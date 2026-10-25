@@ -89,7 +89,7 @@ bool App::physical_key(uint16_t code,bool pressed){
     }
     if(ftue.active()){
         if(command==unsigned(InputCommand::Left)||command==unsigned(InputCommand::Right))ftue_input(command==unsigned(InputCommand::Left)?Key::Left:Key::Right);
-        else if(command==unsigned(InputCommand::Select)||(code==13&&!keyboard_only)){
+        else if(command==unsigned(InputCommand::Select)||(!keyboard_only&&(code==13||(calculator_keyboard&&code=='5'&&command==InputCommandCount)))){
             if(ftue.id!=FtueId::CombatRules){held->key=243;held->context=input_context();}
         }
         return true;

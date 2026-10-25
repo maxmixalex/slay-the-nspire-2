@@ -17,6 +17,26 @@ static const char*collection_header(Canvas&c,unsigned category,char*out,unsigned
     const char*name=collection_ancient_known(c.a,category)?c.a.content.world_title("ancients",ancients[category-8]):c.a.content.locale_string("relic_collection","UNKNOWN_ANCIENT");
     LocalizedTemplate formatter(out,capacity,collection_header_value,name);formatter.format(c.a.content.locale_string("relic_collection","ANCIENT_SUBCATEGORY"));return out;
 }
+static void collection_header_line(Canvas&c,const char*text,int x,int y,bool relic){
+    // Both category scenes fix their body to24 source pixels; inline28px
+    // titles project to the same5px band at1680x1260. Relic headings use
+    // Kreon Regular even for [b], while PotionCategory supplies Kreon Bold.
+    // Header.clip_contents=false and autowrap_mode=0: the full heading may
+    // extend past its1020px category width, without fitting or ellipsizing.
+    const int size=reference_viewport::project(24);
+    const int shadow_x=reference_viewport::project(relic?3:2),shadow_y=reference_viewport::project(relic?2:3);
+    for(unsigned pass=0;pass<2;++pass){
+        Canvas ink=c;if(!pass)ink.opacity=uint8_t(div255(c.opacity*128));
+        RichReader reader(text);RichChar ch{};int at=x;
+        while(reader.next(ch)){
+            const unsigned face=!relic&&ch.style.bold?5u:0u;
+            const auto glyph=c.a.content.glyph(ch.codepoint,size,face);
+            const uint16_t color=ch.style.color==1?rgb(239,200,81):ch.style.color==3?rgb(135,206,235):rgb(255,246,226);
+            ink.character(ch.codepoint,glyph,at+(!pass?shadow_x:0),y+(!pass?shadow_y:0),pass?color:0,!pass);
+            at+=glyph.advance;
+        }
+    }
+}
 static int collection_item_scale(App&a,int index,bool focused,bool relic){
     return a.collection.observe_hover(index,focused,relic,a.map_clock_ms);
 }
@@ -43,7 +63,7 @@ static void collection_screen(Canvas&c){
         if(y<-12||y>=240)continue;char text[512];const char*header=collection_header(c,category,text,sizeof text);
         const int icon=category>=8?collection_assets::AncientIcon[category-8]:-1;
         if(icon>=0)c.ui(icon,63,y-2,9,9);
-        c.text_fitted(header,icon>=0?74:63,y,icon>=0?183:194,8,White,8);
+        collection_header_line(c,header,icon>=0?74:63,y,relic);
     }
     int images[144];unsigned prepared=0;
     for(unsigned row=0;row<a.collection.row_count;++row){const auto&r=a.collection.rows[row];const int y=r.y-offset;

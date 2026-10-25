@@ -29,6 +29,11 @@ static unsigned nd_write(const void*input,unsigned size,unsigned count,void*hand
  const auto*bytes=static_cast<const uint8_t*>(input);auto&data=files.at(f.path);data.insert(data.end(),bytes,bytes+size*n);return n;
 }
 static int nd_close(void*handle){delete static_cast<File*>(handle);return 0;}
+static int nd_seek(void*handle,long offset,int origin){
+ auto&f=*static_cast<File*>(handle);const long base=origin==2?long(files.at(f.path).size()):origin==1?long(f.offset):0;
+ if(offset< -base||static_cast<unsigned long>(base+offset)>files.at(f.path).size())return -1;f.offset=size_t(base+offset);return 0;
+}
+static long nd_tell(void*handle){return long(static_cast<File*>(handle)->offset);}
 static int nd_rename(const char*from,const char*to){
  if(fail_rename==from){fail_rename.clear();return -1;}
  auto found=files.find(from);if(found==files.end()||files.count(to))return -1;

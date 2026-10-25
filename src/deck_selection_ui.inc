@@ -20,15 +20,25 @@ static void deck_selection_prompt(Canvas&c){
     char prompt[256]{};LocalizedTemplate formatted(prompt,sizeof prompt,deck_selection_amount,nullptr);
     formatted.format(c.a.content.world_string("card_selection",key));card_selection_prompt(c,prompt);
 }
-static void deck_selection_upgrades(Canvas&c){
-    auto&a=c.a;if(a.game.phase!=Phase::Upgrade||!a.pointer.visible)return;
+static void card_selection_upgrades_control(Canvas&c){
+    auto&a=c.a;
     using namespace deck_selection_layout;
     const char*label=a.content.world_string("card_selection","VIEW_UPGRADES");
     Canvas text=c;text.font_face=5;
     const int width=ToggleIcon+mn(140,text.width(label,ToggleSize));
     c.ui(a.deck_selection.show_upgrades?F_SettingsTicked:F_SettingsUnticked,ToggleX+1,ToggleY,ToggleIcon,ToggleIcon);
-    text.fitted(label,ToggleX+ToggleIcon+1,ToggleY+2,width-ToggleIcon,ToggleIcon,ToggleSize,ToggleSize,rgb(239,200,81),false,true,true,false,0);
+    // The original Label is fixed 27px inside a .75 parent: native 4px.
+    // Card fitting has a 5px floor, so this authored label must bypass it.
+    // Its 12px black outline at .5 alpha projects to a two-pixel radius.
+    const int x=ToggleX+ToggleIcon+1,y=ToggleY+2,radius=reference_viewport::project(9);
+    Canvas outline=text;outline.opacity=uint8_t(div255(unsigned(text.opacity)*128));
+    for(int dy=-radius;dy<=radius;++dy)for(int dx=-radius;dx<=radius;++dx)
+        if((dx||dy)&&dx*dx+dy*dy<=radius*radius)outline.text(label,x+dx,y+dy,ToggleSize,0,140,1);
+    text.text(label,x,y,ToggleSize,rgb(239,200,81),140,1);
     c.action(ToggleX,ToggleY,width+2,ToggleIcon,UiAction::DeckViewUpgrades);
+}
+static void deck_selection_upgrades(Canvas&c){
+    if(c.a.game.phase==Phase::Upgrade&&c.a.pointer.visible)card_selection_upgrades_control(c);
 }
 static void card_selection_upgrade_arrows(Canvas&c,int center_x=160,int center_y=120,int scale=1000){
     const int arrow=c.a.content.ui_image(I9_UpgradeArrow);if(arrow<0)return;

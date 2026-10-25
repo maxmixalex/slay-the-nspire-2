@@ -42,6 +42,7 @@
  {"cards.OUTMANEUVER","Energy",2,3,1},
  {"cards.PECK","Damage",2,2,1},
  {"cards.PECK","Repeat",3,4,1},
+ {"cards.PURITY","Cards",3,5,1},
  {"cards.REBOUND","Damage",9,12,1},
  {"cards.RELAX","Block",16,18,1},
  {"cards.RELAX","Cards",2,3,1},

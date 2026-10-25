@@ -49,6 +49,39 @@ static void played(){
 }
 static void no_legacy_controls(){CHECK(!has(HitKind::UiAction,int(UiAction::ClearChoice),false));CHECK(!has(HitKind::Command,int(Key::Detail),false));
     for(int i=0;i<a.hit_count;++i)CHECK(a.hits[i].kind!=HitKind::Hand&&a.hits[i].kind!=HitKind::Enemy);}
+static void source_prompt_templates(){
+    scenario="Original selector model variables";snapshot();
+    for(unsigned upgraded=0;upgraded<2;++upgraded){
+        CombatPromptContext context{{&a,"cards",{},int(Purity),-1,1,{Purity,uint8_t(upgraded)}},0,1};
+        wt_model_key(context.model,"PURITY.selectionScreenPrompt");
+        const auto value=combat_prompt_value(&context,"Cards");CHECK(value.known&&value.number==int(3+upgraded*2));
+        char text[128]{};LocalizedTemplate(text,sizeof text,combat_prompt_value,&context,"Energy","Stars",true,combat_prompt_catalog).format("{Cards:diff()}");
+        CHECK(!std::strcmp(text,upgraded?"5":"3"));unchanged();
+    }
+    if(!actual)return;
+    // Read every appended source prompt, not a test-authored translation.
+    // Cover both card variants and singular/plural/range amounts; unresolved
+    // source variables must never leak into a displayed label.
+    struct Entry{const char*key;unsigned index;};static constexpr Entry prompts[]={
+#include "../src/selection_text_index.inc"
+    };
+    CHECK(sizeof prompts/sizeof*prompts==32);
+    for(const auto&entry:prompts){char table[32]{},key[128]{};const char*split=std::strchr(entry.key,'.');CHECK(split&&size_t(split-entry.key)<sizeof table);
+        std::memcpy(table,entry.key,size_t(split-entry.key));std::snprintf(key,sizeof key,"%s",split+1);
+        char raw[512]{};std::snprintf(raw,sizeof raw,"%s",a.content.locale_string(table,key));CHECK(*raw);
+        CardKind kind=Strike;if(!std::strcmp(table,"cards")){
+            kind=CardKinds;const size_t length=size_t(std::strchr(key,'.')-key);
+            for(unsigned i=0;i<CardKinds;++i)if(std::strlen(definitions[i].key)==length&&!std::strncmp(definitions[i].key,key,length)){kind=CardKind(i);break;}
+            CHECK(kind<CardKinds);
+        }
+        for(unsigned upgraded=0;upgraded<2;++upgraded)for(unsigned count:{0u,1u,3u}){
+            CombatPromptContext context{{&a,table,{},int(kind),-1,int(count),{kind,uint8_t(upgraded)}},0,count};wt_model_key(context.model,key);
+            char text[512]{};LocalizedTemplate(text,sizeof text,combat_prompt_value,&context,"Energy","Stars",a.content.english(),combat_prompt_catalog).format(raw);
+            if(std::strchr(text,'{')||std::strchr(text,'}'))std::fprintf(stderr,"unresolved selector %s: %s\n",entry.key,text);
+            CHECK(*text&&!std::strchr(text,'{')&&!std::strchr(text,'}'));unchanged();
+        }
+    }
+}
 static void source_black_backstop(unsigned alpha){
     Canvas c{a};c.rect(0,0,320,240,0xffff);card_choice_screen(c);
     // Source player_hand SelectModeBackstop is black .75; run OverlayBackstop
@@ -76,6 +109,7 @@ static void offers(){
 }
 static void hand(){
     scenario="Purity retained hand";setup({Purity,0});played();CHECK(a.combat_selection_kind()==CombatSelectionKind::Hand);CHECK(a.combat_selection_manual());
+    if(actual){char prompt[512]{};combat_selection_text(a,prompt,sizeof prompt);CHECK(std::strstr(prompt,"3")&&!std::strchr(prompt,'{')&&!std::strchr(prompt,'}'));}
     advance(500);source_black_backstop(191);CHECK(a.active_card_grid()<0);no_legacy_controls();snapshot();
     const auto&pool=choice_pile(a.game);CHECK(pool.count>=4);
     // Keyboard focus retains the hand's lifted card. Verify that separately
@@ -94,6 +128,9 @@ static void hand(){
     std::memcpy(&expected,&a.game,sizeof(State));CHECK(choose_exhaust_many(expected,a.choice_selected,a.choice_selected_count));
     CHECK(has(HitKind::UiAction,int(UiAction::ConfirmChoice)));const auto confirm=a.input_bindings.keys[a.keyboard_only?1:0][unsigned(InputCommand::Confirm)];
     CHECK(a.physical_key(confirm,true));unchanged();CHECK(a.physical_key(confirm,false));matches();
+    scenario="Upgraded Purity requested maximum survives the smaller pool";setup({Purity,1});played();CHECK(a.combat_selection_max()<5);snapshot();
+    if(actual){char prompt[512]{};combat_selection_text(a,prompt,sizeof prompt);CHECK(std::strstr(prompt,"5")&&!std::strchr(prompt,'{')&&!std::strchr(prompt,'}'));}
+    advance(500);capture("combat-hand-purity-upgraded");unchanged();
     scenario="Mandatory hand confirm";setup({Prepared,1},Character::Silent);played();CHECK(a.game.phase==Phase::DiscardChoice);CHECK(a.game.discard_required==2);advance(500);snapshot();
     CHECK(!has(HitKind::UiAction,int(UiAction::ConfirmChoice)));a.confirm_choice();unchanged();
     const auto first=a.game.hand.ids[0],second=a.game.hand.ids[1];a.toggle_choice(first);CHECK(a.choice_selected_count==1);a.confirm_choice();unchanged();
@@ -149,6 +186,6 @@ static void source_geometry_and_ripple(){
 }
 int main(int argc,char**argv){
     Bytes data;if(argc>1){FILE*f=std::fopen(argv[1],"rb");CHECK(f);data.resize(spire_test::pack_size(f));CHECK(std::fread(data.data(),1,data.size(),f)==data.size());std::fclose(f);actual=true;}else data=fixture();
-    CHECK(a.init(data.data(),data.size(),{}));if(argc>2)captures=argv[2];offers();hand();piles();relic_offers();source_geometry_and_ripple();CHECK(a.content.healthy());
+    CHECK(a.init(data.data(),data.size(),{}));if(argc>2)captures=argv[2];source_prompt_templates();offers();hand();piles();relic_offers();source_geometry_and_ripple();CHECK(a.content.healthy());
     std::printf("combat selection: %u checks passed (%s)\n",checks,actual?"actual":"synthetic");
 }

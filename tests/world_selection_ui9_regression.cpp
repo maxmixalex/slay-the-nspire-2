@@ -3,6 +3,7 @@
 #include "original_events.hpp"
 #include "ui_core_observer.hpp"
 #include "content_fixture.hpp"
+#include "selection_label_fixture.hpp"
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -64,7 +65,7 @@ static void enchantments(){
     scenario="optional enchant keeps source MaxSelect with one eligible card";reset();while(a.game.deck_count>1)CHECK(event_remove_deck_card(a.game,a.game.deck_count-1));CHECK(gain_world_relic(a.game,WorldRelicGnarledHammer));a.render();settle();CHECK(ids(choices)==1&&a.world_choice_max()==1&&a.world_selection_max()==3);snapshot();click(HitKind::WorldChoice,choices[0]);CHECK(!a.deck_selection.preview&&a.world_selection_confirmable());unchanged();settle();action(UiAction::ConfirmWorldChoice);CHECK(a.deck_selection.preview&&a.world_selection_preview_cards()==1);settle();action(UiAction::ConfirmWorldChoice);CHECK(a.game.event_cards.deck[0].enchantment==EventEnchantment::Sharp);CHECK(validate(a.game));
 }
 static void transformations(){
-    scenario="Claws fixed transformation preview and view upgrades";relic(WorldRelicClaws);uint16_t choices[MaxWorldUiChoices];CHECK(ids(choices)>2);a.pointer_move(310,30);a.render();CHECK(enabled(UiAction::DeckViewUpgrades));snapshot();action(UiAction::DeckViewUpgrades);CHECK(a.deck_selection.show_upgrades);unchanged();a.input(Key::Right);a.render();CHECK(!a.deck_selection.show_upgrades&&!enabled(UiAction::DeckViewUpgrades));
+    scenario="Claws fixed transformation preview and view upgrades";relic(WorldRelicClaws);uint16_t choices[MaxWorldUiChoices];CHECK(ids(choices)>2);a.pointer_move(310,30);a.render();CHECK(enabled(UiAction::DeckViewUpgrades));snapshot();if(actual){CHECK(spire_test::selection_upgrade_label_pixels(a));unchanged();}action(UiAction::DeckViewUpgrades);CHECK(a.deck_selection.show_upgrades);unchanged();a.input(Key::Right);a.render();CHECK(!a.deck_selection.show_upgrades&&!enabled(UiAction::DeckViewUpgrades));
     click(HitKind::WorldChoice,choices[0]);click(HitKind::WorldChoice,choices[1]);settle();action(UiAction::ConfirmWorldChoice);CHECK(a.deck_selection.preview&&a.world_selection_preview_cards()==4);settle();
     WorldSelectionCard model{};for(unsigned i=2;i<4;++i){CHECK(a.world_selection_preview_card(i,model)&&model.card.kind==EventCardMaul&&model.hover);CHECK(model.x>=0&&model.x+model.w<=320);}unchanged();capture("claws-transform-preview");
     action(UiAction::Back);CHECK(!a.deck_selection.preview&&!a.choice_selected_count);unchanged();click(HitKind::WorldChoice,choices[0]);settle();action(UiAction::ConfirmWorldChoice);settle();const unsigned deck_count=a.game.deck_count;const CardKind original=a.game.deck[choices[0]].kind;unsigned original_count=0;for(unsigned i=0;i<deck_count;++i)original_count+=a.game.deck[i].kind==original;
@@ -89,7 +90,22 @@ static void simple_and_bundle(){
 static void sealed(){
     scenario="Sealed Deck remains manual after tenth selection";reset();CHECK(configure_run_options(a.game,RunMode::Custom,run_modifier_bit(RunModifier::SealedDeck)));CHECK(world_begin_run(a.game));CHECK(original_event_choose(a.game,0));a.render();settle();
     CHECK(neow_modifier_selection(a.game,RunModifier::SealedDeck));uint16_t choices[MaxWorldUiChoices];CHECK(ids(choices)==30&&a.world_selection_kind()==WorldSelectionKind::Simple&&a.world_selection_manual());const unsigned deck=a.game.deck_count;snapshot();
-    for(unsigned i=0;i<10;++i)a.toggle_world_choice(choices[i]);a.render();CHECK(a.choice_selected_count==10&&!a.deck_selection.preview&&a.game.deck_count==deck);unchanged();settle();capture("sealed-ten-selected");action(UiAction::ConfirmWorldChoice);CHECK(a.game.deck_count==10&&a.game.phase==Phase::Event);CHECK(validate(a.game));
+    const auto press=[](uint16_t code){CHECK(a.physical_key(code,true));a.render();CHECK(a.physical_key(code,false));a.render();};
+    // Exercise the same semantic Select and physical arrows as the browser.
+    // NCardGrid wraps horizontally within the row; Right never selects the
+    // next row's first card without its separate Down input.
+    CHECK(a.card_grids[unsigned(CardGridSurface::WorldChoice)].columns==4);
+    for(unsigned i=0;i<9;++i){
+        CHECK(a.cursor==int(i));a.input(Key::Confirm);a.render();CHECK(a.choice_selected_count==i+1);unchanged();
+        press(InputRight);CHECK(a.cursor==int(i%4==3?i-3:i+1));
+        if(i%4==3){press(InputDown);CHECK(a.cursor==int(i+1));}
+    }
+    CHECK(a.cursor==9&&a.choice_selected_count==9);press(27);CHECK(a.choice_selected_count==9&&!a.deck_selection.preview);unchanged();
+    a.input(Key::Confirm);a.render();CHECK(a.choice_selected_count==10&&!a.deck_selection.preview&&a.game.deck_count==deck);unchanged();settle();capture("sealed-ten-selected");
+    a.input(Key::Confirm);a.render();CHECK(a.choice_selected_count==9&&!a.world_selection_confirmable());press('E');CHECK(a.choice_selected_count==9);unchanged();
+    a.input(Key::Confirm);a.render();CHECK(a.choice_selected_count==10&&a.world_selection_confirmable());
+    CHECK(a.physical_key('E',true));a.render();CHECK(a.choice_selected_count==10&&a.game.deck_count==deck);unchanged();
+    CHECK(a.physical_key('E',false));a.render();CHECK(a.game.deck_count==10&&a.game.phase==Phase::Event);CHECK(validate(a.game));
 }
 static void cook(){
     scenario="Meat Cleaver Cook real rest option, two-level cancel";reset();CHECK(world_set_seed(a.game,"NSPIRE-WORLD-017"));CHECK(world_begin_run(a.game));CHECK(gain_world_relic(a.game,WorldRelicMeatCleaver));
@@ -124,6 +140,7 @@ static void exact_font(const char*text,unsigned size,unsigned face=0){
 }
 static void fonts(){
     if(!actual)return;scenario="exact source prompt and enchantment glyphs";
+    exact_font(a.content.world_string("card_selection","VIEW_UPGRADES"),4,5);
     const CombatSelectionPrompt prompts[]={{"card_selection","TO_ENCHANT"},{"relics","DOLLYS_MIRROR.selectionScreenPrompt"},{"relics","CLAWS.selectionScreenPrompt"},{"relics","SEA_GLASS.selectionScreenPrompt"},{"events","BRAIN_LEECH.pages.SHARE_KNOWLEDGE.selectionScreenPrompt"},{"events","ROOM_FULL_OF_CHEESE.pages.GORGE.selectionScreenPrompt"},{"gameplay_ui","COMBAT_REWARD_CARD_REMOVAL.selectionScreenPrompt"},{"modifiers","SEALED_DECK.selectionPrompt"}};
     for(const auto&prompt:prompts){char raw[512]{};std::snprintf(raw,sizeof raw,"%s",a.content.world_string(prompt.table,prompt.key));CHECK(*raw);CombatPromptContext context{{&a,prompt.table,{},int(WorldRelicSeaGlass),-1,10},0,10};wt_model_key(context.model,prompt.key);char text[512]{};LocalizedTemplate(text,sizeof text,combat_prompt_value,&context,"Energy","Stars",a.content.english(),combat_prompt_catalog).format(raw);exact_font(text,5);}
     exact_font(a.content.world_string("gameplay_ui","CHOOSE_A_PACK"),6,5);Canvas canvas{a};

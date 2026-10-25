@@ -4,6 +4,7 @@
 #include "host_text_input.hpp"
 #include "world_run.hpp"
 #include "original_events.hpp"
+#include "rich_text.hpp"
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -100,6 +101,81 @@ static void collection_associated_models(){
         a.render();CHECK(!a.keyword_hover.owner);a.pointer_button(false);a.render();CHECK(grid.position==position);if(tab==1){CHECK(a.detail_item==id&&a.relic_inspect.source==RelicInspectSource::Collection);a.input(Key::Back);a.advance(250);}else CHECK(a.detail_item<0);
     }
 }
+static bool exact_header_glyph(const std::vector<uint8_t>&pack,uint32_t cp,unsigned face){
+    const auto u32=[&](unsigned at){return unsigned(pack[at])|unsigned(pack[at+1])<<8|unsigned(pack[at+2])<<16|unsigned(pack[at+3])<<24;};
+    const unsigned count=u32(20),offset=40+u32(16)*16,packed=5|((face&4)<<3)|((face&3)<<6);
+    const uint64_t key=uint64_t(packed)<<24|cp;unsigned low=0,high=count;
+    while(low<high){const unsigned middle=(low+high)/2,at=offset+middle*16;
+        const uint64_t value=uint64_t(pack[at+8]|unsigned(pack[at+9])<<8)<<24|u32(at);
+        if(value<key)low=middle+1;else high=middle;
+    }
+    if(low==count)return false;const unsigned at=offset+low*16;
+    return u32(at)==cp&&(pack[at+8]|unsigned(pack[at+9])<<8)==packed;
+}
+static void collection_header_pixels(const std::vector<uint8_t>&pack){
+    if(pack.empty())return;
+    // Exercise the real collection renderer with one isolated header. Its
+    // reference image is painted independently from the authored24/28px
+    // fonts, rich colors and50% shadow; no fit/ellipsis helper is shared.
+    const auto rgb=[](unsigned r,unsigned g,unsigned b){return uint16_t((r>>3)<<11|(g>>2)<<5|(b>>3));};
+    const auto mix=[](uint16_t a,uint16_t b,unsigned alpha){
+        const auto channel=[&](unsigned x,unsigned y){return (x*(255-alpha)+y*alpha+127)/255;};
+        return uint16_t(channel(a>>11,b>>11)<<11|channel((a>>5)&63,(b>>5)&63)<<5|channel(a&31,b&31));
+    };
+    const char*relic_keys[]={"STARTER","COMMON","UNCOMMON","RARE","SHOP","ANCIENT","EVENT"};
+    const char*potion_keys[]={"COMMON","UNCOMMON","RARE","SPECIAL"};
+    const char*ancients[]={"NEOW","OROBAS","PAEL","TEZCATARA","NONUPEIPE","TANX","VAKUU","DARV"};
+    const OriginalEventId events[]={OriginalEventId::Neow,OriginalEventId::Orobas,OriginalEventId::Pael,OriginalEventId::Tezcatara,OriginalEventId::Nonupeipe,OriginalEventId::Tanx,OriginalEventId::Vakuu,OriginalEventId::Darv};
+    uint8_t seen_events[sizeof a.progress.discovered_events],seen_relics[sizeof a.progress.discovered_relics];
+    std::memcpy(seen_events,a.progress.discovered_events,sizeof seen_events);std::memcpy(seen_relics,a.progress.discovered_relics,sizeof seen_relics);
+    unsigned headings=0,overflow_headings=0;
+    for(int tab=1;tab<=2;++tab){
+        a.open_library(tab);a.prepare_collection();const auto original=a.collection;
+        auto&grid=a.card_grids[unsigned(CardGridSurface::Library)];grid.position=grid.target=0;
+        a.pointer.visible=true;a.pointer.x=319;a.pointer.y=239;
+        const unsigned samples=tab==1?16u:4u;
+        for(unsigned sample=0;sample<samples;++sample){
+            const bool ancient=tab==1&&sample>=7,unknown=sample==15;
+            const unsigned category=ancient?8+(unknown?0:sample-7):sample;
+            std::memset(a.progress.discovered_events,0,sizeof seen_events);std::memset(a.progress.discovered_relics,0,sizeof seen_relics);
+            if(ancient&&!unknown){const unsigned event=unsigned(events[category-8])-1;a.progress.discovered_events[event/8]|=uint8_t(1u<<(event%8));}
+            std::string text;
+            if(ancient){
+                text=a.content.locale_string("relic_collection","ANCIENT_SUBCATEGORY");const auto at=text.find("{Ancient}");CHECK(at!=std::string::npos);
+                const char*name=unknown?a.content.locale_string("relic_collection","UNKNOWN_ANCIENT"):a.content.world_title("ancients",ancients[category-8]);text.replace(at,9,name);
+            }else text=a.content.locale_string(tab==1?"relic_collection":"potion_lab",tab==1?relic_keys[category]:potion_keys[category]);
+            CHECK(!text.empty());a.collection.row_count=0;a.collection.category_count=1;a.collection.category_kind[0]=uint8_t(category);a.collection.category_y[0]=80;
+            a.render();const std::vector<uint16_t>actual(a.pixels,a.pixels+ScreenW*ScreenH);
+            a.collection.category_count=0;a.render();std::vector<uint16_t>expected(a.pixels,a.pixels+ScreenW*ScreenH);
+            const int start=ancient?74:63,y=80;int width=0,height=0;unsigned characters=0;
+            for(unsigned pass=0;pass<2;++pass){
+                RichReader reader(text.c_str());RichChar ch{};int x=start;
+                while(reader.next(ch)){
+                    CHECK(ch.codepoint>=32);const unsigned face=tab==2&&ch.style.bold?5u:0u;
+                    CHECK(exact_header_glyph(pack,ch.codepoint,face));const auto g=a.content.glyph(ch.codepoint,5,face);
+                    CHECK(g.pixels&&g.advance>0);if(g.h>height)height=g.h;std::vector<uint8_t>alpha(unsigned(g.w)*g.h);
+                    if(g.encoded_size){unsigned at=0;for(unsigned i=0;i<g.encoded_size;i+=2){CHECK(i+1<g.encoded_size&&at+g.pixels[i]<=alpha.size());for(unsigned n=0;n<g.pixels[i];++n)alpha[at++]=g.pixels[i+1];}CHECK(at==alpha.size());}
+                    else std::memcpy(alpha.data(),g.pixels,alpha.size());
+                    CHECK(ch.style.color==0||ch.style.color==1||ch.style.color==3);
+                    const uint16_t color=!pass?0:ch.style.color==1?rgb(239,200,81):ch.style.color==3?rgb(135,206,235):rgb(255,246,226);
+                    const int dx=!pass&&tab==1?1:0,dy=!pass&&tab==2?1:0;
+                    for(unsigned yy=0;yy<g.h;++yy)for(unsigned xx=0;xx<g.w;++xx){const unsigned coverage=pass?alpha[yy*g.w+xx]:(unsigned(alpha[yy*g.w+xx])*128+127)/255;
+                        const int at=(y+int(yy)+dy)*ScreenW+x+int(xx)+dx;CHECK(at>=0&&at<int(expected.size()));expected[at]=mix(expected[at],color,coverage);}
+                    x+=g.advance;if(pass)++characters;
+                }
+                width=x-start;
+            }
+            CHECK(characters>0&&width>0&&start+width+2<ScreenW);if(width>194)++overflow_headings;
+            CHECK(y+height+1<ScreenH);
+            unsigned changed=0;for(int yy=y;yy<y+height+1;++yy)for(int xx=start;xx<start+width+2;++xx){const unsigned at=unsigned(yy*ScreenW+xx);CHECK(actual[at]==expected[at]);if(actual[at]!=a.pixels[at])++changed;}
+            CHECK(changed>0);++headings;
+        }
+        a.collection=original;
+    }
+    CHECK(headings==20);if(a.content.english())CHECK(overflow_headings==2);
+    std::memcpy(a.progress.discovered_events,seen_events,sizeof seen_events);std::memcpy(a.progress.discovered_relics,seen_relics,sizeof seen_relics);
+    a.open_library(0);
+}
 static void host_input(){
     std::vector<int> codes;auto emit=[&](int code){codes.push_back(code);};host_text_utf8("A升级",7,emit);CHECK(codes.size()==3&&codes[0]=='A'&&codes[1]==0x5347&&codes[2]==0x7ea7);
     codes.clear();const char invalid[]={char(0xc0),char(0xaf),char(0xed),char(0xa0),char(0x80),'z'};host_text_utf8(invalid,sizeof invalid,emit);CHECK(codes.size()==1&&codes[0]=='z');
@@ -150,6 +226,6 @@ int main(int argc,char**argv){
         a.render();unsigned preparation=0;while(a.combat_preparation.active&&preparation++<1024){a.advance(33);a.render();}
         CHECK(!a.combat_preparation.active&&a.content.healthy());unchanged(before);
     }
-    pools_and_filters();unchanged(before);discovery_search_and_capture();unchanged(before);hover_discovery_preserves_capture();unchanged(before);collections();unchanged(before);collection_associated_models();unchanged(before);host_input();observed_rewards();
+    pools_and_filters();unchanged(before);discovery_search_and_capture();unchanged(before);hover_discovery_preserves_capture();unchanged(before);collections();unchanged(before);collection_associated_models();unchanged(before);collection_header_pixels(bytes);unchanged(before);host_input();observed_rewards();
     std::printf("UI7 card library and collections: %u checks passed\n",checks);
 }

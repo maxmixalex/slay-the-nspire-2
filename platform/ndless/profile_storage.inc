@@ -1,9 +1,25 @@
 // Foreground-only profile storage. The existing run/progress buffers are
 // reused; opening this menu never constructs another State or UiProgress.
+#include "storage_codec.inc"
 static const char*profile_launcher="";
 static char selector_path[512],selector_temp[512],selector_backup[512];
 static unsigned selected_profile=1,pending_profile=0;
 static bool pending_profile_delete=false;
+enum class ProgressRecovery:uint8_t { Unknown,PrimaryValid,BackupAfterInvalidPrimary };
+// One process-only fact from the existing full load. A profile switch clears
+// it; a read/close failure cannot certify that the primary is corrupt.
+static ProgressRecovery progress_recovery=ProgressRecovery::Unknown;
+static bool progress_file_read(void*file,uint8_t*bytes,unsigned&size,storage_codec::ReadStatus&status){
+    size=0;status=storage_codec::ReadStatus::IoFailure;
+    if(nd_seek(file,0,2)!=0)return false;const long physical=nd_tell(file);
+    if(physical<0)return false;
+    // Even a legal stream of one-byte literal packets is bounded. The writer
+    // selects NSZ1 only when smaller, but reading keeps the complete grammar.
+    constexpr unsigned bound=2*spire::UiProgressCapacity+storage_codec::HeaderBytes;
+    if(physical<storage_codec::HeaderBytes||static_cast<unsigned long>(physical)>bound){status=storage_codec::ReadStatus::Invalid;return false;}
+    if(nd_seek(file,0,0)!=0)return false;
+    return storage_codec::read(file,bytes,spire::UiProgressCapacity,size,storage_codec::HeaderBytes,false,&status,unsigned(physical));
+}
 static constexpr unsigned ProfileFileCount=9;
 static const char*const profile_files[]={"nSpire2.sav.tns","nSpire2.tmp.tns","nSpire2.bak.tns",
     "nSpire2.progress.tns","nSpire2.progress.tmp.tns","nSpire2.progress.bak.tns",
@@ -22,6 +38,7 @@ static bool profile_paths(unsigned profile,char(&paths)[ProfileFileCount][512],b
 static void install_profile_paths(const char(&paths)[ProfileFileCount][512]){
     char*const destinations[]={save_path,temp_path,backup_path,progress_path,progress_temp,progress_backup,settings_path,settings_temp,settings_backup};
     for(unsigned i=0;i<ProfileFileCount;++i)for(unsigned at=0;;++at){destinations[i][at]=paths[i][at];if(!paths[i][at])break;}
+    progress_recovery=ProgressRecovery::Unknown;
 }
 static bool configure_profile_paths(unsigned profile){
     char paths[ProfileFileCount][512];if(!profile_paths(profile,paths))return false;install_profile_paths(paths);return true;
@@ -64,8 +81,9 @@ static bool profile_info(unsigned profile,spire::UiProgressSummary&out){
     char path[512];
     const unsigned candidates[]={3,5};for(unsigned index:candidates){if(!profile_sibling(path,profile_files[index],profile))return false;
         void*f=nd_open(path,"rb");if(!f)continue;
-        const unsigned n=nd_read(progress_bytes,1,spire::UiProgressCapacity+1,f);const bool closed=nd_close(f)==0;
-        if(closed&&spire::decode_ui_progress_summary(progress_bytes,n,out))return true;
+        unsigned n=0;storage_codec::ReadStatus status;const bool read=progress_file_read(f,progress_bytes,n,status);
+        const bool closed=nd_close(f)==0;
+        if(read&&closed&&spire::decode_ui_progress_summary(progress_bytes,n,out))return true;
     }
     // Old ports have no UI-history file. The first byte is only an existence
     // hint; Continue still performs the complete ordinary save validation.
@@ -89,7 +107,8 @@ static bool erase_profile_files(unsigned profile){
         if(nd_rename(paths[i],removed[i])!=0){for(unsigned j=0;j<i;++j)if(moved&(1u<<j))nd_rename(removed[j],paths[j]);return false;}
         moved|=1u<<i;
     }
-    for(unsigned i=0;i<ProfileFileCount;++i)if(moved&(1u<<i))nd_unlink(removed[i]);return true;
+    for(unsigned i=0;i<ProfileFileCount;++i)if(moved&(1u<<i))nd_unlink(removed[i]);
+    if(profile==selected_profile)progress_recovery=ProgressRecovery::Unknown;return true;
 }
 static void service_profile(){
     if(!pending_profile)return;const unsigned target=pending_profile;pending_profile=0;

@@ -75,8 +75,9 @@ static int append(Card card,Zone zone){
     p.ids[p.count++]=(uint16_t)id;return id;
 }
 static void settle_fixture_preparation(){
+    const auto before=snapshot();const auto animation=a.animation;
     a.render();for(unsigned frame=0;a.combat_preparation.active&&frame<1024;++frame){a.advance(33);a.render();}
-    CHECK(!a.combat_preparation.active);
+    CHECK(!a.combat_preparation.active&&a.content.healthy());CHECK(a.animation==animation);unchanged(before);
 }
 static void setup(bool practice=true){
     new_run(a.game,71,false);auto&s=a.game;s.practice=practice;s.phase=Phase::Combat;
@@ -206,7 +207,7 @@ static void offers(){
         }
         a.input(Key::Save);CHECK(stored.size);a.advance(250);a.advance(101);a.render();tap(HitKind::CombatChoice,a.game.expansion.choices.ids[2]);CHECK(a.game.phase==Phase::Combat&&a.game.hand.count==1);
         CHECK(cost(a.game,a.game.hand.ids[0])==(cost(a.game.cards[a.game.hand.ids[0]])<0?-1:0)&&!a.game.expansion.potion_active);CHECK(validate(a.game));
-        a.input(Key::Load);CHECK(a.game.phase==Phase::ExtendedChoice&&a.choice_selected_count==0);unchanged(before);
+        a.input(Key::Load);CHECK(a.game.phase==Phase::ExtendedChoice&&a.choice_selected_count==0);unchanged(before);settle_fixture_preparation();
         auto h=hit(HitKind::CombatChoice,a.game.expansion.choices.ids[0]);a.pointer_move(h.x+h.w/2,h.y+h.h/2);a.pointer_button(true);
         a.input(Key::Collection);a.pointer_button(false);CHECK(a.compendium_open&&!a.library&&a.choice_selected_count==0);unchanged(before);a.input(Key::Back);
         a.advance(250);a.advance(101);a.cursor=1;a.input(Key::Confirm);CHECK(a.game.phase==Phase::Combat&&a.game.hand.count==1);

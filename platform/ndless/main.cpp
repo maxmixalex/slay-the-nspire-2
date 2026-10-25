@@ -90,27 +90,7 @@ static spire::ResourceSource file_source(ResourceFile&file){
     return {&file,(uint32_t)length,read_resource,nullptr,resource_progress};
 }
 #include "preferences_storage.inc"
-static bool load_progress(spire::UiProgress&out){
-    spire::ResourceTransferLease transfer(spire::ResourceTransferUse::Bytes);if(!transfer)return false;
-    uint8_t*progress_bytes=transfer.bytes();
-    const char*paths[]={progress_path,progress_backup};
-    for(const char*path:paths){void*f=nd_open(path,"rb");if(!f)continue;
-        const unsigned n=nd_read(progress_bytes,1,spire::UiProgressCapacity+1,f);nd_close(f);
-        if(spire::decode_ui_progress(progress_bytes,n,out))return true;
-    }return false;
-}
-static bool save_progress(const spire::UiProgress&value){
-    spire::ResourceTransferLease transfer(spire::ResourceTransferUse::Bytes);if(!transfer)return false;
-    uint8_t*progress_bytes=transfer.bytes();
-    const unsigned n=unsigned(spire::encode_ui_progress(value,progress_bytes,spire::UiProgressCapacity));if(!n)return false;
-    void*f=nd_open(progress_temp,"wb");if(!f)return false;
-    bool ok=nd_write(progress_bytes,1,n,f)==n;ok=(nd_close(f)==0)&&ok;
-    if(!ok){nd_unlink(progress_temp);return false;}
-    bool old=false;f=nd_open(progress_path,"rb");if(f){old=true;nd_close(f);}
-    if(old){nd_unlink(progress_backup);if(nd_rename(progress_path,progress_backup)!=0){nd_unlink(progress_temp);return false;}}
-    if(nd_rename(progress_temp,progress_path)!=0){if(old)nd_rename(progress_backup,progress_path);return false;}
-    if(old)nd_unlink(progress_backup);return true;
-}
+#include "progress_storage.inc"
 #include "run_storage.inc"
 static bool clear_save(){
     // A deliberate abandon also removes the preceding atomic-save backup.

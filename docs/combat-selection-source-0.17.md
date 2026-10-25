@@ -318,3 +318,26 @@ byte-exact old suspended saves. Its short matched-core diagnostic passed
 326 checks; the existing world-relic suite passed 2,016 with the same new
 translation unit. Formal execution is required again from the combined
 final source checkpoint.
+
+## Production prompt and host-navigation review — 2026-10-25
+
+The recovered `c3a44adf` runtime completed the selector's production-resource
+regression in both languages, but visual review still found a real defect:
+Purity's hand prompt displayed `{Cards:diff()}`. The pinned model constructs
+`CardsVar(3)` and upgrades it by two. Its common localization numeric fact
+now supplies 3/5; the eligible selection count does not replace that value.
+An independent PCK scan of all 32 appended prompts found five dynamic
+templates: four use the already supported `Amount`, and Purity uses `Cards`.
+The expanded regression reads every production prompt for both card variants
+and singular/plural amounts, rejects unresolved braces, and exercises the
+actual upgraded Purity choice with four eligible cards while displaying five.
+The narrow diagnostic passed 780,221 checks with captures in each language;
+formal execution of the updated source is still pending its checkpoint.
+
+The ordinary browser also caught a verifier error: repeatedly pressing Right
+wraps within a four-card row, so the old Sealed Deck script toggled the same
+four models instead of selecting nine distinct ones. It now navigates down
+after each horizontal wrap. The native companion uses actual Select and
+physical direction/confirm input, preserves canonical bytes at nine cards
+and during confirmation key-down, and commits exactly ten on key-up. This
+changes the verifier, not the original grid navigation or gameplay rules.

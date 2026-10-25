@@ -1,4 +1,93 @@
-# Work state — 2026-10-24
+# Work state — 2026-10-25
+
+## Matched v34 gates and final visible repairs — 2026-10-25
+
+The remotely verified source `c3a44adfce84ef6355c89b0038210f58ab63afa2`
+(tree `8b48c0cdd67c11476c5ae7754ed4d0f048826442`) passes all115 native
+CTest suites and GitHub Actions run40155811647. Python discovery passes217
+tests. The first combined local journal then failed because the wrapper named
+three nonexistent modules; that failed receipt is retained. A separate correct
+invocation passes all54 additional animation, packing and logging tests plus
+compileall. These are build/converter results, not an original-game fidelity
+percentage.
+
+The complete v34 resources have51,123 images,1783 clips,558 card records,
+2061 auxiliary records and8704 strings. English has3282 glyphs and Chinese
+32749, within the unchanged32768-entry limit. The bilingual three-file split
+totals93,128,740 bytes. The18 Kaiser supplements contain344 original samples;
+old image payloads, clip clocks, glyphs and strings are unchanged. Both locale
+full packs and their split reconstruction compare exactly. Both complete
+Kaiser poses were inspected with the missing source pixels now restored.
+
+Matching ARM is1,419,971 bytes, with actual Zehn prefix plus loaded memory/BSS
+of16,753,056 bytes:24,160 bytes below the unchanged16MiB limit. Linked ARM
+division/ABI, LZMA2 and TGR checks pass12,880 /42 /14 cases. Matching WASM is
+6,632,992 bytes. This is not physical-device performance evidence.
+
+Against the final v34 packs, all17 root scene targets pass in each language,
+producing265 captures per locale. Composed review covered direct title,
+character selection, the centered map/legend, events, rest, merchant and
+owned hovers, treasure, rewards, pause, potions, tutorials and run end. The
+first front group passes11/13 per locale; the first combat group passes10/15.
+The failures are retained. They expose old test premises: rendering before
+bounded combat preparation, advancing through an inspector before its source
+exit animation, and comparing event entrance animation as though only rainbow
+text could change. The repaired short diagnostics preserve canonical-save
+bytes, animation clocks, input barriers and actual text bounds. They require
+the next frozen full rerun before being counted as accepted.
+
+Actual visual review also found two implementation defects. Purity's prompt
+left `{Cards:diff()}` unresolved; its canonical3/5 source variable is now bound,
+with all32 selection prompts checked at both upgrade states. Collection
+category headings used8px fitted text instead of fixed source24/inline28
+projected to5px. Their complete regular/bold text, source colors and shadow
+are restored without truncating the two longest English headings. All20
+actual heading variants in each language use existing exact glyph keys; no
+resource or glyph-capacity increase is needed. The original fixed4px View
+Upgrades labels in deck/world selectors also bypass the general card-text
+fitter's5px minimum. Their full labels retain the original control state and
+hit regions. Matching full/browser acceptance of these changes is pending.
+The calculator's default physical5 Confirm alias is also accepted by the
+blocking tutorial dispatcher, consistently with ordinary controls; the
+release transition retains tutorial input ownership and save purity.
+
+The first ordinary browser run passed14 entry, settings, profile, tutorial,
+save/continue and language-persistence checks before its Sealed navigation
+fixture repeatedly visited four cards: Right wraps within the source's
+four-column row. The corrected fixture uses actual Right/Down navigation,
+checks that nine cards cannot confirm and that ten commit only on release.
+This is a test repair, not an alternate release navigation behavior. A new
+ordinary-browser run must use the next matching WASM and final v34 resources.
+
+The exact highlight optimization has now passed748 old/new whole-frame pairs
+(57,446,400 RGB565 pixels), with identical canonical State, hits and presentation.
+In an isolated native warm-render measurement,1920 interleaved old/new pairs
+per locale show mean1477.545→1446.472µs English and1468.639→1445.731µs Chinese
+(2.103% and1.560% reductions). Warm resource read calls and bytes are zero.
+This is the measured scene on the native memory provider, not ARM FPS.
+A16-of732 tile-group context sample saved only592 of936,431 compressed bytes;
+it is not a full-pack saving and does not justify another resource rewrite.
+
+Calculator history now shares the existing512-byte streaming NSZ1 envelope
+with runs, preserving canonical NSH1–8 and raw fallback. Its valid full NSH8
+fixture compresses295,349→74,001 bytes and decodes exactly. One process byte
+tracks existing full-load recovery facts; a known malformed primary cannot
+overwrite the valid recovery backup. Fault injection covers normal, unknown
+I/O, invalid-primary, missing-primary, rollback and retry paths. The short
+actual-callback test passes9463 cases; matching native/ARM and ordinary device
+execution remain required. No resident buffer or startup integrity scan is
+added. See `run-storage-ui9-0.17.md` for exact limits.
+
+Capacity cases must remain distinct: with these measured packed histories and
+dense runs, a three-profile history-update peak is1,025,362 bytes; retaining
+three conservative old raw run backups raises it to1,419,637. The first update
+with three old raw full histories instead peaks at2,083,681, and the all-raw
+conservative bound remains2,699,304. Filesystem costs are additional. Rounded
+OS free-space labels are not exact capacity evidence. The ordinary cloned OS
+is cold-booted and its game directory is empty; final four-file installation,
+actual play/save/continue, capacity write/readback and restoration are still
+open. Final calculator ZIP/offline HTML delivery and verified main sync follow
+those gates. Original assets and captures remain private.
 
 ## Kaiser crop completion and bounded selector fonts — 2026-10-25
 

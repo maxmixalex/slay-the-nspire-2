@@ -3,6 +3,7 @@
 #include "../src/app.cpp"
 #include "card_grid_fixture.hpp"
 #include "content_fixture.hpp"
+#include "selection_label_fixture.hpp"
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -49,7 +50,7 @@ static void smith(){
     uint16_t indices[MaxDeck];CHECK(a.deck_choice_items(indices,MaxDeck)==expected&&indices[0]==1);auto&grid=a.card_grids[unsigned(CardGridSurface::DeckChoice)];
     CHECK(grid.top==15&&grid.bottom==240&&grid.origin==15&&grid.count==int(expected)&&grid.columns==4);
     CHECK(!hit(HitKind::Choice,0));for(int i=0;i<a.hit_count;++i)if(a.hits[i].kind==HitKind::Choice)CHECK(card_upgradeable(a.game.deck[a.hits[i].value]));
-    a.pointer_move(310,30);a.render();CHECK(hit(HitKind::UiAction,int(UiAction::DeckViewUpgrades)));snapshot();capture("smith-grid");
+    a.pointer_move(310,30);a.render();CHECK(hit(HitKind::UiAction,int(UiAction::DeckViewUpgrades)));snapshot();if(actual){CHECK(spire_test::selection_upgrade_label_pixels(a));unchanged();}capture("smith-grid");
     click(HitKind::UiAction,int(UiAction::DeckViewUpgrades));CHECK(a.deck_selection.show_upgrades);unchanged();capture("smith-grid-upgrades");
     a.input(Key::Right);a.render();CHECK(!a.deck_selection.show_upgrades&&!hit(HitKind::UiAction,int(UiAction::DeckViewUpgrades)));CHECK(a.cursor==2);unchanged();capture("smith-directional-grid");
     click(HitKind::Choice,1);CHECK(a.deck_candidate==1&&a.deck_candidate_valid()&&a.active_card_grid()<0);unchanged();settle();capture("smith-upgrade-preview");

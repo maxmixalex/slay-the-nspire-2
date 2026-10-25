@@ -21,6 +21,14 @@ static void press(uint16_t key){CHECK(app.physical_key(key,true));CHECK(app.phys
 static void settle(){for(unsigned i=0;i<32;++i)app.advance(100);app.render();}
 static void snapshot(){CHECK(save(app.game,before));}
 static void unchanged(){CHECK(save(app.game,after)&&before.size==after.size&&!std::memcmp(before.bytes,after.bytes,before.size));}
+static void prepare_combat(){
+    snapshot();const auto animation=app.animation;app.render();
+    // Real artwork enters a bounded preparation gate. Its first visible
+    // frame must be presented before updates can release ordinary input.
+    for(unsigned i=0;app.combat_preparation.active&&i<1024;++i){app.advance(33);app.render();}
+    CHECK(!app.combat_preparation.active);if(app.content.current_profile())CHECK(app.content.healthy());
+    CHECK(app.animation==animation);unchanged();
+}
 static void capture(const char*name){if(!captures)return;app.render();FILE*f=std::fopen((std::string(captures)+"/"+name+".ppm").c_str(),"wb");CHECK(f);std::fprintf(f,"P6\n320 240\n255\n");for(uint16_t p:app.pixels){uint8_t rgb[]={uint8_t((p>>11)*255/31),uint8_t(((p>>5)&63)*255/63),uint8_t((p&31)*255/31)};CHECK(std::fwrite(rgb,1,3,f)==3);}CHECK(!std::fclose(f));}
 static HitRegion hit(unsigned command){app.render();for(int i=app.hit_count-1;i>=0;--i)if(app.hits[i].kind==HitKind::InputBinding&&app.hits[i].value==int(command))return app.hits[i];CHECK(false);return {};}
 static void click(unsigned command){const auto h=hit(command);CHECK(h.enabled);app.pointer_move(h.x+h.w/2,h.y+h.h/2);app.pointer_button(true);app.pointer_button(false);}
@@ -58,7 +66,7 @@ static void settings(){
     app.reset_input_bindings();app.ui_action(UiAction::SettingsBack);CHECK(!app.settings_open);unchanged();
 }
 static void gameplay(){
-    new_run(app.game,0x1717,true);app.title=false;app.keyboard_only=false;app.reset_presentation();settle();CHECK(app.game.phase==Phase::Combat&&app.game.hand.count>=2);
+    new_run(app.game,0x1717,true);app.title=false;app.keyboard_only=false;app.reset_presentation();prepare_combat();settle();CHECK(app.game.phase==Phase::Combat&&app.game.hand.count>=2);
     CHECK(rebind_input(app.input_bindings,0,unsigned(InputCommand::Deck),'A'));
     press('A');CHECK(app.panel==1&&app.pile_tab==0);press('A');CHECK(!app.panel);
     press('D');CHECK(app.panel==1&&app.pile_tab==1);press('D');CHECK(!app.panel);

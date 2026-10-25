@@ -6,7 +6,7 @@
     "dll_sha256": "0861bfa1df347538d932f22d580e75420f08082792eb914e53b4882764acdbe9"
   },
   "supersedes": "ui7-original-ui-inventory-0.17.json",
-  "source_stage": "UI9 follow-up candidate after verified 4e8 font checkpoint. Matched 3e61 native/converter gates passed; new runtime and final resource acceptance remains pending.",
+  "source_stage": "UI9 final source repairs after verified c3a44 v34 checkpoint. Matching v34 root17 targets pass in both languages; remaining front/combat fixture repairs, collection headings, selection labels, Purity prompts and calculator-history changes await the next frozen gate.",
   "scope": {
     "excluded": [
       "audio",
@@ -152,7 +152,7 @@
       ],
       "contract": "Relic categories and inspect",
       "assessment": "implemented_with_documented_limits",
-      "implemented": "Original category/starter/Ancient groups, discovery gates, icons and source 69px hover columns with associated keywords and separate related-card previews. Cookie canonical/no-owner icons and outlines now share one process-stable presentation variant; owned/history icons use the actual owner character.",
+      "implemented": "Original category/starter/Ancient groups, discovery gates, icons and source 69px hover columns with associated keywords and separate related-card previews. Cookie canonical/no-owner icons and outlines now share one process-stable presentation variant; owned/history icons use the actual owner character. Fixed source24/inline28 category headings project to5px with exact regular/bold assignments, full unwrapped text, source colors and shadows;20 actual variants per language require no new glyphs.",
       "remaining": "Exact GPU material equivalence remains unestablished; the new Cookie ownership cases require the next matching regression and actual captures.",
       "regressions": [
         "ui_progress_regression"
@@ -167,7 +167,7 @@
       ],
       "contract": "Potion catalogue and inspect",
       "assessment": "implemented_with_documented_limits",
-      "implemented": "All 64 catalogue entries, original rarity/discovery rules, source 69px/5px primary and related tooltip columns plus separate card previews.",
+      "implemented": "All 64 catalogue entries, original rarity/discovery rules, source 69px/5px primary and related tooltip columns plus separate card previews. Source category headings use fixed5px regular/bold text and full untruncated source lines, independently checked against exact existing glyphs.",
       "remaining": "Final matching real-pack collection and hover boundary acceptance remains required.",
       "regressions": [
         "potion_ui_regression"
@@ -183,8 +183,8 @@
       ],
       "contract": "Enemy list, layouts, move descriptions and character filtering",
       "assessment": "implemented_with_documented_limits",
-      "implemented": "Original known gates, character/move/stats views, source-derived invariant-culture ordering, detached preview and persisted Test Subject names. Follow-up restores original list/header geometry, explicit title/label faces, action controls and release-triggered actual clip previews; no gameplay State mutation.",
-      "remaining": "Actual translated shared Kaiser frame coverage, all phase-specific preview contexts and secondary VFX still require separate acceptance.",
+      "implemented": "Original known gates, character/move/stats views, source-derived invariant-culture ordering, detached preview and persisted Test Subject names. Follow-up restores original list/header geometry, explicit title/label faces, action controls and release-triggered actual clip previews; no gameplay State mutation. Eighteen source-clock-matched sparse Kaiser supplements restore344 native samples outside the shared world crop; both final complete poses have actual bilingual inspection.",
+      "remaining": "All phase-specific preview contexts and secondary VFX are not exhaustively equivalent to the original GPU implementation. The matched c3a44 Bestiary actual regression and complete Kaiser poses pass both languages.",
       "regressions": [
         "bestiary_ui7_regression",
         "power_order_ui8_regression"
@@ -282,7 +282,7 @@
       "contract": "Legend focus/highlight and500ms unfocus recovery",
       "assessment": "implemented_with_documented_limits",
       "implemented": "Source legend focus/highlight and 500ms recovery, with pointer and keyboard ownership.",
-      "remaining": "Final composed bilingual review pending.",
+      "remaining": "The final c3a44 bilingual map/legend composed review passes; exact original GPU raster equivalence is not established.",
       "regressions": [
         "world_map_ui_regression"
       ],
@@ -382,7 +382,7 @@
       "contract": "Entrance, inventory hover, speech, purchase and sold state",
       "assessment": "implemented_with_documented_limits",
       "implemented": "Original large inventory composition, sampled hand tracking, dialogue, open/sold animations, actual purchase and source CharacterCards stock weighting. Legacy large stock tooltips replaced by source69px columns and complete model-related card/keyword/power chains with detached stock facts.",
-      "remaining": "Matching final bilingual room/hover acceptance is pending; full candle/material/secondary particles remain incomplete.",
+      "remaining": "The final c3a44 bilingual ordinary room/stock/owned-hover regression and composed review pass. Full candle/material/secondary particles remain incomplete.",
       "regressions": [
         "world_room_ui_regression",
         "run_modifier_hooks_ui8_regression"
@@ -1235,5 +1235,39 @@
     "save_storage_runtime": "d938a661c7a69e46b829a4a879ce6cd411be0f2b",
     "save_storage_checks": 1410,
     "ordinary_nsz_readback": "230540-byte old raw run continued; two ordinary saves produced7456-byte primary and backup that independently decode to the exact original canonical bytes. A USB-session timeout was retained as failed; restarted ordinary OS readback completed the proof."
+  },
+  "verification_latest": {
+    "runtime": "c3a44adfce84ef6355c89b0038210f58ab63afa2",
+    "resource_format": 34,
+    "native_suites": {
+      "passed": 115,
+      "total": 115
+    },
+    "python_discovery": {
+      "passed": 217,
+      "total": 217
+    },
+    "python_additional": {
+      "passed": 54,
+      "total": 54
+    },
+    "python_wrapper_note": "The first combined journal failed on three misspelled additional module names after217 passes; the separate corrected54-test invocation passed. Both receipts are retained.",
+    "github_actions_run": 40155811647,
+    "actual_targets_per_language": {
+      "root": {
+        "passed": 17,
+        "total": 17
+      },
+      "front": {
+        "passed": 11,
+        "total": 13
+      },
+      "combat": {
+        "passed": 10,
+        "total": 15
+      }
+    },
+    "next_gate": "Matching native/ARM/WASM, repaired actual groups, ordinary browser and ordinary calculator. Short diagnostics are not promoted to full acceptance.",
+    "fidelity_percentage": null
   }
 }

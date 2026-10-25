@@ -14,7 +14,11 @@ static SaveData snapshot(){SaveData b{};CHECK(save(a.game,b));return b;}
 static void same(const SaveData&b){auto now=snapshot();CHECK(now.size==b.size&&!memcmp(now.bytes,b.bytes,b.size));}
 static bool click(HitKind kind,int value){a.render();for(int i=0;i<a.hit_count;i++){auto h=a.hits[i];if(h.kind==kind&&h.value==value){a.pointer_move(h.x+h.w/2,h.y+h.h/2);a.pointer_button(true);a.pointer_button(false);return true;}}return false;}
 static void shot(const char*name){if(capture_dir.empty())return;a.pointer.visible=false;a.render();std::string path=capture_dir+"/"+name+".ppm";FILE*f=fopen(path.c_str(),"wb");CHECK(f);fprintf(f,"P6\n320 240\n255\n");for(auto p:a.pixels){unsigned char v[3]={(unsigned char)((p>>11)*255/31),(unsigned char)(((p>>5)&63)*255/63),(unsigned char)((p&31)*255/31)};CHECK(fwrite(v,1,3,f)==3);}CHECK(!fclose(f));}
-static void setup(){a.title=a.library=a.paused=a.help=false;a.map_preview.open=false;a.character_select=false;new_run(a.game,91,true);for(const auto&d:relic_definitions)gain_relic(a.game,d.id);a.reset_presentation();a.callbacks={save_cb,load_cb};}
+static void setup(){a.title=a.library=a.paused=a.help=false;a.map_preview.open=false;a.character_select=false;new_run(a.game,91,true);for(const auto&d:relic_definitions)gain_relic(a.game,d.id);a.reset_presentation();a.callbacks={save_cb,load_cb};
+ const auto saved=snapshot();const auto animation=a.animation;a.render();
+ for(unsigned frame=0;a.combat_preparation.active&&frame<1024;++frame){a.advance(33);a.render();}
+ CHECK(!a.combat_preparation.active&&a.animation==animation);same(saved);
+}
 static void inventory(){
  setup();for(int i=25;i<=28;i++)a.game.relic_counters[i]=2;a.game.relic_counters[29]=9;
  auto before=snapshot();a.render();
@@ -23,6 +27,9 @@ static void inventory(){
   CHECK(click(HitKind::OwnedRelic,i));CHECK(a.detail_item==a.game.relic_order[i]&&a.detail_owned==i);same(before);
   a.input(Key::EndTurn);a.input(Key::Statuses);same(before);CHECK(a.status_actor<0);
   a.input(Key::Back);CHECK(a.detail_item<0&&a.detail_owned<0);
+  // The original inspector owns pointer input through its exit tween.
+  // The next owned icon becomes actionable only once that paper is gone.
+  if(a.relic_inspect.closing(a.map_clock_ms)){a.advance(250);a.render();CHECK(!a.relic_inspect.closing(a.map_clock_ms));same(before);}
  }
  a.input(Key::Relics);CHECK(!a.panel&&a.hud_focus==HudRelicFocusFirst);a.render();shot("relic-wrapped-inventory");
  // Original inventory wraps in 68px cells; all owned holders remain directly
@@ -59,6 +66,6 @@ int main(int argc,char**argv){
  unsigned strike=0;while(strike<a.game.hand.count&&a.game.cards[a.game.hand.ids[strike]].kind!=Strike)++strike;CHECK(strike<a.game.hand.count);
  a.game.relic_counters[25]=a.game.relic_counters[26]=a.game.relic_counters[27]=2;a.game.relic_counters[29]=9;
  CHECK(play(a.game,int(strike),0));a.render();CHECK(a.relic_flash_ticks==30&&(a.relic_flash_mask&Shuriken));before=snapshot();
- for(int i=0;i<31;i++)a.tick();a.render();CHECK(!a.relic_flash_ticks);same(before);a.open_owned_relic(26);shot("relic-detail");a.input(Key::Back);
+ for(int i=0;i<31;i++)a.tick();a.render();CHECK(!a.relic_flash_ticks);same(before);a.open_owned_relic(26);a.advance(250);shot("relic-detail");same(before);a.input(Key::Back);
  treasure();printf("relic UI: %u checks passed\n",checks);
 }

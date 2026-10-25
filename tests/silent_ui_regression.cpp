@@ -17,6 +17,11 @@ static bool click(HitKind kind,int value){a.render();for(int i=0;i<a.hit_count;i
  a.pointer_move(x,y);a.pointer_button(true);a.pointer_button(false);return true;}}return false;}
 static void action(UiAction x){CHECK(click(HitKind::UiAction,(int)x));}
 static void same(const SaveData&b){SaveData now{};CHECK(save(a.game,now));CHECK(now.size==b.size&&!memcmp(now.bytes,b.bytes,b.size));}
+static void prepare_combat(){
+ SaveData before{};CHECK(save(a.game,before));const auto animation=a.animation;a.render();
+ for(unsigned i=0;a.combat_preparation.active&&i<1024;++i){a.advance(33);a.render();}
+ CHECK(!a.combat_preparation.active);if(a.content.current_profile())CHECK(a.content.healthy());CHECK(a.animation==animation);same(before);
+}
 int main(int argc,char**argv){
  std::vector<uint8_t> content;
  if(argc>1){FILE*f=fopen(argv[1],"rb");CHECK(f);content.resize(spire_test::pack_size(f));size_t n=fread(content.data(),1,content.size(),f);fclose(f);CHECK(a.init(content.data(),n,{save_cb,load_cb}));}
@@ -30,7 +35,7 @@ int main(int argc,char**argv){
  CHECK(a.game.world.active&&a.game.original_events.id==OriginalEventId::Neow);
  // Retained Silent combat/choice fixtures use the legacy route explicitly;
  // the ordinary character-selection flow above now enters the original run.
- new_run(a.game,7,false,Character::Silent);a.reset_presentation();CHECK(choose_node(a.game,0));CHECK(a.game.hand.count==7);
+ new_run(a.game,7,false,Character::Silent);a.reset_presentation();CHECK(choose_node(a.game,0));CHECK(a.game.hand.count==7);prepare_combat();
  SaveData prior{};CHECK(save(a.game,prior));a.input(Key::Collection);
  action(UiAction::LibraryCards);spire_test::discover_all_cards(a);
  // The original pools exclude generated cards; those use the Misc control.
@@ -53,7 +58,7 @@ int main(int argc,char**argv){
  // Construct a choice using real instance IDs; production UI must stay modal.
  new_run(a.game,7,true,Character::Silent);a.reset_presentation();a.title=false;
  // A substituted fixture card is detached from the old permanent identity.
- a.game.cards[a.game.hand.ids[1]]={Prepared,1};a.game.event_cards.deck_origin[a.game.hand.ids[1]]=0;a.cursor=1;a.input(Key::Confirm);a.input(Key::Confirm);
+ a.game.cards[a.game.hand.ids[1]]={Prepared,1};a.game.event_cards.deck_origin[a.game.hand.ids[1]]=0;prepare_combat();a.cursor=1;a.input(Key::Confirm);a.input(Key::Confirm);
  CHECK(a.game.phase==Phase::DiscardChoice&&a.game.discard_required==2);a.busy=0;a.render();CHECK(save(a.game,prior));
  for(int i=0;i<a.hit_count;i++)CHECK(a.hits[i].kind!=HitKind::Enemy&&a.hits[i].kind!=HitKind::Hand);
  int first=a.game.hand.ids[0],second=a.game.hand.ids[1];
@@ -63,11 +68,11 @@ int main(int argc,char**argv){
  a.input(Key::Detail);CHECK(a.detail_card>=0);a.input(Key::Back);CHECK(a.game.phase==Phase::DiscardChoice&&a.choice_selected_count==2);
  // Save preserves the mandatory game choice, not a partially selected UI gesture.
  a.input(Key::Save);CHECK(stored.size>0);a.render();a.advance(250);a.advance(100);action(UiAction::ConfirmChoice);CHECK(a.game.phase==Phase::Combat);
- CHECK(a.game.zones[first]==Zone::Discard&&a.game.zones[second]==Zone::Discard);a.input(Key::Load);a.render();
+ CHECK(a.game.zones[first]==Zone::Discard&&a.game.zones[second]==Zone::Discard);a.input(Key::Load);prepare_combat();
  CHECK(a.game.phase==Phase::DiscardChoice&&a.choice_selected_count==0&&a.game.discard_required==2);same(prior);
  a.cursor=0;a.input(Key::Confirm);a.input(Key::Right);a.input(Key::Confirm);a.input(Key::EndTurn);CHECK(a.game.phase==Phase::Combat);
  // Exhaust retains the source hand and independent confirmation; it never ends the turn.
- new_run(a.game,7,true,Character::Ironclad);a.reset_presentation();a.game.energy=9;
+ new_run(a.game,7,true,Character::Ironclad);a.reset_presentation();a.game.energy=9;prepare_combat();
  a.cursor=2;a.input(Key::Confirm);a.input(Key::Confirm);CHECK(a.game.phase==Phase::ExhaustChoice);a.busy=0;int turn=a.game.turn;
  a.input(Key::Confirm);CHECK(a.game.phase==Phase::ExhaustChoice);a.input(Key::EndTurn);CHECK(a.game.phase==Phase::Combat&&a.game.turn==turn);
  printf("Silent UI: %u checks passed\n",checks);

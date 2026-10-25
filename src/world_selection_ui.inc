@@ -7,11 +7,7 @@ static void world_selection_text(const App&a,char*out,size_t capacity){
 }
 static void world_selection_upgrades(Canvas&c){
     auto&a=c.a;if(!a.world_selection_upgrades()||!a.pointer.visible)return;
-    using namespace deck_selection_layout;const char*label=a.content.world_string("card_selection","VIEW_UPGRADES");Canvas text=c;text.font_face=5;
-    const int width=ToggleIcon+mn(140,text.width(label,ToggleSize));
-    c.ui(a.deck_selection.show_upgrades?F_SettingsTicked:F_SettingsUnticked,ToggleX+1,ToggleY,ToggleIcon,ToggleIcon);
-    text.fitted(label,ToggleX+ToggleIcon+1,ToggleY+2,width-ToggleIcon,ToggleIcon,ToggleSize,ToggleSize,rgb(239,200,81),false,true,true,false,0);
-    c.action(ToggleX,ToggleY,width+2,ToggleIcon,UiAction::DeckViewUpgrades);
+    card_selection_upgrades_control(c);
 }
 static void world_enchantment_description(Canvas&c){
     auto&a=c.a;int amount=0;const auto enchantment=a.world_selection_enchantment(&amount);

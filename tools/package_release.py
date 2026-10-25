@@ -52,6 +52,9 @@ gameplay-settings profiles. Language is shared. Slot 1 keeps older save filename
 更新前备份存档。新程序可读取旧存档；旧程序可能无法读取更新后写出的存档。
 Back up the save before upgrading. This launcher reads older saves; an older
 launcher may reject a save subsequently written by this version.
+计算器上的局面和历史文件会自动选择较小的无损存储方式；旧文件无需手工转换。
+Run and history files automatically use the smaller lossless storage form.
+Existing raw files are still read directly; no manual conversion is needed.
 计算器剩余空间较少时，USB 替换会临时占用新旧两份资源。升级前先删除旧的
 nSpire2.common.tns、nSpire2.eng.tns、nSpire2.zhs.tns，再传入配套的新资源与程序。
 只删除这三个资源文件；保留所有存档、备份、历史、设置和档位文件。
@@ -147,6 +150,7 @@ def main():
         p.error('English and Chinese resources must use the same format version')
     info = dict(reference='v0.111.0 / 41cef1ea', resource_format=version, save_version=17,
                 progress_version=8, settings_version=4, calculator_run_storage='NSZ1 or raw NSV1',
+                calculator_history_storage='NSZ1 or raw NSH1-8',
                 stage=args.stage,
                 runtime_checkpoint=args.runtime_checkpoint,
                 resource_checkpoint=args.resource_checkpoint,

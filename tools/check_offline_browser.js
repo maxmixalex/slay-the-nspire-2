@@ -243,7 +243,9 @@ writeReport();
  assert.equal(sealedBefore.phase,10);assert.equal(sealedBefore.deck_count,0); // Actual Neow Event before its modifier option.
  await page.waitForTimeout(1000);await confirm();await page.waitForTimeout(650);
  await capture('browser-sealed-thirty-card-grid');
- for(let i=0;i<9;++i){await confirm();await press('ArrowRight');}
+ // NCardGrid wraps Right within its four-card row. Move down only after
+ // wrapping to that row's first column, so these are nine distinct cards.
+ for(let i=0;i<9;++i){await confirm();await press('ArrowRight');if(i%4===3)await press('ArrowDown');}
  await page.waitForTimeout(650);await capture('browser-sealed-nine-selected');
  await press('Escape');assert.equal(await saved(2),sealedBaseline);
  await confirm();await page.waitForTimeout(650);await capture('browser-sealed-ten-manual-confirm');

@@ -1,9 +1,10 @@
 # Calculator run storage and three-profile budget
 
 The simulation writer remains canonical NSV1, save version 17. The calculator
-host now writes a smaller, lossless NSZ1 envelope when it reduces the complete
-file length. Desktop and Web saves, old raw-file migration, optional NSH history,
-and simulation values are unchanged.
+host writes a smaller, lossless NSZ1 envelope when it reduces the complete
+file length. The same bounded envelope now also stores optional calculator
+histories. Desktop/Web files, canonical NSV/NSH bytes and simulation values are
+unchanged; either raw or wrapped calculator files remain readable.
 
 ## Format and memory contract
 
@@ -141,7 +142,89 @@ These figures still exclude filesystem overhead. Successful native codecs or
 exact byte budgets do not by themselves establish a successful device write;
 that operation has its own ordinary-USB receipt.
 
-## Verification status
+## Calculator history envelope and recovery
+
+`platform/ndless/storage_codec.inc` contains the shared byte-preserving codec.
+Run reads retain their minimum of16 bytes and four-byte alignment. History
+reads use their separate512KiB capacity, an eight-byte minimum and no alignment
+requirement: the complete NSH8 fixture has an odd length of295,349 bytes.
+Both readers reject output overflow, truncated literals, excess packets and
+trailing bytes. The canonical run and history decoders remain responsible for
+their own schemas. The packet writer is unchanged, including raw fallback
+when compression would not reduce the file.
+
+History loads, saves and profile summaries use the existing shared foreground
+`ResourceTransferUse::Bytes` lease. The reader/writer has one512-byte automatic
+I/O block; there is no new resident buffer, hash, dictionary or second
+`UiProgress`. File length is obtained through seek/tell so a physical malformed
+file can be distinguished from a short I/O read. This is bounded file metadata
+and the normal decode, not an additional body integrity pass. Profile summaries
+still decode only the canonical summary fields; they do not certify the late
+history payload or update recovery facts.
+
+One byte of process-only state records the result of the existing full history
+load. It resets when profile paths change. A complete valid primary load or a
+successful save certifies the primary. A fully read malformed primary followed
+by a valid backup load records that specific recovery. Open, seek, tell, read or
+close failures leave validity unknown. This state is neither simulation State
+nor a new saved field.
+
+Saving first writes and closes the new temporary file. A certified valid
+primary follows the existing primary-to-backup transaction. If the primary
+was certified malformed and the backup recovered successfully, the writer
+removes only the malformed primary and preserves the valid backup until the
+new primary commits. A failed final rename leaves that backup loadable; a
+subsequent load/save can complete normally. A missing primary with a valid
+backup follows the same non-destructive commit path. A failed normal rollback
+also leaves the backup available for the next load. Once a new primary commits,
+a failed optional backup cleanup does not invalidate the successful save.
+
+With two existing files and uncertain I/O validity, the writer never rotates
+the unverified primary over the recovery copy. It attempts only an atomic
+replacement supported by the host filesystem. If replacement is refused, both
+old files remain untouched and a later complete load can establish the safe
+normal path. This keeps a transient I/O failure distinct from a certified bad
+file without permanently locking histories that retain an ordinary backup.
+
+### Concrete history measurement
+
+The exact host test builds the complete valid NSH8 fixture, writes it through
+`save_progress`, reads it through `load_progress` and compares canonical bytes.
+Its current short-check result is **295,349 canonical bytes →74,001 stored
+bytes**, with writes no larger than512 bytes. The separately decoded candidate
+has SHA-256
+`4294557707e07bce1e8830166d8eff3d0d2a79bb2b644b5f1e2f8a168a318067`.
+The committed-source/full ARM and ordinary filesystem gates remain separate;
+this measurement alone is not a successful device installation claim.
+
+Let `P = 74001` for this concrete packed history, retaining the measured dense
+run file `C = 121503` and conservative raw run bound `R = 252928` above:
+
+| Storage state | Atomic update peak including settings | Bytes |
+|---|---|---:|
+| Three packed histories and dense compressed run primaries/backups | `4P + 6C + 340` | 1,025,362 |
+| Three packed histories, compressed run primaries and bounded old raw run backups | `4P + 3C + 3R + 340` | 1,419,637 |
+| First history update with three old raw full histories and those mixed run backups | `3H8 + P + 3C + 3R + 340` | 2,083,681 |
+
+These figures exclude filesystem allocation/metadata and describe the stated
+fixtures. A valid history with less compressible values can use more space;
+the writer falls back to unchanged raw bytes when necessary. Old raw histories
+are read directly and migrate only through ordinary successful writes. The
+all-raw conservative peak remains2,699,304 bytes. Disk-full failures must retain
+the last valid files, and actual installation/peak-write proof is still required.
+
+`ndless_history_storage_regression` compiles the real profile/history callbacks
+against a fault-injecting filesystem. It covers raw and wrapped NSH1–8, complete
+NSH8 equality and summary routing, raw fallback, every prefix truncation of a
+packed fixture, extra trailing bytes, malformed lengths/packets, guarded output
+bounds, shared-lease reentry, all three profiles, temporary write/close failures,
+primary/backup rename and rollback failures, and successful saves after backup
+recovery. It also verifies that an uncertain backup close cannot authorize
+deletion of a malformed primary. `--export <existing-directory>` exports both
+canonical and real-host stored versions for the separate calculator capacity
+test; an exported synthetic fixture is not an ordinary played run.
+
+## Run verification status
 
 `ndless_run_storage_regression` exercises the exact host implementation with
 bounded packets, raw fallback, original v3–v13 fixtures, current v17 files,

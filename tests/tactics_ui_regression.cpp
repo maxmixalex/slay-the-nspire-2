@@ -13,16 +13,26 @@ static bool save_cb(const State&s){return save(s,stored);}
 static bool load_cb(State&s){return load(s,stored.bytes,stored.size);}
 static SaveData snapshot(){SaveData b{};CHECK(save(a.game,b));return b;}
 static void unchanged(const SaveData&b){auto now=snapshot();CHECK(now.size==b.size&&!memcmp(now.bytes,b.bytes,b.size));}
+static void prepare_combat(){
+ const auto before=snapshot();const auto animation=a.animation;a.render();
+ for(unsigned i=0;i<256&&a.combat_preparation.active;++i)a.advance(33);
+ CHECK(!a.combat_preparation.active&&a.animation==animation);unchanged(before);a.render();
+}
+static void prepare_choice(){
+ const auto before=snapshot();a.render();
+ for(unsigned i=0;i<256&&!a.combat_choice_ready();++i){a.advance(33);a.render();}
+ CHECK(a.combat_choice_ready());unchanged(before);
+}
 static bool click(HitKind kind,int value){a.render();for(int i=0;i<a.hit_count;i++){auto h=a.hits[i];if(h.kind==kind&&h.value==value){a.pointer_move(h.x+h.w/2,h.y+h.h/2);a.pointer_button(true);a.pointer_button(false);return true;}}return false;}
 static void action(UiAction action){CHECK(click(HitKind::UiAction,(int)action));}
 static void setup(){
  new_run(a.game,7,false);auto&s=a.game;s.phase=Phase::Combat;s.floor=s.turn=s.enemy_count=1;s.energy=9;
  s.current_node=0;s.deck_count=s.card_count=s.hand.count=1;s.cards[0]=s.deck[0]={Headbutt,0};s.hand.ids[0]=0;s.zones[0]=Zone::Hand;s.enemies[0]={46,46,0,0,0,0};
  for(int i=1;i<=27;i++){s.cards[i]={Defend,0};s.zones[i]=Zone::Discard;s.discard.ids[s.discard.count++]=(uint16_t)i;++s.card_count;}
- a.reset_presentation();a.title=a.library=a.paused=a.help=false;a.callbacks={save_cb,load_cb};CHECK(validate(s));
+ a.reset_presentation();a.title=a.library=a.paused=a.help=false;a.callbacks={save_cb,load_cb};CHECK(validate(s));prepare_combat();
 }
 static void return_choice(){
- setup();a.input(Key::Confirm);a.input(Key::Confirm);CHECK(a.game.phase==Phase::ReturnChoice&&a.game.hand.count==0);auto before=snapshot();
+ setup();a.input(Key::Confirm);a.input(Key::Confirm);CHECK(a.game.phase==Phase::ReturnChoice&&a.game.hand.count==0);auto before=snapshot();prepare_choice();
  a.render();for(int i=0;i<a.hit_count;i++)CHECK(a.hits[i].kind!=HitKind::Hand&&a.hits[i].kind!=HitKind::Enemy);
  for(int row=0;row<5;++row)a.input(Key::Down);CHECK(a.cursor==20);CHECK(spire_test::settle_card_grid(a));unchanged(before);
  a.cursor=21;a.input(Key::Detail);CHECK(a.detail_card==Defend);a.input(Key::Back);CHECK(a.choice_selected_count==0&&a.game.phase==Phase::ReturnChoice);unchanged(before);
@@ -30,7 +40,7 @@ static void return_choice(){
  a.cursor=21;CHECK(spire_test::focus_card_grid(a));static State expected;CHECK(load(expected,before.bytes,before.size));CHECK(choose_return_to_draw(expected,22));
  CHECK(click(HitKind::CombatChoice,22));CHECK(a.game.phase==Phase::Combat&&a.game.draw.ids[a.game.draw.count-1]==22);
  SaveData direct{};CHECK(save(expected,direct));unchanged(direct);
- a.input(Key::Load);CHECK(a.game.phase==Phase::ReturnChoice&&a.choice_selected_count==0);unchanged(before);
+ a.input(Key::Load);CHECK(a.game.phase==Phase::ReturnChoice&&a.choice_selected_count==0);unchanged(before);prepare_combat();prepare_choice();
  // Capturing a card, then scrolling, must never select the replacement region.
  a.render();a.pointer_move(35,70);a.pointer_button(true);a.pointer_scroll(1);a.pointer_button(false);CHECK(a.choice_selected_count==0);unchanged(before);
  a.cursor=25;a.input(Key::Confirm);CHECK(a.game.phase==Phase::Combat&&a.game.draw.ids[a.game.draw.count-1]==26);
@@ -53,7 +63,7 @@ static void statuses(){
  CHECK(click(HitKind::StatusActor,0));CHECK(a.status_selected==0);a.pointer_scroll(1);CHECK(a.status_selected==1);unchanged(before);
  a.input(Key::Statuses);CHECK(a.status_actor<0);a.input(Key::Statuses);CHECK(a.status_actor==0);a.input(Key::Back);CHECK(a.status_actor<0);unchanged(before);
  // Status inspection can temporarily cover a pending choice, without completing it.
- CHECK(play(s,0,0));a.reset_presentation();CHECK(s.phase==Phase::ReturnChoice);before=snapshot();
+ CHECK(play(s,0,0));a.reset_presentation();CHECK(s.phase==Phase::ReturnChoice);before=snapshot();prepare_combat();prepare_choice();
  a.input(Key::Statuses);CHECK(a.status_actor==0);a.input(Key::EndTurn);unchanged(before);a.input(Key::Back);CHECK(s.phase==Phase::ReturnChoice);unchanged(before);
 }
 int main(int argc,char**argv){
@@ -63,9 +73,11 @@ int main(int argc,char**argv){
  if(!data.empty()){
   CHECK(a.content.card_count()==CardKinds);for(int id=Headbutt;id<CardKinds;id++)CHECK(a.content.image(a.content.card_image(id)).pixels);
   for(int id=U_FeelNoPain;id<U_Count;id++)CHECK(a.content.image(a.content.ui_image(id)).pixels);
-  CHECK(strstr(a.content.card_string(Backstab,1),"固有"));CHECK(strstr(a.content.card_string(InfiniteBlades,2),"固有"));
-  CHECK(!strstr(a.content.card_string(InfiniteBlades,1),"固有"));
-  a.library=true;char text[512];for(int id=Headbutt;id<CardKinds;id++)for(int up=0;up<2;up++){a.card_description({(CardKind)id,(uint8_t)up},0,text,sizeof text);CHECK(*text&&!strchr(text,'{'));}
+  a.library=true;char innate[96]{},text[512]{};std::snprintf(innate,sizeof innate,"%s",a.content.world_title("card_keywords","INNATE"));CHECK(*innate);
+  a.card_description({Backstab,0},-1,text,sizeof text);CHECK(strstr(text,innate));
+  a.card_description({InfiniteBlades,1},-1,text,sizeof text);CHECK(strstr(text,innate));
+  a.card_description({InfiniteBlades,0},-1,text,sizeof text);CHECK(!strstr(text,innate));
+  for(int id=Headbutt;id<CardKinds;id++)for(int up=0;up<2;up++){a.card_description({(CardKind)id,(uint8_t)up},0,text,sizeof text);CHECK(*text&&!strchr(text,'{'));}
  }
  printf("tactics UI: %u checks passed\n",checks);
 }

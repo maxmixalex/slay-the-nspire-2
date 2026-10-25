@@ -84,6 +84,43 @@ static void source_checks(){
 static void begin_world(){
  new_run(a.game,0x7195c3,false);CHECK(world_set_seed(a.game,"NSPIRE-WORLD-017"));CHECK(world_begin_run(a.game));prepare();
 }
+static void calculator_select_release(){
+ const auto bindings=a.input_bindings;const bool calculator=a.calculator_keyboard,keyboard=a.keyboard_only;
+ a.physical_keys_cancel();practice();a.keyboard_only=false;
+ scenario="desktop card5 is blocked by FTUE rather than treated as Select";
+ a.calculator_keyboard=false;a.input_bindings=default_input_bindings(false);only(FtueId::CannotPlayCard);
+ CHECK(a.open_ftue(FtueId::CannotPlayCard));snapshot();
+ CHECK(a.physical_key('5',true));CHECK(a.ftue.active());CHECK(a.physical_key('5',false));CHECK(a.ftue.active());unchanged();
+ CHECK(a.physical_key(13,true));CHECK(a.ftue.active());unchanged();CHECK(a.physical_key(13,false));CHECK(!a.ftue.active());unchanged();
+ scenario="calculator5 retains Select adapter and accepts only on release";
+ a.calculator_keyboard=true;a.input_bindings=default_input_bindings(true);only(FtueId::CannotPlayCard);
+ CHECK(a.open_ftue(FtueId::CannotPlayCard));snapshot();const uint32_t context=a.input_context();
+ CHECK(a.physical_key('5',true));CHECK(a.ftue.active()&&a.input_context()==context);unchanged();
+ CHECK(a.physical_key('5',true));CHECK(a.ftue.active()&&a.input_context()==context);unchanged();
+ CHECK(a.physical_key('5',false));CHECK(!a.ftue.active());unchanged();CHECK(!a.physical_key('5',false));unchanged();
+ scenario="explicit calculator5 bindings precede the Select adapter";
+ const InputCommand commands[]={InputCommand::Cancel,InputCommand::EndTurn};
+ for(const auto command:commands){
+  a.input_bindings=default_input_bindings(true);CHECK(rebind_input(a.input_bindings,0,unsigned(command),'5'));only(FtueId::CannotPlayCard);
+  CHECK(a.open_ftue(FtueId::CannotPlayCard));snapshot();CHECK(a.physical_key('5',true));CHECK(a.ftue.active());
+  CHECK(a.physical_key('5',false));CHECK(a.ftue.active());unchanged();
+  CHECK(a.physical_key(13,true));CHECK(a.ftue.active());CHECK(a.physical_key(13,false));CHECK(!a.ftue.active());unchanged();
+ }
+ a.input_bindings=default_input_bindings(true);
+ scenario="a captured calculator5 cannot dismiss a replacement tutorial";
+ only(FtueId::CannotPlayCard);CHECK(a.open_ftue(FtueId::CannotPlayCard));CHECK(a.physical_key('5',true));const uint32_t captured=a.input_context();
+ click(1);CHECK(!a.ftue.active());only(FtueId::CannotPlayCard);CHECK(a.open_ftue(FtueId::CannotPlayCard));CHECK(a.input_context()!=captured);snapshot();
+ CHECK(a.physical_key('5',true));CHECK(a.ftue.active());CHECK(a.physical_key('5',false));CHECK(a.ftue.active());unchanged();
+ CHECK(a.physical_key('5',true));CHECK(a.ftue.active());CHECK(a.physical_key('5',false));CHECK(!a.ftue.active());unchanged();
+ scenario="keyboard-only Confirm stays distinct from source Select";
+ a.keyboard_only=true;only(FtueId::CannotPlayCard);CHECK(a.open_ftue(FtueId::CannotPlayCard));snapshot();
+ CHECK(a.physical_key(13,true));CHECK(a.physical_key(13,false));CHECK(a.ftue.active());unchanged();
+ CHECK(a.physical_key('5',true));CHECK(a.ftue.active());CHECK(a.physical_key('5',false));CHECK(!a.ftue.active());unchanged();
+ scenario="calculator5 never skips a three-page CombatRules lesson";
+ a.keyboard_only=false;only(FtueId::CombatRules);CHECK(a.open_ftue(FtueId::CombatRules));snapshot();
+ CHECK(a.physical_key('5',true));CHECK(a.physical_key('5',false));CHECK(a.ftue.id==FtueId::CombatRules&&a.ftue.page==0);CHECK(!a.seen_ftue(FtueId::CombatRules));unchanged();
+ a.physical_keys_cancel();a.reset_presentation();a.input_bindings=bindings;a.calculator_keyboard=calculator;a.keyboard_only=keyboard;
+}
 static void rooms(){
  scenario="Map source root, sweep even in Fast, then100ms prompt";begin_world();only(FtueId::MapSelect);a.fast_mode=true;
  a.game.original_events=OriginalEventState{};a.game.phase=Phase::Event;CHECK(world_finish_room(a.game));a.open_map_window();CHECK(a.map_act_intro.camera_running);a.render();CHECK(!a.ftue.active());
@@ -191,5 +228,5 @@ static void text_bounds(){
 int main(int argc,char**argv){
  Bytes data;if(argc>1){FILE*f=std::fopen(argv[1],"rb");CHECK(f);data.resize(spire_test::pack_size(f));CHECK(std::fread(data.data(),1,data.size(),f)==data.size());CHECK(!std::fclose(f));actual=true;}else data=fixture();
  if(argc>2)captures=argv[2];CHECK(a.init(data.data(),data.size(),{}));CHECK(a.content.has_ftue_assets());
- embark();combat_pages();source_checks();rooms();shuffle_barrier();real_shuffle();treasure_wait();terminal_boundaries();text_bounds();CHECK(a.content.healthy());std::printf("FTUE UI: %u checks passed (%s)\n",checks,actual?"actual":"synthetic");
+ embark();combat_pages();source_checks();calculator_select_release();rooms();shuffle_barrier();real_shuffle();treasure_wait();terminal_boundaries();text_bounds();CHECK(a.content.healthy());std::printf("FTUE UI: %u checks passed (%s)\n",checks,actual?"actual":"synthetic");
 }

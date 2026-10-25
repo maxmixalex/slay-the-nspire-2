@@ -167,14 +167,17 @@ static void colossal_flower(){
  }
  CHECK(colored>0&&finished);unchanged();CHECK(load(a.game,before.bytes,before.size));char restored[8192]{};a.original_event_text(-1,true,restored,sizeof restored);CHECK(!std::strcmp(text,restored));unchanged();
  if(actual_pack){
-  // Hold the unrelated sine/jitter frame constant: only elapsed rainbow
-  // time changes. The actual original word must change on the screen, and
-  // freq=.3 returns to the same colors after precisely three turns / 10s.
-  a.animation=0;a.map_clock_ms=0;a.scroll=int(first_row);a.render();unchanged();
+  // Finish the original title/body/option entrance and the focus tween
+  // before isolating rainbow time. Hold the unrelated sine/jitter frame.
+  // freq=.3 must return to exactly the same colors after three turns / 10s.
+  a.animation=0;a.map_clock_ms=0;a.scroll=int(first_row);a.render();
+  a.map_clock_ms=10000;a.render();a.map_clock_ms=20000;a.render();unchanged();
+  HitRegion story{};for(int i=0;i<a.hit_count;++i)if(a.hits[i].kind==HitKind::UiAction&&a.hits[i].value==int(UiAction::ReadEvent))story=a.hits[i];
+  CHECK(story.x==132&&story.y==51&&story.w==183&&story.h==68);
   std::vector<uint16_t>first(a.pixels,a.pixels+ScreenW*ScreenH);
-  a.map_clock_ms=1000;a.render();unsigned changes=0;
-  for(unsigned i=0;i<first.size();i++)if(first[i]!=a.pixels[i]){CHECK(i%ScreenW>=140&&i%ScreenW<304&&i/ScreenW>=49&&i/ScreenW<119);++changes;}
-  CHECK(changes>0);unchanged();a.map_clock_ms=10000;a.render();CHECK(!std::memcmp(first.data(),a.pixels,first.size()*sizeof(uint16_t)));unchanged();
+  a.map_clock_ms=21000;a.render();unsigned changes=0;
+  for(unsigned i=0;i<first.size();i++)if(first[i]!=a.pixels[i]){CHECK(int(i%ScreenW)>=story.x&&int(i%ScreenW)<story.x+story.w&&int(i/ScreenW)>=story.y&&int(i/ScreenW)<story.y+story.h);++changes;}
+  CHECK(changes>0);unchanged();a.map_clock_ms=30000;a.render();CHECK(!std::memcmp(first.data(),a.pixels,first.size()*sizeof(uint16_t)));unchanged();
  }
 }
 static std::string attack_description(int slot){
