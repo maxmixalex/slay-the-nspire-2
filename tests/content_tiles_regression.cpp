@@ -135,12 +135,14 @@ struct Package {
         }
         for(const Descriptor&d:descriptors)CHECK(d.group<plans.size());
     }
-    void encode(bool legacy=false,unsigned auxiliary=U_Count,unsigned version=0,unsigned strings=ContentStrings){
+    void encode(bool legacy=false,unsigned auxiliary=U_Count,unsigned version=0,unsigned strings=ContentStrings,unsigned animations=AnimationKinds){
         CHECK(legacy||(!groups.empty()&&groups.size()>tile_groups()));
         images=std::max(images,unsigned(frames.size())+2);
         const unsigned descriptor_count=std::max(unsigned(frames.size()),reserved_descriptors);
-        base=40+images*16+glyphs*16+strings*8+AnimationKinds*16+CardKinds*16+auxiliary*4;
+        base=40+images*16+glyphs*16+strings*8+animations*16+CardKinds*16+auxiliary*4;
         table=base+64;prefix=legacy?base:table+unsigned(groups.size())*8;
+        const unsigned costs=!legacy&&version>=RetainedContentVersion?prefix:0;
+        if(costs)prefix+=(images+1u)&~1u;
         descriptor_base=prefix;bytes.assign(prefix+(legacy?0:descriptor_count*16),0);
         const unsigned card=unsigned(bytes.size());bytes.resize(bytes.size()+9840);
         const unsigned glyph=unsigned(bytes.size());bytes.push_back(0xab);
@@ -156,7 +158,7 @@ struct Package {
             bytes.insert(bytes.end(),encoded.begin(),encoded.end());
         }
         put(bytes,0,0x3250534e);put(bytes,4,version?version:legacy?14:15);put(bytes,8,0x41cef1ea);
-        put(bytes,16,images);put(bytes,20,glyphs);put(bytes,24,strings);put(bytes,28,AnimationKinds);put(bytes,32,CardKinds);
+        put(bytes,16,images);put(bytes,20,glyphs);put(bytes,24,strings);put(bytes,28,animations);put(bytes,32,CardKinds);
         for(unsigned id=0;id<images;++id){
             const unsigned which=id==alias_id()?0:id-1;const bool tiled=!legacy&&id&&which<frames.size();const size_t at=image_entry(id);
             put(bytes,at,tiled?unsigned(descriptor(which)):card);put(bytes,at+4,tiled?frames[which].w:82,2);put(bytes,at+6,tiled?frames[which].h:60,2);
@@ -170,12 +172,12 @@ struct Package {
         at+=glyphs*16;
         for(unsigned i=0;i<strings;++i)put(bytes,at+i*8,empty);
         at+=strings*8;
-        for(unsigned i=0;i<AnimationKinds;++i){put(bytes,at+i*16+4,1,2);put(bytes,at+i*16+6,33,2);}at+=AnimationKinds*16;
+        for(unsigned i=0;i<animations;++i){put(bytes,at+i*16+4,1,2);put(bytes,at+i*16+6,33,2);}at+=animations*16;
         // All card records and auxiliary references use the shared historical
         // card image zero and empty string zero. Catalog counts remain exact.
         CHECK(at+CardKinds*16+auxiliary*4==base);
         if(!legacy){
-            const unsigned fields[]={0x314c4954,1,16,14,unsigned(tiles.size()),tile_groups(),unsigned(groups.size())-tile_groups(),descriptor_count,descriptor_base,table,770,per_group,GroupBound,EncodedBound,0,0};
+            const unsigned fields[]={0x314c4954,1,16,14,unsigned(tiles.size()),tile_groups(),unsigned(groups.size())-tile_groups(),descriptor_count,descriptor_base,table,770,per_group,GroupBound,EncodedBound,costs,costs?images:0};
             for(unsigned i=0;i<16;++i)put(bytes,base+i*4,fields[i]);
             for(unsigned i=0;i<groups.size();++i){put(bytes,table+i*8,group_offsets[i]);put(bytes,table+i*8+4,group_lengths[i]);}
             for(unsigned i=0;i<descriptor_count;++i){const Descriptor&d=descriptors[i<descriptors.size()?i:0];const size_t p=descriptor(i);
@@ -554,6 +556,45 @@ void locale_packages(){
         reject("v17 rejects noncanonical HUD directory",std::move(p.bytes));
     }
 }
+void bestiary_supplement_packages(){
+    // The extended clip directory shifts cards, UI and tile metadata. Exercise
+    // both readers against an independently written synthetic directory and
+    // retain the previous v33 catalog as a compatible, smaller profile.
+    auto direct=std::make_unique<Content>(),range=std::make_unique<Content>();Rejector reject;
+    for(unsigned version:{unsigned(GroupedStringContentVersion),unsigned(BestiaryKaiserContentVersion)})for(const char*locale:{"eng","zhs"}){
+        label=version==BestiaryKaiserContentVersion?"v34 sparse Bestiary clip append":"v33 historical catalog remains readable";
+        const unsigned animations=version==BestiaryKaiserContentVersion?BestiaryKaiserAnimationKinds:CharacterDeathAnimationKinds;
+        Package p=basic();p.encode(false,InspectionAuxiliaryCount,version,Ui7StringCount,animations);
+        const unsigned strings=40+p.images*16+p.glyphs*16,clips=strings+Ui7StringCount*8;
+        put(p.bytes,strings+LocaleMarkerString*8,unsigned(p.bytes.size()));put(p.bytes,strings+LocaleMarkerString*8+4,3);
+        p.bytes.insert(p.bytes.end(),locale,locale+4);seal(p.bytes);
+        if(version==BestiaryKaiserContentVersion)for(unsigned i=0;i<18;++i){
+            const unsigned at=clips+(BestiaryKaiserAnimationFirst+i)*16;
+            put(p.bytes,at,1);put(p.bytes,at+8,uint16_t(-19),2);put(p.bytes,at+10,uint16_t(-23),2);
+            put(p.bytes,at+12,unsigned(bestiary_kaiser::Sources[i])+1);
+        }
+        Provider source{&p.bytes};CHECK(direct->open(p.bytes.data(),p.bytes.size())&&range->open(source.source()));
+        CHECK(direct->current_profile()&&range->current_profile());
+        CHECK(direct->has_inspection_assets()&&range->has_inspection_assets());
+        CHECK(direct->english()==(locale[0]=='e')&&range->english()==(locale[0]=='e'));
+        for(Content*content:{direct.get(),range.get()}){
+            const Clip old=content->clip(CharacterDeathAnimationKinds-1);CHECK(old.count==1&&old.frame_ms==33&&old.sprite_units==0);
+            CHECK(content->ui_image(InspectionAuxiliaryCount-1)==0&&content->ui_image(InspectionAuxiliaryCount)==-1);
+            if(version==BestiaryKaiserContentVersion)for(unsigned i=0;i<18;++i){
+                const Clip added=content->clip(BestiaryKaiserAnimationFirst+i);
+                CHECK(added.first==1&&added.count==1&&added.frame_ms==33);
+                CHECK(added.pivot_x==-19&&added.pivot_y==-23&&added.sprite_units==unsigned(bestiary_kaiser::Sources[i])+1);
+                picture(*content,added.first,p.frames[0]);
+            }
+        }
+        picture(*direct,1,p.frames[0]);picture(*range,1,p.frames[0]);CHECK(!source.bad_range);
+        for(unsigned wrong:{animations-1,animations+1}){
+            Bytes bad=p.bytes;put(bad,28,wrong);reject("version requires its exact animation directory",std::move(bad));
+        }
+        Bytes bad=p.bytes;put(bad,4,BestiaryKaiserContentVersion+1);reject("unknown future profile remains rejected",std::move(bad));
+        bad=p.bytes;put(bad,20,32769);reject("Bestiary append does not raise the glyph bound",std::move(bad));
+    }
+}
 void malformed_container(){
     label="container setup";const Package p=basic();Rejector reject;ImageRejector reject_image;
     const auto field=[&](const char*name,size_t at,uint32_t value,unsigned width=4){Bytes b=p.bytes;put(b,at,value,width);reject(name,std::move(b));};
@@ -927,9 +968,9 @@ void directory_capacity_without_prescan(const Package&pressure_tiny){
 }
 } // namespace
 int main(int argc,char**argv){
-    if(argc==2&&!std::strcmp(argv[1],"--native-ui")){native_ui_packages();locale_packages();std::printf("native UI and locale content: %u checks passed\n",checks);return 0;}
+    if(argc==2&&!std::strcmp(argv[1],"--native-ui")){native_ui_packages();locale_packages();bestiary_supplement_packages();std::printf("native UI and locale content: %u checks passed\n",checks);return 0;}
     progress_contract();valid_packages();malformed_container();malformed_geometry();catalog_metadata_reuse();maximum_frame_and_unused_tile();
-    native_ui_packages();locale_packages();
+    native_ui_packages();locale_packages();bestiary_supplement_packages();
     image_pool_cycles_and_fragmentation();
     label="bounded group pressure fixtures";
     const Package medium=pressure(false),tiny=pressure(true);

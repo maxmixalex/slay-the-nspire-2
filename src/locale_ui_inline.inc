@@ -27,6 +27,7 @@
  {0x3c070704u,12,"Developer commands"},
  {0x3d4db009u,6,"Act"},
  {0x3d5a2ec8u,6,"Open"},
+ {0x4003ee47u,6,"Actions"},
  {0x41aa2b5eu,6,"Read"},
  {0x422c65e0u,12,"Send Feedback"},
  {0x43f9fd33u,12,"Top Bar"},
@@ -113,6 +114,7 @@
 #endif
  {0xef92ba88u,51,"Enter to aim, Left/Right target, Enter to play"},
  {0xf02a5188u,6,"Normal"},
+ {0xf204d665u,12,"View Actions"},
  {0xf49a82e9u,12,"View Actions"},
  {0xf58063f9u,9,"Empty Profile"},
  {0xf873b0bbu,6,"Select"},

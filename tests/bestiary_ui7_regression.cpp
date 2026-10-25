@@ -57,6 +57,9 @@ static void source_layout(){
  mode.observe(true,true,150);CHECK(mode.scale(150)==1075&&mode.scale(400)==973);
  mode.observe(true,false,400);CHECK(mode.scale(1000)==973);
  mode.observe(false,false,1000);CHECK(mode.scale(1500)==1024);
+ for(unsigned i=0;i<18;++i){CHECK(bestiary_kaiser::directory(bestiary_kaiser::Sources[i])==int(BestiaryKaiserAnimationFirst+i));
+  if(i)CHECK(bestiary_kaiser::Sources[i-1]<bestiary_kaiser::Sources[i]);}
+ CHECK(bestiary_kaiser::directory(0)<0&&bestiary_kaiser::directory(1765)<0);
 }
 static bool stored_glyph(const std::vector<uint8_t>&pack,unsigned cp,unsigned face,unsigned size){
  const auto u32=[&](unsigned at){return unsigned(pack[at])|unsigned(pack[at+1])<<8|unsigned(pack[at+2])<<16|unsigned(pack[at+3])<<24;};
@@ -180,8 +183,51 @@ static void physical_actions(const char*folder){
  CHECK(app.physical_key(27,true));CHECK(app.bestiary.open);CHECK(app.physical_key(27,false));CHECK(!app.bestiary.open);unchanged();
  app.keyboard_only=false;
 }
+template<class Visitor>static void sparse_pixels(Picture picture,Visitor visit){
+ CHECK(picture.pixels&&picture.format==4);const uint8_t*run=picture.pixels;
+ for(unsigned y=0;y<picture.h;++y){const unsigned spans=run[0]|unsigned(run[1])<<8;run+=2;
+  for(unsigned span=0;span<spans;++span){const unsigned x=run[0]|unsigned(run[1])<<8,count=run[2]|unsigned(run[3])<<8,stride=run[4]?3:2;run+=5;
+   for(unsigned i=0;i<count;++i){const auto*pixel=run+i*stride;visit(x+i,y,uint16_t(pixel[0]|unsigned(pixel[1])<<8),stride==3?unsigned(pixel[2]):255u);}
+   run+=count*stride;
+  }
+ }
+}
+static void actual_supplements(const char*folder){
+ if(app.content.version()<BestiaryKaiserContentVersion)return;
+ unsigned frames=0,pixels=0;
+ for(unsigned i=0;i<18;++i){const unsigned source=bestiary_kaiser::Sources[i];const auto original=app.content.clip(int(source)),patch=app.content.clip(int(BestiaryKaiserAnimationFirst+i));
+  CHECK(patch.count==original.count&&patch.frame_ms==original.frame_ms&&patch.sprite_units==source+1);
+  CHECK(patch.pivot_x<=0&&patch.pivot_y<=0);const int left=bestiary_kaiser::left(source<800?1:2);
+  for(unsigned frame=0;frame<patch.count;++frame){++frames;const Picture picture=app.content.image(int(patch.first+frame));
+   CHECK(int(picture.w)-patch.pivot_x<=320&&int(picture.h)-patch.pivot_y<=240);
+   sparse_pixels(picture,[&](unsigned x,unsigned y,uint16_t,unsigned alpha){if(!alpha)return;++pixels;
+    const int screen_x=int(x)-patch.pivot_x,screen_y=int(y)-patch.pivot_y;
+    // Supplemental alpha never paints over the retained world's rectangle.
+    CHECK(screen_x<left||screen_x>=left+bestiary_kaiser::Width||screen_y<bestiary_kaiser::Top||screen_y>=bestiary_kaiser::Top+bestiary_kaiser::Height);
+   });
+  }
+ }
+ CHECK(frames==344&&pixels>0&&app.content.healthy());
+ new_run(app.game,0x41cef1ea,false,Character::Silent);app.title=true;app.reset_presentation();app.bestiary_actions_preferred=true;
+ clear_ui_progress(app.progress);app.progress_loaded=true;app.progress.discovered_acts=15;
+ app.progress.enemies[unsigned(EnemyId::Crusher)][0]={1,1,0};app.progress.enemies[unsigned(EnemyId::Rocket)][0]={1,1,0};
+ CHECK(save(app.game,before)&&app.open_bestiary());app.pointer.visible=false;
+ for(unsigned source:{310u,1009u}){const bool crusher=source==310;const int r=row(unsigned(crusher?EnemyId::Crusher:EnemyId::Rocket));CHECK(r>=0);
+  app.bestiary_pointer({0,0,0,0,HitKind::BestiaryEntry,int16_t(r),true});settle();
+  auto&actor=app.bestiary.actors[0];actor.current=0;actor.count=1;actor.clips[0]=int16_t(source);actor.start=app.map_clock_ms;actor.hold=true;
+  app.render();const auto patch=app.content.clip(bestiary_kaiser::directory(source));unsigned painted=0;
+  sparse_pixels(app.content.image(int(patch.first)),[&](unsigned x,unsigned y,uint16_t color,unsigned alpha){
+   const int sx=int(x)-patch.pivot_x,sy=int(y)-patch.pivot_y;
+   if(alpha!=255||sy<40||sy>=200||sx<(crusher?160:190)||sx>=(crusher?173:230))return;
+   for(int i=0;i<app.hit_count;++i){const auto&hit=app.hits[i];if(sx>=hit.x&&sx<hit.x+hit.w&&sy>=hit.y&&sy<hit.y+hit.h)return;}
+   CHECK(app.pixels[sy*320+sx]==color);++painted;
+  });
+  CHECK(painted>0);capture(folder,crusher?"bestiary-crusher-complete-crop":"bestiary-rocket-complete-crop");unchanged();
+ }
+ app.input(Key::Back);CHECK(!app.bestiary.open&&app.content.healthy());
+}
 int main(int argc,char**argv){
  std::vector<uint8_t> pack;if(argc>1){FILE*f=std::fopen(argv[1],"rb");CHECK(f);pack.resize(spire_test::pack_size(f));CHECK(std::fread(pack.data(),1,pack.size(),f)==pack.size());std::fclose(f);CHECK(app.init(pack.data(),pack.size(),{}));}
- if(argc>1){original_unknown_labels();actual_glyphs(pack);}source_layout();ordered_catalog();flow(argc>2?argv[2]:nullptr);physical_actions(argc>2?argv[2]:nullptr);
+ if(argc>1){original_unknown_labels();actual_glyphs(pack);}source_layout();ordered_catalog();flow(argc>2?argv[2]:nullptr);physical_actions(argc>2?argv[2]:nullptr);actual_supplements(argc>2?argv[2]:nullptr);
  std::printf("bestiary UI7: %u checks passed; presentation=%zu bytes\n",checks,sizeof(BestiaryPresentation));
 }

@@ -7,6 +7,7 @@
 #include "room_ui7_assets.hpp"
 #include "phobia_assets.hpp"
 #include "character_death_assets.hpp"
+#include "bestiary_kaiser_assets.hpp"
 #include "game_over_presentation.hpp"
 #include "core.hpp"
 #include "keyword_hover.hpp"
@@ -142,9 +143,9 @@ public:
     bool has_selection_assets()const{return version_>=SelectionContentVersion&&(ui_count_==SelectionAuxiliaryCount||has_inspection_assets());}
     bool has_inspection_assets()const{return version_>=SelectionContentVersion&&ui_count_==InspectionAuxiliaryCount;}
     bool current_profile()const{
-        if(version_<ContentVersion||version_>GroupedStringContentVersion||cards_!=CardKinds)return false;
+        if(version_<ContentVersion||version_>BestiaryKaiserContentVersion||cards_!=CardKinds)return false;
         const unsigned auxiliary=version_>=GameOverTransitionContentVersion?unsigned(GameOverTransitionAuxiliaryCount):version_>=HistoryJournalContentVersion?unsigned(HistoryJournalAuxiliaryCount):version_>=CharacterDeathContentVersion?unsigned(CharacterDeathAuxiliaryCount):version_>=HistoryUi8ContentVersion?unsigned(HistoryUi8AuxiliaryCount):version_>=HudUi7ContentVersion?unsigned(HudUi7AuxiliaryCount):version_>=ProfileContentVersion?unsigned(ProfileAuxiliaryCount):version_>=PhobiaContentVersion?unsigned(PhobiaAuxiliaryCount):version_>=Ui7ContentVersion?unsigned(Ui7AuxiliaryCount):version_>=Ui6ContentVersion?unsigned(Ui6AuxiliaryCount):version_>=FrontendContentVersion?unsigned(FrontendAuxiliaryCount):version_>=TitleEffectsContentVersion?unsigned(TitleEffectsAuxiliaryCount):version_>=MerchantEffectsContentVersion?unsigned(MerchantEffectsAuxiliaryCount):version_==FeedbackContentVersion?unsigned(FeedbackAuxiliaryCount):version_==LocaleContentVersion?unsigned(LocaleAuxiliaryCount):version_==NativeUiContentVersion?unsigned(NativeUiAuxiliaryCount):unsigned(U_Count);
-        const unsigned animations=version_>=CharacterDeathContentVersion?unsigned(CharacterDeathAnimationKinds):version_>=PhobiaContentVersion?unsigned(PhobiaAnimationKinds):version_>=Ui7ContentVersion?unsigned(Ui7AnimationKinds):version_>=MerchantEffectsContentVersion?unsigned(MerchantEffectsAnimationKinds):version_==FeedbackContentVersion?unsigned(FeedbackAnimationKinds):unsigned(AnimationKinds);
+        const unsigned animations=version_>=BestiaryKaiserContentVersion?unsigned(BestiaryKaiserAnimationKinds):version_>=CharacterDeathContentVersion?unsigned(CharacterDeathAnimationKinds):version_>=PhobiaContentVersion?unsigned(PhobiaAnimationKinds):version_>=Ui7ContentVersion?unsigned(Ui7AnimationKinds):version_>=MerchantEffectsContentVersion?unsigned(MerchantEffectsAnimationKinds):version_==FeedbackContentVersion?unsigned(FeedbackAnimationKinds):unsigned(AnimationKinds);
         const bool text=version_>=Ui7ContentVersion?strings_==Ui7StringCount:version_>=LocaleContentVersion?strings_==LocaleStringCount:strings_==ContentStrings||(version_==NativeUiContentVersion&&strings_==NativeUiStringCount);
         const bool ui=ui_count_==auxiliary||(version_>=CardResourceContentVersion&&ui_count_==CardResourceAuxiliaryCount)||has_ftue_assets();
         return ui&&text&&clips_==animations;

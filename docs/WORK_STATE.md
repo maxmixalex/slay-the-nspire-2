@@ -1,5 +1,49 @@
 # Work state — 2026-10-24
 
+## Kaiser crop completion and bounded selector fonts — 2026-10-25
+
+The matching `f3585dc5f8be8c12ca76187d130b4e556fd9b946` native build now
+passes115/115 CTest suites. Its ARM launcher is1,419,446 bytes; the actual
+serialized Zehn prefix plus loaded memory/BSS is16,752,616 bytes, leaving
+24,600 bytes under the unchanged16MiB limit. Linked ARM division/ABI,
+LZMA2 and TGR checks pass12,880 /42 /14 cases. The matching WASM is6,632,532
+bytes. These are build/runtime gates, not original-game visual parity or
+physical-device timing evidence. The Python suite passed211/212 before
+rejecting two unregistered Bestiary fallback labels; their locale bindings
+are repaired here, with the focused six localization tests passing.
+
+Source-based composed inspection exposed a real Kaiser Bestiary crop: the
+shared world animation ends at a320×218 rectangle, while the original
+Bestiary translation shows pixels outside it. The next resource profile is
+NSP2/34 with18 supplemental clips /344 frames, bringing the exact animation
+directory to1783 entries. Only visible original pixels outside the retained
+world crop are appended at native sampling coordinates. Original world
+frames, frame clocks and earlier directory IDs remain unchanged. The runtime
+draws sparse supplements using the existing image cache and no new pixel
+buffer. Both full/split readers and the boot language hint support the new
+profile; old v33/1765 profiles remain accepted. Focused format checks pass,
+including the unchanged32768 glyph limit. Full generation, composed capture,
+new ARM allocation and ordinary-host gates are still required.
+
+The private recovery chain passed stages6–18, including lossless retained,
+glyph, string and tile compression. Stage19 correctly stopped when selector
+font insertion would produce32777 Chinese glyphs, nine over the existing
+bound. The cause was adding0–9 to every static label/title/flavor even when
+none occurs in that text. The converter now adds dynamic numeric characters
+only for template-bearing text and preserves every literal character and
+every old glyph. Exact budgets are English3189+93=3282 and Chinese32021+728
+=32749, leaving19 entries. Seven focused converter tests pass. The full
+selector/split rerun remains pending this checkpoint.
+
+The ordinary merchant/room regression passed14,606 checks in each language
+against the recovered stage18 resources, and the actual stock relic/potion
+and owned-relic hover captures were inspected. This is an early room-specific
+check; final selection resources and the complete bilingual run still need
+their matching acceptance. Ordinary calculator installation, maximum-save
+capacity, whole-frame highlight timing, offline browser flows and final
+private delivery remain open. No restoration percentage is inferred from
+these counts.
+
 ## Integrated follow-up candidate — 2026-10-25
 
 The next runtime stage corrects additional visible differences found while

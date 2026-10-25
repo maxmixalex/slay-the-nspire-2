@@ -98,10 +98,10 @@ Default actors use original sprite registration independently of hitbox
 size; the hitbox supplies the source vertical placement. Decimillipede uses
 its translated encounter markers. Kaiser uses the original shared layout's
 0.75 scale and per-arm translation, including the source division by0.75.
-The existing shared world frame is cropped; final actual-pack captures must
-check that this reused registration covers the displayed arm after the
-Bestiary translation. Full detached phase-dependent gameplay contexts and
-all move-specific VFX are still distinct from playing the registered clips.
+The existing shared world frame is cropped. Its missing pixels are supplied
+by the bounded NSP34 extension below. Full detached phase-dependent gameplay
+contexts and all move-specific VFX are still distinct from playing the
+registered clips.
 
 Mode preference is written when the submenu closes, matching
 `OnSubmenuClosed`, rather than on each toggle. Preview motion, pressed keys
@@ -147,3 +147,44 @@ reachable title and required source font band. It captures ordinary action,
 statistics, Decimillipede, both Kaiser arms and the seven-action layout.
 The full matching run and both regenerated-language captures remain pending
 at this source checkpoint.
+
+## Kaiser crop completion, NSP34
+
+The shared world frame's alpha touches its left, top and right edges. Merely
+translating that320×218 frame into the Bestiary exposes an artificial edge.
+The dedicated converter samples the original skeleton outside that crop,
+keeps only pixels visible in the chosen Bestiary view, and uses exactly the
+same nearest-neighbour coordinates as the retained world picture. Samples
+already owned by the world rectangle have zero supplementary alpha. This
+does not move or paint over the old edge to hide it.
+
+NSP34 appends18 clips at1765–1782, containing344 frames. They cover the two
+actors' five actual move choices, Hurt, Die and required idle/charged/rest
+loops. Each new directory entry copies its source clip's count and frame
+interval; there is no frame removal, altered endpoint convention or reduced
+display resolution. The extra `sprite_units` word is used only in these
+supplementary clips as source-directory-plus-one, never as a sprite scale.
+Its pivot places the tightly bounded native patch directly on screen.
+
+The original1765 clips,2061 auxiliary IDs,8704 strings, glyphs and all old
+art payloads remain intact. Grouped glyphs, grouped strings and TGR2 retain
+their complete relocation semantics. The renderer adds one native sparse
+image through the existing image and retained-group caches; it allocates no
+new resident buffer or gameplay state. Older resources remain readable.
+
+The first private source measurement sampled both idle poses and confirmed
+the crop deficiency. Its initial script rejected an unsupported Pack context
+manager before sampling; the corrected run passed under journal
+`ui9-bestiary-kaiser-patch-measure-retry-c736372e97a0`. Those two older-grid
+LZ4 measurements are not a final installation-size estimate. Full patch
+baking and retained-group compression must establish the final byte budget.
+
+Three focused synthetic converter tests pass: exact344-frame source clocks,
+partitioning every native pixel across all crop boundaries, and append
+relocation preserving old TGR2, grouped glyphs, grouped text, frames and alpha.
+The native Bestiary regression checks every actual patch frame excludes the
+old world rectangle and verifies opaque supplementary pixels through real
+App renders for both arms. The matched full native/resource execution is
+pending. Bilingual installation accounting adds the compressed artwork once
+and the6136-byte new prefix to each locale; it does not count those two
+directories as shared artwork.

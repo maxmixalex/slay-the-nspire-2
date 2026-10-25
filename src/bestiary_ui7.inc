@@ -169,6 +169,7 @@ static void bestiary_actor(Canvas&c,BestiaryPresentation::Preview&actor,int x,in
  const int id=int(animation.first)+int(frame);const auto image=c.a.content.image(id);if(!image.pixels)return;
  c.picture(image,x-animation.pivot_x*scale/1024,feet-animation.pivot_y*scale/1024,mx(1,image.w*scale/1024),mx(1,image.h*scale/1024));
 }
+#include "bestiary_kaiser_ui.inc"
 static void bestiary_actors(Canvas&c){
  auto&a=c.a;auto&b=a.bestiary;const auto*entry=bestiary_entry(b.selected);if(!entry)return;
  Canvas layer=c;const unsigned age=a.map_clock_ms-b.selected_at;layer.opacity=uint8_t(age>=250?255:age*255/250);
@@ -189,8 +190,9 @@ static void bestiary_actors(Canvas&c){
    // Setup divides its510/-620 arm offset by0.75 before adding265.
    uint32_t elapsed=0;bool loop=true;int clip=bestiary_current_clip(a,b.actors[0],elapsed,loop);const auto animation=a.content.clip(clip);
    if(animation.count&&animation.frame_ms){unsigned frame=elapsed/animation.frame_ms;frame=loop?frame%animation.count:unsigned(mn(int(frame),animation.count-1));
-    const int left=v->shared_side==1?173:-114;
-    layer.picture(int(animation.first)+int(frame),left,23,302,206);}
+    const int left=bestiary_kaiser::left(v->shared_side);
+    layer.picture(int(animation.first)+int(frame),left,bestiary_kaiser::Top,bestiary_kaiser::Width,bestiary_kaiser::Height);
+    bestiary_kaiser_supplement(layer,unsigned(clip),frame);}
   }else{const auto bounds=creature_bounds(EnemyId(entry->model));
    const int scale=mx(1,reference_viewport::project(creature_sprite_units(EnemyId(entry->model))));
    // The500px holder is centered48 source px below the viewport center;

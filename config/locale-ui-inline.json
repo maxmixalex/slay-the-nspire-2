@@ -475,6 +475,14 @@
     {
       "source": "显示计时器",
       "eng": "Show Run Timer"
+    },
+    {
+      "source": "行动",
+      "eng": "Actions"
+    },
+    {
+      "source": "查看行动",
+      "eng": "View Actions"
     }
   ]
 }

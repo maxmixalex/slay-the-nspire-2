@@ -17,6 +17,43 @@ import group_strings
 
 
 class SelectionAssetsTest(unittest.TestCase):
+    def test_static_scene_labels_do_not_invent_numeric_alphabets(self):
+        index = selector.source_text_index()
+        class StaticText:
+            def string_payload(self, slot):
+                # A literal numeral in a fixed title or checkbox must remain.
+                if slot == index['relics.BURNING_BLOOD.title']:
+                    return b'Relic 2\0'
+                if slot == index['card_selection.VIEW_UPGRADES']:
+                    return b'View Upgrades 3\0'
+                return b'Static prose\0'
+        required = selector.glyph_requirements(StaticText())
+        self.assertIn((ord('2'), 7, 5), required)
+        self.assertIn((ord('3'), 4, 5), required)
+        for digit in '01456789':
+            self.assertNotIn((ord(digit), 7, 5), required)
+            self.assertNotIn((ord(digit), 4, 5), required)
+            self.assertNotIn((ord(digit), 4, 6), required)
+        self.assertIn((ord('S'), 4, 6), required)
+        self.assertIn((ord('S'), 12, 4), required)
+
+    def test_formatted_scene_text_keeps_all_possible_decimal_digits(self):
+        index = selector.source_text_index()
+        class DynamicText:
+            def string_payload(self, slot):
+                if slot == index[selector.HAND_KEYS[0]]:
+                    return b'Select {Amount} cards.\0'
+                if slot == index[selector.PILE_KEYS[0]]:
+                    return b'Select {Amount:plural:card|cards}.\0'
+                if slot == index['relics.BURNING_BLOOD.flavor']:
+                    return b'{Amount:cond:>1?{Amount}|one} remains.\0'
+                return b'Static prose\0'
+        required = selector.glyph_requirements(DynamicText())
+        for digit in '0123456789':
+            for size, face in ((6, 5), (5, 0), (5, 5), (4, 6)):
+                self.assertIn((ord(digit), size, face), required)
+            self.assertNotIn((ord(digit), 7, 5), required)
+
     def test_inspector_seven_pixel_and_italic_faces_preserve_grouped_payloads(self):
         before, _ = group_strings.repack(fixture('eng'))
         source = group_strings.view(before)

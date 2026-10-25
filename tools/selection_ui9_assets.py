@@ -203,7 +203,14 @@ def glyph_requirements(source):
             tiles.require(key in index, 'Unbound original selector key: '+key)
             text = source.string_payload(index[key])[:-1].decode('utf-8')
             tiles.require(bool(text), 'Empty original selector key: '+key)
-            alphabet = visible_alphabet(text) | set(map(ord, '0123456789'))
+            # Only formatted strings can introduce decimal digits that are
+            # absent from their literal text. Static titles, flavor and
+            # checkbox labels still retain every character they really use.
+            # Keep the complete numeric alphabet for nested/modified LocString
+            # substitutions (Amount, plural branches, comparisons, etc.).
+            alphabet = visible_alphabet(text)
+            if re.search(r'\{[^{}]+\}', text):
+                alphabet |= set(map(ord, '0123456789'))
             required.update((cp, size, face) for cp in alphabet for size in sizes for face in faces)
     add(HAND_KEYS, (6,), (5,))
     add(PILE_KEYS, (5,), (0, 5))
@@ -235,11 +242,17 @@ def glyph_requirements(source):
 def append_fonts(data, regular, bold, display, italic):
     source = tiles.PackView(data, AUXILIARY, versions=(VERSION,))
     known = {(row[0], row[2]) for row in source.glyphs}
+    missing = [(cp, px, style) for cp, px, style in sorted(glyph_requirements(source))
+               if (cp, px | ((style & 3) << 6) | ((style & 4) << 3)) not in known]
+    total = len(source.glyphs)+len(missing)
+    tiles.require(total <= 32768,
+                  f'Selector glyph directory needs {total} entries '
+                  f'({len(source.glyphs)} existing + {len(missing)} new); limit32768')
     rows = []
-    for cp, px, style in sorted(glyph_requirements(source)):
-        packed = px | ((style & 3) << 6) | ((style & 4) << 3)
-        if (cp, packed) in known:
-            continue
+    bands = {}
+    for cp, px, style in missing:
+        band = f'{px}/{style}'
+        bands[band] = bands.get(band, 0)+1
         face = italic if style == 6 else display if style == 4 else bold if style == 5 else regular
         tiles.require(cp in face.coverage, 'Original selector font lacks codepoint '+str(cp))
         rows.append(face.glyph(cp, px, style))
@@ -251,7 +264,9 @@ def append_fonts(data, regular, bold, display, italic):
     for cp, px, style in glyph_requirements(target):
         tiles.require((cp, px | ((style & 3) << 6) | ((style & 4) << 3)) in actual,
                       'Original selector glyph coverage incomplete')
-    return bytes(out), dict(added_glyphs=count, glyphs=len(target.glyphs),
+    return bytes(out), dict(added_glyphs=count, added_by_size_face=bands,
+        input_glyphs=len(source.glyphs), glyphs=len(target.glyphs),
+        remaining_glyph_slots=32768-len(target.glyphs),
         regular_font=regular.metadata(), bold_font=bold.metadata(), display_font=display.metadata(), italic_font=italic.metadata(),
         original_glyphs_exact=proof, missing_required_glyphs=0)
 
