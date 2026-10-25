@@ -162,8 +162,8 @@ static void native_event_screen(Canvas&c){
  c.picture(a.content.world_image("events",original_event_key(e.id)),0,22,320,218);
  if(e.id==OriginalEventId::TheArchitect)architect_scene_actors(c);
  if(e.id==OriginalEventId::TheArchitect&&a.screen_motion.sequence_active(a.map_clock_ms)){
-  // PlayCurrentLine awaits the Silent's initial attack sequence before it
-  // reveals a line or lets Proceed advance the event. Keep the room visible.
+  // PlayCurrentLine awaits the initial reading/head-stop sequence, including
+  // the Silent's attack when present, before revealing dialogue or options.
   motion.start=a.screen_motion.sequence_end(a.map_clock_ms);return;
  }
  if(e.id==OriginalEventId::TheArchitect){native_architect_dialogue(c);return;}

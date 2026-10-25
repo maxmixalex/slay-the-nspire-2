@@ -212,12 +212,12 @@ static void architect_equations(){
   for(unsigned start=0;start<2;++start){
    const unsigned hits=start?(character==1?4u:0u):character==1&&dialogue==2?0u:count;
    const auto p=source_architect_shake(c,dialogue,start,fast);CHECK(p.hits==hits);
-   if(start&&!hits){CHECK(!p.complete&&!p.architect_at);continue;}
+   if(start&&!hits){CHECK(p.complete==2250&&!p.architect_at);continue;}
    const unsigned normal[]={100,300,500,700,900},quick[]={50,200,350,500,650};
    for(unsigned i=0;i<hits;++i)CHECK(p.hit_at(i)==(start?750u:0u)+(fast?quick[i]:normal[i]));
    const unsigned tail=hits?(start?750u:0u)+(fast?quick[hits-1]:normal[hits-1])+2000u:0u;
    CHECK(p.architect_at==(start?0u:tail+(fast?250u:500u)));
-   CHECK(p.complete==(start?tail:tail+(fast?750u:1000u)));
+   CHECK(p.complete==(start?tail+500u:tail+(fast?750u:1000u)));
   }
  }
  scenario="future terminal presentation times clamp before origin and cross uint32 wrap";
@@ -257,16 +257,16 @@ static void architect_queue(uint32_t origin,bool start,bool fast,unsigned dialog
  const unsigned character=unsigned(a.game.character),count=character==1||character==4?4u:5u;
  const unsigned hits=start?(character==1?4u:0u):character==1&&dialogue>=2?0u:count;
  const unsigned normal[]={100,300,500,700,900},quick[]={50,200,350,500,650};
- CHECK(a.screen_motion.count==hits+unsigned(!start)+unsigned(!start||hits));
+ CHECK(a.screen_motion.count==hits+unsigned(!start)+1u);
  for(unsigned i=0;i<hits;++i){const auto&q=a.screen_motion.cues[i];CHECK(q.at==origin+(start?750u:0u)+(fast?quick[i]:normal[i]));CHECK(q.kind==Shake::Punch&&q.strength==(i+1==hits?40:5)&&q.duration==(i+1==hits?800:300));}
  const unsigned tail=hits?(start?750u:0u)+(fast?quick[hits-1]:normal[hits-1])+2000u:0u;
  if(!start){const auto&q=a.screen_motion.cues[hits];CHECK(q.at==origin+tail+(fast?250u:500u)&&q.strength==5&&q.duration==800&&q.kind==Shake::Punch);}
- if(!start||hits){const auto&q=a.screen_motion.cues[a.screen_motion.count-1];CHECK(q.kind==Shake::SequenceEnd&&q.at==origin+tail+(start?0u:fast?750u:1000u));}
+ {const auto&q=a.screen_motion.cues[a.screen_motion.count-1];const unsigned duration=start?(hits?tail+500u:2250u):tail+(fast?750u:1000u);CHECK(q.kind==Shake::SequenceEnd&&q.at==origin+duration);}
 }
 static void actual_architect(Character character,bool fast,unsigned dialogue,unsigned shake){
  scenario="Architect actual final-room entry, Proceed and terminal lifecycle";
  architect_room(character,fast,dialogue,shake);const uint32_t started=a.map_clock_ms;architect_queue(started,true,fast,dialogue);
- if(character==Character::Silent){
+ {
   const uint32_t end=a.screen_motion.sequence_end(a.map_clock_ms);CHECK(end>started);a.render();equal_save();
   a.input(Key::Confirm);equal_save();
   // A cached Choice region from the previous frame cannot dispatch through

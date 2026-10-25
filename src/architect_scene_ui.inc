@@ -55,11 +55,11 @@ static ArchitectSceneFrame architect_scene_frame(const App&a){
  }
  return frame;
 }
-static void architect_scene_actors(Canvas&c){
+static void architect_scene_actors(Canvas&c,bool draw_player=true){
  if(c.a.game.original_events.id!=OriginalEventId::TheArchitect)return;
  const auto frame=architect_scene_frame(c.a);
  const auto player=architect_scene_pose(c.a.game.character,false),architect=architect_scene_pose(c.a.game.character,true);
- c.scaled_clip(frame.player,player.sprite_x,player.sprite_y,frame.player_ms,player.scale,frame.player_loop);
+ if(draw_player)c.scaled_clip(frame.player,player.sprite_x,player.sprite_y,frame.player_ms,player.scale,frame.player_loop);
  c.scaled_clip(frame.architect,architect.sprite_x,architect.sprite_y,frame.architect_ms,architect.scale,frame.architect_loop);
  // CombatEventVisuals.Allies contains player creatures only. Neither Osty
  // nor another survivor from the previous boss belongs to this event.

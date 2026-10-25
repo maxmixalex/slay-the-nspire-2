@@ -12,12 +12,18 @@ inline ArchitectShakeTimeline source_architect_shake(Character character,unsigne
  ArchitectShakeTimeline p;
  p.hits=start?(character==Character::Silent?4u:0u):character==Character::Silent&&dialogue>=2?0u:
   character==Character::Silent||character==Character::Necrobinder?4u:5u;
- if(start&&!p.hits)return p;
  p.lead=start?750u:0u;p.windup=fast?50u:100u;
  if(p.hits)p.complete=p.hit_at(p.hits-1)+2000u;
+ if(start){
+  // PlayCurrentLine waits for the first reading pose in every dialogue:
+  // .75s lead, another1s when no player attack ran, then .5s stop-reading.
+  // The head overlay is separate from the camera, but its input barrier
+  // belongs to this same sequence even when the camera setting is Off.
+  p.complete=p.hits?p.complete+500u:2250u;return p;
+ }
  // Cmd.Wait stays unscaled. Only CreatureCmd.TriggerAnim uses Fast's
  // min(wait*.5,.25), including the Architect's FireBurst wind-up.
- if(!start){p.architect_at=p.complete+(fast?250u:500u);p.complete=p.architect_at+500u;}
+ p.architect_at=p.complete+(fast?250u:500u);p.complete=p.architect_at+500u;
  return p;
 }
 struct SourceImpactShake {uint16_t delay=0,duration=300;uint8_t strength=0;};

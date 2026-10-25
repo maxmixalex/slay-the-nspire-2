@@ -226,7 +226,7 @@ bool original_event_begin(State&s,OriginalEventId id,uint64_t run_seed,unsigned 
  reference::Random rng;rng.named(run_seed,original_event_key(id));keep_random(s,rng);
  s.phase=Phase::Event;if(!rules_begin(s)){fail(s);return false;}
  original_event_resume(s);++s.revision;const bool ok=s.phase!=Phase::Error;
- if(ok&&id==OriginalEventId::TheArchitect&&s.character==Character::Silent)notify_run_fact(s,CoreRunFact::ArchitectAttack,1);
+ if(ok&&id==OriginalEventId::TheArchitect)notify_run_fact(s,CoreRunFact::ArchitectAttack,1);
  return ok;
 }
 unsigned original_event_option_count(const State&s){const auto&e=s.original_events;return e.active&&s.phase==Phase::Event&&!e.combat_pending&&!world_relic_pending(s)&&e.selection==OriginalEventSelection::None?e.option_count:0;}

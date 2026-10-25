@@ -154,9 +154,10 @@ static void game_over_backdrop(Canvas&c){
  game_over_shader_backstop(c,m.backstop_phase(a.map_clock_ms));
  if(s.phase==Phase::Complete&&s.original_events.id==OriginalEventId::TheArchitect){
   // NGameOverScreen reparents every VisualOnly combat creature above its
-  // backstops, preserving positions and ongoing clips. It neither creates
-  // a centered player nor requests a new die animation in this room.
-  architect_scene_actors(c);
+  // backstops. RunManager.WinRun then kills the player at this same origin;
+  // hand its original left-side pose to die without a duplicate idle body.
+  const bool terminal=int32_t(a.map_clock_ms-m.opened)>=0;
+  architect_scene_actors(c,!terminal);if(terminal)game_over_actor(c,age,255);
  }else game_over_actor(c,age,m.event_room?m.black_alpha(a.map_clock_ms):255);
  // The separate summary backstop subsequently covers retained creatures.
  if(a.game_over_summary){Canvas summary=c;summary.opacity=uint8_t(div255(summary.opacity*224*m.summary_opacity(a.map_clock_ms)/255));summary.rect(0,22,320,218,rgb(29,3,0));}

@@ -8,7 +8,9 @@ static void game_over_actor(Canvas&c,uint32_t elapsed,unsigned opacity){
  const auto clip=a.content.clip(int((merchant?MerchantDeathAnimationFirst:CharacterDeathAnimationFirst)+character));if(!clip.count)return;
  const auto registration=player_sprite_registration(s.character);
  int x=160+registration.x*4/21,y=158+registration.y*4/21,scale=int(registration.units)*4/21;
- if(world_room_is_combat(s)||s.world.event_combat_parent||s.original_events.combat_pending){
+ if(s.phase==Phase::Complete&&s.original_events.id==OriginalEventId::TheArchitect){
+  const auto pose=architect_scene_pose(s.character,false);x=pose.sprite_x;y=pose.sprite_y;scale=pose.scale;
+ }else if(world_room_is_combat(s)||s.world.event_combat_parent||s.original_events.combat_pending){
   const auto pose=a.combat_player_pose();x=pose.sprite_x;y=pose.sprite_y;scale=pose.scale;
  }else if(s.world.room_type==unsigned(WorldRoom::Rest)){
   // Rest-site Character_1 has global(651,716); the new creature inherits
