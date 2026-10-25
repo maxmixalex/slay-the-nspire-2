@@ -62,8 +62,8 @@ static void capture(const char*name,bool keep_pointer=false){
  std::fprintf(f,"P6\n320 240\n255\n");unsigned char row[ScreenW*3];
  for(int y=0;y<ScreenH;y++){for(int x=0;x<ScreenW;x++){unsigned p=a.pixels[y*ScreenW+x];row[x*3]=(p>>11)*255/31;row[x*3+1]=((p>>5)&63)*255/63;row[x*3+2]=(p&31)*255/31;}CHECK(std::fwrite(row,1,sizeof row,f)==sizeof row);}CHECK(!std::fclose(f));
 }
-static void world(){a.title=true;a.character_select=true;a.practice_entry=false;a.run_settings=false;a.selected_character=Character::Ironclad;a.selected_ascension=0;a.selected_region=reference::ActKind::Overgrowth;a.selected_seed[0]=0;a.ui_action(UiAction::StartCharacter);CHECK(!a.title&&a.game.original_events.id==OriginalEventId::Neow);CHECK(validate(a.game));
- for(unsigned i=0;i<90&&a.character_departure.active();++i){a.advance(33);a.render();}CHECK(!a.character_departure.active());
+static void world(){a.title=true;a.character_select=true;a.practice_entry=false;a.run_settings=false;a.selected_character=Character::Ironclad;a.selected_ascension=0;a.selected_region=reference::ActKind::Overgrowth;a.selected_seed[0]=0;a.ui_action(UiAction::StartCharacter);CHECK(a.game.original_events.id==OriginalEventId::Neow&&a.character_departure.active());CHECK(validate(a.game));
+ for(unsigned i=0;i<90&&a.character_departure.active();++i){a.advance(33);a.render();}CHECK(!a.character_departure.active()&&!a.title);
  // Later checks supply their own event outcomes, after verifying ordinary Neow entry.
  a.game.original_events=OriginalEventState{};CHECK(world_finish_room(a.game));}
 static void options_and_readers(){

@@ -81,6 +81,61 @@ static void merchant_card(Canvas&c,Card card,int cx,int cy,unsigned scale,bool s
  if(cy+h/2<22||cy-h/2>=240)return;
  draw_card_face(c,card,cx-w/2,cy-h/2,w,h,-2,-2,-1,-1,facts);
 }
+void App::prepare_merchant_inventory(){
+ auto&p=merchant_preparation;p.reset();
+ // Old/direct profiles have no cold tile work. Fake Merchant contains only
+ // six relics and keeps its separate event inventory lifecycle.
+ if(game.phase!=Phase::Shop||content.version()<Ui12ContentVersion)return;
+ const auto add=[&](int image){
+  if(image<0||content.image_cached(image))return;
+  for(unsigned i=0;i<p.count;++i)if(content.image_alias(p.images[i],image))return;
+  if(p.count<MerchantPreparation::Capacity)p.images[p.count++]=image;
+ };
+ add(content.ui_image(U_MerchantRug));add(content.ui_image(U_ShopRemove));add(A_Coin);
+ add(content.world_image("merchant","SALE_TAG"));
+ for(int i=0;i<ShopCardCount;++i)if(!(game.shop_sold&(1u<<i))){
+  const Card card=game.world.active?game.world.shop_cards[i]:Card{game.shop_cards[i],0};
+  const auto*facts=game.world.active?&game.world.shop_facts[i]:nullptr;
+  const auto type=card_face_type(card,-1,-1,facts);
+  const unsigned group=card_face::material_group(unsigned(card_rarity(card.kind)));
+  const int base=U_CardBorderCommonAttack+int(group)*5;
+  add(card_face_image(card,-1,-1,facts));add(card_face_frame(card,-1,-1,facts));
+  add(content.ui_image(base+(type==CardType::Attack?0:type==CardType::Power?2:1)));
+  add(content.ui_image(base+3));add(content.ui_image(base+4));add(content.energy_image(card));
+ }
+ for(int i=0;i<3;++i){
+  if(!(game.shop_sold&(1u<<(ShopRelicStart+i)))){
+   int id=game.world.active?(game.world.shop_relics[i]==NoWorldRelic?-1:game.world.shop_relics[i]):-1;
+   if(!game.world.active)for(int r=0;r<RelicKinds;++r)if(relic_definitions[r].id==game.shop_relics[i])id=r;
+   if(id>=0)add(relic_face_image(id));
+  }
+  if(!(game.shop_sold&(1u<<(ShopPotionStart+i))))add(content.potion_image(Potion(game.shop_potions[i])));
+ }
+ // Stored order improves tile-group locality without a resource-wide scan.
+ for(unsigned i=1;i<p.count;++i){int id=p.images[i];unsigned j=i;while(j&&p.images[j-1]>id){p.images[j]=p.images[j-1];--j;}p.images[j]=id;}
+ p.active=p.count!=0;
+}
+void App::step_merchant_preparation(){
+ auto&p=merchant_preparation;
+ if(!p.active||!p.shown||paused||help||panel||library||settings_open||map_window.is_open)return;
+ if(title||game.phase!=Phase::Shop||!shop_open){p.reset();return;}
+ ++p.updates;
+ while(p.cursor<p.count){const int id=p.images[p.cursor++];if(content.image_cached(id))continue;
+  ++p.cold_images;const auto image=content.image(id);
+  if(!image.pixels){p.reset();shop_open=false;message("资源读取失败");}return;
+ }
+ // A clipped production face resolves the exact title/body/style glyphs.
+ // It neither discovers a card nor mutates the canonical run or face cache.
+ while(p.card<ShopCardCount){const unsigned i=p.card++;if(game.shop_sold&(1u<<i))continue;
+  const Card card=game.world.active?game.world.shop_cards[i]:Card{game.shop_cards[i],0};
+  const auto*facts=game.world.active?&game.world.shop_facts[i]:nullptr;
+  Canvas hidden{*this};hidden.clip_w=hidden.clip_h=0;
+  const unsigned scale=MerchantInventoryLayout::card_scale(650);
+  render_card_face(hidden,card,0,0,MerchantInventoryLayout::size(300,scale),MerchantInventoryLayout::size(422,scale),-2,-2,-1,-1,facts);
+  return;
+ }
+ p.active=false;room_presentation.merchant.set_open(true,map_clock_ms);room_presentation.merchant.speak(4,map_clock_ms);
+}
 // Rug coverage is immutable for a resource generation and geometry. Cache
 // the actual alpha proof, including false results, instead of rescanning its
 // thousands of samples for every flame, actor and glow on every frame.
@@ -138,7 +193,7 @@ static void merchant_secondary_lights(Canvas&c,bool covered){
     }
 }
 static void shop_screen(Canvas&c,bool cull_covered=true){
-    auto&a=c.a;auto&s=a.game;auto&motion=a.room_presentation.merchant;motion.set_open(a.shop_open,a.map_clock_ms);const bool registered=a.content.ui_image(U_MerchantBackdrop)>=0&&a.content.clip(AnimMerchantRoomTop).count;
+    auto&a=c.a;auto&s=a.game;auto&motion=a.room_presentation.merchant;motion.set_open(a.shop_open&&!a.merchant_preparation.active,a.map_clock_ms);const bool registered=a.content.ui_image(U_MerchantBackdrop)>=0&&a.content.clip(AnimMerchantRoomTop).count;
     const int body_x=registered?MerchantLayout::BodyX:181,body_y=registered?MerchantLayout::BodyY:62;
     const int body_w=registered?MerchantLayout::BodyW:105,body_h=registered?MerchantLayout::BodyH:109;
     const bool active=!a.shop_open&&!a.paused&&!a.help&&!a.panel&&!a.library&&!a.settings_open&&!a.frontend_confirm&&
@@ -163,6 +218,15 @@ static void shop_screen(Canvas&c,bool cull_covered=true){
         else c.clip(AnimMerchantRoomTop,0,22,a.map_clock_ms);
     }else{c.picture(A_ShopBackground,0,22,320,218);c.actor(0,54,170);c.clip(AnimMerchantTop,181,62,a.animation*33,false);c.clip(AnimMerchantBottom,152,132,a.animation*33,false);}
     const char*proceed_label=a.content.world_string("gameplay_ui","PROCEED_BUTTON");
+    if(a.merchant_preparation.active){
+        auto&p=a.merchant_preparation;p.shown=true;
+        c.dim(0,22,320,218,110);
+        // Immediate acknowledgement while the original inventory is prepared.
+        // The three dots animate without introducing another font or texture.
+        for(unsigned i=0;i<3;++i)c.rect(147+int(i)*11,119,5,5,(a.map_clock_ms/180)%3==i?Gold:Muted);
+        native_back(c,0,211,31,28,"",true,!a.pointer.visible);c.action(0,209,32,31,UiAction::CloseShop);
+        return;
+    }
     native_proceed(c,*proceed_label?proceed_label:"前进",!a.shop_open,!a.pointer.visible&&a.cursor==1);
     if(!a.shop_open){
         const int x=body_x,y=body_y,w=body_w,h=body_h;

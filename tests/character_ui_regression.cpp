@@ -48,10 +48,27 @@ static HitRegion hit(HitKind kind,int value){
     a.render();for(int i=a.hit_count-1;i>=0;i--)if(a.hits[i].kind==kind&&a.hits[i].value==value)return a.hits[i];
     std::fprintf(stderr,"missing hit %d/%d\n",(int)kind,value);CHECK(false);return {};
 }
+static void point_at_hand(int id){
+    int index=-1;const auto hand=a.combat_hand();
+    for(int i=0;i<hand.count;++i)if(hand.ids[i]==id)index=i;CHECK(index>=0);
+    if(a.pointer.armed_card!=id){
+        // The enlarged fan overlaps; a rectangle's center may belong to its
+        // neighbor. Enter through this card's actual visible hit, then follow
+        // its ordinary hover lift to a point inside the raised face.
+        a.pointer_move(160,40);a.render();int x=-1,y=-1;
+        for(int yy=239;yy>=0&&x<0;--yy)for(int xx=0;xx<320;++xx){const auto*h=a.hit_at(xx,yy);
+            if(h&&h->kind==HitKind::Hand&&h->value==id){x=xx;y=yy;break;}}
+        CHECK(x>=0);a.pointer_move(x,y);a.render();CHECK(a.cursor==index&&a.hand_focus);
+    }
+    const auto pose=a.combat_hand_pose(unsigned(index),true);
+    a.pointer_move(pose.cx,pose.cy+5);a.render();
+    const auto*active=a.hit_at(a.pointer.x,a.pointer.y);CHECK(active&&active->kind==HitKind::Hand&&active->value==id);
+}
 static void tap(HitKind kind,int value){
     auto h=hit(kind,value);
     if(!h.enabled)std::fprintf(stderr,"disabled hit %d/%d detail=%d page=%d phase=%d acquisitions=%u\n",(int)kind,value,a.detail_card,a.library_page,(int)a.game.phase,acquisitions);
-    CHECK(h.enabled);a.pointer_move(h.x+h.w/2,h.y+h.h/2);a.pointer_button(true);a.pointer_button(false);
+    CHECK(h.enabled);if(kind==HitKind::Hand)point_at_hand(value);else a.pointer_move(h.x+h.w/2,h.y+h.h/2);
+    a.pointer_button(true);a.pointer_button(false);
 }
 static void action(UiAction x){tap(HitKind::UiAction,(int)x);}
 // Content/description fixtures create their inputs directly; production no
@@ -86,11 +103,11 @@ static void catalog_navigation(){
     CHECK(spire_test::drag_grid_thumb(a,true));CHECK(grid.position==grid.maximum());
     auto last=hit(HitKind::LibraryItem,count-1);CHECK(last.y>=grid.top&&last.y+last.h<=grid.bottom);unchanged(before);
     CHECK(spire_test::drag_grid_thumb(a,false));CHECK(grid.position==grid.minimum());
-    // At the original 1680px viewport the library has four columns and does not wrap
-    // horizontally. The left edge returns focus to its sidebar.
+    // The readable LCD library has two columns and does not wrap horizontally.
+    // The left edge returns focus to its sidebar.
     a.card_library.control=-1;a.library_selected=0;a.input(Key::Left);CHECK(a.card_library.control==LibraryPoolFirst);
     for(int i=0;i<4;++i)a.input(Key::Right);CHECK(a.card_library.control<0&&a.library_selected==0);
-    CHECK(grid.columns==4);for(int column=1;column<grid.columns;++column){a.input(Key::Right);CHECK(a.library_selected==column);}a.input(Key::Right);CHECK(a.library_selected==grid.columns-1);
+    CHECK(grid.columns==2);for(int column=1;column<grid.columns;++column){a.input(Key::Right);CHECK(a.library_selected==column);}a.input(Key::Right);CHECK(a.library_selected==grid.columns-1);
     for(int column=1;column<grid.columns;++column)a.input(Key::Left);CHECK(a.library_selected==0);
     const int final_row=(count-1)/grid.columns*grid.columns;
     for(int index=grid.columns;index<=final_row;index+=grid.columns){a.input(Key::Down);CHECK(a.library_selected==index);}
@@ -198,9 +215,13 @@ static void named_value_and_screens(){
 static void playability_and_instance_cost(){
     start(Character::Silent);open_model(GrandFinale,0);unsigned id=a.game.card_count;fixture_card();
     CHECK(a.game.draw.count>0&&cost(a.game,(int)id)==0);CHECK(!can_play_card(a.game,(int)id));
-    CHECK(!hit(HitKind::Hand,(int)id).enabled);
-    // Disabled play targets remain hoverable and can still open their detail.
-    auto region=hit(HitKind::Hand,(int)id);a.pointer_move(region.x+region.w/2,region.y+region.h/2);a.input(Key::Detail);
+    CHECK(hit(HitKind::Hand,(int)id).enabled);
+    // An unplayable card remains interactive so its rejected play can show
+    // the character's speech, without changing the canonical run.
+    auto denied=snapshot();for(int i=0;i<a.game.hand.count;++i)if(a.game.hand.ids[i]==id)a.cursor=i;
+    a.input(Key::Confirm);CHECK(a.combat_speech_key&&!std::strcmp(a.combat_speech_key,"UNPLAYABLE"));unchanged(denied);
+    // The same card also remains hoverable and can open its detail.
+    point_at_hand((int)id);a.input(Key::Detail);
     CHECK(a.detail_instance==(int)id);a.input(Key::Back);
     auto&s=a.game;
     while(s.draw.count){unsigned card=s.draw.ids[--s.draw.count];s.discard.ids[s.discard.count++]=(uint16_t)card;s.zones[card]=Zone::Discard;}
@@ -256,7 +277,7 @@ static void inky_and_dynamic_targets(){
     a.reset_presentation();settle_fixture_preparation();
     // Dragging another enchanted Shiv onto empty battlefield needs no enemy hit.
     auto region=hit(HitKind::Hand,(int)ink[1]);CHECK(region.enabled);
-    a.pointer_move(region.x+region.w/2,region.y+region.h/2);a.pointer_button(true);a.pointer_move(104,58);
+    point_at_hand((int)ink[1]);a.pointer_button(true);a.pointer_move(104,58);
     CHECK(a.hit_at(104,58)&&a.hit_at(104,58)->kind==HitKind::Battlefield);a.pointer_button(false);
     CHECK(a.game.zones[ink[1]]==Zone::Exhaust);
     for(int t=0;t<a.game.enemy_count;t++)CHECK(a.game.enemies[t].weak==weak[t]+2);

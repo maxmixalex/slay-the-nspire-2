@@ -236,7 +236,8 @@ static void pile_choices_and_instances(){
     setup();for(int i=0;i<26;i++)append({Strike,0},Zone::Discard);
     acquire_potion(Potion::LiquidMemories);drink();CHECK(a.game.phase==Phase::ExtendedChoice&&a.game.expansion.choice==XChoice::Discard);
     int id=a.game.expansion.choices.ids[22];auto before=snapshot();modal_only();
-    for(int row=0;row<5;++row)a.input(Key::Down);CHECK(a.cursor==20);CHECK(spire_test::settle_card_grid(a));
+    CHECK(a.card_grids[unsigned(CardGridSurface::CombatChoice)].columns==3);
+    for(int row=0;row<5;++row){a.input(Key::Down);CHECK(a.cursor==(row+1)*3);}CHECK(spire_test::settle_card_grid(a));
     a.cursor=22;a.input(Key::Detail);CHECK(a.detail_instance==id&&a.detail_cost_override==0);
     a.input(Key::Back);unchanged(before);a.pointer_scroll(-9);CHECK(spire_test::settle_card_grid(a));CHECK(a.choice_selected_count==0);unchanged(before);
     a.cursor=22;CHECK(spire_test::focus_card_grid(a));tap(HitKind::CombatChoice,id);CHECK(a.game.phase==Phase::Combat&&a.game.hand.ids[0]==id&&cost(a.game,id)==0);CHECK(validate(a.game));

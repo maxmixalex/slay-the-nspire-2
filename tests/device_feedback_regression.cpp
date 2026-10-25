@@ -35,7 +35,11 @@ static void fresh(uint32_t sample,const char*seed=""){
     a.title=a.character_select=true;a.paused=a.help=a.library=a.settings_open=a.practice_entry=false;
     a.frontend_confirm=0;a.selected_character=Character::Ironclad;a.selected_ascension=0;a.selected_region=reference::ActKind::Overgrowth;
     std::strncpy(a.selected_seed,seed,sizeof a.selected_seed-1);a.selected_seed[sizeof a.selected_seed-1]=0;
-    a.reset_presentation();a.ui_action(UiAction::StartCharacter);CHECK(!a.title&&!a.character_select&&validate(a.game));
+    a.reset_presentation();a.ui_action(UiAction::StartCharacter);
+    CHECK(a.title&&a.character_select&&a.character_departure.active()&&validate(a.game));
+    // Use the ordinary two 800 ms departure phases before inspecting the room.
+    for(unsigned frame=0;frame<32;++frame)a.advance(50);
+    CHECK(!a.character_departure.active()&&!a.title&&!a.character_select&&validate(a.game));
 }
 static void seeds(){
     fresh(0x12345678u);CHECK(*a.game.world.seed_text&&!*a.selected_seed&&entropy_calls==1);

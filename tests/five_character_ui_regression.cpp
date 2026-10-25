@@ -101,8 +101,11 @@ static void directory_and_characters(){
         a.render();for(unsigned frame=0;frame<6;++frame){a.advance(100);a.render();}
         CHECK(a.character_select_presentation.panel_offset(a.map_clock_ms)==0);
         const UiAction selectors[]={UiAction::SelectIronclad,UiAction::SelectSilent,UiAction::SelectDefect,UiAction::SelectRegent,UiAction::SelectNecrobinder};
+        // Source portrait order is Ironclad, Silent, Regent, Necrobinder, Defect;
+        // serialized character IDs retain their existing canonical order.
+        constexpr unsigned portrait_slots[]={0,1,4,2,3};
         for(unsigned i=0;i<CharacterKinds;++i){const auto h=hit(HitKind::UiAction,int(selectors[i]));
-            CHECK(h.enabled&&h.x==character_select_layout::portrait_x(i)-1&&h.y==character_select_layout::PortraitTop-2);
+            CHECK(h.enabled&&h.x==character_select_layout::portrait_x(portrait_slots[i])-1&&h.y==character_select_layout::PortraitTop-2);
             CHECK(h.w==character_select_layout::PortraitWidth+2&&h.h==character_select_layout::PortraitHeight+4);
         }
         before=snapshot();tap(HitKind::UiAction,int(selectors[character]));CHECK(a.selected_character==Character(character));unchanged(before);
@@ -125,9 +128,10 @@ static void directory_and_characters(){
 }
 static void stars_and_upgraded_transform(){
     start(Character::Regent);clear_hand();int pulse=add({RegentAstralPulse,0});a.game.expansion.stars=2;
-    CHECK(!hit(HitKind::Hand,pulse).enabled);a.open_choice_detail(pulse);CHECK(a.detail_energy()==0&&a.detail_stars()==3);capture("regent-star-cost");a.input(Key::Back);
+    CHECK(hit(HitKind::Hand,pulse).enabled&&!can_play_card(a.game,pulse));a.open_choice_detail(pulse);CHECK(a.detail_energy()==0&&a.detail_stars()==3);capture("regent-star-cost");a.input(Key::Back);
     auto before=snapshot();RelicMask flash=a.game.relic_flash;CHECK(flash&DivineRight);
     play_ui(pulse);unchanged(before);CHECK(a.game.zones[pulse]==Zone::Hand&&a.game.relic_flash==flash);
+    CHECK(a.combat_speech_key&&!std::strcmp(a.combat_speech_key,"NOT_ENOUGH_STARS"));
     a.game.expansion.stars=3;CHECK(hit(HitKind::Hand,pulse).enabled);play_ui(pulse);CHECK(a.game.expansion.stars==0);
     int dust=add({RegentStardust,1});a.open_choice_detail(dust);CHECK(a.detail_stars()==-1);capture("regent-star-x");a.input(Key::Back);
     a.game.energy=10;int form=add({RegentVoidForm,1});play_ui(form);CHECK(a.game.phase==Phase::Combat&&a.game.turn==2);

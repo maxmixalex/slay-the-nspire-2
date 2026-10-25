@@ -19,12 +19,24 @@ edge. Fractional metrics and kerning now cover those headings; bounded cache
 windows preserve exact pixels at all seven stock positions without more cache
 memory or resource payload.
 
-The final current-source ARM build, same-save UI11/UI12 merchant performance
-comparison, ordinary play/save/continue and release packaging are in progress.
-The earlier timed-out merchant sessions are excluded from speed claims. Private
-assets and system images remain local. No WASM/browser acceptance is requested
-or run. The detailed implementation matrix is in
-`ui12-lcd-followup-0.17.md`; final receipts will replace this in-progress section.
+The f4a7cd59 ARM launcher passed compilation at 1,573,025 bytes and
+20,132,496 bytes allocated. A complete fresh Firebird frontend session passed
+through English collection/search, settings tabs/thumb/tooltip, typed Flag
+console, language change, Chinese credits, normal exit and NAND flush. Full
+Python discovery now passes all 256 tests; the other six Python modules pass
+54 tests. Repaired complete native suites keep original pixel/save/interaction
+oracles while updating the accepted readable layout and physical-key mapping.
+
+Ordinary Firebird play exposed two remaining presentation issues: duplicate
+Battle Start banners and a clipped selected-card description. Both are being
+corrected. The merchant preflight also measured a genuine cold long frame:
+2,285.40 ms total / 1,428.77 ms I/O. That preflight is excluded from matched
+speed claims. Cold inventory work now yields after one decoded image or one
+card's text, acknowledges the open request, permits cancellation, and starts
+the original opening tween after preparation. Device remeasurement is pending.
+A source startup-logo sequence and its saved Skip Intro setting are being
+completed. Private assets remain local; no manual WASM/browser acceptance ran.
+The detailed matrix is in `ui12-lcd-followup-0.17.md`.
 
 ## UI12 active feedback correction — historical pre-recovery notes
 

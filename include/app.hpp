@@ -53,6 +53,7 @@
 #include "character_select_presentation.hpp"
 #include "turn_banner_presentation.hpp"
 #include "combat_preparation.hpp"
+#include "merchant_preparation.hpp"
 #include "ftue_presentation.hpp"
 #include "ftue_assets.hpp"
 #include "selection_assets.hpp"
@@ -290,6 +291,7 @@ struct App {
     int turn_banner_floor=-1,turn_banner_combat=-1,turn_banner_encounter=-1,turn_banner_number=0;
     void sync_turn_banner();
     CombatPreparation combat_preparation{};
+    MerchantPreparation merchant_preparation{};
     FtuePresentation ftue{};
     bool open_ftue(FtueId,int target=-1);
     void sync_ftues();
@@ -316,6 +318,8 @@ struct App {
     int reward_gold()const;
     void sync_combat_preparation();
     void step_combat_preparation();
+    void prepare_merchant_inventory();
+    void step_merchant_preparation();
     uint16_t pixels[ScreenW*ScreenH]{};
     bool title=true,paused=false,quit=false,has_save=false,help=false;
     bool pause_visible=false;

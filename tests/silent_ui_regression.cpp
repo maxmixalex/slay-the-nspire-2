@@ -12,7 +12,7 @@ static unsigned checks=0;static App a;static SaveData stored{};
 #define CHECK(x) do{++checks;if(!(x)){fprintf(stderr,"FAIL %s:%d %s\n",__FILE__,__LINE__,#x);exit(1);}}while(0)
 static bool save_cb(const State&s){return save(s,stored);}
 static bool load_cb(State&s){return load(s,stored.bytes,stored.size);}
-static bool click(HitKind kind,int value){a.render();for(int i=0;i<a.hit_count;i++){auto h=a.hits[i];if(h.kind==kind&&h.value==value){int x=h.x+h.w/2,y=h.y+h.h/2;
+static bool click(HitKind kind,int value){a.render();for(int i=0;i<a.hit_count;i++){auto h=a.hits[i];if(h.kind==kind&&h.value==value&&h.enabled){int x=h.x+h.w/2,y=h.y+h.h/2;
  if(kind==HitKind::CombatChoice&&combat_selection_hand(a.combat_selection_kind())){bool found=false;for(int py=h.y+h.h-1;py>=h.y&&!found;--py)for(int px=h.x;px<h.x+h.w;++px){const auto*actual=a.hit_at(px,py);if(actual&&actual->kind==kind&&actual->value==value){x=px;y=py;found=true;break;}}if(!found)return false;}
  a.pointer_move(x,y);a.pointer_button(true);a.pointer_button(false);return true;}}return false;}
 static void action(UiAction x){CHECK(click(HitKind::UiAction,(int)x));}
@@ -28,9 +28,13 @@ int main(int argc,char**argv){
  else a.callbacks={save_cb,load_cb};
  a.input(Key::Confirm);CHECK(a.run_mode.screen==RunMenu::Singleplayer&&!a.character_select);action(UiAction::OpenStandardRun);
  CHECK(a.character_select);action(UiAction::SelectSilent);CHECK(a.selected_character==Character::Silent);
- // The source confirm enters from beyond the right edge over 350 ms.
- // Select still works during that entrance; wait for its visible hit next.
- CHECK(!click(HitKind::UiAction,int(UiAction::StartCharacter)));a.advance(250);a.advance(100);action(UiAction::StartCharacter);
+ // The source confirm enters over 350 ms. Its clipped visible portion can
+ // already own a hit; wait for the complete button before clicking it.
+ a.advance(250);a.advance(100);action(UiAction::StartCharacter);
+ CHECK(a.title&&a.character_select&&a.character_departure.active()&&a.game.character==Character::Silent);
+ // Ordinary departure wipes out for 800 ms, then fades the room in for 800 ms.
+ for(unsigned frame=0;frame<32;++frame){a.advance(50);a.render();}
+ CHECK(!a.character_departure.active());
  CHECK(!a.title&&a.game.character==Character::Silent&&a.game.hp==70&&a.game.deck_count==12);
  CHECK(a.game.world.active&&a.game.original_events.id==OriginalEventId::Neow);
  // Retained Silent combat/choice fixtures use the legacy route explicitly;

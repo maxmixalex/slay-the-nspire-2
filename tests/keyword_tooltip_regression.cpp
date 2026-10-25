@@ -148,9 +148,17 @@ static void complete_catalog_and_layout(){
     }
     a.library=false;a.keyword_hover={};unchanged();
 }
+static void focus_hand(unsigned index){
+ // Find a genuinely exposed pixel, then follow the raised holder. Its old
+ // bottom-edge sample can leave the face as the readable card rises.
+ const int id=a.game.hand.ids[index];bool found=false;
+ for(int y=239;y>=0&&!found;--y)for(int x=0;x<320;++x){const auto*h=a.hit_at(x,y);if(h&&h->kind==HitKind::Hand&&h->value==id){a.pointer_move(x,y);found=true;break;}}
+ CHECK(found);a.render();const auto pose=a.combat_hand_pose(int(index),true);a.pointer_move(pose.cx,pose.cy);a.render();
+ const auto*h=a.hit_at(a.pointer.x,a.pointer.y);CHECK(h&&h->kind==HitKind::Hand&&h->value==id);
+}
 static void pointer_and_keyboard(){
     setup();snapshot();CardHoverTarget owner{};CHECK(!card_hover_target(a,owner));
-    auto pose=hand_pose(a.game.hand.count,0,false);a.pointer_move(pose.cx,224);a.render();CHECK(card_hover_target(a,owner)&&owner.instance==0&&owner.card.kind==Bash);
+    focus_hand(0);CHECK(card_hover_target(a,owner)&&owner.instance==0&&owner.card.kind==Bash);
     capture("keyword-hand-bash");const int hits=a.hit_count;for(int n=0;n<3;++n){a.render();CHECK(a.hit_count==hits&&card_hover_target(a,owner)&&owner.instance==0);}unchanged();
     a.pointer_button(true);CHECK(!card_hover_target(a,owner));a.pointer_button(false);CHECK(a.pointer.armed_card==0&&!card_hover_target(a,owner));a.pointer_cancel();unchanged();
     a.pointer_move(300,23);a.render();CHECK(!card_hover_target(a,owner));a.input(Key::Right);a.render();CHECK(card_hover_target(a,owner)&&a.hand_focus);unchanged();
@@ -167,7 +175,7 @@ static void pointer_and_keyboard(){
     a.library=false;a.panel=1;a.pile_tab=0;a.inspect_cursor=a.scroll=0;a.pointer.visible=false;a.render();CHECK(card_hover_target(a,owner)&&owner.deck==0);unchanged();
     a.reset_presentation();CHECK(!a.keyword_hover.details&&!a.keyword_hover.owner&&!a.keyword_hover.page);unchanged();
     // Visible tips must not turn a legal card drag into a tooltip command.
-    setup();pose=hand_pose(a.game.hand.count,0,false);a.pointer_move(pose.cx,224);a.pointer_button(true);a.pointer_move(238,82);a.pointer_button(false);
+    setup();focus_hand(0);a.pointer_button(true);a.pointer_move(238,82);a.pointer_button(false);
     CHECK(a.game.hand.count==4&&a.game.enemies[0].hp==38&&a.game.energy==97);CHECK(validate(a.game));
 }
 static void event_begin(OriginalEventId id,unsigned seed=77){

@@ -119,9 +119,9 @@ static void glass_eye(){
  CHECK(a.cursor==1);snapshot();CHECK(!hit(HitKind::WorldChoice,1).enabled);a.input(Key::Confirm);unchanged();
  a.advance(250);a.advance(99);a.render();CHECK(!hit(HitKind::WorldChoice,1).enabled);a.input(Key::Confirm);unchanged();
  a.advance(1);a.render();CHECK(hit(HitKind::WorldChoice,1).enabled);a.advance(150);a.render();
- CHECK(hit(HitKind::WorldChoice,0).x+hit(HitKind::WorldChoice,0).w/2==93);
+ CHECK(hit(HitKind::WorldChoice,0).x+hit(HitKind::WorldChoice,0).w/2==78);
  CHECK(hit(HitKind::WorldChoice,1).x+hit(HitKind::WorldChoice,1).w/2==160);
- CHECK(hit(HitKind::WorldChoice,2).x+hit(HitKind::WorldChoice,2).w/2==227);
+ CHECK(hit(HitKind::WorldChoice,2).x+hit(HitKind::WorldChoice,2).w/2==242);
  CHECK(hit(HitKind::WorldChoice,1).w>hit(HitKind::WorldChoice,0).w);a.advance(250);a.advance(250);a.render();unchanged();capture("rewards-card-row");
  snapshot();a.input(Key::Detail);CHECK(a.detail_card>=0);a.render();a.pointer_scroll(4);a.input(Key::Back);CHECK(a.detail_card<0);a.render();unchanged();
  // Back only closes the card overlay. It does not spend the parent reward,

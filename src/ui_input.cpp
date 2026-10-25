@@ -124,10 +124,10 @@ void App::ui_action(UiAction action){
     case UiAction::LabCard:case UiAction::LabPotion:break;
 #endif
     case UiAction::OpenShop:
-        if(room_shop_available(*this)){shop_open=true;room_presentation.merchant.set_open(true,map_clock_ms);room_presentation.merchant.speak(4,map_clock_ms);
+        if(room_shop_available(*this)){shop_open=true;prepare_merchant_inventory();room_presentation.merchant.set_open(!merchant_preparation.active,map_clock_ms);if(!merchant_preparation.active)room_presentation.merchant.speak(4,map_clock_ms);
             const bool fake=game.phase==Phase::Event;cursor=merchant_navigation::first(merchant_navigation::stock(game,fake),fake?6:ShopLeave);}break;
     case UiAction::CloseShop:
-        if(room_shop_available(*this)){shop_open=false;room_presentation.merchant.set_open(false,map_clock_ms);cursor=0;}break;
+        if(room_shop_available(*this)){shop_open=false;merchant_preparation.reset();room_presentation.merchant.set_open(false,map_clock_ms);cursor=0;}break;
     case UiAction::LeaveShop:
         if(!shop_open&&room_shop_available(*this)){
             if(game.phase==Phase::Shop){if(leave_shop(game))proceed_map_window();}
@@ -493,6 +493,7 @@ bool App::room_input(Key key){
     if(!room_shop_context(*this))return false;
     if(shop_open){
         if(key==Key::Back||(key==Key::Confirm&&cursor==(fake?6:ShopLeave))){ui_action(UiAction::CloseShop);return true;}
+        if(merchant_preparation.active)return true;
         if(key==Key::Left||key==Key::Right||key==Key::Up||key==Key::Down){
             const auto direction=key==Key::Left?merchant_navigation::Left:key==Key::Right?merchant_navigation::Right:
                 key==Key::Up?merchant_navigation::Up:merchant_navigation::Down;

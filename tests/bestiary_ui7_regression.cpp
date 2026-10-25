@@ -126,7 +126,7 @@ static void flow(const char*folder){
  app.pointer_move(thumb.x+thumb.w/2,thumb.y+thumb.h-4);app.pointer_button(false);settle();CHECK(app.bestiary.selected==selected&&app.bestiary.position>0);unchanged();
  app.input(Key::Save);app.input(Key::Load);unchanged();app.input(Key::Back);CHECK(!app.bestiary.open&&!app.bestiary_actions_preferred&&preferences_saved==1);
  CHECK(app.open_bestiary()&&!app.bestiary.actions);settle();
- const auto back=find(HitKind::UiAction,int(UiAction::Back));CHECK(back.x==0&&back.y==173&&back.w==30&&back.h==21);
+ const auto back=find(HitKind::UiAction,int(UiAction::Back));CHECK(back.x==0&&back.y==215&&back.w==40&&back.h==24);
  CHECK(find(HitKind::Close).kind==HitKind::None);click(back);CHECK(!app.bestiary.open&&preferences_saved==2);unchanged();
  // Special encounter entries use encounter wins and own three actors;
  // defeating one segment alone cannot unlock the complete encounter.

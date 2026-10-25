@@ -253,7 +253,7 @@ static void synthetic_pixels(){
     app.map_clock_ms=100;app.character_select_presentation.reset();clear();character_screen(c);portrait_bounds(0,22,34);
     app.pointer.x=character_select_layout::portrait_center(0);app.pointer.y=210;app.map_clock_ms=150;clear();character_screen(c);portrait_bounds(0,22,34);
     app.pointer.x=character_select_layout::portrait_center(1);app.map_clock_ms=200;clear();character_screen(c);portrait_bounds(1,25,36);
-    app.selected_character=Character::Silent;clear();character_screen(c);portrait_bounds(1,25,36);
+    app.selected_character=Character::Silent;clear();character_screen(c);portrait_bounds(1,25,37);
     app.pointer.x=app.pointer.y=0;app.map_clock_ms=201;clear();character_screen(c);
     app.map_clock_ms=701;clear();character_screen(c);portrait_bounds(1,22,34);app.pointer.visible=false;
 }
@@ -451,17 +451,17 @@ static void ui7_cards(){
     app.panel=1;app.pile_tab=0;app.open_card_detail(s.deck[0],0);CHECK(app.card_inspect.index==0&&app.card_inspect.count==3);
     app.render();CHECK(app.card_inspect.card_scale(app.map_clock_ms)==7168);app.advance(250);app.render();
     CHECK(app.card_inspect.card_scale(app.map_clock_ms)==8192);CardHoverTarget owner{};CHECK(card_hover_target(app,owner)&&owner.detail);
-    CHECK(card_inspect_layout::CardW==114&&card_inspect_layout::CardH==161);
-    CHECK(owner.owner.x==93&&owner.owner.y==40&&owner.owner.w==134&&owner.owner.h==159);
+    CHECK(card_inspect_layout::CardW==144&&card_inspect_layout::CardH==203);
+    CHECK(owner.owner.x==35&&owner.owner.y==8&&owner.owner.w==146&&owner.owner.h==207);
     app.advance(100);app.render();bool arrow=false,upgrade=false;for(int i=0;i<app.hit_count;++i){const auto&h=app.hits[i];if(h.kind!=HitKind::UiAction)continue;
-        if(h.value==int(UiAction::InspectNextCard)){CHECK(h.x==229&&h.y==108&&h.w==24&&h.h==24);arrow=true;}
-        if(h.value==int(UiAction::ToggleCardUpgrade)){CHECK(h.y==206&&h.h==12);upgrade=true;}}
+        if(h.value==int(UiAction::InspectNextCard)){CHECK(h.x==183&&h.y==100&&h.w==22&&h.h==22);arrow=true;}
+        if(h.value==int(UiAction::ToggleCardUpgrade)){CHECK(h.y==220&&h.h==16);upgrade=true;}}
     CHECK(arrow&&upgrade);capture("inspector-original-centered");
-    const int cursor=app.inspect_cursor;app.input(Key::Right);CHECK(app.detail_deck_index==1&&card_from_token(app.detail_card).kind==Bash&&app.card_inspect.card_x(app.map_clock_ms)==179);
+    const int cursor=app.inspect_cursor;app.input(Key::Right);CHECK(app.detail_deck_index==1&&card_from_token(app.detail_card).kind==Bash&&app.card_inspect.card_x(app.map_clock_ms)==127);
     app.input(Key::Confirm);CHECK(card_from_token(app.detail_card).upgraded);app.input(Key::Right);CHECK(app.detail_deck_index==2&&card_from_token(app.detail_card).upgraded);
     app.input(Key::Right);CHECK(app.detail_deck_index==2);app.input(Key::Confirm);CHECK(!card_from_token(app.detail_card).upgraded);
     app.input(Key::Left);CHECK(app.detail_deck_index==1&&!card_from_token(app.detail_card).upgraded&&app.inspect_cursor==cursor);
-    app.advance(250);app.render();CHECK(app.card_inspect.card_x(app.map_clock_ms)==160);capture("inspector-carousel-upgrade");unchanged();app.input(Key::Back);CHECK(app.detail_card<0&&app.panel==1);
+    app.advance(250);app.render();CHECK(app.card_inspect.card_x(app.map_clock_ms)==108);capture("inspector-carousel-upgrade");unchanged();app.input(Key::Back);CHECK(app.detail_card<0&&app.panel==1);
     const uint32_t closed=app.map_clock_ms;CHECK(app.card_inspect.closing(closed));app.render();
     for(int i=0;i<app.hit_count;++i){const auto&h=app.hits[i];CHECK(h.kind!=HitKind::DetailClose);
         CHECK(h.kind!=HitKind::UiAction||(h.value!=int(UiAction::InspectNextCard)&&h.value!=int(UiAction::InspectPreviousCard)&&h.value!=int(UiAction::ToggleCardUpgrade)));}
@@ -480,8 +480,10 @@ static void ui7_hud_nodes(){
     const int slots=int(potion_slot_count(app.game));for(int i=0;i<slots;++i)app.input(Key::Right);
     CHECK(app.hud_focus==slots+2);clear();app.hit_count=0;hud(c);const auto*focus=hud_focused_hit(app);CHECK(focus&&focus->kind==HitKind::HudInfo&&focus->value==HudRoom);
     hud_hover_tip(c);capture("hud-current-room-tooltip");app.input(Key::Right);CHECK(app.hud_focus==slots+3);
-    app.input(Key::Right);CHECK(app.hud_focus==slots+4);app.input(Key::Right);CHECK(app.hud_focus==slots+4);
+    app.input(Key::Right);CHECK(app.hud_focus==slots+4);
     clear();app.hit_count=0;hud(c);hud_hover_tip(c);capture("hud-act-boss-tooltip");
+    app.input(Key::Right);CHECK(app.hud_focus==slots+5);app.input(Key::Right);CHECK(app.hud_focus==slots+5);
+    clear();app.hit_count=0;hud(c);focus=hud_focused_hit(app);CHECK(focus&&focus->kind==HitKind::HudInfo&&focus->value==HudPortrait);
     app.input(Key::Down);CHECK(app.hud_focus==HudRelicFocusFirst);clear();app.hit_count=0;hud(c);focus=hud_focused_hit(app);CHECK(focus&&focus->kind==HitKind::OwnedRelic&&focus->value==0);
     app.input(Key::Up);CHECK(app.hud_focus==2);app.input(Key::Back);CHECK(app.hud_focus<0);
     CHECK(save(app.game,after)&&before.size==after.size&&!std::memcmp(before.bytes,after.bytes,before.size));

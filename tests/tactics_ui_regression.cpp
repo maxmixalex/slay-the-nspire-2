@@ -34,7 +34,8 @@ static void setup(){
 static void return_choice(){
  setup();a.input(Key::Confirm);a.input(Key::Confirm);CHECK(a.game.phase==Phase::ReturnChoice&&a.game.hand.count==0);auto before=snapshot();prepare_choice();
  a.render();for(int i=0;i<a.hit_count;i++)CHECK(a.hits[i].kind!=HitKind::Hand&&a.hits[i].kind!=HitKind::Enemy);
- for(int row=0;row<5;++row)a.input(Key::Down);CHECK(a.cursor==20);CHECK(spire_test::settle_card_grid(a));unchanged(before);
+ CHECK(a.card_grids[unsigned(CardGridSurface::CombatChoice)].columns==3);
+ for(int row=0;row<5;++row){a.input(Key::Down);CHECK(a.cursor==(row+1)*3);}CHECK(spire_test::settle_card_grid(a));unchanged(before);
  a.cursor=21;a.input(Key::Detail);CHECK(a.detail_card==Defend);a.input(Key::Back);CHECK(a.choice_selected_count==0&&a.game.phase==Phase::ReturnChoice);unchanged(before);
  a.input(Key::Save);CHECK(stored.size);a.pointer_scroll(-9);CHECK(spire_test::settle_card_grid(a));CHECK(a.choice_selected_count==0);unchanged(before);
  a.cursor=21;CHECK(spire_test::focus_card_grid(a));static State expected;CHECK(load(expected,before.bytes,before.size));CHECK(choose_return_to_draw(expected,22));
