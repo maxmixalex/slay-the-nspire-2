@@ -106,7 +106,7 @@ static void card_description_window(Canvas&c,const char*text,const card_face::Re
  fitted_text::visit(text,r.w,plan,metric,[&](const RichChar&ch,int at,int row,int px){
   if(row<skip||row>=skip+visible)return;
   const auto glyph=c.a.content.glyph(ch.codepoint,px,c.font_style(ch));
-  body.character(ch.codepoint,glyph,at+mx(0,(r.w-widths[row-skip])/2),(row-skip)*plan.step,colors[ch.style.color]);
+  body.character(ch.codepoint,glyph,at+mx(0,(r.w-widths[row-skip])/2),(row-skip)*plan.step,rich_color(ch.style.color,colors));
  });
 }
 // One scene-based card renderer for every presentation size. Individual

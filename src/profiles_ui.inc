@@ -84,7 +84,7 @@ static void profile_text_box(Canvas c,const char*text,int x,int y,int width,int 
         visit([&](const RichChar&ch,int at,int row,int px){if(ch.index>=c.text_visible_characters)return;
             const auto glyph=c.a.content.glyph(ch.codepoint,px,c.font_style(ch));
             const uint16_t colors[]={style.color,rgb(239,200,81),rgb(255,85,85),rgb(135,206,235),rgb(127,255,0),rgb(238,130,238),rgb(255,165,24),rgb(0,255,255),rgb(255,255,255),rgb(128,128,128)};
-            const uint16_t rich=colors[ch.style.color];const int gx=x+at+(centered&&(!clipped||widths[row]<=width)?(width-widths[row])/2:0)+dx-
+            const uint16_t rich=rich_color(ch.style.color,colors);const int gx=x+at+(centered&&(!clipped||widths[row]<=width)?(width-widths[row])/2:0)+dx-
                 (clipped&&!wrap&&scroll_overflow?profile_overflow_offset(mx(0,widths[row]-width),scroll_age):0),gy=text_y+row*plan.step+dy;
             if(inline_icon(ch.codepoint)){if(!decoration)profile_inline_glyph(ink,ch.codepoint,glyph,gx,gy,transform,left,top,right,bottom);}
             else profile_glyph(ink,glyph,gx,gy,decoration?color:rich,transform,left,top,right,bottom);});};

@@ -42,7 +42,7 @@ static int source_hover_paragraph(Canvas&c,const char*body,int x,int y,int width
         int dy=c.a.text_effects&&ch.style.wave?wave[(c.a.animation/2+ch.index*2)%16]:0;
         if(c.a.text_effects&&ch.style.thinky_dots)dy+=rich_thinky_offset(c.a.map_clock_ms,ch.index-ch.style.thinky_start);
         const int dx=c.a.text_effects&&ch.style.jitter?int((c.a.animation/2+ch.index*7)%3)-1:0;
-        const auto ink=c.a.text_effects&&ch.style.rainbow?rich_rainbow_rgb565(ch.style.rainbow_parameters,c.a.map_clock_ms,at*26000/mx(1,size)):colors[ch.style.color];
+        const auto ink=c.a.text_effects&&ch.style.rainbow?rich_rainbow_rgb565(ch.style.rainbow_parameters,c.a.map_clock_ms,at*26000/mx(1,size)):rich_color(ch.style.color,colors);
         const auto g=c.a.content.glyph(ch.codepoint,px,text.font_style(ch));
         text.character(ch.codepoint,g,x+at+dx,y+(row-skip)*(size+1)+dy,ink);
     });return skip+lines;

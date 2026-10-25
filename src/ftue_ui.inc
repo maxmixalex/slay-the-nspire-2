@@ -39,7 +39,7 @@ static fitted_text::Plan ftue_paragraph(Canvas c,const char*text,int x,int y,int
   if(ch.index>=c.text_visible_characters)return;
   const auto g=c.a.content.glyph(ch.codepoint,px,c.font_style(ch));const int left=x+at+(center?mx(0,(w-widths[row])/2):0);
   Canvas shadow=c;shadow.opacity=uint8_t(div255(shadow.opacity*128));shadow.character(ch.codepoint,g,left+1,top+row*step+1,0,true);
-  c.character(ch.codepoint,g,left,top+row*step,colors[ch.style.color]);
+  c.character(ch.codepoint,g,left,top+row*step,rich_color(ch.style.color,colors));
  });plan.rows=visible;return plan;
 }
 static void ftue_reader(Canvas&c,const char*text,int x,int y,int w,int h,bool center=false,bool middle=false,bool interactive=true){

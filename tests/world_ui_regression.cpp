@@ -133,15 +133,16 @@ static void original_aspect_layout(){
  for(unsigned character=0;character<5;++character){
   enemy_visual_fight(EncounterId::CorpseSlugsNormal,Character(character));
   CHECK(a.creature_layout.right==1740000);
-  const auto player=a.combat_player_pose();CHECK(player.feet==156&&player.body_top<player.feet&&player.body_width>0);
+  // UI12 raises the full creature scene 14px above the enlarged hand.
+  const auto player=a.combat_player_pose();CHECK(player.feet==142&&player.body_top<player.feet&&player.body_width>0);
   CHECK(a.health_bars[0].width==health_bar::inner_width(player.width));
-  for(int i=0;i<a.game.enemy_count;++i){const auto pose=a.combat_enemy_pose(i);CHECK(pose.feet==156&&pose.body_top<pose.feet);
+  for(int i=0;i<a.game.enemy_count;++i){const auto pose=a.combat_enemy_pose(i);CHECK(pose.feet==142&&pose.body_top<pose.feet);
    CHECK(a.health_bars[i+1].width==health_bar::inner_width(pose.width));}
   if(character==unsigned(Character::Necrobinder)){const auto pet=a.combat_player_pose(true);CHECK(pet.x>player.x&&pet.feet<player.feet);}
   char name[48];std::snprintf(name,sizeof name,"combat-43-character-%u",character);capture(name);unchanged();
  }
  enemy_visual_fight(EncounterId::AeonglassBoss);const auto boss=a.combat_enemy_pose(0);
- CHECK(boss.x==253&&boss.feet==164&&boss.body_height>80);capture("combat-43-large-enemy");unchanged();
+ CHECK(boss.x==253&&boss.feet==150&&boss.body_height>80);capture("combat-43-large-enemy");unchanged();
  enemy_visual_fight(EncounterId::LivingFogNormal);CHECK(a.game.enemy_count==1);
  const auto actor=a.combat_enemy_pose(0),player=a.combat_player_pose();const auto layout=a.creature_layout;
  {UiCoreObserver observer(a);for(int slot=0;slot<5;++slot){queue_extension(a.game,XOp::EnemySpawn,int(EnemyId::GasBomb),slot+8);resolve_pending(a.game);}}
@@ -241,42 +242,46 @@ static int rendered_number(const char*text,int size,int left,int top,int right,i
  // Search for the requested number's independently composed pixels. Small
  // real font strokes need not contain alpha=255, so use their actual alpha
  // over the captured room, not a predicate that can vacuously match no ink.
- struct Point {int x,y;unsigned alpha;};std::vector<Point> ink;int width=0,height=0,paint_width=0;
- const unsigned face=a.content.version()>=HistoryUi8ContentVersion&&a.content.english()?5:0;size=a.content.font_size(size,face);
- const int repeat_size=a.content.font_size(4,face);
+ struct Point {int x,y;unsigned alpha;};std::vector<Point> ink;int width=0,height=0,paint_left=0,paint_right=0;
+ const unsigned face=a.content.version()>=HistoryUi8ContentVersion&&a.content.original_label_fonts()?5:0;size=a.content.font_size(size,face);
+ const int repeat_size=a.content.font_size(8,face);
  const auto append=[&](const char*string,int px,int offset_y){
+  const int start=width;int pen64=0;uint32_t previous=0;
   RichReader reader(string);RichChar ch{};while(reader.next(ch)){const auto g=a.content.glyph(ch.codepoint,px,face);CHECK(g.pixels&&g.w&&g.h);
+   pen64+=a.content.glyph_kerning64(previous,ch.codepoint,px,face);previous=ch.codepoint;
+   const int left=start+(pen64+32)/64+g.bearing_x;
    std::vector<uint8_t> alpha(unsigned(g.w)*g.h,0);
    if(g.encoded_size){unsigned pos=0;for(unsigned i=0;i+1<g.encoded_size&&pos<alpha.size();i+=2)
     for(unsigned n=0;n<g.pixels[i]&&pos<alpha.size();++n)alpha[pos++]=g.pixels[i+1];
    }else std::memcpy(alpha.data(),g.pixels,alpha.size());
-   for(unsigned y=0;y<g.h;++y)for(unsigned x=0;x<g.w;++x)if(alpha[y*g.w+x])ink.push_back({width+int(x),offset_y+int(y),alpha[y*g.w+x]});
+   for(unsigned y=0;y<g.h;++y)for(unsigned x=0;x<g.w;++x)if(alpha[y*g.w+x])ink.push_back({left+int(x),offset_y+int(y),alpha[y*g.w+x]});
    if(offset_y+int(g.h)>height)height=offset_y+g.h;
-   if(width+int(g.w)>paint_width)paint_width=width+g.w;width+=g.advance;
+   if(left<paint_left)paint_left=left;if(left+int(g.w)>paint_right)paint_right=left+g.w;
+   pen64+=g.advance64?int(g.advance64):int(g.advance)*64;
   }
+  width=start+(pen64+32)/64;
  };
  append(text,size,0);append(repeat,repeat_size,size-repeat_size);CHECK(!ink.empty()&&intent_background.size()==ScreenW*ScreenH);
- constexpr uint16_t cream=uint16_t((31u<<11)|(61u<<5)|28u),outline=uint16_t((2u<<11)|(5u<<5)|2u);
+ constexpr uint16_t cream=uint16_t((31u<<11)|(61u<<5)|28u),shadow=uint16_t((2u<<11)|(5u<<5)|2u);
  const auto mix=[](uint16_t back,uint16_t fore,unsigned alpha){
   const unsigned r=((back>>11)*(255-alpha)+(fore>>11)*alpha+127)/255;
   const unsigned g=(((back>>5)&63)*(255-alpha)+((fore>>5)&63)*alpha+127)/255;
   const unsigned b=((back&31)*(255-alpha)+(fore&31)*alpha+127)/255;return uint16_t((r<<11)|(g<<5)|b);
  };
- // The original5px English bold6 occupies4 bitmap columns but advances3.
- // Vantom's26 therefore extends past its text advance. Reserve the actual
- // glyph box plus outline so the last column cannot wrap into the next row
- // of this independent compositor; retain the strict whole-pixel comparison.
- const int columns=paint_width>width?paint_width:width,stride=columns+2,rows=height+2;
+ // Readable labels use the 10/8px bands and the source 1px, 144/255 shadow.
+ // Independently decode the actual glyph alpha, bearings and fractional
+ // advances; do not call the production text painter for the expected image.
+ const int columns=(paint_right>width?paint_right:width)-paint_left,stride=columns+1,rows=height+1;
  std::vector<uint16_t> expected(unsigned(stride*rows));
- for(int y=top;y+height<bottom;++y)for(int x=left;x+columns<right;++x){
-  for(int yy=0;yy<rows;++yy)for(int xx=0;xx<stride;++xx)expected[yy*stride+xx]=intent_background[(y+yy-1)*ScreenW+x+xx-1];
-  for(int dy=-1;dy<=1;++dy)for(int dx=-1;dx<=1;++dx)if(dx||dy)for(const auto&p:ink){const int at=(p.y+dy+1)*stride+p.x+dx+1;expected[at]=mix(expected[at],outline,p.alpha);}
-  for(const auto&p:ink){const int at=(p.y+1)*stride+p.x+1;expected[at]=mix(expected[at],cream,p.alpha);}
+ for(int y=top;y+height<bottom;++y)for(int x=left;x+paint_left+columns<right;++x){
+  for(int yy=0;yy<rows;++yy)for(int xx=0;xx<stride;++xx)expected[yy*stride+xx]=intent_background[(y+yy)*ScreenW+x+paint_left+xx];
+  for(const auto&p:ink){const int at=(p.y+1)*stride+p.x-paint_left+1;expected[at]=mix(expected[at],shadow,(p.alpha*144+127)/255);}
+  for(const auto&p:ink){const int at=p.y*stride+p.x-paint_left;expected[at]=mix(expected[at],cream,p.alpha);}
   bool match=true;unsigned visible=0;
   for(int yy=0;yy<rows&&match;++yy)for(int xx=0;xx<stride;++xx){
    // The icon occupies the first 14 rows; its last two rows may overlap a
    // synthetic font's top. Compare all remaining pixels, including holes.
-   if(yy<3)continue;const int at=(y+yy-1)*ScreenW+x+xx-1;
+   if(yy<2)continue;const int at=(y+yy)*ScreenW+x+paint_left+xx;
    visible+=expected[yy*stride+xx]!=intent_background[at];if(a.pixels[at]!=expected[yy*stride+xx]){match=false;break;}
   }
   if(match&&visible)return x;
@@ -295,24 +300,24 @@ static void compound_intent_values(){
   CHECK(intent.flags==(EnemyIntentAttack|EnemyIntentStatus)&&intent.damage==test.damage&&intent.hits==1&&intent.status_cards==test.status);
   snapshot();a.begin_combat_feedback();capture_intent_background();const auto pos=enemy_pose(a.game,0);
   char damage[16]{},status[16]{};std::snprintf(damage,sizeof damage,"%d",test.damage);std::snprintf(status,sizeof status,"%d",test.status);
-  const int damage_x=rendered_number(damage,5,pos.x-32,pos.intent+7,pos.x,pos.intent+34);
-  const int status_x=rendered_number(status,5,pos.x,pos.intent+7,pos.x+32,pos.intent+34);
+  const int damage_x=rendered_number(damage,10,pos.x-32,pos.intent+7,pos.x,pos.intent+34);
+  const int status_x=rendered_number(status,10,pos.x,pos.intent+7,pos.x+32,pos.intent+34);
   CHECK(damage_x>=0&&status_x>damage_x);CHECK(has(HitKind::EnemyIntent,0));
   for(int x:{damage_x,status_x}){const auto*hit=a.hit_at(x,pos.intent+16);CHECK(hit&&hit->kind==HitKind::EnemyIntent&&hit->value==0);}
   const std::vector<uint16_t> shown(a.pixels,a.pixels+ScreenW*ScreenH);
   // Removing only the display count must erase visible pixels, while keeping
   // the attack value intact. The former Attack/else-if branch fails this.
   a.combat_feedback.intents[0].status_cards=0;a.render();
-  CHECK(rendered_number(damage,5,pos.x-32,pos.intent+7,pos.x,pos.intent+34)>=0);
-  CHECK(rendered_number(status,5,pos.x,pos.intent+7,pos.x+32,pos.intent+34)<0);
+  CHECK(rendered_number(damage,10,pos.x-32,pos.intent+7,pos.x,pos.intent+34)>=0);
+  CHECK(rendered_number(status,10,pos.x,pos.intent+7,pos.x+32,pos.intent+34)<0);
   bool changed=false;for(int y=pos.intent+7;y<pos.intent+34;++y)for(int x=pos.x;x<pos.x+32;++x)changed|=shown[y*ScreenW+x]!=a.pixels[y*ScreenW+x];CHECK(changed);
   a.combat_feedback.intents[0]=intent;a.render();unchanged();capture(test.name);
   if(test.encounter==EncounterId::MechaKnightElite){
    // Canonical settlement can already point at Windup; the retained labels
    // must still describe the visible Flamethrower until its display cue.
    a.game.enemy_world.models[0].node=2;snapshot();capture_intent_background();CHECK(!(enemy_intent(a.game,0).flags&EnemyIntentAttack));
-   CHECK(rendered_number(damage,5,pos.x-32,pos.intent+7,pos.x,pos.intent+34)>=0);
-   CHECK(rendered_number("4",5,pos.x,pos.intent+7,pos.x+32,pos.intent+34)>=0);unchanged();
+   CHECK(rendered_number(damage,10,pos.x-32,pos.intent+7,pos.x,pos.intent+34)>=0);
+   CHECK(rendered_number("4",10,pos.x,pos.intent+7,pos.x+32,pos.intent+34)>=0);unchanged();
   }
  }
  // Two neighboring real compound attacks retain separate hit targets and
@@ -320,14 +325,14 @@ static void compound_intent_values(){
  enemy_visual_fight(EncounterId::NibbitsNormal);for(int i=0;i<2;++i)a.game.enemy_world.models[i].node=1;
  a.reset_presentation();snapshot();a.begin_combat_feedback();capture_intent_background();for(int i=0;i<2;++i){const auto pos=enemy_pose(a.game,i);const auto intent=enemy_intent(a.game,i);
   CHECK(intent.flags==(EnemyIntentAttack|EnemyIntentBlock)&&intent.damage==6);
-  const int x=rendered_number("6",5,pos.x-32,pos.intent+7,pos.x,pos.intent+34);CHECK(x>=0);
+  const int x=rendered_number("6",10,pos.x-32,pos.intent+7,pos.x,pos.intent+34);CHECK(x>=0);
   const auto*hit=a.hit_at(x,pos.intent+16);CHECK(hit&&hit->kind==HitKind::EnemyIntent&&hit->value==i);
  }capture("intent-two-nibbits-slice");unchanged();
  // Keep the original three-hit display and its smaller suffix, using actual
  // Byrdonis intent data instead of synthesizing a new unsupported flag set.
  enemy_visual_fight(EncounterId::ByrdonisElite);a.game.enemy_world.models[0].node=0;snapshot();a.begin_combat_feedback();capture_intent_background();const auto intent=enemy_intent(a.game,0);const auto pos=enemy_pose(a.game,0);
  CHECK(intent.damage==3&&intent.hits==3&&intent.flags==EnemyIntentAttack);
- const int repeat_x=rendered_number("3",5,pos.x-25,pos.intent+7,pos.x+25,pos.intent+34,a.content.english()?"x3":"×3");CHECK(repeat_x>=0&&repeat_x<pos.x);
+ const int repeat_x=rendered_number("3",10,pos.x-25,pos.intent+7,pos.x+25,pos.intent+34,a.content.english()?"x3":"×3");CHECK(repeat_x>=0&&repeat_x<pos.x);
  capture("intent-byrdonis-three-hits");unchanged();
 }
 static void source_intent_hover_sets(){
@@ -363,7 +368,7 @@ static void source_intent_hover_sets(){
  char from_body[1024]{},from_power[1024]{},title[128]{};format_card_hover_tip(a,owner,all.items[weak],title,sizeof title,from_body,sizeof from_body);
  CardHoverTarget individual{};individual.power=power_token(1,4);HoverTipList one{};collect_power_hover_tips(a,uint16_t(individual.power),one);
  CHECK(one.count>0);format_card_hover_tip(a,individual,one.items[0],title,sizeof title,from_power,sizeof from_power);CHECK(!std::strcmp(from_body,from_power));
- const auto page=card_hover_page(a,owner,all);CHECK(page.count>=3);for(unsigned i=0;i<page.count;++i)if(all.items[page.pieces[i].tip].kind!=HoverTipKind::Card)CHECK(page.pieces[i].box.w==69);
+ const auto page=card_hover_page(a,owner,all);CHECK(page.count>=3);for(unsigned i=0;i<page.count;++i)if(all.items[page.pieces[i].tip].kind!=HoverTipKind::Card)CHECK(page.pieces[i].box.w==104);
  capture("source-creature-intents-and-powers",true);unchanged();
  // The source direction is Up: at the positive sine peak the first
  // intent is three pixels above its anchor, rather than below it.
@@ -668,7 +673,7 @@ static void deferred_enemy_values(){
   CHECK(found);a.pointer.visible=true;a.render();
   const auto intent_panel=[&](){return intent_hover_panel(a);};
   HoverRect old_tip{};CHECK(intent_hover_panel(a,&old_tip));std::vector<uint16_t> old_title;
-  const int title_height=a.content.font_size(5,5),title_x=old_tip.x+4,title_y=old_tip.y+3;
+  const int title_height=a.content.font_size(10,5),title_x=old_tip.x+6,title_y=old_tip.y+5;
   for(int y=title_y;y<title_y+title_height;++y)old_title.insert(old_title.end(),a.pixels+y*ScreenW+title_x,a.pixels+y*ScreenW+title_x+56);
   char old_text[1024]{},retained_text[1024]{};
   a.localized_text("intents","STATUS.description",old_text,sizeof old_text,1,2);
@@ -797,7 +802,7 @@ static void deferred_combat_hand(){
   advance_combat_ms(33);a.render();
   for(unsigned draws=1;draws<=5;++draws){
    CombatHand::Cards arriving=next;arriving.count=uint16_t(kept.count+draws);shown_only(arriving);
-   const auto pose=a.combat_hand_pose(arriving.count-1,false);CHECK(pose.cx==10&&pose.cy==230);
+   const auto pose=a.combat_hand_pose(arriving.count-1,false);CHECK(pose.cx==16&&pose.cy==223);
    for(unsigned j=arriving.count;j<next.count;++j)CHECK(!has(HitKind::Hand,next.ids[j]));
    CHECK(a.combat_feedback.active&&a.combat_actions_locked());
    if(draws<5){const uint32_t next_add=player+TurnBannerPresentation::wait_ticks(draws*250,draws*100,fast!=0);
@@ -923,13 +928,13 @@ static void ui6_combat_fidelity(){
  {UiCoreObserver observer(a);a.begin_combat_feedback();queue_extension(a.game,XOp::EnemyGenerateCard,Slimed,2+2048);resolve_pending(a.game);}
  CHECK(save(a.game,after));CHECK(after.size==expected.size&&!std::memcmp(after.bytes,expected.bytes,after.size));snapshot();
  a.render();CHECK(a.combat_cards.find(first)&&a.combat_cards.find(first+1));CHECK(a.combat_cards.find(first)->mode==CombatCardMotion::Preview);
- a.animation=at+8;a.render();CHECK(a.combat_cards.find(first)->scale==848);capture("ui6-enemy-status-card-preview");unchanged();
+ a.animation=at+8;a.render();CHECK(a.combat_cards.find(first)->scale==1024);capture("ui6-enemy-status-card-preview");unchanged();
  a.animation=at+44;a.render();CHECK(a.combat_cards.find(first)->mode==CombatCardMotion::Fly);unchanged();
 
  for(unsigned fast=0;fast<2;++fast){enemy_visual_fight(EncounterId::NibbitsWeak);a.fast_mode=fast!=0;
   {UiCoreObserver observer(a);damage_unpowered(a.game,0,9999);resolve_pending(a.game);}
   CHECK(a.combat_status.reward_scheduled);const auto&m=a.enemy_presentation[0];
-  CHECK(a.combat_status.reward_at==(fast?a.animation+16:m.until+31));
+  CHECK(a.combat_status.reward_at==a.animation+(fast?8u:16u));
   CHECK(a.combat_status.reward_at<m.hide_at);const uint32_t deadline=a.combat_status.reward_at;
   a.animation+=2;a.sync_enemy_feedback();CHECK(a.combat_status.reward_at==deadline&&a.combat_linger_until==deadline);
  }
@@ -1230,8 +1235,12 @@ static void original_card_movement(){
   a.input(Key::Confirm);CHECK(a.keyboard_card==played);unchanged();
   if(fast){advance_combat_ms(198);a.render();}
   const auto play_pose=a.combat_hand_pose(unsigned(a.cursor),false);
-  if(fast)CHECK(play_pose.cy>start_pose.cy&&play_pose.cy<=210&&play_pose.scale<start_pose.scale);
-  else CHECK(play_pose.cx==start_pose.cx&&play_pose.cy==start_pose.cy);
+  // Selection keeps native-size text and immediately fits the readable
+  // control rails, including this deliberately unsettled outer holder.
+  const auto selected_bounds=hand_bounds(play_pose);
+  CHECK(play_pose.scale==1024&&selected_bounds.x>=70&&selected_bounds.x+selected_bounds.w<=246);
+  CHECK(selected_bounds.y>=22&&selected_bounds.y+selected_bounds.h<=240);
+  if(fast)CHECK(std::abs(play_pose.cx-160)<std::abs(start_pose.cx-160));
   const uint32_t start=a.animation;a.input(Key::Confirm);equivalent();
   const uint32_t end=start+TurnBannerPresentation::wait_ticks(300,150,fast!=0);
   CHECK(a.combat_feedback.finished&&a.combat_feedback.end_at==end&&a.game.zones[played]==Zone::Discard);
@@ -1265,7 +1274,7 @@ static void original_card_movement(){
    const auto shown=a.combat_hand();CHECK(shown.count==base+n);
    for(unsigned i=0;i<shown.count;++i)CHECK(shown.ids[i]==final_hand.ids[i]&&has(HitKind::Hand,shown.ids[i]));
    for(unsigned i=shown.count;i<final_hand.count;++i)CHECK(!has(HitKind::Hand,final_hand.ids[i]));
-   const auto pose=a.combat_hand_pose(shown.count-1,false);CHECK(pose.cx==10&&pose.cy==230&&!a.combat_hand_settled(shown.count-1,false));
+   const auto pose=a.combat_hand_pose(shown.count-1,false);CHECK(pose.cx==16&&pose.cy==223&&!a.combat_hand_settled(shown.count-1,false));
    if(n==2)capture(fast?"card-draw-second-fast":"card-draw-second");
    if(n<3){const uint32_t next=draw_start+TurnBannerPresentation::wait_ticks(n*250,n*100,fast!=0);
     advance_combat_ms((next-a.animation-1)*33);a.render();CHECK(a.combat_hand().count==base+n);
@@ -1291,7 +1300,14 @@ static void original_card_movement(){
   CHECK(a.combat_cards.find(unsigned(inflame))&&a.combat_cards.find(unsigned(inflame))->mode==CombatCardMotion::Play);
   advance_combat_ms((apply-a.animation-1)*33);a.render();CHECK(a.combat_status_amount(0,0)==0);
   advance_combat_ms(33);a.render();CHECK(a.combat_status_amount(0,0)==a.game.strength);
-  advance_combat_ms((power_end-a.animation)*33);a.render();CHECK(!a.combat_cards.find(unsigned(inflame))&&!a.combat_actions_locked());equivalent();
+  advance_combat_ms((power_end-a.animation)*33);a.render();CHECK(!a.combat_actions_locked());
+  CHECK(a.combat_cards.find(unsigned(inflame))&&a.combat_cards.find(unsigned(inflame))->mode==CombatCardMotion::Power);
+  // The independent original power-card path and its .5s trail outlive the
+  // command wait. They must finish without blocking the next player input.
+  for(unsigned tick=0;tick<120&&a.combat_cards.find(unsigned(inflame));++tick){
+   CHECK(!a.combat_actions_locked()&&!has(HitKind::Hand,inflame));advance_combat_ms(33);a.render();
+  }
+  CHECK(!a.combat_cards.find(unsigned(inflame))&&!a.combat_actions_locked());equivalent();
 
   // Prepared's real card-choice continuation must wait for both awaited
   // draws. Its future canonical selection cannot appear at the first draw.
@@ -1344,11 +1360,11 @@ static void feedback_hud_and_merchant(){
   a.ui_action(UiAction::OpenShop);CHECK(a.shop_open);a.render();
   CHECK(a.room_presentation.merchant.y(a.map_clock_ms)==-222);
   a.advance(250);a.advance(250);a.advance(200);a.render();unchanged();
-  // Source card-slot centers in the 1440x1080 viewport, projected once at
-  // 2/9. The rug intentionally extends beyond the viewport; its items do not.
-  constexpr int centers[]={44,102,160,218,277,58,119};
+  // UI12 keeps the source rug and fits readable cards into two LCD rows.
+  // The rug extends beyond the viewport; its live purchase hits do not.
+  constexpr int centers[]={39,99,159,219,279,43,108};
   for(int i=0;i<ShopCardCount;++i){const HitRegion*card=nullptr;for(int j=0;j<a.hit_count;++j)if(a.hits[j].kind==HitKind::Choice&&a.hits[j].value==i)card=&a.hits[j];
-   CHECK(card&&card->x+card->w/2==centers[i]&&card->w==54&&card->h==85);
+   CHECK(card&&card->x+card->w/2==centers[i]&&card->w==57&&card->h==102);
    CHECK(card->x>=0&&card->x+card->w<=320&&card->y>=22&&card->y+card->h<=235);}
   capture((std::string("merchant-inventory-")+names[character]).c_str());a.input(Key::Back);CHECK(!a.shop_open);unchanged();
  }

@@ -40,7 +40,7 @@ static void power_hover_catalog_and_input(){
             for(unsigned i=0;i<page.count;++i){const auto&p=page.pieces[i];const auto&r=p.box;
                 CHECK(p.tip<list.count&&p.skip==visited[p.tip]);
                 if(list.items[p.tip].kind==HoverTipKind::Card){CHECK(r.w==46&&r.h==62);++visited[p.tip];}
-                else{CHECK(r.w==69&&p.lines>0);visited[p.tip]+=p.lines;}
+                else{CHECK(r.w==104&&p.lines>0);visited[p.tip]+=p.lines;}
                 CHECK(r.x>=3&&r.y>=24&&r.x+r.w<=317&&r.y+r.h<=218);
                 for(unsigned j=0;j<i;++j){const auto&o=page.pieces[j].box;CHECK(r.x+r.w<=o.x||o.x+o.w<=r.x||r.y+r.h<=o.y||o.y+o.h<=r.y);}
             }}

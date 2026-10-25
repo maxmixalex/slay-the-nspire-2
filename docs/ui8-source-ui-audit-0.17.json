@@ -6,7 +6,7 @@
     "dll_sha256": "0861bfa1df347538d932f22d580e75420f08082792eb914e53b4882764acdbe9"
   },
   "supersedes": "ui7-original-ui-inventory-0.17.json",
-  "source_stage": "UI12 current-contract reconciliation after recovery of af95e29 and combat/cache/text completion through ae1359512fd76b6d0d4fd814da699ff366cd7f8c. The named UI12 implementations below supersede stale current gap descriptions; all prior implementation/remaining strings and UI10/UI11 receipts remain historical. Final integrated calculator acceptance and release sizes are owned by WORK_STATE.md and ui12-lcd-followup-0.17.md. No blanket source audit, unmodified desktop frame identity or restoration percentage is asserted.",
+  "source_stage": "UI12 current-contract reconciliation after recovery of af95e29 and combat/cache/text completion through ae1359512fd76b6d0d4fd814da699ff366cd7f8c. The named UI12 implementations below supersede stale current gap descriptions; all prior implementation/remaining strings and UI10/UI11 receipts remain historical. Final integrated calculator acceptance and release sizes are owned by WORK_STATE.md and ui12-lcd-followup-0.17.md. No blanket source audit, unmodified desktop frame identity or restoration percentage is asserted. The previously pending startup-logo/SkipIntroLogo feature is now implemented and verified by the explicitly scoped startup-ui12-0.17.md receipts; historical gap strings remain historical.",
   "scope": {
     "excluded": [
       "audio",
@@ -48,16 +48,18 @@
       "original_types": [
         "MegaCrit.Sts2.Core.Nodes.Screens.MainMenu/NMainMenu.cs",
         "MegaCrit.Sts2.Core.Nodes.Screens.MainMenu/NMainMenuTextButton.cs",
-        "MegaCrit.Sts2.Core.Nodes.Screens.MainMenu/NMainMenuSubmenuStack.cs"
+        "MegaCrit.Sts2.Core.Nodes.Screens.MainMenu/NMainMenuSubmenuStack.cs",
+        "MegaCrit.Sts2.Core.Nodes.Screens.MainMenu/NLogoAnimation.cs"
       ],
       "contract": "Title focus/reticles and nested menu ownership",
       "assessment": "implemented_with_documented_limits",
-      "implemented": "UI12 preserves the source menu focus/reticles and nested ownership while using the readable LCD layout. The title atlas rotation is corrected, logo/menu anchors move upward, fog alpha is reduced, and oversized original HSV button materials remain visible through hover/press. Shared and specialized title measurement use natural source font metrics.",
-      "remaining": "Original font chains, fractional advances, pair kerning and bearings are implemented. Final integer LCD rasterization, antialiasing and full-frame desktop Godot equality remain documented limits; this is not a missing-font or wholly omitted-kerning claim.",
+      "implemented": "UI12 preserves the source menu focus/reticles and nested ownership while using the readable LCD layout. The title atlas rotation is corrected, logo/menu anchors move upward, fog alpha is reduced, and oversized original HSV button materials remain visible through hover/press. Shared and specialized title measurement use natural source font metrics. The source MegaCrit first-launch Spine sequence, original stage/cancel clocks and main-menu fade now run once per host, with no replay during locale reload or returning from a run.",
+      "remaining": "Original font chains, fractional advances, pair kerning and bearings are implemented. Final integer LCD rasterization, antialiasing and full-frame desktop Godot equality remain documented limits; this is not a missing-font or wholly omitted-kerning claim. Startup uses a documented 12 Hz sampled Spine stream and bounded CPU fade coverage; final matching Firebird startup remains a release integration gate.",
       "regressions": [
         "world_frontend_ui_regression",
         "profiles_ui7_regression",
-        "check_offline_browser.js"
+        "check_offline_browser.js",
+        "startup_logo_regression"
       ],
       "acceptance": "Historical UI10: Frozen K native checks pass: world_frontend_ui_regression, profiles_ui7_regression. Both matching K format39 actual packs pass: world_frontend_ui_regression, profiles_ui7_regression. The K ordinary-browser21-flow gate includes this scope: Fresh title and original main-menu navigation run through ordinary DOM/canvas input.",
       "pre_ui12_implemented_historical": "Source FourByThree centered269x450 menu container,200x50 hit controls,6px Regular labels with locale-appropriate tracking,3px half-alpha outline,50ms focus, sequential200ms press/release scale/color and8px animated reticles. Browser coordinates and source-derived native input bounds share the new layout.",
@@ -859,7 +861,7 @@
       ],
       "contract": "Player/enemy banners, turn-end blocking and command waits",
       "assessment": "implemented_with_documented_limits",
-      "implemented": "Original player/enemy banners, turn-end blocking, feedback waits and scheduled displayed facts. The candidate settles terminal WorldRelicChoice rewards after the final combat trace; only actual combat choices suspend it. A manual-kill regression reproduces the former indefinite hand/energy/end-turn residue on a0df before the fix. I implements the source optional End Turn long press: strictly greater than500ms, release decay/repress, one completion per owned press and source additive progress bar. A20-byte UI timer serves mouse, mapped keys, calculator edges and real toolbar down/up/cancel; canonical state stays unchanged before completion. K skips disabled idle hold work while retaining existing ownership, residual progress and unfinished fade; the bar visual is requested only while enabled. No state fields or formats change. UI12 adds the Battle Start prelude before Player Turn while retaining independent enemy/player clocks and restored-run suppression.",
+      "implemented": "Original player/enemy banners, turn-end blocking, feedback waits and scheduled displayed facts. The candidate settles terminal WorldRelicChoice rewards after the final combat trace; only actual combat choices suspend it. A manual-kill regression reproduces the former indefinite hand/energy/end-turn residue on a0df before the fix. I implements the source optional End Turn long press: strictly greater than500ms, release decay/repress, one completion per owned press and source additive progress bar. A20-byte UI timer serves mouse, mapped keys, calculator edges and real toolbar down/up/cancel; canonical state stays unchanged before completion. K skips disabled idle hold work while retaining existing ownership, residual progress and unfinished fade; the bar visual is requested only while enabled. No state fields or formats change. UI12 adds the Battle Start prelude before Player Turn while retaining independent enemy/player clocks and restored-run suppression. The UI12 ordinary-play duplicate Battle Start was removed: the tutorial and normal first turn share one renderer/timeline, gated until CombatRules completes; Player Turn is scheduled once after2600ms.",
       "remaining": "The named banners, real effect barriers and turn-end inputs are implemented and tested. A differential audit of every original per-monster command/animation delay has not been completed; no blanket all-monster timing claim is made.",
       "regressions": [
         "turn_banner_regression",
@@ -870,7 +872,7 @@
       "acceptance": "Historical UI10: Frozen K native checks pass: turn_banner_regression, combat_ui_regression, enemies_regression, end_turn_hold_regression. Both matching K format39 actual packs pass: combat_ui_regression, end_turn_hold_regression. The K ordinary-browser21-flow gate includes this scope: Ordinary held mapped-key and toolbar input advance turn1 to2 to3 exactly once per hold; short attempts leave turn1 unchanged. Both K long-press targets pass155,338 checks, including disabled residual owner/timer/fade and canonical-state identity; half/fired captures match I exactly.",
       "pre_ui12_implemented_historical": "Original player/enemy banners, turn-end blocking, feedback waits and scheduled displayed facts. The candidate settles terminal WorldRelicChoice rewards after the final combat trace; only actual combat choices suspend it. A manual-kill regression reproduces the former indefinite hand/energy/end-turn residue on a0df before the fix. I implements the source optional End Turn long press: strictly greater than500ms, release decay/repress, one completion per owned press and source additive progress bar. A20-byte UI timer serves mouse, mapped keys, calculator edges and real toolbar down/up/cancel; canonical state stays unchanged before completion. K skips disabled idle hold work while retaining existing ownership, residual progress and unfinished fade; the bar visual is requested only while enabled. No state fields or formats change.",
       "pre_ui12_remaining_historical": "Every original per-monster animation/command delay has not received a differential audit.",
-      "ui12_acceptance": "Frozen combat worktree ae13595: actual UI40 gate 1096 checks (34d842ab8fde), five complete combat/canvas suites (c4ac9d4cd5d0), unchanged source fingerprints. H/K device scopes and the independent final-release requirement are recorded in combat-ui12-0.17.md."
+      "ui12_acceptance": "Frozen combat worktree ae13595: actual UI40 gate 1096 checks (34d842ab8fde), five complete combat/canvas suites (c4ac9d4cd5d0), unchanged source fingerprints. H/K device scopes and the independent final-release requirement are recorded in combat-ui12-0.17.md. Single-banner actual UI40 regression c728e1e passes1163 checks (12ccf46de37e), including exact no-second-pass frame comparisons for normal and tutorial entry."
     },
     {
       "id": "resources",
@@ -942,20 +944,22 @@
       ],
       "contract": "Real supported controls, persistence and platform restrictions",
       "assessment": "implemented_with_documented_limits",
-      "implemented": "UI12 presents the original General/Input tabs, controls, track/end/thumb assets and working pointer scrollbar dragging. Controls move left with a separate tooltip lane, the language arrow is centered, oversized HSV controls remain visible on hover and Back is reduced. Supported preferences, exact-old-default-only binding migration and Long Press Confirmations persist; user-requested feedback/patch notes are removed.",
-      "remaining": "Audio, multiplayer drawings and remote service behavior remain excluded/unavailable; CommonTooltips and Reset Tutorials follow the pinned hidden release gates. The original startup-logo sequence and SkipIntroLogo preference remain a concrete pending feature at this reconciliation checkpoint, tracked for the release owner; desktop background FPS limiting is a platform difference.",
+      "implemented": "UI12 presents the original General/Input tabs, controls, track/end/thumb assets and working pointer scrollbar dragging. Controls move left with a separate tooltip lane, the language arrow is centered, oversized HSV controls remain visible on hover and Back is reduced. Supported preferences, exact-old-default-only binding migration and Long Press Confirmations persist; user-requested feedback/patch notes are removed. The source Skip Intro Logo checkbox, description and toasts are present in all sixteen locales; default-off/reset behavior and NSPF6 bit11 persistence retain the unchanged108-byte record and old-version migration.",
+      "remaining": "Audio, multiplayer drawings and remote service behavior remain excluded/unavailable; CommonTooltips and Reset Tutorials follow the pinned hidden release gates. Desktop background FPS limiting remains a platform difference. The startup logo and SkipIntroLogo preference are implemented; their final matching Firebird acceptance is recorded separately from the completed native/resource gates.",
       "regressions": [
         "ui_preferences_regression",
         "world_frontend_ui_regression",
         "web_profiles_storage_test.js",
         "input_bindings_ui8_regression",
         "end_turn_hold_regression",
-        "check_offline_browser.js"
+        "check_offline_browser.js",
+        "startup_logo_regression"
       ],
       "acceptance": "Historical UI10: Frozen K native checks pass: ui_preferences_regression, world_frontend_ui_regression, input_bindings_ui8_regression, end_turn_hold_regression. Both matching K format39 actual packs pass: world_frontend_ui_regression, input_bindings_ui8_regression, end_turn_hold_regression. The K ordinary-browser21-flow gate includes this scope: Ordinary real preference controls and Long Press persistence/input/cancel/repeat paths pass, with other profiles unchanged. J source-coordinate hover checks pass synthetically and with both actual packs against the production-identical I core. They verify intended localized title/body, full-screen placement and unchanged canonical bytes; the prior I capture names alone did not establish these contexts. K includes those J fixture corrections; all58 card/HUD captures per locale match the accepted J baseline.",
       "pre_ui12_implemented_historical": "Source General/Input layout, original tabs/checkboxes/action controls, language dropdown rules and real local feedback/credits. G/H restores exact source font roles, geometry, release-hidden controls and Input100ms focus fade. I adds the original default-off per-profile Long Press Confirmations row, yielding eleven supported General rows, and its real End Turn hold behavior. NSPF5 uses reserved bit7 in the unchanged108-byte preference record with explicit backward migration; canonical NSV17 and NSH9 remain unchanged. K avoids disabled idle hold/visual computation without suppressing an existing owner, residual timer or unfinished completion fade.",
       "pre_ui12_remaining_historical": "Audio is excluded. The original startup-logo sequence/SkipIntroLogo, desktop background-FPS cap and remote gameplay upload service are not implemented; they are explicit feature/platform differences. CommonTooltips is authored hidden with an unimplemented callback; Reset Tutorials is hidden by the pinned release gate; ShowMpDrawings belongs to excluded multiplayer.",
-      "ui12_acceptance": "UI12 scoped frontend source/interaction evidence is recorded in ui12-front-feedback-0.17.md; final integrated Firebird acceptance remains separately bound to its launcher. Historical UI10 acceptance is retained without relabeling it as UI12."
+      "ui12_acceptance": "UI12 scoped frontend source/interaction evidence is recorded in ui12-front-feedback-0.17.md; final integrated Firebird acceptance remains separately bound to its launcher. Historical UI10 acceptance is retained without relabeling it as UI12. Startup resource/native coverage and its final device boundary are documented in startup-ui12-0.17.md.",
+      "ui12_pre_startup_remaining_historical": "Audio, multiplayer drawings and remote service behavior remain excluded/unavailable; CommonTooltips and Reset Tutorials follow the pinned hidden release gates. The original startup-logo sequence and SkipIntroLogo preference remain a concrete pending feature at this reconciliation checkpoint, tracked for the release owner; desktop background FPS limiting is a platform difference."
     },
     {
       "id": "language",
@@ -2336,7 +2340,6 @@
     "native_scope": "Frozen ae13595 combat worktree. All listed journals passed with source_changed=false. These are correctness/pixel comparisons, not physical-calculator performance measurements or acceptance of unrelated later source changes.",
     "firebird_scope": "H ordinary play/save evidence includes a retained host ENOSPC controller error and is not a wholly passed journal. K 2d89c8a26a3f is closed/passed; later console-created rooms are fixtures. H/J/L world and H/J frontend sessions retain the launcher-specific scopes in their module reports. Final integrated launcher and matched merchant speed remain separate release gates.",
     "open_feature_review": [
-      "Original startup logo sequence / SkipIntroLogo preference remains pending here.",
       "Independent per-monster entrance effects and every monster command delay are not newly audited by this reconciliation.",
       "Source rumble/trauma and all shake trigger sites retain their prior documented incomplete scope."
     ],
@@ -2345,6 +2348,16 @@
       "Full Ancient actor animation remains omitted under the explicit size-saving exception.",
       "Audio, multiplayer and Timeline remain excluded; online services unavailable and patch notes/feedback removed by user instruction."
     ],
-    "untouched_contracts": "Entries without a UI12 reconciliation keep their previous implementation and remaining scope; no unreviewed contract is promoted to passed."
+    "untouched_contracts": "Entries without a UI12 reconciliation keep their previous implementation and remaining scope; no unreviewed contract is promoted to passed.",
+    "startup_report": "startup-ui12-0.17.md",
+    "startup_completed_native": {
+      "runtime": "5eed72c32678b6dc9eaffb7d7b0f78e2e25ede84",
+      "resources": "3fc5780af452634161610f4dd15815f1d23714ba",
+      "actual_checks": 12531,
+      "actual_journal": "7e2bc39e7cf3",
+      "pure_and_boot_journal": "a0799d759d03",
+      "resource_journal": "3c833edb5241",
+      "scope": "Source clocks, real sampled Spine art, original locale keys, skip/persistence and no replay/canonical mutation pass native/resource gates. Final Firebird startup remains separate."
+    }
   }
 }

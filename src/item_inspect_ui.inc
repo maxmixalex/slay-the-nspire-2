@@ -58,7 +58,7 @@ static int relic_inspect_paragraph(Canvas c,const char*text,int x,int y,int widt
         const int left=x+at+(center&&row<64?mx(0,(width-widths[row])/2):0),top=y+row*step;
         const auto g=c.a.content.glyph(ch.codepoint,px,c.font_style(ch));
         Canvas shadow=c;shadow.opacity=uint8_t(div255(unsigned(shadow.opacity)*64));shadow.character(ch.codepoint,g,left+1,top,0,true);
-        c.character(ch.codepoint,g,left,top,colors[ch.style.color]);
+        c.character(ch.codepoint,g,left,top,rich_color(ch.style.color,colors));
     });return lines*step;
 }
 static void relic_inspect_text(const App&a,RelicId id,char*name,unsigned name_cap,char*description,unsigned description_cap,char*flavor,unsigned flavor_cap){

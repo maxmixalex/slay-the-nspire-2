@@ -50,6 +50,8 @@ class RichReader {
   const char* names[]={"gold","red","blue","green","purple","orange","aqua","white","gray","b","i","sine","jitter","rainbow","thinky_dots"};
   for(unsigned i=0;i<15;++i)if(equal(p,n,names[i]))return i+1;
   if(equal(p,n,"code"))return 17;
+  if(equal(p,n,"pink"))return 18;
+  if(equal(p,n,"shake"))return 19;
   return n>=9&&equal(p,9,"font_size")&&(n==9||p[9]=='=')?16:0;
  }
  static bool font_size_options(const char*p,const char*end){
@@ -82,6 +84,7 @@ class RichReader {
     if(!valid){literal_end_=end+1;return false;}
     if(t<=9)style_.color=(uint8_t)t;else if(t==10)style_.bold=true;else if(t==11)style_.italic=true;else if(t==12)style_.wave=true;else if(t==13)style_.jitter=true;
     else if(t==14){style_.rainbow=true;style_.rainbow_parameters=parameters;}else if(t==15){style_.thinky_dots=true;style_.thinky_start=index_;}
+    else if(t==18)style_.color=10;else if(t==19)style_.jitter=true;
     // Original 18/22/28px stage directions project below the declared 6px
     // scene minimum. Consume their BBCode scope and keep the fitted scene's
     // selected size; the reader's deliberately larger review size also wins.

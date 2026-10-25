@@ -61,7 +61,7 @@ static void crystal_dialogue(Canvas&c){
  char key[96]{},text[512]{};TextBuffer b{key,sizeof key,0};b.text("CRYSTAL_SPHERE.banter.");
  b.text(m.dialogue==1?"START.":m.dialogue==2?"REVEAL_GOOD.":m.dialogue==3?"REVEAL_BAD.":"END.");b.number(m.line);
  a.localized_text("events",key,text,sizeof text);layer.opacity=uint8_t(div255(layer.opacity*191));
- layer.text_visible_characters=room_rich_characters(text)*room_curve::linear(age,400)/room_curve::Q;
+ layer.text_fly_in_elapsed=age;
  layer.fitted(text,center-114,y+7,228,35,10,10,rgb(0,0,0),true,false,false,false);
 }
 static bool crystal_backdrop(Canvas&layer){

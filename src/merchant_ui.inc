@@ -72,7 +72,7 @@ static void merchant_dialogue(Canvas&c,bool fake=false){
   shadow.ui(I7_MerchantDialogue,center_x-width/2,center_y-height/2+1,width,height);
   bubble.ui(I7_MerchantDialogue,center_x-width/2,center_y-height/2,width,height);
  }else{const int skin=a.content.world_image("common","HOVER_TIP");if(skin>=0)bubble.nine_image(skin,center_x-64,center_y-40,128,80,28,22,46,16);}
- bubble.text_visible_characters=room_rich_characters(text)*room_curve::linear(age,400)/room_curve::Q;
+ bubble.text_fly_in_elapsed=age;
  bubble.opacity=uint8_t(div255(bubble.opacity*230));
  native_room_compact_text(bubble,text,center_x-56,center_y-30,112,60,true);
 }

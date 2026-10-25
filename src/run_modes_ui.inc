@@ -42,7 +42,7 @@ static void setup_rich_text(Canvas c,const char*text,int x,int y,int width,int h
  const uint16_t colors[]={rgb(255,246,226),rgb(239,200,81),rgb(255,85,85),rgb(135,206,235),rgb(127,255,0),rgb(238,130,238),rgb(255,165,24),rgb(0,255,255),rgb(255,255,255),rgb(128,128,128)};
  for(unsigned shadow=0;shadow<2;++shadow){Canvas ink=c;if(!shadow)ink.opacity=uint8_t(div255(unsigned(ink.opacity)*64));
   fitted_text::visit(text,width,plan,metric,[&](const RichChar&ch,int at,int row,int px){const auto glyph=c.a.content.glyph(ch.codepoint,px,c.font_style(ch));
-   profile_glyph(ink,glyph,x+at+(center?(width-widths[row])/2:0)+int(!shadow),top+row*plan.step,shadow?colors[ch.style.color]:0,transform);});}
+   profile_glyph(ink,glyph,x+at+(center?(width-widths[row])/2:0)+int(!shadow),top+row*plan.step,shadow?rich_color(ch.style.color,colors):0,transform);});}
 }
 static void setup_disclaimer(Canvas&c,const char*text){
  const unsigned face=source_label_face(c.a.content.original_label_fonts(),6);

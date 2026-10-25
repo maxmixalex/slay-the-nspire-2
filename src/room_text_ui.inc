@@ -31,8 +31,8 @@ static fitted_text::Plan native_room_compact_text(Canvas c,const char*text,int x
   if(c.a.text_effects&&ch.style.wave)yy+=wave[(c.a.animation/2+ch.index*2)%16];
   if(c.a.text_effects&&ch.style.thinky_dots)yy+=rich_thinky_offset(c.a.map_clock_ms,ch.index-ch.style.thinky_start);
   if(c.a.text_effects&&ch.style.jitter)xx+=int((c.a.animation/2+ch.index*7)%3)-1;
-  const auto ink=c.a.text_effects&&ch.style.rainbow?rich_rainbow_rgb565(ch.style.rainbow_parameters,c.a.map_clock_ms,at*26000/mx(1,px)):colors[ch.style.color];
-  shadow.character(ch.codepoint,glyph,xx+1,yy,0,true);clipped.character(ch.codepoint,glyph,xx,yy,ink);
+  const auto ink=c.a.text_effects&&ch.style.rainbow?rich_rainbow_rgb565(ch.style.rainbow_parameters,c.a.map_clock_ms,at*26000/mx(1,px)):rich_color(ch.style.color,colors);
+  shadow.animated_character(ch,glyph,xx+1,yy,0,true);clipped.animated_character(ch,glyph,xx,yy,ink);
  });return plan;
 }
 // A clipped full paragraph supplies both event scrolling and focused option
@@ -52,7 +52,7 @@ static int native_room_scroll_text(Canvas c,const char*text,int x,int y,int w,in
   if(c.a.text_effects&&ch.style.wave)yy+=wave[(c.a.animation/2+ch.index*2)%16];
   if(c.a.text_effects&&ch.style.thinky_dots)yy+=rich_thinky_offset(c.a.map_clock_ms,ch.index-ch.style.thinky_start);
   if(c.a.text_effects&&ch.style.jitter)xx+=int((c.a.animation/2+ch.index*7)%3)-1;
-  const auto color=c.a.text_effects&&ch.style.rainbow?rich_rainbow_rgb565(ch.style.rainbow_parameters,c.a.map_clock_ms,at*26000/mx(1,px)):colors[ch.style.color];
+  const auto color=c.a.text_effects&&ch.style.rainbow?rich_rainbow_rgb565(ch.style.rainbow_parameters,c.a.map_clock_ms,at*26000/mx(1,px)):rich_color(ch.style.color,colors);
   const auto glyph=c.a.content.glyph(ch.codepoint,px,c.font_style(ch));
   Canvas shadow=c;shadow.opacity=uint8_t(div255(shadow.opacity*64));shadow.character(ch.codepoint,glyph,xx+1,yy,0,true);
   c.character(ch.codepoint,glyph,xx,yy,color);

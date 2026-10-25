@@ -277,7 +277,11 @@ static void event_pointer_keyboard_and_text(){
     }
     event_begin(OriginalEventId::Bugslayer);settle_event_entry();capture("event-option-tooltip");snapshot();
     CHECK(keyword_detail_input(a,Key::Statuses));a.render();capture("event-option-tooltip-details");unchanged();
-    CHECK(keyword_detail_input(a,Key::Back));a.input(Key::Detail);a.render();CardHoverTarget owner{};CHECK(!event_hover_target(a,owner));
+    CHECK(keyword_detail_input(a,Key::Back));a.input(Key::Detail);a.render();CardHoverTarget owner{};
+    // Event prose now scrolls inline. Reading it does not create the former
+    // modal reader or remove the current option's associated hover tips.
+    CHECK(a.event_body_focus&&!a.event_reader&&event_hover_target(a,owner));unchanged();
+    a.input(Key::Back);CHECK(!a.event_body_focus&&!a.event_reader);unchanged();
 }
 #include "power_hover_ui_cases.inc"
 int main(int argc,char**argv){

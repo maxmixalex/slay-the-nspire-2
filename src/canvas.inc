@@ -1,6 +1,7 @@
 // Bounded RGB565 canvas; optional coverage is used only by cached card tiles.
 static int mn(int a,int b){return a<b?a:b;}static int mx(int a,int b){return a>b?a:b;}
 static uint16_t rgb(int r,int g,int b){return (uint16_t)((r>>3)<<11|(g>>2)<<5|(b>>3));}
+static uint16_t rich_color(unsigned style,const uint16_t*colors){return style==10?rgb(255,120,160):colors[style];}
 static const uint16_t Ink=rgb(16,20,22),Panel=rgb(27,29,31),Gold=rgb(223,186,112),White=rgb(239,229,206),Muted=rgb(153,156,150),Red=rgb(168,57,45),Blue=rgb(88,157,188),Green=rgb(118,180,112);
 static unsigned div255(unsigned v){v+=128;return (v+(v>>8))>>8;}
 static uint16_t blend(uint16_t a,uint16_t b,unsigned alpha){
@@ -39,6 +40,7 @@ struct Canvas{
     bool wrap_latin_words=false; // Original article fallback keeps Latin word boundaries in every locale.
     bool sparse_scene_sizes=false; // Opt in only when this label's full alphabet is baked.
     const int16_t* color_matrix=nullptr; // Only duplicate-creature sprite layers opt in.
+    uint32_t text_fly_in_elapsed=UINT32_MAX; // Label-local elapsed time; no layout or RNG changes.
     unsigned font_style(const RichChar&ch)const{const unsigned style=rich_font_style(ch);return (style==1&&bold_face?unsigned(bold_face):style)|font_face;}
     void paint(int at,uint16_t color,unsigned alpha=255,unsigned mode=0){
         if(opacity!=255)alpha=div255(alpha*opacity);
@@ -406,6 +408,31 @@ struct Canvas{
         }
         glyph(g,x+g.bearing_x,y,color);
     }
+    void animated_character(const RichChar&ch,Glyph g,int x,int y,uint16_t color,bool shadow=false){
+        if(text_fly_in_elapsed==UINT32_MAX){character(ch.codepoint,g,x,y,color,shadow);return;}
+        // RichTextFlyIn: elapsed*3-relativeIndex*.015, followed by QuadOut
+        // rotation. At the dialogue's default zero offset, the subpixel
+        // translation projects below one LCD pixel. Fade still runs when
+        // Text Effects is disabled, as in the source label.
+        const int64_t phase=int64_t(text_fly_in_elapsed)*3-int64_t(ch.index)*15;
+        const unsigned q=phase<=0?0:phase>=1000?4096:unsigned(phase)*4096/1000;
+        if(!q)return;
+        Canvas ink=*this;ink.text_fly_in_elapsed=UINT32_MAX;ink.opacity=uint8_t(div255(ink.opacity*(255*q/4096)));
+        if(!a.text_effects||q==4096||inline_icon(ch.codepoint)){ink.character(ch.codepoint,g,x,y,color,shadow);return;}
+        const int angle=228*int(4096-q*q/4096)/4096;
+        const int sine=CombatCardMotion::sine(angle),cosine=CombatCardMotion::sine(angle+1024);
+        if(!g.pixels||!g.w||!g.h)return;
+        unsigned position=0;const unsigned pixels=unsigned(g.w)*g.h;
+        const auto emit=[&](unsigned alpha){
+            const int column=int(position%g.w)+g.bearing_x,row=int(position/g.w);++position;if(!alpha)return;
+            const int tx=column*cosine-row*sine,ty=column*sine+row*cosine;
+            const int xx=x+(tx+(tx<0?-512:512))/1024,yy=y+(ty+(ty<0?-512:512))/1024;
+            if(xx>=0&&yy>=0&&xx<ink.clip_w&&yy<ink.clip_h)ink.paint(yy*ink.pitch+xx,color,alpha);
+        };
+        if(g.encoded_size){for(unsigned i=0;i+1<g.encoded_size&&position<pixels;i+=2)
+            for(unsigned n=0;n<g.pixels[i]&&position<pixels;++n)emit(g.pixels[i+1]);}
+        else for(unsigned i=0;i<pixels;++i)emit(g.pixels[i]);
+    }
     int text(const char*p,int x,int y,int size=12,uint16_t color=White,int maxwidth=320,int maxlines=1){
         size=a.content.font_size(size,font_face,false,sparse_scene_sizes);
         char localized[1024];p=a.ui_text(p,localized,sizeof localized);
@@ -421,8 +448,8 @@ struct Canvas{
             int dy=a.text_effects&&ch.style.wave?wave[(a.animation/2+ch.index*2)%16]:0;
             if(a.text_effects&&ch.style.thinky_dots)dy+=rich_thinky_offset(a.map_clock_ms,ch.index-ch.style.thinky_start);
             int dx=a.text_effects&&ch.style.jitter?int((a.animation/2+ch.index*7)%3)-1:0;
-            const auto ink=a.text_effects&&ch.style.rainbow?rich_rainbow_rgb565(ch.style.rainbow_parameters,a.map_clock_ms,(x-start)*26000/mx(1,size)):colors[ch.style.color];
-            character(ch.codepoint,g,x+dx,y+dy,ink);x=start+text_pixel(pen64);
+            const auto ink=a.text_effects&&ch.style.rainbow?rich_rainbow_rgb565(ch.style.rainbow_parameters,a.map_clock_ms,(x-start)*26000/mx(1,size)):rich_color(ch.style.color,colors);
+            animated_character(ch,g,x+dx,y+dy,ink);x=start+text_pixel(pen64);
         }return x;
     }
     int paragraph(const char*p,int x,int y,int w,int lines,int skip=0,int size=12,uint16_t color=White){
@@ -448,8 +475,8 @@ struct Canvas{
                 int dx=a.text_effects&&ch.style.jitter?(int)((a.animation/2+ch.index*7)%3)-1:0;
                 // Original event body text is 26px. Normalize native glyph
                 // advances to that scale, retaining label-local x after wrap.
-                auto ink=a.text_effects&&ch.style.rainbow?rich_rainbow_rgb565(ch.style.rainbow_parameters,a.map_clock_ms,(at-x)*26000/mx(1,size)):colors[ch.style.color];int yy=y+(row-skip)*(size+3)+dy;
-                character(ch.codepoint,g,at+dx,yy,ink);}
+                auto ink=a.text_effects&&ch.style.rainbow?rich_rainbow_rgb565(ch.style.rainbow_parameters,a.map_clock_ms,(at-x)*26000/mx(1,size)):rich_color(ch.style.color,colors);int yy=y+(row-skip)*(size+3)+dy;
+                animated_character(ch,g,at+dx,yy,ink);}
             pen64+=(pen64?metric.kerning64:0)+advance;at=x+text_pixel(pen64);
         }return row+1;
     }
@@ -484,8 +511,8 @@ struct Canvas{
             if(a.text_effects&&ch.style.thinky_dots)dy+=rich_thinky_offset(a.map_clock_ms,ch.index-ch.style.thinky_start);
             int dx=a.text_effects&&ch.style.jitter?int((a.animation/2+ch.index*7)%3)-1:0;
             xx=mx(x,mn(xx+dx,x+w-int(g.w)));yy=mx(y,yy+dy);
-            auto ink=shadow?outline_color:a.text_effects&&ch.style.rainbow?rich_rainbow_rgb565(ch.style.rainbow_parameters,a.map_clock_ms,at*26000/mx(1,size)):colors[ch.style.color];
-            clipped.character(ch.codepoint,g,xx+offset_x,yy+offset_y,ink,shadow);
+            auto ink=shadow?outline_color:a.text_effects&&ch.style.rainbow?rich_rainbow_rgb565(ch.style.rainbow_parameters,a.map_clock_ms,at*26000/mx(1,size)):rich_color(ch.style.color,colors);
+            clipped.animated_character(ch,g,xx+offset_x,yy+offset_y,ink,shadow);
         });};
         // One LCD pixel is a large fraction of an 8px letter. Four subdued
         // axial passes separate text from art without filling its counters or

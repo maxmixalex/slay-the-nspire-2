@@ -36,7 +36,7 @@ static void ancient_text(Canvas&c,const char*text,int x,int y,int width,int rows
   if(c.a.text_effects&&ch.style.wave)yy+=wave[(c.a.animation/2+ch.index*2)%16];
   if(c.a.text_effects&&ch.style.thinky_dots)yy+=rich_thinky_offset(c.a.map_clock_ms,ch.index-ch.style.thinky_start);
   const int xx=x+at+(c.a.text_effects&&ch.style.jitter?int((c.a.animation/2+ch.index*7)%3)-1:0);
-  const auto ink=c.a.text_effects&&ch.style.rainbow?rich_rainbow_rgb565(ch.style.rainbow_parameters,c.a.map_clock_ms,at*26000/mx(1,size)):colors[ch.style.color];
+  const auto ink=c.a.text_effects&&ch.style.rainbow?rich_rainbow_rgb565(ch.style.rainbow_parameters,c.a.map_clock_ms,at*26000/mx(1,size)):rich_color(ch.style.color,colors);
   Canvas shadow=c;shadow.opacity=uint8_t(div255(shadow.opacity*64));shadow.character(ch.codepoint,glyph,xx+1,yy,Ink,true);
   c.character(ch.codepoint,glyph,xx,yy,ink);
  });

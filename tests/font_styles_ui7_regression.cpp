@@ -75,6 +75,28 @@ static void direct(){
  CHECK(pixel(16,40)==0xffff&&pixel(18,40)==0xffff&&pixel(21,40)!=0);
  clear();auto plan=c.fitted("[b]A[/b]B",10,50,8,10,8,8,0xffff,false,true);
  CHECK(!plan.truncated&&plan.rows==1);CHECK(pixel(10,50)==0xffff&&pixel(15,50)!=0);
+ // Every source color used by supported locale strings is markup, never
+ // literal brackets. Nested pink scopes restore the surrounding ink.
+ CHECK(c.width("[pink]A[/pink]B",8)==5);
+ clear();c.text("[pink]A[/pink]A",10,80,8,0xffff);
+ CHECK(pixel(10,80)==rgb(255,120,160)&&pixel(12,80)==0xffff);
+ RichReader shaken("A[shake]B[/shake]A");RichChar mark{};
+ CHECK(shaken.next(mark)&&!mark.style.jitter);
+ CHECK(shaken.next(mark)&&mark.codepoint=='B'&&mark.style.jitter);
+ CHECK(shaken.next(mark)&&mark.codepoint=='A'&&!mark.style.jitter&&!shaken.next(mark));
+ // Merchant/Crystal dialogue uses the original per-character 3x fade and
+ // rotation, independently of text length, with immutable layout metrics.
+ c.text_fly_in_elapsed=0;clear();CHECK(c.text("AB",10,90,8,0xffff)==15);
+ CHECK(pixel(10,90)==0&&pixel(12,90)==0);
+ c.text_fly_in_elapsed=100;clear();c.text("AB",10,90,8,0xffff);
+ CHECK(pixel(10,90)!=0&&pixel(10,90)!=0xffff);
+ app.text_effects=false;clear();c.text("AB",10,90,8,0xffff);
+ CHECK(pixel(10,90)!=0&&pixel(10,90)!=0xffff); // fade survives disabled transforms
+ c.text_fly_in_elapsed=400;clear();c.text("AB",10,90,8,0xffff);
+ const uint16_t full_a=pixel(10,90),full_b=pixel(12,90);
+ CHECK(full_a==0xffff&&full_b!=0);
+ c.text_fly_in_elapsed=UINT32_MAX;clear();c.text("AB",10,90,8,0xffff);
+ CHECK(pixel(10,90)==full_a&&pixel(12,90)==full_b);app.text_effects=true;
  auto legacy=fixture(false);CHECK(app.content.open(legacy.data(),legacy.size()));
  CHECK(app.content.glyph_metrics('A',8,1).advance==2);CHECK(c.width("[b]A[/b]B",8)==5);
  // An actual UI7 locale can intentionally supply only Regular. It still

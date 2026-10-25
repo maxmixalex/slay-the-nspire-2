@@ -682,6 +682,38 @@
         "src/ui_frontend.inc"
       ],
       "note": "Only used when the original localized Continue ascension key is missing."
+    },
+    {
+      "source": "跳过开场Logo动画",
+      "eng": "Skip Intro Logo",
+      "paths": [
+        "src/settings_ui10.inc"
+      ],
+      "note": "Original localized startup setting is preferred; caller supplies explicit English/Chinese fallback."
+    },
+    {
+      "source": "在游戏启动后直接进入主菜单。",
+      "eng": "Go directly to the main menu when the game starts.",
+      "paths": [
+        "src/settings_ui10.inc"
+      ],
+      "note": "Original localized startup setting is preferred; caller supplies explicit English/Chinese fallback."
+    },
+    {
+      "source": "下次启动时跳过开场Logo动画。",
+      "eng": "Intro logo will be skipped.",
+      "paths": [
+        "src/ui_preferences.inc"
+      ],
+      "note": "Original localized startup setting is preferred; caller supplies explicit English/Chinese fallback."
+    },
+    {
+      "source": "下次启动时显示开场Logo动画。",
+      "eng": "Intro logo will be shown.",
+      "paths": [
+        "src/ui_preferences.inc"
+      ],
+      "note": "Original localized startup setting is preferred; caller supplies explicit English/Chinese fallback."
     }
   ]
 }
