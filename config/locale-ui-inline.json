@@ -483,6 +483,86 @@
     {
       "source": "查看行动",
       "eng": "View Actions"
+    },
+    {
+      "source": " 上午",
+      "eng": " AM",
+      "note": "Reviewed zh-CN calendar symbol; selected only by the Chinese date formatter."
+    },
+    {
+      "source": " 下午",
+      "eng": " PM",
+      "note": "Reviewed zh-CN calendar symbol; selected only by the Chinese date formatter."
+    },
+    {
+      "source": "， 上午 ",
+      "eng": ", AM ",
+      "note": "Reviewed zh-CN calendar symbol; selected only by the Chinese date formatter."
+    },
+    {
+      "source": "， 下午 ",
+      "eng": ", PM ",
+      "note": "Reviewed zh-CN calendar symbol; selected only by the Chinese date formatter."
+    },
+    {
+      "source": "一月",
+      "eng": "January",
+      "note": "Reviewed zh-CN calendar symbol; selected only by the Chinese date formatter."
+    },
+    {
+      "source": "二月",
+      "eng": "February",
+      "note": "Reviewed zh-CN calendar symbol; selected only by the Chinese date formatter."
+    },
+    {
+      "source": "三月",
+      "eng": "March",
+      "note": "Reviewed zh-CN calendar symbol; selected only by the Chinese date formatter."
+    },
+    {
+      "source": "四月",
+      "eng": "April",
+      "note": "Reviewed zh-CN calendar symbol; selected only by the Chinese date formatter."
+    },
+    {
+      "source": "五月",
+      "eng": "May",
+      "note": "Reviewed zh-CN calendar symbol; selected only by the Chinese date formatter."
+    },
+    {
+      "source": "六月",
+      "eng": "June",
+      "note": "Reviewed zh-CN calendar symbol; selected only by the Chinese date formatter."
+    },
+    {
+      "source": "七月",
+      "eng": "July",
+      "note": "Reviewed zh-CN calendar symbol; selected only by the Chinese date formatter."
+    },
+    {
+      "source": "八月",
+      "eng": "August",
+      "note": "Reviewed zh-CN calendar symbol; selected only by the Chinese date formatter."
+    },
+    {
+      "source": "九月",
+      "eng": "September",
+      "note": "Reviewed zh-CN calendar symbol; selected only by the Chinese date formatter."
+    },
+    {
+      "source": "十月",
+      "eng": "October",
+      "note": "Reviewed zh-CN calendar symbol; selected only by the Chinese date formatter."
+    },
+    {
+      "source": "十一月",
+      "eng": "November",
+      "note": "Reviewed zh-CN calendar symbol; selected only by the Chinese date formatter."
+    },
+    {
+      "source": "十二月",
+      "eng": "December",
+      "note": "Reviewed zh-CN calendar symbol; selected only by the Chinese date formatter."
     }
   ]
 }

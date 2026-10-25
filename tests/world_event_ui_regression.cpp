@@ -6,6 +6,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <cmath>
 #include <string>
 #include <vector>
 
@@ -115,6 +116,29 @@ static void finished_offer_hidden(){
  // not change the sole Proceed button or turn it back into a relic offer.
  a.game.original_events.offers[0]=saved==WorldRelicGoldenPearl?WorldRelicFakeAnchor:WorldRelicGoldenPearl;
  a.render();CHECK(image_hash(hit.x,hit.y,hit.w,hit.h)==old);a.game.original_events.offers[0]=saved;unchanged();
+}
+static void merchant_welcome(){
+ begin(OriginalEventId::FakeMerchant,23,1);a.reset_presentation();a.render();auto&speech=a.room_presentation.merchant.welcome;
+ const auto start=speech.start;const auto line=speech.line;
+ CHECK(start==a.map_clock_ms+750&&line>=1&&line<=4&&!speech.sample(a.map_clock_ms).alpha);
+ const auto background=image_hash(77,48,72,54);snapshot();
+ advance_ms(749);CHECK(!speech.sample(a.map_clock_ms).alpha&&image_hash(77,48,72,54)==background);unchanged();
+ advance_ms(1);CHECK(!speech.sample(a.map_clock_ms).alpha);advance_ms(200);
+ CHECK(speech.sample(a.map_clock_ms).alpha==127&&speech.sample(a.map_clock_ms).scale>3900);
+ if(a.content.has_speech_bubble_assets())CHECK(image_hash(77,48,72,54)!=background);
+ capture("fake-merchant-welcome-entry");advance_ms(600);
+ CHECK(speech.sample(a.map_clock_ms).alpha==255&&speech.sample(a.map_clock_ms).scale==4096&&speech.sample(a.map_clock_ms).angle==0);
+ capture("fake-merchant-welcome-full");unchanged();
+ press_action(UiAction::OpenShop);CHECK(a.shop_open&&speech.start==start&&speech.line==line);
+ advance_ms(700);press_action(UiAction::CloseShop);CHECK(!a.shop_open&&speech.start==start&&speech.line==line);unchanged();
+ // Independent scalar sine samples check the whole root fades to black
+ // as well as transparent; its inventory owner cannot restart that clock.
+ for(unsigned age=3500;age<3900;age+=50){const auto f=speech.sample(start+age);
+  const int expected=int(255*(1-std::sin((age-3500)*3.141592653589793/800)));
+  CHECK(std::abs(int(f.alpha)-expected)<=1&&f.brightness==f.alpha);
+ }
+ advance_ms(start+3900-a.map_clock_ms);CHECK(!speech.sample(a.map_clock_ms).alpha&&image_hash(77,48,72,54)==background);unchanged();
+ a.reset_presentation();CHECK(!a.room_presentation.merchant.welcome.line);
 }
 static void merchant(){
  begin(OriginalEventId::FakeMerchant,23,1);a.render();CHECK(!a.shop_open&&!choice_count());
@@ -284,5 +308,5 @@ int main(int argc,char**argv){
  if(argc>1){FILE*f=std::fopen(argv[1],"rb");CHECK(f);data.resize(spire_test::pack_size(f));CHECK(std::fread(data.data(),1,data.size(),f)==data.size());CHECK(!std::fclose(f));}else data=synthetic_profile();
  // Only an explicit caller-selected private directory receives captures.
  if(argc>2)capture_directory=argv[2];CHECK(a.init(data.data(),data.size(),{}));CHECK(a.content.current_profile());
- if(argc==1)ancient_original_modulation();merchant();ancients();ancient_conversation(argc==1);ordinary_events(argc==1);std::printf("world event UI: %u checks passed; %s profile; merchant, eight ancients, revealed dialogue/history and centered ordinary events\n",checks,argc>1?"actual":"synthetic");
+ if(argc==1)ancient_original_modulation();merchant_welcome();merchant();ancients();ancient_conversation(argc==1);ordinary_events(argc==1);std::printf("world event UI: %u checks passed; %s profile; merchant welcome/inventory, eight ancients, revealed dialogue/history and centered ordinary events\n",checks,argc>1?"actual":"synthetic");
 }

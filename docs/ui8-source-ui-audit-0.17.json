@@ -44,12 +44,14 @@
       ],
       "contract": "Title focus/reticles and nested menu ownership",
       "assessment": "implemented_with_documented_limits",
-      "implemented": "Original nested menus, focus/reticles, title animation, CPU stars/fog, and direct startup.",
-      "remaining": "GPU noise/turbulence and full original material equivalence are not established.",
+      "implemented": "Source FourByThree centered269x450 menu container,200x50 hit controls,6px Regular labels with locale-appropriate tracking,3px half-alpha outline,50ms focus, sequential200ms press/release scale/color and8px animated reticles. Browser coordinates and source-derived native input bounds share the new layout.",
+      "remaining": "The next matching frozen runtime/font pair must pass the new independent menu pixel oracle and ordinary browser/calculator flow.",
       "regressions": [
-        "world_frontend_ui_regression"
+        "world_frontend_ui_regression",
+        "profiles_ui7_regression",
+        "check_offline_browser.js"
       ],
-      "acceptance": "The a0df baseline native suite passed; final matched stage8e native, actual-resource, browser and calculator gates remain separate and pending."
+      "acceptance": "New source implementation and syntax checks pass; new actual runtime and ordinary-host acceptance remain pending."
     },
     {
       "id": "continue_abandon",
@@ -60,12 +62,13 @@
       ],
       "contract": "Continue preview, abandoned-run confirmation and return",
       "assessment": "implemented_with_documented_limits",
-      "implemented": "Real preview, guarded Save/Quit/Continue/Abandon, original confirmation ownership and atomic host persistence remain implemented.",
-      "remaining": "Continue preview labels still use the general renderer; exact source label size/padding and matching composed bilingual review remain a named follow-up.",
+      "implemented": "Source inherited half-anchors,85x38/44 panel at153,154,5px saved/progress/ascension/HP/gold labels,7px icons, hidden-zero Ascension row and200ms show/hide motion. The prior enlarged character-name panel is removed. Guarded save/continue/abandon and original confirmation ownership remain.",
+      "remaining": "Canonical runs/host interface have no independent run SaveTime. Original saved-time label shows an explicit unknown dash; profile modification timestamps are never substituted. Matching new runtime/oracle and ordinary-host acceptance remain pending.",
       "regressions": [
-        "world_frontend_ui_regression"
+        "world_frontend_ui_regression",
+        "profiles_ui7_regression"
       ],
-      "acceptance": "UI10 source implementation and short syntax check only; matching frozen native, actual bilingual, browser and calculator gates remain separate."
+      "acceptance": "New source implementation and syntax checks pass; new actual runtime and ordinary-host acceptance remain pending."
     },
     {
       "id": "character_select",
@@ -143,7 +146,7 @@
       "regressions": [
         "library_ui7_regression"
       ],
-      "acceptance": "UI10 source implementation and short syntax check only; matching frozen native, actual bilingual, browser and calculator gates remain separate."
+      "acceptance": "UI10c actual run exposed a bounded follow-up recorded in docs/ui10-front-source-review-0.17.md; corrected source awaits next matching runtime. No failure is counted as a pass."
     },
     {
       "id": "relic_collection",
@@ -209,7 +212,7 @@
         "ui_progress_regression",
         "statistics_ui10_regression"
       ],
-      "acceptance": "UI10 source implementation and short syntax check only; matching frozen native, actual bilingual, browser and calculator gates remain separate."
+      "acceptance": "UI10c actual run exposed a bounded follow-up recorded in docs/ui10-front-source-review-0.17.md; corrected source awaits next matching runtime. No failure is counted as a pass."
     },
     {
       "id": "run_history",
@@ -241,12 +244,12 @@
       "contract": "Profile select/icons/delete confirmation",
       "assessment": "implemented_with_documented_limits",
       "implemented": "Three independent profiles and host transactions remain intact. UI10 restores exact source header/title/body bands, shared panel/text/icon transforms, menu/delete timing, hidden-delete navigation and Chinese date contents. Ordinary label fonts follow actual English/Chinese runtime substitution.",
-      "remaining": "Source local-time-zone conversion remains UTC on the port. The 3px projected menu helper intentionally uses4px. Matching profile/compendium pixel oracles and ordinary-host acceptance remain required.",
+      "remaining": "Source local-time-zone conversion remains UTC on the port. The3px projected menu helper intentionally uses4px. Ordinary-host acceptance remains required.",
       "regressions": [
         "profiles_ui7_regression",
         "ndless_profiles_regression"
       ],
-      "acceptance": "UI10 source implementation and short syntax check only; matching frozen native, actual bilingual, browser and calculator gates remain separate."
+      "acceptance": "UI10c matching actual English/Chinese profile and compendium font/geometry pixel oracles pass. The next title/popup batch needs its new matching runtime and ordinary-host acceptance."
     },
     {
       "id": "compendium_leaderboards",
@@ -1280,5 +1283,22 @@
       "external_requests": 0
     },
     "github_actions": "8l cancelled when the subsequent test-only8m commit started; earlier c3a44 full CI passed."
+  },
+  "verification_ui10c_front": {
+    "checkpoint": "3d6d79907bb76269474acd8bd5c27baf575837f2",
+    "passed_both_locales": [
+      "profiles_ui7_regression (includes independent compendium oracle)",
+      "relic_inspect_ui9_regression",
+      "bestiary_ui7_regression"
+    ],
+    "passed_chinese": [
+      "statistics_ui10_regression"
+    ],
+    "failed_then_source_corrected": {
+      "library_ui7_regression": "Four source sort labels were looked up only in supplemental locale index, returning empty strings; production and independent oracle now use world_string, retaining nonempty checks.",
+      "statistics_ui10_regression English": "Saturated32-bit counters can exceed the source minimum-font box; test now independently checks clipping, with ordinary-case width checks retained."
+    },
+    "next_gate": "Matching final title/Continue/popup/runtime/resource checkpoint; rerun corrected actual gates and ordinary hosts.",
+    "fidelity_percentage": null
   }
 }

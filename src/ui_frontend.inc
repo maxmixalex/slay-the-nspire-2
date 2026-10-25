@@ -62,42 +62,87 @@ static void title_logo(Canvas&c){
      title_scene::FireWidth,title_scene::FireHeight);
 }
 #include "profiles_ui.inc"
+static int title_label_width(Canvas&c,const char*text){
+    Canvas label=c;label.font_face=0;const int size=c.a.content.font_size(title_scene::MenuFont,0);
+    RichReader reader(text);RichChar ch{};int width=0,count=0;
+    while(reader.next(ch)){if(ch.codepoint=='\n')break;width+=c.a.content.glyph_metrics(ch.codepoint,size,0).advance;++count;}
+    return width+(c.a.content.english()&&count>1?reference_viewport::project((count-1)*2):0);
+}
+static void title_menu_labels(Canvas&c){
+    auto&a=c.a;const int count=a.title_menu_count();auto&presentation=a.title_presentation;presentation.bind(count);
+    int focused=-1,focus_left=0,focus_width=0,focus_top=0;
+    for(int i=0;i<count;++i){
+        const auto item=front_item(a,i);const char*label=frontend_label(a,item);const int y=title_scene::menu_y(count,i),height=title_scene::menu_height(count,i);
+        const bool inside=a.pointer.visible&&a.pointer.x>=title_scene::MenuHitLeft&&a.pointer.x<title_scene::MenuHitLeft+title_scene::MenuHitWidth&&a.pointer.y>=y&&a.pointer.y<y+height;
+        const bool selected=inside||(!a.pointer.visible&&a.menu==i);
+        const bool pressed=inside&&a.pointer.held&&a.pointer.captured.kind==HitKind::Menu&&a.pointer.captured.value==i&&a.pointer.context==a.input_context();
+        const auto visual=presentation.labels[item].observe(selected,pressed,a.map_clock_ms);
+        const int width=title_label_width(c,label),left=title_scene::MenuCenter-width/2,center_y=title_scene::menu_center_y(count,i);
+        const ProfileTransform transform{title_scene::MenuCenter,center_y,visual.scale};
+        Canvas text=c;text.opacity=uint8_t(div255(unsigned(text.opacity)*visual.alpha));
+        profile_text_box(text,label,left,center_y-4,width,8,{title_scene::MenuFont,0,rgb(visual.red,visual.green,visual.blue),0,3,0,0,128,1,0,a.content.english()?2:0},false,false,transform);
+        if(selected){focused=i;focus_left=left;focus_width=width;focus_top=reference_viewport::project(title_scene::menu_source_y(count,i)+5);}
+        c.hit(title_scene::MenuHitLeft,y,title_scene::MenuHitWidth,height,HitKind::Menu,i);
+    }
+    auto&motion=presentation.reticle;motion.observe(focused,focus_left,focus_top,focus_width,a.map_clock_ms);
+    const unsigned alpha=motion.alpha(a.map_clock_ms);if(!alpha)return;
+    const int mark=a.content.world_image("menu","HIGHLIGHT");if(mark<0)return;
+    const int travel=motion.travel(a.map_clock_ms);
+    const int left=motion.left-reference_viewport::project(26+travel),right=motion.left+motion.width+reference_viewport::project(-14+travel);
+    // One8px sample is shared by the mirrored right-hand TextureRect.
+    uint16_t pixels[64]{};uint8_t coverage[64]{};Canvas sample{a,pixels,8,8,8,coverage};sample.picture(mark,0,0,8,8);
+    const Picture image{reinterpret_cast<const uint8_t*>(pixels),coverage,nullptr,8,8,1};
+    Canvas reticle=c;reticle.opacity=uint8_t(div255(unsigned(c.opacity)*alpha));
+    const unsigned tint=motion.tint(a.map_clock_ms);
+    reticle.tint_red=uint8_t(title_menu_motion::mix(255,239,tint));reticle.tint_green=uint8_t(title_menu_motion::mix(255,200,tint));reticle.tint_blue=uint8_t(title_menu_motion::mix(255,81,tint));
+    reticle.picture_region(image,left,motion.top,0,0,8,8);reticle.picture_region(image,right,motion.top,0,0,8,8,true);
+}
+static LocalizedValue continue_saved_value(const void*,const char*key){
+    // NSP canonical runs do not store the original SaveTime. Profile progress
+    // timestamps can also change after settings/history writes, so they must
+    // not be presented as the timestamp of this saved run.
+    return wt_equal(key,"LastSavedTime")?LocalizedValue{true,0,1,"—"}:LocalizedValue{};
+}
+static void continue_run_info(Canvas&c){
+    auto&a=c.a;const bool focused=a.has_save&&front_item(a,a.menu)==FrontContinue&&
+        (!a.pointer.visible||(a.pointer.x>=title_scene::MenuHitLeft&&a.pointer.x<title_scene::MenuHitLeft+title_scene::MenuHitWidth&&
+            a.pointer.y>=title_scene::menu_y(a.title_menu_count(),0)&&a.pointer.y<title_scene::menu_y(a.title_menu_count(),0)+title_scene::menu_height(a.title_menu_count(),0)));
+    const auto visual=a.title_presentation.run_info.observe(focused,a.map_clock_ms);if(!visual.alpha||!a.has_save)return;
+    Canvas panel=c;panel.opacity=uint8_t(div255(unsigned(panel.opacity)*visual.alpha));
+    // ContinueRunInfo retains its base scene's .5/.5 anchors. Its instance
+    // offset145 is relative to the200px button's center, and offset5 is
+    // relative to its25px vertical center. Source content grows from200 to233
+    // only while the36px Ascension row is visible.
+    const auto x=[](int source_offset){return reference_viewport::project_half(1603+source_offset*2);};
+    const auto y=[&](int source_offset){return ((title_scene::menu_source_y(a.title_menu_count())+30+source_offset)*256*4+visual.y*4+2688)/(256*21);};
+    const int background=a.content.world_image("menu","CONTINUE_PANEL"),height=title_scene::continue_height(a.saved_ascension!=0);
+    if(background>=0){if(!panel.nine_image(background,x(0),y(0),title_scene::ContinueWidth,height,2,2,2,2))panel.picture(background,x(0),y(0),title_scene::ContinueWidth,height);}
+    else panel.dim(x(0),y(0),title_scene::ContinueWidth,height,128);
+    const ProfileTextStyle style{5,0,rgb(255,246,226),64,0,0,0,255,1,1};
+    char row[192]{};LocalizedTemplate date(row,sizeof row,continue_saved_value,nullptr);
+    date.format(frontend_text(a,"main_menu_ui","CONTINUE_RUN_INFO.saved","{LastSavedTime}"));
+    // RichTextLabel is top aligned; its90px DateLabel reserves the source
+    // gap after the two rendered lines, rather than vertically centering them.
+    profile_text_box(panel,row,x(24),y(17),reference_viewport::project(400),13,style,false,true);
+    int portrait=a.content.ui_image(U_TopBarIronclad+int(a.saved_character));
+    if(portrait<0)portrait=a.content.ui_image(character_portrait(a.saved_character));
+    panel.picture(portrait,x(24),y(107),7,7);
+    row[0]=0;TextBuffer b{row,sizeof row,0,&a.content};
+    if(a.saved_world){const char*act=a.content.world_title("acts",map_colors(a.saved_current_region).region);if(*act){b.text(act);b.text(" [blue]- ");}else b.text("[blue]");}
+    else b.text("[blue]");
+    frontend_number(b,frontend_text(a,"main_menu_ui","CONTINUE_RUN_INFO.floor","楼层"),a.saved_floor);b.text("[/blue]");
+    profile_text_box(panel,row,x(66),y(107),reference_viewport::project(358),7,style,false,false);
+    if(a.saved_ascension){row[0]=0;b.n=0;b.text(frontend_text(a,"main_menu_ui","CONTINUE_RUN_INFO.ascension","进阶 "));b.ch(' ');b.number(a.saved_ascension);
+        profile_text_box(panel,row,x(24),y(143),reference_viewport::project(400),7,style,false,false);}
+    const int bottom=a.saved_ascension?179:143;
+    row[0]=0;b.n=0;b.text("[red]");b.number(a.saved_hp);b.ch('/');b.number(a.saved_max_hp);b.text("[/red]");
+    panel.picture(A_Heart,x(24),y(bottom),7,7);profile_text_box(panel,row,x(66),y(bottom),27,7,style,false,false);
+    row[0]=0;b.n=0;b.text("[gold]");b.number(a.saved_gold);b.text("[/gold]");
+    panel.picture(A_Coin,x(212),y(bottom),7,7);profile_text_box(panel,row,x(254),y(bottom),19,7,style,false,false);
+}
 static void title_screen(Canvas&c){
-    auto&a=c.a;title_background(c);title_logo(c);
-    profile_title_button(c);
-    auxiliary_patch_button(c);
-    const int count=a.title_menu_count();
-    for(int i=0;i<count;i++){
-        const int y=title_scene::menu_top(count)+i*title_scene::MenuRowHeight;
-        const bool selected=a.menu==i;const char*label=frontend_label(a,front_item(a,i));
-        const auto fit=c.fitted(label,title_scene::MenuCenter-title_scene::MenuLabelWidth/2,y,
-            title_scene::MenuLabelWidth,19,16,12,selected?Gold:White,true,true,true);
-        if(selected){
-            const int width=mn(title_scene::MenuLabelWidth,c.width(label,fit.size));
-            const int left=title_scene::MenuCenter-width/2-22,right=title_scene::MenuCenter+(width+1)/2+2;
-            const int mark=a.content.world_image("menu","HIGHLIGHT");
-            if(mark>=0){const auto reticle=a.content.image(mark);
-                c.picture_region(reticle,left,y-2,0,0,20,20);
-                c.picture_region(reticle,right,y-2,0,0,20,20,true);
-            }else{c.text("›",left+5,y,16,Gold);c.text("‹",right+5,y,16,Gold);}
-        }
-        c.hit(title_scene::MenuCenter-title_scene::MenuHitWidth/2,y-2,title_scene::MenuHitWidth,title_scene::MenuRowHeight,HitKind::Menu,i);
-    }
-    if(a.has_save&&front_item(a,a.menu)==FrontContinue){
-        int panel=a.content.world_image("menu","CONTINUE_PANEL");if(panel>=0)c.picture(panel,207,137,110,81);else c.dim(207,137,110,81,160);
-        int portrait=a.content.ui_image(U_TopBarIronclad+int(a.saved_character));
-        if(portrait<0)portrait=a.content.ui_image(character_portrait(a.saved_character));
-        c.picture(portrait,212,145,18,18);
-        const auto&ch=character_definitions[unsigned(a.saved_character)];const char*name=a.content.world_title("characters",ch.key);
-        c.text_fitted(*name?name:ch.name,234,147,78,12,White);
-        char row[160]{};TextBuffer b{row,sizeof row,0,&a.content};
-        if(a.saved_world){const char*act=a.content.world_title("acts",map_colors(a.saved_current_region).region);if(*act){b.text(act);b.text(" [blue]- ");}else b.text("[blue]");}
-        else b.text("[blue]");
-        frontend_number(b,frontend_text(a,"main_menu_ui","CONTINUE_RUN_INFO.floor","楼层"),a.saved_floor);b.text("[/blue]");c.text_fitted(row,213,169,98,10,White);
-        if(a.saved_ascension){row[0]=0;b.n=0;frontend_number(b,frontend_text(a,"main_menu_ui","CONTINUE_RUN_INFO.ascension","进阶 "),a.saved_ascension);c.text_fitted(row,213,183,98,10,White);}
-        row[0]=0;b.n=0;b.text("[red]");b.number(a.saved_hp);b.ch('/');b.number(a.saved_max_hp);b.text("[/red]");c.picture(A_Heart,212,201,10,11);c.text_fitted(row,224,201,41,10,White);
-        row[0]=0;b.n=0;b.text("[gold]");b.number(a.saved_gold);b.text("[/gold]");c.picture(A_Coin,267,201,10,11);c.text_fitted(row,280,201,32,10,White);
-    }
+    auto&a=c.a;title_background(c);title_logo(c);profile_title_button(c);auxiliary_patch_button(c);
+    title_menu_labels(c);continue_run_info(c);
     c.text("nSpire II 0.17",235,229,8,White,83);
 }
 static void native_pause_screen(Canvas&c){
@@ -246,32 +291,17 @@ static void frontend_settings_screen(Canvas&c){
   native_back(c,7,211,84,28,"返回",true);c.action(3,207,94,33,UiAction::SettingsBack);
  }
 }
+#include "frontend_popup_ui10.inc"
 static void frontend_confirm_screen(Canvas&c){
- auto&a=c.a;const bool quitting=a.frontend_confirm==3,reset=a.frontend_confirm==4,erase_profile=a.frontend_confirm==5;a.hit_count=0;c.dim(0,0,320,240,210);
+ auto&a=c.a;const bool quitting=a.frontend_confirm==3,reset=a.frontend_confirm==4,erase_profile=a.frontend_confirm==5;a.hit_count=0;
+ c.dim(0,0,320,240,a.content.version()>=Ui6ContentVersion?a.popup_backdrop.sample(a.map_clock_ms):210);
  const char*header=frontend_text(a,reset?"settings_ui":"main_menu_ui",reset?"RESET_CONFIRMATION.header":quitting?"QUIT_CONFIRM_POPUP.header":"ABANDON_RUN_CONFIRMATION.header",reset?"重置设置":quitting?"退出游戏":"你确定吗？");
  const char*body=frontend_text(a,reset?"settings_ui":"main_menu_ui",reset?"RESET_GAMEPLAY_CONFIRMATION.body":quitting?"QUIT_CONFIRM_POPUP.body":"ABANDON_RUN_CONFIRMATION.body",reset?"恢复默认设置？":quitting?"你确定要退出吗？":"放弃游戏会被视为本局失败。");
  char profile_header[128]{},profile_body[1024]{};
  if(erase_profile){profile_text(a,"PROFILE_SCREEN.DELETE_CONFIRM_POPUP.title",a.content.english()?"Delete Save Profile {Id}?":"是否删除{Id}号存档？",{a.profile_target},profile_header,sizeof profile_header);
   profile_text(a,"PROFILE_SCREEN.DELETE_CONFIRM_POPUP.description",a.content.english()?"All data in Save Profile {Id} will be deleted. This cannot be undone.":"{Id}号存档内的所有数据将被删除。这一操作无法逆转。",{a.profile_target},profile_body,sizeof profile_body);header=profile_header;body=profile_body;}
  if(a.content.version()>=Ui6ContentVersion){
-  // NGenericPopup instantiates the 522x600 vertical popup and independent
-  // cancel/confirm skins, not the navigation BackButton/ConfirmButton.
-  c.ui(I6_PopupVertical,73,20,174,200);
-  c.text_fitted(header,80,39,160,12,Gold,10,true);
-  const int lines=c.paragraph(body,90,61,140,0,0,10,White);
-  c.paragraph(body,90,61+mx(0,(101-lines*12)/2),140,8,0,10,White);
-  for(int i=0;i<2;++i){const int x=73+i*114,y=169;const bool selected=!a.pointer.visible&&int(a.frontend_choice)==i;
-   const char*label=frontend_text(a,"main_menu_ui",erase_profile?(i?"PROFILE_SCREEN.DELETE_CONFIRM_POPUP.delete":"PROFILE_SCREEN.DELETE_CONFIRM_POPUP.cancel"):(i?"GENERIC_POPUP.confirm":"GENERIC_POPUP.cancel"),i?"确认":"取消");
-   const auto visual=c.control_visual(label,x,y,60,24,ButtonFamily::Action,selected,true);
-   const int w=60*visual.scale/4096,h=24*visual.scale/4096,left=x+(60-w)/2,top=y+(24-h)/2;
-   Canvas layer=c;layer.brightness=uint8_t(div255(unsigned(c.brightness)*visual.shade));
-   if(visual.hover)layer.picture(a.content.ui_image(i?I6_PopupConfirmOutline:I6_PopupCancelOutline),left,top,w,h,unsigned(visual.hover)*128/4096,presentation::Add);
-   layer.ui(i?I6_PopupConfirm:I6_PopupCancel,left,top,w,h);
-   const int label_x=left+(i?10:5),label_w=w-15;
-   layer.text_fitted(label,label_x+1,top+(h-10)/2,label_w,10,i?rgb(31,71,0):rgb(89,18,0),8,true);
-   layer.text_fitted(label,label_x,top+(h-10)/2-1,label_w,10,White,8,true);
-   c.action(x-3,y-4,66,32,i?UiAction::FrontendAccept:UiAction::FrontendCancel);
-  }
+  native_frontend_popup(c,header,body,erase_profile);
  }else{
   c.ui(U_RewardPanel,29,43,262,165);c.centered(header,41,63,238,16,Gold);c.paragraph(body,51,98,218,3,0,12,White);
   c.button(frontend_text(a,"main_menu_ui","GENERIC_POPUP.cancel","取消"),39,161,109,!a.frontend_choice,31);

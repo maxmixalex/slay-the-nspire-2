@@ -95,7 +95,7 @@ writeReport();
  }
  async function point(x,y){const box=await canvas.boundingBox();assert(box);await page.mouse.click(box.x+x*box.width/320,box.y+y*box.height/240);await painted();}
  async function move(x,y){const box=await canvas.boundingBox();assert(box);await page.mouse.move(box.x+x*box.width/320,box.y+y*box.height/240);await painted();}
- async function titleRow(row,hasRun){await point(119,(hasRun?137:147)+row*20+8);}
+ async function titleRow(row,hasRun){const count=hasRun?5:4;await point(125,Math.round((699+(450-count*50)/2+row*50+25)*4/21));}
  async function openSettings(hasRun){await titleRow(hasRun?2:1,hasRun);}
  async function toggleFast(){await point(274,128);}
  async function toggleTimer(){await point(274,184);}
@@ -172,9 +172,9 @@ writeReport();
  assert.equal(await page.evaluate(()=>localStorage.getItem('nSpire2-selected-profile')),'2');
  await openSettings(true);await toggleFast();assert.equal((await preference(2)).flags&1,0);
  await toggleFast();assert.equal((await preference(2)).flags&1,1);await press('Escape');
- await point(20,10);await capture('browser-profiles');await point(72,192);await capture('browser-profile-delete-confirm');await press('Escape');
+ await point(20,10);await capture('browser-profiles');await point(72,199);await capture('browser-profile-delete-confirm');await point(118,155);
  assert.equal(await saved(),firstSave);assert.equal(await saved(2),secondSave);
- await point(160,192);await press('ArrowRight');await confirm();
+ await point(160,199);await point(192,155);
  assert.equal(await saved(2),null);assert.equal(await preference(2),null);assert.equal(await saved(),firstSave);
  // An empty active profile may immediately persist the new source-default
  // tutorial preference. That fresh NSH8 record must contain no old run or

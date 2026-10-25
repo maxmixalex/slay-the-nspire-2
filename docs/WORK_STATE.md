@@ -1,5 +1,43 @@
 # Work state — 2026-10-25
 
+## UI10d title, confirmations and source speech
+
+The verified UI10c checkpoint is `3d6d79907bb76269474acd8bd5c27baf575837f2`.
+All118 native CTest suites pass. Its ARM build and linked ABI/LZMA/tile
+regressions pass; the actual Zehn-prefix+loaded-image+BSS allocation is
+16,180,804 bytes, leaving596,412 bytes under the unchanged16MiB ceiling.
+WASM compiles. Both complete scene-font appends preserve their input payloads:
+3534 English and36123 Chinese glyphs, with zero missing required glyphs.
+The formal Python run failed on missing private lz4 imports, an obsolete
+unknown-version fixture and new Chinese calendar bindings. The environment
+and both source issues are corrected in the next checkpoint; a full rerun
+remains required rather than relabeling that failure.
+
+The next coherent batch restores source main-menu typography/spacing and its
+label/reticle motion, the Continue information panel, and generic popup
+geometry/material/backdrop timing. Source SaveTime is unavailable in the
+canonical run state, so Continue displays an explicit unknown timestamp.
+An independent actual-resource oracle exposed blank Card Library sorting
+captions caused by looking in the wrong string index; the renderer now uses
+the world index. Locale calendar bindings and an extreme statistics clipping
+premise are corrected without weakening their ordinary label assertions.
+
+NSP2/37 appends six source-derived images: the independent blue Fake Merchant
+welcome bubble and five precisely sized popup skins. The welcome has its own
+delay/reveal/scale/rotation/fade state and does not restart when inventory is
+toggled or purchased. Existing images, strings, glyphs and clip clocks are
+preserved. An offline appended-glyph compactor reuses existing RGR1 groups
+without adding a reader or runtime pool; its c-input proof saves21,517 bytes,
+including all descriptor/header/alignment costs. Final d savings must be
+measured with final fonts.
+
+Source equations, short functional tests and targeted c bilingual captures
+are recorded in the module reviews. The d batch still requires matched
+native/Python/ARM/WASM builds, all bilingual actual-resource gates, ordinary
+browser and cloned-OS capacity/Continue checks, final private deliverables
+and verified main synchronization. The source review continues to identify
+real remaining differences; no95% claim is inferred from coverage counts.
+
 ## UI10 source-sized scenes, locale fonts and shared workspace
 
 The next coherent integration includes the source Statistics layout and real

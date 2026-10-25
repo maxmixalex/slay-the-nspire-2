@@ -42,7 +42,7 @@ static void scene_pixel(std::vector<uint16_t>&frame,int x,int y,uint16_t color,u
 }
 static void scene_label(std::vector<uint16_t>&frame,const std::vector<SceneLetter>&letters,int x,int y,int width,int height,
                         unsigned size,uint16_t color,unsigned shadow,int outline=0,uint16_t outline_color=0,int shadow_outline=0,
-                        bool center=true,bool wrap=false,unsigned outline_alpha=255,int pivot_x=0,int pivot_y=0,int scale=4096,bool clip=false,int shadow_x=1,int shadow_y=0){
+                        bool center=true,bool wrap=false,unsigned outline_alpha=255,int pivot_x=0,int pivot_y=0,int scale=4096,bool clip=false,int shadow_x=1,int shadow_y=0,unsigned overall_alpha=255){
     std::vector<std::vector<SceneLetter>>lines(1);unsigned line_width=0;
     for(unsigned i=0;i<letters.size();++i){const auto&letter=letters[i];
         if(letter.cp=='\n'){lines.emplace_back();line_width=0;continue;}
@@ -57,7 +57,7 @@ static void scene_label(std::vector<uint16_t>&frame,const std::vector<SceneLette
     const auto pass=[&](int dx,int dy,unsigned opacity,uint16_t ink,bool decoration){
         for(unsigned row=0;row<lines.size();++row){int at=x+(center?(width-int(scene_width(lines[row])))/2:0);
             for(const auto&letter:lines[row]){const uint16_t colors[]={color,scene_rgb(239,200,81),scene_rgb(255,85,85),scene_rgb(135,206,235),scene_rgb(127,255,0),scene_rgb(238,130,238),scene_rgb(255,165,24),scene_rgb(0,255,255),scene_rgb(255,255,255),scene_rgb(128,128,128)};const uint16_t rich=colors[letter.color];
-                for(unsigned yy=0;yy<letter.height;++yy)for(unsigned xx=0;xx<letter.width;++xx){const unsigned alpha=(letter.alpha[yy*letter.width+xx]*opacity+127)/255;
+                for(unsigned yy=0;yy<letter.height;++yy)for(unsigned xx=0;xx<letter.width;++xx){const unsigned layer=(opacity*overall_alpha+127)/255,alpha=(letter.alpha[yy*letter.width+xx]*layer+127)/255;
                     const int px=at+int(xx)+dx,py=top+int(row*(size+1))+int(yy)+dy;
                     for(int sy=project(py,pivot_y);sy<project(py+1,pivot_y);++sy)for(int sx=project(px,pivot_x);sx<project(px+1,pivot_x);++sx){
                         if(clip&&(sx<project(x,pivot_x)||sx>=project(x+width,pivot_x)||sy<project(y,pivot_y)||sy>=project(y+height,pivot_y)))continue;

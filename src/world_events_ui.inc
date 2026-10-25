@@ -84,6 +84,7 @@ static void native_fake_merchant_screen(Canvas&c){
  auto&a=c.a;const auto&s=a.game;const auto&e=s.original_events;auto&motion=a.room_presentation.merchant;
  motion.set_open(a.shop_open,a.map_clock_ms);
  c.picture(a.content.world_image("events",original_event_key(e.id)),0,22,320,218);
+ fake_merchant_welcome(c);
  const char*label=a.content.world_string("gameplay_ui","PROCEED_BUTTON");
  native_proceed(c,*label?label:"前进",!a.shop_open,!a.pointer.visible&&a.cursor==1);
  if(!a.shop_open){
@@ -124,7 +125,9 @@ static void native_event_screen(Canvas&c){
  auto&motion=a.room_presentation.event;
  const bool new_event=!motion.bound||motion.id!=unsigned(e.id);
  motion.observe(unsigned(e.id),e.page,e.finished,native_event_revision(e),a.fast_mode,a.map_clock_ms);motion.ancient=ui_ancient_event(e.id);
- if(new_event&&e.id==OriginalEventId::FakeMerchant){a.shop_open=false;a.room_presentation.merchant=RoomUi7Presentation::Merchant{};}
+ if(new_event&&e.id==OriginalEventId::FakeMerchant){a.shop_open=false;a.room_presentation.merchant=RoomUi7Presentation::Merchant{};
+  if(!e.finished)a.room_presentation.merchant.greet(a.map_clock_ms,s.seed);
+ }
  if(e.id==OriginalEventId::CrystalSphere&&e.finished&&e.crystal_item_count){crystal_screen(c);return;}
  if(ui_ancient_event(e.id)){native_ancient_screen(c);return;}
  if(e.id==OriginalEventId::FakeMerchant&&!e.finished){native_fake_merchant_screen(c);return;}

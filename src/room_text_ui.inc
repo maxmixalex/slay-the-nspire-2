@@ -1,8 +1,7 @@
 // The event option and merchant dialogue RichTextLabels can shrink below the
 // shared card fitter's 5px floor. Keep their original projected 5 -> 4px band,
 // rich-bold family and vertical alignment without adding a raster/cache pool.
-static fitted_text::Plan native_room_compact_text(Canvas c,const char*text,int x,int y,int w,int h,bool centered=false){
- c.bold_face=5;
+static fitted_text::Plan native_room_compact_plan(const Canvas&c,const char*text,int w,int h){
  const auto metric=[&](const RichChar&ch,int size){const auto g=c.a.content.glyph_metrics(ch.codepoint,size,c.font_style(ch));return fitted_text::Metric{g.advance,mx(int(g.advance),int(g.w))};};
  const int minimum=c.a.content.font_size(4);int size=c.a.content.font_size(5);
  fitted_text::Plan plan;
@@ -12,6 +11,12 @@ static fitted_text::Plan native_room_compact_text(Canvas c,const char*text,int x
   if(!plan.truncated||size<=minimum)break;
   const int next=c.a.content.font_size(size-1,0,true);if(next>=size)break;size=mx(minimum,next);
  }
+ return plan;
+}
+static fitted_text::Plan native_room_compact_text(Canvas c,const char*text,int x,int y,int w,int h,bool centered=false){
+ c.bold_face=5;
+ const auto metric=[&](const RichChar&ch,int size){const auto g=c.a.content.glyph_metrics(ch.codepoint,size,c.font_style(ch));return fitted_text::Metric{g.advance,mx(int(g.advance),int(g.w))};};
+ auto plan=native_room_compact_plan(c,text,w,h);
  if(!plan.rows||x<0||y<0||x>=c.clip_w||y>=c.clip_h)return plan;
  int widths[32]{};plan.rows=mn(plan.rows,32);
  if(centered)fitted_text::visit(text,w,plan,metric,[&](const RichChar&ch,int at,int row,int px){widths[row]=at+metric(ch,px).width;});

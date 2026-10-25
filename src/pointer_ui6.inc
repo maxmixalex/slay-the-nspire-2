@@ -39,6 +39,8 @@ static void targeting_arrow(Canvas&c,int from_x,int from_y,int target_x,int targ
 }
 static void pointer_overlay(Canvas&c){
     auto&a=c.a;
+    if(!a.frontend_confirm){const unsigned alpha=a.popup_backdrop.sample(a.map_clock_ms);
+        if(alpha){Canvas shade=c;shade.opacity=uint8_t(div255(shade.opacity*alpha));shade.rect(0,0,320,240,0);}}
     // The two authored black transition layers composite before the host
     // pointer. Per-row coverage preserves the original moving gradient.
     if(a.map_travel.pending||a.map_travel.fading_in){

@@ -83,7 +83,9 @@ class BestiaryKaiserAssetsTest(unittest.TestCase):
             self.assertEqual(target.image_raw(ni),target.image_raw(ni+1))
             self.assertTrue(report['unchanged_old_payload']);self.assertTrue(report['unchanged_old_directory_indices'])
             self.assertEqual(split.layout(after,'eng')['version'],34)
-            corrupted=bytearray(after);struct.pack_into('<I',corrupted,4,35)
+            # Later supported font/resource versions may retain this layout.
+            # Exercise an unknown identifier, not the next now-valid version.
+            corrupted=bytearray(after);struct.pack_into('<I',corrupted,4,0xffffffff)
             with self.assertRaises(ValueError):split.layout(corrupted,'eng')
 
 

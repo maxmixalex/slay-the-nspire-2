@@ -71,6 +71,63 @@ static void compendium_scene(const std::vector<uint8_t>&pack){
         unsigned ink=0;for(unsigned i=0;i<actual.size();++i){if(actual[i]!=expected[i])std::fprintf(stderr,"compendium=%u focused=%u pixel=%u,%u actual=%u expected=%u\n",index,focused,i%320,i/320,actual[i],expected[i]);SCENE(actual[i]==expected[i]);ink+=actual[i]!=app.pixels[i];}SCENE(ink>0);
     }
 }
+static void title_source_scene(const std::vector<uint8_t>&pack,const char*captures){
+    SCENE(title_scene::MenuCenter==125&&title_scene::MenuHitLeft==106&&title_scene::MenuHitWidth==38&&title_scene::MenuFont==6);
+    const int fresh_y[]={157,166,176,186},saved_y[]={152,162,171,181,190};
+    for(int i=0;i<4;++i)SCENE(title_scene::menu_y(4,i)==fresh_y[i]);for(int i=0;i<5;++i)SCENE(title_scene::menu_y(5,i)==saved_y[i]);
+    SCENE(title_scene::ContinueX==153&&title_scene::ContinueWidth==85&&title_scene::continue_y(5)==158);
+    SCENE(title_scene::continue_height(false)==38&&title_scene::continue_height(true)==44);
+    title_menu_motion::Label motion{};auto value=motion.observe(true,false,1000);SCENE(value.scale==4096&&value.green==246);
+    value=motion.sample(1050);SCENE(value.scale==4301&&value.red==239&&value.green==200&&value.blue==81&&value.alpha==255);
+    motion.observe(true,true,1050);value=motion.sample(1250);SCENE(value.scale==3891&&value.green==200&&value.alpha==255);
+    value=motion.sample(1450);SCENE(value.scale==3891&&value.red==255&&value.green==255&&value.alpha==128);
+    motion.observe(true,false,1450);value=motion.sample(1650);SCENE(value.scale==4301&&value.alpha==128);
+    value=motion.sample(1850);SCENE(value.scale==4301&&value.green==246&&value.blue==226&&value.alpha==255);
+    motion.observe(false,false,1850);SCENE(motion.sample(2350).scale==4096);
+    title_menu_motion::Continue info{};SCENE(info.observe(true,1000).alpha==0);SCENE(info.sample(1100).alpha==127);
+    SCENE(info.sample(1200).alpha==255&&info.sample(1200).y==-5120);info.observe(false,1200);SCENE(info.sample(1300).alpha==128&&info.sample(1400).alpha==0);
+    if(pack.empty())return;
+    app.title=true;app.profiles_open=false;app.menu=2;
+    const char*keys[2][5]={{"SINGLE_PLAYER","SETTINGS","COMPENDIUM","QUIT",nullptr},{"CONTINUE","ABANDON_RUN","SETTINGS","COMPENDIUM","QUIT"}};
+    for(unsigned saved=0;saved<2;++saved)for(unsigned state=0;state<5;++state){
+        const unsigned count=saved?5:4;app.has_save=saved;app.title_presentation={};app.map_clock_ms=3000;app.pointer={};app.pointer.visible=state==0;
+        app.pointer.x=319;app.pointer.y=0;app.menu=2;
+        const auto paint=[&](bool visible){for(auto&pixel:app.pixels)pixel=scene_rgb(21,40,65);app.hit_count=0;Canvas c{app};if(!visible)c.text_visible_characters=0;title_menu_labels(c);};
+        paint(true);if(state){app.map_clock_ms+=50;paint(true);}
+        if(state>=2){app.pointer.visible=true;app.pointer.x=125;app.pointer.y=saved?176:181;app.pointer.held=true;
+            app.pointer.captured={106,int16_t(saved?171:176),38,10,HitKind::Menu,2,true};app.pointer.context=app.input_context();paint(true);
+            app.map_clock_ms+=state==2?200:400;paint(true);}
+        if(state==4){app.pointer.held=false;paint(true);app.map_clock_ms+=400;paint(true);}
+        const std::vector<uint16_t>actual(app.pixels,app.pixels+320*240);paint(false);std::vector<uint16_t>expected(app.pixels,app.pixels+320*240);
+        for(unsigned i=0;i<count;++i){auto letters=scene_letters(pack,scene_text(keys[saved][i]),6,0);
+            if(app.content.english())for(unsigned n=0;n+1<letters.size();++n)letters[n].advance+=((int(n+1)*8+10)/21)-((int(n)*8+10)/21);
+            const int width=int(scene_width(letters)),center_y=((699+(450-int(count)*50)/2+int(i)*50+25)*4+10)/21;
+            const bool selected=state&&i==2;const int scale=!selected?4096:state==1||state==4?4301:3891;
+            const unsigned alpha=selected&&state==3?128:255;
+            const uint16_t color=!selected||state==4?scene_rgb(255,246,226):state==3?scene_rgb(255,255,255):scene_rgb(239,200,81);
+            scene_label(expected,letters,125-width/2,center_y-4,width,8,6,color,0,3,0,0,false,false,128,125,center_y,scale,false,1,0,alpha);
+        }
+        for(unsigned i=0;i<actual.size();++i){if(actual[i]!=expected[i])std::fprintf(stderr,"title saved=%u state=%u pixel=%u,%u actual=%u expected=%u\n",saved,state,i%320,i/320,actual[i],expected[i]);SCENE(actual[i]==expected[i]);}
+    }
+    // Source coordinates include the inherited half-anchor and the settled
+    // -20px show offset: panel(153,154,85,38/44), not an unanchored145px X.
+    for(unsigned ascension:{0u,3u}){
+        app.has_save=true;app.saved_world=true;app.saved_current_region=unsigned(reference::ActKind::Overgrowth);app.saved_character=Character::Silent;
+        app.saved_floor=42;app.saved_hp=73;app.saved_max_hp=80;app.saved_gold=109;app.saved_ascension=uint8_t(ascension);app.menu=0;
+        app.pointer={};app.title_presentation={};app.title_presentation.bind(5);app.map_clock_ms=5000;
+        const auto paint=[&](bool visible){for(auto&pixel:app.pixels)pixel=scene_rgb(21,40,65);Canvas c{app};if(!visible)c.text_visible_characters=0;continue_run_info(c);};
+        paint(true);app.map_clock_ms+=200;paint(true);const std::vector<uint16_t>actual(app.pixels,app.pixels+320*240);paint(false);std::vector<uint16_t>expected(app.pixels,app.pixels+320*240);
+        std::string date=scene_text("CONTINUE_RUN_INFO.saved");scene_replace(date,"{LastSavedTime}","—");
+        scene_label(expected,scene_letters(pack,date,5,0),157,157,76,13,5,scene_rgb(255,246,226),64,0,0,0,false,true,255,0,0,4096,false,1,1);
+        const std::string progress=std::string(app.content.world_title("acts","OVERGROWTH"))+" [blue]- "+scene_text("CONTINUE_RUN_INFO.floor")+" 42[/blue]";
+        scene_label(expected,scene_letters(pack,progress,5,0),165,174,68,7,5,scene_rgb(255,246,226),64,0,0,0,false,false,255,0,0,4096,false,1,1);
+        if(ascension)scene_label(expected,scene_letters(pack,scene_text("CONTINUE_RUN_INFO.ascension")+" 3",5,0),157,181,76,7,5,scene_rgb(255,246,226),64,0,0,0,false,false,255,0,0,4096,false,1,1);
+        scene_label(expected,scene_letters(pack,"[red]73/80[/red]",5,0),165,ascension?188:181,27,7,5,scene_rgb(255,246,226),64,0,0,0,false,false,255,0,0,4096,false,1,1);
+        scene_label(expected,scene_letters(pack,"[gold]109[/gold]",5,0),201,ascension?188:181,19,7,5,scene_rgb(255,246,226),64,0,0,0,false,false,255,0,0,4096,false,1,1);
+        for(unsigned i=0;i<actual.size();++i){if(actual[i]!=expected[i])std::fprintf(stderr,"Continue asc=%u pixel=%u,%u actual=%u expected=%u\n",ascension,i%320,i/320,actual[i],expected[i]);SCENE(actual[i]==expected[i]);}
+        Canvas c{app};title_screen(c);app.map_clock_ms+=250;title_screen(c);profile_capture(captures,ascension?"title-source-continue-ascension":"title-source-continue");
+    }
+}
 static void profile_scene(const std::vector<uint8_t>&pack,const char*captures){
     UiProfileMotion menu_motion{};SCENE(menu_motion.observe(true,100,true)==0);SCENE(menu_motion.value(125,true)>2048&&menu_motion.value(150,true)==4096);
     menu_motion.observe(false,150,true);SCENE(menu_motion.value(450,true)==0);
@@ -84,7 +141,7 @@ static void profile_scene(const std::vector<uint8_t>&pack,const char*captures){
     Canvas page{app};profiles_screen(page);unsigned deletes=0;
     for(unsigned i=0;i<unsigned(app.hit_count);++i){const auto&hit=app.hits[i];if(hit.kind==HitKind::UiAction&&hit.value>=int(UiAction::DeleteProfile1)&&hit.value<=int(UiAction::DeleteProfile3)){
         SCENE(hit.w==15&&hit.h==15&&hit.y==192);SCENE(hit.value!=int(UiAction::DeleteProfile2));++deletes;}}SCENE(deletes==2);
-    if(pack.empty())return;
+    if(pack.empty()){title_source_scene(pack,captures);return;}
     new_run(app.game,0x1735,false,Character::Ironclad);SCENE(save(app.game,before));
     const auto compare=[&](const std::vector<uint16_t>&actual,const std::vector<uint16_t>&expected){unsigned visible=0;
         for(unsigned i=0;i<actual.size();++i){if(actual[i]!=expected[i]){std::fprintf(stderr,"profile pixel x=%u y=%u actual=%u expected=%u\n",i%320,i/320,actual[i],expected[i]);SCENE(false);}visible+=actual[i]!=app.pixels[i];}SCENE(visible>0);};
@@ -110,7 +167,7 @@ static void profile_scene(const std::vector<uint8_t>&pack,const char*captures){
     std::vector<uint16_t>expected(app.pixels,app.pixels+ScreenW*ScreenH);std::string title=scene_text("OPEN_PROFILE_SCREEN.title");scene_replace(title,"{Id}","1");
     scene_label(expected,scene_letters(pack,title,5,app.content.english()?5:0),16,4,48,7,5,scene_rgb(239,200,81),0,2,0,0,false,false,64);
     scene_label(expected,scene_letters(pack,scene_text("OPEN_PROFILE_SCREEN.description"),4,0),16,10,55,6,4,scene_rgb(135,206,235),64,0,0,0,false);
-    compare(actual,expected);compendium_scene(pack);SCENE(save(app.game,after)&&identical(before,after));
+    compare(actual,expected);compendium_scene(pack);title_source_scene(pack,captures);SCENE(save(app.game,after)&&identical(before,after));
 }
 int main(int argc,char**argv){
     std::vector<uint8_t> pack;
@@ -150,6 +207,12 @@ int main(int argc,char**argv){
     app.input(Key::Left);CHECK(app.profile_selection==4);app.input(Key::Right);CHECK(app.profile_selection==3);app.input(Key::Up);
     app.ui_action(UiAction::OpenProfiles);app.ui_action(UiAction::DeleteProfile2);
     CHECK(app.frontend_confirm==5&&app.profile_target==2&&!requested);
+    if(app.content.version()>=Ui6ContentVersion){app.render();app.advance(150);app.advance(150);app.render();unsigned found=0;
+        for(int i=0;i<app.hit_count;++i){const auto&h=app.hits[i];if(h.kind!=HitKind::UiAction)continue;
+            const bool yes=h.value==int(UiAction::FrontendAccept),no=h.value==int(UiAction::FrontendCancel);if(!yes&&!no)continue;
+            CHECK(h.x==((yes?921:528)*4+10)/21&&h.y==(778*4+10)/21&&h.w==(180*4+10)/21&&h.h==(72*4+10)/21);found|=yes?2:1;}
+        CHECK(found==3);profile_capture(argc>2?argv[2]:nullptr,"profiles-source-delete-confirm");
+    }
     app.input(Key::Back);CHECK(!app.frontend_confirm&&has_run[1]&&!histories[1].empty());
     app.ui_action(UiAction::DeleteProfile2);app.frontend_choice=1;app.input(Key::Confirm);
     CHECK(requested==2&&erase_requested&&app.profile_pending);service();

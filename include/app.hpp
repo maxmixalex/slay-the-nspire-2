@@ -52,7 +52,9 @@
 #include "ftue_presentation.hpp"
 #include "ftue_assets.hpp"
 #include "selection_assets.hpp"
+#include "speech_bubble_assets.hpp"
 #include "title_scene.hpp"
+#include "title_menu_presentation.hpp"
 #include "title_assets.hpp"
 #include "frontend_assets.hpp"
 #include "ui6_assets.hpp"
@@ -63,6 +65,7 @@
 #include "ui_progress.hpp"
 #include "ui_profiles.hpp"
 #include "ui_statistics.hpp"
+#include "popup_layout.hpp"
 #include "profile_assets.hpp"
 #include "hud_ui7_assets.hpp"
 #include "hud_ui7_presentation.hpp"
@@ -144,9 +147,10 @@ public:
     unsigned version()const{return version_;}
     bool has_ftue_assets()const{return version_>=FtueContentVersion&&(ui_count_==FtueAuxiliaryCount||has_selection_assets());}
     bool has_selection_assets()const{return version_>=SelectionContentVersion&&(ui_count_==SelectionAuxiliaryCount||has_inspection_assets());}
-    bool has_inspection_assets()const{return version_>=SelectionContentVersion&&ui_count_==InspectionAuxiliaryCount;}
+    bool has_inspection_assets()const{return version_>=SelectionContentVersion&&(ui_count_==InspectionAuxiliaryCount||has_speech_bubble_assets());}
+    bool has_speech_bubble_assets()const{return version_>=SpeechBubbleContentVersion&&ui_count_==SpeechBubbleAuxiliaryCount;}
     bool current_profile()const{
-        if(version_<ContentVersion||version_>RetainedFilterContentVersion||cards_!=CardKinds)return false;
+        if(version_<ContentVersion||version_>SpeechBubbleContentVersion||cards_!=CardKinds)return false;
         const unsigned auxiliary=version_>=GameOverTransitionContentVersion?unsigned(GameOverTransitionAuxiliaryCount):version_>=HistoryJournalContentVersion?unsigned(HistoryJournalAuxiliaryCount):version_>=CharacterDeathContentVersion?unsigned(CharacterDeathAuxiliaryCount):version_>=HistoryUi8ContentVersion?unsigned(HistoryUi8AuxiliaryCount):version_>=HudUi7ContentVersion?unsigned(HudUi7AuxiliaryCount):version_>=ProfileContentVersion?unsigned(ProfileAuxiliaryCount):version_>=PhobiaContentVersion?unsigned(PhobiaAuxiliaryCount):version_>=Ui7ContentVersion?unsigned(Ui7AuxiliaryCount):version_>=Ui6ContentVersion?unsigned(Ui6AuxiliaryCount):version_>=FrontendContentVersion?unsigned(FrontendAuxiliaryCount):version_>=TitleEffectsContentVersion?unsigned(TitleEffectsAuxiliaryCount):version_>=MerchantEffectsContentVersion?unsigned(MerchantEffectsAuxiliaryCount):version_==FeedbackContentVersion?unsigned(FeedbackAuxiliaryCount):version_==LocaleContentVersion?unsigned(LocaleAuxiliaryCount):version_==NativeUiContentVersion?unsigned(NativeUiAuxiliaryCount):unsigned(U_Count);
         const unsigned animations=version_>=BestiaryKaiserContentVersion?unsigned(BestiaryKaiserAnimationKinds):version_>=CharacterDeathContentVersion?unsigned(CharacterDeathAnimationKinds):version_>=PhobiaContentVersion?unsigned(PhobiaAnimationKinds):version_>=Ui7ContentVersion?unsigned(Ui7AnimationKinds):version_>=MerchantEffectsContentVersion?unsigned(MerchantEffectsAnimationKinds):version_==FeedbackContentVersion?unsigned(FeedbackAnimationKinds):unsigned(AnimationKinds);
         const bool text=version_>=Ui7ContentVersion?strings_==Ui7StringCount:version_>=LocaleContentVersion?strings_==LocaleStringCount:strings_==ContentStrings||(version_==NativeUiContentVersion&&strings_==NativeUiStringCount);
@@ -250,6 +254,7 @@ struct App {
     const char* ui_text(const char* source,char* buffer,size_t capacity)const;
     State game{};Content content{};Callbacks callbacks{};
     ButtonMotion button_motions[MaxButtonMotions]{};
+    PopupBackdrop popup_backdrop{};
     ProceedMotion proceed_motion{};
     EndTurnGlowMotion end_turn_glow{};
     CharacterSelectPresentation character_select_presentation{};
@@ -348,6 +353,7 @@ struct App {
     UiHistoryScroll progress_page_scroll{};
     UiMenuTransition compendium_motion[6]{};
     UiStatisticsPresentation statistics_presentation{};
+    TitleMenuPresentation title_presentation{};
     void open_compendium();
     void open_statistics();
     void open_history();

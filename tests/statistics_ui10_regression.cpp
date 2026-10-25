@@ -61,7 +61,11 @@ static void entry_pixels(const std::vector<uint8_t>&pack){
         const auto label=[&](const char*key,bool second){if(!key)return;std::string value=text(key);
             const auto sub=[&](const char*variable,const std::string&replacement){if(value.find(variable)!=std::string::npos)replace(value,variable,replacement);};
             sub("{Amount}",second?test.other:test.amount);sub("{Playtime}","3:25:20");sub("{FastestWin}","00:59");sub("{Wins}",std::to_string(test.wins));sub("{Losses}",std::to_string(test.losses));
-            unsigned px=5;auto letters=scene_letters(app.content,pack,value,px,0);if(scene_width(letters)>77){px=4;letters=scene_letters(app.content,pack,value,px,0);}CHECK(scene_width(letters)<=77);
+            unsigned px=5;auto letters=scene_letters(app.content,pack,value,px,0);if(scene_width(letters)>77){px=4;letters=scene_letters(app.content,pack,value,px,0);}
+            // The source's22px minimum maps to4px. Two saturated32-bit
+            // counters may still exceed the Label; the independent clipped
+            // oracle below must match instead of assuming they always fit.
+            CHECK(scene_width(letters)<=77||(test.wins==UINT32_MAX&&test.losses==UINT32_MAX));
             const int yy=projected(sy+((test.top&&test.bottom)?(second?36:8):(sh-48)/2))-scroll;
             scene_label(expected,letters,projected(sx+96),yy,77,9,px,test.red&&!second?scene_rgb(255,85,85):scene_rgb(255,246,226),64,0,0,0,false,false,255,0,0,4096,true);
         };label(test.top,false);label(test.bottom,true);

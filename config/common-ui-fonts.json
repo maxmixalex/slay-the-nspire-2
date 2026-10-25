@@ -64,21 +64,29 @@
     },
     {
       "key": "main_menu_ui.GENERIC_POPUP.confirm",
-      "pixels": 5,
+      "pixels": [
+        4,
+        5
+      ],
       "face": 5,
       "faces": {
         "eng": 5,
         "zhs": 0
-      }
+      },
+      "substitutions": "0123456789 —"
     },
     {
       "key": "main_menu_ui.GENERIC_POPUP.cancel",
-      "pixels": 5,
+      "pixels": [
+        4,
+        5
+      ],
       "face": 5,
       "faces": {
         "eng": 5,
         "zhs": 0
-      }
+      },
+      "substitutions": "0123456789 —"
     },
     {
       "key": "ftues.CONFIRM_BUTTON",
@@ -106,6 +114,140 @@
         "eng": 5,
         "zhs": 0
       }
+    },
+    {
+      "key": "main_menu_ui.QUIT_CONFIRM_POPUP.header",
+      "pixels": [
+        4,
+        5,
+        6
+      ],
+      "face": 5,
+      "faces": {
+        "eng": 5,
+        "zhs": 0
+      },
+      "substitutions": "0123456789 —"
+    },
+    {
+      "key": "main_menu_ui.ABANDON_RUN_CONFIRMATION.header",
+      "pixels": [
+        4,
+        5,
+        6
+      ],
+      "face": 5,
+      "faces": {
+        "eng": 5,
+        "zhs": 0
+      },
+      "substitutions": "0123456789 —"
+    },
+    {
+      "key": "main_menu_ui.PROFILE_SCREEN.DELETE_CONFIRM_POPUP.title",
+      "pixels": [
+        4,
+        5,
+        6
+      ],
+      "face": 5,
+      "faces": {
+        "eng": 5,
+        "zhs": 0
+      },
+      "substitutions": "0123456789 —"
+    },
+    {
+      "key": "settings_ui.RESET_CONFIRMATION.header",
+      "pixels": [
+        4,
+        5,
+        6
+      ],
+      "face": 5,
+      "faces": {
+        "eng": 5,
+        "zhs": 0
+      },
+      "substitutions": "0123456789 —"
+    },
+    {
+      "key": "main_menu_ui.QUIT_CONFIRM_POPUP.body",
+      "pixels": [
+        4,
+        5
+      ],
+      "face": 0,
+      "faces": {
+        "eng": 0,
+        "zhs": 0
+      },
+      "substitutions": "0123456789 —"
+    },
+    {
+      "key": "main_menu_ui.ABANDON_RUN_CONFIRMATION.body",
+      "pixels": [
+        4,
+        5
+      ],
+      "face": 0,
+      "faces": {
+        "eng": 0,
+        "zhs": 0
+      },
+      "substitutions": "0123456789 —"
+    },
+    {
+      "key": "main_menu_ui.PROFILE_SCREEN.DELETE_CONFIRM_POPUP.description",
+      "pixels": [
+        4,
+        5
+      ],
+      "face": 0,
+      "faces": {
+        "eng": 0,
+        "zhs": 0
+      },
+      "substitutions": "0123456789 —"
+    },
+    {
+      "key": "settings_ui.RESET_GAMEPLAY_CONFIRMATION.body",
+      "pixels": [
+        4,
+        5
+      ],
+      "face": 0,
+      "faces": {
+        "eng": 0,
+        "zhs": 0
+      },
+      "substitutions": "0123456789 —"
+    },
+    {
+      "key": "main_menu_ui.PROFILE_SCREEN.DELETE_CONFIRM_POPUP.delete",
+      "pixels": [
+        4,
+        5
+      ],
+      "face": 5,
+      "faces": {
+        "eng": 5,
+        "zhs": 0
+      },
+      "substitutions": "0123456789 —"
+    },
+    {
+      "key": "main_menu_ui.PROFILE_SCREEN.DELETE_CONFIRM_POPUP.cancel",
+      "pixels": [
+        4,
+        5
+      ],
+      "face": 5,
+      "faces": {
+        "eng": 5,
+        "zhs": 0
+      },
+      "substitutions": "0123456789 —"
     }
   ],
   "groups": [
@@ -117,7 +259,7 @@
         "eng": 5,
         "zhs": 0
       },
-      "substitutions": "0123456789+.,:?! \u2014"
+      "substitutions": "0123456789+.,:?! —"
     },
     {
       "key_pattern": "^ftues\\..*_TITLE$",
@@ -127,7 +269,7 @@
         "eng": 5,
         "zhs": 0
       },
-      "substitutions": "0123456789+.,:?! \u2014"
+      "substitutions": "0123456789+.,:?! —"
     },
     {
       "key_pattern": "^ancients\\.[^.]+\\.title$",
@@ -140,7 +282,7 @@
         "eng": 4,
         "zhs": 0
       },
-      "substitutions": "0123456789+.,:?! \u2014"
+      "substitutions": "0123456789+.,:?! —"
     },
     {
       "key_pattern": "^ancients\\.[^.]+\\.epithet$",
@@ -150,7 +292,7 @@
         "eng": 6,
         "zhs": 0
       },
-      "substitutions": "0123456789+.,:?! \u2014"
+      "substitutions": "0123456789+.,:?! —"
     },
     {
       "key_pattern": "^game_over_screen\\.BANNER\\.",
@@ -164,7 +306,7 @@
         "eng": 5,
         "zhs": 0
       },
-      "substitutions": "0123456789+.,:?! \u2014"
+      "substitutions": "0123456789+.,:?! —"
     },
     {
       "key_pattern": "^game_over_screen\\.(?:SCORE_LINE|BUTTON)\\.",
@@ -174,7 +316,7 @@
         "eng": 5,
         "zhs": 0
       },
-      "substitutions": "0123456789+.,:?! \u2014"
+      "substitutions": "0123456789+.,:?! —"
     },
     {
       "key_pattern": "^game_over_screen\\.(?:QUOTES\\.|ENCOUNTER_QUOTE_|VICTORY_DAMAGE_LOCAL)",
@@ -184,7 +326,7 @@
         "eng": 6,
         "zhs": 0
       },
-      "substitutions": "0123456789+.,:?! \u2014"
+      "substitutions": "0123456789+.,:?! —"
     },
     {
       "key_pattern": "^characters\\.[^.]+\\.(?:title|titleObject|possessiveAdjective|pronounObject|pronounPossessive|pronounSubject)$",
@@ -194,7 +336,7 @@
         "eng": 6,
         "zhs": 0
       },
-      "substitutions": "0123456789+.,:?! \u2014"
+      "substitutions": "0123456789+.,:?! —"
     },
     {
       "key_pattern": "^(?:encounters|events|ancients)\\.[^.]+\\.(?:loss|title)$",
@@ -204,7 +346,7 @@
         "eng": 6,
         "zhs": 0
       },
-      "substitutions": "0123456789+.,:?! \u2014"
+      "substitutions": "0123456789+.,:?! —"
     }
   ]
 }

@@ -90,8 +90,16 @@ static void disk_unchanged(){CHECK(disk_exists&&disk.size==expected.size&&!std::
 static void external_run(Character character,uint32_t seed,const char*run_seed,unsigned ascension,reference::ActKind region){
  new_run(candidate,seed,false,character);CHECK(world_set_seed(candidate,run_seed));CHECK(world_begin_run(candidate,region,ascension));CHECK(store_run(candidate));
 }
+static void popup_geometry(){
+ if(a.content.version()<Ui6ContentVersion)return;a.render();unsigned found=0;
+ for(int i=0;i<a.hit_count;++i){const auto&hit=a.hits[i];if(hit.kind!=HitKind::UiAction)continue;
+  const bool accept=hit.value==int(UiAction::FrontendAccept),cancel=hit.value==int(UiAction::FrontendCancel);if(!accept&&!cancel)continue;
+  const int source_x=accept?921:528;
+  CHECK(hit.x==(source_x*4+10)/21&&hit.y==(778*4+10)/21&&hit.w==(180*4+10)/21&&hit.h==(72*4+10)/21&&hit.enabled);found|=accept?2:1;
+ }CHECK(found==3);
+}
 static void capture(const char*name){
- if(!capture_directory)return;a.pointer.visible=false;a.render();char path[1024]{};int n=std::snprintf(path,sizeof path,"%s/%s.ppm",capture_directory,name);CHECK(n>0&&unsigned(n)<sizeof path);
+ if(!capture_directory)return;a.pointer.visible=false;if(a.frontend_confirm){a.render();a.advance(150);a.advance(150);popup_geometry();}a.render();char path[1024]{};int n=std::snprintf(path,sizeof path,"%s/%s.ppm",capture_directory,name);CHECK(n>0&&unsigned(n)<sizeof path);
  FILE*f=std::fopen(path,"wb");CHECK(f);CHECK(std::fprintf(f,"P6\n320 240\n255\n")>0);uint8_t row[ScreenW*3];
  for(unsigned y=0;y<ScreenH;y++){for(unsigned x=0;x<ScreenW;x++){uint16_t p=a.pixels[y*ScreenW+x];row[x*3]=uint8_t((p>>11)*255/31);row[x*3+1]=uint8_t(((p>>5)&63)*255/63);row[x*3+2]=uint8_t((p&31)*255/31);}CHECK(std::fwrite(row,1,sizeof row,f)==sizeof row);}CHECK(!std::fclose(f));
 }
@@ -109,10 +117,12 @@ static HitRegion find_hit(HitKind kind,int value){
 static void press(HitKind kind,int value){const auto h=find_hit(kind,value);a.pointer_move(h.x+h.w/2,h.y+h.h/2);a.pointer_button(true);a.pointer_button(false);a.pointer.visible=false;}
 static void action(UiAction value){press(HitKind::UiAction,int(value));}
 static void menu_rows(unsigned count){
- a.render();unsigned seen=0;for(int i=0;i<a.hit_count;i++)if(a.hits[i].kind==HitKind::Menu){CHECK(a.hits[i].value>=0&&unsigned(a.hits[i].value)<count);seen|=1u<<a.hits[i].value;}
+ a.render();unsigned seen=0;for(int i=0;i<a.hit_count;i++)if(a.hits[i].kind==HitKind::Menu){const auto&hit=a.hits[i];CHECK(hit.value>=0&&unsigned(hit.value)<count);
+  const int source_y=699+(450-int(count)*50)/2+hit.value*50,expected_y=(source_y*4+10)/21;
+  CHECK(hit.x==106&&hit.y==expected_y&&hit.w==38&&hit.h==((source_y+50)*4+10)/21-expected_y);seen|=1u<<hit.value;}
  CHECK(seen==((1u<<count)-1));
 }
-static void confirm_accept(){CHECK(a.frontend_confirm&&a.frontend_choice==0);a.input(Key::Right);CHECK(a.frontend_choice==1);a.input(Key::Confirm);CHECK(!a.frontend_confirm);}
+static void confirm_accept(){CHECK(a.frontend_confirm&&a.frontend_choice==0);popup_geometry();a.input(Key::Right);CHECK(a.frontend_choice==1);a.input(Key::Confirm);CHECK(!a.frontend_confirm);}
 
 static void character_click_confirmation(){
  empty_disk();start();snapshot();a.return_to_title();press(HitKind::Menu,0);
@@ -211,7 +221,7 @@ static void title_background_layers(){
  CHECK(visible_changes>0&&covered>0);CHECK(a.content.healthy());unchanged();
 }
 static void title_animation_is_bounded_and_repeats(){
- empty_disk();start();snapshot();a.return_to_title();a.menu=0;a.map_clock_ms=50;a.render();
+ empty_disk();start();snapshot();a.return_to_title();a.menu=0;a.pointer.visible=true;a.pointer.x=319;a.pointer.y=0;a.map_clock_ms=50;a.render();
  if(a.content.version()>=TitleEffectsContentVersion){title_background_layers();return;}
  const auto logo=a.content.image(A_Logo);
  const bool glow=logo.h==title_scene::AtlasHeight;
@@ -259,7 +269,7 @@ static void main_menu_and_continue(){
  press(HitKind::Menu,3);confirm_accept();CHECK(a.quit);a.quit=false;unchanged();
 
  start(Character::Silent,2001);put_disk();start(Character::Defect,2002);snapshot();a.return_to_title();CHECK(a.title_menu_count()==5);menu_rows(5);
- a.pointer_move(213,183);CHECK(a.menu==0);a.pointer.visible=false;capture("frontend-title-continue");
+ a.pointer_move(213,183);CHECK(a.menu==0);a.pointer.visible=false;a.render();a.advance(200);capture("frontend-title-continue");
  a.menu=0;for(unsigned i=0;i<5;i++)a.input(Key::Down);CHECK(a.menu==0);unchanged();
  press(HitKind::Menu,2);CHECK(a.settings_open);a.input(Key::Back);CHECK(!a.settings_open);unchanged();
  press(HitKind::Menu,3);CHECK(a.compendium_open&&a.title&&!a.library);a.input(Key::Back);CHECK(!a.compendium_open);unchanged();

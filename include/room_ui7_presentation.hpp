@@ -31,6 +31,20 @@ inline int interpolate(int from,int to,unsigned progress){return from+(to-from)*
 // Presentation only: no saved room fields, gameplay RNG or dynamic buffers.
 struct RoomUi7Presentation {
  struct FocusRecovery {uint32_t start=0;bool recovering=false;};
+ struct Speech {
+  uint32_t start=0;uint8_t line=0;
+  struct Frame {uint32_t age=0;unsigned alpha=0,brightness=255,scale=4096,reveal=0;int angle=0;};
+  void begin(uint32_t now,uint32_t cosmetic){start=now+750;line=uint8_t(1+cosmetic%4);}
+  Frame sample(uint32_t now)const{
+   if(!line||int32_t(now-start)<0)return {};
+   const uint32_t age=now-start;if(age>=3900)return {};
+   const unsigned alpha=age<400?255*room_curve::linear(age,400)/4096:
+       age<3500?255:255-255*room_curve::sine_out(age-3500,400)/4096;
+   return {age,alpha,age<3500?255:alpha,1365+2731*room_curve::expo_out(age,500)/4096,
+           room_curve::linear(age,400),80*int(4096-room_curve::sine_out(age,300))/4096};
+  }
+ };
+ static_assert(sizeof(Speech)==8,"One live room speech stores only a clock and chosen line");
  struct Merchant {
   static constexpr int ClosedY=-222,OpenY=MerchantInventoryLayout::RugY;
   uint32_t start=0,hand_return=0,dialogue_start=0,dialogue_serial=0,remove_start=0,failure_start=0,dialogue_random=0x39a719d5u;
@@ -39,6 +53,7 @@ struct RoomUi7Presentation {
   int16_t from_y=ClosedY;uint16_t from_alpha=0;
   int16_t hand_x=52*16,hand_y=-12*16,target_x=52*16,target_y=-12*16;
   int8_t focused=-1,dialogue=-1,failed=-1;bool open=false,initialized=false,hand_lingering=false;
+  Speech welcome{};
   FocusRecovery slots[14]{};
   int y(uint32_t now)const{return room_curve::interpolate(from_y,open?OpenY:ClosedY,open?room_curve::quint_out(now-start,700):room_curve::cubic_out(now-start,500));}
   unsigned alpha(uint32_t now)const{return unsigned(room_curve::interpolate(from_alpha,open?204:0,room_curve::sine_in_out(now-start,open?1000:800)));}
@@ -66,11 +81,15 @@ struct RoomUi7Presentation {
    hand_x=int16_t(int(hand_x)+(int(target_x)-hand_x)*int(weight)/1000);
    hand_y=int16_t(int(hand_y)+(int(target_y)-hand_y)*int(weight)/1000);
   }
-  void speak(int kind,uint32_t now){
-   dialogue=int8_t(kind);dialogue_start=now;++dialogue_serial;
+  uint32_t cosmetic(){
    // Rng.Chaotic is cosmetic in the source. A private presentation stream
    // keeps its varied line/position behavior without consuming saved RNG.
    dialogue_random^=dialogue_random<<13;dialogue_random^=dialogue_random>>17;dialogue_random^=dialogue_random<<5;
+   return dialogue_random;
+  }
+  void greet(uint32_t now,uint32_t seed){dialogue_random^=seed^now;welcome.begin(now,cosmetic());}
+  void speak(int kind,uint32_t now){
+   dialogue=int8_t(kind);dialogue_start=now;++dialogue_serial;cosmetic();
    dialogue_x=int16_t(MerchantInventoryLayout::project(450+int(dialogue_random%1001)));
   }
   void failure(int item,int kind,uint32_t now){failed=int8_t(item);failure_start=now;speak(kind,now);}

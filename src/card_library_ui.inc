@@ -55,7 +55,7 @@ static void library_sort_button(Canvas&c,int control,int sorter,const char*key,i
     const int width=reference_viewport::project(pressed?256:269),height=reference_viewport::project(focus&&!pressed?44:pressed?40:42);
     small_material_icon(button,a.content.ui_image(U_RewardButton),x+(w-width)/2,y+(h-height)/2,width,height,focus&&!pressed?1000:800,focus&&!pressed?1000:800,true);
     const int label_x=reference_viewport::project(24),label_h=reference_viewport::project(48);
-    const int text_width=library_fixed_label(c,a.content.locale_string("gameplay_ui",key),label_x,y,w,label_h,4,source_label_face(a.content.english(),5),rgb(239,200,81),128,0,0,reference_viewport::project(12));
+    const int text_width=library_fixed_label(c,a.content.world_string("gameplay_ui",key),label_x,y,w,label_h,4,source_label_face(a.content.english(),5),rgb(239,200,81),128,0,0,reference_viewport::project(12));
     Canvas arrow=c;arrow.tint_red=239;arrow.tint_green=200;arrow.tint_blue=81;
     const int image=a.content.ui_image(I6_SortDescending),size=reference_viewport::project(36),arrow_x=label_x+text_width+reference_viewport::project(12);
     ui_picture_transform(arrow,image,arrow_x+size/2,y+label_h/2,size,size,0,a.card_library.sort_descending&(1u<<sorter)?1024:-1024);

@@ -2,7 +2,7 @@
 #include "health_bar.hpp"
 
 namespace spire {
-enum class ButtonFamily : uint8_t { Action, Pause, EndTurn, Back, RewardAlternative, Proceed, TreasureRelic, OriginalPause, PotionPopup };
+enum class ButtonFamily : uint8_t { Action, Pause, EndTurn, Back, RewardAlternative, Proceed, TreasureRelic, OriginalPause, PotionPopup, OriginalPopup };
 enum class ButtonState : uint8_t { Rest, Focus, Press, Disabled, Release };
 struct ButtonVisual {int scale=4096,y=0,hover=0,shade=255;uint16_t saturation=1000,value=1000;};
 inline ButtonVisual button_target(ButtonFamily family,ButtonState state){
@@ -16,6 +16,7 @@ inline ButtonVisual button_target(ButtonFamily family,ButtonState state){
     if(family==ButtonFamily::Proceed){v.saturation=press?800:1000;v.value=focus?1400:1000;}
     if(family==ButtonFamily::OriginalPause){v.scale=focus?3891:press?3482:3686;v.y=press?4681:0;v.saturation=focus?1100:800;v.value=focus?1100:900;}
     if(family==ButtonFamily::PotionPopup)v.hover=focus||press?4096:0;
+    if(family==ButtonFamily::OriginalPopup){v.scale=focus?4198:press?3994:4096;v.y=0;v.saturation=v.value=focus?1250:press?900:1000;}
     return v;
 }
 // One bounded, interruptible presentation per visible control. Restoring a
@@ -31,6 +32,21 @@ struct ButtonMotion {
         const bool proceeding_disabled=family==ButtonFamily::Proceed&&state==ButtonState::Disabled;
         const auto sampled_state=proceeding_disabled?disabled_from:state;
         auto to=button_target(family,sampled_state);const uint32_t elapsed=now-start;
+        if(family==ButtonFamily::OriginalPopup){
+            if(state==ButtonState::Disabled)return to;
+            // OnPress changes scale/material only. The focused outline is
+            // retained until OnUnfocus or OnRelease changes its blend/color.
+            if(state==ButtonState::Press)to.hover=from.hover;
+            const unsigned duration=state==ButtonState::Focus||state==ButtonState::Release?50:500;
+            const unsigned linear=elapsed>=duration?4096:elapsed*4096/duration;
+            const unsigned eased=health_bar::expo_out(elapsed>=duration?1000:elapsed*1000/duration);
+            const unsigned scale_q=state==ButtonState::Focus||state==ButtonState::Release?linear:eased;
+            const unsigned color_q=state==ButtonState::Release?linear:eased;
+            to.scale=from.scale+(to.scale-from.scale)*int(scale_q)/4096;
+            to.saturation=uint16_t(int(from.saturation)+(int(to.saturation)-int(from.saturation))*int(color_q)/4096);
+            to.value=uint16_t(int(from.value)+(int(to.value)-int(from.value))*int(color_q)/4096);
+            return to;
+        }
         if(family==ButtonFamily::PotionPopup){
             if(state==ButtonState::Disabled)return to;
             const unsigned q=elapsed>=150?4096:elapsed*4096/150;
@@ -116,6 +132,7 @@ struct ButtonMotion {
         // Releasing while still inside is OnRelease, not another OnFocus.
         // Its shader returns to neutral until the pointer leaves/re-enters.
         if(kind==ButtonFamily::Proceed&&mode==ButtonState::Focus&&(state==ButtonState::Press||state==ButtonState::Release))mode=ButtonState::Release;
+        if(kind==ButtonFamily::OriginalPopup&&mode==ButtonState::Focus&&(state==ButtonState::Press||state==ButtonState::Release))mode=ButtonState::Release;
         if(kind==ButtonFamily::OriginalPause&&mode==ButtonState::Focus&&state==ButtonState::Press)mode=ButtonState::Press;
         if(state!=mode){
             if(kind==ButtonFamily::Proceed&&mode==ButtonState::Disabled){

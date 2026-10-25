@@ -1,5 +1,6 @@
 #pragma once
 #include <stdint.h>
+#include "reference_viewport.hpp"
 
 // Original main-menu logo pose, cropped from the 1920x1080 scene to 320x240.
 namespace spire::title_scene {
@@ -29,7 +30,21 @@ inline GlowSample glow_sample(uint32_t milliseconds){
     return {int((uint64_t(AtlasWidth)*unsigned(scale)+peak_scale/2)/peak_scale),
             int((uint64_t(GlowHeight)*unsigned(scale)+peak_scale/2)/peak_scale),brightness};
 }
-constexpr int MenuCenter=119,MenuLabelWidth=164,MenuHitWidth=174;
-constexpr int menu_top(int rows){return rows==5?137:147;}
-constexpr int MenuRowHeight=20;
+// MainMenuTextButtons is centered in the FourByThree UI viewport. Its
+// 269x450 source rectangle contains centered200x50 controls, not stretched
+// full-width text rows. Round each source boundary rather than accumulating
+// a rounded row height across the stack.
+constexpr int MenuCenter=reference_viewport::project_half(1313);
+constexpr int MenuHitLeft=reference_viewport::project_half(1113);
+constexpr int MenuHitWidth=reference_viewport::project(200);
+constexpr int MenuFont=reference_viewport::project(32),MenuRowHeight=reference_viewport::project(50);
+constexpr int menu_source_y(int rows,int row=0){return 699+(450-rows*50)/2+row*50;}
+constexpr int menu_y(int rows,int row){return reference_viewport::project(menu_source_y(rows,row));}
+constexpr int menu_top(int rows){return menu_y(rows,0);}
+constexpr int menu_height(int rows,int row){return reference_viewport::project(menu_source_y(rows,row)+50)-menu_y(rows,row);}
+constexpr int menu_center_y(int rows,int row){return reference_viewport::project(menu_source_y(rows,row)+25);}
+constexpr int ContinueX=reference_viewport::project_half(1313+290);
+constexpr int ContinueWidth=reference_viewport::project(448);
+constexpr int continue_y(int rows){return reference_viewport::project(menu_source_y(rows)+25+5);}
+constexpr int continue_height(bool ascension){return reference_viewport::project(ascension?233:200);}
 }

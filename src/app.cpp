@@ -262,6 +262,7 @@ static void auxiliary_patch_button(Canvas&);
 
 void App::render(){
     begin_card_face_frame();
+    popup_backdrop.observe(frontend_confirm!=0,map_clock_ms);
     if(!paused)pause_visible=false;
     if(auxiliary.screen!=AuxiliaryScreen::None){Canvas c{*this};auxiliary_screen(c);pointer_overlay(c);return;}
 #if SPIRE_DEBUG_COMMANDS

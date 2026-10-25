@@ -561,7 +561,7 @@ void bestiary_supplement_packages(){
     // both readers against an independently written synthetic directory and
     // retain the previous v33 catalog as a compatible, smaller profile.
     auto direct=std::make_unique<Content>(),range=std::make_unique<Content>();Rejector reject;
-    for(unsigned version:{unsigned(GroupedStringContentVersion),unsigned(BestiaryKaiserContentVersion),unsigned(SceneFontContentVersion),unsigned(RetainedFilterContentVersion)})for(const char*locale:{"eng","zhs"}){
+    for(unsigned version:{unsigned(GroupedStringContentVersion),unsigned(BestiaryKaiserContentVersion),unsigned(SceneFontContentVersion),unsigned(RetainedFilterContentVersion),unsigned(SpeechBubbleContentVersion)})for(const char*locale:{"eng","zhs"}){
         label=version>=BestiaryKaiserContentVersion?"v34 sparse Bestiary clip append":"v33 historical catalog remains readable";
         const unsigned animations=version>=BestiaryKaiserContentVersion?BestiaryKaiserAnimationKinds:CharacterDeathAnimationKinds;
         Package p=basic();
@@ -605,7 +605,7 @@ void bestiary_supplement_packages(){
         for(unsigned wrong:{animations-1,animations+1}){
             Bytes bad=p.bytes;put(bad,28,wrong);reject("version requires its exact animation directory",std::move(bad));
         }
-        Bytes bad=p.bytes;put(bad,4,RetainedFilterContentVersion+1);reject("unknown future profile remains rejected",std::move(bad));
+        Bytes bad=p.bytes;put(bad,4,SpeechBubbleContentVersion+1);reject("unknown future profile remains rejected",std::move(bad));
         bad=p.bytes;put(bad,20,scene_font_glyph_limit(version)+1);reject("Versioned glyph count bound",std::move(bad));
     }
 }

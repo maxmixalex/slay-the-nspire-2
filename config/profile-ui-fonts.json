@@ -710,6 +710,21 @@
   {"key": "gameplay_ui.PAUSE_MENU.GIVE_UP", "pixels": 5, "face": 5, "faces": {"eng": 5, "zhs": 0}},
   {"key": "gameplay_ui.PAUSE_MENU.GIVE_UP", "pixels": 6, "face": 5, "faces": {"eng": 5, "zhs": 0}},
   {"key": "gameplay_ui.PAUSE_MENU.SAVE_AND_QUIT", "pixels": 5, "face": 5, "faces": {"eng": 5, "zhs": 0}},
-  {"key": "gameplay_ui.PAUSE_MENU.SAVE_AND_QUIT", "pixels": 6, "face": 5, "faces": {"eng": 5, "zhs": 0}}
+  {"key": "gameplay_ui.PAUSE_MENU.SAVE_AND_QUIT", "pixels": 6, "face": 5, "faces": {"eng": 5, "zhs": 0}},
+  {"key": "main_menu_ui.SINGLE_PLAYER", "pixels": 6, "face": 0, "source_pixels": 32},
+  {"key": "main_menu_ui.CONTINUE", "pixels": 6, "face": 0, "source_pixels": 32},
+  {"key": "main_menu_ui.ABANDON_RUN", "pixels": 6, "face": 0, "source_pixels": 32},
+  {"key": "main_menu_ui.COMPENDIUM", "pixels": 6, "face": 0, "source_pixels": 32},
+  {"key": "main_menu_ui.SETTINGS", "pixels": 6, "face": 0, "source_pixels": 32},
+  {"key": "main_menu_ui.QUIT", "pixels": 6, "face": 0, "source_pixels": 32},
+  {"key": "main_menu_ui.CONTINUE_RUN_INFO.saved", "pixels": 5, "face": 0, "source_pixels": 24, "substitutions": {"LastSavedTime": "—"}},
+  {"key": "main_menu_ui.CONTINUE_RUN_INFO.ascension", "pixels": 5, "face": 0, "source_pixels": 28},
+  {"key": "main_menu_ui.CONTINUE_RUN_INFO.saved", "pixels": 5, "face": 5, "source_pixels": 24, "substitutions": {"LastSavedTime": "—"}},
+  {"key": "main_menu_ui.CONTINUE_RUN_INFO.ascension", "pixels": 5, "face": 5, "source_pixels": 28},
+  {"key": "main_menu_ui.CONTINUE_RUN_INFO.floor", "pixels": 5, "face": 0, "source_pixels": 28},
+  {"key": "acts.OVERGROWTH.title", "pixels": 5, "face": 0, "source_pixels": 28},
+  {"key": "acts.UNDERDOCKS.title", "pixels": 5, "face": 0, "source_pixels": 28},
+  {"key": "acts.HIVE.title", "pixels": 5, "face": 0, "source_pixels": 28},
+  {"key": "acts.GLORY.title", "pixels": 5, "face": 0, "source_pixels": 28}
  ]
 }

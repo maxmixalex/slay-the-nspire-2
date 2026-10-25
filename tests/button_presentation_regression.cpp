@@ -1,5 +1,6 @@
 #include "button_presentation.hpp"
 #include "nine_patch.hpp"
+#include "popup_layout.hpp"
 #include <cstdio>
 #include <cstdlib>
 #include <cmath>
@@ -52,6 +53,40 @@ int main(){
  potion.observe(22,ButtonFamily::PotionPopup,ButtonState::Press,250);check(potion.sample(400).hover==4096&&potion.sample(400).scale==4096);
  potion.observe(22,ButtonFamily::PotionPopup,ButtonState::Rest,400);check(potion.sample(475).hover==2048);
  potion.observe(22,ButtonFamily::PotionPopup,ButtonState::Focus,475);check(potion.sample(550).hover==3072&&potion.sample(625).hover==4096);
+ // NPopupYesNoButton keeps the focus outline during a held press. Its
+ // source scale and shader tweens deliberately use different focus curves.
+ ButtonMotion popup;popup.observe(24,ButtonFamily::OriginalPopup,ButtonState::Rest,100);
+ popup.observe(24,ButtonFamily::OriginalPopup,ButtonState::Focus,200);
+ for(unsigned t=0;t<=50;++t){const auto v=popup.sample(200+t);const double q=t==0?0:t==50?1:1.001*(1-std::pow(2.,-10.*t/50));
+  check(std::abs(v.scale-4096*(1+.025*double(t)/50))<2);
+  check(std::abs(v.saturation-(1000+250*q))<2&&v.value==v.saturation&&v.hover==4096&&v.y==0);
+ }
+ popup.observe(24,ButtonFamily::OriginalPopup,ButtonState::Press,250);
+ for(unsigned t=0;t<=500;++t){const auto v=popup.sample(250+t);const double q=t==0?0:t==500?1:1.001*(1-std::pow(2.,-10.*t/500));
+  check(std::abs(v.scale-4096*(1.025-.05*q))<3);
+  check(std::abs(v.saturation-(1250-350*q))<3&&v.value==v.saturation&&v.hover==4096);
+ }
+ const auto interrupted_popup=popup.sample(375);popup.observe(24,ButtonFamily::OriginalPopup,ButtonState::Focus,375);
+ check(popup.state==ButtonState::Release&&popup.sample(375).scale==interrupted_popup.scale&&popup.sample(375).hover==0);
+ for(unsigned t=0;t<=50;++t){const auto v=popup.sample(375+t);
+  check(std::abs(v.scale-(interrupted_popup.scale+(4096-interrupted_popup.scale)*double(t)/50))<1.1);
+  check(std::abs(v.value-(interrupted_popup.value+(1000-interrupted_popup.value)*double(t)/50))<1.1);
+ }
+ popup.observe(24,ButtonFamily::OriginalPopup,ButtonState::Focus,500);check(popup.state==ButtonState::Release&&popup.sample(500).scale==4096);
+ popup.observe(24,ButtonFamily::OriginalPopup,ButtonState::Rest,500);popup.observe(24,ButtonFamily::OriginalPopup,ButtonState::Focus,510);
+ const auto partial_popup=popup.sample(530);popup.observe(24,ButtonFamily::OriginalPopup,ButtonState::Rest,530);
+ check(popup.sample(530).scale==partial_popup.scale&&popup.sample(530).hover==0);
+ check(popup.sample(1030).scale==4096&&popup.sample(1030).saturation==1000);
+ // NModalContainer backstop independently fades .85 alpha in/out over300ms,
+ // survives interruption without jumping, and releases modal hit handling.
+ PopupBackdrop backdrop;check(backdrop.sample(0)==0);backdrop.observe(true,100);
+ for(unsigned t=0;t<=300;++t)check(std::abs(double(backdrop.sample(100+t))-217.*t/300)<1.1);
+ backdrop.observe(false,400);for(unsigned t=0;t<=300;++t)check(std::abs(double(backdrop.sample(400+t))-217.*(1.-double(t)/300))<1.1);
+ backdrop.observe(true,800);const auto partial_backdrop=backdrop.sample(950);backdrop.observe(false,950);
+ check(!backdrop.open&&backdrop.sample(950)==partial_backdrop&&backdrop.sample(1250)==0);
+ backdrop.observe(true,0xfffffff0u);check(backdrop.sample(284)==217);
+ check(std::abs(popup_layout::W-573.*320/1680)<.5&&std::abs(popup_layout::H-659.*240/1260)<.5);
+ check(std::abs(popup_layout::X-528.*320/1680)<.5&&std::abs(popup_layout::ButtonY-778.*240/1260)<.5);
  // Original navigation controls have their own focus/press curve rather
  // than the generic 0.95 action-button press. Compare interrupted samples.
  ButtonMotion back;check(back.observe(4,ButtonFamily::Back,ButtonState::Rest,0).scale==4096);

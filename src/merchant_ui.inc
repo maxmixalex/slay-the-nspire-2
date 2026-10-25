@@ -19,6 +19,7 @@ static bool merchant_hovered(const App&a,int item,int x,int y,int w,int h){
     return a.pointer.visible?a.pointer.x>=x&&a.pointer.x<x+w&&a.pointer.y>=y&&a.pointer.y<y+h:a.cursor==item;
 }
 static unsigned room_rich_characters(const char*text){RichReader reader(text);RichChar ch{};unsigned count=0;while(reader.next(ch))count=ch.index+1;return count;}
+#include "speech_bubble_ui.inc"
 static void merchant_hand(Canvas&c,bool fake=false){
  auto&a=c.a;const auto&m=a.room_presentation.merchant;if(a.content.version()<RoomUi7ContentVersion)return;
  // The source drives rotate_me across a constrained weighted mesh. Its

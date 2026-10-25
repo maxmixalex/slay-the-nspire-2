@@ -183,7 +183,7 @@ static void library_source_label_pixels(const std::vector<uint8_t>&pack){
         // Search is a plain LineEdit: no title color, outline or ellipsis.
         const auto search=library_letters(pack,a.content.locale_string("card_library","SEARCH_PLACEHOLDER"),5,0);
         CHECK(library_text_width(search)<=36);library_oracle_label(expected,search,5,4,source_rgb(153,156,150),255,0);
-        for(unsigned i=0;i<4;++i){const auto text=library_letters(pack,a.content.locale_string("gameplay_ui",sort_keys[i]),4,a.content.english()?5:0);CHECK(library_text_width(text)+2+7<=49);
+        for(unsigned i=0;i<4;++i){const auto text=library_letters(pack,a.content.world_string("gameplay_ui",sort_keys[i]),4,a.content.english()?5:0);CHECK(library_text_width(text)+2+7<=49);
             library_oracle_label(expected,text,5,sort_y[i]+1,source_rgb(239,200,81),255,128,0,0,2);}
         for(unsigned i=0;i<4;++i){const auto text=library_letters(pack,a.content.locale_string("card_library",rarity_keys[i]),4,a.content.english()?5:0);CHECK(library_text_width(text)<=37);
             // Source OnDisable multiplies the row by gray, retaining alpha.
