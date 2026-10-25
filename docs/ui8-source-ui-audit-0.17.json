@@ -6,7 +6,7 @@
     "dll_sha256": "0861bfa1df347538d932f22d580e75420f08082792eb914e53b4882764acdbe9"
   },
   "supersedes": "ui7-original-ui-inventory-0.17.json",
-  "source_stage": "UI11 implementation through local checkpoint J f16573e1b9c6da390cd9944bd447acb4dc0482d3: readable LCD layouts, sixteen installed-language editions, bounded secondary effects and detached Bestiary phases. Final resources and focused I/J native correctness gates completed; F ordinary Ndless startup verified after reducing actual contiguous allocation. Final UI11 K Firebird interaction/performance, packaging and remote synchronization are not claimed here. UI10 K receipts below are historical and do not validate changed UI11 code. No restoration percentage is inferred.",
+  "source_stage": "UI12 current-contract reconciliation after recovery of af95e29 and combat/cache/text completion through ae1359512fd76b6d0d4fd814da699ff366cd7f8c. The named UI12 implementations below supersede stale current gap descriptions; all prior implementation/remaining strings and UI10/UI11 receipts remain historical. Final integrated calculator acceptance and release sizes are owned by WORK_STATE.md and ui12-lcd-followup-0.17.md. No blanket source audit, unmodified desktop frame identity or restoration percentage is asserted.",
   "scope": {
     "excluded": [
       "audio",
@@ -28,7 +28,9 @@
     "ftue_review": "All thirteen in-scope Ftue classes and their actual callers were reviewed, including mark-on-open versus mark-on-close, two distinct auto-completion counter lifetimes, release-hidden Reset Tutorials, and independent Ascension SeenPopup semantics. See ftue-ui9-0.17.md.",
     "front_source_review": "UI10 reviewed runtime locale substitution, inherited menu/Continue/profile/compendium/statistics/history scenes, General/Input and Standard/Custom/Daily scenes, conditional rows and interactions. Matching final K front15 targets pass in each language and all214 front captures exactly match the reviewed I baseline. Root/combat comparisons retain the accepted J corrected hover and FTUE timing scope. See ui10-front-source-review-0.17.md and settings-run-setup-ui10-0.17.md. Source path recovery is not every method reviewed; no restoration percentage is inferred.",
     "font_variation_scope": "The source Chinese Regular resource declares a0.95 transform and-0.05 baseline offset. A direct Godot4.5.1 experiment found equal advance/ascent/descent to the base font at12 sampled sizes; this neither proves a metric defect from those properties nor establishes identical glyph ink/kerning/raster output. Measured LCD integer-advance differences are recorded separately.",
-    "ui11_evidence_scope": "Per-contract acceptance without a UI11 prefix is historical UI10 evidence. UI11 additions name their actual checks below; source implementation alone is not emulator acceptance. The final K execution/performance gate and remote synchronization remain open at this documentation checkpoint."
+    "ui11_evidence_scope": "Per-contract acceptance without a UI11 prefix is historical UI10 evidence. UI11 additions name their actual checks below; source implementation alone is not emulator acceptance. The final K execution/performance gate and remote synchronization remain open at this documentation checkpoint.",
+    "ui12_evidence_scope": "This reconciliation reads the existing UI12 implementation and its scoped reports. Per-contract ui12_acceptance distinguishes actual native checks, named historical Firebird sessions, source inspection and pending final-release acceptance. A feature implemented in source is not automatically a passed device walkthrough; untouched remaining entries remain unresolved or explicitly outside scope.",
+    "ui12_font_scope": "UI40 stores natural 1/64-pixel advances, pair kerning and negative bearings. Shared text and the audited specialized title, collection, card, price, health, intent, damage and banner paths preserve fractional placement until rasterization. Exact desktop Godot ink, antialiasing and full-frame equivalence remain separate; old UI10 integer-advance overflow measurements are historical."
   },
   "counts": {
     "current_cs_paths": 3538,
@@ -50,14 +52,17 @@
       ],
       "contract": "Title focus/reticles and nested menu ownership",
       "assessment": "implemented_with_documented_limits",
-      "implemented": "Source FourByThree centered269x450 menu container,200x50 hit controls,6px Regular labels with locale-appropriate tracking,3px half-alpha outline,50ms focus, sequential200ms press/release scale/color and8px animated reticles. Browser coordinates and source-derived native input bounds share the new layout.",
-      "remaining": "Exact locale font keys and LCD composition are verified; complete Godot glyph-ink, kerning and raster equality are not established. The declared Chinese Regular variation has equal measured advance/ascent/descent to its base at12 sampled sizes, so a metric defect is not inferred from the resource properties alone. Unmodified original-game full-frame equality remains separate.",
+      "implemented": "UI12 preserves the source menu focus/reticles and nested ownership while using the readable LCD layout. The title atlas rotation is corrected, logo/menu anchors move upward, fog alpha is reduced, and oversized original HSV button materials remain visible through hover/press. Shared and specialized title measurement use natural source font metrics.",
+      "remaining": "Original font chains, fractional advances, pair kerning and bearings are implemented. Final integer LCD rasterization, antialiasing and full-frame desktop Godot equality remain documented limits; this is not a missing-font or wholly omitted-kerning claim.",
       "regressions": [
         "world_frontend_ui_regression",
         "profiles_ui7_regression",
         "check_offline_browser.js"
       ],
-      "acceptance": "Historical UI10: Frozen K native checks pass: world_frontend_ui_regression, profiles_ui7_regression. Both matching K format39 actual packs pass: world_frontend_ui_regression, profiles_ui7_regression. The K ordinary-browser21-flow gate includes this scope: Fresh title and original main-menu navigation run through ordinary DOM/canvas input."
+      "acceptance": "Historical UI10: Frozen K native checks pass: world_frontend_ui_regression, profiles_ui7_regression. Both matching K format39 actual packs pass: world_frontend_ui_regression, profiles_ui7_regression. The K ordinary-browser21-flow gate includes this scope: Fresh title and original main-menu navigation run through ordinary DOM/canvas input.",
+      "pre_ui12_implemented_historical": "Source FourByThree centered269x450 menu container,200x50 hit controls,6px Regular labels with locale-appropriate tracking,3px half-alpha outline,50ms focus, sequential200ms press/release scale/color and8px animated reticles. Browser coordinates and source-derived native input bounds share the new layout.",
+      "pre_ui12_remaining_historical": "Exact locale font keys and LCD composition are verified; complete Godot glyph-ink, kerning and raster equality are not established. The declared Chinese Regular variation has equal measured advance/ascent/descent to its base at12 sampled sizes, so a metric defect is not inferred from the resource properties alone. Unmodified original-game full-frame equality remains separate.",
+      "ui12_acceptance": "UI12 scoped frontend source/interaction evidence is recorded in ui12-front-feedback-0.17.md; final integrated Firebird acceptance remains separately bound to its launcher. Historical UI10 acceptance is retained without relabeling it as UI12."
     },
     {
       "id": "continue_abandon",
@@ -69,12 +74,14 @@
       "contract": "Continue preview, abandoned-run confirmation and return",
       "assessment": "implemented_with_documented_limits",
       "implemented": "Source inherited half-anchors,85x38/44 panel at153,154,5px saved/progress/ascension/HP/gold labels,7px icons, hidden-zero Ascension row and200ms show/hide motion. The prior enlarged character-name panel is removed. Guarded save/continue/abandon and original confirmation ownership remain. G records successful canonical-run writes independently from profile/settings changes and renders the saved source weekday/month/date/time in the top-aligned90px date box; prior run timestamps stay unknown. I restores the original autowrap-off DateLabel: exactly two explicit lines at source24px projected to5px, with Godot-measured6px English/7px Chinese line steps, gold first-line style and top alignment. Unknown, Sunday and long-Wednesday values are independently checked.",
-      "remaining": "Source local-zone conversion differs from the port UTC calendar; a profile modification timestamp is never substituted for a run save. Old timestamps stay unknown. Integer LCD advances make the tested long English/Chinese date extend6/5px past the panel while staying on screen; the source allows overflow, and no invented smaller source font is used.",
+      "remaining": "Run timestamps remain distinct from profile modification times; old timestamps remain unknown and the port calendar remains UTC. Historical UI10 6/5px overflow measurements used old integer advances and are not measurements of the current UI40 layout. Full original date/frame equality has not been newly asserted.",
       "regressions": [
         "world_frontend_ui_regression",
         "profiles_ui7_regression"
       ],
-      "acceptance": "Historical UI10: Frozen K native checks pass: world_frontend_ui_regression, profiles_ui7_regression. Both matching K format39 actual packs pass: world_frontend_ui_regression, profiles_ui7_regression. The K ordinary-browser21-flow gate includes this scope: Ordinary Save and Quit, reload, Continue and canonical-save identity pass."
+      "acceptance": "Historical UI10: Frozen K native checks pass: world_frontend_ui_regression, profiles_ui7_regression. Both matching K format39 actual packs pass: world_frontend_ui_regression, profiles_ui7_regression. The K ordinary-browser21-flow gate includes this scope: Ordinary Save and Quit, reload, Continue and canonical-save identity pass.",
+      "pre_ui12_remaining_historical": "Source local-zone conversion differs from the port UTC calendar; a profile modification timestamp is never substituted for a run save. Old timestamps stay unknown. Integer LCD advances make the tested long English/Chinese date extend6/5px past the panel while staying on screen; the source allows overflow, and no invented smaller source font is used.",
+      "ui12_acceptance": "UI12 scoped frontend source/interaction evidence is recorded in ui12-front-feedback-0.17.md; final integrated Firebird acceptance remains separately bound to its launcher. Historical UI10 acceptance is retained without relabeling it as UI12."
     },
     {
       "id": "character_select",
@@ -86,15 +93,18 @@
       ],
       "contract": "Click-selected character, Ascension, seed and embark",
       "assessment": "implemented_with_documented_limits",
-      "implemented": "Primary contract remains implemented. UI11 adds separate bounded particle contexts for all five character scenes using source emission anchors, lifetimes and prewarm; 8-12px body labels and reflow serve the LCD.",
-      "remaining": "Particle density, deterministic trajectories, subpixel font rasterization and exact GPU material output remain calculator mappings.",
+      "implemented": "UI12 retains five canonical character IDs while displaying the original portrait order and a sixth Random choice. It implements deterministic source selection/reveal/departure clocks, repairs Necrobinder head and purple flames in both affected contexts, centers outlined Ascension labels and clips/scrolls padded description text. UI11 bounded character particle contexts remain.",
+      "remaining": "Dense GPU particle density, water-distortion/material shaders and continuous subpixel rasterization remain CPU/LCD adaptations. The actual Random choice, departure transition and missing Necrobinder layers are no longer omitted.",
       "regressions": [
         "five_character_ui_regression"
       ],
       "acceptance": "Historical UI10: Frozen K native checks pass: five_character_ui_regression. Both matching K format39 actual packs pass: five_character_ui_regression. The K ordinary-browser21-flow gate includes this scope: Ordinary Singleplayer-to-character-to-run navigation passes; this is not every character context.",
       "ui10_remaining_historical": "Independent particle contexts remain incompletely reproduced. Exact locale font keys and LCD composition are verified; complete Godot glyph-ink, kerning and raster equality are not established. The declared Chinese Regular variation has equal measured advance/ascent/descent to its base at12 sampled sizes, so a metric defect is not inferred from the resource properties alone.",
       "ui11_acceptance": "Source implementation reviewed; prior UI10 acceptance below does not validate these added particle contexts.",
-      "ui10_implemented_historical": "Five original sampled loops and source character-info geometry remain implemented. UI10 uses actual locale normal fonts for name/stats/relic title, aligns name measurement and drawing, and removes English font-variation tracking from substituted Chinese text."
+      "ui10_implemented_historical": "Five original sampled loops and source character-info geometry remain implemented. UI10 uses actual locale normal fonts for name/stats/relic title, aligns name measurement and drawing, and removes English font-variation tracking from substituted Chinese text.",
+      "pre_ui12_implemented_historical": "Primary contract remains implemented. UI11 adds separate bounded particle contexts for all five character scenes using source emission anchors, lifetimes and prewarm; 8-12px body labels and reflow serve the LCD.",
+      "pre_ui12_remaining_historical": "Particle density, deterministic trajectories, subpixel font rasterization and exact GPU material output remain calculator mappings.",
+      "ui12_acceptance": "UI12 world H/J/L Firebird sessions and the eight complete world/lifecycle suites are scoped in world-ui12-0.17.md; their console-created room fixtures are distinguished from ordinary map reachability."
     },
     {
       "id": "act_selector",
@@ -150,12 +160,15 @@
       ],
       "contract": "Filters, discoveries, card grid and inspect",
       "assessment": "implemented_with_documented_limits",
-      "implemented": "Original grid/filter/discovery/debounce contracts and exact4/5/6px bands remain. UI10 centers the count markup, applies actual locale normal-font substitution and fixes four empty sort-caption lookups. E streams the normalized title+space+description through a128-byte prefix matcher while preserving lowercase-only nonblank query whitespace.",
-      "remaining": "Exact locale font keys and LCD composition are verified; complete Godot glyph-ink, kerning and raster equality are not established. The declared Chinese Regular variation has equal measured advance/ascent/descent to its base at12 sampled sizes, so a metric defect is not inferred from the resource properties alone.",
+      "implemented": "UI12 keeps the original filters, discovery rules, search semantics and inspectors while retaining original button textures at the enlarged LCD sizes. Long focused descriptions remain bounded, and filter/search/count measurement and painting use fractional metrics.",
+      "remaining": "Original font chains, fractional advances, pair kerning and bearings are implemented. Final integer LCD rasterization, antialiasing and full-frame desktop Godot equality remain documented limits; this is not a missing-font or wholly omitted-kerning claim.",
       "regressions": [
         "library_ui7_regression"
       ],
-      "acceptance": "Historical UI10: Frozen K native checks pass: library_ui7_regression. Both matching K format39 actual packs pass: library_ui7_regression."
+      "acceptance": "Historical UI10: Frozen K native checks pass: library_ui7_regression. Both matching K format39 actual packs pass: library_ui7_regression.",
+      "pre_ui12_implemented_historical": "Original grid/filter/discovery/debounce contracts and exact4/5/6px bands remain. UI10 centers the count markup, applies actual locale normal-font substitution and fixes four empty sort-caption lookups. E streams the normalized title+space+description through a128-byte prefix matcher while preserving lowercase-only nonblank query whitespace.",
+      "pre_ui12_remaining_historical": "Exact locale font keys and LCD composition are verified; complete Godot glyph-ink, kerning and raster equality are not established. The declared Chinese Regular variation has equal measured advance/ascent/descent to its base at12 sampled sizes, so a metric defect is not inferred from the resource properties alone.",
+      "ui12_acceptance": "UI12 scoped frontend source/interaction evidence is recorded in ui12-front-feedback-0.17.md; final integrated Firebird acceptance remains separately bound to its launcher. Historical UI10 acceptance is retained without relabeling it as UI12."
     },
     {
       "id": "relic_collection",
@@ -165,13 +178,16 @@
       ],
       "contract": "Relic categories and inspect",
       "assessment": "implemented_with_documented_limits",
-      "implemented": "Original category/starter/Ancient groups, discovery gates, fixed source headings,69px hover columns and related previews remain implemented. Chinese rich bold headings now use the source runtime Bold substitution, while English relic headings keep their authored regular-bold role. E records exact source rich-category Bold requirements, including localized Ancient title replacements, separately from ordinary-label substitution.",
-      "remaining": "No required exact collection glyph is missing in matching K resources. Exact locale font keys and LCD composition are verified; complete Godot glyph-ink, kerning and raster equality are not established. The declared Chinese Regular variation has equal measured advance/ascent/descent to its base at12 sampled sizes, so a metric defect is not inferred from the resource properties alone.",
+      "implemented": "UI12 keeps original collection and inspect behavior, shifts framed art within its panel, narrows descriptions with readable type and uses clipped focused-text scrolling. The shared smaller Back button and content margins prevent overlap.",
+      "remaining": "Original font chains, fractional advances, pair kerning and bearings are implemented. Final integer LCD rasterization, antialiasing and full-frame desktop Godot equality remain documented limits; this is not a missing-font or wholly omitted-kerning claim.",
       "regressions": [
         "library_ui7_regression",
         "relic_inspect_ui9_regression"
       ],
-      "acceptance": "Historical UI10: Frozen K native checks pass: library_ui7_regression, relic_inspect_ui9_regression. Both matching K format39 actual packs pass: library_ui7_regression, relic_inspect_ui9_regression. The K ordinary-browser21-flow gate includes this scope: Ordinary collection/inspector clamped navigation, popup and backstop dismissal pass."
+      "acceptance": "Historical UI10: Frozen K native checks pass: library_ui7_regression, relic_inspect_ui9_regression. Both matching K format39 actual packs pass: library_ui7_regression, relic_inspect_ui9_regression. The K ordinary-browser21-flow gate includes this scope: Ordinary collection/inspector clamped navigation, popup and backstop dismissal pass.",
+      "pre_ui12_implemented_historical": "Original category/starter/Ancient groups, discovery gates, fixed source headings,69px hover columns and related previews remain implemented. Chinese rich bold headings now use the source runtime Bold substitution, while English relic headings keep their authored regular-bold role. E records exact source rich-category Bold requirements, including localized Ancient title replacements, separately from ordinary-label substitution.",
+      "pre_ui12_remaining_historical": "No required exact collection glyph is missing in matching K resources. Exact locale font keys and LCD composition are verified; complete Godot glyph-ink, kerning and raster equality are not established. The declared Chinese Regular variation has equal measured advance/ascent/descent to its base at12 sampled sizes, so a metric defect is not inferred from the resource properties alone.",
+      "ui12_acceptance": "UI12 scoped frontend source/interaction evidence is recorded in ui12-front-feedback-0.17.md; final integrated Firebird acceptance remains separately bound to its launcher. Historical UI10 acceptance is retained without relabeling it as UI12."
     },
     {
       "id": "potion_lab",
@@ -181,12 +197,15 @@
       ],
       "contract": "Potion catalogue and inspect",
       "assessment": "implemented_with_documented_limits",
-      "implemented": "All 64 catalogue entries, original rarity/discovery rules, source 69px/5px primary and related tooltip columns plus separate card previews. Source category headings use fixed5px regular/bold text and full untruncated source lines, independently checked against exact existing glyphs. E records exact source rich-category Bold requirements, including localized Ancient title replacements, separately from ordinary-label substitution.",
-      "remaining": "No required exact collection glyph is missing in matching K resources. Exact locale font keys and LCD composition are verified; complete Godot glyph-ink, kerning and raster equality are not established. The declared Chinese Regular variation has equal measured advance/ascent/descent to its base at12 sampled sizes, so a metric defect is not inferred from the resource properties alone.",
+      "implemented": "UI12 keeps real potion collection/lab behavior and bounded inspectors with readable labels, corrected content margins and the shared smaller Back button. It does not reintroduce the removed pickup slot-chooser.",
+      "remaining": "Original font chains, fractional advances, pair kerning and bearings are implemented. Final integer LCD rasterization, antialiasing and full-frame desktop Godot equality remain documented limits; this is not a missing-font or wholly omitted-kerning claim.",
       "regressions": [
         "potion_ui_regression"
       ],
-      "acceptance": "Historical UI10: Frozen K native checks pass: potion_ui_regression, library_ui7_regression. Both matching K format39 actual packs pass: potion_ui_regression, library_ui7_regression. The K ordinary-browser21-flow gate includes this scope: Ordinary Potion Lab confirmation remains focus-only without mutating saved runs."
+      "acceptance": "Historical UI10: Frozen K native checks pass: potion_ui_regression, library_ui7_regression. Both matching K format39 actual packs pass: potion_ui_regression, library_ui7_regression. The K ordinary-browser21-flow gate includes this scope: Ordinary Potion Lab confirmation remains focus-only without mutating saved runs.",
+      "pre_ui12_implemented_historical": "All 64 catalogue entries, original rarity/discovery rules, source 69px/5px primary and related tooltip columns plus separate card previews. Source category headings use fixed5px regular/bold text and full untruncated source lines, independently checked against exact existing glyphs. E records exact source rich-category Bold requirements, including localized Ancient title replacements, separately from ordinary-label substitution.",
+      "pre_ui12_remaining_historical": "No required exact collection glyph is missing in matching K resources. Exact locale font keys and LCD composition are verified; complete Godot glyph-ink, kerning and raster equality are not established. The declared Chinese Regular variation has equal measured advance/ascent/descent to its base at12 sampled sizes, so a metric defect is not inferred from the resource properties alone.",
+      "ui12_acceptance": "UI12 scoped frontend source/interaction evidence is recorded in ui12-front-feedback-0.17.md; final integrated Firebird acceptance remains separately bound to its launcher. Historical UI10 acceptance is retained without relabeling it as UI12."
     },
     {
       "id": "bestiary",
@@ -197,8 +216,8 @@
       ],
       "contract": "Enemy list, layouts, move descriptions and character filtering",
       "assessment": "implemented_with_documented_limits",
-      "implemented": "Primary contract remains implemented. UI11 adds detached phase/liveness facts for Test Subject regeneration, Cubex charge/unburrow, Bowlbug stun, Lagavulin awake/sleep, Tough Egg hatch, Tunneler burrow/stun, Sewer Clam growth, Insatiable liquefaction, Obscura summon and three-actor Decimillipede down/revive with 0/150/300ms stagger. Readable 10px two-line rows and five-action paging replace the old dense list.",
-      "remaining": "The named retained phase and multi-creature gaps are implemented and tested. Full GPU scene/material reproduction and every possible enemy presentation combination are not inferred from these targeted previews.",
+      "implemented": "Primary contract remains implemented. UI11 adds detached phase/liveness facts for Test Subject regeneration, Cubex charge/unburrow, Bowlbug stun, Lagavulin awake/sleep, Tough Egg hatch, Tunneler burrow/stun, Sewer Clam growth, Insatiable liquefaction, Obscura summon and three-actor Decimillipede down/revive with 0/150/300ms stagger. Readable 10px two-line rows and five-action paging replace the old dense list. UI12 adds background dimming, original region/rarity colors and a compact readable mode button; discoveries distinguish seen monsters from completed fight records.",
+      "remaining": "The named UI11 phase/multi-creature gaps and UI12 colors/dimming are implemented. Every possible enemy preview combination and all desktop GPU materials have not received a new exhaustive audit.",
       "regressions": [
         "bestiary_ui7_regression",
         "power_order_ui8_regression",
@@ -207,7 +226,10 @@
       "acceptance": "Historical UI10: Frozen K native checks pass: bestiary_ui7_regression, power_order_ui8_regression. Both matching K format39 actual packs pass: bestiary_ui7_regression, power_order_ui8_regression.",
       "ui10_remaining_historical": "Remaining phase-specific multi-creature preview contexts and secondary visual effects need actual replay.",
       "ui11_acceptance": "UI11 phase checkpoint 49340f020bfbe96c49cc6de71aa122e1556c269c passes 139 checks in ui11h-bestiary-phase-correct-fixture-ab6202c82be3.json, with unchanged H core and exact canonical-save preservation.",
-      "ui10_implemented_historical": "Original list/header geometry, known gates, detached actions/statistics previews, persisted names and Kaiser supplements remain implemented. UI10 applies source locale normal-font substitution to the large name, dividers and action/mode labels."
+      "ui10_implemented_historical": "Original list/header geometry, known gates, detached actions/statistics previews, persisted names and Kaiser supplements remain implemented. UI10 applies source locale normal-font substitution to the large name, dividers and action/mode labels.",
+      "pre_ui12_implemented_historical": "Primary contract remains implemented. UI11 adds detached phase/liveness facts for Test Subject regeneration, Cubex charge/unburrow, Bowlbug stun, Lagavulin awake/sleep, Tough Egg hatch, Tunneler burrow/stun, Sewer Clam growth, Insatiable liquefaction, Obscura summon and three-actor Decimillipede down/revive with 0/150/300ms stagger. Readable 10px two-line rows and five-action paging replace the old dense list.",
+      "pre_ui12_remaining_historical": "The named retained phase and multi-creature gaps are implemented and tested. Full GPU scene/material reproduction and every possible enemy presentation combination are not inferred from these targeted previews.",
+      "ui12_acceptance": "UI12 scoped frontend source/interaction evidence is recorded in ui12-front-feedback-0.17.md; final integrated Firebird acceptance remains separately bound to its launcher. Historical UI10 acceptance is retained without relabeling it as UI12."
     },
     {
       "id": "statistics",
@@ -219,13 +241,16 @@
       ],
       "contract": "General/character statistics and achievements",
       "assessment": "implemented_with_documented_limits",
-      "implemented": "UI10 restores source container minimums, tabs/backgrounds/font roles, conditional rows, character colors, bounded entry focus/hover, tooltips, navigation and scrollbar. E composes the entire scrolling subtree through the original128-sample gradient mask, preserving only17 transition rows in10,880 temporary stack bytes with no persistent pool or ordinary-canvas branch.",
-      "remaining": "Source unlock counts depend on excluded Timeline data and the Achievements tab stays disabled. Exact locale font keys and LCD composition are verified; complete Godot glyph-ink, kerning and raster equality are not established. The declared Chinese Regular variation has equal measured advance/ascent/descent to its base at12 sampled sizes, so a metric defect is not inferred from the resource properties alone.",
+      "implemented": "UI12 retains actual recorded character statistics in a narrower container beginning at x=52, clear of Back. Unsupported Achievements/Timeline rows and unknown dash/N/A fields are omitted; actual potion discovery remains. Focused-value tips occupy their own right lane.",
+      "remaining": "Timeline/Achievements data remain outside the agreed scope and are omitted rather than shown as working empty controls. Original font chains, fractional advances, pair kerning and bearings are implemented. Final integer LCD rasterization, antialiasing and full-frame desktop Godot equality remain documented limits; this is not a missing-font or wholly omitted-kerning claim.",
       "regressions": [
         "ui_progress_regression",
         "statistics_ui10_regression"
       ],
-      "acceptance": "Historical UI10: Frozen K native checks pass: ui_progress_regression, statistics_ui10_regression. Both matching K format39 actual packs pass: statistics_ui10_regression."
+      "acceptance": "Historical UI10: Frozen K native checks pass: ui_progress_regression, statistics_ui10_regression. Both matching K format39 actual packs pass: statistics_ui10_regression.",
+      "pre_ui12_implemented_historical": "UI10 restores source container minimums, tabs/backgrounds/font roles, conditional rows, character colors, bounded entry focus/hover, tooltips, navigation and scrollbar. E composes the entire scrolling subtree through the original128-sample gradient mask, preserving only17 transition rows in10,880 temporary stack bytes with no persistent pool or ordinary-canvas branch.",
+      "pre_ui12_remaining_historical": "Source unlock counts depend on excluded Timeline data and the Achievements tab stays disabled. Exact locale font keys and LCD composition are verified; complete Godot glyph-ink, kerning and raster equality are not established. The declared Chinese Regular variation has equal measured advance/ascent/descent to its base at12 sampled sizes, so a metric defect is not inferred from the resource properties alone.",
+      "ui12_acceptance": "UI12 scoped frontend source/interaction evidence is recorded in ui12-front-feedback-0.17.md; final integrated Firebird acceptance remains separately bound to its launcher. Historical UI10 acceptance is retained without relabeling it as UI12."
     },
     {
       "id": "run_history",
@@ -241,8 +266,8 @@
       ],
       "contract": "Historical run navigation, per-floor map/deck/relic details",
       "assessment": "implemented_with_documented_limits",
-      "implemented": "Observed summaries, map/deck/relic carousel and bounded journal remain. UI10 restores Chinese calendar contents. E replaces the enlarged two-row summary with source24/32px rich information/counters, source right alignment and HBox minimums/colors, selected portrait/Ascension, original potion backdrop/slots and format38 custom/daily lock. Full singleplayer game-mode markup is restored; unavailable recorded BuildId displays an unknown dash. G restores fixed5px chapter/section labels, original rarity summaries,60px non-wrapping act entries,19-column68px relic holders, five-column240x32px card entries,4/5px fitting and authored ellipsis, source tiny-card/enchantment geometry/colors and fast-forward card focus. The source death quote/badge HBox uses recorded values, source size/visibility/hover and no live-state substitution. Format39 appends64 original room/outline images; old packs keep a fallback. New runs record the actual port BuildId, while old records stay unknown. H restores UI-only conditional-normal room-icon tilt with random initial sign,50ms ExpoOut hover-to-zero and1000ms recovery to the positive base; icon/outline/quest transform together. Presentation remains124B with independent cosmetic state.",
-      "remaining": "History retains96 floor records,32 runs and at most eight simultaneous presentation transitions. Angles are quantized to1/16 degree, matrix coefficients toQ10 and raster positions to the LCD. Local time remains UTC. Old/evicted floor facts stay partial and pre-metadata BuildId remains unknown. Source16px quote fitting uses the documented4px readability floor.",
+      "implemented": "Observed summaries, map/deck/relic carousel and bounded journal remain. UI10 restores Chinese calendar contents. E replaces the enlarged two-row summary with source24/32px rich information/counters, source right alignment and HBox minimums/colors, selected portrait/Ascension, original potion backdrop/slots and format38 custom/daily lock. Full singleplayer game-mode markup is restored; unavailable recorded BuildId displays an unknown dash. G restores fixed5px chapter/section labels, original rarity summaries,60px non-wrapping act entries,19-column68px relic holders, five-column240x32px card entries,4/5px fitting and authored ellipsis, source tiny-card/enchantment geometry/colors and fast-forward card focus. The source death quote/badge HBox uses recorded values, source size/visibility/hover and no live-state substitution. Format39 appends64 original room/outline images; old packs keep a fallback. New runs record the actual port BuildId, while old records stay unknown. H restores UI-only conditional-normal room-icon tilt with random initial sign,50ms ExpoOut hover-to-zero and1000ms recovery to the positive base; icon/outline/quest transform together. Presentation remains124B with independent cosmetic state. UI12 narrows the container to clear Back and reflows metadata, card cells and icon columns.",
+      "remaining": "The retained limits of 96 floor records, 32 runs and at most eight presentation transitions remain. Old/evicted facts and pre-metadata BuildId stay partial/unknown; local time remains UTC. CPU geometry and final rasterization remain LCD adaptations; historical UI10 4px quote/font statements do not describe every enlarged UI12 label.",
       "regressions": [
         "history_ui8_regression",
         "run_history_journal_ui8_regression",
@@ -251,7 +276,10 @@
         "test_history_body_ui10_assets",
         "run_metadata_regression"
       ],
-      "acceptance": "Historical UI10: Frozen K native checks pass: history_ui8_regression, run_history_journal_ui8_regression, run_history_acquisition_regression, map_drawing_ui_regression, run_metadata_regression. Both matching K format39 actual packs pass: history_ui8_regression, run_history_journal_ui8_regression, map_drawing_ui_regression."
+      "acceptance": "Historical UI10: Frozen K native checks pass: history_ui8_regression, run_history_journal_ui8_regression, run_history_acquisition_regression, map_drawing_ui_regression, run_metadata_regression. Both matching K format39 actual packs pass: history_ui8_regression, run_history_journal_ui8_regression, map_drawing_ui_regression.",
+      "pre_ui12_implemented_historical": "Observed summaries, map/deck/relic carousel and bounded journal remain. UI10 restores Chinese calendar contents. E replaces the enlarged two-row summary with source24/32px rich information/counters, source right alignment and HBox minimums/colors, selected portrait/Ascension, original potion backdrop/slots and format38 custom/daily lock. Full singleplayer game-mode markup is restored; unavailable recorded BuildId displays an unknown dash. G restores fixed5px chapter/section labels, original rarity summaries,60px non-wrapping act entries,19-column68px relic holders, five-column240x32px card entries,4/5px fitting and authored ellipsis, source tiny-card/enchantment geometry/colors and fast-forward card focus. The source death quote/badge HBox uses recorded values, source size/visibility/hover and no live-state substitution. Format39 appends64 original room/outline images; old packs keep a fallback. New runs record the actual port BuildId, while old records stay unknown. H restores UI-only conditional-normal room-icon tilt with random initial sign,50ms ExpoOut hover-to-zero and1000ms recovery to the positive base; icon/outline/quest transform together. Presentation remains124B with independent cosmetic state.",
+      "pre_ui12_remaining_historical": "History retains96 floor records,32 runs and at most eight simultaneous presentation transitions. Angles are quantized to1/16 degree, matrix coefficients toQ10 and raster positions to the LCD. Local time remains UTC. Old/evicted floor facts stay partial and pre-metadata BuildId remains unknown. Source16px quote fitting uses the documented4px readability floor.",
+      "ui12_acceptance": "UI12 scoped frontend source/interaction evidence is recorded in ui12-front-feedback-0.17.md; final integrated Firebird acceptance remains separately bound to its launcher. Historical UI10 acceptance is retained without relabeling it as UI12."
     },
     {
       "id": "profiles",
@@ -306,12 +334,15 @@
       ],
       "contract": "Legend focus/highlight and500ms unfocus recovery",
       "assessment": "implemented_with_documented_limits",
-      "implemented": "Source legend focus/highlight and 500ms recovery, with pointer and keyboard ownership.",
-      "remaining": "Unmodified original-game GPU/raster equivalence is not established.",
+      "implemented": "UI12 uses a compact bottom-right Legend button with the original symbols and correctly spaced centered list. Drawing tooltips avoid their buttons and use the real calculator binding glyph; map close availability follows the source floor condition.",
+      "remaining": "No blanket unmodified original-game GPU/frame equality is asserted; the former legend layout and tooltip overlap are implemented corrections.",
       "regressions": [
         "world_map_ui_regression"
       ],
-      "acceptance": "Historical UI10: Frozen K native checks pass: world_map_ui_regression. Both matching K format39 actual packs pass: world_map_ui_regression."
+      "acceptance": "Historical UI10: Frozen K native checks pass: world_map_ui_regression. Both matching K format39 actual packs pass: world_map_ui_regression.",
+      "pre_ui12_implemented_historical": "Source legend focus/highlight and 500ms recovery, with pointer and keyboard ownership.",
+      "pre_ui12_remaining_historical": "Unmodified original-game GPU/raster equivalence is not established.",
+      "ui12_acceptance": "UI12 world H/J/L Firebird sessions and the eight complete world/lifecycle suites are scoped in world-ui12-0.17.md; their console-created room fixtures are distinguished from ordinary map reachability."
     },
     {
       "id": "map_history",
@@ -337,13 +368,16 @@
       ],
       "contract": "Prepared room fade-in, enemies and hand arrival",
       "assessment": "implemented_with_documented_limits",
-      "implemented": "Original source creature anchors/aspect fitting, entrance timing, actual hand arrival and retained trace.",
-      "remaining": "All independent enemy entrance VFX are not reproduced.",
+      "implemented": "Original source creature anchors/aspect fitting, entrance timing, actual hand arrival and retained trace. UI12 starts Battle Start before Player Turn with the source lead/fade/backstop clocks, raises the whole banner with the scene, and suppresses replay only for the restored encounter.",
+      "remaining": "The battle-opening sequence and ordinary room/hand arrival are implemented. Separate per-monster entrance particle/material variants remain incompletely reviewed/reproduced; this row does not turn that unresolved scope into a pass.",
       "regressions": [
         "combat_ui_regression",
         "combat_layout_regression"
       ],
-      "acceptance": "Historical UI10: Frozen K native checks pass: combat_ui_regression, combat_layout_regression. Both matching K format39 actual packs pass: combat_ui_regression."
+      "acceptance": "Historical UI10: Frozen K native checks pass: combat_ui_regression, combat_layout_regression. Both matching K format39 actual packs pass: combat_ui_regression.",
+      "pre_ui12_implemented_historical": "Original source creature anchors/aspect fitting, entrance timing, actual hand arrival and retained trace.",
+      "pre_ui12_remaining_historical": "All independent enemy entrance VFX are not reproduced.",
+      "ui12_acceptance": "Frozen combat worktree ae13595: actual UI40 gate 1096 checks (34d842ab8fde), five complete combat/canvas suites (c4ac9d4cd5d0), unchanged source fingerprints. H/K device scopes and the independent final-release requirement are recorded in combat-ui12-0.17.md."
     },
     {
       "id": "event_base",
@@ -354,13 +388,16 @@
       ],
       "contract": "Artwork, text reveal, option timing and enabled choice",
       "assessment": "implemented_with_documented_limits",
-      "implemented": "Original option/text timing, artwork, revisited-room semantics, tooltips, enabled actions and retained room beneath selections.",
-      "remaining": "Full original material/text animation equivalence is not established.",
+      "implemented": "UI12 retains actual event choices and source button artwork, renders long body text in place with the original scroll track/thumb and keyboard/pointer scrolling, removes the duplicate Details/Return reader, and clips options within their buttons. Finished Fake Merchant prose uses the same reader.",
+      "remaining": "Exact desktop shader/text-animation output remains an LCD/CPU mapping. This is no longer a missing inline-reader/scrollbar or duplicate-close-control issue.",
       "regressions": [
         "world_event_ui_regression",
         "world_room_lifecycle_regression"
       ],
-      "acceptance": "Historical UI10: Frozen K native checks pass: world_event_ui_regression, world_room_lifecycle_regression. Both matching K format39 actual packs pass: world_event_ui_regression."
+      "acceptance": "Historical UI10: Frozen K native checks pass: world_event_ui_regression, world_room_lifecycle_regression. Both matching K format39 actual packs pass: world_event_ui_regression.",
+      "pre_ui12_implemented_historical": "Original option/text timing, artwork, revisited-room semantics, tooltips, enabled actions and retained room beneath selections.",
+      "pre_ui12_remaining_historical": "Full original material/text animation equivalence is not established.",
+      "ui12_acceptance": "UI12 world H/J/L Firebird sessions and the eight complete world/lifecycle suites are scoped in world-ui12-0.17.md; their console-created room fixtures are distinguished from ordinary map reachability."
     },
     {
       "id": "event_special",
@@ -371,14 +408,17 @@
       ],
       "contract": "Ancient and custom event layouts/choices",
       "assessment": "implemented_with_documented_limits",
-      "implemented": "Crystal Sphere board/tools/source panels and exact port shader oracle; Ancient per-character first/repeat dialogue, history, timing, terminal ClearDialogue and banner.",
-      "remaining": "Original GPU implementation equivalence is not established; matching actual crystal/event targets cover only their exercised contexts.",
+      "implemented": "Crystal Sphere board/tools/source panels and exact port shader oracle; Ancient per-character first/repeat dialogue, history, timing, terminal ClearDialogue and banner. UI12 closes the Ancient background seam, raises the entrance title, puts settled room/epithet text at upper right, scrolls dialogue/options in place, and lets the first pointer choice take reading focus.",
+      "remaining": "Full Ancient actor animation remains intentionally omitted under the user-authorized storage exception. Original GPU material equality and every special-event context remain separately scoped; the placement/reading/click corrections are implemented.",
       "regressions": [
         "crystal_ui8_regression",
         "crystal_shader_regression",
         "world_event_ui_regression"
       ],
-      "acceptance": "Historical UI10: Frozen K native checks pass: crystal_ui8_regression, crystal_shader_regression, world_event_ui_regression. Both matching K format39 actual packs pass: crystal_ui8_regression, world_event_ui_regression."
+      "acceptance": "Historical UI10: Frozen K native checks pass: crystal_ui8_regression, crystal_shader_regression, world_event_ui_regression. Both matching K format39 actual packs pass: crystal_ui8_regression, world_event_ui_regression.",
+      "pre_ui12_implemented_historical": "Crystal Sphere board/tools/source panels and exact port shader oracle; Ancient per-character first/repeat dialogue, history, timing, terminal ClearDialogue and banner.",
+      "pre_ui12_remaining_historical": "Original GPU implementation equivalence is not established; matching actual crystal/event targets cover only their exercised contexts.",
+      "ui12_acceptance": "UI12 world H/J/L Firebird sessions and the eight complete world/lifecycle suites are scoped in world-ui12-0.17.md; their console-created room fixtures are distinguished from ordinary map reachability."
     },
     {
       "id": "rest",
@@ -389,8 +429,8 @@
       ],
       "contract": "Rest actions, character, text and upgrade selection",
       "assessment": "implemented_with_documented_limits",
-      "implemented": "Primary contract remains implemented. UI11 successful Heal triggers timed rising smoke and source-derived three-stage desaturation; per-act fire light/embers extinguish when choices are exhausted. Loading a completed rest does not replay Heal.",
-      "remaining": "Dense GPU smoke, HDR bloom and continuous particle trajectories are bounded CPU approximations. Mend remains multiplayer-only and excluded; no new claim covers all alternative-action-specific desktop shaders.",
+      "implemented": "Primary contract remains implemented. UI11 successful Heal triggers timed rising smoke and source-derived three-stage desaturation; per-act fire light/embers extinguish when choices are exhausted. Loading a completed rest does not replay Heal. UI12 action outlines fit the enlarged artwork, and real committed Smith upgrades drive card growth, hold, golden sparks and deck flight using the existing face cache.",
+      "remaining": "Dense smoke/HDR/continuous particle trajectories remain bounded CPU approximations; Mend remains multiplayer-only and excluded. Committed Smith feedback and action-border geometry are implemented.",
       "regressions": [
         "world_room_ui_regression",
         "room_secondary_vfx_regression"
@@ -398,7 +438,10 @@
       "acceptance": "Historical UI10: Frozen K native checks pass: world_room_ui_regression. Both matching K format39 actual packs pass: world_room_ui_regression.",
       "ui10_remaining_historical": "Alternative action secondary VFX remain incomplete. Mend is multiplayer-only in the pinned source.",
       "ui11_acceptance": "UI11 I: room_secondary_vfx_regression passes 105 checks with final common/English assets, actual triggers and canonical save/RNG invariance. Final K ordinary Firebird acceptance remains separate.",
-      "ui10_implemented_historical": "Original projected layout, real enabled actions and card upgrade selection with retained room."
+      "ui10_implemented_historical": "Original projected layout, real enabled actions and card upgrade selection with retained room.",
+      "pre_ui12_implemented_historical": "Primary contract remains implemented. UI11 successful Heal triggers timed rising smoke and source-derived three-stage desaturation; per-act fire light/embers extinguish when choices are exhausted. Loading a completed rest does not replay Heal.",
+      "pre_ui12_remaining_historical": "Dense GPU smoke, HDR bloom and continuous particle trajectories are bounded CPU approximations. Mend remains multiplayer-only and excluded; no new claim covers all alternative-action-specific desktop shaders.",
+      "ui12_acceptance": "Frozen combat worktree ae13595: actual UI40 gate 1096 checks (34d842ab8fde), five complete combat/canvas suites (c4ac9d4cd5d0), unchanged source fingerprints. H/K device scopes and the independent final-release requirement are recorded in combat-ui12-0.17.md. UI12 world H/J/L Firebird sessions and the eight complete world/lifecycle suites are scoped in world-ui12-0.17.md; their console-created room fixtures are distinguished from ordinary map reachability."
     },
     {
       "id": "shop",
@@ -410,8 +453,8 @@
       ],
       "contract": "Entrance, inventory hover, speech, purchase and sold state",
       "assessment": "implemented_with_documented_limits",
-      "implemented": "Primary contract remains implemented. UI11 adds four candle emitters and eight source light nodes, retaining flame planes; exact rug-occlusion culling avoids hidden particle work. Enlarged focused card faces, prices and item interaction support LCD reading.",
-      "remaining": "Full GPU light/material rasterization and stochastic particle density remain approximations; the missing candle/light trigger layer is now present.",
+      "implemented": "Primary contract remains implemented. UI11 adds four candle emitters and eight source light nodes, retaining flame planes; exact rug-occlusion culling avoids hidden particle work. Enlarged focused card faces, prices and item interaction support LCD reading. UI12 corrects rug/stock/hand positioning and removal hover, admits normal 65x91 faces to the existing cache including every edge slot, preserves exact destination/background composition, and uses natural price metrics.",
+      "remaining": "GPU light/material rasterization and stochastic particle density remain approximations. The eight cache buffers and bounded opaque-rug culling are real implementation; calculator speedup is reported only by a closed matched Firebird comparison, not native timings.",
       "regressions": [
         "world_room_ui_regression",
         "run_modifier_hooks_ui8_regression",
@@ -420,7 +463,10 @@
       "acceptance": "Historical UI10: Frozen K native checks pass: world_room_ui_regression, run_modifier_hooks_ui8_regression. Both matching K format39 actual packs pass: world_room_ui_regression.",
       "ui10_remaining_historical": "Full candle/material/secondary particles remain incomplete.",
       "ui11_acceptance": "UI11 I: room_secondary_vfx_regression passes 105 checks with final common/English assets, actual triggers and canonical save/RNG invariance. Final K ordinary Firebird acceptance remains separate.",
-      "ui10_implemented_historical": "Original large inventory composition, sampled hand tracking, dialogue, open/sold animations, actual purchase and source CharacterCards stock weighting. Legacy large stock tooltips replaced by source69px columns and complete model-related card/keyword/power chains with detached stock facts."
+      "ui10_implemented_historical": "Original large inventory composition, sampled hand tracking, dialogue, open/sold animations, actual purchase and source CharacterCards stock weighting. Legacy large stock tooltips replaced by source69px columns and complete model-related card/keyword/power chains with detached stock facts.",
+      "pre_ui12_implemented_historical": "Primary contract remains implemented. UI11 adds four candle emitters and eight source light nodes, retaining flame planes; exact rug-occlusion culling avoids hidden particle work. Enlarged focused card faces, prices and item interaction support LCD reading.",
+      "pre_ui12_remaining_historical": "Full GPU light/material rasterization and stochastic particle density remain approximations; the missing candle/light trigger layer is now present.",
+      "ui12_acceptance": "Final ae13595 merchant occlusion: 41569 checks / 2376 exact whole frames / all five characters / opening-closing-interruption and canonical-state checks, journal a2ea930acbc8. Actual seven-slot cache checks are included in 34d842ab8fde. Historical timed-out merchant sessions are excluded from performance acceptance."
     },
     {
       "id": "remove_card",
@@ -430,12 +476,15 @@
       ],
       "contract": "Purchased/direct/forced removal feedback",
       "assessment": "implemented_with_documented_limits",
-      "implemented": "Purchased/direct/forced removals share the real observed removal presentation and original selection geometry.",
-      "remaining": "All source secondary particles are not reproduced.",
+      "implemented": "Purchased/direct/forced removals share the real observed removal presentation and original selection geometry. The actual removal captures committed pre-compaction card facts, shrinks the full face and plays the original sampled removal frames. UI12 restores the shop removal-service hover tip.",
+      "remaining": "The required observed removal sequence and service tooltip are present. Every independent source removal particle/material variant has not been newly verified as identical.",
       "regressions": [
         "world_room_ui_regression"
       ],
-      "acceptance": "Historical UI10: Frozen K native checks pass: world_room_ui_regression. Both matching K format39 actual packs pass: world_room_ui_regression."
+      "acceptance": "Historical UI10: Frozen K native checks pass: world_room_ui_regression. Both matching K format39 actual packs pass: world_room_ui_regression.",
+      "pre_ui12_implemented_historical": "Purchased/direct/forced removals share the real observed removal presentation and original selection geometry.",
+      "pre_ui12_remaining_historical": "All source secondary particles are not reproduced.",
+      "ui12_acceptance": "UI12 world H/J/L Firebird sessions and the eight complete world/lifecycle suites are scoped in world-ui12-0.17.md; their console-created room fixtures are distinguished from ordinary map reachability."
     },
     {
       "id": "treasure",
@@ -467,13 +516,16 @@
       ],
       "contract": "Loot opening, take/skip and nested card alternatives",
       "assessment": "implemented_with_documented_limits",
-      "implemented": "Original 402x86-source loot rows, continuous scroll/drag/focus, clipped hits, retained room and no potion slot chooser; card reward source scale/timing and alternatives.",
-      "remaining": "Pickup secondary particles remain incomplete.",
+      "implemented": "UI12 uses the original inset/masked panel with left-aligned readable rows and focused long-label scrolling in both ordinary and world-choice reward paths. Victory opens after the real effect endpoint without waiting for the corpse tail; corpses remain visible behind Loot. Real card/item/gold acquisitions enter the shared observed flight/trail/flash path, and Proceed keeps its original face plus separate hover outline.",
+      "remaining": "Actual pickup flights/trails and relic/potion arrival flashes are implemented; dense GPU ribbons, HDR/noise and exact desktop particle pixels remain CPU mappings. No old unqualified missing-pickup claim applies to these implemented triggers.",
       "regressions": [
         "world_reward_ui_regression",
         "world_ui_regression"
       ],
-      "acceptance": "Historical UI10: Frozen K native checks pass: world_reward_ui_regression, world_ui_regression. Both matching K format39 actual packs pass: world_reward_ui_regression, world_ui_regression."
+      "acceptance": "Historical UI10: Frozen K native checks pass: world_reward_ui_regression, world_ui_regression. Both matching K format39 actual packs pass: world_reward_ui_regression, world_ui_regression.",
+      "pre_ui12_implemented_historical": "Original 402x86-source loot rows, continuous scroll/drag/focus, clipped hits, retained room and no potion slot chooser; card reward source scale/timing and alternatives.",
+      "pre_ui12_remaining_historical": "Pickup secondary particles remain incomplete.",
+      "ui12_acceptance": "Frozen combat worktree ae13595: actual UI40 gate 1096 checks (34d842ab8fde), five complete combat/canvas suites (c4ac9d4cd5d0), unchanged source fingerprints. H/K device scopes and the independent final-release requirement are recorded in combat-ui12-0.17.md."
     },
     {
       "id": "game_over",
@@ -506,12 +558,15 @@
       ],
       "contract": "Hover expansion, tips, counts and inventory entry",
       "assessment": "implemented_with_documented_limits",
-      "implemented": "Original ordered HUD, source potion/room/relic controls and run timer. Right-aligned map/deck/settings positions stay fixed across timer/map visibility; NSPF5 retains the real Show Run Timer checkbox.",
-      "remaining": "All secondary source effects are not reproduced.",
+      "implemented": "UI12 separates current room/floor from elapsed time, places time in the floor hover, adds character/Ascension portrait hover, and displays five potion positions with paging for all sixteen engine slots. Potion/relic pickup flights and additive flashes share the actual destination page/grid anchors. Fixed map/deck/settings positions remain clear.",
+      "remaining": "Source-aligned arrival/flash triggers are implemented. Dense GPU material pixels remain approximate. Paging beyond five visible potions is the deliberate 320x240 adaptation, not a five-slot gameplay cap.",
       "regressions": [
         "card_hud_ui_regression"
       ],
-      "acceptance": "Historical UI10: Frozen K native checks pass: card_hud_ui_regression. Both matching K format39 actual packs pass: card_hud_ui_regression."
+      "acceptance": "Historical UI10: Frozen K native checks pass: card_hud_ui_regression. Both matching K format39 actual packs pass: card_hud_ui_regression.",
+      "pre_ui12_implemented_historical": "Original ordered HUD, source potion/room/relic controls and run timer. Right-aligned map/deck/settings positions stay fixed across timer/map visibility; NSPF5 retains the real Show Run Timer checkbox.",
+      "pre_ui12_remaining_historical": "All secondary source effects are not reproduced.",
+      "ui12_acceptance": "lcd_input_ui12_regression covers actual physical defaults, 16-slot paging and pickup anchors; the scoped UI12 integration report identifies the matching resource and Firebird evidence."
     },
     {
       "id": "hand",
@@ -523,8 +578,8 @@
       ],
       "contract": "Fan, hover, drag, keyboard held-card and targeting confirmation",
       "assessment": "implemented_with_documented_limits",
-      "implemented": "Primary contract remains implemented. UI11 gives the focused card a native 86x121 face with 10px text and adds source cyan/gold/red hand-holder SDF conditions, 500ms width transitions, 100ms selection expansion and 350ms return. The highlight follows the actual affine holder pose.",
-      "remaining": "Integer LCD geometry/font rendering and bounded CPU trail/noise output are adaptations; full desktop GPU/raster equality is not claimed.",
+      "implemented": "Primary contract remains implemented. UI11 gives the focused card a native 86x121 face with 10px text and adds source cyan/gold/red hand-holder SDF conditions, 500ms width transitions, 100ms selection expansion and 350ms return. The highlight follows the actual affine holder pose. UI12 keeps all ten direct numeric card shortcuts, bounds the enlarged focused/aimed card and its interpolation within the LCD, raises indices above the hand, halves the projected glow width, removes the empty-hand placeholder and renders actual denied-play thought bubbles.",
+      "remaining": "Final integer rasterization and bounded CPU trail/noise output remain adaptations. Actual card selection, aimed bounds, source denial reasons and highlight triggers are implemented; exact desktop GPU equality is not claimed.",
       "regressions": [
         "card_hud_ui_regression",
         "card_presentation_regression",
@@ -533,7 +588,10 @@
       "acceptance": "Historical UI10: Frozen K native checks pass: card_hud_ui_regression, card_presentation_regression. Both matching K format39 actual packs pass: card_hud_ui_regression.",
       "ui10_remaining_historical": "All original secondary highlight/trail shaders are not reproduced; original GPU/raster equality is not established.",
       "ui11_acceptance": "UI11 J: combat_secondary_ui11_regression passes 325107 checks with final common/English assets; J renderer/test plus unchanged I core. I card_highlight_regression also passes 12592419 exact scalar/clipping checks. These are native correctness checks, not final K Firebird performance.",
-      "ui10_implemented_historical": "All 55 source hand positions for one through ten cards, source scales/hover displacement, drag, held-card keyboard aim and queued layering. Source resource-state colors, card-pool and rarity outlines, unknown energy icons and cache invalidation are restored; the legacy whole-card gray overlay is removed. Original card-rule resource-cross texture and eligibility, dynamic cache invalidation and upgrade-preview-only changed-cost color/outline are implemented."
+      "ui10_implemented_historical": "All 55 source hand positions for one through ten cards, source scales/hover displacement, drag, held-card keyboard aim and queued layering. Source resource-state colors, card-pool and rarity outlines, unknown energy icons and cache invalidation are restored; the legacy whole-card gray overlay is removed. Original card-rule resource-cross texture and eligibility, dynamic cache invalidation and upgrade-preview-only changed-cost color/outline are implemented.",
+      "pre_ui12_implemented_historical": "Primary contract remains implemented. UI11 gives the focused card a native 86x121 face with 10px text and adds source cyan/gold/red hand-holder SDF conditions, 500ms width transitions, 100ms selection expansion and 350ms return. The highlight follows the actual affine holder pose.",
+      "pre_ui12_remaining_historical": "Integer LCD geometry/font rendering and bounded CPU trail/noise output are adaptations; full desktop GPU/raster equality is not claimed.",
+      "ui12_acceptance": "Frozen combat worktree ae13595: actual UI40 gate 1096 checks (34d842ab8fde), five complete combat/canvas suites (c4ac9d4cd5d0), unchanged source fingerprints. H/K device scopes and the independent final-release requirement are recorded in combat-ui12-0.17.md."
     },
     {
       "id": "piles",
@@ -544,12 +602,15 @@
       ],
       "contract": "Deck/draw/discard/exhaust grids, sort and scroll",
       "assessment": "implemented_with_documented_limits",
-      "implemented": "Original pile panels, continuous scroll/drag thumb, sort, filters and inspect.",
-      "remaining": "Exact selected font keys pass the covered pile contexts; complete original glyph-ink/kerning/raster equivalence remains unestablished.",
+      "implemented": "Original pile panels, continuous scroll/drag thumb, sort, filters and inspect. UI12 enlarges draw/discard/exhaust icons and labels, restores the original red count-badge image and separates exhaust from End Turn.",
+      "remaining": "Final pixel rasterization and every original desktop frame remain separate from the implemented artwork, hit regions and pile behavior.",
       "regressions": [
         "card_hud_ui_regression"
       ],
-      "acceptance": "Historical UI10: Frozen K native checks pass: card_hud_ui_regression. Both matching K format39 actual packs pass: card_hud_ui_regression."
+      "acceptance": "Historical UI10: Frozen K native checks pass: card_hud_ui_regression. Both matching K format39 actual packs pass: card_hud_ui_regression.",
+      "pre_ui12_implemented_historical": "Original pile panels, continuous scroll/drag thumb, sort, filters and inspect.",
+      "pre_ui12_remaining_historical": "Exact selected font keys pass the covered pile contexts; complete original glyph-ink/kerning/raster equivalence remains unestablished.",
+      "ui12_acceptance": "Frozen combat worktree ae13595: actual UI40 gate 1096 checks (34d842ab8fde), five complete combat/canvas suites (c4ac9d4cd5d0), unchanged source fingerprints. H/K device scopes and the independent final-release requirement are recorded in combat-ui12-0.17.md."
     },
     {
       "id": "inspect",
@@ -560,13 +621,16 @@
       ],
       "contract": "Full descriptions and upgrade compare",
       "assessment": "implemented_with_documented_limits",
-      "implemented": "Original inspect/compare/related-card carousel with 100ms card and 250ms backdrop/arrows transitions.",
-      "remaining": "Full original material/raster equivalence is not established.",
+      "implemented": "Original inspect/compare/related-card carousel with 100ms card and 250ms backdrop/arrows transitions. UI12 raises names within their banner, applies correct locale/type roles, and draws cost/Stars with thin four-sided outlines. Enemy-specific damage is used only by the actually aimed card; inspectors cannot inherit a stale target.",
+      "remaining": "Original font chains, fractional advances, pair kerning and bearings are implemented. Final integer LCD rasterization, antialiasing and full-frame desktop Godot equality remain documented limits; this is not a missing-font or wholly omitted-kerning claim.",
       "regressions": [
         "five_character_ui_regression",
         "expansion_ui_regression"
       ],
-      "acceptance": "Historical UI10: Frozen K native checks pass: five_character_ui_regression, expansion_ui_regression. Both matching K format39 actual packs pass: five_character_ui_regression, expansion_ui_regression."
+      "acceptance": "Historical UI10: Frozen K native checks pass: five_character_ui_regression, expansion_ui_regression. Both matching K format39 actual packs pass: five_character_ui_regression, expansion_ui_regression.",
+      "pre_ui12_implemented_historical": "Original inspect/compare/related-card carousel with 100ms card and 250ms backdrop/arrows transitions.",
+      "pre_ui12_remaining_historical": "Full original material/raster equivalence is not established.",
+      "ui12_acceptance": "Frozen combat worktree ae13595: actual UI40 gate 1096 checks (34d842ab8fde), five complete combat/canvas suites (c4ac9d4cd5d0), unchanged source fingerprints. H/K device scopes and the independent final-release requirement are recorded in combat-ui12-0.17.md."
     },
     {
       "id": "targeting",
@@ -617,12 +681,15 @@
       ],
       "contract": "Distinct HP loss, overkill, zero and completely blocked feedback",
       "assessment": "implemented_with_documented_limits",
-      "implemented": "Distinct actual HP loss/overkill/zero/blocked/prevented-hit feedback, independent pet targets and bounded trace queues.",
-      "remaining": "All original GPU secondary effects are not reproduced.",
+      "implemented": "Distinct actual HP loss/overkill/zero/blocked/prevented-hit feedback, independent pet targets and bounded trace queues. UI12 specialized number/blocked-label masks retain fractional advances, kerning and bearings, with bounded coverage union for overlapping glyphs.",
+      "remaining": "All named damage-result and status-popup triggers remain implemented. Dense GPU secondary fields and every desktop material variant are not claimed pixel-identical.",
       "regressions": [
         "combat_damage_ui7_regression"
       ],
-      "acceptance": "Historical UI10: Frozen K native checks pass: combat_damage_ui7_regression. Both matching K format39 actual packs pass: combat_damage_ui7_regression."
+      "acceptance": "Historical UI10: Frozen K native checks pass: combat_damage_ui7_regression. Both matching K format39 actual packs pass: combat_damage_ui7_regression.",
+      "pre_ui12_implemented_historical": "Distinct actual HP loss/overkill/zero/blocked/prevented-hit feedback, independent pet targets and bounded trace queues.",
+      "pre_ui12_remaining_historical": "All original GPU secondary effects are not reproduced.",
+      "ui12_acceptance": "Frozen combat worktree ae13595: actual UI40 gate 1096 checks (34d842ab8fde), five complete combat/canvas suites (c4ac9d4cd5d0), unchanged source fingerprints. H/K device scopes and the independent final-release requirement are recorded in combat-ui12-0.17.md."
     },
     {
       "id": "health_block",
@@ -633,12 +700,15 @@
       ],
       "contract": "Delayed health fill, block gain and shield loss",
       "assessment": "implemented_with_documented_limits",
-      "implemented": "Original split/delayed health fill, fade and first-block entrance from actual effect trace.",
-      "remaining": "Exact original GPU material output is not established.",
+      "implemented": "Original split/delayed health fill, fade and first-block entrance from actual effect trace. UI12 lifts creatures, bars and hitboxes together, keeps energy/Stars on their separate rail, and aligns outlined numeric labels with natural font metrics.",
+      "remaining": "The displayed HP/block and multi-hit timing contract remains distinct from exact desktop GPU/raster output. Integer final pixels are a platform adaptation.",
       "regressions": [
         "health_bar_ui_regression"
       ],
-      "acceptance": "Historical UI10: Frozen K native checks pass: health_bar_ui_regression."
+      "acceptance": "Historical UI10: Frozen K native checks pass: health_bar_ui_regression.",
+      "pre_ui12_implemented_historical": "Original split/delayed health fill, fade and first-block entrance from actual effect trace.",
+      "pre_ui12_remaining_historical": "Exact original GPU material output is not established.",
+      "ui12_acceptance": "Frozen combat worktree ae13595: actual UI40 gate 1096 checks (34d842ab8fde), five complete combat/canvas suites (c4ac9d4cd5d0), unchanged source fingerprints. H/K device scopes and the independent final-release requirement are recorded in combat-ui12-0.17.md."
     },
     {
       "id": "power_strip",
@@ -726,13 +796,16 @@
       ],
       "contract": "Death tracks, corpse removal and once-only normal/Fast/boss reward waits",
       "assessment": "implemented_with_documented_limits",
-      "implemented": "Original victory/reward handoff and UI timers, frozen visible victory powers, all five original normal and merchant nonlooping Die tracks with held exact final poses; separate additive Defect/Regent particle layers.",
-      "remaining": "Original GPU-particle implementation equivalence is not established. Actual bilingual character/four-room checks cover sampled source timing, separate particle decay and terminal poses.",
+      "implemented": "Original victory/reward handoff and UI timers, frozen visible victory powers, all five original normal and merchant nonlooping Die tracks with held exact final poses; separate additive Defect/Regent particle layers. UI12 schedules Loot from the actual effect endpoint independently of the remaining corpse animation, which continues behind the retained room.",
+      "remaining": "Original GPU particles remain approximations. The early-loot adaptation is explicitly responsive calculator behavior, not a claim to preserve the original death-track-plus-one-second wait.",
       "regressions": [
         "combat_ui_regression",
         "power_order_ui8_regression"
       ],
-      "acceptance": "Historical UI10: Frozen K native checks pass: combat_ui_regression, power_order_ui8_regression, character_death_ui9_regression. Both matching K format39 actual packs pass: combat_ui_regression, power_order_ui8_regression, character_death_ui9_regression."
+      "acceptance": "Historical UI10: Frozen K native checks pass: combat_ui_regression, power_order_ui8_regression, character_death_ui9_regression. Both matching K format39 actual packs pass: combat_ui_regression, power_order_ui8_regression, character_death_ui9_regression.",
+      "pre_ui12_implemented_historical": "Original victory/reward handoff and UI timers, frozen visible victory powers, all five original normal and merchant nonlooping Die tracks with held exact final poses; separate additive Defect/Regent particle layers.",
+      "pre_ui12_remaining_historical": "Original GPU-particle implementation equivalence is not established. Actual bilingual character/four-room checks cover sampled source timing, separate particle decay and terminal poses.",
+      "ui12_acceptance": "Frozen combat worktree ae13595: actual UI40 gate 1096 checks (34d842ab8fde), five complete combat/canvas suites (c4ac9d4cd5d0), unchanged source fingerprints. H/K device scopes and the independent final-release requirement are recorded in combat-ui12-0.17.md."
     },
     {
       "id": "generated_cards",
@@ -762,8 +835,8 @@
       ],
       "contract": "Discard/exhaust/draw and pickup/flight particles",
       "assessment": "implemented_with_documented_limits",
-      "implemented": "Primary contract remains implemented. UI11 actual Exhaust transfers use the source 400ms four-point curve, CPU dissolve and embers; Power transfers use the seven-node source path and actual owner VFX center. Six recorded card positions form fading trails; one actual Shuffle log creates one aggregate card-back flight. Room acquisition uses eight sampled trail positions and independent potion/relic arrival flashes.",
-      "remaining": "Godot baked arc-length lookup, dense particle ribbons, turbulence, HDR and material noise use bounded CPU approximations. These actual transfers and acquisition triggers are implemented; desktop pixel identity is not claimed.",
+      "implemented": "Primary contract remains implemented. UI11 actual Exhaust transfers use the source 400ms four-point curve, CPU dissolve and embers; Power transfers use the seven-node source path and actual owner VFX center. Six recorded card positions form fading trails; one actual Shuffle log creates one aggregate card-back flight. Room acquisition uses eight sampled trail positions and independent potion/relic arrival flashes. UI12 also observes real committed upgrades for full-face growth/hold/sparks/deck flight and aligns item pickup flashes with current HUD slots.",
+      "remaining": "Actual draw/discard/exhaust/generated/acquisition/upgrade trigger paths are implemented. Godot baked arc-length lookup, dense ribbons, turbulence, HDR and noise remain bounded CPU approximations.",
       "regressions": [
         "card_motion_regression",
         "combat_secondary_ui11_regression",
@@ -772,7 +845,10 @@
       "acceptance": "Historical UI10: Frozen K native checks pass: card_motion_regression.",
       "ui10_remaining_historical": "All original trails/materials are not reproduced.",
       "ui11_acceptance": "UI11 J: combat_secondary_ui11_regression passes 325107 checks with final common/English assets; J renderer/test plus unchanged I core. I card_highlight_regression also passes 12592419 exact scalar/clipping checks. These are native correctness checks, not final K Firebird performance. UI11 I: room_secondary_vfx_regression passes 105 checks with final common/English assets, actual triggers and canonical save/RNG invariance. Final K ordinary Firebird acceptance remains separate.",
-      "ui10_implemented_historical": "Primary draw/discard/exhaust/acquisition/removal trajectories and actual action linkage."
+      "ui10_implemented_historical": "Primary draw/discard/exhaust/acquisition/removal trajectories and actual action linkage.",
+      "pre_ui12_implemented_historical": "Primary contract remains implemented. UI11 actual Exhaust transfers use the source 400ms four-point curve, CPU dissolve and embers; Power transfers use the seven-node source path and actual owner VFX center. Six recorded card positions form fading trails; one actual Shuffle log creates one aggregate card-back flight. Room acquisition uses eight sampled trail positions and independent potion/relic arrival flashes.",
+      "pre_ui12_remaining_historical": "Godot baked arc-length lookup, dense particle ribbons, turbulence, HDR and material noise use bounded CPU approximations. These actual transfers and acquisition triggers are implemented; desktop pixel identity is not claimed.",
+      "ui12_acceptance": "Frozen combat worktree ae13595: actual UI40 gate 1096 checks (34d842ab8fde), five complete combat/canvas suites (c4ac9d4cd5d0), unchanged source fingerprints. H/K device scopes and the independent final-release requirement are recorded in combat-ui12-0.17.md."
     },
     {
       "id": "turn_flow",
@@ -783,15 +859,18 @@
       ],
       "contract": "Player/enemy banners, turn-end blocking and command waits",
       "assessment": "implemented_with_documented_limits",
-      "implemented": "Original player/enemy banners, turn-end blocking, feedback waits and scheduled displayed facts. The candidate settles terminal WorldRelicChoice rewards after the final combat trace; only actual combat choices suspend it. A manual-kill regression reproduces the former indefinite hand/energy/end-turn residue on a0df before the fix. I implements the source optional End Turn long press: strictly greater than500ms, release decay/repress, one completion per owned press and source additive progress bar. A20-byte UI timer serves mouse, mapped keys, calculator edges and real toolbar down/up/cancel; canonical state stays unchanged before completion. K skips disabled idle hold work while retaining existing ownership, residual progress and unfinished fade; the bar visual is requested only while enabled. No state fields or formats change.",
-      "remaining": "Every original per-monster animation/command delay has not received a differential audit.",
+      "implemented": "Original player/enemy banners, turn-end blocking, feedback waits and scheduled displayed facts. The candidate settles terminal WorldRelicChoice rewards after the final combat trace; only actual combat choices suspend it. A manual-kill regression reproduces the former indefinite hand/energy/end-turn residue on a0df before the fix. I implements the source optional End Turn long press: strictly greater than500ms, release decay/repress, one completion per owned press and source additive progress bar. A20-byte UI timer serves mouse, mapped keys, calculator edges and real toolbar down/up/cancel; canonical state stays unchanged before completion. K skips disabled idle hold work while retaining existing ownership, residual progress and unfinished fade; the bar visual is requested only while enabled. No state fields or formats change. UI12 adds the Battle Start prelude before Player Turn while retaining independent enemy/player clocks and restored-run suppression.",
+      "remaining": "The named banners, real effect barriers and turn-end inputs are implemented and tested. A differential audit of every original per-monster command/animation delay has not been completed; no blanket all-monster timing claim is made.",
       "regressions": [
         "turn_banner_regression",
         "combat_ui_regression",
         "enemies_regression",
         "end_turn_hold_regression"
       ],
-      "acceptance": "Historical UI10: Frozen K native checks pass: turn_banner_regression, combat_ui_regression, enemies_regression, end_turn_hold_regression. Both matching K format39 actual packs pass: combat_ui_regression, end_turn_hold_regression. The K ordinary-browser21-flow gate includes this scope: Ordinary held mapped-key and toolbar input advance turn1 to2 to3 exactly once per hold; short attempts leave turn1 unchanged. Both K long-press targets pass155,338 checks, including disabled residual owner/timer/fade and canonical-state identity; half/fired captures match I exactly."
+      "acceptance": "Historical UI10: Frozen K native checks pass: turn_banner_regression, combat_ui_regression, enemies_regression, end_turn_hold_regression. Both matching K format39 actual packs pass: combat_ui_regression, end_turn_hold_regression. The K ordinary-browser21-flow gate includes this scope: Ordinary held mapped-key and toolbar input advance turn1 to2 to3 exactly once per hold; short attempts leave turn1 unchanged. Both K long-press targets pass155,338 checks, including disabled residual owner/timer/fade and canonical-state identity; half/fired captures match I exactly.",
+      "pre_ui12_implemented_historical": "Original player/enemy banners, turn-end blocking, feedback waits and scheduled displayed facts. The candidate settles terminal WorldRelicChoice rewards after the final combat trace; only actual combat choices suspend it. A manual-kill regression reproduces the former indefinite hand/energy/end-turn residue on a0df before the fix. I implements the source optional End Turn long press: strictly greater than500ms, release decay/repress, one completion per owned press and source additive progress bar. A20-byte UI timer serves mouse, mapped keys, calculator edges and real toolbar down/up/cancel; canonical state stays unchanged before completion. K skips disabled idle hold work while retaining existing ownership, residual progress and unfinished fade; the bar visual is requested only while enabled. No state fields or formats change.",
+      "pre_ui12_remaining_historical": "Every original per-monster animation/command delay has not received a differential audit.",
+      "ui12_acceptance": "Frozen combat worktree ae13595: actual UI40 gate 1096 checks (34d842ab8fde), five complete combat/canvas suites (c4ac9d4cd5d0), unchanged source fingerprints. H/K device scopes and the independent final-release requirement are recorded in combat-ui12-0.17.md."
     },
     {
       "id": "resources",
@@ -803,8 +882,8 @@
       ],
       "contract": "Orbs, stars, Osty resources and activation/evoke feedback",
       "assessment": "implemented_with_documented_limits",
-      "implemented": "Primary contract remains implemented. UI11 records actual passive/evoke notices for all five orb kinds, including repeated evokes and Gold-Plated Cables WorldStage activations. Pulses/beams use the pre-removal slot and actual target mask without consuming RNG; existing stars/Osty state remains unchanged.",
-      "remaining": "Dense orb GPU particles, exact bloom and material pixels remain bounded CPU approximations. No activation is inferred only from orb count changes.",
+      "implemented": "Primary contract remains implemented. UI11 records actual passive/evoke notices for all five orb kinds, including repeated evokes and Gold-Plated Cables WorldStage activations. Pulses/beams use the pre-removal slot and actual target mask without consuming RNG; existing stars/Osty state remains unchanged. UI12 positions outlined energy/Stars on the lower-left rail independently of player block/status bars, and keeps Stars out of the ordinary power strip.",
+      "remaining": "Dense orb GPU particles, exact bloom and material pixels remain bounded CPU approximations; the resource layout, actual passive/evoke observations and repeated activation triggers are implemented.",
       "regressions": [
         "card_hud_ui_regression",
         "combat_ui_regression",
@@ -813,7 +892,10 @@
       "acceptance": "Historical UI10: Frozen K native checks pass: card_hud_ui_regression, combat_ui_regression. Both matching K format39 actual packs pass: card_hud_ui_regression, combat_ui_regression.",
       "ui10_remaining_historical": "All invoke/evoke secondary VFX remain incomplete.",
       "ui11_acceptance": "UI11 J: combat_secondary_ui11_regression passes 325107 checks with final common/English assets; J renderer/test plus unchanged I core. I card_highlight_regression also passes 12592419 exact scalar/clipping checks. These are native correctness checks, not final K Firebird performance.",
-      "ui10_implemented_historical": "Original Defect orb arc/move/fill/fade, stars, Osty source anchors/summon timing and actual resource state."
+      "ui10_implemented_historical": "Original Defect orb arc/move/fill/fade, stars, Osty source anchors/summon timing and actual resource state.",
+      "pre_ui12_implemented_historical": "Primary contract remains implemented. UI11 records actual passive/evoke notices for all five orb kinds, including repeated evokes and Gold-Plated Cables WorldStage activations. Pulses/beams use the pre-removal slot and actual target mask without consuming RNG; existing stars/Osty state remains unchanged.",
+      "pre_ui12_remaining_historical": "Dense orb GPU particles, exact bloom and material pixels remain bounded CPU approximations. No activation is inferred only from orb count changes.",
+      "ui12_acceptance": "Frozen combat worktree ae13595: actual UI40 gate 1096 checks (34d842ab8fde), five complete combat/canvas suites (c4ac9d4cd5d0), unchanged source fingerprints. H/K device scopes and the independent final-release requirement are recorded in combat-ui12-0.17.md."
     },
     {
       "id": "choices",
@@ -860,8 +942,8 @@
       ],
       "contract": "Real supported controls, persistence and platform restrictions",
       "assessment": "implemented_with_documented_limits",
-      "implemented": "Source General/Input layout, original tabs/checkboxes/action controls, language dropdown rules and real local feedback/credits. G/H restores exact source font roles, geometry, release-hidden controls and Input100ms focus fade. I adds the original default-off per-profile Long Press Confirmations row, yielding eleven supported General rows, and its real End Turn hold behavior. NSPF5 uses reserved bit7 in the unchanged108-byte preference record with explicit backward migration; canonical NSV17 and NSH9 remain unchanged. K avoids disabled idle hold/visual computation without suppressing an existing owner, residual timer or unfinished completion fade.",
-      "remaining": "Audio is excluded. The original startup-logo sequence/SkipIntroLogo, desktop background-FPS cap and remote gameplay upload service are not implemented; they are explicit feature/platform differences. CommonTooltips is authored hidden with an unimplemented callback; Reset Tutorials is hidden by the pinned release gate; ShowMpDrawings belongs to excluded multiplayer.",
+      "implemented": "UI12 presents the original General/Input tabs, controls, track/end/thumb assets and working pointer scrollbar dragging. Controls move left with a separate tooltip lane, the language arrow is centered, oversized HSV controls remain visible on hover and Back is reduced. Supported preferences, exact-old-default-only binding migration and Long Press Confirmations persist; user-requested feedback/patch notes are removed.",
+      "remaining": "Audio, multiplayer drawings and remote service behavior remain excluded/unavailable; CommonTooltips and Reset Tutorials follow the pinned hidden release gates. The original startup-logo sequence and SkipIntroLogo preference remain a concrete pending feature at this reconciliation checkpoint, tracked for the release owner; desktop background FPS limiting is a platform difference.",
       "regressions": [
         "ui_preferences_regression",
         "world_frontend_ui_regression",
@@ -870,7 +952,10 @@
         "end_turn_hold_regression",
         "check_offline_browser.js"
       ],
-      "acceptance": "Historical UI10: Frozen K native checks pass: ui_preferences_regression, world_frontend_ui_regression, input_bindings_ui8_regression, end_turn_hold_regression. Both matching K format39 actual packs pass: world_frontend_ui_regression, input_bindings_ui8_regression, end_turn_hold_regression. The K ordinary-browser21-flow gate includes this scope: Ordinary real preference controls and Long Press persistence/input/cancel/repeat paths pass, with other profiles unchanged. J source-coordinate hover checks pass synthetically and with both actual packs against the production-identical I core. They verify intended localized title/body, full-screen placement and unchanged canonical bytes; the prior I capture names alone did not establish these contexts. K includes those J fixture corrections; all58 card/HUD captures per locale match the accepted J baseline."
+      "acceptance": "Historical UI10: Frozen K native checks pass: ui_preferences_regression, world_frontend_ui_regression, input_bindings_ui8_regression, end_turn_hold_regression. Both matching K format39 actual packs pass: world_frontend_ui_regression, input_bindings_ui8_regression, end_turn_hold_regression. The K ordinary-browser21-flow gate includes this scope: Ordinary real preference controls and Long Press persistence/input/cancel/repeat paths pass, with other profiles unchanged. J source-coordinate hover checks pass synthetically and with both actual packs against the production-identical I core. They verify intended localized title/body, full-screen placement and unchanged canonical bytes; the prior I capture names alone did not establish these contexts. K includes those J fixture corrections; all58 card/HUD captures per locale match the accepted J baseline.",
+      "pre_ui12_implemented_historical": "Source General/Input layout, original tabs/checkboxes/action controls, language dropdown rules and real local feedback/credits. G/H restores exact source font roles, geometry, release-hidden controls and Input100ms focus fade. I adds the original default-off per-profile Long Press Confirmations row, yielding eleven supported General rows, and its real End Turn hold behavior. NSPF5 uses reserved bit7 in the unchanged108-byte preference record with explicit backward migration; canonical NSV17 and NSH9 remain unchanged. K avoids disabled idle hold/visual computation without suppressing an existing owner, residual timer or unfinished completion fade.",
+      "pre_ui12_remaining_historical": "Audio is excluded. The original startup-logo sequence/SkipIntroLogo, desktop background-FPS cap and remote gameplay upload service are not implemented; they are explicit feature/platform differences. CommonTooltips is authored hidden with an unimplemented callback; Reset Tutorials is hidden by the pinned release gate; ShowMpDrawings belongs to excluded multiplayer.",
+      "ui12_acceptance": "UI12 scoped frontend source/interaction evidence is recorded in ui12-front-feedback-0.17.md; final integrated Firebird acceptance remains separately bound to its launcher. Historical UI10 acceptance is retained without relabeling it as UI12."
     },
     {
       "id": "language",
@@ -936,13 +1021,16 @@
       ],
       "contract": "Binding capture/conflict/reset and navigation",
       "assessment": "implemented_with_documented_limits",
-      "implemented": "Real two-bank capture/conflict-swap/reset and supported host keys, linked confirm/end-turn handling and card keys persist in NSPF5 with legacy-format support. G/H restores source Input row/command/binding geometry, Listening modal and100ms focus-release fade. I integrates mapped physical/calculator edges and semantic toolbar lifetimes with the shared long-press owner; repeat/release cannot fire an extra turn.",
-      "remaining": "Platform-only keys remain unavailable.",
+      "implemented": "Real two-bank capture/conflict-swap/reset and supported host keys, linked confirm/end-turn handling and card keys persist in NSPF5 with legacy-format support. G/H restores source Input row/command/binding geometry, Listening modal and100ms focus-release fade. I integrates mapped physical/calculator edges and semantic toolbar lifetimes with the shared long-press owner; repeat/release cannot fire an extra turn. UI12 defaults use pad-edge navigation/center selection and Tab/Doc/Home/Del/Var/Menu/Shift/Ctrl, ten direct 1-0 hand slots and Flag for the real typed command console. Labels use official NspireCX glyphs; customized banks are preserved.",
+      "remaining": "Keys absent from the calculator remain unavailable. This does not prevent the implemented native physical-key defaults, editable bindings or typed console.",
       "regressions": [
         "input_bindings_ui8_regression",
         "end_turn_hold_regression"
       ],
-      "acceptance": "Historical UI10: Frozen K native checks pass: input_bindings_ui8_regression, end_turn_hold_regression. Both matching K format39 actual packs pass: input_bindings_ui8_regression, end_turn_hold_regression. J source-coordinate hover checks pass synthetically and with both actual packs against the production-identical I core. They verify intended localized title/body, full-screen placement and unchanged canonical bytes; the prior I capture names alone did not establish these contexts. K includes those J fixture corrections; all58 card/HUD captures per locale match the accepted J baseline."
+      "acceptance": "Historical UI10: Frozen K native checks pass: input_bindings_ui8_regression, end_turn_hold_regression. Both matching K format39 actual packs pass: input_bindings_ui8_regression, end_turn_hold_regression. J source-coordinate hover checks pass synthetically and with both actual packs against the production-identical I core. They verify intended localized title/body, full-screen placement and unchanged canonical bytes; the prior I capture names alone did not establish these contexts. K includes those J fixture corrections; all58 card/HUD captures per locale match the accepted J baseline.",
+      "pre_ui12_implemented_historical": "Real two-bank capture/conflict-swap/reset and supported host keys, linked confirm/end-turn handling and card keys persist in NSPF5 with legacy-format support. G/H restores source Input row/command/binding geometry, Listening modal and100ms focus-release fade. I integrates mapped physical/calculator edges and semantic toolbar lifetimes with the shared long-press owner; repeat/release cannot fire an extra turn.",
+      "pre_ui12_remaining_historical": "Platform-only keys remain unavailable.",
+      "ui12_acceptance": "lcd_input_ui12_regression and the UI12 combat numeric-selection gate verify semantic slot ownership and unchanged state before confirm; typed-console device evidence is scoped in developer-console-ui12-0.17.md."
     },
     {
       "id": "screen_shake",
@@ -1015,15 +1103,18 @@
       ],
       "contract": "Credits and return",
       "assessment": "implemented_with_documented_limits",
-      "implemented": "Primary contract remains implemented. UI11 preserves the supplied original credit sequence and appends the Nspire port credit for zyf722, based on Codex, with localized glyph coverage.",
-      "remaining": "Exact desktop Godot raster/kerning equality remains unestablished.",
+      "implemented": "UI12 preserves the original sequence, aligns role labels to the right-hand gutter, supplies complete heading glyphs and inserts the Nspire / zyf722 / Codex block after Trailer and before FMOD.",
+      "remaining": "Exact desktop glyph-ink/raster equality remains separate; the former alignment, missing heading glyphs and port-credit location defects are implemented corrections.",
       "regressions": [
         "auxiliary_ui8_regression"
       ],
       "acceptance": "Historical UI10: Frozen K native checks pass: auxiliary_ui8_regression. Both matching K format39 actual packs pass: auxiliary_ui8_regression.",
       "ui10_remaining_historical": "Godot raster/kerning equality is not established.",
       "ui11_acceptance": "Source credit append and all sixteen font/text payloads are included in the final resource conversion; prior UI10 navigation acceptance remains historical.",
-      "ui10_implemented_historical": "Complete supplied 64-key original credits, columns/logos, source scrolling, exit gate and fade."
+      "ui10_implemented_historical": "Complete supplied 64-key original credits, columns/logos, source scrolling, exit gate and fade.",
+      "pre_ui12_implemented_historical": "Primary contract remains implemented. UI11 preserves the supplied original credit sequence and appends the Nspire port credit for zyf722, based on Codex, with localized glyph coverage.",
+      "pre_ui12_remaining_historical": "Exact desktop Godot raster/kerning equality remains unestablished.",
+      "ui12_acceptance": "UI12 scoped frontend source/interaction evidence is recorded in ui12-front-feedback-0.17.md; final integrated Firebird acceptance remains separately bound to its launcher. Historical UI10 acceptance is retained without relabeling it as UI12."
     },
     {
       "id": "audio",
@@ -1064,8 +1155,8 @@
       ],
       "contract": "Original locale and scene font families, style measurement and glyph painting",
       "assessment": "implemented_with_documented_limits",
-      "implemented": "Primary contract remains implemented. UI11 uses each original language font chain and full 5/6/8/10/12px body bands, with main LCD text generally 8-12px and larger titles. Nearest-pixel advances fix systematic Latin ceil tracking; original-font offline combining-grapheme shaping covers Thai tone/vowel stacks without a resident shaping engine. Main text outlines are thinner.",
-      "remaining": "Integer LCD advances and glyph rasterization do not establish exact Godot subpixel kerning/ink equality. Original translation omissions and reviewed platform fallbacks remain explicit.",
+      "implemented": "UI40 stores natural 1/64-pixel advances, true source pair kerning and negative bearings using each original locale font chain. Shared measuring/wrapping/painting and audited specialized UI paths preserve fractional positions until rasterization; fallback-font kerning follows the actual resolved family. Full readable body/title bands, thin outlines and offline Thai combining-grapheme shaping remain.",
+      "remaining": "Original font chains, fractional advances, pair kerning and bearings are implemented. Final integer LCD rasterization, antialiasing and full-frame desktop Godot equality remain documented limits; this is not a missing-font or wholly omitted-kerning claim. Original translation omissions and reviewed platform fallbacks remain explicit.",
       "regressions": [
         "font_styles_ui7_regression",
         "card_hud_ui_regression",
@@ -1074,7 +1165,10 @@
       "acceptance": "Historical UI10: Frozen K native checks pass: font_styles_ui7_regression, card_hud_ui_regression. Both matching K format39 actual packs pass: font_styles_ui7_regression, card_hud_ui_regression.",
       "ui10_remaining_historical": "Exact locale font keys and LCD composition are verified; complete Godot glyph-ink, kerning and raster equality are not established. The declared Chinese Regular variation has equal measured advance/ascent/descent to its base at12 sampled sizes, so a metric defect is not inferred from the resource properties alone. Integer LCD advances, fixed screen projection and documented minimum readable sizes remain adaptations.",
       "ui11_acceptance": "UI11 I: locale_editions_regression passes 38644 checks across 53072 model/event descriptions in all sixteen final editions; zero unexpanded templates or missing visible codepoints. Native data/font correctness is separate from final Firebird interaction.",
-      "ui10_implemented_historical": "Original regular/bold/display/italic faces at source-derived sizes, including 935 missing 5px bold Chinese tooltip glyphs and 57 display character-title glyphs, append-only with all old bitmaps exact. The candidate also supplies native4px regular/bold glyphs for the ten standard tutorial bodies and source12/14/16/18px display glyphs for the post-tutorial battle-start banner. G/H adds source9px scene headings only in format39 and keeps sparse bands out of generic text fitting; exact front/History/run-setup alphabets are included with no missing required glyphs in the accepted conversion."
+      "ui10_implemented_historical": "Original regular/bold/display/italic faces at source-derived sizes, including 935 missing 5px bold Chinese tooltip glyphs and 57 display character-title glyphs, append-only with all old bitmaps exact. The candidate also supplies native4px regular/bold glyphs for the ten standard tutorial bodies and source12/14/16/18px display glyphs for the post-tutorial battle-start banner. G/H adds source9px scene headings only in format39 and keeps sparse bands out of generic text fitting; exact front/History/run-setup alphabets are included with no missing required glyphs in the accepted conversion.",
+      "pre_ui12_implemented_historical": "Primary contract remains implemented. UI11 uses each original language font chain and full 5/6/8/10/12px body bands, with main LCD text generally 8-12px and larger titles. Nearest-pixel advances fix systematic Latin ceil tracking; original-font offline combining-grapheme shaping covers Thai tone/vowel stacks without a resident shaping engine. Main text outlines are thinner.",
+      "pre_ui12_remaining_historical": "Integer LCD advances and glyph rasterization do not establish exact Godot subpixel kerning/ink equality. Original translation omissions and reviewed platform fallbacks remain explicit.",
+      "ui12_acceptance": "The integrated UI12 report records twenty independent Pillow/FreeType width comparisons, maximum 0.484375 LCD pixel after final rounding. Final ae13595 actual banner/health/intent placement agrees with ordinary Canvas rendering within the 1096-check UI40 gate; this is not every label or desktop raster identity."
     },
     {
       "id": "tutorial_accept",
@@ -1431,7 +1525,7 @@
     "fidelity_percentage": null,
     "superseded_by_matched_gate": "verification_ui10e; this diagnostic record itself remains mixed-stage, without format38 lock or release acceptance."
   },
-  "verification_current": "verification_ui10k",
+  "verification_current": "verification_ui12",
   "verification_ui10e": {
     "checkpoint": "04038b2cda0240bfa2be1af79bf62401ec26e7a9",
     "tree": "0013609a7d365c985f62f8c2798a3af790c12589",
@@ -2222,5 +2316,35 @@
       },
       "production_change_for_fixture_failures": false
     }
+  },
+  "source_stage_ui11_historical": "UI11 implementation through local checkpoint J f16573e1b9c6da390cd9944bd447acb4dc0482d3: readable LCD layouts, sixteen installed-language editions, bounded secondary effects and detached Bestiary phases. Final resources and focused I/J native correctness gates completed; F ordinary Ndless startup verified after reducing actual contiguous allocation. Final UI11 K Firebird interaction/performance, packaging and remote synchronization are not claimed here. UI10 K receipts below are historical and do not validate changed UI11 code. No restoration percentage is inferred.",
+  "verification_ui12": {
+    "kind": "scoped source reconciliation and completed native combat checks; final integration reported separately",
+    "recovered_base": "af95e29",
+    "combat_runtime_checkpoint": "ae1359512fd76b6d0d4fd814da699ff366cd7f8c",
+    "combat_report": "combat-ui12-0.17.md",
+    "world_report": "world-ui12-0.17.md",
+    "frontend_report": "ui12-front-feedback-0.17.md",
+    "console_report": "developer-console-ui12-0.17.md",
+    "integration_report": "ui12-lcd-followup-0.17.md",
+    "native_receipts": {
+      "complete_build": "b6016237f5c5",
+      "actual_ui40_1096_checks": "34d842ab8fde",
+      "five_complete_suites": "c4ac9d4cd5d0",
+      "merchant_2376_exact_frames": "a2ea930acbc8"
+    },
+    "native_scope": "Frozen ae13595 combat worktree. All listed journals passed with source_changed=false. These are correctness/pixel comparisons, not physical-calculator performance measurements or acceptance of unrelated later source changes.",
+    "firebird_scope": "H ordinary play/save evidence includes a retained host ENOSPC controller error and is not a wholly passed journal. K 2d89c8a26a3f is closed/passed; later console-created rooms are fixtures. H/J/L world and H/J frontend sessions retain the launcher-specific scopes in their module reports. Final integrated launcher and matched merchant speed remain separate release gates.",
+    "open_feature_review": [
+      "Original startup logo sequence / SkipIntroLogo preference remains pending here.",
+      "Independent per-monster entrance effects and every monster command delay are not newly audited by this reconciliation.",
+      "Source rumble/trauma and all shake trigger sites retain their prior documented incomplete scope."
+    ],
+    "platform_limits": [
+      "Bounded CPU/LCD particles, noise, trails, HDR approximations and final integer rasterization do not establish full desktop frame identity.",
+      "Full Ancient actor animation remains omitted under the explicit size-saving exception.",
+      "Audio, multiplayer and Timeline remain excluded; online services unavailable and patch notes/feedback removed by user instruction."
+    ],
+    "untouched_contracts": "Entries without a UI12 reconciliation keep their previous implementation and remaining scope; no unreviewed contract is promoted to passed."
   }
 }

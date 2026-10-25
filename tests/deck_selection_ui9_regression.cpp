@@ -48,15 +48,15 @@ static void smith(){
     scenario="Smith grid/filter/toggle/cancel/confirm";room(WorldRoom::Rest);
     a.game.deck[0].upgraded=1;const unsigned expected=a.game.deck_count-1;begin_smith();
     uint16_t indices[MaxDeck];CHECK(a.deck_choice_items(indices,MaxDeck)==expected&&indices[0]==1);auto&grid=a.card_grids[unsigned(CardGridSurface::DeckChoice)];
-    CHECK(grid.top==15&&grid.bottom==240&&grid.origin==15&&grid.count==int(expected)&&grid.columns==4);
+    CHECK(grid.top==12&&grid.bottom==210&&grid.origin==15&&grid.count==int(expected)&&grid.columns==3);
     CHECK(!hit(HitKind::Choice,0));for(int i=0;i<a.hit_count;++i)if(a.hits[i].kind==HitKind::Choice)CHECK(card_upgradeable(a.game.deck[a.hits[i].value]));
     a.pointer_move(310,30);a.render();CHECK(hit(HitKind::UiAction,int(UiAction::DeckViewUpgrades)));snapshot();if(actual){CHECK(spire_test::selection_upgrade_label_pixels(a));unchanged();}capture("smith-grid");
     click(HitKind::UiAction,int(UiAction::DeckViewUpgrades));CHECK(a.deck_selection.show_upgrades);unchanged();capture("smith-grid-upgrades");
     a.input(Key::Right);a.render();CHECK(!a.deck_selection.show_upgrades&&!hit(HitKind::UiAction,int(UiAction::DeckViewUpgrades)));CHECK(a.cursor==2);unchanged();capture("smith-directional-grid");
     click(HitKind::Choice,1);CHECK(a.deck_candidate==1&&a.deck_candidate_valid()&&a.active_card_grid()<0);unchanged();settle();capture("smith-upgrade-preview");
-    // The authored parents extend eight pixels beyond either screen edge;
-    // input regions are clipped to the actual framebuffer by App::add_hit.
-    const auto*confirm=hit(HitKind::UiAction,int(UiAction::ConfirmDeckChoice));const auto*back=hit(HitKind::UiAction,int(UiAction::Back));CHECK(confirm&&confirm->x==290&&confirm->y==173&&confirm->w==30&&confirm->h==21);CHECK(back&&back->x==0&&back->y==173&&back->w==30);CHECK(!hit(HitKind::UiAction,int(UiAction::CancelDeckChoice)));
+    // Readable LCD navigation reserves independent bottom corners without
+    // overlapping the enlarged preview cards or their selected hit regions.
+    const auto*confirm=hit(HitKind::UiAction,int(UiAction::ConfirmDeckChoice));const auto*back=hit(HitKind::UiAction,int(UiAction::Back));CHECK(confirm&&confirm->x==268&&confirm->y==204&&confirm->w==52&&confirm->h==30);CHECK(back&&back->x==0&&back->y==215&&back->w==40&&back->h==24);CHECK(!hit(HitKind::UiAction,int(UiAction::CancelDeckChoice)));
     a.pointer_move(deck_selection_layout::AfterX+20,deck_selection_layout::PreviewY+20);a.render();CardHoverTarget hover;CHECK(card_hover_target(a,hover)&&hover.card.upgraded&&hover.deck==1);
     click(HitKind::UiAction,int(UiAction::Back));CHECK(a.deck_candidate<0&&a.game.phase==Phase::Upgrade&&a.cursor==1);unchanged();settle();
     click(HitKind::UiAction,int(UiAction::Back));CHECK(a.game.phase==Phase::Camp&&!a.game.world.rest_pending&&!a.game.world.rest_used&&!a.game.deck[1].upgraded);
@@ -80,7 +80,7 @@ static void removal(){
 }
 static void long_grid(){
     scenario="filtered long grid keyboard + mouse scroll";room(WorldRoom::Rest);while(a.game.deck_count<MaxDeck)CHECK(event_add_deck_card(a.game,{Strike,0})>=0);for(unsigned i=0;i<MaxDeck;++i)a.game.deck[i].upgraded=uint8_t(i%3==0);begin_smith();snapshot();uint16_t indices[MaxDeck];const unsigned count=a.deck_choice_items(indices,MaxDeck);CHECK(count==MaxDeck-MaxDeck/3);
-    a.cursor=indices[0];for(unsigned i=0;i<40;++i)a.input(Key::Down);a.render();CHECK(a.cursor==indices[(count-1)/4*4]);CHECK(spire_test::focus_card_grid(a));unchanged();capture("smith-filtered-grid-bottom");
+    a.cursor=indices[0];for(unsigned i=0;i<count;++i)a.input(Key::Down);a.render();CHECK(a.cursor==indices[(count-1)/3*3]);CHECK(spire_test::focus_card_grid(a));unchanged();capture("smith-filtered-grid-bottom");
     CHECK(spire_test::drag_grid_thumb(a,false));CHECK(spire_test::drag_grid_thumb(a,true));unchanged();
     // Loading canonical state has no unchecked view or stale confirmation.
     a.cursor=indices[count-1];a.input(Key::Confirm);CHECK(a.deck_candidate>=0);a.deck_selection.show_upgrades=true;CHECK(load(a.game,before.bytes,before.size));a.reset_presentation(true);a.render();CHECK(a.deck_candidate<0&&!a.deck_selection.show_upgrades);unchanged();

@@ -45,10 +45,10 @@ static void ordered_catalog(){
 }
 static void source_layout(){
  BestiaryPresentation list{};list.row_count=4;list.rows[0]=-1;list.rows[1]=0;list.rows[2]=1;list.rows[3]=-2;list.layout_rows();
- CHECK(list.Top==23&&list.Bottom==217&&list.Left==244&&list.Right==297);
- CHECK(list.row_offsets[0]==0&&list.row_offsets[1]==68&&list.row_offsets[2]==108&&list.row_offsets[3]==148&&list.row_offsets[4]==212);
- CHECK(list.row_y(0)==23&&list.row_height(0)==12&&list.row_y(1)==36&&list.row_height(1)==7&&list.row_y(2)==44);
- CHECK(list.ModeX==18&&list.ModeY==216&&list.ModeWidth==50&&list.ModeHeight==11);
+ CHECK(list.Top==23&&list.Bottom==217&&list.Left==212&&list.Right==300);
+ CHECK(list.row_offsets[0]==0&&list.row_offsets[1]==142&&list.row_offsets[2]==298&&list.row_offsets[3]==454&&list.row_offsets[4]==592);
+ CHECK(list.row_y(0)==23&&list.row_height(0)==26&&list.row_y(1)==50&&list.row_height(1)==29&&list.row_y(2)==80);
+ CHECK(list.ModeX==76&&list.ModeY==215&&list.ModeWidth==118&&list.ModeHeight==22);
  // Source50ms focus and300ms release use the same glyph band throughout.
  BestiaryPresentation::MoveMotion move{};move.focus(true,100);CHECK(move.focus_scale(100)==1024&&move.focus_scale(150)==1075);
  move.press(true,150);CHECK(move.press_scale(150)==1024&&move.press_scale(350)==922);
@@ -76,10 +76,11 @@ static void actual_glyphs(const std::vector<uint8_t>&pack){
  clear_ui_progress(app.progress);app.progress.discovered_acts=15;CHECK(app.open_bestiary(true));
  for(int row_index=0;row_index<app.bestiary.row_count;++row_index){const unsigned model=app.bestiary_entry_model(row_index);if(model!=255)text(app.monster_title(EnemyId(model)),app.content.english()?4:0,10);}
  text(app.content.world_title("encounters","DECIMILLIPEDE_ELITE"),app.content.english()?4:0,10);text(app.content.world_string("bestiary","LOCKED.monsterTitle"),app.content.english()?4:0,10);
- for(const char*label:{"ACTIONS.header","MODE.viewActions","MODE.viewStats"})text(app.content.world_string("bestiary",label),app.content.english()?5:0,5);
- text(app.content.world_string("bestiary","EVENTS.title"),app.content.english()?5:0,6);
- for(const char*act:{"OVERGROWTH","UNDERDOCKS","HIVE","GLORY"})text(app.content.world_title("acts",act),app.content.english()?5:0,6);
- text(app.content.world_string("bestiary","QUOTE_PLACEHOLDER"),6,5);
+ text(app.content.world_string("bestiary","ACTIONS.header"),app.content.english()?5:0,10);
+ for(const char*label:{"MODE.viewActions","MODE.viewStats"})text(app.content.world_string("bestiary",label),app.content.english()?5:0,12);
+ text(app.content.world_string("bestiary","EVENTS.title"),app.content.english()?5:0,10);
+ for(const char*act:{"OVERGROWTH","UNDERDOCKS","HIVE","GLORY"})text(app.content.world_title("acts",act),app.content.english()?5:0,10);
+ text(app.content.world_string("bestiary","QUOTE_PLACEHOLDER"),6,8);
  app.input(Key::Back);
 }
 static void flow(const char*folder){

@@ -620,7 +620,7 @@ void bestiary_supplement_packages(){
         for(unsigned wrong:{animations-1,animations+1}){
             Bytes bad=p.bytes;put(bad,28,wrong);reject("version requires its exact animation directory",std::move(bad));
         }
-        Bytes bad=p.bytes;put(bad,4,HistoryBodyContentVersion+1);reject("unknown future profile remains rejected",std::move(bad));
+        Bytes bad=p.bytes;put(bad,4,Ui12ContentVersion+1);reject("unknown future profile remains rejected",std::move(bad));
         bad=p.bytes;put(bad,20,scene_font_glyph_limit(version)+1);reject("Versioned glyph count bound",std::move(bad));
     }
 }

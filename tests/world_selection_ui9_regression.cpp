@@ -32,7 +32,7 @@ static void capture(const char*name){if(!captures)return;const std::string path=
 static void reset(){new_run(a.game,0x981720,false,Character::Ironclad);a.game.phase=Phase::Map;init_world_relics(a.game);a.title=a.library=a.paused=a.help=a.character_select=a.settings_open=false;a.frontend_confirm=0;a.progress.tutorial_flags=0;a.reset_presentation(true);a.pointer.visible=false;}
 static void relic(RelicId id){reset();CHECK(gain_world_relic(a.game,id));resolve_pending(a.game);CHECK(a.game.phase==Phase::WorldRelicChoice);a.render();settle();CHECK(a.world_selection_active());}
 static unsigned ids(uint16_t*out){const unsigned n=a.world_choice_options(out,MaxWorldUiChoices);CHECK(n<=MaxWorldUiChoices);return n;}
-static void grid_contract(){auto&g=a.card_grids[unsigned(CardGridSurface::WorldChoice)];CHECK(g.top==15&&g.bottom==240&&g.origin==15&&g.columns==4);CHECK(!enabled(UiAction::ClearWorldChoice));CHECK(!hit(HitKind::Command,int(Key::Detail)));}
+static void grid_contract(){auto&g=a.card_grids[unsigned(CardGridSurface::WorldChoice)];CHECK(g.top==12&&g.bottom==213&&g.origin==15&&g.columns==3);CHECK(!enabled(UiAction::ClearWorldChoice));CHECK(!hit(HitKind::Command,int(Key::Detail)));}
 static void duplicate_and_remove(){
     scenario="Dolly native deck preview, cancellation, real duplicate";relic(WorldRelicDollysMirror);grid_contract();uint16_t choices[MaxWorldUiChoices];CHECK(ids(choices)>1);const unsigned old=a.game.deck_count;
     CHECK(!a.world_selection_cancelable()&&!enabled(UiAction::Back));snapshot();capture("dolly-grid");click(HitKind::WorldChoice,choices[0]);CHECK(a.deck_selection.preview&&a.world_selection_preview_cards()==1);unchanged();settle();capture("dolly-preview");
@@ -94,11 +94,11 @@ static void sealed(){
     // Exercise the same semantic Select and physical arrows as the browser.
     // NCardGrid wraps horizontally within the row; Right never selects the
     // next row's first card without its separate Down input.
-    CHECK(a.card_grids[unsigned(CardGridSurface::WorldChoice)].columns==4);
+    CHECK(a.card_grids[unsigned(CardGridSurface::WorldChoice)].columns==3);
     for(unsigned i=0;i<9;++i){
         CHECK(a.cursor==int(i));a.input(Key::Confirm);a.render();CHECK(a.choice_selected_count==i+1);unchanged();
-        press(InputRight);CHECK(a.cursor==int(i%4==3?i-3:i+1));
-        if(i%4==3){press(InputDown);CHECK(a.cursor==int(i+1));}
+        press(InputRight);CHECK(a.cursor==int(i%3==2?i-2:i+1));
+        if(i%3==2){press(InputDown);CHECK(a.cursor==int(i+1));}
     }
     CHECK(a.cursor==9&&a.choice_selected_count==9);press(27);CHECK(a.choice_selected_count==9&&!a.deck_selection.preview);unchanged();
     a.input(Key::Confirm);a.render();CHECK(a.choice_selected_count==10&&!a.deck_selection.preview&&a.game.deck_count==deck);unchanged();settle();capture("sealed-ten-selected");

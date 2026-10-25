@@ -1,6 +1,8 @@
 # UI12 combat, cards and rewards
 
-Native correctness has passed; integrated Firebird acceptance remains pending.
+Native correctness and the scoped H/K Firebird sessions below have executed.
+The final integrated launcher and matched merchant performance are recorded in
+the release acceptance report; historical sessions are not substituted for them.
 Reference: owner-provided v0.111.0 / 41cef1ea. Private scenes and assembly
 were read locally and are not included in this repository.
 
@@ -114,3 +116,70 @@ the host scratch disk filled. The running game stayed intact at the paused
 controller boundary; after temporary build cleanup the same screen saved
 successfully. This environment failure is retained and is not a game crash
 or a passing journal. Final frozen-launcher verification remains required.
+
+## Recovered ordinary-device evidence
+
+H reached the ordinary first battle through New Run, Neow and the map, used
+the real numeric selection/targeting path, showed insufficient-energy speech,
+won after four turns, collected gold and Rage, returned to the map, and saved.
+The production decoder accepted its exact-roundtrip save: floor 2, turn 4,
+76/80 HP, 268 gold, 11 deck cards, revision 28. These successful interactions
+and the save are scoped evidence; the host ENOSPC controller error still means
+the whole H journal is not a pass.
+
+K's closed journal `2d89c8a26a3f` passed with `source_changed=false`. It
+continued H's saved run, checked the complete enlarged aimed card, the source
+Battle Start / Player Turn sequence and actual left-aligned world-choice Loot.
+Its later combat and merchant rooms were created through the real console;
+they are fixtures, not claims of ordinary map reachability. The matched Shop
+save/progress files were produced by that session. Two subsequent historical
+merchant comparison journals timed out before their final receipt/USB return;
+those attempts establish no measured speedup.
+
+## Final cache and text corrections
+
+Recovery of the actual seven-slot shop found an additional cache admission
+defect: the rightmost 65×91 face was inside the LCD, but its padded 84×108
+cache window ended at x=325. `f807731` keeps that fixed window on the surface
+and includes its face-relative offset in the cache identity. All eight cache
+buffers are reused; the change adds no resource image or larger bitmap pool.
+An identical card on a plain background can now move between central and edge
+slots without replaying pixels at the wrong inset.
+
+The focused actual-UI40 gate executes every merchant slot with flat and
+patterned backdrops, repeats warmed draws, and compares the complete 320×240
+result with uncached production rendering. This catches both the previously
+uncached edge and invalid reuse after the window changes its inset. The
+pre-text-correction stage passed 1,072 checks. Its full merchant occlusion
+gate also passed 41,569 checks across 2,376 exact frames, all five characters,
+opening/closing/interrupted animations and clock boundaries.
+
+`1deaf3b` / `ae13595` complete the remaining specialized font paths: banner
+fill and stroke, health/block/energy labels, merchant prices, floating damage,
+intent widths and card-cache cost bounds now retain 1/64-pixel advances,
+source pair kerning and glyph bearings until raster placement. Combining marks
+cannot reduce the damage mask's preceding ink extent. These changes preserve
+the existing text sizes, scene anchors, animation clocks and gameplay state.
+The actual resource test compares banner and health-label glyph placement
+against ordinary Canvas text, including a kerning-sensitive Latin sample.
+
+The complete native library and test executables were rebuilt from the frozen
+`ae13595` combat worktree. Its fixes were separately integrated and pushed by
+the root; these receipts describe the named worktree, not unrelated later
+frontend changes. All four final journals below passed with unchanged source
+fingerprints. They establish correctness and exact cache pixels, not calculator
+frame rates.
+
+| Final executed gate | Result | Journal |
+| --- | --- | --- |
+| Complete matching library / executable rebuild | Passed | `b6016237f5c5` |
+| Actual UI40 card/target/Smith/reward/merchant/font boundaries | 1,096 checks | `34d842ab8fde` |
+| Five complete combat and canvas suites | 5/5 passed | `c4ac9d4cd5d0` |
+| Actual UI40 merchant occlusion | 41,569 checks; 2,376 exact frames | `a2ea930acbc8` |
+
+The five suites cover card-selection continuations (440 checks), banner clocks
+(43), secondary card/orb observer invariance (325,102), the resource-independent
+UI12 contract (892), and 190,626 bounded Canvas cases (384,270 checks). The
+actual merchant comparison retains identical controls, presentation clocks,
+canonical saves and all five character cycles while verifying that fully
+hidden character frames avoid decoding.

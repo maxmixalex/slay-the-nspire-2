@@ -63,6 +63,7 @@ static void capture(const char*name,bool keep_pointer=false){
  for(int y=0;y<ScreenH;y++){for(int x=0;x<ScreenW;x++){unsigned p=a.pixels[y*ScreenW+x];row[x*3]=(p>>11)*255/31;row[x*3+1]=((p>>5)&63)*255/63;row[x*3+2]=(p&31)*255/31;}CHECK(std::fwrite(row,1,sizeof row,f)==sizeof row);}CHECK(!std::fclose(f));
 }
 static void world(){a.title=true;a.character_select=true;a.practice_entry=false;a.run_settings=false;a.selected_character=Character::Ironclad;a.selected_ascension=0;a.selected_region=reference::ActKind::Overgrowth;a.selected_seed[0]=0;a.ui_action(UiAction::StartCharacter);CHECK(!a.title&&a.game.original_events.id==OriginalEventId::Neow);CHECK(validate(a.game));
+ for(unsigned i=0;i<90&&a.character_departure.active();++i){a.advance(33);a.render();}CHECK(!a.character_departure.active());
  // Later checks supply their own event outcomes, after verifying ordinary Neow entry.
  a.game.original_events=OriginalEventState{};CHECK(world_finish_room(a.game));}
 static void options_and_readers(){
@@ -72,7 +73,8 @@ static void options_and_readers(){
  CHECK(has(HitKind::UiAction,int(UiAction::RunAscensionUp)));a.input(Key::ExhaustPile);a.input(Key::ExhaustPile);CHECK(a.selected_ascension==2);
  a.ui_action(UiAction::RunSeed);CHECK(a.map_preview.editing&&a.run_seed_editing);a.reference_text(-1);for(const char*p="WORLD-UI-17";*p;p++)a.reference_text(*p);a.reference_text(13);CHECK(!a.map_preview.open&&!a.run_seed_editing&&a.selected_seed[0]);
  a.ui_action(UiAction::StartCharacter);CHECK(a.game.world.active&&a.game.world.ascension==2);CHECK(a.game.original_events.id==OriginalEventId::Neow);snapshot();
- a.render();CHECK(a.hit_count>0);capture("ancient-neow");a.ui_action(UiAction::ReadEvent);a.render();CHECK(a.event_reader);capture("ancient-reader");a.pointer_scroll(1);a.render();a.ui_action(UiAction::CloseEventReader);unchanged();
+ for(unsigned i=0;i<90&&a.character_departure.active();++i){a.advance(33);a.render();}CHECK(!a.character_departure.active());
+ a.render();CHECK(a.hit_count>0);capture("ancient-neow");a.ui_action(UiAction::ReadEvent);a.render();CHECK(a.event_body_focus&&!a.event_reader);capture("ancient-inline-reader");a.pointer_scroll(1);a.render();a.input(Key::Back);CHECK(!a.event_body_focus&&!a.event_reader);unchanged();
  a.open_library(1);a.prepare_collection();int cookie=-1;
  for(unsigned i=0;i<a.collection.count;++i)if(a.collection.ids[i]==WorldRelicYummyCookie)cookie=int(i);
  CHECK(cookie>=0);a.library_selected=cookie;a.focus_collection();for(unsigned i=0;i<45;++i)a.advance(33);

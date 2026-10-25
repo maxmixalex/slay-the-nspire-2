@@ -103,13 +103,15 @@ static void calculator_select_release(){
  CHECK(a.open_ftue(FtueId::CannotPlayCard));snapshot();
  CHECK(a.physical_key('5',true));CHECK(a.ftue.active());CHECK(a.physical_key('5',false));CHECK(a.ftue.active());unchanged();
  CHECK(a.physical_key(13,true));CHECK(a.ftue.active());unchanged();CHECK(a.physical_key(13,false));CHECK(!a.ftue.active());unchanged();
- scenario="calculator5 retains Select adapter and accepts only on release";
+ scenario="calculator digits remain card shortcuts while Enter accepts FTUE on release";
  a.calculator_keyboard=true;a.input_bindings=default_input_bindings(true);only(FtueId::CannotPlayCard);
  CHECK(a.open_ftue(FtueId::CannotPlayCard));snapshot();const uint32_t context=a.input_context();
  CHECK(a.physical_key('5',true));CHECK(a.ftue.active()&&a.input_context()==context);unchanged();
- CHECK(a.physical_key('5',true));CHECK(a.ftue.active()&&a.input_context()==context);unchanged();
- CHECK(a.physical_key('5',false));CHECK(!a.ftue.active());unchanged();CHECK(!a.physical_key('5',false));unchanged();
- scenario="explicit calculator5 bindings precede the Select adapter";
+ CHECK(a.physical_key('5',false));CHECK(a.ftue.active());unchanged();
+ CHECK(a.physical_key(13,true));CHECK(a.ftue.active()&&a.input_context()==context);unchanged();
+ CHECK(a.physical_key(13,true));CHECK(a.ftue.active()&&a.input_context()==context);unchanged();
+ CHECK(a.physical_key(13,false));CHECK(!a.ftue.active());unchanged();CHECK(!a.physical_key(13,false));unchanged();
+ scenario="explicit calculator5 cancel and end-turn bindings do not accept FTUE";
  const InputCommand commands[]={InputCommand::Cancel,InputCommand::EndTurn};
  for(const auto command:commands){
   a.input_bindings=default_input_bindings(true);CHECK(rebind_input(a.input_bindings,0,unsigned(command),'5'));only(FtueId::CannotPlayCard);
@@ -118,15 +120,17 @@ static void calculator_select_release(){
   CHECK(a.physical_key(13,true));CHECK(a.ftue.active());CHECK(a.physical_key(13,false));CHECK(!a.ftue.active());unchanged();
  }
  a.input_bindings=default_input_bindings(true);
- scenario="a captured calculator5 cannot dismiss a replacement tutorial";
- only(FtueId::CannotPlayCard);CHECK(a.open_ftue(FtueId::CannotPlayCard));CHECK(a.physical_key('5',true));const uint32_t captured=a.input_context();
+ scenario="a captured calculator Select cannot dismiss a replacement tutorial";
+ a.keyboard_only=true;
+ only(FtueId::CannotPlayCard);CHECK(a.open_ftue(FtueId::CannotPlayCard));CHECK(a.physical_key(InputPad,true));const uint32_t captured=a.input_context();
  click(1);CHECK(!a.ftue.active());only(FtueId::CannotPlayCard);CHECK(a.open_ftue(FtueId::CannotPlayCard));CHECK(a.input_context()!=captured);snapshot();
- CHECK(a.physical_key('5',true));CHECK(a.ftue.active());CHECK(a.physical_key('5',false));CHECK(a.ftue.active());unchanged();
- CHECK(a.physical_key('5',true));CHECK(a.ftue.active());CHECK(a.physical_key('5',false));CHECK(!a.ftue.active());unchanged();
- scenario="keyboard-only Confirm stays distinct from source Select";
- a.keyboard_only=true;only(FtueId::CannotPlayCard);CHECK(a.open_ftue(FtueId::CannotPlayCard));snapshot();
+ CHECK(a.physical_key(InputPad,true));CHECK(a.ftue.active());CHECK(a.physical_key(InputPad,false));CHECK(a.ftue.active());unchanged();
+ CHECK(a.physical_key(InputPad,true));CHECK(a.ftue.active());CHECK(a.physical_key(InputPad,false));CHECK(!a.ftue.active());unchanged();
+ scenario="keyboard-only Confirm and card5 stay distinct from touchpad Select";
+ only(FtueId::CannotPlayCard);CHECK(a.open_ftue(FtueId::CannotPlayCard));snapshot();
  CHECK(a.physical_key(13,true));CHECK(a.physical_key(13,false));CHECK(a.ftue.active());unchanged();
- CHECK(a.physical_key('5',true));CHECK(a.ftue.active());CHECK(a.physical_key('5',false));CHECK(!a.ftue.active());unchanged();
+ CHECK(a.physical_key('5',true));CHECK(a.physical_key('5',false));CHECK(a.ftue.active());unchanged();
+ CHECK(a.physical_key(InputPad,true));CHECK(a.ftue.active());CHECK(a.physical_key(InputPad,false));CHECK(!a.ftue.active());unchanged();
  scenario="calculator5 never skips a three-page CombatRules lesson";
  a.keyboard_only=false;only(FtueId::CombatRules);CHECK(a.open_ftue(FtueId::CombatRules));snapshot();
  CHECK(a.physical_key('5',true));CHECK(a.physical_key('5',false));CHECK(a.ftue.id==FtueId::CombatRules&&a.ftue.page==0);CHECK(!a.seen_ftue(FtueId::CombatRules));unchanged();

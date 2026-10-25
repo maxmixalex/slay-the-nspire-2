@@ -47,7 +47,7 @@ static void layouts(){
             a.pointer_move(160,40);a.render();auto r=card_point(i);
             a.pointer_move(r.x,r.y);a.render();CHECK(a.cursor==i);
             auto p=a.combat_hand_pose(unsigned(i),true);const auto bounds=hand_bounds(p);
-            CHECK(bounds.x>=0&&bounds.x+bounds.w<=320&&p.cy==200&&p.scale==848);
+            CHECK(bounds.x>=0&&bounds.x+bounds.w<=320&&bounds.y>=0&&bounds.y+bounds.h<=240&&p.cy==174&&p.scale==1024);
             // Move inside the actual focused face; its new X target does not
             // steal a neighbour's exposed corner or invent a bottom rail.
             const int x=p.cx,y=205;a.pointer_move(x,y);a.render();
@@ -56,23 +56,30 @@ static void layouts(){
         }
         a.pointer_move(160,40);a.render();
         auto end=command(HitKind::Command,(int)Key::EndTurn),draw=command(HitKind::OpenPile,1),discard=command(HitKind::OpenPile,2);
-        CHECK(end.x>=250&&draw.x<40&&discard.x>280);
+        CHECK(end.x==246&&end.y==166&&end.w==70&&end.h==28&&draw.x<40&&discard.x>280);
         click(draw);CHECK(a.panel==1&&a.pile_tab==1);same(before);a.input(Key::Back);a.render();
         click(command(HitKind::OpenPile,2));CHECK(a.panel==1&&a.pile_tab==2);same(before);a.input(Key::Back);a.render();
         click(command(HitKind::Command,(int)Key::EndTurn));CHECK(a.game.turn==2&&a.game.hp==68);
     }
 }
+static HitRegion focused_point(int index){
+    const auto exposed=card_point(index);a.pointer_move(exposed.x,exposed.y);a.render();
+    const auto pose=a.combat_hand_pose(unsigned(index),true);
+    a.pointer_move(pose.cx,pose.cy);a.render();
+    const auto*hit=a.hit_at(pose.cx,pose.cy);CHECK(hit&&hit->kind==HitKind::Hand&&hit->value==a.game.hand.ids[index]);
+    return {int16_t(pose.cx),int16_t(pose.cy),1,1,hit->kind,hit->value,hit->enabled};
+}
 static void input_safety(){
-    setup(5);auto before=snap();auto r=card_point(0);a.pointer_move(r.x+r.w/2,r.y+r.h/2);a.pointer_button(true);
+    setup(5);auto before=snap();auto r=focused_point(0);a.pointer_move(r.x+r.w/2,r.y+r.h/2);a.pointer_button(true);
     a.input(Key::Inspect);a.pointer_button(false);CHECK(a.panel==1);same(before);a.input(Key::Back);a.render();
     // A real attack drag from the new hand still captures an instance, not index.
-    r=card_point(0);a.pointer_move(r.x+r.w/2,r.y+r.h/2);a.pointer_button(true);a.pointer_move(238,82);a.pointer_button(false);
+    r=focused_point(0);a.pointer_move(r.x+r.w/2,r.y+r.h/2);a.pointer_button(true);a.pointer_move(238,82);a.pointer_button(false);
     CHECK(a.game.hand.count==4&&a.game.enemies[0].hp==40&&a.game.energy==98);CHECK(validate(a.game));
-    setup(5);r=card_point(1);a.pointer_move(r.x+r.w/2,r.y+r.h/2);a.pointer_button(true);a.pointer_move(130,65);a.pointer_button(false);
+    setup(5);r=focused_point(1);a.pointer_move(r.x+r.w/2,r.y+r.h/2);a.pointer_button(true);a.pointer_move(130,65);a.pointer_button(false);
     CHECK(a.game.hand.count==4&&a.game.block==5);CHECK(validate(a.game));
-    setup(5);a.game.energy=0;a.render();before=snap();click(card_point(0));CHECK(a.pointer.armed_card<0);same(before);
+    setup(5);a.game.energy=0;a.render();before=snap();click(focused_point(0));CHECK(a.pointer.armed_card<0);same(before);
     // No card may play by releasing a drag over a new modal.
-    setup(5);before=snap();r=card_point(0);a.pointer_move(r.x+r.w/2,r.y+r.h/2);a.pointer_button(true);a.input(Key::Back);a.pointer_move(238,82);a.pointer_button(false);
+    setup(5);before=snap();r=focused_point(0);a.pointer_move(r.x+r.w/2,r.y+r.h/2);a.pointer_button(true);a.input(Key::Back);a.pointer_move(238,82);a.pointer_button(false);
     CHECK(a.paused);same(before);
 }
 static void rendering(const std::vector<uint8_t>&data){
@@ -109,7 +116,7 @@ static void focus_transitions(){
         r=card_point(selected);a.pointer_move(r.x,r.y);a.render();CHECK(a.hand_focus&&a.cursor==selected);same(before);
         a.reset_presentation();CHECK(!a.hand_focus);same(before);
     }
-    setup(5);auto r=card_point(0);a.pointer_move(r.x+r.w/2,r.y+r.h/2);a.pointer_button(true);a.pointer_move(238,82);
+    setup(5);auto r=focused_point(0);a.pointer_move(r.x+r.w/2,r.y+r.h/2);a.pointer_button(true);a.pointer_move(238,82);
     CHECK(a.hand_focus&&a.pointer.held);a.pointer_button(false);a.render();
     CHECK(!a.hand_focus&&a.game.enemies[0].hp==40&&a.game.hand.count==4);
 }

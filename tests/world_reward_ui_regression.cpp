@@ -91,9 +91,9 @@ static void capture(const char*name){
 }
 static void single_column(unsigned total){
  a.render();const unsigned visible=hit_count(HitKind::WorldChoice);CHECK(visible>0&&visible<=6&&visible<=total);if(total<=4)CHECK(visible==total);int x=-1,y=-1,right=-1;
- // Original 402x86 rows and the 474x484 clipping mask at 4/21 scale.
+ // Readable LCD reward rows retain their source skin, clipped to the inset.
  const int dy=a.reward_presentation.window(a.map_clock_ms).y;
- for(int i=0;i<a.hit_count;i++)if(a.hits[i].kind==HitKind::WorldChoice){const auto&h=a.hits[i];CHECK(h.enabled&&h.w==81&&h.h>0&&h.h<=18&&h.y>=82+dy&&h.y+h.h<=174+dy);if(x>=0)CHECK(h.x==x&&h.x+h.w==right&&h.y>=y);x=h.x;right=h.x+h.w;y=h.y+h.h;}
+ for(int i=0;i<a.hit_count;i++)if(a.hits[i].kind==HitKind::WorldChoice){const auto&h=a.hits[i];CHECK(h.enabled&&h.x==87&&h.w==146&&h.h>0&&h.h<=26&&h.y>=70+dy&&h.y+h.h<=202+dy);if(x>=0)CHECK(h.x==x&&h.x+h.w==right&&h.y>=y);x=h.x;right=h.x+h.w;y=h.y+h.h;}
  CHECK(!has_action(UiAction::PreviousWorldPage)&&!has_action(UiAction::NextWorldPage));
 }
 static unsigned reward_position(unsigned kind,unsigned value=65535){

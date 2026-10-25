@@ -5,7 +5,7 @@
 // The final rendered skin is checked independently through the public image
 // view. Sample its right margin, outside both the source title icon and text.
 // This keeps retained-intent tests sensitive to actual drawing after replacing
-// the obsolete178px rectangular panel with the original69px hover column.
+// the obsolete178px rectangular panel with the readable104px hover column.
 inline bool intent_hover_panel(spire::App&a,spire::HoverRect*out=nullptr){
     using namespace spire;
     CardHoverTarget owner{};if(!creature_hover_target(a,owner)||!owner.intent)return false;
@@ -14,7 +14,7 @@ inline bool intent_hover_panel(spire::App&a,spire::HoverRect*out=nullptr){
     const auto page=card_hover_page(a,owner,tips,a.keyword_hover.page);
     if(page.count!=1||a.keyword_hover.owner!=owner.identity)return false;
     const auto r=page.pieces[0].box;if(out)*out=r;
-    if(r.w!=69||r.x<3||r.x+r.w>317||r.y<3||r.y+r.h>237)return false;
+    if(r.w!=104||r.x<3||r.x+r.w>317||r.y<3||r.y+r.h>237)return false;
     int id=a.content.world_image("common","HOVER_TIP");if(id<0)id=a.content.ui_image(U_HoverTip);
     const auto skin=a.content.image(id);
     // The public format fixture deliberately has no world-image directory.

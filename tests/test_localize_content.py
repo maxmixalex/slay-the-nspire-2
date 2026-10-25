@@ -49,12 +49,16 @@ class LocalePack(unittest.TestCase):
         with self.assertRaises(ValueError):bind_template('{Unknown:diff()}',row,False)
         self.assertEqual([row['id'] for row in model_rows()],list(range(558)))
 
-    def test_potion_plural_and_resource_units_are_language_specific(self):
+    def test_potion_plural_and_original_resource_icons(self):
         tables={'static_hover_tips':{'ENERGY_COUNT.title':'ENERGY_UNIT','STAR_COUNT.title':'STAR_UNIT'}}
         text='{Count:plural:{Count:diff()} item|{Count:diff()} items}: {N:energyIcons()} / {N:starIcons()}'
-        self.assertEqual(format_catalog(text,dict(Count=1,N=2),tables,'eng'),'1 item: 2 ENERGY_UNIT / 2 [gold]STAR_UNIT[/gold]')
-        self.assertEqual(format_catalog(text,dict(Count=3,N=2),tables,'eng'),'3 items: 2 ENERGY_UNIT / 2 [gold]STAR_UNIT[/gold]')
-        self.assertEqual(format_catalog('0{energyPrefix:energyIcons(1)}',{},tables,'eng'),'0 ENERGY_UNIT')
+        # Pinned EnergyIconsFormatter repeats 1..3 images and otherwise uses
+        # number+image; StarIconsFormatter repeats images. PUA values are the
+        # port's image tokens, never translated hover-title substitutes.
+        self.assertEqual(format_catalog(text,dict(Count=1,N=2),tables,'eng'),'1 item: \ue001\ue001 / \ue000\ue000')
+        self.assertEqual(format_catalog(text,dict(Count=3,N=2),tables,'eng'),'3 items: \ue001\ue001 / \ue000\ue000')
+        self.assertEqual(format_catalog('0{energyPrefix:energyIcons(1)}',{},tables,'eng'),'0\ue001')
+        self.assertEqual(format_catalog('{N:energyIcons()}',dict(N=4),tables,'eng'),'4\ue001')
         with self.assertRaises(ValueError):format_catalog('{Missing:diff()}',{},tables,'eng')
 
     def test_every_port_literal_has_a_reviewed_binding(self):

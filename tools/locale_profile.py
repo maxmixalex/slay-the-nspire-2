@@ -87,6 +87,25 @@ def inline_bindings():
     return rows
 
 
+def direct_bindings():
+    # These particular labels already select their language in the caller.
+    # They must not enter the generic English fallback table: doing so would
+    # replace the intentionally Traditional Chinese port credit with English.
+    config=json.loads((ROOT/'config/locale-ui-inline.json').read_text())
+    rows=config.get('direct_bindings',[]);literals=source_literals()
+    translated={r['source'] for r in inline_bindings()}|{r['source'] for r in bindings_and_keys()[0]}
+    seen=set()
+    for row in rows:
+        source=row.get('source');paths=row.get('paths');english=row.get('eng')
+        if (not isinstance(source,str) or source in seen or source in translated or
+            not isinstance(english,str) or re.search('[\u3400-\u9fff]',english) or
+            not isinstance(paths,list) or not paths or
+            set(paths)!=set(literals.get(source,[]))):
+            raise ValueError('Invalid or moved directly localized UI text: '+repr(source))
+        seen.add(source)
+    return rows
+
+
 def generated_files():
     rows,keys=bindings_and_keys();hashes={}
     for index,row in enumerate(rows,UI_BASE):
@@ -123,7 +142,7 @@ def generated_files():
 
 def validate_generated():
     rows,_=bindings_and_keys()
-    missing=set(legacy_literals())-{r['source'] for r in rows}-{r['source'] for r in inline_bindings()}
+    missing=set(legacy_literals())-{r['source'] for r in rows}-{r['source'] for r in inline_bindings()}-{r['source'] for r in direct_bindings()}
     if missing:raise ValueError('New UI literals need reviewed locale bindings: '+repr(sorted(missing)))
     for name,text in generated_files().items():
         if (ROOT/name).read_text()!=text:raise ValueError('Locale generated index drift: '+name)

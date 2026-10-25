@@ -633,5 +633,55 @@
       "source": "长按确认",
       "eng": "Long Press Confirmations"
     }
+  ],
+  "direct_bindings": [
+    {
+      "source": "Nspire 移植",
+      "eng": "Nspire port",
+      "paths": [
+        "src/auxiliary_ui.inc"
+      ],
+      "note": "The credits explicitly choose ENG/ZHS/ZHT in the caller."
+    },
+    {
+      "source": "zyf722（基于 Codex）",
+      "eng": "zyf722 (with Codex)",
+      "paths": [
+        "src/auxiliary_ui.inc"
+      ],
+      "note": "Simplified Chinese port credit; other languages are explicit caller branches."
+    },
+    {
+      "source": "zyf722（基於 Codex）",
+      "eng": "zyf722 (with Codex)",
+      "paths": [
+        "src/auxiliary_ui.inc"
+      ],
+      "note": "Traditional Chinese port credit must remain Traditional Chinese."
+    },
+    {
+      "source": "以随机角色开始爬塔之旅。",
+      "eng": "Embark as a randomly chosen character.",
+      "paths": [
+        "src/character_select_ui7.inc"
+      ],
+      "note": "Only used when the original localized Random description is missing."
+    },
+    {
+      "source": "随机",
+      "eng": "Random",
+      "paths": [
+        "src/character_select_ui7.inc"
+      ],
+      "note": "Only used when the original localized Random title is missing."
+    },
+    {
+      "source": "进阶",
+      "eng": "Ascension",
+      "paths": [
+        "src/ui_frontend.inc"
+      ],
+      "note": "Only used when the original localized Continue ascension key is missing."
+    }
   ]
 }

@@ -99,7 +99,7 @@ static void offers(){
     advance(500);unchanged();no_legacy_controls();CHECK(!has(HitKind::UiAction,int(UiAction::ConfirmChoice),false));
     const auto number=a.input_bindings.keys[0][unsigned(InputCommand::Card1)];CHECK(a.physical_key(number,true));CHECK(a.physical_key(number,false));unchanged();CHECK(!a.choice_selected_count);
     CHECK(has(HitKind::UiAction,int(UiAction::SkipCombatChoice)));CHECK(a.active_card_grid()<0);
-    for(unsigned i=0;i<3;++i){const auto h=region(HitKind::CombatChoice,a.game.expansion.choices.ids[i]);CHECK(h.w==50&&h.h==68);CHECK(h.x+h.w/2==95+int(i)*65);CHECK(h.y+h.h/2==131);}
+    for(unsigned i=0;i<3;++i){const auto h=region(HitKind::CombatChoice,a.game.expansion.choices.ids[i]);CHECK(h.w==73&&h.h==100);CHECK(h.x+h.w/2==95+int(i)*65);CHECK(h.y+h.h/2==131);}
     a.cursor=1;a.input(Key::Detail);CHECK(a.detail_card==card_token(choice_card(a.game,id)));a.input(Key::Back);unchanged();capture("combat-offer-discovery");
     std::memcpy(&expected,&a.game,sizeof(State));const uint16_t selected=uint16_t(id);CHECK(choose_extended(expected,&selected,1));click(HitKind::CombatChoice,id);CHECK(a.game.phase==Phase::Combat);matches();
     scenario="Offer skip release";setup({Discovery,0});played();snapshot();std::memcpy(&expected,&a.game,sizeof(State));CHECK(choose_extended(expected,nullptr,0));
@@ -160,7 +160,7 @@ static void relic_offers(){
 static void piles(){
     scenario="Headbutt pile automatic";setup({Headbutt,0});for(unsigned i=0;i<26;++i)append({Defend,0},Zone::Discard);played();CHECK(a.game.phase==Phase::ReturnChoice);
     CHECK(!a.combat_selection_manual());CHECK(a.active_card_grid()==int(CardGridSurface::CombatChoice));advance(500);snapshot();
-    const auto&grid=a.card_grids[unsigned(CardGridSurface::CombatChoice)];CHECK(grid.top==15&&grid.bottom==240&&grid.origin==15);CHECK(!has(HitKind::UiAction,int(UiAction::ConfirmChoice)));
+    const auto&grid=a.card_grids[unsigned(CardGridSurface::CombatChoice)];CHECK(grid.top==12&&grid.bottom==213&&grid.origin==15&&grid.columns==3);CHECK(!has(HitKind::UiAction,int(UiAction::ConfirmChoice)));
     for(unsigned i=0;i<4;++i)a.input(Key::Down);advance(500);unchanged();const int id=choice_pile(a.game).ids[a.cursor];
     a.input(Key::Detail);CHECK(a.detail_instance==id);a.input(Key::Back);unchanged();capture("combat-pile-headbutt");
     std::memcpy(&expected,&a.game,sizeof(State));CHECK(choose_return_to_draw(expected,id));a.toggle_choice(id);CHECK(a.game.phase==Phase::Combat);matches();

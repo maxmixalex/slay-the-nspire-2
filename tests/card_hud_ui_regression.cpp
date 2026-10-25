@@ -119,7 +119,8 @@ static void title_layout(){
     Canvas c{app};
     for(const char*text:{"Short title","A substantially longer card title that needs an ellipsis","[b]Bold title[/b]","A\nsecond line"})
     for(int width:{23,47,96})for(int size:{8,10,12}){
-        pattern();for(int dx=-1;dx<=1;++dx)for(int dy=-1;dy<=1;++dy)if(dx||dy)c.text_fitted(text,40+dx,45+dy,width,size,Ink,8,true);
+        pattern();Canvas shadow=c;shadow.opacity=144;
+        for(const auto&offset:std::initializer_list<std::pair<int,int>>{{-1,0},{1,0},{0,-1},{0,1}})shadow.text_fitted(text,40+offset.first,45+offset.second,width,size,Ink,8,true);
         c.text_fitted(text,40,45,width,size,Green,8,true);const std::vector<uint16_t>expected(app.pixels,app.pixels+320*240);
         pattern();c.text_fitted(text,40,45,width,size,Green,8,true,true);CHECK(!std::memcmp(expected.data(),app.pixels,sizeof app.pixels));
     }
@@ -217,8 +218,8 @@ static void original_resource_colors(){
 static void focused_card_scale(){
     Canvas c{app};static HandTile transparent;transparent.playable=true;
     struct Example {HandPose pose;int left,top,right,bottom;};
-    const Example examples[]={{{160,120,512,0,1024},142,95,177,144},{{160,120,672,0,1024},137,87,183,152},
-        {{160,120,1024,0,1024},124,70,195,169},{{160,120,1024,1024,0},111,84,210,155}};
+    const Example examples[]={{{160,120,512,0,1024},138,89,182,150},{{160,120,672,0,1024},131,79,188,160},
+        {{160,120,1024,0,1024},115,58,204,181},{{160,120,1024,1024,0},99,75,222,164}};
     for(const auto&example:examples){
         clear();draw_hand_tile(c,transparent,example.pose,true);int left=320,top=240,right=-1,bottom=-1;unsigned count=0;
         for(int y=0;y<240;++y)for(int x=0;x<320;++x)if(app.pixels[y*320+x]!=0x0321){CHECK(app.pixels[y*320+x]==Gold);++count;left=mn(left,x);right=mx(right,x);top=mn(top,y);bottom=mx(bottom,y);}
@@ -237,24 +238,24 @@ static void synthetic_pixels(){
     bool potion=false,map=false,deck=false,pause=false;
     for(int i=0;i<app.hit_count;++i){const auto&h=app.hits[i];potion|=h.kind==HitKind::PotionSlot;if(h.kind!=HitKind::Command)continue;map|=h.value==int(Key::Collection)||h.value==int(Key::Map);deck|=h.value==int(Key::Inspect);pause|=h.value==int(Key::Back);}
     CHECK(potion&&map&&deck&&pause);
-    // The source character row uses 22x25 pictures at centers 116..204.
-    // This fixture's 27/36 opaque strip projects to 16 pixels at rest and
-    // 18 at the 1.1 hover scale, with the same full-height alpha coverage.
+    // The enlarged 30x34 character row keeps its original 27/36 opaque
+    // strip and 1.1 hover scale, including the complete bottommost rows.
     auto portrait_bounds=[&](unsigned character,int width,int height){
         const int center=character_select_layout::portrait_center(character);
         int left=320,right=-1,top=240,bottom=-1;
-        for(int y=191;y<231;++y)for(int x=center-12;x<center+13;++x)if(app.pixels[y*320+x]==0xf800){
+        for(int y=196;y<240;++y)for(int x=center-19;x<center+20;++x)if(app.pixels[y*320+x]==0xf800){
             left=mn(left,x);right=mx(right,x);top=mn(top,y);bottom=mx(bottom,y);
         }
+        if(right-left+1!=width||bottom-top+1!=height)std::fprintf(stderr,"portrait %u expected %dx%d observed %d,%d..%d,%d\n",character,width,height,left,top,right,bottom);
         CHECK(right-left+1==width&&bottom-top+1==height);
     };
     app.selected_character=Character::Ironclad;app.run_settings=false;app.pointer.visible=true;app.pointer.x=app.pointer.y=0;
-    app.map_clock_ms=100;app.character_select_presentation.reset();clear();character_screen(c);portrait_bounds(0,16,25);
-    app.pointer.x=character_select_layout::portrait_center(0);app.pointer.y=210;app.map_clock_ms=150;clear();character_screen(c);portrait_bounds(0,16,25);
-    app.pointer.x=character_select_layout::portrait_center(1);app.map_clock_ms=200;clear();character_screen(c);portrait_bounds(1,18,27);
-    app.selected_character=Character::Silent;clear();character_screen(c);portrait_bounds(1,18,27);
+    app.map_clock_ms=100;app.character_select_presentation.reset();clear();character_screen(c);portrait_bounds(0,22,34);
+    app.pointer.x=character_select_layout::portrait_center(0);app.pointer.y=210;app.map_clock_ms=150;clear();character_screen(c);portrait_bounds(0,22,34);
+    app.pointer.x=character_select_layout::portrait_center(1);app.map_clock_ms=200;clear();character_screen(c);portrait_bounds(1,25,36);
+    app.selected_character=Character::Silent;clear();character_screen(c);portrait_bounds(1,25,36);
     app.pointer.x=app.pointer.y=0;app.map_clock_ms=201;clear();character_screen(c);
-    app.map_clock_ms=701;clear();character_screen(c);portrait_bounds(1,16,25);app.pointer.visible=false;
+    app.map_clock_ms=701;clear();character_screen(c);portrait_bounds(1,22,34);app.pointer.visible=false;
 }
 static void character_hover(){
     static SaveData before,after;CHECK(save(app.game,before));const unsigned run=app.run_number;
@@ -266,16 +267,16 @@ static void character_hover(){
         app.advance(33);app.pointer_move(character_select_layout::portrait_center(i),210);app.render();
         CHECK(app.selected_character==previous&&app.character_select_presentation.panel_start==entered);
         CHECK(app.character_select_presentation.focused==int(i));
-        CHECK(app.character_select_presentation.portrait_scale(i,app.map_clock_ms)==(Character(i)==previous?CharacterSelectPresentation::Scale:CharacterSelectPresentation::FocusScale));
+        CHECK(app.character_select_presentation.portrait_scale(i,app.map_clock_ms)==(RunModeCharacters[i]==previous?CharacterSelectPresentation::Scale:CharacterSelectPresentation::FocusScale));
         app.pointer_button(true);app.render();CHECK(app.selected_character==previous);
-        app.pointer_button(false);app.render();CHECK(app.selected_character==Character(i));
+        app.pointer_button(false);app.render();CHECK(app.selected_character==RunModeCharacters[i]);
         CHECK(app.character_select&&app.run_number==run);
         CHECK(save(app.game,after));CHECK(before.size==after.size&&!std::memcmp(before.bytes,after.bytes,before.size));
     }
     // Releasing over a different portrait is not a selection. Only the
     // clicked portrait owns activation; mere focus still scales its picture.
     app.pointer_move(character_select_layout::portrait_center(0),210);app.pointer_button(true);app.pointer_move(character_select_layout::portrait_center(1),210);app.pointer_button(false);app.render();
-    CHECK(app.selected_character==Character::Necrobinder);
+    CHECK(app.selected_character==Character::Defect);
     app.pointer_move(310,225);app.render();CHECK(app.character_select&&app.run_number==run);
     CHECK(save(app.game,after));CHECK(before.size==after.size&&!std::memcmp(before.bytes,after.bytes,before.size));
     app.pointer.visible=false;app.character_select=false;

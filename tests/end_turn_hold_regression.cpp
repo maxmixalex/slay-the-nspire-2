@@ -30,7 +30,7 @@ static void capture(const char*name){
  std::fprintf(f,"P6\n320 240\n255\n");for(uint16_t p:a.pixels){const uint8_t bytes[]={uint8_t((p>>11)*255/31),uint8_t(((p>>5)&63)*255/63),uint8_t((p&31)*255/31)};CHECK(std::fwrite(bytes,1,3,f)==3);}CHECK(!std::fclose(f));
 }
 static HitRegion end_button(){a.render();for(int i=a.hit_count-1;i>=0;--i)if(a.hits[i].kind==HitKind::Command&&a.hits[i].value==int(Key::EndTurn)){CHECK(a.hits[i].enabled);return a.hits[i];}CHECK(false);return {};}
-static void point_button(){const auto h=end_button();CHECK(h.x==267&&h.y==188&&h.w==42&&h.h==17);a.pointer_move(h.x+h.w/2,h.y+h.h/2);}
+static void point_button(){const auto h=end_button();CHECK(h.x==246&&h.y==166&&h.w==70&&h.h==28);a.pointer_move(h.x+h.w/2,h.y+h.h/2);}
 static void physical(){
  scenario="off remains immediate; direct combat key cannot bypass on";combat(false);const int off_turn=a.game.turn;
  CHECK(a.physical_key('E',true));CHECK(a.game.turn==off_turn+1);CHECK(a.physical_key('E',false));
@@ -92,12 +92,12 @@ static void source_bar_pixels(){
   const int width=int(std::lround((age>500?204.:q*204.)*4/21));
   const unsigned outline=unsigned(std::lround(alpha*128./255));
   const auto blend_channel=[](unsigned back,unsigned source,unsigned opacity){return unsigned(std::lround((back*(255-opacity)+source*opacity)/255.));};
-  if(alpha){for(int y=185;y<188;++y)for(int x=268;x<270+width;++x){const auto old=expected[y*ScreenW+x];expected[y*ScreenW+x]=uint16_t(blend_channel(old>>11,0,outline)<<11|blend_channel((old>>5)&63,0,outline)<<5|blend_channel(old&31,0,outline));}
+  if(alpha){for(int y=162;y<165;++y)for(int x=248;x<250+width;++x){const auto old=expected[y*ScreenW+x];expected[y*ScreenW+x]=uint16_t(blend_channel(old>>11,0,outline)<<11|blend_channel((old>>5)&63,0,outline)<<5|blend_channel(old&31,0,outline));}
    // The source uses unclamped HDR Color then additive modulation. Allow
    // only one channel quantum for fixed-point/RGB565 projection rounding.
    const int red=std::min(255,int(std::lround(std::floor(q*2.5*255)*alpha/255.))),green=std::min(255,int(std::lround(std::floor((.6+q)*255)*alpha/255.))),blue=int(std::lround(153*alpha/255.));
-   for(int x=269;x<269+width;++x){const auto old=expected[186*ScreenW+x];expected[186*ScreenW+x]=uint16_t(std::min(31,int(old>>11)+(red>>3))<<11|std::min(63,int((old>>5)&63)+(green>>2))<<5|std::min(31,int(old&31)+(blue>>3)));}}
-  for(int y=184;y<189;++y)for(int x=267;x<311;++x){const auto got=actual[y*ScreenW+x],want=expected[y*ScreenW+x];
+   for(int x=249;x<249+width;++x){const auto old=expected[163*ScreenW+x];expected[163*ScreenW+x]=uint16_t(std::min(31,int(old>>11)+(red>>3))<<11|std::min(63,int((old>>5)&63)+(green>>2))<<5|std::min(31,int(old&31)+(blue>>3)));}}
+  for(int y=161;y<166;++y)for(int x=247;x<291;++x){const auto got=actual[y*ScreenW+x],want=expected[y*ScreenW+x];
    CHECK(std::abs(int(got>>11)-int(want>>11))<=1&&std::abs(int((got>>5)&63)-int((want>>5)&63))<=1&&std::abs(int(got&31)-int(want&31))<=1);}
  }
  a.end_turn_hold={};

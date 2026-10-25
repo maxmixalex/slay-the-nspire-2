@@ -238,6 +238,12 @@ static void glyph_record_pressure(){
         Content&owner=round==1?*ranged:*memory;const auto&expected=round==1?replacements[cp-32]:specs[cp-32];
         for(unsigned repeat=0;repeat<3;++repeat){
             const auto g=owner.glyph_metrics(cp,8),p=owner.glyph(cp,8);
+            if(cp==0xad){
+                // Soft hyphens are format controls even if an old pack has
+                // a glyph record. They must consume neither ink nor advance.
+                CHECK(!g.w&&!g.h&&!g.advance&&!g.pixels);
+                CHECK(!p.w&&!p.h&&!p.advance&&!p.pixels);continue;
+            }
             CHECK(g.w==expected.w&&g.h==expected.h&&g.advance==expected.advance&&!g.pixels);
             CHECK(p.w==expected.w&&p.h==expected.h&&p.advance==expected.advance&&p.pixels&&p.pixels[0]==173);
         }
@@ -247,7 +253,7 @@ static void glyph_record_pressure(){
         CHECK(owner.healthy());
     }
     const auto before=ranged->read_stats();
-    for(unsigned n=0;n<1024;++n){CHECK(ranged->glyph_metrics(32+n,8).advance);CHECK(!ranged->glyph_metrics(32+n,9).pixels);}
+    for(unsigned n=0;n<1024;++n){CHECK((ranged->glyph_metrics(32+n,8).advance!=0)==(32+n!=0xad));CHECK(!ranged->glyph_metrics(32+n,9).pixels);}
     CHECK(ranged->read_stats().callbacks==before.callbacks&&ranged->read_stats().callback_bytes==before.callback_bytes);
     // Reopen the same object with the same keys and different metrics. Failed
     // opens also discard memoized hits and negative/fallback entries.

@@ -12,7 +12,7 @@ static App app;
 static unsigned checks;
 #define CHECK(x) do{++checks;if(!(x)){std::fprintf(stderr,"font styles:%d %s\n",__LINE__,#x);std::exit(1);}}while(0)
 static void put(Bytes&b,unsigned at,uint32_t v,unsigned n=4){CHECK(at+n<=b.size());for(unsigned i=0;i<n;++i)b[at+i]=uint8_t(v>>(i*8));}
-static Bytes fixture(bool modern=true,bool styles=true,bool small=false,bool scene=false){
+static Bytes fixture(bool modern=true,bool styles=true,bool small=false,bool scene=false,bool readable_ancient=false){
  const unsigned ni=A_Count,ng=scene?8:modern&&styles?6:3,ns=modern?Ui7StringCount:LocaleStringCount;
  const unsigned nc=scene?PhobiaAnimationKinds:modern?Ui7AnimationKinds:MerchantEffectsAnimationKinds;
  const unsigned nu=scene?unsigned(HistoryUi8AuxiliaryCount):modern?unsigned(Ui7AuxiliaryCount):unsigned(Ui6AuxiliaryCount);
@@ -33,7 +33,7 @@ static Bytes fixture(bool modern=true,bool styles=true,bool small=false,bool sce
  const Bytes alpha[]={{127},{255},{127},{255,0,255},{0,255},{0,255,255,0},{},{}};
  const Bytes scene_alpha[]={{127},{255},{127},{255,0,255},{255,0,0,255},{0,255},{0,255,255},{0,255,255,0}};
  for(unsigned i=0;i<ng;++i){const unsigned at=ga+i*16;put(b,at,cp[i]);put(b,at+4,unsigned(b.size()));put(b,at+8,small&&i==0?5:size[i],2);
-  if(scene)put(b,at+8,scene_size[i],2);const auto&mask=scene?scene_alpha[i]:alpha[i];
+  if(scene)put(b,at+8,scene_size[i]+(readable_ancient?4:0),2);const auto&mask=scene?scene_alpha[i]:alpha[i];
   b[at+10]=uint8_t(mask.size());b[at+11]=1;put(b,at+12,scene?scene_advance[i]:advance[i],2);b.insert(b.end(),mask.begin(),mask.end());}
  b.resize((b.size()+ResourceReader::PageSize-1)&~size_t(ResourceReader::PageSize-1));
  const unsigned empty=unsigned(b.size());b.push_back(0);const unsigned marker=unsigned(b.size());b.insert(b.end(),{'e','n','g',0});
@@ -91,13 +91,13 @@ static void direct(){
  CHECK(app.content.glyph('?',5).pixels); // Reopening invalidates cached size bands.
 }
 static void ancient_families(){
- auto bytes=fixture(true,true,false,true);CHECK(app.content.open(bytes.data(),bytes.size()));Canvas c{app};
+ auto bytes=fixture(true,true,false,true,true);CHECK(app.content.open(bytes.data(),bytes.size()));Canvas c{app};
  RichChar bold{'A',{},0},italic{'A',{},0};bold.style.bold=true;italic.style.italic=true;
  // Distinct masks and advances expose either a metrics-only or paint-only
  // fix. Other scenes must still use generic faces 1/2, not the ancient faces.
  CHECK(c.font_style(bold)==1&&c.font_style(italic)==2);
- CHECK(app.content.glyph_metrics('A',6,1).advance==5&&app.content.glyph_metrics('A',6,2).advance==4);
- CHECK(ancient_text_metric(c,bold,6).advance==7&&ancient_text_metric(c,italic,6).advance==6);
+ CHECK(app.content.glyph_metrics('A',10,1).advance==5&&app.content.glyph_metrics('A',10,2).advance==4);
+ CHECK(ancient_text_metric(c,bold,10).advance==7&&ancient_text_metric(c,italic,10).advance==6);
  const char*sample="[b]A[/b][i]A[/i]B";const uint16_t ink=rgb(255,246,226),shadow=0x0821,half_shadow=0x0020;
  CHECK(ancient_text_rows(c,sample,16)==1&&ancient_text_rows(c,sample,15)==2);
  clear();ancient_text(c,sample,10,10,16,1);
@@ -108,8 +108,8 @@ static void ancient_families(){
  CHECK(pixel(23,10)!=0&&pixel(22,10)==0&&pixel(24,10)==half_shadow);
  clear();ancient_text(c,sample,10,20,12,2);
  CHECK(pixel(10,20)==ink&&pixel(13,20)==ink&&pixel(18,20)==0);
- CHECK(pixel(11,27)==ink&&pixel(12,27)==ink&&pixel(16,27)!=0);
- CHECK(pixel(10,27)==0&&pixel(13,27)==shadow&&pixel(17,27)==half_shadow&&app.content.healthy());
+ CHECK(pixel(11,31)==ink&&pixel(12,31)==ink&&pixel(16,31)!=0);
+ CHECK(pixel(10,31)==0&&pixel(13,31)==shadow&&pixel(17,31)==half_shadow&&app.content.healthy());
 }
 static void sparse_inspection_size(){
  for(unsigned sparse:{7u,9u}){

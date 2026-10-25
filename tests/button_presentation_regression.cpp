@@ -6,7 +6,8 @@
 #include <cmath>
 #include <initializer_list>
 static unsigned checks=0;
-static void check(bool v){++checks;if(!v){std::fprintf(stderr,"Button presentation check %u failed\n",checks);std::exit(1);}}
+static void check_at(bool v,int line,const char*expression){++checks;if(!v){std::fprintf(stderr,"Button presentation check %u failed at %d: %s\n",checks,line,expression);std::exit(1);}}
+#define check(x) check_at((x),__LINE__,#x)
 int main(){
  using namespace spire;
  for(int source:{1,2,12,20,54,170})for(int width:{1,2,3,16,64,320})
@@ -85,8 +86,8 @@ int main(){
  backdrop.observe(true,800);const auto partial_backdrop=backdrop.sample(950);backdrop.observe(false,950);
  check(!backdrop.open&&backdrop.sample(950)==partial_backdrop&&backdrop.sample(1250)==0);
  backdrop.observe(true,0xfffffff0u);check(backdrop.sample(284)==217);
- check(std::abs(popup_layout::W-573.*320/1680)<.5&&std::abs(popup_layout::H-659.*240/1260)<.5);
- check(std::abs(popup_layout::X-528.*320/1680)<.5&&std::abs(popup_layout::ButtonY-778.*240/1260)<.5);
+ check(popup_layout::X==30&&popup_layout::Y==32&&popup_layout::W==260&&popup_layout::H==176);
+ check(popup_layout::ButtonY==164&&popup_layout::ButtonW==98&&popup_layout::ButtonH==30);
  // Original navigation controls have their own focus/press curve rather
  // than the generic 0.95 action-button press. Compare interrupted samples.
  ButtonMotion back;check(back.observe(4,ButtonFamily::Back,ButtonState::Rest,0).scale==4096);
@@ -150,25 +151,26 @@ int main(){
  check(relic.sample(25).scale==4198&&relic.sample(50).scale==4301);
  relic.observe(7,ButtonFamily::TreasureRelic,ButtonState::Press,50);
  check(relic.sample(450).scale==3891&&relic.sample(450).shade==255);
- // Independently project the original viewport ratio and source dimensions.
- check(std::abs(proceed_layout::X-1583.*320/1920)<.5&&std::abs(proceed_layout::Y-764.*240/1080)<.5);
- check(std::abs(proceed_layout::W-269.*320/1680)<.5&&std::abs(proceed_layout::ImageW-296.*320/1680)<.5);
+ // The LCD adaptation keeps a 76x30 bottom-right control with its
+ // independently larger 81x39 original-art image, above the viewport edge.
+ check(proceed_layout::X==242&&proceed_layout::Y==207&&proceed_layout::W==76&&proceed_layout::H==30);
+ check(proceed_layout::ImageX==239&&proceed_layout::ImageY==201&&proceed_layout::ImageW==81&&proceed_layout::ImageH==39);
  check(proceed_layout::X+proceed_layout::W<=320&&proceed_layout::Y+proceed_layout::H<=240);
  // The original enable/disable tweens use 500/800ms Expo.Out position
  // and independent linear Image/Outline modulation. Compare full curves
  // against the source equation, including interrupted/reversed movement.
  ProceedMotion slide;auto hidden=slide.observe(81,false,100);
- check(hidden.x==67&&hidden.shade==128&&hidden.outline==0);
+ check(hidden.x==86&&hidden.shade==128&&hidden.outline==0);
  slide.observe(81,true,200);
  for(unsigned t=0;t<=500;++t){const auto v=slide.sample(200+t);const double u=double(t)/500;
   const double q=t==0?0:t==500?1:1.001*(1-std::pow(2.,-10*u));
-  check(std::abs(v.x-67*(1-q))<1.1);
+  check(std::abs(v.x-86*(1-q))<1.1);
   check(std::abs(v.shade-(128+127*u))<1.1&&std::abs(v.outline-255*u)<1.1);
  }
  slide.observe(81,false,700);
  for(unsigned t=0;t<=800;++t){const auto v=slide.sample(700+t);const double u=double(t)/800;
   const double q=t==0?0:t==800?1:1.001*(1-std::pow(2.,-10*u));
-  check(std::abs(v.x-67*q)<1.1);
+  check(std::abs(v.x-86*q)<1.1);
   check(std::abs(v.shade-(255-127*u))<1.1&&std::abs(v.outline-255*(1-u))<1.1);
  }
  slide.observe(81,true,1600);const auto entering=slide.sample(1700);
@@ -176,7 +178,7 @@ int main(){
  auto exiting=slide.sample(1750);auto reversed=slide.observe(81,true,1750);
  check(exiting.x==reversed.x&&exiting.shade==reversed.shade&&exiting.outline==reversed.outline);
  check(slide.sample(2250).x==0&&slide.sample(2250).shade==255);
- check(slide.observe(82,true,2300).x==67);
+ check(slide.observe(82,true,2300).x==86);
  slide.observe(83,true,0xfffffff0u);check(slide.sample(484).x==0);
  m.observe(3,ButtonFamily::EndTurn,ButtonState::Focus,0xfffffff0u);m.observe(3,ButtonFamily::EndTurn,ButtonState::Rest,0xfffffff5u);
  check(m.sample(600).y==0&&m.sample(600).hover==0);

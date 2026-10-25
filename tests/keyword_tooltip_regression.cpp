@@ -125,19 +125,20 @@ static void complete_catalog_and_layout(){
             if(!*title||!*body||std::strchr(body,'{')||std::strchr(title,'{'))std::fprintf(stderr,"unresolved hover %s -> %s: %s / %s\n",definitions[kind].key,b.items[i].key,title,body);
             CHECK(*title&&*body&&!std::strchr(body,'{')&&!std::strchr(title,'{'));
         }
+        unsigned related_cards=0;for(unsigned i=0;i<b.count;++i)related_cards+=b.items[i].kind==HoverTipKind::Card;
         for(bool details:{false,true}){a.keyword_hover.details=owner.detail=details;int visited[MaxCardHoverTips]{};
             const auto first=card_hover_page(a,owner,b);CHECK(first.pages>0&&first.pages<=128);
             for(int p=0;p<first.pages;++p){const auto page=card_hover_page(a,owner,b,p);CHECK(page.pages==first.pages);if(b.count)CHECK(page.count>0);
                 for(unsigned j=0;j<page.count;++j){const auto&piece=page.pieces[j];const auto&r=piece.box;CHECK(piece.tip<b.count&&piece.skip==visited[piece.tip]);
-                    if(b.items[piece.tip].kind==HoverTipKind::Card){CHECK(piece.lines==0&&r.w==46&&r.h==62);++visited[piece.tip];}
-                    else{CHECK(piece.lines>0&&r.w==69);visited[piece.tip]+=piece.lines;}
-                    CHECK(r.x>=0&&r.y>=24&&r.w>0&&r.h>0&&r.x+r.w<=320&&r.y+r.h<=(details?191:218));}
+                    if(b.items[piece.tip].kind==HoverTipKind::Card){CHECK(piece.lines==0&&r.w==(details?69:46)&&r.h==(details?96:62));++visited[piece.tip];}
+                    else{CHECK(piece.lines>0&&r.w==(details?(related_cards?225:145):104));visited[piece.tip]+=piece.lines;}
+                    CHECK(r.x>=0&&r.y>=(details?32:24)&&r.w>0&&r.h>0&&r.x+r.w<=320&&r.y+r.h<=(details?210:218));}
             }
             for(unsigned i=0;i<b.count;++i)CHECK(visited[i]>0);
         }
     }
     a.keyword_hover.details=false;
-    for(int x:{0,3,55,120,200,270,319})for(int y:{0,40,122,239}){auto r=card_hover_column({x,y,48,67});CHECK(r.w==69&&r.x>=0&&r.x+r.w<=320&&r.y>=0&&r.y+r.h<=240);
+    for(int x:{0,3,55,120,200,270,319})for(int y:{0,40,122,239}){auto r=card_hover_column({x,y,48,67});CHECK(r.w==104&&r.x>=0&&r.x+r.w<=320&&r.y>=0&&r.y+r.h<=240);
         CardHoverTarget owner{};owner.card={RegentBigBang,0};owner.owner={x,y,48,67};const auto related=tips(owner.card);
         const int count=card_hover_page(a,owner,related).pages;
         for(int page=0;page<count;++page){const auto layout=card_hover_page(a,owner,related,page);
