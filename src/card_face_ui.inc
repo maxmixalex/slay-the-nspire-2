@@ -198,10 +198,13 @@ static bool card_cache_label_fits(Canvas&c,card_face::Rect icon,int value,bool s
     if(!star&&value==-2)return true;
     char label[16]{};TextBuffer text{label,sizeof label,0};if(star?value<0:value==-1)text.ch('X');else text.number(value);
     Canvas text_layer=c;text_layer.font_face=uint8_t(face);
-    int x=icon.x+(icon.w-text_layer.width(label,size))/2,y=icon.y+(icon.h-size-2)/2;
-    for(const char*p=label;*p;){const auto g=c.a.content.glyph_metrics(utf8(p),size,face);
+    const int origin=icon.x+(icon.w-text_layer.width(label,size))/2,y=icon.y+(icon.h-size-2)/2;
+    int pen64=0;uint32_t previous=0;
+    for(const char*p=label;*p;){const uint32_t cp=utf8(p);const auto g=c.a.content.glyph_metrics(cp,size,face);
+        pen64+=c.a.content.glyph_kerning64(previous,cp,size,face);previous=cp;
+        const int x=origin+text_pixel(pen64)+g.bearing_x;
         if(g.w&&g.h&&(x-1<left||y-1<top||x+int(g.w)+1>left+SmallCardCacheW||y+int(g.h)+1>top+SmallCardCacheH))return false;
-        x+=g.advance;}
+        pen64+=g.advance64?g.advance64:int(g.advance)*64;}
     return true;
 }
 }

@@ -29,12 +29,13 @@ static void card_grid_stats(Canvas&c,CardKind kind,int cx,int cy,int scale){
     label_layer.clip_w=clip_right-clip_x;label_layer.clip_h=clip_bottom-clip_y;
     for(unsigned pass=0;pass<2;++pass){
         Canvas ink=label_layer;if(!pass)ink.opacity=uint8_t(div255(unsigned(ink.opacity)*128));
-        RichReader reader(label);RichChar ch{};int at=left;
+        RichReader reader(label);RichChar ch{};int advance64=0;
         while(reader.next(ch)){
             const auto glyph=c.a.content.glyph(ch.codepoint,size,0);
+            if(advance64)advance64+=c.a.content.glyph_kerning64(ch.previous,ch.codepoint,size,0);
             const uint16_t color=ch.style.color==1?rgb(239,200,81):rgb(255,246,226);
-            if(ch.index<c.text_visible_characters)ink.character(ch.codepoint,glyph,at-clip_x+(!pass?dx:0),top-clip_y+(!pass?dy:0),pass?color:0,!pass);
-            at+=glyph.advance;
+            if(ch.index<c.text_visible_characters)ink.character(ch.codepoint,glyph,left+text_pixel(advance64)-clip_x+(!pass?dx:0),top-clip_y+(!pass?dy:0),pass?color:0,!pass);
+            advance64+=glyph.advance64?glyph.advance64:int(glyph.advance)*64;
         }
     }
 }

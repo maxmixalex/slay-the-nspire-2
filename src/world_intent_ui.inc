@@ -16,7 +16,10 @@ struct UiIntentValue {char value[16]{},repeat[16]{};int width=0,value_width=0;};
 static unsigned ui_intent_face(const App&a){return a.content.version()>=HistoryUi8ContentVersion&&a.content.original_label_fonts()?5u:0u;}
 static int ui_intent_size(const App&a,bool repeat=false){return a.content.font_size(repeat?8:10,ui_intent_face(a));}
 static int ui_intent_text_width(const App&a,const char*text,int size){
- int width=0;while(*text)width+=a.content.glyph_metrics(utf8(text),size,ui_intent_face(a)).advance;return width;
+ int width64=0;uint32_t previous=0;const unsigned face=ui_intent_face(a);
+ while(*text){const uint32_t cp=utf8(text);const auto g=a.content.glyph_metrics(cp,size,face);
+  width64+=a.content.glyph_kerning64(previous,cp,size,face)+(g.advance64?g.advance64:int(g.advance)*64);previous=cp;}
+ return text_pixel(width64);
 }
 static UiIntentValue ui_intent_value(const App&a,const UiIntentPart&part,const EnemyIntent&intent){
  UiIntentValue label;TextBuffer value{label.value,sizeof label.value,0},repeat{label.repeat,sizeof label.repeat,0};
@@ -53,8 +56,8 @@ static void native_enemy_intent(Canvas&c,int slot,CreaturePose pos){
   faded.picture(ui_intent_image(c.a,*part,intent),center-cell.size/2,cell.y,cell.size,cell.size);
   if(*label.value){
    // Source22/18px normal labels use authored Kreon Bold in English, then
-   // MegaRichTextLabel's Regular locale substitution in Chinese.5/4px keeps
-   // the source ratio; the former10/8px labels doubled their native size.
+   // MegaRichTextLabel's Regular locale substitution in Chinese. The10/8px
+   // LCD bands keep both values readable after the agreed UI enlargement.
    const int x=center-label.width/2,y=cell.y+cell.size-2,repeat_y=y+mx(0,main_size-repeat_size);
    Canvas shadow=faded;shadow.opacity=uint8_t(div255(unsigned(shadow.opacity)*144));
    shadow.text(label.value,x+1,y+1,main_size,Ink);shadow.text(label.repeat,x+label.value_width+1,repeat_y+1,repeat_size,Ink);

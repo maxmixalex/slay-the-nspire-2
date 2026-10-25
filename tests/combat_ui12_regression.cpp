@@ -141,6 +141,29 @@ static void merchant_cache(){
  }
  CHECK(a.content.healthy());
 }
+static void actual_label_metrics(){
+ scenario="specialized combat text agrees with the ordinary font layout";fresh();Canvas c{a};
+ const auto clear=[](){for(auto&pixel:a.pixels)pixel=0x2925;};
+ for(unsigned face:{0u,5u})for(const char*text:{"80/80","999/999","AVATAR","Strength","Vulnerable"}){
+  c.font_face=uint8_t(face);const int size=a.content.font_size(10,face),width=c.width(text,size);
+  clear();c.text(text,40+(180-width)/2,50,size,White);const std::vector<uint16_t>expected(a.pixels,a.pixels+320*240);
+  // Matching the flat backdrop hides only the outline, allowing an exact
+  // independent comparison of glyph placement, bearings and kerning.
+  clear();health_label(c,text,40,50,180,size,White,0x2925,true);
+  CHECK(!std::memcmp(expected.data(),a.pixels,sizeof a.pixels));
+ }
+ c.font_face=4;c.sparse_scene_sizes=true;
+ for(const char*text:{"BATTLE START","ENEMY TURN","PLAYER TURN","AVATAR"}){
+  const int size=a.content.font_size(18,c.font_face,false,true);
+  clear();c.text(text,160-c.width(text,size)/2,50,size,White);const std::vector<uint16_t>expected(a.pixels,a.pixels+320*240);
+  clear();turn_banner_text(c,text,160,50,4096,size,White);
+  CHECK(!std::memcmp(expected.data(),a.pixels,sizeof a.pixels));
+ }
+ c.font_face=uint8_t(ui_intent_face(a));c.sparse_scene_sizes=false;
+ for(const char*text:{"123","x3","9999"})for(int size:{ui_intent_size(a),ui_intent_size(a,true)})
+  CHECK(ui_intent_text_width(a,text,size)==c.width(text,size));
+ CHECK(a.content.healthy());
+}
 static void actual_aimed_descriptions(){
  scenario="actual hand cache changes damage only while aiming";fresh();a.game.enemies[0].vulnerable=2;before=a.game;Canvas c{a};
  invalidate_hand_tiles();begin_card_face_frame();a.target=0;const std::string base=hand_tile(c,0).description;
@@ -164,7 +187,7 @@ static void actual_winning_card(){
 int main(int argc,char**argv){CHECK(argc==1||argc==2);aimed_preview();numeric_selection();denied_plays();battle_entry();smith();reward_overlap();
  if(argc==2){const std::string root=argv[1];auto common=read(root+"/nSpire2.common.tns"),language=read(root+"/nSpire2.eng.tns");SplitResourceSource split;
   CHECK(split.open(ResourceSource::memory(common.data(),common.size()),ResourceSource::memory(language.data(),language.size()),ResourceLanguage::English));CHECK(a.init(split.source(),{}));
-  aimed_preview();denied_plays();smith();reward_overlap();merchant_cache();actual_aimed_descriptions();actual_winning_card();
+  aimed_preview();denied_plays();smith();reward_overlap();merchant_cache();actual_label_metrics();actual_aimed_descriptions();actual_winning_card();
  }
  std::printf("combat UI12: %u checks passed%s\n",checks,argc==2?"; actual source cards rendered":"");
 }

@@ -18,10 +18,13 @@ void App::sync_turn_banner(){
 static void turn_banner_text(Canvas&c,const char*text,int center_x,int y,unsigned scale,int size,uint16_t color){
     if(!text||!*text)return;
     size=c.a.content.font_size(size,c.font_face,false,c.sparse_scene_sizes);
-    int x=center_x-int(unsigned(c.width(text,size))*scale/4096)/2;
+    const int origin=center_x-int(unsigned(c.width(text,size))*scale/4096)/2;
+    int pen64=0;uint32_t previous=0;
     // Scale the existing bitmap glyphs, including RLE glyphs. This keeps the
     // original 2 -> 1 enemy label zoom without another font atlas or surface.
-    while(*text){const auto g=c.a.content.glyph(utf8(text),size,c.font_face);
+    while(*text){const uint32_t cp=utf8(text);const auto g=c.a.content.glyph(cp,size,c.font_face);
+        pen64+=c.a.content.glyph_kerning64(previous,cp,size,c.font_face);previous=cp;
+        const int x=origin+text_pixel(int(int64_t(pen64)*scale/4096))+int(g.bearing_x)*int(scale)/4096;
         auto pixel=[&](unsigned position,unsigned alpha){
             if(!alpha||!g.w||position>=unsigned(g.w)*g.h)return;const unsigned sx=position%g.w,sy=position/g.w;
             const int left=x+int(sx*scale/4096),right=x+int((sx+1)*scale/4096);
@@ -30,7 +33,7 @@ static void turn_banner_text(Canvas&c,const char*text,int center_x,int y,unsigne
         };
         if(g.pixels&&g.encoded_size){unsigned position=0;const unsigned pixels=unsigned(g.w)*g.h;for(unsigned i=0;i+1<g.encoded_size&&position<pixels;i+=2){const unsigned count=mn(unsigned(g.pixels[i]),pixels-position);for(unsigned j=0;j<count;++j)pixel(position+j,g.pixels[i+1]);position+=count;}}
         else if(g.pixels)for(unsigned i=0;i<unsigned(g.w)*g.h;++i)pixel(i,g.pixels[i]);
-        x+=int(g.advance*scale/4096);
+        pen64+=g.advance64?g.advance64:int(g.advance)*64;
     }
 }
 static void turn_banner_outline(Canvas&c,const char*text,int center_x,int y,unsigned scale,int size,int border,bool round_left=false){
@@ -40,9 +43,12 @@ static void turn_banner_outline(Canvas&c,const char*text,int center_x,int y,unsi
     if(!text||!*text||border<1||border>9)return;
     size=c.a.content.font_size(size,c.font_face,false,c.sparse_scene_sizes);
     uint32_t codepoints[64];int positions[64];unsigned count=0,height=0;
-    int x=center_x-(int(unsigned(c.width(text,size))*scale/4096)+int(round_left))/2;
+    const int origin=center_x-(int(unsigned(c.width(text,size))*scale/4096)+int(round_left))/2;
+    int pen64=0;uint32_t previous=0;
     while(*text&&count<64){const uint32_t cp=utf8(text);const auto g=c.a.content.glyph_metrics(cp,size,c.font_face);
-        codepoints[count]=cp;positions[count++]=x;x+=int(g.advance*scale/4096);height=mx(int(height),int(unsigned(g.h)*scale/4096));}
+        pen64+=c.a.content.glyph_kerning64(previous,cp,size,c.font_face);previous=cp;
+        codepoints[count]=cp;positions[count++]=origin+text_pixel(int(int64_t(pen64)*scale/4096))+int(g.bearing_x)*int(scale)/4096;
+        pen64+=g.advance64?g.advance64:int(g.advance)*64;height=mx(int(height),int(unsigned(g.h)*scale/4096));}
     int reach[10]{};for(int dy=0;dy<=border;++dy){int dx=border;while(dx*dx+dy*dy>border*border)--dx;reach[dy]=dx;}
     uint8_t alpha[ScreenW];const int right=mn(ScreenW,c.clip_w);
     for(int row=mx(0,y-border);row<mn(c.clip_h,y+int(height)+border);++row){

@@ -1,5 +1,6 @@
 static void ancient_scaled_glyph(Canvas&c,Glyph glyph,int x,int y,unsigned scale,uint16_t color){
  if(!glyph.pixels||!scale)return;
+ x+=text_pixel(int(int64_t(glyph.bearing_x)*64*scale/4096));
  uint8_t mask[40*40];const unsigned length=unsigned(glyph.w)*glyph.h;
  if(!length||length>sizeof mask)return;
  if(glyph.encoded_size){unsigned at=0;
@@ -36,19 +37,22 @@ static void native_ancient_banner(Canvas&c){
  const auto title_color=rgb(239,200*(4096-red)/4096,81*(4096-red)/4096);
  const auto epithet_color=rgb(135,206*(4096-red)/4096,235*(4096-red)/4096);
  name.opacity=uint8_t(div255(name.opacity*motion.alpha(a.map_clock_ms)));
- const int width=name.width(title,14);int before=0,count=0,center_index=0;
- const char*p=title;while(*p){const auto cp=utf8(p);const auto metric=a.content.glyph_metrics(cp,14,name.font_face);
-  if(!center_index&&2*(before+metric.advance)>width)center_index=count*4096+(width*2048-before*4096)/mx(1,metric.advance);
-  before+=metric.advance;++count;
+ const int size=a.content.font_size(14,name.font_face),width=name.width(title,size);int before64=0,count=0,center_index=0;uint32_t previous=0;
+ const char*p=title;while(*p){const auto cp=utf8(p);const auto metric=a.content.glyph_metrics(cp,size,name.font_face);
+  before64+=a.content.glyph_kerning64(previous,cp,size,name.font_face);
+  const int advance64=metric.advance64?metric.advance64:int(metric.advance)*64;
+  if(!center_index&&2*(before64+advance64)>width*64)center_index=count*4096+int((int64_t(width)*64*2048-int64_t(before64)*4096)/mx(1,advance64));
+  before64+=advance64;previous=cp;++count;
  }
- p=title;int x=(320-width)/2,index=0;
- while(*p){const auto cp=utf8(p);const auto glyph=a.content.glyph(cp,14,name.font_face);
+ p=title;int pen64=0,index=0;previous=0;
+ while(*p){const auto cp=utf8(p);const auto glyph=a.content.glyph(cp,size,name.font_face);
+  pen64+=a.content.glyph_kerning64(previous,cp,size,name.font_face);const int x=(320-width)/2+text_pixel(pen64);
   const int dx=a.text_effects?int(int64_t(index*4096+2048-center_index)*spacing/(4096*4096)):0;
   Canvas letter=name;if(!a.text_effects)letter.opacity=uint8_t(div255(letter.opacity*unsigned(mn(255,mx(0,int(age*765/1000)-index*4)))));
   Canvas shadow=letter;shadow.opacity=uint8_t(div255(shadow.opacity*96));
   ancient_scaled_glyph(shadow,glyph,x+dx+1,y+1,scale,rgb(0,0,0));
   ancient_scaled_glyph(letter,glyph,x+dx,y,scale,title_color);
-  x+=glyph.advance;++index;
+  pen64+=glyph.advance64?glyph.advance64:int(glyph.advance)*64;previous=cp;++index;
  }
  description.opacity=uint8_t(div255(description.opacity*motion.epithet_alpha(a.map_clock_ms)));
  description.centered(epithet,0,(630+root+offset)*4/21-34,320,8,epithet_color);

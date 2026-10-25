@@ -22,8 +22,8 @@ static void unchanged(const SaveData&before){SaveData now{};CHECK(save(a.game,no
 static void pools_and_filters(){
     a.open_library(0);a.advance(200);a.advance(200);const int filters[]={1,2,5,6,4,3,7,8};const unsigned expected[]={85,86,86,86,86,53,19,67};
     bool all[CardKinds]{};CardKind ids[CardKinds];
-    a.render();CHECK(a.card_grids[unsigned(CardGridSurface::Library)].columns==4);
-    CHECK(CardGridScroll::CardW==46&&CardGridScroll::CardH==64&&CardGridScroll::row_offset(100)==7192);
+    a.render();CHECK(a.card_grids[unsigned(CardGridSurface::Library)].columns==2);
+    CHECK(CardGridScroll::CardW==69&&CardGridScroll::CardH==96&&CardGridScroll::row_offset(100)==10800);
     for(unsigned pool=0;pool<8;++pool){if(a.library_filter!=filters[pool])control(LibraryPoolFirst+int(pool));CHECK(a.library_filter==filters[pool]);const unsigned count=a.library_items(ids);CHECK(count==expected[pool]);for(unsigned i=0;i<count;++i){CHECK(ids[i]<CardKinds);all[ids[i]]=true;}}
     for(bool found:all)CHECK(found);
     control(LibraryPoolLast);CHECK(a.library_filter==0&&a.library_items()==0);control(LibraryPoolFirst);CHECK(a.library_items()==85);
@@ -139,19 +139,22 @@ static bool exact_header_glyph(const std::vector<uint8_t>&pack,uint32_t cp,unsig
 // glyphs, not Canvas::fitted or the production label helper. A suppressed-text
 // frame supplies only original images/background; the oracle adds every
 // complete heading, count, rarity, cost and checkbox word to that frame.
-struct LibraryLetter {unsigned cp,w,h,advance,color;std::vector<uint8_t>alpha;};
+struct LibraryLetter {unsigned cp,w,h,advance,color;int advance64,kerning64,bearing;std::vector<uint8_t>alpha;};
 static std::vector<LibraryLetter>library_letters(const std::vector<uint8_t>&pack,const std::string&text,unsigned size,unsigned face){
     std::vector<LibraryLetter>result;RichReader reader(text.c_str());RichChar ch{};
     while(reader.next(ch)){
         const unsigned actual_face=face|(ch.style.bold?5u:0u);CHECK(exact_header_glyph(pack,ch.codepoint,actual_face,size));
         const auto g=a.content.glyph(ch.codepoint,int(size),actual_face);CHECK(g.pixels&&g.advance);
-        LibraryLetter letter{ch.codepoint,g.w,g.h,g.advance,ch.style.color,std::vector<uint8_t>(unsigned(g.w)*g.h)};
+        LibraryLetter letter{ch.codepoint,g.w,g.h,g.advance,ch.style.color,
+            g.advance64?int(g.advance64):int(g.advance)*64,
+            ch.previous_font==rich_font_style(ch)?a.content.glyph_kerning64(ch.previous,ch.codepoint,int(size),actual_face):0,
+            g.bearing_x,std::vector<uint8_t>(unsigned(g.w)*g.h)};
         if(g.encoded_size){unsigned at=0;for(unsigned i=0;i<g.encoded_size;i+=2){CHECK(i+1<g.encoded_size&&at+g.pixels[i]<=letter.alpha.size());
             for(unsigned n=0;n<g.pixels[i];++n)letter.alpha[at++]=g.pixels[i+1];}CHECK(at==letter.alpha.size());}
         else std::memcpy(letter.alpha.data(),g.pixels,letter.alpha.size());result.push_back(letter);
     }CHECK(!result.empty());return result;
 }
-static unsigned library_text_width(const std::vector<LibraryLetter>&letters){unsigned width=0;for(const auto&letter:letters)width+=letter.advance;return width;}
+static unsigned library_text_width(const std::vector<LibraryLetter>&letters){int width64=0;for(const auto&letter:letters)width64+=(width64?letter.kerning64:0)+letter.advance64;return unsigned((width64+32)/64);}
 static uint16_t source_rgb(unsigned r,unsigned g,unsigned b){return uint16_t((r>>3)<<11|(g>>2)<<5|(b>>3));}
 static void library_oracle_paint(std::vector<uint16_t>&frame,int x,int y,uint16_t color,unsigned alpha){
     if(x<0||x>=320||y<0||y>=240)return;const auto from=frame[unsigned(y*320+x)];
@@ -161,13 +164,14 @@ static void library_oracle_paint(std::vector<uint16_t>&frame,int x,int y,uint16_
 static void library_oracle_label(std::vector<uint16_t>&frame,const std::vector<LibraryLetter>&letters,int left,int top,
                                 uint16_t color,unsigned opacity=255,unsigned shadow=128,int dx=1,int dy=1,int radius=0,
                                 unsigned red=255,unsigned green=255,unsigned blue=255){
-    const auto pass=[&](int sx,int sy,bool shade){int x=left;
-        for(const auto&letter:letters){const auto ink=shade?uint16_t(0):letter.color==1?source_rgb(239,200,81):letter.color==3?source_rgb(135,206,235):color;
+    const auto pass=[&](int sx,int sy,bool shade){int position64=0;
+        for(const auto&letter:letters){if(position64)position64+=letter.kerning64;const int x=left+(position64+32)/64+letter.bearing;
+            const auto ink=shade?uint16_t(0):letter.color==1?source_rgb(239,200,81):letter.color==3?source_rgb(135,206,235):color;
             const uint16_t tinted=uint16_t((((ink>>11)*red+127)/255)<<11|((((ink>>5)&63)*green+127)/255)<<5|((ink&31)*blue+127)/255);
             const unsigned layer=shade?(opacity*shadow+127)/255:opacity;
             for(unsigned yy=0;yy<letter.h;++yy)for(unsigned xx=0;xx<letter.w;++xx)
                 library_oracle_paint(frame,x+int(xx)+sx,top+int(yy)+sy,tinted,(unsigned(letter.alpha[yy*letter.w+xx])*layer+127)/255);
-            x+=letter.advance;
+            position64+=letter.advance64;
         }
     };
     if(radius){for(int yy=-radius;yy<=radius;++yy)for(int xx=-radius;xx<=radius;++xx)if((xx||yy)&&xx*xx+yy*yy<=radius*radius)pass(xx,yy,true);}
@@ -176,12 +180,12 @@ static void library_oracle_label(std::vector<uint16_t>&frame,const std::vector<L
 static void library_source_geometry(){
     a.open_library(0);a.pointer.visible=true;a.pointer.x=319;a.pointer.y=239;a.advance(400);a.render();
     const int sort_controls[]={LibrarySortType,LibrarySortRarity,LibrarySortCost,LibrarySortAlphabet};
-    const int sort_y[]={41,64,106,127};for(unsigned i=0;i<4;++i){const auto h=hit(HitKind::LibraryControl,sort_controls[i]);CHECK(h.x==3&&h.y==sort_y[i]&&h.w==49&&h.h==8);}
-    auto h=hit(HitKind::LibraryControl,LibraryViewStats);CHECK(h.x==3&&h.y==220&&h.w==49&&h.h==8);
-    h=hit(HitKind::LibraryControl,LibraryViewUpgrades);CHECK(h.x==3&&h.y==229&&h.w==49&&h.h==8);
-    const int rows[]={73,80,88,95};for(unsigned i=0;i<4;++i){h=hit(HitKind::LibraryControl,LibraryRarityFirst+int(i));CHECK(h.y==rows[i]&&h.h==7&&h.enabled);}
-    const int columns[]={5,14,23,32,41};for(unsigned i=0;i<5;++i){h=hit(HitKind::LibraryControl,LibraryCostFirst+int(i));CHECK(h.x==columns[i]&&h.y==114&&h.w==9&&h.h==9);}
-    h=hit(HitKind::LibraryControl,LibrarySearch);CHECK(h.y==3&&h.h==9);
+    const int sort_y[]={59,91,158,193};for(unsigned i=0;i<4;++i){const auto h=hit(HitKind::LibraryControl,sort_controls[i]);CHECK(h.x==3&&h.y==sort_y[i]&&h.w==76&&h.h==14);}
+    auto h=hit(HitKind::LibraryControl,LibraryViewStats);CHECK(h.x==58&&h.y==215&&h.w==104&&h.h==20);
+    h=hit(HitKind::LibraryControl,LibraryViewUpgrades);CHECK(h.x==165&&h.y==215&&h.w==104&&h.h==20);
+    const int rows[]={107,119,131,143};for(unsigned i=0;i<4;++i){h=hit(HitKind::LibraryControl,LibraryRarityFirst+int(i));CHECK(h.y==rows[i]&&h.h==12&&h.enabled);}
+    const int columns[]={4,19,34,49,64};for(unsigned i=0;i<5;++i){h=hit(HitKind::LibraryControl,LibraryCostFirst+int(i));CHECK(h.x==columns[i]&&h.y==174&&h.w==14&&h.h==14);}
+    h=hit(HitKind::LibraryControl,LibrarySearch);CHECK(h.y==3&&h.h==16);
     // Actual controls, including the tighter bottom rows, retain only their
     // intended presentation predicate and never alter the current run.
     SaveData before{};CHECK(save(a.game,before));control(LibraryViewUpgrades);CHECK(a.library_upgraded&&!a.card_library.show_stats);unchanged(before);
@@ -190,37 +194,37 @@ static void library_source_geometry(){
 static void library_source_label_pixels(const std::vector<uint8_t>&pack){
     if(pack.empty())return;a.open_library(0);spire_test::discover_all_cards(a);a.card_library.invalidate();
     a.pointer.visible=true;a.pointer.x=319;a.pointer.y=239;a.advance(500);
-    const char*sort_keys[]={"SORT_TYPE","SORT_RARITY","SORT_COST","SORT_ALPHABET"};const int sort_y[]={41,64,106,127};
-    const char*rarity_keys[]={"RARITY_COMMON","RARITY_UNCOMMON","RARITY_RARE","RARITY_OTHER"};const int rarity_y[]={73,80,88,95};
+    const char*sort_keys[]={"SORT_TYPE","SORT_RARITY","SORT_COST","SORT_ALPHABET"};const int sort_y[]={59,91,158,193};
+    const char*rarity_keys[]={"RARITY_COMMON","RARITY_UNCOMMON","RARITY_RARE","RARITY_OTHER"};const int rarity_y[]={107,119,131,143};
     const unsigned rarity_rgb[][3]={{255,255,255},{135,206,235},{239,200,81},{238,130,238}};
     for(unsigned empty=0;empty<2;++empty){
         a.library_filter=empty?0:1;a.card_library.invalidate();a.card_grids[unsigned(CardGridSurface::Library)].reset();
         const auto clear=[](){for(unsigned i=0;i<ScreenW*ScreenH;++i)a.pixels[i]=uint16_t((i*17u)^(i/320u));a.hit_count=0;};
         clear();Canvas visible{a};card_library_screen(visible);const std::vector<uint16_t>actual(a.pixels,a.pixels+ScreenW*ScreenH);
         clear();Canvas hidden{a};hidden.text_visible_characters=0;card_library_screen(hidden);std::vector<uint16_t>expected(a.pixels,a.pixels+ScreenW*ScreenH);
-        if(empty){auto text=library_letters(pack,a.content.locale_string("card_library","NO_RESULTS"),6,0);
-            library_oracle_label(expected,text,54+(266-int(library_text_width(text)))/2,116,source_rgb(255,246,226),255,64,1,0);}
+        if(empty){auto text=library_letters(pack,a.content.locale_string("card_library","NO_RESULTS"),10,0);
+            library_oracle_label(expected,text,83+(237-int(library_text_width(text)))/2,100,source_rgb(255,246,226),255,64,1,0);}
         std::string count=a.content.locale_string("card_library","CARD_COUNT");const auto variable=count.find("{Amount}");CHECK(variable!=std::string::npos);count.replace(variable,8,empty?"0":"85");
-        const auto count_letters=library_letters(pack,count,4,0);
-        library_oracle_label(expected,count_letters,296+(19-int(library_text_width(count_letters)))/2,228,source_rgb(255,246,226),129,64,1,0);
+        const auto count_letters=library_letters(pack,count,8,0);
+        library_oracle_label(expected,count_letters,267+(49-int(library_text_width(count_letters)))/2,221,source_rgb(255,246,226),129,64,1,0);
         // Search is a plain LineEdit: no title color, outline or ellipsis.
-        const auto search=library_letters(pack,a.content.locale_string("card_library","SEARCH_PLACEHOLDER"),5,0);
-        CHECK(library_text_width(search)<=36);library_oracle_label(expected,search,5,4,source_rgb(153,156,150),255,0);
-        for(unsigned i=0;i<4;++i){const auto text=library_letters(pack,a.content.world_string("gameplay_ui",sort_keys[i]),4,a.content.english()?5:0);CHECK(library_text_width(text)+2+7<=49);
-            library_oracle_label(expected,text,5,sort_y[i]+1,source_rgb(239,200,81),255,128,0,0,2);}
-        for(unsigned i=0;i<4;++i){const auto text=library_letters(pack,a.content.locale_string("card_library",rarity_keys[i]),4,a.content.english()?5:0);CHECK(library_text_width(text)<=37);
+        const auto search=library_letters(pack,a.content.locale_string("card_library","SEARCH_PLACEHOLDER"),8,0);
+        CHECK(library_text_width(search)<=58);library_oracle_label(expected,search,6,6,source_rgb(153,156,150),255,0);
+        for(unsigned i=0;i<4;++i){const auto text=library_letters(pack,a.content.world_string("gameplay_ui",sort_keys[i]),8,a.content.original_label_fonts()?5:0);CHECK(library_text_width(text)+6+8<=76);
+            library_oracle_label(expected,text,6,sort_y[i]+2,source_rgb(239,200,81),255,96,1,1);}
+        for(unsigned i=0;i<4;++i){const auto text=library_letters(pack,a.content.locale_string("card_library",rarity_keys[i]),8,a.content.original_label_fonts()?5:0);CHECK(library_text_width(text)<=61);
             // Source OnDisable multiplies the row by gray, retaining alpha.
             const unsigned shade=empty?128:255;const auto creme=source_rgb(255,246,226);
             const auto dimmed=uint16_t((((creme>>11)*shade+127)/255)<<11|((((creme>>5)&63)*shade+127)/255)<<5|((creme&31)*shade+127)/255);
-            library_oracle_label(expected,text,13,rarity_y[i],dimmed,255,128,1,1,0,rarity_rgb[i][0],rarity_rgb[i][1],rarity_rgb[i][2]);}
-        const char*costs[]={"0","1","2","3+","X"};const int columns[]={5,14,23,32,41};
-        for(unsigned i=0;i<5;++i){const auto text=library_letters(pack,costs[i],5,a.content.english()?5:0);const int width=int(library_text_width(text));
-            library_oracle_label(expected,text,columns[i]+(10-width)/2,115,source_rgb(255,246,226),255,128,0,0,2);}
-        for(unsigned i=0;i<2;++i){const auto text=library_letters(pack,a.content.locale_string("card_library",i?"VIEW_UPGRADES":"VIEW_STATS"),4,a.content.english()?5:0);CHECK(library_text_width(text)<=40);
-            library_oracle_label(expected,text,11,i?230:221,source_rgb(239,200,81));}
+            library_oracle_label(expected,text,18,rarity_y[i]+1,dimmed,255,96,1,1,0,rarity_rgb[i][0],rarity_rgb[i][1],rarity_rgb[i][2]);}
+        const char*costs[]={"0","1","2","3+","X"};const int columns[]={4,19,34,49,64};
+        for(unsigned i=0;i<5;++i){const auto text=library_letters(pack,costs[i],8,a.content.original_label_fonts()?5:0);const int width=int(library_text_width(text));
+            library_oracle_label(expected,text,columns[i]+(14-width)/2,176,source_rgb(255,246,226),255,96,1,1);}
+        for(unsigned i=0;i<2;++i){const auto text=library_letters(pack,a.content.locale_string("card_library",i?"VIEW_UPGRADES":"VIEW_STATS"),8,a.content.original_label_fonts()?5:0);CHECK(library_text_width(text)<=89);
+            library_oracle_label(expected,text,i?180:73,220,source_rgb(239,200,81),255,96,1,1);}
         unsigned changed=0;for(unsigned y=0;y<240;++y)for(unsigned x=0;x<320;++x){const unsigned at=y*320+x;
             // Source text can extend beyond its Control (clip_contents=false).
-            if(x<54||(x>=292&&y>=226)||(empty&&x>=54&&y>=112&&y<128)){
+            if(x<83||(y>=215&&x>=58)||(empty&&x>=83&&y>=100&&y<116)){
                 if(actual[at]!=expected[at])std::fprintf(stderr,"library source pixels empty=%u x=%u y=%u actual=%u expected=%u\n",empty,x,y,actual[at],expected[at]);
                 CHECK(actual[at]==expected[at]);changed+=actual[at]!=a.pixels[at];
             }
@@ -276,12 +280,14 @@ static void collection_header_pixels(const std::vector<uint8_t>&pack){
             CHECK(!text.empty());a.collection.row_count=0;a.collection.category_count=1;a.collection.category_kind[0]=uint8_t(category);a.collection.category_y[0]=80;
             a.render();const std::vector<uint16_t>actual(a.pixels,a.pixels+ScreenW*ScreenH);
             a.collection.category_count=0;a.render();std::vector<uint16_t>expected(a.pixels,a.pixels+ScreenW*ScreenH);
-            const int start=ancient?74:63,y=80;int width=0,height=0;unsigned characters=0;
+            const int start=ancient?64:47,y=80;int width=0,height=0;unsigned characters=0;
             for(unsigned pass=0;pass<2;++pass){
-                RichReader reader(text.c_str());RichChar ch{};int x=start;
+                RichReader reader(text.c_str());RichChar ch{};int position64=0;unsigned previous_face=0;
                 while(reader.next(ch)){
-                    CHECK(ch.codepoint>=32);const unsigned face=ch.style.bold&&(tab==2||!a.content.english())?5u:0u;
-                    CHECK(exact_header_glyph(pack,ch.codepoint,face));const auto g=a.content.glyph(ch.codepoint,5,face);
+                    CHECK(ch.codepoint>=32);const unsigned face=ch.style.bold&&(tab==2||!a.content.original_label_fonts())?5u:0u;
+                    CHECK(exact_header_glyph(pack,ch.codepoint,face,8));const auto g=a.content.glyph(ch.codepoint,8,face);
+                    if(position64&&previous_face==face)position64+=a.content.glyph_kerning64(ch.previous,ch.codepoint,8,face);
+                    const int x=start+(position64+32)/64+g.bearing_x;
                     CHECK(g.pixels&&g.advance>0);if(g.h>height)height=g.h;std::vector<uint8_t>alpha(unsigned(g.w)*g.h);
                     if(g.encoded_size){unsigned at=0;for(unsigned i=0;i<g.encoded_size;i+=2){CHECK(i+1<g.encoded_size&&at+g.pixels[i]<=alpha.size());for(unsigned n=0;n<g.pixels[i];++n)alpha[at++]=g.pixels[i+1];}CHECK(at==alpha.size());}
                     else std::memcpy(alpha.data(),g.pixels,alpha.size());
@@ -290,9 +296,9 @@ static void collection_header_pixels(const std::vector<uint8_t>&pack){
                     const int dx=!pass&&tab==1?1:0,dy=!pass&&tab==2?1:0;
                     for(unsigned yy=0;yy<g.h;++yy)for(unsigned xx=0;xx<g.w;++xx){const unsigned coverage=pass?alpha[yy*g.w+xx]:(unsigned(alpha[yy*g.w+xx])*128+127)/255;
                         const int at=(y+int(yy)+dy)*ScreenW+x+int(xx)+dx;CHECK(at>=0&&at<int(expected.size()));expected[at]=mix(expected[at],color,coverage);}
-                    x+=g.advance;if(pass)++characters;
+                    position64+=g.advance64?g.advance64:int(g.advance)*64;previous_face=face;if(pass)++characters;
                 }
-                width=x-start;
+                width=(position64+32)/64;
             }
             CHECK(characters>0&&width>0&&start+width+2<ScreenW);if(width>194)++overflow_headings;
             CHECK(y+height+1<ScreenH);
@@ -301,7 +307,7 @@ static void collection_header_pixels(const std::vector<uint8_t>&pack){
         }
         a.collection=original;
     }
-    CHECK(headings==20);if(a.content.english())CHECK(overflow_headings==2);
+    CHECK(headings==20);
     std::memcpy(a.progress.discovered_events,seen_events,sizeof seen_events);std::memcpy(a.progress.discovered_relics,seen_relics,sizeof seen_relics);
     a.open_library(0);
 }

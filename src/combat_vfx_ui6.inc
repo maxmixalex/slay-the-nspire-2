@@ -72,13 +72,17 @@ static void combat_power_popups(Canvas&c){
 // alpha-only scratch line. There is no new sprite pack or persistent cache.
 static void combat_damage_text(Canvas&c,const char*label,int cx,int cy,int scale,uint16_t color){
  constexpr int W=128,H=40;uint8_t mask[W*H]{};
- int width=0,height=0;
- for(const char*p=label;*p;){const auto g=c.a.content.glyph(utf8(p),16);if(width+mx(g.w,g.advance)>=W)break;
+ int width=0,height=0,pen64=0;uint32_t previous=0;
+ for(const char*p=label;*p;){const uint32_t cp=utf8(p);const auto g=c.a.content.glyph(cp,16);
+  pen64+=c.a.content.glyph_kerning64(previous,cp,16);previous=cp;
+  const int at=text_pixel(pen64)+g.bearing_x,advance=g.advance64?g.advance64:int(g.advance)*64;
+  if(mx(at+int(g.w),text_pixel(pen64+advance))>=W)break;
   if(g.pixels){unsigned pos=0;
-   const auto pixel=[&](unsigned at,unsigned alpha){const unsigned yy=at/g.w,xx=at-yy*g.w;if(yy<H)mask[yy*W+width+xx]=uint8_t(alpha);};
+   const auto pixel=[&](unsigned position,unsigned alpha){const unsigned yy=position/g.w,xx=position-yy*g.w;
+    const int column=at+int(xx);if(yy<H&&column>=0&&column<W){auto&sample=mask[yy*W+column];if(alpha>sample)sample=uint8_t(alpha);}};
    if(g.encoded_size){for(unsigned at=0;at+1<g.encoded_size&&pos<unsigned(g.w)*g.h;at+=2){unsigned n=mn(g.pixels[at],int(unsigned(g.w)*g.h-pos));const unsigned alpha=g.pixels[at+1];while(n--)pixel(pos++,alpha);}}
    else for(unsigned at=0;at<unsigned(g.w)*g.h;++at)pixel(at,g.pixels[at]);
-  }width+=g.advance;height=mx(height,g.h);
+  }pen64+=advance;width=mx(width,mx(text_pixel(pen64),at+int(g.w)));height=mx(height,g.h);
  }
  if(!width||!height||scale<=0)return;
  const int w=mx(1,width*scale/1024),h=mx(1,height*scale/1024),left=cx-w/2,top=cy-h/2;

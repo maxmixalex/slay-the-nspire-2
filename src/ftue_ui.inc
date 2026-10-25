@@ -146,9 +146,12 @@ static void ftue_combat_pages(Canvas&c){
 }
 static void ftue_start_label(Canvas c,const char*text,unsigned scale){
  c.font_face=source_label_face(c.a.content.original_label_fonts(),4);const int size=c.a.content.font_size(18,c.font_face);
- int x=160-int(unsigned(c.width(text,size))*scale/4096)/2;
+ const int left=160-int(unsigned(c.width(text,size))*scale/4096)/2;int pen64=0;uint32_t previous=0;
  while(*text){const uint32_t cp=utf8(text);const auto g=c.a.content.glyph(cp,size,c.font_face);
-  if(!g.pixels||g.w>48||g.h>48){x+=int(g.advance*scale/4096);continue;}
+  pen64+=c.a.content.glyph_kerning64(previous,cp,size,c.font_face);
+  const int x=left+text_pixel(int(int64_t(pen64+int(g.bearing_x)*64)*scale/4096));
+  pen64+=g.advance64?g.advance64:int(g.advance)*64;previous=cp;
+  if(!g.pixels||g.w>48||g.h>48)continue;
   uint8_t alpha[48*48]{};unsigned at=0;
   if(g.encoded_size){for(unsigned i=0;i+1<g.encoded_size&&at<unsigned(g.w)*g.h;i+=2)for(unsigned j=0;j<g.pixels[i]&&at<unsigned(g.w)*g.h;++j)alpha[at++]=g.pixels[i+1];}
   else for(unsigned i=0;i<unsigned(g.w)*g.h;++i)alpha[i]=g.pixels[i];
@@ -164,7 +167,6 @@ static void ftue_start_label(Canvas c,const char*text,unsigned scale){
   }
   for(int yy=0;yy<h;++yy)for(int xx=0;xx<w;++xx)if(x+xx>=0&&x+xx<c.clip_w&&top+yy>=0&&top+yy<c.clip_h)
    c.paint((top+yy)*c.pitch+x+xx,rgb(239,200,81),alpha[unsigned(yy*g.h/h)*g.w+unsigned(xx*g.w/w)]);
-  x+=int(g.advance*scale/4096);
  }
 }
 static void ftue_combat_start(Canvas&c){

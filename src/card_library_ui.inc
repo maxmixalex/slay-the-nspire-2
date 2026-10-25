@@ -16,7 +16,7 @@ static LocalizedValue library_count_value(const void*opaque,const char*key){retu
 // Scale the existing native glyph about the Label pivot for its source1.1
 // hover. This changes no font band and needs no temporary bitmap or cache.
 static void library_label_glyph(Canvas&c,Glyph g,int x,int y,uint16_t color,int pivot_x,int pivot_y,int scale){
-    if(scale==1000){c.glyph(g,x,y,color);return;}if(!g.pixels)return;
+    x+=g.bearing_x;if(scale==1000){c.glyph(g,x,y,color);return;}if(!g.pixels)return;
     const auto project=[&](int value,int pivot){const int q=(value-pivot)*scale;return pivot+(q+(q<0?-500:500))/1000;};
     unsigned column=0,row=0;const auto emit=[&](unsigned alpha){
         if(alpha){const int left=project(x+int(column),pivot_x),right=project(x+int(column)+1,pivot_x),top=project(y+int(row),pivot_y),bottom=project(y+int(row)+1,pivot_y);
@@ -35,12 +35,13 @@ static int library_fixed_label(Canvas c,const char*text,int x,int y,int w,int h,
     const int size=c.a.content.font_size(mx(8,requested),face),width=c.width(text,size),left=x+(center?(w-width)/2:0),top=y+(h-size-2)/2;
     const auto draw=[&](int dx,int dy,bool shadow){
         Canvas ink=c;if(shadow)ink.opacity=uint8_t(div255(unsigned(ink.opacity)*shadow_alpha));
-        RichReader reader(text);RichChar ch{};int at=left;
+        RichReader reader(text);RichChar ch{};int advance64=0;
         while(reader.next(ch)){
             const auto g=c.a.content.glyph(ch.codepoint,size,c.font_style(ch));
+            const auto metric=c.text_metric(ch,size);if(advance64)advance64+=metric.kerning64;
             const uint16_t rich=ch.style.color==1?rgb(239,200,81):ch.style.color==3?rgb(135,206,235):color;
-            if(ch.index<c.text_visible_characters)library_label_glyph(ink,g,at+dx,top+dy,shadow?0:rich,x,y+h/2,scale);
-            at+=g.advance;
+            if(ch.index<c.text_visible_characters)library_label_glyph(ink,g,left+text_pixel(advance64)+dx,top+dy,shadow?0:rich,x,y+h/2,scale);
+            advance64+=fitted_text::advance64(metric);
         }
     };
     if(shadow_alpha)draw(outline?1:shadow_x,outline?1:shadow_y,true);
@@ -66,11 +67,17 @@ static void library_search(Canvas&c){
     const char*query=*a.card_library.draft?a.card_library.draft:a.content.locale_string("card_library","SEARCH_PLACEHOLDER");
     // LineEdit displays plain text and scrolls to the caret. Brackets typed
     // into a search must not become RichReader markup or an ellipsis.
-    const int size=a.content.font_size(8);int width=0;for(const char*p=query;*p;)width+=a.content.glyph_metrics(utf8(p),size).advance;
+    const int size=a.content.font_size(8);int advance64=0;uint32_t previous=0;
+    for(const char*p=query;*p;){const uint32_t cp=utf8(p);const auto g=a.content.glyph_metrics(cp,size);
+        if(previous)advance64+=a.content.glyph_kerning64(previous,cp,size);
+        advance64+=g.advance64?g.advance64:int(g.advance)*64;previous=cp;}
+    const int width=text_pixel(advance64);
     constexpr int text_width=58;const int scroll=*a.card_library.draft?mx(0,width-text_width+1):0;
     Canvas field=c;field.pixels+=6*field.pitch+6;if(field.coverage)field.coverage+=6*field.pitch+6;field.clip_w=text_width;field.clip_h=11;
-    int at=-scroll;unsigned index=0;for(const char*p=query;*p;){const uint32_t cp=utf8(p);const auto g=a.content.glyph(cp,size);
-        if(index++<field.text_visible_characters)field.character(cp,g,at,0,*a.card_library.draft?rgb(255,255,255):rgb(153,156,150));at+=g.advance;}
+    advance64=0;previous=0;unsigned index=0;for(const char*p=query;*p;){const uint32_t cp=utf8(p);const auto g=a.content.glyph(cp,size);
+        if(previous)advance64+=a.content.glyph_kerning64(previous,cp,size);
+        if(index++<field.text_visible_characters)field.character(cp,g,text_pixel(advance64)-scroll,0,*a.card_library.draft?rgb(255,255,255):rgb(153,156,150));
+        advance64+=g.advance64?g.advance64:int(g.advance)*64;previous=cp;}
     if(editing&&(a.map_clock_ms/500)%2==0)field.rect(mn(text_width-1,width-scroll),0,1,10,rgb(255,255,255));
     c.hit(x,y,61,h,HitKind::LibraryControl,LibrarySearch);c.ui(I6_CloseX,67,6,10,10);c.hit(65,y,14,h,HitKind::LibraryControl,LibraryClearSearch);
 }

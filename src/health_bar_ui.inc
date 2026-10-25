@@ -95,12 +95,17 @@ static void health_fill(Canvas&c,const HealthPatch&fill,const HealthPatch&mask,i
  }
 }
 static void health_label(Canvas&c,const char*label,int x,int y,int width,int size,uint16_t color,uint16_t outline,bool full_outline=false){
- int at=x+mx(0,(width-c.width(label,size))/2);const char*text=label;
+ size=c.a.content.font_size(size,c.font_face,false,c.sparse_scene_sizes);
+ const int origin=x+mx(0,(width-c.width(label,size))/2);const char*text=label;
+ int pen64=0;uint32_t previous=0;
  // Each glyph is fetched once for all outline passes. Repeated text() calls
  // would redo the directory/cache lookup for every outline direction.
  Glyph glyphs[32];int positions[32];unsigned count=0;
- while(*text&&count<32){const auto glyph=c.a.content.glyph(utf8(text),size,c.font_face);if(at+glyph.advance>x+width)break;
-  glyphs[count]=glyph;positions[count++]=at;at+=glyph.advance;
+ while(*text&&count<32){const uint32_t cp=utf8(text);const auto glyph=c.a.content.glyph(cp,size,c.font_face);
+  pen64+=c.a.content.glyph_kerning64(previous,cp,size,c.font_face);previous=cp;
+  const int advance= glyph.advance64?glyph.advance64:int(glyph.advance)*64;
+  if(origin+text_pixel(pen64+advance)>x+width)break;
+  glyphs[count]=glyph;positions[count++]=origin+text_pixel(pen64)+glyph.bearing_x;pen64+=advance;
  }
  // Complete every outline first: a tightly spaced following character's
  // left stroke must not paint over the preceding character's foreground.

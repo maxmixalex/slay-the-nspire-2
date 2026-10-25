@@ -11,12 +11,13 @@ static void merchant_cost_label(Canvas&c,int amount,int x,int y,unsigned scale,b
     const bool english=c.a.content.english();const unsigned face=source_label_face(c.a.content.original_label_fonts(),5);
     const int size=c.a.content.font_size(mx(10,MerchantInventoryLayout::size(39,scale)),face,false,true);
     char value[24]{};TextBuffer text{value,sizeof value,0};text.number(amount);
-    Glyph glyphs[12];int positions[12];unsigned count=0;int advance=0;
+    Glyph glyphs[12];int positions[12];unsigned count=0;int advance64=0;uint32_t previous=0;
     for(const char*p=value;*p&&count<12;++p){
-        positions[count]=advance;
-        glyphs[count]=c.a.content.glyph(uint8_t(*p),size,face);advance+=glyphs[count++].advance;
+        const uint32_t cp=uint8_t(*p);advance64+=c.a.content.glyph_kerning64(previous,cp,size,face);previous=cp;
+        const auto g=c.a.content.glyph(cp,size,face);glyphs[count]=g;positions[count++]=text_pixel(advance64)+g.bearing_x;
+        advance64+=g.advance64?g.advance64:int(g.advance)*64;
     }
-    const int width=advance;
+    const int width=text_pixel(advance64);
     const int coin=MerchantInventoryLayout::size(54,scale),gap=MerchantInventoryLayout::size(6,scale),left=x-(coin+gap+width)/2;
     // The source HBox centers its54px coin beside the original39px label.
     // CostLabel's measured baseline, not the glyph's padded bitmap height,
