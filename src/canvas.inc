@@ -368,6 +368,9 @@ struct Canvas{
         return text_pixel(w);
     }
     void glyph(Glyph g,int x,int y,uint16_t color){
+        // The caller has already resolved and cached the glyph. Empty
+        // preparation surfaces need no raster-span traversal.
+        if(clip_w<=0||clip_h<=0)return;
         if(g.pixels&&g.encoded_size){
             unsigned position=0,column=0,row=0;const unsigned pixels=unsigned(g.w)*g.h;
             for(unsigned at=0;at+1<g.encoded_size&&position<pixels;at+=2){
