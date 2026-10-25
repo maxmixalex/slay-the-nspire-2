@@ -1,5 +1,50 @@
 # Work state — 2026-10-25
 
+## UI10i closes two further source-review findings
+
+H is remotely preserved at `0eb82c19b8794f5235e6c5283d339f0c93f3a21f`,
+tree `77e404db6c133adacb7c02bbd7c275dc319c4ef0`. Its matching native120/120,
+Python251+54, ARM linked ABI/codec, WASM,94 bilingual actual-resource targets
+and both complete split-stream comparisons pass. The ordinary browser
+passes18 flows/41 captures without page errors or external requests. These
+are execution layers, not an original-game fidelity percentage.
+H GitHub Actions40174150511 also passes; G Actions40172979898 retains its
+failed result alongside the already documented G local findings.
+
+H's ARM allocation is16,251,288 bytes,525,928 below the unchanged16MiB ceiling.
+The final physical resources total90,114,227 bytes; the installed four files
+total91,602,752. All four ordinary cloned-OS USB capacity cases pass with
+exact readbacks:1,027,498;1,421,773;2,085,823;2,701,448 bytes. This last case
+models the specified history-write peak, not every combination of stale
+failure residues. Normal English/Chinese Save and Quit preserves the actual
+230,540-byte canonical run while migrating its17,731-byte NSH8 metadata to
+18,267-byte NSH9 (469 bytes in the device container). Its observed saved
+revision matches canonical revision24; unknown old build IDs remain unknown.
+The independent Chinese and English cold reopens also pass, with both primary
+and backup canonical bytes unchanged and the final English preference exact.
+
+Continued source review found an in-scope functional omission: the original
+optional Long Press Confirmations setting. I implements its default-off,
+per-profile End Turn gate, strictly greater than500ms, release/unfocus decay,
+one action per owned press and the source additive204x6 progress bar. Mouse,
+mapped physical keys and HTML toolbar controls share the native timer. The
+toolbar now forwards real down/up/cancel lifetimes, preserving ordinary
+non-combat confirmations. NSPF5 uses reserved bit7 in the unchanged108-byte
+preference record; older records retain their original validation and masks.
+Canonical NSV17 and NSH9 are unchanged. Short JS/module/transaction checks
+pass; matching native, ARM, actual UI, ordinary browser and OS checks remain
+required. See `settings-run-setup-ui10-0.17.md`.
+
+The known-date Continue capture also exposed an incorrect H oracle premise:
+the original DateLabel has automatic wrapping disabled. Direct pinned Godot
+measurement of its400x90 rectangle and font-size estimator retains24px for
+English/Chinese unknown and representative longest date strings. I keeps the
+corresponding5px glyphs, renders only explicit newlines and uses the measured
+English6px/Chinese7px line spacing. It does not invent a smaller original font
+to hide the port's integer glyph-advance differences. The previous H pass and
+this subsequent visual discovery are both retained. All I production work
+must start after the combined source has been pushed and read back.
+
 ## UI10h closes the G acceptance findings
 
 G is remotely preserved at `7d159cb4534c7923c10f1e5570a1befea1c9d687`,

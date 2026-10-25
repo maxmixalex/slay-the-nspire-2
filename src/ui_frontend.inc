@@ -138,9 +138,11 @@ static void continue_run_info(Canvas&c){
     char row[192]{},saved_time[96]{};continue_saved_time(a,saved_time,sizeof saved_time);
     LocalizedTemplate date(row,sizeof row,continue_saved_value,saved_time);
     date.format(frontend_text(a,"main_menu_ui","CONTINUE_RUN_INFO.saved","{LastSavedTime}"));
-    // RichTextLabel is top aligned; its90px DateLabel reserves the source
-    // gap after the two rendered lines, rather than vertically centering them.
-    profile_text_box(panel,row,x(24),y(17),reference_viewport::project(400),reference_viewport::project(90),style,false,true,{},false,true);
+    // DateLabel has autowrap=Off and an explicit newline in the locale text.
+    // Source MegaRichTextLabel measurement retains24px for these timestamps;
+    // the original fonts place line two at30.5px English/36px Chinese.
+    // Its90px top-aligned rectangle reserves the gap before progress details.
+    profile_text_box(panel,row,x(24),y(17),reference_viewport::project(400),reference_viewport::project(90),style,false,false,{},false,true,a.content.english()?6:7);
     int portrait=a.content.ui_image(U_TopBarIronclad+int(a.saved_character));
     if(portrait<0)portrait=a.content.ui_image(character_portrait(a.saved_character));
     panel.picture(portrait,x(24),y(107),7,7);

@@ -63,6 +63,7 @@
  {0x69c2893eu,42,"Language Options (main menu only)"},
  {0x6a12f4dau,71,"Encounters: {total}\nKills: {kills}\nDeaths: {deaths}\nWin rate: {winrate}%"},
  {0x6c69fa02u,4," cards"},
+ {0x6cf6ed11u,12,"Long Press Confirmations"},
  {0x705193e0u,12,"Language Options"},
  {0x706cc104u,12,"Merchant room"},
  {0x71d4a82au,6,"Blocked"},

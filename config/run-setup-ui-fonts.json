@@ -75,6 +75,27 @@
       "face": 0
     },
     {
+      "key": "settings_ui.LONG_PRESS_CONFIRMATION_HEADER",
+      "pixels": [
+        4,
+        5
+      ],
+      "face": 0
+    },
+    {
+      "key": "settings_ui.LONG_PRESS_CONFIRMATION_HEADER",
+      "pixels": 5,
+      "face": 5,
+      "face_by_locale": {
+        "zhs": 0
+      }
+    },
+    {
+      "key": "settings_ui.LONG_PRESS_CONFIRMATION_DESCRIPTION",
+      "pixels": 5,
+      "face": 0
+    },
+    {
       "key": "settings_ui.TEXT_EFFECTS",
       "pixels": [
         4,

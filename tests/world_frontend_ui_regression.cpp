@@ -459,8 +459,10 @@ static void modal_isolation_and_fast_mode(){
  for(unsigned y=0;y<16;++y)for(unsigned x=0;x<16;++x)reticle_pixels+=tick[y*16+x]!=a.pixels[(69+y)*ScreenW+215+x];
  CHECK(!focused_label_pixels&&reticle_pixels>0);a.settings_item=0;unchanged();
  const auto checkbox=find_hit(HitKind::UiAction,int(UiAction::SettingsFastMode));CHECK(checkbox.x==193&&checkbox.y==71&&checkbox.w==61&&checkbox.h==12);
+ const auto hold_checkbox=find_hit(HitKind::UiAction,int(UiAction::SettingsLongPress));CHECK(hold_checkbox.x==193&&hold_checkbox.y==134&&hold_checkbox.w==61&&hold_checkbox.h==12);
+ const bool held=a.long_press;action(UiAction::SettingsLongPress);CHECK(a.long_press!=held);action(UiAction::SettingsLongPress);CHECK(a.long_press==held);unchanged();
  a.input(Key::Up);CHECK(a.settings_item==0);a.input(Key::Left);CHECK(!a.settings_tab&&a.settings_item==0);
- for(unsigned i=0;i<30;++i)a.input(Key::Down);CHECK(a.settings_item==10);a.input(Key::Down);CHECK(a.settings_item==10);
+ for(unsigned i=0;i<30;++i)a.input(Key::Down);CHECK(a.settings_item==11);a.input(Key::Down);CHECK(a.settings_item==11);
  for(unsigned i=0;i<30;++i)a.input(Key::Up);CHECK(a.settings_item==0&&a.settings_top==0);
  // OpenDropdown initially focuses the first item, clamps its endpoints and
  // ignores lateral arrows. Choosing the current locale leaves it open.

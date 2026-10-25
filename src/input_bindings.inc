@@ -17,6 +17,8 @@ void App::reset_input_bindings(){
     physical_keys_cancel();input_bindings=default_input_bindings(calculator_keyboard);binding_listening=-1;persist_preferences();
 }
 void App::physical_keys_cancel(){
+    command_keys_cancel();
+    if(end_turn_hold.owner!=EndTurnHold::Mouse)end_turn_hold.cancel(end_turn_hold.owner);
     for(auto&held:held_inputs){if(held.code&&held.key<=unsigned(Key::Debug))map_drawing_key_release(Key(held.key));held={};}
     bestiary.cancel_presses(map_clock_ms);
 }
@@ -30,6 +32,7 @@ bool App::physical_key(uint16_t code,bool pressed){
     code=normalize_input_key(code);if(!valid_input_key(code))return false;
     HeldInput*held=nullptr;for(auto&entry:held_inputs)if(entry.code==code){held=&entry;break;}
     if(!pressed){if(!held)return false;const unsigned released=held->key;const uint32_t context=held->context;*held={};
+        release_end_turn_hold(code);
         if(released>=BestiaryPresentation::PhysicalBase&&released<BestiaryPresentation::PhysicalEnd){
             if(bestiary.open&&context==bestiary.input_serial)bestiary_shortcut(released-BestiaryPresentation::PhysicalBase,false);
             return true;
@@ -77,7 +80,9 @@ bool App::physical_key(uint16_t code,bool pressed){
     }
     const unsigned bank=keyboard_only?1:0;unsigned command=InputCommandCount;
     for(unsigned i=0;i<InputCommandCount;++i)if(input_bindings.keys[bank][i]==code){command=i;break;}
-    const auto dispatch=[&](Key key){held->key=uint8_t(key);input(key);return true;};
+    const auto dispatch=[&](Key key){held->key=uint8_t(key);
+        if(key==Key::EndTurn&&long_press&&end_turn_hold_surface(*this)){start_end_turn_hold(code);return true;}
+        input(key);return true;};
     sync_ftues();
     if(detail_item>=0){
         if(command==unsigned(InputCommand::Left))return dispatch(Key::Left);

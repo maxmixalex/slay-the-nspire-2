@@ -81,6 +81,17 @@ static void source_checks(){
  scenario="Select hotkey activates on release and held keys cannot dismiss new modal";only(FtueId::CannotPlayCard);a.game.cards[id]={Strike,0};a.game.energy=0;
  CHECK(a.open_ftue(FtueId::CannotPlayCard));a.keyboard_only=true;a.physical_key(' ',true);CHECK(a.ftue.active());a.physical_key(' ',true);CHECK(a.ftue.active());a.physical_key(' ',false);CHECK(!a.ftue.active());a.keyboard_only=false;
 }
+static void long_press_tutorials(){
+ scenario="long-press short release keeps source playable-card tutorial";practice();only(FtueId::CanPlayCards);a.long_press=true;a.game.energy=99;snapshot();
+ CHECK(a.physical_key('E',true));advance(200);unchanged();CHECK(!a.ftue.active());CHECK(a.physical_key('E',false));
+ CHECK(a.ftue.id==FtueId::CanPlayCards&&!a.end_turn_hold.owner);advance(330);click(1);unchanged();
+ scenario="completed hold calls source release logic directly";practice();only(FtueId::CanPlayCards);a.long_press=true;a.game.energy=99;
+ const int turn=a.game.turn;CHECK(a.physical_key('E',true));advance(500);CHECK(a.game.turn==turn&&!a.ftue.active());advance(1);
+ CHECK(a.game.turn==turn+1&&!a.ftue.active()&&!a.seen_ftue(FtueId::CanPlayCards));CHECK(a.physical_key('E',false));
+ scenario="CannotPlayCard sneaky control keeps its source hold bypass";practice();only(FtueId::CannotPlayCard);a.long_press=true;
+ CHECK(a.open_ftue(FtueId::CannotPlayCard));advance(330);const int before_turn=a.game.turn;click(4);CHECK(a.game.turn==before_turn+1&&!a.ftue.active());
+ a.physical_keys_cancel();a.long_press=false;
+}
 static void begin_world(){
  new_run(a.game,0x7195c3,false);CHECK(world_set_seed(a.game,"NSPIRE-WORLD-017"));CHECK(world_begin_run(a.game));prepare();
 }
@@ -228,5 +239,5 @@ static void text_bounds(){
 int main(int argc,char**argv){
  Bytes data;if(argc>1){FILE*f=std::fopen(argv[1],"rb");CHECK(f);data.resize(spire_test::pack_size(f));CHECK(std::fread(data.data(),1,data.size(),f)==data.size());CHECK(!std::fclose(f));actual=true;}else data=fixture();
  if(argc>2)captures=argv[2];CHECK(a.init(data.data(),data.size(),{}));CHECK(a.content.has_ftue_assets());
- embark();combat_pages();source_checks();calculator_select_release();rooms();shuffle_barrier();real_shuffle();treasure_wait();terminal_boundaries();text_bounds();CHECK(a.content.healthy());std::printf("FTUE UI: %u checks passed (%s)\n",checks,actual?"actual":"synthetic");
+ embark();combat_pages();source_checks();long_press_tutorials();calculator_select_release();rooms();shuffle_barrier();real_shuffle();treasure_wait();terminal_boundaries();text_bounds();CHECK(a.content.healthy());std::printf("FTUE UI: %u checks passed (%s)\n",checks,actual?"actual":"synthetic");
 }

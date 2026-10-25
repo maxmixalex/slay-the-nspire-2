@@ -102,7 +102,7 @@ void App::ui_action(UiAction action){
     case UiAction::SettingsGeneralTab:case UiAction::SettingsInputTab:
         if(settings_open){settings_tab=action==UiAction::SettingsInputTab;settings_item=0;pointer_cancel();}break;
     case UiAction::SettingsLanguage:case UiAction::SettingsLanguageEnglish:case UiAction::SettingsLanguageChinese:
-    case UiAction::SettingsLanguageClose:case UiAction::SettingsCardIndices:case UiAction::SettingsTextEffects:case UiAction::SettingsRunTimer:
+    case UiAction::SettingsLongPress:case UiAction::SettingsLanguageClose:case UiAction::SettingsCardIndices:case UiAction::SettingsTextEffects:case UiAction::SettingsRunTimer:
     case UiAction::SettingsKeyboardOnly:case UiAction::SettingsPhobia:case UiAction::SettingsShakeDown:case UiAction::SettingsShakeUp:
     case UiAction::SettingsReset:case UiAction::SettingsScrollUp:case UiAction::SettingsScrollDown:
     case UiAction::SettingsFeedback:case UiAction::SettingsCredits:break;

@@ -21,6 +21,7 @@
 #include "locale.hpp"
 #include "feedback_assets.hpp"
 #include "button_presentation.hpp"
+#include "end_turn_hold.hpp"
 #include "ui_actions.hpp"
 #include "pointer.hpp"
 #include "map_preview.hpp"
@@ -264,6 +265,11 @@ struct App {
     PopupBackdrop popup_backdrop{};
     ProceedMotion proceed_motion{};
     EndTurnGlowMotion end_turn_glow{};
+    EndTurnHold end_turn_hold{};
+    bool end_turn_hold_available()const;
+    void start_end_turn_hold(uint16_t owner);
+    void release_end_turn_hold(uint16_t owner);
+    void advance_end_turn_hold(unsigned ms);
     CharacterSelectPresentation character_select_presentation{};
     TurnBannerPresentation turn_banner{};
     uint32_t energy_rotation_tick=0,energy_rotation_mdeg=0;
@@ -312,7 +318,7 @@ struct App {
     void auxiliary_scroll(int);
     void advance_auxiliary(unsigned);
     unsigned feedback_report(char*,unsigned)const;
-    bool show_card_indices=false,text_effects=true,keyboard_only=false,phobia_mode=false,show_run_timer=false;
+    bool show_card_indices=false,text_effects=true,keyboard_only=false,phobia_mode=false,show_run_timer=false,long_press=false;
     bool run_timer_visible()const;
     void run_timer_label(char*,size_t)const;
     uint8_t screen_shake=2;
@@ -323,8 +329,12 @@ struct App {
     uint8_t binding_bank=0;
     struct HeldInput {uint16_t code=0;uint8_t key=255;uint32_t context=0;};
     HeldInput held_inputs[12]{};
+    uint8_t command_held=255;
+    bool command_hold=false;
     void begin_key_rebind(unsigned command);
     bool physical_key(uint16_t code,bool pressed);
+    void command_key(Key key,bool pressed);
+    void command_keys_cancel();
     void physical_keys_cancel();
     void reset_input_bindings();
     const char* input_command_title(unsigned command)const;

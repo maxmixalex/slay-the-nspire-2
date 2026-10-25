@@ -138,5 +138,20 @@ static void native_end_turn(Canvas&c,bool enabled){
  const uint16_t cream=rgb(255,246,226),focus=playable?rgb(255,79,67):rgb(0,255,255);
  uint16_t color=enabled?blend(cream,focus,unsigned(visual.hover)*255/4096):Muted;
  layer.centered("结束回合",268,194+shift,42,8,rgb(19,31,46));layer.centered("结束回合",267,193+shift,42,8,color);
+ // Bar is a sibling of Visuals: its authored (8,-11) offset does not
+ // inherit the pressed artwork's downward shift. No temporary image/pool.
+ const auto bar=a.end_turn_hold.visual();
+ if(a.long_press&&bar.alpha_q12){
+  const int x=269,y=186,w=int((uint64_t(bar.width_q12)*4+21*2048)/(21*4096)),h=1;
+  const unsigned alpha=(bar.alpha_q12*255+2048)/4096;
+  Canvas outline=c;outline.opacity=uint8_t(div255(unsigned(c.opacity)*div255(alpha*128)));
+  outline.rect(x-1,y-1,w+2,h+2,rgb(0,0,0));
+  // Source red/green exceed1.0. Multiply by the fading alpha before
+  // clamping their additive contribution; premature color clamping dims it.
+  const unsigned coverage=div255(alpha*c.opacity);
+  const uint16_t color=rgb(mn(255,div255(bar.red*coverage)),mn(255,div255(bar.green*coverage)),mn(255,div255(bar.blue*coverage)));
+  Canvas fill=c;fill.opacity=255;
+  for(int yy=mx(0,y);yy<mn(c.clip_h,y+h);++yy)for(int xx=mx(0,x);xx<mn(c.clip_w,x+w);++xx)fill.paint(yy*c.pitch+xx,color,255,presentation::Add);
+ }
  c.hit(267,188,42,17,HitKind::Command,(int)Key::EndTurn,enabled);
 }

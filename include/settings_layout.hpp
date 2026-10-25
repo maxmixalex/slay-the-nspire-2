@@ -15,7 +15,7 @@ constexpr int LabelLeft=project(346),ControlLeft=project(1014),ControlWidth=proj
 constexpr int RowHeight=project(64),LabelFont=project(28),TabFont=project(32);
 constexpr int general_row(unsigned i){return project(211+int(i)*82);}
 constexpr int general_divider(unsigned i){return project(211+int(i)*82+72);}
-constexpr unsigned GeneralRows=10; // Includes the source Reset Gameplay row.
+constexpr unsigned GeneralRows=11; // Includes the source Reset Gameplay row.
 constexpr int InputPanelLeft=project(290),InputWidth=project(1100);
 constexpr int InputControlLeft=project(1058),KeyboardTop=project(251);
 constexpr int InputResetTop=project(341),InputResetLeft=project(1070);
@@ -31,5 +31,5 @@ constexpr int DropdownTop=project(275),DropdownHeight=project(88);
 constexpr int dropdown_row(unsigned i){return project(275+int(i)*44);}
 constexpr int dropdown_row_height(unsigned i){return dropdown_row(i+1)-dropdown_row(i);}
 constexpr int DropdownFont=project(22),TickSize=10,ModifierTickSize=7;
-static_assert(GeneralRows==10&&InputVisible<InputCommandCount,"All implemented General options fit the source panel");
+static_assert(GeneralRows==11&&InputVisible<InputCommandCount,"All implemented General options fit the source panel");
 }

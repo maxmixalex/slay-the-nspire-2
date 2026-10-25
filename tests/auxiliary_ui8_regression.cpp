@@ -81,15 +81,15 @@ static void notes(){
  click(HitKind::AuxiliaryControl,AuxiliaryOpenPatchNotes);advance(250);click(HitKind::AuxiliaryControl,AuxiliaryBack);advance(250);CHECK(app.auxiliary.screen==AuxiliaryScreen::None);
 }
 static void settings_entries(){
- app.has_save=false;app.menu=1;app.input(Key::Confirm);CHECK(app.settings_open);app.settings_top=0;app.settings_item=8;
+ app.has_save=false;app.menu=1;app.input(Key::Confirm);CHECK(app.settings_open);app.settings_top=0;app.settings_item=9;
  click(HitKind::UiAction,int(UiAction::SettingsCredits));CHECK(app.auxiliary.screen==AuxiliaryScreen::Credits);snapshot();
  app.input(Key::Back);CHECK(!app.auxiliary.closing);advance(1900);app.pointer_button(true);app.pointer_button(false);CHECK(!app.auxiliary.closing);
  advance(100);CHECK(app.auxiliary.credits_position>0);capture("credits-start");const int before_scroll=app.auxiliary.credits_target;
  app.pointer_scroll(2);CHECK(app.auxiliary.credits_target>before_scroll);advance(100);app.auxiliary.credits_position=app.auxiliary.credits_target=400*256;capture("credits-roles");
  CHECK(app.physical_key(27,true)&&!app.auxiliary.closing);CHECK(app.physical_key(27,false)&&app.auxiliary.closing);advance(999);CHECK(app.auxiliary.screen==AuxiliaryScreen::Credits);advance(1);
- CHECK(app.auxiliary.screen==AuxiliaryScreen::None&&app.settings_open&&app.settings_top==0&&app.settings_item==8);unchanged();
- app.settings_item=7;app.input(Key::Confirm);CHECK(app.auxiliary.screen==AuxiliaryScreen::Feedback);capture("feedback-empty");app.close_auxiliary();
- CHECK(app.settings_open&&app.settings_top==0&&app.settings_item==7);click(HitKind::UiAction,int(UiAction::SettingsFeedback));CHECK(app.auxiliary.screen==AuxiliaryScreen::Feedback);
+ CHECK(app.auxiliary.screen==AuxiliaryScreen::None&&app.settings_open&&app.settings_top==0&&app.settings_item==9);unchanged();
+ app.settings_item=8;app.input(Key::Confirm);CHECK(app.auxiliary.screen==AuxiliaryScreen::Feedback);capture("feedback-empty");app.close_auxiliary();
+ CHECK(app.settings_open&&app.settings_top==0&&app.settings_item==8);click(HitKind::UiAction,int(UiAction::SettingsFeedback));CHECK(app.auxiliary.screen==AuxiliaryScreen::Feedback);
 }
 static void feedback(){
  auto&v=app.auxiliary;app.pointer.visible=false;app.auxiliary_control(AuxiliaryFeedbackText);CHECK(v.editing);snapshot();

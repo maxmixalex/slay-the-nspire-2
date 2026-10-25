@@ -628,6 +628,10 @@
       "source": "月 ",
       "eng": "month ",
       "note": "Reviewed locale-specific Continue calendar symbol; English dates use their independent pinned format."
+    },
+    {
+      "source": "长按确认",
+      "eng": "Long Press Confirmations"
     }
   ]
 }

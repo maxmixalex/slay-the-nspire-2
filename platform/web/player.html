@@ -18,6 +18,7 @@
 <script>
 'use strict';
 __PROFILE_STORAGE__
+__COMMAND_BUTTONS__
 const translations=__LOCALES__;
 let language=null;
 const t=key=>language?translations[language][key]:translations.zhs[key]+' / '+translations.eng[key];
@@ -278,7 +279,11 @@ const t=key=>language?translations[language][key]:translations.zhs[key]+' / '+tr
   if(game.physical_key){const code=physicalDown.get(e.code);if(code){physicalDown.delete(e.code);input(()=>game.physical_key(code,0));e.preventDefault();}}
   else if(e.key in keyMap&&game.key_release)input(()=>game.key_release(keyMap[e.key]));
  });
- document.querySelectorAll('[data-key]').forEach(b=>b.addEventListener('click',()=>{const code=Number(b.dataset.key);key(code);input(()=>game.key_release(code));canvas.focus();}));
+ const commandButtons=game.command_key?bindCommandButtons(document.querySelectorAll('[data-key]'),{
+  press:code=>input(()=>game.command_key(code,1)),release:code=>input(()=>game.command_key(code,0)),
+  cancel:()=>input(()=>game.command_keys_cancel()),focus:()=>canvas.focus()
+ }):null;
+ if(!commandButtons)document.querySelectorAll('[data-key]').forEach(b=>b.addEventListener('click',()=>{const code=Number(b.dataset.key);key(code);input(()=>game.key_release(code));canvas.focus();}));
  function position(e){const r=canvas.getBoundingClientRect();return {x:Math.floor((e.clientX-r.left)*320/r.width),y:Math.floor((e.clientY-r.top)*240/r.height),inside:e.clientX>=r.left&&e.clientX<r.right&&e.clientY>=r.top&&e.clientY<r.bottom};}
  canvas.addEventListener('pointermove',e=>{const p=position(e);input(()=>game.pointer_move(p.x,p.y),false);});
  canvas.addEventListener('pointerdown',e=>{e.preventDefault();canvas.focus();if(e.button<0||e.button>2)return;const p=position(e);canvas.setPointerCapture(e.pointerId);input(()=>{game.pointer_move(p.x,p.y);if(e.button===0)game.pointer_button(1);else game.pointer_aux_button(e.button===2?2:3,1);});});
@@ -286,7 +291,7 @@ const t=key=>language?translations[language][key]:translations.zhs[key]+' / '+tr
  canvas.addEventListener('pointercancel',()=>input(()=>game.pointer_cancel()));
  canvas.addEventListener('contextmenu',e=>e.preventDefault());
  canvas.addEventListener('wheel',e=>{e.preventDefault();input(()=>game.pointer_scroll(Math.sign(e.deltaY)));},{passive:false});
- window.addEventListener('blur',()=>{physicalDown.clear();if(game.physical_keys_cancel)game.physical_keys_cancel();game.pointer_cancel();});
+ window.addEventListener('blur',()=>{if(commandButtons)commandButtons.cancel();physicalDown.clear();if(game.physical_keys_cancel)game.physical_keys_cancel();game.pointer_cancel();});
  function finishProfile(reason){profiling=false;measureButton.disabled=false;profile.resource_total={read_calls:ioCalls,read_bytes:ioBytes,copy_ms:ioTime};profile.finished_reason=reason;profile.finished_at=new Date().toISOString();reportView.textContent=JSON.stringify(profile,null,2);}
  measureButton.addEventListener('click',()=>{profile=freshProfile();ioCalls=ioBytes=ioTime=0;profiling=true;profileUntil=clock()+10000;lastPresented=0;lastScene=-1;measureButton.disabled=true;reportView.textContent=t('measuring');canvas.focus();});
  let previous=clock(),nextPaint=previous+1000/30;
@@ -296,7 +301,7 @@ const t=key=>language?translations[language][key]:translations.zhs[key]+' / '+tr
   // in every pointer/key callback and then duplicate it in the same RAF.
   if(dirty||now>=nextPaint){draw();if(now>=nextPaint){nextPaint+=1000/30;if(nextPaint<now-1000/30)nextPaint=now+1000/30;}}
  }if(profiling&&(clock()>=profileUntil||game.closed()))finishProfile(game.closed()?'game_closed':'complete');requestAnimationFrame(loop);}
- document.addEventListener('visibilitychange',()=>{previous=clock();nextPaint=previous;physicalDown.clear();if(game.physical_keys_cancel)game.physical_keys_cancel();game.pointer_cancel();if(profiling&&document.hidden)finishProfile('tab_hidden');});
+ document.addEventListener('visibilitychange',()=>{previous=clock();nextPaint=previous;if(commandButtons)commandButtons.cancel();physicalDown.clear();if(game.physical_keys_cancel)game.physical_keys_cancel();game.pointer_cancel();if(profiling&&document.hidden)finishProfile('tab_hidden');});
  draw();loading.hidden=true;measureButton.disabled=false;requestAnimationFrame(loop);canvas.focus();
 
 })().catch(e=>{document.getElementById('error').textContent=t('startup_failed')+'\n'+e.message;console.error(e);});

@@ -88,9 +88,9 @@ struct Canvas{
         const auto&pointer=a.pointer;
         const bool inside=pointer.visible&&pointer.x>=x+shift_x&&pointer.x<x+shift_x+w&&pointer.y>=y&&pointer.y<y+h;
         const auto&captured=pointer.captured;
-        const bool pressed=inside&&pointer.held&&captured.enabled&&captured.kind!=HitKind::None&&
+        const bool pressed=(family==ButtonFamily::EndTurn&&a.end_turn_hold.pressed)||(inside&&pointer.held&&captured.enabled&&captured.kind!=HitKind::None&&
             captured.x<=x+shift_x+w/2&&captured.x+captured.w>x+shift_x+w/2&&captured.y<=y+h/2&&captured.y+captured.h>y+h/2&&
-            pointer.context==a.input_context();
+            pointer.context==a.input_context());
         const ButtonState mode=!enabled?ButtonState::Disabled:pressed?ButtonState::Press:inside||selected?ButtonState::Focus:ButtonState::Rest;
         uint32_t key=2166136261u;for(const char*p=label;*p;++p)key=(key^uint8_t(*p))*16777619u;
         const int values[]={x,y,w,h,int(family),int(a.input_context())};for(int v:values)key=(key^uint32_t(v))*16777619u;if(!key)key=1;

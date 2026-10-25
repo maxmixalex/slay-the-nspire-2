@@ -87,3 +87,74 @@ remain explicitly unavailable. The very small Daily Ascension number keeps
 the established4px calculator minimum instead of its approximately3px source
 projection. Those adaptations and limits are not counted as exact source
 restoration.
+
+
+## I follow-up: real long-press confirmations
+
+The pinned `settings_screen.tscn` exposes LongPressConfirmations in the release
+General panel without a platform or controller visibility condition.
+`NLongPressConfirmationTickbox` writes the per-profile `PrefsSave.long_press`,
+which defaults to false. I adds that real option after Hand Card Count. The
+remaining rows move down one source82px pitch; their fonts and controls retain
+the previous source projection. Both original localized hover keys are used.
+
+`NEndTurnLongPressBar._Process` supplies the strict greater-than500ms trigger,
+linear release decay, and continued progress after a short release/repress.
+The visual uses its authored204×6 ColorRect and outline, with
+`CubicOut(0.75 * elapsed / 500)` alpha, the source unclamped color ramp, and a
+250ms linear completion fade. The bar is a sibling of the pressed Visuals node,
+so its projected(269,186) position does not move with the button artwork.
+The largest fill is39×1 pixels. Rendering has no new image, full-screen pass,
+resident pixel pool or glyph cache.
+
+Mouse capture, both physical key banks, calculator matrix edges and semantic
+HTML button edges share one20-byte timer. Owners survive an unfocus until their
+real release; repeat cannot start the next turn. Pointer exit, another focused
+control, pause/modal/context changes and host cancellation stop accumulation.
+A completed hold fires once, including when synchronous game logic immediately
+returns to Combat. Default-off input retains the prior immediate behavior.
+The source short-release playable-cards tutorial remains available; completed
+holds call the release logic directly, and the CannotPlayCard tutorial's
+existing special end-turn control retains its source bypass.
+
+NSPF version5 assigns the formerly reserved bit7. The record remains108 bytes,
+including both original key maps; versions1–4 remain readable with long press
+off and still reject that formerly reserved bit. The future version6 negative
+case remains invalid. General Reset clears the preference, profile switching
+loads each profile's value, and neither canonical NSV1/version17 nor NSH9 grows.
+
+`command_key(Key,bool)` captures one semantic press. A matching ordinary
+release calls the former `input` plus map-drawing release pair. When Long Press
+is enabled for Combat EndTurn, down starts the shared owner and up cancels it;
+no release is dispatched into a new phase. `command_keys_cancel` cancels only
+the semantic owner, retaining any concurrently held physical key and its repeat
+latch. Window blur uses `physical_keys_cancel`, which also cancels semantic
+input. A stray release after cancellation is ignored.
+The legacy one-shot EndTurn API cannot bypass the enabled Combat hold gate;
+its noncombat uses, such as confirming a selection, remain available.
+
+The independent timeline oracle covers threshold500/501, release decay,
+repress, completion fade and owner conflicts. `end_turn_hold_regression` also
+covers ordinary mouse, mapped physical and calculator input, both keyboard
+modes, semantic release/cancel, stale repeats across turns, canonical-state
+immutability before completion and source bar composition. Preference and
+profile regressions retain explicit legacy-format cases. These short checks
+are not the matching frozen I native/ARM/WASM/actual-resource/browser gates.
+
+### General rows resolved against release visibility and consumers
+
+CommonTooltips is hidden in the authored scene and its callback is unimplemented;
+ResetTutorials is shown only outside release builds, while the pinned
+`NGame.IsReleaseGame()` returns true. They are not missing release controls.
+ShowMpDrawings affects other players' lines and belongs to the user-excluded
+multiplayer scope. LongPressConfirmations was a real single-player gap and is
+implemented above.
+
+SkipIntroLogo is visible in the original and controls a separate startup logo
+sequence; the port currently starts on the title scene, so no equivalent
+startup animation/skip setting is implemented. LimitFpsInBackground controls
+the original desktop focus-out30fps cap; the browser currently suspends hidden
+updates instead and the calculator has no equivalent window-focus lifecycle.
+UploadGameplayData gates original remote metric/Sentry uploads; this offline
+port has no such upload service. These are explicit platform/feature
+differences, not hidden controls or evidence of complete Settings parity.

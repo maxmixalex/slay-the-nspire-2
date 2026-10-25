@@ -68,6 +68,7 @@ The old complete nSpire2.nsp.tns pack is unnecessary alongside split resources.
 计算器 Q 牌组，A 抽牌堆，D 弃牌堆，F 消耗牌堆，M 地图。
 电脑默认鼠标与键盘：方向键移动，Enter 选择，E 结束回合，D 牌组，A 抽牌堆，S 弃牌堆，X 消耗牌堆。
 在设置中可选择纯键盘操作并分别改键。I 详情，C 百科，V 状态，P 药水，R 遗物，O 读取。
+常规设置中的“长按确认”默认关闭；开启后，结束回合需按住超过半秒，提前松开或移出会取消。
 键盘选中手牌后 Enter 进入指向，左右选择目标，再按 Enter 出牌；Esc 取消。
 Calculator: 8/2/4/6 navigate; Enter/5 selects; E ends the turn;
 hold Space to peek beneath a combat card selection; Esc returns/pauses.
@@ -75,6 +76,8 @@ Q deck; A draw, D discard, F exhaust; M map.
 Desktop mouse-and-keyboard defaults: arrows navigate; Enter selects; E ends
 the turn; D deck; A draw, S discard, X exhaust; M map; Space peeks.
 Settings has separate remappable mouse/keyboard and keyboard-only banks.
+Long Press Confirmations in General is off by default. When enabled, hold End
+turn for more than half a second; releasing early or moving away cancels it.
 I details; C compendium; V statuses; P potions; R relics; O loads.
 Touchpad clicking/dragging is supported. Save through the pause menu.
 With a hand card selected, Enter aims, Left/Right chooses a target, Enter plays;
@@ -146,7 +149,7 @@ def main():
     if resource_version(args.zhs) != version:
         p.error('English and Chinese resources must use the same format version')
     info = dict(reference='v0.111.0 / 41cef1ea', resource_format=version, save_version=17,
-                progress_version=9, settings_version=4, calculator_run_storage='NSZ1 or raw NSV1',
+                progress_version=9, settings_version=5, calculator_run_storage='NSZ1 or raw NSV1',
                 calculator_history_storage='NSZ1 or raw NSH1-9',
                 stage=args.stage,
                 runtime_checkpoint=args.runtime_checkpoint,

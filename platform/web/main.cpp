@@ -163,6 +163,8 @@ int resource_language(){return app.content.english()?1:2;}
 unsigned save_version(){return spire::SaveVersion;}
 unsigned framebuffer(){return (unsigned)(size_t)app.pixels;}
 void input(int key){if(key>=0&&key<=(int)spire::Key::Debug)app.input((spire::Key)key);}
+void command_key(int key,int pressed){if(key>=0&&key<=(int)spire::Key::Debug)app.command_key((spire::Key)key,pressed!=0);}
+void command_keys_cancel(){app.command_keys_cancel();}
 void frame(){app.tick();app.render();}
 void advance(unsigned elapsed_ms){app.advance(elapsed_ms);}
 void draw_frame(){app.render();}

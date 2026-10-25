@@ -73,15 +73,15 @@ static void frontend_settings_screen(Canvas&c){
  if(!a.settings_tab){
   settings_focus::blur_rows(a.button_motions,MaxButtonMotions,a.map_clock_ms);
   a.settings_top=0;
-  const char*keys[]={a.title?"LANGUAGE":"LANGUAGE_IN_RUN","SCREENSHAKE","FASTMODE","PHOBIA_MODE","SHOW_RUN_TIMER_HEADER","SHOW_HAND_CARD_COUNT_HEADER","TEXT_EFFECTS","SEND_FEEDBACK","CREDITS","INPUT_SETTINGS.RESET_TO_DEFAULT"};
-  const char*eng[]={a.title?"Language":"Language (main menu only)","Screenshake","Fast Mode","Phobia Mode","Show Run Timer","Show Hand Card Count","Text Effects","Send Feedback","Credits","Reset to Default"};
-  const char*zhs[]={a.title?"语言选项":"语言选项（仅可在主菜单调整）","屏幕抖动","加速模式","恐惧症模式","显示计时器","显示手牌计数","文字特效","发送反馈","制作名单","恢复默认设置"};
-  const UiAction actions[]={UiAction::SettingsLanguage,UiAction::SettingsShakeUp,UiAction::SettingsFastMode,UiAction::SettingsPhobia,UiAction::SettingsRunTimer,UiAction::SettingsCardIndices,UiAction::SettingsTextEffects,UiAction::SettingsFeedback,UiAction::SettingsCredits,UiAction::SettingsReset};
-  const bool checked[]={false,false,a.fast_mode,a.phobia_mode,a.show_run_timer,a.show_card_indices,a.text_effects};
+  const char*keys[]={a.title?"LANGUAGE":"LANGUAGE_IN_RUN","SCREENSHAKE","FASTMODE","PHOBIA_MODE","SHOW_RUN_TIMER_HEADER","SHOW_HAND_CARD_COUNT_HEADER","LONG_PRESS_CONFIRMATION_HEADER","TEXT_EFFECTS","SEND_FEEDBACK","CREDITS","INPUT_SETTINGS.RESET_TO_DEFAULT"};
+  const char*eng[]={a.title?"Language":"Language (main menu only)","Screenshake","Fast Mode","Phobia Mode","Show Run Timer","Show Hand Card Count","Long Press Confirmations","Text Effects","Send Feedback","Credits","Reset to Default"};
+  const char*zhs[]={a.title?"语言选项":"语言选项（仅可在主菜单调整）","屏幕抖动","加速模式","恐惧症模式","显示计时器","显示手牌计数","长按确认","文字特效","发送反馈","制作名单","恢复默认设置"};
+  const UiAction actions[]={UiAction::SettingsLanguage,UiAction::SettingsShakeUp,UiAction::SettingsFastMode,UiAction::SettingsPhobia,UiAction::SettingsRunTimer,UiAction::SettingsCardIndices,UiAction::SettingsLongPress,UiAction::SettingsTextEffects,UiAction::SettingsFeedback,UiAction::SettingsCredits,UiAction::SettingsReset};
+  const bool checked[]={false,false,a.fast_mode,a.phobia_mode,a.show_run_timer,a.show_card_indices,a.long_press,a.text_effects};
   for(unsigned i=0;i<GeneralRows;++i){const int y=general_row(i);const bool enabled=i!=0||a.title;
    const bool focus=!a.pointer.visible&&a.settings_item==i;Canvas row=c;if(!enabled)row.opacity=uint8_t(div255(unsigned(row.opacity)*115));
    text(row,label(keys[i],eng[i],zhs[i]),LabelLeft,y,ControlLeft-LabelLeft-3,RowHeight);
-   if(pointed(GeneralLeft,y,GeneralWidth,RowHeight)&&i<7){hover=int(i);hover_y=y;}
+   if(pointed(GeneralLeft,y,GeneralWidth,RowHeight)&&i<8){hover=int(i);hover_y=y;}
    if(i==0){row.rect(ControlLeft,y,ControlWidth,RowHeight,rgb(44,67,79));
     text(row,english?"English":"中文",ControlLeft,y,ControlWidth,RowHeight,bold,gold,true);
     if(a.content.version()>=RoomUi7ContentVersion)row.ui(source_art?I10_SettingsArrowDown:I7_SettingsArrowDown,ControlLeft+ControlWidth-8,y+3,5,5);
@@ -95,15 +95,15 @@ static void frontend_settings_screen(Canvas&c){
      row.ui(source_art?I10_SettingsArrowRight:I7_SettingsArrowRight,ControlLeft+50,y+1,9,9,a.screen_shake<4?255:64);}
     if(focus)settings_reticle(c,ControlLeft,y,ControlWidth,RowHeight);
     c.action(ControlLeft,y,12,RowHeight,UiAction::SettingsShakeDown,a.screen_shake>0);c.action(ControlLeft+50,y,11,RowHeight,UiAction::SettingsShakeUp,a.screen_shake<4);
-   }else if(i<7)tick(checked[i],i,ControlLeft,y,actions[i]);
-   else button(i==7?label("SEND_FEEDBACK_BUTTON_LABEL","Open","打开"):i==8?label("CREDITS_BUTTON_LABEL","View","查看"):label("RESET_SETTINGS_BUTTON","Reset","重置"),i,ControlLeft,y,i==7?I10_SettingsFeedback:i==8?I10_SettingsCredits:I10_SettingsReset,actions[i]);
+   }else if(i<8)tick(checked[i],i,ControlLeft,y,actions[i]);
+   else button(i==8?label("SEND_FEEDBACK_BUTTON_LABEL","Open","打开"):i==9?label("CREDITS_BUTTON_LABEL","View","查看"):label("RESET_SETTINGS_BUTTON","Reset","重置"),i,ControlLeft,y,i==8?I10_SettingsFeedback:i==9?I10_SettingsCredits:I10_SettingsReset,actions[i]);
    if(i+1<GeneralRows)divider.rect(GeneralLeft,general_divider(i),GeneralWidth,1,rgb(232,220,190));
   }
  }else{
   if(a.settings_top>InputMaximum)a.settings_top=InputMaximum;
   text(c,label("KEYBOARD_ONLY_MODE_HEADER","Keyboard-Only Mode","纯键盘模式"),InputPanelLeft,KeyboardTop,InputControlLeft-InputPanelLeft-3,RowHeight);
   tick(a.keyboard_only,0,InputControlLeft,KeyboardTop,UiAction::SettingsKeyboardOnly);
-  if(pointed(InputPanelLeft,KeyboardTop,InputWidth,RowHeight)){hover=7;hover_y=KeyboardTop;}
+  if(pointed(InputPanelLeft,KeyboardTop,InputWidth,RowHeight)){hover=8;hover_y=KeyboardTop;}
   divider.rect(InputPanelLeft,62,InputWidth,1,rgb(232,220,190));divider.rect(InputPanelLeft,79,InputWidth,1,rgb(232,220,190));
   button(label("INPUT_SETTINGS.RESET_TO_DEFAULT","Reset to Default","恢复默认"),InputCommandCount+1,InputResetLeft,InputResetTop,I10_SettingsReset,UiAction::SettingsReset);
   ProfileTextStyle header{LabelFont,bold,gold,192,1,rgb(59,44,0)};header.tracking_source=english?1:0;
@@ -146,8 +146,8 @@ static void frontend_settings_screen(Canvas&c){
  }
  native_original_back(c);
  if(hover>=1&&!a.settings_language_open&&!a.frontend_confirm){
-  const char*titles[]={"","SCREENSHAKE_HEADER","FASTMODE","PHOBIA_MODE","SHOW_RUN_TIMER_HEADER","SHOW_HAND_CARD_COUNT_HEADER","TEXT_EFFECTS","KEYBOARD_ONLY_MODE_HEADER"};
-  const char*descriptions[]={"","SCREENSHAKE_DESCRIPTION","FASTMODE_DESCRIPTION","PHOBIA_MODE_DESCRIPTION","SHOW_RUN_TIMER_DESCRIPTION","SHOW_HAND_CARD_COUNT_DESCRIPTION","TEXT_EFFECTS_DESCRIPTION","KEYBOARD_ONLY_MODE_DESCRIPTION"};
+  const char*titles[]={"","SCREENSHAKE_HEADER","FASTMODE","PHOBIA_MODE","SHOW_RUN_TIMER_HEADER","SHOW_HAND_CARD_COUNT_HEADER","LONG_PRESS_CONFIRMATION_HEADER","TEXT_EFFECTS","KEYBOARD_ONLY_MODE_HEADER"};
+  const char*descriptions[]={"","SCREENSHAKE_DESCRIPTION","FASTMODE_DESCRIPTION","PHOBIA_MODE_DESCRIPTION","SHOW_RUN_TIMER_DESCRIPTION","SHOW_HAND_CARD_COUNT_DESCRIPTION","LONG_PRESS_CONFIRMATION_DESCRIPTION","TEXT_EFFECTS_DESCRIPTION","KEYBOARD_ONLY_MODE_DESCRIPTION"};
   if(const char*body=a.content.world_string("settings_ui",descriptions[hover]);*body)
    source_hover_box(c,a.content.world_string("settings_ui",titles[hover]),body,(a.settings_tab?InputPanelLeft:GeneralLeft)+project(1012),hover_y-project(60));
  }

@@ -71,12 +71,12 @@ writeReport();
   assert.equal(data.readUInt32LE(4),17);assert.equal(data.readUInt32LE(8),0x41cef1ea);
   // The original fixed v17 prefix: 13 scalar fields, two power-order
   // entries, two RNG fields, seed, revision, then the deck count.
-  return {phase:data.readUInt32LE(12),deck_count:data.readUInt32LE(88),bytes:data.length};
+  return {phase:data.readUInt32LE(12),turn:data.readUInt32LE(56),deck_count:data.readUInt32LE(88),bytes:data.length};
  }
  async function press(key){await canvas.focus();await page.keyboard.press(key);await painted();}
  async function confirm(){await page.locator('button[data-key="4"]').click();await painted();}
  const saved=(slot=1)=>page.evaluate(id=>localStorage.getItem('nSpire2-save-v17'+(id===1?'':'-profile-'+id)),slot);
- const preference=(slot=1)=>page.evaluate(id=>JSON.parse(localStorage.getItem('nSpire2-preferences-v4'+(id===1?'':'-profile-'+id))),slot);
+ const preference=(slot=1)=>page.evaluate(id=>JSON.parse(localStorage.getItem('nSpire2-preferences-v5'+(id===1?'':'-profile-'+id))),slot);
  const progress=(slot=1)=>page.evaluate(id=>localStorage.getItem('nSpire2-progress-v1'+(id===1?'':'-profile-'+id)),slot);
  const tutorial={accept:1,combat:2,map:4,enabled:0x2000,initialized:0x4000,fresh:0x6000};
  async function tutorialRecord(slot){
@@ -124,7 +124,7 @@ writeReport();
  record('ordinary HTML does not expose the developer command API');
  await capture('browser-title-eng');
  await openSettings(false);await toggleFast();await toggleTimer();
- assert.equal((await preference()).version,4);assert.equal((await preference()).flags&65,65);
+ assert.equal((await preference()).version,5);assert.equal((await preference()).flags&65,65);
  await capture('browser-settings-persisted-eng');
  await page.reload({waitUntil:'load'});await ready('eng');
  await openSettings(false);await toggleFast();
@@ -133,7 +133,7 @@ writeReport();
  await toggleTimer();assert.equal((await preference()).flags&64,64);
  await press('Escape');
  record('in-game Fast Mode survives reload and the real toggle reads its restored value');
- record('Show Run Timer uses the real General settings checkbox and survives reload in the v4 profile preference record');
+ record('Show Run Timer uses the real General settings checkbox and survives reload in the v5 profile preference record');
  await titleRow(0,false);await capture('browser-singleplayer-eng');await confirm();await capture('browser-character-eng');
  assert.equal((await tutorialRecord(1)).flags,tutorial.fresh);
  await confirm();await declineTutorials(1,'browser-profile1-tutorial');await saveAndResume();
@@ -301,6 +301,51 @@ writeReport();
  assert.equal(report.performance.finished_reason,'complete');
  assert.ok(report.performance.scenes.some(scene=>scene.scene==='collection'&&scene.render.count>0));
  record('visible 10-second performance control renders the actual card library');
+ // Return to the actual first battle created above. Preference writes and
+ // run transitions use only visible controls; localStorage is read solely
+ // to verify what the ordinary host persisted.
+ await page.reload({waitUntil:'load'});await ready('eng');await selectProfile(3);
+ await openSettings(true);await point(settingsControlX,settingsRowCenter(6));
+ assert.equal((await preference(3)).version,5);assert.equal((await preference(3)).flags&128,128);
+ assert.equal((await preference(1)).flags&128,0);assert.equal((await preference(2))?.flags&128,0);
+ await capture('browser-long-press-setting');await page.reload({waitUntil:'load'});await ready('eng');
+ assert.equal((await preference(3)).flags&128,128);await titleRow(0,true);await page.waitForTimeout(2500);
+ const endToolbar=page.locator('button[data-key="6"]');
+ await endToolbar.click();await painted();
+ // The source short-release path may show its still-playable-cards lesson;
+ // completing that lesson must itself leave the canonical first turn alone.
+ await waitTutorial(3,8,8);await capture('browser-long-press-short-release-tutorial');await confirm();await page.waitForTimeout(400);
+ await press('e');await move(288,196);await page.mouse.down();await page.waitForTimeout(150);
+ await capture('browser-long-press-pointer-progress');await move(240,160);await page.waitForTimeout(650);
+ await page.mouse.up();await painted();await returnToTitle();
+ assert.equal(await saved(3),tutorialSave);
+ record('Long Press Confirmations persists only in its selected profile; short toolbar and keyboard taps plus moving out of the canvas End turn control leave the real first-turn save unchanged');
+ await titleRow(0,true);await page.waitForTimeout(2500);await canvas.focus();
+ await page.keyboard.down('e');await page.waitForTimeout(1300);await page.keyboard.down('e');
+ await page.waitForTimeout(1700);await page.keyboard.up('e');await painted();
+ await capture('browser-long-press-keyboard-completed');await returnToTitle();
+ const keyboardHoldSave=await saved(3),keyboardHold=runPrefix(keyboardHoldSave);
+ assert.equal(keyboardHold.phase,0);assert.equal(keyboardHold.turn,2);
+ record('holding the real mapped E key beyond half a second, including an OS-repeat event, ends exactly one turn before release');
+ await titleRow(0,true);await page.waitForTimeout(2500);
+ const beforeToolbarTutorial=(await tutorialRecord(3)).flags;
+ await endToolbar.scrollIntoViewIfNeeded();const toolbarBox=await endToolbar.boundingBox();assert(toolbarBox);
+ await page.mouse.move(toolbarBox.x+toolbarBox.width/2,toolbarBox.y+toolbarBox.height/2);await page.mouse.down();
+ await page.waitForTimeout(3000);await page.mouse.up();await painted();await page.waitForTimeout(1600);
+ // The starter deck can reach its first shuffle on turn three. That source
+ // modal pauses animation until its real confirmation button is released.
+ if(!(beforeToolbarTutorial&64)&&((await tutorialRecord(3)).flags&64)){
+  await capture('browser-long-press-shuffle-tutorial');await confirm();await page.waitForTimeout(1500);
+ }
+ await capture('browser-long-press-toolbar-completed');await returnToTitle();
+ const toolbarHoldSave=await saved(3),toolbarHold=runPrefix(toolbarHoldSave);
+ assert.equal(toolbarHold.phase,0);assert.equal(toolbarHold.turn,3);
+ assert.equal(await saved(1),firstSave);assert.equal(await saved(2),sealedSave);
+ await page.reload({waitUntil:'load'});await ready('eng');
+ assert.equal(await saved(3),toolbarHoldSave);assert.equal((await preference(3)).flags&128,128);
+ report.long_press={profile:3,before:runPrefix(tutorialSave),after_keyboard:keyboardHold,after_toolbar:toolbarHold,
+  input_scope:'Real canvas pointer cancellation, physical E down/repeat/up and HTML toolbar pointer down/up; no application test hook or save injection'};
+ record('holding the ordinary HTML End turn button ends exactly one further turn; reload preserves the v5 setting and v17 run while the other two profile saves remain exact');
  if(debugHtml){
   // A separate origin context prevents developer mutations from altering the
   // ordinary acceptance save. Only the shipped, flag-gated console is used.

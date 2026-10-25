@@ -40,7 +40,7 @@ uint32_t App::input_context()const{
         ((uint32_t)help<<10)|((uint32_t)panel<<11)|((uint32_t)potion_targeting<<15)|((uint32_t)(detail_card>=0)<<16)|
         ((uint32_t)pile_tab<<17)|((uint32_t)grimoire_select<<20)|((uint32_t)map_legend<<21)|((uint32_t)(frontend_confirm!=0)<<22)|((uint32_t)settings_open<<23)|((uint32_t)map_preview.open<<24)|((uint32_t)map_preview.editing<<25)|((uint32_t)library<<26)|((uint32_t)character_select<<27)|((uint32_t)reward_cards<<28)|((uint32_t)(detail_item>=0)<<29)|((uint32_t)(deck_candidate>=0||(deck_selection.preview&&world_selection_kind()!=WorldSelectionKind::None))<<30)|((uint32_t)(status_actor>=0)<<31);
 }
-void App::pointer_cancel(bool keep_keyboard_card){reward_presentation.list_scroll.dragging=reward_presentation.list_scroll.thumb=false;map_drawing.cancel();auxiliary.scroll.dragging=auxiliary.scroll.thumb=false;progress_page_scroll.dragging=progress_page_scroll.thumb=false;hand_focus=false;map_dragging=false;card_grid_drag=-1;bestiary.dragging=bestiary.thumb_drag=false;for(auto&grid:card_grids)grid.dragging=grid.thumb_drag=false;pointer.held=pointer.dragging=false;pointer.armed_card=-1;pointer.captured={};if(!keep_keyboard_card)keyboard_card=-1;}
+void App::pointer_cancel(bool keep_keyboard_card){end_turn_hold.cancel(EndTurnHold::Mouse);reward_presentation.list_scroll.dragging=reward_presentation.list_scroll.thumb=false;map_drawing.cancel();auxiliary.scroll.dragging=auxiliary.scroll.thumb=false;progress_page_scroll.dragging=progress_page_scroll.thumb=false;hand_focus=false;map_dragging=false;card_grid_drag=-1;bestiary.dragging=bestiary.thumb_drag=false;for(auto&grid:card_grids)grid.dragging=grid.thumb_drag=false;pointer.held=pointer.dragging=false;pointer.armed_card=-1;pointer.captured={};if(!keep_keyboard_card)keyboard_card=-1;}
 void App::pointer_key(Key k){pointer.dispatching=true;input(k);pointer.dispatching=false;pointer.visible=true;}
 #include "card_inspect_input.inc"
 void App::open_card_detail(Card card,int deck_index){
@@ -83,6 +83,13 @@ void App::pointer_move(int x,int y){
             (distance*81u<=1000000u&&dt<50000u&&uint64_t(distance)*20250000u>uint64_t(dt)*dt*100u);
         pointer.motion_time=map_clock_ms;
         if(mouse){pointer.visible=true;hud_focus=-1;map_directional=false;keyboard_card=-1;if(auxiliary.screen==AuxiliaryScreen::None){sync_map_reticles();map_drawing_pointer_motion();}}
+    }
+    if(end_turn_hold.pressed){
+        const auto&captured=pointer.captured;
+        if(end_turn_hold.owner==EndTurnHold::Mouse){
+            if(!end_turn_hold_available()||pointer.context!=input_context()||
+               pointer.x<captured.x||pointer.x>=captured.x+captured.w||pointer.y<captured.y||pointer.y>=captured.y+captured.h)end_turn_hold.unfocus();
+        }else if(distance&&pointer.visible)end_turn_hold.unfocus();
     }
     if(!pointer.visible)return;
     if(ftue.active())return;
@@ -223,6 +230,7 @@ void App::pointer_scroll(int rows){
         ui_action(rows>0?UiAction::NextDeckPage:UiAction::PreviousDeckPage);
 }
 void App::pointer_button(bool down){
+    if(!down&&end_turn_hold.owner==EndTurnHold::Mouse){release_end_turn_hold(EndTurnHold::Mouse);pointer_cancel();return;}
     sync_ftues();
     if(ftue.active()){
         pointer.visible=true;pointer.motion_time=map_clock_ms;render();
@@ -308,6 +316,8 @@ void App::pointer_button(bool down){
         }
         pointer.held=true;pointer.dragging=false;pointer.down_x=pointer.x;pointer.down_y=pointer.y;
         pointer.captured=hit;pointer.context=input_context();pointer.revision=game.revision;
+        if(hit.enabled&&hit.kind==HitKind::Command&&hit.value==int(Key::EndTurn))start_end_turn_hold(EndTurnHold::Mouse);
+        else end_turn_hold.unfocus();
         if(reward_list_interactive()&&reward_presentation.list_scroll.maximum){
             auto&list=reward_presentation.list_scroll;const int dy=reward_presentation.window(map_clock_ms).y;
             if(hit.kind==HitKind::RewardScroll||(pointer.x>=114&&pointer.x<205&&pointer.y>=82+dy&&pointer.y<174+dy)){

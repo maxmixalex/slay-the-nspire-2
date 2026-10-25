@@ -128,22 +128,30 @@ static void title_source_scene(const std::vector<uint8_t>&pack,const char*captur
     }
     // Source coordinates include the inherited half-anchor and the settled
     // -20px show offset: panel(153,154,85,38/44), not an unanchored145px X.
-    for(unsigned ascension:{0u,3u})for(unsigned saved_at:{0u,1792931400u}){
+    for(unsigned ascension:{0u,3u})for(unsigned saved_at:{0u,1792931400u,1790771400u}){
         app.has_save=true;app.saved_world=true;app.saved_current_region=unsigned(reference::ActKind::Overgrowth);app.saved_character=Character::Silent;
         app.saved_at=saved_at;
         app.saved_floor=42;app.saved_hp=73;app.saved_max_hp=80;app.saved_gold=109;app.saved_ascension=uint8_t(ascension);app.menu=0;
         app.pointer={};app.title_presentation={};app.title_presentation.bind(5);app.map_clock_ms=5000;
         const auto paint=[&](bool visible){for(auto&pixel:app.pixels)pixel=scene_rgb(21,40,65);Canvas c{app};if(!visible)c.text_visible_characters=0;continue_run_info(c);};
         paint(true);app.map_clock_ms+=200;paint(true);const std::vector<uint16_t>actual(app.pixels,app.pixels+320*240);paint(false);std::vector<uint16_t>expected(app.pixels,app.pixels+320*240);
-        std::string date=scene_text("CONTINUE_RUN_INFO.saved");scene_replace(date,"{LastSavedTime}",!saved_at?"—":app.content.english()?"Sunday Oct 25, 2026 12:30PM":"2026 10月 25， 星期日 下午12:30");
-        scene_label(expected,scene_letters(pack,date,5,0),157,157,76,17,5,scene_rgb(255,246,226),64,0,0,0,false,true,255,0,0,4096,false,1,1,255,255,true);
+        const bool longest=saved_at==1790771400u;
+        std::string date=scene_text("CONTINUE_RUN_INFO.saved");scene_replace(date,"{LastSavedTime}",!saved_at?"—":app.content.english()?(longest?"Wednesday Sep 30, 2026 12:30PM":"Sunday Oct 25, 2026 12:30PM"):(longest?"2026 9月 30， 星期三 下午12:30":"2026 10月 25， 星期日 下午12:30"));
+        // Source DateLabel is autowrap=Off. A translated Godot measurement
+        // with the source fonts retains24px for unknown/Sunday/Wednesday;
+        // its two actual lines begin at0 and30.5/36 source pixels. Keep this
+        // oracle separate from fitted_text's automatic line breaker.
+        const auto newline=date.find('\n');SCENE(newline!=std::string::npos&&date.find('\n',newline+1)==std::string::npos);
+        for(unsigned line=0;line<2;++line){const auto text=line?date.substr(newline+1):date.substr(0,newline);const auto letters=scene_letters(pack,text,5,0);
+            SCENE(!letters.empty());SCENE(157+scene_width(letters)<320);
+            scene_label(expected,letters,157,157+int(line)*(app.content.english()?6:7),76,17,5,scene_rgb(255,246,226),64,0,0,0,false,false,255,0,0,4096,false,1,1,255,255,true);}
         const std::string progress=std::string(app.content.world_title("acts","OVERGROWTH"))+" [blue]- "+scene_text("CONTINUE_RUN_INFO.floor")+" 42[/blue]";
         scene_label(expected,scene_letters(pack,progress,5,0),165,174,68,7,5,scene_rgb(255,246,226),64,0,0,0,false,false,255,0,0,4096,false,1,1);
         if(ascension)scene_label(expected,scene_letters(pack,scene_text("CONTINUE_RUN_INFO.ascension")+" 3",5,0),157,181,76,7,5,scene_rgb(255,246,226),64,0,0,0,false,false,255,0,0,4096,false,1,1);
         scene_label(expected,scene_letters(pack,"[red]73/80[/red]",5,0),165,ascension?188:181,27,7,5,scene_rgb(255,246,226),64,0,0,0,false,false,255,0,0,4096,false,1,1);
         scene_label(expected,scene_letters(pack,"[gold]109[/gold]",5,0),201,ascension?188:181,19,7,5,scene_rgb(255,246,226),64,0,0,0,false,false,255,0,0,4096,false,1,1);
         for(unsigned i=0;i<actual.size();++i){if(actual[i]!=expected[i])std::fprintf(stderr,"Continue asc=%u saved_at=%u pixel=%u,%u actual=%u expected=%u\n",ascension,saved_at,i%320,i/320,actual[i],expected[i]);SCENE(actual[i]==expected[i]);}
-        Canvas c{app};title_screen(c);app.map_clock_ms+=250;title_screen(c);profile_capture(captures,saved_at?(ascension?"title-source-continue-saved-ascension":"title-source-continue-saved"):(ascension?"title-source-continue-ascension":"title-source-continue"));
+        Canvas c{app};title_screen(c);app.map_clock_ms+=250;title_screen(c);profile_capture(captures,longest?(ascension?"title-source-continue-long-ascension":"title-source-continue-long"):saved_at?(ascension?"title-source-continue-saved-ascension":"title-source-continue-saved"):(ascension?"title-source-continue-ascension":"title-source-continue"));
     }
     app.saved_at=0;
 }
@@ -199,7 +207,7 @@ int main(int argc,char**argv){
     selector[6]=1;CHECK(decode_profile_selector(selector,sizeof selector)==1);CHECK(decode_profile_selector(selector,7)==1);
     app.callbacks.save=write_run;app.callbacks.load=read_run;app.callbacks.clear_save=clear_run;
     app.callbacks.load_preferences=read_preferences;app.callbacks.save_preferences=write_preferences;
-    app.fast_mode=true;app.phobia_mode=true;app.screen_shake=0;app.bestiary_actions_preferred=false;app.persist_preferences();
+    app.fast_mode=true;app.phobia_mode=true;app.long_press=true;app.screen_shake=0;app.bestiary_actions_preferred=false;app.persist_preferences();
     app.callbacks.load_progress=read_progress;app.callbacks.save_progress=write_progress;app.callbacks.wall_clock=wall;
     app.callbacks.current_profile=current;app.callbacks.profile_info=info;app.callbacks.request_profile=request;
     new_run(app.game,0x7231,false,Character::Ironclad);CHECK(world_begin_run(app.game,reference::ActKind::Overgrowth,0));
@@ -212,14 +220,14 @@ int main(int argc,char**argv){
     app.ui_action(UiAction::SelectProfile2);CHECK(app.profile_pending&&requested==2&&active==1);
     CHECK(save(app.game,after)&&identical(before,after)); // Queuing never adopts another live model.
     service();CHECK(active==2&&!app.profiles_open&&!app.has_save&&!app.run_save_linked);
-    CHECK(!app.fast_mode&&!app.phobia_mode&&app.screen_shake==2&&app.bestiary_actions_preferred);
+    CHECK(!app.fast_mode&&!app.phobia_mode&&!app.long_press&&app.screen_shake==2&&app.bestiary_actions_preferred);
     app.show_card_indices=true;app.keyboard_only=true;app.persist_preferences();
     CHECK(app.progress.count==0&&app.progress.current.serial==0&&app.progress.next_serial==1);
     CHECK(identical(runs[0],before)&&histories[0]==history_one);
     new_run(app.game,0x7322,false,Character::Silent);CHECK(world_begin_run(app.game,reference::ActKind::Overgrowth,0));
     app.title=false;app.begin_progress();CHECK(app.save_current_run());app.return_to_title();
     app.ui_action(UiAction::OpenProfiles);app.ui_action(UiAction::SelectProfile1);service();
-    CHECK(active==1&&app.has_save);CHECK(app.fast_mode&&app.phobia_mode&&app.screen_shake==0&&!app.bestiary_actions_preferred);
+    CHECK(active==1&&app.has_save);CHECK(app.fast_mode&&app.phobia_mode&&app.long_press&&app.screen_shake==0&&!app.bestiary_actions_preferred);
     CHECK(!app.show_card_indices&&!app.keyboard_only);CHECK(app.load_saved_run()&&app.game.character==Character::Ironclad);
     CHECK(save(app.game,after)&&identical(before,after));app.return_to_title();
     app.ui_action(UiAction::OpenProfiles);app.input(Key::Down);CHECK(app.profile_selection==3);
@@ -241,11 +249,11 @@ int main(int argc,char**argv){
     storage_ok=false;app.ui_action(UiAction::SelectProfile3);CHECK(active==1&&!requested&&!app.profile_pending&&app.profiles_open);
     storage_ok=true;app.ui_action(UiAction::SelectProfile3);CHECK(app.profile_pending);service(false);
     CHECK(active==1&&app.profiles_open&&app.has_save&&identical(runs[0],before));
-    CHECK(app.fast_mode&&app.phobia_mode&&app.screen_shake==0&&!app.bestiary_actions_preferred);
+    CHECK(app.fast_mode&&app.phobia_mode&&app.long_press&&app.screen_shake==0&&!app.bestiary_actions_preferred);
     app.ui_action(UiAction::DeleteProfile1);app.frontend_choice=1;app.input(Key::Confirm);service();
     CHECK(active==1&&app.profiles_open&&!app.has_save&&!has_run[0]&&histories[0].empty());
     CHECK(app.progress.count==0&&!app.progress.current.serial&&app.progress.next_serial==1);
-    CHECK(!app.fast_mode&&!app.phobia_mode&&app.screen_shake==2&&app.bestiary_actions_preferred);
+    CHECK(!app.fast_mode&&!app.phobia_mode&&!app.long_press&&app.screen_shake==2&&app.bestiary_actions_preferred);
     app.title=false;app.profiles_open=false;app.open_profiles();CHECK(!app.profiles_open); // In-run switching is unavailable.
     profile_scene(pack,argc>2?argv[2]:nullptr);
     std::puts("profiles: three independent runs/progress, confirmation, failed switch and active deletion passed");

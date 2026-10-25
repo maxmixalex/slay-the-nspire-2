@@ -84,7 +84,7 @@ function fixture(){
  // The browser preserves the opaque portable record; C++ validates actual
  // command conflicts. This nondefault code must survive every host operation.
  record[8+2*2]=89;record[8+2*25+2*2]=80;
- assert(p.writePreferences(1,516,record));record[4]=4;assert.deepEqual(p.readPreferencesRecord(1),record);
+ assert(p.writePreferences(1,516,record));record[4]=5;assert.deepEqual(p.readPreferencesRecord(1),record);
  const second=record.slice();second[12]=84;assert(p.writePreferences(2,525,second));second[5]=13;
  assert.deepEqual(p.readPreferencesRecord(2),second);assert.equal(p.readPreferencesRecord(3),null);
  assert(p.writePreferences(1,517));record[5]=5;assert.deepEqual(p.readPreferencesRecord(1),record); // Older flags API retains bindings.
@@ -93,12 +93,12 @@ function fixture(){
  assert.equal(p.writePreferences(1,520,second),false);assert.deepEqual(f.values,before);assert.deepEqual(p.readPreferencesRecord(1),record);
  f.fail(()=>false);assert(p.clearRun(1));assert.deepEqual(p.readPreferencesRecord(1),record);
  assert(p.deleteProfile(2));assert.equal(p.readPreferencesRecord(2),null);assert.deepEqual(p.readPreferencesRecord(1),record);
- const bad=record.slice();bad[4]=5;assert.throws(()=>p.writePreferences(3,516,bad));assert.equal(p.readPreferencesRecord(3),null);
+ const bad=record.slice();bad[4]=6;assert.throws(()=>p.writePreferences(3,516,bad));assert.equal(p.readPreferencesRecord(3),null);
  f.values.set('nSpire2-preferences-v3-profile-3','{"version":3,"bytes":[78,83,80,70]}');assert.equal(p.readPreferencesRecord(3),null);
 }
 {
  const f=fixture(),p=f.profile,record=new Uint8Array(108);record.set([78,83,80,70,4,68,2,0]);record[12]=89;
- assert(p.writePreferences(2,580,record));assert.equal(p.readPreferences(2),580);assert.deepEqual(p.readPreferencesRecord(2),record);
+ assert(p.writePreferences(2,580,record));record[4]=5;assert.equal(p.readPreferences(2),580);assert.deepEqual(p.readPreferencesRecord(2),record);
  assert.equal(p.readPreferences(1),516);assert.equal(JSON.parse(f.values.get('nSpire2-preferences-v2-profile-2')).flags,516);
  const old=JSON.parse(f.values.get('nSpire2-preferences-v3-profile-2')).bytes;
  assert.equal(old[4],3);assert.equal(old[5],4);assert.equal(old[12],89);
@@ -107,6 +107,35 @@ function fixture(){
  assert.equal(p.writePreferences(2,516,record),false);assert.deepEqual(f.values,before);assert.equal(p.readPreferences(2),580);
  f.fail(()=>false);assert(p.deleteProfile(2));assert.equal(p.readPreferences(2),516);assert.equal(p.readPreferencesRecord(2),null);
  assert(!f.values.has('nSpire2-preferences-v4-profile-2'));
+ assert(!f.values.has('nSpire2-preferences-v5-profile-2'));
+}
+{
+ // Long-press confirmations occupy only v5's formerly reserved bit7.
+ // Earlier records retain their exact meaning and compatible key maps.
+ const f=fixture(),p=f.profile,record=new Uint8Array(108);record.set([78,83,80,70,5,196,2,0]);record[12]=89;
+ assert(p.writePreferences(2,708,record));assert.equal(p.readPreferences(2),708);assert.deepEqual(p.readPreferencesRecord(2),record);
+ assert.equal(p.readPreferences(1),516);assert.equal(p.readPreferences(3),516);
+ const four=JSON.parse(f.values.get('nSpire2-preferences-v4-profile-2'));
+ assert.equal(four.version,4);assert.equal(four.flags,580);assert.equal(four.bytes[4],4);assert.equal(four.bytes[5],68);assert.equal(four.bytes[12],89);
+ const three=JSON.parse(f.values.get('nSpire2-preferences-v3-profile-2'));
+ assert.equal(three.bytes[4],3);assert.equal(three.bytes[5],4);assert.equal(three.bytes[12],89);
+ assert.equal(JSON.parse(f.values.get('nSpire2-preferences-v2-profile-2')).flags,516);
+ for(const version of [3,4]){
+  const bad=record.slice();bad[4]=version;
+  assert.throws(()=>p.writePreferences(1,644,bad));assert.equal(p.readPreferencesRecord(1),null);
+  f.values.set('nSpire2-preferences-v'+version,JSON.stringify({version,bytes:Array.from(bad)}));
+  assert.equal(p.readPreferencesRecord(1),null);assert.equal(p.readPreferences(1),516);
+ }
+ const before=new Map(f.values);let failed=false;
+ f.fail((op,key)=>!failed&&op==='set'&&key==='nSpire2-preferences-v5-profile-2'?(failed=true):false);
+ assert.equal(p.writePreferences(2,516),false);assert.deepEqual(f.values,before);assert.equal(p.readPreferences(2),708);
+ let denied=false;f.fail((op,key)=>{if(op==='remove'&&key==='nSpire2-preferences-v5-profile-2')denied=true;return denied&&op!=='get';});
+ assert.equal(p.deleteProfile(2),false);assert.equal(p.readPreferences(2),708);
+ const next=createProfileStorage(()=>f.storage);assert.equal(next.recover(),false);assert.deepEqual(next.readPreferencesRecord(2),record);
+ f.fail(()=>false);assert(next.recover());assert.deepEqual(f.values,before);
+ assert(next.clearRun(2));assert.deepEqual(next.readPreferencesRecord(2),record);
+ assert(next.deleteProfile(2));assert.equal(next.readPreferences(2),516);assert.equal(next.readPreferencesRecord(2),null);
+ for(let version=1;version<=5;++version)assert(!f.values.has('nSpire2-preferences-v'+version+'-profile-2'));
 }
 {
  const f=fixture(),p=f.profile;

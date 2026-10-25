@@ -29,6 +29,6 @@ enum class UiAction {
     OpenStandardRun, OpenCustomRun, OpenDailyRun, RandomizeRun, StartConfiguredRun,
     SettingsFeedback, SettingsCredits, GameOverViewRun, SettingsRunTimer,
     DeckViewUpgrades, SkipCombatChoice,
-    InspectPreviousRelic, InspectNextRelic, CloseRelicInspect
+    InspectPreviousRelic, InspectNextRelic, CloseRelicInspect, SettingsLongPress
 };
 }
