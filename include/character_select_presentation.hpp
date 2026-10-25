@@ -9,7 +9,7 @@ namespace spire {
 // Fifty-seven display pixels preserve that distance at 1680 -> 320 scaling.
 // The background's 1.1 responsive scale is not an animation to invent here.
 struct CharacterSelectPresentation {
-    static constexpr unsigned Count=5,Scale=1024,FocusScale=1126;
+    static constexpr unsigned Count=6,Scale=1024,FocusScale=1126;
     static constexpr uint32_t DurationMs=500;
     static constexpr int PanelDistance=reference_viewport::project(300);
     struct Portrait {uint16_t from=Scale,focus_scale=Scale,saturation=200,value=400;uint32_t start=0,color_start=0;bool color_tween=false;};
@@ -56,6 +56,18 @@ struct CharacterSelectPresentation {
             p.saturation=uint16_t(saturation(unsigned(focused),now));p.value=uint16_t(value(unsigned(focused),now));p.color_start=now;p.color_tween=true;}
         focused=next;
         if(focused>=0)portraits[focused].focus_scale=uint16_t(next_scale);
+    }
+};
+struct CharacterDeparturePresentation {
+    static constexpr unsigned FadeMs=800,RandomRevealMs=1000;
+    uint32_t started=0,reveal_ms=0;
+    uint8_t phase=0,character=0; // 1: source texture wipe; 2: room fade-in.
+    bool animated_ftue=false;
+    bool active()const{return phase!=0;}
+    unsigned progress(uint32_t now)const{
+        const uint32_t elapsed=now-started;
+        const uint32_t age=phase==1?(elapsed>reveal_ms?elapsed-reveal_ms:0):elapsed;
+        return age>=FadeMs?4096:unsigned(age*4096/FadeMs);
     }
 };
 }

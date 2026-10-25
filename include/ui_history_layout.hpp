@@ -34,43 +34,41 @@ inline unsigned ui_history_groups(const UiRunHistory&r,uint16_t*indices,uint16_t
  }return n;
 }
 struct UiHistoryLayout {
- // The source scrolling Control fills1260px. Its32px content margin is
- // positional, not an extra clip; only25px bottom scrolling padding is added.
- static constexpr int ViewTop=0,ViewHeight=240,Left=25,Width=270;
- static constexpr unsigned RelicColumns=19,CardColumns=5;
- static constexpr int RelicFirst=256,CardFirst=1024,BadgeFirst=2048;
+ // All hit regions and keyboard neighbors use the same LCD layout. Rows are
+ // allowed to grow vertically so card names never require tiny type/ellipsis.
+ static constexpr int ViewTop=0,ViewHeight=240,Left=52,Width=238;
+ static constexpr unsigned RelicColumns=11,CardColumns=2,FloorColumns=11;
+ static constexpr int RelicFirst=256,CardFirst=1024,BadgeFirst=2048,MapTop=212;
  struct Point{int x,y,w,h;};
- int map_y=0,map_left=0,relic_header=0,relic_y=0,deck_header=0,deck_y=0,height=0;
- int map_source_y=0,map_source_left=0,relic_source_y=0,deck_source_y=0,quote_width=1420,badge_left=0;
+ int map_y=MapTop,map_left=Left,relic_header=0,relic_y=0,deck_header=0,deck_y=0,height=0;
+ int map_source_y=0,map_source_left=130,relic_source_y=0,deck_source_y=0,quote_width=1416,badge_left=0;
  unsigned groups=0,badge_count=0;uint64_t badge_tiers=0;
  static unsigned floor_row(const UiRunHistory&r,unsigned index,unsigned*column=nullptr){
   unsigned row=0,col=0;
   for(unsigned i=0;i<index&&i<r.floor_count;++i){
-   if(i+1<r.floor_count&&r.floors[i+1].act!=r.floors[i].act){++row;col=0;}else ++col;
+   if(i+1<r.floor_count&&(r.floors[i+1].act!=r.floors[i].act||col+1>=FloorColumns)){++row;col=0;}else ++col;
   }
   if(column)*column=col;return row;
  }
  static Point projected(int x,int y,int w,int h){using reference_viewport::project;return {project(x),project(y),project(w),project(h)};}
- explicit UiHistoryLayout(const UiRunHistory&r,unsigned count):groups(count){
-  using reference_viewport::project;
-  unsigned rows=0,columns=0,col=0;
-  for(unsigned i=0;i<r.floor_count;++i){if(!i||r.floors[i-1].act!=r.floors[i].act){++rows;col=0;}++col;if(col>columns)columns=col;}
-  const int map_height=rows*60>174?int(rows*60):174,inner_width=140+int(columns)*64>1232?140+int(columns)*64:1232;
-  map_source_left=(1680-inner_width)/2;map_source_y=252+(map_height-int(rows)*60)/2;
-  map_left=project(map_source_left);map_y=project(map_source_y);
-  const int relic_top=312+map_height;relic_header=project(relic_top);relic_source_y=relic_top+40;relic_y=project(relic_source_y);
-  const int relic_height=48+int((r.relic_count+RelicColumns-1)/RelicColumns)*68;
-  const int deck_top=relic_top+(relic_height>100?relic_height:100)+24;deck_header=project(deck_top);deck_source_y=deck_top+44;deck_y=project(deck_source_y);
-  const int card_rows=int((groups+CardColumns-1)/CardColumns),deck_height=40+card_rows*36;
-  height=project(deck_top+(deck_height>100?deck_height:100)+25);
-  for(unsigned i=0;i<UiRunBadgeCount;++i){const unsigned tier=ui_run_badge_rarity(r,UiRunBadge(i));badge_tiers|=uint64_t(tier)<<(i*2);badge_count+=tier!=0;}
-  if(badge_count){const int badge_min=int(badge_count)*68-4,badge_width=badge_min>708?badge_min:708;
-   quote_width=1416-badge_width;badge_left=130+quote_width+4+(badge_width-badge_min)/2;}
+ Point floor(const UiRunHistory&r,unsigned index)const{
+  int y=MapTop;unsigned col=0;
+  for(unsigned i=0;i<=index&&i<r.floor_count;++i){
+   if(!i||r.floors[i-1].act!=r.floors[i].act){if(i&&col)y+=23;col=0;y+=19;}
+   if(i==index)return {Left+int(col)*21,y,20,21};
+   if(++col==FloorColumns){col=0;y+=23;}
+  }return {};
  }
- Point floor(const UiRunHistory&r,unsigned index)const{unsigned col=0;const unsigned row=floor_row(r,index,&col);return projected(map_source_left+144+int(col)*64,map_source_y+int(row)*60,60,60);}
- Point relic(unsigned index)const{return projected(194+int(index%RelicColumns)*68,relic_source_y+int(index/RelicColumns)*68,68,68);}
- Point card(unsigned index)const{return projected(194+int(index%CardColumns)*244,deck_source_y+int(index/CardColumns)*36,240,32);}
- Point badge(unsigned id)const{unsigned before=0;for(unsigned i=0;i<id;++i)before+=((badge_tiers>>(i*2))&3)!=0;return projected(badge_left+int(before)*68,158,64,64);}
+ explicit UiHistoryLayout(const UiRunHistory&r,unsigned count):groups(count){
+  const int map_bottom=r.floor_count?floor(r,r.floor_count-1).y+23:MapTop;
+  relic_header=map_bottom+12;relic_y=relic_header+25;
+  deck_header=relic_y+int((r.relic_count+RelicColumns-1)/RelicColumns)*24+12;deck_y=deck_header+25;
+  height=deck_y+int((groups+CardColumns-1)/CardColumns)*32+30;
+  for(unsigned i=0;i<UiRunBadgeCount;++i){const unsigned tier=ui_run_badge_rarity(r,UiRunBadge(i));badge_tiers|=uint64_t(tier)<<(i*2);badge_count+=tier!=0;}
+ }
+ Point relic(unsigned index)const{return {Left+int(index%RelicColumns)*21,relic_y+int(index/RelicColumns)*24,20,22};}
+ Point card(unsigned index)const{return {Left+int(index%CardColumns)*122,deck_y+int(index/CardColumns)*32,116,30};}
+ Point badge(unsigned id)const{unsigned before=0;for(unsigned i=0;i<id;++i)before+=((badge_tiers>>(i*2))&3)!=0;return {Left+int(before)*20,184,18,18};}
  bool point(const UiRunHistory&r,int id,Point&out)const{
   if(id>=BadgeFirst&&unsigned(id-BadgeFirst)<UiRunBadgeCount&&((badge_tiers>>((id-BadgeFirst)*2))&3)){out=badge(unsigned(id-BadgeFirst));return true;}
   if(id>=CardFirst&&id<BadgeFirst&&unsigned(id-CardFirst)<groups){out=card(unsigned(id-CardFirst));return true;}

@@ -85,12 +85,12 @@ int main(){
     collision_and_eviction();
     // Include indexes on both sides of the former byte boundary. The count,
     // permutation and returned age must survive entries 256 through 319.
-    CHECK(ImageEntries==320);
+    CHECK(ImageEntries==Content::image_capacity_entries()&&ImageEntries==480);
     std::vector<unsigned> all;
     for(unsigned i=0;i<ImageEntries;++i)all.push_back(i);
     image_wrap(all);
     image_wrap({0,7,63,127,128,191,254,255,256,287,319});
-    image_wrap({319});
+    image_wrap({ImageEntries-1});
     image_wrap({});
-    std::printf("content cache ages: %u checks passed; 320 colliding keys, owner/alias eviction, chain clearing and age wrap\n",checks);
+    std::printf("content cache ages: %u checks passed; 480 colliding keys, owner/alias eviction, chain clearing and age wrap\n",checks);
 }

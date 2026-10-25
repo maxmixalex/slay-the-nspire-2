@@ -6,15 +6,9 @@ static void combat_orbs(Canvas&c){
  auto&a=c.a;const auto&s=a.game;const int slots=health_bar::bounded(a.combat_status_fact(CombatStatus::OrbSlots),0,MaxOrbs);
  const int count=health_bar::bounded(a.combat_status_fact(CombatStatus::OrbCount),0,slots);const uint32_t now=a.animation*33u;
  auto&motion=a.orb_presentation;motion.layout(unsigned(slots),now);
- const auto camera=s.enemy_world.active?encounter_camera(s.enemy_world.encounter):EncounterCamera{};
- const auto layout=a.creature_layout.right?a.creature_layout:combat_layout_for(s);const auto root=player_formation_point(s,camera.zoom);
- const auto player=a.combat_player_pose();const auto anchors=player_anchors(s.character);
- const int radius=mx(5,combat_project_extent(camera,layout,30)),base_size=mx(9,combat_project_extent(camera,layout,90));
  for(int i=0;i<slots;++i){
   const int kind=i<count?a.combat_status_fact(CombatStatus::OrbKind,i):255;motion.model(unsigned(i),unsigned(kind),now);
-  const auto position=motion.position(unsigned(i),now);const int xx=anchors.intent_x*1024+position.x,yy=(anchors.intent_y+195)*1024+position.y;
-  const int x=s.enemy_world.active?combat_project_x(camera,layout,root.x+int(int64_t(xx)*camera.zoom/1024),false):player.x+xx*4/(21*1024);
-  const int y=s.enemy_world.active?combat_project_y(camera,layout,root.y+int(int64_t(yy)*camera.zoom/1024)):player.feet+yy*4/(21*1024);
+  const auto point=combat_orb_point(a,motion.position(unsigned(i),now));const int x=point.x,y=point.y,base_size=point.size,radius=point.radius;
   if(i<count){
    const unsigned age=now-motion.items[i].born;
    const int fade=age>=500?4096:int(health_bar::expo_out(age*2));
@@ -60,7 +54,7 @@ static void orb_hover_tip(Canvas&c){
  const char*source=a.content.world_string("orbs",path);
  if(!*source){path[0]=0;name.n=0;name.text(key);name.text(".description");source=a.content.world_string("orbs",path);}
  const CombatOrbTipContext context{&a,index};LocalizedTemplate(body,sizeof body,combat_orb_tip_value,&context,
-  a.content.world_title("static_hover_tips","ENERGY_COUNT"),a.content.world_title("static_hover_tips","STAR_COUNT"),a.content.english()).format(source);
+  a.content.world_title("static_hover_tips","ENERGY_COUNT"),a.content.world_title("static_hover_tips","STAR_COUNT"),a.content.english()).for_language(a.content.language()).format(source);
  if(!*title)title=a.content.ui_text(index<count?orb_name(kind):"空槽位");
  // NOrb uses its bounds, the default 75% left/right threshold, and the
  // OrbModel's icon in the normal HoverTip header. The complete dynamic

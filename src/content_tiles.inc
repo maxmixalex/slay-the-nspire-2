@@ -1,9 +1,9 @@
 // NSP2/15 sparse tiles. Included in content.cpp's private namespace so the
 // existing encoded scratch and image tiers remain the only picture buffers.
-// A bounded 5 MiB pool reduces cross-actor group reloads while keeping the
-// complete ARM allocation below its 16 MiB address limit. A 128 KiB page
-// holds common full-size groups in four pages without enlarging the bitmap.
-constexpr unsigned TileSide=16,TileBytes=770,TilePageBytes=131072,TilePages=40;
+// The 6 MiB pool keeps more actors and inspected card artwork warm while
+// leaving room for Ndless's contiguous executable allocation and temporary
+// compressed input. No larger dictionary or decode is required.
+constexpr unsigned TileSide=16,TileBytes=770,TilePageBytes=131072,TilePages=48;
 constexpr unsigned MaxFrameTiles=300,MaxTileGroups=64;
 // The offline access model uses the same contiguous first-fit allocation and
 // oldest-unpinned LRU eviction. A frame's index group stays pinned throughout.

@@ -5,6 +5,7 @@ namespace spire {
 // Match App::render's opaque-screen and modal precedence on every host.
 inline RuntimeScene runtime_scene(const App&app){
     if(app.auxiliary.screen!=AuxiliaryScreen::None)return RuntimeScene::Overlay;
+    if(app.bestiary.open)return RuntimeScene::Collection;
     if(app.map_preview.open)return RuntimeScene::Map;
     if(app.library)return app.detail_card>=0||app.detail_item>=0?RuntimeScene::Overlay:RuntimeScene::Collection;
     if(app.character_select)return RuntimeScene::Character;

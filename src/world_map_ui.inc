@@ -103,11 +103,11 @@ static void map_special_node(Canvas&c,const reference::ReferenceMap&m,unsigned i
         map_picture(c,map_named_picture(c.a.content,"BOSS_",d->key),x,y,static_size,static_size,MapShader::Tint,ink);
     }
 }
-// NMapScreen places the legend at viewport_width * .8. Keep that anchor;
-// its text column is fitted to the remaining 64 pixels at this viewport.
-constexpr int MapLegendX=256,MapLegendY=74,MapLegendRowY=96,MapLegendRowStep=12;
+// Keep the source paper, type highlighting and descriptions, but open the
+// readable legend on demand so a 320px map does not lose its rightmost routes.
+constexpr int MapLegendX=191,MapLegendY=88,MapLegendRowY=113,MapLegendRowStep=17,MapLegendWidth=125;
 static int map_legend_hover(const App&a,int offset_x=0){
-    if(!a.pointer.visible||a.pointer.x<MapLegendX+3+offset_x||a.pointer.x>=MapLegendX+64+offset_x||
+    if(!a.map_legend||!a.pointer.visible||a.pointer.x<MapLegendX+3+offset_x||a.pointer.x>=MapLegendX+MapLegendWidth+offset_x||
        a.pointer.y<MapLegendRowY||a.pointer.y>=MapLegendRowY+6*MapLegendRowStep)return -1;
     return (a.pointer.y-MapLegendRowY)/MapLegendRowStep;
 }
@@ -120,25 +120,32 @@ static const char* map_legend_text(const App&a,unsigned item,const char*suffix,c
 }
 static void map_legend_screen(Canvas&c,const MapColors&colors,int offset_x=0){
     auto&a=c.a;const int x=MapLegendX+offset_x,y=MapLegendY;
-    map_picture(c,a.content.world_image("map","LEGEND"),x+38,y+51,76,102,MapShader::Original,0,0,255,0,22,235);
-    const char*header=a.content.world_string("map","LEGEND_HEADER");c.centered(*header?header:"图例",x+3,y+8,58,10,colors.ink);
+    const char*header=a.content.world_string("map","LEGEND_HEADER");
+    if(!a.map_legend){
+        const int tab_x=244+offset_x,tab_y=215;
+        map_picture(c,a.content.world_image("map","LEGEND"),tab_x+36,tab_y+11,72,22,MapShader::Original,0,0,255,0,22,235);
+        c.fitted(*header?header:(a.content.language()==2?"图例":"Legend"),tab_x+5,tab_y+2,62,18,10,10,colors.ink,true);
+        c.action(tab_x,tab_y,72,22,UiAction::ToggleMapLegend);return;
+    }
+    map_picture(c,a.content.world_image("map","LEGEND"),x+MapLegendWidth/2,y+65,MapLegendWidth,130,MapShader::Original,0,0,255,0,22,235);
+    c.fitted(*header?header:(a.content.language()==2?"图例":"Legend"),x+5,y+5,MapLegendWidth-23,20,12,10,colors.ink,true);
+    c.text("×",x+MapLegendWidth-17,y+5,12,colors.ink);c.action(x+MapLegendWidth-22,y,22,24,UiAction::ToggleMapLegend);
     a.room_presentation.legend.observe(a.map_legend?a.map_legend_item:-1,a.map_clock_ms);
     for(unsigned i=0;i<6;++i){const int row=MapLegendRowY+int(i)*MapLegendRowStep;const auto type=map_legend_type(i);
         // NMapLegendItem scales its icon and highlights its point type; the
         // paper itself is always present and is not a separate modal window.
-        const int size=int((11*a.room_presentation.legend.scale(i,a.map_clock_ms)+2048)/4096);
-        map_picture(c,world_point_image(type),x+12,row+6,size,size,MapShader::Normal,0,colors.paper,255,0,22,235);
+        const int size=int((16*a.room_presentation.legend.scale(i,a.map_clock_ms)+2048)/4096);
+        map_picture(c,world_point_image(type),x+23,row+8,size,size,MapShader::Normal,0,colors.paper,255,0,22,235);
         char key[96]{};const char*label=map_legend_text(a,i,".title",key,sizeof key);
-        c.text_fitted(*label?label:world_point_name(type),x+22,row+1,41,8,colors.ink,8);
-        c.action(x+3,row,61,MapLegendRowStep,UiAction(int(UiAction::MapLegendUnknown)+int(i)));
+        c.fitted(*label?label:world_point_name(type),x+38,row-1,MapLegendWidth-48,18,10,10,colors.ink);
+        c.action(x+3,row,MapLegendWidth-6,MapLegendRowStep,UiAction(int(UiAction::MapLegendUnknown)+int(i)));
     }
     if(a.map_legend){
         char key[96]{},title[160]{};const char*source=map_legend_text(a,a.map_legend_item,".hoverTip.title",key,sizeof key);
         TextBuffer label{title,sizeof title,0};label.text(*source?source:world_point_name(map_legend_type(a.map_legend_item)));
         const char*body=map_legend_text(a,a.map_legend_item,".hoverTip.description",key,sizeof key);
-        // NMapLegendItem anchors below its containing LegendItems column,
-        // right-aligned with that column, independently of the hovered row.
-        if(*body)source_hover_box(c,title,body,x+64-SourceHoverWidth,MapLegendRowY+6*MapLegendRowStep);
+        // Place the full-size tooltip beside the expanded column.
+        if(*body)source_hover_box(c,title,body,x-SourceHoverWidth-4,MapLegendRowY);
     }
 }
 static uint8_t map_window_product(unsigned byte,unsigned q12){
@@ -163,7 +170,7 @@ static void world_map_screen(Canvas&parent,bool inspect,const MapWindowSample*wi
     const int legend_offset=window?map_source_offset(window->legend_x_q12):0;
     if(a.pointer.visible&&a.map_drawing.mode==MapDrawingMode::None&&!a.paused&&!a.settings_open&&!a.frontend_confirm&&!a.help){
         const bool over_history=a.history_tooltip.source==2&&a.history_tooltip.serial==a.progress.current.serial&&a.history_tooltip.contains(a.pointer.x,a.pointer.y);
-        const int hovered=over_history?-1:map_legend_hover(a,legend_offset);a.map_legend=hovered>=0;
+        const int hovered=over_history?-1:map_legend_hover(a,legend_offset);
         if(hovered>=0)a.map_legend_item=uint8_t(hovered);
     }
     // A HUD window uses the authored BG alpha over the retained live room;
@@ -239,7 +246,7 @@ static void world_map_screen(Canvas&parent,bool inspect,const MapWindowSample*wi
             c.text("↑",304,53,12,colors.ink);c.hit(297,47,23,28,HitKind::Scroll,-1);
         }
         if(a.map_can_scroll()&&view.origin>view.minimum){
-            c.text("↓",304,218,12,colors.ink);c.hit(297,211,23,29,HitKind::Scroll,1);
+            c.text("↓",304,188,12,colors.ink);c.hit(297,181,23,29,HitKind::Scroll,1);
         }
     }
     // Legend is a permanent sibling of TheMap and keeps its own fade/slide.
@@ -265,7 +272,7 @@ static void world_map_act_banner_screen(Canvas&parent){
         Canvas band=parent;band.opacity=map_window_product(band.opacity,sample.background_alpha);
         band.rect(0,96,ScreenW,44,0);
         char number[80]{};const char*format=a.content.world_string("gameplay_ui","ACT_NUMBER");
-        LocalizedTemplate(number,sizeof number,map_act_number_value,&banner.act).format(*format?format:"第 {actNumber} 幕");
+        LocalizedTemplate(number,sizeof number,map_act_number_value,&banner.act).for_language(a.content.language()).format(*format?format:"第 {actNumber} 幕");
         const char*key=map_colors(banner.region).region;
         const char*name=a.content.world_title("acts",key);if(!*name)name=key;
         const int number_y=94+map_source_offset(sample.number_y_q12);
@@ -293,7 +300,11 @@ static void world_map_window_screen(Canvas&c){
     }
     world_map_screen(c,!a.map_routes_active(),&sample);
     world_map_act_banner_screen(c);
-    if(a.map_window.is_open&&a.panel==3&&a.game.phase!=Phase::Map)c.close_button();
+    if(a.map_window.is_open&&a.panel==3&&a.game.phase!=Phase::Map){
+        // NMapScreen owns the same Back control as other original screens.
+        // It is absent when no entered room exists to return to.
+        native_back(c,0,211,44,28,"",true,false);c.action(0,209,45,31,UiAction::Back);
+    }
     // Closed immediately restores room input; only the visual tail remains.
     if(!a.map_window.is_open)a.hit_count=old_hits;
 }

@@ -129,7 +129,8 @@ static void library_control_cell(int control,int&row,int&column){
     if(control<=LibraryRarityLast){row=6+control-LibraryRarityFirst;return;}
     if(control==LibrarySortCost){row=10;return;}
     if(control<=LibraryCostLast){row=11;column=control-LibraryCostFirst;return;}
-    row=control==LibrarySortAlphabet?12:control==LibraryViewStats?13:14;
+    row=control==LibrarySortAlphabet?12:13;
+    if(control==LibraryViewUpgrades)column=1;
 }
 bool App::library_input(Key key){
     if(!library||detail_card>=0||detail_item>=0)return false;

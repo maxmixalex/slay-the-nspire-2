@@ -105,8 +105,9 @@ static void begin(OriginalEventId id,uint64_t seed,unsigned act){
 }
 static void reader(bool require_scroll){
  snapshot();uint32_t calls=a.game.original_events.rng_calls,revision=a.game.revision;
- a.input(Key::Detail);CHECK(a.event_reader);a.render();a.pointer_scroll(9);a.render();if(require_scroll)CHECK(a.event_reader_scroll>0);
- a.input(Key::Up);a.render();a.ui_action(UiAction::CloseEventReader);CHECK(!a.event_reader);a.render();
+ a.input(Key::Detail);CHECK(!a.event_reader&&a.event_body_focus);a.render();
+ a.pointer_scroll(9);advance_ms(500);if(require_scroll)CHECK(a.event_body_scroll.offset()>0);
+ a.input(Key::Up);a.render();a.input(Key::Back);CHECK(!a.event_reader&&!a.event_body_focus);a.render();
  CHECK(a.game.original_events.rng_calls==calls&&a.game.revision==revision);unchanged();
 }
 static void finished_offer_hidden(){
@@ -214,7 +215,9 @@ static void ancients(){
  const Entry entries[]={{OriginalEventId::Neow,0,"ancient-neow"},{OriginalEventId::Darv,1,"ancient-darv"},{OriginalEventId::Orobas,1,"ancient-orobas"},{OriginalEventId::Pael,1,"ancient-pael"},{OriginalEventId::Tezcatara,1,"ancient-tezcatara"},{OriginalEventId::Nonupeipe,2,"ancient-nonupeipe"},{OriginalEventId::Tanx,2,"ancient-tanx"},{OriginalEventId::Vakuu,2,"ancient-vakuu"}};
  for(const auto&entry:entries){
   begin(entry.id,0x71ef23,entry.act);a.render();CHECK(choice_count()==3);HitRegion previous{};snapshot();
-  for(int i=0;i<3;i++){auto hit=choice(i);CHECK(hit.x==65&&hit.w==190&&hit.h==19);if(i)CHECK(hit.y-previous.y==18||hit.y-previous.y==19);previous=hit;
+  // The LCD layout retains the source option stack, with readable 35px
+  // controls and a 2px gap instead of the former 19px projection.
+  for(int i=0;i<3;i++){auto hit=choice(i);CHECK(hit.x==20&&hit.w==280&&hit.h==35);if(i)CHECK(hit.y-previous.y==37);previous=hit;
    a.pointer_move(hit.x+hit.w/2,hit.y+hit.h/2);CHECK(a.cursor==i);a.input(Key::Down);a.render();unchanged();}
   a.cursor=0;a.scroll=0;capture(entry.file);reader(false);
   if(entry.id==OriginalEventId::Orobas){
@@ -264,7 +267,10 @@ static void ancient_conversation(bool synthetic){
  capture("ancient-dialogue-history-and-options");unchanged();
  // Hover any older visible line restores all history, then leaving restores
  // the original quarter-alpha. Wheel / arrow review moves only the content.
- a.pointer_scroll(-100);a.render();CHECK(d.scroll==d.max_scroll);unchanged();
+ // Put the pointer outside option/keyword hover controls before reviewing
+ // the conversation. A selected relic's now-readable paged tooltip owns
+ // wheel input while that relic remains the active hover target.
+ a.pointer_move(a.pointer.x==310?311:310,80);a.pointer_scroll(-100);a.render();CHECK(d.scroll==d.max_scroll);unchanged();
  const int y=d.y(a.map_clock_ms)+d.scroll;
  a.pointer_move(90,y+6);a.render();advance_ms(100);
  CHECK(d.history_hovered&&d.history_alpha(a.map_clock_ms)==255);unchanged();
@@ -276,7 +282,7 @@ static void ancient_conversation(bool synthetic){
  CHECK(d.count&&std::strstr(d.keys[0],"r.ancient")&&!std::strstr(d.keys[0],".2-0.ancient"));
  clear_ui_progress(a.progress);a.progress_loaded=false;
  begin(OriginalEventId::Neow,0x8ac413,0);CHECK(d.count==1&&std::strstr(d.keys[0],"firstVisitEver"));
- if(synthetic){CHECK(d.max_scroll>0);snapshot();a.pointer_scroll(-1000);a.render();CHECK(d.scroll==d.max_scroll);
+ if(synthetic){CHECK(d.max_scroll>0);snapshot();a.pointer_move(a.pointer.x==310?311:310,80);a.pointer_scroll(-1000);a.render();CHECK(d.scroll==d.max_scroll);
   a.input(Key::Down);a.render();CHECK(d.scroll<d.max_scroll);unchanged();a.pointer_scroll(1000);a.render();CHECK(!d.scroll);}
  // A genuine page refresh clears the conversation. The resulting page has
  // only its Proceed option, with no synthetic completion speech bubble.
@@ -294,15 +300,23 @@ static void ordinary_events(bool synthetic){
   a.cursor=0;a.input(Key::Up);CHECK(a.cursor==int(count)-1);a.input(Key::Down);CHECK(a.cursor==0);
   for(unsigned i=0;i<count;++i)a.input(Key::Down);CHECK(a.cursor==0&&a.scroll==0);unchanged();
   for(unsigned selected=0;selected<count;++selected){
-   a.cursor=int(selected);a.render();const unsigned first=selected/6*6;CHECK(choice_count()==(count-first<6?count-first:6));
-   HitRegion previous{};for(unsigned i=first;i<count&&i<first+6;++i){const auto h=choice(int(i));
-    CHECK(h.x==153&&h.w==152&&h.h==19);if(i>first)CHECK(!overlap(h,previous)&&h.y==previous.y+20);previous=h;}
+   a.cursor=int(selected);a.render();const unsigned first=selected/3*3;CHECK(choice_count()==(count-first<3?count-first:3));
+   HitRegion previous{};for(unsigned i=first;i<count&&i<first+3;++i){const auto h=choice(int(i));
+    CHECK(h.x>=90&&h.x+h.w<=320&&h.w>=200&&h.h>=36);if(i>first)CHECK(!overlap(h,previous)&&h.y>previous.y+previous.h);previous=h;}
    unchanged();
   }
-  HitRegion body{};for(int i=0;i<a.hit_count;++i)if(a.hits[i].kind==HitKind::UiAction&&a.hits[i].value==int(UiAction::ReadEvent))body=a.hits[i];
-  CHECK(body.x==153&&body.y==54&&body.w==152&&body.h>=53);
-  CHECK(choice(int(a.cursor/6*6)).y==body.y+body.h+6);
-  a.cursor=0;a.pointer.visible=false;a.render();
+  CHECK(a.event_body_top>=50&&a.event_body_height>=49);
+  CHECK(choice(int(a.cursor/3*3)).y>=a.event_body_top+a.event_body_height+4);
+  if(a.event_body_scroll.maximum){
+   HitRegion thumb{};for(int i=0;i<a.hit_count;++i)if(a.hits[i].kind==HitKind::EventScroll&&a.hits[i].value==1)thumb=a.hits[i];
+   CHECK(thumb.w>0&&thumb.x+thumb.w<=320);
+   a.pointer_move(thumb.x+thumb.w/2,thumb.y+4);a.pointer_button(true);a.pointer_move(thumb.x+thumb.w/2,thumb.y+thumb.h-4);a.pointer_button(false);
+   CHECK(a.event_body_scroll.offset()>0&&!a.event_reader);unchanged();a.event_body_focus=false;
+  }
+  // These background samples exclude intentionally overlaid keyword tips.
+  // Move off the option; hiding the pointer would select cursor 0 and open
+  // its wider readable tooltip over the lower-left illustration instead.
+  a.cursor=0;a.pointer_move(a.pointer.x==318?319:318,23);a.render();
   if(synthetic){
    // The authored illustration remains unobscured: no repeated option panel
    // over its lower-left corner and no unrelated right-edge dark gradient.
@@ -313,10 +327,31 @@ static void ordinary_events(bool synthetic){
   capture(names[model]);reader(false);unchanged();
  }
 }
+static void reading_focus(){
+ // A pointer action takes focus from the same in-place reading container.
+ // The first click must perform exactly the canonical event choice, rather
+ // than merely dismissing keyboard reading and requiring a second click.
+ begin(OriginalEventId::Neow,0x91f332,0);a.pointer_scroll(1000);a.render();
+ CHECK(a.ancient_dialogue_ready()&&a.ancient_dialogue.last());
+ a.input(Key::Detail);CHECK(a.event_body_focus&&!a.event_reader);snapshot();
+ static State expected;static SaveData expected_save;
+ CHECK(load(expected,before.bytes,before.size));CHECK(event_choice(expected,0));CHECK(save(expected,expected_save));
+ press_choice(0);CHECK(!a.event_body_focus);CHECK(save(a.game,after));
+ CHECK(after.size==expected_save.size&&!std::memcmp(after.bytes,expected_save.bytes,after.size));
+ // The fake merchant uses its own rug while trading, then returns to an
+ // ordinary event page. Finished prose must regain the normal reader.
+ begin(OriginalEventId::FakeMerchant,23,1);CHECK(!a.event_body_active());
+ CHECK(event_choice(a.game,6));a.render();advance_ms(1000);
+ CHECK(a.game.original_events.finished&&a.game.phase==Phase::Event&&a.event_body_active());
+ snapshot();a.input(Key::Detail);CHECK(a.event_body_focus&&!a.event_reader);
+ a.input(Key::Down);advance_ms(250);a.input(Key::Back);CHECK(!a.event_body_focus);unchanged();
+}
 int main(int argc,char**argv){
+ const bool reading_only=argc>1&&!std::strcmp(argv[1],"--reading");const int asset_argument=reading_only?2:1;const bool actual=argc>asset_argument;
  std::vector<uint8_t>data;
- if(argc>1){FILE*f=std::fopen(argv[1],"rb");CHECK(f);data.resize(spire_test::pack_size(f));CHECK(std::fread(data.data(),1,data.size(),f)==data.size());CHECK(!std::fclose(f));}else data=synthetic_profile();
+ if(actual){FILE*f=std::fopen(argv[asset_argument],"rb");CHECK(f);data.resize(spire_test::pack_size(f));CHECK(std::fread(data.data(),1,data.size(),f)==data.size());CHECK(!std::fclose(f));}else data=synthetic_profile();
  // Only an explicit caller-selected private directory receives captures.
- if(argc>2)capture_directory=argv[2];CHECK(a.init(data.data(),data.size(),{}));CHECK(a.content.current_profile());
+ if(argc>asset_argument+1)capture_directory=argv[asset_argument+1];CHECK(a.init(data.data(),data.size(),{}));CHECK(a.content.current_profile());
+ if(reading_only){reading_focus();std::printf("World inline reading focus and canonical pointer choice: %u checks; %s profile\n",checks,actual?"actual":"synthetic");return 0;}
  if(argc==1)ancient_original_modulation();merchant_welcome();merchant();ancients();ancient_conversation(argc==1);ordinary_events(argc==1);std::printf("world event UI: %u checks passed; %s profile; merchant welcome/inventory, eight ancients, revealed dialogue/history and centered ordinary events\n",checks,argc>1?"actual":"synthetic");
 }

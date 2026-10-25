@@ -91,11 +91,18 @@ bool App::scroll_ancient_dialogue(int rows){
 }
 bool App::ancient_dialogue_input(Key key){
  if(!ancient_dialogue_ready())return false;sync_ancient_dialogue();auto&d=ancient_dialogue;
+ if(key==Key::Detail){event_body_focus=!event_body_focus;pointer_cancel();return true;}
+ if(event_body_focus){
+  if(key==Key::Back||key==Key::Confirm){event_body_focus=false;pointer_cancel();return true;}
+  if(key==Key::Up||key==Key::Down||key==Key::Left||key==Key::Right){
+   scroll_ancient_dialogue(key==Key::Up?-1:key==Key::Left?-5:key==Key::Down?1:5);return true;
+  }
+ }
  if(key==Key::Up||key==Key::Down){
   if(d.last()&&!d.scroll){
    // NEventLayout wraps vertical focus through the options and keeps both
-   // horizontal neighbors on the same button. The reader still exposes the
-   // entire dialogue to keyboard-only users at the larger reading size.
+   // horizontal neighbors on the same button. Detail switches keyboard focus
+   // to this same scroll container; no duplicate full-screen reader opens.
    if(map_clock_ms-d.start>=800){const int count=int(original_event_option_count(game));
     if(count)cursor=(cursor+(key==Key::Up?count-1:1))%count;}
   }else scroll_ancient_dialogue(key==Key::Up?-1:1);

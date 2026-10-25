@@ -43,12 +43,22 @@ bool App::bestiary_pointer(const HitRegion&hit){
  case HitKind::BestiaryMove:bestiary_play(*this,unsigned(hit.value));bestiary.focus=1;break;
  case HitKind::BestiaryFilter:bestiary_choose_filter(*this,unsigned(hit.value));bestiary.focus=1;break;
  case HitKind::BestiaryMode:bestiary_toggle(*this);break;
- case HitKind::UiAction:if(hit.value==int(UiAction::Back))bestiary_close(*this);break;
+ case HitKind::UiAction:
+  if(hit.value==int(UiAction::Back))bestiary_close(*this);
+  else if(bestiary.actions&&(hit.value==int(UiAction::PreviousPage)||hit.value==int(UiAction::NextPage))){
+   const unsigned count=bestiary_move_count();const int page=int(bestiary.action/BestiaryPresentation::ActionsPerPage)+(hit.value==int(UiAction::PreviousPage)?-1:1);
+   if(count){bestiary.action=uint8_t(BestiaryPresentation::clamp(page*int(BestiaryPresentation::ActionsPerPage),0,int(count)-1));bestiary.focus=1;}
+  }break;
  case HitKind::Close:bestiary_close(*this);break;
  default:break;
  }return true;
 }
-void App::bestiary_scroll(int rows){if(bestiary.open)bestiary.wheel(rows);}
+void App::bestiary_scroll(int rows){
+ if(!bestiary.open)return;
+ if(bestiary.actions&&pointer.visible&&pointer.x<BestiaryPresentation::Left){
+  const unsigned count=bestiary_move_count();if(count&&rows){bestiary.action=uint8_t(BestiaryPresentation::clamp(int(bestiary.action)+(rows<0?-1:1)*int(BestiaryPresentation::ActionsPerPage),0,int(count)-1));bestiary.focus=1;}
+ }else bestiary.wheel(rows);
+}
 bool App::bestiary_input(Key key){
  auto&b=bestiary;if(!b.open)return false;
  if(key==Key::Back){bestiary_close(*this);return true;}

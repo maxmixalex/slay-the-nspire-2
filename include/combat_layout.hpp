@@ -5,9 +5,17 @@ namespace spire {
 // original300x422 frame is centered on its holder; a padded tile must not
 // move that pivot or enlarge its mouse hitbox.
 struct HandPose {int cx,cy,scale,sine,cosine;};
-constexpr int HandTileW=80,HandTileH=112,HandFaceX=8,HandFaceY=6,HandFaceW=69,HandFaceH=97;
+constexpr int HandTileW=104,HandTileH=136,HandFaceX=8,HandFaceY=6,HandFaceW=86,HandFaceH=121;
 constexpr int HandPivotX=(HandFaceX*2+HandFaceW)*512,HandPivotY=(HandFaceY*2+HandFaceH)*512;
-constexpr int HandFocusScale=(300*4*1024+21*HandFaceW/2)/(21*HandFaceW);
+// Rasterize at the focused LCD size. Enlarging a69px cached card smears the
+// native glyphs;1:1 sampling keeps its10px description crisp at rest.
+constexpr int HandFocusScale=1024;
+namespace combat_controls {
+constexpr int EnergyX=8,EnergyY=174,EnergySize=34,StarX=43,StarY=176,StarSize=27;
+constexpr int DrawX=4,DrawY=211,DiscardX=290,DiscardY=211,ExhaustX=291,ExhaustY=135,PileSize=24;
+constexpr int EndX=246,EndY=166,EndW=70,EndH=28,SceneLift=14;
+}
+
 inline int hand_project(int source){return (source*4+10)/21;}
 inline HandPose hand_pose(int count,int index,bool focused,int focus=-1){
     if(count<1)count=1;if(count>MaxHand)count=MaxHand;
@@ -22,15 +30,20 @@ inline HandPose hand_pose(int count,int index,bool focused,int focus=-1){
     // the hovered card. The focused holder keeps its authored horizontal slot.
     if(focus>=0&&focus<count&&focus!=index){int distance=focus>index?focus-index:index-focus;
         if(distance<4)x+=(index<focus?-1:1)*(100-distance*25);}
-    if(focused)return {hand_project(840+x),hand_project(1260-211+2),HandFocusScale,0,1024};
+    // The enlarged LCD cards retain their fan/neighbor motion inside the
+    // control rails. A focused outer card slides inward instead of covering
+    // energy, Stars or End Turn.
+    const int projected=160+(hand_project(840+x)-160)*4/5;
+    if(focused)return {projected<114?114:projected>202?202:projected,174,HandFocusScale,0,1024};
     const int percent=count>=8?80*(100-(count-7)*5):8000;
     const int scale=(HandFocusScale*percent+5000)/10000;
-    return {hand_project(840+x),hand_project(1260+p.y),scale,p.sine,p.cosine};
+    return {projected,hand_project(1260+p.y)-12,scale,p.sine,p.cosine};
 }
 inline HandPose hand_selected_pose(){
-    // NCardPlay.CenterCard: viewport bottom minus half of the .75-scale
-    //422px hitbox, with the holder's ordinary position/scale interpolation.
-    return {160,(1260*16-422*6+42)/84,(HandFocusScale*3+2)/4,0,1024};
+    // NCardPlay.CenterCard keeps the selected card above the viewport edge.
+    // The enlarged LCD face needs its own half-height, not the old source
+    // projection. Keep native 10px text at 1:1 while choosing a target.
+    return {160,174,HandFocusScale,0,1024};
 }
 struct HandRect {int x,y,w,h;};
 inline HandRect hand_bounds(HandPose p){
@@ -58,7 +71,9 @@ struct CreaturePose {
 };
 inline CreaturePose legacy_creature_pose(CreaturePose p){
  p.body_left=p.x-p.width/2;p.body_height=84*p.scale/1024;p.body_top=p.feet-p.body_height;
- p.body_width=p.width;p.center_x=p.x;p.center_y=p.feet-31;p.intent_x=p.x;p.sprite_x=p.x;p.sprite_y=p.feet;return p;
+ p.body_width=p.width;p.center_x=p.x;p.center_y=p.feet-31;p.intent_x=p.x;p.sprite_x=p.x;p.sprite_y=p.feet;
+ p.feet-=combat_controls::SceneLift;p.body_top-=combat_controls::SceneLift;p.center_y-=combat_controls::SceneLift;
+ p.sprite_y-=combat_controls::SceneLift;p.intent-=combat_controls::SceneLift;p.hp-=combat_controls::SceneLift;p.status-=combat_controls::SceneLift;return p;
 }
 inline int creature_health_left(CreaturePose p){return p.body_left+(p.body_width-p.width)/2;}
 inline CreaturePose enemy_pose(int count,int index){
@@ -205,7 +220,7 @@ inline int combat_project_x(EncounterCamera camera,CombatSceneLayout layout,int 
 inline int combat_project_y(EncounterCamera camera,CombatSceneLayout layout,int point){
  const int64_t right=layout.right>CombatSourceWidth?layout.right:CombatSourceWidth;
  const int64_t base=540000+90*camera.zoom+camera.y*1000;
- return int((base*right+int64_t(point)*CombatSourceWidth)*4/(right*21000));
+ return int((base*right+int64_t(point)*CombatSourceWidth)*4/(right*21000))-combat_controls::SceneLift;
 }
 inline int combat_project_extent(EncounterCamera camera,CombatSceneLayout layout,int source,int numerator=1,int denominator=1){
  const int64_t right=layout.right>CombatSourceWidth?layout.right:CombatSourceWidth;
@@ -243,11 +258,29 @@ inline CreaturePose player_pose(const State&s,CombatSceneLayout layout,bool pet=
  return project_creature_pose(camera,layout,player_formation_point(s,camera.zoom,pet),player_anchors(s.character,pet),false,
   registration.units,scale,scale,registration.x,registration.y);
 }
+inline bool creature_duplicate_kind(const State&s,int index){
+ if(!s.enemy_world.active||index<0||index>=s.enemy_count)return false;
+ for(int other=0;other<s.enemy_count;++other)if(other!=index&&s.enemy_world.models[other].kind==s.enemy_world.models[index].kind)return true;
+ return false;
+}
+inline int creature_instance_scale(const State&s,int index){
+ if(!creature_duplicate_kind(s,index))return 1024;
+ const auto kind=s.enemy_world.models[index].kind;const auto*d=enemy_definition(kind);if(!d)return 1024;
+ const int low=s.enemy_world.ascension>=8?d->min_hp_8:d->min_hp,high=s.enemy_world.ascension>=8?d->max_hp_8:d->max_hp;
+ if(high<=low)return 1024;
+ // NCombatRoom uses the upper half of the initial HP interval and a
+ // 10..15 percent amplitude, with smaller source bounds varying more.
+ int weight=(int(s.enemies[index].max_hp)-low)*2048/(high-low)-1024;if(weight<0)weight=0;if(weight>1024)weight=1024;
+ const auto bounds=creature_bounds(kind);int extent=bounds.width>bounds.height?bounds.width:bounds.height;
+ int small=(250-extent)*1024/150;if(small<0)small=0;if(small>1024)small=1024;
+ return 1024+weight*(102+51*small/1024)/1024;
+}
 inline CreaturePose enemy_pose(const State&s,int index,CombatSceneLayout layout){
  if(index<0||index>=s.enemy_count||!s.enemy_world.active)return enemy_pose(s.enemy_count,index);
  const auto camera=encounter_camera(s.enemy_world.encounter);const auto kind=s.enemy_world.models[index].kind;
  if(kind==EnemyId::LegacyNibbit)return enemy_pose(s.enemy_count,index);
- auto p=project_creature_pose(camera,layout,enemy_formation_point(s,index,camera.zoom),creature_anchors(kind),true,creature_sprite_units(kind));
+ const int scale=creature_instance_scale(s,index);
+ auto p=project_creature_pose(camera,layout,enemy_formation_point(s,index,camera.zoom),creature_anchors(kind),true,creature_sprite_units(kind),scale,scale);
  // NHealthBar adds24 source pixels around monster Bounds. The segmented
  // boss alone subtracts35 first; player health bars have no extra width.
  const bool segment=kind==EnemyId::DecimillipedeSegmentBack||kind==EnemyId::DecimillipedeSegmentFront||kind==EnemyId::DecimillipedeSegmentMiddle;

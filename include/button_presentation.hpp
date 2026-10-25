@@ -156,10 +156,10 @@ namespace proceed_layout {
 // NProceedButton.ShowPos is a viewport ratio, while its child sizes use the
 // uniform FourByThree scale 320/1680. AtlasTexture fits inside Image, not the
 // parent hit rectangle. Text coordinates are relative to Image's 296px box.
-constexpr int X=264,Y=170,W=51,H=21,PivotX=290,PivotY=180;
-constexpr int ImageX=262,ImageY=167,ImageW=56,ImageH=27;
-constexpr int LabelX=273,LabelY=179,LabelW=34,FontSize=6;
-constexpr int HideOffset=67; // 400 / 1920 of the current viewport width.
+constexpr int X=242,Y=207,W=76,H=30,PivotX=280,PivotY=222;
+constexpr int ImageX=239,ImageY=201,ImageW=81,ImageH=39;
+constexpr int LabelX=251,LabelY=216,LabelW=58,FontSize=10;
+constexpr int HideOffset=86; // 400 / 1920 of the current viewport width.
 }
 
 // NProceedButton keeps its enabled/disabled translation separate from the

@@ -33,7 +33,7 @@ TAG = re.compile(r'\[(/?)([a-z_]+)(?:\s+[^\]]*)?\]')
 
 def text_format_control(cp):
     """Match unicode_text.hpp without changing any stored localization byte."""
-    return (0x200b <= cp <= 0x200f or 0x202a <= cp <= 0x202e or
+    return (cp == 0x00ad or 0x200b <= cp <= 0x200f or 0x202a <= cp <= 0x202e or
             0x2060 <= cp <= 0x206f or cp == 0xfeff or
             0xfe00 <= cp <= 0xfe0f or 0xe0100 <= cp <= 0xe01ef)
 
@@ -98,7 +98,10 @@ class Face:
     def glyph(self, cp, px, style=0):
         tiles.require(cp in self.coverage, 'Font does not cover requested glyph')
         font, char = self.fonts[px], chr(cp)
-        advance = max(1, math.ceil(font.getlength(char)))
+        # Ceil per glyph introduces nearly half a pixel of tracking per Latin
+        # letter. Integer LCD placement uses nearest advances, while bitmap
+        # width still retains every visible ink column.
+        advance = max(1, math.floor(font.getlength(char) + 0.5))
         width, height = max(advance, font.getbbox(char)[2]), px + 5
         tiles.require(0 < width <= 40 and advance <= 40, 'Glyph outside runtime bound')
         image = Image.new('L', (width, height))

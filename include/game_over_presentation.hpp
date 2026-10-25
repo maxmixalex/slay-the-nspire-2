@@ -11,7 +11,8 @@ struct GameOverPresentation {
  uint32_t seed=0,opened=0,summary_started=0;
  uint16_t floor=0;
  uint8_t character=0,phase=0,rows=0,badges=0,discoveries=0,quote_from=0;
- bool bound=false,event_room=false,summary=false;
+ bool bound=false,event_room=false,summary=false,reveal_focus=false;
+ uint16_t scroll=0,scroll_maximum=0;
  void reset(){*this={};}
  unsigned intro_delay()const{return event_room?1950u:1750u;}
  uint32_t initial_age(uint32_t now)const{return now-opened;}
@@ -65,5 +66,5 @@ struct GameOverPresentation {
   quote_from=uint8_t(initial_quote_alpha(now));summary=true;summary_started=now;rows=uint8_t(score_rows);badges=uint8_t(badge_count);discoveries=uint8_t(discovery_count);
  }
 };
-static_assert(sizeof(GameOverPresentation)<=40,"Terminal presentation must not add large run caches");
+static_assert(sizeof(GameOverPresentation)<=48,"Terminal presentation must not add large run caches");
 }

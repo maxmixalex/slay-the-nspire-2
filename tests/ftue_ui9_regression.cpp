@@ -225,16 +225,19 @@ static void terminal_boundaries(){
  w.choice_group=1;snapshot();CHECK(a.ftue_before_action(UiAction::LeaveWorldRewards));CHECK(a.ftue.id==FtueId::CombatReward);advance(330);capture("ftue-terminal-extra-rewards");click(1);unchanged();
 }
 static void text_bounds(){
- if(!actual)return;scenario="every original localized paragraph fits its source rectangle";Canvas c{a};c.bold_face=5;
+ if(!actual)return;scenario="readable tutorial text reaches every final line without shrinking";Canvas c{a};c.bold_face=5;
+ const auto reader=[&](const char*text,int w,int h){CHECK(*text);a.ftue.text_scroll=0;
+  const auto first=ftue_paragraph(c,text,0,0,w,h,10,false,12,false,true);CHECK(first.size==10&&!first.truncated);
+  CHECK(first.total==first.rows+a.ftue.text_maximum);a.ftue.text_scroll=a.ftue.text_maximum;
+  const auto last=ftue_paragraph(c,text,0,0,w,h,10,false,12,false,true);CHECK(!last.truncated&&int(a.ftue.text_scroll)+last.rows==last.total);
+  RichReader glyphs(text);RichChar ch;while(glyphs.next(ch))if(ch.codepoint>=32)CHECK(a.content.glyph_metrics(ch.codepoint,10,c.font_style(ch)).advance>0);
+ };
  const char*keys[]={"CANNOT_PLAY_CARD_FTUE_DESCRIPTION","CAN_PLAY_CARDS_FTUE_DESCRIPTION","MAP_SELECT_DESCRIPTION","MERCHANT_FTUE_DESCRIPTION","POTION_FTUE_DESCRIPTION","POWER_FTUE_DESCRIPTION","RELIC_FTUE_DESCRIPTION","REST_SITE_FTUE_DESCRIPTION","REWARDS_FTUE_DESCRIPTION","SHUFFLE_FTUE_DESCRIPTION"};
- for(unsigned i=0;i<10;++i){const int w=i==1?124:i==6?108:96,h=i==1?33:i==6?28:23;const char*text=ftue_text(a,keys[i]);CHECK(*text);const auto fit=ftue_paragraph(c,text,0,0,w,h,4,false,4);
-  if(fit.truncated)std::fprintf(stderr,"FTUE paragraph overflow %s: %d rows in %d px\n",keys[i],fit.total,h);CHECK(!fit.truncated);
-  RichReader reader(text);RichChar ch;while(reader.next(ch))if(ch.codepoint>=32)CHECK(a.content.glyph_metrics(ch.codepoint,4,c.font_style(ch)).advance>0);
- }
- for(unsigned page=1;page<=3;++page){char key[40];std::snprintf(key,sizeof key,"TUTORIAL_FTUE_BODY_%u",page);CHECK(!ftue_paragraph(c,ftue_text(a,key),0,0,119,92,5,true).truncated);}
- CHECK(!ftue_paragraph(c,ftue_text(a,"ASCENSION_SINGLEPLAYER_FTUE_DESCRIPTION"),0,0,98,76,5).truncated);
- CHECK(!ftue_paragraph(c,ftue_text(a,"ASCENSION_SINGLEPLAYER_FTUE_DISCLAIMER"),0,0,98,23,5).truncated);
- CHECK(!ftue_paragraph(c,a.content.world_string("main_menu_ui","ENABLE_TUTORIALS.description"),0,0,80,63,5,true).truncated);
+ for(unsigned i=0;i<10;++i)reader(ftue_text(a,keys[i]),i==3?146:210,i==3?92:i==7?52:72);
+ for(unsigned page=1;page<=3;++page){char key[40];std::snprintf(key,sizeof key,"TUTORIAL_FTUE_BODY_%u",page);reader(ftue_text(a,key),120,132);}
+ reader(ftue_text(a,"ASCENSION_SINGLEPLAYER_FTUE_DESCRIPTION"),220,120);
+ reader(ftue_text(a,"ASCENSION_SINGLEPLAYER_FTUE_DISCLAIMER"),220,120);
+ reader(a.content.world_string("main_menu_ui","ENABLE_TUTORIALS.description"),210,84);
 }
 int main(int argc,char**argv){
  Bytes data;if(argc>1){FILE*f=std::fopen(argv[1],"rb");CHECK(f);data.resize(spire_test::pack_size(f));CHECK(std::fread(data.data(),1,data.size(),f)==data.size());CHECK(!std::fclose(f));actual=true;}else data=fixture();

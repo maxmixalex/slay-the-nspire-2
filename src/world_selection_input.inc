@@ -160,13 +160,13 @@ bool App::world_selection_preview_card(unsigned index,WorldSelectionCard&out)con
         const int source_width=int(count)*300+int(count-1)*30;scale=source_width>610?610000/source_width:1000;
         const int center=after?960:710,offset=after?((int(at)*2+1)*150*scale/1000+int(at)*30):(-((int(count-at)*2-1)*150*scale/1000)-int(count-at-1)*30);
         cx=(center+offset)*4/21;
-    }else if(paired)cx=after?213:107;
+    }else if(paired){cx=after?213:107;if(kind==WorldSelectionKind::Enchant){cx=after?156:59;scale=900;}}
     else{
         scale=count>6?550:count>3?800:1000;
         const unsigned displayed=kind==WorldSelectionKind::Bundle?3:count;
         const int slot=kind==WorldSelectionKind::Bundle?int(displayed-1-at):int(at);
         cx=160+(2*slot-int(displayed)+1)*200*4*scale/(21*1000);
-        if(kind==WorldSelectionKind::Bundle)cy=131;
+        if(kind==WorldSelectionKind::Bundle){cx=160+(2*slot-int(displayed)+1)*52;cy=139;}
     }
     out.w=int16_t((PreviewW*scale+500)/1000);out.h=int16_t((PreviewH*scale+500)/1000);
     out.x=int16_t(cx-out.w/2);out.y=int16_t(cy-out.h/2);return true;

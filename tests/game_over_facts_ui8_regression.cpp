@@ -34,7 +34,7 @@ static void presentation_timing(){
  CHECK(!m.menu_ready(at+3349)&&m.menu_ready(at+3350)&&m.button_alpha(at+3350)==0&&m.button_alpha(at+3850)==255);
  CHECK(m.quote_alpha(at)==255&&m.quote_alpha(at+250)==0&&m.quote_alpha(at+1249)==0&&m.quote_alpha(at+2750)==255);
  m.reset();m.bound=true;m.begin_summary(0,0,0,0);CHECK(m.quote_from==0&&m.menu_start()==1250&&m.quote_alpha(1500)==255);
- CHECK(!game_over_ui::ViewRunEnabled&&game_over_ui::MainMenuX==133);
+ CHECK(!game_over_ui::ViewRunEnabled&&game_over_ui::MainMenuX*2+game_over_ui::ButtonWidth==ScreenW);
 }
 static void start(unsigned seed=0x7195c3){
  a.reset_presentation();a.title=a.paused=a.help=a.library=a.compendium_open=a.history_open=false;
@@ -137,5 +137,26 @@ static void persistence_and_navigation(){
  CHECK(a.physical_key(select,true)&&!a.title);CHECK(a.physical_key(select,false)&&a.title);
  CHECK(save(a.game,after)&&after.size==before.size&&!std::memcmp(before.bytes,after.bytes,before.size));
 }
-int main(){clear_ui_progress(a.progress);a.progress_loaded=true;presentation_timing();score_and_badges();observations();persistence_and_navigation();
+static void readable_summary_navigation(){
+ scenario="readable summary scroll bounds, focus reveal and canonical purity";start(0x7195c8);
+ {UiCoreObserver observer(a);player_kill(a.game,true);resolve_pending(a.game);}CHECK(a.game.phase==Phase::Dead&&save(a.game,before));
+ // A long recorded summary is a display fixture. It changes neither the
+ // finished run nor its RNG, and forces the actual renderer to scroll.
+ auto&r=a.progress.current;r.ascension=10;r.facts.elite_rooms=1;r.facts.boss_rooms=1;r.gold=600;
+ a.progress.current_discoveries={};a.progress.current_discoveries.add(0,Strike);a.progress.current_discoveries.add(1,WorldRelicAnchor);
+ a.keyboard_only=true;a.pointer.visible=false;
+ a.sync_game_over_presentation();advance_ms(a.game_over_presentation.intro_delay());a.show_game_over_summary();
+ advance_ms(a.game_over_presentation.menu_start()+500);a.render();
+ auto&m=a.game_over_presentation;CHECK(a.game_over_summary&&m.scroll_maximum>0&&m.scroll==0);
+ a.input(Key::Down);CHECK(m.scroll>0&&m.scroll<=m.scroll_maximum);
+ a.pointer_scroll(10000);CHECK(m.scroll==m.scroll_maximum&&a.game_over_focus<0);
+ a.pointer_scroll(-10000);CHECK(m.scroll==0);
+ a.input(Key::Right);CHECK(a.game_over_focus>=0&&m.reveal_focus);const int first=a.game_over_focus;
+ a.input(Key::Left);CHECK(a.game_over_focus!=first&&m.reveal_focus);a.render();
+ CHECK(!m.reveal_focus&&m.scroll>0&&m.scroll<=m.scroll_maximum);
+ bool visible=false;for(unsigned i=0;i<a.hit_count;++i)if(a.hits[i].kind==HitKind::GameOverDetail&&a.hits[i].value==a.game_over_focus)visible=true;
+ CHECK(visible);a.input(Key::Up);CHECK(a.game_over_focus<0&&m.scroll<=m.scroll_maximum);
+ CHECK(save(a.game,after)&&after.size==before.size&&!std::memcmp(before.bytes,after.bytes,before.size));
+}
+int main(){clear_ui_progress(a.progress);a.progress_loaded=true;presentation_timing();score_and_badges();observations();persistence_and_navigation();readable_summary_navigation();
  std::printf("Game-over observed facts: %u checks, UiFloorHistory=%zu UiRunFacts=%zu UiRunDiscoveries=%zu UiRunHistory=%zu UiProgress=%zu App=%zu\n",checks,sizeof(UiFloorHistory),sizeof(UiRunFacts),sizeof(UiRunDiscoveries),sizeof(UiRunHistory),sizeof(UiProgress),sizeof(App));}

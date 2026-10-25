@@ -6,14 +6,10 @@
 namespace spire {
 constexpr unsigned UiProfileCount=3,UiProfileSelectorBytes=8;
 namespace profile_layout {
-constexpr int Width=reference_viewport::project(440),Height=reference_viewport::project(560);
-constexpr int Top=reference_viewport::project((reference_viewport::Height-560)/2);
-// HBox's minimum is 3*440 + 2*24 = 1368, wider than its authored
-// 1328 offset rectangle. Grow-both keeps its children centered; these
-// centers therefore agree with the separately anchored delete buttons.
-constexpr int center(unsigned i){return reference_viewport::project(840+(int(i)-1)*464);}
-constexpr int left(unsigned i){return reference_viewport::project(620+(int(i)-1)*464);}
-constexpr int DeleteTop=reference_viewport::project(reference_viewport::Height-252);
+constexpr int Width=92,Height=145,Top=48;
+constexpr int center(unsigned i){return 62+int(i)*98;}
+constexpr int left(unsigned i){return center(i)-Width/2;}
+constexpr int DeleteTop=198;
 }
 struct UiProfileLabelMotion {
     uint32_t changed=0;unsigned from=0;bool focused=false;

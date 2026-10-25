@@ -3,6 +3,7 @@ bool App::open_ftue(FtueId id,int target){
     (id==FtueId::AscensionSingleplayer?seen_popup(id):seen_ftue(id)))return false;
  ftue.backstop_from=ftue.closing&&map_clock_ms-ftue.closing_at<300?uint16_t(ftue.closing_alpha*(300-(map_clock_ms-ftue.closing_at))/300):0;ftue.closing=false;
  ftue.id=id;ftue.target=int16_t(target);ftue.page=0;ftue.focus=1;ftue.page_direction=0;
+ ftue.text_scroll=ftue.text_maximum=ftue.text_rows=0;
  ftue.opened=ftue.page_started=map_clock_ms;++ftue.serial;ftue.pending&=uint16_t(~ftue_bit(id));
  pointer_cancel();keyword_hover={};hit_count=0;
  // The three-page lesson and the two account popups mark on completion.
@@ -14,10 +15,14 @@ void App::ftue_control(int control){
  if(!ftue.active())return;
  const FtueId id=ftue.id;
  if(id==FtueId::AscensionSingleplayer&&ftue.age(map_clock_ms)<1000)return;
+ if(control==5||control==6){
+  const int step=mx(1,int(ftue.text_rows)-1),next=int(ftue.text_scroll)+(control==5?-step:step);
+  ftue.text_scroll=uint16_t(mn(int(ftue.text_maximum),mx(0,next)));pointer_cancel();return;
+ }
  if(id==FtueId::CombatRules){
-  if(control==2&&ftue.page){--ftue.page;ftue.page_direction=-1;ftue.page_started=map_clock_ms;++ftue.serial;pointer_cancel();return;}
+  if(control==2&&ftue.page){--ftue.page;ftue.page_direction=-1;ftue.page_started=map_clock_ms;ftue.text_scroll=ftue.text_maximum=0;++ftue.serial;pointer_cancel();return;}
   if(control!=3)return;
-  if(ftue.page<2){++ftue.page;ftue.page_direction=1;ftue.page_started=map_clock_ms;++ftue.serial;pointer_cancel();return;}
+  if(ftue.page<2){++ftue.page;ftue.page_direction=1;ftue.page_started=map_clock_ms;ftue.text_scroll=ftue.text_maximum=0;++ftue.serial;pointer_cancel();return;}
   mark_ftue(id);
   ftue.banner=true;ftue.banner_player=false;ftue.banner_at=map_clock_ms;
  }else if(control!=1&&control!=0&&control!=4)return;
@@ -27,7 +32,7 @@ void App::ftue_control(int control){
  ftue.closing_alpha=uint16_t(ftue.backstop_from+(217-ftue.backstop_from)*mn(300u,ftue.age(map_clock_ms))/300);
  ftue.closing_at=map_clock_ms;ftue.closing=true;
  ftue.id=FtueId::Count;ftue.target=-1;ftue.shuffle_waiting=false;++ftue.serial;pointer_cancel();hit_count=0;
- if(id==FtueId::AcceptTutorials){start_selected_run(embark);return;}
+ if(id==FtueId::AcceptTutorials){const bool animated=character_departure.animated_ftue;character_departure.animated_ftue=false;start_selected_run(embark,animated);return;}
  // These are the only source tutorials with a live "sneaky" control.
  // A normal confirmation merely closes the explanation.
  if(control==4&&id==FtueId::CannotPlayCard){ftue.skip_end_turn_check=true;input(Key::EndTurn);ftue.skip_end_turn_check=false;}
@@ -35,6 +40,7 @@ void App::ftue_control(int control){
 }
 bool App::ftue_input(Key key){
  if(!ftue.active())return false;
+ if(key==Key::Up||key==Key::Down){ftue_control(key==Key::Up?5:6);return true;}
  if(ftue.id==FtueId::CombatRules){if(key==Key::Left)ftue_control(2);if(key==Key::Right)ftue_control(3);return true;}
  if(ftue.id==FtueId::AcceptTutorials){
   if(key==Key::Left||key==Key::Right)ftue.focus=uint8_t(key==Key::Right);
@@ -93,6 +99,7 @@ void App::observe_ftue_history(const RunHistoryNotice&notice){
  if(notice.kind==RunHistoryEvent::PotionObtained&&!seen_ftue(FtueId::ObtainPotion))ftue.pending|=ftue_bit(FtueId::ObtainPotion);
 }
 void App::sync_ftues(){
+ if(character_departure.active())return;
  if(!content.has_ftue_assets())return;
  if(ftue.banner&&!ftue.banner_player&&map_clock_ms-ftue.banner_at>=2600){ftue.banner_player=true;turn_banner.begin_player(1,animation);}
  if(ftue.banner&&map_clock_ms-ftue.banner_at>=5100)ftue.banner=false;

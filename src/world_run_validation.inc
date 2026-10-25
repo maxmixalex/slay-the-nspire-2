@@ -12,7 +12,9 @@ bool world_valid_run(const State&s){
     unsigned visited=0;
     for(unsigned a=0;a<WorldActCount;++a){
         const auto&q=w.rooms[a];
-        if(q.ready!=1||q.region>=4||(a==0?q.region>1:q.region!=a+1)||!q.encounter_count||q.encounter_count>MaxWorldEncounterQueue||q.encounter_cursor>64||
+        // ActConsoleCmd can replace the current region without changing its
+        // act index. Region-local pools below still validate every model.
+        if(q.ready!=1||q.region>=4||!q.encounter_count||q.encounter_count>MaxWorldEncounterQueue||q.encounter_cursor>64||
            q.elite_count!=15||q.elite_cursor>64||!q.event_count||q.event_count>MaxWorldEventQueue||q.event_cursor>4096||
            !q.boss_count||q.boss_count>2||q.boss_cursor>q.boss_count||q.ancient==0||q.ancient>=unsigned(OriginalEventId::Count))return false;
         if(q.boss_count==2&&(a!=2||w.ascension<10||q.bosses[0]==q.bosses[1]))return false;

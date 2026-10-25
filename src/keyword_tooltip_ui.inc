@@ -1,6 +1,6 @@
 // Card hover ownership and content follow the pinned CardModel/NHoverTipSet.
-// Original 5px text flows into 69px columns. The calculator adapter pages
-// only when the available viewport cannot contain the whole associated set. It adds no gameplay hits, RNG calls or save fields.
+// LCD text uses readable10px columns, and pages when the available viewport
+// cannot contain the associated set. It adds no RNG calls or save fields.
 struct HoverTipSpec {HoverTipKind kind;const char*key;uint8_t flags;};
 struct CardHoverCatalog {uint16_t first;uint8_t count,flags;uint32_t order;};
 #include "keyword_hover_catalog.inc"
@@ -220,8 +220,9 @@ void format_card_hover_tip(const App&a,const CardHoverTarget&owner,const HoverTi
         a.localized_text("intents",key,body,body_cap,tip.actor-1,tip.actor);return;
     }
     if(tip.kind==HoverTipKind::Description){
+        if(owner.event_option>=0){native_event_option(a,owner.event_option,false,title,title_cap);native_event_option(a,owner.event_option,true,body,body_cap);return;}
         TextBuffer name{title,title_cap,0,&a.content};name.text(a.content.card_string(owner.card.kind));if(owner.card.upgraded)name.ch('+');
-        a.card_description(owner.card,card_targets_enemy(a.game,owner.card)?a.target:-1,body,body_cap,owner.instance,owner.deck,owner.card_facts());return;
+        a.card_description(owner.card,a.card_preview_target(owner.instance),body,body_cap,owner.instance,owner.deck,owner.card_facts());return;
     }
     if(tip.kind==HoverTipKind::Card){
         TextBuffer name{title,title_cap,0,&a.content};name.text(a.content.card_string(tip.card.kind));if(tip.card.upgraded)name.ch('+');
@@ -243,7 +244,7 @@ void format_card_hover_tip(const App&a,const CardHoverTarget&owner,const HoverTi
     int model=-1;if(tip.kind==HoverTipKind::Power)for(unsigned i=0;i<EnemyPowerCount;++i)if(wt_equal(tip.key,world_enemy_power_keys[i])){model=int(i);break;}
     HoverTextContext context{{&a,table,{},model,tip.actor,tip.amount,owner.card,owner.instance,owner.deck,owner.card_facts()},&tip};
     auto format=[&](const char*suffix,char*out,size_t cap){if(!cap)return;char key[160]{},raw[4096]{};TextBuffer k{key,sizeof key,0};k.text(tip.key);k.text(suffix);
-        wt_model_key(context.world,key);TextBuffer source{raw,sizeof raw,0};source.text(a.content.world_string(table,key));LocalizedTemplate(out,cap,hover_text_value,&context,a.content.world_title("static_hover_tips","ENERGY_COUNT"),a.content.world_title("static_hover_tips","STAR_COUNT"),a.content.english()).format(raw);};
+        wt_model_key(context.world,key);TextBuffer source{raw,sizeof raw,0};source.text(a.content.world_string(table,key));LocalizedTemplate(out,cap,hover_text_value,&context,a.content.world_title("static_hover_tips","ENERGY_COUNT"),a.content.world_title("static_hover_tips","STAR_COUNT"),a.content.english()).for_language(a.content.language()).format(raw);};
     format(".title",title,title_cap);format(tip.smart?".smartDescription":".description",body,body_cap);
     if(body_cap&&!*body&&tip.smart)format(".description",body,body_cap);
 }
@@ -251,15 +252,18 @@ void format_card_hover_tip(const App&a,const CardHoverTarget&owner,const HoverTi
 static bool hover_compact_event(const CardHoverTarget&owner){return owner.event_option>=0&&owner.owner.w>240&&!owner.detail;}
 static HoverPage hover_page(Canvas&c,const CardHoverTarget&owner,const HoverTipList&tips,int selected){
     const bool details=owner.detail&&c.a.keyword_hover.details,inspect=owner.detail&&!details;
-    const HoverRect column=details?HoverRect{13,52,SourceHoverWidth,139}:inspect?
-        HoverRect{mn(318-SourceHoverWidth,owner.owner.x+owner.owner.w+1),owner.owner.y,SourceHoverWidth,235-owner.owner.y}:keyword_hover_column(owner);
+    int card_count=0;for(unsigned i=0;i<tips.count;++i)if(tips.items[i].kind==HoverTipKind::Card)++card_count;
+    // Associated cards share the inspector's right column vertically. They
+    // must not cover its text or the enlarged primary card on the left.
+    const int card_w=(details||inspect)?69:46,card_h=(details||inspect)?96:62,card_step=card_h+1;
+    const HoverRect column=details?HoverRect{8,32,card_count?225:145,178}:inspect?
+        HoverRect{212,8,104,card_count?109:209}:keyword_hover_column(owner);
     int direction=column.x<owner.owner.x?-1:1;if(owner.relic>=0)direction=owner.owner.x>240?-1:1;
     if(owner.power>=0||owner.creature>=0)direction=owner.power_left?-1:1;
     if(owner.merchant)direction=owner.merchant_left?-1:1;
-    int card_count=0;for(unsigned i=0;i<tips.count;++i)if(tips.items[i].kind==HoverTipKind::Card)++card_count;
     const int space=direction<0?column.x-3:317-column.x-column.w;
     const bool cards_need_room=card_count&&(hover_compact_event(owner)||(direction>0?owner.owner.x<50:owner.owner.x+owner.owner.w+47>317));
-    const int columns=details?(card_count?3:4):inspect?1:mn(3,mx(1,1+(space-(cards_need_room?47:0))/(column.w+1)));
+    const int columns=details?(card_count?1:2):inspect?1:mn(3,mx(1,1+(space-(cards_need_room?47:0))/(column.w+1)));
     const int step=source_hover_step(c),overhead=source_hover_overhead(c),minimum=overhead+step;
     int page=0,lane=0,y=0;HoverPage result{};
     for(unsigned i=0;i<tips.count;++i){
@@ -285,9 +289,10 @@ static HoverPage hover_page(Canvas&c,const CardHoverTarget&owner,const HoverTipL
     }
     // CardHoverTip is a separate 239x323 source container with a 0.75 card;
     // it has no duplicate title or body beside its actual card face.
-    const int cards_per_page=mx(1,(column.h+1)/63),card_pages=mx(1,(card_count+cards_per_page-1)/cards_per_page);
+    const int cards_per_page=inspect?1:mx(1,(column.h+1)/card_step),card_pages=mx(1,(card_count+cards_per_page-1)/cards_per_page);
     int card_x=inspect?owner.owner.x-46:direction>0?owner.owner.x-47:owner.owner.x+owner.owner.w+1;
-    if(details)card_x=13+3*70;
+    if(details)card_x=243;
+    if(inspect)card_x=column.x+(column.w-card_w)/2;
     if(hover_compact_event(owner))card_x=column.x+columns*(column.w+1);
     if((owner.power>=0||owner.creature>=0||owner.merchant)&&!details&&!inspect&&card_count&&result.count){
         // NHoverTipSet.CorrectHorizontalOverflow moves the actual containers
@@ -298,13 +303,13 @@ static HoverPage hover_page(Canvas&c,const CardHoverTarget&owner,const HoverTipL
         else if(card_x+46>317||right>317){card_x=right-46;shift=-47;}
         else if(card_x<3||left<3){card_x=left;shift=47;}
         for(unsigned i=0;i<result.count;++i)result.pieces[i].box.x+=shift;
-    }else if(card_x<3||card_x+46>317)card_x=direction>0?column.x+columns*(column.w+1):column.x-(columns-1)*(column.w+1)-47;
-    card_x=mx(3,mn(271,card_x));
-    const int visible_cards=mx(0,mn(cards_per_page,card_count-selected*cards_per_page)),card_height=mx(0,visible_cards*63-1);
-    int card_top=details?column.y:mn(mx(column.y,owner.owner.y),column.y+column.h-card_height);
+    }else if(card_x<3||card_x+card_w>317)card_x=direction>0?column.x+columns*(column.w+1):column.x-(columns-1)*(column.w+1)-card_w-1;
+    card_x=mx(3,mn(317-card_w,card_x));
+    const int visible_cards=mx(0,mn(cards_per_page,card_count-selected*cards_per_page)),card_height=mx(0,visible_cards*card_step-1);
+    int card_top=inspect?121:details?column.y:mn(mx(column.y,owner.owner.y),column.y+column.h-card_height);
     if(owner.relic>=0&&!owner.inspect_relic&&!owner.merchant&&text_top+text_height+1+card_height<=column.y+column.h){card_x=column.x;card_top=text_top+text_height+1;}
     int card=0;for(unsigned i=0;i<tips.count;++i)if(tips.items[i].kind==HoverTipKind::Card){
-        if(card/cards_per_page==selected&&result.count<MaxCardHoverTips)result.pieces[result.count++]={i,0,0,{card_x,card_top+(card%cards_per_page)*63,46,62}};
+        if(card/cards_per_page==selected&&result.count<MaxCardHoverTips)result.pieces[result.count++]={i,0,0,{card_x,card_top+(card%cards_per_page)*card_step,card_w,card_h}};
         ++card;
     }
     result.pages=mx(page+1,card_pages);return result;
@@ -314,7 +319,7 @@ static void draw_hover_piece(Canvas&c,const CardHoverTarget&owner,const HoverTip
     const auto&tip=tips.items[piece.tip];const auto&r=piece.box;char title[160]{},body[2048]{};
     format_card_hover_tip(c.a,owner,tip,title,sizeof title,body,sizeof body);
     if(tip.kind==HoverTipKind::Card){
-        const EventCardFacts canonical{};draw_card_face(c,tip.card,r.x+1,r.y,43,60,cost(tip.card),-2,tip.amount>0?tip.amount-1:-1,-1,tip.has_facts?&tip.facts:&canonical,body);return;
+        const EventCardFacts canonical{};draw_card_face(c,tip.card,r.x+1,r.y,r.w-3,r.h-2,cost(tip.card),-2,tip.amount>0?tip.amount-1:-1,-1,tip.has_facts?&tip.facts:&canonical,body);return;
     }
     source_hover_skin(c,r,tip.debuff);int icon=-1;
     if(tip.kind==HoverTipKind::Relic){
@@ -346,7 +351,13 @@ static void collect_visible_hover_tips(Canvas&c,const CardHoverTarget&owner,Hove
     collect_keyword_hover_tips(c.a,owner,tips);
     if(owner.inspect_relic)return;
     bool truncated=owner.detail&&c.a.card_inspect.description_truncated;
-    if(!owner.detail){
+    if(owner.event_option>=0&&!owner.merchant){
+        char title[256]{},body[4096]{},combined[4480]{};
+        native_event_option(c.a,owner.event_option,false,title,sizeof title);native_event_option(c.a,owner.event_option,true,body,sizeof body);
+        TextBuffer full{combined,sizeof combined,0};full.text(title);if(*body){full.ch('\n');full.text(body);}
+        if(ui_ancient_event(c.a.game.original_events.id))truncated=ancient_text_rows(c,combined,ancient_layout::OptionsW-38)>3;
+        else truncated=native_room_compact_plan(c,combined,198,36).truncated;
+    }else if(!owner.detail){
         if(owner.event_option>=0||owner.instance<0||c.a.library||c.a.panel||
            !c.a.hand_can_focus()||!c.a.hand_focus||owner.instance>=c.a.game.card_count)return;
         truncated=hand_tile(c,owner.instance).description_truncated;
@@ -354,7 +365,7 @@ static void collect_visible_hover_tips(Canvas&c,const CardHoverTarget&owner,Hove
     if(!truncated)return;
     if(tips.count==MaxCardHoverTips){--tips.count;tips.overflow=true;}
     for(unsigned i=tips.count;i;i--)tips.items[i]=tips.items[i-1];
-    HoverTip full{};full.kind=HoverTipKind::Description;full.key=definitions[owner.card.kind].key;full.card=owner.card;full.instanced=true;
+    HoverTip full{};full.kind=HoverTipKind::Description;full.key=owner.event_option>=0?"EVENT_OPTION_DESCRIPTION":definitions[owner.card.kind].key;full.card=owner.card;full.instanced=true;
     tips.items[0]=full;++tips.count;
 }
 static void keyword_tooltips(Canvas&c){
@@ -369,7 +380,7 @@ static void keyword_tooltips(Canvas&c){
         else if(tip.kind==HoverTipKind::Potion)a.discover_potion(Potion(tip.amount));
     }
     const bool detail=owner.detail&&a.keyword_hover.details;
-    if(detail){c.dim(11,47,298,155,250);}
+    if(detail){c.dim(3,25,314,194,250);}
     if(!tips.count){if(detail){c.centered("这张牌没有关联词条。",18,102,284,12,Muted);
         c.centered(owner.event_option>=0?"返回事件":"返回",18,192,284,10,Gold);c.hit(18,190,284,13,HitKind::Command,int(Key::Statuses));}return;}
     HoverPage page=hover_page(c,owner,tips,a.keyword_hover.page);
@@ -377,18 +388,18 @@ static void keyword_tooltips(Canvas&c){
     for(unsigned i=0;i<page.count;++i)draw_hover_piece(c,owner,tips,page.pieces[i]);
     if(!page.count)return;
     char footer[96]{};TextBuffer text{footer,sizeof footer,0,&c.a.content};text.number(a.keyword_hover.page+1);text.ch('/');text.number(page.pages);
-    if(detail){if(page.pages>1)c.centered(footer,12,192,296,10,Gold);
+    if(detail){if(page.pages>1)c.centered(footer,12,219,296,10,Gold);
         // Existing command dispatch keeps these controls modal and cancels a
         // captured release correctly; hover panels themselves remain passive.
-        c.hit(12,190,65,13,HitKind::Command,int(Key::Up),a.keyword_hover.page>0);
-        c.hit(243,190,65,13,HitKind::Command,int(Key::Down),a.keyword_hover.page+1<page.pages);
-        c.hit(78,190,164,13,HitKind::Command,int(Key::Statuses));
+        c.hit(12,216,65,22,HitKind::Command,int(Key::Up),a.keyword_hover.page>0);
+        c.hit(243,216,65,22,HitKind::Command,int(Key::Down),a.keyword_hover.page+1<page.pages);
+        c.hit(78,216,164,22,HitKind::Command,int(Key::Statuses));
     }else if(owner.detail&&page.pages>1){
-        c.rect(248,230,69,8,Panel);c.centered(footer,248,230,69,source_hover_size(c),Gold);
-        c.hit(248,230,30,8,HitKind::Scroll,-1,a.keyword_hover.page>0);
-        c.hit(287,230,30,8,HitKind::Scroll,1,a.keyword_hover.page+1<page.pages);
+        c.rect(212,222,104,16,Panel);c.centered(footer,212,224,104,source_hover_size(c),Gold);
+        c.hit(212,222,45,16,HitKind::Scroll,-1,a.keyword_hover.page>0);
+        c.hit(271,222,45,16,HitKind::Scroll,1,a.keyword_hover.page+1<page.pages);
     }else if(page.pages>1){
-        const auto column=keyword_hover_column(owner);const int foot_y=hover_compact_event(owner)?column.y+column.h+1:219;c.rect(column.x,foot_y,column.w,8,Panel);c.centered(footer,column.x,foot_y,column.w,source_hover_size(c),Gold);
+        const auto column=keyword_hover_column(owner);const int foot_y=hover_compact_event(owner)?column.y+column.h+1:219;c.rect(column.x,foot_y,column.w,12,Panel);c.centered(footer,column.x,foot_y,column.w,source_hover_size(c),Gold);
     }
 }
 bool keyword_hover_scroll(App&a,int rows){

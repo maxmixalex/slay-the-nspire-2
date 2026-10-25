@@ -8,10 +8,12 @@ struct Fraction {
     unsigned smooth(unsigned value)const{
         if(!divisor||value>=divisor)return Full;
         // For value<divisor, value*floor(2^32/divisor) fits uint32.
-        // The estimate is at most two low for our denominator<=75000.
+        // The estimate is at most three low for denominator<=150000,
+        // including NCardHighlight.AnimFlash's temporary .15 width.
         // Unsigned wrap preserves the small positive remainder exactly.
         unsigned q=(value*reciprocal)>>16;
         unsigned remainder=(value<<16)-q*divisor;
+        if(remainder>=divisor){++q;remainder-=divisor;}
         if(remainder>=divisor){++q;remainder-=divisor;}
         if(remainder>=divisor)++q;
         const unsigned q2=(q*q)>>16;
@@ -31,8 +33,8 @@ inline unsigned source_alpha(uint16_t alpha){
 struct Context {
     Fraction edge;
     unsigned time;
-    explicit Context(unsigned width,uint32_t milliseconds):
-        edge(unsigned(uint64_t(width>MaximumWidth?MaximumWidth:width)*1000000/Full)),
+    explicit Context(unsigned width,uint32_t milliseconds,bool flash=false):
+        edge(unsigned(uint64_t(width>MaximumWidth*(flash?2u:1u)?MaximumWidth*(flash?2u:1u):width)*1000000/Full)),
         time((milliseconds%2000)*30){}
     unsigned transparent_through()const{
         // The existing early return is floor(alpha*980000/65535) <=

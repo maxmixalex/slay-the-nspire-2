@@ -48,19 +48,21 @@ static void crystal_sphere_layer(Canvas&c,bool fog,crystal_shader::Phase phase){
 static void crystal_dialogue(Canvas&c){
  auto&a=c.a;const auto&m=a.crystal_presentation;const uint32_t age=a.map_clock_ms-m.dialogue_start;
  const unsigned alpha=m.dialogue_alpha(a.map_clock_ms);if(!alpha)return;
- const int y=46-15*(int(room_curve::Q)-room_curve::back_out(room_curve::linear(age,500)))/int(room_curve::Q);
+ // A readable bubble occupies the clear strip above the unchanged board.
+ // Preserve the source's entrance/reveal timing and slight horizontal drift.
+ const int y=23-12*(int(room_curve::Q)-room_curve::back_out(room_curve::linear(age,500)))/int(room_curve::Q);
+ const int center=160+m.dialogue_x-218;
  Canvas layer=c;layer.opacity=uint8_t(div255(layer.opacity*alpha));
- const auto p=a.content.image(a.content.ui_image(I8_CrystalDialogue));
  const unsigned scale=1365+2731*room_curve::expo_out(age,500)/room_curve::Q;
- const int width=p.w*int(scale)/4096,height=p.h*int(scale)/4096;
+ const int width=260*int(scale)/4096,height=52*int(scale)/4096;
  Canvas shadow=layer;shadow.tint_red=shadow.tint_green=shadow.tint_blue=0;
- shadow.ui(I8_CrystalDialogue,m.dialogue_x-8-width/2,y-5-height/2+1,width,height,64);
- layer.ui(I8_CrystalDialogue,m.dialogue_x-8-width/2,y-5-height/2,width,height);
+ shadow.ui(I8_CrystalDialogue,center-width/2,y+(52-height)/2+1,width,height,64);
+ layer.ui(I8_CrystalDialogue,center-width/2,y+(52-height)/2,width,height);
  char key[96]{},text[512]{};TextBuffer b{key,sizeof key,0};b.text("CRYSTAL_SPHERE.banter.");
  b.text(m.dialogue==1?"START.":m.dialogue==2?"REVEAL_GOOD.":m.dialogue==3?"REVEAL_BAD.":"END.");b.number(m.line);
  a.localized_text("events",key,text,sizeof text);layer.opacity=uint8_t(div255(layer.opacity*191));
  layer.text_visible_characters=room_rich_characters(text)*room_curve::linear(age,400)/room_curve::Q;
- layer.fitted(text,m.dialogue_x-35,y-13,54,25,6,6,rgb(0,0,0),true,true,true,false);
+ layer.fitted(text,center-114,y+7,228,35,10,10,rgb(0,0,0),true,false,false,false);
 }
 static bool crystal_backdrop(Canvas&layer){
  auto&a=layer.a;const auto&e=a.game.original_events;auto&motion=a.crystal_presentation;
@@ -100,23 +102,28 @@ static void crystal_screen(Canvas&c){
  }
  char text[2048]{};
  if(!e.finished){
-  a.localized_text("events","CRYSTAL_SPHERE.minigame.divinationsRemain",text,sizeof text);layer.text(text,12,223,6,rgb(255,246,226),220);
-  for(int index=0;index<2;++index){const int tool=index?1:2,x=240,y=65+index*29,w=75,h=25;
+  a.localized_text("events","CRYSTAL_SPHERE.minigame.divinationsRemain",text,sizeof text);layer.fitted(text,8,219,192,20,10,10,rgb(255,246,226),true,false,false,true);
+  for(int index=0;index<2;++index){const int tool=index?1:2,x=206,y=76+index*33,w=110,h=30;
    const bool hover=a.pointer.visible&&a.pointer.x>=x&&a.pointer.x<x+w&&a.pointer.y>=y&&a.pointer.y<y+h;
-   Canvas button=layer;button.font_face=5;button.brightness=hover?255:204;
+   Canvas button=layer;button.font_face=a.content.original_label_fonts()?5:0;button.brightness=hover?255:204;
    button.picture(a.content.world_image("crystal","DIVINE_BUTTON"),x,y,w,h);
    if(e.crystal_tool==tool)layer.picture(a.content.world_image("crystal","DIVINE_BUTTON_OUTLINE"),x,y,w,h);
-   layer.picture(a.content.world_image("crystal",tool==1?"SMALL_DIVINATION_ICON":"BIG_DIVINATION_ICON"),x+8,y+4,16,16);
+   layer.picture(a.content.world_image("crystal",tool==1?"SMALL_DIVINATION_ICON":"BIG_DIVINATION_ICON"),x+6,y+5,20,20);
    a.localized_text("events",tool==1?"CRYSTAL_SPHERE.button.DIVINATION_LABEL_SMALL":"CRYSTAL_SPHERE.button.DIVINATION_LABEL_BIG",text,sizeof text);
-   button.fitted(text,x+25,y+4,45,17,8,6,rgb(255,246,226),true,false,true,false);
+   button.fitted(text,x+29,y+3,75,25,10,10,rgb(255,246,226),true,false,false,true);
    c.action(x,y,w,h,tool==1?UiAction::CrystalSmall:UiAction::CrystalLarge,enabled);
   }
   Canvas instructions=layer;instructions.tint_red=4;instructions.tint_green=0;instructions.tint_blue=40;
-  instructions.nine_ui(I7_TinyPanel,240,128,75,89,2,2,2,2,192);
+  instructions.nine_ui(I7_TinyPanel,206,143,110,95,2,2,2,2,224);
   a.localized_text("events","CRYSTAL_SPHERE.minigame.instructions.title",text,sizeof text);
-  layer.fitted(text,244,132,67,12,6,6,rgb(254,209,0),true,true,true,false);
+  layer.fitted(text,211,147,100,24,10,10,rgb(254,209,0),true,false,false,true);
   a.localized_text("events","CRYSTAL_SPHERE.minigame.instructions.description",text,sizeof text);
-  layer.fitted(text,245,146,65,68,6,6,rgb(255,246,226),true,false,false,false);
+  layer.paragraph(text,212,175,98,3,0,10,rgb(255,246,226));
+  // Keep the instructions readable at one fixed LCD size. The existing
+  // article reader provides the whole original text with keyboard/wheel
+  // scrolling, so longer translations never require a microscopic font.
+  layer.centered("全文 I",208,221,106,10,Gold);
+  c.action(206,143,110,95,UiAction::ReadEvent);
  }else{
   a.cursor=0;
   const char*proceed=a.content.world_string("gameplay_ui","PROCEED_BUTTON");

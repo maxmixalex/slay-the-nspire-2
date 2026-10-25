@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Package matching private calculator resources and an offline browser player."""
+"""Package matching private calculator resources, with an optional browser player."""
 from __future__ import annotations
 
 import argparse
@@ -117,13 +117,78 @@ Both launchers share the save location. An explicit Save writes the modified run
 完整指令 / Full command syntax:
 https://github.com/maxmixalex/slay-the-nspire-2/blob/'''+info['runtime_checkpoint']+'''/docs/debug-commands-0.17.md
 '''
+    if info.get('calculator_only'):
+        start=text.index('离线 HTML 可直接')
+        end=text.index('\n版本 / Build',start)
+        text=text[:start]+'''UI11 可读性与语言 / Readability and languages
+主要正文使用10px、标题12px或更大；长文可滚动或翻页。I 打开完整卡牌详情。
+地图图例按 I 展开，再按 I 或 Esc 收起；教学长文用8/2滚动。
+图鉴长名称使用双行显示，行动较多时可翻页；原有游戏规则与存档保持兼容。
+Main body text uses 10px, with larger headings. Long text scrolls or pages.
+I opens full card details or the map legend. Use 8/2 to scroll long tutorials.
+补充语言包中的每个 nSpire2.<语言代码>.tns 都可单独复制到同一文件夹。
+只安装需要的语言；无需把16种语言全部复制到计算器。主菜单设置会列出已安装语言。
+Install individual nSpire2.<locale>.tns files from the optional language archive.
+Settings lists installed languages. All sixteen are supported; install only those needed.
+本版不包含WASM/浏览器产物；界面与运行性能在Firebird计算器模拟器中验证。
+This release contains the calculator build. UI and performance validation uses Firebird.
+\n'''+text[end:]
+    if info['resource_format'] >= 40:
+        start=text.index('操作 / Controls')
+        end=text.index('\nUI11 可读性与语言',start) if info.get('calculator_only') else text.index('\n离线 HTML 可直接',start)
+        text=text[:start]+'''操作 / Controls
+触摸板四边按下用于方向导航，中心用于点击；纯键盘模式下中心键选择。
+数字 1–9、0 直接选择第 1–10 张手牌。Enter 进入指向/确认，左右换目标，Esc 取消。
+Tab 地图；Doc 牌组；Home/On 抽牌堆；Del 弃牌堆；Var 消耗牌堆。
+Menu 结束回合；Shift 按住查看选牌界面下面的战场；Ctrl 在纯键盘模式下进入顶部栏。
+I 详情/地图图例，C 百科，V 状态，P 药水，R 遗物，O 读取；Esc 返回或暂停。
+设置中的两套键位可分别修改。只自动迁移未改动过的旧默认键位，保留自定义设置。
+长按确认默认关闭；开启后按住 Menu 超过半秒，提前松开或移出会取消结束回合。
+Touchpad edge presses navigate; the centre clicks, or selects in keyboard-only mode.
+Digits 1–9 and 0 select hand slots 1–10. Enter aims/confirms; arrows choose a target;
+Esc cancels. Tab map; Doc deck; Home/On draw pile; Del discard; Var exhaust.
+Menu ends the turn. Hold Shift to peek below a combat selection. Ctrl focuses
+the top bar in keyboard-only mode. Settings has two separately remappable banks.
+Untouched old defaults migrate automatically; custom bindings remain unchanged.
+I details/map legend; C compendium; V statuses; P potions; R relics; O load.
+Use the pause menu to save. With Long Press Confirmations enabled, hold Menu
+for more than half a second; releasing early cancels the turn-end action.
+
+原版控制台 / Developer console
+按 Flag（Enter 上方的输入法切换键）打开/关闭控制台，直接输入命令，Enter 执行。
+Tab 补全命令和模型名；方向键编辑或查看历史；Esc 取消补全/关闭控制台。
+输入 help 查看命令，help card 等查看语法；例如 gold 10、card STRIKE_IRONCLAD、room Shop。
+命令直接修改当前游戏，但本身不覆盖上次存档；主动保存会写入修改后的局面。
+The normal launcher includes the original command console. Flag toggles it;
+type commands and press Enter. Tab completes names, arrows edit/browse history,
+and Esc cancels completion or closes the console. Use help or help card for syntax.
+Commands change the current game without autosaving over the previous checkpoint;
+an explicit Save persists the changed run. Desktop/network-only services report
+that they are unavailable on this offline calculator.
+'''+text[end:]
+        text=text.replace('UI11 可读性与语言 / Readability and languages',
+                          'UI12 可读性与语言 / Readability and languages')
+        text=text.replace('地图图例按 I 展开，再按 I 或 Esc 收起；教学长文用8/2滚动。',
+                          '地图图例按 I 或右下角按钮展开，再按 I 或 Esc 收起；长文用触摸板上下键滚动。')
+        text=text.replace('I opens full card details or the map legend. Use 8/2 to scroll long tutorials.',
+                          'I opens full card details or the map legend. Use touchpad Up/Down to scroll long text.')
+    if info.get('local_checkpoints'):
+        text=text.replace('Runtime source: https://github.com/maxmixalex/slay-the-nspire-2/tree/'+info['runtime_checkpoint'],
+                          'Runtime source checkpoint (local): '+info['runtime_checkpoint'])
+        text=text.replace('Resource converter: https://github.com/maxmixalex/slay-the-nspire-2/tree/'+info['resource_checkpoint'],
+                          'Resource converter checkpoint (local): '+info['resource_checkpoint']+
+                          '\nRepository: https://github.com/maxmixalex/slay-the-nspire-2')
     return text
 
 
 def main():
     p = argparse.ArgumentParser(description=__doc__)
-    for name in ('launcher', 'common', 'eng', 'zhs', 'wasm', 'output'):
+    for name in ('launcher', 'common', 'eng', 'zhs', 'output'):
         p.add_argument('--' + name, type=Path, required=True)
+    p.add_argument('--wasm',type=Path)
+    p.add_argument('--calculator-only',action='store_true',help='Do not build or package a browser player')
+    p.add_argument('--local-checkpoints',action='store_true',help='Record local source receipts without claiming published Git refs')
+    p.add_argument('--optional-locales',type=Path,help='Verified language editions directory; package additional locales separately')
     p.add_argument('--runtime-checkpoint', required=True)
     p.add_argument('--resource-checkpoint', required=True)
     p.add_argument('--stage', default='ui4', help='Release suffix, for example ui4')
@@ -137,11 +202,15 @@ def main():
             p.error('Checkpoints must be full Git commit IDs')
     paths = {'nSpire2.tns': args.launcher, 'nSpire2.common.tns': args.common,
              'nSpire2.eng.tns': args.eng, 'nSpire2.zhs.tns': args.zhs}
-    if bool(args.debug_launcher) != bool(args.debug_wasm):
+    if not args.calculator_only and not args.wasm:
+        p.error('Provide --wasm or choose --calculator-only')
+    if not args.calculator_only and bool(args.debug_launcher) != bool(args.debug_wasm):
         p.error('Provide both optional debug runtimes together')
+    if args.calculator_only and args.debug_wasm:
+        p.error('--calculator-only does not accept --debug-wasm')
     if args.debug_launcher:
         paths['nSpire2-debug.tns'] = args.debug_launcher
-    for path in (*paths.values(), args.wasm, *([args.debug_wasm] if args.debug_wasm else [])):
+    for path in (*paths.values(), *([args.wasm] if args.wasm else []), *([args.debug_wasm] if args.debug_wasm else [])):
         if not path.is_file():
             p.error('Input file is missing: ' + str(path))
     args.output.mkdir(parents=True, exist_ok=True)
@@ -155,6 +224,7 @@ def main():
                 runtime_checkpoint=args.runtime_checkpoint,
                 resource_checkpoint=args.resource_checkpoint,
                 debug_launcher=bool(args.debug_launcher),
+                calculator_only=args.calculator_only,local_checkpoints=args.local_checkpoints,
                 files={name: path.stat().st_size for name, path in paths.items()})
     stem = f'Slay-the-Nspire-2-0.17-{args.stage}-bilingual'
     archive = args.output / (stem + '-calculator.zip')
@@ -179,17 +249,39 @@ def main():
         for name, data in texts.items():
             if check.read(name) != data:
                 raise ValueError('Archive text differs: ' + name)
-    package_runtime(destination=offline, common_path=args.common, eng_path=args.eng,
-                    zhs_path=args.zhs, wasm_path=args.wasm,
-                    source_checkpoint=args.runtime_checkpoint)
+    if not args.calculator_only:
+        package_runtime(destination=offline, common_path=args.common, eng_path=args.eng,
+                        zhs_path=args.zhs, wasm_path=args.wasm,
+                        source_checkpoint=args.runtime_checkpoint)
     debug_offline = None
     if args.debug_wasm:
         debug_offline = args.output / (stem + '-debug-offline.html')
         package_runtime(destination=debug_offline, common_path=args.common, eng_path=args.eng,
                         zhs_path=args.zhs, wasm_path=args.debug_wasm,
                         source_checkpoint=args.runtime_checkpoint)
+    optional=None
+    if args.optional_locales:
+        extra={path.name:path for path in sorted(args.optional_locales.glob('nSpire2.*.tns'))
+               if path.name not in ('nSpire2.common.tns','nSpire2.eng.tns','nSpire2.zhs.tns')}
+        if len(extra)!=14 or any(resource_version(path)!=version for path in extra.values()):
+            raise ValueError('Expected the fourteen additional matching original locales')
+        optional=args.output/f'Slay-the-Nspire-2-0.17-{args.stage}-optional-languages.zip'
+        instructions=('只复制需要的语言包，与配套公共包和程序放在同一文件夹，在主菜单设置切换语言。\n'
+                      'Copy only desired language files beside the matching launcher/common file. Select in main-menu Settings.\n'
+                      'English and Simplified Chinese are included in the main calculator archive.\n'+
+                      ''.join(name+'  '+str(path.stat().st_size)+' bytes\n' for name,path in extra.items())).encode()
+        with zipfile.ZipFile(optional,'w',zipfile.ZIP_DEFLATED,compresslevel=6) as out:
+            out.writestr('README.txt',instructions)
+            for name,path in extra.items():out.write(path,name)
+        with zipfile.ZipFile(optional) as check:
+            if set(check.namelist())!=set(extra)|{'README.txt'} or check.read('README.txt')!=instructions:
+                raise ValueError('Optional locale archive members differ')
+            for name,path in extra.items():
+                if check.read(name)!=path.read_bytes():raise ValueError('Optional locale differs: '+name)
     print(json.dumps(dict(calculator=str(archive), calculator_bytes=archive.stat().st_size,
-                          offline=str(offline), offline_bytes=offline.stat().st_size,
+                          offline=str(offline) if not args.calculator_only else None,
+                          offline_bytes=offline.stat().st_size if not args.calculator_only else 0,
+                          optional_locales=str(optional) if optional else None,
                           debug_offline=str(debug_offline) if debug_offline else None,
                           installed_bytes=sum(info['files'].values()), members=len(paths) + len(texts))))
 

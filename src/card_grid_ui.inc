@@ -14,7 +14,7 @@ static LocalizedValue card_grid_victory_value(const void*opaque,const char*key){
 static void card_grid_stats(Canvas&c,CardKind kind,int cx,int cy,int scale){
     const int x=cx-117*scale*4/21000,y=cy-138*scale*4/21000,w=231*scale*4/21000,h=117*scale*4/21000;
     Canvas background=c;background.opacity=uint8_t(div255(unsigned(background.opacity)*186));background.rect(x,y,w,h,0);
-    char label[128]{};LocalizedTemplate text(label,sizeof label,card_grid_victory_value,&c.a.progress.card_wins[kind]);text.format(c.a.content.locale_string("card_library","VICTORIES"));
+    char label[128]{};LocalizedTemplate text(label,sizeof label,card_grid_victory_value,&c.a.progress.card_wins[kind]);text.for_language(c.a.content.language()).format(c.a.content.locale_string("card_library","VICTORIES"));
     // The source30px label inherits the actual holder scale (.8 normally,
     // 1.05 on focus). Render its native5/6px glyphs directly, keeping rich
     // color and alpha; the old8px temporary bitmap changed both shapes.

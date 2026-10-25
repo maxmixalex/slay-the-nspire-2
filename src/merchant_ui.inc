@@ -8,15 +8,15 @@ static void ui_potion_description(const App&a,int p,char*out,size_t size){
  TextBuffer b{out,size,0,&a.content};b.text(potion_desc(p));
 }
 static void merchant_cost_label(Canvas&c,int amount,int x,int y,unsigned scale,bool affordable,bool sale=false,bool card=false){
-    const bool english=c.a.content.english();const unsigned face=source_label_face(english,5);
-    const int size=c.a.content.font_size(MerchantInventoryLayout::size(39,scale),face,false,true);
+    const bool english=c.a.content.english();const unsigned face=source_label_face(c.a.content.original_label_fonts(),5);
+    const int size=c.a.content.font_size(mx(10,MerchantInventoryLayout::size(39,scale)),face,false,true);
     char value[24]{};TextBuffer text{value,sizeof value,0};text.number(amount);
     Glyph glyphs[12];int positions[12];unsigned count=0;int advance=0;
     for(const char*p=value;*p&&count<12;++p){
-        positions[count]=advance+(english?MerchantInventoryLayout::size(int(count)*2,scale):0);
+        positions[count]=advance;
         glyphs[count]=c.a.content.glyph(uint8_t(*p),size,face);advance+=glyphs[count++].advance;
     }
-    const int width=advance+(english?MerchantInventoryLayout::size(int(count)*2,scale):0);
+    const int width=advance;
     const int coin=MerchantInventoryLayout::size(54,scale),gap=MerchantInventoryLayout::size(6,scale),left=x-(coin+gap+width)/2;
     // The source HBox centers its54px coin beside the original39px label.
     // CostLabel's measured baseline, not the glyph's padded bitmap height,
@@ -25,9 +25,8 @@ static void merchant_cost_label(Canvas&c,int amount,int x,int y,unsigned scale,b
     const int origin=y+(baseline*int(scale)*2+72000)/144000-(size+1);
     c.picture(A_Coin,left,y+MerchantInventoryLayout::size(card||!english?2:0,scale),coin,coin);
     Canvas outline=c;outline.opacity=uint8_t(div255(outline.opacity*110));
-    const int radius=MerchantInventoryLayout::size(15,scale),start=left+coin+gap;
-    for(unsigned i=0;i<count;++i)for(int dy=-radius;dy<=radius;++dy)for(int dx=-radius;dx<=radius;++dx)
-        if((dx||dy)&&dx*dx+dy*dy<=radius*radius)outline.glyph(glyphs[i],start+positions[i]+dx,origin+dy,rgb(17,0,0));
+    const int radius=0,start=left+coin+gap;
+    for(unsigned i=0;i<count;++i)outline.glyph(glyphs[i],start+positions[i]+1,origin+1,rgb(17,0,0));
     const auto color=affordable?(sale?rgb(127,255,0):rgb(255,246,226)):rgb(255,85,85);
     for(unsigned i=0;i<count;++i)c.glyph(glyphs[i],start+positions[i],origin,color);
 }
@@ -50,7 +49,9 @@ static void merchant_hand(Canvas&c,bool fake=false){
  const int source_x=int(m.hand_x)*9/32;
  const int degrees=-10+(source_x-770)/5;
  const unsigned sample=unsigned(mn(46,mx(0,(degrees+134)/5)));
- c.ui((fake?I7_FakeMerchantHandStart:I7_MerchantHandStart)+int(sample),m.hand_x/16-MerchantHandPivotX,m.hand_y/16-MerchantHandPivotY);
+ // Keep the fingertip at its source slot while reducing the hand to 75%
+ // on the LCD. The large transparent source canvas is scaled as one mesh.
+ c.ui((fake?I7_FakeMerchantHandStart:I7_MerchantHandStart)+int(sample),m.hand_x/16-120,m.hand_y/16-173,240,180);
 }
 static void merchant_dialogue(Canvas&c,bool fake=false){
  auto&a=c.a;const auto&m=a.room_presentation.merchant;const unsigned alpha=m.dialogue_alpha(a.map_clock_ms);if(!alpha)return;
@@ -62,24 +63,37 @@ static void merchant_dialogue(Canvas&c,bool fake=false){
  const unsigned age=a.map_clock_ms-m.dialogue_start;
  const int node_y=MerchantInventoryLayout::project(271)-18*(int(room_curve::Q)-room_curve::back_out(room_curve::linear(age,500)))/int(room_curve::Q);
  const unsigned scale=1365+2731*room_curve::expo_out(age,500)/room_curve::Q;
- const int width=int((70*scale+2048)/4096),height=int((48*scale+2048)/4096);
- const int center_x=m.dialogue_x-10,center_y=node_y-6;
+ const int width=int((128*scale+2048)/4096),height=int((80*scale+2048)/4096);
+ const int center_x=mn(254,mx(66,int(m.dialogue_x)-10)),center_y=mx(62,node_y-6);
  Canvas bubble=c;bubble.opacity=uint8_t(div255(bubble.opacity*alpha));
  if(a.content.version()>=RoomUi7ContentVersion){
   Canvas shadow=bubble;shadow.tint_red=shadow.tint_green=shadow.tint_blue=0;shadow.opacity=uint8_t(div255(shadow.opacity*64));
   shadow.ui(I7_MerchantDialogue,center_x-width/2,center_y-height/2+1,width,height);
   bubble.ui(I7_MerchantDialogue,center_x-width/2,center_y-height/2,width,height);
- }else{const int skin=a.content.world_image("common","HOVER_TIP");if(skin>=0)bubble.nine_image(skin,center_x-35,center_y-24,70,48,28,22,46,16);}
+ }else{const int skin=a.content.world_image("common","HOVER_TIP");if(skin>=0)bubble.nine_image(skin,center_x-64,center_y-40,128,80,28,22,46,16);}
  bubble.text_visible_characters=room_rich_characters(text)*room_curve::linear(age,400)/room_curve::Q;
  bubble.opacity=uint8_t(div255(bubble.opacity*230));
- // Source MarginContainer (-182,-66)..(98,64), Text's +2px Y offset,
- // and 18..24px native font range share the inventory's uniform 2/9 scale.
- native_room_compact_text(bubble,text,m.dialogue_x-40,node_y-14,62,29,true);
+ native_room_compact_text(bubble,text,center_x-56,center_y-30,112,60,true);
 }
 static void merchant_card(Canvas&c,Card card,int cx,int cy,unsigned scale,bool sold,const EventCardFacts*facts=nullptr){
  if(sold)return;const int w=MerchantInventoryLayout::size(300,scale),h=MerchantInventoryLayout::size(422,scale);
  if(cy+h/2<22||cy-h/2>=240)return;
  draw_card_face(c,card,cx-w/2,cy-h/2,w,h,-2,-2,-1,-1,facts);
+}
+// Rug coverage is immutable for a resource generation and geometry. Cache
+// the actual alpha proof, including false results, instead of rescanning its
+// thousands of samples for every flame, actor and glow on every frame.
+static bool merchant_rug_covers(Canvas&c,int x,int y,int w,int h){
+ struct Entry {int16_t x=0,y=0,w=0,h=0;bool valid=false,covered=false;};
+ static const Content*owner=nullptr;static uint32_t generation=0;static Entry entries[64]{};static unsigned next=0;
+ if(owner!=&c.a.content||generation!=c.a.content.generation()){
+  owner=&c.a.content;generation=c.a.content.generation();next=0;for(auto&e:entries)e.valid=false;
+ }
+ if(c.opacity!=255||c.clip_w!=320||c.clip_h!=240)return false;
+ for(const auto&e:entries)if(e.valid&&e.x==x&&e.y==y&&e.w==w&&e.h==h)return e.covered;
+ const bool covered=c.opaque_picture_covers(c.a.content.image(c.a.content.ui_image(U_MerchantRug)),
+  MerchantInventoryLayout::RugX,MerchantInventoryLayout::RugY,MerchantInventoryLayout::RugW,MerchantInventoryLayout::RugH,x,y,w,h);
+ entries[next]={int16_t(x),int16_t(y),int16_t(w),int16_t(h),true,covered};next=(next+1)%64;return covered;
 }
 static void merchant_room_clip(Canvas&c,int clip,uint32_t milliseconds,bool covered){
     const auto sequence=c.a.content.clip(clip);if(!sequence.count)return;
@@ -90,9 +104,7 @@ static void merchant_room_clip(Canvas&c,int clip,uint32_t milliseconds,bool cove
         // to discover its bounds. The actual rug mask, not its rectangular
         // control or a fixed silhouette, proves every covered screen sample.
         const auto size=c.a.content.image_dimensions(image);
-        if(size.w&&size.h&&c.opaque_picture_covers(c.a.content.image(c.a.content.ui_image(U_MerchantRug)),
-            MerchantInventoryLayout::RugX,MerchantInventoryLayout::RugY,MerchantInventoryLayout::RugW,MerchantInventoryLayout::RugH,
-            x,y,size.w,size.h))return;
+        if(size.w&&size.h&&merchant_rug_covers(c,x,y,size.w,size.h))return;
     }
     c.picture(image,x,y);
 }
@@ -102,6 +114,27 @@ static void merchant_idle(Canvas&c,int clip,bool covered=false){
     // directory stores rounded frame_ms, so select by the original duration.
     const unsigned frame=(c.a.map_clock_ms%MerchantIdleDurationMs)*sequence.count/MerchantIdleDurationMs;
     merchant_room_clip(c,clip,frame*sequence.frame_ms,covered);
+}
+static void merchant_secondary_lights(Canvas&c,bool covered){
+    // merchant_room.tscn candle/bottle lights, projected through its existing
+    // BgContainer and the same1920x1080 camera used by the authored clips.
+    // Flame planes already animate; these are their separate light/cinder nodes.
+    struct Light {int16_t x,y;uint8_t size,alpha;uint32_t color;bool fire;};
+    static constexpr Light lights[]={{12,52,24,72,0xc26121,true},{231,201,24,72,0xc26121,true},
+        {240,207,20,72,0xc26121,true},{275,92,20,72,0xc26121,true},
+        {222,84,47,45,0xbb71ca,false},{272,73,33,52,0xb5702e,false},
+        {284,151,31,32,0x5c73cb,false},{320,160,31,40,0xc26120,false}};
+    for(unsigned i=0;i<sizeof lights/sizeof lights[0];++i){const auto&light=lights[i];
+        const int left=light.x-light.size/2,top=light.y-light.size/2;
+        // Use the same exact opaque-rug proof as the animation planes. The
+        // union also includes the cinders above a candle, not just its glow.
+        const int margin=light.fire?39:light.size/2,above=light.fire?68:light.size/2;
+        if(covered&&merchant_rug_covers(c,light.x-margin,light.y-above,margin*2+2,above+light.size/2+1))continue;
+        const unsigned period=750+i*91;const int sway=room_curve::sine_turn((c.a.map_clock_ms%period)*4096/period+i*509);
+        const unsigned alpha=unsigned(int(light.alpha)+sway*int(light.alpha)/24576);
+        room_vfx_stamp(c,I7_Glow,left,top,light.size,light.size,alpha,light.color);
+        if(light.fire)room_vfx_cinders(c,light.x,light.y,4,c.a.map_clock_ms,0x43414e44u+i,120);
+    }
 }
 static void shop_screen(Canvas&c,bool cull_covered=true){
     auto&a=c.a;auto&s=a.game;auto&motion=a.room_presentation.merchant;motion.set_open(a.shop_open,a.map_clock_ms);const bool registered=a.content.ui_image(U_MerchantBackdrop)>=0&&a.content.clip(AnimMerchantRoomTop).count;
@@ -118,6 +151,7 @@ static void shop_screen(Canvas&c,bool cull_covered=true){
     const bool covered=cull_covered&&a.shop_open&&motion.open&&a.map_clock_ms-motion.start>=1000;
     if(registered){
         c.ui(U_MerchantBackdrop,0,22,320,218);
+        if(effects)merchant_secondary_lights(c,covered);
         if(effects){
             merchant_room_clip(c,AnimMerchantFlamesBehind,a.map_clock_ms%MerchantIdleDurationMs,covered);
             merchant_idle(c,AnimMerchantRoomBottom,covered);
@@ -161,14 +195,15 @@ static void shop_screen(Canvas&c,bool cull_covered=true){
         if(y+MerchantInventoryLayout::FocusH/2<22||y-MerchantInventoryLayout::FocusH/2>=240)continue;
         const Card card=s.world.active?s.world.shop_cards[i]:Card{s.shop_cards[i],0};portraits[portrait_count++]=a.card_face_image(card,-1,-1,s.world.active?&s.world.shop_facts[i]:nullptr);}
     a.content.prepare_images(portraits,portrait_count);
-    for(int i=0;i<ShopCardCount;i++){
-        const int cx=MerchantInventoryLayout::card_x(i),cy=MerchantInventoryLayout::card_y(i)+dy;const bool sold=s.shop_sold&(1u<<i);
-        const unsigned scale=motion.scale(unsigned(i),a.map_clock_ms);const auto r=MerchantInventoryLayout::bounds(unsigned(i),dy);
+    auto draw_stock_card=[&](int i){
+        const int cx=MerchantInventoryLayout::card_x(i),cy=MerchantInventoryLayout::card_y(i)+dy-(i>=5&&i==focus?12:0);const bool sold=s.shop_sold&(1u<<i);
+        const unsigned scale=MerchantInventoryLayout::card_scale(motion.scale(unsigned(i),a.map_clock_ms));const auto r=MerchantInventoryLayout::bounds(unsigned(i),dy);
         merchant_card(c,s.world.active?s.world.shop_cards[i]:Card{s.shop_cards[i],0},cx+motion.wiggle(unsigned(i),a.map_clock_ms),cy,scale,sold,s.world.active?&s.world.shop_facts[i]:nullptr);
         merchant_price(c,i,cx,cy+MerchantInventoryLayout::size(220,scale),scale);
         if(s.world.active&&s.world.shop_sale==i&&!sold){const int sale=a.content.world_image("merchant","SALE_TAG");if(sale>=0)c.picture(sale,cx+MerchantInventoryLayout::size(146,scale)-10,cy-MerchantInventoryLayout::size(153,scale)-8,20,16);}
         if(a.shop_open)c.hit(r.x,mx(22,r.y),r.w,mx(0,r.y+r.h-mx(22,r.y)),HitKind::Choice,i,!sold);
-    }
+    };
+    for(int i=0;i<ShopCardCount;i++)if(i!=focus)draw_stock_card(i);
     for(int i=0;i<3;i++){
         const int x=MerchantInventoryLayout::item_x(i);int item=ShopRelicStart+i,index=-1;bool sold=s.shop_sold&(1u<<item);
         if(s.world.active)index=s.world.shop_relics[i]==NoWorldRelic?-1:s.world.shop_relics[i];else for(int r=0;r<RelicKinds;r++)if(relic_definitions[r].id==s.shop_relics[i])index=r;
@@ -194,9 +229,20 @@ static void shop_screen(Canvas&c,bool cull_covered=true){
     const int remove_size=MerchantInventoryLayout::size(270,remove_scale);const auto remove_rect=MerchantInventoryLayout::bounds(ShopRemove,dy);
     c.ui(remove_image,MerchantInventoryLayout::RemoveX-remove_size/2+motion.wiggle(ShopRemove,a.map_clock_ms),MerchantInventoryLayout::RemoveY+dy-remove_size/2,remove_size,remove_size);
     merchant_price(c,ShopRemove,MerchantInventoryLayout::RemoveX,MerchantInventoryLayout::RemoveY+dy+MerchantInventoryLayout::size(177,remove_scale),remove_scale);
+    if(focus>=0&&focus<ShopCardCount)draw_stock_card(focus);
     if(a.shop_open){c.hit(remove_rect.x,mx(22,remove_rect.y),remove_rect.w,mx(0,remove_rect.y+remove_rect.h-mx(22,remove_rect.y)),HitKind::Choice,ShopRemove,!removed);
-        native_back(c,3,212,52,28,"返回",true,!a.pointer.visible&&a.cursor==ShopLeave);c.hit(0,209,61,31,HitKind::Choice,ShopLeave);}
+        native_back(c,0,211,31,28,"",true,!a.pointer.visible&&a.cursor==ShopLeave);c.hit(0,209,32,31,HitKind::Choice,ShopLeave);}
     merchant_hand(c);merchant_dialogue(c);
+    if(a.shop_open&&focus==ShopRemove&&!removed&&!a.pointer.held){
+        char description[1024]{};const char*title=a.content.world_string("merchant_room","MERCHANT.cardRemovalService.title");
+        const auto amount=[](const void*context,const char*key)->LocalizedValue{
+            const char wanted[]="Amount";unsigned i=0;while(wanted[i]&&key[i]==wanted[i])++i;
+            return !wanted[i]&&!key[i]?LocalizedValue{true,*static_cast<const int*>(context),1,nullptr}:LocalizedValue{};
+        };
+        const int increase=s.world.ascension>=6?50:25;
+        LocalizedTemplate(description,sizeof description,amount,&increase).for_language(a.content.language()).format(a.content.world_string("merchant_room","MERCHANT.cardRemovalService.description"));
+        source_hover_box(c,title,description,MerchantInventoryLayout::RemoveX-SourceHoverWidth-34,55);
+    }
     // NMerchantRelic/Potion expose their complete model hover sets through
     // the shared source-sized layer after the room and its global UI.
 }

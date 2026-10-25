@@ -72,7 +72,7 @@ RewardAcquisitionSnapshot App::reward_acquisition_snapshot()const{
  RewardAcquisitionSnapshot out;out.serial=reward_presentation.serial;out.seed=game.seed;out.run=run_number;
  if(title||paused||help||library||panel||settings_open||map_window.is_open||detail_card>=0||detail_item>=0||status_actor>=0||event_reader)return out;
  const bool cards=game.phase==Phase::Reward&&reward_cards||world_choice_is_card_reward();
- const bool direct=game.phase==Phase::Shop&&shop_open||game.phase==Phase::Event&&game.original_events.active||game.phase==Phase::OriginalEventChoice;
+ const bool direct=game.phase==Phase::Shop&&shop_open||game.phase==Phase::Event&&game.original_events.active||game.phase==Phase::OriginalEventChoice||game.phase==Phase::Treasure&&game.world.active;
  const unsigned mode=reward_list_mode(*this);if(!mode&&!cards&&!direct)return out;
  out.context=cards||direct?2:1;out.deck_count=game.deck_count;out.relic_count=uint16_t(ui_owned_relic_count(game));out.gold=game.gold;
  for(unsigned i=0;i<MaxPotionSlots;++i)out.potions[i]=potion_at(game,i);
@@ -82,6 +82,7 @@ RewardAcquisitionSnapshot App::reward_acquisition_snapshot()const{
  }
  if(!chosen){
   int id=cursor;HitKind kind=HitKind::Choice;
+  if(game.phase==Phase::Treasure){id=int(game.treasure_state?UiAction::TreasureTake:UiAction::TreasureOpen);kind=HitKind::UiAction;}
   if(mode==1){UiAction actions[6];const int count=int(ui_reward_actions(game,actions));if(id<0||id>=count)return RewardAcquisitionSnapshot{};id=int(actions[id]);kind=HitKind::UiAction;}
   else if(game.phase==Phase::WorldRelicChoice||game.phase==Phase::OriginalEventChoice){uint16_t ids[MaxWorldUiChoices];const unsigned count=world_choice_options(ids,MaxWorldUiChoices);if(cursor<0||unsigned(cursor)>=count)return RewardAcquisitionSnapshot{};id=ids[cursor];kind=HitKind::WorldChoice;}
   for(int i=0;i<hit_count;++i)if(hits[i].kind==kind&&hits[i].value==id){chosen=&hits[i];break;}
@@ -113,7 +114,7 @@ void App::sync_reward_presentation(){
  auto&m=reward_presentation;
  if(!m.gold_bound||m.gold_to!=game.gold){m.gold_bound=true;m.gold_from=m.gold_to=game.gold;m.gold_active=false;}
  for(auto&f:m.flights){
-  if(!RewardPresentation::alive(f,map_clock_ms)||
+  if(!RewardPresentation::retained(f,map_clock_ms)||
      (f.kind==RewardPickupKind::Potion&&unsigned(potion_at(game,f.slot))!=f.model)||
      (f.kind==RewardPickupKind::Relic&&ui_owned_relic_id(game,f.slot)!=f.model))f.kind=RewardPickupKind::None;
  }

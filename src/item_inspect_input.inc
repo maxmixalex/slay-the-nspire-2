@@ -49,14 +49,18 @@ void App::move_relic_inspect(int direction){
     // The original keyboard handler also animates a clamped first/last item;
     // invisible pointer arrows have no hit region and cannot wrap around.
     view.index=int16_t(next);view.model=int16_t(detail_item);view.owned=int16_t(detail_owned);
-    view.direction=int8_t(direction<0?-1:1);view.slid=map_clock_ms;keyword_hover={};pointer_cancel();
+    view.direction=int8_t(direction<0?-1:1);view.slid=map_clock_ms;view.scroll_maximum=0;view.reading_keywords=false;detail_scroll=0;keyword_hover={};pointer_cancel();
 }
 bool App::relic_inspect_input(Key key){
     if(detail_item<0)return false;
     sync_relic_inspect();
     if(key==Key::Back)close_relic_inspect();
     else if(key==Key::Left||key==Key::Right)move_relic_inspect(key==Key::Left?-1:1);
-    else if(key==Key::Up||key==Key::Down)keyword_hover_scroll(*this,key==Key::Up?-1:1);
+    else if(key==Key::Statuses)relic_inspect.reading_keywords=!relic_inspect.reading_keywords;
+    else if(key==Key::Up||key==Key::Down){
+        if(relic_inspect.reading_keywords||!relic_inspect.scroll_maximum)keyword_hover_scroll(*this,key==Key::Up?-1:1);
+        else{const int next=detail_scroll+(key==Key::Up?-12:12),maximum=relic_inspect.scroll_maximum;detail_scroll=next<0?0:next>maximum?maximum:next;}
+    }
 #if SPIRE_DEBUG_COMMANDS
     else if(key==Key::EndTurn&&library&&!title&&!paused&&!help&&detail_item>=WorldRelicKinds)ui_action(UiAction::LabPotion);
 #endif

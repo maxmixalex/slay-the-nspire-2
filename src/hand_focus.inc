@@ -24,3 +24,23 @@ struct HandInputFocus {
         else app.hand_focus=false;
     }
 };
+
+// Enemy-specific preview values belong to the card currently being aimed.
+// A retained navigation target must not make every idle card show Vulnerable.
+int App::card_preview_target(int instance)const{
+    if(instance<0||instance>=game.card_count||target<0||target>=game.enemy_count||game.enemies[target].hp<=0||
+       selected_hand_card()!=instance||!card_targets_enemy(game,game.cards[instance],instance))return -1;
+    if(keyboard_card==instance)return target;
+    if(pointer.visible){const auto*hit=hit_at(pointer.x,pointer.y);
+        if(hit&&(hit->kind==HitKind::Enemy||hit->kind==HitKind::EnemyIntent)&&hit->value==target)return target;}
+    return -1;
+}
+void App::combat_play_denied(int instance){
+    const char*key="UNPLAYABLE";
+    if(instance>=0&&instance<game.card_count){
+        if(cost(game,instance)>game.energy)key="NOT_ENOUGH_ENERGY";
+        else if(card_star_cost(game,game.cards[instance],instance)>game.expansion.stars)key="NOT_ENOUGH_STARS";
+
+    }
+    combat_speech_key=key;combat_speech_at=map_clock_ms;
+}

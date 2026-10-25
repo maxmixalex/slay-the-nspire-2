@@ -221,7 +221,10 @@ class PackView:
         for glyph_id, (cp, offset, px, w, h, advance, encoded) in enumerate(self.glyphs):
             require(cp <= 0x10ffff and 0 < px <= (255 if self.version >= 24 else 32) and
                     (px & (31 if self.version >= 28 else 63)) in glyph_sizes and
-                    0 < w <= 40 and 0 < h <= 40 and advance <= 40,
+                    0 < w <= 40 and 0 < h <= 40 and
+                    (advance <= 40 or (self.version >= 40 and
+                     ((advance & 0x8000 and advance & 4095 <= 2560) or
+                      (0x100000 <= cp < 0x100000+95*95 and advance & 0xf000 == 0x4000)))),
                     'Invalid glyph geometry')
             glyph_key = (px << 24) | cp
             require(glyph_key > previous_glyph, 'Glyph keys must be strictly increasing')
@@ -754,7 +757,7 @@ def index_records(raw, count, tile_count):
 class TileReader:
     """Independent host reference decoder for a completed v15 pack."""
     def __init__(self, pack):
-        require(pack.version in (15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39), 'Tiled reader requires version 15 through 39')
+        require(15 <= pack.version <= 40, 'Tiled reader requires version 15 through 40')
         self.pack = pack
         require(pack.base_end + GLOBAL.size <= len(pack.data), 'Truncated tile header')
         fields = GLOBAL.unpack_from(pack.data, pack.base_end)

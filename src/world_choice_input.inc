@@ -87,10 +87,16 @@ void App::confirm_world_choice(){
   if(native==WorldSelectionKind::Enchant&&!choice_selected_count)return;
  }
  if(choice_selected_count<world_choice_min()||choice_selected_count>world_choice_max())return;
+ uint16_t upgrade_ids[RewardPresentation::Upgrades::Capacity]{};unsigned upgrade_count=0;
+ if(native==WorldSelectionKind::Upgrade)for(unsigned i=0;i<choice_selected_count&&upgrade_count<RewardPresentation::Upgrades::Capacity;++i)
+  if(choice_selected[i]<game.deck_count&&!game.deck[choice_selected[i]].upgraded)upgrade_ids[upgrade_count++]=choice_selected[i];
  continue_combat_choice();
  bool done=game.phase==Phase::WorldRelicChoice?world_relic_select(game,choice_selected,choice_selected_count):
   original_event_select(game,choice_selected,choice_selected_count);
- if(done){choice_selected_count=0;choice_revision=game.revision;deck_selection.reset();cursor=0;busy=0;pointer_cancel();}
+ if(done){
+  for(unsigned i=0;i<upgrade_count;++i){const int index=upgrade_ids[i];if(index<game.deck_count&&game.deck[index].upgraded)
+   reward_presentation.upgrades.add(game.deck[index],game.event_cards.deck[index],index,map_clock_ms);}
+  choice_selected_count=0;choice_revision=game.revision;deck_selection.reset();cursor=0;busy=0;pointer_cancel();}
 }
 void App::world_choice_detail(int id){
  if(choice_peeking||id<0||!combat_choice_ready())return;

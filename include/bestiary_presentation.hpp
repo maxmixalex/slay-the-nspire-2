@@ -9,10 +9,12 @@ namespace spire {
 struct BestiaryPresentation {
  static constexpr int Capacity=112,Unit=256;
  static constexpr int Top=reference_viewport::project(120),Bottom=240-Top;
- static constexpr int Left=320-reference_viewport::project(400),Right=Left+reference_viewport::project(280);
- static constexpr int EntryHeight=36,HeaderHeight=64,Separation=4;
- static constexpr int ModeX=reference_viewport::project(94),ModeY=240-reference_viewport::project(124);
- static constexpr int ModeWidth=reference_viewport::project(260),ModeHeight=reference_viewport::project(58);
+ static constexpr int Left=212,Right=300;
+ // Two 10px lines per LCD entry; retain source-space scrolling/tweens.
+ static constexpr int EntryHeight=152,HeaderHeight=138,Separation=4;
+ static constexpr unsigned ActionsPerPage=5;
+ static constexpr int ModeX=76,ModeY=215;
+ static constexpr int ModeWidth=118,ModeHeight=22;
  static constexpr unsigned PhysicalBase=192,PhysicalEnd=PhysicalBase+25;
  struct RowMotion {uint32_t at=0;uint16_t from=1024;bool hover=false;};
  struct MoveMotion {
@@ -61,8 +63,9 @@ struct BestiaryPresentation {
  struct Preview {
   uint8_t model=0,skin=0,count=0,current=0;
   int16_t state=-1,clips[12]{};
-  uint32_t start=0;
-  int16_t idle=-1;
+  uint32_t start=0,delay_until=0,action_at=0;
+  int16_t idle=-1,waiting=-1;
+  uint8_t facts[40]{};
   bool hold=false;
  } actors[3]{};
  int16_t rows[Capacity]{},row_count=0,selected=-1,selected_row=-1,focused=-1;
@@ -117,5 +120,5 @@ struct BestiaryPresentation {
   return scale;
  }
 };
-static_assert(sizeof(BestiaryPresentation)<2048,"Bestiary retains only a bounded list and clip queue");
+static_assert(sizeof(BestiaryPresentation)<2304,"Bestiary retains only bounded preview facts, list and clip queues");
 }

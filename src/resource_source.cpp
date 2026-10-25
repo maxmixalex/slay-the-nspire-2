@@ -7,6 +7,7 @@
 #include "retained_filter.hpp"
 #include "speech_bubble_assets.hpp"
 #include "history_body_ui10_assets.hpp"
+#include "ui12_assets.hpp"
 #include "resource_transfer.hpp"
 #include "lzma2_block.hpp"
 
@@ -40,7 +41,7 @@ void SplitResourceSource::close(){
 }
 bool SplitResourceSource::open(ResourceSource common,ResourceSource localized,ResourceLanguage expected){
     close();
-    if((expected!=ResourceLanguage::English&&expected!=ResourceLanguage::Chinese)||
+    if(!locale_language_valid(unsigned(expected))||
        common.context==this||localized.context==this)return false;
     uint8_t c[CommonHeader],l[PackedLanguageHeader];
     if(!split_read(common,0,c,sizeof c)||!split_read(localized,0,l,LanguageHeader))return false;
@@ -73,7 +74,7 @@ bool SplitResourceSource::open(ResourceSource common,ResourceSource localized,Re
     language_id_=expected;valid_=true;
     uint8_t h[40],row[8],marker[4];
     if(!read(0,h,sizeof h)||split_u32(h)!=0x3250534Eu||
-       (split_u32(h+4)<17||split_u32(h+4)>HistoryBodyContentVersion)||split_u32(h+8)!=0x41cef1eau||
+       (split_u32(h+4)<17||split_u32(h+4)>Ui12ContentVersion)||split_u32(h+8)!=0x41cef1eau||
        split_u32(h+12)!=total){
         close();return false;
     }
@@ -85,9 +86,7 @@ bool SplitResourceSource::open(ResourceSource common,ResourceSource localized,Re
     }
     const uint32_t marker_at=split_u32(row);
     if(split_u32(row+4)!=3||marker_at<prefix+art||!read(marker_at,marker,sizeof marker)||
-       marker[3]||(expected==ResourceLanguage::English?
-         marker[0]!='e'||marker[1]!='n'||marker[2]!='g':
-         marker[0]!='z'||marker[1]!='h'||marker[2]!='s')){
+       marker[3]||locale_language_id(reinterpret_cast<const char*>(marker))!=unsigned(expected)){
         close();return false;
     }
     return true;

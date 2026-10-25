@@ -58,11 +58,12 @@ static void hud_navigation(Canvas&c,int index,int asset,int cx,int hit_x,int hit
     ui_picture_transform(layer,a.content.ui_image(asset),cx,11,size,size,CombatCardMotion::sine(phase),CombatCardMotion::sine(phase+1024));
     c.hit(hit_x,0,hit_width,22,HitKind::Command,int(key),enabled);
 }
-struct HudTipContext {UiTextContext ui;const char*boss="";const char*second="";};
+struct HudTipContext {UiTextContext ui;const char*boss="";const char*second="";const char*character="";};
 static LocalizedValue hud_tip_value(const void*opaque,const char*name){
     const auto&v=*static_cast<const HudTipContext*>(opaque);
     if(wt_equal(name,"BossName")||wt_equal(name,"BossName1"))return wt_string(v.boss);
     if(wt_equal(name,"BossName2"))return wt_string(v.second);
+    if(wt_equal(name,"character"))return wt_string(v.character);
     return ui_text_value(&v.ui,name);
 }
 static const char* hud_boss_name(const Content&content,EncounterId id){
@@ -73,23 +74,44 @@ static void hud_static_tip(Canvas&c,const char*key,int x,int y=27,int width=Sour
     title_name.text(key);title_name.text(".title");body_name.text(key);body_name.text(".description");
     const auto*title=c.a.content.world_string("static_hover_tips",title_key);const auto*body=c.a.content.world_string("static_hover_tips",body_key);
     if(!*title&&!*body)return;
-    const char*hotkey=wt_equal(key,"DECK")?"Q":wt_equal(key,"MAP")?"M":wt_equal(key,"DRAW_PILE")?"A":wt_equal(key,"DISCARD_PILE")?"D":wt_equal(key,"EXHAUST_PILE")?"F":"None";
+    const InputCommand command=wt_equal(key,"DECK")?InputCommand::Deck:wt_equal(key,"MAP")?InputCommand::Map:
+        wt_equal(key,"DRAW_PILE")?InputCommand::Draw:wt_equal(key,"DISCARD_PILE")?InputCommand::Discard:wt_equal(key,"EXHAUST_PILE")?InputCommand::Exhaust:InputCommand::Count;
+    char binding[24]{};const char*hotkey="None";
+    if(command!=InputCommand::Count){input_key_label(c.a.input_bindings.keys[c.a.keyboard_only?1:0][unsigned(command)],binding,sizeof binding,c.a.calculator_keyboard);hotkey=binding;}
     HudTipContext context{{&c.a,hotkey}};
     if(wt_equal(key,"BOSS")||wt_equal(key,"DOUBLE_BOSS")){const auto info=hud_room_info(c.a.game);
         context.boss=hud_boss_name(c.a.content,info.boss);context.second=hud_boss_name(c.a.content,info.second_boss);}
     char formatted_title[256],formatted_body[1024];
     LocalizedTemplate format_title(formatted_title,sizeof formatted_title,hud_tip_value,&context);
     LocalizedTemplate format_body(formatted_body,sizeof formatted_body,hud_tip_value,&context);
-    format_title.format(title);format_body.format(body);
+    format_title.for_language(c.a.content.language()).format(title);format_body.for_language(c.a.content.language()).format(body);
     if(!format_title.truncated())title=formatted_title;if(!format_body.truncated())body=formatted_body;
+    char timed_body[1200]{};
+    if(c.a.run_timer_visible()&&(wt_equal(key,"FLOOR")||wt_equal(key,"ROOM_MAP")||wt_equal(key,"ROOM_ANCIENT"))){
+        char elapsed[24]{};c.a.run_timer_label(elapsed,sizeof elapsed);TextBuffer combined{timed_body,sizeof timed_body,0};
+        combined.text(body);combined.text("\n\n");combined.text(c.a.content.world_string("stats_screen","TIP_PLAYTIME.header"));combined.text(": ");combined.text(elapsed);body=timed_body;
+    }
     source_hover_box(c,title,body,x,y,width);
+}
+static void hud_portrait_tip(Canvas&c){
+    const auto&definition=character_definitions[unsigned(c.a.game.character)];
+    const char*name=c.a.content.world_title("characters",definition.key);
+    HudTipContext context{{&c.a,"None"},"","",*name?name:definition.name};
+    const unsigned level=world_ascension(c.a.game);char title[256]{},body[2048]{};
+    LocalizedTemplate formatter(title,sizeof title,hud_tip_value,&context);
+    formatter.for_language(c.a.content.language()).format(c.a.content.world_string("ascension",level?"PORTRAIT_TITLE":"PORTRAIT_TITLE_NO_ASCENSION"));
+    TextBuffer description{body,sizeof body,0};
+    if(level){for(unsigned i=1;i<=level;++i){char key[32]{};TextBuffer k{key,sizeof key,0};k.text("LEVEL_");if(i<10)k.ch('0');k.number(i);k.text(".title");
+        if(i>1)description.ch('\n');description.text(c.a.content.world_string("ascension",key));}}
+    else{char key[80]{};TextBuffer k{key,sizeof key,0};k.text(definition.key);k.text(".description");c.a.localized_text("characters",key,body,sizeof body);}
+    source_hover_box(c,*title?title:context.character,body,3,26);
 }
 static const HitRegion* hud_focused_hit(const App&a){
     if(a.hud_focus<0||a.pointer.visible)return nullptr;
     const int slots=int(potion_slot_count(a.game));HitKind kind=HitKind::HudInfo;int value=a.hud_focus;
     if(a.hud_focus>=HudRelicFocusFirst){kind=HitKind::OwnedRelic;value=a.hud_focus-HudRelicFocusFirst;}
     else if(a.hud_focus>=2&&a.hud_focus<slots+2){kind=HitKind::PotionSlot;value=a.hud_focus-2;}
-    else if(a.hud_focus>=slots+2){static const int info[]={HudRoom,HudFloor,HudBoss};const unsigned at=unsigned(a.hud_focus-slots-2);if(at>=3)return nullptr;value=info[at];}
+    else if(a.hud_focus>=slots+2){static const int info[]={HudRoom,HudFloor,HudBoss,HudPortrait};const unsigned at=unsigned(a.hud_focus-slots-2);if(at>=4)return nullptr;value=info[at];}
     for(int i=0;i<a.hit_count;++i)if(a.hits[i].kind==kind&&a.hits[i].value==value)return &a.hits[i];
     return nullptr;
 }
@@ -101,6 +123,7 @@ static void hud_hover_tip(Canvas&c){
         if(unsigned(h->value)<3)hud_static_tip(c,keys[h->value],h->x);
         else if(h->value==HudRoom)hud_static_tip(c,hud_room_info(a.game).room_tip,h->x);
         else if(h->value==HudBoss){const auto info=hud_room_info(a.game);hud_static_tip(c,info.second_boss==EncounterId::None?"BOSS":"DOUBLE_BOSS",h->x);}
+        else if(h->value==HudPortrait)hud_portrait_tip(c);
     }else if(h->kind==HitKind::Command&&h->y==0){const auto key=Key(h->value);const char*name=key==Key::Inspect?"DECK":key==Key::Map?"MAP":key==Key::Back?"SETTINGS":nullptr;if(name)hud_static_tip(c,name,h->x+h->w-SourceHoverWidth);}
     else if(h->kind==HitKind::OpenPile){const char*name=h->value==1?"DRAW_PILE":h->value==2?"DISCARD_PILE":h->value==3?"EXHAUST_PILE":nullptr;if(name)hud_static_tip(c,name,h->x<160?h->x+h->w+2:h->x-SourceHoverWidth-2,h->y);}
 }
@@ -127,18 +150,18 @@ static void hud_room_icon(Canvas&c,const char*key,int x,int y,int w,int h,bool p
 }
 static void hud_room_nodes(Canvas&c){
     auto&a=c.a;const auto info=hud_room_info(a.game);
-    if(info.room_enabled){hud_room_icon(c,info.room_key,181,2,9,17);c.hit(181,0,9,22,HitKind::HudInfo,HudRoom);}
-    c.ui(U_TopFloor,190,4,11,14);char floor[16]{};TextBuffer text{floor,sizeof floor,0};text.number(a.game.floor);
-    c.text_fitted(floor,201,5,10,8,rgb(197,218,206));c.hit(190,0,20,22,HitKind::HudInfo,HudFloor);
+    if(info.room_enabled){hud_room_icon(c,info.room_key,201,2,10,17);c.hit(200,0,12,22,HitKind::HudInfo,HudRoom);}
+    c.ui(U_TopFloor,212,4,11,14);char floor[16]{};TextBuffer text{floor,sizeof floor,0};text.number(a.game.floor);
+    c.text_fitted(floor,223,4,14,10,rgb(197,218,206));c.hit(212,0,25,22,HitKind::HudInfo,HudFloor);
     if(!info.boss_enabled)return;
     if(info.second_boss!=EncounterId::None){
         static const uint16_t act_tints[]={rgb(135,114,86),rgb(83,74,98),rgb(110,119,80),rgb(96,113,124)};
         const unsigned region=a.game.world.rooms[a.game.world.act_index].region;
         const auto*second=encounter_definition(info.second_boss);
-        if(second)hud_room_icon(c,second->key,217,6,8,8,info.second_placeholder,act_tints[region<4?region:0]);
+        if(second)hud_room_icon(c,second->key,248,6,8,8,info.second_placeholder,act_tints[region<4?region:0]);
     }
-    const auto*boss=encounter_definition(info.boss);if(boss)hud_room_icon(c,boss->key,211,2,9,17);
-    c.hit(210,0,15,22,HitKind::HudInfo,HudBoss);
+    const auto*boss=encounter_definition(info.boss);if(boss)hud_room_icon(c,boss->key,238,2,11,17);
+    c.hit(237,0,20,22,HitKind::HudInfo,HudBoss);
 }
 static void hud_deck_count(Canvas&c,int right=280){
  auto&a=c.a;char label[16]{};TextBuffer b{label,sizeof label,0};b.number(a.game.deck_count);
@@ -161,16 +184,16 @@ static int hud_potion_shake(const App&a){
  return value<0?-((-value+unit/2)/unit):(value+unit/2)/unit;
 }
 static void hud_potion_container(Canvas&c){
-    auto&s=c.a.game;
-    c.nine_ui(U_TopBarBackdrop,127,1,53,20,7,6,7,6);
+    using namespace hud_potion_layout;auto&s=c.a.game;
+    c.nine_ui(U_TopBarBackdrop,Left,1,Width,20,7,6,7,6);
     const unsigned error=c.a.potion_belt_motion.error_alpha(c.a.map_clock_ms);
-    if(error&&c.a.content.version()>=Ui7ContentVersion)c.nine_ui(I7_PotionErrorBackground,127,1,53,20,7,6,7,6,error);
+    if(error&&c.a.content.version()>=Ui7ContentVersion)c.nine_ui(I7_PotionErrorBackground,Left,1,Width,20,7,6,7,6,error);
     const int shake=hud_potion_shake(c.a);
-    const int slots=potion_slot_count(s),width=slots>3?14:17;
-    c.a.potion_page=uint8_t(mn(int(c.a.potion_page),(slots-1)/3));
-    const int first=int(c.a.potion_page)*3,visible=mn(slots-first,3);
+    const int slots=potion_slot_count(s),width=Cell;
+    c.a.potion_page=uint8_t(mn(int(c.a.potion_page),(slots-1)/Visible));
+    const int first=int(c.a.potion_page)*Visible,visible=mn(slots-first,Visible);
     for(int i=0;i<visible;i++){
-        int x=128+i*width+shake;const int slot=first+i;Potion potion=potion_at(s,slot);
+        int x=Left+i*width+shake;const int slot=first+i;Potion potion=potion_at(s,slot);
         const bool focused=hud_pointer_inside(c.a,x,width)||(!c.a.pointer.visible&&c.a.hud_focus==slot+2&&!c.a.paused&&!c.a.settings_open&&!c.a.frontend_confirm&&c.a.detail_card<0&&c.a.detail_item<0);
         auto&holder=c.a.potion_belt_motion.holders[slot];const int scale=holder.observe(focused,potion!=Potion::Empty,c.a.map_clock_ms);
         int bounce=0;if(holder.bouncing){const unsigned t=c.a.map_clock_ms-holder.bounce;const int phase=t<125?int(t)*1024/125:1024+int(t-125)*1024/125;bounce=(8*CombatCardMotion::sine(phase)+1536)/(3*1024);}
@@ -188,7 +211,7 @@ static void hud_potion_container(Canvas&c){
         }
         c.hit(x,0,width,22,HitKind::PotionSlot,slot,potion!=Potion::Empty);
     }
-    if(slots>3){c.text("›",171,5,10,Gold);c.hit(170,0,11,22,HitKind::PotionPage,1);}
+    if(slots>Visible){c.text("›",PageX,5,10,Gold);c.hit(PageX,0,PageWidth,22,HitKind::PotionPage,1);}
 }
 static void hud(Canvas&c){
     auto&s=c.a.game;c.rect(0,0,320,22,Panel);c.ui(U_TopBar,0,0,320,22);
@@ -201,24 +224,15 @@ static void hud(Canvas&c){
     if(const unsigned ascension=world_ascension(s)){
         c.ui(U_TopBarAscension,13,10,7,11);c.num(int(ascension),19,10,8,Gold);
     }
+    c.hit(0,0,26,22,HitKind::HudInfo,HudPortrait);
     const auto health=c.a.combat_health(0);
-    c.picture(A_Heart,27,4,12,13);char b[32]={};TextBuffer t{b,sizeof b,0,&c.a.content};t.number(health.hp);t.ch('/');t.number(health.max_hp);
-    c.text_fitted(b,41,5,43,8,rgb(255,85,85));
-    c.hit(26,0,59,22,HitKind::HudInfo,0);
-    c.picture(A_Coin,86,4,12,13);b[0]=0;t.n=0;t.number(c.a.reward_gold());c.text_fitted(b,100,5,25,8,Gold);
-    c.hit(85,0,42,22,HitKind::HudInfo,1);
+    c.picture(A_Heart,27,4,10,13);char b[32]={};TextBuffer t{b,sizeof b,0,&c.a.content};t.number(health.hp);t.ch('/');t.number(health.max_hp);
+    c.text_fitted(b,38,4,40,10,rgb(255,85,85));
+    c.hit(26,0,52,22,HitKind::HudInfo,HudHp);
+    c.picture(A_Coin,79,4,10,13);b[0]=0;t.n=0;t.number(c.a.reward_gold());c.text_fitted(b,90,4,24,10,Gold);
+    c.hit(78,0,36,22,HitKind::HudInfo,HudGold);
     hud_potion_container(c);
     hud_room_nodes(c);
-    if(c.a.run_timer_visible()){
-        // RightAlignedStuff uses end alignment. Timer visibility must never
-        // move Map/Deck/Pause; a second click must hit the same map button.
-        char elapsed[24]{};c.a.run_timer_label(elapsed,sizeof elapsed);
-        if(c.a.content.version()>=CharacterDeathContentVersion)c.ui(I9_RunTimerIcon,225,3,7,15);
-        Canvas timer=c;timer.font_face=5;timer.text_fitted(elapsed,233,6,24,6,Gold,5,false,true);
-    }
-#if SPIRE_DEBUG_COMMANDS
-    if(s.practice){c.text_fitted("图鉴",225,5,31,10,Gold,8,true);c.hit(225,0,31,22,HitKind::Command,(int)Key::Collection);}
-#endif
     hud_navigation(c,0,U_TopMap,267,257,20,Key::Map,!s.world.active||s.phase!=Phase::Map,c.a.panel==3);
     hud_navigation(c,1,U_TopDeck,287,277,20,Key::Inspect,true,c.a.panel==1&&c.a.pile_tab==0);
     hud_deck_count(c,296);

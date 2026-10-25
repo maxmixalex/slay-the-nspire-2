@@ -7,12 +7,12 @@ namespace spire {
 // NPlayerTurnBanner / NEnemyTurnBanner, pinned v0.111.0. All clocks are
 // presentation ticks: no event, random stream or saved turn is modified.
 struct TurnBannerPresentation {
-    enum Kind : uint8_t {None,Player,Enemy};
+    enum Kind : uint8_t {None,Player,Enemy,Battle};
     struct Frame {Kind kind=None;unsigned alpha=0,scale=4096,red=0;int offset=0,number=0;bool extra=false;};
-    uint32_t player_start=0,enemy_start=0;
+    uint32_t player_start=0,enemy_start=0,battle_start=0;
     int number=0;
-    bool player_active=false,enemy_active=false,in_enemy=false,extra=false;
-    static constexpr uint32_t PlayerMs=2200,EnemyMs=2300,EnemyTicks=(EnemyMs+32)/33;
+    bool player_active=false,enemy_active=false,battle_active=false,in_enemy=false,extra=false;
+    static constexpr uint32_t PlayerMs=2200,EnemyMs=2300,EnemyTicks=(EnemyMs+32)/33,BattleMs=2600,BattleTicks=(BattleMs+32)/33;
     // CombatManager.StartTurn waits 0.8s after creating the banner, then
     // NCreature.PerformIntent waits 0.4s before TakeTurn in normal speed.
     static constexpr uint32_t EnemyLeadTicks=(800+32)/33,IntentLeadTicks=(400+32)/33;
@@ -31,6 +31,24 @@ struct TurnBannerPresentation {
     }
     void begin_player(int turn,uint32_t earliest,bool extra_turn=false){
         player_start=earliest;number=turn;extra=extra_turn;player_active=true;in_enemy=false;
+    }
+    void begin_battle(uint32_t now){
+        battle_start=now;battle_active=true;begin_player(1,now+BattleTicks);
+    }
+    unsigned battle_backstop(uint32_t now)const{
+        if(!battle_active||int32_t(now-battle_start)<0)return 0;
+        const uint32_t age=(now-battle_start)*33u;if(age<300u||age>=5100u)return 0;
+        if(age<1050u)return ease(age-300u,750u)*64u/4096u;
+        if(age<4100u)return 64u;const unsigned left=(5100u-age)*1024u/1000u;
+        return (((left*left)>>10)*left*64u)>>20;
+    }
+    Frame sample_battle(uint32_t now)const{
+        Frame f;if(!battle_active||int32_t(now-battle_start)<0)return f;
+        const uint32_t age=(now-battle_start)*33u;if(age<300u||age>=BattleMs)return f;
+        const uint32_t ms=age-300u;f.kind=Battle;f.scale=8192-ease(ms,750);
+        if(ms<1300u)f.alpha=ease(ms,1300)*255u/4096u;
+        else {const unsigned left=(2300u-ms)*1024u/1000u;f.alpha=(((left*left)>>10)*left*255u)>>20;}
+        return f;
     }
     Frame sample_enemy(uint32_t now)const{
         Frame f;
@@ -54,6 +72,6 @@ struct TurnBannerPresentation {
         // Opposite50px scene tweens project to10px at the real1680px UI.
         f.offset=int((ease(ms,1500)*10+2048)/4096);return f;
     }
-    Frame sample(uint32_t now)const{const auto enemy=sample_enemy(now);return enemy.kind!=None?enemy:sample_player(now);}
+    Frame sample(uint32_t now)const{const auto battle=sample_battle(now);if(battle.kind!=None)return battle;const auto enemy=sample_enemy(now);return enemy.kind!=None?enemy:sample_player(now);}
 };
 }

@@ -51,8 +51,8 @@ def main():
     emulator.ctl_set_cpu_model(UC_CPU_ARM_926)
     low = min(a for a, _, _ in segments) & ~4095
     high = (max(a + n for a, n, _ in segments) + 4095) & ~4095
-    if high - low > 16 * 1024 * 1024:
-        raise ValueError('Production runtime exceeds the fixed 16 MiB budget')
+    if high - low > 24 * 1024 * 1024:
+        raise ValueError('Production runtime exceeds the fixed 24 MiB budget')
     emulator.mem_map(low, high - low)
     for start, _, payload in segments:
         emulator.mem_write(start, payload)

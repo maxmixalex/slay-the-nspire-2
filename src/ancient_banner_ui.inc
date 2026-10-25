@@ -19,16 +19,17 @@ static void native_ancient_banner(Canvas&c){
  unsigned n=0;for(;*text&&n+1<sizeof title;++text)title[n++]=*text>='a'&&*text<='z'?char(*text-'a'+'A'):*text;
  TextBuffer b{key,sizeof key,0};b.text(original_event_key(id));b.text(".epithet");
  const char*epithet=a.content.world_string("ancients",key);
- Canvas name=c,description=c;name.font_face=source_label_face(a.content.english(),4);description.font_face=source_label_face(a.content.english(),6);
+ Canvas name=c,description=c;name.font_face=source_label_face(a.content.original_label_fonts(),4);description.font_face=source_label_face(a.content.original_label_fonts(),6);
  if(age>=5500){
-  const int x=int(48*4*AncientBannerPresentation::circ(age-5500,2000)/(21*4096));
-  name.text(title,x,219,10,rgb(255,246,226),198);
+  // The room label has settled at the right edge. The desktop banner's
+  // remaining horizontal drift must not shrink this LCD text rectangle.
+  const int name_w=mn(200,name.width(title,12));name.text_fitted(title,312-name_w,25,name_w,12,rgb(255,246,226),10);
   description.opacity=uint8_t(div255(description.opacity*motion.epithet_alpha(a.map_clock_ms)));
-  description.text(epithet,x,227,4,rgb(255,246,226),198);return;
+  const int epithet_w=mn(208,description.width(epithet,8));description.text_fitted(epithet,312-epithet_w,40,epithet_w,8,rgb(255,246,226),8);return;
  }
  const int root=-200+100*int(AncientBannerPresentation::circ(age,4000))/4096;
  const int offset=18+(age<=1000?0:24*int(room_curve::cubic_out(age-1000,2000))/4096);
- const int center=(630+root+offset-42)*4/21,y=center-7;
+ const int center=(630+root+offset-42)*4/21-37,y=center-7;
  const unsigned spacing=1000*4*(4096-room_curve::expo_out(age,3000))/21;
  const unsigned scale=a.text_effects?AncientBannerPresentation::spring(age):4096;
  const unsigned red=age<4500?0:room_curve::expo_out(age-4500,1000);
@@ -50,5 +51,5 @@ static void native_ancient_banner(Canvas&c){
   x+=glyph.advance;++index;
  }
  description.opacity=uint8_t(div255(description.opacity*motion.epithet_alpha(a.map_clock_ms)));
- description.centered(epithet,0,(630+root+offset)*4/21-3,320,4,epithet_color);
+ description.centered(epithet,0,(630+root+offset)*4/21-34,320,8,epithet_color);
 }

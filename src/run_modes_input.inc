@@ -1,7 +1,7 @@
 void App::open_run_menu(RunMenu screen){
     if(!title||has_save)return;
     run_mode.screen=screen;run_mode.started=map_clock_ms;run_mode.focus=-1;
-    character_select=false;practice_entry=false;progress_page_scroll.reset();pointer_cancel();character_select_presentation.reset();
+    character_select=false;character_random=false;practice_entry=false;progress_page_scroll.reset();pointer_cancel();character_select_presentation.reset();
     if(screen==RunMenu::Singleplayer){compendium_selection=0;for(auto&motion:compendium_motion)motion={};return;}
     run_mode.pending={};selected_character=Character::Ironclad;selected_ascension=0;
     selected_region=reference::ActKind::Overgrowth;selected_seed[0]=0;
@@ -20,9 +20,9 @@ void App::run_modifier_select(unsigned index){
     if(run_mode.screen!=RunMenu::Custom||index>=RunModifierKinds)return;
     toggle_run_modifier(run_mode.pending,RunModifier(index));run_mode.focus=int16_t(index+9);
 }
-bool App::start_selected_run(const RunOptions&options){
-    if(!valid_run_options(options))return false;
-    if(!practice_entry&&!seen_ftue(FtueId::AcceptTutorials)&&open_ftue(FtueId::AcceptTutorials)){ftue.embark=options;return false;}
+bool App::start_selected_run(const RunOptions&options,bool animated){
+    if(character_departure.active()||!valid_run_options(options))return false;
+    if(!practice_entry&&!seen_ftue(FtueId::AcceptTutorials)&&open_ftue(FtueId::AcceptTutorials)){ftue.embark=options;character_departure.animated_ftue=animated;return false;}
     uint32_t seed=0;char canonical[65]{};
     if(!practice_entry&&*selected_seed){
         if(!reference::canonicalize_ascii(selected_seed,canonical,sizeof canonical)){message("种子无效");return false;}++run_number;
@@ -30,16 +30,39 @@ bool App::start_selected_run(const RunOptions&options){
         bool randomized=false;seed=next_run_seed(&randomized);
         if(randomized&&!practice_entry){static const char digits[]="0123456789ABCDEF";for(unsigned i=0;i<8;++i)canonical[i]=digits[(seed>>((7-i)*4))&15];}
     }
-    if(*canonical){unsigned length=0;while(canonical[length])++length;const uint64_t hash=reference::hash64(canonical,length);seed=uint32_t(hash)^uint32_t(hash>>32);if(!seed)seed=1;}
+    uint64_t run_hash=seed;
+    if(*canonical){unsigned length=0;while(canonical[length])++length;run_hash=reference::hash64(canonical,length);seed=uint32_t(run_hash)^uint32_t(run_hash>>32);if(!seed)seed=1;}
+    const bool random=character_random;
+    if(random){
+        // StartRunLobby resolves Random after the three ActModel choices,
+        // from the independent act_selection stream and ModelDb order.
+        // This port exposes both first acts and all five characters.
+        reference::Random rng;rng.named(run_hash,"act_selection");
+        (void)rng.below(2);(void)rng.below(1);(void)rng.below(1);
+        selected_character=RunModeCharacters[rng.below(CharacterKinds)];character_random=false;
+    }
     forget_run_checkpoint();new_run(game,seed,practice_entry,selected_character);
     if(!practice_entry){
         game.run_options=options;
         if(*canonical&&!world_set_seed(game,canonical)){message("种子无效");return false;}
         if(!world_begin_run(game,selected_region,selected_ascension)){message("无法开始游戏");return false;}
     }
-    character_select=run_settings=false;run_mode={};title=false;reset_presentation();begin_progress();
+    if(animated){
+        character_departure.phase=1;character_departure.character=uint8_t(selected_character);
+        character_departure.started=map_clock_ms;character_departure.reveal_ms=random?CharacterDeparturePresentation::RandomRevealMs:0;
+        pointer_cancel();hit_count=0;return true;
+    }
+    finish_selected_run();return true;
+}
+void App::finish_selected_run(){
+    character_select=run_settings=false;run_mode={};title=false;reset_presentation();turn_banner_suppress_intro=false;begin_progress();
     if(game.world.active){map_visuals.bind(game,map_clock_ms);if(const auto*map=world_current_map(game))map_visuals.initial_marker(map->root,map_clock_ms);}
-    return true;
+}
+void App::advance_character_departure(){
+    auto&m=character_departure;if(!m.active())return;
+    if(m.phase==1&&map_clock_ms-m.started>=m.reveal_ms+CharacterDeparturePresentation::FadeMs){
+        const auto character=m.character;finish_selected_run();m.phase=2;m.character=character;m.started=map_clock_ms;
+    }else if(m.phase==2&&map_clock_ms-m.started>=CharacterDeparturePresentation::FadeMs)m={};
 }
 bool App::run_modes_action(UiAction action){
     if(action==UiAction::OpenStandardRun){
@@ -50,7 +73,7 @@ bool App::run_modes_action(UiAction action){
     }
     if(action==UiAction::StartConfiguredRun){
         if(run_mode.screen==RunMenu::Daily){refresh_daily_run();if(run_mode.pending.mode!=RunMode::Daily)return true;}
-        if(run_mode.screen==RunMenu::Custom||run_mode.screen==RunMenu::Daily)start_selected_run(run_mode.pending);return true;
+        if(run_mode.screen==RunMenu::Custom||run_mode.screen==RunMenu::Daily)start_selected_run(run_mode.pending,true);return true;
     }
     if(action==UiAction::RandomizeRun){
         if(run_mode.screen==RunMenu::Custom){reference::Random rng;rng.reset(next_run_seed());selected_character=RunModeCharacters[rng.below(CharacterKinds)];pick_run_modifiers(rng,selected_character,run_mode.pending);}

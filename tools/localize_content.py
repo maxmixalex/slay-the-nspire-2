@@ -139,7 +139,7 @@ def glyph_subset(texts, font_path, language, legacy_literals=()):
     for px in FONT_SIZES:
         font=ImageFont.truetype(str(font_path),px)
         for ch in alphabet:
-            advance=max(1,math.ceil(font.getlength(ch)));w=max(advance,font.getbbox(ch)[2]);h=px+5
+            advance=max(1,math.floor(font.getlength(ch)+0.5));w=max(advance,font.getbbox(ch)[2]);h=px+5
             tiles.require(0<w<=40 and advance<=40,'Glyph outside runtime bound')
             image=Image.new('L',(w,h));ImageDraw.Draw(image).text((0,px+1),ch,font=font,fill=255,anchor='ls')
             raw=image.tobytes();encoded=bytearray();at=0
@@ -183,9 +183,9 @@ def format_catalog(source, values, tables, language):
             elif ch=='}':depth-=1
             elif ch=='|' and depth==0:result.append(text[start:at]);start=at+1
         result.append(text[start:]);return result
-    def unit(star):
-        title=tables['static_hover_tips'][('STAR_COUNT' if star else 'ENERGY_COUNT')+'.title']
-        return (' ' if language=='eng' else ' 点')+('[gold]'+title+'[/gold]' if star else title)
+    def energy_icons(value):
+        amount=int(value)
+        return '\ue001'*amount if 0<amount<4 else str(amount)+'\ue001'
     def render(text, context=None, depth=0):
         tiles.require(depth<=12,'Catalog format depth exceeded');out=[];at=0
         while at<len(text):
@@ -200,15 +200,23 @@ def format_catalog(source, values, tables, language):
             value=context if not name else values.get(name)
             tiles.require(value is not None,'Unbound catalog variable: '+name)
             fmt=parts[1] if len(parts)>1 else ''
-            if fmt in ('plural','show'):
-                choices=branches(parts[2]);index=0 if (value==1 if fmt=='plural' else bool(value)) else 1
+            if fmt in ('plural','show','choose') or fmt.startswith(('plural(', 'choose(')):
+                choices=branches(parts[2]);index=0 if value==1 else 1
+                if fmt=='show':index=0 if bool(value) else 1
+                elif fmt.startswith('choose('):
+                    options=fmt[7:-1].split('|');index=options.index(str(value)) if str(value) in options else len(options)
+                elif fmt.startswith('plural') and len(choices)>2:
+                    culture=fmt[7:-1] if fmt.startswith('plural(') else language
+                    if culture in ('rus','ru'):index=0 if value%10==1 and value%100!=11 else 1 if value%10 in (2,3,4) and value%100 not in (12,13,14) else 2
+                    elif culture in ('pol','pl'):index=0 if value==1 else 1 if value%10 in (2,3,4) and value%100 not in (12,13,14) else 2
+                    else:index=0 if value==1 else len(choices)-1
                 tiles.require(index<len(choices),'Missing catalog branch')
                 out.append(render(choices[index],value,depth+1))
             elif fmt in ('','diff()','inverseDiff()'):out.append(str(value))
-            elif fmt in ('energyIcons()','starIcons()'):out.append(str(value)+unit(fmt=='starIcons()'))
+            elif fmt=='energyIcons()':out.append(energy_icons(value))
+            elif fmt=='starIcons()':out.append('\ue000'*max(0,int(value)))
             elif re.fullmatch(r'energyIcons\([0-9]+\)',fmt):
-                preceding=''.join(out);count=fmt[12:-1]
-                out.append(('' if preceding and preceding[-1] in '0123456789X' else count)+unit(False))
+                out.append(energy_icons(int(fmt[12:-1])))
             else:raise ValueError('Unsupported catalog formatter: '+expression)
             at=end
         return ''.join(out)

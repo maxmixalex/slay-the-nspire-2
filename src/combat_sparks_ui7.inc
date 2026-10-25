@@ -64,12 +64,14 @@ static uint16_t spark_color(bool blocked,bool bright,unsigned variation){
 }
 static void combat_hit_sparks(Canvas&c){
  auto&a=c.a;auto&m=a.combat_sparks;m.step(a.animation*33u);if(!m.count||a.content.version()<Ui7ContentVersion)return;
+ bool live_hit=false;for(unsigned i=0;i<m.count;++i)if(m.bursts[i].kind==CombatSparkMotion::Hit&&int32_t(a.animation*33u-m.bursts[i].at)>=0)live_hit=true;
+ if(!live_hit)return; // Orb/power bursts share metadata, not five unnecessary hit-texture reads.
  // One resource is used by every live burst before the next decode. The
  // sparse fallback is bounded32KiB scratch; no extra image cache is retained.
  SparkTexture texture;
  static constexpr unsigned images[]={I7_GlowSpeck,I7_Speck,I7_Glow,I7_BlockRing,I7_HitStreak};
  for(unsigned system=0;system<5;++system){if(!texture.read(a.content,images[system]))continue;
-  for(unsigned n=0;n<m.count;++n){const auto&b=m.bursts[n];const int elapsed=int32_t(a.animation*33u-b.at);if(elapsed<0)continue;const unsigned age=unsigned(elapsed);
+  for(unsigned n=0;n<m.count;++n){const auto&b=m.bursts[n];if(b.kind!=CombatSparkMotion::Hit)continue;const int elapsed=int32_t(a.animation*33u-b.at);if(elapsed<0)continue;const unsigned age=unsigned(elapsed);
    if(system<2){for(unsigned i=system?6u:0u;i<(system?10u:6u);++i){const auto&p=b.particles[i];if(age>=p.lifetime)continue;
      const unsigned q=CombatSparkMotion::progress(age,p.lifetime),velocity=CombatSparkMotion::velocity(p,age),vq=mn(1024,int(velocity*102400u/67071u));
      const int scale=int(p.scale)*CombatSparkMotion::bounded(CombatSparkMotion::curve(int(q),1024,0,0,-2656))/1024;

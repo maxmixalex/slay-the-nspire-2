@@ -258,6 +258,10 @@ struct CoreDamageResult {
     int8_t receiver=-1;uint8_t flags=0,shake_strength=0;
     int amount()const{return unblocked+overkill;}
 };
+// Actual orb activation, including repeated evokes without dequeuing. The
+// target mask is chosen by the command before damage; observing it consumes
+// no RNG and does not infer an activation from slot/count changes.
+struct CoreOrbNotice {uint8_t kind=0,slot=0,slots=0,targets=0;bool evoke=false;};
 struct CoreObserver {
     void* context=nullptr;
     void(*on_log)(void*,const State&,Log)=nullptr;
@@ -276,6 +280,7 @@ struct CoreObserver {
     void(*on_enemy_spawned)(void*,const State&,unsigned,uint16_t)=nullptr;
     void(*on_run_fact)(void*,const State&,unsigned,unsigned)=nullptr;
     void(*on_history)(void*,const State&,const RunHistoryNotice&)=nullptr;
+    void(*on_orb)(void*,const State&,const CoreOrbNotice&)=nullptr;
 };
 enum class CoreRunFact : uint8_t { ShopGoldSpent,RestChoice };
 CoreObserver set_core_observer(CoreObserver);

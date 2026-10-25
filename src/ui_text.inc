@@ -35,7 +35,7 @@ const char* App::ui_text(const char* source,char* buffer,size_t capacity)const{
         if(n&&(*q=='}'||*q==':'||*q=='='))resolved=ui_text_value(&context,name).known;
     }
     if(!resolved)return raw;
-    LocalizedTemplate formatter(buffer,capacity,ui_text_value,&context,content.english()?"Energy":"能量",content.english()?"Stars":"辉星",content.english());
-    formatter.format(raw);
+    LocalizedTemplate formatter(buffer,capacity,ui_text_value,&context,content.language()!=2?"Energy":"能量",content.language()!=2?"Stars":"辉星",content.english());
+    formatter.for_language(content.language()).format(raw);
     return formatter.truncated()?raw:buffer;
 }

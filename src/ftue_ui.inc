@@ -18,24 +18,43 @@ static void ftue_material(Canvas&c,int asset,int x,int y,int w,int h,bool vertic
   c.paint((y+yy)*c.pitch+x+xx,color,alpha);
  }
 }
-static fitted_text::Plan ftue_paragraph(Canvas c,const char*text,int x,int y,int w,int h,int size,bool center=false,int step=0,bool middle=false){
- // The contextual 22px source labels project to four native pixels and
- // have -2px line separation. No rescaling of an 8px bitmap is involved.
+static fitted_text::Plan ftue_paragraph(Canvas c,const char*text,int x,int y,int w,int h,int size,bool center=false,int step=0,bool middle=false,bool scroll=false){
+ // Readable native bands retain rich colors and the tutorial's reveal clock.
+ // Overflow is a real reader viewport, never an ellipsis-only instruction.
  if(!c.a.content.glyph_metrics('?',size,c.font_face).advance)size=c.a.content.font_size(size,c.font_face);
  if(!step)step=size+1;
- auto metrics=[&](const RichChar&ch,int px){const auto g=c.a.content.glyph_metrics(ch.codepoint,px,c.font_style(ch));return fitted_text::Metric{g.advance,mx(int(g.w),int(g.advance))};};
- fitted_text::Plan plan;plan.size=size;plan.step=step;plan.total=fitted_text::line_count(text,w,size,metrics);plan.rows=mn(plan.total,mx(0,(h-size)/step+1));plan.truncated=plan.rows<plan.total;
- int widths[32]{};if(plan.rows>32)plan.rows=32;
- if(center)fitted_text::visit(text,w,plan,metrics,[&](const RichChar&ch,int at,int row,int px){widths[row]=at+metrics(ch,px).width;});
- const int top=y+((center||middle)?mx(0,(h-(plan.rows-1)*step-size)/2):0);
+ auto metrics=[&](const RichChar&ch,int px){return c.text_metric(ch,px);};
+ fitted_text::Plan plan;plan.size=size;plan.step=step;plan.total=fitted_text::line_count(text,w,size,metrics);
+ const int visible=mn(32,mn(plan.total,mx(0,(h-size)/step+1)));int offset=0;
+ if(scroll){auto&f=c.a.ftue;f.text_rows=uint16_t(visible);f.text_maximum=uint16_t(mx(0,plan.total-visible));
+  f.text_scroll=uint16_t(mn(unsigned(f.text_scroll),unsigned(f.text_maximum)));offset=f.text_scroll;}
+ plan.rows=offset+visible;plan.truncated=!scroll&&plan.rows<plan.total;
+ int widths[32]{};
+ if(center)fitted_text::visit(text,w,plan,metrics,[&](const RichChar&ch,int at,int row,int px){if(row>=offset)widths[row-offset]=at+metrics(ch,px).width;});
+ const int top=y+((center||middle)?mx(0,(h-(visible-1)*step-size)/2):0);
  const uint16_t colors[]={rgb(255,246,226),Gold,rgb(244,122,102),Blue,Green,rgb(190,145,217),rgb(236,164,92),rgb(104,210,205),White,Muted};
  c.clip_w=mn(c.clip_w,x+w);c.clip_h=mn(c.clip_h,y+h);
  fitted_text::visit(text,w,plan,metrics,[&](const RichChar&ch,int at,int row,int px){
+  if(row<offset)return;row-=offset;
   if(ch.index>=c.text_visible_characters)return;
   const auto g=c.a.content.glyph(ch.codepoint,px,c.font_style(ch));const int left=x+at+(center?mx(0,(w-widths[row])/2):0);
   Canvas shadow=c;shadow.opacity=uint8_t(div255(shadow.opacity*128));shadow.character(ch.codepoint,g,left+1,top+row*step+1,0,true);
   c.character(ch.codepoint,g,left,top+row*step,colors[ch.style.color]);
- });return plan;
+ });plan.rows=visible;return plan;
+}
+static void ftue_reader(Canvas&c,const char*text,int x,int y,int w,int h,bool center=false,bool middle=false,bool interactive=true){
+ ftue_paragraph(c,text,x,y,w,h,10,center,12,middle,true);
+ const auto&f=c.a.ftue;if(!f.text_maximum)return;
+ const int bx=x+w+3,bottom=y+h-20;const bool up=f.text_scroll>0,down=f.text_scroll<f.text_maximum;
+ Canvas arrows=c;arrows.opacity=uint8_t(div255(arrows.opacity*(up?255:70)));
+ ui_picture_transform(arrows,c.a.content.ui_image(I7_SettingsArrowRight),bx+10,y+10,20,20,-1024,0);
+ Canvas lower=c;lower.opacity=uint8_t(div255(lower.opacity*(down?255:70)));
+ ui_picture_transform(lower,c.a.content.ui_image(I7_SettingsArrowRight),bx+10,bottom+10,20,20,1024,0);
+ if(interactive){c.hit(bx,y,20,20,HitKind::FtueControl,5,up);c.hit(bx,bottom,20,20,HitKind::FtueControl,6,down);}
+ if(bottom-y>28){const int track_y=y+23,track_h=bottom-track_y-3;
+  c.rect(bx+9,track_y,2,track_h,rgb(49,76,85));
+  c.rect(bx+7,track_y+int(f.text_scroll)*mx(0,track_h-5)/int(f.text_maximum),6,5,Gold);
+ }
 }
 static void ftue_arrow(Canvas&c,int cx,int cy,int sn=0,int cs=1024,bool flip_h=false,bool flip_v=false,int w=47,int h=39){
  const auto p=c.a.content.image(c.a.content.ui_image(I9_FtueArrow));if(!p.pixels||p.format>3)return;
@@ -63,7 +82,7 @@ static void ftue_button(Canvas&c,int x,int y,int w,int h,int action,const char*l
   if(focused)c.ui(action?I6_PopupConfirmOutline:I6_PopupCancelOutline,x,y,w,h,160);
   c.ui(action?I6_PopupConfirm:I6_PopupCancel,x,y,w,h);
  }
- Canvas text=c;text.font_face=source_label_face(c.a.content.english(),5);text.fitted(label,x+5,y+2,w-10,h-3,5,5,ordinary?rgb(239,200,81):White,true,true,true,false,rgb(61,25,23));
+ Canvas text=c;text.font_face=source_label_face(c.a.content.original_label_fonts(),5);text.fitted(label,x+5,y+2,w-10,h-3,10,10,ordinary?rgb(239,200,81):White,true,false,true,false,rgb(61,25,23));
  c.hit(x,y,w,h,HitKind::FtueControl,action);
  if(ordinary&&!a.pointer.visible)card_reward_keycap(c,InputCommand::Select,x+w-11,y+3,9);
 }
@@ -71,7 +90,7 @@ static void ftue_lift(Canvas&c){
  auto&a=c.a;const auto&s=a.game;
  switch(a.ftue.id){
  case FtueId::CanPlayCards:combat_energy(c,combat_stars_visible(a),false);break;
- case FtueId::CannotPlayCard:native_end_turn(c,true);c.hit(267,188,42,17,HitKind::FtueControl,4);break;
+ case FtueId::CannotPlayCard:native_end_turn(c,true);c.hit(246,188,70,28,HitKind::FtueControl,4);break;
  case FtueId::Shuffle:{const auto n=a.combat_pile_counts();combat_pile(c,A_DrawPile,n.draw,3,222,1);combat_pile(c,A_DiscardPile,n.discard,302,222,2);break;}
  case FtueId::ObtainPotion:hud_potion_container(c);break;
  case FtueId::Merchant:{const bool focus=a.pointer.visible&&a.pointer.x>=MerchantLayout::BodyX&&a.pointer.x<MerchantLayout::BodyX+MerchantLayout::BodyW&&a.pointer.y>=MerchantLayout::BodyY&&a.pointer.y<MerchantLayout::BodyY+MerchantLayout::BodyH;
@@ -111,21 +130,22 @@ static void ftue_combat_pages(Canvas&c){
  const unsigned slide=room_curve::expo_out(age,500);const int dx=f.page_direction*38*int(4096-slide)/4096;
  Canvas image=c;const unsigned ease=room_curve::cubic_out(age,500);
  image.opacity=uint8_t(div255(image.opacity*(f.page_direction?128+127*ease/4096:255*ease/4096)));
- image.ui(I9_FtueCombat0+f.page,33+dx,65,128,98);
+ image.ui(I9_FtueCombat0+f.page,20+dx,66,128,98);
  Canvas text=c;text.bold_face=5;text.opacity=uint8_t(div255(text.opacity*255*room_curve::linear(age,f.page_direction?600:1000)/4096));
  char key[32]{};TextBuffer k{key,sizeof key,0};k.text("TUTORIAL_FTUE_BODY_");k.number(f.page+1);const char*body=ftue_text(a,key);
  unsigned characters=0;RichReader reader(body);RichChar ch;while(reader.next(ch))++characters;
  text.text_visible_characters=characters*room_curve::sine_out(age,600)/4096;
- ftue_paragraph(text,body,169+dx,69,119,92,5,false,0,true);
- c.fitted(ftue_text(a,"COMBAT_BASICS_FTUE_HEADER"),46,174,229,11,5,5,Gold,true,true);
+ ftue_reader(text,body,166+dx,50,120,132,false,true);
+ Canvas title=c;title.font_face=source_label_face(a.content.original_label_fonts(),5);
+ title.fitted(ftue_text(a,"COMBAT_BASICS_FTUE_HEADER"),18,14,284,30,12,12,Gold,true,false);
  char page[64]{};const int current=f.page+1;
  const auto resolve=[](const void*p,const char*key)->LocalizedValue{return wt_equal(key,"currentPage")?LocalizedValue{true,*static_cast<const int*>(p),1,nullptr}:wt_equal(key,"totalPages")?LocalizedValue{true,3,1,nullptr}:LocalizedValue{};};
- LocalizedTemplate(page,sizeof page,resolve,&current).format(ftue_text(a,"COMBAT_BASICS_FTUE_PAGE_COUNT"));c.fitted(page,46,180,229,11,5,5,rgb(135,206,235),true,true);
- if(f.page){c.ui(I7_SettingsArrowLeft,8,108,24,24);c.hit(8,108,24,24,HitKind::FtueControl,2);}
- c.ui(I7_SettingsArrowRight,288,108,24,24);c.hit(288,108,24,24,HitKind::FtueControl,3);
+ LocalizedTemplate(page,sizeof page,resolve,&current).for_language(a.content.language()).format(ftue_text(a,"COMBAT_BASICS_FTUE_PAGE_COUNT"));c.fitted(page,42,205,236,20,10,10,rgb(135,206,235),true,true);
+ if(f.page){c.ui(I7_SettingsArrowLeft,6,199,28,28);c.hit(6,199,28,28,HitKind::FtueControl,2);}
+ c.ui(I7_SettingsArrowRight,286,199,28,28);c.hit(286,199,28,28,HitKind::FtueControl,3);
 }
 static void ftue_start_label(Canvas c,const char*text,unsigned scale){
- c.font_face=source_label_face(c.a.content.english(),4);const int size=c.a.content.font_size(18,c.font_face);
+ c.font_face=source_label_face(c.a.content.original_label_fonts(),4);const int size=c.a.content.font_size(18,c.font_face);
  int x=160-int(unsigned(c.width(text,size))*scale/4096)/2;
  while(*text){const uint32_t cp=utf8(text);const auto g=c.a.content.glyph(cp,size,c.font_face);
   if(!g.pixels||g.w>48||g.h>48){x+=int(g.advance*scale/4096);continue;}
@@ -168,43 +188,58 @@ static void ftue_screen(Canvas&c){
  ftue_lift(c);
  if(id==FtueId::CombatRules){ftue_combat_pages(c);return;}
  if(id==FtueId::AcceptTutorials){
-  ftue_material(c,I6_PopupVertical,110,63,99,114,true);Canvas text=c;text.font_face=source_label_face(c.a.content.english(),5);
-  text.fitted(a.content.world_string("main_menu_ui","ENABLE_TUTORIALS.title"),114,74,91,14,6,6,Gold,true,true);
-  text.font_face=0;text.bold_face=5;ftue_paragraph(text,a.content.world_string("main_menu_ui","ENABLE_TUTORIALS.description"),120,85,80,63,5,true);
-  for(int i=0;i<2;++i)ftue_button(c,110+i*65,148,34,14,i,a.content.world_string("main_menu_ui",i?"GENERIC_POPUP.confirm":"GENERIC_POPUP.cancel"),false);
+  ftue_material(c,I6_PopupVertical,30,30,260,180,true);Canvas text=c;text.font_face=source_label_face(c.a.content.original_label_fonts(),5);
+  text.fitted(a.content.world_string("main_menu_ui","ENABLE_TUTORIALS.title"),44,42,232,30,12,12,Gold,true,false);
+  text.font_face=0;text.bold_face=5;ftue_reader(text,a.content.world_string("main_menu_ui","ENABLE_TUTORIALS.description"),44,78,210,84,true);
+  for(int i=0;i<2;++i)ftue_button(c,38+i*144,172,100,28,i,a.content.world_string("main_menu_ui",i?"GENERIC_POPUP.confirm":"GENERIC_POPUP.cancel"),false);
   return;
  }
  if(id==FtueId::AscensionSingleplayer){
   const uint32_t age=a.ftue.age(a.map_clock_ms),at=age>1000?age-1000:0;Canvas layer=c;layer.opacity=uint8_t(div255(layer.opacity*255*room_curve::linear(at,300)/4096));
   const int t=int(room_curve::linear(at,300)),u=t-4096;const int ease=4096+int(int64_t(u)*u/4096*(int64_t(11066)*u/4096+6970)/4096);
-  const int dy=19*(4096-ease)/4096;ftue_material(layer,I6_PopupVertical,97,48+dy,126,144,true);
-  layer.ui(U_TopBarAscension,104,56+dy,12,12);Canvas title=layer;title.font_face=source_label_face(c.a.content.english(),5);title.fitted(ftue_text(a,"ASCENSION_SINGLEPLAYER_FTUE_TITLE"),116,57+dy,88,14,6,6,Gold,true,true);
-  layer.bold_face=5;ftue_paragraph(layer,ftue_text(a,"ASCENSION_SINGLEPLAYER_FTUE_DESCRIPTION"),111,73+dy,98,76,5);
-  layer.rect(135,151+dy,49,1,rgb(126,112,98));ftue_paragraph(layer,ftue_text(a,"ASCENSION_SINGLEPLAYER_FTUE_DISCLAIMER"),111,156+dy,98,23,5);
-  if(age>=1000)ftue_button(layer,132,178+dy,56,19,1,ftue_text(a,"CONFIRM_BUTTON"));return;
+  const int dy=19*(4096-ease)/4096;ftue_material(layer,I6_PopupVertical,22,15+dy,276,210,true);
+  layer.ui(U_TopBarAscension,34,28+dy,18,18);Canvas title=layer;title.font_face=source_label_face(c.a.content.original_label_fonts(),5);title.fitted(ftue_text(a,"ASCENSION_SINGLEPLAYER_FTUE_TITLE"),56,27+dy,226,28,12,12,Gold,true,false);
+  char body[2048]{};TextBuffer text{body,sizeof body,0};text.text(ftue_text(a,"ASCENSION_SINGLEPLAYER_FTUE_DESCRIPTION"));text.text("\n\n");text.text(ftue_text(a,"ASCENSION_SINGLEPLAYER_FTUE_DISCLAIMER"));
+  layer.bold_face=5;ftue_reader(layer,body,38,61+dy,220,120,false,false,age>=1000);
+  if(age>=1000)ftue_button(layer,108,190+dy,104,28,1,ftue_text(a,"CONFIRM_BUTTON"));return;
  }
- int x=105,y=96,w=110,h=49;const char*prefix="";
+ int x=30,y=35,w=260,h=152;const char*prefix="";
  switch(id){
- case FtueId::MapSelect:{prefix="MAP_SELECT";WorldMapLayout layout;const auto*m=world_current_map(a.game);if(m&&world_map_layout(a.game,layout)&&unsigned(a.ftue.target)<m->count){const auto p=layout.points[a.ftue.target];const int py=p.y+a.map_view(layout).origin;x=p.x+24;y=py-96;ftue_arrow(c,p.x+6,py-36,-534,873);}break;}
- case FtueId::CanPlayCards:prefix="CAN_PLAY_CARDS_FTUE";x=88;w=146;h=65;ftue_arrow(c,59,168);break;
- case FtueId::CannotPlayCard:prefix="CANNOT_PLAY_CARD_FTUE";ftue_arrow(c,252,169,0,1024,true);break;
- case FtueId::ObtainPotion:prefix="POTION_FTUE";ftue_arrow(c,126,42,0,1024,false,true);break;
- case FtueId::CombatReward:prefix="REWARDS_FTUE";x=190;y=151;ftue_arrow(c,221,126,887,512);break;
- case FtueId::PowerCard:prefix="POWER_FTUE";x=191;y=179;ftue_arrow(c,230,129,973,320,false,false,37,31);break;
- case FtueId::RelicReward:prefix="RELIC_FTUE";x=198;y=145;w=122;h=54;{const int ry=a.ftue.target==-2?124:104+RewardPresentation::row_offset(unsigned(mx(0,a.ftue.target)))-a.reward_presentation.list_scroll.offset();ftue_arrow(c,184,ry+20,0,1024,false,true);}break;
- case FtueId::Merchant:prefix="MERCHANT_FTUE";x=26;ftue_arrow(c,201,97);break;
- case FtueId::RestSite:prefix="REST_SITE_FTUE";y=140;break;
- case FtueId::Shuffle:prefix="SHUFFLE_FTUE";y=150;ftue_arrow(c,42,192);ftue_arrow(c,278,192,0,1024,true);break;
+ case FtueId::MapSelect:prefix="MAP_SELECT";y=45;break;
+ case FtueId::CanPlayCards:prefix="CAN_PLAY_CARDS_FTUE";y=25;break;
+ case FtueId::CannotPlayCard:prefix="CANNOT_PLAY_CARD_FTUE";y=25;break;
+ case FtueId::ObtainPotion:prefix="POTION_FTUE";y=58;break;
+ case FtueId::CombatReward:prefix="REWARDS_FTUE";break;
+ case FtueId::PowerCard:prefix="POWER_FTUE";break;
+ case FtueId::RelicReward:prefix="RELIC_FTUE";if(a.ftue.target==-2){x=8;y=8;w=136;h=224;}break;
+ case FtueId::Merchant:prefix="MERCHANT_FTUE";x=8;y=30;w=196;h=172;break;
+ case FtueId::RestSite:prefix="REST_SITE_FTUE";y=104;h=132;break;
+ case FtueId::Shuffle:prefix="SHUFFLE_FTUE";y=28;break;
  default:return;
  }
- // Keep only the nine-pixel 4:3 overhang of the authored relic panel in
- // bounds. Text and controls retain their original relative geometry.
  x=mn(mx(0,x),320-w);y=mn(mx(0,y),240-h-2);
  ftue_material(c,I9_FtuePopup,x,y,w,h);
  char key[64]{};TextBuffer t{key,sizeof key,0};t.text(prefix);t.text(id==FtueId::MapSelect?"_TITLE":"_TITLE");
- Canvas title=c;title.font_face=source_label_face(c.a.content.english(),5);title.fitted(ftue_text(a,key),x+(w==146?19:16),y+(w==146?7:4),w-(w==146?41:23),11,5,5,Gold,false,false,true);
+ Canvas title=c;title.font_face=source_label_face(c.a.content.original_label_fonts(),5);title.fitted(ftue_text(a,key),x+36,y+8,w-50,30,12,12,Gold,false,false,true);
  t.n=0;key[0]=0;t.text(prefix);t.text("_DESCRIPTION");Canvas body=c;body.bold_face=5;
- const int bx=w==146?12:7,by=w==146?20:14,bw=w-bx-(w==146?10:7),bh=h-by-12;
- ftue_paragraph(body,ftue_text(a,key),x+bx,y+by,bw,bh,4,false,4);
- ftue_button(c,x+w/2-26,y+h-13,52,14,1,ftue_text(a,"CONFIRM_BUTTON"));
+ ftue_reader(body,ftue_text(a,key),x+14,y+42,w-50,h-80);
+ ftue_button(c,x+w/2-52,y+h-33,104,28,1,ftue_text(a,"CONFIRM_BUTTON"));
+ // Point at the original highlighted object after the larger text panel.
+ switch(id){
+ case FtueId::MapSelect:{WorldMapLayout layout;const auto*m=world_current_map(a.game);if(m&&world_map_layout(a.game,layout)&&unsigned(a.ftue.target)<m->count){const auto p=layout.points[a.ftue.target];const int py=p.y+a.map_view(layout).origin;ftue_arrow(c,p.x+6,py-36,-534,873);}break;}
+ case FtueId::CanPlayCards:ftue_arrow(c,36,190);break;
+ case FtueId::CannotPlayCard:ftue_arrow(c,279,181,0,1024,true);break;
+ case FtueId::ObtainPotion:ftue_arrow(c,126,42,0,1024,false,true);break;
+ case FtueId::CombatReward:ftue_arrow(c,295,171,887,512);break;
+ case FtueId::PowerCard:ftue_arrow(c,300,163,973,320,false,false,37,31);break;
+ case FtueId::RelicReward:
+  // The treasure holder stays at its authored center. Its lesson uses the
+  // left reading pane so neither the lifted relic nor its flipped arrow is
+  // hidden behind the enlarged popup.
+  if(a.ftue.target==-2)ftue_arrow(c,184,144+a.treasure_holder_offset(),0,1024,false,true);
+  else ftue_arrow(c,299,143,0,1024,false,true);break;
+ case FtueId::Merchant:ftue_arrow(c,231,97);break;
+ case FtueId::Shuffle:ftue_arrow(c,42,199);ftue_arrow(c,278,199,0,1024,true);break;
+ default:break;
+ }
 }

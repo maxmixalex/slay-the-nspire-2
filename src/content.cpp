@@ -16,12 +16,11 @@ namespace {
 constexpr unsigned MaxImageBytes=320u*240u*8u+2u*240u;
 constexpr unsigned MaxEncodedImage=MaxImageBytes+MaxImageBytes/255u+32u;
 constexpr unsigned MaxGlyphBytes=40u*40u*2u,MaxStringBytes=16384;
-constexpr unsigned ImageBufferBudget=64u*4096u+16u*32768u+8u*131072u+2u*MaxImageBytes;
-// Keep the historical four-tier pixel budget. Small animation frames need
-// more keys even when the decoded working set fits these pages: a measured
-// three-enemy/title/HUD trace has 257 unique descriptors but uses 681 pages.
-// Only bounded metadata grows; the pixel budget remains exactly 748 pages.
-constexpr unsigned ImagePageBytes=4096,ImagePages=ImageBufferBudget/ImagePageBytes,ImageEntries=320;
+// The 5 MiB image pool retains more actor loops and readable card surfaces.
+// Keep the complete executable below the 24 MiB ceiling with sufficient
+// contiguous-loader headroom; the larger trial pool failed real OS loading.
+constexpr unsigned ImagePageBytes=4096,ImagePages=1280,ImageEntries=480;
+constexpr unsigned ImageBufferBudget=ImagePages*ImagePageBytes;
 alignas(4) static uint8_t image_pixels[ImagePages*ImagePageBytes];
 static_assert(MaxEncodedImage==ResourceTransferCapacity,"Shared transfer capacity must preserve the original decoding bound");
 #include "content_tiles.inc"
@@ -44,13 +43,13 @@ static uint16_t image_buckets[ImageBuckets]{};
 static uint32_t image_used[(ImagePages+31)/32]{},image_age=0;
 static_assert(ImagePageBytes==Content::image_page_bytes()&&ImagePages==Content::image_capacity_pages()&&
               ImageEntries==Content::image_capacity_entries(),"Public preparation budget must match the cache");
-static_assert(ImagePages==748&&(MaxImageBytes+ImagePageBytes-1)/ImagePageBytes<=255,
+static_assert(ImagePages<65536&&(MaxImageBytes+ImagePageBytes-1)/ImagePageBytes<=255,
               "Image page indexes and lengths must fit the bounded entry");
 static_assert(ImageEntries<512&&ImageBuckets==128,"Image ids and bucket links must share the existing key word");
 static_assert(sizeof image_pixels<=ImageBufferBudget,
-              "Image pixels must not exceed the previous four-tier cache");
-static_assert(sizeof image_cache+sizeof image_buckets+sizeof image_used+sizeof image_age<=8u*1024u,
-              "Image-cache bookkeeping must remain below 8 KiB");
+              "Image pixels must remain inside the calculator cache budget");
+static_assert(sizeof image_cache+sizeof image_buckets+sizeof image_used+sizeof image_age<=13u*1024u,
+              "Image-cache bookkeeping must remain below 13 KiB");
 static uint8_t* image_buffer(const ImageCache& cache){return image_pixels+unsigned(cache.first)*ImagePageBytes;}
 static unsigned image_bucket(const uint8_t* descriptor){
     const uint32_t offset=u32(descriptor),shape=u32(descriptor+4),size=u32(descriptor+12);
@@ -196,13 +195,13 @@ bool Content::open(const uint8_t*p,size_t n){return open(ResourceSource::memory(
 bool Content::open(ResourceSource source){
     ++generation_;
     data_=metadata_=tile_metadata_=nullptr;directory_bytes_=0;image_pages_=nullptr;
-    version_=cards_=0;ui_offset_=ui_count_=0;io_good_=true;clear_caches(this);
+    version_=cards_=0;ui_offset_=ui_count_=0;language_id_=2;io_good_=true;clear_caches(this);
     if(!reader_.reset(source)||source.length<40||source.length>MaxContentFile)return false;
     reader_.progress(ResourceStage::Header,0,1);
     uint8_t h[40];if(!reader_.read(0,h,sizeof h))return false;const uint32_t n=source.length;
     if(u32(h)!=0x3250534E||u32(h+8)!=0x41CEF1EA||u32(h+12)!=n)return false;
     const uint32_t version=u32(h+4),cards=u32(h+32);
-    if(version<3||version>HistoryBodyContentVersion||(version==3&&cards)||(version==4&&cards!=24)||(version==5&&cards!=26)||(version==6&&cards!=51)||(version==7&&cards!=58)||(version>=8&&version<=10&&cards!=68)||(version==11&&cards!=114)||(version==12&&cards!=228)||(version==13&&cards!=497)||(version>=14&&cards!=CardKinds))return false;
+    if(version<3||version>Ui12ContentVersion||(version==3&&cards)||(version==4&&cards!=24)||(version==5&&cards!=26)||(version==6&&cards!=51)||(version==7&&cards!=58)||(version>=8&&version<=10&&cards!=68)||(version==11&&cards!=114)||(version==12&&cards!=228)||(version==13&&cards!=497)||(version>=14&&cards!=CardKinds))return false;
     auto ni=u32(h+16),ng=u32(h+20),ns=u32(h+24),nc=u32(h+28);
     if(ni<A_Count||ni>(version>=14?65535u:8192u)||ng>(version>=14?scene_font_glyph_limit(version):version==13?16384u:8192u)||ns<66||ns>(version>=14?16384u:2048u)||nc!=(version>=BestiaryKaiserContentVersion?BestiaryKaiserAnimationKinds:version>=CharacterDeathContentVersion?CharacterDeathAnimationKinds:version>=PhobiaContentVersion?PhobiaAnimationKinds:version>=Ui7ContentVersion?Ui7AnimationKinds:version>=MerchantEffectsContentVersion?MerchantEffectsAnimationKinds:version==FeedbackContentVersion?FeedbackAnimationKinds:version>=14?AnimationKinds:version==13?38:version>=6?17:11))return false;
     if((version==11&&ns!=407)||(version==12&&ns!=749)||(version==13&&ns!=1556)||
@@ -252,8 +251,13 @@ bool Content::open(ResourceSource source){
                                     for(unsigned i=HistoryHeaderAuxiliaryCount;i<SettingsUi10AuxiliaryCount;++i){
                                         if(next>=ni||!reader_.u32(base+4,next))return false;base+=4;
                                     }
+                                    if(version>=Ui12ContentVersion){
+                                        for(unsigned i=SettingsUi10AuxiliaryCount;i<Ui12AuxiliaryCount;++i){
+                                            if(next>=ni||!reader_.u32(base+4,next))return false;base+=4;
+                                        }
+                                    }
                                     if(next!=0x314c4954u)return false;
-                                    auxiliary=SettingsUi10AuxiliaryCount;
+                                    auxiliary=version>=Ui12ContentVersion?Ui12AuxiliaryCount:SettingsUi10AuxiliaryCount;
                                 }
                             }
                         }
@@ -280,7 +284,7 @@ bool Content::open(ResourceSource source){
     const uint8_t*p=metadata_;length_=n;images_=ni;glyphs_=ng;strings_=ns;clips_=nc;version_=version;
     directory_bytes_=start;tile_metadata_=version>=TileContentVersion?p+base:nullptr;
     auto reject=[&](){data_=metadata_=tile_metadata_=nullptr;directory_bytes_=0;image_pages_=nullptr;
-        version_=cards_=ui_offset_=ui_count_=0;clear_caches(this);return false;};
+        version_=cards_=ui_offset_=ui_count_=0;language_id_=2;clear_caches(this);return false;};
     // Opening needs only the directory. Pixel groups, glyphs and strings are
     // read on demand; legacy checksums and unrequested records are ignored.
     const unsigned available=DirectoryCapacity-start;
@@ -292,8 +296,8 @@ bool Content::open(ResourceSource source){
     if(version>=LocaleContentVersion){
         const uint8_t* row=p+40+ni*16+ng*16+LocaleMarkerString*8;uint8_t marker[4];
         if(u32(row+4)!=3||!reader_.read(u32(row),marker,4)||marker[3]||
-           !((marker[0]=='z'&&marker[1]=='h'&&marker[2]=='s')||
-             (marker[0]=='e'&&marker[1]=='n'&&marker[2]=='g')))return reject();
+           !locale_language_id(reinterpret_cast<const char*>(marker)))return reject();
+        language_id_=uint8_t(locale_language_id(reinterpret_cast<const char*>(marker)));
     }
     if(version>=5){
         ui_count_=auxiliary;ui_offset_=40+ni*16+ng*16+ns*8+nc*16+cards*16;
@@ -462,7 +466,8 @@ int Content::font_size(int preferred,unsigned style,bool at_most,bool sparse_sce
                 const unsigned encoded=band|px;unsigned lo=0,hi=glyphs_;
                 while(lo<hi){const unsigned mid=lo+(hi-lo)/2;const auto*r=metadata_+40+images_*16+mid*16;
                     if(u16(r+8)<encoded)lo=mid+1;else hi=mid;}
-                if(lo<glyphs_&&u16(metadata_+40+images_*16+lo*16+8)==encoded)mask|=1u<<(px-1);
+                if(lo<glyphs_){const auto*r=metadata_+40+images_*16+lo*16;
+                    if(u16(r+8)==encoded&&!kerning_codepoint(u32(r)))mask|=1u<<(px-1);}
             }
             font_sizes_[selected]=mask;font_sizes_known_|=uint8_t(1u<<selected);
         }return font_sizes_[selected];
@@ -499,7 +504,7 @@ const uint8_t* Content::glyph_record(uint32_t cp,int size,unsigned style)const{
     if((unsigned)lo<glyphs_){const uint8_t*r=base+lo*16;if(((uint32_t)u16(r+8)<<24|u32(r))==key){
         const unsigned w=r[10],h=r[11],stored=u16(r+14),encoded=stored&~GroupedGlyphFlag;
         const unsigned sized=u16(r+8),pixel_size=sized&(version_>=HistoryUi8ContentVersion?31u:63u);
-        if(!w||w>40||!h||h>40||!pixel_size||pixel_size>32||sized>255||(version_<Ui7ContentVersion&&sized>32)||u16(r+12)>40||
+        if(!w||w>40||!h||h>40||!pixel_size||pixel_size>32||sized>255||(version_<Ui7ContentVersion&&sized>32)||!valid_glyph_advance(cp,u16(r+12),version_)||
            ((stored&GroupedGlyphFlag)&&version_<GroupedGlyphContentVersion)||
            (encoded&&(version_<5||encoded%2||encoded>2*w*h))){io_good_=false;return nullptr;}
         return glyph_records.remember(key,base,r);
@@ -510,13 +515,35 @@ const uint8_t* Content::glyph_record(uint32_t cp,int size,unsigned style)const{
     return io_good_?glyph_records.remember(key,base,fallback):nullptr;
 }
 Glyph Content::glyph_metrics(uint32_t cp,int size,unsigned style)const{
-    if(!metadata_||!io_good_||text_format_control(cp))return {nullptr,0,0,0};
+    if(!metadata_||!io_good_||text_format_control(cp)||kerning_codepoint(cp))return {nullptr,0,0,0};
     if(inline_icon(cp)&&size>0&&size<=255)return {nullptr,uint8_t(size),uint8_t(size),uint16_t(size)};
     const uint8_t*r=glyph_record(cp,size,style);
-    return r?Glyph{nullptr,r[10],r[11],u16(r+12),uint16_t(u16(r+14)&~GroupedGlyphFlag)}:Glyph{nullptr,0,0,uint16_t(size/2)};
+    return r?Glyph{nullptr,r[10],r[11],uint16_t(text_pixel(glyph_advance64(u16(r+12)))),uint16_t(u16(r+14)&~GroupedGlyphFlag),uint16_t(glyph_advance64(u16(r+12))),int8_t(glyph_bearing(u16(r+12)))}:Glyph{nullptr,0,0,uint16_t(size/2)};
+}
+int Content::glyph_kerning64(uint32_t left,uint32_t right,int size,unsigned style)const{
+    if(version_<Ui12ContentVersion||left<32||left>126||right<32||right>126)return 0;
+    unsigned face=style&7u;
+    if(face){
+        // A scene face may fall back to Regular at a missing raster size.
+        // Use the face which actually supplied both letters. Metadata reads
+        // share the glyph-record memo; no raster/stream access is needed.
+        const auto*l=glyph_record(left,size,face),*r=glyph_record(right,size,face);
+        if(!l||!r||u32(l)!=left||u32(r)!=right)return 0;
+        const unsigned lb=u16(l+8),rb=u16(r+8);
+        const unsigned lf=((lb>>6)&3u)|((lb>>3)&4u),rf=((rb>>6)&3u)|((rb>>3)&4u);
+        if(lf!=rf)return 0;face=lf;
+    }
+    face=kerning_font_style(face);
+    const unsigned band=KerningMetadataSize|((face&3u)<<6)|((face&4u)<<3);
+    const uint32_t cp=kerning_codepoint(left,right);const auto*r=glyph_record(cp,KerningMetadataSize,face);
+    // An absent pair means zero for this face. glyph_record's normal regular
+    // fallback is useful for letters but must never import another font's pair.
+    if(!r||u32(r)!=cp||u16(r+8)!=band||(u16(r+12)&0xf000u)!=KerningGlyphAdvance)return 0;
+    const int value=(int(u16(r+12)&4095u)-2048)*size;
+    return value<0?-((-value+16)/32):(value+16)/32;
 }
 Glyph Content::glyph(uint32_t cp,int size,unsigned style)const{
-    if(!metadata_||!io_good_||text_format_control(cp))return {nullptr,0,0,0};
+    if(!metadata_||!io_good_||text_format_control(cp)||kerning_codepoint(cp))return {nullptr,0,0,0};
     if(inline_icon(cp))return glyph_metrics(cp,size);
     if(const uint8_t*r=glyph_record(cp,size,style)){
         const unsigned stored=u16(r+14),encoded=stored&~GroupedGlyphFlag;
@@ -534,7 +561,7 @@ Glyph Content::glyph(uint32_t cp,int size,unsigned style)const{
             }
         }else if(data_)bytes=data_+off;
         else {bytes=glyph_cache.read(this,off,len,reader_);if(!bytes)io_good_=false;}
-        if(!bytes)return {nullptr,0,0,0};return {bytes,r[10],r[11],u16(r+12),uint16_t(encoded)};
+        if(!bytes)return {nullptr,0,0,0};return {bytes,r[10],r[11],uint16_t(text_pixel(glyph_advance64(u16(r+12)))),uint16_t(encoded),uint16_t(glyph_advance64(u16(r+12))),int8_t(glyph_bearing(u16(r+12)))};
     }
     return {nullptr,0,0,(uint16_t)(size/2)};
 }

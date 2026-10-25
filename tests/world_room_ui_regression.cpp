@@ -194,7 +194,13 @@ static void ordinary_rest(){
 static void rest_actor_layers(){
  begin_room(WorldRoom::Rest,reference::ActKind::Overgrowth,0,nullptr,0,Character::Defect);
  for(unsigned dark=0;dark<2;dark++){
-  if(dark){click(HitKind::Choice,0);CHECK(a.game.phase==Phase::Camp&&!a.camp_options(nullptr,0));}
+  if(dark){
+   click(HitKind::Choice,0);CHECK(a.game.phase==Phase::Camp&&!a.camp_options(nullptr,0));
+   // The original heal tone/smoke now overlays the whole scene for 4s.
+   // Check settled actor planes after that real presentation lifetime;
+   // the effect itself has its own room_secondary_vfx regression.
+   snapshot();room_clock(4000);CHECK(!a.room_presentation.rest.healing);unchanged();
+  }
   snapshot();const uint32_t cards=a.game.rng_cards,world=a.game.rng_world;reference::Random streams[WorldRngCount];for(unsigned i=0;i<WorldRngCount;i++)streams[i]=a.game.world.rng[i];
   for(unsigned frame=0;frame<5;frame++){
    a.advance(frame?250:0);a.render();
@@ -482,15 +488,15 @@ static void event_motion(){
  CHECK(!motion.title_alpha(a.map_clock_ms)&&!motion.body_reveal(a.map_clock_ms));
  CHECK(choices()==2&&!hit(HitKind::Choice,0).enabled&&!hit(HitKind::Choice,1).enabled);
  a.input(Key::Confirm);unchanged();room_clock(500);CHECK(!hit(HitKind::Choice,0).enabled);
- CHECK(hit(HitKind::Choice,0).x==140);room_clock(250);
+ CHECK(hit(HitKind::Choice,0).x==83);room_clock(250);
  CHECK(motion.title_alpha(a.map_clock_ms)>0&&motion.title_alpha(a.map_clock_ms)<255&&!motion.body_reveal(a.map_clock_ms));
  capture("event-options-entering");unchanged();room_clock(250);
  CHECK(motion.title_alpha(a.map_clock_ms)==255&&hit(HitKind::Choice,0).enabled&&!hit(HitKind::Choice,1).enabled);
  CHECK(motion.body_reveal(a.map_clock_ms)>motion.body_progress(a.map_clock_ms));
  room_clock(200);CHECK(hit(HitKind::Choice,1).enabled);unchanged();room_clock(550);
  CHECK(motion.body_reveal(a.map_clock_ms)==4096);capture("event-typewriter-complete");
- const uint32_t entered=motion.start;a.input(Key::Detail);CHECK(a.event_reader);room_clock(125);a.input(Key::Back);a.render();
- CHECK(!a.event_reader&&motion.start==entered);unchanged();
+ const uint32_t entered=motion.start;a.input(Key::Detail);CHECK(!a.event_reader&&a.event_body_focus);room_clock(125);a.input(Key::Back);a.render();
+ CHECK(!a.event_reader&&!a.event_body_focus&&motion.start==entered);unchanged();
  // Single-player release selects immediately: the source's .3 s flash is
  // only awaited for shared multiplayer choices, which this port excludes.
  click(HitKind::Choice,1);CHECK(a.game.phase==Phase::OriginalEventChoice);
@@ -506,8 +512,8 @@ static void merchant_motion_and_pickups(){
  const uint32_t began=a.map_clock_ms;CHECK(a.room_presentation.merchant.y(began)==-222);CHECK(!choices());unchanged();
  room_clock(350);CHECK(a.room_presentation.merchant.y(a.map_clock_ms)>0&&a.room_presentation.merchant.y(a.map_clock_ms)<18);capture("merchant-rug-half-open");unchanged();
  room_clock(350);CHECK(a.room_presentation.merchant.y(a.map_clock_ms)==18);
- constexpr int centers[]={44,102,160,218,277,58,119};
- for(int i=0;i<ShopCardCount;++i){const auto h=hit(HitKind::Choice,i);CHECK(h.x+h.w/2==centers[i]&&h.w==54&&h.h==85&&h.y+h.h<=235);}
+ constexpr int centers[]={39,99,159,219,279,43,108};
+ for(int i=0;i<ShopCardCount;++i){const auto h=hit(HitKind::Choice,i);CHECK(h.x+h.w/2==centers[i]&&h.w==57&&h.h==102&&h.y+h.h<=235);}
  room_clock(300);CHECK(a.room_presentation.merchant.alpha(a.map_clock_ms)==204);capture("merchant-source-scale");unchanged();
  // The original vertical graph uses row indices. Shared colorless controls
  // receive the middle row's links last, including their downward self-link.
@@ -553,16 +559,16 @@ static void merchant_model_hover_sets(){
   a.cursor=slot;a.pointer.visible=false;a.render();CardHoverTarget owner{};CHECK(merchant_hover_target(a,owner));
   CHECK(owner.merchant&&owner.merchant_left&&owner.owner.w==22&&owner.owner.h==22);
   CHECK(owner.owner.x==MerchantInventoryLayout::item_x(unsigned(slot-ShopRelicStart)%3)-11);
-  CHECK(owner.owner.y==(slot<ShopPotionStart?150:182)-11);
+  CHECK(owner.owner.y==(slot<ShopPotionStart?151:187)-11);
   CHECK(slot<ShopPotionStart?owner.relic==a.game.world.shop_relics[slot-ShopRelicStart]&&owner.canonical_relic:owner.potion==a.game.shop_potions[slot-ShopPotionStart]);
-  if(slot<ShopPotionStart){const auto icon=hit(HitKind::Choice,slot);CHECK(icon.x==MerchantInventoryLayout::item_x(unsigned(slot-ShopRelicStart))-10&&icon.y==137&&icon.w==21&&icon.h==21);}
+  if(slot<ShopPotionStart){const auto icon=hit(HitKind::Choice,slot);CHECK(icon.x==MerchantInventoryLayout::item_x(unsigned(slot-ShopRelicStart))-10&&icon.y==138&&icon.w==21&&icon.h==21);}
   HoverTipList tips{};if(owner.relic>=0)collect_relic_hover_tips(a,RelicId(owner.relic),tips,true);else collect_potion_hover_tips(a,Potion(owner.potion),tips);
   CHECK(tips.count>0&&!tips.overflow);if(slot==ShopRelicStart||slot==ShopPotionStart)CHECK(tips.count>1);
   bool visited[MaxCardHoverTips]{};const auto first=card_hover_page(a,owner,tips,0);CHECK(first.pages>0);
   for(int page=0;page<first.pages;++page){const auto view=card_hover_page(a,owner,tips,page);CHECK(view.count>0);
    for(unsigned i=0;i<view.count;++i){const auto&piece=view.pieces[i];const auto&box=piece.box;CHECK(piece.tip<tips.count);visited[piece.tip]=true;
     CHECK(box.x>=3&&box.y>=24&&box.x+box.w<=317&&box.y+box.h<=218);
-    CHECK(box.w==(tips.items[piece.tip].kind==HoverTipKind::Card?46:69));
+    CHECK(box.w==(tips.items[piece.tip].kind==HoverTipKind::Card?46:104));
    }
   }
   for(unsigned i=0;i<tips.count;++i)CHECK(visited[i]);

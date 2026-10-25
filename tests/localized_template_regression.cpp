@@ -29,6 +29,37 @@ static void catalog_context(){
  LocalizedTemplate(text,sizeof text,resolve,&x,"Energy","Stars",true,catalog_snapshot).format("{Snapshot:diff()} / {Snapshot=broken:diff()}");
  CHECK(!std::strcmp(text,"{Snapshot:diff()} / {Snapshot=broken:diff()}"));
 }
+static void original_culture_grammar(){
+ Context x;char text[256]{};
+ auto show=[&](unsigned language,const char*source){LocalizedTemplate(text,sizeof text,resolve,&x).for_language(language).format(source);return text;};
+ for(unsigned language:{1u,2u,3u,4u,5u,6u,7u,8u,9u,10u,11u,12u,13u,14u,15u,16u}){
+  for(int count:{0,1,2,3,4,12,-2}){x.value=count;
+   std::string expected=count>0&&count<4?std::string():std::to_string(count);
+   for(int i=0;i<(count>0&&count<4?count:1);++i)expected+=InlineEnergyText;
+   CHECK(expected==show(language,"{N:energyIcons()}"));
+  }
+  CHECK(std::string(InlineEnergyText)+InlineEnergyText==show(language,"{N:energyIcons(2)}"));
+ }
+ for(int count:{0,1,2,4,5,11,12,14,21,22,25,101,112}){
+  x.value=count;const char*ru=count%10==1&&count%100!=11?"single":count%10>=2&&count%10<=4&&(count%100<12||count%100>14)?"few":"many";
+  const char*pl=count==1?"single":count%10>=2&&count%10<=4&&(count%100<12||count%100>14)?"few":"many";
+  CHECK(!std::strcmp(show(13,"{N:plural:single|few|many}"),ru));
+  CHECK(!std::strcmp(show(1,"{N:plural(ru):single|few|many}"),ru));
+  CHECK(!std::strcmp(show(11,"{N:plural:single|few|many}"),pl));
+  CHECK(!std::strcmp(show(1,"{N:plural(pl):single|few|many}"),pl));
+ }
+ x.value=0;CHECK(!std::strcmp(show(6,"{N:plural:single|many}"),"single"));CHECK(!std::strcmp(show(12,"{N:plural:single|many}"),"single"));
+ CHECK(!std::strcmp(show(4,"{N:plural:single|many}"),"many"));
+ x.type="feminine";CHECK(!std::strcmp(show(6,"{Type:choose(neutral|masculine|feminine):N|M|F}"),"F"));
+ CHECK(!std::strcmp(show(4,"{WideMax:n()}"),"9.223.372.036.854.775.807"));
+ CHECK(!std::strcmp(show(6,"{WideMax:n()}"),"9\xe2\x80\xaf" "223\xe2\x80\xaf" "372\xe2\x80\xaf" "036\xe2\x80\xaf" "854\xe2\x80\xaf" "775\xe2\x80\xaf" "807"));
+ CHECK(!std::strcmp(show(13,"{WideMax:n()}"),"9\xc2\xa0" "223\xc2\xa0" "372\xc2\xa0" "036\xc2\xa0" "854\xc2\xa0" "775\xc2\xa0" "807"));
+ CHECK(!std::strcmp(show(4,"{Low}"),"-0,25"));
+ for(int count:{1,2,3}){x.value=count;
+  CHECK(!std::strcmp(show(8,"{N:diff():plural:one|many}"),count==1?"one":"many"));
+  CHECK(!std::strcmp(show(8,"{N:inverseDiff():choose(1|2):one|two|many}"),count==1?"one":count==2?"two":"many"));
+ }
+}
 struct CorpusContext{int amount=2;bool flag=true;const char*text="REF";};
 static LocalizedValue corpus_resolve(const void*p,const char*k){const auto&x=*static_cast<const CorpusContext*>(p);
  if(!std::strcmp(k,"GainsBlock")||!std::strcmp(k,"displayCount"))return {true,x.flag};
@@ -177,7 +208,7 @@ int main(){Context x;expect(x,"{N:diff()}","3");expect(x,"{IfUpgraded:show:up {N
  expect(x,"{Catalog=7:diff()}","7");expect(x,"{Catalog=-2}","-2");expect(x,"{N=19:diff()}","3");
  expect(x,"{Catalog=2:plural:one|{} many}","2 many");expect(x,"{Catalog=x:diff()}","{Catalog=x:diff()}");
  {char text[128]{};LocalizedTemplate(text,sizeof text,resolve,&x,"ENERGY_UNIT","STAR_UNIT",true).format("{N:energyIcons()} / {N:starIcons()}");
-  const auto expected=std::string("3 ENERGY_UNIT / ")+InlineStarText+InlineStarText+InlineStarText;CHECK(text==expected);}
+  const auto expected=std::string(InlineEnergyText)+InlineEnergyText+InlineEnergyText+" / "+InlineStarText+InlineStarText+InlineStarText;CHECK(text==expected);}
  {char text[32]{};LocalizedTemplate(text,sizeof text,resolve,&x).format("{Catalog=0:starIcons()}");CHECK(!*text);
   LocalizedTemplate(text,sizeof text,resolve,&x).format("{Catalog=1:starIcons()}");CHECK(!std::strcmp(text,InlineStarText));
   LocalizedTemplate(text,sizeof text,resolve,&x).format("{WideRatio:starIcons()}");CHECK(!std::strcmp(text,InlineStarText));
@@ -192,5 +223,5 @@ int main(){Context x;expect(x,"{N:diff()}","3");expect(x,"{IfUpgraded:show:up {N
  expect(x,"x{Empty}y","xy");expect(x,"{Missing:show:bad|also bad}","{Missing:show:bad|also bad}");expect(x,"{Missing}","{Missing}");expect(x,"{unclosed","{unclosed");
  for(unsigned size=0;size<16;size++){char b[24];std::memset(b,0x5a,sizeof b);LocalizedTemplate(b,size,resolve,&x).format("prefix{N:abs()}long suffix");CHECK((unsigned char)b[size]==0x5a);if(size)CHECK(std::memchr(b,0,size));}
  expect(x,"{WideMin:n()}","-9,223,372,036,854,775,808");expect(x,"{WideMax:n()}","9,223,372,036,854,775,807");expect(x,"{WideRatio:n()}","1");expect(x,"{Low:n()}","0");expect(x,"{Missing:n()}","{Missing:n()}");
- catalog_context();conditional_corpus();thinky_dots();source_font_sizes();brackets_and_code();rainbow();std::printf("localized templates: %u checks passed\n",checks);
+ catalog_context();original_culture_grammar();conditional_corpus();thinky_dots();source_font_sizes();brackets_and_code();rainbow();std::printf("localized templates: %u checks passed\n",checks);
 }

@@ -12,7 +12,7 @@ namespace {
 using Bytes=std::vector<uint8_t>;
 constexpr unsigned TileSide=16,TileBytes=770,GroupBound=524288,EncodedBound=617323;
 constexpr unsigned ImageBound=614880,DirectoryBound=2u*1024u*1024u;
-constexpr unsigned ImageEntryCapacity=Content::image_capacity_entries(),TilePoolBytes=5u*1024u*1024u;
+constexpr unsigned ImageEntryCapacity=Content::image_capacity_entries(),TilePoolBytes=6u*1024u*1024u;
 unsigned checks=0;
 std::string label;
 #define CHECK(x) do{++checks;if(!(x)){std::fprintf(stderr,"FAIL [%s] line %d: %s\n",label.c_str(),__LINE__,#x);std::exit(1);}}while(0)
@@ -335,24 +335,25 @@ void image_pool_cycles_and_fragmentation(){
 
     label="contiguous allocation evicts LRU holes without moving survivors";
     empty_image_pool();Package mixed;mixed.per_group=680;std::vector<std::vector<unsigned>> plans;
-    for(unsigned i=0;i<5;++i){mixed.frames.push_back(frame(160,218,Pattern::ManySpans,200+i));plans.push_back({i});}
-    mixed.frames.push_back(frame(320,240,Pattern::AlphaSpans,777));plans.push_back({5});
-    CHECK(mixed.frames[0].expected.size()==262036&&mixed.frames[5].expected.size()==ImageBound);
+    const unsigned pairs=(Content::image_capacity_pages()-9)/128;
+    for(unsigned i=0;i<pairs;++i){mixed.frames.push_back(frame(160,218,Pattern::ManySpans,200+i));plans.push_back({i});}
+    mixed.frames.push_back(frame(320,240,Pattern::AlphaSpans,777));plans.push_back({pairs});
+    CHECK(mixed.frames[0].expected.size()==262036&&mixed.frames[pairs].expected.size()==ImageBound);
     mixed.collect();mixed.make_groups(plans);mixed.encode();
     auto holes=std::make_unique<Content>(),survivors=std::make_unique<Content>(),large=std::make_unique<Content>();
     Provider a{&mixed.bytes},b{&mixed.bytes},c{&mixed.bytes};
     CHECK(holes->open(a.source()));CHECK(survivors->open(b.source()));CHECK(large->open(c.source()));
     CHECK(holes->image(0).pixels&&survivors->image(0).pixels&&large->image(0).pixels);
     std::vector<Picture> kept;
-    for(unsigned i=0;i<5;++i){picture(*holes,mixed.image_id(i),mixed.frames[i]);picture(*survivors,mixed.image_id(i),mixed.frames[i]);kept.push_back(survivors->image(mixed.image_id(i)));}
-    // Ten interleaved 64-page frames plus three 3-page card images leave a
-    // 99-page tail. Reopening one owner frees five separated 64-page holes.
+    for(unsigned i=0;i<pairs;++i){picture(*holes,mixed.image_id(i),mixed.frames[i]);picture(*survivors,mixed.image_id(i),mixed.frames[i]);kept.push_back(survivors->image(mixed.image_id(i)));}
+    // Interleaved 64-page frames plus three 3-page card images leave a
+    // sub-151-page tail. Reopening one owner frees separated 64-page holes.
     // A 151-page maximum image needs eviction/coalescing despite enough total
     // free pages. Refreshing the first survivor makes the second the victim.
     CHECK(holes->open(a.source()));CHECK(holes->image(0).pixels);const auto before_refresh=survivors->read_stats();
     CHECK(survivors->image(mixed.image_id(0)).pixels==kept[0].pixels);
     CHECK(same_reads(before_refresh,survivors->read_stats()));
-    picture(*large,mixed.image_id(5),mixed.frames[5]);const Picture largest=large->image(mixed.image_id(5));
+    picture(*large,mixed.image_id(pairs),mixed.frames[pairs]);const Picture largest=large->image(mixed.image_id(pairs));
     const auto before_survivors=survivors->read_stats();
     for(unsigned i:{0u,2u,3u,4u}){
         CHECK(!std::memcmp(kept[i].pixels,mixed.frames[i].expected.data(),mixed.frames[i].expected.size()));
@@ -361,23 +362,23 @@ void image_pool_cycles_and_fragmentation(){
     CHECK(same_reads(before_survivors,survivors->read_stats()));
     picture(*survivors,mixed.image_id(1),mixed.frames[1]);
     CHECK(!same_reads(before_survivors,survivors->read_stats()));
-    CHECK(!std::memcmp(largest.pixels,mixed.frames[5].expected.data(),mixed.frames[5].expected.size()));
+    CHECK(!std::memcmp(largest.pixels,mixed.frames[pairs].expected.data(),mixed.frames[pairs].expected.size()));
     CHECK(!a.bad_range&&!b.bad_range&&!c.bad_range);
 
     label="failed large reservations release pages and never publish a key";
     auto faulty=std::make_unique<Content>();Provider fault{&mixed.bytes};
-    // Six abandoned 151-page reservations exceed the complete 748-page pool
-    // if even one error path leaks its destination. Corruption is injected
+    // Enough abandoned 151-page reservations exceed the complete image pool
+    // if an error path leaks its destination. Corruption is injected
     // only after successful structural opening of the immutable fixture.
-    for(unsigned attempt=0;attempt<6;++attempt){
+    for(unsigned attempt=0;attempt<Content::image_capacity_pages()/151+2;++attempt){
         fault.fail_first=fault.fail_last=0;CHECK(faulty->open(fault.source()));
-        const unsigned group=mixed.frames[5].ids[0]/mixed.per_group;
+        const unsigned group=mixed.frames[pairs].ids[0]/mixed.per_group;
         fault.fail_first=mixed.group_offsets[group]+32;fault.fail_last=fault.fail_first+1;
-        const unsigned before=fault.failed;CHECK(!faulty->image(mixed.image_id(5)).pixels);
+        const unsigned before=fault.failed;CHECK(!faulty->image(mixed.image_id(pairs)).pixels);
         CHECK(fault.failed>before&&!faulty->healthy());CHECK(!faulty->image(0).pixels&&!faulty->glyph('?',10).pixels);
     }
     fault.fail_first=fault.fail_last=0;CHECK(faulty->open(fault.source()));
-    picture(*faulty,mixed.image_id(5),mixed.frames[5]);CHECK(!fault.bad_range);
+    picture(*faulty,mixed.image_id(pairs),mixed.frames[pairs]);CHECK(!fault.bad_range);
 }
 void valid_packages(){
     auto direct=std::make_unique<Content>(),range=std::make_unique<Content>();
@@ -793,7 +794,7 @@ Package pressure(bool tiny){
     Package p;p.per_group=680;p.alignment=4096;
     const unsigned count=tiny?ImageEntryCapacity+44:16;
     for(unsigned i=0;i<count;++i)p.frames.push_back(frame(tiny?1:80,tiny?1:200,tiny?Pattern::Alpha:Pattern::ManySpans,31+i));
-    p.collect();p.scatter(12);std::vector<std::vector<unsigned>> plans;
+    p.collect();p.scatter(TilePoolBytes/(680u*TileBytes)+2);std::vector<std::vector<unsigned>> plans;
     if(tiny){for(unsigned begin=0;begin<count;begin+=35){std::vector<unsigned> ids;for(unsigned i=begin;i<std::min(count,begin+35);++i)ids.push_back(i);plans.push_back(std::move(ids));}}
     else for(unsigned i=0;i<count;++i)plans.push_back(std::vector<unsigned>(1+i%6,i));
     p.make_groups(plans);p.encode();return p;
@@ -810,9 +811,9 @@ void owners_lifetime_and_fragmentation(const Package&pressure_medium){
     CHECK(first->open(pa.source()));CHECK(second->open(pb.source()));
     std::vector<Picture> kept;
     for(unsigned i=0;i<a.frames.size();++i){picture(*first,a.image_id(i),a.frames[i]);picture(*second,b.image_id(i),b.frames[i]);kept.push_back(first->image(int(a.image_id(i))));}
-    // Twelve full tile groups exceed the 5 MiB pool. Index groups require 1--4
+    // The fixture scatters tiles beyond the current pool. Index groups require 1--4
     // pages, deliberately mixing allocation lengths and forcing evictions.
-    // Each medium frame references all twelve tile groups while its index group
+    // Each medium frame references every tile group while its index group
     // must remain pinned. The 16 decoded medium frames occupy 480 image pages;
     // the fresh tiny views fit beside them and must retain their addresses.
     // This asserts surviving-view stability, not permanent size-tier isolation.

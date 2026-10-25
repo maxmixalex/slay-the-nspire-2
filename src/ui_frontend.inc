@@ -37,7 +37,10 @@ static void title_background(Canvas&c,bool particles=true){
     title_particle(c,dot,title_scene::star_sample(i,a.map_clock_ms),title_scene::DotAtlasX,title_scene::DotSize,presentation::Normal);
    Picture fog[4];for(unsigned row=0;row<4;++row)fog[row]=Canvas::picture_rows(atlas,int(row)*title_scene::FogFrameHeight,title_scene::FogFrameHeight);
    for(unsigned layer=0;layer<2;++layer)for(unsigned i=0;i<title_scene::FogCount;++i){
-    const auto particle=title_scene::fog_sample(layer,i,a.map_clock_ms);
+    auto particle=title_scene::fog_sample(layer,i,a.map_clock_ms);
+    // The 320px crop concentrates many source particles in one small band.
+    // Bound their composite opacity so the sea and menu remain visible.
+    particle.opacity=(particle.opacity*112u+127u)/255u;
     title_particle(c,fog[particle.frame/2],particle,int(particle.frame%2)*title_scene::FogFrameWidth,
         title_scene::FogFrameWidth,presentation::Add);
    }
@@ -66,7 +69,7 @@ static int title_label_width(Canvas&c,const char*text){
     Canvas label=c;label.font_face=0;const int size=c.a.content.font_size(title_scene::MenuFont,0);
     RichReader reader(text);RichChar ch{};int width=0,count=0;
     while(reader.next(ch)){if(ch.codepoint=='\n')break;width+=c.a.content.glyph_metrics(ch.codepoint,size,0).advance;++count;}
-    return width+(c.a.content.english()&&count>1?reference_viewport::project((count-1)*2):0);
+    return width;
 }
 static void title_menu_labels(Canvas&c){
     auto&a=c.a;const int count=a.title_menu_count();auto&presentation=a.title_presentation;presentation.bind(count);
@@ -80,8 +83,8 @@ static void title_menu_labels(Canvas&c){
         const int width=title_label_width(c,label),left=title_scene::MenuCenter-width/2,center_y=title_scene::menu_center_y(count,i);
         const ProfileTransform transform{title_scene::MenuCenter,center_y,visual.scale};
         Canvas text=c;text.opacity=uint8_t(div255(unsigned(text.opacity)*visual.alpha));
-        profile_text_box(text,label,left,center_y-4,width,8,{title_scene::MenuFont,0,rgb(visual.red,visual.green,visual.blue),0,3,0,0,128,1,0,a.content.english()?2:0},false,false,transform);
-        if(selected){focused=i;focus_left=left;focus_width=width;focus_top=reference_viewport::project(title_scene::menu_source_y(count,i)+5);}
+        profile_text_box(text,label,left,center_y-7,width,15,{title_scene::MenuFont,0,rgb(visual.red,visual.green,visual.blue),0,1,0,0,96,1,0,0},false,false,transform);
+        if(selected){focused=i;focus_left=left;focus_width=width;focus_top=center_y-4;}
         c.hit(title_scene::MenuHitLeft,y,title_scene::MenuHitWidth,height,HitKind::Menu,i);
     }
     auto&motion=presentation.reticle;motion.observe(focused,focus_left,focus_top,focus_width,a.map_clock_ms);
@@ -98,69 +101,42 @@ static void title_menu_labels(Canvas&c){
     reticle.picture_region(image,left,motion.top,0,0,8,8);reticle.picture_region(image,right,motion.top,0,0,8,8,true);
 }
 static void continue_saved_time(const App&a,char*out,size_t capacity){
-    TextBuffer text{out,capacity,0};if(!a.saved_at){text.text("—");return;}
-    const auto value=ui_calendar(a.saved_at);
-    // The two pinned savedTimeFormat strings are "dddd MMM d, yyyy h:mmtt"
-    // and "yyyy MMM d， dddd tth:mm". The calendar matches existing profile
-    // dates; the platform's local-zone conversion remains a separate concern.
-    if(a.content.english()){
-        static const char*weekdays[]={"Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"};
-        static const char*months[]={"Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"};
-        text.text(weekdays[value.weekday]);text.ch(' ');text.text(months[value.month-1]);text.ch(' ');
-        text.number(value.day);text.text(", ");text.number(value.year);text.ch(' ');
-    }else{
-        static const char*weekdays[]={"星期日","星期一","星期二","星期三","星期四","星期五","星期六"};
-        text.number(value.year);text.ch(' ');text.number(value.month);text.text("月 ");text.number(value.day);
-        text.text("， ");text.text(weekdays[value.weekday]);text.ch(' ');text.text(value.hour<12?"上午":"下午");
-    }
-    text.number(value.hour%12?value.hour%12:12);text.ch(':');if(value.minute<10)text.ch('0');text.number(value.minute);
-    if(a.content.english())text.text(value.hour<12?"AM":"PM");
+ TextBuffer text{out,capacity,0};if(!a.saved_at){text.text("—");return;}
+ const auto value=ui_calendar(a.saved_at);
+ // The LCD uses an unambiguous compact date instead of a clipped weekday.
+ text.number(value.year);text.ch('-');if(value.month<10)text.ch('0');text.number(value.month);
+ text.ch('-');if(value.day<10)text.ch('0');text.number(value.day);text.ch(' ');
+ if(value.hour<10)text.ch('0');text.number(value.hour);text.ch(':');if(value.minute<10)text.ch('0');text.number(value.minute);
 }
 static LocalizedValue continue_saved_value(const void*context,const char*key){
     return wt_equal(key,"LastSavedTime")?LocalizedValue{true,0,1,static_cast<const char*>(context)}:LocalizedValue{};
 }
 static void continue_run_info(Canvas&c){
-    auto&a=c.a;const bool focused=a.has_save&&front_item(a,a.menu)==FrontContinue&&
-        (!a.pointer.visible||(a.pointer.x>=title_scene::MenuHitLeft&&a.pointer.x<title_scene::MenuHitLeft+title_scene::MenuHitWidth&&
-            a.pointer.y>=title_scene::menu_y(a.title_menu_count(),0)&&a.pointer.y<title_scene::menu_y(a.title_menu_count(),0)+title_scene::menu_height(a.title_menu_count(),0)));
-    const auto visual=a.title_presentation.run_info.observe(focused,a.map_clock_ms);if(!visual.alpha||!a.has_save)return;
-    Canvas panel=c;panel.opacity=uint8_t(div255(unsigned(panel.opacity)*visual.alpha));
-    // ContinueRunInfo retains its base scene's .5/.5 anchors. Its instance
-    // offset145 is relative to the200px button's center, and offset5 is
-    // relative to its25px vertical center. Source content grows from200 to233
-    // only while the36px Ascension row is visible.
-    const auto x=[](int source_offset){return reference_viewport::project_half(1603+source_offset*2);};
-    const auto y=[&](int source_offset){return ((title_scene::menu_source_y(a.title_menu_count())+30+source_offset)*256*4+visual.y*4+2688)/(256*21);};
-    const int background=a.content.world_image("menu","CONTINUE_PANEL"),height=title_scene::continue_height(a.saved_ascension!=0);
-    if(background>=0){if(!panel.nine_image(background,x(0),y(0),title_scene::ContinueWidth,height,2,2,2,2))panel.picture(background,x(0),y(0),title_scene::ContinueWidth,height);}
-    else panel.dim(x(0),y(0),title_scene::ContinueWidth,height,128);
-    const ProfileTextStyle style{5,0,rgb(255,246,226),64,0,0,0,255,1,1};
-    char row[192]{},saved_time[96]{};continue_saved_time(a,saved_time,sizeof saved_time);
-    LocalizedTemplate date(row,sizeof row,continue_saved_value,saved_time);
-    date.format(frontend_text(a,"main_menu_ui","CONTINUE_RUN_INFO.saved","{LastSavedTime}"));
-    // DateLabel has autowrap=Off and an explicit newline in the locale text.
-    // Source MegaRichTextLabel measurement retains24px for these timestamps;
-    // the original fonts place line two at30.5px English/36px Chinese.
-    // Its90px top-aligned rectangle reserves the gap before progress details.
-    profile_text_box(panel,row,x(24),y(17),reference_viewport::project(400),reference_viewport::project(90),style,false,false,{},false,true,a.content.english()?6:7);
-    int portrait=a.content.ui_image(U_TopBarIronclad+int(a.saved_character));
-    if(portrait<0)portrait=a.content.ui_image(character_portrait(a.saved_character));
-    panel.picture(portrait,x(24),y(107),7,7);
-    row[0]=0;TextBuffer b{row,sizeof row,0,&a.content};
-    if(a.saved_world){const char*act=a.content.world_title("acts",map_colors(a.saved_current_region).region);if(*act){b.text(act);b.text(" [blue]- ");}else b.text("[blue]");}
-    else b.text("[blue]");
-    frontend_number(b,frontend_text(a,"main_menu_ui","CONTINUE_RUN_INFO.floor","楼层"),a.saved_floor);b.text("[/blue]");
-    profile_text_box(panel,row,x(66),y(107),reference_viewport::project(358),7,style,false,false);
-    if(a.saved_ascension){row[0]=0;b.n=0;b.text(frontend_text(a,"main_menu_ui","CONTINUE_RUN_INFO.ascension","进阶 "));b.ch(' ');b.number(a.saved_ascension);
-        profile_text_box(panel,row,x(24),y(143),reference_viewport::project(400),7,style,false,false);}
-    const int bottom=a.saved_ascension?179:143;
-    row[0]=0;b.n=0;b.text("[red]");b.number(a.saved_hp);b.ch('/');b.number(a.saved_max_hp);b.text("[/red]");
-    panel.picture(A_Heart,x(24),y(bottom),7,7);profile_text_box(panel,row,x(66),y(bottom),27,7,style,false,false);
-    row[0]=0;b.n=0;b.text("[gold]");b.number(a.saved_gold);b.text("[/gold]");
-    panel.picture(A_Coin,x(212),y(bottom),7,7);profile_text_box(panel,row,x(254),y(bottom),19,7,style,false,false);
+ auto&a=c.a;const bool focused=a.has_save&&front_item(a,a.menu)==FrontContinue&&
+  (!a.pointer.visible||(a.pointer.x>=title_scene::MenuHitLeft&&a.pointer.x<title_scene::MenuHitLeft+title_scene::MenuHitWidth&&
+   a.pointer.y>=title_scene::menu_y(a.title_menu_count(),0)&&a.pointer.y<title_scene::menu_y(a.title_menu_count(),0)+title_scene::MenuRowHeight));
+ const auto visual=a.title_presentation.run_info.observe(focused,a.map_clock_ms);if(!visual.alpha||!a.has_save)return;
+ Canvas panel=c;panel.opacity=uint8_t(div255(unsigned(panel.opacity)*visual.alpha));
+ constexpr int x=184,width=130;const int y=97+(visual.y+2048)/4096,height=a.saved_ascension?107:94;
+ const int background=a.content.world_image("menu","CONTINUE_PANEL");
+ if(background>=0)panel.nine_image(background,x,y,width,height,2,2,2,2);else panel.dim(x,y,width,height,176);
+ const ProfileTextStyle style{8,0,rgb(255,246,226),40,0,0,0,112,1,1};
+ char row[192]{},saved_time[48]{};continue_saved_time(a,saved_time,sizeof saved_time);
+ LocalizedTemplate date(row,sizeof row,continue_saved_value,saved_time);date.for_language(a.content.language()).format(frontend_text(a,"main_menu_ui","CONTINUE_RUN_INFO.saved","{LastSavedTime}"));
+ profile_text_box(panel,row,x+7,y+6,116,27,style,false,true,{},true,true);
+ int portrait=a.content.ui_image(U_TopBarIronclad+int(a.saved_character));if(portrait<0)portrait=a.content.ui_image(character_portrait(a.saved_character));
+ panel.picture(portrait,x+7,y+39,11,11);TextBuffer b{row,sizeof row,0,&a.content};row[0]=0;
+ if(a.saved_world){const char*act=a.content.world_title("acts",map_colors(a.saved_current_region).region);if(*act){b.text(act);b.ch(' ');}}
+ b.text("[blue]");frontend_number(b,frontend_text(a,"main_menu_ui","CONTINUE_RUN_INFO.floor",a.content.language()==2?"楼层":"Floor"),a.saved_floor);b.text("[/blue]");
+ profile_text_box(panel,row,x+23,y+37,100,24,style,false,true,{},true,true);
+ if(a.saved_ascension){row[0]=0;b.n=0;frontend_number(b,frontend_text(a,"main_menu_ui","CONTINUE_RUN_INFO.ascension",a.content.language()==2?"进阶":"Ascension"),a.saved_ascension);
+  profile_text_box(panel,row,x+7,y+64,116,12,style,false,false);}
+ const int bottom=a.saved_ascension?84:70;row[0]=0;b.n=0;b.text("[red]");b.number(a.saved_hp);b.ch('/');b.number(a.saved_max_hp);b.text("[/red]");
+ panel.picture(A_Heart,x+7,y+bottom,11,11);profile_text_box(panel,row,x+22,y+bottom,48,12,style,false,false);
+ row[0]=0;b.n=0;b.text("[gold]");b.number(a.saved_gold);b.text("[/gold]");panel.picture(A_Coin,x+76,y+bottom,11,11);profile_text_box(panel,row,x+91,y+bottom,33,12,style,false,false);
 }
 static void title_screen(Canvas&c){
-    auto&a=c.a;title_background(c);title_logo(c);profile_title_button(c);auxiliary_patch_button(c);
+    auto&a=c.a;title_background(c);title_logo(c);profile_title_button(c);
     title_menu_labels(c);continue_run_info(c);
     c.text("nSpire II 0.17",235,229,8,White,83);
 }
@@ -170,23 +146,23 @@ static void native_pause_screen(Canvas&c){
  // run.tscn's shared OverlayBackstop is black at .85, independent of
  // the unused blue Backstop child of pause_menu.tscn.
  Canvas backstop=c;backstop.opacity=uint8_t(217*room_curve::cubic_out(a.map_clock_ms-a.pause_opened,500)/4096);backstop.rect(0,0,320,240,0);
- Canvas title=c;title.font_face=uint8_t(source_label_face(a.content.english(),4));
+ Canvas title=c;title.font_face=uint8_t(source_label_face(a.content.original_label_fonts(),4));
  title.text_fitted(frontend_text(a,"gameplay_ui","PAUSE_MENU.PAUSED","暂停"),0,TitleY,320,TitleFont,rgb(239,200,81),TitleFont,true,true,0);
  const char*keys[]={"PAUSE_MENU.RESUME","PAUSE_MENU.SETTINGS","PAUSE_MENU.COMPENDIUM","PAUSE_MENU.GIVE_UP","PAUSE_MENU.SAVE_AND_QUIT"};
  const char*fallback[]={"继续游戏","设置","图鉴","放弃游戏","保存并返回主菜单"};
  for(int i=0;i<5;i++){const int y=row_y(unsigned(i));const bool enabled=i!=3||resumable_run(a.game),selected=a.menu==i;
   const char*label=frontend_text(a,"gameplay_ui",keys[i],fallback[i]);
   const auto visual=c.control_visual(label,X,y,W,H,ButtonFamily::OriginalPause,selected,enabled,0,i!=0);
-  const int w=mx(1,W*visual.scale/4096),h=mx(1,H*visual.scale/4096),left=X+(W-w)/2,top=y+(H-h)/2+(visual.y+2048)/4096;
+  constexpr int PW=224,PH=40;const int w=mn(PW,mx(1,W*visual.scale/4096)),h=mn(PH,mx(1,H*visual.scale/4096)),left=X+(W-w)/2,top=y+(H-h)/2+(visual.y+2048)/4096;
   // Reuse the original untinted reward plaque and its bounded cache. The
   // Give Up material's h=.5 negates YIQ chroma, without a replacement skin.
-  uint16_t pixels[W*H];uint8_t alpha[W*H]{};Canvas tile{a,pixels,W,w,h,alpha};tile.ui(U_RewardButton,0,0,w,h);
-  for(int yy=0;yy<h;++yy)for(int xx=0;xx<w;++xx){const int at=yy*W+xx;if(alpha[at])c.paint((top+yy)*c.pitch+left+xx,presentation::yiq_material(pixels[at],i==3?-int(visual.saturation):int(visual.saturation),visual.value,visual.shade),alpha[at]);}
-  Canvas text=c;text.font_face=uint8_t(source_label_face(a.content.english(),5));if(!enabled)text.brightness=128;
-  const int label_y=y+(H-Font)/2+(visual.y+2048)/4096;
+  uint16_t pixels[PW*PH];uint8_t alpha[PW*PH]{};Canvas tile{a,pixels,PW,w,h,alpha};tile.ui(U_RewardButton,0,0,w,h);
+  for(int yy=0;yy<h;++yy)for(int xx=0;xx<w;++xx){const int at=yy*PW+xx;if(alpha[at])c.paint((top+yy)*c.pitch+left+xx,presentation::yiq_material(pixels[at],i==3?-int(visual.saturation):int(visual.saturation),visual.value,visual.shade),alpha[at]);}
+  Canvas text=c;text.font_face=uint8_t(source_label_face(a.content.original_label_fonts(),5));if(!enabled)text.brightness=128;
+  const int label_y=y+(visual.y+2048)/4096;
   const uint16_t ink=blend(rgb(255,246,226),rgb(239,200,81),unsigned(visual.hover)*255/4096);
-  Canvas shadow=text;shadow.opacity=uint8_t(div255(text.opacity*32));shadow.text_fitted(label,X+7,label_y+1,W-12,Font,0,5,true);
-  text.text_fitted(label,X+6,label_y,W-12,Font,ink,5,true,true,i==3?rgb(92,50,37):rgb(37,84,92));
+  Canvas shadow=text;shadow.opacity=uint8_t(div255(text.opacity*32));shadow.fitted(label,X+7,label_y+2,W-12,H-2,Font,Font,0,true);
+  text.fitted(label,X+6,label_y+1,W-12,H-2,Font,Font,ink,true,false,true,false,i==3?rgb(92,50,37):rgb(37,84,92));
   c.hit(X,y,W,H,HitKind::Menu,i,enabled);
  }
  native_original_back(c,a.pause_opened);
@@ -199,8 +175,8 @@ static void frontend_confirm_screen(Canvas&c){
  const char*header=frontend_text(a,reset?"settings_ui":"main_menu_ui",reset?"RESET_CONFIRMATION.header":quitting?"QUIT_CONFIRM_POPUP.header":"ABANDON_RUN_CONFIRMATION.header",reset?"重置设置":quitting?"退出游戏":"你确定吗？");
  const char*body=frontend_text(a,reset?"settings_ui":"main_menu_ui",reset?"RESET_GAMEPLAY_CONFIRMATION.body":quitting?"QUIT_CONFIRM_POPUP.body":"ABANDON_RUN_CONFIRMATION.body",reset?"恢复默认设置？":quitting?"你确定要退出吗？":"放弃游戏会被视为本局失败。");
  char profile_header[128]{},profile_body[1024]{};
- if(erase_profile){profile_text(a,"PROFILE_SCREEN.DELETE_CONFIRM_POPUP.title",a.content.english()?"Delete Save Profile {Id}?":"是否删除{Id}号存档？",{a.profile_target},profile_header,sizeof profile_header);
-  profile_text(a,"PROFILE_SCREEN.DELETE_CONFIRM_POPUP.description",a.content.english()?"All data in Save Profile {Id} will be deleted. This cannot be undone.":"{Id}号存档内的所有数据将被删除。这一操作无法逆转。",{a.profile_target},profile_body,sizeof profile_body);header=profile_header;body=profile_body;}
+ if(erase_profile){profile_text(a,"PROFILE_SCREEN.DELETE_CONFIRM_POPUP.title",a.content.language()!=2?"Delete Save Profile {Id}?":"是否删除{Id}号存档？",{a.profile_target},profile_header,sizeof profile_header);
+  profile_text(a,"PROFILE_SCREEN.DELETE_CONFIRM_POPUP.description",a.content.language()!=2?"All data in Save Profile {Id} will be deleted. This cannot be undone.":"{Id}号存档内的所有数据将被删除。这一操作无法逆转。",{a.profile_target},profile_body,sizeof profile_body);header=profile_header;body=profile_body;}
  if(a.content.version()>=Ui6ContentVersion){
   native_frontend_popup(c,header,body,erase_profile);
  }else{

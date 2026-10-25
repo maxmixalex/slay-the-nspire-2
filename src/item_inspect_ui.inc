@@ -1,5 +1,5 @@
-// NInspectRelicScreen: one native-sized paper popup, not the old inventory
-// grid/detail sheet. Images and text retain separate source modulation.
+// NInspectRelicScreen keeps its paper, frame and separate image modulation.
+// The LCD reading pane uses larger native text and scrolls the full prose.
 static uint16_t relic_inspect_frame_color(uint16_t color,unsigned rarity,unsigned brightness=255){
     // Q16 inverse(M) * value * saturation * hue((1-h)*tau) * M, where M
     // is hsv.gdshader's authored RGB-to-YIQ matrix. Source RGB is quantized
@@ -44,11 +44,11 @@ static void relic_inspect_fit_image(Canvas&c,int image,int x,int y,int w,int h){
     c.picture(image,x+(w-width)/2,y+(h-height)/2,width,height);
 }
 static int relic_inspect_paragraph(Canvas c,const char*text,int x,int y,int width,int requested,bool center,bool draw){
-    // AutoSizeEnabled=false. The VBox may grow for a long description; no
-    // scrollbar or truncation is invented. The entire original prose stays.
+    // Measure the complete original VBox. Its larger LCD presentation is
+    // clipped by the caller's scrolling viewport, with no omitted prose.
     const int size=c.a.content.font_size(requested,c.font_face);
-    const auto metrics=[&](const RichChar&ch,int px){const auto g=c.a.content.glyph_metrics(ch.codepoint,px,c.font_style(ch));return fitted_text::Metric{g.advance,mx(int(g.w),int(g.advance))};};
-    const int lines=fitted_text::line_count(text,width,size,metrics),step=size+1;
+    const auto metrics=[&](const RichChar&ch,int px){return c.text_metric(ch,px);};
+    const int lines=fitted_text::line_count(text,width,size,metrics),step=size+2;
     if(!draw||!lines)return lines?lines*step:0;
     const fitted_text::Plan plan{size,lines,lines,step,false};
     int widths[64]{};if(center)fitted_text::visit(text,width,plan,metrics,[&](const RichChar&ch,int at,int row,int px){if(row<64)widths[row]=at+metrics(ch,px).width;});
@@ -90,6 +90,7 @@ static void relic_inspect_arrow(Canvas c,unsigned index,int x,bool interactive){
     if(interactive)c.action(x,y,box,box,action);
 }
 static void item_detail_screen(Canvas&c){
+    using namespace relic_inspect_layout;
     auto&a=c.a;a.sync_relic_inspect();auto&view=a.relic_inspect;
     if(a.detail_item>=WorldRelicKinds){
 #if SPIRE_DEBUG_COMMANDS
@@ -114,31 +115,47 @@ static void item_detail_screen(Canvas&c){
     // ignore the mouse. A click on the paper must not reach Backstop.
     // Close removes the backdrop/arrow filters immediately, but the paper
     // retains Stop until the screen's 250ms visibility callback completes.
-    c.hit(relic_inspect_layout::PopupX+dx,relic_inspect_layout::PopupY+dy,relic_inspect_layout::PopupSize,relic_inspect_layout::PopupSize,HitKind::None);
+    c.hit(PopupX+dx,PopupY+dy,PopupWidth,PopupHeight,HitKind::None);
     if(layer.opacity){
-        layer.ui(U_RewardPanel,78+dx,44+dy,165,165);
-        Canvas frame_bg=layer;frame_bg.tint_red=21;frame_bg.tint_green=71;frame_bg.tint_blue=63;frame_bg.opacity=uint8_t(div255(unsigned(frame_bg.opacity)*128));frame_bg.ui(U_RewardPanel,132+dx,76+dy,57,57);
+        layer.ui(U_RewardPanel,PopupX+dx,PopupY+dy,PopupWidth,PopupHeight);
+        Canvas frame_bg=layer;frame_bg.tint_red=21;frame_bg.tint_green=71;frame_bg.tint_blue=63;frame_bg.opacity=uint8_t(div255(unsigned(frame_bg.opacity)*128));frame_bg.ui(U_RewardPanel,FrameX+1+dx,FrameY+dy,FrameSize-1,FrameSize-1);
         const bool seen=view.source!=RelicInspectSource::Collection||a.library_item_seen(1,id);
-        Canvas icon=layer;if(!seen)icon.brightness=uint8_t(div255(unsigned(icon.brightness)*26));relic_inspect_fit_image(icon,a.relic_face_image(RelicId(id),a.relic_inspect_character()),142+dx,87+dy,37,37);
-        const unsigned rarity=world_relic_definitions[id].rarity;relic_inspect_frame(layer,131+dx,76+dy,rarity);
+        Canvas icon=layer;if(!seen)icon.brightness=uint8_t(div255(unsigned(icon.brightness)*26));relic_inspect_fit_image(icon,a.relic_face_image(RelicId(id),a.relic_inspect_character()),IconX+dx,IconY+dy,IconSize,IconSize);
+        const unsigned rarity=world_relic_definitions[id].rarity;relic_inspect_frame(layer,FrameX+dx,FrameY+dy,rarity);
         char name[256]{},description[4096]{},flavor[1024]{};relic_inspect_text(a,RelicId(id),name,sizeof name,description,sizeof description,flavor,sizeof flavor);
-        Canvas title=layer;title.font_face=uint8_t(source_label_face(a.content.english(),a.content.version()>=28?5:0));title.sparse_scene_sizes=true;const int title_size=a.content.font_size(7,title.font_face,false,true);
-        Canvas shadow=title;shadow.opacity=uint8_t(div255(unsigned(shadow.opacity)*64));shadow.text_fitted(name,88+dx,55+dy,147,title_size,0,5,true);
-        title.text_fitted(name,87+dx,54+dy,147,title_size,rgb(239,200,81),5,true);
+        Canvas title=layer;title.font_face=uint8_t(source_label_face(a.content.original_label_fonts(),a.content.version()>=28?5:0));
+        Canvas shadow=title;shadow.opacity=uint8_t(div255(unsigned(shadow.opacity)*64));shadow.fitted(name,NameX+1+dx,NameY+1+dy,NameWidth,28,12,12,0,true,false);
+        title.fitted(name,NameX+dx,NameY+dy,NameWidth,28,12,12,rgb(239,200,81),true,false);
         if(seen){static const char*const rarities[]={"NONE","STARTER","COMMON","UNCOMMON","RARE","SHOP","EVENT","ANCIENT"};
             char key[64]{};TextBuffer k{key,sizeof key,0};k.text("RELIC_RARITY.");k.text(rarities[rarity<8?rarity:0]);
-            layer.text_fitted(a.content.world_string("gameplay_ui",key),118+dx,63+dy,84,5,relic_inspect_rarity_color(rarity),5,true);
+            layer.fitted(a.content.world_string("gameplay_ui",key),RarityX+dx,RarityY+dy,RarityWidth,13,10,10,relic_inspect_rarity_color(rarity),true,true);
         }
         Canvas body=layer;body.font_face=0;body.bold_face=5;
-        const int body_height=relic_inspect_paragraph(body,description,118+dx,142+dy,91,5,false,true);
-        Canvas flavor_layer=layer;flavor_layer.font_face=uint8_t(source_label_face(a.content.english(),a.content.version()>=28?6:0));
-        const int flavor_height=relic_inspect_paragraph(flavor_layer,flavor,110+dx,0,99,4,true,false);
-        // VBox's expanding spacer has a 44px source minimum. Preserve the
-        // complete description and flavor rather than adding a scroll pane.
-        const int flavor_y=mx(203-flavor_height,142+body_height+8),line_y=(142+body_height+flavor_y)/2;
-        Canvas divider=layer;for(int i=0;i<49;++i){const unsigned edge=unsigned(mn(i,48-i));const unsigned alpha=edge>=10?128:edge*128/10;
-            divider.opacity=uint8_t(div255(unsigned(layer.opacity)*alpha));divider.rect(136+dx+i,line_y+dy,1,1,rgb(255,246,226));}
-        relic_inspect_paragraph(flavor_layer,flavor,110+dx,flavor_y+dy,99,4,true,true);
+        const int body_height=relic_inspect_paragraph(body,description,BodyX+dx,0,BodyWidth,10,false,false);
+        Canvas flavor_layer=layer;flavor_layer.font_face=uint8_t(source_label_face(a.content.original_label_fonts(),a.content.version()>=28?6:0));
+        const int flavor_height=relic_inspect_paragraph(flavor_layer,flavor,BodyX+dx,0,BodyWidth,10,true,false);
+        const int flavor_y=body_height+10,total=body_height+(flavor_height?10+flavor_height:0);
+        view.scroll_maximum=int16_t(mx(0,total-BodyHeight));a.detail_scroll=mn(mx(0,a.detail_scroll),int(view.scroll_maximum));
+        const int top=BodyY+dy,visible=mn(BodyHeight,mx(0,layer.clip_h-top));
+        if(top>=0&&visible){
+            body.pixels+=top*body.pitch;if(body.coverage)body.coverage+=top*body.pitch;body.clip_h=visible;
+            relic_inspect_paragraph(body,description,BodyX+dx,-a.detail_scroll,BodyWidth,10,false,true);
+            flavor_layer.pixels+=top*flavor_layer.pitch;if(flavor_layer.coverage)flavor_layer.coverage+=top*flavor_layer.pitch;flavor_layer.clip_h=visible;
+            if(flavor_height){Canvas divider=flavor_layer;for(int i=0;i<90;++i){const unsigned edge=unsigned(mn(i,89-i));const unsigned alpha=edge>=16?128:edge*128/16;
+                divider.opacity=uint8_t(div255(unsigned(layer.opacity)*alpha));divider.rect(BodyX+(BodyWidth-90)/2+dx+i,body_height+5-a.detail_scroll,1,1,rgb(255,246,226));}
+                relic_inspect_paragraph(flavor_layer,flavor,BodyX+dx,flavor_y-a.detail_scroll,BodyWidth,10,true,true);
+            }
+        }
+        if(view.scroll_maximum){
+            const int track=BodyY+dy,height=BodyHeight;layer.rect(BodyX+BodyWidth+5+dx,track,2,height,rgb(44,69,77));
+            layer.rect(BodyX+BodyWidth+3+dx,track+a.detail_scroll*(height-8)/view.scroll_maximum,6,8,Gold);
+            char page[24]{};TextBuffer text{page,sizeof page,0};text.number(a.detail_scroll*100/view.scroll_maximum);text.ch('%');
+            layer.fitted(page,54+dx,214+dy,96,15,10,10,Muted,true,true);
+            layer.ui(I7_SettingsArrowLeft,24+dx,212+dy,18,18,a.detail_scroll?255:70);
+            layer.ui(I7_SettingsArrowRight,164+dx,212+dy,18,18,a.detail_scroll<view.scroll_maximum?255:70);
+            if(!closing){c.hit(18+dx,211+dy,30,20,HitKind::Scroll,-5,a.detail_scroll>0);c.hit(158+dx,211+dy,30,20,HitKind::Scroll,5,a.detail_scroll<view.scroll_maximum);}
+        }
+        if(view.reading_keywords)layer.box(212,221,104,18,Gold);
     }
     Canvas arrows=c;arrows.opacity=uint8_t(div255(unsigned(arrows.opacity)*view.arrow_alpha(a.map_clock_ms)));arrows.brightness=uint8_t(view.arrow_brightness(a.map_clock_ms));
     if(view.index>0)relic_inspect_arrow(arrows,0,view.arrow_x(0,a.map_clock_ms),!closing);

@@ -132,8 +132,8 @@ struct RoomUi7Presentation {
    uint32_t mask=0,enabled=0,used=0;
    int8_t slot=-1;uint8_t option=0;bool pending=false,proceed=false;
   } selection;
-  uint32_t mask=0,start=0,description_start=0,post_start=0;
-  uint16_t post_wait=0;int8_t focused=-1,description=-1;bool bound=false,hiding=false,returning=false;
+  uint32_t mask=0,start=0,description_start=0,post_start=0,heal_start=0;
+  uint16_t post_wait=0;int8_t focused=-1,description=-1;bool bound=false,hiding=false,returning=false,healing=false;
   void show(uint32_t next,uint32_t now,bool again=false){mask=next;start=now;bound=true;returning=again;focused=description=-1;for(auto&button:buttons)button=Button{};}
   void observe(uint32_t next,uint32_t now){if(selection.pending||hiding||(bound&&mask==next))return;show(next,now);}
   void select(unsigned slot,unsigned option,uint32_t enabled,uint32_t used,bool proceed){

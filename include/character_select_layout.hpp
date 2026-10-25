@@ -3,27 +3,29 @@
 #include "reference_viewport.hpp"
 namespace spire::character_select_layout {
 using reference_viewport::project;
-// Five 100px portraits plus four 16px gaps center within the source HBox.
+// Five playable portraits and the source Random button share a centered row.
 // The actual 4:3 viewport is 1680x1260; the row begins at 1260-209.
-constexpr int PortraitTop=project(1051),PortraitHeight=project(148),PortraitWidth=project(100);
-constexpr int portrait_x(unsigned index){return project(558+int(index)*116);}
-constexpr int portrait_center(unsigned index){return project(608+int(index)*116);}
+constexpr int PortraitTop=201,PortraitHeight=35,PortraitWidth=30;
+constexpr int portrait_x(unsigned index){return 55+int(index)*36;}
+constexpr int portrait_center(unsigned index){return portrait_x(index)+PortraitWidth/2;}
 // InfoPanel/VBox has center alignment and fixed Name / HpGoldSpacer /
 // Relic minimum heights. Its background is independent of localized text.
-constexpr int InfoX=project(163),InfoY=project(414),InfoWidth=project(575),InfoHeight=project(380);
-constexpr int NameHeight=project(140),StatsHeight=project(20),RelicHeight=project(100);
-constexpr int InfoPanelX=project(89),InfoPanelY=project(411),InfoPanelWidth=project(700),InfoPanelHeight=project(402);
-constexpr int StatsOffset=project(-26),StatsIcon=project(40),StatsGap=project(48),StatsLabelGap=project(4);
-constexpr int RelicIcon=project(64),RelicIconY=project(8),RelicTextX=project(72),RelicTextWidth=project(420);
-constexpr int RelicTitleY=project(12),RelicDescriptionY=project(44);
+constexpr int InfoX=16,InfoY=22,InfoWidth=177,InfoHeight=141;
+constexpr int NameHeight=25,StatsHeight=17,RelicHeight=42;
+constexpr int InfoPanelX=3,InfoPanelY=13,InfoPanelWidth=203,InfoPanelHeight=160;
+constexpr int StatsOffset=-1,StatsIcon=11,StatsGap=14,StatsLabelGap=3;
+constexpr int RelicIcon=18,RelicIconY=2,RelicTextX=22,RelicTextWidth=155;
+constexpr int RelicTitleY=0,RelicDescriptionY=11;
 constexpr int info_top(int description_height){
     // Godot containers expand to their combined minimum size; center
     // alignment must never shift a longer locale above the VBox origin.
-    const int spare=InfoHeight-NameHeight-StatsHeight-description_height-RelicHeight;
-    return InfoY+(spare>0?spare/2:0);
+    (void)description_height;return InfoY;
 }
-constexpr int AscensionX=project(539),AscensionY=project(918),AscensionWidth=project(600),AscensionHeight=project(118);
+constexpr int AscensionX=73,AscensionY=172,AscensionWidth=174,AscensionHeight=29;
 constexpr unsigned FirstClip=1705;
+// UI12's appended source catalog. Keeping these here also lets older source
+// checkpoints compile while their optional UI12 resource pack is unavailable.
+constexpr unsigned SourceVersion=40;
 constexpr uint32_t Durations[5]={5333,11667,13333,6667,8000};
 inline unsigned frame(unsigned character,uint32_t elapsed,unsigned count){
  return character<5&&count?unsigned(uint64_t(elapsed%Durations[character])*count/Durations[character]):0;

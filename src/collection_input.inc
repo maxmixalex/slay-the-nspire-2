@@ -14,16 +14,16 @@ void App::prepare_collection(){
     if(v.tab==library_tab&&v.generation==content.generation()&&grid.bound)return;
     v=CollectionPresentation{};v.tab=uint8_t(library_tab);v.generation=content.generation();v.started=map_clock_ms;
     const bool relic=library_tab==1;const auto&rank=collection_title_rank[content.english()?0:1];
-    int y=150;const int item_size=relic?68:60;
+    int y=28;const int row_step=relic?32:29;
     auto header=[&](unsigned kind){
-        if(v.category_count<16){v.category_kind[v.category_count]=uint8_t(kind);v.category_y[v.category_count++]=int16_t(reference_viewport::project(y));}y+=56;
+        if(v.category_count<16){v.category_kind[v.category_count]=uint8_t(kind);v.category_y[v.category_count++]=int16_t(y);}y+=18;
     };
     auto rows=[&](const uint16_t*ids,unsigned count,unsigned category){
-        for(unsigned start=0;start<count;start+=10){
-            const unsigned n=count-start<10?count-start:10;
+        for(unsigned start=0;start<count;start+=7){
+            const unsigned n=count-start<7?count-start:7;
             if(v.row_count>=CollectionPresentation::MaxRows||v.count+n>WorldRelicKinds)return;
-            auto&row=v.rows[v.row_count++];row={v.count,uint8_t(n),uint8_t(category),int16_t(reference_viewport::project(y))};
-            for(unsigned i=0;i<n;++i)v.ids[v.count++]=ids[start+i];y+=item_size+32;
+            auto&row=v.rows[v.row_count++];row={v.count,uint8_t(n),uint8_t(category),int16_t(y)};
+            for(unsigned i=0;i<n;++i)v.ids[v.count++]=ids[start+i];y+=row_step;
         }
     };
     auto sorted_group=[&](int rarity,int ancient,int category){
@@ -44,19 +44,19 @@ void App::prepare_collection(){
             const unsigned offset=relic?0:WorldRelicKinds;return int(rank[offset+l])-int(rank[offset+r]);
         };
         for(unsigned i=1;i<n;++i){const uint16_t id=ids[i];unsigned j=i;while(j&&compare(ids[j-1],id)>0){ids[j]=ids[j-1];--j;}ids[j]=id;}
-        rows(ids,n,unsigned(category));y+=38;
+        rows(ids,n,unsigned(category));y+=10;
     };
     if(relic){
         header(0);
         static constexpr uint16_t starting[]={WorldRelicBurningBlood,WorldRelicRingOfTheSnake,WorldRelicDivineRight,WorldRelicBoundPhylactery,WorldRelicCrackedCore};
         static constexpr uint16_t upgraded[]={WorldRelicBlackBlood,WorldRelicRingOfTheDrake,WorldRelicDivineDestiny,WorldRelicPhylacteryUnbound,WorldRelicInfusedCore};
-        rows(starting,5,0);y-=12;rows(upgraded,5,0);y+=38;
+        rows(starting,5,0);y-=3;rows(upgraded,5,0);y+=10;
         for(unsigned category=1;category<5;++category){header(category);sorted_group(int(category)+1,0,int(category));}
-        header(5);y-=40;
+        header(5);y-=7;
         for(unsigned ancient=1;ancient<=8;++ancient){header(7+ancient);sorted_group(7,int(ancient),7+int(ancient));}
         header(6);sorted_group(6,0,6);
     }else for(unsigned category=0;category<4;++category){header(category);sorted_group(int(category)+1,0,int(category));}
-    grid.configure(unsigned(library_tab),pile_sort_epoch,v.count,0,240,0,10,57,false,reference_viewport::project(y+150));
+    grid.configure(unsigned(library_tab),pile_sort_epoch,v.count,0,213,0,7,47,false,y+28);
     library_selected=CardGridScroll::clamp(library_selected,0,v.count?int(v.count)-1:0);
 }
 void App::focus_collection(){

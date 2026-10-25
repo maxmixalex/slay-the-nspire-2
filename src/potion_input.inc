@@ -5,7 +5,7 @@ void App::open_potion(int slot){
     if(potion_at(game,unsigned(slot))==Potion::Empty)return;
     if(panel==4&&scroll==slot&&!potion_targeting){close_potion();return;}
     if(panel==4&&!potion_targeting)begin_potion_popup_exit(potion_at(game,unsigned(scroll)));
-    pointer_cancel();hud_focus=-1;panel=4;scroll=slot;potion_page=uint8_t(slot/3);
+    pointer_cancel();hud_focus=-1;panel=4;scroll=slot;potion_page=uint8_t(slot/hud_potion_layout::Visible);
     potion_targeting=false;potion_menu_item=0;potion_popup_slot=slot;potion_popup_start=map_clock_ms;
     if(!potion_usable()&&can_discard_potion(game,slot))potion_menu_item=1;
 }
@@ -15,8 +15,8 @@ static bool thrown_bottle(Potion bottle){
 }
 void App::begin_potion_popup_exit(Potion bottle){
     if(panel!=4||potion_targeting||potion_popup_slot<0||bottle==Potion::Empty)return;
-    const unsigned age=map_clock_ms-potion_popup_start;const int width=potion_slot_count(game)>3?14:17;
-    potion_popup_exit.start=map_clock_ms;potion_popup_exit.x=int16_t(128+(scroll-int(potion_page)*3)*width+width/2-24);
+    const unsigned age=map_clock_ms-potion_popup_start;
+    potion_popup_exit.start=map_clock_ms;potion_popup_exit.x=int16_t(hud_potion_layout::center_x(unsigned(scroll))-potion_popup_layout::W/2);
     potion_popup_exit.y=int16_t(33-5*CombatCardMotion::sine(1024+int(age>=150?150:age)*1024/150)/1024);
     potion_popup_exit.alpha=uint8_t(age>=100?255:(1024-CombatCardMotion::sine(1024+int(age)*2048/100))*255/2048);
     potion_popup_exit.thrown=thrown_bottle(bottle);potion_popup_exit.active=true;
@@ -86,14 +86,14 @@ bool App::potion_input(Key key){
             if(key==Key::Down||key==Key::Back||key==Key::Relics){return_to_screen();return true;}
             hud_focus=-1;return false;
         }
-        hud_focus=mn(hud_focus,slots+4);
+        hud_focus=mn(hud_focus,slots+5);
         if(key==Key::Left||key==Key::Right){
             const auto room=hud_room_info(game);const int step=key==Key::Left?-1:1;
-            for(int next=hud_focus+step;next>=0&&next<=slots+4;next+=step){
+            for(int next=hud_focus+step;next>=0&&next<=slots+5;next+=step){
                 if(next==slots+2&&!room.room_enabled)continue;if(next==slots+4&&!room.boss_enabled)continue;
                 hud_focus=next;break;
             }
-            if(hud_focus>=2&&hud_focus<slots+2)potion_page=uint8_t((hud_focus-2)/3);
+            if(hud_focus>=2&&hud_focus<slots+2)potion_page=uint8_t((hud_focus-2)/hud_potion_layout::Visible);
             return true;
         }
         if(key==Key::Up)return true;

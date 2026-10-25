@@ -78,10 +78,10 @@ bool App::progress_navigation_input(Key key){
     if(!compendium_open)return false;
     if(key==Key::Back||key==Key::Collection){compendium_open=false;pointer_cancel();return true;}
     const int top=bestiary_available()?4:3;
-    if(key==Key::Left){if(compendium_selection<4){if(compendium_selection)--compendium_selection;}else compendium_selection=4;}
-    else if(key==Key::Right){if(compendium_selection<4){if(compendium_selection+1<top)++compendium_selection;}else if(progress.count)compendium_selection=5;}
-    else if(key==Key::Down&&compendium_selection<4)compendium_selection=compendium_selection==3&&progress.count?5:4;
-    else if(key==Key::Up&&compendium_selection>=4)compendium_selection=compendium_selection==5&&top==4?3:2;
+    if(key==Key::Left){if(compendium_selection&1)--compendium_selection;}
+    else if(key==Key::Right){if(!(compendium_selection&1)&&((compendium_selection<4&&compendium_selection+1<top)||(compendium_selection==4&&progress.count)))++compendium_selection;}
+    else if(key==Key::Down&&compendium_selection<4){const unsigned next=compendium_selection+2;compendium_selection=uint8_t(next<top?next:next==5&&progress.count?5:4);}
+    else if(key==Key::Up&&compendium_selection>=2){const unsigned next=compendium_selection-2;compendium_selection=uint8_t(next<top?next:2);}
     else if(key==Key::Confirm){
         if(compendium_selection<3)ui_action(UiAction(int(UiAction::LibraryCards)+compendium_selection));
         else if(compendium_selection==3)open_bestiary();else if(compendium_selection==4)open_statistics();else open_history();
@@ -95,7 +95,7 @@ bool App::progress_pointer_button(bool down,const HitRegion&hit){
         if(hit.kind==HitKind::ProgressThumb||hit.kind==HitKind::ProgressScroll||hit.kind==HitKind::HistoryCard||hit.kind==HitKind::HistoryRelic||hit.kind==HitKind::HistoryFloor||hit.kind==HitKind::RunModifier||hit.kind==HitKind::StatisticsEntry){
             pointer.held=true;pointer.dragging=false;pointer.captured=hit;pointer.down_x=pointer.x;pointer.down_y=pointer.y;pointer.context=input_context();pointer.revision=game.revision;
             scroller.dragging=true;scroller.thumb=hit.kind==HitKind::ProgressThumb;scroller.last_y=pointer.y;
-            if(scroller.thumb)scroller.set_thumb(pointer.y,run_mode.screen==RunMenu::Custom?42:statistics_open?UiStatisticsLayout::ScrollTop:61,run_mode.screen==RunMenu::Custom?158:statistics_open?UiStatisticsLayout::ScrollLength:128);return true;
+            if(scroller.thumb)scroller.set_thumb(pointer.y,run_mode.screen==RunMenu::Custom?45:statistics_open?UiStatisticsLayout::ScrollTop:61,run_mode.screen==RunMenu::Custom?153:statistics_open?UiStatisticsLayout::ScrollLength:128);return true;
         }
         return false;
     }

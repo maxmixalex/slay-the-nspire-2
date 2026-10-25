@@ -1,0 +1,157 @@
+// Actual input/command/presentation boundaries. Host timing is not device
+// performance evidence; the integrated release is accepted in Firebird.
+#include "../src/app.cpp"
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
+#include <string>
+#include <vector>
+using namespace spire;
+static App a;
+static State before,direct;
+static unsigned checks;
+static const char*scenario="initial";
+#define CHECK(x) do{++checks;if(!(x)){std::fprintf(stderr,"combat UI12 [%s]:%d %s\n",scenario,__LINE__,#x);std::exit(1);}}while(0)
+static void fresh(unsigned cards=2,Character character=Character::Ironclad){
+ new_run(a.game,0x41cef1ea,false,character);auto&s=a.game;
+ s.phase=Phase::Combat;s.current_node=0;s.turn=s.floor=1;s.relics=s.relic_count=s.relic_flash=0;
+ s.energy=99;s.expansion.stars=99;s.enemy_count=1;s.enemies[0]={999,999,0,0,0,2};
+ s.deck_count=s.card_count=s.hand.count=s.draw.count=s.discard.count=s.exhaust.count=0;
+ for(unsigned i=0;i<cards;++i){s.deck[s.deck_count++]={Strike,0};s.cards[i]={Strike,0};s.zones[i]=Zone::Hand;s.hand.ids[s.hand.count++]=uint16_t(i);++s.card_count;}
+ a.title=a.paused=a.help=a.library=a.character_select=a.settings_open=a.profiles_open=a.compendium_open=false;
+ a.statistics_open=a.history_open=a.map_preview.open=false;a.run_mode={};a.frontend_confirm=0;a.progress.tutorial_flags=0;
+ a.reset_presentation();a.pointer.visible=false;a.hit_count=0;a.map_clock_ms=100;a.animation=3;
+ CHECK(validate(s));CHECK(a.hand_can_focus());
+ // Real packs preload poses before accepting gameplay. Complete that
+ // production preparation phase without advancing the fixture's UI clock.
+ a.sync_combat_preparation();a.combat_preparation.shown=true;
+ for(unsigned i=0;i<256&&a.combat_preparation.active;++i)a.step_combat_preparation();
+ CHECK(!a.combat_preparation.active);
+}
+static void unchanged(){CHECK(!std::memcmp(&before,&a.game,sizeof before));}
+static void canonical_equal(const State&left,const State&right){
+ static SaveData one{},two{};CHECK(save(left,one));CHECK(save(right,two));
+ CHECK(one.size==two.size&&!std::memcmp(one.bytes,two.bytes,one.size));
+}
+static void aimed_preview(){
+ scenario="only the selected card receives target modifiers";fresh();a.game.enemies[0].vulnerable=2;before=a.game;
+ a.target=0;CHECK(a.card_preview_target(0)==-1&&a.card_preview_target(1)==-1);
+ a.cursor=0;a.input(Key::Confirm);CHECK(a.keyboard_card==0&&a.card_preview_target(0)==0&&a.card_preview_target(1)==-1);unchanged();
+ a.input(Key::Back);CHECK(a.keyboard_card<0&&a.card_preview_target(0)==-1);unchanged();
+ a.pointer.visible=true;a.pointer.armed_card=0;a.pointer.x=20;a.pointer.y=40;
+ CHECK(a.card_preview_target(0)==-1);
+ a.add_hit(200,60,60,60,HitKind::Enemy,0,true);a.pointer.x=220;a.pointer.y=80;
+ CHECK(a.card_preview_target(0)==0&&a.card_preview_target(1)==-1);unchanged();
+ a.pointer.x=170;CHECK(a.card_preview_target(0)==-1);unchanged();
+ a.pointer.x=220;a.detail_card=card_token(a.game.cards[0]);CHECK(a.card_preview_target(0)==-1);a.detail_card=-1;
+ a.game.enemies[0].hp=0;CHECK(a.card_preview_target(0)==-1);
+}
+static void numeric_selection(){
+ scenario="ten semantic card shortcuts select, repeat does not play";fresh(10);before=a.game;
+ for(unsigned slot=0;slot<10;++slot){
+  const auto key=a.input_bindings.keys[0][unsigned(InputCommand::Card1)+slot];
+  CHECK(key&&a.physical_key(key,true));CHECK(a.keyboard_card==int(slot)&&a.cursor==int(slot));unchanged();
+  CHECK(a.physical_key(key,true));CHECK(a.keyboard_card==int(slot));unchanged();CHECK(a.physical_key(key,false));
+ }
+ a.input(Key::Back);CHECK(a.keyboard_card<0);unchanged();
+ // The enlarged focused face clears the two control rails even at the
+ // extreme authored fan positions; every source holder remains addressable.
+ for(unsigned count=1;count<=10;++count)for(unsigned slot=0;slot<count;++slot){
+  const auto pose=hand_pose(int(count),int(slot),true);const auto bounds=hand_bounds(pose);
+  CHECK(bounds.x>=70&&bounds.x+bounds.w<=246&&bounds.y>=100);
+  CHECK(hand_contains(pose,pose.cx,pose.cy));
+ }
+ // Entering target selection must retain a full-size readable face even
+ // before its horizontal interpolation has settled. This covers the LCD
+ // regression where source .75 scale left the description below y=240.
+ CombatCardMotion motion;
+ for(unsigned slot=0;slot<10;++slot){
+  motion.begin(a.game,0);motion.set_selected(int(slot));motion.fit_centered_selection();
+  for(unsigned tick=0;tick<=30;++tick){
+   motion.advance(tick);const auto pose=motion.hand_pose_at(slot,false);const auto bounds=hand_bounds(pose);
+   CHECK(pose.scale==HandFocusScale&&bounds.y>=22&&bounds.y+bounds.h<=240);
+   CHECK(bounds.x>=70&&bounds.x+bounds.w<=246);
+  }
+ }
+ unchanged();
+}
+static void denied_plays(){
+ scenario="keyboard denied play creates a thought message without commands";fresh();a.game.energy=0;before=a.game;
+ a.input(Key::Confirm);CHECK(a.combat_speech_key&&!std::strcmp(a.combat_speech_key,"NOT_ENOUGH_ENERGY"));
+ CHECK(a.combat_speech_at==100&&a.keyboard_card<0);unchanged();
+ scenario="pointer can click a nonplayable card";fresh(1);a.game.energy=0;before=a.game;
+ const auto pose=a.combat_hand_pose(0,false);const auto bounds=hand_bounds(pose);
+ a.add_hit(bounds.x,bounds.y,bounds.w,bounds.h,HitKind::Hand,0,true);
+ a.pointer_move(pose.cx,pose.cy>239?239:pose.cy);CHECK(a.hit_at(a.pointer.x,a.pointer.y));
+ a.pointer_button(true);a.pointer_button(false);
+ CHECK(a.combat_speech_key&&!std::strcmp(a.combat_speech_key,"NOT_ENOUGH_ENERGY"));unchanged();
+ scenario="resource and intrinsic failure reasons";fresh(1,Character::Regent);a.game.cards[0]={RegentAstralPulse,0};a.game.expansion.stars=0;
+ CHECK(card_star_cost(a.game,a.game.cards[0],0)>0);before=a.game;a.combat_play_denied(0);
+ CHECK(!std::strcmp(a.combat_speech_key,"NOT_ENOUGH_STARS"));unchanged();
+ a.game.cards[0]={Wound,0};before=a.game;a.combat_play_denied(0);CHECK(!std::strcmp(a.combat_speech_key,"UNPLAYABLE"));unchanged();
+}
+static void battle_entry(){
+ scenario="cold combat intro and restored combat suppression";fresh();before=a.game;
+ CHECK(a.turn_banner_suppress_intro);a.sync_turn_banner();CHECK(!a.turn_banner.battle_active&&!a.turn_banner.player_active);unchanged();
+ CHECK(!a.turn_banner_suppress_intro);++a.game.floor;before=a.game;a.sync_turn_banner();CHECK(a.turn_banner.battle_active);unchanged();
+ a.game.phase=Phase::Map;a.reset_presentation();a.game.phase=Phase::Combat;before=a.game;a.sync_turn_banner();
+ CHECK(a.turn_banner.battle_active&&a.turn_banner.player_start==a.animation+TurnBannerPresentation::BattleTicks);unchanged();
+ a.animation+=TurnBannerPresentation::BattleTicks;CHECK(a.turn_banner.sample(a.animation).kind==TurnBannerPresentation::Player);
+}
+static void smith(){
+ scenario="Smith only animates the committed upgraded card";fresh();auto&s=a.game;s.phase=Phase::Camp;
+ CHECK(camp(s,true));CHECK(s.phase==Phase::Upgrade);a.reset_presentation();a.map_clock_ms=600;
+ a.deck_candidate=0;a.deck_choice_revision=s.revision;a.deck_choice_phase=s.phase;CHECK(a.deck_candidate_valid());
+ direct=s;CHECK(upgrade_card(direct,0));a.confirm_deck_choice();CHECK(!std::memcmp(&s,&direct,sizeof s));
+ const auto&view=a.reward_presentation.upgrades;CHECK(view.count==1&&view.cards[0].card.kind==Strike&&view.cards[0].card.upgraded);
+ CHECK(view.start==600&&view.cards[0].deck==0&&view.alive(2849)&&!view.alive(2850));
+ before=s;Canvas c{a};for(unsigned age:{0u,1u,125u,250u,1749u,1750u,2100u,2250u}){a.map_clock_ms=600+age;upgraded_card_animation(c);unchanged();}
+ a.reset_presentation();CHECK(!a.reward_presentation.upgrades.count);
+ scenario="stale or canceled Smith cannot create upgrade effects";fresh();s.phase=Phase::Upgrade;a.reset_presentation();
+ a.deck_candidate=0;a.deck_choice_revision=s.revision+1;a.deck_choice_phase=s.phase;before=s;
+ a.confirm_deck_choice();CHECK(!a.reward_presentation.upgrades.count);unchanged();
+}
+static void reward_overlap(){
+ scenario="Loot barrier excludes the remaining death clip";
+ for(unsigned fast=0;fast<2;++fast){fresh();CHECK(encounter_setup(a.game,EncounterId::NibbitsNormal));a.fast_mode=fast!=0;
+  a.sync_enemy_feedback();CHECK(a.combat_status.had_live_scene);
+  for(unsigned i=0;i<a.game.enemy_count;++i)a.game.enemies[i].hp=0;
+  a.game.phase=Phase::Reward;a.enemy_visual_clock=a.animation+1000;before=a.game;a.sync_enemy_feedback();
+  CHECK(a.combat_status.reward_scheduled&&a.combat_status.reward_at==a.animation+(fast?8u:16u));unchanged();
+ }
+}
+static std::vector<uint8_t>read(const std::string&path){FILE*f=std::fopen(path.c_str(),"rb");CHECK(f);CHECK(!std::fseek(f,0,SEEK_END));const long n=std::ftell(f);CHECK(n>0);CHECK(!std::fseek(f,0,SEEK_SET));std::vector<uint8_t>v(size_t(n),0);CHECK(std::fread(v.data(),1,v.size(),f)==v.size());CHECK(!std::fclose(f));return v;}
+static void merchant_cache(){
+ scenario="actual merchant normal card uses exact existing cache";fresh();a.game.phase=Phase::Shop;Canvas c{a};
+ invalidate_card_face_cache();begin_card_face_frame();for(auto&pixel:a.pixels)pixel=0x2925;draw_card_face(c,{Strike,0},90,40,65,91);
+ bool cached=false;for(const auto&slot:small_card_faces)cached|=slot.valid&&slot.width==65&&slot.height==91;CHECK(cached);
+ const std::vector<uint16_t>first(a.pixels,a.pixels+320*240);begin_card_face_frame();for(auto&pixel:a.pixels)pixel=0x2925;draw_card_face(c,{Strike,0},90,40,65,91);
+ CHECK(!std::memcmp(first.data(),a.pixels,sizeof a.pixels));CHECK(a.content.healthy());
+}
+static void actual_aimed_descriptions(){
+ scenario="actual hand cache changes damage only while aiming";fresh();a.game.enemies[0].vulnerable=2;before=a.game;Canvas c{a};
+ invalidate_hand_tiles();begin_card_face_frame();a.target=0;const std::string base=hand_tile(c,0).description;
+ a.cursor=0;a.input(Key::Confirm);const std::string aimed=hand_tile(c,0).description;
+ CHECK(aimed!=base&&std::strstr(aimed.c_str(),"9"));CHECK(base==hand_tile(c,1).description);unchanged();
+ a.input(Key::Back);CHECK(base==hand_tile(c,0).description);unchanged();CHECK(a.content.healthy());
+}
+static void actual_winning_card(){
+ scenario="a real winning card opens Loot while corpses still animate";fresh();CHECK(encounter_setup(a.game,EncounterId::NibbitsNormal));
+ a.game.cards[0]={Thunderclap,0};for(unsigned i=0;i<a.game.enemy_count;++i)a.game.enemies[i].hp=1;a.fast_mode=true;
+ a.sync_combat_preparation();a.combat_preparation.shown=true;for(unsigned i=0;i<256&&a.combat_preparation.active;++i)a.step_combat_preparation();CHECK(!a.combat_preparation.active);
+ direct=a.game;a.begin_combat_feedback(0);{UiCoreObserver observer(a);CHECK(play(a.game,0,0));}
+ CHECK(play(direct,0,0));canonical_equal(a.game,direct);CHECK(a.game.phase==Phase::Reward&&a.combat_feedback.finished);
+ before=a.game;for(unsigned i=0;i<256&&!a.combat_status.reward_scheduled;++i){a.advance(33);a.sync_enemy_feedback();}
+ CHECK(a.combat_status.reward_scheduled);const auto ready=a.combat_status.reward_at;
+ CHECK(ready<=ui_feedback_later(a.animation,a.combat_feedback.end_at)+8u);
+ while(int32_t(ready-a.animation)>0){a.advance(33);a.sync_enemy_feedback();}unchanged();
+ bool retained=false;for(unsigned i=0;i<a.game.enemy_count;++i)retained|=a.enemy_opacity(int(i))>0;
+ CHECK(retained&&int32_t(a.combat_linger_until-a.animation)<=0);CHECK(a.content.healthy());
+}
+int main(int argc,char**argv){CHECK(argc==1||argc==2);aimed_preview();numeric_selection();denied_plays();battle_entry();smith();reward_overlap();
+ if(argc==2){const std::string root=argv[1];auto common=read(root+"/nSpire2.common.tns"),language=read(root+"/nSpire2.eng.tns");SplitResourceSource split;
+  CHECK(split.open(ResourceSource::memory(common.data(),common.size()),ResourceSource::memory(language.data(),language.size()),ResourceLanguage::English));CHECK(a.init(split.source(),{}));
+  aimed_preview();denied_plays();smith();reward_overlap();merchant_cache();actual_aimed_descriptions();actual_winning_card();
+ }
+ std::printf("combat UI12: %u checks passed%s\n",checks,argc==2?"; actual source cards rendered":"");
+}

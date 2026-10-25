@@ -72,16 +72,24 @@ static void card_resource_label(Canvas&c,const char*text,int x,int y,int size,un
     else if(style==ResourceDecreased){color=rgb(127,255,0);outline=rgb(31,89,35);}
     else if(style==ResourceInsufficient){color=rgb(255,85,85);outline=rgb(80,23,23);}
     Canvas edge=c;if(star&&style==ResourceNormal)edge.opacity=uint8_t(div255(edge.opacity*220));
-    for(int dx=-1;dx<=1;++dx)for(int dy=-1;dy<=1;++dy)if(dx||dy)edge.text(text,x+dx,y+dy,size,outline);
+    // A cost has a colored stroke, not a lower-right drop shadow. Keep a
+    // thin LCD pixel on all four sides without the heavy diagonal halo.
+    edge.opacity=uint8_t(div255(unsigned(edge.opacity)*208));
+    edge.text(text,x-1,y,size,outline);edge.text(text,x+1,y,size,outline);
+    edge.text(text,x,y-1,size,outline);edge.text(text,x,y+1,size,outline);
     c.text(text,x,y,size,color);
 }
 static CardFaceFonts card_face_fonts(const Canvas&c,int width){
     const auto&content=c.a.content;
     const bool compact=content.version()>=HistoryUi8ContentVersion&&content.font_size(5)==5;
     if(!compact)return {width>=100?12:width>=70?10:8,8,width>=100?10:8,8,width>=100?12:width>=70?10:8,8,8,false};
-    return {content.font_size(card_face::font_pixels(26,width)),content.font_size(card_face::font_pixels(16,width),5),
-        content.font_size(card_face::font_pixels(21,width)),content.font_size(card_face::font_pixels(12,width)),
-        content.font_size(card_face::font_pixels(32,width),5),content.font_size(card_face::font_pixels(22,width),5),5,true};
+    // A 5px glyph cannot carry a readable card description on this LCD.
+    // Keep source artwork proportions; text uses a native 8px floor and
+    // complete descriptions remain available in the paged hover/inspector.
+    const int readable=width>=80?10:8;
+    return {content.font_size(mx(readable,card_face::font_pixels(26,width))),content.font_size(width>=80?10:8,source_label_face(content.original_label_fonts(),5)),
+        content.font_size(mx(readable,card_face::font_pixels(21,width))),content.font_size(readable),
+        content.font_size(mx(width>=80?12:10,card_face::font_pixels(32,width)),5),content.font_size(mx(8,card_face::font_pixels(22,width)),5),8,true};
 }
 // One scene-based card renderer for every presentation size. Individual
 // screens supply instance-aware costs/descriptions, never rearranged art.
@@ -103,13 +111,16 @@ static void render_card_face(Canvas&c,Card card,int x,int y,int w,int h,int fee=
     c.picture(banner,l.banner.x,l.banner.y,l.banner.w,l.banner.h);
     char title[160]{};TextBuffer name{title,sizeof title,0,&a.content};name.text(known?a.content.card_string(card.kind):a.content.locale_string("card_library","UNKNOWN.title"));if(known&&card.upgraded)name.ch('+');
     const int title_size=fonts.title;
-    const int title_y=l.title.y+mx(0,(l.title.h-title_size-2)/2);
-    c.text_fitted(title,l.title.x,title_y,l.title.w,title_size,known&&card.upgraded?rgb(127,255,0):rgb(255,246,226),fonts.minimum,true,true,card_title_outline(card,known));
+    const int title_y=l.title.y+mx(0,(l.title.h-title_size-4)/2)-mx(1,h/100);
+    Canvas title_label=c;title_label.font_face=uint8_t(source_label_face(a.content.original_label_fonts(),5));
+    title_label.text_fitted(title,l.title.x,title_y,l.title.w,title_size,known&&card.upgraded?rgb(127,255,0):rgb(255,246,226),fonts.minimum,true,true,card_title_outline(card,known));
 
-    const char*type_text=card_type_label(type,&a.content);Canvas type_label=c;if(fonts.compact)type_label.font_face=5;
+    const char*type_text=card_type_label(type,&a.content);Canvas type_label=c;if(fonts.compact)type_label.font_face=uint8_t(source_label_face(a.content.original_label_fonts(),5));
     const int type_size=fonts.type,plaque_h=fonts.compact?mx(type_size+3,l.type.h):mx(11,l.type.h);
     const int padding=fonts.compact?mx(2,card_face::scaled(17,w,300)):5;
-    const int plaque_w=mn(w-6,mx(l.type.w,type_label.width(type_text,type_size)+padding));
+    // Leave two pixels for the last glyph's ink beyond its advance. A
+    // perfectly measured "Attack" must not be shortened to "Atta...".
+    const int plaque_w=mn(w-6,mx(l.type.w,type_label.width(type_text,type_size)+padding+2));
     const int plaque_x=x+(w-plaque_w)/2,plaque_y=fonts.compact?l.type.y+(l.type.h-plaque_h)/2:l.type.y;
     int plaque=a.content.ui_image(base+3);
     if(plaque>=0)c.nine_image(plaque,plaque_x,plaque_y,plaque_w,plaque_h,4,0,4,0);
@@ -158,7 +169,7 @@ namespace {
 // pixel, so moving actors, selection highlights and overlapping cards remain
 // exact. Eight protected slots cover a full library page and eight of ten
 // selector cards without a cyclic LRU miss storm.
-constexpr int SmallCardCacheW=56,SmallCardCacheH=70,SmallCardCacheCount=8;
+constexpr int SmallCardCacheW=84,SmallCardCacheH=108,SmallCardCacheCount=8;
 struct SmallCardFaceCache {
     const Content* owner=nullptr;
     uint32_t generation=0,seen=0;
@@ -173,8 +184,8 @@ struct SmallCardFaceCache {
 };
 static SmallCardFaceCache small_card_faces[SmallCardCacheCount];
 static uint32_t small_card_frame=0;
-static_assert(sizeof small_card_faces+sizeof small_card_frame<=130u*1024u,
-    "Small-card cache must fit its bounded 130KiB ARM allowance");
+static_assert(sizeof small_card_faces+sizeof small_card_frame<=300u*1024u,
+    "Small-card cache must fit its bounded 300KiB ARM allowance");
 static bool card_cache_text_equal(const char*a,const char*b){while(*a&&*a==*b){++a;++b;}return *a==*b;}
 static bool card_cache_text_fits(const char*s,unsigned capacity){unsigned n=0;while(s[n])if(++n>=capacity)return false;return true;}
 static void card_cache_text_copy(char*out,const char*in){while((*out++=*in++)){};}
@@ -203,7 +214,7 @@ static void draw_card_face(Canvas&c,Card card,int x,int y,int w,int h,int fee=-2
     if(known&&!c.a.library&&!c.a.history_open&&!c.a.title&&c.a.game.world.active&&!c.a.game.practice)c.a.discover_card(card.kind);
     // Energy labels retain a1px outline above the source energy artwork.
     const int left=x-6,top=y-4;
-    const bool supported_size=(w==46&&h==64)||(w==47&&h==66)||(w==43&&h==61)||(w==36&&h==50)||(w==44&&h==62);
+    const bool supported_size=(w==65&&h==91)||(w==69&&h==96)||(w==69&&h==97)||(w==68&&h==96)||(w==46&&h==64)||(w==47&&h==66)||(w==43&&h==61)||(w==36&&h==50)||(w==44&&h==62);
     const bool candidate=known&&!description_truncated&&c.a.content.healthy()&&supported_size&&!c.coverage&&c.opacity==255&&c.brightness==255&&
         c.tint_red==255&&c.tint_green==255&&c.tint_blue==255&&left>=0&&top>=0&&
         left+SmallCardCacheW<=c.clip_w&&top+SmallCardCacheH<=c.clip_h;

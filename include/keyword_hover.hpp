@@ -79,7 +79,7 @@ struct KeywordHoverState {
     bool details=false;
 };
 inline HoverRect card_hover_column(HoverRect owner){
-    constexpr int margin=3,gap=1,desired=69;
+    constexpr int margin=3,gap=2,desired=104;
     const int left=owner.x-gap-margin,right=320-margin-(owner.x+owner.w+gap);
     bool use_left=owner.x>240;
     if(!use_left&&right<desired&&left>right)use_left=true;

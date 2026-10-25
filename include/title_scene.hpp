@@ -5,10 +5,10 @@
 // Original main-menu logo pose, cropped from the 1920x1080 scene to 320x240.
 namespace spire::title_scene {
 constexpr int AtlasWidth=164,LegacyAtlasHeight=106,AtlasHeight=210;
-constexpr int TextX=40,TextY=48,TextWidth=164,TextHeight=84;
-constexpr int FireX=106,FireY=66,FireWidth=16,FireHeight=22;
+constexpr int TextX=40,TextY=36,TextWidth=164,TextHeight=84;
+constexpr int FireX=106,FireY=54,FireWidth=16,FireHeight=22;
 constexpr int FireAtlasY=84,FireFrames=10,FireFrameMs=100;
-constexpr int GlowAtlasY=106,GlowHeight=104,GlowCenterX=115,GlowCenterY=79;
+constexpr int GlowAtlasY=106,GlowHeight=104,GlowCenterX=115,GlowCenterY=67;
 constexpr unsigned GlowPeriodMs=3000,GlowOpacity=75;
 struct GlowSample {int width,height;unsigned brightness;};
 inline GlowSample glow_sample(uint32_t milliseconds){
@@ -34,17 +34,15 @@ inline GlowSample glow_sample(uint32_t milliseconds){
 // 269x450 source rectangle contains centered200x50 controls, not stretched
 // full-width text rows. Round each source boundary rather than accumulating
 // a rounded row height across the stack.
-constexpr int MenuCenter=reference_viewport::project_half(1313);
-constexpr int MenuHitLeft=reference_viewport::project_half(1113);
-constexpr int MenuHitWidth=reference_viewport::project(200);
-constexpr int MenuFont=reference_viewport::project(32),MenuRowHeight=reference_viewport::project(50);
-constexpr int menu_source_y(int rows,int row=0){return 699+(450-rows*50)/2+row*50;}
-constexpr int menu_y(int rows,int row){return reference_viewport::project(menu_source_y(rows,row));}
+// LCD adaptation: keep the source menu under the logo, with readable rows.
+constexpr int MenuCenter=111,MenuHitLeft=24,MenuHitWidth=174;
+constexpr int MenuFont=10,MenuRowHeight=20;
+constexpr int menu_y(int rows,int row){return 206-rows*MenuRowHeight+row*MenuRowHeight;}
 constexpr int menu_top(int rows){return menu_y(rows,0);}
-constexpr int menu_height(int rows,int row){return reference_viewport::project(menu_source_y(rows,row)+50)-menu_y(rows,row);}
-constexpr int menu_center_y(int rows,int row){return reference_viewport::project(menu_source_y(rows,row)+25);}
-constexpr int ContinueX=reference_viewport::project_half(1313+290);
-constexpr int ContinueWidth=reference_viewport::project(448);
-constexpr int continue_y(int rows){return reference_viewport::project(menu_source_y(rows)+25+5);}
-constexpr int continue_height(bool ascension){return reference_viewport::project(ascension?233:200);}
+constexpr int menu_height(int,int){return MenuRowHeight;}
+constexpr int menu_center_y(int rows,int row){return menu_y(rows,row)+MenuRowHeight/2;}
+constexpr int menu_source_y(int rows,int row=0){return menu_y(rows,row)*21/4;}
+constexpr int ContinueX=184,ContinueWidth=130;
+constexpr int continue_y(int rows){return menu_y(rows,0)+10;}
+constexpr int continue_height(bool ascension){return ascension?97:82;}
 }

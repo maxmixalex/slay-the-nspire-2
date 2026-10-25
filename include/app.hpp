@@ -1,4 +1,5 @@
 #pragma once
+#include "character_select_particles.hpp"
 #include "merchant_layout.hpp"
 #include "merchant_navigation.hpp"
 #include "room_ui7_presentation.hpp"
@@ -13,6 +14,7 @@
 #include "retained_filter.hpp"
 #include "game_over_presentation.hpp"
 #include "core.hpp"
+#include "debug_commands.hpp"
 #include "keyword_hover.hpp"
 #include "event_assets.hpp"
 #include "assets.hpp"
@@ -57,6 +59,8 @@
 #include "speech_bubble_assets.hpp"
 #include "history_body_ui10_assets.hpp"
 #include "settings_ui10_assets.hpp"
+#include "ui12_assets.hpp"
+#include "font_metrics.hpp"
 #include "title_scene.hpp"
 #include "title_menu_presentation.hpp"
 #include "title_assets.hpp"
@@ -85,6 +89,7 @@
 #include "run_modes.hpp"
 #include "bestiary_presentation.hpp"
 #include "auxiliary_ui.hpp"
+#include "ui12_assets.hpp"
 namespace spire {
 constexpr int ScreenW=320,ScreenH=240,MaxPack=13*1024*1024;
 // MaxPack remains the historical in-memory fixture limit. Production hosts
@@ -97,7 +102,7 @@ constexpr uint32_t MaxContentFile=256u*1024u*1024u;
 constexpr unsigned ContentVersion=14,TileContentVersion=15,NativeUiContentVersion=16,ContentStrings=WorldStringCount;
 constexpr unsigned RetainedContentVersion=20;
 struct Picture {const uint8_t* pixels;const uint8_t* alpha;const uint8_t* palette;uint16_t w,h;uint8_t format;};
-struct Glyph {const uint8_t* pixels;uint8_t w,h;uint16_t advance;uint16_t encoded_size=0;};
+struct Glyph {const uint8_t* pixels;uint8_t w,h;uint16_t advance;uint16_t encoded_size=0;uint16_t advance64=0;int8_t bearing_x=0;};
 struct Clip {uint32_t first;uint16_t count,frame_ms;int16_t pivot_x,pivot_y;uint32_t sprite_units=0;};
 struct ImageDimensions {uint16_t w=0,h=0;};
 struct ImageCacheUsage {unsigned entries=0,pages=0;};
@@ -109,6 +114,7 @@ class Content {
     const uint8_t* tile_metadata_{};uint32_t directory_bytes_{};
     ResourceReader reader_{};
     mutable bool io_good_=true;
+    uint8_t language_id_=2;
     uint32_t generation_=0;
     mutable uint32_t font_sizes_[8]{},font_size_generation_=0;
     mutable uint8_t font_sizes_known_=0;
@@ -137,8 +143,8 @@ public:
     unsigned image_cache_pages(int id)const;
     ImageCacheUsage image_cache_usage()const;
     static constexpr unsigned image_page_bytes(){return 4096;}
-    static constexpr unsigned image_capacity_pages(){return 748;}
-    static constexpr unsigned image_capacity_entries(){return 320;}
+    static constexpr unsigned image_capacity_pages(){return 1280;}
+    static constexpr unsigned image_capacity_entries(){return 480;}
     // Select a real resident font band before layout. This never loads a
     // glyph or scans the resource payload; sparse legacy faces fall back.
     int font_size(int preferred,unsigned style=0,bool at_most=false,bool sparse_scene_sizes=false)const;
@@ -146,6 +152,7 @@ public:
     // Layout uses the resident descriptor only. Measuring a label must not
     // decode/read glyph pixels or evict the glyphs about to be painted.
     Glyph glyph_metrics(uint32_t cp,int size,unsigned style=0)const;
+    int glyph_kerning64(uint32_t left,uint32_t right,int size,unsigned style=0)const;
     const char* string(int id)const;
     Clip clip(int id)const;
     unsigned card_count()const{return cards_;}
@@ -155,10 +162,10 @@ public:
     bool has_inspection_assets()const{return version_>=SelectionContentVersion&&(ui_count_==InspectionAuxiliaryCount||has_speech_bubble_assets());}
     bool has_speech_bubble_assets()const{return version_>=SpeechBubbleContentVersion&&(ui_count_==SpeechBubbleAuxiliaryCount||has_history_header_assets());}
     bool has_history_header_assets()const{return version_>=HistoryHeaderContentVersion&&(ui_count_==HistoryHeaderAuxiliaryCount||has_history_body_assets());}
-    bool has_history_body_assets()const{return version_>=HistoryBodyContentVersion&&ui_count_==SettingsUi10AuxiliaryCount;}
+    bool has_history_body_assets()const{return version_>=HistoryBodyContentVersion&&(ui_count_==SettingsUi10AuxiliaryCount||(version_>=Ui12ContentVersion&&ui_count_==Ui12AuxiliaryCount));}
     bool has_settings_ui10_assets()const{return has_history_body_assets();}
     bool current_profile()const{
-        if(version_<ContentVersion||version_>HistoryBodyContentVersion||cards_!=CardKinds)return false;
+        if(version_<ContentVersion||version_>Ui12ContentVersion||cards_!=CardKinds)return false;
         const unsigned auxiliary=version_>=GameOverTransitionContentVersion?unsigned(GameOverTransitionAuxiliaryCount):version_>=HistoryJournalContentVersion?unsigned(HistoryJournalAuxiliaryCount):version_>=CharacterDeathContentVersion?unsigned(CharacterDeathAuxiliaryCount):version_>=HistoryUi8ContentVersion?unsigned(HistoryUi8AuxiliaryCount):version_>=HudUi7ContentVersion?unsigned(HudUi7AuxiliaryCount):version_>=ProfileContentVersion?unsigned(ProfileAuxiliaryCount):version_>=PhobiaContentVersion?unsigned(PhobiaAuxiliaryCount):version_>=Ui7ContentVersion?unsigned(Ui7AuxiliaryCount):version_>=Ui6ContentVersion?unsigned(Ui6AuxiliaryCount):version_>=FrontendContentVersion?unsigned(FrontendAuxiliaryCount):version_>=TitleEffectsContentVersion?unsigned(TitleEffectsAuxiliaryCount):version_>=MerchantEffectsContentVersion?unsigned(MerchantEffectsAuxiliaryCount):version_==FeedbackContentVersion?unsigned(FeedbackAuxiliaryCount):version_==LocaleContentVersion?unsigned(LocaleAuxiliaryCount):version_==NativeUiContentVersion?unsigned(NativeUiAuxiliaryCount):unsigned(U_Count);
         const unsigned animations=version_>=BestiaryKaiserContentVersion?unsigned(BestiaryKaiserAnimationKinds):version_>=CharacterDeathContentVersion?unsigned(CharacterDeathAnimationKinds):version_>=PhobiaContentVersion?unsigned(PhobiaAnimationKinds):version_>=Ui7ContentVersion?unsigned(Ui7AnimationKinds):version_>=MerchantEffectsContentVersion?unsigned(MerchantEffectsAnimationKinds):version_==FeedbackContentVersion?unsigned(FeedbackAnimationKinds):unsigned(AnimationKinds);
         const bool text=version_>=Ui7ContentVersion?strings_==Ui7StringCount:version_>=LocaleContentVersion?strings_==LocaleStringCount:strings_==ContentStrings||(version_==NativeUiContentVersion&&strings_==NativeUiStringCount);
@@ -179,6 +186,9 @@ public:
     const char* locale_string(const char* table,const char* key)const;
     const char* ui_text(const char* legacy_utf8)const;
     bool english()const;
+    unsigned language()const;
+    bool original_label_fonts()const{return !locale_language_info(language()).substitute;}
+    bool word_wrapping()const{return locale_language_info(language()).word_wrap;}
     const char* world_title(const char* table,const char* key)const;
     int world_image(const char* group,const char* key)const;
     int world_clip(const char* model,const char* action)const;
@@ -245,7 +255,7 @@ constexpr unsigned MaxEnemyVisualFacts=64,MaxEnemyVisualCommands=24;
 struct EnemyVisualFacts {uint64_t known=0;int values[MaxEnemyVisualFacts]{};};
 struct EnemyVisualCommand {const char* action=nullptr;EnemyVisualFacts facts{};int16_t move=-1;uint8_t direct=0;uint32_t earliest=0;};
 struct EnemyPresentation {
-    uint16_t identity=0;uint8_t model=0,skin=0;
+    uint16_t identity=0;uint8_t model=0,skin=0,instance_hue=0;
     CreaturePose pose{};
     int state=-1,clip=-1,move=-1,hp=0;
     uint32_t start=0,until=0;
@@ -271,6 +281,8 @@ struct App {
     void release_end_turn_hold(uint16_t owner);
     void advance_end_turn_hold(unsigned ms);
     CharacterSelectPresentation character_select_presentation{};
+    CharacterDeparturePresentation character_departure{};
+    bool character_random=false;
     TurnBannerPresentation turn_banner{};
     uint32_t energy_rotation_tick=0,energy_rotation_mdeg=0;
     bool energy_rotation_zero=false;
@@ -441,7 +453,9 @@ struct App {
     bool run_modes_input(Key);
     bool run_modes_action(UiAction);
     void run_modifier_select(unsigned);
-    bool start_selected_run(const RunOptions&);
+    bool start_selected_run(const RunOptions&,bool animated=false);
+    void finish_selected_run();
+    void advance_character_departure();
     const char* run_modifier_text(RunModifier,bool description=false)const;
     uint16_t localized_card_rank(CardKind)const;
     void accept_frontend_confirm();
@@ -516,6 +530,11 @@ struct App {
     bool crystal_input(Key);
     void crystal_click(int);
     int event_reader_scroll=0;
+    UiHistoryScroll event_body_scroll{};
+    uint32_t event_body_key=0;
+    int event_body_top=54,event_body_height=49;
+    bool event_body_focus=false;
+    bool event_body_active()const;
     bool room_input(Key);
     Character selected_character=Character::Ironclad;
     int library_filter=1,library_sort=0;
@@ -575,6 +594,10 @@ struct App {
     uint32_t keyboard_card_revision=0;
     bool card_target_input(Key);
     int selected_hand_card()const;
+    bool turn_banner_suppress_intro=false;
+    int card_preview_target(int instance)const;
+    void combat_play_denied(int instance);
+    const char* combat_speech_key=nullptr;uint32_t combat_speech_at=0;
     uint8_t potion_menu_item=0,potion_page=0;
     int hud_focus=-1; // HP, gold, holders, Room/Floor/Boss, then relic positions at 32.
     HudRelicMotion hud_relic_motion{};
@@ -687,6 +710,7 @@ struct App {
     void before_combat_effect(const State&,Effect);
     void observe_combat_effect(const State&,Effect);
     void observe_combat_damage(const State&,const CoreDamageResult&);
+    void observe_orb_activation(const State&,const CoreOrbNotice&);
     void sync_combat_damage();
     void combat_scene_offset(int&x,int&y)const;
     void observe_power_flash(const State&,int receiver,const char*key);
@@ -844,6 +868,12 @@ struct App {
     bool debug_open=false,debug_editing=false;
     int debug_selection=0,debug_variant=0;
     char debug_line[128]{},debug_reply[256]{};
+    char debug_output[24][64]{},debug_history[8][128]{},debug_draft[128]{},debug_completion[128]{};
+    uint8_t debug_output_count=0,debug_history_count=0,debug_caret=0,debug_output_scroll=0;
+    int8_t debug_history_index=-1;
+    bool debug_completing=false;
+    uint16_t debug_completion_total=0;
+    uint8_t debug_output_kind[24]{};
     bool debug_command(const char*);
     bool debug_input(Key);
     void debug_text(int);

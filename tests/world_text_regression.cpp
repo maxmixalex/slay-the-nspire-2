@@ -127,7 +127,7 @@ static void original_resource_labels(){
  // The pinned star formatter repeats sprite-font icons. Its standalone
  // binding uses the same sprite; localized prose still names the resource.
  const std::string star=InlineStarText;
- const std::string energy=a.content.world_title("static_hover_tips","ENERGY_COUNT");
+ const std::string energy=InlineEnergyText;
  CHECK(!star.empty()&&!energy.empty());
  CHECK(description(WorldRelicDivineRight).find(star)!=std::string::npos);unchanged();
  struct Sample{const char*table,*key;const std::string*label;};

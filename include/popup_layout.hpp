@@ -2,20 +2,20 @@
 #include <stdint.h>
 namespace spire {
 namespace popup_layout {
-// GenericPopup is centered at1680x1260. Its VerticalPopup instance overrides
-// the base scene with(-51,-59)..(522,600), so it is573x659, not522x600.
+// GenericPopup retains the source artwork and two-button semantics. Its LCD
+// plaque is reflowed so destructive confirmations are readable at10/12px.
 constexpr int project(int value){return (value*4+10)/21;}
-constexpr int X=project(528),Y=project(271),W=project(573),H=project(659);
-constexpr int HeaderY=project(327),BodyX=project(578),BodyY=project(386);
-constexpr int BodyW=project(473),BodyH=project(389);
-constexpr int ButtonY=project(778),ButtonW=project(180),ButtonH=project(72);
-constexpr int ImageY=project(770),ImageW=project(196),ImageH=project(96);
-constexpr int LabelY=project(767),LabelW=project(150),LabelH=project(96);
-constexpr int button_x(bool yes){return project(yes?921:528);}
-constexpr int image_x(bool yes){return project(yes?904:528);}
-constexpr int label_x(bool yes){return project(yes?935:543);}
-constexpr int pivot_x(bool yes){return project(yes?1095:533);}
-constexpr int PivotY=project(820);
+constexpr int X=30,Y=32,W=260,H=176;
+constexpr int HeaderY=45,BodyX=44,BodyY=80;
+constexpr int BodyW=232,BodyH=76;
+constexpr int ButtonY=164,ButtonW=98,ButtonH=30;
+constexpr int ImageY=160,ImageW=108,ImageH=40;
+constexpr int LabelY=161,LabelW=88,LabelH=32;
+constexpr int button_x(bool yes){return yes?178:44;}
+constexpr int image_x(bool yes){return button_x(yes)-5;}
+constexpr int label_x(bool yes){return button_x(yes)+5;}
+constexpr int pivot_x(bool yes){return button_x(yes)+ButtonW/2;}
+constexpr int PivotY=179;
 }
 // NModalContainer uses independent300ms linear black-backstop entry/exit.
 // The disappearing modal releases input immediately; only its backdrop fades.

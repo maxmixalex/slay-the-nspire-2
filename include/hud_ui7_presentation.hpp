@@ -8,8 +8,18 @@
 namespace spire {
 // Preserve the historical HudInfo floor id. Keyboard positions follow the
 // source neighbor chain and therefore place Room before Floor.
-enum HudInfoItem {HudHp,HudGold,HudFloor,HudRoom,HudBoss};
+enum HudInfoItem {HudHp,HudGold,HudFloor,HudRoom,HudBoss,HudPortrait};
 constexpr int HudRelicFocusFirst=32;
+// One geometry owns bottles, focus, popup anchors and acquisition flashes.
+// The canonical inventory supports sixteen slots; five remain visible at once.
+namespace hud_potion_layout {
+constexpr int Visible=5,Left=114,Cell=16,Width=86,PageX=194,PageWidth=6;
+inline unsigned pages(unsigned slots){return (slots+Visible-1)/Visible;}
+inline int x(unsigned slot){return Left+int(slot%Visible)*Cell;}
+inline int center_x(unsigned slot){return x(slot)+Cell/2;}
+inline int center_y(){return 11;}
+inline int landing_x(unsigned slot,unsigned page){return slot/Visible==page?center_x(slot):PageX+PageWidth/2;}
+}
 struct HudRoomInfo {
     const char* room_key=nullptr;
     const char* room_tip="ROOM_MAP";

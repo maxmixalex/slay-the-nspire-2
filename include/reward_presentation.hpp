@@ -24,18 +24,18 @@ struct RewardPresentation {
  uint16_t list_count=0;
  int16_t list_focus=-1;
  uint8_t list_mode=0;
- static int row_offset(unsigned index){return int((index*128+3)/7);}
+ static int row_offset(unsigned index){return int(index)*28;}
  void configure_list(uint8_t mode,uint32_t key,unsigned count,int focused,uint32_t now){
   (void)now;if(!mode)return;
   if(mode!=list_mode||key!=list_key){list_scroll.reset();list_focus=-1;list_key=key;list_mode=mode;}
-  list_count=uint16_t(count);list_scroll.configure(count?row_offset(count-1)+16:0,76);
+  list_count=uint16_t(count);list_scroll.configure(count?row_offset(count-1)+24:0,128);
   if(focused>=0&&unsigned(focused)<count&&list_focus!=focused){
    list_focus=int16_t(focused);
-   list_scroll.target=UiHistoryScroll::clamp((row_offset(unsigned(focused))-39)*256,0,list_scroll.maximum);
+   list_scroll.target=UiHistoryScroll::clamp((row_offset(unsigned(focused))-52)*256,0,list_scroll.maximum);
   }
  }
- void scroll_list(int rows){list_scroll.target=UiHistoryScroll::clamp(list_scroll.target+UiHistoryScroll::clamp(rows,-64,64)*160*256/21,-76*256,list_scroll.maximum+76*256);}
- int list_first()const{const int above=list_scroll.offset()-23;return above>0?above*7/128:0;}
+ void scroll_list(int rows){list_scroll.target=UiHistoryScroll::clamp(list_scroll.target+UiHistoryScroll::clamp(rows,-64,64)*160*256/21,-128*256,list_scroll.maximum+128*256);}
+ int list_first()const{const int above=list_scroll.offset()-29;return above>0?above/28:0;}
  static constexpr unsigned MaxFlights=12;
  struct Flight {
   RewardPickupKind kind=RewardPickupKind::None;
@@ -59,6 +59,18 @@ struct RewardPresentation {
    return 4096-unsigned(uint64_t(inverse)*inverse*inverse/16777216);
   }
  } removed{};
+ // NCardUpgradeVfx displays only cards whose upgrade actually committed.
+ // The bounded four-card fan covers Smith/Gnarled Hammer without a State
+ // copy; model facts stay attached even if a later deck operation reorders it.
+ struct Upgrades {
+  struct CardView {Card card{};EventCardFacts facts{};int16_t deck=-1;};
+  static constexpr unsigned Capacity=4;
+  CardView cards[Capacity]{};uint32_t start=0;uint8_t count=0;
+  bool alive(uint32_t now)const{return count&&uint32_t(now-start)<2250u+(count-1u)*100u;}
+  void add(Card card,const EventCardFacts&facts,int deck,uint32_t now){
+   if(!alive(now)||uint32_t(now-start)>400u){count=0;start=now;}if(count<Capacity)cards[count++]={card,facts,int16_t(deck)};
+  }
+ } upgrades{};
  uint32_t serial=0,window_start=0,window_key=0,empty_start=0;
  unsigned window_from=0;
  uint8_t window_mode=0;
@@ -102,9 +114,16 @@ struct RewardPresentation {
   const uint32_t age=now-f.start;
   return f.kind==RewardPickupKind::Card?age<f.arrival+uint32_t(f.duration)*2/5:age<350;
  }
+ static bool retained(const Flight&f,uint32_t now){
+  // Arrival unhides the real inventory icon immediately; its source flash
+  // remains a presentation-only tail, not an extended acquisition flight.
+  if(f.kind==RewardPickupKind::Potion)return uint32_t(now-f.start)<1350;
+  if(f.kind==RewardPickupKind::Relic)return uint32_t(now-f.start)<2260;
+  return alive(f,now);
+ }
  void append(RewardPickupKind kind,unsigned model,unsigned slot,int x,int y,uint32_t now,Card card={}){
   Flight*target=nullptr;
-  for(auto&f:flights)if(!alive(f,now)){target=&f;break;}
+  for(auto&f:flights)if(!retained(f,now)){target=&f;break;}
   if(!target){target=&flights[0];for(auto&f:flights)if(uint32_t(now-f.start)>uint32_t(now-target->start))target=&f;}
   // Original NCardFlyVfx uses Chaotic presentation randomness. A private hash
   // supplies its bounded parameters without reading or advancing game RNG.

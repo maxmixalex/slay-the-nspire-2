@@ -1,14 +1,12 @@
-// NGenericPopup -> NVerticalPopup -> NPopupYesNoButton. All coordinates use
-// the actual inherited Control rectangles, including the instance overrides.
+// NGenericPopup -> NVerticalPopup -> NPopupYesNoButton, reflowed for the LCD.
 static void native_frontend_popup(Canvas&c,const char*header,const char*body,bool erase_profile){
  using namespace popup_layout;auto&a=c.a;const bool original=a.content.has_speech_bubble_assets();
  c.ui(original?I10_PopupVertical:I6_PopupVertical,X,Y,W,H);
- const unsigned face=source_label_face(a.content.english(),5);Canvas title=c;title.font_face=uint8_t(face);
- int title_size=6;while(title_size>4&&title.width(header,title_size)>W-2)--title_size;
- profile_text_box(c,header,X,HeaderY,W,title_size+2,{title_size,face,rgb(239,200,81),32,2,rgb(84,63,0),2,255,1,1},true,false);
+ const unsigned face=source_label_face(a.content.original_label_fonts(),5);Canvas title=c;title.font_face=uint8_t(face);
+ const int title_size=12;
+ profile_text_box(c,header,X+10,HeaderY,W-20,29,{title_size,face,rgb(239,200,81),64,1,rgb(84,63,0),1,255,1,1},true,true);
  Canvas description=c;description.bold_face=5;
- const auto plan=native_room_compact_plan(description,body,BodyW,BodyH);
- profile_text_box(description,body,BodyX,BodyY,BodyW,BodyH,{plan.size,0,rgb(255,246,226),64,0,0,0,255,1,0},true,true,{},true);
+ profile_text_box(description,body,BodyX,BodyY,BodyW,BodyH,{10,0,rgb(255,246,226),64,0,0,0,255,1,0},true,true,{},true);
  for(unsigned i=0;i<2;++i){const bool yes=i!=0;const int x=button_x(yes);
   const char*label=frontend_text(a,"main_menu_ui",erase_profile?(yes?"PROFILE_SCREEN.DELETE_CONFIRM_POPUP.delete":"PROFILE_SCREEN.DELETE_CONFIRM_POPUP.cancel"):(yes?"GENERIC_POPUP.confirm":"GENERIC_POPUP.cancel"),yes?"确认":"取消");
   const bool selected=!a.pointer.visible&&int(a.frontend_choice)==int(i);
@@ -24,13 +22,12 @@ static void native_frontend_popup(Canvas&c,const char*header,const char*body,boo
   const unsigned value=unsigned((base_v+int(visual.value)-1000)*1000/base_v);
   const int image=original?(yes?I10_PopupConfirm:I10_PopupCancel):(yes?I6_PopupConfirm:I6_PopupCancel);
   small_material_icon(c,a.content.ui_image(image),left,top,width,height,int(saturation),value);
-  Canvas text=c;text.font_face=uint8_t(face);const int size=text.width(label,5)>LabelW?4:5;
-  profile_text_box(c,label,label_x(yes),LabelY,LabelW,LabelH,{size,face,rgb(255,246,226),32,3,yes?rgb(31,71,0):rgb(89,18,0),3,255,1,1},true,false,transform);
+  profile_text_box(c,label,label_x(yes),LabelY,LabelW,LabelH,{10,face,rgb(255,246,226),64,1,yes?rgb(31,71,0):rgb(89,18,0),1,255,1,1},true,true,transform);
   c.action(x,ButtonY,ButtonW,ButtonH,yes?UiAction::FrontendAccept:UiAction::FrontendCancel);
   if(!a.pointer.visible&&a.content.version()>=HistoryUi8ContentVersion){
    char key[20]{};input_key_label(a.input_bindings.keys[a.keyboard_only?1:0][unsigned(yes?InputCommand::Confirm:InputCommand::Cancel)],key,sizeof key);
-   const int kx=project(yes?1072:507),ky=project(yes?823:822),kw=mx(8,mn(24,c.width(key,4)+4));
-   c.ui(I8_KeyboardKeycap,kx,ky,kw,8);profile_text_box(c,key,kx,ky,kw,8,{4,0,White,0},true,false);
+   const int kx=x+ButtonW-22,ky=ButtonY+24,kw=mx(12,mn(32,c.width(key,8)+4));
+   c.ui(I8_KeyboardKeycap,kx,ky,kw,12);profile_text_box(c,key,kx,ky,kw,12,{8,0,White,0},true,false);
   }
  }
 }

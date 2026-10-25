@@ -1,6 +1,7 @@
 #include "app.hpp"
 #include "world_run.hpp"
 #include "original_events.hpp"
+#include "menu_overlay_layout.hpp"
 #include "content_fixture.hpp"
 #include <cstdio>
 #include <cstdlib>
@@ -51,10 +52,11 @@ int main(int argc,char**argv){
     standalone_reward();reset();snapshot();auto bottle=find(HitKind::PotionSlot,1);
     app.pointer_move(bottle.x+4,8);app.render();CHECK(!app.panel);unchanged();
     click(HitKind::PotionSlot,1);CHECK(app.panel==4&&app.scroll==1&&!app.potion_targeting);app.advance(150);capture("potion-fire-menu");unchanged();
-    // 259x239 source popup at 4/21, centered beneath the actual holder.
+    // Original popup ratio with LCD controls, centered beneath its holder.
     const auto use_control=find(HitKind::Potion,1),discard_control=find(HitKind::UiAction,int(UiAction::DiscardPotion));
-    CHECK(use_control.x==131&&use_control.y==43&&use_control.w==45&&use_control.h==16);
-    CHECK(discard_control.x==131&&discard_control.y==60&&discard_control.w==45&&discard_control.h==16);
+    CHECK(use_control.x+potion_popup_layout::W/2-potion_popup_layout::ControlX==hud_potion_layout::center_x(1));
+    CHECK(use_control.y==33+potion_popup_layout::UseY&&use_control.w==potion_popup_layout::ControlW&&use_control.h==potion_popup_layout::ControlH);
+    CHECK(discard_control.x==use_control.x&&discard_control.y==33+potion_popup_layout::DiscardY&&discard_control.w==use_control.w&&discard_control.h==use_control.h);
     click(HitKind::Potion,1);CHECK(app.potion_targeting&&app.game.potions[1]==Potion::Fire);CHECK(app.potion_popup_exit.active&&app.potion_popup_exit.alpha==255&&app.potion_popup_exit.thrown);
     app.render();for(int i=0;i<app.hit_count;++i)CHECK(app.hits[i].kind!=HitKind::Potion&&!(app.hits[i].kind==HitKind::UiAction&&app.hits[i].value==int(UiAction::DiscardPotion)));
     app.advance(50);capture("potion-popup-exit-half");unchanged();app.advance(150);app.render();CHECK(!app.potion_popup_exit.active);capture("potion-throw-targeting");unchanged();
@@ -80,7 +82,7 @@ int main(int argc,char**argv){
     app.input(Key::Potions);CHECK(app.hud_focus==2);app.input(Key::Potions);CHECK(app.hud_focus<0&&!app.panel);unchanged();
     // Extra physical slots stay reachable through the small top-bar pager.
     CHECK(add_potion_slots(app.game,13));CHECK(potion_slot_count(app.game)==16);app.game.potions[15]=Potion::Fruit;
-    for(int i=0;i<5;++i)click(HitKind::PotionPage,1);CHECK(app.potion_page==5);
+    for(int i=0;i<3;++i)click(HitKind::PotionPage,1);CHECK(app.potion_page==3);
     click(HitKind::PotionSlot,15);CHECK(app.panel==4&&app.scroll==15);click(HitKind::Potion,15);CHECK(app.game.potions[15]==Potion::Empty);
     // The room's merchant is a target, and its inventory overlay is not.
     reset();app.game.phase=Phase::Shop;app.game.potions[0]=Potion::FoulPotion;app.reset_presentation();

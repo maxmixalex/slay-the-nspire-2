@@ -60,7 +60,7 @@ static HitRegion hit(HitKind kind,int value,bool enabled=true){
 static void click(HitKind kind,int value){const auto h=hit(kind,value);app.pointer_move(h.x+h.w/2,h.y+h.h/2);app.pointer_button(true);app.pointer_button(false);}
 static void settings_back(){
     CHECK(app.settings_open);const auto h=hit(HitKind::UiAction,int(UiAction::Back));
-    CHECK(h.enabled&&h.x==0&&h.y==173&&h.w==30&&h.h==21);
+    CHECK(h.enabled&&h.x==0&&h.y==215&&h.w==40&&h.h==24);
     click(HitKind::UiAction,int(UiAction::Back));CHECK(!app.settings_open);
 }
 static void capture(const char*name){
@@ -76,6 +76,13 @@ static void new_game(bool fast=false,uint32_t clock=1000){
     if(fast){click(HitKind::Menu,1);click(HitKind::UiAction,int(UiAction::SettingsFastMode));settings_back();}
     click(HitKind::Menu,0);CHECK(app.run_mode.screen==RunMenu::Singleplayer&&!app.character_select);
     click(HitKind::UiAction,int(UiAction::OpenStandardRun));CHECK(app.character_select);app.render();advance_ms(350);click(HitKind::UiAction,int(UiAction::StartCharacter));
+    // The ordinary start action owns two 800ms source-mask transitions.
+    // Wait through them using the production update path before testing
+    // the independent map-intro clocks; do not bypass character departure.
+    CHECK(app.title&&app.character_select&&app.character_departure.phase==1);
+    advance_ms(799);CHECK(app.title&&app.character_departure.phase==1);
+    app.advance(1);CHECK(!app.title&&app.character_departure.phase==2);
+    advance_ms(800);CHECK(!app.character_departure.active());
     CHECK(!app.title&&app.game.original_events.id==OriginalEventId::Neow&&app.game.world.total_floor==1);
     CHECK(app.fast_mode==fast&&app.map_act_intro.fast_at_construction==fast&&!app.map_act_intro.played);
     CHECK(!app.map_window.visible&&!app.map_act_intro.banner_count);app.pointer.visible=false;
@@ -178,10 +185,10 @@ static void pointer_and_capstone(){
 }
 static void saving_and_reset(){
     constexpr uint32_t intro_start=0xffffff00u;
-    // Starting the character screen and both Ancient pages now consumes
-    // their actual 350+1000+1000ms entries. Keep the map animation itself
+    // Starting the character screen, departure and both Ancient pages consumes
+    // their actual 350+800+800+1000+1000ms entries. Keep the map animation itself
     // crossing uint32 wrap, rather than wrapping during that prelude.
-    constexpr unsigned prelude=350+1000+1000;
+    constexpr unsigned prelude=350+800+800+1000+1000;
     new_game(false,intro_start-prelude);proceed_neow();CHECK(app.map_clock_ms==intro_start);snapshot();advance_ms(1250);CHECK(app.save_current_run());
     const unsigned elapsed=app.map_act_intro.camera_elapsed;const int y=app.map_act_intro.y_q12;
     read_ok=false;app.input(Key::Load);CHECK(app.map_window.is_open&&app.map_act_intro.camera_elapsed==elapsed&&app.map_act_intro.y_q12==y);unchanged();

@@ -28,10 +28,7 @@ struct AuxiliaryUi {
  bool closing=false,editing=false,category_open=false;
  uint8_t focus=0,category=2,export_result=0;
  int8_t emoji=-1;
- uint16_t draft_size=0,draft_units=0,caret=0,draft_scroll=0;
- // The original limit is8000 UTF-16 units. A BMP unit needs at most three
- // UTF-8 bytes; a surrogate pair needs four. Retain every valid description.
- char draft[24001]{};
+ // Retired note/feedback enum values remain reserved for input ABI stability.
 };
-static_assert(sizeof(AuxiliaryUi)<25u*1024u,"Auxiliary menus add no framebuffer or whole-article copy");
+static_assert(sizeof(AuxiliaryUi)<128u,"Credits keep only scroll state");
 }

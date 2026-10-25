@@ -5,22 +5,23 @@
 namespace spire {
 enum class RelicInspectSource:uint8_t { Single,Owned,Collection };
 namespace relic_inspect_layout {
-// inspect_relic_screen.tscn in NGame's 1680 x 1260 viewport (4/21).
-constexpr int PopupX=78,PopupY=44,PopupSize=165;
-constexpr int NameX=87,NameY=54,NameWidth=147;
-constexpr int RarityX=118,RarityY=63,RarityWidth=84;
-constexpr int FrameX=131,FrameY=76,FrameSize=58,IconX=142,IconY=87,IconSize=37;
-constexpr int BodyX=118,BodyY=142,BodyWidth=91,VBoxX=110,VBoxWidth=99,VBoxBottom=203;
-constexpr int LeftX=67,RightX=229,ArrowY=108,ArrowSize=24,Travel=19;
+// The source paper/frame hierarchy occupies the left reading pane; related
+// keywords retain the separate 104px column on the right of the LCD.
+constexpr int PopupX=8,PopupY=8,PopupWidth=194,PopupHeight=224;
+constexpr int NameX=20,NameY=18,NameWidth=170;
+constexpr int RarityX=20,RarityY=46,RarityWidth=170;
+constexpr int FrameX=68,FrameY=60,FrameSize=72,IconX=77,IconY=69,IconSize=54;
+constexpr int BodyX=22,BodyY=139,BodyWidth=158,BodyHeight=69;
+constexpr int LeftX=0,RightX=188,ArrowY=89,ArrowSize=24,Travel=19;
 }
 struct RelicInspectPresentation {
     RelicInspectSource source=RelicInspectSource::Single;
     uint32_t opened=0,slid=0,closed=0;
     int16_t model=-1,owned=-1,index=0,count=1;
-    int16_t closed_left=67,closed_right=229;
+    int16_t closed_left=relic_inspect_layout::LeftX,closed_right=relic_inspect_layout::RightX,scroll_maximum=0;
     int8_t direction=0;
     uint8_t backstop_from=255,closed_backstop=0,closed_popup=0,closed_brightness=0,closed_arrows=0;
-    bool bound=false,ever_opened=false,exiting=false;
+    bool bound=false,ever_opened=false,exiting=false,reading_keywords=false;
     CardInspectPresentation::Arrow arrows[2]{};
     unsigned age(uint32_t now)const{return now-opened;}
     unsigned linear(unsigned elapsed,unsigned duration)const{return elapsed>=duration?255:elapsed*255/duration;}

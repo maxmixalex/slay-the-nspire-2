@@ -28,7 +28,9 @@ COMPRESSED_LANGUAGE_HEADER = 128
 DIRECTORY_BLOCK_BYTES = 65536
 DIRECTORY_ALIGNMENT = 4096
 DIRECTORY_LITERAL = 0x80000000
-LANGUAGES = {"eng": 1, "zhs": 2}
+LANGUAGES = {code: index for index, code in enumerate((
+    "eng", "zhs", "zht", "deu", "esp", "fra", "ind", "ita",
+    "jpn", "kor", "pol", "ptb", "rus", "spa", "tha", "tur"), 1)}
 
 
 def require(condition, message):
@@ -56,8 +58,8 @@ def layout(data, language):
     require(language in LANGUAGES, "Unsupported language")
     require(40 <= len(data) <= FILE_LIMIT, "Invalid input size")
     magic, version, reference, length, ni, ng, ns, nc, nk, checksum = struct.unpack_from("<4s9I", data)
-    require(magic == b"NSP2" and version in (17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39) and reference == REFERENCE,
-            "Expected pinned NSP2/17 through NSP2/39")
+    require(magic == b"NSP2" and version in (17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40) and reference == REFERENCE,
+            "Expected pinned NSP2/17 through NSP2/40")
     require(length == len(data), "Input length differs")
     require(0 < ni <= 65535 and 0 < ng <= (65535 if version >= 35 else 32768) and MARKER < ns <= 16384 and
             0 < nc <= 65535 and 0 < nk <= 65535, "Invalid directory counts")
@@ -144,7 +146,10 @@ def layout(data, language):
         require(cp <= 0x10FFFF and 0 < w <= 40 and 0 < h <= 40 and
                 0 < px <= (255 if version >= 24 else 32) and
                 0 < (px & (31 if version >= 28 else 63)) <= 32 and
-                advance <= 40 and end <= off <= length - (16 if grouped else count),
+                (advance <= 40 or (version >= 40 and
+                 ((advance & 0x8000 and (advance & 4095) <= 2560) or
+                  (0x100000 <= cp < 0x100000+95*95 and (advance & 0xf000) == 0x4000)))) and
+                end <= off <= length - (16 if grouped else count),
                 "Glyphs must be after the artwork region")
         if grouped:
             relative, group_size, raw_at, raw_bytes = struct.unpack_from('<iIII', data, off)
@@ -259,7 +264,7 @@ def _directory_boundary(prefix, total):
     require(len(prefix) >= 40 and prefix[:4] == b"NSP2" and u32(prefix, 8) == REFERENCE and
             u32(prefix, 12) == total, "Invalid logical NSP2 header")
     version = u32(prefix, 4)
-    require(17 <= version <= 39, "Unsupported logical NSP2 version")
+    require(17 <= version <= 40, "Unsupported logical NSP2 version")
     ni, ng, ns, nc, nk = struct.unpack_from("<5I", prefix, 16)
     require(0 < ni <= 65535 and 0 < ng <= (65535 if version >= 35 else 32768) and
             MARKER < ns <= 16384 and 0 < nc <= 65535 and 0 < nk <= 65535,
@@ -302,7 +307,7 @@ def language_resource_version(localized):
     prefix = _decode_directory_block(localized, compressed["entries"][0]) if compressed else \
              localized[LANGUAGE_HEADER:LANGUAGE_HEADER + 40]
     require(len(prefix) >= 40 and prefix[:4] == b"NSP2" and u32(prefix, 8) == REFERENCE and
-            u32(prefix, 12) == header[5] and 17 <= u32(prefix, 4) <= 39,
+            u32(prefix, 12) == header[5] and 17 <= u32(prefix, 4) <= 40,
             "Invalid logical resource version")
     return u32(prefix, 4)
 
@@ -384,10 +389,11 @@ def reconstruct(common, localized, language):
 
 
 def split(packs, *, compress_directory=False):
-    require(set(packs) == set(LANGUAGES), "Both eng and zhs inputs are required")
+    require(bool(packs) and set(packs) <= set(LANGUAGES), "Expected supported original language inputs")
     rows = {language: layout(data, language) for language, data in packs.items()}
-    reference = rows["eng"]
-    artwork = memoryview(packs["eng"])[reference["prefix"]:reference["prefix"] + reference["artwork"]]
+    first = next(iter(packs))
+    reference = rows[first]
+    artwork = memoryview(packs[first])[reference["prefix"]:reference["prefix"] + reference["artwork"]]
     for language, data in packs.items():
         row = rows[language]
         require(row["version"] == reference["version"] and row["artwork"] == len(artwork) and

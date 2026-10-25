@@ -10,20 +10,23 @@ namespace spire {
 struct CombatCardMotion {
  static constexpr unsigned Capacity=64,Visible=MaxHand*3,CountCapacity=32;
  static constexpr uint8_t NewCard=6,Tracked=128;
- enum Mode : uint8_t {Empty,Hand,Play,Fly,Tail,Preview};
+ enum Mode : uint8_t {Empty,Hand,Play,Fly,Tail,Preview,Exhaust,Power,Shuffle};
  struct Counts {uint16_t draw=0,discard=0,exhaust=0;};
  struct Cue {
   uint32_t at=0;uint16_t id=0;uint8_t from=0,to=0;
-  Card card{};int16_t energy=0,stars=0;bool fast=false,preview=false;
+  Card card{};int16_t energy=0,stars=0,target_x=0,target_y=0;bool fast=false,preview=false;
  };
  struct CountCue {Counts value{};uint32_t at=0;};
  struct Sprite {
+  struct TrailPoint {int16_t x=0,y=0;};
+  static constexpr unsigned TrailPoints=6;
+  TrailPoint trail[TrailPoints]{};
   HandPose origin{};
   int32_t x=0,y=0; // Q10 position retains subpixel motion between frames.
   uint32_t at=0,progress=0,speed=0,duration=0,accel=0;
   Card card{};uint16_t id=0;
-  int16_t scale=0,angle=0,energy=0,stars=0,arc=0;
-  uint8_t mode=Empty,to=0;bool fast=false;
+  int16_t scale=0,angle=0,energy=0,stars=0,arc=0,target_x=0,target_y=0;
+  uint8_t mode=Empty,to=0,trail_count=0;bool fast=false,generated=false;
  };
  Sprite sprites[Visible]{};
  Cue cues[Capacity]{};
@@ -34,7 +37,7 @@ struct CombatCardMotion {
  uint32_t seed=0,clock=0,cosmetic=0x906b1a4du,manual_started=0,manual_min_end=0,wait_at=0;
  int floor=-1,combat=-1,encounter=-1,focus=-1,selected=-1,manual=-1;
  int16_t manual_energy=0,manual_stars=0;
- int16_t selected_x=160,selected_y=210,selected_scale=(HandFocusScale*3+2)/4;
+ int16_t selected_x=160,selected_y=174,selected_scale=HandFocusScale;
  uint16_t card_count=0;
  uint8_t head=0,count=0,count_head=0,count_count=0,wait_excess=0;
  bool active=false,overflow=false,count_overflow=false,selected_centered=false;
@@ -42,6 +45,8 @@ struct CombatCardMotion {
  static Counts capture_counts(const State&s){return {s.draw.count,s.discard.count,s.exhaust.count};}
  static bool same(Counts a,Counts b){return a.draw==b.draw&&a.discard==b.discard&&a.exhaust==b.exhaust;}
  static int magnitude(int n){return n<0?-n:n;}
+ static unsigned square_root(unsigned value){unsigned result=0,bit=1u<<30;while(bit>value)bit>>=2;
+  while(bit){if(value>=result+bit){value-=result+bit;result=(result>>1)+bit;}else result>>=1;bit>>=2;}return result;}
  static uint16_t modulate(uint16_t pixel,unsigned brightness){
   if(brightness>=255)return pixel;
   const unsigned r=(pixel>>11)*brightness/255u,g=((pixel>>5)&63u)*brightness/255u,b=(pixel&31u)*brightness/255u;
@@ -64,9 +69,9 @@ struct CombatCardMotion {
   if(ay>ax)a=1024-a;if(x<0)a=2048-a;if(y<0)a=-a;return a;
  }
  static HandPose pile(uint8_t zone){
-  if(zone==unsigned(Zone::Draw))return {hand_project(15+40),hand_project(1165+40),HandFocusScale,0,1024};
-  if(zone==unsigned(Zone::Discard))return {hand_project(1586+40),hand_project(1165+40),HandFocusScale,0,1024};
-  if(zone==unsigned(Zone::Exhaust))return {hand_project(1590+40),hand_project(970+40),HandFocusScale,0,1024};
+  if(zone==unsigned(Zone::Draw))return {combat_controls::DrawX+12,combat_controls::DrawY+12,HandFocusScale,0,1024};
+  if(zone==unsigned(Zone::Discard))return {combat_controls::DiscardX+12,combat_controls::DiscardY+12,HandFocusScale,0,1024};
+  if(zone==unsigned(Zone::Exhaust))return {combat_controls::ExhaustX+12,combat_controls::ExhaustY+12,HandFocusScale,0,1024};
   // PileType.Play uses the full viewport center minus100 source pixels.
   // AppendPileLerpTween targets source scale .8 independently of FastMode.
   return {160,hand_project(630-100),(HandFocusScale*4+2)/5,0,1024};
@@ -124,6 +129,14 @@ struct CombatCardMotion {
   if(id>=0)if(auto*v=find(unsigned(id))){v->angle=0;v->scale=HandFocusScale;}
  }
  void set_selection_pose(HandPose p){selected_x=int16_t(p.cx);selected_y=int16_t(p.cy);selected_scale=int16_t(p.scale);}
+ void fit_centered_selection(){
+  if(selected<0)return;auto*v=find(unsigned(selected));if(!v)return;
+  // BeginDrag already snaps angle/scale. The LCD adaptation also keeps the
+  // first interpolated aiming frame inside the two rails and the screen,
+  // so keyboard selection never spends several frames with cropped text.
+  if(v->x<114*1024)v->x=114*1024;if(v->x>202*1024)v->x=202*1024;
+  if(v->y<84*1024)v->y=84*1024;if(v->y>174*1024)v->y=174*1024;
+ }
  HandPose hand_target(unsigned index,bool focused)const{
   if(index>=hand.count)return hand_pose(1,0,focused);
   if(int(hand.ids[index])==selected)return {selected_x,selected_y,selected_scale,0,1024};
@@ -153,9 +166,41 @@ struct CombatCardMotion {
   return magnitude(p.cx-target.cx)<=1&&magnitude(p.cy-target.cy)<=1&&magnitude(p.scale-target.scale)<=2&&magnitude(p.sine-target.sine)<=3;
  }
  void fly(Sprite&v,uint8_t to,uint32_t at){
-  v.origin=pose(v);v.mode=Fly;v.to=to;v.at=at;v.progress=0;
+  v.origin=pose(v);v.mode=Fly;v.to=to;v.at=at;v.progress=0;v.trail_count=0;v.generated=false;
   v.speed=72090u+random()%9831u;v.accel=131072u+random()%32769u;v.duration=65536u+random()%49153u;
   v.arc=int16_t((600u+random()%301u)*4u/21u);
+ }
+ struct PowerPoint {int16_t x,y;uint16_t length;};
+ static PowerPoint power_point(const Sprite&v,unsigned index){
+  static constexpr PowerPoint points[]={
+#include "combat_power_path.inc"
+  };
+  if(index<41)return points[index];
+  // The last source point is moved to the owner's actual VfxSpawnPosition.
+  const int t=int(index-40),q=8-t,ex=(v.target_x-v.origin.cx)*16,ey=(v.target_y-v.origin.cy)*16;
+  const int x=(q*q*q*(-509)+3*q*q*t*(-1003)+(3*q*t*t+t*t*t)*ex)/512;
+  const int y=(q*q*q*488+3*q*q*t*461+(3*q*t*t+t*t*t)*ey)/512;
+  return {int16_t(x),int16_t(y),0};
+ }
+ static unsigned power_length(const Sprite&v){
+  auto previous=power_point(v,40);unsigned length=previous.length;
+  for(unsigned i=41;i<=48;++i){const auto p=power_point(v,i);const int dx=p.x-previous.x,dy=p.y-previous.y;length+=square_root(unsigned(dx*dx+dy*dy));previous=p;}return length;
+ }
+ static void power_pose(Sprite&v,unsigned fraction){
+  const unsigned wanted=v.accel*fraction/1024u;auto previous=power_point(v,0);unsigned length=0;
+  for(unsigned i=1;i<=48;++i){const auto p=power_point(v,i);const int dx=p.x-previous.x,dy=p.y-previous.y;
+   const unsigned next=i<=40?p.length:length+square_root(unsigned(dx*dx+dy*dy));
+   if(wanted<=next||i==48){const unsigned segment=next-length,t=segment?(wanted-length)*1024u/segment:0;
+    v.x=v.origin.cx*1024+int(previous.x)*64+dx*int(t)/16;
+    v.y=v.origin.cy*1024+int(previous.y)*64+dy*int(t)/16;
+    const int turn=angle_delta(v.angle,direction(dy,dx));const int limit=67+int(fraction)*3233/1024;
+    v.angle=int16_t(v.angle+(turn<-limit?-limit:turn>limit?limit:turn));return;
+   }previous=p;length=next;
+  }
+ }
+ static void keep_trail(Sprite&v){
+  const unsigned count=v.trail_count<Sprite::TrailPoints?v.trail_count++:Sprite::TrailPoints-1;
+  for(unsigned i=count;i>0;--i)v.trail[i]=v.trail[i-1];v.trail[0]={int16_t((v.x+512)/1024),int16_t((v.y+512)/1024)};
  }
  void arrange_previews(uint32_t at){
   unsigned total=0;for(const auto&v:sprites)if(v.mode==Preview&&v.at==at)++total;
@@ -176,6 +221,7 @@ struct CombatCardMotion {
  void step(){
   ++clock;
   for(auto&v:sprites){
+   if(v.mode==Fly||v.mode==Power||v.mode==Shuffle)keep_trail(v);
    if(v.mode==Hand){
     int index=-1;for(unsigned i=0;i<hand.count;++i)if(hand.ids[i]==v.id){index=int(i);break;}if(index<0){v.mode=Empty;continue;}
     const auto p=hand_target(unsigned(index),int(v.id)==focus);
@@ -191,9 +237,17 @@ struct CombatCardMotion {
     const unsigned age=(clock-v.at)*33u;
     v.scale=int16_t(unsigned(HandFocusScale)*cubic(age,250u)/1024u);
     if(age>=1450u)fly(v,v.to,clock);
-   }else if(v.mode==Fly){
+   }else if(v.mode==Exhaust){
+    if((clock-v.at)*33u>=1000u)v.mode=Empty;
+   }else if(v.mode==Power){
+    const unsigned age=(clock-v.at)*33u,p=age>=v.duration?1024u:age*1024u/v.duration;
+    power_pose(v,p*p/1024u);
+    v.scale=int16_t(age<300u?v.origin.scale*(3000-int(age)*9)/3000:v.origin.scale/10);
+    if(p>=922u)v.scale=int16_t(v.origin.scale*int(1024u-p)/1024);
+    if(p==1024u){v.mode=Tail;v.at=clock;v.scale=0;}
+   }else if(v.mode==Fly||v.mode==Shuffle){
     v.progress+=v.speed*33u/1000u;v.speed+=v.accel*33u/1000u;
-    if(v.progress>=v.duration){const auto end=pile(v.to);v.x=end.cx*1024;v.y=end.cy*1024;v.scale=int16_t(v.origin.scale/10);v.mode=Tail;v.progress=0;continue;}
+    if(v.progress>=v.duration){const auto end=pile(v.to);v.x=end.cx*1024;v.y=end.cy*1024;v.scale=int16_t(v.origin.scale/10);v.mode=Tail;v.at=clock;v.progress=0;continue;}
     const unsigned p=v.progress*1024u/v.duration,q=1024-p;
     const auto end=pile(v.to);v.x=v.origin.cx*int(q)+end.cx*int(p);
     v.y=v.origin.cy*int(q)+end.cy*int(p)-2*v.arc*int(p)*int(q)/1024;
@@ -201,8 +255,8 @@ struct CombatCardMotion {
     const int target=direction(dy,dx)+1024;v.angle=int16_t(v.angle+angle_delta(v.angle,target)*396/1000);
     const unsigned shrink=p*3>1024?1024:p*3;v.scale=int16_t(v.origin.scale*int(10240-shrink*9)/10240);
    }else if(v.mode==Tail){
-    v.progress+=v.speed*33u/1000u;const unsigned p=v.progress*1024u/v.duration;
-    if(p>=410){v.mode=Empty;continue;}v.scale=int16_t(v.origin.scale*int(410-p)/4100);
+    // NCardTrailVfx stops emitting and fades its existing sprites for .5s.
+    if((clock-v.at)*33u>=500u){v.mode=Empty;continue;}
    }
   }
  }
@@ -219,8 +273,9 @@ struct CombatCardMotion {
    v.card=cue.card;v.energy=cue.energy;v.stars=cue.stars;arrange_previews(cue.at);return;
   }
   if(cue.to==unsigned(Zone::Hand)){
-   auto&v=claim(cue.id);if(cue.from==NewCard){v.mode=Empty;v.card=cue.card;v.energy=cue.energy;v.stars=cue.stars;return;}
+   auto&v=claim(cue.id);if(cue.from==NewCard){v.mode=Hand;v.at=cue.at;v.generated=true;place(v,{160,200,0,0,1024});v.card=cue.card;v.energy=cue.energy;v.stars=cue.stars;return;}
    if(v.mode==Empty)place(v,pile(cue.from));v.mode=Hand;
+   v.trail_count=0;v.generated=false;
    v.card=cue.card;v.energy=cue.energy;v.stars=cue.stars;return;
   }
   if(cue.to==unsigned(Zone::Limbo)&&cue.from==unsigned(Zone::Hand)){
@@ -230,8 +285,19 @@ struct CombatCardMotion {
   if((cue.to==unsigned(Zone::Draw)||cue.to==unsigned(Zone::Discard))&&old&&(cue.from==unsigned(Zone::Hand)||old->mode==Play)){
    auto&v=*old;fly(v,cue.to,cue.at);v.card=cue.card;v.energy=cue.energy;v.stars=cue.stars;return;
   }
-  // Exhaust/power/shuffle have their own original VFX. Do not mislabel a
-  // generic discard flight as those effects; the logical view still changes.
+  if(cue.to==unsigned(Zone::Exhaust)){
+   auto&v=claim(cue.id);if(v.mode==Empty)place(v,pile(cue.from));v.origin=pose(v);v.mode=Exhaust;v.at=cue.at;v.trail_count=0;
+   v.card=cue.card;v.energy=cue.energy;v.stars=cue.stars;return;
+  }
+  if(cue.to==unsigned(Zone::Power)){
+   auto&v=claim(cue.id);if(v.mode==Empty)place(v,pile(cue.from));v.origin=pose(v);v.mode=Power;v.at=cue.at;v.to=cue.to;v.trail_count=0;
+   v.target_x=cue.target_x;v.target_y=cue.target_y;v.accel=power_length(v);v.duration=v.accel*7u/64u;if(!v.duration)v.duration=1;
+   v.card=cue.card;v.energy=cue.energy;v.stars=cue.stars;return;
+  }
+  if(cue.id==MaxCards&&cue.from==unsigned(Zone::Discard)&&cue.to==unsigned(Zone::Draw)){
+   auto&v=claim(cue.id);place(v,pile(cue.from));fly(v,cue.to,cue.at);v.mode=Shuffle;
+   v.arc=int16_t((200u+random()%701u)*4u/21u);v.card=cue.card;v.energy=cue.energy;v.stars=cue.stars;return;
+  }
   if(old)old->mode=Empty;
  }
  unsigned brightness(const Sprite&v)const{
@@ -244,5 +310,5 @@ struct CombatCardMotion {
   return result;
  }
 };
-static_assert(sizeof(CombatCardMotion)<=6*1024,"Card motion must reuse the existing raster tiles");
+static_assert(sizeof(CombatCardMotion)<=6*1024,"Card paths and six-point trails reuse the existing raster tiles");
 }

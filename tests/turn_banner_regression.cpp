@@ -38,5 +38,19 @@ int main(){
     CHECK(TurnBannerPresentation::outline_pixels(24)==5);
     CHECK(TurnBannerPresentation::outline_pixels(24,8192)==9);
     CHECK(TurnBannerPresentation::outline_pixels(16)==3);
+    // The source starts Battle Start first, then Player Turn after its
+    // 300ms lead + 1300ms fade-in + 1000ms fade-out. The backstop remains
+    // through the overlapping Player Turn rather than reopening a scene.
+    b.reset();b.begin_battle(100);
+    CHECK(b.sample(100).kind==b.None&&b.sample_player(178).kind==b.None);
+    CHECK(b.sample_battle(109).kind==b.None&&b.battle_backstop(109)==0);
+    CHECK(b.sample_battle(110).kind==b.Battle&&b.sample_battle(110).scale>4096);
+    CHECK(b.sample_battle(132).scale==4096&&b.battle_backstop(132)==64);
+    CHECK(b.sample_battle(148).alpha>250&&b.sample_battle(163).alpha<40);
+    CHECK(b.sample_battle(179).kind==b.None&&b.sample_player(179).kind==b.Player);
+    CHECK(b.sample_player(179).number==1&&b.battle_backstop(179)==64);
+    CHECK(b.battle_backstop(240)>0&&b.battle_backstop(255)==0);
+    b.reset();b.begin_battle(0xfffffff0u);
+    CHECK(b.sample_battle(0).kind==b.Battle&&b.sample_player(63).kind==b.Player);
     std::printf("turn banner: %u checks passed\n",checks);
 }

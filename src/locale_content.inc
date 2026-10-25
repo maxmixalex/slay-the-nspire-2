@@ -18,8 +18,10 @@ static const WorldContentIndex frontend_text_index[]={
 };
 }
 bool Content::english()const{
- if(version_<LocaleContentVersion)return false;const char*p=string(LocaleMarkerString);
- return p[0]=='e'&&p[1]=='n'&&p[2]=='g'&&!p[3];
+ return language_id_==1;
+}
+unsigned Content::language()const{
+ return language_id_;
 }
 const char* Content::locale_string(const char*table,const char*key)const{
  if(has_selection_assets()){const int selection=wc_find(selection_text_index,table,key);if(selection>=0)return string(selection);}
@@ -61,7 +63,7 @@ const char* Content::ui_text(const char*source)const{
  while(lo<hi){unsigned middle=(lo+hi)/2;if(locale_ui_index[middle].hash<hash)lo=middle+1;else hi=middle;}
  if(lo<sizeof(locale_ui_index)/sizeof(locale_ui_index[0])&&locale_ui_index[lo].hash==hash&&locale_ui_index[lo].length==length)
   return string(locale_ui_index[lo].index);
- if(english()){
+ if(language()!=2){
   lo=0;hi=sizeof(locale_ui_inline)/sizeof(locale_ui_inline[0]);
   while(lo<hi){unsigned middle=(lo+hi)/2;if(locale_ui_inline[middle].hash<hash)lo=middle+1;else hi=middle;}
   if(lo<sizeof(locale_ui_inline)/sizeof(locale_ui_inline[0])&&locale_ui_inline[lo].hash==hash&&locale_ui_inline[lo].length==length)

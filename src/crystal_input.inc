@@ -19,6 +19,7 @@ void App::crystal_click(int at){
 }
 bool App::crystal_input(Key key){
  sync_crystal_presentation();const auto&e=game.original_events;
+ if(key==Key::Detail){ui_action(UiAction::ReadEvent);return true;}
  if(key==Key::Confirm){crystal_click(cursor);return true;}
  if(key==Key::DrawPile||key==Key::DiscardPile||key==Key::EndTurn){
   original_event_crystal_tool(game,key==Key::DiscardPile||(key==Key::EndTurn&&e.crystal_tool!=2));return true;

@@ -1,6 +1,7 @@
 #pragma once
 #include <stddef.h>
 #include <stdint.h>
+#include "locale_languages.hpp"
 
 namespace spire {
 
@@ -25,7 +26,7 @@ struct ResourceSource {
     static ResourceSource memory(const uint8_t*,size_t);
 };
 
-enum class ResourceLanguage : uint32_t { English=1,Chinese=2 };
+enum class ResourceLanguage : uint32_t { English=1,Chinese=2,TraditionalChinese=3,German=4,LatinAmericanSpanish=5,French=6,Indonesian=7,Italian=8,Japanese=9,Korean=10,Polish=11,Portuguese=12,Russian=13,Spanish=14,Thai=15,Turkish=16 };
 
 // An NSC1 artwork file plus an NSL1/NSL2 language file presents the exact original
 // NSP2 byte stream. Only the directory and glyph/text sections are localized;

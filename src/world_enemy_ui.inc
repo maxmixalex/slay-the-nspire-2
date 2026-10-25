@@ -194,6 +194,7 @@ void App::sync_enemy_feedback(){
   if(ui_feedback_bound(*this)&&combat_feedback.identity[i+1]!=ui_feedback_identity(game,unsigned(i+1)))continue;
   if(m.identity!=source.combat_id||m.model!=unsigned(source.kind)){
    m=EnemyPresentation{};m.identity=source.combat_id;m.model=uint8_t(source.kind);m.pose=enemy_pose(game,i,creature_layout);m.hp=combat_health(i+1).hp;m.dead=m.hp<=0;m.skin=uint8_t(ui_enemy_skin(game,i,m.model));m.facts=ui_enemy_facts(game,i);
+   if(creature_duplicate_kind(game,i))m.instance_hue=uint8_t(character_particles::hash(map_clock_ms+source.combat_id*0x9e3779b9u)&7u);
    int initial=source.age?world_enemy_resume(m.model,ui_enemy_fact,&m.facts):world_enemy_initial(m.model,ui_enemy_fact,&m.facts);
    ui_enemy_set_state(*this,i,initial,m.facts,animation);if(m.dead)enemy_trigger(i,source.kind==EnemyId::TestSubject&&(source.flags&EnemyDown)?"DeadTrigger":"Dead");
    ui_enemy_removal(*this,i,m.dead);
@@ -208,16 +209,12 @@ void App::sync_enemy_feedback(){
  bool living=false;for(int i=0;i<game.enemy_count;++i)living|=combat_health(i+1).hp>0;
  if(living)combat_status.had_live_scene=true;
  if(!living&&combat_status.had_live_scene&&!combat_phase(game.phase)&&game.phase!=Phase::Dead&&!combat_status.reward_scheduled){
-  // NCombatUi.ShowRewards: Normal waits current death track +1s. Fast
-  // waits .5s in ordinary rooms, half the remaining track for a boss.
-  // The later corpse dissolve never gates the reward window.
+  // NCombatUi.ShowRewards normally waits for the death track in Standard.
+  // The calculator's requested responsiveness adaptation overlaps that
+  // noninteractive tail with Loot. Actual damage/status commands still
+  // finish first; no corpse clip length can prolong the reward barrier.
   const uint32_t at=ui_feedback_bound(*this)?ui_feedback_later(animation,combat_feedback.end_at):animation;
-  uint32_t remaining=0;for(int i=0;i<game.enemy_count;++i){const auto&m=enemy_presentation[i];if(!m.dead)continue;
-   uint32_t end=m.until;if(m.clip<0&&(game.enemy_world.models[i].kind==EnemyId::Rocket||game.enemy_world.models[i].kind==EnemyId::Crusher))end=animation+76u;
-   if(int32_t(end-at)>int32_t(remaining))remaining=end-at;
-  }
-  const auto*encounter=encounter_definition(game.enemy_world.encounter);const bool boss=encounter&&encounter->type==EncounterClass::Boss;
-  const unsigned wait=fast_mode?(boss?(remaining+1u)/2u:16u):remaining+31u;
+  const unsigned wait=fast_mode?8u:16u;
   combat_status.reward_scheduled=true;combat_status.reward_at=at+wait;
   combat_linger_until=ui_feedback_later(combat_linger_until,combat_status.reward_at);
  }
@@ -226,6 +223,16 @@ void App::observe_core(const State&s,Log log){
  if(&s!=&game)return;
  observe_ftue_log(log);
  observe_progress_log(log);
+ if(log.kind==LogKind::Shuffle&&ui_cards_bound(*this)){
+  CombatCardMotion::Cue cue;cue.at=ui_feedback_bound(*this)?combat_feedback.effect_at:animation;
+  cue.id=MaxCards;cue.from=uint8_t(Zone::Discard);cue.to=uint8_t(Zone::Draw);combat_cards.append(cue);
+ }
+ if(log.kind==LogKind::Play&&(log.a==Inflame||log.a==CrimsonMantle||log.a==Corruption||log.a==Unmovable)){
+  // These four original OnPlay methods explicitly create NPowerUpVfx;
+  // ordinary power amount changes only keep their existing title/icon VFX.
+  const auto p=combat_player_pose();const uint32_t at=ui_feedback_bound(*this)?combat_feedback.effect_at:animation;
+  combat_sparks.secondary(at*33u,p.center_x,p.center_y,CombatSparkMotion::PowerUp,0,at^uint32_t(log.a));
+ }
  if(log.kind==LogKind::Enemy){
   // Bind a newly entered encounter before reserving its lead-in; the first
   // identity sync resets the presentation clock to the current frame.

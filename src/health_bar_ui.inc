@@ -94,19 +94,20 @@ static void health_fill(Canvas&c,const HealthPatch&fill,const HealthPatch&mask,i
   }
  }
 }
-static void health_label(Canvas&c,const char*label,int x,int y,int width,int size,uint16_t color,uint16_t outline){
+static void health_label(Canvas&c,const char*label,int x,int y,int width,int size,uint16_t color,uint16_t outline,bool full_outline=false){
  int at=x+mx(0,(width-c.width(label,size))/2);const char*text=label;
  // Each glyph is fetched once for all outline passes. Repeated text() calls
  // would redo the directory/cache lookup for every outline direction.
  Glyph glyphs[32];int positions[32];unsigned count=0;
- while(*text&&count<32){const auto glyph=c.a.content.glyph(utf8(text),size);if(at+glyph.advance>x+width)break;
+ while(*text&&count<32){const auto glyph=c.a.content.glyph(utf8(text),size,c.font_face);if(at+glyph.advance>x+width)break;
   glyphs[count]=glyph;positions[count++]=at;at+=glyph.advance;
  }
  // Complete every outline first: a tightly spaced following character's
  // left stroke must not paint over the preceding character's foreground.
  for(unsigned i=0;i<count;++i){const auto glyph=glyphs[i];const int px=positions[i];
-  c.glyph(glyph,px-1,y,outline);c.glyph(glyph,px+1,y,outline);
-  c.glyph(glyph,px,y-1,outline);c.glyph(glyph,px,y+1,outline);
+  Canvas shadow=c;shadow.opacity=uint8_t(div255(unsigned(shadow.opacity)*(full_outline?208u:160u)));
+  if(full_outline){shadow.glyph(glyph,px-1,y,outline);shadow.glyph(glyph,px+1,y,outline);shadow.glyph(glyph,px,y-1,outline);shadow.glyph(glyph,px,y+1,outline);}
+  else shadow.glyph(glyph,px+1,y+1,outline);
  }
  for(unsigned i=0;i<count;++i)c.glyph(glyphs[i],positions[i],y,color);
 }

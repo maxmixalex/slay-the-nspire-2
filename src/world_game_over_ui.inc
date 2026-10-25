@@ -48,17 +48,12 @@ bool App::game_over_input(Key key){
  if(!game_over_available())return false;
  if(key==Key::Confirm){ui_action(game_over_summary?UiAction::GameOverMainMenu:UiAction::GameOverSummary);return true;}
  if(!game_over_summary||(key!=Key::Left&&key!=Key::Right&&key!=Key::Up&&key!=Key::Down))return false;
+ auto&m=game_over_presentation;
+ if(key==Key::Up||key==Key::Down){m.scroll=uint16_t(mx(0,mn(int(m.scroll)+(key==Key::Up?-26:26),m.scroll_maximum)));game_over_focus=-1;return true;}
  if(!game_over_button_ready())return true;
  int8_t items[UiRunBadgeCount+4]{};const unsigned n=game_over_focus_items(*this,items);if(!n)return true;
  unsigned at=0;for(;at<n&&items[at]!=game_over_focus;++at);
- if(at==n)game_over_focus=items[0];
- else if(key==Key::Left||key==Key::Right){
-  const bool discoveries=items[at]>=32;unsigned first=at,last=at;
-  while(first&&(items[first-1]>=32)==discoveries)--first;
-  while(last+1<n&&(items[last+1]>=32)==discoveries)++last;
-  game_over_focus=items[key==Key::Left?(at==first?last:at-1):(at==last?first:at+1)];
- }else if(key==Key::Down){for(unsigned i=0;i<n;++i)if(items[i]>=32){game_over_focus=items[i];break;}}
- else if(items[at]>=32&&items[0]<32)game_over_focus=items[0];
+ game_over_focus=items[at==n?0:key==Key::Left?(at?at-1:n-1):(at+1)%n];m.reveal_focus=true;
  return true;
 }
 static const char* game_over_text(const App&a,const char*key,const char*fallback=""){
@@ -91,7 +86,7 @@ static LocalizedValue game_over_value(const void*opaque,const char*name){
  return {};
 }
 static void game_over_format(const App&a,const char*raw,char*out,unsigned capacity,unsigned count=0){
- const GameOverValues values{&a,a.game_over_run(),count};LocalizedTemplate(out,capacity,game_over_value,&values,"Energy","Stars",a.content.english()).format(raw);
+ const GameOverValues values{&a,a.game_over_run(),count};LocalizedTemplate(out,capacity,game_over_value,&values,"Energy","Stars",a.content.english()).for_language(a.content.language()).format(raw);
 }
 void App::game_over_quote(char*out,unsigned capacity)const{
  if(capacity)out[0]=0;const auto&s=game;const char*table="run_history";char key[128]{};
@@ -166,19 +161,19 @@ static void game_over_button(Canvas&c,int x,UiAction action,const char*label,Inp
  using namespace game_over_ui;auto&m=c.a.game_over_presentation;if(!m.ready(c.a.map_clock_ms))return;
  const int y=ButtonY+(c.a.game_over_summary?0:m.continue_offset(c.a.map_clock_ms));const bool hover=enabled&&game_over_hovered(c,x,y,ButtonWidth,ButtonHeight);
  Canvas button=c;button.opacity=uint8_t(div255(button.opacity*m.button_alpha(c.a.map_clock_ms)));button.brightness=enabled?(hover?255:215):110;
- button.ui(U_RewardSkip,x,y,ButtonWidth,ButtonHeight);button.font_face=source_label_face(c.a.content.english(),5);
- button.fitted(label,x+4,y+2,ButtonWidth-8,9,5,5,rgb(253,244,227),true,true,true);
+ button.ui(U_RewardSkip,x,y,ButtonWidth,ButtonHeight);button.font_face=source_label_face(c.a.content.original_label_fonts(),5);
+ button.fitted(label,x+16,y+2,ButtonWidth-32,22,10,10,rgb(253,244,227),true,false,true);
  c.action(x,y,ButtonWidth,ButtonHeight,action,enabled);
  const uint16_t code=c.a.input_bindings.keys[c.a.keyboard_only?1:0][unsigned(command)];
  if(!c.a.pointer.visible&&code){char key[16]{};input_key_label(code,key,sizeof key);
-  button.text_fitted(key,x,y+14,ButtonWidth,5,Muted,5,true);}
+  button.text_fitted(key,x+ButtonWidth+4,y+8,38,8,Muted,8);}
 }
 static void game_over_score_line(Canvas&c,const char*key,unsigned icon,int y,const char*points,unsigned row){
  using namespace game_over_ui;char label[256]{};game_over_format(c.a,game_over_text(c.a,key),label,sizeof label);
  const auto motion=c.a.game_over_presentation.score(row,c.a.map_clock_ms);if(!motion.visible||!motion.alpha)return;
- Canvas text=c;text.opacity=uint8_t(div255(text.opacity*motion.alpha));const int x=ScoreX+motion.offset;text.ui(int(icon),x,y,8,9);text.font_face=source_label_face(c.a.content.english(),5);
- text.fitted(label,x+10,y+1,72,8,5,5,White,false,true);
- text.fitted(points,x+82,y+1,18,8,5,5,Gold,false,true);
+ Canvas text=c;text.opacity=uint8_t(div255(text.opacity*motion.alpha));const int x=ScoreX+motion.offset;text.ui(int(icon),x,y+4,14,16);text.font_face=source_label_face(c.a.content.original_label_fonts(),5);
+ text.fitted(label,x+20,y+1,196,26,10,10,White);
+ text.fitted(points,x+220,y+5,44,15,10,10,Gold,false,true);
 }
 static void game_over_hover(Canvas&c,int focus,int anchor_x,int anchor_y){
  char title[192]{},body[2048]{};c.a.game_over_detail(focus,title,sizeof title,body,sizeof body);if(!*title)return;
@@ -187,14 +182,14 @@ static void game_over_hover(Canvas&c,int focus,int anchor_x,int anchor_y){
 }
 static void native_game_over_screen(Canvas&c){
  using namespace game_over_ui;auto&a=c.a;const auto&s=a.game;a.hit_count=0;game_over_backdrop(c);
- const auto&motion=a.game_over_presentation;const auto now=a.map_clock_ms;
+ auto&motion=a.game_over_presentation;const auto now=a.map_clock_ms;
  const auto*r=a.game_over_run();const bool known=r&&ui_run_facts_complete(*r);
  const int banner_y=motion.banner_y(now);Canvas banner=c;banner.opacity=uint8_t(div255(banner.opacity*motion.ui_alpha(now)));
  banner.ui(I6_CommonBanner,BannerX,banner_y,BannerWidth,BannerHeight);
  char banner_key[48]{};TextBuffer bk{banner_key,sizeof banner_key,0};
  if(s.phase==Phase::Complete)bk.text("BANNER.falseWin");else{bk.text("BANNER.lose");bk.number(unsigned(s.world.run_seed>>32)%8);}
- Canvas label=c;label.font_face=source_label_face(c.a.content.english(),5);banner.font_face=source_label_face(c.a.content.english(),5);
- banner.fitted(game_over_text(a,banner_key,s.phase==Phase::Complete?"Victory?":"Defeat"),BannerX+11,banner_y+10,BannerWidth-22,15,10,6,Gold,true,true,true);
+ Canvas label=c;label.font_face=source_label_face(c.a.content.original_label_fonts(),5);banner.font_face=source_label_face(c.a.content.original_label_fonts(),5);
+ banner.fitted(game_over_text(a,banner_key,s.phase==Phase::Complete?"Victory?":"Defeat"),BannerX+11,banner_y+10,BannerWidth-22,18,12,10,Gold,true,true,true);
  char quote[2048]{};
  if(!a.game_over_summary){
   if(s.phase==Phase::Complete&&known){game_over_format(a,game_over_text(a,"VICTORY_DAMAGE_LOCAL"),quote,sizeof quote);
@@ -202,51 +197,80 @@ static void native_game_over_screen(Canvas&c){
    label.opacity=uint8_t(div255(label.opacity*255*room_curve::linear(elapsed,2000)/4096));
    RichReader reader(quote);RichChar ch{};unsigned count=0;while(reader.next(ch))++count;
    label.text_visible_characters=count*room_curve::sine_out(elapsed,2000)/4096;
-   label.font_face=source_label_face(a.content.english(),6);label.paragraph_fitted(quote,42,106,236,72,5,White,5,true);
+   label.font_face=source_label_face(a.content.original_label_fonts(),6);label.paragraph_fitted(quote,26,96,268,105,10,White,10,true);
   }else if(s.phase!=Phase::Complete){char key[24]{};TextBuffer b{key,sizeof key,0};b.text("QUOTES.");unsigned index=unsigned(s.world.run_seed)%17;if(index<10)b.ch('0');b.number(index);
-   game_over_format(a,game_over_text(a,key),quote,sizeof quote);Canvas italic=label;italic.font_face=source_label_face(a.content.english(),6);italic.opacity=uint8_t(div255(italic.opacity*motion.quote_alpha(now)));
-   italic.paragraph_fitted(quote,26,motion.quote_y(now),268,30,5,rgb(255,100,100),5,true);
-  }else label.paragraph_fitted(a.content.string(PartialHistoryText),44,111,232,28,5,Muted,5,true);
+   game_over_format(a,game_over_text(a,key),quote,sizeof quote);Canvas italic=label;italic.font_face=source_label_face(a.content.original_label_fonts(),6);italic.opacity=uint8_t(div255(italic.opacity*motion.quote_alpha(now)));
+   const int height=mn(100,italic.paragraph(quote,26,0,268,0,0,10)*13+2);
+   italic.paragraph_fitted(quote,26,motion.quote_y(now)+8,268,height,10,rgb(255,100,100),10,true);
+  }else label.paragraph_fitted(a.content.string(PartialHistoryText),26,96,268,105,10,Muted,10,true);
   game_over_button(c,ContinueX,UiAction::GameOverSummary,game_over_text(a,"BUTTON.continue","Continue"),InputCommand::Select);return;
  }
+ // The original terminal sequence remains timed; its readable summary is a
+ // clipped 10px article with a fixed confirmation button on the LCD.
  if(s.phase!=Phase::Complete){
-  if(motion.quote_from&&motion.summary_age(now)>=250)a.game_over_quote(quote,sizeof quote);
-  else{char key[24]{};TextBuffer b{key,sizeof key,0};b.text("QUOTES.");unsigned index=unsigned(s.world.run_seed)%17;if(index<10)b.ch('0');b.number(index);game_over_format(a,game_over_text(a,key),quote,sizeof quote);}
-  Canvas italic=label;italic.font_face=source_label_face(a.content.english(),6);italic.opacity=uint8_t(div255(italic.opacity*motion.quote_alpha(now)));italic.paragraph_fitted(quote,26,motion.quote_y(now),268,22,5,rgb(255,100,100),5,true);
+  if(motion.quote_from&&motion.summary_age(now)<250){char key[24]{};TextBuffer b{key,sizeof key,0};b.text("QUOTES.");unsigned index=unsigned(s.world.run_seed)%17;if(index<10)b.ch('0');b.number(index);game_over_format(a,game_over_text(a,key),quote,sizeof quote);}
+  else a.game_over_quote(quote,sizeof quote);
  }
- const unsigned rows=known?motion.rows:2;
- const int score_height=int(rows)*ScoreStep+2;int y=116-(score_height-16)/2;
+ Canvas body=label;body.pixels+=BodyTop*body.pitch;if(body.coverage)body.coverage+=BodyTop*body.pitch;body.clip_h=BodyHeight;
+ Canvas quote_measure=body;quote_measure.font_face=source_label_face(a.content.original_label_fonts(),6);
+ const int quote_height=*quote?quote_measure.paragraph(quote,26,0,268,0,0,10)*13+9:0;
+ const int score_top=quote_height;
+ int8_t items[UiRunBadgeCount+4]{};const unsigned item_count=game_over_focus_items(a,items);
+ unsigned badge_count=0;while(badge_count<item_count&&items[badge_count]<32)++badge_count;
+ const unsigned discoveries=item_count-badge_count;
+ const int badge_top=score_top+(known?int(motion.rows)*ScoreStep:52)+6;
+ const int discovery_top=badge_top+(badge_count?int((badge_count+BadgesPerRow-1)/BadgesPerRow)*(BadgeSize+4)+6:0);
+ const int full_height=discovery_top+(discoveries?45:0);
+ motion.scroll_maximum=uint16_t(mx(0,full_height-BodyHeight));
+ if(motion.reveal_focus){
+  for(unsigned i=0;i<item_count;++i)if(items[i]==a.game_over_focus){
+   const int top=i<badge_count?badge_top+int(i/BadgesPerRow)*(BadgeSize+4):discovery_top+18;
+   if(top<int(motion.scroll))motion.scroll=uint16_t(top);
+   else if(top+BadgeSize>int(motion.scroll)+BodyHeight)motion.scroll=uint16_t(top+BadgeSize-BodyHeight);
+  }motion.reveal_focus=false;
+ }
+ motion.scroll=uint16_t(mx(0,mn(motion.scroll,motion.scroll_maximum)));const int scroll=motion.scroll;
+ if(*quote){Canvas italic=body;italic.font_face=source_label_face(a.content.original_label_fonts(),6);italic.opacity=uint8_t(div255(italic.opacity*motion.quote_alpha(now)));
+  italic.paragraph(quote,26,-scroll,268,200,0,10,rgb(255,100,100));}
+ int y=score_top-scroll;
  if(known){const auto score=ui_run_score(*r);char amount[32]{};unsigned row=0;
   const auto points=[&](unsigned n){amount[0]=0;TextBuffer b{amount,sizeof amount,0};b.ch('+');b.number(n);};
-  points(score.floor_points);game_over_score_line(c,"SCORE_LINE.floorsClimbed",I8_GameOverScoreFloor,y,amount,row++);y+=ScoreStep;
-  points(score.gold_points);game_over_score_line(c,"SCORE_LINE.goldGained",I8_GameOverScoreGold,y,amount,row++);y+=ScoreStep;
-  if(score.elites){points(score.elites*50);game_over_score_line(c,"SCORE_LINE.elitesKilled",I8_GameOverScoreElite,y,amount,row++);y+=ScoreStep;}
-  if(score.bosses){points(score.bosses*100);game_over_score_line(c,"SCORE_LINE.bossesSlain",I8_GameOverScoreBoss,y,amount,row++);y+=ScoreStep;}
-  if(r->ascension){amount[0]=0;TextBuffer b{amount,sizeof amount,0};b.ch('x');b.number(1+r->ascension/10);if(r->ascension%10){b.ch('.');b.number(r->ascension%10);}game_over_score_line(c,"SCORE_LINE.ascension",I8_GameOverScoreAscension,y,amount,row++);y+=ScoreStep;}
- }else{label.paragraph_fitted(a.content.string(PartialHistoryText),72,y,176,24,5,Muted,5,true);y+=24;}
- y+=5;int8_t items[UiRunBadgeCount+4]{};const unsigned item_count=game_over_focus_items(a,items);
- unsigned badge_count=0;while(badge_count<item_count&&items[badge_count]<32)++badge_count;
- int focus=a.pointer.visible?-1:a.game_over_focus,anchor_x=150,anchor_y=y;
- for(unsigned i=0;i<badge_count;++i){const unsigned id=unsigned(items[i]),tier=game_over_badge_tier(a,*r,id);const int x=(320-int(badge_count)*BadgeSize)/2+int(i)*BadgeSize;
-  const auto state=motion.badge(i,now);if(!state.visible||!state.alpha)continue;const int py=y+state.offset;
-  Canvas badge=c;badge.opacity=uint8_t(div255(badge.opacity*state.alpha));if(game_over_hovered(c,x,py,BadgeSize,BadgeSize))badge.brightness=255;else badge.brightness=225;
+  points(score.floor_points);game_over_score_line(body,"SCORE_LINE.floorsClimbed",I8_GameOverScoreFloor,y,amount,row++);y+=ScoreStep;
+  points(score.gold_points);game_over_score_line(body,"SCORE_LINE.goldGained",I8_GameOverScoreGold,y,amount,row++);y+=ScoreStep;
+  if(score.elites){points(score.elites*50);game_over_score_line(body,"SCORE_LINE.elitesKilled",I8_GameOverScoreElite,y,amount,row++);y+=ScoreStep;}
+  if(score.bosses){points(score.bosses*100);game_over_score_line(body,"SCORE_LINE.bossesSlain",I8_GameOverScoreBoss,y,amount,row++);y+=ScoreStep;}
+  if(r->ascension){amount[0]=0;TextBuffer b{amount,sizeof amount,0};b.ch('x');b.number(1+r->ascension/10);if(r->ascension%10){b.ch('.');b.number(r->ascension%10);}game_over_score_line(body,"SCORE_LINE.ascension",I8_GameOverScoreAscension,y,amount,row++);}
+ }else body.paragraph_fitted(a.content.string(PartialHistoryText),28,y,264,52,10,Muted,10,true);
+ int focus=a.pointer.visible?-1:a.game_over_focus,anchor_x=150,anchor_y=BodyTop;bool focus_visible=false;
+ const auto detail_hit=[&](int x,int py,int w,int h,int id){
+  const int top=mx(0,py),bottom=mn(BodyHeight,py+h);if(bottom<=top)return;
+  c.hit(x,BodyTop+top,w,bottom-top,HitKind::GameOverDetail,id);
+  if(focus==id){anchor_x=x;anchor_y=BodyTop+top;focus_visible=true;body.box(x,py,w,h,Gold);}
+ };
+ for(unsigned i=0;i<badge_count;++i){const unsigned id=unsigned(items[i]),tier=game_over_badge_tier(a,*r,id);
+  const unsigned inrow=mn(BadgesPerRow,int(badge_count-i/BadgesPerRow*BadgesPerRow));
+  const int x=(320-int(inrow)*(BadgeSize+4))/2+int(i%BadgesPerRow)*(BadgeSize+4);
+  const auto state=motion.badge(i,now);if(!state.visible||!state.alpha)continue;
+  const int py=badge_top+int(i/BadgesPerRow)*(BadgeSize+4)-scroll+state.offset;
+  Canvas badge=body;badge.opacity=uint8_t(div255(badge.opacity*state.alpha));badge.brightness=game_over_hovered(c,x,BodyTop+py,BadgeSize,BadgeSize)?255:225;
   badge.ui(I8_GameOverBadgeBronze+int(tier)-1,x,py,BadgeSize,BadgeSize);badge.ui(I8_GameOverBadgeCombo+int(id),x,py,BadgeSize,BadgeSize);
-  c.hit(x,py,BadgeSize,BadgeSize,HitKind::GameOverDetail,int(id));if(focus==int(id)){anchor_x=x;anchor_y=py;c.box(x,py,BadgeSize,BadgeSize,Gold);}
+  detail_hit(x,py,BadgeSize,BadgeSize,int(id));
  }
- y+=badge_count?BadgeSize+9:5;
- const unsigned discoveries=item_count-badge_count;
- if(discoveries){Canvas header=label;header.opacity=uint8_t(div255(header.opacity*motion.discovery_header_alpha(now)));header.text_fitted(game_over_text(a,"DISCOVERY_HEADER"),80,y,160,5,White,5,true);y+=10;
-  for(unsigned i=0;i<discoveries;++i){const unsigned kind=unsigned(items[badge_count+i]-32);const int x=(320-int(discoveries)*32)/2+int(i)*32;
-   const auto state=motion.discovery(i,now);if(!state.visible||!state.alpha)continue;const int py=y+state.offset;Canvas item=label;item.opacity=uint8_t(div255(item.opacity*state.alpha));
-   item.ui(I8_GameOverDiscoveryCard+int(kind),x,py,10,10);item.num(a.progress.current_discoveries.count[kind],x+12,py+2,5,White);
-   c.hit(x,py,25,11,HitKind::GameOverDetail,int(kind+32));if(focus==int(kind+32)){anchor_x=x;anchor_y=py;c.box(x,py,25,11,Gold);}
+ if(discoveries){y=discovery_top-scroll;Canvas header=body;header.opacity=uint8_t(div255(header.opacity*motion.discovery_header_alpha(now)));
+  header.text_fitted(game_over_text(a,"DISCOVERY_HEADER"),28,y,264,10,White,10,true);y+=18;
+  for(unsigned i=0;i<discoveries;++i){const unsigned kind=unsigned(items[badge_count+i]-32);const int x=(320-int(discoveries)*59)/2+int(i)*59;
+   const auto state=motion.discovery(i,now);if(!state.visible||!state.alpha)continue;const int py=y+state.offset;Canvas item=body;item.opacity=uint8_t(div255(item.opacity*state.alpha));
+   item.ui(I8_GameOverDiscoveryCard+int(kind),x,py,20,20);item.num(a.progress.current_discoveries.count[kind],x+24,py+5,10,White);
+   detail_hit(x,py,53,22,int(kind+32));
   }
  }
- const char*view_label=a.content.string(ViewRunText);if(!*view_label)view_label=a.content.english()?"View Run":"查看本局";
+ if(motion.scroll_maximum){c.rect(309,BodyTop,2,BodyHeight,Muted);const int thumb=mx(10,BodyHeight*BodyHeight/full_height);
+  c.rect(308,BodyTop+(BodyHeight-thumb)*motion.scroll/motion.scroll_maximum,4,thumb,Gold);}
+ const char*view_label=a.content.string(ViewRunText);if(!*view_label)view_label=a.content.language()!=2?"View Run":"查看本局";
  if(ViewRunEnabled)game_over_button(c,ViewRunX,UiAction::GameOverViewRun,view_label,InputCommand::Confirm,r&&r->outcome&&a.progress.count);
  game_over_button(c,MainMenuX,UiAction::GameOverMainMenu,game_over_text(a,"BUTTON.mainMenu","Main Menu"),InputCommand::Select);
  if(a.game_over_available()){
-  if(a.pointer.visible&&!a.pointer.held){const auto*h=a.hit_at(a.pointer.x,a.pointer.y);if(h&&h->kind==HitKind::GameOverDetail){focus=h->value;anchor_x=h->x;anchor_y=h->y;}}
-  if(focus>=0)game_over_hover(c,focus,anchor_x,anchor_y);
+  if(a.pointer.visible&&!a.pointer.held){const auto*h=a.hit_at(a.pointer.x,a.pointer.y);if(h&&h->kind==HitKind::GameOverDetail){focus=h->value;anchor_x=h->x;anchor_y=h->y;focus_visible=true;}}
+  if(focus>=0&&focus_visible)game_over_hover(c,focus,anchor_x,anchor_y);
  }
 }

@@ -40,7 +40,7 @@ static void reading(bool art){
  for(unsigned e=0;e<EventKinds;e++){
   setup((EventId)e);auto before=snap();auto first=hit(HitKind::Choice,0),second=hit(HitKind::Choice,1);
   CHECK(first.x>=130&&second.x>=130&&first.y+first.h<=second.y&&second.y+second.h<=240);
-  a.pointer_scroll(1);a.render();same(before);action(UiAction::ReadEvent);CHECK(a.event_reader);same(before);
+  a.pointer_scroll(1);a.render();same(before);a.input(Key::Detail);a.render();CHECK(a.event_reader);same(before);
   for(int i=0;i<a.hit_count;i++)CHECK(a.hits[i].kind!=HitKind::Choice&&a.hits[i].kind!=HitKind::OwnedRelic&&a.hits[i].kind!=HitKind::Hand);
   for(Key key:{Key::EndTurn,Key::Collection,Key::Map,Key::Save,Key::Load,Key::Potions,Key::Relics,Key::ReferenceMap}){a.input(key);CHECK(a.event_reader&&!a.library&&!a.map_preview.open);same(before);}
   a.input(Key::Down);a.render();CHECK(a.event_reader_scroll>=0&&a.event_reader_scroll<=1);

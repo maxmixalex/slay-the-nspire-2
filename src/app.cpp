@@ -1,4 +1,5 @@
 #include "app.hpp"
+#include "ui12_assets.hpp"
 #include "enemy_command_timing.hpp"
 #include "rich_text.hpp"
 #include "source_locale_fonts.hpp"
@@ -6,6 +7,7 @@
 #include "run_setup_layout.hpp"
 #include "status.hpp"
 #include "combat_layout.hpp"
+#include "hand_card_highlight.hpp"
 #include "power_strip_layout.hpp"
 #include "event_assets.hpp"
 #include "world_run.hpp"
@@ -40,6 +42,7 @@ namespace spire {
 #include "combat_feedback_ui.inc"
 #include "canvas.inc"
 #include "small_material_ui7.inc"
+#include "room_secondary_vfx_ui11.inc"
 static void world_region_image_key(const State&s,char*out,size_t size){
  // Run models retain names such as Overgrowth; both original-image families
  // register uppercase keys. Normalize only at the presentation boundary.
@@ -246,7 +249,6 @@ int App::detail_stars()const{
 }
 #include "card_inspect_ui.inc"
 #include "reference_map_ui.inc"
-static void auxiliary_patch_button(Canvas&);
 #include "ui_frontend.inc"
 #include "bestiary_ui7.inc"
 #include "ui_progress_ui.inc"
@@ -263,13 +265,18 @@ static void auxiliary_patch_button(Canvas&);
 #include "pointer_ui6.inc"
 
 void App::render(){
+#if SPIRE_DEBUG_COMMANDS
+    if(debug_open){
+        // Retain the current scene under the console. Rendering it with mouse
+        // focus suppressed cannot expose any background control to input.
+        const bool mouse=pointer.visible;debug_open=false;pointer.visible=false;render();debug_open=true;pointer.visible=mouse;
+        Canvas c{*this};debug_screen(c);pointer_overlay(c);return;
+    }
+#endif
     begin_card_face_frame();
     popup_backdrop.observe(frontend_confirm!=0,map_clock_ms);
     if(!paused)pause_visible=false;
     if(auxiliary.screen!=AuxiliaryScreen::None){Canvas c{*this};auxiliary_screen(c);pointer_overlay(c);return;}
-#if SPIRE_DEBUG_COMMANDS
-    if(debug_open){Canvas c{*this};debug_screen(c);pointer_overlay(c);return;}
-#endif
     if(bestiary.open){Canvas c{*this};const bool mouse=pointer.visible;if(frontend_confirm)pointer.visible=false;bestiary_screen(c);pointer.visible=mouse;if(frontend_confirm)frontend_confirm_screen(c);pointer_overlay(c);return;}
     sync_reward_presentation();
     sync_combat_peek();
@@ -291,12 +298,12 @@ void App::render(){
     sync_game_over_presentation();Canvas c{*this};sync_combat_feedback();sync_relic_feedback();sync_character_feedback();sync_enemy_feedback();sync_turn_banner();sync_health_bars();sync_map_reticles();sync_ftues();hit_count=0;c.rect(0,0,320,240,Ink);
     // Opaque screens do not redraw the hidden title/combat scene or its clips.
     if(profiles_open){const bool mouse=pointer.visible;if(frontend_confirm)pointer.visible=false;profiles_screen(c);pointer.visible=mouse;if(frontend_confirm)frontend_confirm_screen(c);pointer_overlay(c);return;}
-    if(run_mode.screen!=RunMenu::Closed){const bool mouse=pointer.visible;if(frontend_confirm||ftue.active())pointer.visible=false;run_modes_screen(c);pointer.visible=mouse;if(frontend_confirm)frontend_confirm_screen(c);ftue_screen(c);pointer_overlay(c);return;}
+    if(run_mode.screen!=RunMenu::Closed){const bool mouse=pointer.visible;if(frontend_confirm||ftue.active())pointer.visible=false;run_modes_screen(c);pointer.visible=mouse;if(frontend_confirm)frontend_confirm_screen(c);ftue_screen(c);character_departure_screen(c);pointer_overlay(c);return;}
     if(map_preview.open){reference_map_screen(c);pointer_overlay(c);return;}
     if(library){const bool mouse=pointer.visible;if(frontend_confirm)pointer.visible=false;library_screen(c);if(detail_card>=0||card_inspect.closing(map_clock_ms))detail_screen(c);if(detail_item>=0||relic_inspect.closing(map_clock_ms))item_detail_screen(c);keyword_tooltips(c);pointer.visible=mouse;if(frontend_confirm)frontend_confirm_screen(c);pointer_overlay(c);return;}
     if(statistics_open||history_open){const bool mouse=pointer.visible;if(frontend_confirm)pointer.visible=false;if(statistics_open)statistics_screen(c);else history_screen(c);if(detail_card>=0||card_inspect.closing(map_clock_ms))detail_screen(c);if(detail_item>=0||relic_inspect.closing(map_clock_ms))item_detail_screen(c);keyword_tooltips(c);pointer.visible=mouse;if(frontend_confirm)frontend_confirm_screen(c);pointer_overlay(c);return;}
     if(compendium_open){const bool mouse=pointer.visible;if(frontend_confirm)pointer.visible=false;compendium_screen(c);pointer.visible=mouse;if(frontend_confirm)frontend_confirm_screen(c);pointer_overlay(c);return;}
-    if(character_select){const bool mouse=pointer.visible;if(ftue.active())pointer.visible=false;character_screen(c);pointer.visible=mouse;ftue_screen(c);pointer_overlay(c);return;}
+    if(character_select){const bool mouse=pointer.visible;if(ftue.active())pointer.visible=false;character_screen(c);pointer.visible=mouse;ftue_screen(c);character_departure_screen(c);pointer_overlay(c);return;}
     const bool underlay_pointer_visible=pointer.visible;
     if(settings_open||frontend_confirm||help||ftue.active())pointer.visible=false;
     if(title){title_screen(c);
@@ -344,9 +351,9 @@ void App::render(){
         const InputCommand commands[]={InputCommand::Select,InputCommand::Confirm,InputCommand::EndTurn,InputCommand::Map,InputCommand::Deck,
             InputCommand::Draw,InputCommand::Discard,InputCommand::Exhaust,InputCommand::Peek,InputCommand::Cancel};
         const unsigned bank=keyboard_only?1:0;
-        for(unsigned i=0;i<10;++i){const unsigned command=unsigned(commands[i]);char label[16]{};input_key_label(input_bindings.keys[bank][command],label,sizeof label);
+        for(unsigned i=0;i<10;++i){const unsigned command=unsigned(commands[i]);char label[16]{};input_key_label(input_bindings.keys[bank][command],label,sizeof label,calculator_keyboard);
             c.text_fitted(input_command_title(command),16,41+int(i)*17,204,11,White,8);c.text_fitted(label,225,41+int(i)*17,77,11,Gold,8,true);}
-        c.centered(content.english()?"Change bindings in Settings > Input":"在设置 > 输入中更改按键",0,216,320,10,Gold);
+        c.centered(content.language()!=2?"Change bindings in Settings > Input":"在设置 > 输入中更改按键",0,216,320,10,Gold);
     }
     if(character_select)character_screen(c);
     if(library)library_screen(c);
@@ -365,6 +372,7 @@ void App::render(){
     keyword_tooltips(c);
     }
     ftue_screen(c);
+    character_departure_screen(c);
     pointer_overlay(c);
 }
 } // namespace spire

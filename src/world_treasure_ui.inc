@@ -226,14 +226,48 @@ static void treasure_scene(Canvas&c){
  // existing composition without manufacturing an opening animation.
  c.picture(A_ChestBackground,0,22,320,218,opacity);c.picture(A_Chest,128,91,0,0,opacity);
 }
+static void treasure_secondary_coins(Canvas&c){
+ const auto&a=c.a;
+ if(!a.treasure_presentation||a.game.world.treasure_gold<=0)return;
+ // NTreasureRoom emits the actual OpenChest gold count. Restoring a room
+ // has no opening clock and must not manufacture another award/burst.
+ const uint32_t elapsed=treasure_elapsed(a.animation-a.treasure_banner_tick,2300)*9/5;
+ if(elapsed>=3750)return;
+ const unsigned count=unsigned(mn(24,a.game.world.treasure_gold));
+ for(unsigned i=0;i<count;++i){const uint32_t hash=room_vfx_hash(0x434f494eu+i*0x9e3779b9u),delay=hash%1251;
+  if(elapsed<delay)continue;const uint32_t t=elapsed-delay,life=2000+(hash>>8)%501;if(t>=life)continue;
+  const int vx=int((hash>>16)%101)-50,vy=30+int((hash>>24)%91);
+  const int x=155+int(hash%81)-40+vx*int(t)/1000;
+  int y=125+int((hash>>7)%25)-12-vy*int(t)/1000+int(uint64_t(t)*t*81/1000000);
+  // The source gold collider has a .75 bounce. A single reflected arc is
+  // sufficient for these sub-three-pixel coins before their2.5s expiry.
+  if(y>192)y=192-(y-192)*3/4;
+  if(y<22||y>237||x<0||x>=320)continue;
+  const unsigned alpha=t>life-500?(life-t)*255/500:255;
+  const int width=1+int((t/75+i)%3);
+  c.picture(A_Coin,x-width/2,y-2,width,3,alpha);
+ }
+}
+static void treasure_relic_glow(Canvas&c,RelicId relic,int x,int y,int side){
+ if(relic>=WorldRelicKinds)return;const unsigned rarity=world_relic_definitions[relic].rarity;
+ if(rarity!=3&&rarity!=4)return;
+ // Original holder uses four cyan uncommon lights or three gold rare ones.
+ const unsigned count=rarity==3?4:3,period=rarity==3?3000:1800;
+ for(unsigned i=0;i<count;++i){const unsigned age=(c.a.map_clock_ms+i*period/count)%period;
+  const unsigned q=room_curve::sine_in_out(age<period/2?age:period-age,period/2);
+  const unsigned alpha=(rarity==3?30:52)*q/4096;
+  const int size=side+9+int(age*side/(period*2));
+  room_vfx_stamp(c,I7_Glow,x-size/2,y-size/2,size,size,alpha,rarity==3?0xadfcff:0xffe014);
+ }
+}
 static void native_treasure_screen(Canvas&c){
  auto&a=c.a;const auto&s=a.game;a.sync_treasure_presentation();
  const bool offering=s.treasure_state==1&&s.world.treasure_relic!=NoWorldRelic;
- if(s.treasure_state&&!offering)a.cursor=1;treasure_scene(c);
+ if(s.treasure_state&&!offering)a.cursor=1;treasure_scene(c);treasure_secondary_coins(c);
  const unsigned banner_alpha=a.treasure_banner_opacity();
  if(banner_alpha){Canvas banner=c;banner.opacity=uint8_t(div255(c.opacity*banner_alpha));const int y=a.treasure_banner_offset();
   banner.ui(a.content.version()>=Ui6ContentVersion?I6_CommonBanner:U_RewardBanner,98,56+y,125,31);
-  banner.font_face=source_label_face(c.a.content.english(),5);banner.fitted(treasure_text(a,"TREASURE_BANNER","宝藏"),117,60+y,86,16,6,5,rgb(255,246,226),true,false,true,false,rgb(74,60,42));}
+  banner.font_face=source_label_face(c.a.content.original_label_fonts(),5);banner.fitted(treasure_text(a,"TREASURE_BANNER","宝藏"),108,61+y,104,20,10,10,rgb(255,246,226),true,false,true,false,rgb(74,60,42));}
  if(!s.treasure_state){
   // Projection of the original centered 800x500 Chest control at 1920x1080.
   c.action(87,96,162,101,UiAction::TreasureOpen);
@@ -246,6 +280,7 @@ static void native_treasure_screen(Canvas&c){
   const int holder_y=a.treasure_holder_offset();
   const auto visual=c.control_visual("TREASURE_RELIC",141,85+holder_y,39,39,ButtonFamily::TreasureRelic,!a.pointer.visible&&a.cursor==0,a.treasure_pointer_can_take());
   const int size=mx(1,23*visual.scale/4096),left=149-(size-23+1)/2,top=93+holder_y-(size-23+1)/2;
+  treasure_relic_glow(holder,s.world.treasure_relic,left+size/2,top+size/2,size);
   int outline=collection_assets::RelicOutline[s.world.treasure_relic];
   if(s.world.treasure_relic==WorldRelicYummyCookie)outline=collection_assets::CookieOutline[a.canonical_cookie_variant()];
   if(outline>=0){Canvas shadow=holder;shadow.tint_red=shadow.tint_green=shadow.tint_blue=0;shadow.ui(outline,left,top,size,size,128);}
@@ -258,7 +293,9 @@ static void native_treasure_screen(Canvas&c){
  }else{
   if(s.treasure_state==1&&a.treasure_collection_opacity()){
    Canvas empty=c;const unsigned self_alpha=treasure_alpha8(treasure_linear(0,65535,a.animation-a.treasure_open_tick,250));
-   empty.opacity=uint8_t(div255(div255(c.opacity*a.treasure_collection_opacity())*self_alpha));empty.fitted(treasure_text(a,"TREASURE_EMPTY","空的……"),112,101,96,38,9,8,rgb(135,206,235),true,false,true);
+   empty.opacity=uint8_t(div255(div255(c.opacity*a.treasure_collection_opacity())*self_alpha));
+   if(a.treasure_collection_started)room_vfx_smoke(empty,160,120,84,a.map_clock_ms-a.treasure_collection_start_ms,6,0x454d5054u);
+   empty.fitted(treasure_text(a,"TREASURE_EMPTY","空的……"),112,101,96,38,9,8,rgb(135,206,235),true,false,true);
   }
   owned_relic_strip(c);
  }

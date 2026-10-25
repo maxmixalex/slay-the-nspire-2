@@ -150,29 +150,33 @@ static void defect_add_orb_slots(State&s,int n){
 }
 static int defect_random_enemy(State&s){int ids[MaxEnemies],n=0;for(int i=0;i<s.enemy_count;i++)if(s.enemies[i].hp)ids[n++]=i;return n?ids[random_below(s.rng_cards,n)]:-1;}
 static int defect_enemy_count(const State&s){int n=0;for(int i=0;i<s.enemy_count;i++)if(s.enemies[i].hp)++n;return n;}
-static void defect_orb_fire(State&s,DOrb kind,int raw,bool evoke,int target=-1){
+static void defect_orb_fire(State&s,DOrb kind,int raw,bool evoke,int target=-1,unsigned slot=0){
  int focus=power_value(s,XPower::Focus),n=0;
  if(kind==DOrb::Dark){
   if(!evoke)return;target=-1;
   for(int i=0;i<s.enemy_count;i++)if(s.enemies[i].hp&&(target<0||s.enemies[i].hp<s.enemies[target].hp))target=i;
+  notify_orb_activation(s,unsigned(kind),slot,true,target>=0?1u<<target:0u);
   if(target>=0)damage_unpowered(s,target,raw);return;
  }
  if(kind==DOrb::Lightning){
   n=max(0,wr_orb_value(s,kind,(evoke?8:3)+focus));if(target<0)target=defect_random_enemy(s);
+  notify_orb_activation(s,unsigned(kind),slot,evoke,target>=0&&target<s.enemy_count&&s.enemies[target].hp?1u<<target:0u);
   if(target>=0&&target<s.enemy_count&&s.enemies[target].hp){
    damage_unpowered(s,target,n);
    if(evoke&&dpower(s,DPower::Thunder)&&s.enemies[target].hp)damage_unpowered(s,target,dpower(s,DPower::Thunder));
   }return;
  }
- if(kind==DOrb::Frost){gain_unpowered_block(s,max(0,(evoke?5:2)+focus));return;}
- if(kind==DOrb::Plasma){s.energy=(int16_t)min(999,s.energy+(evoke?2:1));record(s,LogKind::Energy,evoke?2:1);return;}
- if(kind==DOrb::Glass){n=min(9999,max(0,raw+focus)*(evoke?2:1));for(int i=0;i<s.enemy_count;i++)damage_unpowered(s,i,n);}
+ if(kind==DOrb::Frost){notify_orb_activation(s,unsigned(kind),slot,evoke);gain_unpowered_block(s,max(0,(evoke?5:2)+focus));return;}
+ if(kind==DOrb::Plasma){notify_orb_activation(s,unsigned(kind),slot,evoke);s.energy=(int16_t)min(999,s.energy+(evoke?2:1));record(s,LogKind::Energy,evoke?2:1);return;}
+ if(kind==DOrb::Glass){unsigned targets=0;for(int i=0;i<s.enemy_count;++i)if(s.enemies[i].hp)targets|=1u<<i;
+  notify_orb_activation(s,unsigned(kind),slot,evoke,targets);
+  n=min(9999,max(0,raw+focus)*(evoke?2:1));for(int i=0;i<s.enemy_count;i++)damage_unpowered(s,i,n);}
 }
 static void defect_orb_passive(State&s,unsigned at,int target=-1){
  auto&x=s.expansion;if(at>=x.orb_count)return;DOrb kind=(DOrb)s.defect.orb_kind[at];int raw=x.dark[at];
- if(kind==DOrb::Dark){x.dark[at]=(int16_t)min(9999,raw+max(0,6+power_value(s,XPower::Focus)));return;}
+ if(kind==DOrb::Dark){notify_orb_activation(s,unsigned(kind),at,false);x.dark[at]=(int16_t)min(9999,raw+max(0,6+power_value(s,XPower::Focus)));return;}
  if(kind==DOrb::Glass){if(raw+power_value(s,XPower::Focus)<=0)return;x.dark[at]=(int16_t)max(0,raw-1);}
- defect_orb_fire(s,kind,raw,false,target);
+ defect_orb_fire(s,kind,raw,false,target,at);
 }
 static void defect_channel_dark(State&s,int count){if(count>0)queue_extension(s,XOp::DChannel,(int)DOrb::Dark,count,true);}
 static void defect_orbs_end(State&s){
@@ -353,7 +357,7 @@ static bool defect_effect(State&s,Effect e){
   if(b<=0||!x.orb_count||!alive(s))break;unsigned at=a<0?x.orb_count-1:(unsigned)a;if(at>=x.orb_count)break;
   DOrb kind=(DOrb)v.orb_kind[at];int raw=x.dark[at];
   if(b>1)queue_extension(s,XOp::DEvoke,a,b-1,true);else defect_remove_orb(s,at);
-  defect_orb_fire(s,kind,raw,true);break;
+  defect_orb_fire(s,kind,raw,true,-1,at);break;
  }
  case XOp::DEvokeAll:if(x.orb_count){queue_extension(s,XOp::DEvokeAll,0,0,true);queue_extension(s,XOp::DEvoke,0,2,true);}break;
  case XOp::DPowerTurn:{

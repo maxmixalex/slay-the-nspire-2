@@ -21,7 +21,7 @@ static spire::App app;
 static unsigned installed_languages=0,pending_language=0;
 static unsigned available_languages(){return installed_languages;}
 static bool request_language(unsigned language){
-    if(language<1||language>2||!(installed_languages&(1u<<(language-1))))return false;
+    if(!spire::locale_language_valid(language)||!(installed_languages&spire::locale_language_mask(language)))return false;
     pending_language=language;return true;
 }
 static uint32_t seed_entropy(){
@@ -178,7 +178,7 @@ int main(int argc,char**argv){
 #endif
         else if((a=="--pack"||a=="--common"||a=="--locale"||a=="--resources"||a=="--language"||a=="--save"||a=="--settings"||a=="--progress"||a=="--capture"||a=="--actions")&&i+1<argc){const char*v=argv[++i];
             if(a=="--pack")packpath=v;else if(a=="--common")commonpath=v;else if(a=="--locale")localepath=v;else if(a=="--resources")dir=v;
-            else if(a=="--language"){if(!strcmp(v,"eng"))language=spire::BootLanguage::English;else if(!strcmp(v,"zhs"))language=spire::BootLanguage::Chinese;else{fprintf(stderr,"--language eng|zhs\n");return 2;}}
+            else if(a=="--language"){language=static_cast<spire::BootLanguage>(spire::locale_language_id(v));if(language==spire::BootLanguage::Unknown){fprintf(stderr,"Unsupported original language code: %s\n",v);return 2;}}
             else if(a=="--save")save_path=v;else if(a=="--settings")settings_path=v;else if(a=="--progress")progress_path=v;else if(a=="--capture")shot=v;else actions=v;}
         else {fprintf(stderr,"Usage: %s [--pack FILE | --resources DIR | --common FILE --locale FILE] [--language eng|zhs] [--save FILE] [--headless] [--actions enter,right,...] [--capture FILE.ppm]\n",argv[0]);return 2;}}
     if(!packpath.empty()&&(!commonpath.empty()||!localepath.empty())){fprintf(stderr,"Choose --pack or --common/--locale\n");return 2;}
@@ -191,23 +191,23 @@ int main(int argc,char**argv){
     if(common.file){
         if(localepath.empty()){
             const std::string root=directory(commonpath);
-            FILE*english=fopen((root+"/nSpire2.eng.tns").c_str(),"rb"),*chinese=fopen((root+"/nSpire2.zhs.tns").c_str(),"rb");
-            installed_languages=(english?1u:0u)|(chinese?2u:0u);
-            if(language==spire::BootLanguage::Unknown){
-                language=read_preference(preference);
-                if(!english)language=spire::BootLanguage::Chinese;else if(!chinese)language=spire::BootLanguage::English;
-                else if(language==spire::BootLanguage::Unknown){const char*system=getenv("LANG");language=system&&system[0]=='e'&&system[1]=='n'?spire::BootLanguage::English:spire::BootLanguage::Chinese;}
+            for(unsigned id=1;id<=spire::LocaleLanguageCount;++id){FILE*f=fopen((root+"/"+spire::locale_language_info(id).file).c_str(),"rb");
+                if(f){installed_languages|=spire::locale_language_mask(id);fclose(f);}}
+            if(language==spire::BootLanguage::Unknown)language=read_preference(preference);
+            if(!(installed_languages&spire::locale_language_mask(unsigned(language)))){
+                const char*system=getenv("LANG");unsigned preferred=(system&&system[0]=='e'&&system[1]=='n')?1u:2u;
+                if(!(installed_languages&spire::locale_language_mask(preferred)))preferred=spire::locale_language_at(installed_languages,0);
+                language=static_cast<spire::BootLanguage>(preferred);
             }
-            resource.file=language==spire::BootLanguage::English?english:chinese;
-            FILE*unused=language==spire::BootLanguage::English?chinese:english;if(unused)fclose(unused);
+            if(language!=spire::BootLanguage::Unknown)resource.file=fopen((root+"/"+spire::locale_language_info(unsigned(language)).file).c_str(),"rb");
         }else{
             resource.file=fopen(localepath.c_str(),"rb");
             if(resource.file&&language==spire::BootLanguage::Unknown){uint8_t value[4]{};
-                if(read_resource(resource.file,36,value,4)&&!value[1]&&!value[2]&&!value[3]&&(value[0]==1||value[0]==2))language=static_cast<spire::BootLanguage>(value[0]);}
+                if(read_resource(resource.file,36,value,4)&&!value[1]&&!value[2]&&!value[3]&&spire::locale_language_valid(value[0]))language=static_cast<spire::BootLanguage>(value[0]);}
         }
         if(!resource.file)return error(spire::BootText::MissingLanguage);
         if(language==spire::BootLanguage::Unknown||!split.open(file_source(common.file),file_source(resource.file),
-            language==spire::BootLanguage::English?spire::ResourceLanguage::English:spire::ResourceLanguage::Chinese))return error(spire::BootText::InvalidResources);
+            static_cast<spire::ResourceLanguage>(language)))return error(spire::BootText::InvalidResources);
         source=split.source();
     }else{
         if(explicit_split)return error(spire::BootText::MissingResources);
@@ -215,7 +215,7 @@ int main(int argc,char**argv){
         resource.file=fopen(packpath.c_str(),"rb");if(!resource.file)return error(spire::BootText::MissingResources);
         source=file_source(resource.file);language=spire::boot_probe_language(source);
     }
-    if(!installed_languages)installed_languages=language==spire::BootLanguage::English?1u:2u;
+    if(!installed_languages)installed_languages=spire::locale_language_mask(unsigned(language));
     if(progress_path.empty()&&!headless)progress_path=directory(save_path)+"/nSpire2.progress.tns";
     if(settings_path.empty()&&!headless)settings_path=(common.file?directory(commonpath):directory(packpath))+"/nSpire2.settings.tns";
     base_save_path=save_path;base_progress_path=progress_path;base_settings_path=settings_path;
@@ -231,9 +231,9 @@ int main(int argc,char**argv){
     auto change_language=[&](){
         const unsigned requested=pending_language;pending_language=0;
         if(!requested||!common.file||!app.title)return;
-        const std::string next_path=directory(commonpath)+(requested==1?"/nSpire2.eng.tns":"/nSpire2.zhs.tns");
+        const std::string next_path=directory(commonpath)+"/"+spire::locale_language_info(requested).file;
         FILE*next=fopen(next_path.c_str(),"rb");
-        if(!next){app.message(app.content.english()?"Language resources are unavailable.":"无法读取语言资源。");return;}
+        if(!next){app.message(app.content.language()!=2?"Language resources are unavailable.":"无法读取语言资源。");return;}
         FILE*previous=resource.file;const auto old_language=language;resource.file=next;
         if(split.open(file_source(common.file),file_source(resource.file),static_cast<spire::ResourceLanguage>(requested))&&app.reload_language(split.source())){
             language=static_cast<spire::BootLanguage>(requested);fclose(previous);persist_language();
@@ -242,7 +242,7 @@ int main(int argc,char**argv){
             if(!split.open(file_source(common.file),file_source(resource.file),static_cast<spire::ResourceLanguage>(old_language))||!app.reload_language(split.source())){
                 error(spire::BootText::InvalidResources);app.quit=true;return;
             }
-            app.message(app.content.english()?"Could not change language.":"无法切换语言。");
+            app.message(app.content.language()!=2?"Could not change language.":"无法切换语言。");
         }
     };
 #if SPIRE_DEBUG_COMMANDS
@@ -304,6 +304,26 @@ int main(int argc,char**argv){
                 bool repeat=false;if(XPending(d)){XEvent next;XPeekEvent(d,&next);repeat=next.type==KeyPress&&next.xkey.keycode==e.xkey.keycode&&next.xkey.time==e.xkey.time;}
                 if(!repeat){held[e.xkey.keycode&255]=false;app.physical_key(physical_keycode(XLookupKeysym(&e.xkey,0)),false);}}
             else if(e.type==KeyPress){held[e.xkey.keycode&255]=true;KeySym symbol=XLookupKeysym(&e.xkey,0);
+#if SPIRE_DEBUG_COMMANDS
+                // The console owns keys ahead of search/remapping modals.
+                // F1 / grave are the desktop equivalents of calculator Flag.
+                if(symbol==XK_F1||symbol==XK_grave){app.input(spire::Key::Debug);}
+                else if(app.debug_open){
+                    char text[16];KeySym actual=symbol;const int size=XLookupString(&e.xkey,text,sizeof text,&actual,nullptr);
+                    if(actual==XK_Return||actual==XK_KP_Enter)app.debug_text(13);
+                    else if(actual==XK_BackSpace)app.debug_text(8);
+                    else if(actual==XK_Delete)app.debug_text(127);
+                    else if(actual==XK_Escape)app.debug_text(27);
+                    else if(actual==XK_Home)app.debug_text(1);
+                    else if(actual==XK_End)app.debug_text(5);
+                    else if(actual==XK_Tab||actual==XK_ISO_Left_Tab){
+                        if((e.xkey.state&ShiftMask)&&app.debug_completing)app.debug_input(spire::Key::Up);
+                        else app.debug_text(9);
+                    }else if(actual==XK_Left||actual==XK_Right||actual==XK_Up||actual==XK_Down)
+                        app.debug_input(actual==XK_Left?spire::Key::Left:actual==XK_Right?spire::Key::Right:actual==XK_Up?spire::Key::Up:spire::Key::Down);
+                    else if(!(e.xkey.state&Mod1Mask)&&size==1)app.debug_text((unsigned char)text[0]);
+                }else
+#endif
                 if(app.binding_listening>=0)app.physical_key(physical_keycode(symbol),true);
                 else if(((app.library&&!app.library_tab&&app.library_search_editing)||(app.auxiliary.screen==spire::AuxiliaryScreen::Feedback&&app.auxiliary.editing))&&!(e.xkey.state&(ControlMask|Mod1Mask))){
                     char text[512];KeySym actual=symbol;Status status=XLookupNone;int size=0;
@@ -319,14 +339,6 @@ int main(int argc,char**argv){
                     else if(status==XBufferOverflow&&size>0&&size<=65536){std::vector<char>commit(size+1);size=Xutf8LookupString(input_context,&e.xkey,commit.data(),int(commit.size()),&actual,&status);if(status!=XBufferOverflow&&size>0)spire::host_text_utf8(commit.data(),size,[](int code){app.library_text(code);});}
                     else if(size>0&&size<=int(sizeof text))spire::host_text_utf8(text,size,[](int code){app.library_text(code);});
                 }else
-#if SPIRE_DEBUG_COMMANDS
-                if(app.debug_open&&app.debug_editing&&!(e.xkey.state&(ControlMask|Mod1Mask))){
-                    char text[16];KeySym actual;int size=XLookupString(&e.xkey,text,sizeof text,&actual,nullptr);
-                    if(actual==XK_Return||actual==XK_KP_Enter)app.debug_text(13);
-                    else if(actual==XK_BackSpace)app.debug_text(8);else if(actual==XK_Escape)app.debug_text(27);
-                    else if(size==1&&(unsigned char)text[0]>=32)app.debug_text((unsigned char)text[0]);
-                }else
-#endif
                 if(app.map_preview.open&&app.map_preview.editing&&!(e.xkey.state&(ControlMask|Mod1Mask))){
                     char text[16];KeySym actual;int size=XLookupString(&e.xkey,text,sizeof text,&actual,nullptr);
                     if(actual==XK_Return||actual==XK_KP_Enter)app.reference_text(13);

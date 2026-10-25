@@ -57,8 +57,7 @@ static LocalizedValue wt_catalog_value(const void*opaque,const char*name,Localiz
 }
 static LocalizedTemplate wt_formatter(char*out,size_t cap,const WorldTextContext*x){
  const auto&c=x->app->content;
- const char*energy=c.world_title("static_hover_tips","ENERGY_COUNT");const char*star=c.world_title("static_hover_tips","STAR_COUNT");bool english=c.english();
- return LocalizedTemplate(out,cap,wt_resolve,x,*energy?energy:english?"Energy":"能量",*star?star:english?"Stars":"辉星",english,wt_catalog_value);
+ return LocalizedTemplate(out,cap,wt_resolve,x,nullptr,nullptr,false,wt_catalog_value).for_language(c.language());
 }
 static void wt_model_key(WorldTextContext&,const char*);
 static LocalizedValue wt_nested(const WorldTextContext&x,const char*table,const char*key,int model=-1){
@@ -105,6 +104,11 @@ static LocalizedValue wt_resolve(const void*opaque,const char*name){
  }
  if(wt_equal(name,"singleStarIcon"))return wt_string(InlineStarText);
  if(wt_equal(name,"energyPrefix"))return wt_number(1);
+ if(wt_equal(name,"characterGender"))return wt_string(s.character==Character::Silent||s.character==Character::Necrobinder?"feminine":s.character==Character::Defect?"neutral":"masculine");
+ if(wt_equal(name,"characterObject")||wt_equal(name,"possessiveAdjective")||wt_equal(name,"pronounObject")||wt_equal(name,"pronounPossessive")||wt_equal(name,"pronounSubject")){
+  char key[80]{};TextBuffer b{key,sizeof key,0};b.text(character_definitions[unsigned(s.character)].key);b.ch('.');b.text(wt_equal(name,"characterObject")?"titleObject":name);
+  return wt_string(a.content.world_string("characters",key));
+ }
  if(wt_equal(name,"OwnerName")||wt_equal(name,"TargetPlayer")||wt_equal(name,"character")){
   if(x.actor>0&&x.actor<=s.enemy_count){const auto kind=(wt_equal(x.table,"intents")||wt_equal(x.table,"powers"))?ui_intent_enemy_kind(a,x.actor-1):s.enemy_world.models[x.actor-1].kind;if(enemy_definition(kind))return wt_string(a.monster_title(kind));}
   const auto&character=character_definitions[(unsigned)s.character];const char*title=a.content.world_title("characters",character.key);return wt_string(*title?title:a.content.ui_text(character.name));
@@ -319,7 +323,7 @@ void App::world_card_description(Card card,int target,char*out,size_t cap,int in
    replay+=game.expansion.replay[instance];
   }
   if(replay){char raw[256]{},text[256]{};TextBuffer copy{raw,sizeof raw,0};copy.text(content.world_string("static_hover_tips","REPLAY.extraText"));
-   LocalizedTemplate formatted(text,sizeof text,wt_replay_value,&replay,content.english()?"Energy":"能量",content.english()?"Stars":"辉星",content.english());formatted.format(raw);
+   LocalizedTemplate formatted(text,sizeof text,wt_replay_value,&replay,content.language()!=2?"Energy":"能量",content.language()!=2?"Stars":"辉星",content.english());formatted.for_language(content.language()).format(raw);
    if(*text){if(suffix.n)suffix.ch('\n');suffix.text(text);}}
  }
  if(content.version()>=LocaleContentVersion){TextBuffer copy{source,sizeof source,0};source[0]=0;copy.text(out);card_keyword_text::compose(out,cap,source,wt_card_display_keywords(x),labels);}
@@ -368,7 +372,7 @@ void App::card_modifier_text(Card card,char*out,size_t cap,int instance,int deck
  auto append=[&](const char*table,const char*key,int amount){
   char full[160]{},text[2048]{};TextBuffer k{full,sizeof full,0};k.text(key);k.text(".description");WorldTextContext x{this,table,{},-1,-1,amount,card,instance,deck,facts};wt_model_key(x,full);
   char source[4096]{};TextBuffer raw{source,sizeof source,0};raw.text(content.world_string(table,full));wt_formatter(text,sizeof text,&x).format(source);
-  b.text("\n[purple]");b.text(content.world_title(table,key));b.text("[/purple]");if(*text){b.text(content.english()?": ":"：");b.text(text);}
+  b.text("\n[purple]");b.text(content.world_title(table,key));b.text("[/purple]");if(*text){b.text(content.language()!=2?": ":"：");b.text(text);}
  };
  if(facts&&facts->enchantment!=EventEnchantment::None)append("enchantments",event_enchantment_key(facts->enchantment),facts->enchantment_amount);
  if(instance>=0&&instance<game.card_count){unsigned affliction=game.enemy_world.affliction[instance];const char*keys[]={"","BOUND","ENTANGLED","GALVANIZED","HEXED","TAINTED","RINGING","SMOG"};

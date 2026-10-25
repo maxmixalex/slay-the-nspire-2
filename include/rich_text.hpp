@@ -6,7 +6,7 @@
 #include "unicode_text.hpp"
 namespace spire {
 struct RichStyle { uint8_t color=0; bool bold=false,italic=false,wave=false,jitter=false,rainbow=false,thinky_dots=false; unsigned thinky_start=0;RichRainbow rainbow_parameters{}; };
-struct RichChar { uint32_t codepoint; RichStyle style; unsigned index; };
+struct RichChar { uint32_t codepoint; RichStyle style; unsigned index; uint32_t previous=0; uint8_t previous_font=0; };
 // Original styles select their own font metrics. They are never simulated by
 // widening or drawing a second offset copy of the regular glyph.
 inline unsigned rich_font_style(const RichChar&ch){return inline_icon(ch.codepoint)?0u:unsigned(ch.style.bold)|(unsigned(ch.style.italic)<<1);}
@@ -20,6 +20,8 @@ inline int rich_thinky_offset(uint32_t elapsed_ms,unsigned relative_index){
 }
 // Tags are presentation only. The parser owns no heap storage and never consumes RNG.
 class RichReader {
+ uint32_t previous_=0;uint8_t previous_font_=0;
+ void emit(RichChar&out,uint32_t cp){out={cp,style_,index_++,previous_,previous_font_};previous_=cp=='\n'?0:cp;previous_font_=uint8_t(rich_font_style(out));}
  const char* p_;const char*literal_end_=nullptr;bool literal_tag_=false;RichStyle style_{};unsigned index_=0,depth_=0,overflow_rainbows_=0,overflow_sizes_=0,overflow_codes_=0;
  struct Entry{uint8_t tag;RichStyle before;bool literal;} stack_[16]{};
  static bool equal(const char*p,size_t n,const char*q){size_t i=0;while(q[i]){if(i>=n||p[i]!=q[i])return false;++i;}return i==n;}
@@ -97,12 +99,12 @@ public:
   while(*p_&&markup()){}if(!*p_)return false;
   if(!literal_tag_&&(!literal_end_||p_>=literal_end_)&&*p_=='['&&
      (p_[1]=='l'||p_[1]=='r')&&p_[2]=='b'&&p_[3]==']'){
-   const uint32_t cp=p_[1]=='l'?'[':']';p_+=4;out={cp,style_,index_++};return true;
+   const uint32_t cp=p_[1]=='l'?'[':']';p_+=4;emit(out,cp);return true;
   }
   uint32_t cp=(uint8_t)*p_++;
   if(cp>=128){int n=cp<224?1:cp<240?2:3;cp&=(1u<<(6-n))-1;while(n--){uint8_t b=(uint8_t)*p_;if((b&192)!=128){cp='?';break;}++p_;cp=(cp<<6)|(b&63);}}
   if(text_format_control(cp))continue;
-  if(literal_tag_&&cp==']')literal_tag_=false;out={cp,style_,index_++};return true;
+  if(literal_tag_&&cp==']')literal_tag_=false;emit(out,cp);return true;
   }
  }
 };

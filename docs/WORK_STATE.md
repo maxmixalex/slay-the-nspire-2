@@ -1,5 +1,249 @@
 # Work state — 2026-10-25
 
+## UI12 active feedback correction
+
+The user explicitly authorized pushing UI11, then requested the next complete
+calculator usability pass. Remote main/work were read at UI10 `9dc0c112`.
+The atomic fast-forward of UI11 `40def2b0` was rejected by automatic approval
+review despite that authorization: it requested the exact source payload and
+destination be bound in user-authored text. No alternate transport was used.
+All UI12 checkpoints remain local until that block is resolved.
+
+Three isolated worktrees implement frontend/credits/collections, combat/cards/
+rewards, and rooms/map/character selection. Root owns shared fractional glyph
+layout, private resource integration, calculator physical inputs, the top bar
+and final Firebird acceptance. The console is now assigned to the frontend
+agent after its coherent UI stage. This section records work in progress;
+no UI12 emulator or completion claim is made yet.
+
+The root integration is now frozen at J `1074b720cf281629b52003794739e5c71d1daa27`.
+Its ARM launcher builds successfully at 1,570,350 bytes and requests 20,126,948
+bytes under the 24 MiB build ceiling. H's unchanged final UI40 resources plus J
+install at 69,318,101 bytes with English and Simplified Chinese. All sixteen
+locale conversions completed; 15 H locale loading/formatting routes passed,
+then the Turkish route exposed an invisible U+00AD mistaken for a visible glyph.
+J handles that format control and fixes two final cross-family kerning cases;
+matching native gates are running. Full NSL2 English and Chinese reconstruction
+already passes with I's test-only include fix and unchanged H loader library.
+
+Three independent ordinary Firebird sessions have executed H: typed Flag-key
+console, original settings controls, ordinary new-run/character transition,
+Ancient choices, save/title/language change/continue, and a normal first battle.
+Their acceptance remains scoped to their actual checkpoints. Real interaction
+found an aimed-card clipping defect and an Ancient first-click focus defect;
+J implements both. A further ordinary OfferReward alignment omission was found
+in the combat session and is being fixed before final delivery. Native tests
+are correctness evidence, never calculator speed measurements.
+
+Root implements fractional advances, true source pair kerning/negative bearings,
+official TI key glyphs, real pad-edge navigation, 1–0 hand shortcuts, exact-old-
+default-only migration, expanded potion pages and top-bar tooltip/arrival anchors.
+The frontend implements original material buttons/tabs/scrollbars, credits and
+collections, and the actual typed command console. World implements source random
+selection/transitions, reconstructed Necrobinder head/fire, in-place reading and
+map/room layout. Combat implements target-only values, actor/HUD/card layout,
+thought bubbles, early loot, actual Smith animation and merchant card caching.
+
+The private character repair adds only 98,098 bytes by replacing its old tile
+references and reclaiming dead tiles, instead of appending 8.42 MB of sparse
+frames. Full images/clip clocks remain preserved at the accepted UI11 precision.
+The final source-only report and package are still being assembled. No WASM or
+browser validation is run. Runtime source stages have local archives/journals;
+none is described as pushed while automatic approval blocks the remote update.
+
+Host ENOSPC interrupted two native journal closures and truncated a frontend
+emulator snapshot. The failed/unfinished receipts are retained, not counted as
+passes. Removing only old reproducible UI9/UI10 CMake objects/libraries/executables
+restored space; original inputs, source, reports and emulator evidence were kept.
+The frontend restarted from a clean independent NAND and again installed Ndless
+normally before H. The earlier truncated snapshot/installer errors did not execute
+H and are not attributed to the game.
+
+### UI12 world final acceptance and complete registered suites
+
+World production stages are merged through the L source-order correction.
+Ordinary Firebird H exercised Random reveal/original-mask departure, Neow,
+compact map legend/drawing tips, UI language change plus saved-run Continue,
+Chinese inline event keyboard/thumb scrolling and the rest room. J executed
+the actual Smith selection/confirmation, full enlargement/flash/deck flight,
+and the repaired first pointer Ancient choice after reading focus. L verified
+the source portrait order and a real mouse click on Random. Its session
+`ui12-world-firebird-l-preview-95adc07760f1` passed, returned perf through USB,
+flushed its independent NAND and quit normally; `source_changed=false`.
+
+The M-matched native core library now passes all eight complete world UI /
+lifecycle suites plus the registered focused reader gate (403,476 checks).
+The final event, room, map, act-intro counts are 5,161 / 8,809 / 98,037 /
+47,282; no complete suite is replaced by a reader-only invocation. Test-only
+checkpoints `c083b79`, `fdab3db`, `e16933b`, `5981dd3` update changed LCD
+geometry, explicit legend controls, the actual 1,600ms departure prelude,
+settled post-heal actor samples and deliberate pointer hover ownership.
+Canonical saves, RNG assertions, four exact Defect composite colors and
+uint32 map-clock wrap remain checked. All final journals passed with unchanged
+source fingerprints; the earlier failures remain separately recorded.
+
+`docs/world-ui12-0.17.md` records checkpoints, complete suite receipts, ordinary
+emulator observations, measured limits and the optional unadded Ancient
+animation. No WASM/browser test or physical-device performance claim is made.
+The remote approval rejection remains unchanged; these are local persisted
+checkpoints, not pushed source.
+
+## UI11 final N — readable LCD, storage and ordinary ARM execution
+
+UI11 continues from accepted UI10 `9dc0c11291b828e4e17a347e7ef7a27c7b371e60`.
+The user-authorized 320 × 240 adaptation uses roughly 1.5× main text/control
+sizes, reflow, scrollable descriptions, thinner outlines and corrected Latin
+spacing. Exact UI10 screenshot equality is no longer the acceptance criterion.
+The runtime removes patch notes and feedback, preserves original credits and
+appends the zyf722/Codex Nspire port credit. Focused cards, inspection, events,
+Ancients, shops, collections and settings now use the readable LCD layouts.
+The terminal summary also has a readable scrolling article and keyboard focus
+reveal. Ordinary K/L gameplay and final N title/terminal execution now pass in
+Firebird; their distinct scopes are recorded below and in
+`ui11-lcd-adaptation-0.17.md`.
+
+### Implemented retained differences
+
+- Combat now has actual hand gold/red/cyan highlight conditions, selection
+  flashes, exhaust dissolve/embers, seven-node power-card travel, recorded
+  trails, aggregate shuffle and generated-card entry effects. All five orb
+  kinds report real passive/evoke events, including repeated evokes and extra
+  Gold-Plated Cables activations, without resampling targets or changing RNG.
+- Heal smoke/desaturation, rest embers, merchant candles/light nodes, chest
+  coins/rarity glows/empty smoke, card acquisition trails and separate potion/
+  relic arrival flashes are linked to real actions; restored rooms do not
+  replay completed effects.
+- Bestiary previews retain detached phase and liveness facts for the tested
+  regeneration, charge, burrow, stun, hatch, growth, summon and multi-actor
+  down/revive contexts. Character-select particle contexts and duplicate-actor
+  cosmetic scale/hue are implemented with bounded independent display state.
+
+`combat-secondary-ui11-0.17.md`, `room-vfx-ui11-0.17.md` and the current
+contract rows in `ui8-source-ui-audit-0.17.json` identify the implementation and
+limits. Dense GPU turbulence, continuous particle paths, HDR bloom, smoke/noise
+materials and exact desktop glyph rasterization remain explicit CPU/LCD
+approximations. Closing their real triggers does not establish pixel identity
+or a measured 95% restoration score.
+
+### Resource, language and memory results
+
+The final private common art file is **61,186,168 bytes**. English is
+**1,049,523 bytes** and Simplified Chinese **5,034,485 bytes**: the default
+resource files total **67,270,176 bytes** before the launcher. Final N's
+**1,506,285-byte** launcher gives a four-file installation of **68,776,461
+bytes** (68.78 MB decimal), **24.9206% smaller** than UI10's 91,604,965 bytes.
+This is storage reduction, not a speedup percentage. The common file alone
+is **23,648,624 bytes** smaller than UI10. Lossless retiling is followed by authorized bounded mixed
+RGB555/454/444 and alpha6 animation precision; all frames, timings, dimensions
+and geometry remain intact. Static UI/cards/icons/text remain exact, and the
+five character-select static planes use the same map as their animated layers
+to avoid seams. Color precision is explicitly lossy, not a lossless-compression
+claim. See `storage-memory-ui11-0.17.md`.
+
+All **16 original locale editions** have actual source text, original font
+chains and verified glyph coverage. Each optional edition shares the same
+common file; installing all editions is not the default 65–70 MB target.
+Original missing translations use English fallback (Thai: 1,966 bound keys;
+other non-English editions: 91–129); calculator-only instructions outside ZHS
+and early boot text retain the documented fallback. See
+`localization-ui11-0.17.md` for the installation table and formatter limits.
+
+The build allocation ceiling is **24 MiB**. The D candidate's **23,874,780-byte**
+contiguous Zehn request failed in ordinary Ndless with `Memory allocation
+failed`; being under that ceiling was not sufficient. F uses a real **5 MiB
+image cache / 480 keys** and **6 MiB tile-group cache / 48 pages**, producing a
+**19,755,048-byte** linked allocation that starts successfully in ordinary
+Firebird. Subsequent K/L ordinary gameplay and N's final launch/terminal/exit
+also pass. Final N's measured linked allocation is **19,806,488 bytes**; the
+5 MiB image and 6 MiB tile caches are real runtime buffers, while 24 MiB is
+the build ceiling rather than a claim that the OS accepted a 24 MiB block.
+
+### Executed focused correctness
+
+- I (`4e4ce0692a01132de613c01e3cb6a8a56f0d001c`): all 16 final locale editions
+  pass **38,644 checks / 53,072 model-event descriptions**, with zero failures
+  or unexpanded templates. Actual room effects pass **105 checks**. Independent
+  card-highlight scalar/clipping checks pass **12,592,419 comparisons**.
+- J (`f16573e1b9c6da390cd9944bd447acb4dc0482d3`): actual final common/English
+  combat secondary checks pass **325,107**. J's test and renderer were compiled
+  against the unchanged I core library; this is explicit incremental evidence.
+- Bestiary phase fixture checkpoint
+  `49340f020bfbe96c49cc6de71aa122e1556c269c` passes **139 checks** with unchanged
+  H core and canonical-save preservation. F tile/cache checks pass
+  **16,396,600** and **5,966** respectively. Exact receipts are in the module
+  reports and source audit; these are correctness, not speed measurements.
+- Final Game Over fixture checkpoint
+  `02f0f4b266dc1ac9578a43e02521a07d95d647de` passes **176 checks**, compiling
+  the actual L UI against unchanged I core. Original score/badge/history and
+  release timing, long-summary scroll bounds, focus wrap/visible auto-reveal
+  and canonical SaveData/RNG preservation pass. Build `e4bc30c76261` and run
+  `d246a073ed6e` both record `source_changed=false`. This asset-independent
+  gate is not a font screenshot or calculator speed measurement; the two
+  earlier fixture-only failures remain explained in the source audit.
+
+### Ordinary ARM/Firebird acceptance and measured limits
+
+- **K ordinary continuation** (`90d981c4e42e5f67f7a72b52f37fa1ac45410a71`):
+  continued the F floor-4 combat, inspected/played cards, completed four turns,
+  won, claimed gold and Setup Strike, opened the retained-room map, saved and
+  exited normally. Actual NSZ1 readback passes production decoding, L native
+  load/validate and exact canonical resave. HP 73→64, gold 109→125, deck 11→12
+  and revision 30→48; Setup Strike is the only added card. The NSH9 readback
+  matches floor 4 and four battle turns. Final canonical phase is Reward; the
+  open map does not claim travel to another floor. Journal `8a5389fd74a2` and
+  readback `dfa5befd59c0` pass with `source_changed=false`.
+- **L ordinary continuation** (`7722cad8adb6626081b0100e5017d3de095904c5`):
+  traveled from that saved run to the floor-5 Tablet of Truth, used the full
+  reader and healed 64→80, then entered floor-6 three-slime combat. Actual
+  middle-enemy targeting changed its HP 27→9; ending the turn left player HP 73.
+  Voluntary Give Up opened the readable summary, scrolling, Main Menu and
+  normal Quit. Journal `93bd401af87c` passes with `source_changed=false`.
+- **L Chinese room/Bestiary**: ordinary cold OS/Ndless launch used constructed
+  canonical Neow and compendium-progress fixtures. Actual option selection
+  changed HP/max HP 80→91, finished the event and advanced revision 4→6; native
+  readback confirms it. Five-action paging exposes and plays the sixth Death
+  action. Journals `d6f0eebb90d7` and `7012def96add` pass. These fixtures verify
+  Chinese interaction and presentation, not ordinary-playthrough reachability.
+- **Final N** (`e95893c9effaa9b5f7fd09158cca546d7b65ce3b`) changes only two
+  initial-defeat-quote rendering lines from L: natural paragraph height and
+  source `quote_y + 8` placement. Ordinary boot, corrected quote, summary,
+  Main Menu, normal Quit and exported performance pass journal `383291056740`
+  with `source_changed=false`. The release owner directly reviewed the quote
+  below the banner without corpse overlap. N's 206 title / 338 room / 67
+  overlay samples are a focused terminal smoke, **not an N combat benchmark**.
+
+Measured mean frame intervals and cold outliers remain visible:
+
+| Actual session / scene | Frames | Mean interval ms | Mean render ms | Maximum interval ms | Over 100 ms |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| K ordinary combat | 1,324 | 35.800 | 27.880 | 382.874 | 14 |
+| L ordinary three-enemy combat | 430 | 41.751 | 34.526 | 752.655 | 16 |
+| K map | 46 | 80.050 | 79.165 | 452.087 | 3 |
+| L map | 81 | 72.307 | 71.338 | 393.829 | 2 |
+| L Chinese collection fixture | 784 | 42.713 | 20.161 | 1,807.068 | 18 |
+| L Chinese room fixture | 102 | 54.170 | 46.605 | 1,393.280 | 3 |
+
+All four reports have **zero resource-read failures**. Preparation is separate:
+K's 17 preparation frames average 139.442 ms, maximum 1,205.963 ms; L's 45 average
+91.601 ms, maximum 987.152 ms. L also records a 1,214.386 ms mixed-room interval.
+Map/overlay work and cold-entry stalls remain measurable limits; these values
+are not removed from the report or described as uniformly smooth performance.
+
+`performance-ui11-0.17.json` binds each result to its source checkpoint,
+closed journal, raw report hash and exact scope. It records SP804 emulated
+calculator time, not host wall time or a physical-device measurement. K/L
+use different encounters and cache histories; there is no matched UI10/F
+baseline, speedup percentage, median or percentile claim. Startup counts only
+selected resource processing/App initialization, with first render separate.
+No UI11 WASM/browser build or test was run. Final private package/readback and
+delivery receipts are maintained by the release owner.
+
+All UI11 checkpoints cited above are local frozen stages with logged results.
+Automatic approval review rejected remote push; this work state does **not**
+claim UI11 was synchronized remotely. Private game assets stay outside public
+Git. The UI10 K delivery and browser/performance receipts below are historical
+and must not be reused as acceptance for changed UI11 code.
+
 ## Final UI10 K runtime and delivery acceptance
 
 The delivered runtime and regenerated resources are frozen at remotely verified
@@ -81,7 +325,11 @@ deliverables remain outside public Git. The K GitHub Actions run
 were cancelled and H `40174150511` passed. Local matching acceptance above
 must not be presented as a completed remote K Actions run.
 
-### Honest remaining scope for the next iteration
+### Historical UI10 remaining scope, superseded by UI11 above
+
+This records the limits at UI10 delivery. UI11's current implementation,
+authorized LCD/color adaptations and actual remaining gates are recorded at
+the top of this file and in the current source-audit contracts.
 
 The source inventory covers 3,538 C# paths, 714 nonempty node-namespace files
 (plus two excluded empty files), 1,022 scenes and 72 flow contracts. Inventory

@@ -66,7 +66,7 @@ static void native_ancient_screen(Canvas&c){
  auto&a=c.a;const auto&e=a.game.original_events;a.sync_ancient_dialogue();
  auto&d=a.ancient_dialogue;const unsigned count=unsigned(mn(3,original_event_option_count(a.game)));
  a.cursor=mn(mx(0,a.cursor),mx(0,int(count)-1));
- c.picture(a.content.world_image("events",original_event_key(e.id)),0,22,320,218);
+ c.picture(a.content.world_image("events",original_event_key(e.id)),0,17,320,223);
  const int dialogue_height=ancient_measure(c,count),top=d.y(a.map_clock_ms)+d.scroll;
  Canvas clipped=c;clipped.pixels+=ancient_layout::ClipY*clipped.pitch+ancient_layout::ClipX;
  clipped.clip_w=ancient_layout::ClipW;
@@ -132,26 +132,37 @@ static void native_event_screen(Canvas&c){
  // default_event_layout.tscn: VBox at (viewport/2-38,255-39), width800.
  // Its64px title,280px minimum body,24px spacer and100px options belong to
  // the full1680x1260 UI, not the room artwork's cropped218px camera.
- constexpr int x0=153,width0=152,title_y=41,title_h=12,body_y=54,body_min=53;
- constexpr int option_h=19,option_step=20,spacer=6,max_visible=6;
+ constexpr int x0=96,width0=216,title_y=31,title_h=20,body_y=54,body_min=49;
+ constexpr int option_h=40,option_step=42,spacer=6,max_visible=3;
  Canvas title=c;title.opacity=uint8_t(div255(title.opacity*motion.title_alpha(a.map_clock_ms)));
- title.font_face=a.content.english()?4:0;title.sparse_scene_sizes=true;
- const int title_size=a.content.font_size(7,title.font_face,false,true);
- title.fitted(native_event_title(a),x0,title_y+mx(0,title_h-title_size-2),width0,title_h,7,5,rgb(239,200,81),true,true,false,true);
+ title.font_face=a.content.original_label_fonts()?4:0;title.sparse_scene_sizes=true;
+ const int title_size=a.content.font_size(10,title.font_face,false,true);
+ title.fitted(native_event_title(a),x0,title_y+mx(0,title_h-title_size-2),width0,title_h,10,8,rgb(239,200,81),true,true,false,true);
  char text[8192]{};a.original_event_text(-1,true,text,sizeof text);
  Canvas body=c;body.bold_face=5;body.opacity=uint8_t(unsigned(body.opacity)*motion.body_progress(a.map_clock_ms)/room_curve::Q);
  body.text_visible_characters=room_rich_characters(text)*motion.body_reveal(a.map_clock_ms)/room_curve::Q;
  const int count=original_event_option_count(s);a.cursor=mn(mx(0,a.cursor),mx(0,count-1));const int first=a.cursor/max_visible*max_visible,shown=mn(count-first,max_visible);
- const int body_size=a.content.font_size(5);
- const auto metric=[&](const RichChar&ch,int px){const auto g=a.content.glyph_metrics(ch.codepoint,px,body.font_style(ch));return fitted_text::Metric{g.advance,mx(int(g.advance),int(g.w))};};
+ const int body_size=a.content.font_size(10);
+ const auto metric=[&](const RichChar&ch,int px){return body.text_metric(ch,px);};
  const int rows=fitted_text::line_count(text,width0,body_size,metric);
  const int options_height=shown?(shown-1)*option_step+option_h:0;
- // Godot fit_content grows the body before placing the options. Only prose
- // that exceeds the calculator viewport uses its existing complete reader;
- // ordinary four/five-option pages no longer lose rows behind a3-item page.
+ // Keep the authored prose and options together. The independent body
+ // scroll has real source scrollbar art, wheel/drag and keyboard focus.
  const int body_h=mn(mx(body_min,rows*(body_size+1)+2),240-4-body_y-spacer-options_height);
- body.fitted(text,x0,body_y,width0,body_h,5,5,rgb(255,246,226),true,false,false,true);
- c.action(x0,body_y,width0,body_h,UiAction::ReadEvent);
+ const uint32_t body_key=native_event_revision(e)^(unsigned(e.id)<<24);
+ if(a.event_body_key!=body_key){a.event_body_key=body_key;a.event_body_scroll.reset();a.event_body_focus=false;}
+ auto&scroller=a.event_body_scroll;const int prose_width=width0-13;
+ const int prose_rows=fitted_text::line_count(text,prose_width,body_size,metric);
+ scroller.configure(prose_rows*(body_size+1)+2,body_h);a.event_body_top=body_y;a.event_body_height=body_h;
+ native_room_scroll_text(body,text,x0,body_y,prose_width,body_h,scroller.offset(),body_size);
+ if(scroller.maximum){
+  const int sx=x0+width0-8,sy=body_y+6,length=mx(1,body_h-12);
+  c.ui(I6_ScrollbarTrack,sx,sy,5,length);c.ui(I6_ScrollbarEdge,sx,body_y,5,6);
+  ui_picture_transform(c,a.content.ui_image(I6_ScrollbarEdge),sx+2,body_y+body_h-3,5,6,0,-1024);
+  c.ui(I6_ScrollbarGrabber,sx-2,scroller.thumb_y(sy,length)-5,9,10);
+  c.hit(x0,body_y,prose_width,body_h,HitKind::EventScroll,0);
+  c.hit(sx-4,body_y,13,body_h,HitKind::EventScroll,1);
+ }
  const int options_y=body_y+body_h+spacer;
  for(int i=first;i<first+shown;i++){const int y=options_y+(i-first)*option_step,x=x0+motion.option_x(unsigned(i),a.map_clock_ms);
   const bool enabled=original_event_option_enabled(s,i),ready=motion.option_ready(unsigned(i),a.map_clock_ms);
@@ -171,8 +182,11 @@ static void native_event_screen(Canvas&c){
   TextBuffer body{combined,sizeof combined,0,&a.content};
   if(*label){body.text(enabled?"[gold][b]":"[red][b]");body.text(label);body.text(enabled?"[/b][/gold]":"[/b][/red]");if(*description)body.ch('\n');}body.text(description);
   Canvas words=entry;if(!enabled)words.opacity=uint8_t(div255(words.opacity*179));
-  native_room_compact_text(words,combined,x+8,y+2,138,14);
+  const int tx=left+12,ty=top+5,tw=width-24,th=height-10;
+  const auto plan=native_room_compact_plan(words,combined,tw,th);
+  const int overflow=mx(0,plan.total*plan.step+2-th);
+  native_room_scroll_text(words,combined,tx,ty,tw,th,selected?native_room_marquee_offset(overflow,a.map_clock_ms-motion.buttons[i].start):0);
   c.hit(x,y,width0,option_h,HitKind::Choice,i,enabled&&ready);
  }
- if(count>max_visible){char page[32]{};TextBuffer b{page,sizeof page,0,&c.a.content};b.number(first/max_visible+1);b.ch('/');b.number((count+max_visible-1)/max_visible);c.text(page,285,23,5,White,30);}
+ if(count>max_visible){char page[32]{};TextBuffer b{page,sizeof page,0,&c.a.content};b.number(first/max_visible+1);b.ch('/');b.number((count+max_visible-1)/max_visible);c.text(page,274,23,8,White,42);}
 }

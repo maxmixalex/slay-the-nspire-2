@@ -4,20 +4,20 @@
 #include "health_bar.hpp"
 namespace spire::run_setup_layout {
 using reference_viewport::project;
-constexpr int MenuTop=project(277),MenuWidth=project(330),MenuHeight=project(705);
-constexpr int menu_left(unsigned i){return project(275+int(i)*400);}
-constexpr int ModifiersLeft=project(872),ModifiersTop=project(168),ModifiersWidth=project(566),ModifiersHeight=project(930);
-constexpr int ModifierContentWidth=project(554),ModifierTextWidth=project(494);
-constexpr int CustomPortraitTop=project(916),CustomPortraitHeight=project(154),CustomPortraitWidth=project(100);
-constexpr int portrait_left(unsigned i){return project(161+int(i)*116);}
-constexpr int portrait_center(unsigned i){return project(211+int(i)*116);}
+constexpr int MenuTop=26,MenuWidth=92,MenuHeight=181;
+constexpr int menu_left(unsigned i){return 14+int(i)*100;}
+constexpr int ModifiersLeft=162,ModifiersTop=37,ModifiersWidth=146,ModifiersHeight=170;
+constexpr int ModifierContentWidth=143,ModifierTextWidth=124;
+constexpr int CustomPortraitTop=174,CustomPortraitHeight=36,CustomPortraitWidth=27;
+constexpr int portrait_left(unsigned i){return 7+int(i)*30;}
+constexpr int portrait_center(unsigned i){return portrait_left(i)+CustomPortraitWidth/2;}
 // Native FontVariation measurement: KreonBold spacing2 at36px is164px;
 // the substituted Noto Regular title is72px. HBox separation is89px.
-constexpr int randomize_left(bool english){return project(864+(english?164:72)+89);}
-constexpr int randomize_top() {return project(113);}
-constexpr int RandomizeWidth=project(200),RandomizeHeight=project(50);
-constexpr int seed_input_left(bool english){return project(273+(english?62:84)+4);}
-constexpr int SeedTop=project(538),SeedBottom=project(614),SeedRight=project(711);
+constexpr int randomize_left(bool){return 246;}
+constexpr int randomize_top() {return 14;}
+constexpr int RandomizeWidth=62,RandomizeHeight=19;
+constexpr int seed_input_left(bool){return 51;}
+constexpr int SeedTop=87,SeedBottom=108,SeedRight=151;
 struct SubmenuVisual {unsigned scale,focus;};
 inline SubmenuVisual submenu_visual(UiMenuTransition&m,bool focused,uint32_t now){
  if(!m.bound){m={};m.bound=true;m.start=now;}

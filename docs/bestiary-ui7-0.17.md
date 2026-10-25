@@ -4,6 +4,24 @@ Reference: **v0.111.0 / 41cef1ea**. Source-backed implementation and the
 matching acceptance gates are distinguished below. Original source, prose,
 textures and captures remain private.
 
+## UI11 current status
+
+UI11 replaces the historical dense typography below with 10px two-line list
+entries and five-action paging. Detached preview facts now preserve the named
+regeneration, charge, burrow, stun, hatch, coral-growth, liquefaction and summon
+phases, plus the three Decimillipede actors' staggered down/revive state.
+The phase fixture passes **139 checks** at local checkpoint
+`49340f020bfbe96c49cc6de71aa122e1556c269c`, with unchanged H core and exact
+canonical-save preservation; receipt
+`ui11h-bestiary-phase-correct-fixture-ab6202c82be3.json` uses the historical
+format39 English pack. It is not a final-art render or Firebird speed test.
+
+The sections below retain the UI7–UI10 implementation/acceptance history,
+including their then-current sizes and typography. Their old phase-context
+omissions are superseded by UI11's source-audit contract. Exact GPU materials,
+every possible preview combination and final K emulator acceptance are not
+established by the targeted phase test.
+
 ## Source contract
 
 The screen follows `NBestiary`, `NBestiaryEntry`, `NBestiaryMoveButton`,

@@ -36,22 +36,23 @@ struct CardRewardPresentation {
         // A bounded extension can contain more; keep the same single row and
         // fit only those exceptional >5-card sets inside the 4:3 viewport.
         const int unit=int(index)*2-int(count)+1;
-        const int offset=count>5?rounded(unit*262,int(count-1)*2):rounded(unit*100,3);
+        const int offset=count>3?rounded(unit*244,int(count-1)*2):rounded(unit*82,2);
         return 160+rounded(offset*int(expo(now-start,500)),4096);
     }
     unsigned shade(uint32_t now)const{return cubic(now-start,1000)*255/4096;}
     int scale(unsigned index,uint32_t now)const{
-        if(index>=8)return int(index)==focus?1000:800;
-        const auto&face=faces[index];if(face.focused)return 1000;
-        return face.seen?800+200*int(4096-expo(now-face.released,500))/4096:800;
+        const int base=count>3?1000:1200;
+        if(index>=8)return int(index)==focus?base+200:base;
+        const auto&face=faces[index];if(face.focused)return base+200;
+        return face.seen?base+200*int(4096-expo(now-face.released,500))/4096:base;
     }
     void set_focus(int selected,uint32_t now){
         focus=int16_t(selected);
         for(unsigned i=0;i<8;++i){auto&face=faces[i];const bool on=int(i)==selected;
             if(face.focused!=on){face.focused=on;if(on)face.seen=true;else face.released=now;}}
     }
-    int banner_y(uint32_t now)const{return 56+rounded(10*(4096-back(now-opened,400)),4096);}
+    int banner_y(uint32_t now)const{return 40+rounded(10*(4096-back(now-opened,400)),4096);}
     unsigned banner_alpha(uint32_t now)const{return expo(now-opened,400)*255/4096;}
-    int alternative_y(uint32_t now)const{return 186-rounded(10*(4096-back(now-opened,500)),4096);}
+    int alternative_y(uint32_t now)const{return 199-rounded(10*(4096-back(now-opened,500)),4096);}
 };
 }

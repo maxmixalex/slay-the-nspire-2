@@ -14,7 +14,7 @@ using LocalizedDefaultResolver=LocalizedValue(*)(const void*,const char*,Localiz
 class LocalizedTemplate {
  char*out_;size_t capacity_,used_=0;LocalizedResolver resolve_;const void*context_;
  LocalizedDefaultResolver default_resolver_=nullptr;
- char energy_[64]{},star_[64]{};bool english_=false,truncated_=false;
+ bool truncated_=false;unsigned language_=0;
  static bool same(const char*a,size_t n,const char*b){size_t i=0;while(b[i]){if(i>=n||a[i]!=b[i])return false;++i;}return i==n;}
  static size_t length(const char*p){size_t n=0;while(p&&p[n])++n;return n;}
  void ch(char c){if(capacity_&&used_+1<capacity_){out_[used_++]=c;out_[used_]=0;}else truncated_=true;}
@@ -30,21 +30,36 @@ class LocalizedTemplate {
   remainder=uint32_t(r);return q;
  }
  void unsigned_integer(uint64_t u){char digits[24];unsigned n=0;do{uint32_t rem;u=divide(u,10,rem);digits[n++]=char('0'+rem);}while(u);while(n)ch(digits[--n]);}
+ bool decimal_comma()const{return language_==4||language_==6||language_==7||language_==8||language_==11||language_==12||language_==13||language_==14||language_==16;}
+ const char*group_separator()const{
+  if(language_==6)return "\xe2\x80\xaf";
+  if(language_==11||language_==13)return "\xc2\xa0";
+  return decimal_comma()?".":",";
+ }
  void locale_integer(LocalizedValue v){
-  // LocaleNumberFormatter defaults to N0. Both shipped cultures group in
-  // threes, with midpoint-to-even rounding.
+  // LocaleNumberFormatter defaults to N0. The pinned sixteen cultures group
+  // in threes, with midpoint-to-even rounding and their own separator.
   uint32_t remainder;const uint32_t scale=v.scale?v.scale:1;
   uint64_t number=divide(magnitude(v.number),scale,remainder);
   if(uint64_t(remainder)*2>scale||(uint64_t(remainder)*2==scale&&(number&1)))++number;
   if(v.number<0&&number)ch('-');char digits[24];unsigned n=0;
   do{uint32_t rem;number=divide(number,10,rem);digits[n++]=char('0'+rem);}while(number);
-  while(n){ch(digits[--n]);if(n&&n%3==0)ch(',');}
+  while(n){ch(digits[--n]);if(n&&n%3==0)text(group_separator());}
  }
  void integer(int64_t v){if(v<0)ch('-');unsigned_integer(magnitude(v));}
  void value(LocalizedValue v,bool absolute=false){
   if(v.text){text(v.text);return;}unsigned scale=v.scale?v.scale:1;
   uint32_t rem;uint64_t whole=divide(magnitude(v.number),scale,rem);if(v.number<0&&!absolute)ch('-');unsigned_integer(whole);
-  if(rem){ch('.');for(unsigned digits=0;rem&&digits<4;digits++){uint64_t digit=divide(uint64_t(rem)*10,scale,rem);ch(char('0'+digit));}}
+  if(rem){ch(decimal_comma()?',':'.');for(unsigned digits=0;rem&&digits<4;digits++){uint64_t digit=divide(uint64_t(rem)*10,scale,rem);ch(char('0'+digit));}}
+ }
+ void energy_icons(LocalizedValue v){
+  if(v.text){text("{energy-value}");return;}
+  uint32_t remainder;const uint64_t amount=divide(magnitude(v.number),v.scale?v.scale:1,remainder);
+  // The source repeats one to three sprites; zero, negative and >=4 values
+  // show the integer followed by one sprite. At 320x240 each sprite occupies
+  // one text cell and uses the existing character-colored card resource art.
+  if(v.number>0&&amount>0&&amount<4){for(unsigned i=0;i<unsigned(amount);++i)text(InlineEnergyText);return;}
+  if(v.number<0&&amount)ch('-');unsigned_integer(amount);text(InlineEnergyText);
  }
  static size_t split(const char*p,size_t n,char delimiter){
   unsigned braces=0,parens=0;for(size_t i=0;i<n;i++){if(p[i]=='{')++braces;else if(p[i]=='}'&&braces)--braces;else if(!braces&&p[i]=='(')++parens;else if(!braces&&p[i]==')'&&parens)--parens;else if(!braces&&!parens&&p[i]==delimiter)return i;}return n;
@@ -90,15 +105,40 @@ class LocalizedTemplate {
    if(end==n)return true;p+=end+1;n-=end+1;
   }
  }
+ unsigned plural_choice(const char*p,size_t n,LocalizedValue v,unsigned language)const{
+  unsigned forms=1;for(size_t at=0;at<n;){size_t end=split(p+at,n-at,'|');if(end==n-at)break;++forms;at+=end+1;}
+  uint32_t fraction=0;uint64_t value=divide(magnitude(v.number),v.scale?v.scale:1,fraction);
+  if(forms<=1)return 0;
+  if(forms==2)return !fraction&&(language==6||language==12?value<=1:value==1)?0:1;
+  uint32_t last=0,last2=0;divide(value,10,last);divide(value,100,last2);
+  if(language==13){
+   if(!fraction&&last==1&&last2!=11)return 0;
+   if(!fraction&&last>=2&&last<=4&&(last2<12||last2>14))return 1;
+   return fraction&&forms>3?3:2;}
+  if(language==11){
+   if(!fraction&&value==1)return 0;
+   if(!fraction&&last>=2&&last<=4&&(last2<12||last2>14))return 1;
+   return fraction&&forms>3?3:2;}
+  return !fraction&&value==1?0:forms-1;
+ }
  void expression(const char*p,size_t n,LocalizedValue context,unsigned depth){
   size_t colon=split(p,n,':'),name_len=colon;LocalizedValue v=named(p,name_len,context);
   if(colon==n){if(v.known)value(v);else{ch('{');text(p,n);ch('}');}return;}
   if(!v.known){ch('{');text(p,n);ch('}');return;}
   const char*fmt=p+colon+1;size_t fn=n-colon-1,second=split(fmt,fn,':');
   const char*body=second<fn?fmt+second+1:nullptr;size_t bn=second<fn?fn-second-1:0;
+  // The original Italian Refract chains a preview annotation before plural.
+  // diff/inverseDiff do not change the numeric value; retain that value for
+  // the following grammatical formatter instead of exposing its braces.
+  while(body&&(same(fmt,second,"diff()")||same(fmt,second,"inverseDiff()"))){
+   fmt=body;fn=bn;second=split(fmt,fn,':');body=second<fn?fmt+second+1:nullptr;bn=second<fn?fn-second-1:0;
+  }
   if(same(fmt,fn,"n()")&&!v.text){locale_integer(v);return;}
   if(same(fmt,second,"show")){branch(body,bn,v.known&&(v.text?*v.text!=0:v.number!=0)?0:1,v,depth);return;}
-  if(same(fmt,second,"plural")){branch(body,bn,v.number==int64_t(v.scale?v.scale:1)?0:1,v,depth);return;}
+  if(same(fmt,second,"plural")||(second>8&&same(fmt,7,"plural(")&&fmt[second-1]==')')){
+   const unsigned language=same(fmt,second,"plural(ru)")?13:same(fmt,second,"plural(pl)")?11:language_;
+   branch(body,bn,plural_choice(body,bn,v,language),v,depth);return;}
+  if(same(fmt,second,"choose")){branch(body,bn,v.number==int64_t(v.scale?v.scale:1)?0:1,v,depth);return;}
   if(second>=8&&same(fmt,7,"choose(")&&fmt[second-1]==')'){
    const char*choices=fmt+7;size_t cn=second-8;unsigned selected=0;bool matched=false;
    while(true){size_t end=split(choices,cn,'|');
@@ -130,17 +170,16 @@ class LocalizedTemplate {
    if(count>available)truncated_=true;return;
   }
   if(same(fmt,fn,"energyIcons()")){
-   if(v.known)value(v);else{ch('{');text(p,name_len);ch('}');}unit(false);return;
+   energy_icons(v);return;
   }
   if(fn>13&&same(fmt,12,"energyIcons(")&&fmt[fn-1]==')'){
-   bool preceding=used_&&((out_[used_-1]>='0'&&out_[used_-1]<='9')||out_[used_-1]=='X');
-   if(!preceding)text(fmt+12,fn-13);unit(false);return;
+   unsigned amount=0;bool valid=true;for(size_t i=12;i+1<fn;++i){if(fmt[i]<'0'||fmt[i]>'9'||amount>999999){valid=false;break;}amount=amount*10+unsigned(fmt[i]-'0');}
+   if(valid)energy_icons({true,int64_t(amount),1,nullptr});else{ch('{');text(p,n);ch('}');}return;
   }
   // Boolean expressions omit the formatter name in the original locale.
   if(second==fn&&v.known){branch(fmt,fn,v.text?(*v.text?0:1):(v.number?0:1),v,depth);return;}
   ch('{');text(p,n);ch('}');
  }
- void unit(bool star){text(english_?" ":" 点");if(star)text("[gold]");text(star?star_:energy_);if(star)text("[/gold]");}
  void render(const char*p,size_t n,LocalizedValue context,unsigned depth){
   if(depth>12){text("{format-depth}");return;}
   for(size_t at=0;at<n;){if(p[at]!='{'){ch(p[at++]);continue;}size_t end=at+1;unsigned nested=1;
@@ -149,9 +188,9 @@ class LocalizedTemplate {
   }
  }
 public:
- LocalizedTemplate(char*out,size_t capacity,LocalizedResolver resolver,const void*context,const char*energy="能量",const char*star="辉星",bool english=false,LocalizedDefaultResolver default_resolver=nullptr):out_(out),capacity_(capacity),resolve_(resolver),context_(context),default_resolver_(default_resolver),english_(english){if(capacity_)out_[0]=0;
-  size_t i=0;for(;energy&&energy[i]&&i+1<sizeof energy_;i++)energy_[i]=energy[i];energy_[i]=0;i=0;for(;star&&star[i]&&i+1<sizeof star_;i++)star_[i]=star[i];star_[i]=0;}
+ LocalizedTemplate(char*out,size_t capacity,LocalizedResolver resolver,const void*context,const char* = "能量",const char* = "辉星",bool = false,LocalizedDefaultResolver default_resolver=nullptr):out_(out),capacity_(capacity),resolve_(resolver),context_(context),default_resolver_(default_resolver){if(capacity_)out_[0]=0;}
  bool truncated()const{return truncated_;}
+ LocalizedTemplate& for_language(unsigned language){language_=language;return *this;}
  void format(const char*source){render(source,length(source),{},0);}
 };
 } // namespace spire

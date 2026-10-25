@@ -6,24 +6,29 @@
     "dll_sha256": "0861bfa1df347538d932f22d580e75420f08082792eb914e53b4882764acdbe9"
   },
   "supersedes": "ui7-original-ui-inventory-0.17.json",
-  "source_stage": "Matching final K at 61c5a93acbd9730ab345a4add8293bda744820f0 passes121 native suites,96 actual target-language pairs, both complete NSL2 virtual-stream comparisons and21 ordinary-browser flows/47 captures. Its idle long-press optimization preserves the accepted UI: all1228 complete capture comparisons match I or the separately proven J hover/FTUE fixtures, with no new unexplained runtime difference. Historical C/D/G failures, H date discovery and I fixture limitations remain recorded. No inventory/test/capture count is treated as a restoration percentage.",
+  "source_stage": "UI11 implementation through local checkpoint J f16573e1b9c6da390cd9944bd447acb4dc0482d3: readable LCD layouts, sixteen installed-language editions, bounded secondary effects and detached Bestiary phases. Final resources and focused I/J native correctness gates completed; F ordinary Ndless startup verified after reducing actual contiguous allocation. Final UI11 K Firebird interaction/performance, packaging and remote synchronization are not claimed here. UI10 K receipts below are historical and do not validate changed UI11 code. No restoration percentage is inferred.",
   "scope": {
     "excluded": [
       "audio",
       "multiplayer",
       "Timeline"
     ],
-    "adaptation": "1680x1260 source UI projected to 320x240, with documented physical-input and readable-font constraints"
+    "adaptation": "320x240 LCD adaptation with approximately 1.5x main text/control sizing, reflow, scrolling and thinner outlines; source interaction/animation semantics retained. User-authorized animation color precision is bounded and explicitly lossy; frames, dimensions and timing remain intact.",
+    "ui11_user_requested_omissions": [
+      "patch-notes interface",
+      "feedback interface and submission/export controls"
+    ]
   },
   "methodology": {
     "full_path_scan": "All3538 current C# paths and1022 PCK scene paths were enumerated. This turn recovered nine in-scope empty bodies; five remaining empty files are generated or excluded paths. Enumeration/recovery is not a claim that every method was reviewed.",
     "nodes": "714 nonempty namespace-declared node files plus2 empty excluded node paths = 716 indexed node files. In-scope recovered method bodies are available for targeted source review. Recovery alone is not implementation or verification evidence.",
     "method_review": "Concrete source methods and scenes identified in module audit documents were reviewed and implemented; a path scan does not assert every method has been reviewed.",
-    "acceptance": "Native suites, actual bilingual scene review, browser behavior and linked ARM/Firebird checks are separate evidence. No restoration percentage is inferred from file, model, contract or passing-test counts.",
+    "acceptance": "Historical native/browser/ARM receipts retain their original checkpoints. UI11 uses narrow native correctness and resource checks, with ordinary ARM/Firebird required for calculator interaction, latency and memory acceptance. No UI11 WASM/browser build or performance test is used. No restoration percentage is inferred from inventory, model, contract or passing-test counts.",
     "privacy": "Only identifiers, counts, independent implementation summaries and test references are public.",
     "ftue_review": "All thirteen in-scope Ftue classes and their actual callers were reviewed, including mark-on-open versus mark-on-close, two distinct auto-completion counter lifetimes, release-hidden Reset Tutorials, and independent Ascension SeenPopup semantics. See ftue-ui9-0.17.md.",
     "front_source_review": "UI10 reviewed runtime locale substitution, inherited menu/Continue/profile/compendium/statistics/history scenes, General/Input and Standard/Custom/Daily scenes, conditional rows and interactions. Matching final K front15 targets pass in each language and all214 front captures exactly match the reviewed I baseline. Root/combat comparisons retain the accepted J corrected hover and FTUE timing scope. See ui10-front-source-review-0.17.md and settings-run-setup-ui10-0.17.md. Source path recovery is not every method reviewed; no restoration percentage is inferred.",
-    "font_variation_scope": "The source Chinese Regular resource declares a0.95 transform and-0.05 baseline offset. A direct Godot4.5.1 experiment found equal advance/ascent/descent to the base font at12 sampled sizes; this neither proves a metric defect from those properties nor establishes identical glyph ink/kerning/raster output. Measured LCD integer-advance differences are recorded separately."
+    "font_variation_scope": "The source Chinese Regular resource declares a0.95 transform and-0.05 baseline offset. A direct Godot4.5.1 experiment found equal advance/ascent/descent to the base font at12 sampled sizes; this neither proves a metric defect from those properties nor establishes identical glyph ink/kerning/raster output. Measured LCD integer-advance differences are recorded separately.",
+    "ui11_evidence_scope": "Per-contract acceptance without a UI11 prefix is historical UI10 evidence. UI11 additions name their actual checks below; source implementation alone is not emulator acceptance. The final K execution/performance gate and remote synchronization remain open at this documentation checkpoint."
   },
   "counts": {
     "current_cs_paths": 3538,
@@ -52,7 +57,7 @@
         "profiles_ui7_regression",
         "check_offline_browser.js"
       ],
-      "acceptance": "Frozen K native checks pass: world_frontend_ui_regression, profiles_ui7_regression. Both matching K format39 actual packs pass: world_frontend_ui_regression, profiles_ui7_regression. The K ordinary-browser21-flow gate includes this scope: Fresh title and original main-menu navigation run through ordinary DOM/canvas input."
+      "acceptance": "Historical UI10: Frozen K native checks pass: world_frontend_ui_regression, profiles_ui7_regression. Both matching K format39 actual packs pass: world_frontend_ui_regression, profiles_ui7_regression. The K ordinary-browser21-flow gate includes this scope: Fresh title and original main-menu navigation run through ordinary DOM/canvas input."
     },
     {
       "id": "continue_abandon",
@@ -69,7 +74,7 @@
         "world_frontend_ui_regression",
         "profiles_ui7_regression"
       ],
-      "acceptance": "Frozen K native checks pass: world_frontend_ui_regression, profiles_ui7_regression. Both matching K format39 actual packs pass: world_frontend_ui_regression, profiles_ui7_regression. The K ordinary-browser21-flow gate includes this scope: Ordinary Save and Quit, reload, Continue and canonical-save identity pass."
+      "acceptance": "Historical UI10: Frozen K native checks pass: world_frontend_ui_regression, profiles_ui7_regression. Both matching K format39 actual packs pass: world_frontend_ui_regression, profiles_ui7_regression. The K ordinary-browser21-flow gate includes this scope: Ordinary Save and Quit, reload, Continue and canonical-save identity pass."
     },
     {
       "id": "character_select",
@@ -81,12 +86,15 @@
       ],
       "contract": "Click-selected character, Ascension, seed and embark",
       "assessment": "implemented_with_documented_limits",
-      "implemented": "Five original sampled loops and source character-info geometry remain implemented. UI10 uses actual locale normal fonts for name/stats/relic title, aligns name measurement and drawing, and removes English font-variation tracking from substituted Chinese text.",
-      "remaining": "Independent particle contexts remain incompletely reproduced. Exact locale font keys and LCD composition are verified; complete Godot glyph-ink, kerning and raster equality are not established. The declared Chinese Regular variation has equal measured advance/ascent/descent to its base at12 sampled sizes, so a metric defect is not inferred from the resource properties alone.",
+      "implemented": "Primary contract remains implemented. UI11 adds separate bounded particle contexts for all five character scenes using source emission anchors, lifetimes and prewarm; 8-12px body labels and reflow serve the LCD.",
+      "remaining": "Particle density, deterministic trajectories, subpixel font rasterization and exact GPU material output remain calculator mappings.",
       "regressions": [
         "five_character_ui_regression"
       ],
-      "acceptance": "Frozen K native checks pass: five_character_ui_regression. Both matching K format39 actual packs pass: five_character_ui_regression. The K ordinary-browser21-flow gate includes this scope: Ordinary Singleplayer-to-character-to-run navigation passes; this is not every character context."
+      "acceptance": "Historical UI10: Frozen K native checks pass: five_character_ui_regression. Both matching K format39 actual packs pass: five_character_ui_regression. The K ordinary-browser21-flow gate includes this scope: Ordinary Singleplayer-to-character-to-run navigation passes; this is not every character context.",
+      "ui10_remaining_historical": "Independent particle contexts remain incompletely reproduced. Exact locale font keys and LCD composition are verified; complete Godot glyph-ink, kerning and raster equality are not established. The declared Chinese Regular variation has equal measured advance/ascent/descent to its base at12 sampled sizes, so a metric defect is not inferred from the resource properties alone.",
+      "ui11_acceptance": "Source implementation reviewed; prior UI10 acceptance below does not validate these added particle contexts.",
+      "ui10_implemented_historical": "Five original sampled loops and source character-info geometry remain implemented. UI10 uses actual locale normal fonts for name/stats/relic title, aligns name measurement and drawing, and removes English font-variation tracking from substituted Chinese text."
     },
     {
       "id": "act_selector",
@@ -115,7 +123,7 @@
         "neow_modifiers_ui8_regression",
         "run_modifier_hooks_ui8_regression"
       ],
-      "acceptance": "Frozen K native checks pass: run_modes_ui8_regression, neow_modifiers_ui8_regression, run_modifier_hooks_ui8_regression. Both matching K format39 actual packs pass: run_modes_ui8_regression. The K ordinary-browser21-flow gate includes this scope: The ordinary Sealed Deck flow opens30 cards, preserves cancellation/deselection and manually commits exactly10."
+      "acceptance": "Historical UI10: Frozen K native checks pass: run_modes_ui8_regression, neow_modifiers_ui8_regression, run_modifier_hooks_ui8_regression. Both matching K format39 actual packs pass: run_modes_ui8_regression. The K ordinary-browser21-flow gate includes this scope: The ordinary Sealed Deck flow opens30 cards, preserves cancellation/deselection and manually commits exactly10."
     },
     {
       "id": "daily_run",
@@ -131,7 +139,7 @@
       "regressions": [
         "run_modes_ui8_regression"
       ],
-      "acceptance": "Frozen K native checks pass: run_modes_ui8_regression. Both matching K format39 actual packs pass: run_modes_ui8_regression."
+      "acceptance": "Historical UI10: Frozen K native checks pass: run_modes_ui8_regression. Both matching K format39 actual packs pass: run_modes_ui8_regression."
     },
     {
       "id": "card_library",
@@ -147,7 +155,7 @@
       "regressions": [
         "library_ui7_regression"
       ],
-      "acceptance": "Frozen K native checks pass: library_ui7_regression. Both matching K format39 actual packs pass: library_ui7_regression."
+      "acceptance": "Historical UI10: Frozen K native checks pass: library_ui7_regression. Both matching K format39 actual packs pass: library_ui7_regression."
     },
     {
       "id": "relic_collection",
@@ -163,7 +171,7 @@
         "library_ui7_regression",
         "relic_inspect_ui9_regression"
       ],
-      "acceptance": "Frozen K native checks pass: library_ui7_regression, relic_inspect_ui9_regression. Both matching K format39 actual packs pass: library_ui7_regression, relic_inspect_ui9_regression. The K ordinary-browser21-flow gate includes this scope: Ordinary collection/inspector clamped navigation, popup and backstop dismissal pass."
+      "acceptance": "Historical UI10: Frozen K native checks pass: library_ui7_regression, relic_inspect_ui9_regression. Both matching K format39 actual packs pass: library_ui7_regression, relic_inspect_ui9_regression. The K ordinary-browser21-flow gate includes this scope: Ordinary collection/inspector clamped navigation, popup and backstop dismissal pass."
     },
     {
       "id": "potion_lab",
@@ -178,7 +186,7 @@
       "regressions": [
         "potion_ui_regression"
       ],
-      "acceptance": "Frozen K native checks pass: potion_ui_regression, library_ui7_regression. Both matching K format39 actual packs pass: potion_ui_regression, library_ui7_regression. The K ordinary-browser21-flow gate includes this scope: Ordinary Potion Lab confirmation remains focus-only without mutating saved runs."
+      "acceptance": "Historical UI10: Frozen K native checks pass: potion_ui_regression, library_ui7_regression. Both matching K format39 actual packs pass: potion_ui_regression, library_ui7_regression. The K ordinary-browser21-flow gate includes this scope: Ordinary Potion Lab confirmation remains focus-only without mutating saved runs."
     },
     {
       "id": "bestiary",
@@ -189,13 +197,17 @@
       ],
       "contract": "Enemy list, layouts, move descriptions and character filtering",
       "assessment": "implemented_with_documented_limits",
-      "implemented": "Original list/header geometry, known gates, detached actions/statistics previews, persisted names and Kaiser supplements remain implemented. UI10 applies source locale normal-font substitution to the large name, dividers and action/mode labels.",
-      "remaining": "Remaining phase-specific multi-creature preview contexts and secondary visual effects need actual replay.",
+      "implemented": "Primary contract remains implemented. UI11 adds detached phase/liveness facts for Test Subject regeneration, Cubex charge/unburrow, Bowlbug stun, Lagavulin awake/sleep, Tough Egg hatch, Tunneler burrow/stun, Sewer Clam growth, Insatiable liquefaction, Obscura summon and three-actor Decimillipede down/revive with 0/150/300ms stagger. Readable 10px two-line rows and five-action paging replace the old dense list.",
+      "remaining": "The named retained phase and multi-creature gaps are implemented and tested. Full GPU scene/material reproduction and every possible enemy presentation combination are not inferred from these targeted previews.",
       "regressions": [
         "bestiary_ui7_regression",
-        "power_order_ui8_regression"
+        "power_order_ui8_regression",
+        "bestiary_phase_ui11_regression"
       ],
-      "acceptance": "Frozen K native checks pass: bestiary_ui7_regression, power_order_ui8_regression. Both matching K format39 actual packs pass: bestiary_ui7_regression, power_order_ui8_regression."
+      "acceptance": "Historical UI10: Frozen K native checks pass: bestiary_ui7_regression, power_order_ui8_regression. Both matching K format39 actual packs pass: bestiary_ui7_regression, power_order_ui8_regression.",
+      "ui10_remaining_historical": "Remaining phase-specific multi-creature preview contexts and secondary visual effects need actual replay.",
+      "ui11_acceptance": "UI11 phase checkpoint 49340f020bfbe96c49cc6de71aa122e1556c269c passes 139 checks in ui11h-bestiary-phase-correct-fixture-ab6202c82be3.json, with unchanged H core and exact canonical-save preservation.",
+      "ui10_implemented_historical": "Original list/header geometry, known gates, detached actions/statistics previews, persisted names and Kaiser supplements remain implemented. UI10 applies source locale normal-font substitution to the large name, dividers and action/mode labels."
     },
     {
       "id": "statistics",
@@ -213,7 +225,7 @@
         "ui_progress_regression",
         "statistics_ui10_regression"
       ],
-      "acceptance": "Frozen K native checks pass: ui_progress_regression, statistics_ui10_regression. Both matching K format39 actual packs pass: statistics_ui10_regression."
+      "acceptance": "Historical UI10: Frozen K native checks pass: ui_progress_regression, statistics_ui10_regression. Both matching K format39 actual packs pass: statistics_ui10_regression."
     },
     {
       "id": "run_history",
@@ -239,7 +251,7 @@
         "test_history_body_ui10_assets",
         "run_metadata_regression"
       ],
-      "acceptance": "Frozen K native checks pass: history_ui8_regression, run_history_journal_ui8_regression, run_history_acquisition_regression, map_drawing_ui_regression, run_metadata_regression. Both matching K format39 actual packs pass: history_ui8_regression, run_history_journal_ui8_regression, map_drawing_ui_regression."
+      "acceptance": "Historical UI10: Frozen K native checks pass: history_ui8_regression, run_history_journal_ui8_regression, run_history_acquisition_regression, map_drawing_ui_regression, run_metadata_regression. Both matching K format39 actual packs pass: history_ui8_regression, run_history_journal_ui8_regression, map_drawing_ui_regression."
     },
     {
       "id": "profiles",
@@ -256,7 +268,7 @@
         "profiles_ui7_regression",
         "ndless_profiles_regression"
       ],
-      "acceptance": "Frozen K native checks pass: profiles_ui7_regression, ndless_profiles_regression. Both matching K format39 actual packs pass: profiles_ui7_regression. The K ordinary-browser21-flow gate includes this scope: Ordinary three-profile isolation, preference persistence, cancel/delete/reset and unchanged other-profile saves pass."
+      "acceptance": "Historical UI10: Frozen K native checks pass: profiles_ui7_regression, ndless_profiles_regression. Both matching K format39 actual packs pass: profiles_ui7_regression. The K ordinary-browser21-flow gate includes this scope: Ordinary three-profile isolation, preference persistence, cancel/delete/reset and unchanged other-profile saves pass."
     },
     {
       "id": "compendium_leaderboards",
@@ -284,7 +296,7 @@
         "world_map_window_ui_regression",
         "world_map_travel_ui_regression"
       ],
-      "acceptance": "Frozen K native checks pass: world_map_ui_regression, world_map_window_ui_regression, world_map_travel_ui_regression. Both matching K format39 actual packs pass: world_map_ui_regression, world_map_window_ui_regression."
+      "acceptance": "Historical UI10: Frozen K native checks pass: world_map_ui_regression, world_map_window_ui_regression, world_map_travel_ui_regression. Both matching K format39 actual packs pass: world_map_ui_regression, world_map_window_ui_regression."
     },
     {
       "id": "map_legend",
@@ -299,7 +311,7 @@
       "regressions": [
         "world_map_ui_regression"
       ],
-      "acceptance": "Frozen K native checks pass: world_map_ui_regression. Both matching K format39 actual packs pass: world_map_ui_regression."
+      "acceptance": "Historical UI10: Frozen K native checks pass: world_map_ui_regression. Both matching K format39 actual packs pass: world_map_ui_regression."
     },
     {
       "id": "map_history",
@@ -314,7 +326,7 @@
       "regressions": [
         "history_ui8_regression"
       ],
-      "acceptance": "Frozen K native checks pass: history_ui8_regression. Both matching K format39 actual packs pass: history_ui8_regression."
+      "acceptance": "Historical UI10: Frozen K native checks pass: history_ui8_regression. Both matching K format39 actual packs pass: history_ui8_regression."
     },
     {
       "id": "combat_entry",
@@ -331,7 +343,7 @@
         "combat_ui_regression",
         "combat_layout_regression"
       ],
-      "acceptance": "Frozen K native checks pass: combat_ui_regression, combat_layout_regression. Both matching K format39 actual packs pass: combat_ui_regression."
+      "acceptance": "Historical UI10: Frozen K native checks pass: combat_ui_regression, combat_layout_regression. Both matching K format39 actual packs pass: combat_ui_regression."
     },
     {
       "id": "event_base",
@@ -348,7 +360,7 @@
         "world_event_ui_regression",
         "world_room_lifecycle_regression"
       ],
-      "acceptance": "Frozen K native checks pass: world_event_ui_regression, world_room_lifecycle_regression. Both matching K format39 actual packs pass: world_event_ui_regression."
+      "acceptance": "Historical UI10: Frozen K native checks pass: world_event_ui_regression, world_room_lifecycle_regression. Both matching K format39 actual packs pass: world_event_ui_regression."
     },
     {
       "id": "event_special",
@@ -366,7 +378,7 @@
         "crystal_shader_regression",
         "world_event_ui_regression"
       ],
-      "acceptance": "Frozen K native checks pass: crystal_ui8_regression, crystal_shader_regression, world_event_ui_regression. Both matching K format39 actual packs pass: crystal_ui8_regression, world_event_ui_regression."
+      "acceptance": "Historical UI10: Frozen K native checks pass: crystal_ui8_regression, crystal_shader_regression, world_event_ui_regression. Both matching K format39 actual packs pass: crystal_ui8_regression, world_event_ui_regression."
     },
     {
       "id": "rest",
@@ -377,12 +389,16 @@
       ],
       "contract": "Rest actions, character, text and upgrade selection",
       "assessment": "implemented_with_documented_limits",
-      "implemented": "Original projected layout, real enabled actions and card upgrade selection with retained room.",
-      "remaining": "Alternative action secondary VFX remain incomplete. Mend is multiplayer-only in the pinned source.",
+      "implemented": "Primary contract remains implemented. UI11 successful Heal triggers timed rising smoke and source-derived three-stage desaturation; per-act fire light/embers extinguish when choices are exhausted. Loading a completed rest does not replay Heal.",
+      "remaining": "Dense GPU smoke, HDR bloom and continuous particle trajectories are bounded CPU approximations. Mend remains multiplayer-only and excluded; no new claim covers all alternative-action-specific desktop shaders.",
       "regressions": [
-        "world_room_ui_regression"
+        "world_room_ui_regression",
+        "room_secondary_vfx_regression"
       ],
-      "acceptance": "Frozen K native checks pass: world_room_ui_regression. Both matching K format39 actual packs pass: world_room_ui_regression."
+      "acceptance": "Historical UI10: Frozen K native checks pass: world_room_ui_regression. Both matching K format39 actual packs pass: world_room_ui_regression.",
+      "ui10_remaining_historical": "Alternative action secondary VFX remain incomplete. Mend is multiplayer-only in the pinned source.",
+      "ui11_acceptance": "UI11 I: room_secondary_vfx_regression passes 105 checks with final common/English assets, actual triggers and canonical save/RNG invariance. Final K ordinary Firebird acceptance remains separate.",
+      "ui10_implemented_historical": "Original projected layout, real enabled actions and card upgrade selection with retained room."
     },
     {
       "id": "shop",
@@ -394,13 +410,17 @@
       ],
       "contract": "Entrance, inventory hover, speech, purchase and sold state",
       "assessment": "implemented_with_documented_limits",
-      "implemented": "Original large inventory composition, sampled hand tracking, dialogue, open/sold animations, actual purchase and source CharacterCards stock weighting. Legacy large stock tooltips replaced by source69px columns and complete model-related card/keyword/power chains with detached stock facts.",
-      "remaining": "Full candle/material/secondary particles remain incomplete.",
+      "implemented": "Primary contract remains implemented. UI11 adds four candle emitters and eight source light nodes, retaining flame planes; exact rug-occlusion culling avoids hidden particle work. Enlarged focused card faces, prices and item interaction support LCD reading.",
+      "remaining": "Full GPU light/material rasterization and stochastic particle density remain approximations; the missing candle/light trigger layer is now present.",
       "regressions": [
         "world_room_ui_regression",
-        "run_modifier_hooks_ui8_regression"
+        "run_modifier_hooks_ui8_regression",
+        "room_secondary_vfx_regression"
       ],
-      "acceptance": "Frozen K native checks pass: world_room_ui_regression, run_modifier_hooks_ui8_regression. Both matching K format39 actual packs pass: world_room_ui_regression."
+      "acceptance": "Historical UI10: Frozen K native checks pass: world_room_ui_regression, run_modifier_hooks_ui8_regression. Both matching K format39 actual packs pass: world_room_ui_regression.",
+      "ui10_remaining_historical": "Full candle/material/secondary particles remain incomplete.",
+      "ui11_acceptance": "UI11 I: room_secondary_vfx_regression passes 105 checks with final common/English assets, actual triggers and canonical save/RNG invariance. Final K ordinary Firebird acceptance remains separate.",
+      "ui10_implemented_historical": "Original large inventory composition, sampled hand tracking, dialogue, open/sold animations, actual purchase and source CharacterCards stock weighting. Legacy large stock tooltips replaced by source69px columns and complete model-related card/keyword/power chains with detached stock facts."
     },
     {
       "id": "remove_card",
@@ -415,7 +435,7 @@
       "regressions": [
         "world_room_ui_regression"
       ],
-      "acceptance": "Frozen K native checks pass: world_room_ui_regression. Both matching K format39 actual packs pass: world_room_ui_regression."
+      "acceptance": "Historical UI10: Frozen K native checks pass: world_room_ui_regression. Both matching K format39 actual packs pass: world_room_ui_regression."
     },
     {
       "id": "treasure",
@@ -426,12 +446,16 @@
       ],
       "contract": "Chest opening, relic appearance, take/leave",
       "assessment": "implemented_with_documented_limits",
-      "implemented": "Original chest/holder/banner timing and command guards; original 125x31 common banner, separate 39px holder/23px icon, source hover/press scaling, actual relic hover tips, centered empty label and shared original Proceed. Legacy permanent description and extra Details control removed. Shared Proceed retains original 500/800ms enable/disable translation and moving pointer bounds.",
-      "remaining": "All original particles/materials are not reproduced.",
+      "implemented": "Primary contract remains implemented. UI11 real gold-bearing chest opens produce bounded coins; uncommon/rare holders use distinct timed glows, newly empty chests emit smoke, and successful acquisitions enter the shared observation path. Restored rooms do not manufacture new bursts or acquisitions.",
+      "remaining": "GPU trajectories, smoke silhouette and HDR material output are CPU mappings; actual chest/rarity/acquisition triggers are implemented.",
       "regressions": [
-        "world_room_ui_regression"
+        "world_room_ui_regression",
+        "room_secondary_vfx_regression"
       ],
-      "acceptance": "Frozen K native checks pass: world_room_ui_regression. Both matching K format39 actual packs pass: world_room_ui_regression."
+      "acceptance": "Historical UI10: Frozen K native checks pass: world_room_ui_regression. Both matching K format39 actual packs pass: world_room_ui_regression.",
+      "ui10_remaining_historical": "All original particles/materials are not reproduced.",
+      "ui11_acceptance": "UI11 I: room_secondary_vfx_regression passes 105 checks with final common/English assets, actual triggers and canonical save/RNG invariance. Final K ordinary Firebird acceptance remains separate.",
+      "ui10_implemented_historical": "Original chest/holder/banner timing and command guards; original 125x31 common banner, separate 39px holder/23px icon, source hover/press scaling, actual relic hover tips, centered empty label and shared original Proceed. Legacy permanent description and extra Details control removed. Shared Proceed retains original 500/800ms enable/disable translation and moving pointer bounds."
     },
     {
       "id": "loot",
@@ -449,7 +473,7 @@
         "world_reward_ui_regression",
         "world_ui_regression"
       ],
-      "acceptance": "Frozen K native checks pass: world_reward_ui_regression, world_ui_regression. Both matching K format39 actual packs pass: world_reward_ui_regression, world_ui_regression."
+      "acceptance": "Historical UI10: Frozen K native checks pass: world_reward_ui_regression, world_ui_regression. Both matching K format39 actual packs pass: world_reward_ui_regression, world_ui_regression."
     },
     {
       "id": "game_over",
@@ -461,13 +485,17 @@
       ],
       "contract": "Death/victory summary, score, badges and discoveries",
       "assessment": "implemented_with_documented_limits",
-      "implemented": "Actual original score formula/19 solo badge predicates, observed discoveries, source intro/score/badge/discovery timing and release-triggered controls. Pinned View Run is hidden/disabled and remains unavailable; ordinary Compendium Run History stays available. The original dark-red threshold mask and event-only pure-black prelude replace the generic Ink fade, preserving actor layer order.",
-      "remaining": "Unmodified Godot full-frame equality remains unestablished.",
+      "implemented": "Original score, nineteen solo badge predicates, observed discoveries, intro/score/badge/discovery clocks and release-triggered controls remain. UI11 uses a clipped 10px summary article, 28px score rows, 22px badges and a fixed 152x26 confirmation button. Up/Down scroll; Left/Right cycles badge/discovery focus and reveals it in the visible article. Source-hidden View Run remains unavailable.",
+      "remaining": "LCD reflow, integer text rasterization and full-frame Godot shader equality remain documented adaptations. Final ordinary calculator acceptance is separate from the asset-independent correctness target.",
       "regressions": [
         "world_game_over_ui_regression",
-        "ui_progress_regression"
+        "ui_progress_regression",
+        "game_over_facts_ui8_regression"
       ],
-      "acceptance": "Frozen K native checks pass: world_game_over_ui_regression, ui_progress_regression. Both matching K format39 actual packs pass: world_game_over_ui_regression."
+      "acceptance": "Historical UI10: Frozen K native checks pass: world_game_over_ui_regression, ui_progress_regression. Both matching K format39 actual packs pass: world_game_over_ui_regression.",
+      "ui10_implemented_historical": "Actual original score formula/19 solo badge predicates, observed discoveries, source intro/score/badge/discovery timing and release-triggered controls. Pinned View Run is hidden/disabled and remains unavailable; ordinary Compendium Run History stays available. The original dark-red threshold mask and event-only pure-black prelude replace the generic Ink fade, preserving actor layer order.",
+      "ui10_remaining_historical": "Unmodified Godot full-frame equality remains unestablished.",
+      "ui11_acceptance": "Final fixture checkpoint 02f0f4b266dc1ac9578a43e02521a07d95d647de passes 176 game_over_facts_ui8_regression checks against recompiled L UI and unchanged I core. The source-timing/release assertions, bounded long-summary scroll, two-category focus wrap/reveal and canonical SaveData/RNG checks pass. Both earlier fixture-only failures remain recorded in verification_ui11.game_over_readability; runtime code was unchanged."
     },
     {
       "id": "topbar",
@@ -483,7 +511,7 @@
       "regressions": [
         "card_hud_ui_regression"
       ],
-      "acceptance": "Frozen K native checks pass: card_hud_ui_regression. Both matching K format39 actual packs pass: card_hud_ui_regression."
+      "acceptance": "Historical UI10: Frozen K native checks pass: card_hud_ui_regression. Both matching K format39 actual packs pass: card_hud_ui_regression."
     },
     {
       "id": "hand",
@@ -495,13 +523,17 @@
       ],
       "contract": "Fan, hover, drag, keyboard held-card and targeting confirmation",
       "assessment": "implemented_with_documented_limits",
-      "implemented": "All 55 source hand positions for one through ten cards, source scales/hover displacement, drag, held-card keyboard aim and queued layering. Source resource-state colors, card-pool and rarity outlines, unknown energy icons and cache invalidation are restored; the legacy whole-card gray overlay is removed. Original card-rule resource-cross texture and eligibility, dynamic cache invalidation and upgrade-preview-only changed-cost color/outline are implemented.",
-      "remaining": "All original secondary highlight/trail shaders are not reproduced; original GPU/raster equality is not established.",
+      "implemented": "Primary contract remains implemented. UI11 gives the focused card a native 86x121 face with 10px text and adds source cyan/gold/red hand-holder SDF conditions, 500ms width transitions, 100ms selection expansion and 350ms return. The highlight follows the actual affine holder pose.",
+      "remaining": "Integer LCD geometry/font rendering and bounded CPU trail/noise output are adaptations; full desktop GPU/raster equality is not claimed.",
       "regressions": [
         "card_hud_ui_regression",
-        "card_presentation_regression"
+        "card_presentation_regression",
+        "combat_secondary_ui11_regression"
       ],
-      "acceptance": "Frozen K native checks pass: card_hud_ui_regression, card_presentation_regression. Both matching K format39 actual packs pass: card_hud_ui_regression."
+      "acceptance": "Historical UI10: Frozen K native checks pass: card_hud_ui_regression, card_presentation_regression. Both matching K format39 actual packs pass: card_hud_ui_regression.",
+      "ui10_remaining_historical": "All original secondary highlight/trail shaders are not reproduced; original GPU/raster equality is not established.",
+      "ui11_acceptance": "UI11 J: combat_secondary_ui11_regression passes 325107 checks with final common/English assets; J renderer/test plus unchanged I core. I card_highlight_regression also passes 12592419 exact scalar/clipping checks. These are native correctness checks, not final K Firebird performance.",
+      "ui10_implemented_historical": "All 55 source hand positions for one through ten cards, source scales/hover displacement, drag, held-card keyboard aim and queued layering. Source resource-state colors, card-pool and rarity outlines, unknown energy icons and cache invalidation are restored; the legacy whole-card gray overlay is removed. Original card-rule resource-cross texture and eligibility, dynamic cache invalidation and upgrade-preview-only changed-cost color/outline are implemented."
     },
     {
       "id": "piles",
@@ -517,7 +549,7 @@
       "regressions": [
         "card_hud_ui_regression"
       ],
-      "acceptance": "Frozen K native checks pass: card_hud_ui_regression. Both matching K format39 actual packs pass: card_hud_ui_regression."
+      "acceptance": "Historical UI10: Frozen K native checks pass: card_hud_ui_regression. Both matching K format39 actual packs pass: card_hud_ui_regression."
     },
     {
       "id": "inspect",
@@ -534,7 +566,7 @@
         "five_character_ui_regression",
         "expansion_ui_regression"
       ],
-      "acceptance": "Frozen K native checks pass: five_character_ui_regression, expansion_ui_regression. Both matching K format39 actual packs pass: five_character_ui_regression, expansion_ui_regression."
+      "acceptance": "Historical UI10: Frozen K native checks pass: five_character_ui_regression, expansion_ui_regression. Both matching K format39 actual packs pass: five_character_ui_regression, expansion_ui_regression."
     },
     {
       "id": "targeting",
@@ -545,13 +577,17 @@
       ],
       "contract": "Single/all/self reticles and arrow",
       "assessment": "implemented_with_documented_limits",
-      "implemented": "Source single/self/all/random reticles and targeting arrow; real pointer and keyboard selection/aim/confirm.",
-      "remaining": "All secondary effects are not reproduced.",
+      "implemented": "Primary contract remains implemented. UI11 retains the actual pointer/keyboard target manager, adds the selected-card source flash lifecycle and renders orb beams from recorded actual target masks without selecting targets again.",
+      "remaining": "Exact GPU/subpixel reticle, beam and material rasterization remains an approximation. Targeting behavior is not expanded by inventing secondary targets.",
       "regressions": [
         "card_hud_ui_regression",
-        "potion_ui_regression"
+        "potion_ui_regression",
+        "combat_secondary_ui11_regression"
       ],
-      "acceptance": "Frozen K native checks pass: card_hud_ui_regression, potion_ui_regression. Both matching K format39 actual packs pass: card_hud_ui_regression, potion_ui_regression."
+      "acceptance": "Historical UI10: Frozen K native checks pass: card_hud_ui_regression, potion_ui_regression. Both matching K format39 actual packs pass: card_hud_ui_regression, potion_ui_regression.",
+      "ui10_remaining_historical": "All secondary effects are not reproduced.",
+      "ui11_acceptance": "UI11 J: combat_secondary_ui11_regression passes 325107 checks with final common/English assets; J renderer/test plus unchanged I core. I card_highlight_regression also passes 12592419 exact scalar/clipping checks. These are native correctness checks, not final K Firebird performance.",
+      "ui10_implemented_historical": "Source single/self/all/random reticles and targeting arrow; real pointer and keyboard selection/aim/confirm."
     },
     {
       "id": "potions",
@@ -568,7 +604,7 @@
         "potion_ui_regression",
         "world_reward_ui_regression"
       ],
-      "acceptance": "Frozen K native checks pass: potion_ui_regression, world_reward_ui_regression. Both matching K format39 actual packs pass: potion_ui_regression, world_reward_ui_regression."
+      "acceptance": "Historical UI10: Frozen K native checks pass: potion_ui_regression, world_reward_ui_regression. Both matching K format39 actual packs pass: potion_ui_regression, world_reward_ui_regression."
     },
     {
       "id": "damage_result",
@@ -586,7 +622,7 @@
       "regressions": [
         "combat_damage_ui7_regression"
       ],
-      "acceptance": "Frozen K native checks pass: combat_damage_ui7_regression. Both matching K format39 actual packs pass: combat_damage_ui7_regression."
+      "acceptance": "Historical UI10: Frozen K native checks pass: combat_damage_ui7_regression. Both matching K format39 actual packs pass: combat_damage_ui7_regression."
     },
     {
       "id": "health_block",
@@ -602,7 +638,7 @@
       "regressions": [
         "health_bar_ui_regression"
       ],
-      "acceptance": "Frozen K native checks pass: health_bar_ui_regression."
+      "acceptance": "Historical UI10: Frozen K native checks pass: health_bar_ui_regression."
     },
     {
       "id": "power_strip",
@@ -618,7 +654,7 @@
       "regressions": [
         "power_order_ui8_regression"
       ],
-      "acceptance": "Frozen K native checks pass: power_order_ui8_regression. Both matching K format39 actual packs pass: power_order_ui8_regression."
+      "acceptance": "Historical UI10: Frozen K native checks pass: power_order_ui8_regression. Both matching K format39 actual packs pass: power_order_ui8_regression."
     },
     {
       "id": "power_feedback",
@@ -631,13 +667,17 @@
       ],
       "contract": "Applied/removed titles and actual power Flash events",
       "assessment": "implemented_with_documented_limits",
-      "implemented": "Actual applied/removed titles and common source flash triggers, additive blend and ordered effect-time updates.",
-      "remaining": "All secondary trigger particles remain incomplete.",
+      "implemented": "Primary contract remains implemented. UI11 adds one-second power-up particles on the four source explicit Play calls: Inflame, Crimson Mantle, Corruption and Unmovable. Actual amount changes keep their existing title/icon feedback.",
+      "remaining": "The concrete retained power-up triggers are implemented; dense GPU particle fields and every card-specific material effect are not asserted as identical.",
       "regressions": [
         "combat_damage_ui7_regression",
-        "power_order_ui8_regression"
+        "power_order_ui8_regression",
+        "combat_secondary_ui11_regression"
       ],
-      "acceptance": "Frozen K native checks pass: combat_damage_ui7_regression, power_order_ui8_regression. Both matching K format39 actual packs pass: combat_damage_ui7_regression, power_order_ui8_regression."
+      "acceptance": "Historical UI10: Frozen K native checks pass: combat_damage_ui7_regression, power_order_ui8_regression. Both matching K format39 actual packs pass: combat_damage_ui7_regression, power_order_ui8_regression.",
+      "ui10_remaining_historical": "All secondary trigger particles remain incomplete.",
+      "ui11_acceptance": "UI11 J: combat_secondary_ui11_regression passes 325107 checks with final common/English assets; J renderer/test plus unchanged I core. I card_highlight_regression also passes 12592419 exact scalar/clipping checks. These are native correctness checks, not final K Firebird performance.",
+      "ui10_implemented_historical": "Actual applied/removed titles and common source flash triggers, additive blend and ordered effect-time updates."
     },
     {
       "id": "hit_sparks",
@@ -648,12 +688,16 @@
       ],
       "contract": "Original warm/blue hit sparks and secondary particles",
       "assessment": "implemented_with_documented_limits",
-      "implemented": "Original sampled glow/ring/streak/speck assets and bounded 60Hz display particles.",
-      "remaining": "GPU turbulence and every secondary variant remain incomplete.",
+      "implemented": "Primary contract remains implemented. UI11 preserves actual hit/block triggers while sharing the bounded 48-burst pool with orb/power effects; orb-only bursts skip unused hit-texture lookups.",
+      "remaining": "GPU turbulence, stochastic density, subpixel rasterization and every desktop material variant remain explicit CPU approximations.",
       "regressions": [
-        "combat_damage_ui7_regression"
+        "combat_damage_ui7_regression",
+        "combat_secondary_ui11_regression"
       ],
-      "acceptance": "Frozen K native checks pass: combat_damage_ui7_regression. Both matching K format39 actual packs pass: combat_damage_ui7_regression."
+      "acceptance": "Historical UI10: Frozen K native checks pass: combat_damage_ui7_regression. Both matching K format39 actual packs pass: combat_damage_ui7_regression.",
+      "ui10_remaining_historical": "GPU turbulence and every secondary variant remain incomplete.",
+      "ui11_acceptance": "UI11 J: combat_secondary_ui11_regression passes 325107 checks with final common/English assets; J renderer/test plus unchanged I core. I card_highlight_regression also passes 12592419 exact scalar/clipping checks. These are native correctness checks, not final K Firebird performance.",
+      "ui10_implemented_historical": "Original sampled glow/ring/streak/speck assets and bounded 60Hz display particles."
     },
     {
       "id": "formations",
@@ -663,12 +707,15 @@
       ],
       "contract": "Named scene slots, unnamed widths and stable summon replacements",
       "assessment": "implemented_with_documented_limits",
-      "implemented": "All source named slots, original unnamed widths, per-model registration, aspect fitting and summon replacement identities.",
-      "remaining": "Source per-instance randomized scale/hue and all material variations remain incomplete; the calculator ground rail is an explicit adaptation.",
+      "implemented": "Primary contract remains implemented. UI11 applies source same-kind group/initial-HP rules to per-instance 10-15% cosmetic scale variation and bounded hue variation, using independent cosmetic seeds. Quantized CPU hue affects only actor layers; canonical RNG is untouched.",
+      "remaining": "The LCD ground rail, eight-step CPU hue treatment and complete Godot material output remain adaptations; per-instance scale/hue are no longer wholly omitted.",
       "regressions": [
         "combat_layout_regression"
       ],
-      "acceptance": "Frozen K native checks pass: combat_layout_regression."
+      "acceptance": "Historical UI10: Frozen K native checks pass: combat_layout_regression.",
+      "ui10_remaining_historical": "Source per-instance randomized scale/hue and all material variations remain incomplete; the calculator ground rail is an explicit adaptation.",
+      "ui11_acceptance": "Source implementation reviewed; prior UI10 layout checks below are historical. Final K ordinary Firebird acceptance is not asserted here.",
+      "ui10_implemented_historical": "All source named slots, original unnamed widths, per-model registration, aspect fitting and summon replacement identities."
     },
     {
       "id": "death_rewards",
@@ -685,7 +732,7 @@
         "combat_ui_regression",
         "power_order_ui8_regression"
       ],
-      "acceptance": "Frozen K native checks pass: combat_ui_regression, power_order_ui8_regression, character_death_ui9_regression. Both matching K format39 actual packs pass: combat_ui_regression, power_order_ui8_regression, character_death_ui9_regression."
+      "acceptance": "Historical UI10: Frozen K native checks pass: combat_ui_regression, power_order_ui8_regression, character_death_ui9_regression. Both matching K format39 actual packs pass: combat_ui_regression, power_order_ui8_regression, character_death_ui9_regression."
     },
     {
       "id": "generated_cards",
@@ -695,12 +742,16 @@
       ],
       "contract": "Enemy-generated status/curse preview and card entry",
       "assessment": "implemented_with_documented_limits",
-      "implemented": "Actual generated-card batches, entry motions and effect-time hand updates.",
-      "remaining": "All direct-insertion secondary variants remain incomplete.",
+      "implemented": "Primary contract remains implemented. UI11 direct new-instance hand entries receive their own grow-in and short particles rather than a fabricated draw-pile origin; actual enemy-generated batches remain intact.",
+      "remaining": "GPU particle density and exact shader rasterization are bounded CPU mappings; generated-card gameplay and batch semantics are unchanged.",
       "regressions": [
-        "card_motion_regression"
+        "card_motion_regression",
+        "combat_secondary_ui11_regression"
       ],
-      "acceptance": "Frozen K native checks pass: card_motion_regression."
+      "acceptance": "Historical UI10: Frozen K native checks pass: card_motion_regression.",
+      "ui10_remaining_historical": "All direct-insertion secondary variants remain incomplete.",
+      "ui11_acceptance": "UI11 J: combat_secondary_ui11_regression passes 325107 checks with final common/English assets; J renderer/test plus unchanged I core. I card_highlight_regression also passes 12592419 exact scalar/clipping checks. These are native correctness checks, not final K Firebird performance.",
+      "ui10_implemented_historical": "Actual generated-card batches, entry motions and effect-time hand updates."
     },
     {
       "id": "card_secondary",
@@ -711,12 +762,17 @@
       ],
       "contract": "Discard/exhaust/draw and pickup/flight particles",
       "assessment": "implemented_with_documented_limits",
-      "implemented": "Primary draw/discard/exhaust/acquisition/removal trajectories and actual action linkage.",
-      "remaining": "All original trails/materials are not reproduced.",
+      "implemented": "Primary contract remains implemented. UI11 actual Exhaust transfers use the source 400ms four-point curve, CPU dissolve and embers; Power transfers use the seven-node source path and actual owner VFX center. Six recorded card positions form fading trails; one actual Shuffle log creates one aggregate card-back flight. Room acquisition uses eight sampled trail positions and independent potion/relic arrival flashes.",
+      "remaining": "Godot baked arc-length lookup, dense particle ribbons, turbulence, HDR and material noise use bounded CPU approximations. These actual transfers and acquisition triggers are implemented; desktop pixel identity is not claimed.",
       "regressions": [
-        "card_motion_regression"
+        "card_motion_regression",
+        "combat_secondary_ui11_regression",
+        "room_secondary_vfx_regression"
       ],
-      "acceptance": "Frozen K native checks pass: card_motion_regression."
+      "acceptance": "Historical UI10: Frozen K native checks pass: card_motion_regression.",
+      "ui10_remaining_historical": "All original trails/materials are not reproduced.",
+      "ui11_acceptance": "UI11 J: combat_secondary_ui11_regression passes 325107 checks with final common/English assets; J renderer/test plus unchanged I core. I card_highlight_regression also passes 12592419 exact scalar/clipping checks. These are native correctness checks, not final K Firebird performance. UI11 I: room_secondary_vfx_regression passes 105 checks with final common/English assets, actual triggers and canonical save/RNG invariance. Final K ordinary Firebird acceptance remains separate.",
+      "ui10_implemented_historical": "Primary draw/discard/exhaust/acquisition/removal trajectories and actual action linkage."
     },
     {
       "id": "turn_flow",
@@ -735,7 +791,7 @@
         "enemies_regression",
         "end_turn_hold_regression"
       ],
-      "acceptance": "Frozen K native checks pass: turn_banner_regression, combat_ui_regression, enemies_regression, end_turn_hold_regression. Both matching K format39 actual packs pass: combat_ui_regression, end_turn_hold_regression. The K ordinary-browser21-flow gate includes this scope: Ordinary held mapped-key and toolbar input advance turn1 to2 to3 exactly once per hold; short attempts leave turn1 unchanged. Both K long-press targets pass155,338 checks, including disabled residual owner/timer/fade and canonical-state identity; half/fired captures match I exactly."
+      "acceptance": "Historical UI10: Frozen K native checks pass: turn_banner_regression, combat_ui_regression, enemies_regression, end_turn_hold_regression. Both matching K format39 actual packs pass: combat_ui_regression, end_turn_hold_regression. The K ordinary-browser21-flow gate includes this scope: Ordinary held mapped-key and toolbar input advance turn1 to2 to3 exactly once per hold; short attempts leave turn1 unchanged. Both K long-press targets pass155,338 checks, including disabled residual owner/timer/fade and canonical-state identity; half/fired captures match I exactly."
     },
     {
       "id": "resources",
@@ -747,13 +803,17 @@
       ],
       "contract": "Orbs, stars, Osty resources and activation/evoke feedback",
       "assessment": "implemented_with_documented_limits",
-      "implemented": "Original Defect orb arc/move/fill/fade, stars, Osty source anchors/summon timing and actual resource state.",
-      "remaining": "All invoke/evoke secondary VFX remain incomplete.",
+      "implemented": "Primary contract remains implemented. UI11 records actual passive/evoke notices for all five orb kinds, including repeated evokes and Gold-Plated Cables WorldStage activations. Pulses/beams use the pre-removal slot and actual target mask without consuming RNG; existing stars/Osty state remains unchanged.",
+      "remaining": "Dense orb GPU particles, exact bloom and material pixels remain bounded CPU approximations. No activation is inferred only from orb count changes.",
       "regressions": [
         "card_hud_ui_regression",
-        "combat_ui_regression"
+        "combat_ui_regression",
+        "combat_secondary_ui11_regression"
       ],
-      "acceptance": "Frozen K native checks pass: card_hud_ui_regression, combat_ui_regression. Both matching K format39 actual packs pass: card_hud_ui_regression, combat_ui_regression."
+      "acceptance": "Historical UI10: Frozen K native checks pass: card_hud_ui_regression, combat_ui_regression. Both matching K format39 actual packs pass: card_hud_ui_regression, combat_ui_regression.",
+      "ui10_remaining_historical": "All invoke/evoke secondary VFX remain incomplete.",
+      "ui11_acceptance": "UI11 J: combat_secondary_ui11_regression passes 325107 checks with final common/English assets; J renderer/test plus unchanged I core. I card_highlight_regression also passes 12592419 exact scalar/clipping checks. These are native correctness checks, not final K Firebird performance.",
+      "ui10_implemented_historical": "Original Defect orb arc/move/fill/fade, stars, Osty source anchors/summon timing and actual resource state."
     },
     {
       "id": "choices",
@@ -771,7 +831,7 @@
         "world_ui_regression",
         "neow_modifiers_ui8_regression"
       ],
-      "acceptance": "Frozen K native checks pass: world_ui_regression, neow_modifiers_ui8_regression, combat_selection_ui9_regression, deck_selection_ui9_regression, world_selection_ui9_regression. Both matching K format39 actual packs pass: world_ui_regression, combat_selection_ui9_regression, deck_selection_ui9_regression, world_selection_ui9_regression. The K ordinary-browser21-flow gate includes this scope: The ordinary Sealed Deck cancellation/deselection/manual-ten-card confirmation flow passes."
+      "acceptance": "Historical UI10: Frozen K native checks pass: world_ui_regression, neow_modifiers_ui8_regression, combat_selection_ui9_regression, deck_selection_ui9_regression, world_selection_ui9_regression. Both matching K format39 actual packs pass: world_ui_regression, combat_selection_ui9_regression, deck_selection_ui9_regression, world_selection_ui9_regression. The K ordinary-browser21-flow gate includes this scope: The ordinary Sealed Deck cancellation/deselection/manual-ten-card confirmation flow passes."
     },
     {
       "id": "pause",
@@ -789,7 +849,7 @@
         "world_frontend_ui_regression",
         "auxiliary_ui8_regression"
       ],
-      "acceptance": "Frozen K native checks pass: world_frontend_ui_regression, auxiliary_ui8_regression. Both matching K format39 actual packs pass: world_frontend_ui_regression, auxiliary_ui8_regression. The K ordinary-browser21-flow gate includes this scope: Ordinary Save and Quit/Continue and Settings return paths pass."
+      "acceptance": "Historical UI10: Frozen K native checks pass: world_frontend_ui_regression, auxiliary_ui8_regression. Both matching K format39 actual packs pass: world_frontend_ui_regression, auxiliary_ui8_regression. The K ordinary-browser21-flow gate includes this scope: Ordinary Save and Quit/Continue and Settings return paths pass."
     },
     {
       "id": "settings",
@@ -810,7 +870,7 @@
         "end_turn_hold_regression",
         "check_offline_browser.js"
       ],
-      "acceptance": "Frozen K native checks pass: ui_preferences_regression, world_frontend_ui_regression, input_bindings_ui8_regression, end_turn_hold_regression. Both matching K format39 actual packs pass: world_frontend_ui_regression, input_bindings_ui8_regression, end_turn_hold_regression. The K ordinary-browser21-flow gate includes this scope: Ordinary real preference controls and Long Press persistence/input/cancel/repeat paths pass, with other profiles unchanged. J source-coordinate hover checks pass synthetically and with both actual packs against the production-identical I core. They verify intended localized title/body, full-screen placement and unchanged canonical bytes; the prior I capture names alone did not establish these contexts. K includes those J fixture corrections; all58 card/HUD captures per locale match the accepted J baseline."
+      "acceptance": "Historical UI10: Frozen K native checks pass: ui_preferences_regression, world_frontend_ui_regression, input_bindings_ui8_regression, end_turn_hold_regression. Both matching K format39 actual packs pass: world_frontend_ui_regression, input_bindings_ui8_regression, end_turn_hold_regression. The K ordinary-browser21-flow gate includes this scope: Ordinary real preference controls and Long Press persistence/input/cancel/repeat paths pass, with other profiles unchanged. J source-coordinate hover checks pass synthetically and with both actual packs against the production-identical I core. They verify intended localized title/body, full-screen placement and unchanged canonical bytes; the prior I capture names alone did not establish these contexts. K includes those J fixture corrections; all58 card/HUD captures per locale match the accepted J baseline."
     },
     {
       "id": "language",
@@ -820,13 +880,17 @@
       ],
       "contract": "Title-only choice, disabled while run active",
       "assessment": "implemented_with_documented_limits",
-      "implemented": "Direct startup, global remembered language and original main-menu Settings change; disabled during an active run as in source. The source dropdown opens at its first item, clamps Up/Down, keeps Left/Right on the item and stays open when reselecting the current language.",
-      "remaining": "No separate startup chooser or unrelated expedition settings remains.",
+      "implemented": "Primary contract remains implemented. UI11 supports all sixteen original language codes through independently installed NSL2 editions sharing one common art file. The settings dropdown lists installed editions only, scrolls and persists selection; mid-run changes remain disabled.",
+      "remaining": "Original missing translation keys use English fallback; calculator-only text remains English outside ZHS and startup/errors retain ENG/ZHS boot glyphs. Installing all sixteen editions simultaneously is not the default storage target.",
       "regressions": [
         "boot_locale_regression",
-        "profiles_ui7_regression"
+        "profiles_ui7_regression",
+        "locale_editions_regression"
       ],
-      "acceptance": "Frozen K native checks pass: boot_locale_regression, profiles_ui7_regression. Both matching K format39 actual packs pass: profiles_ui7_regression. The K ordinary-browser21-flow gate includes this scope: Ordinary English-to-Chinese-to-English switching and saved-language reload pass without a startup chooser."
+      "acceptance": "Historical UI10: Frozen K native checks pass: boot_locale_regression, profiles_ui7_regression. Both matching K format39 actual packs pass: profiles_ui7_regression. The K ordinary-browser21-flow gate includes this scope: Ordinary English-to-Chinese-to-English switching and saved-language reload pass without a startup chooser.",
+      "ui10_remaining_historical": "No separate startup chooser or unrelated expedition settings remains.",
+      "ui11_acceptance": "UI11 I: locale_editions_regression passes 38644 checks across 53072 model/event descriptions in all sixteen final editions; zero unexpanded templates or missing visible codepoints. Native data/font correctness is separate from final Firebird interaction.",
+      "ui10_implemented_historical": "Direct startup, global remembered language and original main-menu Settings change; disabled during an active run as in source. The source dropdown opens at its first item, clamps Up/Down, keeps Left/Right on the item and stays open when reselecting the current language."
     },
     {
       "id": "phobia",
@@ -844,7 +908,7 @@
       "regressions": [
         "phobia_ui7_regression"
       ],
-      "acceptance": "Frozen K native checks pass: phobia_ui7_regression. Both matching K format39 actual packs pass: phobia_ui7_regression."
+      "acceptance": "Historical UI10: Frozen K native checks pass: phobia_ui7_regression. Both matching K format39 actual packs pass: phobia_ui7_regression."
     },
     {
       "id": "text_effects",
@@ -861,7 +925,7 @@
         "localized_template_regression",
         "font_styles_ui7_regression"
       ],
-      "acceptance": "Frozen K native checks pass: localized_template_regression, font_styles_ui7_regression. Both matching K format39 actual packs pass: font_styles_ui7_regression."
+      "acceptance": "Historical UI10: Frozen K native checks pass: localized_template_regression, font_styles_ui7_regression. Both matching K format39 actual packs pass: font_styles_ui7_regression."
     },
     {
       "id": "keyboard_rebind",
@@ -878,7 +942,7 @@
         "input_bindings_ui8_regression",
         "end_turn_hold_regression"
       ],
-      "acceptance": "Frozen K native checks pass: input_bindings_ui8_regression, end_turn_hold_regression. Both matching K format39 actual packs pass: input_bindings_ui8_regression, end_turn_hold_regression. J source-coordinate hover checks pass synthetically and with both actual packs against the production-identical I core. They verify intended localized title/body, full-screen placement and unchanged canonical bytes; the prior I capture names alone did not establish these contexts. K includes those J fixture corrections; all58 card/HUD captures per locale match the accepted J baseline."
+      "acceptance": "Historical UI10: Frozen K native checks pass: input_bindings_ui8_regression, end_turn_hold_regression. Both matching K format39 actual packs pass: input_bindings_ui8_regression, end_turn_hold_regression. J source-coordinate hover checks pass synthetically and with both actual packs against the production-identical I core. They verify intended localized title/body, full-screen placement and unchanged canonical bytes; the prior I capture names alone did not establish these contexts. K includes those J fixture corrections; all58 card/HUD captures per locale match the accepted J baseline."
     },
     {
       "id": "screen_shake",
@@ -895,7 +959,7 @@
       "regressions": [
         "combat_damage_ui7_regression"
       ],
-      "acceptance": "Frozen K native checks pass: combat_damage_ui7_regression. Both matching K format39 actual packs pass: combat_damage_ui7_regression."
+      "acceptance": "Historical UI10: Frozen K native checks pass: combat_damage_ui7_regression. Both matching K format39 actual packs pass: combat_damage_ui7_regression."
     },
     {
       "id": "patch_notes",
@@ -904,13 +968,16 @@
         "MegaCrit.Sts2.Core.Nodes.Screens.MainMenu/NPatchNotesScreen.cs"
       ],
       "contract": "Patch-notes reader",
-      "assessment": "implemented_with_documented_limits",
-      "implemented": "All 126 supplied source notes, continuous reader, real bold glyphs, original opening and immediate wheel layout.",
-      "remaining": "Remote live feed is not implemented; supplied pinned notes are available offline.",
+      "assessment": "excluded",
+      "implemented": "UI11 removes this runtime interface and its entry points at the user's explicit request. Historical string slots stay stable but empty; no unavailable external submission/feed is presented as a working calculator feature.",
+      "remaining": "Intentional user-authorized platform omission, not unfinished UI11 work.",
       "regressions": [
         "auxiliary_ui8_regression"
       ],
-      "acceptance": "Frozen K native checks pass: auxiliary_ui8_regression. Both matching K format39 actual packs pass: auxiliary_ui8_regression."
+      "acceptance": "Historical UI10: Frozen K native checks pass: auxiliary_ui8_regression. Both matching K format39 actual packs pass: auxiliary_ui8_regression.",
+      "ui10_implemented_historical": "All 126 supplied source notes, continuous reader, real bold glyphs, original opening and immediate wheel layout.",
+      "ui10_remaining_historical": "Remote live feed is not implemented; supplied pinned notes are available offline.",
+      "ui11_acceptance": "Removal is present in the runtime source and final sixteen-locale conversion. auxiliary_ui8_regression now checks absent entry points and no export; its UI10 acceptance below is historical, not a claimed UI11 execution."
     },
     {
       "id": "feedback",
@@ -919,13 +986,16 @@
         "MegaCrit.Sts2.Core.Nodes.Screens.FeedbackScreen/NSendFeedbackScreen.cs"
       ],
       "contract": "Feedback form and submit acknowledgement",
-      "assessment": "implemented_with_documented_limits",
-      "implemented": "Actual UTF-8 draft, source 8000 UTF-16-unit limit, 60s retention, mood and local export with explicit acknowledgement.",
-      "remaining": "External submission is not performed; no original service success is claimed.",
+      "assessment": "excluded",
+      "implemented": "UI11 removes this runtime interface and its entry points at the user's explicit request. Historical string slots stay stable but empty; no unavailable external submission/feed is presented as a working calculator feature.",
+      "remaining": "Intentional user-authorized platform omission, not unfinished UI11 work.",
       "regressions": [
         "auxiliary_ui8_regression"
       ],
-      "acceptance": "Frozen K native checks pass: auxiliary_ui8_regression. Both matching K format39 actual packs pass: auxiliary_ui8_regression."
+      "acceptance": "Historical UI10: Frozen K native checks pass: auxiliary_ui8_regression. Both matching K format39 actual packs pass: auxiliary_ui8_regression.",
+      "ui10_implemented_historical": "Actual UTF-8 draft, source 8000 UTF-16-unit limit, 60s retention, mood and local export with explicit acknowledgement.",
+      "ui10_remaining_historical": "External submission is not performed; no original service success is claimed.",
+      "ui11_acceptance": "Removal is present in the runtime source and final sixteen-locale conversion. auxiliary_ui8_regression now checks absent entry points and no export; its UI10 acceptance below is historical, not a claimed UI11 execution."
     },
     {
       "id": "modding",
@@ -945,12 +1015,15 @@
       ],
       "contract": "Credits and return",
       "assessment": "implemented_with_documented_limits",
-      "implemented": "Complete supplied 64-key original credits, columns/logos, source scrolling, exit gate and fade.",
-      "remaining": "Godot raster/kerning equality is not established.",
+      "implemented": "Primary contract remains implemented. UI11 preserves the supplied original credit sequence and appends the Nspire port credit for zyf722, based on Codex, with localized glyph coverage.",
+      "remaining": "Exact desktop Godot raster/kerning equality remains unestablished.",
       "regressions": [
         "auxiliary_ui8_regression"
       ],
-      "acceptance": "Frozen K native checks pass: auxiliary_ui8_regression. Both matching K format39 actual packs pass: auxiliary_ui8_regression."
+      "acceptance": "Historical UI10: Frozen K native checks pass: auxiliary_ui8_regression. Both matching K format39 actual packs pass: auxiliary_ui8_regression.",
+      "ui10_remaining_historical": "Godot raster/kerning equality is not established.",
+      "ui11_acceptance": "Source credit append and all sixteen font/text payloads are included in the final resource conversion; prior UI10 navigation acceptance remains historical.",
+      "ui10_implemented_historical": "Complete supplied 64-key original credits, columns/logos, source scrolling, exit gate and fade."
     },
     {
       "id": "audio",
@@ -991,13 +1064,17 @@
       ],
       "contract": "Original locale and scene font families, style measurement and glyph painting",
       "assessment": "implemented_with_documented_limits",
-      "implemented": "Original regular/bold/display/italic faces at source-derived sizes, including 935 missing 5px bold Chinese tooltip glyphs and 57 display character-title glyphs, append-only with all old bitmaps exact. The candidate also supplies native4px regular/bold glyphs for the ten standard tutorial bodies and source12/14/16/18px display glyphs for the post-tutorial battle-start banner. G/H adds source9px scene headings only in format39 and keeps sparse bands out of generic text fitting; exact front/History/run-setup alphabets are included with no missing required glyphs in the accepted conversion.",
-      "remaining": "Exact locale font keys and LCD composition are verified; complete Godot glyph-ink, kerning and raster equality are not established. The declared Chinese Regular variation has equal measured advance/ascent/descent to its base at12 sampled sizes, so a metric defect is not inferred from the resource properties alone. Integer LCD advances, fixed screen projection and documented minimum readable sizes remain adaptations.",
+      "implemented": "Primary contract remains implemented. UI11 uses each original language font chain and full 5/6/8/10/12px body bands, with main LCD text generally 8-12px and larger titles. Nearest-pixel advances fix systematic Latin ceil tracking; original-font offline combining-grapheme shaping covers Thai tone/vowel stacks without a resident shaping engine. Main text outlines are thinner.",
+      "remaining": "Integer LCD advances and glyph rasterization do not establish exact Godot subpixel kerning/ink equality. Original translation omissions and reviewed platform fallbacks remain explicit.",
       "regressions": [
         "font_styles_ui7_regression",
-        "card_hud_ui_regression"
+        "card_hud_ui_regression",
+        "locale_editions_regression"
       ],
-      "acceptance": "Frozen K native checks pass: font_styles_ui7_regression, card_hud_ui_regression. Both matching K format39 actual packs pass: font_styles_ui7_regression, card_hud_ui_regression."
+      "acceptance": "Historical UI10: Frozen K native checks pass: font_styles_ui7_regression, card_hud_ui_regression. Both matching K format39 actual packs pass: font_styles_ui7_regression, card_hud_ui_regression.",
+      "ui10_remaining_historical": "Exact locale font keys and LCD composition are verified; complete Godot glyph-ink, kerning and raster equality are not established. The declared Chinese Regular variation has equal measured advance/ascent/descent to its base at12 sampled sizes, so a metric defect is not inferred from the resource properties alone. Integer LCD advances, fixed screen projection and documented minimum readable sizes remain adaptations.",
+      "ui11_acceptance": "UI11 I: locale_editions_regression passes 38644 checks across 53072 model/event descriptions in all sixteen final editions; zero unexpanded templates or missing visible codepoints. Native data/font correctness is separate from final Firebird interaction.",
+      "ui10_implemented_historical": "Original regular/bold/display/italic faces at source-derived sizes, including 935 missing 5px bold Chinese tooltip glyphs and 57 display character-title glyphs, append-only with all old bitmaps exact. The candidate also supplies native4px regular/bold glyphs for the ten standard tutorial bodies and source12/14/16/18px display glyphs for the post-tutorial battle-start banner. G/H adds source9px scene headings only in format39 and keeps sparse bands out of generic text fitting; exact front/History/run-setup alphabets are included with no missing required glyphs in the accepted conversion."
     },
     {
       "id": "tutorial_accept",
@@ -1015,7 +1092,7 @@
         "web_profiles_storage_test.js",
         "check_offline_browser.js"
       ],
-      "acceptance": "Frozen K native checks pass: ftue_ui9_regression, ftue_progress_regression. Both matching K format39 actual packs pass: ftue_ui9_regression. The K ordinary-browser21-flow gate includes this scope: Ordinary Embark Yes/No and per-profile persistence execute the actual question. J retains the long-press assertions after the established capture sequence; all19 FTUE captures per locale match the H source-timed baseline exactly with production unchanged. Matching K root execution reproduces those19 J-timed captures per locale exactly."
+      "acceptance": "Historical UI10: Frozen K native checks pass: ftue_ui9_regression, ftue_progress_regression. Both matching K format39 actual packs pass: ftue_ui9_regression. The K ordinary-browser21-flow gate includes this scope: Ordinary Embark Yes/No and per-profile persistence execute the actual question. J retains the long-press assertions after the established capture sequence; all19 FTUE captures per locale match the H source-timed baseline exactly with production unchanged. Matching K root execution reproduces those19 J-timed captures per locale exactly."
     },
     {
       "id": "tutorial_combat_rules",
@@ -1033,7 +1110,7 @@
         "web_profiles_storage_test.js",
         "check_offline_browser.js"
       ],
-      "acceptance": "Frozen K native checks pass: ftue_ui9_regression, ftue_progress_regression. Both matching K format39 actual packs pass: ftue_ui9_regression. The K ordinary-browser21-flow gate includes this scope: Ordinary first-combat pages, previous/next, final-release persistence and blocked gameplay shortcuts pass. J retains the long-press assertions after the established capture sequence; all19 FTUE captures per locale match the H source-timed baseline exactly with production unchanged. Matching K root execution reproduces those19 J-timed captures per locale exactly."
+      "acceptance": "Historical UI10: Frozen K native checks pass: ftue_ui9_regression, ftue_progress_regression. Both matching K format39 actual packs pass: ftue_ui9_regression. The K ordinary-browser21-flow gate includes this scope: Ordinary first-combat pages, previous/next, final-release persistence and blocked gameplay shortcuts pass. J retains the long-press assertions after the established capture sequence; all19 FTUE captures per locale match the H source-timed baseline exactly with production unchanged. Matching K root execution reproduces those19 J-timed captures per locale exactly."
     },
     {
       "id": "tutorial_map",
@@ -1051,7 +1128,7 @@
         "web_profiles_storage_test.js",
         "check_offline_browser.js"
       ],
-      "acceptance": "Frozen K native checks pass: ftue_ui9_regression, ftue_progress_regression. Both matching K format39 actual packs pass: ftue_ui9_regression. The K ordinary-browser21-flow gate includes this scope: The ordinary fresh-profile path opens and confirms the actual first map tutorial before combat. J retains the long-press assertions after the established capture sequence; all19 FTUE captures per locale match the H source-timed baseline exactly with production unchanged. Matching K root execution reproduces those19 J-timed captures per locale exactly."
+      "acceptance": "Historical UI10: Frozen K native checks pass: ftue_ui9_regression, ftue_progress_regression. Both matching K format39 actual packs pass: ftue_ui9_regression. The K ordinary-browser21-flow gate includes this scope: The ordinary fresh-profile path opens and confirms the actual first map tutorial before combat. J retains the long-press assertions after the established capture sequence; all19 FTUE captures per locale match the H source-timed baseline exactly with production unchanged. Matching K root execution reproduces those19 J-timed captures per locale exactly."
     },
     {
       "id": "tutorial_can_play",
@@ -1069,7 +1146,7 @@
         "web_profiles_storage_test.js",
         "check_offline_browser.js"
       ],
-      "acceptance": "Frozen K native checks pass: ftue_ui9_regression, ftue_progress_regression. Both matching K format39 actual packs pass: ftue_ui9_regression. The K ordinary-browser21-flow gate includes this scope: The ordinary short End Turn release opens and confirms the actual StillCanPlay tutorial without ending the turn. J retains the long-press assertions after the established capture sequence; all19 FTUE captures per locale match the H source-timed baseline exactly with production unchanged. Matching K root execution reproduces those19 J-timed captures per locale exactly."
+      "acceptance": "Historical UI10: Frozen K native checks pass: ftue_ui9_regression, ftue_progress_regression. Both matching K format39 actual packs pass: ftue_ui9_regression. The K ordinary-browser21-flow gate includes this scope: The ordinary short End Turn release opens and confirms the actual StillCanPlay tutorial without ending the turn. J retains the long-press assertions after the established capture sequence; all19 FTUE captures per locale match the H source-timed baseline exactly with production unchanged. Matching K root execution reproduces those19 J-timed captures per locale exactly."
     },
     {
       "id": "tutorial_cannot_play",
@@ -1087,7 +1164,7 @@
         "web_profiles_storage_test.js",
         "check_offline_browser.js"
       ],
-      "acceptance": "Frozen K native checks pass: ftue_ui9_regression, ftue_progress_regression. Both matching K format39 actual packs pass: ftue_ui9_regression. J retains the long-press assertions after the established capture sequence; all19 FTUE captures per locale match the H source-timed baseline exactly with production unchanged. Matching K root execution reproduces those19 J-timed captures per locale exactly."
+      "acceptance": "Historical UI10: Frozen K native checks pass: ftue_ui9_regression, ftue_progress_regression. Both matching K format39 actual packs pass: ftue_ui9_regression. J retains the long-press assertions after the established capture sequence; all19 FTUE captures per locale match the H source-timed baseline exactly with production unchanged. Matching K root execution reproduces those19 J-timed captures per locale exactly."
     },
     {
       "id": "tutorial_power",
@@ -1105,7 +1182,7 @@
         "web_profiles_storage_test.js",
         "check_offline_browser.js"
       ],
-      "acceptance": "Frozen K native checks pass: ftue_ui9_regression, ftue_progress_regression. Both matching K format39 actual packs pass: ftue_ui9_regression. J retains the long-press assertions after the established capture sequence; all19 FTUE captures per locale match the H source-timed baseline exactly with production unchanged. Matching K root execution reproduces those19 J-timed captures per locale exactly."
+      "acceptance": "Historical UI10: Frozen K native checks pass: ftue_ui9_regression, ftue_progress_regression. Both matching K format39 actual packs pass: ftue_ui9_regression. J retains the long-press assertions after the established capture sequence; all19 FTUE captures per locale match the H source-timed baseline exactly with production unchanged. Matching K root execution reproduces those19 J-timed captures per locale exactly."
     },
     {
       "id": "tutorial_shuffle",
@@ -1123,7 +1200,7 @@
         "web_profiles_storage_test.js",
         "check_offline_browser.js"
       ],
-      "acceptance": "Frozen K native checks pass: ftue_ui9_regression, ftue_progress_regression. Both matching K format39 actual packs pass: ftue_ui9_regression. The K ordinary-browser21-flow gate includes this scope: The ordinary held toolbar flow opens and confirms the actual Shuffle tutorial before continuing into turn3. J retains the long-press assertions after the established capture sequence; all19 FTUE captures per locale match the H source-timed baseline exactly with production unchanged. Matching K root execution reproduces those19 J-timed captures per locale exactly."
+      "acceptance": "Historical UI10: Frozen K native checks pass: ftue_ui9_regression, ftue_progress_regression. Both matching K format39 actual packs pass: ftue_ui9_regression. The K ordinary-browser21-flow gate includes this scope: The ordinary held toolbar flow opens and confirms the actual Shuffle tutorial before continuing into turn3. J retains the long-press assertions after the established capture sequence; all19 FTUE captures per locale match the H source-timed baseline exactly with production unchanged. Matching K root execution reproduces those19 J-timed captures per locale exactly."
     },
     {
       "id": "tutorial_combat_reward",
@@ -1141,7 +1218,7 @@
         "web_profiles_storage_test.js",
         "check_offline_browser.js"
       ],
-      "acceptance": "Frozen K native checks pass: ftue_ui9_regression, ftue_progress_regression. Both matching K format39 actual packs pass: ftue_ui9_regression. J retains the long-press assertions after the established capture sequence; all19 FTUE captures per locale match the H source-timed baseline exactly with production unchanged. Matching K root execution reproduces those19 J-timed captures per locale exactly."
+      "acceptance": "Historical UI10: Frozen K native checks pass: ftue_ui9_regression, ftue_progress_regression. Both matching K format39 actual packs pass: ftue_ui9_regression. J retains the long-press assertions after the established capture sequence; all19 FTUE captures per locale match the H source-timed baseline exactly with production unchanged. Matching K root execution reproduces those19 J-timed captures per locale exactly."
     },
     {
       "id": "tutorial_relic",
@@ -1159,7 +1236,7 @@
         "web_profiles_storage_test.js",
         "check_offline_browser.js"
       ],
-      "acceptance": "Frozen K native checks pass: ftue_ui9_regression, ftue_progress_regression. Both matching K format39 actual packs pass: ftue_ui9_regression. J retains the long-press assertions after the established capture sequence; all19 FTUE captures per locale match the H source-timed baseline exactly with production unchanged. Matching K root execution reproduces those19 J-timed captures per locale exactly."
+      "acceptance": "Historical UI10: Frozen K native checks pass: ftue_ui9_regression, ftue_progress_regression. Both matching K format39 actual packs pass: ftue_ui9_regression. J retains the long-press assertions after the established capture sequence; all19 FTUE captures per locale match the H source-timed baseline exactly with production unchanged. Matching K root execution reproduces those19 J-timed captures per locale exactly."
     },
     {
       "id": "tutorial_potion",
@@ -1177,7 +1254,7 @@
         "web_profiles_storage_test.js",
         "check_offline_browser.js"
       ],
-      "acceptance": "Frozen K native checks pass: ftue_ui9_regression, ftue_progress_regression. Both matching K format39 actual packs pass: ftue_ui9_regression. J retains the long-press assertions after the established capture sequence; all19 FTUE captures per locale match the H source-timed baseline exactly with production unchanged. Matching K root execution reproduces those19 J-timed captures per locale exactly."
+      "acceptance": "Historical UI10: Frozen K native checks pass: ftue_ui9_regression, ftue_progress_regression. Both matching K format39 actual packs pass: ftue_ui9_regression. J retains the long-press assertions after the established capture sequence; all19 FTUE captures per locale match the H source-timed baseline exactly with production unchanged. Matching K root execution reproduces those19 J-timed captures per locale exactly."
     },
     {
       "id": "tutorial_merchant",
@@ -1195,7 +1272,7 @@
         "web_profiles_storage_test.js",
         "check_offline_browser.js"
       ],
-      "acceptance": "Frozen K native checks pass: ftue_ui9_regression, ftue_progress_regression. Both matching K format39 actual packs pass: ftue_ui9_regression. J retains the long-press assertions after the established capture sequence; all19 FTUE captures per locale match the H source-timed baseline exactly with production unchanged. Matching K root execution reproduces those19 J-timed captures per locale exactly."
+      "acceptance": "Historical UI10: Frozen K native checks pass: ftue_ui9_regression, ftue_progress_regression. Both matching K format39 actual packs pass: ftue_ui9_regression. J retains the long-press assertions after the established capture sequence; all19 FTUE captures per locale match the H source-timed baseline exactly with production unchanged. Matching K root execution reproduces those19 J-timed captures per locale exactly."
     },
     {
       "id": "tutorial_rest",
@@ -1213,7 +1290,7 @@
         "web_profiles_storage_test.js",
         "check_offline_browser.js"
       ],
-      "acceptance": "Frozen K native checks pass: ftue_ui9_regression, ftue_progress_regression. Both matching K format39 actual packs pass: ftue_ui9_regression. J retains the long-press assertions after the established capture sequence; all19 FTUE captures per locale match the H source-timed baseline exactly with production unchanged. Matching K root execution reproduces those19 J-timed captures per locale exactly."
+      "acceptance": "Historical UI10: Frozen K native checks pass: ftue_ui9_regression, ftue_progress_regression. Both matching K format39 actual packs pass: ftue_ui9_regression. J retains the long-press assertions after the established capture sequence; all19 FTUE captures per locale match the H source-timed baseline exactly with production unchanged. Matching K root execution reproduces those19 J-timed captures per locale exactly."
     },
     {
       "id": "tutorial_ascension",
@@ -1231,7 +1308,7 @@
         "web_profiles_storage_test.js",
         "check_offline_browser.js"
       ],
-      "acceptance": "Frozen K native checks pass: ftue_ui9_regression, ftue_progress_regression. Both matching K format39 actual packs pass: ftue_ui9_regression. J retains the long-press assertions after the established capture sequence; all19 FTUE captures per locale match the H source-timed baseline exactly with production unchanged. Matching K root execution reproduces those19 J-timed captures per locale exactly."
+      "acceptance": "Historical UI10: Frozen K native checks pass: ftue_ui9_regression, ftue_progress_regression. Both matching K format39 actual packs pass: ftue_ui9_regression. J retains the long-press assertions after the established capture sequence; all19 FTUE captures per locale match the H source-timed baseline exactly with production unchanged. Matching K root execution reproduces those19 J-timed captures per locale exactly."
     }
   ],
   "verification_baseline": {
@@ -2034,5 +2111,116 @@
     ],
     "performance_scope": "Final CPU/device/storage measurements are maintained separately in performance-ui10-0.17.md and release receipts; functional acceptance alone is not performance evidence.",
     "fidelity_percentage": null
+  },
+  "source_stage_ui10_historical": "Matching final K at 61c5a93acbd9730ab345a4add8293bda744820f0 passes121 native suites,96 actual target-language pairs, both complete NSL2 virtual-stream comparisons and21 ordinary-browser flows/47 captures. Its idle long-press optimization preserves the accepted UI: all1228 complete capture comparisons match I or the separately proven J hover/FTUE fixtures, with no new unexplained runtime difference. Historical C/D/G failures, H date discovery and I fixture limitations remain recorded. No inventory/test/capture count is treated as a restoration percentage.",
+  "verification_ui11": {
+    "source_checkpoint_j": "f16573e1b9c6da390cd9944bd447acb4dc0482d3",
+    "persistence": "Local frozen checkpoints and logged receipts; remote push was rejected by automatic approval review. No new remote synchronization is asserted.",
+    "resources": {
+      "format": 39,
+      "common_bytes": 61186168,
+      "english_bytes": 1049523,
+      "simplified_chinese_bytes": 5034485,
+      "default_resource_bytes": 67270176,
+      "ui10_common_bytes": 84834792,
+      "common_reduction_bytes": 23648624,
+      "animation_integrity": "All 51216 image entries, 1783 clips, animation frames, dimensions, geometry and timing retained. Static UI/card/icon/text art remains exact except the five character-select planes intentionally mapped with their matching animation layers.",
+      "precision": "First 38 actor/character clips use RGB555/alpha6; five character-select clips and their planes use RGB454/alpha6; other animation tiles use RGB444/alpha6. Maximum RGB565 channel-code errors are respectively (0,1,0), (1,1,1), (1,2,1); alpha error <=2/255 with exact endpoints. Existing runtime RGB565/alpha8 decoding is unchanged. This is not lossless artwork.",
+      "receipt": "ui11-animation-precision-resume-b9d1bdbceaaf.json",
+      "locale_rebase_receipt": "ui11-rebase-final-art-sixteen-locales-g-69c96a2ed77b.json",
+      "package_scope": "English and Simplified Chinese are the default; fourteen additional editions are optional and reuse the same common file. Final launcher/package byte counts belong to the release checkpoint, not this resource-only total."
+    },
+    "locales": {
+      "codes": [
+        "eng",
+        "zhs",
+        "zht",
+        "deu",
+        "esp",
+        "fra",
+        "ind",
+        "ita",
+        "jpn",
+        "kor",
+        "pol",
+        "ptb",
+        "rus",
+        "spa",
+        "tha",
+        "tur"
+      ],
+      "checkpoint": "4e4ce0692a01132de613c01e3cb6a8a56f0d001c",
+      "checks": 38644,
+      "model_event_descriptions": 53072,
+      "failures": 0,
+      "unexpanded_templates": 0,
+      "receipt": "ui11-sixteen-final-locale-runtime-i-4c191c83846c.json",
+      "limits": "Original missing translations use English fallback; Thai omits 1966 bound keys, other non-English editions 91-129. Calculator-only instructions retain reviewed English outside ZHS; early boot messages remain ENG/ZHS. Exact Godot glyph ink/kerning is not claimed."
+    },
+    "memory": {
+      "allocation_ceiling_bytes": 25165824,
+      "decoded_image_cache_bytes": 5242880,
+      "image_keys": 480,
+      "tile_group_cache_bytes": 6291456,
+      "tile_group_pages": 48,
+      "failed_d_allocation_bytes": 23874780,
+      "failed_d_reason": "Ordinary Ndless loader: [Zehn] Memory allocation failed! Single contiguous OS allocation failed despite being below the build ceiling.",
+      "verified_f_allocation_bytes": 19755048,
+      "f_scope": "Ordinary Firebird/Ndless startup passed. This does not by itself establish gameplay latency or final K memory acceptance.",
+      "cache_checks": {
+        "content_tiles_regression": 16396600,
+        "content_cache_age_regression": 5966
+      },
+      "cache_receipt": "ui11f-cache-correctness-bb90aaca0279.json"
+    },
+    "secondary_combat": {
+      "checkpoint": "f16573e1b9c6da390cd9944bd447acb4dc0482d3",
+      "checks": 325107,
+      "receipt": "ui11j-combat-secondary-assets-7178b28eabeb.json",
+      "scope": "Actual final common/English assets; J test and app.cpp renderer recompiled, unchanged I core library reused. Entire canonical State including RNG compared with/without repeated-evoke/passive observers; real Gold-Plated Cables WorldStage activation covered.",
+      "independent_highlight_checks_at_i": 12592419,
+      "card_motion_bytes": 5540,
+      "shared_spark_metadata_bytes": 10760
+    },
+    "secondary_rooms": {
+      "checkpoint": "4e4ce0692a01132de613c01e3cb6a8a56f0d001c",
+      "checks": 105,
+      "receipt": "ui11-room-final-asset-canonical-i-318ee8e5334f.json",
+      "scope": "Actual final common/English assets, successful Heal/chest triggers, restored-room suppression, expiry, inventory arrival/flash separation, exact merchant rug culling and canonical save/RNG invariance."
+    },
+    "bestiary_phases": {
+      "checkpoint": "49340f020bfbe96c49cc6de71aa122e1556c269c",
+      "checks": 139,
+      "receipt": "ui11h-bestiary-phase-correct-fixture-ab6202c82be3.json",
+      "scope": "Detached selected-monster phase/liveness facts and multi-actor stagger; fixture skips regional headers and links unchanged H core. Canonical save bytes remain unchanged.",
+      "resource_fixture": "Historical UI10 format39 English logical pack; this phase/canonical test is not a final-art render or ordinary calculator performance test."
+    },
+    "remaining_platform_mappings": [
+      "Bounded CPU particle counts, deterministic trajectories and sampled card paths replace dense GPU particles/turbulence/trails.",
+      "Exhaust noise, room smoke silhouette, HDR bloom, continuous subpixel rasterization and complete material variants are not pixel-identical desktop shader reproductions.",
+      "Actor duplicate hue uses bounded quantized CPU color treatment; font advances and main layout are integer-LCD adaptations.",
+      "Final K ordinary Firebird interaction/performance and packaged launcher sizes are pending release-owner verification; no physical-calculator performance or 95% fidelity score is asserted."
+    ],
+    "reports": [
+      "ui11-lcd-adaptation-0.17.md",
+      "storage-memory-ui11-0.17.md",
+      "localization-ui11-0.17.md",
+      "combat-secondary-ui11-0.17.md",
+      "room-vfx-ui11-0.17.md"
+    ],
+    "game_over_readability": {
+      "fixture_checkpoint": "02f0f4b266dc1ac9578a43e02521a07d95d647de",
+      "runtime_checkpoint": "7722cad8adb6626081b0100e5017d3de095904c5",
+      "checks": 176,
+      "build_receipt": "ui11-final-game-over-readable-build-e4bc30c76261.json",
+      "receipt": "ui11-final-game-over-readable-canonical-d246a073ed6e.json",
+      "source_changed": false,
+      "scope": "Asset-independent correctness: actual L app.cpp, pointer.cpp, ui_input.cpp and map_preview_input.cpp recompiled against unchanged I core. Original score/badge/history/release timing plus long-summary scroll bounds, two-category keyboard focus wrap, actual render auto-reveal/visible hit region and canonical SaveData/RNG preservation. Not an actual-font screenshot or calculator performance gate.",
+      "failed_fixture_receipts": {
+        "ui11k-game-over-readable-canonical-7526e18efcac.json": "Fixture queried intro_delay before binding the event-room presentation facts; explicit sync now precedes delay selection.",
+        "ui11l-game-over-readable-canonical-d8ccfb009281.json": "Fixture contained only one focus category, so Left correctly returned to the same item. Two valid Strike/Anchor discovery categories now exercise wrap."
+      },
+      "production_change_for_fixture_failures": false
+    }
   }
 }

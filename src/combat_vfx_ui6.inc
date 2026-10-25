@@ -52,7 +52,7 @@ static void combat_power_popups(Canvas&c){
    const char*title=ui_status_title(a,p.id);const int width=mn(110,c.width(title,10)),left=mx(18,mn(318-width,x-width/2));
    text.picture(ui_status_image(a,p.id),left-16,y+2,13,13,192);
    health_label(text,title,left,y,width,10,rgb(255,246,226),Ink);
-   const char*ended=a.content.world_string("vfx","POWER_WEARS_OFF");if(!*ended)ended=a.content.english()?"Wears Off":"效果结束";
+   const char*ended=a.content.world_string("vfx","POWER_WEARS_OFF");if(!*ended)ended=a.content.language()!=2?"Wears Off":"效果结束";
    text.text(ended,left,y+11,8,rgb(255,246,226),110);continue;
   }
   // Icon + echo use the authored 0.4 -> 0.8 scale and low opacity.
@@ -114,7 +114,7 @@ static void combat_damage_popups(Canvas&c){
    const unsigned alpha=ms<=500?255u:255u*CombatCardMotion::sine(unsigned(2000-ms)*1024u/1500u)/1024u;
    Canvas text=c;text.opacity=uint8_t(unsigned(c.opacity)*alpha/255u);
    const unsigned color=CombatCardMotion::cubic(unsigned(ms),2000u)*255u/1024u;
-   const char*label=a.content.world_string("vfx","BLOCKED");if(!*label)label=a.content.english()?"Blocked":"格挡";
+   const char*label=a.content.world_string("vfx","BLOCKED");if(!*label)label=a.content.language()!=2?"Blocked":"格挡";
    combat_damage_text(text,label,cx,cy,scale,blend(rgb(33,192,255),rgb(255,246,226),color));continue;
   }
   // The original integration uses 2000px/s^2 gravity, initial vertical

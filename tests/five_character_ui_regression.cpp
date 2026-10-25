@@ -110,7 +110,8 @@ static void directory_and_characters(){
         const char*captures[]={"ironclad-character","silent-character","defect-character","regent-character","necro-character"};
         capture(captures[character]);
     }
-    a.selected_character=Character::Ironclad;a.input(Key::Left);CHECK(a.selected_character==Character::Necrobinder);a.input(Key::Right);CHECK(a.selected_character==Character::Ironclad);
+    a.selected_character=Character::Ironclad;a.input(Key::Left);CHECK(a.character_random);a.input(Key::Right);CHECK(!a.character_random&&a.selected_character==Character::Ironclad);
+    const auto random=hit(HitKind::UiAction,int(UiAction::SelectRandomCharacter));CHECK(random.enabled&&random.x==character_select_layout::portrait_x(5)-1);
     start(Character::Regent);a.input(Key::Collection);action(UiAction::LibraryCards);const int debris=spire_test::library_model_index(a,Debris);CHECK(debris>=0);
     a.library_upgraded=true;a.select_library_item(debris);CHECK(card_from_token(a.detail_card).kind==Debris&&!card_from_token(a.detail_card).upgraded);
     a.render();for(int i=0;i<a.hit_count;++i)CHECK(a.hits[i].kind!=HitKind::UiAction||a.hits[i].value!=int(UiAction::ToggleCardUpgrade));

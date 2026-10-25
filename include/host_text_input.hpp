@@ -32,12 +32,13 @@ static constexpr CalculatorTextKey CalculatorTextKeys[]={
     {0,0x80,'0'},{1,0x80,'1'},{6,0x10,'2'},{1,0x08,'3'},{2,0x80,'4'},
     {5,0x40,'5'},{2,0x08,'6'},{3,0x80,'7'},{6,0x40,'8'},{3,0x08,'9'},
     {5,0x10,'.'},{5,0x04,'-'},{6,0x04,'+'},{5,0x01,'\''},{7,0x400,','},
-    {5,0x200,8},{0,0x02,13},{6,0x80,27}
+    {5,0x200,8},{0,0x02,13},{0,0x01,13},{6,0x80,27}
 };
 template<class Emit> void calculator_text_edges(const uint16_t*current,const uint16_t*previous,Emit emit){
     const bool shift=current[7]&0x100;
     for(const auto&key:CalculatorTextKeys)if((current[key.row]&key.mask)&&!(previous[key.row]&key.mask)){
-        int code=key.character;if(shift&&code>='a'&&code<='z')code-=32;emit(code);
+        int code=key.character;if(shift&&code>='a'&&code<='z')code-=32;
+        else if(shift&&code=='-')code='_';emit(code);
     }
 }
 } // namespace spire

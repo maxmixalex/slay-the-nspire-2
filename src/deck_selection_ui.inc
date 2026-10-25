@@ -5,12 +5,12 @@ static void card_selection_prompt(Canvas&c,const char*text){
     using namespace deck_selection_layout;
     if(!text||!*text)return;
     Canvas label=c;label.bold_face=5;
-    const int width=mn(312,mx(24,label.width(text,PromptSize)+2*PromptPadding));
+    const int width=mn(208,mx(24,label.width(text,PromptSize)+2*PromptPadding));
     Canvas background=c;background.opacity=uint8_t(div255(unsigned(background.opacity)*192));
     background.rect(160-width/2,PromptY,width,PromptH,0);
     Canvas shadow=label;shadow.opacity=uint8_t(div255(unsigned(shadow.opacity)*64));
-    shadow.fitted(text,161-width/2+PromptPadding,PromptY+1,width-2*PromptPadding,PromptH,PromptSize,PromptSize,0,true,true);
-    label.fitted(text,160-width/2+PromptPadding,PromptY+1,width-2*PromptPadding,PromptH,PromptSize,PromptSize,rgb(255,246,226),true,true);
+    shadow.fitted(text,161-width/2+PromptPadding,PromptY+1,width-2*PromptPadding,PromptH,PromptSize,PromptSize,0,true,false);
+    label.fitted(text,160-width/2+PromptPadding,PromptY+1,width-2*PromptPadding,PromptH,PromptSize,PromptSize,rgb(255,246,226),true,false);
 }
 static LocalizedValue deck_selection_amount(const void*,const char*key){
     return wt_equal(key,"Amount")?LocalizedValue{true,1,1,nullptr}:LocalizedValue{};
@@ -18,7 +18,7 @@ static LocalizedValue deck_selection_amount(const void*,const char*key){
 static void deck_selection_prompt(Canvas&c){
     const char*key=c.a.game.phase==Phase::Upgrade?"TO_UPGRADE":c.a.game.phase==Phase::Transform?"TO_TRANSFORM":"TO_REMOVE";
     char prompt[256]{};LocalizedTemplate formatted(prompt,sizeof prompt,deck_selection_amount,nullptr);
-    formatted.format(c.a.content.world_string("card_selection",key));card_selection_prompt(c,prompt);
+    formatted.for_language(c.a.content.language()).format(c.a.content.world_string("card_selection",key));card_selection_prompt(c,prompt);
 }
 static void card_selection_upgrades_control(Canvas&c){
     auto&a=c.a;
@@ -30,10 +30,9 @@ static void card_selection_upgrades_control(Canvas&c){
     // The original Label is fixed 27px inside a .75 parent: native 4px.
     // Card fitting has a 5px floor, so this authored label must bypass it.
     // Its 12px black outline at .5 alpha projects to a two-pixel radius.
-    const int x=ToggleX+ToggleIcon+1,y=ToggleY+2,radius=reference_viewport::project(9);
+    const int x=ToggleX+ToggleIcon+1,y=ToggleY+2,radius=0;
     Canvas outline=text;outline.opacity=uint8_t(div255(unsigned(text.opacity)*128));
-    for(int dy=-radius;dy<=radius;++dy)for(int dx=-radius;dx<=radius;++dx)
-        if((dx||dy)&&dx*dx+dy*dy<=radius*radius)outline.text(label,x+dx,y+dy,ToggleSize,0,140,1);
+    outline.text(label,x+1,y+1,ToggleSize,0,140,1);
     text.text(label,x,y,ToggleSize,rgb(239,200,81),140,1);
     c.action(ToggleX,ToggleY,width+2,ToggleIcon,UiAction::DeckViewUpgrades);
 }

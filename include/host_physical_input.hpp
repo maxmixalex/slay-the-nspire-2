@@ -2,11 +2,18 @@
 #include "host_text_input.hpp"
 #include "input_bindings.hpp"
 namespace spire {
-constexpr unsigned CalculatorPhysicalKeyCount=sizeof(CalculatorTextKeys)/sizeof(CalculatorTextKeys[0])+2;
+constexpr unsigned CalculatorPhysicalKeyCount=sizeof(CalculatorTextKeys)/sizeof(CalculatorTextKeys[0])+9;
 template<class Visit>void calculator_physical_keys(Visit visit){
     unsigned index=0;for(const auto&key:CalculatorTextKeys)visit(index++,key.row,key.mask,normalize_input_key(key.character));
     visit(index++,6,0x200,9); // TAB
     visit(index++,7,0x100,InputShift);
+    visit(index++,7,0x200,InputControl);
+    visit(index++,6,0x08,InputDoc);
+    visit(index++,6,0x20,InputMenu);
+    visit(index++,5,0x02,InputVar);
+    visit(index++,6,0x01,InputFlag);
+    visit(index++,0,0x200,InputHome);
+    visit(index++,5,0x80,InputCatalog);
 }
 // A host samples a matrix; saved bindings use the same normalized key codes
 // as desktop/browser. Repeats are emitted for held keys, then App only repeats

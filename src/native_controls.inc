@@ -73,21 +73,21 @@ static void native_back(Canvas&c,int x,int y,int w,int h,const char*,bool enable
 // its independent Control origin. The hit rectangle is a different node.
 static void native_original_back(Canvas&c,uint32_t opened=UINT32_MAX){
  auto&a=c.a;const unsigned age=a.map_clock_ms-opened;
- const int entry=opened==UINT32_MAX||age>=350?0:-34*(4096-room_curve::back_out(age*4096/350))/4096;
- const auto visual=c.control_visual("ORIGINAL_BACK",-8+entry,173,38,21,ButtonFamily::Back,false,true);
- const int pivot_x=-4+entry,pivot_y=180,scale=int(visual.scale);
+ const int entry=opened==UINT32_MAX||age>=350?0:-27*(4096-room_curve::back_out(age*4096/350))/4096;
+ const auto visual=c.control_visual("ORIGINAL_BACK",0+entry,215,40,24,ButtonFamily::Back,false,true);
+ const int pivot_x=0+entry,pivot_y=226,scale=int(visual.scale);
  const auto draw=[&](Canvas&layer,int id,int x,int y,int w,int h,unsigned alpha,unsigned mode){
   if(id>=0)layer.picture(id,pivot_x+(x+entry-pivot_x)*scale/4096,pivot_y+(y-pivot_y)*scale/4096,
                        mx(1,w*scale/4096),mx(1,h*scale/4096),alpha,mode);
  };
  const int back=a.content.world_image("common","BACK"),outline=a.content.world_image("common","BACK_OUTLINE");
  Canvas shadow=c;shadow.tint_red=shadow.tint_green=shadow.tint_blue=0;
- draw(shadow,back,-5,172,42,29,64,presentation::Normal);
- if(visual.hover)draw(c,outline,-8,170,44,30,unsigned(visual.hover)*255/4096,presentation::Add);
+ draw(shadow,back,1,210,47,32,64,presentation::Normal);
+ if(visual.hover)draw(c,outline,-2,208,49,34,unsigned(visual.hover)*255/4096,presentation::Add);
  Canvas face=c;face.brightness=uint8_t(div255(unsigned(face.brightness)*visual.shade));
- draw(face,back,-7,170,42,29,255,presentation::Normal);
- draw(face,a.content.world_image("common","BACK_ARROW"),5,175,15,15,255,presentation::Normal);
- c.action(-8+entry,173,38,21,UiAction::Back);
+ draw(face,back,-1,208,47,32,255,presentation::Normal);
+ draw(face,a.content.world_image("common","BACK_ARROW"),11,217,16,16,255,presentation::Normal);
+ c.action(0+entry,215,40,24,UiAction::Back);
 }
 static void native_close(Canvas&c,int x,int y,int w,int h,bool selected=false){native_control(c,"BACK",x,y,w,h,"",true,selected,true);}
 static void native_confirm(Canvas&c,int x,int y,int w,int h,const char*label,bool enabled=true,bool selected=false){native_control(c,"CONFIRM",x,y,w,h,label,enabled,selected);}
@@ -97,24 +97,24 @@ static void native_original_confirm(Canvas&c,UiAction action,uint32_t opened=UIN
  const int entry=a.native_confirm_motion.observe(key,enabled,opened,a.map_clock_ms);
  // NConfirmButton derives (1520,906) from the actual 1680x1260 viewport.
  // Its child textures use the same full AtlasTexture fitting as Back.
- const auto visual=c.control_visual("ORIGINAL_CONFIRM",290+entry,173,38,21,ButtonFamily::Action,false,true);
- const int pivot_x=324+entry,pivot_y=180,scale=int(visual.scale);
+ const auto visual=c.control_visual("ORIGINAL_CONFIRM",268+entry,204,52,30,ButtonFamily::Action,false,true);
+ const int pivot_x=320+entry,pivot_y=217,scale=int(visual.scale);
  const auto draw=[&](Canvas&layer,int id,int x,int y,int w,int h,unsigned alpha,unsigned mode){
   if(id>=0)layer.picture(id,pivot_x+(x+entry-pivot_x)*scale/4096,pivot_y+(y-pivot_y)*scale/4096,
                        mx(1,w*scale/4096),mx(1,h*scale/4096),alpha,mode);
  };
  const int face=a.content.world_image("common","CONFIRM"),outline=a.content.world_image("common","CONFIRM_OUTLINE");
  Canvas shadow=c;shadow.tint_red=shadow.tint_green=shadow.tint_blue=0;
- draw(shadow,face,286,172,42,29,64,presentation::Normal);
- if(enabled&&visual.hover)draw(c,outline,283,170,44,30,unsigned(visual.hover)*255/4096,presentation::Add);
+ draw(shadow,face,260,199,61,42,64,presentation::Normal);
+ if(enabled&&visual.hover)draw(c,outline,257,197,63,44,unsigned(visual.hover)*255/4096,presentation::Add);
  Canvas button=c;button.brightness=uint8_t(div255(unsigned(c.brightness)*visual.shade));
- draw(button,face,284,170,42,29,255,presentation::Normal);
+ draw(button,face,258,197,61,42,255,presentation::Normal);
  button.tint_green=uint8_t(div255(unsigned(button.tint_green)*246));button.tint_blue=uint8_t(div255(unsigned(button.tint_blue)*226));
- draw(button,a.content.world_image("common","CONFIRM_TICK"),296,175,15,15,255,presentation::Normal);
- c.action(290+entry,173,38,21,action,enabled);
+ draw(button,a.content.world_image("common","CONFIRM_TICK"),280,207,20,20,255,presentation::Normal);
+ c.action(268+entry,204,52,30,action,enabled);
 }
 static void native_end_turn(Canvas&c,bool enabled){
- auto&a=c.a;const auto visual=c.control_visual("END_TURN",267,188,42,17,ButtonFamily::EndTurn,false,enabled);
+ auto&a=c.a;const auto visual=c.control_visual("END_TURN",combat_controls::EndX,combat_controls::EndY,combat_controls::EndW,combat_controls::EndH,ButtonFamily::EndTurn,false,enabled);
  const int shift=(visual.y+2048)/4096,normal=a.content.ui_image(U_EndTurnNative),hover=a.content.ui_image(U_EndTurnHover);
  bool playable=false;for(unsigned i=0;i<a.game.hand.count;i++)if(can_play_card(a.game,a.game.hand.ids[i])){playable=true;break;}
  const uint16_t encounter=a.game.enemy_world.active?uint16_t(256+unsigned(a.game.enemy_world.encounter)):a.game.encounter;
@@ -124,26 +124,26 @@ static void native_end_turn(Canvas&c,bool enabled){
   if(!alpha||glow_image<0)return;
   // All three original TextureRects have the same 512x256 bounds and
   // (256,128) pivot. Keep their shared center through the 320px adaptation.
-  const int w=(49*scale+2048)/4096,h=(24*scale+2048)/4096;
+  const int w=(74*scale+2048)/4096,h=(36*scale+2048)/4096;
   Canvas light=c;light.tint_red=uint8_t(div255(unsigned(c.tint_red)*red));
   light.tint_green=uint8_t(div255(unsigned(c.tint_green)*green));
-  light.picture(glow_image,264+(49-w)/2,184+shift+(24-h)/2,w,h,unsigned(alpha)*255/4096,presentation::Add);
+  light.picture(glow_image,244+(74-w)/2,161+shift+(36-h)/2,w,h,unsigned(alpha)*255/4096,presentation::Add);
  };
  draw_glow(glow.pulse_alpha,glow.pulse_scale,64,223);
  Canvas layer=c;layer.brightness=uint8_t(div255(unsigned(c.brightness)*visual.shade));
- if(normal>=0){layer.picture(normal,264,184+shift,49,24);
-  if(visual.hover&&hover>=0)layer.picture(hover,264,184+shift,49,24,unsigned(visual.hover)*255/4096);
- }else layer.picture(A_EndTurn,264,184+shift,49,24);
+ if(normal>=0){layer.picture(normal,244,161+shift,74,36);
+  if(visual.hover&&hover>=0)layer.picture(hover,244,161+shift,74,36,unsigned(visual.hover)*255/4096);
+ }else layer.picture(A_EndTurn,244,161+shift,74,36);
  draw_glow(glow.base_alpha,glow.base_scale,0,212);
  const uint16_t cream=rgb(255,246,226),focus=playable?rgb(255,79,67):rgb(0,255,255);
  uint16_t color=enabled?blend(cream,focus,unsigned(visual.hover)*255/4096):Muted;
- layer.centered("结束回合",268,194+shift,42,8,rgb(19,31,46));layer.centered("结束回合",267,193+shift,42,8,color);
+ layer.centered("结束回合",248,174+shift,68,10,rgb(19,31,46));layer.centered("结束回合",247,173+shift,68,10,color);
  // Bar is a sibling of Visuals: its authored (8,-11) offset does not
  // inherit the pressed artwork's downward shift. No temporary image/pool.
  if(a.long_press){
  const auto bar=a.end_turn_hold.visual();
  if(bar.alpha_q12){
-  const int x=269,y=186,w=int((uint64_t(bar.width_q12)*4+21*2048)/(21*4096)),h=1;
+  const int x=249,y=163,w=int((uint64_t(bar.width_q12)*4+21*2048)/(21*4096)),h=1;
   const unsigned alpha=(bar.alpha_q12*255+2048)/4096;
   Canvas outline=c;outline.opacity=uint8_t(div255(unsigned(c.opacity)*div255(alpha*128)));
   outline.rect(x-1,y-1,w+2,h+2,rgb(0,0,0));
@@ -155,5 +155,5 @@ static void native_end_turn(Canvas&c,bool enabled){
   for(int yy=mx(0,y);yy<mn(c.clip_h,y+h);++yy)for(int xx=mx(0,x);xx<mn(c.clip_w,x+w);++xx)fill.paint(yy*c.pitch+xx,color,255,presentation::Add);
  }
  }
- c.hit(267,188,42,17,HitKind::Command,(int)Key::EndTurn,enabled);
+ c.hit(combat_controls::EndX,combat_controls::EndY,combat_controls::EndW,combat_controls::EndH,HitKind::Command,(int)Key::EndTurn,enabled);
 }

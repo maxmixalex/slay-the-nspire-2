@@ -5,7 +5,7 @@ const char* App::input_command_title(unsigned command)const{
     const char*localized=content.world_string("settings_ui",key);if(*localized)return localized;
     static const char*const english[]={"Select","Cancel / Exit","View Map","Top Panel","View Deck / Page Left","View Draw Pile","View Discard Pile","View Exhaust / Page Right","Confirm","End Turn","Peek","Up","Down","Left","Right","Select Card 1","Select Card 2","Select Card 3","Select Card 4","Select Card 5","Select Card 6","Select Card 7","Select Card 8","Select Card 9","Select Card 10"};
     static const char*const chinese[]={"选择","取消 / 退出","查看地图","顶部面板","查看牌组 / 上一页","查看抽牌堆","查看弃牌堆","查看消耗堆 / 下一页","确认","结束回合","查看战斗","向上","向下","向左","向右","选择卡牌 1","选择卡牌 2","选择卡牌 3","选择卡牌 4","选择卡牌 5","选择卡牌 6","选择卡牌 7","选择卡牌 8","选择卡牌 9","选择卡牌 10"};
-    return command<InputCommandCount?(content.english()?english[command]:chinese[command]):"";
+    return command<InputCommandCount?(content.language()!=2?english[command]:chinese[command]):"";
 }
 void App::begin_key_rebind(unsigned command){
     if(!settings_open||!settings_tab||binding_listening>=0||command>=InputCommandCount)return;
@@ -22,14 +22,14 @@ void App::physical_keys_cancel(){
     for(auto&held:held_inputs){if(held.code&&held.key<=unsigned(Key::Debug))map_drawing_key_release(Key(held.key));held={};}
     bestiary.cancel_presses(map_clock_ms);
 }
-static bool title_patch_notes_available(const App&a){
-    return a.title&&!a.paused&&!a.settings_open&&!a.frontend_confirm&&!a.help&&!a.panel&&!a.library&&
-        !a.character_select&&!a.map_preview.open&&!a.compendium_open&&!a.statistics_open&&!a.history_open&&
-        !a.profiles_open&&!a.bestiary.open&&a.run_mode.screen==RunMenu::Closed&&
-        a.auxiliary.screen==AuxiliaryScreen::None&&a.detail_card<0&&a.detail_item<0;
-}
 bool App::physical_key(uint16_t code,bool pressed){
     code=normalize_input_key(code);if(!valid_input_key(code))return false;
+#if SPIRE_DEBUG_COMMANDS
+    if(code==InputFlag){if(pressed)input(Key::Debug);return true;}
+    if(debug_open){if(pressed){if(code==InputUp)debug_input(Key::Up);else if(code==InputDown)debug_input(Key::Down);
+        else if(code==InputLeft)debug_input(Key::Left);else if(code==InputRight)debug_input(Key::Right);
+        else if(code==9)debug_text(9);}return true;}
+#endif
     HeldInput*held=nullptr;for(auto&entry:held_inputs)if(entry.code==code){held=&entry;break;}
     if(!pressed){if(!held)return false;const unsigned released=held->key;const uint32_t context=held->context;*held={};
         release_end_turn_hold(code);
@@ -53,9 +53,6 @@ bool App::physical_key(uint16_t code,bool pressed){
         else if(released<=unsigned(Key::Debug))map_drawing_key_release(Key(released));
         else if(released==254)toggle_combat_peek();
         else if(released==253&&run_mode.screen==RunMenu::Custom)ui_action(UiAction::RandomizeRun);
-        else if(released==252&&title_patch_notes_available(*this))open_auxiliary(AuxiliaryScreen::PatchNotes);
-        else if(released==251&&auxiliary.screen==AuxiliaryScreen::PatchNotes)close_auxiliary();
-        else if((released==248||released==247)&&auxiliary.screen==AuxiliaryScreen::PatchNotes)auxiliary_control(released==248?AuxiliaryPrevious:AuxiliaryNext);
         else if(released==246&&auxiliary.screen!=AuxiliaryScreen::None)auxiliary_input(Key::Back);
         else if((released==245||released==244)&&game_over_available()&&game_over_button_ready()&&context==input_context()){
             if(released==245){if(game_over_ui::ViewRunEnabled)open_game_over_history();}
@@ -78,6 +75,7 @@ bool App::physical_key(uint16_t code,bool pressed){
         if(rebind_input(input_bindings,binding_bank,unsigned(binding_listening),code)){binding_listening=-1;persist_preferences();}
         return true;
     }
+    if(calculator_keyboard&&code==InputControl&&!keyboard_only){input(Key::Potions);return true;}
     const unsigned bank=keyboard_only?1:0;unsigned command=InputCommandCount;
     for(unsigned i=0;i<InputCommandCount;++i)if(input_bindings.keys[bank][i]==code){command=i;break;}
     const auto dispatch=[&](Key key){held->key=uint8_t(key);
@@ -85,6 +83,7 @@ bool App::physical_key(uint16_t code,bool pressed){
         input(key);return true;};
     sync_ftues();
     if(detail_item>=0){
+        if(detail_item<WorldRelicKinds&&(command==unsigned(InputCommand::Peek)||code=='V'))return dispatch(Key::Statuses);
         if(command==unsigned(InputCommand::Left))return dispatch(Key::Left);
         if(command==unsigned(InputCommand::Right))return dispatch(Key::Right);
         if(command==unsigned(InputCommand::Cancel))return dispatch(Key::Back);
@@ -94,6 +93,7 @@ bool App::physical_key(uint16_t code,bool pressed){
     }
     if(ftue.active()){
         if(command==unsigned(InputCommand::Left)||command==unsigned(InputCommand::Right))ftue_input(command==unsigned(InputCommand::Left)?Key::Left:Key::Right);
+        else if(command==unsigned(InputCommand::Up)||command==unsigned(InputCommand::Down))ftue_input(command==unsigned(InputCommand::Up)?Key::Up:Key::Down);
         else if(command==unsigned(InputCommand::Select)||(!keyboard_only&&(code==13||(calculator_keyboard&&code=='5'&&command==InputCommandCount)))){
             if(ftue.id!=FtueId::CombatRules){held->key=243;held->context=input_context();}
         }
@@ -114,7 +114,6 @@ bool App::physical_key(uint16_t code,bool pressed){
     }
     if(auxiliary.screen!=AuxiliaryScreen::None){
         if(command==unsigned(InputCommand::Cancel)){held->key=246;return true;}
-        if(auxiliary.screen==AuxiliaryScreen::PatchNotes&&(command==unsigned(InputCommand::Left)||command==unsigned(InputCommand::Right))){held->key=command==unsigned(InputCommand::Left)?248:247;return true;}
     }
     if(command>=unsigned(InputCommand::Card1)&&command<InputCommandCount){
         if(auxiliary.screen!=AuxiliaryScreen::None)return true;
@@ -161,10 +160,6 @@ bool App::physical_key(uint16_t code,bool pressed){
         if(deck_selection_active()){if(deck_candidate_valid()){held->key=242;held->context=input_context();}return true;}
         if(world_selection_active()){sync_world_selection();if(world_selection_confirmable()){held->key=238;held->context=input_context();}return true;}
         if(game_over_available()){if(game_over_ui::ViewRunEnabled&&game_over_summary&&game_over_button_ready()){held->key=245;held->context=input_context();}return true;}
-        // NPatchNotesButton listens to MegaInput.confirm's release. Its
-        // title shortcut stays distinct from Select and the Enter fallback.
-        if(title_patch_notes_available(*this)){held->key=252;return true;}
-        if(auxiliary.screen==AuxiliaryScreen::PatchNotes){held->key=251;return true;}
         if(card_reward_interactive())return dispatch(Key::Detail);
         if(!title&&!paused&&!settings_open&&!frontend_confirm&&!help&&!panel&&!library&&detail_card<0&&detail_item<0){
             if(choice_phase(game.phase)||((game.phase==Phase::WorldRelicChoice||game.phase==Phase::OriginalEventChoice)&&!world_choice_is_card_reward()&&

@@ -20,6 +20,29 @@ static bool ui_feedback_bound(const App&a){const auto&f=a.combat_feedback;const 
  return f.active&&s.enemy_world.active&&f.seed==s.seed&&f.floor==s.floor&&f.combat==s.world.combat_count&&f.encounter==int(s.enemy_world.encounter);
 }
 static uint32_t ui_feedback_later(uint32_t a,uint32_t b){return int32_t(a-b)>0?a:b;}
+struct CombatOrbPoint {int x,y,size,radius;};
+static CombatOrbPoint combat_orb_point(const App&a,OrbSourcePoint position){
+ const auto&s=a.game;const auto camera=s.enemy_world.active?encounter_camera(s.enemy_world.encounter):EncounterCamera{};
+ const auto layout=a.creature_layout.right?a.creature_layout:combat_layout_for(s);const auto root=player_formation_point(s,camera.zoom);
+ const auto player=a.combat_player_pose();const auto anchors=player_anchors(s.character);
+ const int xx=anchors.intent_x*1024+position.x,yy=(anchors.intent_y+195)*1024+position.y;
+ const int x=s.enemy_world.active?combat_project_x(camera,layout,root.x+int(int64_t(xx)*camera.zoom/1024),false):player.x+xx*4/(21*1024);
+ const int y=s.enemy_world.active?combat_project_y(camera,layout,root.y+int(int64_t(yy)*camera.zoom/1024)):player.feet+yy*4/(21*1024);
+ return {x,y,health_bar::bounded(combat_project_extent(camera,layout,90),9,90),health_bar::bounded(combat_project_extent(camera,layout,30),5,30)};
+}
+void App::observe_orb_activation(const State&s,const CoreOrbNotice&notice){
+ if(&s!=&game||notice.kind>=unsigned(DOrb::Count)||!notice.slots||notice.slot>=notice.slots)return;
+ const uint32_t at=(ui_feedback_bound(*this)?combat_feedback.effect_at:animation)*33u;
+ // Keep the activating slot's position even after an evoke removes it or a
+ // new orb of the same kind occupies it. Beam endpoints are the actual
+ // command's selected targets, never a second random selection.
+ const auto p=combat_orb_point(*this,CombatOrbPresentation::target(notice.slots,notice.slot));
+ const uint32_t seed=at^(uint32_t(notice.kind+1)*0x4a56b39u)^(uint32_t(notice.slot+1)*0x906b1a4du);
+ combat_sparks.secondary(at,p.x,p.y,notice.evoke?CombatSparkMotion::OrbEvoke:CombatSparkMotion::OrbPassive,notice.kind,seed);
+ if(notice.evoke)for(unsigned slot=0;slot<unsigned(s.enemy_count);++slot)if(notice.targets&(1u<<slot)){
+  const auto target=combat_enemy_pose(int(slot));combat_sparks.secondary(at,p.x,p.y,CombatSparkMotion::OrbBeam,notice.kind,seed^slot,target.center_x,target.center_y);
+ }
+}
 static const WorldEnemyVisualAction*ui_enemy_attack_action(EnemyId kind,int node){
  // These source AttackCommands suppress their animator entirely. A zero
  // delay alone cannot identify that case: Cubex still triggers Attack.

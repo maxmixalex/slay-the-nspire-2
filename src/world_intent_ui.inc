@@ -13,14 +13,14 @@ static int ui_intent_image(const App&a,const UiIntentPart&part,const EnemyIntent
  return a.content.world_image("intents",part.image);
 }
 struct UiIntentValue {char value[16]{},repeat[16]{};int width=0,value_width=0;};
-static unsigned ui_intent_face(const App&a){return a.content.version()>=HistoryUi8ContentVersion&&a.content.english()?5u:0u;}
-static int ui_intent_size(const App&a,bool repeat=false){return a.content.font_size(repeat?4:5,ui_intent_face(a));}
+static unsigned ui_intent_face(const App&a){return a.content.version()>=HistoryUi8ContentVersion&&a.content.original_label_fonts()?5u:0u;}
+static int ui_intent_size(const App&a,bool repeat=false){return a.content.font_size(repeat?8:10,ui_intent_face(a));}
 static int ui_intent_text_width(const App&a,const char*text,int size){
  int width=0;while(*text)width+=a.content.glyph_metrics(utf8(text),size,ui_intent_face(a)).advance;return width;
 }
 static UiIntentValue ui_intent_value(const App&a,const UiIntentPart&part,const EnemyIntent&intent){
  UiIntentValue label;TextBuffer value{label.value,sizeof label.value,0},repeat{label.repeat,sizeof label.repeat,0};
- if(part.flag==EnemyIntentAttack){value.number(intent.damage);if(intent.hits>1){repeat.text(a.content.english()?"x":"×");repeat.number(intent.hits);}}
+ if(part.flag==EnemyIntentAttack){value.number(intent.damage);if(intent.hits>1){repeat.text(a.content.language()!=2?"x":"×");repeat.number(intent.hits);}}
  else if(part.flag==EnemyIntentStatus&&intent.status_cards>0)value.number(intent.status_cards);
  label.value_width=ui_intent_text_width(a,label.value,ui_intent_size(a));
  label.width=label.value_width+ui_intent_text_width(a,label.repeat,ui_intent_size(a,true));return label;
@@ -29,7 +29,7 @@ struct UiIntentCell {int x,y,w,h,size;uint16_t flag;};
 static unsigned ui_intent_cells(const App&a,int slot,CreaturePose pos,UiIntentCell*cells){
  const auto intent=a.combat_intent(slot);unsigned count=0;
  for(const auto&part:ui_intent_parts)if(intent.flags&part.flag)++count;
- if(!count)return 0;const int size=mn(14,mx(9,pos.width/int(count)));int width=0;
+ if(!count)return 0;const int size=mn(20,mx(14,pos.width/int(count)));int width=0;
  for(const auto&part:ui_intent_parts)if(intent.flags&part.flag)width+=mx(size,ui_intent_value(a,part,intent).width+2);
  int next=mx(1,mn(319-width,pos.intent_x-width/2));unsigned index=0;
  for(const auto&part:ui_intent_parts)if(intent.flags&part.flag){
@@ -56,7 +56,8 @@ static void native_enemy_intent(Canvas&c,int slot,CreaturePose pos){
    // MegaRichTextLabel's Regular locale substitution in Chinese.5/4px keeps
    // the source ratio; the former10/8px labels doubled their native size.
    const int x=center-label.width/2,y=cell.y+cell.size-2,repeat_y=y+mx(0,main_size-repeat_size);
-   for(int dy=-1;dy<=1;dy++)for(int dx=-1;dx<=1;dx++)if(dx||dy){faded.text(label.value,x+dx,y+dy,main_size,Ink);faded.text(label.repeat,x+label.value_width+dx,repeat_y+dy,repeat_size,Ink);}
+   Canvas shadow=faded;shadow.opacity=uint8_t(div255(unsigned(shadow.opacity)*144));
+   shadow.text(label.value,x+1,y+1,main_size,Ink);shadow.text(label.repeat,x+label.value_width+1,repeat_y+1,repeat_size,Ink);
    faded.text(label.value,x,y,main_size,rgb(255,246,226));faded.text(label.repeat,x+label.value_width,repeat_y,repeat_size,rgb(255,246,226));
   }
   // Each NIntent owns a separate hitbox. Its slot identity still routes

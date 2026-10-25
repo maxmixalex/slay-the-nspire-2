@@ -211,7 +211,7 @@ static bool inspect_relic_hover_target(const App&a,CardHoverTarget&target){
     if(collection&&!a.library_item_seen(1,a.detail_item))return false;
     // NInspectRelicScreen aligns to its stationary HoverTipRect, not the
     // entering popup or pointer. Related cards are on the opposite side.
-    target={};target.relic=a.detail_item;target.owner={92,47,134,159};target.detail=true;
+    target={};target.relic=a.detail_item;target.owner={relic_inspect_layout::PopupX,relic_inspect_layout::PopupY,relic_inspect_layout::PopupWidth,relic_inspect_layout::PopupHeight};target.detail=true;
     target.inspect_relic=true;target.canonical_relic=collection||a.history_open;target.historical=a.history_open;
     target.identity=0x74000000u|unsigned(a.detail_item)|(unsigned(a.detail_owned+1)<<12);return true;
 }

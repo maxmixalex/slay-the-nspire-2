@@ -5,6 +5,9 @@ No inferred relocations: every absolute word requires an ELF relocation.
 Unknown relocation kinds, TLS, constructors and undefined symbols fail closed.
 Format follows the Ndless r2022 zehn.h and genzehn.cpp allocation convention.
 """
+ALLOCATION_LIMIT = 24 * 1024 * 1024
+RELOCATION_ADDRESS_LIMIT = 1 << 24
+
 from pathlib import Path
 import struct
 import zlib
@@ -24,7 +27,7 @@ def build(source:Path,target:Path)->None:
         if s[2]&0x400 or name(s) in ('.init_array','.fini_array','.ctors'):raise ValueError('TLS/constructors unsupported')
     end=max(s[3]+s[5] for s in alloc if s[1]!=8)
     memory_end=max(s[3]+s[5] for s in alloc)
-    if memory_end>=0x1000000 or entry>=end:raise ValueError('Invalid image size or entry')
+    if memory_end>ALLOCATION_LIMIT or entry>=end:raise ValueError('Invalid image size or entry')
     image=bytearray(end);covered=bytearray(end)
     for s in alloc:
         if s[1]==8:
@@ -47,7 +50,8 @@ def build(source:Path,target:Path)->None:
             if kind in (2,38): # R_ARM_ABS32 / TARGET1
                 if sym[5]==0:raise ValueError('Absolute relocation against undefined symbol')
                 if sym[5]==0xfff1:continue # Absolute linker constant, not an image pointer.
-                if addr%4 or addr+4>end:raise ValueError('Unaligned/out-of-range relocation')
+                if addr%4 or addr+4>end or addr>=RELOCATION_ADDRESS_LIMIT:
+                    raise ValueError('Unaligned/out-of-range relocation')
                 value=struct.unpack_from('<I',image,addr)[0]
                 if value>memory_end:raise ValueError(f'Absolute word outside image: {value:x}')
                 relocs.add(addr)
@@ -61,9 +65,10 @@ def build(source:Path,target:Path)->None:
     prefix=32+len(reloc_data)+len(flag_data)+len(extra)
     allocation=prefix+memory_end
     # Ndless allocates the Zehn prefix as well as the loaded image/BSS. An
-    # image below 16 MiB can still exceed our limit once relocations and flags
-    # are included. Reject before compressing or replacing an existing file.
-    if allocation>0x1000000:raise ValueError(f'Zehn allocation exceeds 16 MiB: {allocation}')
+    # image below 24 MiB can still exceed the budget once relocations and
+    # flags are included. Relocation *locations* remain separately limited
+    # to 24 bits by Zehn; values may point into the larger zeroed BSS.
+    if allocation>ALLOCATION_LIMIT:raise ValueError(f'Zehn allocation exceeds 24 MiB: {allocation}')
     compressed=zlib.compress(image,9)
     result=struct.pack('<8I',0x6e68655A,1,prefix+len(compressed),len(relocs)+1,len(flag_pairs),len(extra),allocation,entry)+reloc_data+flag_data+extra+compressed
     target.write_bytes(result)

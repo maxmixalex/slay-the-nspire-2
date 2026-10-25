@@ -54,7 +54,7 @@ int named_key(const std::string& name){
         {"doc",keymap::doc},{"menu",keymap::menu},{"tab",keymap::tab},
         {"ctrl",keymap::ctrl},{"shift",keymap::shift},{"space",keymap::space},
         {"del",keymap::del},{"on",keymap::on},{"pad",keymap::pad},
-        {"var",keymap::var},{"plus",keymap::plus},{"minus",keymap::minus},
+        {"var",keymap::var},{"flag",keymap::flag},{"catalog",keymap::cat},{"plus",keymap::plus},{"minus",keymap::minus},
         {"up",100},{"down",101},{"left",102},{"right",103}
     };
     for(const auto& k:names)if(name==k.name)return k.id;

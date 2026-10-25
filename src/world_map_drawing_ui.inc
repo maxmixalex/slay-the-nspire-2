@@ -32,11 +32,11 @@ static void map_drawing_tools(Canvas&parent,const MapWindowSample*window){
     if(window){c.opacity=map_window_product(c.opacity,window->drawing_tools.alpha);
         c.brightness=map_window_product(c.brightness,window->drawing_tools.rgb);}
     // DrawingTools: (56,-108)..(264,-40); 60/60/68 source-unit buttons.
-    const int left=12,top=216,width=46,height=15;
+    const int left=64,top=216,width=55,height=19;
     Canvas background=c;background.tint_red=background.tint_green=background.tint_blue=0;
     if(!background.nine_image(a.content.ui_image(I7_TinyPanel),left,top,width,height,2,2,2,2,192))background.rect(left,top,width,height,0);
     int hovered=-1;
-    for(unsigned tool=0;tool<3;++tool){const int x=14+int(tool)*13,w=tool==2?15:13;
+    for(unsigned tool=0;tool<3;++tool){const int x=66+int(tool)*17,w=17;
         const bool focus=a.map_drawing.tool_focus==int(tool)||(a.pointer.visible&&a.pointer.x>=x&&a.pointer.x<x+w&&a.pointer.y>=top&&a.pointer.y<top+height);
         const bool selected=(tool==0&&a.map_drawing.mode==MapDrawingMode::Draw)||(tool==1&&a.map_drawing.mode==MapDrawingMode::Erase);
         if(focus)hovered=int(tool);
@@ -47,7 +47,9 @@ static void map_drawing_tools(Canvas&parent,const MapWindowSample*window){
         if(image>=0)icon.picture(image,x+(w-size)/2,top+(height-size)/2,size,size,active?255:128,presentation::Add);
         if(a.map_drawing_ready())c.hit(x-1,top-1,w+1,height+2,HitKind::MapDrawingTool,int(tool));
     }
-    if(a.map_drawing.tool_focus>=0){c.text("F",2,top+2,8,Gold,9);}
+    if(a.map_drawing.tool_focus>=0){char hotkey[16]{};
+        input_key_label(a.input_bindings.keys[a.keyboard_only?1:0][unsigned(InputCommand::Exhaust)],hotkey,sizeof hotkey,a.calculator_keyboard);
+        c.text_fitted(hotkey,42,top+4,20,8,Gold,6);}
     if(hovered>=0&&a.map_drawing_ready()){
         const char*keys[]={"DRAWING_BUTTON","ERASING_BUTTON","CLEAR_DRAWING"};char key[80]{};
         TextBuffer title_key{key,sizeof key,0};title_key.text(keys[hovered]);title_key.text(hovered==2?".title":a.pointer.visible?".title_mkb":".title_controller");
@@ -56,7 +58,7 @@ static void map_drawing_tools(Canvas&parent,const MapWindowSample*window){
         const char*body=a.content.world_string("map",key);
         // All three source controls anchor to DrawingTools+(10,-132),
         // not to the particular icon or a separate full-width reader.
-        if(*title_copy)source_hover_box(c,title_copy,body,left+2,top-25);
+        if(*title_copy)source_hover_box(c,title_copy,body,left+width+6,top-source_hover_height(c,title_copy,body)-5);
     }
 }
 static bool map_drawing_cursor(Canvas&c){

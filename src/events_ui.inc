@@ -30,9 +30,12 @@ static void event_option_text(Canvas&c,int option,char*out,size_t size){
 }
 static void event_reader_screen(Canvas&c){
     auto&a=c.a;a.hit_count=0;c.dim(0,0,320,240,235);
-    c.ui(U_RewardPanel,4,5,312,230);c.centered(event_title(c),18,18,278,16,Gold);c.close_button(289,10);
+    const bool crystal=a.game.phase==Phase::OriginalEventChoice&&a.game.original_events.selection==OriginalEventSelection::Crystal;
+    const char*title=crystal?a.content.world_string("events","CRYSTAL_SPHERE.minigame.instructions.title"):event_title(c);
+    c.ui(U_RewardPanel,4,5,312,230);c.centered(title,18,18,278,16,Gold);
     char full[12288]{};const char*text=a.content.string(event_body_text(a.game));
-    if(a.game.original_events.active){
+    if(crystal){a.localized_text("events","CRYSTAL_SPHERE.minigame.instructions.description",full,sizeof full);text=full;}
+    else if(a.game.original_events.active){
         const bool ancient=ui_ancient_event(a.game.original_events.id);if(ancient)a.sync_ancient_dialogue();
         TextBuffer b{full,sizeof full,0};
         if(ancient&&a.ancient_dialogue.count){
@@ -61,7 +64,7 @@ static void event_screen(Canvas&c){
     c.centered(event_title(c),134,29,178,16,Gold);
     const char*text=a.content.string(event_body_text(s));int lines=c.paragraph(text,142,59,163,0,0,10);
     a.scroll=mn(mx(0,a.scroll),mx(0,lines-6));c.paragraph(text,142,59,163,6,a.scroll,10);
-    c.text("全文 I",145,139,10,Gold);c.action(136,135,78,21,UiAction::ReadEvent);
+    // The inline scroll preserves the event context; no duplicate reader button.
     c.text("↑",271,139,10,a.scroll?Gold:Muted);c.hit(262,135,25,21,HitKind::Scroll,-1,a.scroll>0);
     c.text("↓",298,139,10,a.scroll+6<lines?Gold:Muted);c.hit(289,135,26,21,HitKind::Scroll,1,a.scroll+6<lines);
     if(lines>6){c.rect(312,59,1,74,rgb(68,66,61));c.rect(312,59+65*a.scroll/mx(1,lines-6),1,9,Gold);}

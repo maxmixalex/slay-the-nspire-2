@@ -21,7 +21,7 @@ static LocalizedValue journal_text_value(const void*context,const char*key){
 }
 static void journal_text(const App&a,const char*key,const char*fallback,const JournalTextValues&values,char*out,unsigned size){
  const char*format=a.content.world_string("run_history",key);
- LocalizedTemplate(out,size,journal_text_value,&values,"Energy","Stars",a.content.english()).format(*format?format:fallback);
+ LocalizedTemplate(out,size,journal_text_value,&values,"Energy","Stars",a.content.english()).for_language(a.content.language()).format(*format?format:fallback);
 }
 static void journal_card_name(const App&a,unsigned token,char*out,unsigned size){
  const auto card=card_from_token(int(token));TextBuffer text{out,size,0};
@@ -54,7 +54,7 @@ void App::history_journal_line(const UiHistoryJournalEntry&e,char*out,unsigned s
   if(variable==HistoryChoiceVariable::Relic)values.relic=relic_title(RelicId(e.detail));
   else if(variable==HistoryChoiceVariable::Potion)values.potion=journal_potion_name(*this,e.detail);
   else if(variable==HistoryChoiceVariable::PotionRarity){const char*keys[]={"","POTION_RARITY.COMMON","POTION_RARITY.UNCOMMON","POTION_RARITY.RARE","POTION_RARITY.EVENT","POTION_RARITY.TOKEN"};if(e.detail<=5)values.rarity=content.world_string("gameplay_ui",keys[e.detail]);}
-  LocalizedTemplate(choice,sizeof choice,journal_text_value,&values,"Energy","Stars",content.english()).format(content.string(e.model));
+  LocalizedTemplate(choice,sizeof choice,journal_text_value,&values,"Energy","Stars",content.english()).for_language(content.language()).format(content.string(e.model));
   values.choice=choice;key="MAP_POINT_HISTORY.chose";fallback="Chose {Choice}";break;
  }
  case K::ModifierChoice:values.choice=run_modifier_text(RunModifier(e.model));key="MAP_POINT_HISTORY.chose";fallback="Chose {Choice}";break;
@@ -70,7 +70,7 @@ void App::history_journal_line(const UiHistoryJournalEntry&e,char*out,unsigned s
  case K::MaxHpGained:key="MAP_POINT_HISTORY.maxHpGained";fallback="[green]Gained {HP} Max HP[/green]";break;
  case K::MaxHpLost:key="MAP_POINT_HISTORY.maxHpLost";fallback="[red]Lost {HP} Max HP[/red]";break;
  case K::QuestCompleted:journal_card_name(*this,unsigned(card_token({CardKind(e.model),0})),first,sizeof first);values.first=first;key="MAP_POINT_HISTORY.questCompleted";fallback="Completed the {Quest} Quest.";break;
- case K::FurCoat:values.first=relic_title(WorldRelicFurCoat);LocalizedTemplate(out,size,journal_text_value,&values).format(content.world_string("relics","FUR_COAT.historyEntry"));return;
+ case K::FurCoat:values.first=relic_title(WorldRelicFurCoat);LocalizedTemplate(out,size,journal_text_value,&values).for_language(content.language()).format(content.world_string("relics","FUR_COAT.historyEntry"));return;
  case K::None:
   if(e.flags==1){key="MAP_POINT_HISTORY.turnsTaken";fallback="{Turns} Turns";values.turns=e.amount();}
   else if(e.flags==2){key="HISTORY_ENTRY.goldGained";fallback="{Amount} Gold";values.amount=e.amount();}break;
@@ -140,9 +140,9 @@ static void journal_floor_tooltip(Canvas&c,const UiRunHistory&run,unsigned floor
  // NMapPointHistoryHoverTip fills a whole first column, then the second.
  // It opens the second only above five entries and gives column one at
  // least five rows. This is not an alternating row-major rewards grid.
- const unsigned splits[3]={groups[0],groups[1]>5?mx(5u,(groups[1]+1)/2):groups[1],groups[2]>5?mx(5u,(groups[2]+1)/2):groups[2]};
+ const unsigned splits[3]={groups[0],groups[1],groups[2]};
  const unsigned row_count=splits[0]+splits[1]+splits[2];motion.maximum=int16_t(row_count?row_count-1:0);motion.scroll(0);
- constexpr int width=172,body_width=156,max_height=202;
+ constexpr int width=272,body_width=254,max_height=202;
  Canvas text=c;text.font_face=0;text.bold_face=5;Canvas bold=text;bold.font_face=5;
  JournalTextValues values;values.floor=point.floor;values.hp=point.hp;values.max_hp=point.max_hp;values.gold=point.gold;
  char title[192]{},player[192]{},room_line[512]{};
@@ -155,22 +155,22 @@ static void journal_floor_tooltip(Canvas&c,const UiRunHistory&run,unsigned floor
  if(room==WorldRoom::Event)model.text(a.content.world_title("events",original_event_key(OriginalEventId(point.event))));
  else if(room==WorldRoom::Monster||room==WorldRoom::Elite||room==WorldRoom::Boss)if(const auto*d=encounter_definition(EncounterId(point.encounter)))model.text(a.content.world_title("encounters",d->key));
  values.model=model_title;journal_text(a,"MAP_POINT_HISTORY.room_stats","{MapPointType}{ModelTitle:: {}|}",values,room_line,sizeof room_line);
- const int room_lines=mn(3,text.paragraph(room_line,0,0,body_width,0,0,5));int at=25+room_lines*8;
+ const int room_lines=mn(3,text.paragraph(room_line,0,0,body_width,0,0,10));int at=40+room_lines*13;
  const char*partial_text=a.content.world_string("game_over_ui","PARTIAL_HISTORY");if(!*partial_text)partial_text="Earlier run data is unavailable.";
- const int partial_lines=partial?text.paragraph(partial_text,0,0,body_width,0,0,5):0;at+=partial_lines*8+(partial?3:0);
+ const int partial_lines=partial?text.paragraph(partial_text,0,0,body_width,0,0,10):0;at+=partial_lines*13+(partial?3:0);
  struct Row {uint16_t indices[2];uint8_t cells,group,header,columns;int16_t at,lines[2];};Row rows[32]{};unsigned planned=0,visible=unsigned(motion.offset);int previous_group=-1;
  // Only the visible page is formatted. Off-screen rows require bounded
  // integer scans and no localized-string or glyph-pixel reads.
  for(unsigned i=unsigned(motion.offset);i<row_count&&planned<32;++i){
   const unsigned group=i<splits[0]?0:i<splits[0]+splits[1]?1:2;
   const unsigned local=i-(group==2?splits[0]+splits[1]:group==1?splits[0]:0),base=group==2?groups[0]+groups[1]:group==1?groups[0]:0;
-  const bool columns=group&&groups[group]>5,paired=columns&&local+splits[group]<groups[group],header=group&&previous_group!=int(group);
+  const bool columns=false,paired=false,header=group&&previous_group!=int(group);
   const unsigned cells=paired?2:1;const int cell_width=columns?(body_width-4)/2:body_width;int lines[2]{},height=0;uint16_t indices[2]{order[base+local],0};
   if(paired)indices[1]=order[base+local+splits[group]];
   for(unsigned col=0;col<cells;++col){char line[768]{};const auto e=journal_display_entry(journal,indices[col],point);a.history_journal_line(e,line,sizeof line);
-   lines[col]=text.paragraph(line,0,0,cell_width-(journal_icon(e)>=0?7:0),0,0,5);height=mx(height,lines[col]*8+2);}
-  if(at+height+(header?10:0)>max_height-15&&planned)break;
-  if(header)at+=10;rows[planned++]={{indices[0],indices[1]},uint8_t(cells),uint8_t(group),uint8_t(header),uint8_t(columns),int16_t(at),{int16_t(lines[0]),int16_t(lines[1])}};
+   lines[col]=text.paragraph(line,0,0,cell_width-(journal_icon(e)>=0?13:0),0,0,10);height=mx(height,lines[col]*13+3);}
+  if(at+height+(header?15:0)>max_height-15&&planned)break;
+  if(header)at+=15;rows[planned++]={{indices[0],indices[1]},uint8_t(cells),uint8_t(group),uint8_t(header),uint8_t(columns),int16_t(at),{int16_t(lines[0]),int16_t(lines[1])}};
   at+=height;visible=i+1;previous_group=int(group);if(at>=max_height-15)break;
  }
  const bool paging=motion.offset||visible<row_count;const int height=mn(max_height,mx(48,at+(paging?17:7)));
@@ -179,15 +179,15 @@ static void journal_floor_tooltip(Canvas&c,const UiRunHistory&run,unsigned floor
  const int skin=a.content.world_image("common","HOVER_TIP");
  if(skin>=0){Canvas shadow=c;shadow.tint_red=shadow.tint_green=shadow.tint_blue=0;shadow.nine_image(skin,x+2,y+2,width,height,28,22,46,16,64);c.nine_image(skin,x,y,width,height,28,22,46,16);}
  else c.nine_ui(U_HoverTip,x,y,width,height,7,7,7,7);
- bold.text(title,x+7,y+5,5,Gold,body_width);text.text(player,x+7,y+15,5,White,body_width);
- text.paragraph(room_line,x+7,y+25,body_width,room_lines,0,5);
- if(partial)text.paragraph(partial_text,x+7,y+25+room_lines*8,body_width,partial_lines,0,5,Muted);
+ bold.text(title,x+8,y+5,12,Gold,body_width);text.text(player,x+8,y+23,10,White,body_width);
+ text.paragraph(room_line,x+8,y+40,body_width,room_lines,0,10);
+ if(partial)text.paragraph(partial_text,x+8,y+40+room_lines*13,body_width,partial_lines,0,10,Muted);
  for(unsigned row=0;row<planned;++row){const auto&plan=rows[row];const int top=y+plan.at,cell_width=plan.columns?(body_width-4)/2:body_width;
-  if(plan.header){const char*label=a.content.world_string("run_history",plan.group==1?"HISTORY_ENTRY.rewardsHeader":"HISTORY_ENTRY.skippedHeader");bold.text(*label?label:plan.group==1?"Rewards:":"Skipped:",x+7,top-10,5,Gold,body_width);}
-  for(unsigned col=0;col<plan.cells;++col){const auto e=journal_display_entry(journal,plan.indices[col],point);char line[768]{};a.history_journal_line(e,line,sizeof line);const int left=x+7+int(col)*(cell_width+4),icon=journal_icon(e),indent=icon>=0?7:0;
-   if(icon>=0&&a.content.version()>=HistoryJournalContentVersion)c.ui(icon,left,top,5,5);
-   text.paragraph(line,left+indent,top,cell_width-indent,mn(int(plan.lines[col]),(y+height-(paging?15:5)-top)/8),0,5,White);}
+  if(plan.header){const char*label=a.content.world_string("run_history",plan.group==1?"HISTORY_ENTRY.rewardsHeader":"HISTORY_ENTRY.skippedHeader");bold.text(*label?label:plan.group==1?"Rewards:":"Skipped:",x+8,top-15,10,Gold,body_width);}
+  for(unsigned col=0;col<plan.cells;++col){const auto e=journal_display_entry(journal,plan.indices[col],point);char line[768]{};a.history_journal_line(e,line,sizeof line);const int left=x+7+int(col)*(cell_width+4),icon=journal_icon(e),indent=icon>=0?13:0;
+   if(icon>=0&&a.content.version()>=HistoryJournalContentVersion)c.ui(icon,left,top+1,10,10);
+   text.paragraph(line,left+indent,top,cell_width-indent,mn(int(plan.lines[col]),(y+height-(paging?15:5)-top)/13),0,10,White);}
  }
- if(paging){char position[48]{};TextBuffer label{position,sizeof position,0};label.number(unsigned(motion.offset)+1);label.text("–");label.number(visible);label.ch('/');label.number(row_count);text.text(position,x+7,y+height-11,5,Muted,body_width);}
+ if(paging){char position[48]{};TextBuffer label{position,sizeof position,0};label.number(unsigned(motion.offset)+1);label.text("–");label.number(visible);label.ch('/');label.number(row_count);text.text(position,x+8,y+height-13,8,Muted,body_width);}
  c.hit(x,y,width,height,HitKind::HistoryJournalScroll,int(floor));
 }

@@ -21,6 +21,8 @@ static bool same(CreaturePose a,CreaturePose b){
 // camera-scaled integer formation coordinates and a retained rational fit.
 // Sources: NGame.FourByThree, combat_room.tscn, NCombatRoom's Ready/position/
 // aspect methods, and the numeric CreatureVisuals scene metadata.
+// UI12 applies one explicit -14 LCD-pixel Y translation after projection;
+// the independent source geometry and formation oracle stay unchanged.
 struct SourcePoint {long double x,y;};
 static SourcePoint local_enemy(int index){
  const auto camera=encounter_camera(game.enemy_world.encounter);const long double zoom=camera.zoom/1000.0L;
@@ -56,25 +58,43 @@ static SourcePoint reference_point(SourcePoint local,bool enemy,long double righ
          (540+(parent.y+local.y*ratio-540)*zoom+camera.y)*4/21};
 }
 static int pixel(long double value){return int(value+0.000000001L);}
+static long double source_instance_scale(int index){
+ // NCombatRoom scales repeated species from the upper half of their initial
+ // HP interval. UI11 stores the scalar in Q10; retain those quantization
+ // boundaries while composing the geometry independently in source space.
+ const auto kind=game.enemy_world.models[index].kind;unsigned duplicates=0;
+ for(int i=0;i<game.enemy_count;++i)duplicates+=game.enemy_world.models[i].kind==kind;
+ const auto*d=enemy_definition(kind);if(duplicates<2||!d)return 1;
+ const long double low=game.enemy_world.ascension>=8?d->min_hp_8:d->min_hp,high=game.enemy_world.ascension>=8?d->max_hp_8:d->max_hp;
+ if(high<=low)return 1;
+ const auto clamp=[](long double x){return x<0?0:x>1?1:x;};
+ const long double weight=std::floor(clamp(((game.enemies[index].max_hp-low)/(high-low)-.5L)*2)*1024);
+ const auto bounds=creature_bounds(kind);const long double extent=bounds.width>bounds.height?bounds.width:bounds.height;
+ const long double small=std::floor(clamp((250-extent)/150)*1024);
+ const long double amplitude=102+std::floor(51*small/1024);
+ return (1024+std::floor(weight*amplitude/1024))/1024;
+}
 static void agrees_with_source(int index){
  const auto layout=combat_layout_for(game);const auto p=enemy_pose(game,index,layout);const auto local=local_enemy(index);const auto a=creature_anchors(game.enemy_world.models[index].kind);
  const long double right=source_right();CHECK(std::fabs(layout.right/1000.0L-right)<0.002L);
- const auto point=reference_point(local,true,right),top=reference_point({local.x+a.left,local.y+a.top},true,right),bottom=reference_point({local.x+a.right,local.y+a.bottom},true,right);
- const auto center=reference_point({local.x+a.center_x,local.y+a.center_y},true,right);
- CHECK(p.x==pixel(point.x)&&p.feet==pixel(point.y));CHECK(p.body_left==pixel(top.x)&&p.body_top==pixel(top.y));
+ const long double visual_scale=source_instance_scale(index),zoom=encounter_camera(game.enemy_world.encounter).zoom;
+ const auto offset=[&](int value){return std::trunc(value*zoom*visual_scale)/zoom;};
+ const auto point=reference_point(local,true,right),top=reference_point({local.x+offset(a.left),local.y+offset(a.top)},true,right),bottom=reference_point({local.x+offset(a.right),local.y+offset(a.bottom)},true,right);
+ const auto center=reference_point({local.x+offset(a.center_x),local.y+offset(a.center_y)},true,right);
+ CHECK(p.x==pixel(point.x)&&p.feet==pixel(point.y)-14);CHECK(p.body_left==pixel(top.x)&&p.body_top==pixel(top.y)-14);
  CHECK(p.body_width==pixel(bottom.x)-pixel(top.x)&&p.body_height==pixel(bottom.y)-pixel(top.y));
- CHECK(p.center_x==pixel(center.x)&&p.center_y==pixel(center.y));
+ CHECK(p.center_x==pixel(center.x)&&p.center_y==pixel(center.y)-14);
  CHECK(p.intent_x==pixel(reference_point({local.x+a.intent_x,local.y+a.intent_y},true,right).x));
  CHECK(p.sprite_x==p.x&&p.sprite_y==p.feet);
- const long double scale=creature_sprite_units(game.enemy_world.models[index].kind)*
+ const long double scale=creature_sprite_units(game.enemy_world.models[index].kind)*visual_scale*
   (encounter_camera(game.enemy_world.encounter).zoom/1000.0L)*(1680/right)*4/21;
  CHECK(p.scale==(scale<1?1:pixel(scale)));
  CHECK(creature_health_left(p)==p.body_left+(p.body_width-p.width)/2);
  const auto player=player_pose(game,layout);const auto want_player=reference_point(local_player(),false,right);
- CHECK(player.x==pixel(want_player.x)&&player.feet==pixel(want_player.y));
+ CHECK(player.x==pixel(want_player.x)&&player.feet==pixel(want_player.y)-14);
  const auto registration=player_sprite_registration(game.character);const auto source=local_player();
  const auto want_sprite=reference_point({source.x+registration.x,source.y+registration.y},false,right);
- CHECK(player.sprite_x==pixel(want_sprite.x)&&player.sprite_y==pixel(want_sprite.y));
+ CHECK(player.sprite_x==pixel(want_sprite.x)&&player.sprite_y==pixel(want_sprite.y)-14);
 }
 static void original_hand_fan(){
  // Independent authored samples and floating source projection catch a
@@ -86,14 +106,18 @@ static void original_hand_fan(){
   {8,0,-565,28,-12},{8,2,-231,-39,-6},{9,0,-600,37,-12},{9,3,-150,-45,-3},
   {10,0,-610,38,-15},{10,1,-472,5,-12},{10,3,-200,-41,-6},{10,9,610,38,15}};
  for(const auto&v:samples){const auto p=hand_pose(v.count,v.index,false);const double source_scale=.8*(v.count<8?1:1-.05*(v.count-7));
-  CHECK(std::abs(p.cx-(840+v.x)*4.0/21)<=.51&&std::abs(p.cy-(1260+v.y)*4.0/21)<=.51);
-  CHECK(std::abs(p.scale*69.0/1024-300*source_scale*4/21)<.05);
+  // Preserve authored fan shape inside an 80% horizontal LCD span, with
+  // its new 86px readable face and a 12px lift above the bottom controls.
+  CHECK(std::abs(p.cx-(160+v.x*4.0/21*.8))<=1.2&&std::abs(p.cy-((1260+v.y)*4.0/21-12))<=.51);
+  CHECK(std::abs(p.scale*86.0/1024-86*source_scale)<.05);
   const double angle=v.degrees*std::acos(-1.0)/180;
   CHECK(std::abs(p.sine-1024*std::sin(angle))<.51&&std::abs(p.cosine-1024*std::cos(angle))<.51);
-  const auto focused=hand_pose(v.count,v.index,true);CHECK(focused.cx==p.cx&&focused.cy==200&&focused.scale==848&&focused.sine==0);
+  const auto focused=hand_pose(v.count,v.index,true);const int safe=p.cx<114?114:p.cx>202?202:p.cx;
+  CHECK(focused.cx==safe&&focused.cy==174&&focused.scale==1024&&focused.sine==0);
  }
- CHECK(hand_pose(5,0,false,2).cx==86&&hand_pose(5,1,false,2).cx==113&&hand_pose(5,3,false,2).cx==207&&hand_pose(5,4,false,2).cx==234);
- const auto selected=hand_selected_pose();CHECK(selected.cx==160&&selected.cy==210&&selected.scale==636);
+ CHECK(hand_pose(5,0,false,2).cx==101&&hand_pose(5,1,false,2).cx==123&&hand_pose(5,3,false,2).cx==197&&hand_pose(5,4,false,2).cx==219);
+ const auto selected=hand_selected_pose();const auto selected_bounds=hand_bounds(selected);
+ CHECK(selected.cx==160&&selected.scale==1024&&selected_bounds.y>=22&&selected_bounds.y+selected_bounds.h<=240);
  for(int count=1;count<=10;++count)for(int i=0;i<count;++i){const auto p=hand_pose(count,i,false);const auto bounds=hand_bounds(p);
   CHECK(hand_contains(p,p.cx,p.cy));CHECK(!hand_contains(p,bounds.x-1,p.cy));CHECK(!hand_contains(p,p.cx,bounds.y-1));
   if(p.sine)CHECK(!hand_contains(p,bounds.x,bounds.y));
@@ -101,7 +125,7 @@ static void original_hand_fan(){
 }
 static void authored_widths(){
  fight(EncounterId::NibbitsWeak);auto p=enemy_pose(game,0);
- CHECK(combat_layout_for(game).right==1680000);CHECK(p.x==251&&p.feet==158&&p.body_width==52&&p.scale==311);
+ CHECK(combat_layout_for(game).right==1680000);CHECK(p.x==251&&p.feet==144&&p.body_width==52&&p.scale==311);
  CHECK(combat_player_x(game)==68);game.character=Character::Necrobinder;CHECK(combat_player_x(game)==40);
  fight(EncounterId::CorpseSlugsNormal);CHECK(!encounter_positions(game.enemy_world.encounter));
  // Three 232px Bounds use source centers191,480,769. Their right edge
@@ -116,7 +140,7 @@ static void authored_widths(){
  CHECK(enemy_pose(game,1).feet<enemy_pose(game,0).feet&&enemy_pose(game,1).feet==enemy_pose(game,3).feet);
  fight(EncounterId::SlimesNormal);CHECK(encounter_camera(game.enemy_world.encounter).zoom==900);
  for(int i=0;i<game.enemy_count;++i)agrees_with_source(i);CHECK(enemy_pose(game,0).scale>enemy_pose(game,2).scale);
- fight(EncounterId::AeonglassBoss);p=enemy_pose(game,0);CHECK(p.x==253&&p.feet==164&&p.scale==1084);agrees_with_source(0);
+ fight(EncounterId::AeonglassBoss);p=enemy_pose(game,0);CHECK(p.x==253&&p.feet==150&&p.scale==1084);agrees_with_source(0);
 }
 static void scene_slots_without_slots_override(){
  for(auto encounter:{EncounterId::BowlbugsNormal,EncounterId::BowlbugsWeak,EncounterId::KnightsElite,EncounterId::SlumberingBeetleNormal}){

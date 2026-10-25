@@ -39,9 +39,10 @@ static bool ui_capture_card_changes(App&a,uint32_t at,bool generated_preview=fal
   const uint8_t to=uint8_t(s.zones[id]);const bool tracked=id<m.card_count&&(m.zones[id]&CombatCardMotion::Tracked);
   if(before!=to){
    if(to==unsigned(Zone::Hand)&&before!=CombatCardMotion::NewCard)awaited_hand_add=true;
-   if(tracked||before==unsigned(Zone::Hand)||to==unsigned(Zone::Hand)||(generated_preview&&before==CombatCardMotion::NewCard)){
+   if(tracked||before==unsigned(Zone::Hand)||to==unsigned(Zone::Hand)||to==unsigned(Zone::Exhaust)||to==unsigned(Zone::Power)||(generated_preview&&before==CombatCardMotion::NewCard)){
     CombatCardMotion::Cue cue;cue.at=at;cue.id=uint16_t(id);cue.from=before;cue.to=to;cue.card=s.cards[id];cue.fast=a.fast_mode;cue.preview=generated_preview;
     cue.energy=int16_t(cost(s,id));cue.stars=int16_t(card_star_cost(s,cue.card,id));
+    if(to==unsigned(Zone::Power)){const auto owner=a.combat_player_pose();cue.target_x=int16_t(owner.center_x);cue.target_y=int16_t(owner.center_y);}
     // The manually played card keeps the resource labels seen before
     // payment; an X-cost card must not turn into zero midway through flight.
     if(int(id)==m.manual){cue.energy=m.manual_energy;cue.stars=m.manual_stars;}
@@ -106,6 +107,7 @@ void App::sync_combat_cards(){
   if(!targeted||!m.selected_centered)m.set_selection_pose({pointer.x,pointer.y,HandFocusScale,0,1024});
   else m.set_selection_pose(hand_selected_pose());
  }
+ if(keyboard_card>=0||m.selected_centered)m.fit_centered_selection();
  ui_sync_card_queues(*this);
  if(!ui_feedback_bound(*this)){
   // Continue, initial preparation and direct fixture/core entry are already

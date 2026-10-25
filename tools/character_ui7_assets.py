@@ -54,6 +54,17 @@ class FrameSampler:
 
 
 class CharacterRenderer(RoomRenderer):
+    def visit(self, node, parent_matrix, parent_size, parent_tint, parent_z, path, clips=(), bones=None):
+        # Control.get_parent_anchorable_rect uses its immediate CanvasItem,
+        # not the nearest ancestor Control. SpineSlotNode inherits Node2D's
+        # empty anchorable rect. Passing the 2560x1200 background bounds
+        # displaced the two .5-anchored Necrobinder fire children offscreen.
+        # Restrict this correction to the reviewed character slot followers;
+        # existing unrelated room snapshots are not silently reinterpreted.
+        if node.kind == 'SpineSlotNode':
+            parent_size = np.zeros(2)
+        return super().visit(node, parent_matrix, parent_size, parent_tint, parent_z, path, clips, bones)
+
     def spine(self, node, path, matrix, tint, clips, z):
         bones, commands, order = super().spine(node, path, matrix, tint, clips, z)
         # SpineSprite's Godot default Screen material uses SUB, not the
@@ -75,7 +86,7 @@ class CharacterRenderer(RoomRenderer):
         return bones, commands, order
 
 
-def build_art(pack, cache, *, runtime, dotnet=None):
+def build_art(pack, cache, *, runtime, dotnet=None, characters=CHARACTERS):
     """Return five static planes, contiguous delta clips, and auxiliary mapping.
 
     Append ``images`` after the caller's static prefix. Add that prefix length
@@ -83,13 +94,18 @@ def build_art(pack, cache, *, runtime, dotnet=None):
     The five auxiliaries name disjoint static planes. Each original frame is
     restored by its static plane plus the corresponding sparse delta image.
     """
+    characters = tuple(characters)
+    tiles.require(characters and len(set(characters)) == len(characters) and
+                  all(character in CHARACTERS for character in characters), 'Unknown character selection')
+    frame_count = sum(COUNTS[CHARACTERS.index(character)] for character in characters)
     cache = Path(cache);cache.mkdir(parents=True, exist_ok=True)
-    path = cache/'character-ui7-assets.json'
+    suffix = '' if characters == CHARACTERS else '-'+ '-'.join(characters)
+    path = cache/('character-ui7-assets'+suffix+'.json')
     identity, runtime_identity = converter_identity(), tiles.sha256(Path(runtime).read_bytes())
     if path.is_file():
         previous = json.loads(path.read_text())
         if previous.get('converter_sha256') == identity and previous.get('runtime_sha256') == runtime_identity:
-            tiles.require(len(previous['images']) == FRAME_COUNT+5 and len(previous['clips']) == 5 and
+            tiles.require(len(previous['images']) == frame_count+len(characters) and len(previous['clips']) == len(characters) and
                           previous.get('static_layering') is True,
                           'Changed cached character catalog')
             for row in previous['images']:
@@ -100,7 +116,9 @@ def build_art(pack, cache, *, runtime, dotnet=None):
 
     rows, clips, auxiliary, reports = [], [], [], []
     with SpineSampler(pack, runtime=runtime, dotnet=dotnet, work_dir=cache/'character-spine-adapter') as sampler:
-        for character, duration, count in zip(CHARACTERS, DURATIONS, COUNTS):
+        for character in characters:
+            character_index = CHARACTERS.index(character)
+            duration, count = DURATIONS[character_index], COUNTS[character_index]
             resource = f'animations/character_select/{character}/characterselect_{character}_skel_data.tres'
             metadata = sampler.metadata(resource)
             tiles.require(len(metadata['clips']) == 1 and metadata['clips'][0]['name'] == 'animation' and
@@ -151,19 +169,20 @@ def build_art(pack, cache, *, runtime, dotnet=None):
                                 sample_rate=count/period, initial_frame=first_report))
             print(json.dumps(dict(character=character, frames=count, duration_ms=duration,
                                   stored_bytes=sum(row['bytes'] for row in rows[first:]))), flush=True)
-    tiles.require(len(rows) == FRAME_COUNT, 'Incorrect character animation image count')
+    tiles.require(len(rows) == frame_count, 'Incorrect character animation image count')
     sampled_rows, bases, dynamic, layer_reports = rows, [], [], []
     for clip in clips:
         start, count = clip['first'], clip['count']
         base, deltas, report = split_loop(sampled_rows[start:start+count], cache, clip['key'])
         bases.append(base);dynamic.extend(deltas);layer_reports.append(report)
-        clip['first'] += len(CHARACTERS)
+        clip['first'] += len(characters)
         print(json.dumps(dict(stage='character_static_layers', **report)), flush=True)
     rows = bases+dynamic
-    auxiliary = list(range(len(CHARACTERS)))
+    auxiliary = list(range(len(characters)))
     result = dict(schema=1, reference='v0.111.0 / 41cef1ea', source_pck_sha256=SOURCE_PCK_SHA256,
                   converter_sha256=identity, runtime_sha256=runtime_identity, images=rows, clips=clips,
-                  auxiliary_rows=auxiliary, durations_ms=list(DURATIONS), clip_first=CLIP_FIRST,
+                  auxiliary_rows=auxiliary, durations_ms=[DURATIONS[CHARACTERS.index(c)] for c in characters],
+                  clip_first=CLIP_FIRST, characters=list(characters),
                   viewport=list(VIEWPORT), output_size=list(SIZE), character_reports=reports,
                   sampled_images=sampled_rows, static_layering=True, static_layer_reports=layer_reports,
                   limits=['12fps skeletal samples', 'independent particles omitted',

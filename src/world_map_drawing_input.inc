@@ -40,7 +40,7 @@ bool App::map_drawing_point(bool begin){
     }
     const MapDrawingTransform transform{input.paper_origin};
     if(document.count>=MapDrawingCapacity){
-        if(begin||input.pressed)message(content.english()?"Map notes are full. Clear them to draw again.":"地图标记已满，请先清空后继续绘制。");
+        if(begin||input.pressed)message(content.language()!=2?"Map notes are full. Clear them to draw again.":"地图标记已满，请先清空后继续绘制。");
         input.stop_line();return false;
     }
     const bool changed=document.append(transform.source_x(x),transform.source_y(y),input.mode,begin);

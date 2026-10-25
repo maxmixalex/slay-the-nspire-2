@@ -1,15 +1,17 @@
 #pragma once
 #include "rich_text.hpp"
+#include "font_metrics.hpp"
 
 namespace spire { namespace fitted_text {
-struct Metric {int advance=0,width=0;};
+struct Metric {int advance=0,width=0,advance64=0,kerning64=0;};
+inline int advance64(const Metric&g){return g.advance64?g.advance64:g.advance*64;}
 struct Plan {int size=8,rows=0,total=0,step=9;bool truncated=false;};
 inline int next_size(int size){return size>16?16:size>12?12:size>10?10:size>8?8:size>6?6:5;}
 inline int row_capacity(int height,int size){return height>2?(height-2)/(size+1):0;}
-inline bool word_character(uint32_t cp){return cp>32&&cp<0x300;}
+inline bool word_character(uint32_t cp){return cp>32&&(cp<0x300||cp==0x202f||(cp>=0x370&&cp<0x530)||(cp>=0xac00&&cp<=0xd7a3));}
 template<class Metrics> int word_width(const RichReader&tail,const RichChar&first,int size,Metrics metrics){
-    RichReader reader=tail;RichChar ch{};auto g=metrics(first,size);int advance=g.advance,width=g.width;
-    while(reader.next(ch)&&word_character(ch.codepoint)){g=metrics(ch,size);width=advance+g.width;advance+=g.advance;}
+    RichReader reader=tail;RichChar ch{};auto g=metrics(first,size);int advance=advance64(g),width=g.width;
+    while(reader.next(ch)&&word_character(ch.codepoint)){g=metrics(ch,size);advance+=g.kerning64;width=text_pixel(advance)+g.width;advance+=advance64(g);}
     return width;
 }
 template<class Metrics> int line_count(const char*text,int width,int size,Metrics metrics){
@@ -18,11 +20,12 @@ template<class Metrics> int line_count(const char*text,int width,int size,Metric
     while(reader.next(ch)){
         if(ch.codepoint=='\n'){at=0;++row;boundary=true;continue;}
         const auto g=metrics(ch,size);
-        if((ch.codepoint==' '||ch.codepoint=='\t')&&(!at||at+g.width>width)){boundary=true;continue;}
+        int pen=text_pixel(at+(at?g.kerning64:0));
+        if((ch.codepoint==' '||ch.codepoint=='\t')&&(!at||pen+g.width>width)){boundary=true;continue;}
         int word=boundary&&at&&word_character(ch.codepoint)?word_width(reader,ch,size,metrics):0;
-        if(at&&(at+g.width>width||(word&&word<=width&&at+word>width))){at=0;++row;}
+        if(at&&(pen+g.width>width||(word&&word<=width&&pen+word>width))){at=0;++row;}
         boundary=ch.codepoint==' '||ch.codepoint=='\t';if(!at&&boundary)continue;
-        at+=g.advance;
+        at+=(at?g.kerning64:0)+advance64(g);
     }return row;
 }
 template<class Metrics> Plan plan(const char*text,int width,int height,int preferred,int minimum,Metrics metrics){
@@ -47,19 +50,20 @@ template<class Metrics,class Emit> void visit(const char*text,int width,const Pl
     const RichChar dots{0x2026,{},0};const auto ellipsis=metrics(dots,plan.size);
     while(reader.next(ch)){
         const auto g=metrics(ch,plan.size);
-        if((ch.codepoint==' '||ch.codepoint=='\t')&&(!at||at+g.width>width)){boundary=true;continue;}
+        int pen=text_pixel(at+(at?g.kerning64:0));
+        if((ch.codepoint==' '||ch.codepoint=='\t')&&(!at||pen+g.width>width)){boundary=true;continue;}
         int word=boundary&&at&&word_character(ch.codepoint)?word_width(reader,ch,plan.size,metrics):0;
-        const bool wrap=at&&(at+g.width>width||(word&&word<=width&&at+word>width));
+        const bool wrap=at&&(pen+g.width>width||(word&&word<=width&&pen+word>width));
         boundary=ch.codepoint==' '||ch.codepoint=='\t'||ch.codepoint=='\n';
         if(row==plan.rows-1&&plan.truncated){
-            if(ch.codepoint=='\n'||wrap||at+g.width>width-ellipsis.width){emit(dots,at,row,plan.size);return;}
+            if(ch.codepoint=='\n'||wrap||pen+g.width>width-ellipsis.width){emit(dots,text_pixel(at),row,plan.size);return;}
         }else if(ch.codepoint=='\n'||wrap){
-            at=0;if(++row>=plan.rows)return;if(ch.codepoint=='\n')continue;
+            at=0;pen=0;if(++row>=plan.rows)return;if(ch.codepoint=='\n')continue;
             if(row==plan.rows-1&&plan.truncated&&g.width>width-ellipsis.width){emit(dots,0,row,plan.size);return;}
         }
         if(!at&&boundary)continue;
-        emit(ch,at,row,plan.size);at+=g.advance;
+        emit(ch,pen,row,plan.size);at+=(at?g.kerning64:0)+advance64(g);
     }
-    if(plan.truncated)emit(dots,at,row,plan.size);
+    if(plan.truncated)emit(dots,text_pixel(at),row,plan.size);
 }
 }}

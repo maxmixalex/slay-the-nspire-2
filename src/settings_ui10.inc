@@ -36,13 +36,13 @@ static void setup_tickbox(Canvas&c,uint32_t key,bool value,int center_x,int cent
 }
 static void frontend_settings_screen(Canvas&c){
  using namespace settings_layout;auto&a=c.a;a.hit_count=0;c.dim(0,0,320,240,205);
- const bool english=a.content.english(),source_art=a.content.has_settings_ui10_assets();
- const unsigned bold=source_label_face(english,5);const uint16_t cream=rgb(255,246,226),gold=rgb(239,200,81);
+ const bool english=a.content.language()!=2,source_art=a.content.has_settings_ui10_assets();
+ const unsigned bold=source_label_face(a.content.original_label_fonts(),5);const uint16_t cream=rgb(255,246,226),gold=rgb(239,200,81);
  const auto label=[&](const char*key,const char*eng,const char*zhs){return frontend_text(a,"settings_ui",key,english?eng:zhs);};
  const auto pointed=[&](int x,int y,int w,int h){return a.pointer.visible&&a.pointer.x>=x&&a.pointer.x<x+w&&a.pointer.y>=y&&a.pointer.y<y+h;};
  const auto pressed=[&](UiAction action){return a.pointer.held&&a.pointer.captured.kind==HitKind::UiAction&&a.pointer.captured.value==int(action);};
  const auto text=[&](Canvas layer,const char*value,int x,int y,int w,int h,unsigned face=0,uint16_t color=0,bool center=false,int px=LabelFont){
-  profile_text_box(layer,value,x,y,w,h,{px,face,color?color:cream,128},center,false);};
+  profile_text_box(layer,value,x,y,w,h,{px,face,color?color:cream,128},center,true,{},true,false,0,pointed(x,y,w,h)||!a.pointer.visible);};
  const char*tabs[]={label("TAB_GENERAL","General","常规"),label("TAB_INPUT","Input","输入")};
  for(unsigned i=0;i<2;++i){const int x=tab_left(i);const bool hover=pointed(x,TabTop,TabWidth,TabHeight),selected=a.settings_tab==i;
   const auto visual=setup_control_visual(a,0x738b1000u+i,hover,false,true);
@@ -72,44 +72,52 @@ static void frontend_settings_screen(Canvas&c){
   c.action(x,y,ControlWidth,RowHeight,action);};
  if(!a.settings_tab){
   settings_focus::blur_rows(a.button_motions,MaxButtonMotions,a.map_clock_ms);
-  a.settings_top=0;
-  const char*keys[]={a.title?"LANGUAGE":"LANGUAGE_IN_RUN","SCREENSHAKE","FASTMODE","PHOBIA_MODE","SHOW_RUN_TIMER_HEADER","SHOW_HAND_CARD_COUNT_HEADER","LONG_PRESS_CONFIRMATION_HEADER","TEXT_EFFECTS","SEND_FEEDBACK","CREDITS","INPUT_SETTINGS.RESET_TO_DEFAULT"};
-  const char*eng[]={a.title?"Language":"Language (main menu only)","Screenshake","Fast Mode","Phobia Mode","Show Run Timer","Show Hand Card Count","Long Press Confirmations","Text Effects","Send Feedback","Credits","Reset to Default"};
-  const char*zhs[]={a.title?"语言选项":"语言选项（仅可在主菜单调整）","屏幕抖动","加速模式","恐惧症模式","显示计时器","显示手牌计数","长按确认","文字特效","发送反馈","制作名单","恢复默认设置"};
-  const UiAction actions[]={UiAction::SettingsLanguage,UiAction::SettingsShakeUp,UiAction::SettingsFastMode,UiAction::SettingsPhobia,UiAction::SettingsRunTimer,UiAction::SettingsCardIndices,UiAction::SettingsLongPress,UiAction::SettingsTextEffects,UiAction::SettingsFeedback,UiAction::SettingsCredits,UiAction::SettingsReset};
+  if(a.settings_top>GeneralMaximum)a.settings_top=GeneralMaximum;
+  if(!a.pointer.visible){if(a.settings_item<a.settings_top)a.settings_top=a.settings_item;else if(a.settings_item>=a.settings_top+GeneralVisible)a.settings_top=uint8_t(a.settings_item-GeneralVisible+1);}
+  if(a.settings_top>GeneralMaximum)a.settings_top=GeneralMaximum;
+  const char*keys[]={a.title?"LANGUAGE":"LANGUAGE_IN_RUN","SCREENSHAKE","FASTMODE","PHOBIA_MODE","SHOW_RUN_TIMER_HEADER","SHOW_HAND_CARD_COUNT_HEADER","LONG_PRESS_CONFIRMATION_HEADER","TEXT_EFFECTS","CREDITS","INPUT_SETTINGS.RESET_TO_DEFAULT"};
+  const char*eng[]={a.title?"Language":"Language (main menu only)","Screenshake","Fast Mode","Phobia Mode","Show Run Timer","Show Hand Card Count","Long Press Confirmations","Text Effects","Credits","Reset to Default"};
+  const char*zhs[]={a.title?"语言选项":"语言选项（仅可在主菜单调整）","屏幕抖动","加速模式","恐惧症模式","显示计时器","显示手牌计数","长按确认","文字特效","制作名单","恢复默认设置"};
+  const UiAction actions[]={UiAction::SettingsLanguage,UiAction::SettingsShakeUp,UiAction::SettingsFastMode,UiAction::SettingsPhobia,UiAction::SettingsRunTimer,UiAction::SettingsCardIndices,UiAction::SettingsLongPress,UiAction::SettingsTextEffects,UiAction::SettingsCredits,UiAction::SettingsReset};
   const bool checked[]={false,false,a.fast_mode,a.phobia_mode,a.show_run_timer,a.show_card_indices,a.long_press,a.text_effects};
-  for(unsigned i=0;i<GeneralRows;++i){const int y=general_row(i);const bool enabled=i!=0||a.title;
+  for(unsigned i=a.settings_top;i<GeneralRows&&i<a.settings_top+GeneralVisible;++i){const int row_index=int(i-a.settings_top),y=general_row(unsigned(row_index));const bool enabled=i!=0||a.title;
    const bool focus=!a.pointer.visible&&a.settings_item==i;Canvas row=c;if(!enabled)row.opacity=uint8_t(div255(unsigned(row.opacity)*115));
    text(row,label(keys[i],eng[i],zhs[i]),LabelLeft,y,ControlLeft-LabelLeft-3,RowHeight);
    if(pointed(GeneralLeft,y,GeneralWidth,RowHeight)&&i<8){hover=int(i);hover_y=y;}
    if(i==0){row.rect(ControlLeft,y,ControlWidth,RowHeight,rgb(44,67,79));
-    text(row,english?"English":"中文",ControlLeft,y,ControlWidth,RowHeight,bold,gold,true);
-    if(a.content.version()>=RoomUi7ContentVersion)row.ui(source_art?I10_SettingsArrowDown:I7_SettingsArrowDown,ControlLeft+ControlWidth-8,y+3,5,5);
+    text(row,locale_language_info(a.content.language()).name,ControlLeft+1,y,ControlWidth-11,RowHeight,bold,gold,true);
+    if(a.content.version()>=RoomUi7ContentVersion)row.ui(source_art?I10_SettingsArrowDown:I7_SettingsArrowDown,ControlLeft+ControlWidth-8,y+(RowHeight-5)/2,5,5);
     if(focus&&enabled)settings_reticle(c,ControlLeft,y,ControlWidth,RowHeight);
-    c.action(ControlLeft,y,ControlWidth,RowHeight,actions[i],enabled&&a.available_languages()==3);
+    c.action(ControlLeft,y,ControlWidth,RowHeight,actions[i],enabled&&locale_language_count(a.available_languages())>1);
    }else if(i==1){
     static const char*levels[]={"SCREENSHAKE_NONE","SCREENSHAKE_SOME","SCREENSHAKE_NORMAL","SCREENSHAKE_LOTS","SCREENSHAKE_CAAAW"};
     static const char*en[]={"None","Some","Normal","Lots","CAAAW!"},*zh[]={"无","轻微","正常","剧烈","咔咔！"};
-    text(row,label(levels[a.screen_shake],en[a.screen_shake],zh[a.screen_shake]),ControlLeft+12,y,38,RowHeight,bold,cream,true);
-    if(a.content.version()>=RoomUi7ContentVersion){row.ui(source_art?I10_SettingsArrowLeft:I7_SettingsArrowLeft,ControlLeft+1,y+1,9,9,a.screen_shake?255:64);
-     row.ui(source_art?I10_SettingsArrowRight:I7_SettingsArrowRight,ControlLeft+50,y+1,9,9,a.screen_shake<4?255:64);}
+    text(row,label(levels[a.screen_shake],en[a.screen_shake],zh[a.screen_shake]),ControlLeft+11,y,ControlWidth-22,RowHeight,bold,cream,true);
+    if(a.content.version()>=RoomUi7ContentVersion){row.ui(source_art?I10_SettingsArrowLeft:I7_SettingsArrowLeft,ControlLeft+1,y+5,10,10,a.screen_shake?255:64);
+     row.ui(source_art?I10_SettingsArrowRight:I7_SettingsArrowRight,ControlLeft+ControlWidth-11,y+5,10,10,a.screen_shake<4?255:64);}
     if(focus)settings_reticle(c,ControlLeft,y,ControlWidth,RowHeight);
-    c.action(ControlLeft,y,12,RowHeight,UiAction::SettingsShakeDown,a.screen_shake>0);c.action(ControlLeft+50,y,11,RowHeight,UiAction::SettingsShakeUp,a.screen_shake<4);
+    c.action(ControlLeft,y,12,RowHeight,UiAction::SettingsShakeDown,a.screen_shake>0);c.action(ControlLeft+ControlWidth-12,y,12,RowHeight,UiAction::SettingsShakeUp,a.screen_shake<4);
    }else if(i<8)tick(checked[i],i,ControlLeft,y,actions[i]);
-   else button(i==8?label("SEND_FEEDBACK_BUTTON_LABEL","Open","打开"):i==9?label("CREDITS_BUTTON_LABEL","View","查看"):label("RESET_SETTINGS_BUTTON","Reset","重置"),i,ControlLeft,y,i==8?I10_SettingsFeedback:i==9?I10_SettingsCredits:I10_SettingsReset,actions[i]);
-   if(i+1<GeneralRows)divider.rect(GeneralLeft,general_divider(i),GeneralWidth,1,rgb(232,220,190));
+   else button(i==8?label("CREDITS_BUTTON_LABEL","View","查看"):label("RESET_SETTINGS_BUTTON","Reset","重置"),i,ControlLeft,y,i==8?I10_SettingsCredits:I10_SettingsReset,actions[i]);
+   if(i+1<GeneralRows)divider.rect(GeneralLeft,general_divider(unsigned(row_index)),GeneralWidth,1,rgb(232,220,190));
   }
+  const int track_y=scroll_top(false),track_h=scroll_height(false);
+  c.ui(I6_ScrollbarTrack,InputTrackLeft,track_y,8,track_h);
+  c.ui(I6_ScrollbarEdge,InputTrackLeft,track_y-7,8,8);
+  ui_picture_transform(c,a.content.ui_image(I6_ScrollbarEdge),InputTrackLeft+4,track_y+track_h+3,8,8,0,-1024);
+  c.ui(I6_ScrollbarGrabber,InputTrackLeft-3,track_y+int(a.settings_top)*(track_h-14)/int(GeneralMaximum),14,14);
+  c.hit(InputTrackLeft-5,track_y-7,18,track_h+14,HitKind::SettingsScroll);
  }else{
   if(a.settings_top>InputMaximum)a.settings_top=InputMaximum;
   text(c,label("KEYBOARD_ONLY_MODE_HEADER","Keyboard-Only Mode","纯键盘模式"),InputPanelLeft,KeyboardTop,InputControlLeft-InputPanelLeft-3,RowHeight);
   tick(a.keyboard_only,0,InputControlLeft,KeyboardTop,UiAction::SettingsKeyboardOnly);
   if(pointed(InputPanelLeft,KeyboardTop,InputWidth,RowHeight)){hover=8;hover_y=KeyboardTop;}
-  divider.rect(InputPanelLeft,62,InputWidth,1,rgb(232,220,190));divider.rect(InputPanelLeft,79,InputWidth,1,rgb(232,220,190));
-  button(label("INPUT_SETTINGS.RESET_TO_DEFAULT","Reset to Default","恢复默认"),InputCommandCount+1,InputResetLeft,InputResetTop,I10_SettingsReset,UiAction::SettingsReset);
+  divider.rect(InputPanelLeft,62,InputWidth,1,rgb(232,220,190));divider.rect(InputPanelLeft,87,InputWidth,1,rgb(232,220,190));
+  button(label("RESET_SETTINGS_BUTTON","Reset","重置"),InputCommandCount+1,InputResetLeft,InputResetTop,I10_SettingsReset,UiAction::SettingsReset);
   ProfileTextStyle header{LabelFont,bold,gold,192,1,rgb(59,44,0)};header.tracking_source=english?1:0;
   profile_text_box(c,label("INPUT_SETTINGS.COMMAND_HEADER","Command","指令"),InputPanelLeft,InputHeaderTop,InputLabelWidth,InputHeaderHeight,header,false,false);
   const char*headers[]={label("INPUT_SETTINGS.MOUSE_KEYBOARD_HEADER","Mouse + Keyboard","鼠标与键盘"),label("INPUT_SETTINGS.KEYBOARD_ONLY_MODE_HEADER","Keyboard-Only","纯键盘")};
-  for(unsigned b=0;b<2;++b)profile_text_box(c,headers[b],binding_left(b),InputHeaderTop,BindingWidth,InputHeaderHeight,header,true,false);
+  for(unsigned b=0;b<2;++b)profile_text_box(c,headers[b],binding_left(b),InputHeaderTop,BindingWidth,InputHeaderHeight,header,true,true,{},true);
   const unsigned bank=a.keyboard_only&&!a.pointer.visible?1:0;
   int focused_command=-1;
   for(unsigned i=a.settings_top;i<InputCommandCount&&i<a.settings_top+InputVisible;++i){const unsigned visible=i-a.settings_top;
@@ -129,37 +137,44 @@ static void frontend_settings_screen(Canvas&c){
    while(reader.next(ch)){command_width+=a.content.glyph_metrics(ch.codepoint,LabelFont,0).advance;++characters;}
    command_width+=project(mx(0,characters-1)*item.tracking_source);
    ProfileTextStyle command_style=item;
-   // MegaLabel's auto-size reduces long input names inside the authored308px
-   // column. Keep bindings at their own28px source band.
-   if(command_width>InputLabelWidth)command_style.size=4;
-   profile_text_box(c,command,InputLabelLeft,y,InputLabelWidth,height,command_style,false,false,{},true);
-   for(unsigned b=0;b<2;++b){char binding[16]{};input_key_label(a.input_bindings.keys[b][i],binding,sizeof binding);
+   // Keep long input names readable by wrapping within the taller LCD row.
+   if(command_width>InputLabelWidth)command_style.size=10;
+   profile_text_box(c,command,InputLabelLeft,y,InputLabelWidth,height,command_style,false,true,{},true);
+   for(unsigned b=0;b<2;++b){char binding[16]{};input_key_label(a.input_bindings.keys[b][i],binding,sizeof binding,a.calculator_keyboard);
     Canvas value=c;if(b!=bank){value.tint_red=191;value.tint_green=value.tint_blue=48;}
     if(!input_remappable(b,i))value.brightness=128;else if(!b&&i==unsigned(InputCommand::EndTurn))value.brightness=153;
     profile_text_box(value,binding,binding_left(b),y,BindingWidth,height,item,true,false);}
    c.hit(InputPanelLeft,y,InputWidth,height,HitKind::InputBinding,int(i),enabled);
   }
-  const int top=input_row(0),height=InputBottom-top;
-  c.rect(InputTrackLeft,top,2,height,rgb(18,33,41));c.rect(InputTrackLeft-1,top+int(a.settings_top)*(height-24)/int(InputMaximum),4,24,rgb(80,115,132));
-  c.action(InputTrackLeft-3,top-3,9,height/2+3,UiAction::SettingsScrollUp,a.settings_top>0);
-  c.action(InputTrackLeft-3,top+height/2,9,height/2+3,UiAction::SettingsScrollDown,a.settings_top<InputMaximum);
+  const int top=scroll_top(true),height=scroll_height(true);
+  c.ui(I6_ScrollbarTrack,InputTrackLeft,top,8,height);
+  c.ui(I6_ScrollbarEdge,InputTrackLeft,top-7,8,8);
+  ui_picture_transform(c,a.content.ui_image(I6_ScrollbarEdge),InputTrackLeft+4,top+height+3,8,8,0,-1024);
+  c.ui(I6_ScrollbarGrabber,InputTrackLeft-3,top+int(a.settings_top)*(height-14)/int(InputMaximum),14,14);
+  c.hit(InputTrackLeft-5,top-7,18,height+14,HitKind::SettingsScroll);
  }
  native_original_back(c);
  if(hover>=1&&!a.settings_language_open&&!a.frontend_confirm){
   const char*titles[]={"","SCREENSHAKE_HEADER","FASTMODE","PHOBIA_MODE","SHOW_RUN_TIMER_HEADER","SHOW_HAND_CARD_COUNT_HEADER","LONG_PRESS_CONFIRMATION_HEADER","TEXT_EFFECTS","KEYBOARD_ONLY_MODE_HEADER"};
   const char*descriptions[]={"","SCREENSHAKE_DESCRIPTION","FASTMODE_DESCRIPTION","PHOBIA_MODE_DESCRIPTION","SHOW_RUN_TIMER_DESCRIPTION","SHOW_HAND_CARD_COUNT_DESCRIPTION","LONG_PRESS_CONFIRMATION_DESCRIPTION","TEXT_EFFECTS_DESCRIPTION","KEYBOARD_ONLY_MODE_DESCRIPTION"};
   if(const char*body=a.content.world_string("settings_ui",descriptions[hover]);*body)
-   source_hover_box(c,a.content.world_string("settings_ui",titles[hover]),body,(a.settings_tab?InputPanelLeft:GeneralLeft)+project(1012),hover_y-project(60));
+   source_hover_box(c,a.content.world_string("settings_ui",titles[hover]),body,TooltipLeft,hover_y);
  }
  if(a.settings_language_open){
-  a.hit_count=0;c.action(0,0,320,240,UiAction::SettingsLanguageClose);c.rect(ControlLeft,DropdownTop,ControlWidth,DropdownHeight,rgb(18,33,41));
-  for(unsigned i=0;i<2;++i){const int y=dropdown_row(i),height=dropdown_row_height(i);const bool focus=a.pointer.visible?pointed(ControlLeft,y,ControlWidth,height):a.settings_language_item==i;
-   if(focus)c.rect(ControlLeft,y,ControlWidth,height,rgb(44,88,112));
-   // NLanguageDropdownItem.Init changes text only. Normal rich text retains
-   // the active locale family and its native fallback for other scripts.
-   profile_text_box(c,i?"中文":"English",ControlLeft,y,ControlWidth,height,{DropdownFont,0,cream,32},true,false);
-   c.action(ControlLeft,y,ControlWidth,height,i?UiAction::SettingsLanguageChinese:UiAction::SettingsLanguageEnglish);
+  const unsigned count=locale_language_count(a.available_languages()),visible=7;
+  const unsigned top=a.settings_language_item>=visible?a.settings_language_item-visible+1:0;
+  constexpr int left=82,width=220,row_height=22,first_y=40;
+  a.hit_count=0;c.action(0,0,320,240,UiAction::SettingsLanguageClose);
+  c.rect(left,first_y-3,width,int(mn(count,visible))*row_height+6,rgb(18,33,41));
+  for(unsigned i=top;i<count&&i<top+visible;++i){const unsigned id=locale_language_at(a.available_languages(),i);
+   const int y=first_y+int(i-top)*row_height;const bool focus=a.pointer.visible?pointed(left,y,width,row_height):a.settings_language_item==i;
+   if(focus)c.rect(left,y,width,row_height,rgb(44,88,112));
+   profile_text_box(c,locale_language_info(id).name,left+8,y,width-16,row_height,{10,0,cream,0},false,false);
+   c.action(left,y,width,row_height,UiAction(unsigned(UiAction::SettingsLanguageFirst)+id-1));
   }
+  if(count>visible){c.text("↑",62,44,12,cream);c.text("↓",62,174,12,cream);
+   c.action(54,40,24,36,UiAction::SettingsLanguagePrevious,a.settings_language_item>0);
+   c.action(54,160,24,36,UiAction::SettingsLanguageNext,a.settings_language_item+1<count);}
  }
  if(a.binding_listening>=0){a.hit_count=0;
   Canvas backstop=c;backstop.opacity=242;backstop.rect(27,101,267,38,rgb(0,73,68));

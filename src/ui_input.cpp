@@ -6,6 +6,7 @@
 #include "ui_core_observer.hpp"
 #include "library_search.hpp"
 #include "settings_layout.hpp"
+#include "menu_overlay_layout.hpp"
 namespace spire {
 static bool room_shop_context(const App&a){return a.game.phase==Phase::Shop||(a.game.phase==Phase::Event&&a.game.original_events.active&&a.game.original_events.id==OriginalEventId::FakeMerchant&&!a.game.original_events.finished);}
 static bool room_shop_available(const App&a){return room_shop_context(a)&&!a.title&&!a.paused&&!a.help&&!a.panel&&!a.library&&!a.character_select&&!a.map_preview.open&&!a.event_reader&&!a.frontend_confirm&&!a.settings_open&&!a.map_window.is_open&&a.detail_card<0&&a.detail_item<0&&a.status_actor<0&&a.deck_candidate<0;}
@@ -53,6 +54,7 @@ void App::select_library_item(int index){
     if(library_card_seen(ids[index]))open_card_detail({ids[index],uint8_t(library_upgraded&&card_upgradeable({ids[index],0}))});
 }
 void App::ui_action(UiAction action){
+    if(character_departure.active())return;
     sync_ftues();if(ftue_before_action(action))return;
     if(detail_item>=0&&detail_item<WorldRelicKinds){
         if(action==UiAction::InspectPreviousRelic)move_relic_inspect(-1);
@@ -143,9 +145,13 @@ void App::ui_action(UiAction action){
     case UiAction::PreviousCampPage:camp_page(-1);break;
     case UiAction::NextCampPage:camp_page(1);break;
     case UiAction::ReadEvent:
-        if(!title&&!paused&&!panel&&!library&&game.phase==Phase::Event){event_reader=true;event_reader_scroll=0;}break;
+        if(event_body_active()){event_body_focus=!event_body_focus;break;}
+        if(ancient_dialogue_ready()){event_body_focus=!event_body_focus;break;}
+        if(!title&&!paused&&!panel&&!library&&(game.phase==Phase::Event||
+           (game.phase==Phase::OriginalEventChoice&&game.original_events.selection==OriginalEventSelection::Crystal))){event_reader=true;event_reader_scroll=0;}break;
     case UiAction::CloseEventReader:event_reader=false;break;
-    case UiAction::StartCharacter:if(character_select)start_selected_run({});break;
+    case UiAction::StartCharacter:if(character_select)start_selected_run({},true);break;
+    case UiAction::SelectRandomCharacter:if(character_select)character_random=true;break;
     case UiAction::RunSettings:break; // Retired port-only overlay; keep enum ABI.
     case UiAction::RunAscensionDown:if(character_select&&selected_ascension)selected_ascension--;break;
     case UiAction::RunAscensionUp:if(character_select&&selected_ascension<10)selected_ascension++;break;
@@ -196,8 +202,8 @@ void App::ui_action(UiAction action){
     case UiAction::MoreStatus:
         if(status_actor>=0)status_scroll=status_scroll>=status_scroll_limit?0:status_scroll+5;break;
     case UiAction::SelectIronclad:case UiAction::SelectSilent:case UiAction::SelectDefect:case UiAction::SelectRegent:case UiAction::SelectNecrobinder:
-        if(character_select)selected_character=action==UiAction::SelectIronclad?Character::Ironclad:action==UiAction::SelectSilent?Character::Silent:
-            action==UiAction::SelectDefect?Character::Defect:action==UiAction::SelectRegent?Character::Regent:Character::Necrobinder;break;
+        if(character_select){character_random=false;selected_character=action==UiAction::SelectIronclad?Character::Ironclad:action==UiAction::SelectSilent?Character::Silent:
+            action==UiAction::SelectDefect?Character::Defect:action==UiAction::SelectRegent?Character::Regent:Character::Necrobinder;}break;
     case UiAction::FilterAll:case UiAction::FilterIronclad:case UiAction::FilterSilent:case UiAction::FilterColorless:
     case UiAction::FilterDefect:case UiAction::FilterRegent:case UiAction::FilterNecrobinder:
     case UiAction::CycleSort:break; // Replaced by original sidebar controls.
@@ -267,8 +273,12 @@ bool App::screen_input(Key key){
         if(key==Key::Confirm)ui_action(UiAction::StartCharacter);
         else if(key==Key::Inspect&&!practice_entry)ui_action(UiAction::RunAscensionDown);
         else if(key==Key::ExhaustPile&&!practice_entry)ui_action(UiAction::RunAscensionUp);
-        else if(key==Key::Left||key==Key::Right||key==Key::Up||key==Key::Down)
-            selected_character=(Character)(((int)selected_character+(key==Key::Left||key==Key::Up?CharacterKinds-1:1))%CharacterKinds);
+        else if(key==Key::Left||key==Key::Right||key==Key::Up||key==Key::Down){
+            unsigned current=CharacterKinds;
+            if(!character_random)for(unsigned i=0;i<CharacterKinds;++i)if(RunModeCharacters[i]==selected_character){current=i;break;}
+            const unsigned next=(current+(key==Key::Left||key==Key::Up?CharacterKinds:1))%(CharacterKinds+1);
+            character_random=next==CharacterKinds;if(!character_random)selected_character=RunModeCharacters[next];
+        }
         else if(key==Key::Back){if(practice_entry)character_select=false;else open_run_menu(RunMenu::Singleplayer);}
         else if(key==Key::Quit){cancel_map_travel();quit=true;}
         return true;
@@ -350,6 +360,7 @@ void App::confirm_deck_choice(){
     if(!deck_candidate_valid()){deck_candidate=-1;return;}
     int index=deck_candidate;Phase phase=game.phase;deck_candidate=-1;pointer_cancel();
     const auto rest_selection=room_presentation.rest.selection;
+    RewardPresentation::Upgrades upgraded;
     RewardPresentation::RemovedCard removed;
     if(phase==Phase::Remove||grimoire_select){
         removed.card=game.deck[index];if(const auto*facts=event_card_facts(game,removed.card,-1,index))removed.facts=*facts;
@@ -362,7 +373,9 @@ void App::confirm_deck_choice(){
         else message("此时无法移除这张牌");return;
     }
     bool ok=phase==Phase::Upgrade?upgrade_card(game,index):phase==Phase::Remove?remove_card(game,index):transform_card(game,index);
-    if(ok){reset_presentation(true);if(removed.active)reward_presentation.removed=removed;
+    if(ok){
+      if(phase==Phase::Upgrade)upgraded.add(game.deck[index],game.event_cards.deck[index],index,map_clock_ms);
+      reset_presentation(true);if(removed.active)reward_presentation.removed=removed;if(upgraded.count)reward_presentation.upgrades=upgraded;
       if(rest_selection.pending&&game.world.active&&game.world.room_type==unsigned(WorldRoom::Rest)){
         room_presentation.rest.restore_selection(rest_selection,map_clock_ms);sync_camp_presentation();
       }
@@ -446,7 +459,18 @@ void App::sync_relic_feedback(){
 }
 
 namespace spire {
+bool App::event_body_active()const{
+ return !title&&!paused&&!help&&!panel&&!library&&!settings_open&&!frontend_confirm&&!character_select&&
+  !map_preview.open&&!map_window.is_open&&detail_card<0&&detail_item<0&&status_actor<0&&deck_candidate<0&&
+  game.phase==Phase::Event&&game.original_events.active&&!room_presentation.event.ancient&&
+  !(game.original_events.id==OriginalEventId::FakeMerchant&&!game.original_events.finished)&&
+  !(game.original_events.id==OriginalEventId::CrystalSphere&&game.original_events.finished&&game.original_events.crystal_item_count);
+}
 bool App::room_input(Key key){
+    if(event_body_active()&&event_body_focus){
+        if(key==Key::Back||key==Key::Detail||key==Key::Confirm){event_body_focus=false;pointer_cancel();return true;}
+        if(key==Key::Up||key==Key::Down||key==Key::Left||key==Key::Right){event_body_scroll.wheel(key==Key::Up?-1:key==Key::Left?-5:key==Key::Down?1:5);return true;}
+    }
     if(event_reader){
         if(key==Key::Back||key==Key::Detail||key==Key::Confirm){event_reader=false;pointer_cancel();}
         else if(key==Key::Up||key==Key::Left){event_reader_scroll-=key==Key::Left?10:1;if(event_reader_scroll<0)event_reader_scroll=0;}

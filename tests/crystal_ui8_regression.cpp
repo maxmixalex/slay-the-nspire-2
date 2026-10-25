@@ -32,6 +32,14 @@ int main(int argc,char**argv){
  app.input(Key::DiscardPile);CHECK(app.game.original_events.crystal_tool==2);app.render();
  app.advance(150);app.render();CHECK(app.crystal_presentation.hover_alpha(60,app.map_clock_ms)==128);CHECK(app.crystal_presentation.hover_alpha(48,app.map_clock_ms)==128);
  app.input(Key::DrawPile);CHECK(app.game.original_events.crystal_tool==1);
+ // LCD instructions use the existing full reader. Opening, scrolling and
+ // closing it must never spend a divination or move the board selection.
+ const int reader_cursor=app.cursor;CHECK(save(app.game,before));
+ app.input(Key::Detail);CHECK(app.event_reader);app.input(Key::Down);CHECK(app.event_reader_scroll==1);
+ app.input(Key::Confirm);CHECK(!app.event_reader&&app.cursor==reader_cursor&&app.game.original_events.crystal_charges==6);
+ app.render();app.pointer_move(260,180);app.pointer_button(true);app.pointer_button(false);CHECK(app.event_reader);
+ app.input(Key::Back);CHECK(!app.event_reader&&app.cursor==reader_cursor);
+ CHECK(save(app.game,after));CHECK(before.size==after.size&&!std::memcmp(before.bytes,after.bytes,before.size));
  // Navigation and both original hotkeys affect selection only; no acquisition
  // or reward reroll can occur while painting or advancing the presentation.
  CHECK(save(app.game,before));for(unsigned i=0;i<20;++i){app.advance(33);app.render();}

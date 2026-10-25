@@ -8,6 +8,7 @@ namespace spire {
 // not consume combat RNG, retain creatures, or keep another framebuffer.
 struct CombatSparkMotion {
  static constexpr unsigned Capacity=48,Particles=10;
+ enum Kind:uint8_t {Hit,OrbPassive,OrbEvoke,OrbBeam,PowerUp};
  struct Particle {
   int32_t distance=0; // Q10 calculator pixels, along the emission direction.
   uint16_t speed=0,radial=0,damping=0,scale=0,lifetime=0,angle=0;
@@ -19,6 +20,8 @@ struct CombatSparkMotion {
   int16_t x=0,y=0;
   uint16_t stepped=0;
   uint8_t steps=0,blocked=0;
+  int16_t target_x=0,target_y=0;
+  uint8_t kind=Hit,variant=0;
  };
  Burst bursts[Capacity]{};
  uint8_t count=0;uint32_t clock=UINT32_MAX;
@@ -52,12 +55,15 @@ struct CombatSparkMotion {
   }
   clock=UINT32_MAX;
  }
+ void secondary(uint32_t at,int x,int y,Kind kind,unsigned variant,uint32_t seed,int tx=0,int ty=0){
+  emit(at,x,y,false,seed);auto&b=bursts[count-1];b.kind=kind;b.variant=uint8_t(variant);b.target_x=int16_t(tx);b.target_y=int16_t(ty);
+ }
  void step(uint32_t now){
   if(clock==now)return;clock=now;
   unsigned out=0;
   for(unsigned n=0;n<count;++n){auto&b=bursts[n];const int age=int32_t(now-b.at);
    if(age>=1000)continue;
-   if(age>=0)while(b.steps<60){const unsigned next=(unsigned(b.steps+1)*1000u+59u)/60u;if(next>unsigned(age))break;
+   if(age>=0&&b.kind==Hit)while(b.steps<60){const unsigned next=(unsigned(b.steps+1)*1000u+59u)/60u;if(next>unsigned(age))break;
     const unsigned dt=next-b.stepped;
     for(auto&p:b.particles){if(next>=p.lifetime)continue;
      const unsigned life=progress(next,p.lifetime),damp=unsigned(curve(int(life*1024u/361u),0,1024))*p.damping/1024u;

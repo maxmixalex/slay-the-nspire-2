@@ -371,6 +371,15 @@ bool original_event_text_key(const State&s,int option,bool description,char*out,
  if(!out||!capacity)return false;const auto&e=s.original_events;
  if(!e.active||unsigned(e.id)>=unsigned(OriginalEventId::Count)||option< -1||option>=int(e.option_count))return false;
  const char*parts[5]={original_event_key(e.id),".pages.",option<0?e.page_key:e.option_keys[option],description?".description":".title",""};
+ // The source supplies separate locked labels when a required potion/relic
+ // or enchantable attack is absent. Select that text without changing the
+ // canonical option identity, availability or the saved event state.
+ if(option>=0&&!e.finished&&!e.page&&!original_event_option_enabled(s,unsigned(option))){
+  if(e.id==OriginalEventId::RanwidTheElder){
+   if(option==0)parts[2]="INITIAL.options.POTION_LOCKED";
+   else if(option==2)parts[2]="INITIAL.options.RELIC_LOCKED";
+  }else if(e.id==OriginalEventId::StoneOfAllTime)parts[2]=option?"INITIAL.options.PUSH_LOCKED":"INITIAL.options.LIFT_LOCKED";
+ }
  if(e.id==OriginalEventId::Trial&&option<0&&description&&e.page>=2&&e.page<=4){parts[0]=e.finished?"TRIAL.trialResult":"TRIAL.trialFormat";parts[1]=parts[2]=parts[3]="";}
  char architect_next[64]{};
  if(e.id==OriginalEventId::TheArchitect){parts[1]=".";parts[2]=option<0?e.page_key:"PROCEED";parts[3]="";

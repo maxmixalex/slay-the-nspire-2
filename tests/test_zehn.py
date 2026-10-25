@@ -8,7 +8,7 @@ import tempfile
 import unittest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'tools'))
-from zehn import build
+from zehn import ALLOCATION_LIMIT, build
 
 
 def image(memory_end: int) -> bytes:
@@ -48,14 +48,14 @@ class ZehnAllocationTest(unittest.TestCase):
             build(self.source, self.target)
 
     def test_total_allocation_at_limit_is_accepted(self):
-        self.make(0x1000000 - self.prefix)
-        self.assertEqual(struct.unpack_from('<I', self.target.read_bytes(), 24)[0], 0x1000000)
+        self.make(ALLOCATION_LIMIT - self.prefix)
+        self.assertEqual(struct.unpack_from('<I', self.target.read_bytes(), 24)[0], ALLOCATION_LIMIT)
 
     def test_prefix_pushes_valid_image_over_limit_without_replacing_output(self):
         previous = self.target.read_bytes()
-        memory_end = 0x1000000 - self.prefix + 1
-        self.assertLess(memory_end, 0x1000000)
-        with self.assertRaisesRegex(ValueError, 'Zehn allocation exceeds 16 MiB'):
+        memory_end = ALLOCATION_LIMIT - self.prefix + 1
+        self.assertLess(memory_end, ALLOCATION_LIMIT)
+        with self.assertRaisesRegex(ValueError, 'Zehn allocation exceeds 24 MiB'):
             self.make(memory_end)
         self.assertEqual(self.target.read_bytes(), previous)
 

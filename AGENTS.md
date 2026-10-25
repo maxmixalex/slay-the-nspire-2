@@ -1,5 +1,9 @@
 # Development continuity
 
+## Current calculator acceptance direction
+
+The user's UI11 direction is readable 320×240 layouts, a roughly 65–70 MB default installation, optional support for all original locales, and a 24 MiB allocation ceiling subject to ordinary Ndless startup. Use Firebird for interactive UI, gameplay and performance validation. Do not run manual WASM/browser validation unless the user asks for it again; native regressions remain useful for correctness and do not establish calculator performance. Keep platform adaptations and measured limits explicit.
+
 Read `docs/WORK_STATE.md` before doing work. The active 0.17 task is original UI fidelity and calculator usability first, followed by runtime performance and resource storage size. Preserve the verified single-player content, five-character/card/potion foundation and world/map behavior. The repository moved to `maxmixalex/slay-the-nspire-2` on 2026-10-23. Continue coherent changes on `work/0.17-world-parity`, then synchronize verified progress to `main` as the user requested. Read `docs/world-parity-0.17.md` for scope and integration boundaries. Preserve source persistence BEFORE long validation. The user requests parallel sub-agents with smaller independent goals.
 
 ## Required checkpoint cycle

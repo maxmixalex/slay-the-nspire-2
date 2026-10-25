@@ -1,3 +1,4 @@
+#include "calculator_pad_input.hpp"
 #include "app.hpp"
 #include "host_text_input.hpp"
 #include "host_physical_input.hpp"
@@ -35,7 +36,7 @@ static uint32_t entropy_start=0;
 static unsigned installed_languages=0,pending_language=0;
 static unsigned available_languages(){return installed_languages;}
 static bool request_language(unsigned language){
-    if(language<1||language>2||!(installed_languages&(1u<<(language-1))))return false;
+    if(!spire::locale_language_valid(language)||!(installed_languages&spire::locale_language_mask(language)))return false;
     pending_language=language;return true;
 }
 static uint32_t seed_entropy(){
@@ -204,24 +205,26 @@ extern "C" int main(int argc,char**argv){
     const auto preferred=language_preference();bool selected_language=false;
     common.file=open_sibling(launcher,"nSpire2.common.tns");
     if(common.file){
-        void*english=open_sibling(launcher,"nSpire2.eng.tns");void*chinese=open_sibling(launcher,"nSpire2.zhs.tns");
-        if(!english&&!chinese){boot_error(blit,spire::BootText::MissingLanguage,spire::BootLanguage::Unknown);return 4;}
-        installed_languages=(english?1u:0u)|(chinese?2u:0u);
-        source.language=preferred==spire::BootLanguage::English&&english?spire::BootLanguage::English:
-            preferred==spire::BootLanguage::Chinese&&chinese?spire::BootLanguage::Chinese:
-            chinese?spire::BootLanguage::Chinese:spire::BootLanguage::English;
-        if(source.language==spire::BootLanguage::English){source.file=english;if(chinese)nd_close(chinese);}
-        else if(source.language==spire::BootLanguage::Chinese){source.file=chinese;if(english)nd_close(english);}
-        else {if(english)nd_close(english);if(chinese)nd_close(chinese);exit_input_release(timer_ticks,boot_keys_held);return 0;}
+        // Probe installed optional language files; retain only the chosen handle.
+        // A language change reloads metadata/fonts while artwork stays shared.
+        for(unsigned id=1;id<=spire::LocaleLanguageCount;++id){
+            void*f=open_sibling(launcher,spire::locale_language_info(id).file);
+            if(f){installed_languages|=spire::locale_language_mask(id);nd_close(f);}
+        }
+        if(!installed_languages){boot_error(blit,spire::BootText::MissingLanguage,spire::BootLanguage::Unknown);return 4;}
+        unsigned selected=unsigned(preferred);
+        if(!(installed_languages&spire::locale_language_mask(selected)))selected=(installed_languages&2u)?2u:spire::locale_language_at(installed_languages,0);
+        source.language=static_cast<spire::BootLanguage>(selected);
+        source.file=open_sibling(launcher,spire::locale_language_info(selected).file);
         selected_language=true;
     }else source.file=open_sibling(launcher,"nSpire2.nsp.tns");
     if(!source.file){boot_error(blit,spire::BootText::MissingResources,spire::BootLanguage::Unknown);return 4;}
     const uint32_t startup_start=performance.enabled?timer_ticks():0;
     source.blit=blit;auto resource=file_source(source);bool valid=resource.length!=0;
     if(common.file){
-        valid=valid&&split.open(file_source(common),resource,source.language==spire::BootLanguage::English?spire::ResourceLanguage::English:spire::ResourceLanguage::Chinese);
+        valid=valid&&split.open(file_source(common),resource,static_cast<spire::ResourceLanguage>(source.language));
         if(valid)resource=split.source();
-    }else{source.language=spire::boot_probe_language(resource);installed_languages=source.language==spire::BootLanguage::English?1u:2u;}
+    }else{source.language=spire::boot_probe_language(resource);installed_languages=spire::locale_language_mask(unsigned(source.language));}
     app.calculator_keyboard=true;
     if(!valid||!app.init(resource,{save_game,load_game,clear_save,seed_entropy,load_preferences,save_preferences,available_languages,request_language,load_progress,save_progress,wall_clock,current_profile,profile_info,request_profile,write_feedback})){
         boot_error(blit,spire::BootText::InvalidResources,source.language);return 5;
@@ -234,8 +237,8 @@ extern "C" int main(int argc,char**argv){
     auto change_language=[&](){
         const unsigned requested=pending_language;pending_language=0;
         if(!requested||!common.file||!app.title)return;
-        void*next=open_sibling(launcher,requested==1?"nSpire2.eng.tns":"nSpire2.zhs.tns");
-        if(!next){app.message(app.content.english()?"Language resources are unavailable.":"无法读取语言资源。");return;}
+        void*next=open_sibling(launcher,spire::locale_language_info(requested).file);
+        if(!next){app.message(app.content.language()!=2?"Language resources are unavailable.":"无法读取语言资源。");return;}
         void*previous=source.file;const auto old_language=source.language;
         source.file=next;source.language=static_cast<spire::BootLanguage>(requested);
         const bool opened=split.open(file_source(common),file_source(source),static_cast<spire::ResourceLanguage>(requested));
@@ -245,11 +248,11 @@ extern "C" int main(int argc,char**argv){
             if(!split.open(file_source(common),file_source(source),static_cast<spire::ResourceLanguage>(old_language))||!app.reload_language(split.source())){
                 boot_error(blit,spire::BootText::InvalidResources,old_language);app.quit=true;return;
             }
-            app.message(app.content.english()?"Could not change language.":"无法切换语言。");
+            app.message(app.content.language()!=2?"Could not change language.":"无法切换语言。");
         }
     };
     while(pressed(0x10,2)){} // Release ENTER used to open the document.
-    Touchpad pad{};pad.init();spire::TouchpadCursor pad_cursor;
+    Touchpad pad{};pad.init();spire::TouchpadCursor pad_cursor;spire::CalculatorPadInput pad_keys;
     clock.last=timer_ticks();uint32_t input_clock=0;
     uint16_t text_previous[8]{};uint8_t repeat[spire::CalculatorPhysicalKeyCount]{};bool input_ready=false;unsigned quiet_ms=0;
     uint32_t first_start=performance.enabled?timer_ticks():0;
@@ -276,7 +279,11 @@ extern "C" int main(int argc,char**argv){
         const auto resources_before=performance.enabled?performance.resources:spire::RuntimeResourceTiming{};
         app.advance(elapsed);
         input_clock+=elapsed;
-        auto sample=pad.read();auto pointer=pad_cursor.sample(sample,input_clock);
+        auto sample=pad.read();
+        const bool pad_navigation=input_ready&&pad_keys.sample(sample,input_clock,app.keyboard_only,
+            [](uint16_t code,bool down){app.physical_key(code,down);});
+        if(pad_navigation){app.pointer_cancel();pad_cursor.reset(app.pointer.x,app.pointer.y);}
+        auto pointer=pad_navigation?spire::PointerUpdate{}:pad_cursor.sample(sample,input_clock);
         if(input_ready&&pointer.cancelled)app.pointer_cancel();
         if(input_ready&&(pointer.moved||pointer.down||pointer.up||pointer.tap))app.pointer_move(pointer.x,pointer.y);
         if(input_ready&&(pointer.down||pointer.tap))app.pointer_button(true);
@@ -292,19 +299,20 @@ extern "C" int main(int argc,char**argv){
         }
         const bool library_text=app.library&&!app.library_tab&&app.library_search_editing&&app.binding_listening<0;
         const bool seed_text=app.map_preview.open&&app.map_preview.editing&&app.binding_listening<0;
-        const bool feedback_text=app.auxiliary.screen==spire::AuxiliaryScreen::Feedback&&app.auxiliary.editing&&app.binding_listening<0;
-        spire::calculator_physical_edges(text_keys,text_previous,repeat,library_text||seed_text||feedback_text,
-            [](uint16_t code,bool down){app.physical_key(code,down);});
-        if(feedback_text){
-            // Numeric keys remain literal text; SHIFT plus the established
-            // 4/6/8/2 pad moves the caret on the CX's shared keyboard.
-            spire::calculator_text_edges(text_keys,text_previous,[&](int code){
-                if((text_keys[7]&0x100)&&(code=='4'||code=='6'||code=='8'||code=='2'))app.auxiliary_text(code=='4'?-1:code=='6'?-2:code=='8'?-3:-4);
-                else app.auxiliary_text(code);
-            });
-            if((text_keys[6]&0x200)&&!(text_previous[6]&0x200))app.auxiliary_text(9);
-        }
-        else if(library_text)spire::calculator_text_edges(text_keys,text_previous,[](int code){app.library_text(code);});
+        bool console_text=false;
+#if SPIRE_DEBUG_COMMANDS
+        console_text=app.debug_open;
+        if((text_keys[6]&1)&&!(text_previous[6]&1))app.input(spire::Key::Debug);
+        console_text=app.debug_open;
+#endif
+        spire::calculator_physical_edges(text_keys,text_previous,repeat,library_text||seed_text||console_text,
+            [](uint16_t code,bool down){if(code!=spire::InputFlag)app.physical_key(code,down);});
+        #if SPIRE_DEBUG_COMMANDS
+        if(console_text){spire::calculator_text_edges(text_keys,text_previous,[](int code){app.debug_text(code);});
+            if((text_keys[6]&0x200)&&!(text_previous[6]&0x200))app.debug_text(9);}
+        else
+#endif
+        if(library_text)spire::calculator_text_edges(text_keys,text_previous,[](int code){app.library_text(code);});
         else if(seed_text)spire::calculator_text_edges(text_keys,text_previous,[](int code){app.reference_text(code);});
         for(unsigned row=0;row<8;++row)text_previous[row]=text_keys[row];
         change_language();service_profile();

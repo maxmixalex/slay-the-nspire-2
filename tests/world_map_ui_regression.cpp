@@ -378,13 +378,23 @@ static void circle_pixels(){
 }
 static void layout_and_input(){
     start();CHECK(app.game.world.visited_rooms[0][app.game.world.current_point]==unsigned(WorldRoom::Event));
-    app.input(Key::Map);CHECK(app.panel==3);snapshot();app.render();CHECK(!world_hits());capture("map-neow-inspection");
-    CHECK(!find_hit(HitKind::UiAction,int(UiAction::ToggleMapLegend))&&find_hit(HitKind::Close,0));
-    for(unsigned i=0;i<6;++i)CHECK(find_hit(HitKind::UiAction,int(UiAction::MapLegendUnknown)+int(i)));
+    app.input(Key::Map);CHECK(app.panel==3);app.map_window.settle();snapshot();app.render();CHECK(!world_hits());capture("map-neow-inspection");
+    const auto*toggle=find_hit(HitKind::UiAction,int(UiAction::ToggleMapLegend));CHECK(toggle);
+    CHECK(toggle->x==244&&toggle->y==215&&toggle->w==72&&toggle->h==22);
+    CHECK(find_hit(HitKind::UiAction,int(UiAction::Back))&&!find_hit(HitKind::Close,0));
+    for(unsigned i=0;i<6;++i)CHECK(!find_hit(HitKind::UiAction,int(UiAction::MapLegendUnknown)+int(i)));
+    // The compact LCD legend opens by its explicit bottom-right control.
+    // Moving away only relinquishes item hover; it must not dismiss it.
+    const auto collapsed=*toggle;app.pointer_move(collapsed.x+collapsed.w/2,collapsed.y+collapsed.h/2);
+    app.pointer_button(true);app.pointer_button(false);app.render();CHECK(app.map_legend);unchanged();
+    for(unsigned i=0;i<6;++i){const auto*row=find_hit(HitKind::UiAction,int(UiAction::MapLegendUnknown)+int(i));CHECK(row);
+        CHECK(row->x==194&&row->y==113+17*int(i)&&row->w==119&&row->h==17);}
     const auto*legend=find_hit(HitKind::UiAction,int(UiAction::MapLegendTreasure));CHECK(legend);
     app.pointer_move(legend->x+legend->w/2,legend->y+legend->h/2);app.render();CHECK(app.map_legend&&app.map_legend_item==2);unchanged();
-    app.pointer_move(0,0);app.render();CHECK(!app.map_legend);unchanged();
-    app.input(Key::Detail);CHECK(app.map_legend);app.render();CHECK(!world_hits()&&find_hit(HitKind::Close,0));app.input(Key::Back);CHECK(!app.map_legend&&app.panel==3&&!app.paused);
+    app.pointer_move(0,0);app.render();CHECK(app.map_legend&&app.map_legend_item==2);unchanged();
+    toggle=find_hit(HitKind::UiAction,int(UiAction::ToggleMapLegend));CHECK(toggle);const auto expanded=*toggle;
+    app.pointer_move(expanded.x+expanded.w/2,expanded.y+expanded.h/2);app.pointer_button(true);app.pointer_button(false);app.render();CHECK(!app.map_legend);unchanged();
+    app.input(Key::Detail);CHECK(app.map_legend);app.render();CHECK(!world_hits()&&find_hit(HitKind::UiAction,int(UiAction::Back)));app.input(Key::Back);CHECK(!app.map_legend&&app.panel==3&&!app.paused);
     app.input(Key::Back);CHECK(!app.panel);unchanged();finish_routing_fixture();snapshot();
     WorldMapLayout a,b;CHECK(world_map_layout(app.game,a));CHECK(world_map_layout(app.game,b));
     const auto&m=*world_current_map(app.game);unsigned regular=0;
@@ -404,10 +414,10 @@ static void layout_and_input(){
     // modal opens. The ordinary release path must discard the stale gesture.
     app.render();const auto*h=find_hit(HitKind::WorldNode,ids[0]);CHECK(h);const int x=h->x+h->w/2,y=h->y+h->h/2;
     app.pointer_move(x,y);app.pointer_button(true);CHECK(app.pointer.held);app.input(Key::Detail);app.pointer_button(false);
-    // A physical button event restores mouse mode. This release cancels the
-    // keyboard legend at the node's actual pointer position; another Back
-    // would now pause the run instead of dismissing an already closed legend.
-    CHECK(world_can_travel(app.game)&&!app.pointer.held&&app.pointer.visible&&!app.map_legend&&!app.paused);
+    // A physical button event restores mouse mode but retains the explicit
+    // legend. The stale press cannot travel; Back dismisses only the legend.
+    CHECK(world_can_travel(app.game)&&!app.pointer.held&&app.pointer.visible&&app.map_legend&&!app.paused);
+    app.input(Key::Back);CHECK(!app.map_legend&&!app.paused);unchanged();
     for(int i=0;i<40;++i){app.input(Key::Up);app.render();}const auto top=world_map_view(app.game,a,app.map_scroll);CHECK(top.origin==top.maximum);CHECK(!world_hits());capture("map-boss-distant");
     app.input(Key::Confirm);CHECK(world_can_travel(app.game)&&app.map_scroll==0);
     app.advance(67);app.render();CHECK(world_hits()==n);unchanged();

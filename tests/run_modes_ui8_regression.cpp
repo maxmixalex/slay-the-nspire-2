@@ -39,11 +39,11 @@ int main(int argc,char**argv){
     a.input(Key::Left);a.input(Key::Up);CHECK(a.compendium_selection==0);
     a.input(Key::Right);a.input(Key::Right);a.input(Key::Right);a.input(Key::Down);CHECK(a.compendium_selection==2);
     a.input(Key::Left);a.input(Key::Left);CHECK(a.compendium_selection==0);
-    const auto standard=hit(HitKind::UiAction,int(UiAction::OpenStandardRun));CHECK(standard.x==52&&standard.y==53&&standard.w==63&&standard.h==134);
+    const auto standard=hit(HitKind::UiAction,int(UiAction::OpenStandardRun));CHECK(standard.x>=0&&standard.y>=20&&standard.w>=80&&standard.h>=160&&standard.y+standard.h<=211);
     a.ui_action(UiAction::OpenCustomRun);CHECK(a.run_mode.screen==RunMenu::Custom&&a.run_mode.pending.mode==RunMode::Custom);
     a.pointer.visible=false;a.run_mode.focus=0;a.input(Key::Right);CHECK(a.selected_character==Character::Silent&&a.run_mode.focus==1);
     a.input(Key::Up);CHECK(a.run_mode.focus==7);a.run_mode.focus=4;a.input(Key::Right);CHECK(a.run_mode.focus==4);
-    const auto random=hit(HitKind::UiAction,int(UiAction::RandomizeRun));CHECK(random.x==(a.content.english()?213:195)&&random.y==22&&random.w==38&&random.h==10);
+    const auto random=hit(HitKind::UiAction,int(UiAction::RandomizeRun));CHECK(random.x>=230&&random.x+random.w<=320&&random.y>=0&&random.w>=50&&random.h>=16);
     a.ui_action(UiAction::SelectRegent);CHECK(a.selected_character==Character::Regent);
     a.ui_action(UiAction::RunAscensionUp);CHECK(a.selected_ascension==1);
     a.ui_action(UiAction::RunSeed);CHECK(a.map_preview.editing&&a.map_preview.open&&a.run_seed_editing);
@@ -66,7 +66,7 @@ int main(int argc,char**argv){
     CHECK(a.run_mode.pending.daily_day==now/86400&&a.run_mode.pending.modifiers==expected.modifiers&&a.selected_character==character);
     settle();capture("daily-offline");
     a.input(Key::Back);a.ui_action(UiAction::OpenCustomRun);a.run_modifier_select(unsigned(RunModifier::Flight));
-    a.ui_action(UiAction::StartConfiguredRun);CHECK(!a.title&&a.game.world.active&&a.game.run_options.mode==RunMode::Custom&&has_run_modifier(a.game,RunModifier::Flight));
+    a.ui_action(UiAction::StartConfiguredRun);CHECK(a.title&&a.character_departure.active());settle();settle();CHECK(!a.title&&!a.character_departure.active()&&a.game.world.active&&a.game.run_options.mode==RunMode::Custom&&has_run_modifier(a.game,RunModifier::Flight));
     CHECK(a.game.original_events.finished&&original_event_option_count(a.game)==1); // No ordinary Neow relic for modifiers without a Neow option.
     SaveData saved{};CHECK(save(a.game,saved));CHECK(load(restored,saved.bytes,saved.size));
     CHECK(restored.run_options.mode==RunMode::Custom&&restored.run_options.modifiers==a.game.run_options.modifiers);

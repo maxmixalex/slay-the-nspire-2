@@ -42,7 +42,7 @@ static void fake_merchant_welcome(Canvas&c){
  char key[80]{},text[512]{};TextBuffer b{key,sizeof key,0};b.text("FAKE_MERCHANT.talk.welcome.line");b.number(welcome.line);
  a.localized_text("events",key,text,sizeof text);if(!*text)return;
  layer.bold_face=5;layer.opacity=uint8_t(div255(layer.opacity*230));
- const auto metric=[&](const RichChar&ch,int px){const auto g=a.content.glyph_metrics(ch.codepoint,px,layer.font_style(ch));return fitted_text::Metric{g.advance,mx(int(g.advance),int(g.w))};};
+ const auto metric=[&](const RichChar&ch,int px){return layer.text_metric(ch,px);};
  auto plan=native_room_compact_plan(layer,text,53,25);plan.rows=mn(plan.rows,8);int widths[8]{};
  fitted_text::visit(text,53,plan,metric,[&](const RichChar&ch,int at,int row,int px){widths[row]=at+metric(ch,px).width;});
  const int top=mx(0,(25-(plan.rows*plan.step+2))/2);

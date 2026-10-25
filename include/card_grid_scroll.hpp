@@ -9,10 +9,10 @@ enum class CardGridSurface : uint8_t { Pile, Library, DeckChoice, CombatChoice, 
 // NCardGrid / ScrollHelper, using the pinned 1680x1260 FourByThree viewport.
 // The fixed-point position belongs to UI presentation, never to a saved pile.
 struct CardGridScroll {
-    static constexpr int Unit=256, Columns=4, CardW=46, CardH=64, StepX=53, StepY=72;
-    static constexpr int Left=52, BottomMargin=61, ThumbSize=14;
+    static constexpr int Unit=256, Columns=3, CardW=69, CardH=96, StepX=78, StepY=108;
+    static constexpr int Left=42, BottomMargin=24, ThumbSize=14;
     // Keep fractional 377.6px source row spacing until the final projection.
-    static int row_offset(int row){return (row*7552+52)/105;}
+    static int row_offset(int row){return row*StepY;}
     uint32_t identity=0,epoch=0,hover_changed=0;
     int32_t position=0,target=0,thumb_position=0,thumb_velocity=0;
     int16_t count=0,top=0,bottom=0,origin=0,focused_index=-1,left=Left,custom_height=-1,bar_inset=25;
@@ -32,16 +32,16 @@ struct CardGridScroll {
     bool has_scrollbar()const{return count&&origin+cards_height()>height();}
     int offset()const{return position/Unit;}
     int card_y(int index)const{return top+origin+row_offset(index/columns)-offset();}
-    int card_x(int index)const{return left+reference_viewport::project((index%columns)*280);}
+    int card_x(int index)const{return left+(index%columns)*StepX;}
     int first()const{
         const int above=offset()-origin-CardH-4;
-        int row=above>0?above*105/7552:0;
+        int row=above>0?above/StepY:0;
         while(row<rows()&&row_offset(row)<=above)++row;
         return clamp(row*columns,0,count);
     }
     int last()const{
         const int below=height()+offset()-origin+4;
-        int row=below>0?below*105/7552:0;
+        int row=below>0?below/StepY:0;
         while(row<rows()&&row_offset(row)<below)++row;
         return clamp(row*columns,0,count);
     }
@@ -59,14 +59,14 @@ struct CardGridScroll {
         if(changed){position=target=minimum();thumb_position=bar_top()*Unit;thumb_velocity=0;dragging=thumb_drag=false;thumb_hover=false;hover_changed=0;focused_index=-1;for(auto&face:faces)face=FaceMotion{};}
     }
     int face_scale(int index,uint32_t now)const{
-        const auto&face=faces[unsigned(index)%16];if(face.index!=index)return 800;
-        if(face.focused)return 1000;const unsigned elapsed=now-face.start;
-        if(elapsed>=500)return 800;
-        return 800+200*int(4096-health_bar::expo_out(elapsed*2))/4096;
+        const auto&face=faces[unsigned(index)%16];if(face.index!=index)return 1200;
+        if(face.focused)return 1400;const unsigned elapsed=now-face.start;
+        if(elapsed>=500)return 1200;
+        return 1200+200*int(4096-health_bar::expo_out(elapsed*2))/4096;
     }
     int observe_face(int index,bool focused,uint32_t now){
         auto&face=faces[unsigned(index)%16];
-        if(face.index!=index){if(!focused)return 800;face={};face.index=int16_t(index);face.start=now-500;}
+        if(face.index!=index){if(!focused)return 1200;face={};face.index=int16_t(index);face.start=now-500;}
         if(face.focused!=focused){face.focused=focused;face.start=now;}
         return face_scale(index,now);
     }
