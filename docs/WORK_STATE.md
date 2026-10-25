@@ -1,6 +1,79 @@
 # Work state — 2026-10-25
 
-## UI12 recovered release — acceptance completed
+## UI12 playable follow-up — acceptance completed
+
+Delivered runtime: **`9398633d8fd715c008560cc038f61d8f85c98466`**. Validation source:
+**`1848338c68d4f10e9fa46d414729087fbd0b1224`**; the only difference is the
+independent Architect regression source. All 504 production `src`/`include`
+files match. Verified source is synchronized to `main`; no original assets,
+fonts, ROM/NAND, private assemblies or generated game packs enter GitHub.
+
+The prior recovered UI12 baseline below is retained with its actual receipts.
+This follow-up additionally stops invisible glyph-span raster work on empty
+merchant preparation canvases and restores the original Architect/player actor
+layer. Its VisualOnly scene uses existing idle/attack/hurt clips, source first
+line waits, 400ms speech reveal, authored dialogue/next labels and the original
+left-side death animation at the terminal handoff. It does not add Osty from
+old combat state. Long English/Chinese dialogue uses the existing reader.
+
+Actual original-resource validation found two real omissions: the dialogue was
+queried from `events` instead of `ancients`, and a partial-history fallback
+covered the actors before the terminal quote stage. Both are fixed; the original
+pixel and nonempty-text assertions now pass. Test fixture corrections preserve
+completed-run exclusion from ordinary Continue and the independent Silent
+actor/UI clocks. These test corrections are not misreported as game features.
+
+### Final acceptance and deliverables
+
+- **135/135** registered native tests pass, **0 failures**, 64.05s; **310 Python
+  tests** and tool compilation pass. Final actual-resource checks pass for UI12
+  combat feedback (12,594), merchant preparation (223), and the original
+  English/Japanese camera/sleep/lifecycle gate (2,122,238).
+- The independent actor gate passes all **20** five-character × Normal/Fast ×
+  English/Chinese combinations, 7,279 assertions per language. It checks original
+  sprite ink/anchors, repeated hits, actual text and scrolling, the two-actor
+  terminal composition, no residual Osty, death and canonical-state invariance.
+- Final ARM is **1,600,738 bytes**, SHA-256
+  `5b62c0797bb10d49e9d7d36bc478dff808dc1cdf83cc55633433d2bc3d6a7275`.
+  It requests **20,363,472 bytes**, below the unchanged 24 MiB ceiling. Common,
+  English, Chinese and launcher install at **69,514,501 bytes**. No new resource
+  payload, App/State field or persistent cache was added by the actor follow-up.
+- Final Firebird journal **`ui12-architect-device-final-55becdaab6a4`** passes
+  with unchanged source. Ordinary revision69 Continue/SaveQuit/normal OS exit
+  preserves the canonical run. A separate native-generated original-entry
+  Ironclad fixture shows dialogue, Proceed, actor actions, original-position
+  death, summary, Main Menu and normal OS exit. It is not a natural three-act
+  playthrough or a new performance benchmark.
+- The ordinary save and progress were then restored through USB and read back
+  **byte-for-byte equal** to the original 7,708-byte/1,191-byte files. Production
+  load/validate/roundtrip passes, resource failures are zero, and the controller
+  has stopped normally.
+- The paired calculator ZIP and separate fourteen-language archive are verified.
+  Evidence contains **82 files / 65 lossless 320×240 PNGs / 10 source groups**;
+  earlier screenshots remain labelled with their actual runtime.
+
+Exact closed journals, file sizes, SHA-256 identities and test scopes are in
+`validation-ui12-0.17.json`; the user-feedback matrix is
+`ui12-lcd-followup-0.17.md`. The first complete native attempt could not launch
+two unchanged host ELF files missing execute bits. Its failure remains recorded;
+a complete same-session permission-corrected rerun passed all 135. Intermediate
+actor failures and superseded candidate builds remain separate from final passes.
+
+The existing matched Shop result still belongs to `1826969`: mean room interval
+improved 23.23%, while the largest cold interval rose to 2703.094 ms. The new empty
+clip fast path has correctness evidence, not a newly measured speed percentage.
+Camera/noise/LCD mappings and the specific remaining Doom/Architect visual
+families are explicitly separated in `screen-effects-ui12-0.17.md`; no blanket
+GPU equality or 95% score is claimed. The user's full Ancient animation storage
+exception and audio/multiplayer/Timeline exclusions remain.
+
+This acceptance cycle has no open build, packaging, source-persistence or
+emulator task. Install the four matched default files; keep ordinary saves,
+progress and settings. Any later implementation work starts from this verified
+runtime and preserves its paired UI40 resources.
+
+
+## UI12 recovered 169 baseline — historical completed acceptance
 
 Runtime checkpoint: **`169cea998135a47e5f8580b15df798244e0e7e6a`**. The final documentation/source
 checkpoint is synchronized from `work/0.17-world-parity` to **`main`** after

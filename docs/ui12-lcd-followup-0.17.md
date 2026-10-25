@@ -7,7 +7,7 @@ clipping, scrolling and physical-key changes for 320 × 240.
 
 This is the release integration report. The interrupted workspace was recovered
 and its source preserved on GitHub before validation. The delivered runtime is
-`169cea998135a47e5f8580b15df798244e0e7e6a`; verified source is synchronized to `main`. Exact
+`9398633d8fd715c008560cc038f61d8f85c98466`; verified source is synchronized to `main`. Exact
 launcher/resource hashes, sizes and closed validation scopes are recorded in
 `validation-ui12-0.17.json`. This release uses ordinary Ndless/Firebird acceptance
 and contains the calculator build; no manual WASM/browser validation ran.
@@ -44,6 +44,8 @@ and contains the calculator build; no manual WASM/browser validation ran.
 | Events | Body text uses an in-place original scrollbar, keyboard reading and pointer dragging. There is no redundant Details/Return-to-event reader. Option labels stay clipped to their original button texture. Finished Fake Merchant prose re-enters that same reader. |
 | Rest/Smith | Rest outlines fit the enlarged action images. A real committed upgrade drives card growth, hold, golden flash/sparks and flight to the deck, using the existing face cache. |
 | Console | The normal calculator build includes the typed original command console, toggled by Flag. Editing, history, Tab completion and actual model/state commands replace the old preset menu. |
+| Architect ending | Existing original player and Architect clips now form the VisualOnly room and remain at their authored positions through the ending. Source first-line waits, 400ms speech reveal and independent option clocks are restored. Actual English/Chinese dialogue and per-line labels use the original ancients table; long prose scrolls within the lower bubble. The original-position player death replaces the earlier centered terminal stand-in. Compatibility text waits for its proper quote stage. |
+| Hidden preparation work | Empty-clip merchant preparation still resolves/caches its glyphs, then skips their invisible raster spans. Existing exact pixel checks and actual seven-slot preparation pass; no additional heap, cache or asset payload is introduced. |
 
 Detailed command semantics and offline/platform limits are in
 `developer-console-ui12-0.17.md`. Combat clocks, observer invariance and exact
@@ -54,8 +56,8 @@ contracts are in `ui12-front-feedback-0.17.md`.
 
 The final shared UI40 resource is **61,669,167 bytes**. English is
 **1,130,274 bytes** and Simplified Chinese **5,114,322 bytes**. The delivered
-launcher is **1,595,942 bytes**, so the four-file default installation
-is **69,509,705 bytes** before saves. ZIP size is not the installation
+launcher is **1,600,738 bytes**, so the four-file default installation
+is **69,514,501 bytes** before saves. ZIP size is not the installation
 size. All sixteen language resources together with the common file occupy
 91,975,031 bytes; the default installation includes only English and Chinese.
 
@@ -84,7 +86,7 @@ translations and calculator-only text retain the already documented fallback
 in `localization-ui11-0.17.md`.
 
 The allocation ceiling stays **24 MiB**. The delivered launcher requests
-**20,356,556 bytes**, including the existing bounded 5 MiB image and
+**20,363,472 bytes**, including the existing bounded 5 MiB image and
 6 MiB tile-group caches. Actual ordinary Ndless startup and saved-run Continue
 are required acceptance evidence; the ceiling is not itself proof of execution.
 The historical UI11 23.87 MB allocation failure remains recorded. This release
@@ -96,6 +98,25 @@ The complete final registered native suite and Python conversion/packaging
 results are recorded against the final frozen source in
 `validation-ui12-0.17.json`. Native checks establish functional, pixel-cache,
 format and canonical-state contracts; they do not establish calculator speed.
+
+The final actor follow-up uses runtime `9398633` and test checkpoint `1848338`;
+their only tree difference is the independent Architect regression source.
+All **135 registered native tests** pass, as do **310 Python tests** and tool
+compilation. Current actual-resource gates pass **12,594** combat UI checks,
+**223** merchant-preparation checks and **2,122,238** English/Japanese
+camera/sleep/lifecycle checks. The separate Architect gate passes in English
+and Chinese across five characters and Normal/Fast mode: **20 combinations**,
+7,279 assertions in each language, including canonical-state comparisons and
+pixel checks. These counts are not counts of independent gameplay features.
+
+Actual actor validation exposed an empty dialogue lookup and premature
+partial-history text. Both were fixed in production; the original pixel and
+text assertions remain. Test-only corrections preserve the rule that completed
+runs are excluded from ordinary Continue and that the Silent's 1,867ms death
+clip is shorter than the terminal UI's independent 1,950ms gate. One complete
+native attempt could not start two host executables because their execution
+bits were missing. Its failure remains recorded; after repairing file modes,
+the complete 135-test rerun passed. No unstarted test is counted as a pass.
 
 The actual final-resource work at `44ebf0e` separately passed all sixteen locale
 editions (53,072 model/event descriptions, no missing visible codepoints or
@@ -210,17 +231,28 @@ The `44ebf0e` ordinary continuation took the only legal next map node to floor
 5 it naturally drew Rage; selecting it then waiting revealed the complete
 `this turn, gain 3 Block.` tail without moving the title, cost or neighbours.
 The saved state for final-launcher Continue is HP 59/85, gold 280, deck 12.
-The final `169cea99` launcher independently continued that real save, selected
+The earlier `169cea99` baseline independently continued that real save, selected
 and played Rage with digit 1 / Enter, showed Rage 3 and hand count 5 → 4,
 saved revision 69 and returned normally to the calculator OS. USB readback
 passed production decode, validation and exact canonical roundtrip, with zero
 resource-read failures. The battle was not claimed to be another completed win.
 
-A separate final Flag-console fixture used actual typed `fight` commands and
+A separate `169cea99` Flag-console fixture used actual typed `fight` commands and
 Tab completion to exercise Entomancer's moving phobia swarm and the beetle's
 sleeping Z. It returned to the OS and restored the ordinary revision 69 save
 and progress, with identical USB readback. These deliberately constructed
 contexts are not ordinary map progress or another performance benchmark.
+
+The delivered `9398633` launcher independently passed ordinary revision69
+Continue, SaveQuit, normal OS return and canonical-equal USB readback. A separate
+native-generated original-entry Ironclad fixture then exercised actual Architect
+dialogue, Proceed, visible actor actions, original-position death, ending summary,
+Main Menu and normal OS exit. The earlier room outcomes in that fixture were
+supplied by the native routing test; it is not a natural three-act victory.
+Control-wait screenshot labels are not exact animation-clock measurements.
+Afterward the original ordinary save/progress were restored and read back
+byte-identically (7,708 / 1,191 bytes); resource failures were zero. The closed
+journal is `ui12-architect-device-final-55becdaab6a4`, with `source_changed=false`.
 
 Actual startup/SkipIntroLogo persistence was verified at `125adc82`: the
 original sampled logo ran, NSPF6 stored the setting in 108 bytes, a real USB

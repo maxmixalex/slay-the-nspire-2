@@ -13,14 +13,14 @@ The original three-act route now drives the playable world: Overgrowth or Underd
 The interrupted workspace has been recovered, the user's UI/input feedback is
 integrated, and verified source is synchronized to `main`. The deliverable is
 the ordinary Ndless calculator launcher with shared artwork and independently
-installed languages. Runtime: `169cea998135a47e5f8580b15df798244e0e7e6a`.
+installed languages. Runtime: `9398633d8fd715c008560cc038f61d8f85c98466`.
 
 | Release property | Verified value |
 | --- | --- |
-| Default installed files | 69,509,705 bytes: launcher + common + English + Chinese |
-| Launcher allocation | 20,356,556 bytes; unchanged 24 MiB ceiling |
+| Default installed files | 69,514,501 bytes: launcher + common + English + Chinese |
+| Launcher allocation | 20,363,472 bytes; unchanged 24 MiB ceiling |
 | Locales | All 16 original editions; 14 are an optional separate archive |
-| Regression suites | 134 complete registered native suites; 310 Python conversion/packaging tests |
+| Regression suites | 135 complete registered native suites; 310 Python conversion/packaging tests |
 | Device acceptance | Ordinary Firebird/Ndless startup, actual battles and rewards, save/Continue and return to OS |
 
 The [UI12 feedback matrix](docs/ui12-lcd-followup-0.17.md) covers typography,
@@ -31,6 +31,14 @@ triggers close additional retained feature differences. Selected long hand
 cards now scroll their body without moving their title, cost or neighbours.
 Calculator defaults use the physical touchpad and surrounding keys; digits
 1–9/0 select hand slots directly.
+
+The final follow-up restores Architect's existing original idle/hurt/attack
+actors, first-dialogue waits, original-position terminal death and readable
+English/Chinese dialogue with its authored next labels. Five characters in
+Normal/Fast mode pass actual-resource checks in both default languages. The
+actor work adds no resources or persistent state. Empty merchant preparation
+canvases also stop before invisible glyph-span raster work; this optimization
+does not carry a new measured frame-rate claim.
 
 The closed matched merchant fixture measured a 23.23% lower mean frame interval
 than UI11 N, but its maximum cold frame increased from 2,387.054 to 2,703.094 ms.

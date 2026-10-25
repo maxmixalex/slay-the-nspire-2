@@ -6,7 +6,7 @@
     "dll_sha256": "0861bfa1df347538d932f22d580e75420f08082792eb914e53b4882764acdbe9"
   },
   "supersedes": "ui7-original-ui-inventory-0.17.json",
-  "source_stage": "UI12 recovered release, runtime 169cea998135a47e5f8580b15df798244e0e7e6a. Current contracts include the readable feedback corrections, saved startup-logo option, original swarm/sleep masks, live rich-text callers and audited camera lifecycles. Historical fields remain historical. The final integration record is validation-ui12-0.17.json; no blanket GPU/frame equality, all-VFX differential audit or restoration percentage is asserted.",
+  "source_stage": "UI12 playable follow-up, runtime9398633d8fd715c008560cc038f61d8f85c98466. User-feedback corrections, original Architect actors/dialogue/terminal handoff and invisible merchant glyph fast path are integrated. Complete135 native,310 Python and final ordinary Ndless/Firebird receipts are in validation-ui12-0.17.json. Named remaining effects remain explicit, and no percentage or blanket desktop-pixel equality is asserted.",
   "scope": {
     "excluded": [
       "audio",
@@ -544,13 +544,14 @@
       ],
       "contract": "Death/victory summary, score, badges and discoveries",
       "assessment": "implemented_with_documented_limits",
-      "implemented": "Original score, nineteen solo badge predicates, observed discoveries, intro/score/badge/discovery clocks and release-triggered controls remain. UI11 uses a clipped 10px summary article, 28px score rows, 22px badges and a fixed 152x26 confirmation button. Up/Down scroll; Left/Right cycles badge/discovery focus and reveals it in the visible article. Source-hidden View Run remains unavailable. The actual final Architect Proceed now keeps the original room visible through its authored camera sequence before the terminal black fade. Future intro origins clamp safely across 32-bit clock wrap. Normal/Fast timing, Silent dialogue exceptions, Camera Off, repeated leave, Continue/reload and actual return-to-title are covered without canonical changes.",
-      "remaining": "LCD reflow, integer text rasterization and full-frame Godot shader equality remain documented adaptations. Final ordinary calculator acceptance is separate from the asset-independent correctness target. The added Architect sequence covers the source camera triggers on the retained event background; complete per-character attack/Architect/FireBurst VFX tracks are not asserted by this scope.",
+      "implemented": "Original score, nineteen solo badge predicates, observed discoveries, intro/score/badge/discovery clocks and release-triggered controls remain. UI11 uses a clipped 10px summary article, 28px score rows, 22px badges and a fixed 152x26 confirmation button. Up/Down scroll; Left/Right cycles badge/discovery focus and reveals it in the visible article. Source-hidden View Run remains unavailable. The actual final Architect Proceed now keeps the original room visible through its authored camera sequence before the terminal black fade. Future intro origins clamp safely across 32-bit clock wrap. Normal/Fast timing, Silent dialogue exceptions, Camera Off, repeated leave, Continue/reload and actual return-to-title are covered without canonical changes. Later actor stage 19fee6c renders the already installed original player idle/attack and Architect idle/hurt/attack clips at the default VisualOnly scene positions; it creates neither a canonical combat nor a residual Osty. All characters now wait for the source first-line reading/head-stop gate. The complete WinRun call chain hands the player to its original death clip at the retained left-side position while the Architect remains above the terminal backstops, without a centered duplicate. Completed-run reload keeps attack cues cleared. Source follow-up f3da494 uses immediate 400ms speech-bubble alpha/character reveal after each line origin; the independent option input delay remains 1000ms Normal / 500ms Fast, without a second delayed Proceed entrance. Actual inspection then corrected the empty Architect speech caused by the wrong events locale table (the model uses ancients), preserved authored next labels, and delayed the partial-history compatibility message to the normal victory quote stage instead of covering the actors.",
+      "remaining": "LCD subtitle reflow, integer text rasterization and full-frame Godot shader equality remain platform adaptations. Corrected runtime9398633 now passes the separate bilingual actor/resource gate; complete-suite and calculator execution remain separately scoped release evidence. Architect head-reading/stop-reading/normal overlays, the independent pen trail, score damage numbers, per-character hit VFX and lightning/FireBurst particles remain actual missing visual effects, not merely unproved desktop pixel identity. Body clips, first-line waits, source camera triggers and terminal death ownership are separately implemented. See screen-effects-ui12-0.17.md for exact callers and scope.",
       "regressions": [
         "world_game_over_ui_regression",
         "ui_progress_regression",
         "game_over_facts_ui8_regression",
-        "screen_effects_ui12_regression"
+        "screen_effects_ui12_regression",
+        "architect_visual_ui12_regression"
       ],
       "acceptance": "Historical UI10: Frozen K native checks pass: world_game_over_ui_regression, ui_progress_regression. Both matching K format39 actual packs pass: world_game_over_ui_regression.",
       "ui10_implemented_historical": "Actual original score formula/19 solo badge predicates, observed discoveries, source intro/score/badge/discovery timing and release-triggered controls. Pinned View Run is hidden/disabled and remains unavailable; ordinary Compendium Run History stays available. The original dark-red threshold mask and event-only pure-black prelude replace the generic Ink fade, preserving actor layer order.",
@@ -558,7 +559,18 @@
       "ui11_acceptance": "Final fixture checkpoint 02f0f4b266dc1ac9578a43e02521a07d95d647de passes 176 game_over_facts_ui8_regression checks against recompiled L UI and unchanged I core. The source-timing/release assertions, bounded long-summary scroll, two-category focus wrap/reveal and canonical SaveData/RNG checks pass. Both earlier fixture-only failures remain recorded in verification_ui11.game_over_readability; runtime code was unchanged.",
       "pre_ui12_screen_completion_implemented_historical": "Original score, nineteen solo badge predicates, observed discoveries, intro/score/badge/discovery clocks and release-triggered controls remain. UI11 uses a clipped 10px summary article, 28px score rows, 22px badges and a fixed 152x26 confirmation button. Up/Down scroll; Left/Right cycles badge/discovery focus and reveals it in the visible article. Source-hidden View Run remains unavailable.",
       "pre_ui12_screen_completion_remaining_historical": "LCD reflow, integer text rasterization and full-frame Godot shader equality remain documented adaptations. Final ordinary calculator acceptance is separate from the asset-independent correctness target.",
-      "ui12_screen_effects_acceptance": "Verified checkpoint 169cea998135a47e5f8580b15df798244e0e7e6a: screen_effects_ui12_regression passes 2,122,118 checks, including original English/Japanese masks and actual command/terminal lifecycles; journal 75aed13c3f47 passed with source_changed=false. All 503 production src/include files match the root checkpoint. Source timing, original pixels, hit targets and canonical save identity are correctness evidence, not calculator-speed measurements. See screen-effects-ui12-0.17.md."
+      "ui12_screen_effects_acceptance": "Verified checkpoint 169cea998135a47e5f8580b15df798244e0e7e6a: screen_effects_ui12_regression passes 2,122,118 checks, including original English/Japanese masks and actual command/terminal lifecycles; journal 75aed13c3f47 passed with source_changed=false. All 503 production src/include files match the root checkpoint. Source timing, original pixels, hit targets and canonical save identity are correctness evidence, not calculator-speed measurements. See screen-effects-ui12-0.17.md.",
+      "pre_ui12_architect_visual_implemented_historical": "Original score, nineteen solo badge predicates, observed discoveries, intro/score/badge/discovery clocks and release-triggered controls remain. UI11 uses a clipped 10px summary article, 28px score rows, 22px badges and a fixed 152x26 confirmation button. Up/Down scroll; Left/Right cycles badge/discovery focus and reveals it in the visible article. Source-hidden View Run remains unavailable. The actual final Architect Proceed now keeps the original room visible through its authored camera sequence before the terminal black fade. Future intro origins clamp safely across 32-bit clock wrap. Normal/Fast timing, Silent dialogue exceptions, Camera Off, repeated leave, Continue/reload and actual return-to-title are covered without canonical changes.",
+      "pre_ui12_architect_visual_remaining_historical": "LCD reflow, integer text rasterization and full-frame Godot shader equality remain documented adaptations. Final ordinary calculator acceptance is separate from the asset-independent correctness target. The added Architect sequence covers the source camera triggers on the retained event background; complete per-character attack/Architect/FireBurst VFX tracks are not asserted by this scope.",
+      "ui12_architect_visual_source_stage": {
+        "runtime": "356ddab3e37f21ce6c2f4317c71edb6cdc13a745",
+        "local_syntax": "Clang 18 C++17 complete app/test and original_events.cpp syntax passed; diff check passed.",
+        "acceptance": "Corrected actual-resource gate passes 7279 checks each in English and Simplified Chinese, journals93498ff2c976 and204837870e07, exit0/source_changed=false. Test checkpoint1848338c68d4f10e9fa46d414729087fbd0b1224; all504 production src/include files identical to runtime9398633. Twenty five-character Normal/Fast scenarios cover original actor texels, full terminal actor band, actual dialogue/scroll, source waits, no Osty and canonical identity. Complete native/ARM/Firebird receipts are separately owned by release acceptance.",
+        "integrated_checkpoint": "9398633d8fd715c008560cc038f61d8f85c98466",
+        "pre_actual_visual_fix_runtime_historical": "f3da49429efce3d7ee25da6a933471a2007202ac",
+        "integrated_tree": "1b7a17a1e7734d5c9edddbcf5a839abca7236356",
+        "source_only_acceptance_historical": "First actual-resource actor journal a5b7a0fe7872 failed honestly on 609 early partial-history text pixels; source_changed=false. Inspection also found a blank panel from the wrong locale table. Corrected actual/bilingual actor gate, complete135 native and final ARM/Firebird execution remain pending at this document checkpoint."
+      }
     },
     {
       "id": "topbar",
@@ -1066,8 +1078,8 @@
       ],
       "contract": "Source punch, rumble/drunk rumble, trauma, saved strength settings and audited actual command hooks",
       "assessment": "implemented_with_documented_limits",
-      "implemented": "Bounded scene-only camera model implements source 2/5/20/40/80 strengths, 300/800/1200 ms durations, 0/.5/1/2/4 settings, cubic directional punch, latest-punch precedence, additive trauma/decay/vector cap, and rumble/drunk rumble. Integer noise and in-place scene/hit translation require no extra framebuffer or gameplay RNG. Audited hooks include settings, character selection, Power arrival, 38 explicitly mapped card keys, named heavy/scream monster paths, ordinary/event Smith, Lift/Clone, Dense Vegetation, Punch Off, Amalgamator, Foul Potion and observed history previews. Real Doom execution sends a presentation-only notice; player death retains its scene for the full 300 ms pulse. Architect uses the actual begin/final leave lifecycle, per-character Normal/Fast source hit times and final Strong pulse, correct Silent exceptions, delayed terminal intro, input barriers and no reload replay. Camera Off preserves sequence completion.",
-      "remaining": "Integer gradient noise, bounded LCD displacement and final rasterization approximate Godot FastNoiseLite/material output. Binding a new target clears its bounded trauma state. The named audited camera hooks are implemented; this does not claim a differential audit of every invocation in all 65 VFX scene families. Architect additions here are camera hooks on its retained background, not complete character attack/Architect/FireBurst animation reconstruction.",
+      "implemented": "Bounded scene-only camera model implements source 2/5/20/40/80 strengths, 300/800/1200 ms durations, 0/.5/1/2/4 settings, cubic directional punch, latest-punch precedence, additive trauma/decay/vector cap, and rumble/drunk rumble. Integer noise and in-place scene/hit translation require no extra framebuffer or gameplay RNG. Audited hooks include settings, character selection, Power arrival, 38 explicitly mapped card keys, named heavy/scream monster paths, ordinary/event Smith, Lift/Clone, Dense Vegetation, Punch Off, Amalgamator, Foul Potion and observed history previews. Real Doom execution sends a presentation-only notice; player death retains its scene for the full 300 ms pulse. Architect uses the actual begin/final leave lifecycle, per-character Normal/Fast source hit times and final Strong pulse, correct Silent exceptions, delayed terminal intro, input barriers and no reload replay. Camera Off preserves sequence completion. Later actor stage 19fee6c reuses the same SequenceEnd barrier for every first Architect line: fixed 750ms lead, 1000ms reading only without player attacks, then fixed 500ms head-stop. The visible body tracks are a separate renderer and do not alter the camera sampler.",
+      "remaining": "Integer gradient noise, bounded LCD displacement and final rasterization approximate Godot FastNoiseLite. Binding a new target clears trauma; the source ClearTarget retains it, so this is an explicit lifecycle difference. Audited camera hooks are implemented, not a blanket audit of all 65 VFX scene families. Doom sinking/destruction and Architect overlay/trail/particle effects listed in screen-effects-ui12-0.17.md remain actual missing visual sequences; camera hooks and the separately added body clips do not stand in for them.",
       "regressions": [
         "combat_damage_ui7_regression",
         "screen_effects_ui12_regression"
@@ -1076,7 +1088,18 @@
       "pre_ui12_screen_completion_contract_historical": "Scene-only latest punch,300ms,5/20/40px and0/.5/1/2/4strength",
       "pre_ui12_screen_completion_implemented_historical": "Scene-only latest punch, source duration/amplitudes and five persisted strengths.",
       "pre_ui12_screen_completion_remaining_historical": "Original rumble/trauma and all trigger sites remain incomplete.",
-      "ui12_screen_effects_acceptance": "Verified checkpoint 169cea998135a47e5f8580b15df798244e0e7e6a: screen_effects_ui12_regression passes 2,122,118 checks, including original English/Japanese masks and actual command/terminal lifecycles; journal 75aed13c3f47 passed with source_changed=false. All 503 production src/include files match the root checkpoint. Source timing, original pixels, hit targets and canonical save identity are correctness evidence, not calculator-speed measurements. See screen-effects-ui12-0.17.md."
+      "ui12_screen_effects_acceptance": "Verified checkpoint 169cea998135a47e5f8580b15df798244e0e7e6a: screen_effects_ui12_regression passes 2,122,118 checks, including original English/Japanese masks and actual command/terminal lifecycles; journal 75aed13c3f47 passed with source_changed=false. All 503 production src/include files match the root checkpoint. Source timing, original pixels, hit targets and canonical save identity are correctness evidence, not calculator-speed measurements. See screen-effects-ui12-0.17.md.",
+      "pre_ui12_architect_visual_implemented_historical": "Bounded scene-only camera model implements source 2/5/20/40/80 strengths, 300/800/1200 ms durations, 0/.5/1/2/4 settings, cubic directional punch, latest-punch precedence, additive trauma/decay/vector cap, and rumble/drunk rumble. Integer noise and in-place scene/hit translation require no extra framebuffer or gameplay RNG. Audited hooks include settings, character selection, Power arrival, 38 explicitly mapped card keys, named heavy/scream monster paths, ordinary/event Smith, Lift/Clone, Dense Vegetation, Punch Off, Amalgamator, Foul Potion and observed history previews. Real Doom execution sends a presentation-only notice; player death retains its scene for the full 300 ms pulse. Architect uses the actual begin/final leave lifecycle, per-character Normal/Fast source hit times and final Strong pulse, correct Silent exceptions, delayed terminal intro, input barriers and no reload replay. Camera Off preserves sequence completion.",
+      "pre_ui12_architect_visual_remaining_historical": "Integer gradient noise, bounded LCD displacement and final rasterization approximate Godot FastNoiseLite/material output. Binding a new target clears its bounded trauma state. The named audited camera hooks are implemented; this does not claim a differential audit of every invocation in all 65 VFX scene families. Architect additions here are camera hooks on its retained background, not complete character attack/Architect/FireBurst animation reconstruction.",
+      "ui12_architect_visual_source_stage": {
+        "runtime": "356ddab3e37f21ce6c2f4317c71edb6cdc13a745",
+        "local_syntax": "Clang 18 C++17 complete app/test and original_events.cpp syntax passed; diff check passed.",
+        "acceptance": "Corrected actual-resource gate passes 7279 checks each in English and Simplified Chinese, journals93498ff2c976 and204837870e07, exit0/source_changed=false. Test checkpoint1848338c68d4f10e9fa46d414729087fbd0b1224; all504 production src/include files identical to runtime9398633. Twenty five-character Normal/Fast scenarios cover original actor texels, full terminal actor band, actual dialogue/scroll, source waits, no Osty and canonical identity. Complete native/ARM/Firebird receipts are separately owned by release acceptance.",
+        "integrated_checkpoint": "9398633d8fd715c008560cc038f61d8f85c98466",
+        "pre_actual_visual_fix_runtime_historical": "f3da49429efce3d7ee25da6a933471a2007202ac",
+        "integrated_tree": "1b7a17a1e7734d5c9edddbcf5a839abca7236356",
+        "source_only_acceptance_historical": "First actual-resource actor journal a5b7a0fe7872 failed honestly on 609 early partial-history text pixels; source_changed=false. Inspection also found a blank panel from the wrong locale table. Corrected actual/bilingual actor gate, complete135 native and final ARM/Firebird execution remain pending at this document checkpoint."
+      }
     },
     {
       "id": "patch_notes",
@@ -2366,7 +2389,8 @@
     "firebird_scope": "H ordinary play/save evidence includes a retained host ENOSPC controller error and is not a wholly passed journal. K 2d89c8a26a3f is closed/passed; later console-created rooms are fixtures. H/J/L world and H/J frontend sessions retain the launcher-specific scopes in their module reports. Final integrated launcher and matched merchant speed remain separate release gates.",
     "open_feature_review": [
       "The named source sleep/wake emitters and already-present bot FallControl entry are covered. Other per-monster GPU/material variants and every command delay have not received a blanket differential audit.",
-      "Punch, rumble/drunk rumble, trauma and the explicitly audited command hooks, including Doom/Architect, are implemented and tested. Integer noise/LCD raster and target-reset behavior are documented adaptations; all 65 VFX families are not newly claimed as verified."
+      "Punch, rumble/drunk rumble, trauma and the explicitly audited command hooks, including Doom/Architect, are implemented and tested. Integer noise/LCD raster and target-reset behavior are documented adaptations; all 65 VFX families are not newly claimed as verified.",
+      "Architect body actors and first-line waits are now implemented and now pass the scoped bilingual native actor gate on runtime9398633. Named unimplemented head overlays, pen trail, hit numbers/particles and FireBurst, plus the separate Doom sinking/destruction sequence, are explicitly listed in screen-effects-ui12-0.17.md; none is hidden behind a claim of unknown pixel parity."
     ],
     "platform_limits": [
       "Bounded CPU/LCD particles, noise, trails, HDR approximations and final integer rasterization do not establish full desktop frame identity.",
@@ -2390,6 +2414,55 @@
     ],
     "screen_effects_report": "screen-effects-ui12-0.17.md",
     "screen_effects_completed_native": {
+      "runtime_checkpoint": "9398633d8fd715c008560cc038f61d8f85c98466",
+      "test_checkpoint": "1848338c68d4f10e9fa46d414729087fbd0b1224",
+      "actual_checks": 2122238,
+      "actual_journal": "ui12-architect-actual-screen-effects-cbb2ef00c2da",
+      "source_changed": false,
+      "production_files_compared": 504,
+      "production_differences": 0,
+      "scope": "Source camera equations, actual command hooks, Doom and sleep lifetimes, five-character Architect clocks, and real English/Japanese masks and scene pixels; not a GPU-family or performance claim."
+    },
+    "architect_actor_actual_followup": {
+      "report": "screen-effects-ui12-0.17.md",
+      "checkpoint": "9398633d8fd715c008560cc038f61d8f85c98466",
+      "tree": "1b7a17a1e7734d5c9edddbcf5a839abca7236356",
+      "prior_actual_journal": "architect-visual-actual-a5b7a0fe7872",
+      "prior_status": "failed",
+      "prior_source_changed": false,
+      "actual_bug": "609 extra pixels from opaque partial-history text during terminal age200; separate inspected idle capture had blank dialogue because Architect talk strings were looked up in events instead of its original ancients table.",
+      "fixes": [
+        "69672d37df3dc81ce43415de971d1c592fb3624b",
+        "356ddab3e37f21ce6c2f4317c71edb6cdc13a745"
+      ],
+      "current_acceptance": "passed actual-resource actor/dialogue/scroll gate in English and Simplified Chinese; full native/ARM/Firebird acceptance is separate.",
+      "fixture_scope": "Actual world/original_event entry and final Proceed with earlier room outcomes supplied; no console, newly played full acts, or performance measurement claimed.",
+      "source_only_acceptance_historical": "Corrected actual-resource bilingual actor/dialogue/scroll execution and integrated native/ARM/Firebird pending.",
+      "actual_native": {
+        "test_checkpoint": "1848338c68d4f10e9fa46d414729087fbd0b1224",
+        "build_journal": "architect-visual-ui-clock-build-c2e8f30483f3",
+        "journals": {
+          "eng": "architect-visual-complete-eng-93498ff2c976",
+          "zhs": "architect-visual-complete-zhs-204837870e07"
+        },
+        "checks_per_locale": 7279,
+        "source_changed": false,
+        "production_files_compared": 504,
+        "production_differences": 0,
+        "scenario_combinations": 20,
+        "scope": "Five characters x Normal/Fast x English/Chinese: source poses, original actor texels, full terminal actor-band equality, each dialogue source table/next label, real scroll endpoints, original-position death, no residual Osty, canonical save identity and legacy terminal codec reload.",
+        "count_note": "Aggregate actor-band/texel comparisons are each one assertion; total also includes fixture routing and capture row writes, not restored-function count."
+      },
+      "integrated_acceptance": {
+        "native_suites": 135,
+        "python_tests": 310,
+        "arm_journal": "ui12-architect-corrected-arm-e5ba1eee9fe3",
+        "device_journal": "ui12-architect-device-final-55becdaab6a4",
+        "status": "passed",
+        "scope": "Separate ordinary save lifecycle and original-entry Ironclad event fixture, with ordinary save/progress restored exactly. Source times remain independently validated native."
+      }
+    },
+    "screen_effects_pre_actor_native_historical": {
       "runtime_checkpoint": "169cea998135a47e5f8580b15df798244e0e7e6a",
       "local_test_commit": "14695dbe334702f01e349ac5f10e473d2dac58a7",
       "actual_checks": 2122118,
@@ -2406,6 +2479,18 @@
     }
   },
   "verification_ui12_release": {
+    "runtime_checkpoint": "9398633d8fd715c008560cc038f61d8f85c98466",
+    "test_checkpoint": "1848338c68d4f10e9fa46d414729087fbd0b1224",
+    "native_registered_suites": 135,
+    "python_tests": 310,
+    "architect_actual_combinations": 20,
+    "ordinary_final_device_journal": "ui12-architect-device-final-55becdaab6a4",
+    "canonical_readback": "Continue/SaveQuit keeps ordinaryrev69 canonical equal; separate native-generated Architect route closes through summary/MainMenu/normal OS exit; ordinarysave and progress restored byte-identically byUSB.",
+    "record": "validation-ui12-0.17.json",
+    "unreviewed_contracts": "Unchanged or explicitly limited contract rows are not promoted to universal source parity by the release."
+  },
+  "source_stage_ui12_baseline_historical": "UI12 recovered release, runtime 169cea998135a47e5f8580b15df798244e0e7e6a. Current contracts include the readable feedback corrections, saved startup-logo option, original swarm/sleep masks, live rich-text callers and audited camera lifecycles. Historical fields remain historical. The final integration record is validation-ui12-0.17.json; no blanket GPU/frame equality, all-VFX differential audit or restoration percentage is asserted.",
+  "verification_ui12_release_baseline_historical": {
     "runtime_checkpoint": "169cea998135a47e5f8580b15df798244e0e7e6a",
     "native_registered_suites": 134,
     "python_tests": 310,
