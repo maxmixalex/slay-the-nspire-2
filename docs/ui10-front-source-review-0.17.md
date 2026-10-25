@@ -45,11 +45,11 @@ passing result.
 | Statistics | Source container minimums produce a1096px content column at sourceX227; two256x90 tabs, source section backgrounds,5px entries,7px headers,6px tabs and5px character names replace the enlarged generic layout. | `statistics_ui10_regression` source geometry, dynamic row layout and actual packed-font pixel checks. |
 | Statistics conditions | Missing fastest victories and zero ascensions leave their original rows hidden; single visible rows remain vertically centered. Original character colors and red character-ascension prefix are restored. | Empty/full metadata cases, single/pair label pixel cases and saturated counter minimum-band/clipping. |
 | Statistics interaction | Twenty-four bounded entry motions, initial first-entry focus, directional navigation, focus-driven scrolling, original Playtime/Ascension hover text, corrected scrollbar drag geometry. UI state is292bytes and stays outside canonical saves/RNG. | Input/scroll, endpoint checks, captures and canonical-save identity. |
-| Statistics mask | The original128px gradient texture is sampled at the source offsets and composed once over the complete scrolling subtree. At240px the two filtered bands occupy rows29–37 and232–239. A10,880byte temporary stack snapshot preserves only those17rows; no persistent buffer or ordinary-canvas branch is added. | Independent floating-point texture-sampling/group-compositing oracle, overlapping translucent primitives, unchanged central/outside rows and actual scrolled captures. E matching acceptance pending. |
+| Statistics mask | The original128px gradient texture is sampled at the source offsets and composed once over the complete scrolling subtree. At240px the two filtered bands occupy rows29–37 and232–239. A10,880byte temporary stack snapshot preserves only those17rows; no persistent buffer or ordinary-canvas branch is added. | Independent floating-point texture-sampling/group-compositing oracle, overlapping translucent primitives, unchanged central/outside rows and actual scrolled captures pass both matching E packs. |
 | Card Library | The count follows the original centered rich-text markup. Sort/filter/cost/check labels select each locale's actual normal face. The actual-pack oracle exposed four empty sort captions: they now resolve the original world-text keys instead of searching only the supplemental locale index. | `library_ui7_regression` independent sidebar/count oracle. |
-| Card Library search | Source normalization now streams the joined title, one separating space and description. Queries keep their source lowercase-only behavior and meaningful leading/trailing spaces; blank queries remain unfiltered. A128byte prefix table replaces the old2KiB normalized-copy buffer. | Cross-field phrase/space cases, debounce/input ownership and actual matching gates; E matching acceptance pending. |
-| Relic/potion collections | Rich role substitution fixes Chinese relic headings while keeping English's authored regular-bold mapping. D actual acceptance exposed three missing Chinese5px Bold glyphs; E adds exact rich-category/Ancient title requirements. | All20 category variants in the collection scalar pixel oracle; E matching acceptance pending. |
-| History header | Source24px rich information and32px counters project to5px and6px. Right-aligned date/seed/full game-mode/build rows keep fixed sizes and source overflow behavior. The single HBox retains source minimum widths, counter colors, potion backdrop/slots, selected1.1 portrait, conditional Ascension and original custom/daily lock. The extra character-name heading is removed. | Independent full-frame header text oracle for Standard/Custom/Daily and partial time, source HBox minimum/expansion checks and exact locale glyph requirements; E matching acceptance pending. |
+| Card Library search | Source normalization now streams the joined title, one separating space and description. Queries keep their source lowercase-only behavior and meaningful leading/trailing spaces; blank queries remain unfiltered. A128byte prefix table replaces the old2KiB normalized-copy buffer. | Cross-field phrase/space cases, debounce/input ownership and both matching E actual-language gates pass. |
+| Relic/potion collections | Rich role substitution fixes Chinese relic headings while keeping English's authored regular-bold mapping. D actual acceptance exposed three missing Chinese5px Bold glyphs; E adds exact rich-category/Ancient title requirements. | All20 category variants pass the collection scalar pixel oracle in both matching E packs, with no missing exact glyph keys. |
+| History header | Source24px rich information and32px counters project to5px and6px. Right-aligned date/seed/full game-mode/build rows keep fixed sizes and source overflow behavior. The single HBox retains source minimum widths, counter colors, potion backdrop/slots, selected1.1 portrait, conditional Ascension and original custom/daily lock. The extra character-name heading is removed. | Matching E packs pass the independent full-frame header text oracle for Standard/Custom/Daily at scroll0/5, partial time, source HBox minimum/expansion checks and exact locale glyph requirements. The scrolled header remains visible to screen row0. |
 | Bestiary | Normal-role locale substitution covers the large name, category dividers, Actions/Stats and mode labels; actual rich italic dialogue retains its separate role. | `bestiary_ui7_regression` exact glyph coverage, actions, layouts and captures. |
 | Character selection | Ordinary name/stats/relic-title roles use the actual locale font; name measurement and glyph drawing agree, including tracking. | `five_character_ui_regression` and full actual-language review. |
 | Relic inspection | Chinese title and normal flavor text follow runtime font substitution; rich body bold/italic stays explicit. | `relic_inspect_ui9_regression` checks every actual relic text field and exact glyph key. |
@@ -74,7 +74,7 @@ metadata is invented for excluded Timeline/platform achievements.
 | Chinese regular FontVariation | The source Chinese Regular resource also contains a0.95 transform and−0.05 baseline offset. The current packed raster/oracles establish exact selected font keys and LCD composition, without reproducing this Godot variation transform. | Bake and independently compare the source variation metrics before asserting full font raster equivalence. |
 | Settings and run setup | Prior preference/input behavior remains implemented, but this batch is not a renewed per-node typography audit of all settings/custom/daily controls. | Enumerate visible normal/bold roles and check exact widths, dropdowns and focus states in the matched build. |
 | Bestiary previews | Every phase-specific multi-creature preview and secondary visual effect has not been independently replayed. | Drive the remaining actual move/state contexts, keeping preview state detached from the run. |
-| General acceptance | New glyphs, the changed App layout and render/input code require one matching frozen build and paired private resources. | Run native, actual bilingual, ordinary browser and calculator gates; retain failures separately from passes. |
+| Original-frame and device scope | E native, actual bilingual and ordinary browser gates pass at the checkpoint below. These source-derived tests do not establish unmodified Godot-frame equality or physical-calculator timing. | Keep original-frame comparison and ordinary calculator capacity/save execution as separate evidence; do not turn passing-test counts into a restoration percentage. |
 
 The source-only syntax pass covers profile/statistics/library/relic-inspect/
 Bestiary regression translation units plus the real input and pointer units.
@@ -93,10 +93,10 @@ that explicitly constructed extreme case. The Card Library actual tests
 failed on the empty-sort-caption lookup defect described above; those failed
 receipts remain separate from the correction's eventual runtime acceptance.
 
-The next batch also restores the main menu/Continue source geometry and
-adds their independent text/presentation checks. Short syntax checks pass,
-but their new runtime pixel oracles require the matching next frozen binary
-and font append. The locale binding gate passes after registering all16
+The following batch restored the main menu/Continue source geometry and
+added their independent text/presentation checks. Its initial short syntax
+checks did not substitute for a matched binary and font append; the subsequent
+D failures and E passes are recorded below. The locale binding gate passed after registering all16
 Chinese calendar symbols and regenerating only the append-only inline table;
 legacy pack string slots are unchanged. Native/ordinary-host final acceptance
 and actual unmodified-game frame comparison are not implied by these results.
@@ -124,6 +124,39 @@ E short diagnostics compile the current Profiles/Statistics/History test
 translation units against the frozen D core and run both D packs: all six
 pass, including the new group-mask and header oracles. Both corrected
 world-front diagnostics also pass with captures. These mixed-stage diagnostics
-are explicitly not E release acceptance. The source changes, new format38 lock,
-and exact font requirements still require the single matching E build/resource
-gates and ordinary hosts. Failed D receipts remain failures.
+were explicitly not E release acceptance. The matching E gates below now cover
+the source changes, new format38 lock and exact font requirements. Failed D
+receipts and the mixed-stage diagnostic records remain unchanged.
+
+## UI10e matched acceptance and composed review
+
+Frozen runtime `04038b2cda0240bfa2be1af79bf62401ec26e7a9`, tree
+`0013609a7d365c985f62f8c2798a3af790c12589`, was built with the same checkpoint's
+format38 English and Chinese resources. All15 front targets pass in each
+language: Profiles, Statistics, deck/world selection, Card Library and
+collections, run modes, auxiliary screens, History and its journal, input
+bindings, Bestiary, phobia, device feedback, power ordering and world text.
+The private acceptance records confirm that neither tested binaries nor packs
+changed during execution. This closes the matching-resource gaps identified
+above; it does not close the concrete remaining source differences.
+
+The two front journals are `ui10e-front-eng-aac2c29a203c.json` and
+`ui10e-front-zhs-852ca306d067.json`. The same checkpoint's six actual-resource
+receipts pass94/94 target-language pairs, and its native journal
+`ui10e-native-034f41360da8.json` passes119/119 suites. The ordinary offline HTML
+browser retry passes18 checks with41 captures, no page errors and no external
+requests. Its initial Chromium launch failed before any flow ran with a
+sandbox `setsockopt`/`SIGTRAP` error; that failed launch receipt remains separate
+from the successful retry. These are different execution layers, not additive
+units of source coverage.
+
+Composed visual review covered20 current E captures across both languages:
+Statistics initial/scrolled views, History top, Library sidebar, relic and
+potion collection tops, new/continued title states and quit/abandon popups.
+The Statistics subtree fades at both edges; the compact History header keeps
+its date/game-mode alignment and counter separation; all collection category
+headings remain visible with the exact Bold additions; the title/Continue and
+popup text has no newly observed clipping or unintended overlap. Captures and
+contact sheets remain private. This review supplements the independent
+source-derived pixel/input oracles, and is not a side-by-side comparison with
+an unmodified running Godot build.

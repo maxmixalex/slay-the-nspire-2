@@ -260,6 +260,9 @@ bool Content::open(ResourceSource source){
         if(!reader_.read(base,header,sizeof header)||
            !tile_header_bounds(header,base,n,ni,DirectoryCapacity,version>=RetainedContentVersion,start))return false;
     }
+    // NSL2 only compresses metadata that stays in this existing directory
+    // cache. Frame-descriptor reads may already hold an image-transfer lease.
+    if(source.required_cached_prefix>start)return false;
     reader_.progress(ResourceStage::Directory,0,start);
     if(source.direct){data_=source.direct;metadata_=source.direct;}
     else {if(!reader_.read(0,directory_,start))return false;metadata_=directory_;}

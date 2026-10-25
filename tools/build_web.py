@@ -49,7 +49,7 @@ def resource_package(content_path=None,language='zhs',common_path=None,eng_path=
     for locale,path in (('eng',eng_path),('zhs',zhs_path)):
         if path:
             data=path.read_bytes()
-            reconstruct(common,data,locale) # Resolve segments and the requested language mapping.
+            reconstruct(common,data,locale) # Validate NSL1/NSL2 logical segments and locale before embedding.
             languages[locale]=encode(data)
     if not languages:raise ValueError('At least one of --eng and --zhs is required')
     return {'mode':'split','common':encode(common),'languages':languages}
@@ -80,8 +80,8 @@ def main():
     parser.add_argument('--language',choices=('zhs','eng'),default='zhs',help='Language of a legacy --content pack; split installations select either language in the browser')
     parser.add_argument('--content',type=Path,help='Private content pack to embed')
     parser.add_argument('--common',type=Path,help='Common artwork NSC1 file; encoded only once in the HTML')
-    parser.add_argument('--eng',type=Path,help='English NSL1 language file')
-    parser.add_argument('--zhs',type=Path,help='Chinese NSL1 language file')
+    parser.add_argument('--eng',type=Path,help='English NSL1/NSL2 language file')
+    parser.add_argument('--zhs',type=Path,help='Chinese NSL1/NSL2 language file')
     parser.add_argument('--output',type=Path,help='Generated offline HTML destination')
     args=parser.parse_args()
     runtime=ROOT/'build'/('web-debug' if args.debug_commands else 'web')/'nSpire2.wasm'

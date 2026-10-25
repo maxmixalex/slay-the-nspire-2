@@ -6,6 +6,8 @@
 #include "scene_font_assets.hpp"
 #include "retained_filter.hpp"
 #include "speech_bubble_assets.hpp"
+#include "resource_transfer.hpp"
+#include "lzma2_block.hpp"
 
 namespace spire {
 static void resource_copy(void* destination,const uint8_t* source,uint32_t count){
@@ -18,6 +20,8 @@ ResourceSource ResourceSource::memory(const uint8_t* bytes,size_t size){
 }
 namespace {
 constexpr uint32_t CommonHeader=64,LanguageHeader=96,SplitLimit=256u*1024u*1024u;
+constexpr uint32_t PackedLanguageHeader=128,PackedDirectoryBlock=65536,PackedDirectoryLimit=2u*1024u*1024u;
+static_assert(2u*PackedDirectoryBlock<=ResourceTransferCapacity,"Directory decoding must fit the existing transfer workspace");
 static uint32_t split_u32(const uint8_t* p){
     return uint32_t(p[0])|(uint32_t(p[1])<<8)|(uint32_t(p[2])<<16)|(uint32_t(p[3])<<24);
 }
@@ -30,25 +34,40 @@ static bool split_read(const ResourceSource& source,uint32_t offset,void* dst,ui
 }
 void SplitResourceSource::close(){
     common_={};localized_={};prefix_=artwork_=length_=0;valid_=false;
+    packed_directory_=packed_data_=packed_tail_=0;
     language_id_=ResourceLanguage::English;
 }
 bool SplitResourceSource::open(ResourceSource common,ResourceSource localized,ResourceLanguage expected){
     close();
     if((expected!=ResourceLanguage::English&&expected!=ResourceLanguage::Chinese)||
        common.context==this||localized.context==this)return false;
-    uint8_t c[CommonHeader],l[LanguageHeader];
-    if(!split_read(common,0,c,sizeof c)||!split_read(localized,0,l,sizeof l))return false;
-    if(split_u32(c)!=0x3143534Eu||split_u32(l)!=0x314C534Eu||
-       split_u32(c+4)!=1||split_u32(l+4)!=1||
+    uint8_t c[CommonHeader],l[PackedLanguageHeader];
+    if(!split_read(common,0,c,sizeof c)||!split_read(localized,0,l,LanguageHeader))return false;
+    const bool packed=split_u32(l)==0x324C534Eu;
+    if(split_u32(c)!=0x3143534Eu||(!packed&&split_u32(l)!=0x314C534Eu)||
+       split_u32(c+4)!=1||split_u32(l+4)!=(packed?2u:1u)||
        split_u32(c+8)!=0x41cef1eau||split_u32(l+8)!=0x41cef1eau||
-       split_u32(c+12)!=CommonHeader||split_u32(l+12)!=LanguageHeader||
+       split_u32(c+12)!=CommonHeader||split_u32(l+12)!=(packed?PackedLanguageHeader:LanguageHeader)||
        split_u32(c+16)!=common.length||split_u32(l+16)!=localized.length||
        split_u32(l+36)!=uint32_t(expected))return false;
     const uint32_t total=split_u32(l+20),prefix=split_u32(l+24),art=split_u32(l+28),suffix=split_u32(l+32);
     if(total>SplitLimit||prefix<40||prefix>total||!art||art>total-prefix||
        !suffix||suffix!=total-prefix-art||split_u32(c+20)!=art||
-       common.length-CommonHeader!=art||
-       localized.length-LanguageHeader!=prefix+suffix)return false;
+       common.length-CommonHeader!=art)return false;
+    if(packed){
+        if(!split_read(localized,LanguageHeader,l+LanguageHeader,PackedLanguageHeader-LanguageHeader))return false;
+        const uint32_t directory=split_u32(l+96),blocks=split_u32(l+104),data=split_u32(l+112),tail=split_u32(l+116);
+        // The raw suffix includes the last partial directory page and every
+        // frame descriptor. It remains safe under an active image lease.
+        if(directory<ResourceReader::PageSize||directory>PackedDirectoryLimit||directory>prefix||
+           directory%ResourceReader::PageSize||split_u32(l+100)!=PackedDirectoryBlock||
+           blocks!=(directory+PackedDirectoryBlock-1)/PackedDirectoryBlock||blocks>32||
+           split_u32(l+108)!=PackedLanguageHeader||data!=PackedLanguageHeader+blocks*8||
+           tail<data||tail>localized.length||prefix-directory>localized.length-tail||
+           suffix!=localized.length-tail-(prefix-directory)||
+           split_u32(l+120)!=Lzma2DictionaryProperty||split_u32(l+124))return false;
+        packed_directory_=directory;packed_data_=data;packed_tail_=tail;
+    }else if(localized.length-LanguageHeader!=prefix+suffix)return false;
     common_=common;localized_=localized;prefix_=prefix;artwork_=art;length_=total;
     language_id_=expected;valid_=true;
     uint8_t h[40],row[8],marker[4];
@@ -72,16 +91,46 @@ bool SplitResourceSource::open(ResourceSource common,ResourceSource localized,Re
     }
     return true;
 }
+bool SplitResourceSource::read_directory(uint32_t offset,void* destination,uint32_t count)const{
+    auto*out=static_cast<uint8_t*>(destination);
+    while(count){
+        const uint32_t block=offset/PackedDirectoryBlock,in_block=offset%PackedDirectoryBlock;
+        const uint32_t remaining=packed_directory_-block*PackedDirectoryBlock;
+        const uint32_t raw=remaining<PackedDirectoryBlock?remaining:PackedDirectoryBlock;
+        uint8_t row[8];if(!split_read(localized_,PackedLanguageHeader+block*8,row,sizeof row))return false;
+        const uint32_t physical=split_u32(row),stored=split_u32(row+4),encoded=stored&0x7fffffffu;
+        const bool literal=(stored&0x80000000u)!=0;
+        if(physical<packed_data_||physical>packed_tail_||!encoded||encoded>packed_tail_-physical||
+           (literal?encoded!=raw:encoded>=raw))return false;
+        const uint32_t available=raw-in_block,n=count<available?count:available;
+        if(literal){if(!split_read(localized_,physical+in_block,out,n))return false;}
+        else{
+            ResourceTransferLease transfer(ResourceTransferUse::Bytes);if(!transfer)return false;
+            uint8_t* scratch=transfer.bytes();
+            if(!split_read(localized_,physical,scratch+PackedDirectoryBlock,encoded)||
+               !decode_lzma2_block(scratch,PackedDirectoryBlock,raw,scratch+PackedDirectoryBlock,
+                                  encoded,Lzma2DictionaryProperty))return false;
+            resource_copy(out,scratch+in_block,n);
+        }
+        out+=n;offset+=n;count-=n;
+    }
+    return true;
+}
 bool SplitResourceSource::read(uint32_t offset,void* dst,uint32_t count)const{
     if(!valid_||offset>length_||count>length_-offset||(count&&!dst))return false;
     auto* out=static_cast<uint8_t*>(dst);
     while(count){
+        if(offset<packed_directory_){
+            const uint32_t available=packed_directory_-offset,n=count<available?count:available;
+            if(!read_directory(offset,out,n))return false;
+            out+=n;offset+=n;count-=n;continue;
+        }
         const ResourceSource* input=&localized_;
         uint32_t physical=0,available=0;
-        if(offset<prefix_){physical=LanguageHeader+offset;available=prefix_-offset;}
+        if(offset<prefix_){physical=packed_directory_?packed_tail_+offset-packed_directory_:LanguageHeader+offset;available=prefix_-offset;}
         else if(offset-prefix_<artwork_){
             input=&common_;physical=CommonHeader+offset-prefix_;available=artwork_-(offset-prefix_);
-        }else {physical=LanguageHeader+offset-artwork_;available=length_-offset;}
+        }else {physical=packed_directory_?packed_tail_+offset-packed_directory_-artwork_:LanguageHeader+offset-artwork_;available=length_-offset;}
         const uint32_t n=count<available?count:available;
         if(!split_read(*input,physical,out,n))return false;
         out+=n;offset+=n;count-=n;
@@ -98,7 +147,7 @@ void SplitResourceSource::progress_at(void* context,ResourceStage stage,uint32_t
 }
 ResourceSource SplitResourceSource::source(){
     if(!valid_)return {};
-    return {this,length_,read_at,nullptr,progress_at};
+    return {this,length_,read_at,nullptr,progress_at,packed_directory_};
 }
 bool ResourceReader::reset(ResourceSource source){
     source_=source;valid_=source.direct||source.read_at;

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Separate private NSP2/17..37 artwork from locale metadata, glyphs and text.
+"""Separate private NSP2/17..38 artwork from locale metadata, glyphs and text.
 
 The virtual concatenation prefix + artwork + suffix is byte-identical to each
 input. No image/animation is decoded, recompressed, resampled or omitted. This
@@ -10,6 +10,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import lzma
 import os
 from pathlib import Path
 import struct
@@ -23,6 +24,10 @@ DIRECTORY_LIMIT = 2 * 1024 * 1024
 MARKER = 6110
 COMMON_HEADER = 64
 LANGUAGE_HEADER = 96
+COMPRESSED_LANGUAGE_HEADER = 128
+DIRECTORY_BLOCK_BYTES = 65536
+DIRECTORY_ALIGNMENT = 4096
+DIRECTORY_LITERAL = 0x80000000
 LANGUAGES = {"eng": 1, "zhs": 2}
 
 
@@ -178,6 +183,7 @@ def layout(data, language):
             marker = bytes(data[off:off + count])
     require(marker == language.encode("ascii"), "Language label does not match the NSP2 marker")
     return dict(version=version, prefix=begin, artwork=end - begin, suffix=length - end,
+                directory_raw_bytes=descriptors & ~(DIRECTORY_ALIGNMENT - 1),
                 original_bytes=length, original_fnv=checksum, original_sha256=sha(data),
                 auxiliary=(base - aux_at) // 4, images=ni, glyphs=ng, strings=ns, clips=nc)
 
@@ -197,22 +203,178 @@ def language_file(original, row, language, common_digest):
     return bytes(header) + bytes(original[:prefix]) + bytes(original[prefix + art:])
 
 
+def _language_header(localized):
+    require(len(localized) >= LANGUAGE_HEADER, "Truncated language container")
+    header = struct.unpack_from("<4s11I32s16s", localized)
+    compressed = header[0] == b"NSL2"
+    expected = (b"NSL2", 2, REFERENCE, COMPRESSED_LANGUAGE_HEADER) if compressed else \
+               (b"NSL1", 1, REFERENCE, LANGUAGE_HEADER)
+    require(header[:4] == expected and header[4] == len(localized) and
+            header[9] in LANGUAGES.values(), "Invalid language header")
+    total, prefix, art, suffix = header[5:9]
+    require(total <= FILE_LIMIT and prefix >= 40 and art > 0 and suffix > 0 and
+            prefix + art + suffix == total, "Invalid virtual language bounds")
+    if not compressed:
+        require(LANGUAGE_HEADER + prefix + suffix == len(localized), "Invalid raw locale length")
+        return header, None
+    require(len(localized) >= COMPRESSED_LANGUAGE_HEADER, "Truncated NSL2 extension")
+    raw, block, count, table, data_at, tail, prop, reserved = struct.unpack_from("<8I", localized, 96)
+    require(DIRECTORY_ALIGNMENT <= raw <= min(prefix, DIRECTORY_LIMIT) and raw % DIRECTORY_ALIGNMENT == 0 and
+            block == DIRECTORY_BLOCK_BYTES and
+            count == (raw + block - 1) // block and 1 <= count <= 32 and
+            table == COMPRESSED_LANGUAGE_HEADER and data_at == table + count * 8 and
+            data_at <= tail <= len(localized) and prop == 14 and reserved == 0 and
+            tail + prefix - raw + suffix == len(localized), "Invalid compressed directory bounds")
+    cursor, entries = data_at, []
+    for index in range(count):
+        off, stored = struct.unpack_from("<II", localized, table + index * 8)
+        literal, size = bool(stored & DIRECTORY_LITERAL), stored & ~DIRECTORY_LITERAL
+        raw_size = min(block, raw - index * block)
+        require(off == cursor and 0 < size <= tail - off and
+                (size == raw_size if literal else size < raw_size),
+                "Invalid compressed directory block")
+        entries.append((off, size, raw_size, literal))
+        cursor += size
+    require(cursor == tail, "Compressed directory contains a gap or trailing bytes")
+    return header, dict(raw=raw, tail=tail, entries=entries)
+
+
+def _decode_directory_block(localized, entry):
+    off, size, raw_size, literal = entry
+    encoded = localized[off:off + size]
+    if literal:
+        return bytes(encoded)
+    try:
+        decoder = lzma.LZMADecompressor(format=lzma.FORMAT_RAW,
+            filters=[dict(id=lzma.FILTER_LZMA2, dict_size=512 * 1024)])
+        raw = decoder.decompress(encoded, max_length=raw_size + 1)
+        require(len(raw) == raw_size and decoder.eof and not decoder.unused_data,
+                "Compressed directory block has wrong output or trailing bytes")
+        return raw
+    except lzma.LZMAError as error:
+        raise ValueError("Invalid compressed directory stream") from error
+
+
+def _directory_boundary(prefix, total):
+    require(len(prefix) >= 40 and prefix[:4] == b"NSP2" and u32(prefix, 8) == REFERENCE and
+            u32(prefix, 12) == total, "Invalid logical NSP2 header")
+    version = u32(prefix, 4)
+    require(17 <= version <= 38, "Unsupported logical NSP2 version")
+    ni, ng, ns, nc, nk = struct.unpack_from("<5I", prefix, 16)
+    require(0 < ni <= 65535 and 0 < ng <= (65535 if version >= 35 else 32768) and
+            MARKER < ns <= 16384 and 0 < nc <= 65535 and 0 < nk <= 65535,
+            "Invalid logical NSP2 counts")
+    base = 40 + (ni + ng + nc + nk) * 16 + ns * 8
+    bound = min(len(prefix), DIRECTORY_LIMIT)
+    start = base
+    while prefix[base:base + 4] != b"TIL1":
+        require(base + 4 <= bound and (base - start) // 4 < 65535 and u32(prefix, base) < ni,
+                "Invalid directory auxiliary table")
+        base += 4
+    require(base > start and base + 64 <= bound, "Truncated logical tile header")
+    tile = struct.unpack_from("<4s15I", prefix, base)
+    groups, frames, descriptors, table = tile[5] + tile[6], tile[7], tile[8], tile[9]
+    costs = (ni + 1) & ~1 if version >= 20 else 0
+    require(tile[1:4] == (1, 16, 14) and tile[10] == 770 and
+            0 < groups <= 131070 and 0 < frames <= 65535 and table == base + 64 and
+            descriptors == table + groups * 8 + costs and descriptors <= DIRECTORY_LIMIT and
+            descriptors + frames * 16 <= len(prefix), "Invalid logical directory boundary")
+    if version >= 20:
+        require(tile[14] == table + groups * 8 and tile[15] == ni, "Invalid logical cost table")
+    # Cold image decoding already owns the transfer Bytes lease. Its 4 KiB
+    # descriptor-page reads must never overlap a compressed directory block.
+    return descriptors & ~(DIRECTORY_ALIGNMENT - 1)
+
+
+def _language_payload(localized, header, compressed):
+    if compressed is None:
+        return bytes(localized[LANGUAGE_HEADER:])
+    directory = b"".join(_decode_directory_block(localized, entry) for entry in compressed["entries"])
+    payload = directory + bytes(localized[compressed["tail"]:])
+    require(_directory_boundary(payload[:header[6]], header[5]) == compressed["raw"],
+            "Compressed bytes extend beyond the resident directory")
+    return payload
+
+
+def language_resource_version(localized):
+    """Read the logical NSP2 header, decoding only the first NSL2 block."""
+    header, compressed = _language_header(localized)
+    prefix = _decode_directory_block(localized, compressed["entries"][0]) if compressed else \
+             localized[LANGUAGE_HEADER:LANGUAGE_HEADER + 40]
+    require(len(prefix) >= 40 and prefix[:4] == b"NSP2" and u32(prefix, 8) == REFERENCE and
+            u32(prefix, 12) == header[5] and 17 <= u32(prefix, 4) <= 38,
+            "Invalid logical resource version")
+    return u32(prefix, 4)
+
+
+def compress_language_directory(localized, *, details=None):
+    """Replace only the resident directory with bounded independent NSL2 blocks."""
+    header, existing = _language_header(localized)
+    if existing is not None:
+        _language_payload(localized, header, existing)
+        if details is not None:
+            details.update(existing_nsl2=True, saved_bytes=0)
+        return bytes(localized)
+    prefix = localized[LANGUAGE_HEADER:LANGUAGE_HEADER + header[6]]
+    directory_bytes = _directory_boundary(prefix, header[5])
+    count = (directory_bytes + DIRECTORY_BLOCK_BYTES - 1) // DIRECTORY_BLOCK_BYTES
+    data_at = COMPRESSED_LANGUAGE_HEADER + count * 8
+    output = bytearray(data_at)
+    output[:LANGUAGE_HEADER] = localized[:LANGUAGE_HEADER]
+    rows = []
+    for index in range(count):
+        raw = bytes(prefix[index * DIRECTORY_BLOCK_BYTES:min((index + 1) * DIRECTORY_BLOCK_BYTES, directory_bytes)])
+        best, selected = raw, "literal"
+        for name, options in (("preset6", dict(preset=6)),
+                              ("preset9-nice273-depth512", dict(preset=9, nice_len=273, depth=512))):
+            encoded = lzma.compress(raw, format=lzma.FORMAT_RAW,
+                filters=[dict(id=lzma.FILTER_LZMA2, dict_size=512 * 1024, lc=3, lp=0, pb=2, **options)])
+            if len(encoded) < len(best):
+                require(_decode_directory_block(encoded, (0, len(encoded), len(raw), False)) == raw,
+                        "Directory compression changed bytes")
+                best, selected = encoded, name
+        literal = selected == "literal"
+        struct.pack_into("<II", output, COMPRESSED_LANGUAGE_HEADER + index * 8,
+                         len(output), len(best) | (DIRECTORY_LITERAL if literal else 0))
+        output.extend(best)
+        rows.append(dict(raw_bytes=len(raw), stored_bytes=len(best), encoder=selected,
+                         raw_sha256=sha(raw), stored_sha256=sha(best)))
+    tail_at = len(output)
+    output.extend(localized[LANGUAGE_HEADER + directory_bytes:])
+    struct.pack_into("<4sI", output, 0, b"NSL2", 2)
+    struct.pack_into("<II", output, 12, COMPRESSED_LANGUAGE_HEADER, len(output))
+    struct.pack_into("<8I", output, 96, directory_bytes, DIRECTORY_BLOCK_BYTES, count,
+                     COMPRESSED_LANGUAGE_HEADER, data_at, tail_at, 14, 0)
+    result = bytes(output)
+    checked, compressed = _language_header(result)
+    require(_language_payload(result, checked, compressed) == localized[LANGUAGE_HEADER:],
+            "NSL2 changed the complete logical locale payload")
+    if details is not None:
+        details.update(directory_raw_bytes=directory_bytes, block_bytes=DIRECTORY_BLOCK_BYTES,
+                       directory_alignment=DIRECTORY_ALIGNMENT,
+                       blocks=rows, raw_frame_and_suffix_bytes=len(output) - tail_at,
+                       input_bytes=len(localized), output_bytes=len(output),
+                       saved_bytes=len(localized) - len(output), dictionary_bytes=512 * 1024,
+                       lc=3, lp=0, pb=2, byte_identical_directory=True,
+                       frame_descriptors_stay_raw=True, runtime_pixel_pools_added=0)
+    return result
+
+
 def reconstruct(common, localized, language):
     """Independent container readback used by packaging and conversion tests."""
     require(language in LANGUAGES and len(common) >= COMMON_HEADER and
             len(localized) >= LANGUAGE_HEADER, "Invalid split container size/language")
     c = struct.unpack_from("<4s7I32s", common)
-    l = struct.unpack_from("<4s11I32s16s", localized)
+    l, compressed = _language_header(localized)
     require(c[:4] == (b"NSC1", 1, REFERENCE, COMMON_HEADER) and c[4] == len(common) and
             c[5] == len(common) - COMMON_HEADER, "Invalid common header")
-    require(l[:4] == (b"NSL1", 1, REFERENCE, LANGUAGE_HEADER) and l[4] == len(localized) and
-            l[9] == LANGUAGES[language], "Invalid language header")
+    require(l[9] == LANGUAGES[language], "Invalid language header")
     total, prefix, art, suffix = l[5:9]
     require(total <= FILE_LIMIT and prefix >= 40 and art > 0 and suffix > 0 and
-            prefix + art + suffix == total and art == c[5] and
-            LANGUAGE_HEADER + prefix + suffix == len(localized),
+            prefix + art + suffix == total and art == c[5],
             "Mismatched split bounds")
-    result = localized[LANGUAGE_HEADER:LANGUAGE_HEADER + prefix] + common[COMMON_HEADER:] + localized[LANGUAGE_HEADER + prefix:]
+    payload = _language_payload(localized, l, compressed)
+    result = payload[:prefix] + common[COMMON_HEADER:] + payload[prefix:]
     require(result[:4] == b"NSP2", "Reconstructed NSP2 tag differs")
     ni, ng = u32(result, 16), u32(result, 20)
     at = 40 + ni * 16 + ng * 16 + MARKER * 8
@@ -221,7 +383,7 @@ def reconstruct(common, localized, language):
     return result
 
 
-def split(packs):
+def split(packs, *, compress_directory=False):
     require(set(packs) == set(LANGUAGES), "Both eng and zhs inputs are required")
     rows = {language: layout(data, language) for language, data in packs.items()}
     reference = rows["eng"]
@@ -234,18 +396,26 @@ def split(packs):
     common = common_file(artwork)
     languages = {language: language_file(data, rows[language], language, common[32:64])
                  for language, data in packs.items()}
+    directory_receipts = {}
+    if compress_directory:
+        for language in languages:
+            directory_receipts[language] = {}
+            languages[language] = compress_language_directory(languages[language], details=directory_receipts[language])
     for language, localized in languages.items():
         require(reconstruct(common, localized, language) == packs[language],
                 "Split storage changed the original NSP2 bytes")
     original = sum(len(p) for p in packs.values())
     stored = len(common) + sum(len(p) for p in languages.values())
-    receipt = dict(schema=1, reference="v0.111.0 / 41cef1ea", format="NSC1/NSL1",
+    receipt = dict(schema=1, reference="v0.111.0 / 41cef1ea", format="NSC1/NSL2" if compress_directory else "NSC1/NSL1",
         complete=True, original_bytes=original, stored_bytes=stored, saved_bytes=original - stored,
         byte_identical_roundtrip=True, runtime_integrity_checks=False,
         common=dict(file="nSpire2.common.tns", bytes=len(common), sha256=sha(common),
                     artwork_bytes=len(artwork), artwork_sha256=sha(artwork)),
         languages={language: dict(row, file=f"nSpire2.{language}.tns", bytes=len(languages[language]),
                                   sha256=sha(languages[language])) for language, row in rows.items()})
+    if compress_directory:
+        receipt.update(directory_compression=directory_receipts,
+                       directory_saved_bytes=sum(row["saved_bytes"] for row in directory_receipts.values()))
     return common, languages, receipt
 
 
@@ -254,6 +424,7 @@ def main():
     parser.add_argument("--eng", type=Path, required=True)
     parser.add_argument("--zhs", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--compress-directory", action="store_true", help="Use bounded NSL2 directory blocks; keep all logical NSP2 and common bytes unchanged")
     args = parser.parse_args()
     destination = args.output.resolve()
     require(destination != ROOT and ROOT not in destination.parents,
@@ -263,7 +434,8 @@ def main():
     names = ["nSpire2.common.tns", "nSpire2.eng.tns", "nSpire2.zhs.tns", "split-receipt.json"]
     require(not any((destination / name).resolve() in input_paths for name in names),
             "Outputs must not replace the input packs")
-    common, languages, receipt = split({"eng": args.eng.read_bytes(), "zhs": args.zhs.read_bytes()})
+    common, languages, receipt = split({"eng": args.eng.read_bytes(), "zhs": args.zhs.read_bytes()},
+                                       compress_directory=args.compress_directory)
     destination.mkdir(parents=True, exist_ok=True)
     with TemporaryDirectory(prefix=".split-", dir=destination) as temporary:
         stage = Path(temporary)

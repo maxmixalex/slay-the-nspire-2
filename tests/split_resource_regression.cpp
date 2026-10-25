@@ -9,6 +9,8 @@
 #include "grouped_glyphs.hpp"
 #include "grouped_strings.hpp"
 #include "bestiary_kaiser_assets.hpp"
+#include "resource_transfer.hpp"
+#include <algorithm>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -22,6 +24,7 @@ static void put(Bytes& b,unsigned at,uint32_t n){for(unsigned i=0;i<4;++i)b[at+i
 static uint32_t get(const Bytes& b,unsigned at){return uint32_t(b[at])|(uint32_t(b[at+1])<<8)|(uint32_t(b[at+2])<<16)|(uint32_t(b[at+3])<<24);}
 static uint32_t hash(const uint8_t*p,unsigned n,uint32_t v=2166136261u){while(n--){v^=*p++;v*=16777619u;}return v;}
 static void header_hash(Bytes& b,bool common){const unsigned at=common?28:44,end=common?64:96;put(b,at,hash(b.data()+at+4,end-at-4,hash(b.data(),at)));}
+#include "fixtures/split_directory_lzma2.inc"
 struct Fixture {
     unsigned prefix=40+16+16+6111*8,art=137,suffix=41;
     Bytes original,common,locale;
@@ -55,12 +58,248 @@ struct File {
     static void progress(void*c,ResourceStage,uint32_t,uint32_t){++static_cast<File*>(c)->progress_calls;}
     ResourceSource source(){return {this,uint32_t(bytes->size()),read,nullptr,progress};}
 };
+
+// Independent NSL2 construction: the directory is synthetic, all literal
+// blocks are generated here, and the three compressed streams have a small
+// reproducible Python generator. No production pack writer is the oracle.
+struct DirectoryFixture {
+    static constexpr unsigned Block=65536,Page=4096,DefaultDirectory=3*Block+Page;
+    unsigned directory,prefix,art=137,suffix=41,blocks;
+    Bytes original,common,locale;
+    explicit DirectoryFixture(bool chinese=false,unsigned size=DefaultDirectory,bool first_compressed=true,bool last_compressed=true)
+        :directory(size),prefix(std::max(size+321,40u+16+16+6111*8+321)),blocks((size+Block-1)/Block){
+        CHECK(directory>=Page&&directory<=2u*1024u*1024u&&directory%Page==0);
+        CHECK(!first_compressed||directory==DefaultDirectory);
+        original.resize(prefix+art+suffix);
+        for(unsigned i=40;i<original.size();++i)original[i]=uint8_t(i*71u+(i>>5));
+        uint32_t random=0x12345678;
+        for(unsigned i=Block;i<std::min(directory,2*Block);++i){
+            random^=random<<13;random^=random>>17;random^=random<<5;original[i]=uint8_t(random>>24);
+        }
+        for(unsigned i=2*Block;i<directory;++i)original[i]=uint8_t(0xa5+(i%Block)%7);
+        std::memcpy(original.data(),"NSP2",4);put(original,4,38);put(original,8,0x41cef1ea);
+        put(original,12,unsigned(original.size()));put(original,16,1);put(original,20,1);
+        put(original,24,6111);put(original,28,1);put(original,32,1);put(original,36,0);
+        const unsigned marker=prefix+art+7,row=40+16+16+6110*8;
+        put(original,row,marker);put(original,row+4,3);std::memcpy(original.data()+marker,chinese?"zhs":"eng",4);
+        common.resize(64+art);std::memcpy(common.data(),"NSC1",4);put(common,4,1);put(common,8,0x41cef1ea);
+        put(common,12,64);put(common,16,unsigned(common.size()));put(common,20,art);
+        for(unsigned i=0;i<32;++i)common[32+i]=uint8_t(7*i+3);
+        std::memcpy(common.data()+64,original.data()+prefix,art);header_hash(common,true);
+        locale.resize(128+blocks*8);std::memcpy(locale.data(),"NSL2",4);put(locale,4,2);put(locale,8,0x41cef1ea);
+        put(locale,12,128);put(locale,20,unsigned(original.size()));put(locale,24,prefix);put(locale,28,art);
+        put(locale,32,suffix);put(locale,36,chinese?2:1);std::memcpy(locale.data()+48,common.data()+32,32);
+        put(locale,96,directory);put(locale,100,Block);put(locale,104,blocks);put(locale,108,128);
+        put(locale,112,unsigned(locale.size()));put(locale,120,14);
+        for(unsigned index=0;index<blocks;++index){
+            const unsigned offset=index*Block,raw=std::min(Block,directory-offset);
+            const uint8_t* bytes=original.data()+offset;unsigned stored=raw;bool compressed=false;
+            if(index==0&&first_compressed){bytes=split_directory_first;stored=sizeof split_directory_first;compressed=true;}
+            else if(index>=2&&(index+1<blocks||last_compressed)){
+                CHECK(raw==Block||raw==Page);
+                bytes=raw==Block?split_directory_full:split_directory_last;
+                stored=raw==Block?sizeof split_directory_full:sizeof split_directory_last;compressed=true;
+            }
+            put(locale,128+index*8,unsigned(locale.size()));put(locale,132+index*8,stored|(compressed?0u:0x80000000u));
+            locale.insert(locale.end(),bytes,bytes+stored);
+        }
+        put(locale,116,unsigned(locale.size()));
+        locale.insert(locale.end(),original.begin()+directory,original.begin()+prefix);
+        locale.insert(locale.end(),original.begin()+prefix+art,original.end());put(locale,16,unsigned(locale.size()));
+    }
+    unsigned offset(unsigned block)const{return get(locale,128+block*8);}
+    unsigned stored(unsigned block)const{return get(locale,132+block*8)&0x7fffffffu;}
+    void replace_block(unsigned block,const Bytes& bytes){
+        const unsigned at=offset(block),old=stored(block);const int change=int(bytes.size())-int(old);
+        locale.erase(locale.begin()+at,locale.begin()+at+old);locale.insert(locale.begin()+at,bytes.begin(),bytes.end());
+        put(locale,132+block*8,unsigned(bytes.size()));
+        for(unsigned next=block+1;next<blocks;++next)put(locale,128+next*8,unsigned(int(offset(next))+change));
+        put(locale,116,unsigned(int(get(locale,116))+change));put(locale,16,unsigned(locale.size()));
+    }
+};
+
+static bool open_directory(SplitResourceSource& joined,const DirectoryFixture& f,bool chinese=false){
+    return joined.open(ResourceSource::memory(f.common.data(),f.common.size()),
+        ResourceSource::memory(f.locale.data(),f.locale.size()),chinese?ResourceLanguage::Chinese:ResourceLanguage::English);
+}
+static void same_read(SplitResourceSource& joined,const DirectoryFixture& f,unsigned at,unsigned count){
+    Bytes guarded(count+32,0xcd);CHECK(joined.read(at,guarded.data()+16,count));
+    CHECK(!count||!std::memcmp(guarded.data()+16,f.original.data()+at,count));
+    for(unsigned i=0;i<16;++i)CHECK(guarded[i]==0xcd&&guarded[count+16+i]==0xcd);
+}
+static void directory_checks_for(bool chinese,bool streamed,bool first_compressed,bool last_compressed){
+    DirectoryFixture f(chinese,DirectoryFixture::DefaultDirectory,first_compressed,last_compressed);
+    File common{&f.common},locale{&f.locale};SplitResourceSource joined;
+    const auto lang=chinese?ResourceLanguage::Chinese:ResourceLanguage::English;
+    CHECK(joined.open(streamed?common.source():ResourceSource::memory(f.common.data(),f.common.size()),
+        streamed?locale.source():ResourceSource::memory(f.locale.data(),f.locale.size()),lang));
+    CHECK(joined.valid()&&joined.language()==lang&&!joined.source().direct);
+    CHECK(joined.source().required_cached_prefix==f.directory);
+    if(streamed){CHECK(common.read_bytes==64);CHECK(locale.read_bytes<DirectoryFixture::Block);}
+    for(unsigned start:{0u,39u,40u,4095u,4096u,65535u,65536u,65537u,131065u,131072u,196607u,196608u,
+            f.directory-7,f.directory,f.directory+123,f.prefix-7,f.prefix,f.prefix+f.art-7,f.prefix+f.art,unsigned(f.original.size())}){
+        for(unsigned count:{0u,1u,7u,8u,61u,4096u,65536u}){
+            if(count<=f.original.size()-start)same_read(joined,f,start,count);
+        }
+    }
+    same_read(joined,f,0,unsigned(f.original.size()));
+    CHECK(joined.read(f.original.size(),nullptr,0));CHECK(!joined.read(f.original.size()+1,nullptr,0));
+    uint8_t byte=0;CHECK(!joined.read(0,nullptr,1));CHECK(!joined.read(f.original.size(),&byte,1));
+    CHECK(!joined.read(0xffffffffu,&byte,1));CHECK(!resource_transfer_uses);
+    ResourceReader reader(joined.source());reader.progress(ResourceStage::Directory,1,1);
+    if(streamed){
+        CHECK(locale.progress_calls==1&&common.progress_calls==0);
+        locale.fail_at=f.offset(2)+1;CHECK(!joined.read(2*DirectoryFixture::Block,&byte,1));CHECK(!resource_transfer_uses);
+        locale.fail_at=-1;same_read(joined,f,2*DirectoryFixture::Block,31);
+        common.fail_at=64+10;CHECK(!joined.read(f.prefix+10,&byte,1));common.fail_at=-1;
+        same_read(joined,f,f.prefix+10,1);
+    }
+    joined.close();CHECK(!joined.valid()&&!joined.source().required_cached_prefix);
+    // Switching back to a legacy source must drop the packed mapping, too.
+    Fixture old(chinese,38);CHECK(joined.open(ResourceSource::memory(old.common.data(),old.common.size()),
+        ResourceSource::memory(old.locale.data(),old.locale.size()),lang));
+    CHECK(!joined.source().required_cached_prefix);
+    Bytes all(old.original.size());CHECK(joined.read(0,all.data(),all.size()));CHECK(all==old.original);
+}
+
+static void malformed_directory(){
+    DirectoryFixture f;SplitResourceSource joined;CHECK(open_directory(joined,f));
+    const auto header_rejected=[&](unsigned at,uint32_t value){
+        const uint32_t previous=get(f.locale,at);put(f.locale,at,value);CHECK(!open_directory(joined,f));
+        CHECK(!joined.valid());put(f.locale,at,previous);
+    };
+    for(unsigned at:{0u,4u,8u,12u,16u,20u,24u,28u,32u,36u})header_rejected(at,get(f.locale,at)^1u);
+    for(uint32_t value:{0u,39u,4095u,4097u,2u*1024u*1024u+4096u,0xffffffffu})header_rejected(96,value);
+    for(uint32_t value:{0u,65535u,65537u,0xffffffffu})header_rejected(100,value);
+    for(uint32_t value:{0u,3u,5u,33u,0xffffffffu})header_rejected(104,value);
+    for(uint32_t value:{0u,96u,127u,129u,0xffffffffu})header_rejected(108,value);
+    for(uint32_t value:{0u,128u,get(f.locale,112)-1,get(f.locale,112)+1,0xffffffffu})header_rejected(112,value);
+    for(uint32_t value:{0u,get(f.locale,112)-1,get(f.locale,116)-1,get(f.locale,116)+1,0xffffffffu})header_rejected(116,value);
+    for(uint32_t value:{0u,13u,15u,40u,0xffffffffu})header_rejected(120,value);
+    for(uint32_t value:{1u,0xffffffffu})header_rejected(124,value);
+    for(unsigned at:{40u,44u,48u,79u,80u,95u}){
+        f.locale[at]^=1;CHECK(open_directory(joined,f));f.locale[at]^=1;
+    }
+    // Rows are checked when accessed. The first/last blocks exercise both
+    // opening-time and deferred validation without demanding a startup scan.
+    for(unsigned block:{0u,1u,2u,3u}){
+        const unsigned raw=std::min(DirectoryFixture::Block,f.directory-block*DirectoryFixture::Block);
+        for(uint32_t value:{0u,raw,raw+1,0x40000001u,0x80000000u,0x80000000u|(raw-1),0x80000000u|(raw+1),0xffffffffu}){
+            const unsigned at=132+block*8;const uint32_t previous=get(f.locale,at);put(f.locale,at,value);
+            if(open_directory(joined,f)){uint8_t byte=0;CHECK(!joined.read(block*DirectoryFixture::Block,&byte,1));}
+            put(f.locale,at,previous);CHECK(!resource_transfer_uses);
+        }
+        for(uint32_t value:{0u,127u,get(f.locale,112)-1,get(f.locale,116),get(f.locale,116)+1,0xffffffffu}){
+            const unsigned at=128+block*8;const uint32_t previous=get(f.locale,at);put(f.locale,at,value);
+            if(open_directory(joined,f)){uint8_t byte=0;CHECK(!joined.read(block*DirectoryFixture::Block,&byte,1));}
+            put(f.locale,at,previous);
+        }
+    }
+    for(unsigned block:{0u,2u,3u}){
+        DirectoryFixture bad;bad.locale[bad.offset(block)]=3;
+        if(open_directory(joined,bad)){uint8_t byte=0;CHECK(!joined.read(block*DirectoryFixture::Block,&byte,1));}
+        CHECK(!resource_transfer_uses);
+    }
+    for(unsigned mode=0;mode<4;++mode){
+        DirectoryFixture bad;const unsigned at=bad.offset(2),n=bad.stored(2);
+        Bytes encoded(bad.locale.begin()+at,bad.locale.begin()+at+n);
+        if(mode==0)encoded.pop_back(); // Missing explicit LZMA2 end marker.
+        if(mode==1)encoded.push_back(0); // Trailing bytes must not be accepted.
+        if(mode==2)encoded.assign(split_directory_last,split_directory_last+sizeof split_directory_last); // Wrong decoded length.
+        if(mode==3){CHECK(encoded.size()>6&&encoded[0]>=0xe0);encoded[5]=0xff;} // Invalid literal-context properties.
+        bad.replace_block(2,encoded);CHECK(open_directory(joined,bad));
+        uint8_t byte=0;CHECK(!joined.read(2*DirectoryFixture::Block,&byte,1));CHECK(!resource_transfer_uses);
+    }
+    {DirectoryFixture bad;bad.locale.pop_back();put(bad.locale,16,unsigned(bad.locale.size()));CHECK(!open_directory(joined,bad));}
+    {DirectoryFixture bad;CHECK(!joined.open(ResourceSource::memory(bad.common.data(),bad.common.size()),
+        ResourceSource::memory(bad.locale.data(),bad.locale.size()-1),ResourceLanguage::English));}
+    for(unsigned length:{95u,96u,127u,128u,get(f.locale,112)-1}){
+        DirectoryFixture bad;bad.locale.resize(length);put(bad.locale,16,length);CHECK(!open_directory(joined,bad));
+    }
+    // Relabeling the NSL2 header cannot disguise an actual marker mismatch.
+    put(f.locale,36,2);CHECK(!open_directory(joined,f,true));put(f.locale,36,1);
+    const unsigned marker=get(f.locale,116)+f.prefix-f.directory+7;
+    f.locale[marker]='z';CHECK(!open_directory(joined,f));f.locale[marker]='e';
+    CHECK(open_directory(joined,f));same_read(joined,f,0,unsigned(f.original.size()));
+}
+
+static Bytes workspace_snapshot(){
+    const auto* p=reinterpret_cast<const uint8_t*>(&foreground_workspace);
+    return {p,p+sizeof foreground_workspace};
+}
+static void packed_lease_conflicts(){
+    DirectoryFixture f;SplitResourceSource joined;CHECK(open_directory(joined,f));
+    for(auto use:{ResourceTransferUse::Bytes,ResourceTransferUse::Save,ResourceTransferUse::Codec,ResourceTransferUse::Map}){
+        CHECK(!resource_transfer_uses);
+        {ResourceTransferLease owner(use);CHECK(owner);std::memset(&foreground_workspace,0x6d,sizeof foreground_workspace);
+            const Bytes before=workspace_snapshot();uint8_t byte=0xa7;
+            CHECK(!joined.read(0,&byte,1));CHECK(byte==0xa7);CHECK(resource_transfer_uses==unsigned(use));
+            CHECK(!std::memcmp(before.data(),&foreground_workspace,before.size()));
+            // Literal blocks, raw directory tail, artwork and locale text do
+            // not need the transfer workspace and remain readable by owners.
+            for(unsigned at:{DirectoryFixture::Block+123,f.directory+123,f.prefix+13,f.prefix+f.art+7})
+                same_read(joined,f,at,4);
+            CHECK(resource_transfer_uses==unsigned(use));CHECK(!std::memcmp(before.data(),&foreground_workspace,before.size()));
+            SplitResourceSource blocked;CHECK(!open_directory(blocked,f));CHECK(!blocked.valid());
+            CHECK(resource_transfer_uses==unsigned(use));CHECK(!std::memcmp(before.data(),&foreground_workspace,before.size()));
+        }
+        CHECK(!resource_transfer_uses);same_read(joined,f,0,41);
+    }
+    // More than 64 distinct pages evicts the initially warm descriptor page.
+    // Its actual offset is deliberately not page aligned, as in both packs.
+    DirectoryFixture large(false,6*DirectoryFixture::Block+DirectoryFixture::Page,false);
+    CHECK(open_directory(joined,large));ResourceReader reader(joined.source());
+    const unsigned descriptor=large.directory+123;uint8_t got[16];CHECK(reader.read(descriptor,got,sizeof got));
+    for(unsigned page=0;page<96;++page){uint8_t byte;CHECK(reader.u8(page*ResourceReader::PageSize,byte));}
+    reader.clear_stats();
+    {ResourceTransferLease owner(ResourceTransferUse::Bytes);CHECK(owner);std::memset(owner.bytes(),0x9d,ResourceTransferCapacity);
+        const Bytes before=workspace_snapshot();CHECK(reader.read(descriptor,got,sizeof got));
+        CHECK(!std::memcmp(got,large.original.data()+descriptor,sizeof got));CHECK(reader.stats().cache_misses==1);
+        CHECK(resource_transfer_uses==unsigned(ResourceTransferUse::Bytes));
+        CHECK(!std::memcmp(before.data(),&foreground_workspace,before.size()));
+    }
+    CHECK(!resource_transfer_uses);
+}
+
+struct ReentrantFile {
+    File file;SplitResourceSource* joined{};unsigned trigger{};bool attempted{},nested_result{},preserved{};
+    static bool read(void* context,uint32_t at,void* dst,uint32_t count){
+        auto& self=*static_cast<ReentrantFile*>(context);
+        if(!File::read(&self.file,at,dst,count))return false;
+        if(self.joined&&!self.attempted&&at<=self.trigger&&self.trigger-at<count){
+            self.attempted=true;const unsigned owner=resource_transfer_uses;const Bytes before=workspace_snapshot();uint8_t byte=0x6b;
+            self.nested_result=self.joined->read(0,&byte,1);
+            self.preserved=byte==0x6b&&owner==unsigned(ResourceTransferUse::Bytes)&&resource_transfer_uses==owner&&
+                !std::memcmp(before.data(),&foreground_workspace,before.size());
+        }
+        return true;
+    }
+    ResourceSource source(){return {this,unsigned(file.bytes->size()),read};}
+};
+static void packed_reentrant_read(){
+    DirectoryFixture f;ReentrantFile locale;locale.file.bytes=&f.locale;File common{&f.common};SplitResourceSource joined;
+    CHECK(joined.open(common.source(),locale.source(),ResourceLanguage::English));
+    locale.joined=&joined;locale.trigger=f.offset(2)+1;
+    same_read(joined,f,2*DirectoryFixture::Block+17,129);
+    CHECK(locale.attempted&&!locale.nested_result&&locale.preserved);CHECK(!resource_transfer_uses);
+    same_read(joined,f,0,79);
+}
+
+static void directory_limits(){
+    for(unsigned size:{4096u,65536u,2u*1024u*1024u})for(bool chinese:{false,true}){
+        DirectoryFixture f(chinese,size,false);SplitResourceSource joined;CHECK(open_directory(joined,f,chinese));
+        CHECK(joined.source().required_cached_prefix==size);
+        same_read(joined,f,0,unsigned(f.original.size()));same_read(joined,f,size-1,2);
+        CHECK(!resource_transfer_uses);
+    }
+}
 static void checks_for(bool chinese,bool streamed,unsigned version){
     Fixture f(chinese,version);File common{&f.common},locale{&f.locale};SplitResourceSource joined;
     const auto lang=chinese?ResourceLanguage::Chinese:ResourceLanguage::English;
     CHECK(joined.open(streamed?common.source():ResourceSource::memory(f.common.data(),f.common.size()),
                       streamed?locale.source():ResourceSource::memory(f.locale.data(),f.locale.size()),lang));
     CHECK(joined.valid()&&joined.language()==lang&&joined.source().direct==nullptr);
+    CHECK(!joined.source().required_cached_prefix);
     if(streamed){CHECK(common.read_bytes==64);CHECK(locale.read_bytes==96+40+8+4);} // No extra full payload scan.
     for(unsigned start:{0u,39u,f.prefix-7,f.prefix,f.prefix+f.art-7,f.prefix+f.art,unsigned(f.original.size())}){
         for(unsigned n:{0u,1u,7u,8u,61u,4096u,unsigned(f.original.size())}){
@@ -136,5 +375,8 @@ int main(int argc,char**argv){
     // as the full-pack runtime, across both languages and source adapters.
     for(unsigned version=17;version<=HistoryHeaderContentVersion;++version)for(bool chinese:{false,true})for(bool streamed:{false,true})checks_for(chinese,streamed,version);
     malformed();
+    for(bool chinese:{false,true})for(bool streamed:{false,true})for(bool first:{false,true})for(bool last:{false,true})
+        directory_checks_for(chinese,streamed,first,last);
+    malformed_directory();packed_lease_conflicts();packed_reentrant_read();directory_limits();
     std::printf("split resources: %u checks passed; adapter=%zu bytes\n",checks,sizeof(SplitResourceSource));
 }

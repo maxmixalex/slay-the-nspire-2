@@ -1,5 +1,32 @@
 # Work state — 2026-10-25
 
+## UI10f directory storage closes the remaining capacity failure
+
+UI10e source is verified at `04038b2cda0240bfa2be1af79bf62401ec26e7a9`, tree
+`0013609a7d365c985f62f8c2798a3af790c12589`. Its native119/119, Python244+54,
+ARM linked ABI/codec, WASM and all94 bilingual actual-resource gates pass.
+The ordinary offline browser passes18 flows with41 captures, no page errors
+and no external requests. Its first Chromium launch was blocked by sandbox
+socket permissions before executing the page; the permitted retry is a
+separate successful receipt. E runtime allocation is16,211,240 bytes, leaving
+565,976 bytes below16MiB. E actual scene/font resources preserve old payloads.
+
+Ordinary USB installation and complete readback of all four E files pass.
+Packed capacity1,025,362 and raw-backup migration1,419,637 bytes pass; the
+2,083,681-byte raw-history and2,699,304-byte all-raw cases fail actual writes.
+The four original run/backup/history/language files were fully restored and
+independently decoded, with no fixture files left behind and original NAND
+unchanged. The failed E capacity gates are not accepted as completed storage.
+
+F therefore adds NSL2 compression of only the existing cached metadata prefix,
+keeping all frame descriptors, common artwork and logical NSP2/38 bytes exact.
+The short actual candidate saves2,394,329 bytes without a new resident pool.
+Its4KiB-aligned boundary and cached-prefix constraint prevent directory decode
+reentry during image reads. See `split-directory-ui10-0.17.md` for format,
+ownership and negative cases. The matching frozen F source, physical-container
+readback, ARM/WASM/browser, real capacity retry, quiet performance comparison,
+private delivery and verified main synchronization remain required.
+
 ## UI10e source follow-up and final matched acceptance
 
 UI10d is remotely preserved at `78ac86e35651d3832e1b9638001aa0aa6be3f0a0`,

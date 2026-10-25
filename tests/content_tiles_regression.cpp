@@ -231,6 +231,20 @@ bool same_reads(ResourceReadStats a,ResourceReadStats b){
     return a.callbacks==b.callbacks&&a.cache_hits==b.cache_hits&&a.cache_misses==b.cache_misses&&
         a.bypasses==b.bypasses&&a.direct_reads==b.direct_reads&&a.callback_bytes==b.callback_bytes;
 }
+void required_metadata_prefix(){
+    label="compressed source prefix must fit the retained metadata directory";
+    const Package p=basic();auto content=std::make_unique<Content>();
+    for(bool direct:{false,true}){
+        Provider provider{&p.bytes};
+        ResourceSource source=direct?ResourceSource::memory(p.bytes.data(),p.bytes.size()):provider.source(true);
+        source.required_cached_prefix=p.descriptor_base;
+        CHECK(content->open(source));picture(*content,1,p.frames[0]);
+        source.required_cached_prefix=p.descriptor_base+1;
+        provider.progress.clear();CHECK(!content->open(source));
+        for(const auto& event:provider.progress)CHECK(event.stage!=ResourceStage::Directory&&event.stage!=ResourceStage::Ready);
+        source.required_cached_prefix=0;CHECK(content->open(source));picture(*content,1,p.frames[0]);
+    }
+}
 void progress_contract(){
     label="startup reads the resident directory and defers image payloads";
     const Package p=basic();Provider provider{&p.bytes};auto content=std::make_unique<Content>();
@@ -983,7 +997,7 @@ void directory_capacity_without_prescan(const Package&pressure_tiny){
 } // namespace
 int main(int argc,char**argv){
     if(argc==2&&!std::strcmp(argv[1],"--native-ui")){native_ui_packages();locale_packages();bestiary_supplement_packages();std::printf("native UI and locale content: %u checks passed\n",checks);return 0;}
-    progress_contract();valid_packages();malformed_container();malformed_geometry();catalog_metadata_reuse();maximum_frame_and_unused_tile();
+    required_metadata_prefix();progress_contract();valid_packages();malformed_container();malformed_geometry();catalog_metadata_reuse();maximum_frame_and_unused_tile();
     native_ui_packages();locale_packages();bestiary_supplement_packages();
     image_pool_cycles_and_fragmentation();
     label="bounded group pressure fixtures";

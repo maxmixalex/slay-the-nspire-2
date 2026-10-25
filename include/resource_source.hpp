@@ -19,17 +19,23 @@ struct ResourceSource {
     bool (*read_at)(void*,uint32_t offset,void* dst,uint32_t count){};
     const uint8_t* direct{};
     ResourceProgress progress{};
+    // A compressed directory adapter may require this prefix to be retained
+    // by Content before image reads can acquire the shared decode workspace.
+    uint32_t required_cached_prefix{};
     static ResourceSource memory(const uint8_t*,size_t);
 };
 
 enum class ResourceLanguage : uint32_t { English=1,Chinese=2 };
 
-// An NSC1 artwork file plus an NSL1 language file presents the exact original
+// An NSC1 artwork file plus an NSL1/NSL2 language file presents the exact original
 // NSP2 byte stream. Only the directory and glyph/text sections are localized;
 // compressed animation groups and image pixels live once in the common file.
 // Both inputs and this adapter must outlive the returned source. Opening checks
 // the container mapping bounds and actual NSP2 locale marker. Historical
 // digest fields remain in the container layout but are not runtime gates.
+// NSL2 stores only the initial directory in independent64KiB LZMA2 blocks.
+// Its end is4KiB aligned, so cold frame-descriptor pages never decode a prefix
+// block while an image already holds the shared transfer workspace.
 class SplitResourceSource {
 public:
     bool open(ResourceSource common,ResourceSource language,ResourceLanguage expected);
@@ -41,10 +47,12 @@ public:
 private:
     ResourceSource common_{},localized_{};
     uint32_t prefix_{},artwork_{},length_{};
+    uint32_t packed_directory_{},packed_data_{},packed_tail_{};
     ResourceLanguage language_id_{ResourceLanguage::English};
     bool valid_{};
     static bool read_at(void*,uint32_t,void*,uint32_t);
     static void progress_at(void*,ResourceStage,uint32_t,uint32_t);
+    bool read_directory(uint32_t,void*,uint32_t)const;
 };
 static_assert(sizeof(SplitResourceSource)<=256,"Split resources must not require a resident pack or mapping table");
 

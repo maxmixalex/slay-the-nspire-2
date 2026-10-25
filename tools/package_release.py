@@ -6,20 +6,17 @@ import argparse
 import json
 from pathlib import Path
 import re
-import struct
 import zipfile
 
 from build_web import ROOT, package_runtime
-from split_content import LANGUAGE_HEADER
+from split_content import language_resource_version
 
 
 def resource_version(path):
-    with path.open('rb') as stream:
-        prefix = stream.read(LANGUAGE_HEADER + 8)
-    if (len(prefix) != LANGUAGE_HEADER + 8 or prefix[:4] != b'NSL1' or
-            prefix[LANGUAGE_HEADER:LANGUAGE_HEADER + 4] != b'NSP2'):
-        raise ValueError('Expected a split language resource: ' + str(path))
-    return struct.unpack_from('<I', prefix, LANGUAGE_HEADER + 4)[0]
+    try:
+        return language_resource_version(path.read_bytes())
+    except ValueError as error:
+        raise ValueError('Expected a valid NSL1/NSL2 language resource: ' + str(path)) from error
 
 
 def readme(info):
