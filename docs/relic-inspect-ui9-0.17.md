@@ -94,6 +94,17 @@ fixtures now expect source relic inspection, retain potion hover-only
 expectations, and explicitly close the modal before resuming collection
 navigation. No prior failed gate is relabeled as passed.
 
+The recovered remote `1e504049` CI failure was a fixture requesting a
+physical keypress for the intentionally unbound mouse/keyboard TopPanel
+action. Its correction verifies both default input banks: unbound key zero
+is rejected, and the real keyboard-only TopPanel binding is consumed by
+the inspector. With the unchanged frozen runtime, the focused diagnostic
+passed 107,949 checks. The exhaustive UI-flow diagnostic passed 6,508 after
+waiting for the original 250 ms Popup mouse filter to disappear between
+collection clicks. All canonical State checks remain intact. These short
+diagnostics do not replace the pending matching production-pack glyph,
+pixel and bilingual capture acceptance above.
+
 Actual invocation:
 
 ```text

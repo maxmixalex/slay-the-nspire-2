@@ -12,6 +12,11 @@ static bool click(HitKind kind,int value){a.render();for(int i=0;i<a.hit_count;i
 static void action(UiAction u){CHECK(click(HitKind::UiAction,(int)u));}
 static SaveData snapshot(){SaveData b{};CHECK(save(a.game,b));return b;}
 static void unchanged(const SaveData&b){auto now=snapshot();CHECK(b.size==now.size&&!std::memcmp(b.bytes,now.bytes,b.size));}
+static void settle_deck_controls(){
+    const auto before=snapshot();a.render();a.advance(250);a.advance(100);a.render();unchanged(before);
+    // The native Confirm starts outside the viewport and enters in350ms.
+}
+static void confirm_deck(){settle_deck_controls();action(UiAction::ConfirmDeckChoice);}
 static void init(){new_run(a.game,7,true);a.reset_presentation();a.title=a.library=a.paused=a.help=a.compendium_open=a.statistics_open=a.history_open=false;}
 int main(int argc,char**argv){
  std::vector<uint8_t> data;
@@ -26,11 +31,13 @@ int main(int argc,char**argv){
  init();a.game.phase=Phase::Upgrade;a.cursor=31;CHECK(spire_test::focus_card_grid(a));before=snapshot();CHECK(click(HitKind::Choice,31));CHECK(a.deck_candidate==31);unchanged(before);
  a.render();for(int i=0;i<a.hit_count;i++)CHECK(a.hits[i].kind!=HitKind::Choice&&a.hits[i].kind!=HitKind::Enemy);
  a.input(Key::Back);CHECK(a.deck_candidate<0&&a.game.phase==Phase::Upgrade);unchanged(before);
- a.input(Key::Confirm);CHECK(a.deck_candidate==31);action(UiAction::ConfirmDeckChoice);CHECK(a.game.deck[31].upgraded&&a.game.phase==Phase::Complete);
+ a.input(Key::Confirm);CHECK(a.deck_candidate==31);confirm_deck();CHECK(a.game.deck[31].upgraded&&a.game.phase==Phase::Complete);
  init();a.game.practice=0;a.game.phase=Phase::Remove;a.game.gold=999;a.cursor=2;int gold=a.game.gold,deck=a.game.deck_count;before=snapshot();a.input(Key::Confirm);CHECK(a.deck_candidate==2);unchanged(before);
- action(UiAction::CancelDeckChoice);unchanged(before);a.input(Key::Confirm);action(UiAction::ConfirmDeckChoice);CHECK(a.game.deck_count==deck-1&&a.game.gold==gold-75&&a.game.phase==Phase::Shop);
- init();a.game.phase=Phase::Transform;a.game.event_id=EventId::Grove;a.game.event_remaining=2;a.cursor=3;before=snapshot();a.input(Key::Confirm);unchanged(before);action(UiAction::ConfirmDeckChoice);CHECK(a.game.event_remaining==1&&a.game.event_first==3&&a.game.phase==Phase::Transform);
- a.cursor=3;a.input(Key::Confirm);CHECK(a.deck_candidate<0);a.cursor=4;a.input(Key::Confirm);CHECK(a.deck_candidate==4);a.game.revision++;auto stale=snapshot();a.confirm_deck_choice();unchanged(stale);CHECK(a.deck_candidate<0);
+ settle_deck_controls();action(UiAction::Back);CHECK(a.deck_candidate<0&&a.game.phase==Phase::Remove);unchanged(before);a.input(Key::Confirm);confirm_deck();CHECK(a.game.deck_count==deck-1&&a.game.gold==gold-75&&a.game.phase==Phase::Shop);
+ init();a.game.phase=Phase::Transform;a.game.event_id=EventId::Grove;a.game.event_remaining=2;a.cursor=3;before=snapshot();a.input(Key::Confirm);unchanged(before);confirm_deck();CHECK(a.game.event_remaining==1&&a.game.event_first==3&&a.game.phase==Phase::Transform);
+ before=snapshot();a.cursor=3;CHECK(spire_test::focus_card_grid(a));CHECK(a.cursor!=3&&a.deck_candidate<0);
+ for(int i=0;i<a.hit_count;++i)CHECK(a.hits[i].kind!=HitKind::Choice||a.hits[i].value!=3);unchanged(before);
+ a.cursor=4;a.input(Key::Confirm);CHECK(a.deck_candidate==4);a.game.revision++;auto stale=snapshot();a.confirm_deck_choice();unchanged(stale);CHECK(a.deck_candidate<0);
  init();a.game.cards[a.game.hand.ids[0]]={Purity,0};a.game.event_cards.deck_origin[a.game.hand.ids[0]]=0;a.cursor=0;a.input(Key::Confirm);a.input(Key::Confirm);CHECK(a.game.phase==Phase::ExhaustManyChoice);before=snapshot();a.render();
  for(int i=0;i<a.hit_count;i++)CHECK(a.hits[i].kind!=HitKind::Hand&&a.hits[i].kind!=HitKind::Enemy);unchanged(before);a.advance(250);a.advance(100);action(UiAction::ConfirmChoice);CHECK(a.game.phase==Phase::Combat&&a.game.exhaust.count==1);
  if(!data.empty()){

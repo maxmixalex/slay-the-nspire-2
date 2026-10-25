@@ -60,7 +60,10 @@ static void offers(){
     const auto opened=a.combat_selection.row.opened;const int id=a.game.expansion.choices.ids[1];snapshot();
     a.toggle_choice(id);CHECK(!a.choice_selected_count);unchanged();
     advance(350-(a.map_clock_ms-opened));CHECK(a.map_clock_ms-opened==350);a.toggle_choice(id);CHECK(!a.choice_selected_count);unchanged();
-    advance(650);source_black_backstop(217);a.pointer_move(0,30);a.render();no_legacy_controls();CHECK(!has(HitKind::UiAction,int(UiAction::ConfirmChoice),false));
+    advance(650);source_black_backstop(217);a.pointer_move(0,30);a.render();
+    // Keyboard focus expands one offer. Moving away starts the original
+    // 500ms unfocus tween; SmallScale assertions apply after it settles.
+    advance(500);unchanged();no_legacy_controls();CHECK(!has(HitKind::UiAction,int(UiAction::ConfirmChoice),false));
     const auto number=a.input_bindings.keys[0][unsigned(InputCommand::Card1)];CHECK(a.physical_key(number,true));CHECK(a.physical_key(number,false));unchanged();CHECK(!a.choice_selected_count);
     CHECK(has(HitKind::UiAction,int(UiAction::SkipCombatChoice)));CHECK(a.active_card_grid()<0);
     for(unsigned i=0;i<3;++i){const auto h=region(HitKind::CombatChoice,a.game.expansion.choices.ids[i]);CHECK(h.w==50&&h.h==68);CHECK(h.x+h.w/2==95+int(i)*65);CHECK(h.y+h.h/2==131);}
@@ -74,9 +77,17 @@ static void offers(){
 static void hand(){
     scenario="Purity retained hand";setup({Purity,0});played();CHECK(a.combat_selection_kind()==CombatSelectionKind::Hand);CHECK(a.combat_selection_manual());
     advance(500);source_black_backstop(191);CHECK(a.active_card_grid()<0);no_legacy_controls();snapshot();
-    const auto&pool=choice_pile(a.game);CHECK(pool.count>=4);for(unsigned i=0;i<pool.count;++i){const auto h=region(HitKind::CombatChoice,pool.ids[i]);CHECK(h.y>165);}
+    const auto&pool=choice_pile(a.game);CHECK(pool.count>=4);
+    // Keyboard focus retains the hand's lifted card. Verify that separately
+    // before testing every unfocused holder at its ordinary fan position.
+    CHECK(region(HitKind::CombatChoice,pool.ids[a.cursor]).y<165);
+    a.pointer_move(0,30);advance(500);unchanged();
+    for(unsigned i=0;i<pool.count;++i){const auto h=region(HitKind::CombatChoice,pool.ids[i]);CHECK(h.y>165);}
     a.toggle_choice(pool.ids[0]);a.toggle_choice(pool.ids[1]);a.toggle_choice(pool.ids[2]);CHECK(a.choice_selected_count==3);unchanged();
     a.toggle_choice(pool.ids[3]);CHECK(a.choice_selected_count==3&&a.choice_selected[0]==pool.ids[0]&&a.choice_selected[1]==pool.ids[1]&&a.choice_selected[2]==pool.ids[3]);unchanged();
+    // Render the selection change before advancing its holder transition,
+    // just as the ordinary host does after the released click.
+    a.render();unchanged();
     advance(500);const auto selected=region(HitKind::CombatChoice,pool.ids[3]);CHECK(selected.y<120);capture("combat-hand-selected");
     const unsigned chosen=a.choice_selected_count;a.toggle_combat_peek();CHECK(a.choice_peeking&&a.choice_selected_count==chosen);a.render();CHECK(!has(HitKind::CombatChoice,pool.ids[3],false));
     for(unsigned i=0;i<chosen;++i)CHECK(!has(HitKind::InstanceCard,a.choice_selected[i],false));unchanged();a.toggle_combat_peek();

@@ -225,7 +225,7 @@ static void free_x_costs(){
         a.input(Key::Back);unchanged(before);a.render();a.advance(250);a.advance(101);tap(HitKind::CombatChoice,MaxCards);
         CHECK(a.game.phase==Phase::Combat&&a.game.hand.count==1&&cost(a.game,a.game.hand.ids[0])==-1);
         setup();int id=append({(CardKind)kind,0},Zone::Discard);append({Defend,0},Zone::Discard);
-        acquire_potion(Potion::LiquidMemories);drink();before=snapshot();for(unsigned i=0;i<choice_pile(a.game).count;++i)if(choice_pile(a.game).ids[i]==id)a.cursor=int(i);
+        acquire_potion(Potion::LiquidMemories);drink();a.render();before=snapshot();for(unsigned i=0;i<choice_pile(a.game).count;++i)if(choice_pile(a.game).ids[i]==id)a.cursor=int(i);
         a.input(Key::Detail);CHECK(a.detail_instance==id&&a.detail_cost_override<0);
         a.input(Key::Back);unchanged(before);tap(HitKind::CombatChoice,id);
         CHECK(a.game.phase==Phase::Combat&&a.game.hand.ids[0]==id&&cost(a.game,id)==-1);CHECK(validate(a.game));

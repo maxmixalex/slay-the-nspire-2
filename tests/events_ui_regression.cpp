@@ -16,7 +16,14 @@ static SaveData snap(){SaveData b{};CHECK(save(a.game,b));return b;}static void 
 static void setup(EventId id){a.title=a.library=a.paused=a.help=a.character_select=a.map_preview.open=false;new_run(a.game,73,false);a.reset_presentation();auto&s=a.game;s.phase=Phase::Event;s.event_id=id;s.current_node=3;s.next_row=1;s.floor=2;s.map[3].event=(uint8_t)id;s.map[3].room=Room::Event;a.callbacks={save_cb,load_cb};a.render();}
 static HitRegion hit(HitKind kind,int value){a.render();for(int i=0;i<a.hit_count;i++)if(a.hits[i].kind==kind&&a.hits[i].value==value)return a.hits[i];CHECK(false);return {};}
 static void click(HitRegion h){a.pointer_move(h.x+h.w/2,h.y+h.h/2);a.pointer_button(true);a.pointer_button(false);a.render();}
-static void action(UiAction cmd){click(hit(HitKind::UiAction,(int)cmd));}
+static void action(UiAction cmd){
+ if(cmd==UiAction::ConfirmDeckChoice){
+  // Original Back/Confirm start offscreen and enter over350ms. Bind the
+  // preview first, then advance its own clock before clicking the control.
+  a.render();a.advance(250);a.advance(100);a.render();
+ }
+ click(hit(HitKind::UiAction,(int)cmd));
+}
 static int reader_lines(unsigned e){
  char localized[1024];const char*text=a.ui_text(a.content.string(EventTextBase+e*EventTextStride+1),localized,sizeof localized);
  auto metrics=[](const RichChar&ch,int size){int advance=a.content.glyph_metrics(ch.codepoint,size,rich_font_style(ch)).advance;return fitted_text::Metric{advance,advance};};
@@ -67,6 +74,7 @@ static void shop(){
  a.advance(250);a.advance(250);a.advance(200);a.render();same(before);
  for(int item=0;item<ShopRemove;item++){
   auto target=hit(HitKind::Choice,item);const auto*resolved=a.hit_at(target.x+target.w/2,target.y+target.h/2);CHECK(resolved&&resolved->kind==HitKind::Choice&&resolved->value==item);a.cursor=item;a.input(Key::Detail);CHECK(item<7?a.detail_card>=0:item<ShopPotionStart?a.detail_item>=0:a.detail_item<0&&a.detail_card<0);same(before);if(item<ShopPotionStart)a.input(Key::Back);CHECK(a.shop_open);same(before);
+  if(item>=7&&item<ShopPotionStart){CHECK(a.relic_inspect.closing(a.map_clock_ms));a.advance(250);a.render();CHECK(!a.relic_inspect.closing(a.map_clock_ms));same(before);}
  }
  s.gold=9999;a.cursor=0;a.input(Key::Confirm);CHECK(s.shop_sold&1);before=snap();
  // Purchase moves controller focus to the nearest remaining slot. Selecting

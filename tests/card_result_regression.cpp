@@ -76,7 +76,7 @@ static void power_lifecycle(){
  CHECK(end_turn(s)&&s.phase==Phase::Combat&&s.turn==2&&!rebound());
  CHECK(s.expansion.result_order[0]==unsigned(CardResultActor::Feral)&&!s.expansion.result_order[1]&&!s.defect.feral_used);roundtrip();
  scenario="removing a power while its physical card is paused does not recalculate that card";
- reset();gain_power(s,XPower::Nostalgia,1);const int recalled=append(Defend,Zone::Discard),headbutt=append(Headbutt);
+ reset();gain_power(s,XPower::Nostalgia,1);append(Strike,Zone::Discard);const int recalled=append(Defend,Zone::Discard),headbutt=append(Headbutt);
  CHECK(play(s,index_of(s.hand,headbutt),0)&&s.phase==Phase::ReturnChoice);
  gain_power(s,XPower::Nostalgia,-9999);CHECK(!s.expansion.result_order[0]);preview(headbutt,Zone::Draw,true);roundtrip();
  CHECK(choose_return_to_draw(s,recalled)&&s.zones[headbutt]==Zone::Draw&&s.draw.ids[s.draw.count-1]==headbutt);roundtrip();
@@ -111,19 +111,22 @@ static void physical_capture_and_history(){
  reset();cast(DefectFeral);gain_power(s,XPower::Duplicator,1);const int claw=cast(DefectClaw);
  CHECK(s.zones[claw]==Zone::Hand&&s.defect.feral_used==1&&s.defect.zero_attacks_started==2);roundtrip();
  scenario="captured Feral survives a pending choice and cannot be consumed by preview";
- reset();cast(DefectFeral);int recalled=append(Defend,Zone::Discard),headbutt=append(Headbutt);s.expansion.turn_cost[headbutt]=1;
+ reset();cast(DefectFeral);append(Strike,Zone::Discard);int recalled=append(Defend,Zone::Discard),headbutt=append(Headbutt);s.expansion.turn_cost[headbutt]=1;
  CHECK(play(s,index_of(s.hand,headbutt),0)&&s.phase==Phase::ReturnChoice);CHECK(s.defect.feral_used==1&&s.expansion.feral_result[0]==2);
  preview(headbutt,Zone::Hand,true);roundtrip();CHECK(choose_return_to_draw(s,recalled));CHECK(s.zones[headbutt]==Zone::Hand&&s.defect.feral_used==1);roundtrip();
  scenario="a relic acquisition selection retains the suspended card's combat frames";
- reset();cast(DefectFeral);recalled=append(Defend,Zone::Discard);headbutt=append(Headbutt);s.expansion.turn_cost[headbutt]=1;
+ reset();cast(DefectFeral);append(Strike,Zone::Discard);recalled=append(Defend,Zone::Discard);headbutt=append(Headbutt);s.expansion.turn_cost[headbutt]=1;
+ // Both commands need more than the requested single candidate to retain
+ // their original suspension boundary; source singleton commands return all.
+ s.deck[s.deck_count++]={Strike,0};CHECK(validate(s));
  CHECK(play(s,index_of(s.hand,headbutt),0)&&s.phase==Phase::ReturnChoice);CHECK(gain_world_relic(s,WorldRelicDollysMirror));
  CHECK(s.phase==Phase::WorldRelicChoice&&s.world_relics.choice==WorldRelicChoice::Duplicate&&s.world_relics.return_phase==unsigned(Phase::ReturnChoice));
  preview(headbutt,Zone::Hand,true);roundtrip();
  s.world_relics.return_phase=unsigned(Phase::Map);CHECK(!validate(s));CHECK(load(s,before.bytes,before.size));
  const uint16_t permanent=0;CHECK(world_relic_select(s,&permanent,1)&&s.phase==Phase::ReturnChoice);
- CHECK(choose_return_to_draw(s,recalled));CHECK(s.zones[headbutt]==Zone::Hand&&s.deck_count==2&&s.defect.feral_used==1);roundtrip();
+ CHECK(choose_return_to_draw(s,recalled));CHECK(s.zones[headbutt]==Zone::Hand&&s.deck_count==3&&s.defect.feral_used==1);roundtrip();
  scenario="nested automatic plays preserve the outer captured result through save and resume";
- reset();cast(DefectFeral);recalled=append(Defend,Zone::Discard);headbutt=append(Headbutt,Zone::Draw);const int uproar=append(DefectUproar);s.expansion.turn_cost[uproar]=1;
+ reset();cast(DefectFeral);append(Strike,Zone::Discard);recalled=append(Defend,Zone::Discard);headbutt=append(Headbutt,Zone::Draw);const int uproar=append(DefectUproar);s.expansion.turn_cost[uproar]=1;
  CHECK(play(s,index_of(s.hand,uproar),0)&&s.phase==Phase::ReturnChoice&&s.expansion.depth==1);
  preview(uproar,Zone::Hand,true);preview(headbutt,Zone::Discard,false);CHECK(s.defect.feral_used==1);roundtrip();
  CHECK(choose_return_to_draw(s,recalled));CHECK(s.zones[uproar]==Zone::Hand&&s.zones[headbutt]==Zone::Discard&&s.defect.feral_used==1);roundtrip();

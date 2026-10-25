@@ -201,11 +201,19 @@ static void grimoire_and_relic_width(){
     play_ui(add({NecroForbiddenGrimoire,0}));play_ui(add({NecroForbiddenGrimoire,1}));
     for(int i=0;i<a.game.enemy_count;i++)a.game.enemies[i].hp=1;play_ui(add({DefectSweepingBeam,0}));
     CHECK(a.game.phase==Phase::Reward&&a.game.necro.grimoire_pending==2);capture("necro-grimoire-reward");action(UiAction::RewardGrimoire);
-    int eternal=deck_index(NecroForbiddenGrimoire);a.cursor=eternal;CHECK(spire_test::focus_card_grid(a));CHECK(!hit(HitKind::Choice,eternal).enabled);auto before=snapshot();a.input(Key::Confirm);CHECK(a.deck_candidate<0);unchanged(before);
-    int index=deck_index(NecroTheScythe);a.cursor=index;CHECK(spire_test::focus_card_grid(a));tap(HitKind::Choice,index);CHECK(a.deck_candidate_valid());capture("necro-grimoire-confirm");before=snapshot();action(UiAction::CancelDeckChoice);unchanged(before);
-    a.cursor=index;tap(HitKind::Choice,index);unsigned deck=a.game.deck_count;int gold=a.game.gold;action(UiAction::ConfirmDeckChoice);
+    int eternal=deck_index(NecroForbiddenGrimoire);a.cursor=eternal;CHECK(spire_test::focus_card_grid(a));
+    // FromDeckForRemoval filters Eternal models out of the displayed list.
+    // A stale capture of that forbidden model must also fail confirmation.
+    for(int i=0;i<a.hit_count;++i)CHECK(a.hits[i].kind!=HitKind::Choice||a.hits[i].value!=eternal);
+    auto before=snapshot();a.deck_candidate=eternal;a.deck_choice_revision=a.game.revision;a.deck_choice_phase=a.game.phase;
+    CHECK(!a.deck_candidate_valid());a.confirm_deck_choice();CHECK(a.deck_candidate<0);unchanged(before);
+    int index=deck_index(NecroTheScythe);a.cursor=index;CHECK(spire_test::focus_card_grid(a));tap(HitKind::Choice,index);CHECK(a.deck_candidate_valid());capture("necro-grimoire-confirm");before=snapshot();a.render();a.advance(250);a.advance(100);a.render();unchanged(before);action(UiAction::Back);CHECK(a.deck_candidate<0&&a.grimoire_select);unchanged(before);
+    a.cursor=index;tap(HitKind::Choice,index);unsigned deck=a.game.deck_count;int gold=a.game.gold;
+    before=snapshot();a.render();a.advance(250);a.advance(100);a.render();unchanged(before);action(UiAction::ConfirmDeckChoice);
     CHECK(a.game.deck_count==deck-1&&a.game.gold==gold&&a.game.necro.grimoire_pending==1&&a.grimoire_select);
-    deck=a.game.deck_count;action(UiAction::SkipGrimoire);CHECK(a.game.deck_count==deck&&!a.game.necro.grimoire_pending&&!a.grimoire_select);CHECK(validate(a.game));
+    // The next pending Grimoire choice owns a fresh native Confirm entrance.
+    deck=a.game.deck_count;before=snapshot();a.render();a.advance(250);a.advance(100);a.render();unchanged(before);
+    action(UiAction::SkipGrimoire);CHECK(a.game.deck_count==deck&&!a.game.necro.grimoire_pending&&!a.grimoire_select);CHECK(validate(a.game));
     start(Character::Ironclad);CHECK(gain_relic(a.game,BoundPhylactery));a.sync_relic_feedback();CHECK(a.relic_flash_mask&BoundPhylactery);
     int owned=-1;for(int i=0;i<a.game.relic_count;i++)if(relic_definitions[a.game.relic_order[i]].id==BoundPhylactery)owned=i;
     CHECK(owned>=0);before=snapshot();tap(HitKind::OwnedRelic,owned);CHECK(a.detail_item==32);unchanged(before);

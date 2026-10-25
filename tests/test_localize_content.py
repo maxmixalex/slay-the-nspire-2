@@ -71,7 +71,9 @@ class LocalePack(unittest.TestCase):
 
     def test_language_subsets_keep_runtime_symbols(self):
         symbols=runtime_symbols()
-        self.assertTrue(set('✓▼–←→↑↓‹›×…−·').issubset(set(glyph_alphabet(['Synthetic English']))))
+        # Source checkboxes now use their original image assets. The removed
+        # text checkmark must not force an unused glyph into every locale.
+        self.assertTrue(set('▼–←→↑↓‹›×…−·').issubset(set(glyph_alphabet(['Synthetic English']))))
         self.assertTrue(symbols.issubset(set(glyph_alphabet(['Synthetic alternative']))))
         self.assertNotIn('\n',glyph_alphabet(['Synthetic\ntext']))
 

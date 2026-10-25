@@ -1,5 +1,45 @@
 # Work state — 2026-10-24
 
+## Environment recovery and texture-bound repair — 2026-10-25
+
+The complete selector/inspection source is preserved at
+`1e50404901ab398574fcf8fa44d863e8961248ef`. The transient executor was recycled
+while its native, ARM, WASM and resource jobs were running. Their missing
+completion records are **unknown**, not passes. The repository was restored
+at that exact commit. The original owner PCK/DLL and previously delivered UI6
+split resources were recovered from the saved original archives; their source
+identities were verified. Newer private packs and conversion caches must be
+rebuilt, then persisted privately before further long acceptance work.
+
+The relic resource append failure is now reproduced against the exact original
+PCK: the source frame texture is408×408, whereas the scene's containing Control
+is304×304. The converter confused those bounds. The repair accepts the actual
+408px texture, records both bounds and retains the58×58 projected frame.
+Runtime inspector geometry remains based on the304px scene Control.
+The corrected conversion and final composed acceptance remain required.
+
+The recovered remote CI run
+[40118639939](https://github.com/maxmixalex/slay-the-nspire-2/actions/runs/40118639939)
+built native, ARM and WASM. Native passed102/113 suites; converter tests
+passed208/209 before stopping. The eleven native failures were traced to
+test premises retained from the replaced selector/inspection UI: source
+entrance/exit clocks, focus-driven hand layout, the original Back action,
+filtered nonremovable cards, and source single-candidate shortcuts. The
+repaired tests retain gameplay, invalid-input, save and pixel assertions.
+Their individual Release reruns against the frozen1e504 core all passed;
+the next full matching suite remains required. The Python failure required
+the obsolete text-checkmark glyph although original checkbox images had
+replaced that literal; the corrected symbol coverage check passed.
+
+Recovery also rebuilt the exact1e504 WASM (6,612,714 bytes), the public
+Firebird controller, original fonts and fixed official Spine dependency.
+The original CXII NAND/boot identities were recovered; an isolated NAND
+clone boots the ordinary OS6.4.0.74 and has installed Ndless. Original NAND
+bytes remain unchanged. This is environment preparation, not final game
+execution. Actual regenerated NSH8/dense-NSZ capacity fixtures match their
+historical hashes and sizes:295,349 /121,503 bytes; final OS write/readback
+and three-profile capacity acceptance remain required.
+
 ## Active objective and continuity
 
 Continue 0.17 on `work/0.17-world-parity`: pinned original UI fidelity first,

@@ -268,6 +268,19 @@ execution and the new English/Chinese production-asset screenshots remain
 pending at this checkpoint; this section does not convert source coverage
 or test counts into a percentage of original-game fidelity.
 
+After executor recovery on 2026-10-25, the remote `1e504049` CI log was
+recovered with its original failures intact. Short diagnostic drivers linked
+the unchanged frozen `1e504049` core, headers and drawing source. The updated
+combat selector driver passed 71,026 checks. Its geometry checks now first
+allow the original 500 ms offer unfocus transition to finish, distinguish
+the lifted keyboard-focused hand card from the ordinary fan, and render a
+selection change before timing its holder movement. These fixture changes
+do not relax the 350 ms offer click gate or the canonical byte comparisons.
+The shared, expansion and five-character drivers also passed their focused
+diagnostics with original native Back/Confirm controls and filtered deck
+entries. This is diagnostic evidence; formal combined-checkpoint execution
+and both production-resource visual reviews remain required.
+
 ## Fixed world-deck command companion
 
 The same source shortcut applies to `CardSelectCmd.FromDeckForUpgrade`

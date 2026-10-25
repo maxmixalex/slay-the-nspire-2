@@ -61,8 +61,10 @@ static void actual_power_order(){
  const int old=position(0,loop);effect(XOp::DPower,int(DPower::Loop),1);CHECK(position(0,loop)==old);
  gain_power(a.game,XPower::Focus,2);CHECK(position(0,focus)<0);effect(XOp::Power,int(XPower::Plating),3);
  gain_power(a.game,XPower::Focus,-1);CHECK(position(0,focus)>position(0,18+unsigned(XPower::Plating)));
- // Nightmare adds an independent original snapshot through its real chooser.
- const int defend=add(DefendSilent),nightmare=add(Nightmare);cast(nightmare);CHECK(a.game.expansion.choice==XChoice::NightmareCard);
+ // Two eligible cards keep Nightmare on its real chooser. The original
+ // nonmanual singleton path returns its only card without opening a screen.
+ const int defend=add(DefendSilent);add(StrikeSilent);const int nightmare=add(Nightmare);cast(nightmare);
+ CHECK(a.game.expansion.choice==XChoice::NightmareCard&&a.game.expansion.choices.count==2);
  const uint16_t selected=uint16_t(defend);CHECK(choose_extended(a.game,&selected,1));CHECK(position(0,CharacterExtraStatusStart)>=0);
  CHECK(a.combat_power_amount(power_token(0,CharacterExtraStatusStart),true)==3);
  effect(XOp::Power,int(XPower::RollingBoulder),5);CHECK(position(0,18+unsigned(XPower::RollingBoulder))>=0);

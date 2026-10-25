@@ -59,9 +59,16 @@ static void inventory(){
     CHECK(region(UiAction::InspectPreviousRelic,false).kind==HitKind::None);CHECK(region(UiAction::InspectNextRelic).x==229);
     for(Key key:{Key::Confirm,Key::Detail,Key::EndTurn,Key::Inspect,Key::Map,Key::Collection,Key::Potions,Key::Relics,Key::Save,Key::Load,Key::Quit}){a.input(key);CHECK(a.detail_item>=0&&!a.quit&&!a.library&&!a.panel);unchanged();}
     const int focused=a.hud_focus;
-    for(InputCommand command:{InputCommand::Card1,InputCommand::TopPanel,InputCommand::EndTurn,InputCommand::Peek}){
-        const uint16_t key=a.input_bindings.keys[0][unsigned(command)];CHECK(a.physical_key(key,true));CHECK(a.physical_key(key,false));unchanged();CHECK(!a.choice_peeking&&a.hud_focus==focused);
-    }
+    for(unsigned bank=0;bank<2;++bank){a.keyboard_only=bank!=0;
+        for(InputCommand command:{InputCommand::Card1,InputCommand::TopPanel,InputCommand::EndTurn,InputCommand::Peek}){
+            const uint16_t key=a.input_bindings.keys[bank][unsigned(command)];
+            // MKb has no TopPanel binding. The real keyboard-only binding
+            // below still verifies that the inspector consumes this action.
+            if(key){CHECK(a.physical_key(key,true));CHECK(a.physical_key(key,false));}
+            else{CHECK(!a.physical_key(key,true));CHECK(!a.physical_key(key,false));}
+            unchanged();CHECK(!a.choice_peeking&&a.hud_focus==focused);
+        }
+    }a.keyboard_only=false;
     const auto count=a.relic_inspect.count;for(int i=1;i<count;++i){action(UiAction::InspectNextRelic);CHECK(a.detail_owned==i&&a.detail_item==ui_owned_relic_id(a.game,unsigned(i)));advance(350);unchanged();}
     CHECK(region(UiAction::InspectNextRelic,false).kind==HitKind::None);a.input(Key::Right);CHECK(a.detail_owned==count-1);unchanged();
     const uint16_t left=a.input_bindings.keys[0][unsigned(InputCommand::Left)];CHECK(a.physical_key(left,true));const int once=a.detail_owned;CHECK(a.physical_key(left,true));CHECK(a.detail_owned==once);CHECK(a.physical_key(left,false));

@@ -133,9 +133,12 @@ def build_art(pck_path, cache):
         rows = [row, write_shader_input(cache, project_shader_input(sdf))]
         frame_source = 'images/packed/inspect_relic_screen/relic_inspect_frame.png'
         original_frame = load_scene_texture(pack, frame_source).convert('RGBA')
-        tiles.require(original_frame.size == (304, 304), 'Original relic frame geometry changed')
+        # The source texture is408px; its scene Control displays it at304px.
+        # Project that Control to58px without confusing texture and UI bounds.
+        tiles.require(original_frame.size == (408, 408), 'Original relic frame texture changed')
         frame = write_image(cache, 'relic-inspect-frame', original_frame.resize((58, 58), Image.Resampling.LANCZOS))
-        frame.update(source=frame_source, source_size=[304, 304], size=[58, 58], auxiliary=BASE_AUX+2)
+        frame.update(source=frame_source, source_size=[408, 408], scene_size=[304, 304],
+                     size=[58, 58], auxiliary=BASE_AUX+2)
         rows.append(frame)
         localized = {}
         for language in ('eng', 'zhs'):

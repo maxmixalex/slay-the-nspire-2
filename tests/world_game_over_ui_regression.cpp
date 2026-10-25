@@ -200,6 +200,9 @@ static void overlays_do_not_advance(){
  if(viewed.upgraded||card_upgradeable(viewed))CHECK(card_from_token(a.detail_card).upgraded!=viewed.upgraded);
  unchanged();a.input(Key::Back);CHECK(a.detail_card<0&&!a.game_over_summary);unchanged();
  a.detail_item=0;a.ui_action(UiAction::GameOverSummary);CHECK(!a.game_over_summary);a.input(Key::Confirm);CHECK(a.detail_item==0&&!a.game_over_summary);unchanged();a.input(Key::Back);CHECK(a.detail_item<0&&!a.game_over_summary);unchanged();
+ // The inspector's paper still stops pointer input during its source250ms
+ // close. Finish that transition before clicking the underlying Continue.
+ CHECK(a.relic_inspect.closing(a.map_clock_ms));advance_ms(250);a.render();CHECK(!a.relic_inspect.closing(a.map_clock_ms));unchanged();
 }
 static void saved_facts(){
  char text[512]{},number[32]{};a.localized_text("game_over_screen","SCORE_LINE.floorsClimbed",text,sizeof text);std::snprintf(number,sizeof number,"%u",a.game.world.total_floor);CHECK(std::strstr(text,number));

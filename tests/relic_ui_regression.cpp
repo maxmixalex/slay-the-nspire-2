@@ -40,6 +40,9 @@ static void treasure(){
  new_run(a.game,91,false);a.game.phase=Phase::Treasure;a.game.current_node=19;a.game.next_row=6;a.game.floor=7;a.reset_presentation();
  auto closed=snapshot();a.render();same(closed);CHECK(click(HitKind::Choice,0));CHECK(a.game.treasure_state==1);auto revealed=snapshot();shot("treasure-reveal");
  CHECK(a.game.relic_count==1);a.input(Key::Detail);CHECK(a.detail_item>=0);a.input(Key::Back);same(revealed);
+ // The source inspector paper keeps MouseFilter=Stop until its250ms exit
+ // completes. The reward behind that paper is actionable afterwards.
+ CHECK(a.relic_inspect.closing(a.map_clock_ms));a.advance(250);a.render();CHECK(!a.relic_inspect.closing(a.map_clock_ms));same(revealed);
  a.input(Key::Save);CHECK(click(HitKind::Choice,0));CHECK(a.game.treasure_state==2&&a.game.relic_count==2);auto claimed=snapshot();
  CHECK(click(HitKind::Choice,0));same(claimed);a.input(Key::Load);CHECK(a.game.treasure_state==1&&a.game.relic_count==1);same(revealed);
  // A capture started before load cannot claim the reward when released.
