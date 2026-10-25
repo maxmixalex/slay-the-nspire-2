@@ -295,6 +295,39 @@ def character_title_display_alphabet(source):
         'characters.'+key+'.title' for key in ('IRONCLAD','SILENT','DEFECT','REGENT','NECROBINDER')})
 
 
+def bestiary_scene_alphabets(source):
+    """Only the fixed native bands actually used by bestiary.tscn.
+
+    MonsterName is Spectral Bold48 (10px here), not the dialogue's Bitter
+    Italic. The original28px Actions/Mode labels use5px Kreon Bold; act/event
+    dividers use32px/6px. Body, entries and action names already belong to
+    the complete ordinary5/6px alphabet. No all-size display expansion.
+    """
+    result = {(4, 10): set(), (5, 5): set(), (5, 6): set(), (6, 5): set()}
+    if getattr(source, 'version', 0) < 28: return result
+    src = Path(__file__).resolve().parents[1]/'src'
+    config = src.parent/'config'
+    models = {model['id']:model['key'] for model in json.loads((config/'enemy-visuals-0.17.json').read_text())['models']}
+    titles = {'monsters.'+models[entry['model']]+'.name'
+              for entry in json.loads((config/'bestiary-ui7-0.17.json').read_text())['entries']
+              if entry['model'] in models}
+    indices = (src/'world_text_index.inc').read_text()+(src/'ui7_text_index.inc').read_text()
+    for key, ordinal in re.findall(r'\{"([^\"]+)",(\d+)\}', indices):
+        ordinal = int(ordinal)
+        if ordinal >= len(source.strings): continue
+        band = None
+        if (key in titles or
+            key in ('encounters.DECIMILLIPEDE_ELITE.title', 'bestiary.LOCKED.monsterTitle')):
+            band = (4, 10)
+        elif key in ('bestiary.ACTIONS.header', 'bestiary.MODE.viewActions', 'bestiary.MODE.viewStats'):
+            band = (5, 5)
+        elif key == 'bestiary.EVENTS.title' or key in tuple('acts.'+act+'.title' for act in ('OVERGROWTH','UNDERDOCKS','HIVE','GLORY')):
+            band = (5, 6)
+        elif key == 'bestiary.QUOTE_PLACEHOLDER': band = (6, 5)
+        if band: result[band].update(visible_alphabet(source_text(source, ordinal)))
+    return result
+
+
 def scene_glyphs(source, faces):
     """Pack actual explicit faces only for the screens that select them."""
     if source.version < 28 or not any(faces): return [], {}
@@ -346,6 +379,7 @@ def scene_glyphs(source, faces):
     for ordinal,key in GAME_OVER_TEXTS:
         if ordinal<len(texts) and key.startswith('game_over_ui.'):
             small_bold.update(visible_alphabet(texts[ordinal]))
+    bestiary_bands = bestiary_scene_alphabets(source)
     rows=[];report={}
     for i,face in enumerate(faces):
         if face is None: continue
@@ -375,6 +409,11 @@ def scene_glyphs(source, faces):
             for cp in sorted(small_italic):
                 if cp>=32 and not text_format_control(cp) and cp in face.coverage and (cp,5) not in present:
                     rows.append(face.glyph(cp,5,6));present.add((cp,5));covered.add(cp)
+        for (style, px), alphabet in bestiary_bands.items():
+            if style != 4+i: continue
+            for cp in sorted(alphabet):
+                if cp>=32 and not text_format_control(cp) and cp in face.coverage and (cp,px) not in present:
+                    rows.append(face.glyph(cp,px,style));present.add((cp,px));covered.add(cp)
         report[('display','explicit_bold','scene_italic')[i]]=dict(**face.metadata(),codepoints=len(covered),glyphs=len(present))
     return rows,report
 

@@ -1,5 +1,27 @@
 # Work state — 2026-10-24
 
+## Recovered full gates and Bestiary font stage — 2026-10-25
+
+The matched `3e61c041ffdc02e82ea8f8e14dc27601e2751aac` native build passed
+113/113 CTest suites. The wrapper's redirected console log is incomplete;
+the independent complete CTest LastTest.log contains all113 passes and no
+failed test. Python passed209 tests plus54 animation/packing/logging checks.
+These are native/converter gates, not original-game visual parity evidence.
+
+The original input chain has been reconstructed through v28 history art,
+and all1006 character-death frames /12 clips have been regenerated. A private
+recovery archive preserves the split stage5 pack, death cache and exact font
+and converter inputs. It is a development checkpoint, not the final release.
+
+Bestiary source review found the MonsterName uses Spectral Bold48 (native10),
+Actions/Mode uses bold28 (native5), act/event dividers use bold32 (native6),
+and dialogue uses italic28 (native5). The font converter now adds only the
+actual reachable titles and labels at those exact face/size bands. A focused
+font-band regression passes. The full private font build must establish the
+final glyph count against the unchanged32768-entry limit. Bestiary geometry
+and input, Retain description, Cookie ownership, highlight and allocation
+repairs are still being integrated separately from this font-only stage.
+
 ## Environment recovery and texture-bound repair — 2026-10-25
 
 The complete selector/inspection source is preserved at
