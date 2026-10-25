@@ -21,6 +21,9 @@ void App::screen_scene_offset(int&x,int&y)const{screen_motion.sample(screen_moti
 static void ui_architect_screen_effect(App&a,bool start){
  if(a.game.original_events.id!=OriginalEventId::TheArchitect)return;
  const auto plan=source_architect_shake(a.game.character,unsigned(a.game.original_events.values[0]),start,a.fast_mode);if(!plan.complete)return;
+ // Share the already-existing event clock's captured speed with the clip
+ // sampler. A later Settings toggle must not retime an in-flight sequence.
+ a.room_presentation.event.fast=a.fast_mode;
  for(unsigned i=0;i<plan.hits;++i)a.screen_effect(ScreenShakePresentation::Punch,
   i+1==plan.hits?ScreenShakePresentation::Strong:ScreenShakePresentation::Weak,i+1==plan.hits?800:300,0,plan.hit_at(i));
  if(plan.architect_at)a.screen_effect(ScreenShakePresentation::Punch,ScreenShakePresentation::Weak,800,0,plan.architect_at);

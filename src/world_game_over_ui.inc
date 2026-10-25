@@ -152,7 +152,12 @@ static void game_over_backdrop(Canvas&c){
  // The event's 200 ms fade precedes the 1500 ms source threshold tween.
  if(m.event_room){Canvas black=c;black.opacity=uint8_t(div255(black.opacity*m.black_alpha(a.map_clock_ms)));black.rect(0,0,ScreenW,ScreenH,0);}
  game_over_shader_backstop(c,m.backstop_phase(a.map_clock_ms));
- game_over_actor(c,age,m.event_room?m.black_alpha(a.map_clock_ms):255);
+ if(s.phase==Phase::Complete&&s.original_events.id==OriginalEventId::TheArchitect){
+  // NGameOverScreen reparents every VisualOnly combat creature above its
+  // backstops, preserving positions and ongoing clips. It neither creates
+  // a centered player nor requests a new die animation in this room.
+  architect_scene_actors(c);
+ }else game_over_actor(c,age,m.event_room?m.black_alpha(a.map_clock_ms):255);
  // The separate summary backstop subsequently covers retained creatures.
  if(a.game_over_summary){Canvas summary=c;summary.opacity=uint8_t(div255(summary.opacity*224*m.summary_opacity(a.map_clock_ms)/255));summary.rect(0,22,320,218,rgb(29,3,0));}
 }

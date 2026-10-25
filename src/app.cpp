@@ -44,6 +44,7 @@ namespace spire {
 #include "combat_feedback_ui.inc"
 #include "canvas.inc"
 #include "screen_shake_ui.inc"
+#include "architect_scene_ui.inc"
 #include "small_material_ui7.inc"
 #include "room_secondary_vfx_ui11.inc"
 static void world_region_image_key(const State&s,char*out,size_t size){
