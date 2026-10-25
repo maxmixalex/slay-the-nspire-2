@@ -184,7 +184,11 @@ static void run_character(unsigned character,bool fast){
  CHECK(a.game_over_button_ready());a.input(Key::Confirm);a.render();CHECK(a.game_over_summary);equal_save();
  if(!character&&!fast){
   CHECK(save(a.game,architect_saved));const auto callbacks=a.callbacks;a.callbacks.load=load_architect;a.return_to_title();
-  CHECK(a.load_saved_run());a.title=false;a.render();equal_save();const auto frame=architect_scene_frame(a);
+  // Terminal checkpoints are deliberately excluded from ordinary Continue.
+  // Older hosts can still persist them; exercise that production codec
+  // reload directly, as the existing terminal compatibility gate does.
+  CHECK(!a.has_save&&!a.load_saved_run());CHECK(load(a.game,architect_saved.bytes,architect_saved.size));
+  a.title=false;a.reset_presentation();a.render();equal_save();const auto frame=architect_scene_frame(a);
   if(original_art)CHECK(frame.player==0&&frame.architect==51&&frame.player_loop&&frame.architect_loop);
   CHECK(!a.screen_motion.sequence_active(a.map_clock_ms)&&a.game_over_presentation.opened==a.map_clock_ms);
   visible_original(int(CharacterDeathAnimationFirst),0,pose);capture("ironclad-complete-reload");a.callbacks=callbacks;
