@@ -209,7 +209,7 @@ static void architect_equations(){
  }
 }
 static void architect_room(Character character,bool fast,unsigned dialogue,unsigned shake){
- fresh();new_run(a.game,0x7195c3,false,character);CHECK(world_set_seed(a.game,"NSPIRE-GAME-OVER-017"));CHECK(world_begin_run(a.game,reference::ActKind::Overgrowth,3));
+ fresh();a.forget_run_checkpoint();new_run(a.game,0x7195c3,false,character);CHECK(world_set_seed(a.game,"NSPIRE-GAME-OVER-017"));CHECK(world_begin_run(a.game,reference::ActKind::Overgrowth,3));
  a.game.event_run.wins=a.game.event_run.character_wins[unsigned(character)]=dialogue;
  // Supply prior room outcomes to the normal world controller, exactly as
  // its routing gate does. These fixtures do not claim combat victories.
