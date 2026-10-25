@@ -196,9 +196,22 @@ def source_text_index():
     return result
 
 
+def flavor_visible_alphabet(text):
+    """Exclude only the exact color scopes used by original relic flavor.
+
+    RichReader consumes [red]/[gold] and their closing tags. Do not treat
+    arbitrary bracketed text as markup: an unfamiliar/literal bracket keeps
+    the conservative original alphabet, including the brackets themselves.
+    This also avoids stripping a color-looking substring inside an invalid
+    or literal rich-text tag. LocString substitutions are left intact.
+    """
+    plain = re.sub(r'\[/?(?:red|gold)\]', '', text)
+    return visible_alphabet(text if '[' in plain or ']' in plain else plain)
+
+
 def glyph_requirements(source):
     index, required = source_text_index(), set()
-    def add(keys, sizes, faces):
+    def add(keys, sizes, faces, alphabet_for=visible_alphabet):
         for key in keys:
             tiles.require(key in index, 'Unbound original selector key: '+key)
             text = source.string_payload(index[key])[:-1].decode('utf-8')
@@ -208,7 +221,7 @@ def glyph_requirements(source):
             # checkbox labels still retain every character they really use.
             # Keep the complete numeric alphabet for nested/modified LocString
             # substitutions (Amount, plural branches, comparisons, etc.).
-            alphabet = visible_alphabet(text)
+            alphabet = alphabet_for(text)
             if re.search(r'\{[^{}]+\}', text):
                 alphabet |= set(map(ord, '0123456789'))
             required.update((cp, size, face) for cp in alphabet for size in sizes for face in faces)
@@ -235,7 +248,8 @@ def glyph_requirements(source):
         ('inspect_relic_screen.LOCKED_TITLE', 'inspect_relic_screen.UNDISCOVERED_TITLE'), (7,), (5,))
     add(tuple(key for key in index if key.startswith('relics.') and key.endswith('.description'))+
         ('inspect_relic_screen.LOCKED_DESCRIPTION', 'inspect_relic_screen.UNDISCOVERED_DESCRIPTION'), (5,), (0, 5))
-    add(tuple(key for key in index if key.startswith('relics.') and key.endswith('.flavor')), (4,), (6,))
+    add(tuple(key for key in index if key.startswith('relics.') and key.endswith('.flavor')),
+        (4,), (6,), flavor_visible_alphabet)
     return {(cp, px, face) for cp, px, face in required if cp >= 32 and not text_format_control(cp)}
 
 

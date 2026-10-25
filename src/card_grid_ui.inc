@@ -13,14 +13,30 @@ static void card_grid_hit(Canvas&c,const CardGridScroll&grid,int x,int y,int w,i
 static LocalizedValue card_grid_victory_value(const void*opaque,const char*key){return wt_equal(key,"Victories")?LocalizedValue{true,*static_cast<const uint32_t*>(opaque),1,nullptr}:LocalizedValue{};}
 static void card_grid_stats(Canvas&c,CardKind kind,int cx,int cy,int scale){
     const int x=cx-117*scale*4/21000,y=cy-138*scale*4/21000,w=231*scale*4/21000,h=117*scale*4/21000;
-    c.dim(x,y,w,h,186);char label[128]{};LocalizedTemplate text(label,sizeof label,card_grid_victory_value,&c.a.progress.card_wins[kind]);text.format(c.a.content.locale_string("card_library","VICTORIES"));
-    // The original 30px single-line label projects below the 8px atlas size.
-    // Rasterize that small label once here, then scale into its authored box.
-    const int width=mn(176,mx(1,c.width(label,8))),height=11;uint16_t pixels[176*11]{};uint8_t alpha[176*11]{};
-    Canvas stamp=c;stamp.pixels=pixels;stamp.coverage=alpha;stamp.pitch=width;stamp.clip_w=width;stamp.clip_h=height;
-    stamp.opacity=stamp.brightness=stamp.tint_red=stamp.tint_green=stamp.tint_blue=255;stamp.text(label,0,0,8,White,width);
-    const int draw_width=mn(w-2,width),draw_height=mx(1,height*draw_width/width);
-    c.picture(Picture{reinterpret_cast<const uint8_t*>(pixels),alpha,nullptr,uint16_t(width),uint16_t(height),0},x+(w-draw_width)/2,y+(h-draw_height)/2,draw_width,draw_height);
+    Canvas background=c;background.opacity=uint8_t(div255(unsigned(background.opacity)*186));background.rect(x,y,w,h,0);
+    char label[128]{};LocalizedTemplate text(label,sizeof label,card_grid_victory_value,&c.a.progress.card_wins[kind]);text.format(c.a.content.locale_string("card_library","VICTORIES"));
+    // The source30px label inherits the actual holder scale (.8 normally,
+    // 1.05 on focus). Render its native5/6px glyphs directly, keeping rich
+    // color and alpha; the old8px temporary bitmap changed both shapes.
+    const int size=c.a.content.font_size((30*scale*4+10500)/21000),width=c.width(label,size),left=x+(w-width)/2,top=y+(h-size-2)/2;
+    const int dx=(3*scale*4+10500)/21000,dy=(2*scale*4+10500)/21000;
+    // RichTextLabel defaults to clip_contents=true. It has no horizontal
+    // autosize bound here: a very large counter keeps the source band and
+    // is clipped to the Label, never rescaled or replaced with an ellipsis.
+    const int clip_x=mx(0,x),clip_y=mx(0,y),clip_right=mn(c.clip_w,x+w),clip_bottom=mn(c.clip_h,y+h);
+    if(clip_right<=clip_x||clip_bottom<=clip_y)return;
+    Canvas label_layer=c;label_layer.pixels+=clip_y*c.pitch+clip_x;if(label_layer.coverage)label_layer.coverage+=clip_y*c.pitch+clip_x;
+    label_layer.clip_w=clip_right-clip_x;label_layer.clip_h=clip_bottom-clip_y;
+    for(unsigned pass=0;pass<2;++pass){
+        Canvas ink=label_layer;if(!pass)ink.opacity=uint8_t(div255(unsigned(ink.opacity)*128));
+        RichReader reader(label);RichChar ch{};int at=left;
+        while(reader.next(ch)){
+            const auto glyph=c.a.content.glyph(ch.codepoint,size,0);
+            const uint16_t color=ch.style.color==1?rgb(239,200,81):rgb(255,246,226);
+            if(ch.index<c.text_visible_characters)ink.character(ch.codepoint,glyph,at-clip_x+(!pass?dx:0),top-clip_y+(!pass?dy:0),pass?color:0,!pass);
+            at+=glyph.advance;
+        }
+    }
 }
 struct CardGridPainter {
     Canvas&c;CardGridScroll&grid;int hover=-1;

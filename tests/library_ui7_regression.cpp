@@ -1,4 +1,4 @@
-#include "app.hpp"
+#include "../src/app.cpp"
 #include "card_grid_fixture.hpp"
 #include "content_fixture.hpp"
 #include "host_text_input.hpp"
@@ -101,9 +101,9 @@ static void collection_associated_models(){
         a.render();CHECK(!a.keyword_hover.owner);a.pointer_button(false);a.render();CHECK(grid.position==position);if(tab==1){CHECK(a.detail_item==id&&a.relic_inspect.source==RelicInspectSource::Collection);a.input(Key::Back);a.advance(250);}else CHECK(a.detail_item<0);
     }
 }
-static bool exact_header_glyph(const std::vector<uint8_t>&pack,uint32_t cp,unsigned face){
+static bool exact_header_glyph(const std::vector<uint8_t>&pack,uint32_t cp,unsigned face,unsigned size=5){
     const auto u32=[&](unsigned at){return unsigned(pack[at])|unsigned(pack[at+1])<<8|unsigned(pack[at+2])<<16|unsigned(pack[at+3])<<24;};
-    const unsigned count=u32(20),offset=40+u32(16)*16,packed=5|((face&4)<<3)|((face&3)<<6);
+    const unsigned count=u32(20),offset=40+u32(16)*16,packed=size|((face&4)<<3)|((face&3)<<6);
     const uint64_t key=uint64_t(packed)<<24|cp;unsigned low=0,high=count;
     while(low<high){const unsigned middle=(low+high)/2,at=offset+middle*16;
         const uint64_t value=uint64_t(pack[at+8]|unsigned(pack[at+9])<<8)<<24|u32(at);
@@ -111,6 +111,111 @@ static bool exact_header_glyph(const std::vector<uint8_t>&pack,uint32_t cp,unsig
     }
     if(low==count)return false;const unsigned at=offset+low*16;
     return u32(at)==cp&&(pack[at+8]|unsigned(pack[at+9])<<8)==packed;
+}
+// Fixed-size source labels are compared against individually decoded alpha
+// glyphs, not Canvas::fitted or the production label helper. A suppressed-text
+// frame supplies only original images/background; the oracle adds every
+// complete heading, count, rarity, cost and checkbox word to that frame.
+struct LibraryLetter {unsigned cp,w,h,advance,color;std::vector<uint8_t>alpha;};
+static std::vector<LibraryLetter>library_letters(const std::vector<uint8_t>&pack,const std::string&text,unsigned size,unsigned face){
+    std::vector<LibraryLetter>result;RichReader reader(text.c_str());RichChar ch{};
+    while(reader.next(ch)){
+        const unsigned actual_face=face|(ch.style.bold?5u:0u);CHECK(exact_header_glyph(pack,ch.codepoint,actual_face,size));
+        const auto g=a.content.glyph(ch.codepoint,int(size),actual_face);CHECK(g.pixels&&g.advance);
+        LibraryLetter letter{ch.codepoint,g.w,g.h,g.advance,ch.style.color,std::vector<uint8_t>(unsigned(g.w)*g.h)};
+        if(g.encoded_size){unsigned at=0;for(unsigned i=0;i<g.encoded_size;i+=2){CHECK(i+1<g.encoded_size&&at+g.pixels[i]<=letter.alpha.size());
+            for(unsigned n=0;n<g.pixels[i];++n)letter.alpha[at++]=g.pixels[i+1];}CHECK(at==letter.alpha.size());}
+        else std::memcpy(letter.alpha.data(),g.pixels,letter.alpha.size());result.push_back(letter);
+    }CHECK(!result.empty());return result;
+}
+static unsigned library_text_width(const std::vector<LibraryLetter>&letters){unsigned width=0;for(const auto&letter:letters)width+=letter.advance;return width;}
+static uint16_t source_rgb(unsigned r,unsigned g,unsigned b){return uint16_t((r>>3)<<11|(g>>2)<<5|(b>>3));}
+static void library_oracle_paint(std::vector<uint16_t>&frame,int x,int y,uint16_t color,unsigned alpha){
+    if(x<0||x>=320||y<0||y>=240)return;const auto from=frame[unsigned(y*320+x)];
+    const auto mix=[&](unsigned old,unsigned value){return (old*(255-alpha)+value*alpha+127)/255;};
+    frame[unsigned(y*320+x)]=uint16_t(mix(from>>11,color>>11)<<11|mix((from>>5)&63,(color>>5)&63)<<5|mix(from&31,color&31));
+}
+static void library_oracle_label(std::vector<uint16_t>&frame,const std::vector<LibraryLetter>&letters,int left,int top,
+                                uint16_t color,unsigned opacity=255,unsigned shadow=128,int dx=1,int dy=1,int radius=0,
+                                unsigned red=255,unsigned green=255,unsigned blue=255){
+    const auto pass=[&](int sx,int sy,bool shade){int x=left;
+        for(const auto&letter:letters){const auto ink=shade?uint16_t(0):letter.color==1?source_rgb(239,200,81):letter.color==3?source_rgb(135,206,235):color;
+            const uint16_t tinted=uint16_t((((ink>>11)*red+127)/255)<<11|((((ink>>5)&63)*green+127)/255)<<5|((ink&31)*blue+127)/255);
+            const unsigned layer=shade?(opacity*shadow+127)/255:opacity;
+            for(unsigned yy=0;yy<letter.h;++yy)for(unsigned xx=0;xx<letter.w;++xx)
+                library_oracle_paint(frame,x+int(xx)+sx,top+int(yy)+sy,tinted,(unsigned(letter.alpha[yy*letter.w+xx])*layer+127)/255);
+            x+=letter.advance;
+        }
+    };
+    if(radius){for(int yy=-radius;yy<=radius;++yy)for(int xx=-radius;xx<=radius;++xx)if((xx||yy)&&xx*xx+yy*yy<=radius*radius)pass(xx,yy,true);}
+    else if(shadow)pass(dx,dy,true);pass(0,0,false);
+}
+static void library_source_geometry(){
+    a.open_library(0);a.pointer.visible=true;a.pointer.x=319;a.pointer.y=239;a.advance(400);a.render();
+    const int sort_controls[]={LibrarySortType,LibrarySortRarity,LibrarySortCost,LibrarySortAlphabet};
+    const int sort_y[]={41,64,106,127};for(unsigned i=0;i<4;++i){const auto h=hit(HitKind::LibraryControl,sort_controls[i]);CHECK(h.x==3&&h.y==sort_y[i]&&h.w==49&&h.h==8);}
+    auto h=hit(HitKind::LibraryControl,LibraryViewStats);CHECK(h.x==3&&h.y==220&&h.w==49&&h.h==8);
+    h=hit(HitKind::LibraryControl,LibraryViewUpgrades);CHECK(h.x==3&&h.y==229&&h.w==49&&h.h==8);
+    const int rows[]={73,80,88,95};for(unsigned i=0;i<4;++i){h=hit(HitKind::LibraryControl,LibraryRarityFirst+int(i));CHECK(h.y==rows[i]&&h.h==7&&h.enabled);}
+    const int columns[]={5,14,23,32,41};for(unsigned i=0;i<5;++i){h=hit(HitKind::LibraryControl,LibraryCostFirst+int(i));CHECK(h.x==columns[i]&&h.y==114&&h.w==9&&h.h==9);}
+    h=hit(HitKind::LibraryControl,LibrarySearch);CHECK(h.y==3&&h.h==9);
+    // Actual controls, including the tighter bottom rows, retain only their
+    // intended presentation predicate and never alter the current run.
+    SaveData before{};CHECK(save(a.game,before));control(LibraryViewUpgrades);CHECK(a.library_upgraded&&!a.card_library.show_stats);unchanged(before);
+    control(LibraryViewStats);CHECK(a.card_library.show_stats&&a.library_upgraded);unchanged(before);control(LibraryViewStats);control(LibraryViewUpgrades);
+}
+static void library_source_label_pixels(const std::vector<uint8_t>&pack){
+    if(pack.empty())return;a.open_library(0);spire_test::discover_all_cards(a);a.card_library.invalidate();
+    a.pointer.visible=true;a.pointer.x=319;a.pointer.y=239;a.advance(500);
+    const char*sort_keys[]={"SORT_TYPE","SORT_RARITY","SORT_COST","SORT_ALPHABET"};const int sort_y[]={41,64,106,127};
+    const char*rarity_keys[]={"RARITY_COMMON","RARITY_UNCOMMON","RARITY_RARE","RARITY_OTHER"};const int rarity_y[]={73,80,88,95};
+    const unsigned rarity_rgb[][3]={{255,255,255},{135,206,235},{239,200,81},{238,130,238}};
+    for(unsigned empty=0;empty<2;++empty){
+        a.library_filter=empty?0:1;a.card_library.invalidate();a.card_grids[unsigned(CardGridSurface::Library)].reset();
+        const auto clear=[](){for(unsigned i=0;i<ScreenW*ScreenH;++i)a.pixels[i]=uint16_t((i*17u)^(i/320u));a.hit_count=0;};
+        clear();Canvas visible{a};card_library_screen(visible);const std::vector<uint16_t>actual(a.pixels,a.pixels+ScreenW*ScreenH);
+        clear();Canvas hidden{a};hidden.text_visible_characters=0;card_library_screen(hidden);std::vector<uint16_t>expected(a.pixels,a.pixels+ScreenW*ScreenH);
+        if(empty){auto text=library_letters(pack,a.content.locale_string("card_library","NO_RESULTS"),6,0);
+            library_oracle_label(expected,text,54+(266-int(library_text_width(text)))/2,116,source_rgb(255,246,226),255,64,1,0);}
+        std::string count=a.content.locale_string("card_library","CARD_COUNT");const auto variable=count.find("{Amount}");CHECK(variable!=std::string::npos);count.replace(variable,8,empty?"0":"85");
+        library_oracle_label(expected,library_letters(pack,count,4,0),296,228,source_rgb(255,246,226),129,64,1,0);
+        // Search is a plain LineEdit: no title color, outline or ellipsis.
+        const auto search=library_letters(pack,a.content.locale_string("card_library","SEARCH_PLACEHOLDER"),5,0);
+        CHECK(library_text_width(search)<=36);library_oracle_label(expected,search,5,4,source_rgb(153,156,150),255,0);
+        for(unsigned i=0;i<4;++i){const auto text=library_letters(pack,a.content.locale_string("gameplay_ui",sort_keys[i]),4,5);CHECK(library_text_width(text)+2+7<=49);
+            library_oracle_label(expected,text,5,sort_y[i]+1,source_rgb(239,200,81),255,128,0,0,2);}
+        for(unsigned i=0;i<4;++i){const auto text=library_letters(pack,a.content.locale_string("card_library",rarity_keys[i]),4,5);CHECK(library_text_width(text)<=37);
+            // Source OnDisable multiplies the row by gray, retaining alpha.
+            const unsigned shade=empty?128:255;const auto creme=source_rgb(255,246,226);
+            const auto dimmed=uint16_t((((creme>>11)*shade+127)/255)<<11|((((creme>>5)&63)*shade+127)/255)<<5|((creme&31)*shade+127)/255);
+            library_oracle_label(expected,text,13,rarity_y[i],dimmed,255,128,1,1,0,rarity_rgb[i][0],rarity_rgb[i][1],rarity_rgb[i][2]);}
+        const char*costs[]={"0","1","2","3+","X"};const int columns[]={5,14,23,32,41};
+        for(unsigned i=0;i<5;++i){const auto text=library_letters(pack,costs[i],5,5);const int width=int(library_text_width(text));
+            library_oracle_label(expected,text,columns[i]+(10-width)/2,115,source_rgb(255,246,226),255,128,0,0,2);}
+        for(unsigned i=0;i<2;++i){const auto text=library_letters(pack,a.content.locale_string("card_library",i?"VIEW_UPGRADES":"VIEW_STATS"),4,5);CHECK(library_text_width(text)<=40);
+            library_oracle_label(expected,text,11,i?230:221,source_rgb(239,200,81));}
+        unsigned changed=0;for(unsigned y=0;y<240;++y)for(unsigned x=0;x<320;++x){const unsigned at=y*320+x;
+            // Source text can extend beyond its Control (clip_contents=false).
+            if(x<54||(x>=292&&y>=226)||(empty&&x>=54&&y>=112&&y<128)){
+                if(actual[at]!=expected[at])std::fprintf(stderr,"library source pixels empty=%u x=%u y=%u actual=%u expected=%u\n",empty,x,y,actual[at],expected[at]);
+                CHECK(actual[at]==expected[at]);changed+=actual[at]!=a.pixels[at];
+            }
+        }CHECK(changed>0);
+        capture(empty?"library-native-no-results":"library-native-sidebar");
+    }
+    a.open_library(0);const auto wins=a.progress.card_wins[Strike];
+    for(unsigned victory:{0u,17u,999u,4294967295u})for(int scale:{800,1050}){
+        a.progress.card_wins[Strike]=victory;for(unsigned i=0;i<ScreenW*ScreenH;++i)a.pixels[i]=source_rgb(92,121,143);
+        Canvas canvas{a};card_grid_stats(canvas,Strike,160,120,scale);const std::vector<uint16_t>actual(a.pixels,a.pixels+ScreenW*ScreenH);
+        std::vector<uint16_t>expected(ScreenW*ScreenH,source_rgb(92,121,143));
+        const int x=160-117*scale*4/21000,y=120-138*scale*4/21000,w=231*scale*4/21000,h=117*scale*4/21000;
+        for(int yy=y;yy<y+h;++yy)for(int xx=x;xx<x+w;++xx)library_oracle_paint(expected,xx,yy,0,186);
+        std::string label=a.content.locale_string("card_library","VICTORIES");const auto at=label.find("{Victories}");CHECK(at!=std::string::npos);label.replace(at,11,std::to_string(victory));
+        const unsigned px=scale==800?5u:6u;const auto text=library_letters(pack,label,px,0);const int width=int(library_text_width(text));
+        const auto no_text=expected;library_oracle_label(expected,text,x+(w-width)/2,y+(h-int(px)-2)/2,source_rgb(255,246,226),255,128,scale==800?0:1,0);
+        for(unsigned yy=0;yy<240;++yy)for(unsigned xx=0;xx<320;++xx)if(int(xx)<x||int(xx)>=x+w||int(yy)<y||int(yy)>=y+h)expected[yy*320+xx]=no_text[yy*320+xx];
+        unsigned changed=0;for(unsigned i=0;i<expected.size();++i){CHECK(actual[i]==expected[i]);changed+=actual[i]!=source_rgb(92,121,143);}CHECK(changed>0);
+    }a.progress.card_wins[Strike]=wins;
 }
 static void collection_header_pixels(const std::vector<uint8_t>&pack){
     if(pack.empty())return;
@@ -226,6 +331,6 @@ int main(int argc,char**argv){
         a.render();unsigned preparation=0;while(a.combat_preparation.active&&preparation++<1024){a.advance(33);a.render();}
         CHECK(!a.combat_preparation.active&&a.content.healthy());unchanged(before);
     }
-    pools_and_filters();unchanged(before);discovery_search_and_capture();unchanged(before);hover_discovery_preserves_capture();unchanged(before);collections();unchanged(before);collection_associated_models();unchanged(before);collection_header_pixels(bytes);unchanged(before);host_input();observed_rewards();
+    library_source_geometry();unchanged(before);library_source_label_pixels(bytes);unchanged(before);pools_and_filters();unchanged(before);discovery_search_and_capture();unchanged(before);hover_discovery_preserves_capture();unchanged(before);collections();unchanged(before);collection_associated_models();unchanged(before);collection_header_pixels(bytes);unchanged(before);host_input();observed_rewards();
     std::printf("UI7 card library and collections: %u checks passed\n",checks);
 }

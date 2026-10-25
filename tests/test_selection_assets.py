@@ -17,6 +17,26 @@ import group_strings
 
 
 class SelectionAssetsTest(unittest.TestCase):
+    def test_flavor_color_tags_do_not_consume_italic_glyph_slots(self):
+        visible = selector.flavor_visible_alphabet
+        self.assertEqual(visible('[red]中文[/red] [gold]颜色[/gold]'),
+                         set(map(ord, '中文 颜色')))
+        # Ordinary prose, unrecognized markup and escaped/literal brackets
+        # remain conservative. This is not a generic bracket-removal regex.
+        for text in ('red / gold', '[unknown]中文[/unknown]', '[lb]red[rb]',
+                     '[rainbow broken=[red]]中文[/rainbow]', '[red]中文[/red] []'):
+            self.assertEqual(visible(text), selector.visible_alphabet(text))
+        index = selector.source_text_index()
+        flavors = {slot for key, slot in index.items() if key.endswith('.flavor')}
+        class ColoredFlavors:
+            def string_payload(self, slot):
+                return ('[red]中文字[/red]' if slot in flavors else 'Static prose').encode()+b'\0'
+        required = selector.glyph_requirements(ColoredFlavors())
+        for char in '/[]deglor':
+            self.assertNotIn((ord(char), 4, 6), required)
+        for char in '中文字':
+            self.assertIn((ord(char), 4, 6), required)
+
     def test_static_scene_labels_do_not_invent_numeric_alphabets(self):
         index = selector.source_text_index()
         class StaticText:

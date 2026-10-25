@@ -1,5 +1,67 @@
 # Work state — 2026-10-25
 
+## Complete matched UI gates and Card Library source follow-up — 2026-10-25
+
+The frozen `bbb47e23e0939bbcf2534ad2ba7d4221e6adce5f` runtime passes all116
+native CTest suites. All45 actual private-resource UI targets pass in both
+languages:17 world/root,13 front and15 combat,90 results in total. There are
+1178 resulting captures, with module-specific composed reviews. The ordinary
+browser run now passes18 flows with41 captures, zero page errors and zero
+external requests. Its corrected test source is
+`66b433cb574f3f0348b34bbde41e7ee4ef7ba51d`; all486 runtime/build files are
+byte-identical to the accepted8l runtime. The first browser cursor failure and
+native wrapper's wrong-build-directory failure are retained separately from
+the successful runs. GitHub's8l run was cancelled by the newer8m checkpoint,
+not reported as a CI pass.
+
+Composed browser review exposed another actual implementation gap: Card
+Library still used8px labels in its narrow original sidebar. The next source
+stage restores original4px bold sorting, rarity and checkbox labels,5px search
+and cost text,4px card counts and6px empty results, together with the source
+control positions, label-sized sort arrows and selection colors. Card stats
+use their original5/6px glyphs at the actual card scales and clip only at the
+original label boundary. The old8px temporary bitmap/rescaling path is
+removed, including its 5808-byte stack image/alpha buffers. Matching
+new-font composed and runtime acceptance is required after this checkpoint.
+
+The required glyph budget was proved against both actual v34 packs. The
+selector generator incorrectly counted the literal characters of[red]/[gold]
+as4px italic flavor text. All306 Chinese relic flavors were independently
+fed through the real C++ RichReader: nine keys `/ [ ] d e g l o r` never appear
+as visible output. They were added only by that selector stage, and no other
+runtime screen uses the same face/size. The new converter retires only these
+nine directory keys, retaining even their old payload bytes. It adds all
+required Card Library characters: English3282+10=3292 and Chinese32749−9+24
+=32764, within the unchanged32768 limit. The converter verifies all other
+old glyph keys/metrics/alpha, every string, image, clip clock and the complete
+old payload. The public correction changes the collector, not original text.
+The immutable21/22 inputs are preserved; new outputs will be23/24 after the
+new source is remotely verified.
+
+The additional retained-color codec is deliberately not installed. A short
+native comparison using the actual LZMA2 decoder and once-per-group inverse
+preserves all output bytes but slows the measured192 interleaved cold pairs
+from3875.739 to4073.144µs on average (+5.093%). This is not an ARM timing claim;
+there is no demonstrated performance benefit to justify that storage tradeoff.
+Adding the necessary per-group slice table would reduce its full candidate
+saving to870,076 bytes. A separate byte-delta sample improves only one of16
+groups, by14,891 bytes total, and is not promoted to a new resource format.
+The current reader, decoded pools and image payloads remain unchanged. The
+offline oracle is retained as future engineering evidence, not a shipped
+storage feature.
+
+Ordinary cloned-OS acceptance has cold-booted the real8l launcher, switched
+language in Settings, started Ironclad, accepted tutorials with physical5,
+walked Neow and the map, completed the three-page combat tutorial, won the
+first battle through real inputs, received rewards and completed Save/Quit
+and Continue. The continued state shows73/80HP,109gold and Floor2; the reward
+scene has no residual hand, energy, piles or End Turn control. Game exit and
+OS flush/quit complete normally. Final save-file decoding, capacity cases,
+new-library launcher acceptance and private delivery remain separate gates.
+Long-lived emulator outputs now reside in `/tmp` until closed: earlier
+scratch output paths retained truncated prefixes despite success logs, and
+their independent cold-boot reads are retained as distinct evidence.
+
 ## Ordinary browser cursor isolation and storage candidate — 2026-10-25
 
 Runtime `bbb47e23e0939bbcf2534ad2ba7d4221e6adce5f` passes the matching ARM
