@@ -1,5 +1,33 @@
 # Work state — 2026-10-25
 
+## UI10k adopts the measured idle-off optimization
+
+The final bounded experiment changes only two production branches, keeping
+I's App fields, layout, global address/size and render address/size unchanged.
+The long-press timer advances when the preference is enabled or an owner,
+residual timer or unfinished fade still needs service. The progress-bar
+visual is computed only when that setting is enabled. The elapsed-run clock,
+500ms threshold, cancellation, source colors,250ms fade, canonical formats,
+resources and resident pools remain unchanged.
+
+Four balanced I/off-guard pairs each render3,600 identical frames; all28,800
+frames, canonical bytes and zero warm I/O checks pass. Every pair improves,
+with CPU median1446.0925->1385.028ms (-4.22%). Mean1529.02075->1383.31975ms
+(-9.53%) includes a visibly high I sample, which remains in the receipt.
+This is a measured improvement in one native battle workload, not an ARM
+FPS or universal speed claim. See `performance-ui10-0.17.md` for every sample
+and the earlier contradictory/negative windows.
+
+The two production files are byte-identical to the measured private variant.
+The existing hold regression adds App-level disabled-but-residual owner,
+timer and fade assertions after its original captures. Its short1731 checks
+pass with the unchanged I ABI. K requires its own verified remote checkpoint,
+matching full native/ARM/WASM/Python and actual-resource/browser gates, final
+closed artifacts and ordinary-OS launcher/cold-persistence check. Source
+association with the measured binary must be verified before describing K's
+performance as accepted. J's fixture corrections and all earlier evidence
+remain preserved; source/test counts still do not establish95% fidelity.
+
 ## UI10j verification follow-up after the accepted I runtime
 
 I runtime/resource source is remotely verified at
@@ -47,9 +75,16 @@ their fixed source-coordinate points, adds Long Press hover, and compares
 the real Settings result with the specified source title/body and anchor.
 It also moves the new long-press FTUE assertions after all older captures, so
 their added elapsed time does not change the old animated-background samples.
-All new assertions remain. These two test changes require their own remote
-checkpoint and focused execution. Production files must compare exactly to I
-before reusing its core; no I launcher, WASM, resource or deliverable changes.
+All new assertions remain. J is remotely verified at
+`8a2ebda2cfab09d1ce90925599255cd7e11cf14e`, tree
+`12dacbcf996f2cfd8024347508e1ee39e3542ea4`. Its focused gate
+`ui10j-fixture-acceptance-2a725e41f14d` passes:683 production inputs compare
+exactly to I, the accepted I core remains unchanged, both synthetic targets
+and all four bilingual actual runs pass. Each locale's19 original FTUE
+captures are again byte-identical to H. Each locale's54 other card/HUD
+captures remain exact; the three corrected hover captures and the new Long
+Press capture pass their full-screen binding/position oracle with unchanged
+canonical bytes. No I launcher, WASM, resource or deliverable changes.
 
 Quiet F/I tests retain the same physical F input. Requested-row batching
 reduces callbacks46->31/62->39 and seeks43->12/59->12 for English/Chinese,
@@ -61,9 +96,23 @@ and zero warm I/O. The full raw samples remain. A bounded H/I comparison is
 now separating pre-hold changes from the new input feature before any proposed
 production optimization. Host CPU is not physical-calculator FPS.
 
-The corrected-hover/FTUE gates, performance attribution, final documentation,
-main ref synchronization and private delivery remain to be completed. No95%
-restoration claim is inferred from source inventories or passing tests.
+The H/I isolation window does not reproduce the first difference: H's180-
+frame CPU mean/median is77.8655/77.141ms and the same I binary gives
+76.41175/76.3015ms. Idle hold adds only fixed branches; no extra pixel loop or
+font traversal was found. Source inspection alone does not attribute timing
+to the changed transform-function or App layout. A final balanced F/H/I
+window lengthens this same battle sample to distinguish cross-window noise;
+it introduces no new scene. That balanced F/H/I run passes43,200 rendered
+frames,14,400 fingerprints per version, canonical equality and zero warm I/O.
+Its3,600-frame CPU means are1445.43225/1467.781/1616.211ms, so I is11.82%
+above F and10.11% above H in this same-window test. A private default-off
+branch experiment is therefore isolating code-path cost while retaining I's
+App layout. No production optimization is accepted from speculation or from
+the earlier short-window result.
+
+Final performance interpretation, documentation, main ref synchronization and
+private delivery remain to be completed. No95% restoration claim is inferred
+from source inventories or passing tests.
 
 ## UI10i closes two further source-review findings
 

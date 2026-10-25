@@ -6,7 +6,7 @@
     "dll_sha256": "0861bfa1df347538d932f22d580e75420f08082792eb914e53b4882764acdbe9"
   },
   "supersedes": "ui7-original-ui-inventory-0.17.json",
-  "source_stage": "Matching I at 76c022a1e2db17c49bf3ab8edb335dbb98618582 passes121 native suites,96 actual target-language pairs, both NSL2 complete virtual-stream comparisons and21 ordinary-browser flows/47 captures. This accepts the source Compendium/History/Settings/run-setup/metadata work plus I Long Press and explicit-line Continue date corrections. Historical C/D/G failures and the later H date visual finding remain recorded. J is a test-only correction of stale Settings hover coordinates; its added coverage is still pending and is not inferred from I capture names.",
+  "source_stage": "Matching I at 76c022a1e2db17c49bf3ab8edb335dbb98618582 passes121 native suites,96 actual target-language pairs, both NSL2 complete virtual-stream comparisons and21 ordinary-browser flows/47 captures. This accepts the source Compendium/History/Settings/run-setup/metadata work plus I Long Press and explicit-line Continue date corrections. Historical C/D/G failures and the later H date visual finding remain recorded. J test-only hover/capture corrections pass after verifying683 production inputs identical to I. The former stale I hover coordinates and altered FTUE sampling are retained as prior evidence; J adds precise tests, not new production functionality.",
   "scope": {
     "excluded": [
       "audio",
@@ -801,7 +801,7 @@
       "contract": "Real supported controls, persistence and platform restrictions",
       "assessment": "implemented_with_documented_limits",
       "implemented": "Source General/Input layout, original tabs/checkboxes/action controls, language dropdown rules and real local feedback/credits. G/H restores exact source font roles, geometry, release-hidden controls and Input100ms focus fade. I adds the original default-off per-profile Long Press Confirmations row, yielding eleven supported General rows, and its real End Turn hold behavior. NSPF5 uses reserved bit7 in the unchanged108-byte preference record with explicit backward migration; canonical NSV17 and NSH9 remain unchanged.",
-      "remaining": "Audio is excluded. The original startup-logo sequence/SkipIntroLogo, desktop background-FPS cap and remote gameplay upload service are not implemented; they are explicit feature/platform differences. CommonTooltips is authored hidden with an unimplemented callback; Reset Tutorials is hidden by the pinned release gate; ShowMpDrawings belongs to excluded multiplayer. J must still execute corrected source-coordinate assertions for Screenshake, Text Effects, Keyboard-Only and Long Press hover; I old capture names did not prove those intended hover contexts.",
+      "remaining": "Audio is excluded. The original startup-logo sequence/SkipIntroLogo, desktop background-FPS cap and remote gameplay upload service are not implemented; they are explicit feature/platform differences. CommonTooltips is authored hidden with an unimplemented callback; Reset Tutorials is hidden by the pinned release gate; ShowMpDrawings belongs to excluded multiplayer.",
       "regressions": [
         "ui_preferences_regression",
         "world_frontend_ui_regression",
@@ -810,7 +810,7 @@
         "end_turn_hold_regression",
         "check_offline_browser.js"
       ],
-      "acceptance": "Frozen I native checks pass: ui_preferences_regression, world_frontend_ui_regression, input_bindings_ui8_regression, end_turn_hold_regression. Both matching I format39 actual packs pass: world_frontend_ui_regression, input_bindings_ui8_regression, end_turn_hold_regression. The I ordinary-browser21-flow gate includes this scope: Ordinary real preference controls and Long Press persistence/input/cancel/repeat paths pass, with other profiles unchanged. Corrected J static-hover coverage is still pending and is not inferred from I screenshot names."
+      "acceptance": "Frozen I native checks pass: ui_preferences_regression, world_frontend_ui_regression, input_bindings_ui8_regression, end_turn_hold_regression. Both matching I format39 actual packs pass: world_frontend_ui_regression, input_bindings_ui8_regression, end_turn_hold_regression. The I ordinary-browser21-flow gate includes this scope: Ordinary real preference controls and Long Press persistence/input/cancel/repeat paths pass, with other profiles unchanged. J source-coordinate hover checks pass synthetically and with both actual packs against the production-identical I core. They verify intended localized title/body, full-screen placement and unchanged canonical bytes; the prior I capture names alone did not establish these contexts."
     },
     {
       "id": "language",
@@ -873,12 +873,12 @@
       "contract": "Binding capture/conflict/reset and navigation",
       "assessment": "implemented_with_documented_limits",
       "implemented": "Real two-bank capture/conflict-swap/reset and supported host keys, linked confirm/end-turn handling and card keys persist in NSPF5 with legacy-format support. G/H restores source Input row/command/binding geometry, Listening modal and100ms focus-release fade. I integrates mapped physical/calculator edges and semantic toolbar lifetimes with the shared long-press owner; repeat/release cannot fire an extra turn.",
-      "remaining": "Platform-only keys remain unavailable. J corrected Keyboard-Only hover ownership/binding execution is pending; the old named I capture is not evidence for that intended hover.",
+      "remaining": "Platform-only keys remain unavailable.",
       "regressions": [
         "input_bindings_ui8_regression",
         "end_turn_hold_regression"
       ],
-      "acceptance": "Frozen I native checks pass: input_bindings_ui8_regression, end_turn_hold_regression. Both matching I format39 actual packs pass: input_bindings_ui8_regression, end_turn_hold_regression. Corrected J static-hover coverage is still pending and is not inferred from I screenshot names."
+      "acceptance": "Frozen I native checks pass: input_bindings_ui8_regression, end_turn_hold_regression. Both matching I format39 actual packs pass: input_bindings_ui8_regression, end_turn_hold_regression. J source-coordinate hover checks pass synthetically and with both actual packs against the production-identical I core. They verify intended localized title/body, full-screen placement and unchanged canonical bytes; the prior I capture names alone did not establish these contexts."
     },
     {
       "id": "screen_shake",
@@ -1015,7 +1015,7 @@
         "web_profiles_storage_test.js",
         "check_offline_browser.js"
       ],
-      "acceptance": "Frozen I native checks pass: ftue_ui9_regression, ftue_progress_regression. Both matching I format39 actual packs pass: ftue_ui9_regression. The I ordinary-browser21-flow gate includes this scope: Ordinary Embark Yes/No and per-profile persistence execute the actual question."
+      "acceptance": "Frozen I native checks pass: ftue_ui9_regression, ftue_progress_regression. Both matching I format39 actual packs pass: ftue_ui9_regression. The I ordinary-browser21-flow gate includes this scope: Ordinary Embark Yes/No and per-profile persistence execute the actual question. J retains the long-press assertions after the established capture sequence; all19 FTUE captures per locale match the H source-timed baseline exactly with production unchanged."
     },
     {
       "id": "tutorial_combat_rules",
@@ -1033,7 +1033,7 @@
         "web_profiles_storage_test.js",
         "check_offline_browser.js"
       ],
-      "acceptance": "Frozen I native checks pass: ftue_ui9_regression, ftue_progress_regression. Both matching I format39 actual packs pass: ftue_ui9_regression. The I ordinary-browser21-flow gate includes this scope: Ordinary first-combat pages, previous/next, final-release persistence and blocked gameplay shortcuts pass."
+      "acceptance": "Frozen I native checks pass: ftue_ui9_regression, ftue_progress_regression. Both matching I format39 actual packs pass: ftue_ui9_regression. The I ordinary-browser21-flow gate includes this scope: Ordinary first-combat pages, previous/next, final-release persistence and blocked gameplay shortcuts pass. J retains the long-press assertions after the established capture sequence; all19 FTUE captures per locale match the H source-timed baseline exactly with production unchanged."
     },
     {
       "id": "tutorial_map",
@@ -1051,7 +1051,7 @@
         "web_profiles_storage_test.js",
         "check_offline_browser.js"
       ],
-      "acceptance": "Frozen I native checks pass: ftue_ui9_regression, ftue_progress_regression. Both matching I format39 actual packs pass: ftue_ui9_regression. The I ordinary-browser21-flow gate includes this scope: The ordinary fresh-profile path opens and confirms the actual first map tutorial before combat."
+      "acceptance": "Frozen I native checks pass: ftue_ui9_regression, ftue_progress_regression. Both matching I format39 actual packs pass: ftue_ui9_regression. The I ordinary-browser21-flow gate includes this scope: The ordinary fresh-profile path opens and confirms the actual first map tutorial before combat. J retains the long-press assertions after the established capture sequence; all19 FTUE captures per locale match the H source-timed baseline exactly with production unchanged."
     },
     {
       "id": "tutorial_can_play",
@@ -1069,7 +1069,7 @@
         "web_profiles_storage_test.js",
         "check_offline_browser.js"
       ],
-      "acceptance": "Frozen I native checks pass: ftue_ui9_regression, ftue_progress_regression. Both matching I format39 actual packs pass: ftue_ui9_regression. The I ordinary-browser21-flow gate includes this scope: The ordinary short End Turn release opens and confirms the actual StillCanPlay tutorial without ending the turn."
+      "acceptance": "Frozen I native checks pass: ftue_ui9_regression, ftue_progress_regression. Both matching I format39 actual packs pass: ftue_ui9_regression. The I ordinary-browser21-flow gate includes this scope: The ordinary short End Turn release opens and confirms the actual StillCanPlay tutorial without ending the turn. J retains the long-press assertions after the established capture sequence; all19 FTUE captures per locale match the H source-timed baseline exactly with production unchanged."
     },
     {
       "id": "tutorial_cannot_play",
@@ -1087,7 +1087,7 @@
         "web_profiles_storage_test.js",
         "check_offline_browser.js"
       ],
-      "acceptance": "Frozen I native checks pass: ftue_ui9_regression, ftue_progress_regression. Both matching I format39 actual packs pass: ftue_ui9_regression."
+      "acceptance": "Frozen I native checks pass: ftue_ui9_regression, ftue_progress_regression. Both matching I format39 actual packs pass: ftue_ui9_regression. J retains the long-press assertions after the established capture sequence; all19 FTUE captures per locale match the H source-timed baseline exactly with production unchanged."
     },
     {
       "id": "tutorial_power",
@@ -1105,7 +1105,7 @@
         "web_profiles_storage_test.js",
         "check_offline_browser.js"
       ],
-      "acceptance": "Frozen I native checks pass: ftue_ui9_regression, ftue_progress_regression. Both matching I format39 actual packs pass: ftue_ui9_regression."
+      "acceptance": "Frozen I native checks pass: ftue_ui9_regression, ftue_progress_regression. Both matching I format39 actual packs pass: ftue_ui9_regression. J retains the long-press assertions after the established capture sequence; all19 FTUE captures per locale match the H source-timed baseline exactly with production unchanged."
     },
     {
       "id": "tutorial_shuffle",
@@ -1123,7 +1123,7 @@
         "web_profiles_storage_test.js",
         "check_offline_browser.js"
       ],
-      "acceptance": "Frozen I native checks pass: ftue_ui9_regression, ftue_progress_regression. Both matching I format39 actual packs pass: ftue_ui9_regression. The I ordinary-browser21-flow gate includes this scope: The ordinary held toolbar flow opens and confirms the actual Shuffle tutorial before continuing into turn3."
+      "acceptance": "Frozen I native checks pass: ftue_ui9_regression, ftue_progress_regression. Both matching I format39 actual packs pass: ftue_ui9_regression. The I ordinary-browser21-flow gate includes this scope: The ordinary held toolbar flow opens and confirms the actual Shuffle tutorial before continuing into turn3. J retains the long-press assertions after the established capture sequence; all19 FTUE captures per locale match the H source-timed baseline exactly with production unchanged."
     },
     {
       "id": "tutorial_combat_reward",
@@ -1141,7 +1141,7 @@
         "web_profiles_storage_test.js",
         "check_offline_browser.js"
       ],
-      "acceptance": "Frozen I native checks pass: ftue_ui9_regression, ftue_progress_regression. Both matching I format39 actual packs pass: ftue_ui9_regression."
+      "acceptance": "Frozen I native checks pass: ftue_ui9_regression, ftue_progress_regression. Both matching I format39 actual packs pass: ftue_ui9_regression. J retains the long-press assertions after the established capture sequence; all19 FTUE captures per locale match the H source-timed baseline exactly with production unchanged."
     },
     {
       "id": "tutorial_relic",
@@ -1159,7 +1159,7 @@
         "web_profiles_storage_test.js",
         "check_offline_browser.js"
       ],
-      "acceptance": "Frozen I native checks pass: ftue_ui9_regression, ftue_progress_regression. Both matching I format39 actual packs pass: ftue_ui9_regression."
+      "acceptance": "Frozen I native checks pass: ftue_ui9_regression, ftue_progress_regression. Both matching I format39 actual packs pass: ftue_ui9_regression. J retains the long-press assertions after the established capture sequence; all19 FTUE captures per locale match the H source-timed baseline exactly with production unchanged."
     },
     {
       "id": "tutorial_potion",
@@ -1177,7 +1177,7 @@
         "web_profiles_storage_test.js",
         "check_offline_browser.js"
       ],
-      "acceptance": "Frozen I native checks pass: ftue_ui9_regression, ftue_progress_regression. Both matching I format39 actual packs pass: ftue_ui9_regression."
+      "acceptance": "Frozen I native checks pass: ftue_ui9_regression, ftue_progress_regression. Both matching I format39 actual packs pass: ftue_ui9_regression. J retains the long-press assertions after the established capture sequence; all19 FTUE captures per locale match the H source-timed baseline exactly with production unchanged."
     },
     {
       "id": "tutorial_merchant",
@@ -1195,7 +1195,7 @@
         "web_profiles_storage_test.js",
         "check_offline_browser.js"
       ],
-      "acceptance": "Frozen I native checks pass: ftue_ui9_regression, ftue_progress_regression. Both matching I format39 actual packs pass: ftue_ui9_regression."
+      "acceptance": "Frozen I native checks pass: ftue_ui9_regression, ftue_progress_regression. Both matching I format39 actual packs pass: ftue_ui9_regression. J retains the long-press assertions after the established capture sequence; all19 FTUE captures per locale match the H source-timed baseline exactly with production unchanged."
     },
     {
       "id": "tutorial_rest",
@@ -1213,7 +1213,7 @@
         "web_profiles_storage_test.js",
         "check_offline_browser.js"
       ],
-      "acceptance": "Frozen I native checks pass: ftue_ui9_regression, ftue_progress_regression. Both matching I format39 actual packs pass: ftue_ui9_regression."
+      "acceptance": "Frozen I native checks pass: ftue_ui9_regression, ftue_progress_regression. Both matching I format39 actual packs pass: ftue_ui9_regression. J retains the long-press assertions after the established capture sequence; all19 FTUE captures per locale match the H source-timed baseline exactly with production unchanged."
     },
     {
       "id": "tutorial_ascension",
@@ -1231,7 +1231,7 @@
         "web_profiles_storage_test.js",
         "check_offline_browser.js"
       ],
-      "acceptance": "Frozen I native checks pass: ftue_ui9_regression, ftue_progress_regression. Both matching I format39 actual packs pass: ftue_ui9_regression."
+      "acceptance": "Frozen I native checks pass: ftue_ui9_regression, ftue_progress_regression. Both matching I format39 actual packs pass: ftue_ui9_regression. J retains the long-press assertions after the established capture sequence; all19 FTUE captures per locale match the H source-timed baseline exactly with production unchanged."
     }
   ],
   "verification_baseline": {
@@ -1736,14 +1736,6 @@
       ],
       "scope": "Isolated desktop Chromium with ordinary DOM/canvas input; no developer command API, original full-frame or physical-calculator timing claim."
     },
-    "pending_test_only_followup": {
-      "stage": "J",
-      "path": "tests/static_hover_ui_cases.inc",
-      "production_change": false,
-      "scope": "Correct three stale source-coordinate Settings hover cases and add Long Press hover; validate ownership/localized binding and canonical-state identity. The expected composition uses the shared hover painter and does not independently establish that painter raster.",
-      "status": "pending_frozen_J_execution",
-      "I_limitation": "I capture names alone did not establish that the three intended Settings hover contexts were exercised."
-    },
     "remaining_source_work": [
       "Original host local-zone calendar conversion",
       "Measured integer font advances and independently compared original glyph ink/full frames",
@@ -1758,6 +1750,121 @@
       "Unavailable historical facts/build IDs remain unknown",
       "Offline leaderboard/service state and explicitly excluded audio/multiplayer/Timeline"
     ],
-    "fidelity_percentage": null
+    "fidelity_percentage": null,
+    "test_only_followup": {
+      "stage": "J",
+      "path": "tests/static_hover_ui_cases.inc",
+      "production_change": false,
+      "scope": "Correct three stale source-coordinate Settings hover cases and add Long Press hover; validate ownership/localized binding and canonical-state identity. The expected composition uses the shared hover painter and does not independently establish that painter raster.",
+      "status": "passed_frozen_J_execution",
+      "I_limitation": "I capture names alone did not establish that the three intended Settings hover contexts were exercised.",
+      "acceptance": "verification_ui10j"
+    }
+  },
+  "verification_test_followup": "verification_ui10j",
+  "verification_ui10j": {
+    "checkpoint": "8a2ebda2cfab09d1ce90925599255cd7e11cf14e",
+    "runtime_checkpoint": "76c022a1e2db17c49bf3ab8edb335dbb98618582",
+    "status": "passed",
+    "scope": "Test-only correction; all683 production inputs equal I, whose native/ARM/WASM/resource/browser acceptance remains the production baseline. Rebuild only changed test translation units after verifying production identity; do not count test precision as another implemented feature.",
+    "changed_inputs": [
+      "tests/ftue_ui9_regression.cpp",
+      "tests/static_hover_ui_cases.inc"
+    ],
+    "production_files_identical": 683,
+    "production_inventory_sha256": "2187e8d49f603c07d99fa40232059017c0fece0f17a866520b18a1adc634dc59",
+    "core_sha256": "8bbc99f44ab08dcde0fd2bd820300786f9d95f473f423c5a2762b954aa8ef433",
+    "pack_sha256": {
+      "eng": "670a863c34b472e8f7392deaa3cb66b12bca99f906ee4af55f35245b20441580",
+      "zhs": "dc52fcd40d4f6384c99fcd7c79d3c42ba9fa56fa9776ab11c01fb0357b1c4328"
+    },
+    "core_and_packs_unchanged": true,
+    "source_changed": false,
+    "executions": {
+      "synthetic": {
+        "passed": 2,
+        "total": 2
+      },
+      "actual": {
+        "passed": 4,
+        "total": 4
+      }
+    },
+    "journal": "ui10j-fixture-acceptance-2a725e41f14d.json",
+    "private_receipt": "/tmp/slay-ui10j-fixtures/acceptance.json",
+    "settings_hover": {
+      "languages": [
+        "eng",
+        "zhs"
+      ],
+      "contexts": [
+        "Screenshake",
+        "Text Effects",
+        "Keyboard-Only",
+        "Long Press Confirmations"
+      ],
+      "source_coordinates": "independently projected original General/Input row coordinates",
+      "verified": [
+        "Explicit original localized title/body bindings",
+        "Full-screen pixel composition at the intended source location",
+        "Canonical bytes unchanged"
+      ],
+      "oracle_limit": "The expected composition reuses the shared hover painter; this verifies Settings ownership/binding/placement, not independent glyph-raster correctness of that painter.",
+      "per_locale": {
+        "other_card_hud_captures_exact_to_I": 54,
+        "corrected_hover_captures": 3,
+        "new_long_press_capture": 1
+      }
+    },
+    "ftue_capture_timing": {
+      "per_locale_exact_to_H": 19,
+      "change": "Move new long-press assertions after the existing capture sequence, preserving every assertion while restoring original sampling times."
+    },
+    "capture_comparisons": [
+      {
+        "target": "ftue_ui9_regression",
+        "language": "eng",
+        "baseline": "H original capture order",
+        "identical": 19,
+        "changed": []
+      },
+      {
+        "target": "card_hud_ui_regression",
+        "language": "eng",
+        "baseline": "I accepted captures",
+        "identical": 54,
+        "changed": [
+          "settings-source-hover-keyboard.ppm",
+          "settings-source-hover-shake.ppm",
+          "settings-source-hover-text-effects.ppm"
+        ],
+        "added": [
+          "settings-source-hover-long-press.ppm"
+        ]
+      },
+      {
+        "target": "ftue_ui9_regression",
+        "language": "zhs",
+        "baseline": "H original capture order",
+        "identical": 19,
+        "changed": []
+      },
+      {
+        "target": "card_hud_ui_regression",
+        "language": "zhs",
+        "baseline": "I accepted captures",
+        "identical": 54,
+        "changed": [
+          "settings-source-hover-keyboard.ppm",
+          "settings-source-hover-shake.ppm",
+          "settings-source-hover-text-effects.ppm"
+        ],
+        "added": [
+          "settings-source-hover-long-press.ppm"
+        ]
+      }
+    ],
+    "retained_history": "The incorrectly positioned I hover captures and earlier I FTUE timing differences remain preserved; successful J fixtures do not retroactively change that scope.",
+    "restoration_percentage_inferred": false
   }
 }

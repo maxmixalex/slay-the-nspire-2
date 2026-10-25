@@ -31,7 +31,9 @@ void App::sync_character_feedback(){
     if(clip>=0)osty_motion={clip,animation};last_osty_hp=hp;last_osty_attacks=attacks;
 }
 void App::advance(uint32_t ms){
-    advance_end_turn_hold(ms>250?250:ms);
+    if(long_press||end_turn_hold.owner||end_turn_hold.timer||
+       (end_turn_hold.fired&&end_turn_hold.fade_age<EndTurnHold::FadeDuration))
+        advance_end_turn_hold(ms>250?250:ms);
 #if SPIRE_DEBUG_COMMANDS
     if(debug_open){map_clock_ms+=ms>250?250:ms;return;}
 #endif

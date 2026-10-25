@@ -82,7 +82,6 @@ metadata is invented for excluded Timeline/platform achievements.
 | Continue date advances | I restores the source nonwrapping two-line date at5px. Integer glyph advances make the tested long English line extend6 LCD pixels beyond the panel and the Chinese line5, while staying on screen. The original source-width measurements are narrower. | Compare future glyph-advance/ink work against the measured source case; do not invent a smaller source font to conceal the difference. |
 | Chinese regular FontVariation | The source resource declares a0.95 transform and−0.05 baseline offset. The targeted Godot experiment found the same advance/ascent/descent as its base at12 sampled sizes; this does not establish identical glyph ink. | Retain the exact face/size coverage and independently compare glyph ink before asserting full font raster equivalence. |
 | Settings and run setup | The implemented General/Input and Standard/Custom/Daily surfaces pass matching I. Source startup-logo skip, desktop background-FPS control and remote gameplay upload service have no corresponding port feature. The Daily4px minimum and offline leaderboard state remain. | Keep these feature/platform differences explicit; see `settings-run-setup-ui10-0.17.md`. |
-| Settings hover verification | I's three old named hover captures used stale row coordinates. J corrects those source coordinates and adds Long Press hover ownership/binding checks without changing production code. | Run the frozen J test translation unit with the proven unchanged I core and both I packs; the old capture names alone do not prove the intended hover was exercised. |
 | Bestiary previews | Every phase-specific multi-creature preview and secondary visual effect has not been independently replayed. | Drive the remaining actual move/state contexts, keeping preview state detached from the run. |
 | Original-frame and device scope | I native, actual bilingual and ordinary browser gates pass at the checkpoint below. These source-derived tests do not establish unmodified Godot-frame equality or physical-calculator timing. | Keep original-frame comparison and ordinary calculator capacity/save execution as separate evidence; do not turn passing-test counts into a restoration percentage. |
 
@@ -335,5 +334,32 @@ The browser journal is `ui10i-ordinary-browser-3bdf52198bec.json`. The tested
 HTML is129,282,437bytes, SHA256
 `8ecb49ca4108410fbd634e250a40328ee25ef4886d44cf7ff10090bebda18c06`;
 the independent closed-package manifest and hashes before/after browser use
-agree. A later test-only J correction is still required for the three stale
-Settings hover coordinates and added Long Press hover assertion above.
+agree. The test-only J correction below supplies the previously missing
+Settings hover evidence; it does not alter this tested production HTML.
+
+## J test-only hover and tutorial capture correction
+
+Frozen J `8a2ebda2cfab09d1ce90925599255cd7e11cf14e` changes two test inputs:
+`tests/static_hover_ui_cases.inc` and `tests/ftue_ui9_regression.cpp`.
+All683 production inputs are byte-identical to I. The verified I core is
+reused only after that comparison, and its hash and both pack hashes stay
+unchanged throughout the J execution. Two synthetic and four actual-language
+executions pass in `ui10j-fixture-acceptance-2a725e41f14d.json`, with no source
+change during the logged run.
+
+The Settings fixture now projects the original row coordinates independently
+and verifies the exact localized title/body, full-screen composition and
+unchanged canonical bytes for Screenshake, Text Effects, Keyboard-Only and
+Long Press. Both languages pass. In each locale,54 other card/HUD captures
+remain byte-identical to I; only the three corrected hover captures change,
+and the Long Press hover capture is added. The expected tooltip composition
+uses the shared painter, so this is direct Settings ownership/binding and
+placement evidence, not an independent proof of that painter's font raster.
+The incorrectly positioned I captures remain preserved as prior evidence.
+
+Moving the added long-press tutorial assertions after the existing capture
+sequence restores H's original sampling times without deleting those
+assertions. All19 FTUE captures per language now match H byte for byte.
+The earlier I timing differences remain recorded. J adds test precision and
+preserves the accepted I runtime; it is not another implemented UI feature or
+an increased restoration percentage.

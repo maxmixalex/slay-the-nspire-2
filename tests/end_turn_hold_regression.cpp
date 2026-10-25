@@ -102,8 +102,27 @@ static void source_bar_pixels(){
  }
  a.end_turn_hold={};
 }
+static void off_residual(){
+ scenario="disabled setting still cancels a zero-time captured owner";combat();
+ CHECK(a.physical_key('E',true));CHECK(a.end_turn_hold.owner=='E'&&a.end_turn_hold.pressed&&!a.end_turn_hold.timer);
+ a.long_press=false;a.advance(0);CHECK(a.end_turn_hold.owner=='E'&&!a.end_turn_hold.pressed&&!a.end_turn_hold.timer);
+ CHECK(a.physical_key('E',false));CHECK(!a.end_turn_hold.owner);unchanged();
+ scenario="disabled setting keeps released residual progress decaying";combat();
+ CHECK(a.physical_key('E',true));advance(250);a.long_press=false;a.advance(100);
+ CHECK(a.end_turn_hold.owner=='E'&&!a.end_turn_hold.pressed&&a.end_turn_hold.timer==150);
+ CHECK(a.physical_key('E',false));CHECK(!a.end_turn_hold.owner);a.advance(149);CHECK(a.end_turn_hold.timer==1);
+ a.advance(1);CHECK(!a.end_turn_hold.timer&&!a.end_turn_hold.fired);unchanged();
+ scenario="disabled setting completes an ownerless completion fade";combat();
+ CHECK(a.physical_key('E',true));const int turn=a.game.turn;advance(501);
+ CHECK(a.game.turn==turn+1&&a.end_turn_hold.fired&&!a.end_turn_hold.fade_age);
+ CHECK(a.physical_key('E',false));CHECK(!a.end_turn_hold.owner&&!a.end_turn_hold.timer);a.long_press=false;snapshot();
+ a.advance(125);CHECK(a.end_turn_hold.fade_age==125&&a.end_turn_hold.visual().alpha_q12>0);
+ a.advance(124);CHECK(a.end_turn_hold.fade_age==249);a.advance(1);
+ CHECK(a.end_turn_hold.fade_age==250&&!a.end_turn_hold.visual().alpha_q12);a.advance(250);
+ CHECK(a.end_turn_hold.fade_age==250&&!a.end_turn_hold.owner&&!a.end_turn_hold.pressed);unchanged();
+}
 int main(int argc,char**argv){
  std::vector<uint8_t>pack;if(argc>1){FILE*f=std::fopen(argv[1],"rb");CHECK(f);pack.resize(spire_test::pack_size(f));CHECK(std::fread(pack.data(),1,pack.size(),f)==pack.size());std::fclose(f);CHECK(a.content.open(pack.data(),pack.size())&&a.content.current_profile());}if(argc>2)captures=argv[2];
- CHECK(source_end_turn_hold_timeline());physical();mouse_and_semantic();source_bar_pixels();
+ CHECK(source_end_turn_hold_timeline());physical();mouse_and_semantic();source_bar_pixels();off_residual();
  std::printf("Source end-turn long press: %u checks; strict threshold, decay, keyboard/calculator/mouse/toolbar ownership and source bar passed\n",checks);
 }

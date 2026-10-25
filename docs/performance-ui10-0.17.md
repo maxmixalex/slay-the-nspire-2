@@ -2,7 +2,7 @@
 
 ## Evidence boundary
 
-The accepted F runtime is `361c36c27f06c4905e1899b8bdc2ab281ba9b9cc` (tree `a031c1bc29513b80fbf3fd629bb07ef20fd53453`). The matched native core archive SHA-256 is `dfc981f168c37f3e795002de554ba875277c175384b4f98ece9db2f2b7942333`. These results measure that frozen implementation; later G UI/font/history changes require their own acceptance. No numerical original-game fidelity percentage is inferred from these performance or regression results.
+The accepted F runtime is `361c36c27f06c4905e1899b8bdc2ab281ba9b9cc` (tree `a031c1bc29513b80fbf3fd629bb07ef20fd53453`). The matched native core archive SHA-256 is `dfc981f168c37f3e795002de554ba875277c175384b4f98ece9db2f2b7942333`. The memo, retained-color and initial NSL1/NSL2 sections measure that frozen implementation. The final I runtime is `76c022a1e2db17c49bf3ab8edb335dbb98618582` (tree `546128015f0087d2327b28f3514019ccdc53d44d`), with native core SHA-256 `8bbc99f44ab08dcde0fd2bd820300786f9d95f473f423c5a2762b954aa8ef433`. The later sections separately record final F/I same-input reader/combat measurements, bounded H/I attribution, and actual H/I calculator acceptance. No numerical original-game fidelity percentage is inferred from these performance or regression results.
 
 The F quiet host measurements ran serially with CPU affinity set to one allowed CPU (CPU 0), after the other known build, conversion, browser and emulator tasks stopped. Process CPU time and elapsed time were both retained. A fresh application or fixture has cold application caches; the host OS file page cache was **not** flushed. All samples, including outliers and regressions, remain in the private receipts. This is native host evidence, not ARM FPS, physical calculator timing, or a guarantee for every scene.
 
@@ -99,11 +99,81 @@ The startup comparison uses one F executable, E NSL1 files and F NSL2 files with
 
 NSL2 reduces requested startup bytes by 89.95% in English and 87.91% in Chinese, while adding about 10.57 ms and 17.01 ms of mean host process CPU time respectively. F also performs more small table seeks. These are measured startup costs, not free performance gains. Warm UI metadata accesses stay in the existing Content directory cache; compression does not add decode work to that warm path. The ordinary calculator acceptance below establishes successful real boot/language-switch/Continue behavior but does not supply a physical-device timing benchmark.
 
-## G requested-row table batch — implementation ready, formal acceptance pending
+## Requested-row table batch: final I acceptance
 
-The next reader batches only the table rows needed for a single directory request into a bounded 256-byte stack array. It retains the same exact decoder, per-block bounds and foreground Bytes lease; it adds no resident pool and does not scan unrelated rows. A full four-block test now uses five physical callbacks and one initial seek: one 32-byte table range followed by contiguous block data. Partial-block reads copy only the requested literal portion; compressed blocks still decode exactly. New tests cover a three-block subrange, directory/raw-tail/common boundaries, table read failure before output, malformed later rows, retry, guards and released leases. The short linked split test passes 42,948 checks, with the adapter still 128 bytes on the host.
+The reader introduced in G and retained in I batches only the table rows needed for a single directory request into a bounded 256-byte stack array. It retains the same exact decoder, per-block bounds and foreground Bytes lease; it adds no resident pool and does not scan unrelated rows. A full four-block test uses five physical callbacks and one initial seek: one 32-byte table range followed by contiguous block data. Partial-block reads copy only the requested literal portion; compressed blocks still decode exactly. Tests cover a three-block subrange, directory/raw-tail/common boundaries, table read failure before output, malformed later rows, retry, guards and released leases. The short linked split test passes 42,948 checks, with the adapter still 128 bytes on the host.
 
-This G optimization is not yet a formal performance result. After the coherent G checkpoint/build, compare F and G readers with the **same physical F NSL2 files**, retaining serial AB/BA samples, CPU, elapsed, callbacks and seeks. Updated G fonts/content must be measured separately to avoid attributing input changes to the reader. The added NSH9 metadata requires a new maximum-profile migration-capacity check and real old-save conversion/Continue/cold reopen.
+Final comparison `ui10i-quiet-f-i-nsl2-reader-98ceb99af101.json` passes. F and I use their matching headers/archives and identical Release Clang 18 flags. Both read the **same physical F NSL2 files**. Each language has twenty alternating AB/BA repetitions, pinned to CPU 0 after known heavy jobs and the ordinary emulator stopped. Metadata fingerprints, virtual Content reads and physical requested bytes agree in every sample. The final I font/artwork additions are deliberately absent from this reader comparison. Raw samples and source/archive/input hashes are in `/tmp/slay-ui10-focused-benchmark/startup-final-fi/receipt.json`.
+
+| Locale / runtime | Total physical callbacks | Total requested bytes | Total cursor seeks | Content.open callbacks / bytes / seeks |
+|---|---:|---:|---:|---:|
+| ENG F | 46 | 106,899 | 43 | 38 / 90,032 / 37 |
+| ENG I | 31 | 106,899 | 12 | 23 / 90,032 / 6 |
+| ZHS F | 62 | 191,590 | 59 | 54 / 175,108 / 53 |
+| ZHS I | 39 | 191,590 | 12 | 31 / 175,108 / 6 |
+
+These callback/seek reductions are deterministic in all repetitions. They are FILE-provider results, not a measured NAND latency saving. Startup process CPU remains mixed:
+
+| Locale / phase | F CPU mean; median; range (ms) | I CPU mean; median; range (ms) |
+|---|---:|---:|
+| ENG adapter open | 1.8511; 1.8040; 1.4160–2.4940 | 1.7494; 1.7265; 1.3910–2.1320 |
+| ENG Content.open | 9.4164; 9.0615; 8.1550–11.4990 | 9.5797; 9.2955; 7.6690–13.0270 |
+| ENG total | 11.2674; 10.9265; 9.8340–13.9930 | 11.3291; 10.9745; 9.0600–14.5820 |
+| ZHS adapter open | 1.8363; 1.8200; 1.3900–2.4550 | 2.0314; 1.7640; 1.3990–6.7750 |
+| ZHS Content.open | 18.0972; 17.7195; 16.1130–22.8890 | 17.6091; 17.5270; 16.2820–19.4030 |
+| ZHS total | 19.9334; 19.8770; 17.6980–24.6800 | 19.6404; 19.3595; 17.7150–26.1780 |
+
+Mean total CPU changes by +0.55% in English and -1.47% in Chinese. The Chinese I adapter sample of 6.775 ms and its 26.178 ms total remain in the result; adapter I/O is unchanged by the batch. This does not establish a general CPU startup improvement or remove NSL2's previously measured decompression cost. The delivered improvement is fewer requested-row callbacks/seeks with identical decoded metadata and bytes, within the existing memory budget.
+
+## Final default-off combat check and bounded attribution
+
+The existing `combat_preparation_benchmark.cpp` was reused for one English combat. Its private common driver adds process CPU timing and computes every rendered-frame fingerprint outside the timed intervals. Both runtimes use the identical 86,926,376-byte logical F NSP2/38 pack (SHA-256 `3b451fa9fe08bc57710524f4c2508e0be3243ca2999a7adfdd0e8f4c23fded18`) and the same actual 230,556-byte combat save obtained by ordinary I play (SHA-256 `bdfd3d7188452e17697083f686560480735239ae74a394e336ebf6b174ca50c4`). It is the real floor-3, turn-1 battle reached from the preserved run, not a changed workload created for one runtime. Preferences are default, including Long Press off.
+
+Four alternating AB/BA repetitions each measure 180 `advance(33)` plus render frames. All 720 paired RGB565 frame fingerprints match, every runtime loads/resaves the original canonical bytes exactly, each before/after canonical state is unchanged, and both warm windows issue zero source reads. Formal `ui10i-quiet-f-i-default-off-combat-a85783fe672a.json` passes those correctness conditions. It also records a performance counterexample:
+
+| Runtime | Mean CPU ms/frame | Median CPU ms/frame | Range of four window averages |
+|---|---:|---:|---:|
+| F | 0.415188 | 0.415200 | 0.404933–0.425417 |
+| I | 0.473847 | 0.460075 | 0.446372–0.528867 |
+
+The measured I mean is **14.13% higher**, its median **10.81% higher**. Complete 180-frame CPU samples are F `[73.311, 76.575, 72.888, 76.161]` ms and I `[83.336, 82.291, 80.347, 95.196]` ms. This initial result is retained in `/tmp/slay-ui10-focused-benchmark/combat-final-fi/receipt.json`; the correctness pass is not relabeled as a performance pass.
+
+One bounded H/I comparison then separated the new hold feature from the intervening G/H changes. It uses the original preserved H archive, SHA-256 `c53b519c5b21d82cfc4080e74cc1498b94824ce80e252a0313b532e8853d7e85`, and the same driver/input/frame checks. The deleted H build directory was not reconstructed: only the configuration command recorded in its formal build log was replayed to check Release/compiler flags; no H object was rebuilt. Formal `ui10i-quiet-h-i-archived-core-0e1aa112ba51.json` passes, again with all 720 paired frame fingerprints, canonical bytes and zero warm I/O matching.
+
+The H 180-frame CPU samples are `[77.061, 77.221, 86.194, 70.986]` ms (mean 77.8655, median 77.1410); I samples are `[79.108, 80.815, 73.495, 72.229]` ms (mean 76.4118, median 76.3015). I is 1.87% lower by mean and 1.09% lower by median in that follow-up. The two I batches differ substantially. This short follow-up does **not** prove that the initial F/I regression vanished or identify its cause. All original samples and this bounded follow-up remain in `/tmp/slay-ui10-focused-benchmark/combat-hi-archived/receipt.json`. The longer comparison below addresses that unresolved difference without adding another scene.
+
+### Longer balanced F/H/I comparison
+
+Formal `ui10i-quiet-balanced-f-h-i-long-9c949d12fd59.json` reuses the already compiled F/H/I binaries and identical inputs. Four rounds use the order F/H/I, I/H/F, H/F/I, I/F/H. Every pair appears in each order twice; all versions have the same average position within a round. Each sample contains 3,600 frames, so there are 14,400 frames per version and 43,200 rendered frames in total. All per-frame fingerprints match across versions/repetitions, original and before/after canonical bytes remain exact, and every measured 180-frame subwindow has zero source I/O.
+
+| Runtime | Four complete 3,600-frame process CPU samples (ms) | Mean ms/frame | Median ms/frame | Range of sample averages |
+|---|---|---:|---:|---:|
+| F | 1416.630, 1419.070, 1524.215, 1421.814 | 0.401509 | 0.394567 | 0.393508–0.423393 |
+| H | 1517.970, 1418.274, 1455.084, 1479.796 | 0.407717 | 0.407622 | 0.393965–0.421658 |
+| I | 1750.346, 1668.836, 1498.215, 1547.447 | 0.448948 | 0.446706 | 0.416171–0.486207 |
+
+In this common longer window, I/F is +11.82% by mean and +13.21% by median; I/H is +10.11% and +9.59%. I is slower than H in each corresponding round. F/H differs by +1.55% by mean. Four samples still do not identify every host or compiler-layout influence, but this result retains a concrete I increment that the short H/I batch did not resolve. The complete data are in `/tmp/slay-ui10-focused-benchmark/combat-balanced-long/receipt.json`.
+
+### Measured idle-off guard adopted for K
+
+The resulting candidate changes only two guards. `App::advance` skips the hold helper when Long Press is off **and** no owner, remaining timer or unfinished fired fade requires work. Owner cancellation, released-timer decay and the 250 ms fade therefore retain their existing progression. `native_end_turn` evaluates and paints the hold bar inside the Long Press condition. This does not reduce animation fidelity, disable the feature, shrink a cache, or add a pool.
+
+The private archive keeps I's exact member order and replaces only `app.cpp.o`; every other object member has the same SHA-256. Headers and App layout are unchanged. The native benchmark's global App has the same address `0x38d0d0` and size `0x3104a0`, and `App::render` retains its address and size. Thus this comparison does not silently move the framebuffer or change its alignment. The compiler retains the guard changes: `App::advance` grows from `0x603` to `0x653` bytes and `native_end_turn` from `0xcb7` to `0xcd8`, so smaller machine code is not the explanation being asserted. The existing hold regression passes all 1,696 threshold, ownership, cancel, fade and source-bar checks against the private implementation. Its build record is `ui10i-private-off-ordered-build-04a5c28e0a3a.json`.
+
+Formal `ui10i-quiet-private-off-guard-fbb70cb2a89b.json` compares I and that candidate in four alternating AB/BA pairs, again with 3,600 frames per sample. All 14,400 paired frame fingerprints match, original/before/after canonical bytes remain exact, and all 28,800 rendered frames have zero measured warm source I/O.
+
+| Pair | I CPU ms per 3,600 frames | Guarded candidate CPU ms | Candidate change |
+|---|---:|---:|---:|
+| 1 | 1435.104 | 1390.109 | -3.14% |
+| 2 | 1443.469 | 1437.222 | -0.43% |
+| 3 | 1788.794 | 1379.947 | -22.86% |
+| 4 | 1448.716 | 1326.001 | -8.47% |
+| Mean | 1529.02075 | 1383.31975 | -9.53% |
+| Median | 1446.09250 | 1385.02800 | -4.22% |
+
+The candidate is faster in all four paired samples. The unusually high third I sample remains in the mean and ranges; it makes the 9.53% mean improvement more optimistic than the **approximately 4.2% median improvement for this one scene**. Mean per-frame CPU is 0.424728 → 0.384255 ms; median is 0.401692 → 0.384730 ms. The result supports adopting these bounded guards, while preserving the initial regressions and all subsequent samples. It does not establish a general frame-rate gain or ARM/device FPS. Raw samples, input/binary/source hashes and both successful and failed private build attempts remain under `/tmp/slay-ui10-focused-benchmark/combat-off-long/` and `/tmp/slay-ui10-off-branch/`.
+
+K adopts the two measured source changes exactly and adds App-level checks for an off setting with a retained owner, an ownerless remaining timer, and an unfinished fired fade; the short source regression passes 1,731 checks. Its matching official build/source association and minimal ordinary cold-reopen check are separate acceptance steps; the completed I 9.8-second physical hold and maximum-capacity executions remain labeled I.
 
 ## Memory and ordinary capacity acceptance
 
@@ -116,8 +186,31 @@ The independent ordinary calculator clone initially exposed genuine E capacity f
 | Packed profiles | 1,025,362 | `fed17db23002` | Passed all writes and exact readbacks |
 | Raw backup migration | 1,419,637 | `03e41fc64562` | Passed all writes and exact readbacks |
 | Raw history migration | 2,083,681 | `54992f521f6a` | Passed all writes and exact readbacks |
-| All raw upper bound | 2,699,304 | `9d365e39de21` | Passed all writes and exact readbacks |
+| All raw, specified history-write peak | 2,699,304 | `9d365e39de21` | Passed all writes and exact readbacks |
 
-The upper-bound padding is a separately identified reserve file, not a purported valid save. The original independent NAND is never written. F restore `64635656ba78`, bilingual ordinary Continue/Save & Quit `ffafca969ff2`, and subsequent cold restart/Continue/Save & Quit `b2afd3a2c7f4` all pass. English → Chinese → English uses the ordinary settings UI. The canonical NSV17 run remains byte-identical to the preinstall real run: 73/80 HP, 109 gold, floor 2, eleven-card deck. History playtime changes normally. Independent NSZ1 unpack plus F-core run/history decoding and exact canonical round trip are recorded in `/tmp/slay-ui10-ordinary/reopen-f-validation/canonical-validation.json`. The emulator was stopped normally afterward. This F evidence does not pre-accept the subsequent G NSH9 trailer or G installation.
+The upper-bound padding is a separately identified reserve file, not a purported valid save. The original independent NAND is never written. F restore `64635656ba78`, bilingual ordinary Continue/Save & Quit `ffafca969ff2`, and subsequent cold restart/Continue/Save & Quit `b2afd3a2c7f4` all pass. English → Chinese → English uses the ordinary settings UI. The canonical NSV17 run remains byte-identical to the preinstall real run: 73/80 HP, 109 gold, floor 2, eleven-card deck. History playtime changes normally. Independent NSZ1 unpack plus F-core run/history decoding and exact canonical round trip are recorded in `/tmp/slay-ui10-ordinary/reopen-f-validation/canonical-validation.json`. The emulator was stopped normally afterward. The following H/I results independently cover the subsequent NSH9 trailer and final installation; they are not inferred from F.
+
+### NSH9 and final I installation
+
+H (`0eb82c19b8794f5235e6c5283d339f0c93f3a21f`) exported the actual maximum NSH9 profile: 295,885 raw bytes, exactly 536 more than NSH8. The actual Ndless storage writer produces a 74,535-byte NSZ1 container for that fixture; independent unpack and the matched core reproduce its bytes exactly. The valid C++ exported maximum NSH8 **and** NSH9 records also pass the actual web storage recovery/write-denial checks. H's full common, both locales and launcher were uploaded and completely read back through ordinary USB.
+
+| H concrete capacity case | Fixture and explicit padding bytes | Ordinary journal | Result |
+|---|---:|---|---|
+| Packed profiles, history update | 1,027,498 | `cab403f00948` | All writes/readbacks exact |
+| Raw backup migration, history update | 1,421,773 | `79ac82bc4c82` | All writes/readbacks exact |
+| Raw history migration | 2,085,823 | `edb6a2da92aa` | All writes/readbacks exact |
+| All raw, specified history-write peak | 2,701,448 | `75b5095ace0b` | All writes/readbacks exact |
+
+The last case is `4 × 295885 + 6 × 252928 + 340 = 2701448`. The actual run fixture is 250,964 bytes, so 11,784 bytes of separate reserve padding represents the six run records' maximum-size difference. Padding is not represented as valid save data. It models the clean serial history-write peak; the corresponding clean run-write phase is 2,658,491 bytes. The packed/migration cases are their stated history-update scenarios, not individual claims of every save phase's maximum. None of these totals claims to include arbitrary stale backup files left by unrelated cleanup failures.
+
+H ordinary English/Chinese Save and Quit migrates the real 17,731-byte NSH8 metadata to 18,267-byte NSH9 while preserving both copies of the actual 230,540-byte canonical run. The observed saved revision matches canonical revision 24; old unknown build IDs remain unknown. Separate Chinese and English cold reopens both pass. These are H executions, preserved in `/tmp/slay-ui10-ordinary/h-ordinary-summary.json` and its exact copied private proof.
+
+Final I resources are fully byte-identical to H: common 84,834,792 bytes, English 1,204,642, Chinese 4,074,793; total **90,114,227 bytes**. I ordinary upgrade `ae9985261afc` replaces and fully reads back the 1,490,840-byte launcher, explicitly reusing the complete verified H resource readbacks after checking each new input's equality. The installed four files total **91,605,067 bytes**. I's linked allocation is **16,256,312 bytes**, leaving **520,904 bytes** under the unchanged 16 MiB limit. This is the loaded prefix/image/BSS budget; it does not turn disk pack bytes into runtime resident memory.
+
+I repeats the maximum clean storage case with its actual 108-byte NSPF5 preference file: ordinary `7fc8225026e4` writes and reads all sixteen files exactly at 2,701,448 bytes, then restores all real profile files. The OS status screen reports approximately 1.5 MB remaining. The earlier H four-case evidence is kept under H, rather than relabeled as four new I executions.
+
+The new Long Press preference is exercised through the real Settings UI, from default off to on. Its persisted record is exactly 108 bytes, version 5, flags 644 (bit 7 set), with the other defaults and both calculator key banks unchanged. Actual play then proceeds from the original reward room to the next enemy. A 250 ms physical E release shows the source playable-cards tutorial; another held press is canceled by opening Pause. After both cancellations, the saved 230,556-byte combat state is identical to the before state. A later E press held continuously for 9,800 simulated milliseconds crosses the enemy action and next player turn but fires only once. The saved result, turn 1 → 2 and HP 73 → 69, is byte-identical to the matching I core applying exactly one `end_turn` to the before state. This is a functional emulator test; the separate native oracle establishes the strict 500/501 ms boundary.
+
+The original floor-2 run, history and English marker are restored afterward while independently retaining the real NSPF5 preference. Final I cold execution `07737e016f0c` shows the persisted checked control, continues that original run, saves and exits normally. Matched-core validation `fe762b8c00b2` confirms that primary and backup canonical bytes still have the original SHA-256 `a2af0f8668388320906812bf1e476c06fd96665c38519cc3cf5a5fc392e56bc6`; NSH9 records the actual successful save time/revision. The original NAND hash remains unchanged and the emulator is stopped. The complete I record is `/tmp/slay-ui10-ordinary/i-ordinary-summary.json`, including normal command transcripts, exact readbacks, the retained preparation failure and the excluded title/patch-notes detour before the actual combat measurements.
 
 The requested 30–40 MB resource target remains unmet. The delivered storage work preserves exact art/alpha/animation data and closes the measured migration-capacity failure; it is not presented as reaching that separate target.

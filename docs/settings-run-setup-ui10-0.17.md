@@ -175,8 +175,22 @@ explicit localized title/body bindings and unchanged canonical bytes are
 checked for those three rows and the new Long Press row. The expected hover
 composition reuses the shared tooltip painter, so it verifies Settings
 ownership/binding rather than independently proving that painter's raster.
-Matching J test execution against the production-identical I core and both
-actual packs remains pending; no production or resource change is implied.
+Frozen J `8a2ebda2cfab09d1ce90925599255cd7e11cf14e` now passes this fixture in
+both actual languages and synthetically. All683 production inputs are
+byte-identical to I; the reused core and both pack hashes are checked before
+and after execution. Each locale retains54 other card/HUD captures exactly,
+changes the three corrected hover captures and adds the Long Press capture.
+The full-screen composition, intended localized title/body, source placement
+and canonical-state identity checks pass for all four rows. The prior I
+incorrectly positioned captures remain preserved.
+
+The same J batch moves the new long-press tutorial assertions after the
+existing FTUE capture sequence, retaining every assertion while restoring
+the original sampling times. All19 FTUE captures per locale match H exactly.
+Together, two synthetic and four actual runs pass in
+`ui10j-fixture-acceptance-2a725e41f14d.json`, with `source_changed=false`.
+No production or resource change is implied, and the prior I timing
+differences are not erased from their records.
 
 ### General rows resolved against release visibility and consumers
 
