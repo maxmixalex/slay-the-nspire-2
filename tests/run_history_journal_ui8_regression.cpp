@@ -153,11 +153,14 @@ static void terminal_rewards(){
 }
 static bool load_profile(UiProgress&value){if(decode_ui_progress(bytes,bad_size,value))return true;return load_mode==2&&decode_ui_progress(backup,backup_size,value);}
 static void persistence(){
- scenario="NSH7 used tail, corrupt late fields and application fallback publication";
- const size_t size=encode_ui_progress(a.progress,bytes,sizeof bytes);CHECK(size&&bytes[3]=='7'&&decode_ui_progress(bytes,size,restored));
+ scenario="NSH9 observed journal, corrupt late journal fields and application fallback publication";
+ const size_t size=encode_ui_progress(a.progress,bytes,sizeof bytes);CHECK(size&&bytes[3]=='9'&&decode_ui_progress(bytes,size,restored));
  CHECK(restored.journal.count==a.progress.journal.count);for(unsigned i=0;i<restored.journal.count;++i)CHECK(!std::memcmp(&restored.journal.at(i),&a.progress.journal.at(i),sizeof(UiHistoryJournalEntry)));
  UiProgressSummary summary;CHECK(decode_ui_progress_summary(bytes,size,summary)&&summary.exists);
- std::memcpy(backup,bytes,size);backup_size=size;bytes[size-1]=255;bad_size=size;
+ // Keep corrupting the journal's final used field, before the NSH8 tutorial
+ // flags and NSH9 metadata, rather than weakening this to a trailer test.
+ CHECK(size>UiProgressMetadataBytes+3);
+ std::memcpy(backup,bytes,size);backup_size=size;bytes[size-UiProgressMetadataBytes-3]=255;bad_size=size;
  CHECK(!decode_ui_progress(bytes,size,restored));
  // Profile cards intentionally read only the small statistics prefix; that
  // preview never publishes a history tail as a loaded profile.
@@ -181,7 +184,9 @@ static void persistence(){
    CHECK(decode_ui_progress(bytes,old,restored)&&restored.journal.owner(1)<0&&!restored.journal.count);}
  }
  scenario="legacy live floor continues forward while its earlier observations remain unknown";
- start();a.progress.journal={};CHECK(encode_ui_progress(a.progress,bytes,sizeof bytes)&&bytes[3]=='6');
+ start();a.progress.journal={};a.progress.current_saved_at=a.progress.current_saved_revision=0;
+ for(auto&ch:a.progress.current.build_id)ch=0;for(auto&r:a.progress.history)for(auto&ch:r.build_id)ch=0;
+ CHECK(encode_ui_progress(a.progress,bytes,sizeof bytes)&&bytes[3]=='6');
  {UiCoreObserver observer(a);CHECK(event_add_deck_card(a.game,{Bash,1})>=0);}
  const int owner=a.progress.journal.owner(a.progress.current.serial);CHECK(owner>=0&&a.progress.journal.owners[owner].incomplete(0)&&amount(RunHistoryEvent::CardObtained)==1);
  scenario="batch transform pending survives profile save and completes exactly once";

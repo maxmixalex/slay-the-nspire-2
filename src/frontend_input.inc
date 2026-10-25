@@ -26,9 +26,10 @@ static void remember_saved(App&a,const State&s){
  a.saved_run_seed=s.world.active?s.world.run_seed:0;a.saved_ascension=s.world.active?s.world.ascension:0;
  a.saved_region=s.world.active?s.world.rooms[0].region:0;
  a.saved_current_region=s.world.active?s.world.rooms[s.world.act_index].region:0;
+ a.saved_at=progress_matches(a.progress.current,s)&&a.progress.current_saved_revision==s.revision?a.progress.current_saved_at:0;
 }
 static void forget_saved(App&a){
- a.has_save=false;a.saved_character=Character::Ironclad;a.saved_seed=0;
+ a.has_save=false;a.saved_character=Character::Ironclad;a.saved_seed=a.saved_at=0;
  a.saved_floor=a.saved_hp=a.saved_max_hp=a.saved_gold=0;a.saved_run_seed=0;a.saved_ascension=a.saved_region=a.saved_current_region=0;
  a.saved_world=a.saved_practice=false;
 }
@@ -61,6 +62,10 @@ bool App::load_saved_run(){
 }
 bool App::save_current_run(){
  if(!callbacks.save||!callbacks.save(game))return false;
+ if(progress_matches(progress.current,game)){
+  progress.current_saved_at=callbacks.wall_clock?callbacks.wall_clock():0;
+  progress.current_saved_revision=game.revision;progress_dirty=true;
+ }
  remember_saved(*this,game);run_save_linked=has_save;sync_progress();return persist_progress();
 }
 bool App::finish_saved_run(){

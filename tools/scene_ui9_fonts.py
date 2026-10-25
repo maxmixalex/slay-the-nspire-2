@@ -28,6 +28,7 @@ def text_index():
     for name in ('profile_text_index.inc', 'auxiliary_text_index.inc'):
         result.update((key, int(slot)) for key, slot in re.findall(
             r'\{"([^"]+)",\s*(\d+)\}', (ROOT/'src'/name).read_text()))
+    result.update({'settings_ui.TAB_GENERAL': 8103, 'settings_ui.TAB_INPUT': 8104})
     return result
 
 
@@ -136,6 +137,11 @@ def room_requirements(source, filename='room-ui-fonts.json'):
                 values.update(alphabet(source.string_payload(slot)[:-1].decode('utf-8'), {}))
         sizes = item['pixels'] if isinstance(item['pixels'], list) else [item['pixels']]
         result.update((cp, px, face) for cp in values for px in sizes for face in item['faces'])
+    for item in config.get('alphabets', []):
+        characters = item.get('characters_by_locale', {}).get(language, item['characters'])
+        sizes = item['pixels'] if isinstance(item['pixels'], list) else [item['pixels']]
+        face = item.get('face_by_locale', item.get('faces', {})).get(language, item['face'])
+        result.update((cp, px, face) for cp in visible_alphabet(characters) for px in sizes)
     return result
 
 
@@ -144,25 +150,33 @@ def requirements(source):
     library_labels = {(cp, px, 0 if language == 'zhs' and face == 5 else face)
                       for cp, px, face in library.glyph_requirements(source)}
     hover_titles = {(cp, 5, 0) for cp in tooltip_small_bold_alphabet(source)} if language == 'zhs' else set()
-    return profile_requirements(source) | intent_requirements(source) | library_labels | room_requirements(source) | room_requirements(source, 'common-ui-fonts.json') | hover_titles
+    return (profile_requirements(source) | intent_requirements(source) | library_labels |
+            room_requirements(source) | room_requirements(source, 'common-ui-fonts.json') |
+            room_requirements(source, 'history-ui-fonts.json') |
+            room_requirements(source, 'run-setup-ui-fonts.json') | hover_titles)
 
 
-def patch(data, regular, bold, display=None, italic=None):
+def patch(data, regular, bold, display=None, italic=None, fallback=None):
     # Later font-only iterations preserve the complete existing artwork and
     # its encoding/version, including RGR2 and the six source UI37 pictures.
     version = struct.unpack_from('<I', data, 4)[0] if len(data) >= 8 else 0
-    auxiliary = 2068 if version == 38 else 2067 if version == 37 else AUXILIARY
-    source = tiles.PackView(data, auxiliary, versions=(34, 35, 36, 37, 38),
+    auxiliary = 2154 if version == 39 else 2068 if version == 38 else 2067 if version == 37 else AUXILIARY
+    source = tiles.PackView(data, auxiliary, versions=(34, 35, 36, 37, 38, 39),
                            profile=(*PROFILE[:3], auxiliary))
     output_version = max(VERSION, source.version)
     language = source.string_payload(split_content.MARKER)[:-1].decode('ascii')
     required = requirements(source)
     known = {(row[0], row[2]) for row in source.glyphs}
     missing = sorted(row for row in required if (row[0], library.encoded_band(row[1], row[2])) not in known)
-    additions = []
+    additions, fallback_glyphs = [], []
     for cp, px, face in missing:
         font = bold if face == 5 else display if face == 4 else italic if face == 6 else regular
         tiles.require(font is not None, 'Original display font is required')
+        if cp not in font.coverage and face == 0 and fallback is not None and cp in fallback.coverage:
+            # Preserve the established original Noto Mono fallback for native
+            # language labels and symbols absent from English Kreon.
+            font = fallback
+            fallback_glyphs.append(dict(codepoint=cp, pixels=px, face=face))
         tiles.require(cp in font.coverage, 'Original scene font lacks codepoint '+str(cp))
         additions.append(font.glyph(cp, px, face))
     out = library.rewrite_directory(data, auxiliary, set(), additions,
@@ -185,7 +199,9 @@ def patch(data, regular, bold, display=None, italic=None):
         directory_capacity=split_content.DIRECTORY_LIMIT, resident_pool_growth_bytes=0,
         fonts=dict(regular=regular.metadata(), bold=bold.metadata(),
                    display=display.metadata() if display else None,
-                   italic=italic.metadata() if italic else None), verification=proof)
+                   italic=italic.metadata() if italic else None,
+                   fallback=fallback.metadata() if fallback else None),
+        fallback_glyphs=fallback_glyphs, verification=proof)
 
 
 def main():
@@ -201,7 +217,8 @@ def main():
         path = tiles.private_path(getattr(args, 'input_'+language), 'Immutable input pack')
         target = output/('ui9-'+language+'.nsp')
         tiles.require(path.resolve() != target.resolve(), 'Preserve the input pack')
-        out, reports[language] = patch(path.read_bytes(), *(Face(fonts/name) for name in names))
+        fallback = Face(fonts/'NotoSansMonoCJKsc-Regular.otf') if language == 'eng' else None
+        out, reports[language] = patch(path.read_bytes(), *(Face(fonts/name) for name in names), fallback=fallback)
         tiles.atomic_bytes(target, out)
     tiles.require(reports['eng']['verification']['common_art_sha256'] ==
                   reports['zhs']['verification']['common_art_sha256'], 'Locale artwork differs')

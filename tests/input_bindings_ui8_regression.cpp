@@ -1,5 +1,6 @@
 #include "app.hpp"
 #include "host_physical_input.hpp"
+#include "settings_layout.hpp"
 #include "world_run.hpp"
 #include "content_fixture.hpp"
 #include <cstdio>
@@ -53,7 +54,7 @@ static void settings(){
     app.ui_action(UiAction::SettingsKeyboardOnly);CHECK(app.keyboard_only);
     app.pointer.visible=false;app.settings_item=unsigned(InputCommand::Select)+1;press(13);CHECK(app.binding_listening==int(InputCommand::Select)&&app.binding_bank==1);
     press('Q');CHECK(app.input_bindings.keys[1][unsigned(InputCommand::Select)]=='Q'&&app.input_bindings.keys[1][unsigned(InputCommand::Deck)]==' ');
-    app.settings_item=unsigned(InputCommand::Card10)+1;app.settings_top=InputCommandCount-5;capture("input-last-shortcuts");
+    app.settings_item=unsigned(InputCommand::Card10)+1;app.settings_top=settings_layout::InputMaximum;capture("input-last-shortcuts");
     for(unsigned i=20;i<InputCommandCount;++i)CHECK(hit(i).enabled);
     const auto expected=app.input_bindings;app.restore_preferences();CHECK(!std::memcmp(&app.input_bindings,&expected,sizeof expected));unchanged();
     app.ui_action(UiAction::SettingsReset);CHECK(!app.frontend_confirm&&app.settings_open&&valid_input_bindings(app.input_bindings));

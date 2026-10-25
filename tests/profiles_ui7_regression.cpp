@@ -55,21 +55,34 @@ static void compendium_scene(const std::vector<uint8_t>&pack){
     const char*keys[]={"COMPENDIUM_CARD_LIBRARY","COMPENDIUM_RELIC_COLLECTION","COMPENDIUM_POTION_LAB","COMPENDIUM_BESTIARY","STATISTICS","RUN_HISTORY"};
     const int bases[]={I7_MenuCardPanel,I7_MenuRelicPanel,I7_MenuPotionPanel,I7_MenuBestiaryPanel,I7_MenuStatsPanel,I7_MenuHistoryPanel};
     const int icons[]={I7_MenuCardIcon,I7_MenuRelicIcon,I7_MenuPotionIcon,I7_MenuBestiaryIcon,I7_MenuStatsIcon,I7_MenuHistoryIcon};
-    for(unsigned index=0;index<6;++index)for(unsigned focused=0;focused<2;++focused){
-        const bool bottom=index>=4;app.pointer.visible=true;app.pointer.x=focused?22:319;app.pointer.y=focused?42:0;app.pointer.held=false;
+    for(unsigned index=0;index<6;++index)for(unsigned state=0;state<6;++state){
+        const bool bottom=index>=4,focused=state>0;app.pointer.visible=true;app.pointer.x=focused?22:319;app.pointer.y=focused?42:0;app.pointer.held=false;
         app.compendium_motion[index]={};app.map_clock_ms=2000;
         const auto paint=[&](bool visible){for(auto&pixel:app.pixels)pixel=scene_rgb(21,40,65);app.hit_count=0;Canvas canvas{app};if(!visible)canvas.text_visible_characters=0;
             compendium_button(canvas,index,20,40,bottom?53:70,bottom?38:93,bases[index],icons[index],keys[index],UiAction::OpenCompendium,bottom);};
-        paint(true);app.map_clock_ms+=50;paint(true);const std::vector<uint16_t>actual(app.pixels,app.pixels+320*240);
+        paint(true);app.map_clock_ms+=50;paint(true);
+        if(state>=2){app.pointer.held=true;app.pointer.captured.kind=HitKind::UiAction;app.pointer.captured.value=int(UiAction::OpenCompendium);paint(true);app.map_clock_ms+=state==2?100:200;paint(true);}
+        if(state>=4){app.pointer.held=false;app.pointer.x=319;paint(true);app.map_clock_ms+=state==4?150:300;paint(true);}
+        const std::vector<uint16_t>actual(app.pixels,app.pixels+320*240);
         paint(false);std::vector<uint16_t>expected(app.pixels,app.pixels+320*240);
-        const int scale=focused?(bottom?4301:4178):4096,pivot_x=bottom?46:54,pivot_y=bottom?58:86;
+        const unsigned base=state==0||state==5?1000:state==1?(bottom?1050:1020):state==2?(bottom?963:985):state==3?(bottom?950:980):bottom?993:997;
+        const unsigned brightness=state<2||state==5?255:state==2||state==4?223:191;
+        const int scale=int((base*4096+500)/1000),pivot_x=bottom?46:54,pivot_y=bottom?58:86;
         std::string key=std::string(keys[index])+".title";
         scene_label(expected,scene_letters(pack,scene_text(key.c_str()),5,app.content.english()?5:0),bottom?23:24,bottom?66:47,bottom?47:60,10,5,
-            scene_rgb(239,200,81),32,2,scene_rgb(51,49,39),1,true,false,255,pivot_x,pivot_y,scale,false,1,1);
+            scene_rgb(239,200,81),32,2,scene_rgb(51,49,39),1,true,false,255,pivot_x,pivot_y,scale,false,1,1,255,brightness);
         if(!bottom){key=std::string(keys[index])+".description";
-            scene_label(expected,scene_letters(pack,scene_text(key.c_str()),5,0),28,96,53,29,5,scene_rgb(255,246,226),64,0,0,0,true,true,255,pivot_x,pivot_y,scale);}
-        unsigned ink=0;for(unsigned i=0;i<actual.size();++i){if(actual[i]!=expected[i])std::fprintf(stderr,"compendium=%u focused=%u pixel=%u,%u actual=%u expected=%u\n",index,focused,i%320,i/320,actual[i],expected[i]);SCENE(actual[i]==expected[i]);ink+=actual[i]!=app.pixels[i];}SCENE(ink>0);
+            scene_label(expected,scene_letters(pack,scene_text(key.c_str()),5,0),28,96,53,29,5,scene_rgb(255,246,226),64,0,0,0,true,true,255,pivot_x,pivot_y,scale,false,1,0,255,brightness);}
+        unsigned ink=0;for(unsigned i=0;i<actual.size();++i){if(actual[i]!=expected[i])std::fprintf(stderr,"compendium=%u state=%u pixel=%u,%u actual=%u expected=%u\n",index,state,i%320,i/320,actual[i],expected[i]);SCENE(actual[i]==expected[i]);ink+=actual[i]!=app.pixels[i];}SCENE(ink>0);
     }
+    // Interruption retains both the parent shade and current shader value;
+    // it does not jump to a baked press material or restart from white.
+    UiMenuTransition transition{};auto visual=transition.observe_compendium(1,1000,false);
+    SCENE(visual.scale==1000&&visual.shade==255&&visual.focus==0);
+    visual=transition.observe_compendium(2,1025,false);SCENE(visual.scale==1010&&visual.shade==255&&visual.focus==128);
+    visual=transition.observe_compendium(1,1125,false);SCENE(visual.scale==984&&visual.shade==223&&visual.focus==128);
+    visual=transition.observe_compendium(1,1175,false);SCENE(visual.scale==1020&&visual.shade==223&&visual.focus==255);
+    transition.observe_compendium(0,1175,false);visual=transition.observe_compendium(0,1475,false);SCENE(visual.scale==1000&&visual.shade==255&&visual.focus==0);
 }
 static void title_source_scene(const std::vector<uint8_t>&pack,const char*captures){
     SCENE(title_scene::MenuCenter==125&&title_scene::MenuHitLeft==106&&title_scene::MenuHitWidth==38&&title_scene::MenuFont==6);
@@ -115,22 +128,24 @@ static void title_source_scene(const std::vector<uint8_t>&pack,const char*captur
     }
     // Source coordinates include the inherited half-anchor and the settled
     // -20px show offset: panel(153,154,85,38/44), not an unanchored145px X.
-    for(unsigned ascension:{0u,3u}){
+    for(unsigned ascension:{0u,3u})for(unsigned saved_at:{0u,1792931400u}){
         app.has_save=true;app.saved_world=true;app.saved_current_region=unsigned(reference::ActKind::Overgrowth);app.saved_character=Character::Silent;
+        app.saved_at=saved_at;
         app.saved_floor=42;app.saved_hp=73;app.saved_max_hp=80;app.saved_gold=109;app.saved_ascension=uint8_t(ascension);app.menu=0;
         app.pointer={};app.title_presentation={};app.title_presentation.bind(5);app.map_clock_ms=5000;
         const auto paint=[&](bool visible){for(auto&pixel:app.pixels)pixel=scene_rgb(21,40,65);Canvas c{app};if(!visible)c.text_visible_characters=0;continue_run_info(c);};
         paint(true);app.map_clock_ms+=200;paint(true);const std::vector<uint16_t>actual(app.pixels,app.pixels+320*240);paint(false);std::vector<uint16_t>expected(app.pixels,app.pixels+320*240);
-        std::string date=scene_text("CONTINUE_RUN_INFO.saved");scene_replace(date,"{LastSavedTime}","—");
-        scene_label(expected,scene_letters(pack,date,5,0),157,157,76,13,5,scene_rgb(255,246,226),64,0,0,0,false,true,255,0,0,4096,false,1,1);
+        std::string date=scene_text("CONTINUE_RUN_INFO.saved");scene_replace(date,"{LastSavedTime}",!saved_at?"—":app.content.english()?"Sunday Oct 25, 2026 12:30PM":"2026 10月 25， 星期日 下午12:30");
+        scene_label(expected,scene_letters(pack,date,5,0),157,157,76,17,5,scene_rgb(255,246,226),64,0,0,0,false,true,255,0,0,4096,false,1,1,255,255,true);
         const std::string progress=std::string(app.content.world_title("acts","OVERGROWTH"))+" [blue]- "+scene_text("CONTINUE_RUN_INFO.floor")+" 42[/blue]";
         scene_label(expected,scene_letters(pack,progress,5,0),165,174,68,7,5,scene_rgb(255,246,226),64,0,0,0,false,false,255,0,0,4096,false,1,1);
         if(ascension)scene_label(expected,scene_letters(pack,scene_text("CONTINUE_RUN_INFO.ascension")+" 3",5,0),157,181,76,7,5,scene_rgb(255,246,226),64,0,0,0,false,false,255,0,0,4096,false,1,1);
         scene_label(expected,scene_letters(pack,"[red]73/80[/red]",5,0),165,ascension?188:181,27,7,5,scene_rgb(255,246,226),64,0,0,0,false,false,255,0,0,4096,false,1,1);
         scene_label(expected,scene_letters(pack,"[gold]109[/gold]",5,0),201,ascension?188:181,19,7,5,scene_rgb(255,246,226),64,0,0,0,false,false,255,0,0,4096,false,1,1);
-        for(unsigned i=0;i<actual.size();++i){if(actual[i]!=expected[i])std::fprintf(stderr,"Continue asc=%u pixel=%u,%u actual=%u expected=%u\n",ascension,i%320,i/320,actual[i],expected[i]);SCENE(actual[i]==expected[i]);}
-        Canvas c{app};title_screen(c);app.map_clock_ms+=250;title_screen(c);profile_capture(captures,ascension?"title-source-continue-ascension":"title-source-continue");
+        for(unsigned i=0;i<actual.size();++i){if(actual[i]!=expected[i])std::fprintf(stderr,"Continue asc=%u saved_at=%u pixel=%u,%u actual=%u expected=%u\n",ascension,saved_at,i%320,i/320,actual[i],expected[i]);SCENE(actual[i]==expected[i]);}
+        Canvas c{app};title_screen(c);app.map_clock_ms+=250;title_screen(c);profile_capture(captures,saved_at?(ascension?"title-source-continue-saved-ascension":"title-source-continue-saved"):(ascension?"title-source-continue-ascension":"title-source-continue"));
     }
+    app.saved_at=0;
 }
 static void profile_scene(const std::vector<uint8_t>&pack,const char*captures){
     UiProfileMotion menu_motion{};SCENE(menu_motion.observe(true,100,true)==0);SCENE(menu_motion.value(125,true)>2048&&menu_motion.value(150,true)==4096);

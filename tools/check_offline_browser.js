@@ -81,15 +81,16 @@ writeReport();
  const tutorial={accept:1,combat:2,map:4,enabled:0x2000,initialized:0x4000,fresh:0x6000};
  async function tutorialRecord(slot){
   const value=await progress(slot);if(!value)return null;
-  const data=Buffer.from(value,'base64');assert.equal(data.subarray(0,4).toString(),'NSH8');assert.equal(data.readUInt32LE(4),data.length);
-  const flags=data.readUInt16LE(data.length-2);assert.equal(flags&0x8000,0);assert.ok(flags&tutorial.initialized);
+  const data=Buffer.from(value,'base64');assert.match(data.subarray(0,4).toString(),/^NSH[89]$/);assert.equal(data.readUInt32LE(4),data.length);
+  const metadata=data[3]===57?536:0;const flags=data.readUInt16LE(data.length-2-metadata);assert.equal(flags&0x8000,0);assert.ok(flags&tutorial.initialized);
   return {flags,next_serial:data.readUInt32LE(8),history_count:data[12],bytes:data.length};
  }
  async function waitTutorial(slot,mask,value,timeout=10000){
   await page.waitForFunction(({slot,mask,value})=>{
    const encoded=localStorage.getItem('nSpire2-progress-v1'+(slot===1?'':'-profile-'+slot));if(!encoded)return false;
-   const data=atob(encoded);if(data.slice(0,4)!=='NSH8'||data.length<10)return false;
-   const flags=data.charCodeAt(data.length-2)|(data.charCodeAt(data.length-1)<<8);return (flags&mask)===value;
+   const data=atob(encoded);if(!/^NSH[89]$/.test(data.slice(0,4))||data.length<10)return false;
+   const metadata=data[3]==='9'?536:0;if(data.length<10+metadata)return false;
+   const at=data.length-2-metadata,flags=data.charCodeAt(at)|(data.charCodeAt(at+1)<<8);return (flags&mask)===value;
   },{slot,mask,value},{timeout});
   return tutorialRecord(slot);
  }
@@ -97,8 +98,15 @@ writeReport();
  async function move(x,y){const box=await canvas.boundingBox();assert(box);await page.mouse.move(box.x+x*box.width/320,box.y+y*box.height/240);await painted();}
  async function titleRow(row,hasRun){const count=hasRun?5:4;await point(125,Math.round((699+(450-count*50)/2+row*50+25)*4/21));}
  async function openSettings(hasRun){await titleRow(hasRun?2:1,hasRun);}
- async function toggleFast(){await point(274,128);}
- async function toggleTimer(){await point(274,184);}
+ // Pinned Settings source:1014px control origin,320px width,64px row
+ // height,211px first row and82px pitch. These are ordinary canvas clicks;
+ // no application state or hit-region test API supplies the coordinates.
+ const settingsProject=value=>Math.floor((value*4+10)/21);
+ const settingsControlX=settingsProject(1014)+Math.floor(settingsProject(320)/2);
+ const settingsRowCenter=row=>settingsProject(211+82*row)+Math.floor(settingsProject(64)/2);
+ const settingsLanguageCenter=item=>Math.floor((settingsProject(275+44*item)+settingsProject(275+44*(item+1)))/2);
+ async function toggleFast(){await point(settingsControlX,settingsRowCenter(2));}
+ async function toggleTimer(){await point(settingsControlX,settingsRowCenter(4));}
  async function returnToTitle(){await press('Escape');await point(160,156);}
  async function saveAndResume(){await returnToTitle();await titleRow(0,true);}
  async function selectProfile(slot){await point(20,10);await point(72+(slot-1)*88,120);await page.waitForFunction(id=>localStorage.getItem('nSpire2-selected-profile')===String(id),slot);await painted();}
@@ -145,7 +153,7 @@ writeReport();
  await returnToTitle();await openSettings(true);
  async function switchLanguage(language){
   const origin=await page.evaluate(()=>performance.timeOrigin);
-  await point(241,73);await point(241,language==='eng'?98:119);
+  await point(settingsControlX,settingsRowCenter(0));await point(settingsControlX,settingsLanguageCenter(language==='eng'?0:1));
   await page.waitForFunction(lang=>document.documentElement.lang===(lang==='eng'?'en':'zh-CN')&&localStorage.getItem('nSpire2-language')===lang,language,{timeout:60000});
   await ready(language);assert.equal(await page.evaluate(()=>performance.timeOrigin),origin);
   assert.equal(await saved(),firstSave);

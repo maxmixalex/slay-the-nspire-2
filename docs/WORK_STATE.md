@@ -1,5 +1,61 @@
 # Work state — 2026-10-25
 
+## UI10g follows the fully accepted F baseline
+
+F is now verified on both `main` and `work/0.17-world-parity` at
+`361c36c27f06c4905e1899b8bdc2ab281ba9b9cc`, exact tree
+`a031c1bc29513b80fbf3fd629bb07ef20fd53453`. Its GitHub Actions run40170450855
+passes; the preceding E run40168822819 also completed successfully. F's
+matching local native119 suites, Python249+54, linked ARM
+ABI/LZMA/tile/RGR, WASM,94 bilingual actual UI targets and both complete
+NSL2 virtual-stream comparisons pass. The normal offline browser passes18
+flows/41 captures with no errors or external requests. F/E compare identical
+468 combat and20 key front captures. These counts are distinct execution
+layers and are never added into a source-fidelity percentage.
+
+The ordinary cloned OS passes all four actual USB capacity cases:
+1,025,362;1,419,637;2,083,681;2,699,304 bytes. Thus both E failures are closed
+by actual writes and readbacks. Original files were restored, Chinese and
+English Continue/Save and Quit and two cold reopens pass, and the canonical
+73/80HP,109gold,floor2,11-card run remains byte-identical. The original NAND
+guard is unchanged. F installs91,480,069 bytes; its physical resources total
+90,014,771 bytes,2,394,329 fewer than E, with unchanged logical NSP2/38 data.
+Its loaded ARM allocation is16,213,224 bytes,563,992 below the unchanged
+16MiB limit. The completed private F ZIP is90,183,913 bytes; HTML129,077,681.
+An initial long write into the shared workspace lost the ZIP central
+directory after the packaging process's own successful readback. A separate
+closed `/tmp` package passed independent full archive reads. Its HTML is
+byte-identical to the successfully tested browser artifact. The damaged
+workspace copy was discarded; its failed independent readback is retained.
+
+F quiet measurements now cover glyph metadata caching, RGR2 and NSL2 startup
+with complete raw samples and retained cold outliers. Warm frame CPU improves
+in the aggregate, while NSL2 trades extra decode CPU for much less startup
+I/O. `performance-ui10-0.17.md` records both sides. G batches only the requested
+NSL2 table rows into256 stack bytes to remove redundant callbacks/seeks;
+same-input F/G timing is still required. There is no new resident pool or
+integrity-only startup scan.
+
+The next source batch restores whole-control Compendium press modulation,
+History body fonts/rows/death quotes/badges and64 original room icons,
+Settings and Standard/Custom/Daily geometry/fonts/input and22 source-sized
+controls. It adds a small exact font suffix and one combined append-only
+NSP2/39 artwork catalog. Sparse9px headings are opt-in so ordinary card/text
+fitting cannot select their incomplete alphabet. The full old payload remains
+an immutable input; no earlier artwork is recompressed.
+
+Optional NSH9 UI metadata records real successful run-save timestamps and new
+runs' observed port build identifiers, retaining unknown old values. Canonical
+NSV1/version17 remains unchanged. The fixed536-byte tail grows the maximal
+history fixture from295,349 to295,885 bytes. The same-revision optional-write
+failure limit is documented in `run-metadata-ui10-0.17.md` rather than hidden
+behind extra invalidation writes. Short source/codec/font tests and mixed
+diagnostics do not replace matching G native/Python/ARM/WASM, font/artwork
+conversion, actual bilingual UI/browser and updated ordinary-OS acceptance.
+Old E38 packs correctly fail the new History oracle on missing4px ellipsis
+and Chinese quote glyphs; the exact added glyph requirements retain those
+failures until the matching G resources are executed.
+
 ## UI10f directory storage closes the remaining capacity failure
 
 UI10e source is verified at `04038b2cda0240bfa2be1af79bf62401ec26e7a9`, tree

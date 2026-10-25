@@ -1,0 +1,516 @@
+{
+  "reference": "v0.111.0 / 41cef1ea",
+  "projection": "1680x1260 to320x240",
+  "labels": [
+    {
+      "key": "settings_ui.TAB_GENERAL",
+      "pixels": 6,
+      "face": 5,
+      "face_by_locale": {
+        "zhs": 0
+      }
+    },
+    {
+      "key": "settings_ui.TAB_INPUT",
+      "pixels": 6,
+      "face": 5,
+      "face_by_locale": {
+        "zhs": 0
+      }
+    },
+    {
+      "key": "settings_ui.LANGUAGE",
+      "pixels": [
+        4,
+        5
+      ],
+      "face": 0
+    },
+    {
+      "key": "settings_ui.LANGUAGE_IN_RUN",
+      "pixels": [
+        4,
+        5
+      ],
+      "face": 0
+    },
+    {
+      "key": "settings_ui.SCREENSHAKE",
+      "pixels": [
+        4,
+        5
+      ],
+      "face": 0
+    },
+    {
+      "key": "settings_ui.FASTMODE",
+      "pixels": [
+        4,
+        5
+      ],
+      "face": 0
+    },
+    {
+      "key": "settings_ui.PHOBIA_MODE",
+      "pixels": [
+        4,
+        5
+      ],
+      "face": 0
+    },
+    {
+      "key": "settings_ui.SHOW_RUN_TIMER_HEADER",
+      "pixels": [
+        4,
+        5
+      ],
+      "face": 0
+    },
+    {
+      "key": "settings_ui.SHOW_HAND_CARD_COUNT_HEADER",
+      "pixels": [
+        4,
+        5
+      ],
+      "face": 0
+    },
+    {
+      "key": "settings_ui.TEXT_EFFECTS",
+      "pixels": [
+        4,
+        5
+      ],
+      "face": 0
+    },
+    {
+      "key": "settings_ui.SEND_FEEDBACK",
+      "pixels": [
+        4,
+        5
+      ],
+      "face": 0
+    },
+    {
+      "key": "settings_ui.CREDITS",
+      "pixels": [
+        4,
+        5
+      ],
+      "face": 0
+    },
+    {
+      "key": "settings_ui.INPUT_SETTINGS.RESET_TO_DEFAULT",
+      "pixels": [
+        4,
+        5
+      ],
+      "face": 0
+    },
+    {
+      "key": "settings_ui.KEYBOARD_ONLY_MODE_HEADER",
+      "pixels": [
+        4,
+        5
+      ],
+      "face": 0
+    },
+    {
+      "key": "settings_ui.SCREENSHAKE_NONE",
+      "pixels": [
+        4,
+        5
+      ],
+      "face": 5,
+      "face_by_locale": {
+        "zhs": 0
+      }
+    },
+    {
+      "key": "settings_ui.SCREENSHAKE_SOME",
+      "pixels": [
+        4,
+        5
+      ],
+      "face": 5,
+      "face_by_locale": {
+        "zhs": 0
+      }
+    },
+    {
+      "key": "settings_ui.SCREENSHAKE_NORMAL",
+      "pixels": [
+        4,
+        5
+      ],
+      "face": 5,
+      "face_by_locale": {
+        "zhs": 0
+      }
+    },
+    {
+      "key": "settings_ui.SCREENSHAKE_LOTS",
+      "pixels": [
+        4,
+        5
+      ],
+      "face": 5,
+      "face_by_locale": {
+        "zhs": 0
+      }
+    },
+    {
+      "key": "settings_ui.SCREENSHAKE_CAAAW",
+      "pixels": [
+        4,
+        5
+      ],
+      "face": 5,
+      "face_by_locale": {
+        "zhs": 0
+      }
+    },
+    {
+      "key": "settings_ui.SEND_FEEDBACK_BUTTON_LABEL",
+      "pixels": [
+        4,
+        5
+      ],
+      "face": 5,
+      "face_by_locale": {
+        "zhs": 0
+      }
+    },
+    {
+      "key": "settings_ui.CREDITS_BUTTON_LABEL",
+      "pixels": [
+        4,
+        5
+      ],
+      "face": 5,
+      "face_by_locale": {
+        "zhs": 0
+      }
+    },
+    {
+      "key": "settings_ui.RESET_SETTINGS_BUTTON",
+      "pixels": [
+        4,
+        5
+      ],
+      "face": 5,
+      "face_by_locale": {
+        "zhs": 0
+      }
+    },
+    {
+      "key": "settings_ui.INPUT_SETTINGS.RESET_TO_DEFAULT",
+      "pixels": [
+        4,
+        5
+      ],
+      "face": 5,
+      "face_by_locale": {
+        "zhs": 0
+      }
+    },
+    {
+      "key": "settings_ui.INPUT_SETTINGS.COMMAND_HEADER",
+      "pixels": [
+        4,
+        5
+      ],
+      "face": 5,
+      "face_by_locale": {
+        "zhs": 0
+      }
+    },
+    {
+      "key": "settings_ui.INPUT_SETTINGS.MOUSE_KEYBOARD_HEADER",
+      "pixels": [
+        4,
+        5
+      ],
+      "face": 5,
+      "face_by_locale": {
+        "zhs": 0
+      }
+    },
+    {
+      "key": "settings_ui.INPUT_SETTINGS.KEYBOARD_ONLY_MODE_HEADER",
+      "pixels": [
+        4,
+        5
+      ],
+      "face": 5,
+      "face_by_locale": {
+        "zhs": 0
+      }
+    },
+    {
+      "key": "settings_ui.LISTENING_INPUT",
+      "pixels": 12,
+      "face": 0
+    },
+    {
+      "key": "main_menu_ui.STANDARD.title",
+      "pixels": 6,
+      "face": 5,
+      "face_by_locale": {
+        "zhs": 0
+      }
+    },
+    {
+      "key": "main_menu_ui.STANDARD.description",
+      "pixels": [
+        4,
+        5
+      ],
+      "face": 0
+    },
+    {
+      "key": "main_menu_ui.DAILY.title",
+      "pixels": 6,
+      "face": 5,
+      "face_by_locale": {
+        "zhs": 0
+      }
+    },
+    {
+      "key": "main_menu_ui.DAILY.description",
+      "pixels": [
+        4,
+        5
+      ],
+      "face": 0
+    },
+    {
+      "key": "main_menu_ui.CUSTOM.title",
+      "pixels": 6,
+      "face": 5,
+      "face_by_locale": {
+        "zhs": 0
+      }
+    },
+    {
+      "key": "main_menu_ui.CUSTOM.description",
+      "pixels": [
+        4,
+        5
+      ],
+      "face": 0
+    },
+    {
+      "key": "main_menu_ui.CUSTOM_RUN_SCREEN.CUSTOM_MODE_TITLE",
+      "pixels": 9,
+      "face": 4,
+      "face_by_locale": {
+        "zhs": 0
+      }
+    },
+    {
+      "key": "main_menu_ui.DAILY_RUN_MENU.DAILY_TITLE",
+      "pixels": 9,
+      "face": 4,
+      "face_by_locale": {
+        "zhs": 0
+      }
+    },
+    {
+      "key": "main_menu_ui.CUSTOM_RUN_SCREEN.MODIFIERS_TITLE",
+      "pixels": 7,
+      "face": 5,
+      "face_by_locale": {
+        "zhs": 0
+      }
+    },
+    {
+      "key": "main_menu_ui.DAILY_RUN_MENU.LEADERBOARDS.title",
+      "pixels": 7,
+      "face": 5,
+      "face_by_locale": {
+        "zhs": 0
+      }
+    },
+    {
+      "key": "main_menu_ui.DAILY_RUN_MENU.MODIFIERS",
+      "pixels": 6,
+      "face": 5,
+      "face_by_locale": {
+        "zhs": 0
+      }
+    },
+    {
+      "key": "main_menu_ui.CUSTOM_RUN_SCREEN.SEED_LABEL",
+      "pixels": 5,
+      "face": 5,
+      "face_by_locale": {
+        "zhs": 0
+      }
+    },
+    {
+      "key": "main_menu_ui.CUSTOM_RUN_SCREEN.RANDOMIZE",
+      "pixels": 5,
+      "face": 0
+    },
+    {
+      "key": "main_menu_ui.CUSTOM_RUN_SCREEN.SEED_RANDOM_PLACEHOLDER",
+      "pixels": 5,
+      "face": 0
+    },
+    {
+      "key": "main_menu_ui.CUSTOM_RUN_SCREEN.disclaimer",
+      "pixels": [
+        4,
+        5
+      ],
+      "face": 6,
+      "face_by_locale": {
+        "zhs": 0
+      }
+    },
+    {
+      "key": "main_menu_ui.DAILY_RUN_MENU.disclaimer",
+      "pixels": [
+        4,
+        5
+      ],
+      "face": 6,
+      "face_by_locale": {
+        "zhs": 0
+      }
+    },
+    {
+      "key": "main_menu_ui.DAILY_RUN_MENU.TIME_LEFT",
+      "pixels": 5,
+      "face": 0,
+      "substitutions": "0123456789:"
+    },
+    {
+      "key": "main_menu_ui.DAILY_RUN_MENU.TIME_LEFT",
+      "pixels": 5,
+      "face": 5,
+      "rich_face": "bold"
+    },
+    {
+      "key": "main_menu_ui.DAILY_RUN_MENU.ASCENSION",
+      "pixels": 4,
+      "face": 0,
+      "substitutions": "0123456789"
+    }
+  ],
+  "groups": [
+    {
+      "key_pattern": "^settings_ui\\.INPUT_SETTINGS\\.INPUT_TITLE\\.",
+      "pixels": [
+        4,
+        5
+      ],
+      "face": 0
+    },
+    {
+      "key_pattern": "^modifiers\\..*\\.(?:title|description)$",
+      "pixels": 5,
+      "face": 0,
+      "substitutions": "0123456789+-%:："
+    },
+    {
+      "key_pattern": "^modifiers\\..*\\.description$",
+      "pixels": 5,
+      "face": 5,
+      "rich_face": "bold",
+      "substitutions": "0123456789+-%"
+    },
+    {
+      "key_pattern": "^ascension\\.LEVEL_[0-9]+\\.title$",
+      "pixels": [
+        4,
+        5
+      ],
+      "face": 5
+    },
+    {
+      "key_pattern": "^ascension\\.LEVEL_[0-9]+\\.description$",
+      "pixels": [
+        4,
+        5
+      ],
+      "face": 0
+    },
+    {
+      "key_pattern": "^characters\\.[A-Z_]+\\.title$",
+      "pixels": 5,
+      "face": 0
+    }
+  ],
+  "alphabets": [
+    {
+      "characters": " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~",
+      "pixels": 5,
+      "face": 0
+    },
+    {
+      "characters": "English中文",
+      "pixels": 4,
+      "face": 0
+    },
+    {
+      "characters": "English",
+      "characters_by_locale": {
+        "zhs": "中文"
+      },
+      "pixels": 5,
+      "face": 5,
+      "face_by_locale": {
+        "zhs": 0
+      }
+    },
+    {
+      "characters": "0123456789, JanuaryFebruaryMarchAprilMayJuneJulyAugustSeptemberOctoberNovemberDecember—",
+      "characters_by_locale": {
+        "zhs": "0123456789 一二三四五六七八九十月—"
+      },
+      "pixels": 5,
+      "face": 5,
+      "face_by_locale": {
+        "zhs": 0
+      }
+    },
+    {
+      "characters": "0123456789",
+      "pixels": 4,
+      "face": 5,
+      "face_by_locale": {
+        "zhs": 0
+      }
+    },
+    {
+      "characters": "Leaderboards unavailable offline.Challenge uses this device's UTC date.",
+      "characters_by_locale": {
+        "zhs": "离线时无法连接排行榜。挑战使用本机 UTC 日期。"
+      },
+      "pixels": 5,
+      "face": 0
+    },
+    {
+      "characters": "0123456789",
+      "pixels": 7,
+      "face": 5,
+      "face_by_locale": {
+        "zhs": 0
+      }
+    },
+    {
+      "characters": "0123456789",
+      "pixels": 4,
+      "face": 0
+    }
+  ],
+  "notes": [
+    "Ordinary MegaLabel and normal MegaRichTextLabel use regular Chinese locale substitution; authored English Spectral/Kreon/Bitter faces remain on English labels. Explicit rich bold spans retain face5.",
+    "Nine-pixel Spectral titles require sparse_scene_sizes opt-in. Settings tab32→6; labels28→5; input command automatic fitting may use4; dropdown22→4; submenu32/24→6/5.",
+    "The two supported Settings tabs and two host input banks retain source control sizes. Audio/video/controller columns are unavailable host capabilities.",
+    "The General RESET_DEFAULT and Input INPUT_SETTINGS.RESET_TO_DEFAULT have identical source text in both supported languages; reuse the existing Input text slot for both.",
+    "Dynamic alphabets cover physical keys, canonical seed ASCII, native language names and the daily calendar. Modifier titles/descriptions remain localized pack text.",
+    "Daily icon numerals use the established4px calculator floor; source MegaLabel auto fitting is21px in English and18px in Chinese inside the28px label."
+  ]
+}

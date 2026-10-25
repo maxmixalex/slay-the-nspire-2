@@ -144,6 +144,17 @@ template<class Codec>void progress(Codec&c,UiProgress&v,unsigned version){
     }
     if(version>=7)journal(c,v);
     if(version>=8){c.integer(v.tutorial_flags);if(!ftue_flags_valid(v.tutorial_flags))c.good=false;}
+    if(version>=9){
+        c.integer(v.current_saved_at);c.integer(v.current_saved_revision);
+        const auto build=[&](UiRunHistory&r){
+            bool ended=false;
+            for(auto&ch:r.build_id){c.integer(ch);const unsigned value=uint8_t(ch);
+                if(!value)ended=true;else if(ended||value<32||value>126||!r.serial)c.good=false;}
+            if(!ended)c.good=false;
+        };
+        build(v.current);for(auto&r:v.history)build(r);
+        if(!v.current.serial&&(v.current_saved_at||v.current_saved_revision))c.good=false;
+    }
 }
 }
 void clear_ui_progress(UiProgress&out){auto*bytes=reinterpret_cast<uint8_t*>(&out);for(size_t i=0;i<sizeof out;++i)bytes[i]=0;out.next_serial=1;}
@@ -159,6 +170,8 @@ size_t encode_ui_progress(const UiProgress&value,uint8_t*out,size_t capacity){
     for(const auto&owner:value.journal.owners)if(owner.serial){version=7;break;}
     if(value.journal.count)version=7;
     if(value.tutorial_flags)version=8;
+    if(value.current_saved_at||value.current_saved_revision||value.current.build_id[0])version=9;
+    for(const auto&r:value.history)if(r.build_id[0])version=9;
     out[0]='N';out[1]='S';out[2]='H';out[3]=char('0'+version);for(unsigned i=4;i<8;++i)out[i]=0;
     // Encoder never changes a field. The shared schema keeps its reader and
     // writer in the same order without depending on C++ padding/endianness.
@@ -167,13 +180,13 @@ size_t encode_ui_progress(const UiProgress&value,uint8_t*out,size_t capacity){
     for(unsigned i=0;i<4;++i)out[4+i]=uint8_t(c.at>>(i*8));return c.at;
 }
 bool decode_ui_progress(const uint8_t*data,size_t size,UiProgress&out){
-    if(!data||size<8||size>UiProgressCapacity||data[0]!='N'||data[1]!='S'||data[2]!='H'||data[3]<'1'||data[3]>'8')return false;
+    if(!data||size<8||size>UiProgressCapacity||data[0]!='N'||data[1]!='S'||data[2]!='H'||data[3]<'1'||data[3]>'9')return false;
     uint32_t stored=0;for(unsigned i=0;i<4;++i)stored|=uint32_t(data[4+i])<<(i*8);if(stored!=size)return false;
     clear_ui_progress(out);Decoder c{data,size,8};progress(c,out,unsigned(data[3]-'0'));return c.good&&c.at==size;
 }
 bool decode_ui_progress_summary(const uint8_t*data,size_t size,UiProgressSummary&out){
     out={};
-    if(!data||size<8||size>UiProgressCapacity||data[0]!='N'||data[1]!='S'||data[2]!='H'||data[3]<'1'||data[3]>'8')return false;
+    if(!data||size<8||size>UiProgressCapacity||data[0]!='N'||data[1]!='S'||data[2]!='H'||data[3]<'1'||data[3]>'9')return false;
     uint32_t stored=0;for(unsigned i=0;i<4;++i)stored|=uint32_t(data[4+i])<<(i*8);if(stored!=size)return false;
     Decoder c{data,size,8};uint32_t serial=0,ignored=0;uint8_t count=0,next=0,byte=0;
     c.integer(serial);c.integer(count);c.integer(next);c.integer(byte);c.integer(byte);c.integer(ignored);c.integer(ignored);

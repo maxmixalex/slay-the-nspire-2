@@ -39,7 +39,7 @@ def fixture(language, version=17, images=2):
 
 class SplitContentTest(unittest.TestCase):
     def test_compressed_directory_exact_versions_and_unchanged_common(self):
-        for version in (17, 32, 36, 38):
+        for version in (17, 32, 36, 38, 39):
             original = {lang: fixture(lang, version) for lang in ('eng', 'zhs')}
             common, legacy, _ = split.split(original)
             compressed_common, locales, receipt = split.split(original, compress_directory=True)
@@ -122,7 +122,7 @@ class SplitContentTest(unittest.TestCase):
                 self.assertEqual({lang: base64.b64decode(data) for lang, data in result['languages'].items()}, locales)
 
     def test_lossless_known_versions(self):
-        for version in (17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38):
+        for version in (17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39):
             original={lang:fixture(lang,version) for lang in ("eng","zhs")}
             common,locales,receipt=split.split(original)
             self.assertEqual(receipt["common"]["artwork_bytes"],40)

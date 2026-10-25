@@ -41,7 +41,7 @@ passing result.
 | Profiles | 7px regular header; 6px slot title; 5px description/delete/menu title; source rectangles, panel/icon/text parent scaling, delete label cubic-out motion, menu-specific 50/300ms easing; keyboard navigation skips hidden delete buttons. | `profiles_ui7_regression` persistence/input checks and exact-font scalar pixel oracle. |
 | Profile helper | Authored 18px helper projects to3px; the port deliberately keeps4px for calculator readability. Mouse-only visibility is restored. | Actual locale pack and pointer/keyboard composed review. |
 | Profile/history calendar | Chinese month names and twelve-hour period labels follow the pinned formats. Profiles put the period before the clock; history puts it after. The existing UTC host boundary is unchanged. | Profile/history pixel oracles and exact dynamic glyph requirements at5px. |
-| Compendium | Source5px titles/descriptions, true multiline descriptions, title outline/shadow, icon rectangles and source pivot-based parent scaling; short-button press scale is0.98 without changing long-menu defaults. | Profile regression additionally checks six buttons at rest and full hover against an independent text/transform oracle. |
+| Compendium | Source5px labels, outlines/shadows, icon rectangles and pivots remain. G restores whole-parent light-gray press modulation, preserves the current HSV value during press, and resumes interrupted shade/scale transitions; short/bottom press scales remain0.98/0.95. | Six-button rest/hover/mid-press/pressed/mid-release/released scalar pixel states and interrupted-refocus values pass both E-pack short diagnostics; matching G acceptance remains required. |
 | Statistics | Source container minimums produce a1096px content column at sourceX227; two256x90 tabs, source section backgrounds,5px entries,7px headers,6px tabs and5px character names replace the enlarged generic layout. | `statistics_ui10_regression` source geometry, dynamic row layout and actual packed-font pixel checks. |
 | Statistics conditions | Missing fastest victories and zero ascensions leave their original rows hidden; single visible rows remain vertically centered. Original character colors and red character-ascension prefix are restored. | Empty/full metadata cases, single/pair label pixel cases and saturated counter minimum-band/clipping. |
 | Statistics interaction | Twenty-four bounded entry motions, initial first-entry focus, directional navigation, focus-driven scrolling, original Playtime/Ascension hover text, corrected scrollbar drag geometry. UI state is292bytes and stays outside canonical saves/RNG. | Input/scroll, endpoint checks, captures and canonical-save identity. |
@@ -66,11 +66,11 @@ metadata is invented for excluded Timeline/platform achievements.
 
 | Surface | Remaining difference or unverified scope | Next action |
 | --- | --- | --- |
-| Compendium press | Original press modulates the whole control toward light gray. The port's panel state changes, but icon/text parent press modulation remains separate work. | Apply the original parent modulation through the same bounded transition and add press/release oracle states. |
+| G source batch | Compendium press, History body/art/quote/badges, actual recorded BuildId and separately observed Continue SaveTime are implemented in current source. | Freeze G, append its exact required fonts and64 original History images, then run matching two-language native/browser acceptance. |
 | Profile/history time zone | The source converts timestamps to the host's local time zone; the port uses UTC. | Supply a bounded host calendar conversion interface if local-zone parity is required on every host. |
-| History body | This batch restores the summary header. The existing map act labels, relic/deck section captions and grouped-card list still use their earlier8px bands/layout. The source death-quote/badge strip needs a separate history-specific comparison. | Apply the remaining body nodes' fixed source sizes and geometry, then inspect a long full history and its tooltips. |
-| History build identifier | Original `BuildLabel` displays the recorded run's `BuildId`. Current UI history never recorded that field, so the new source-positioned label displays an unknown dash. | Persist a separate observed build identifier for newly recorded runs while leaving old history unknown. |
-| Continue save time | The canonical run/host interface has no original `SaveTime`. The new source saved-time label therefore displays an explicit unknown dash; profile-progress modification time is not substituted. | Add a separately persisted run-save timestamp with backward-compatible unknown handling if exact historical save time is required. |
+| History icon rotation | Source room icons receive a small UI-only chaotic Gaussian tilt, which eases to zero on focus. G restores their original artwork, outline colors and scale but keeps their angle upright. | Add bounded presentation-only angle state and source easing without consuming canonical run RNG. |
+| History partial metadata | Older or evicted floor journal facts remain unavailable. New BuildId is the actual port identifier recorded at new-run creation; pre-metadata records retain an unknown dash. | Preserve unknown handling and verify old/new optional metadata codecs in matching G. |
+| Continue observed save time | G records successful canonical writes separately from profile/settings updates and restores the source weekday/month/date/time format. Its90px date rectangle is top aligned so longer dates do not shift upward. | Verify the new metadata on real save/reload/Continue paths; old timestamps remain unknown. |
 | Chinese regular FontVariation | The source Chinese Regular resource also contains a0.95 transform and−0.05 baseline offset. The current packed raster/oracles establish exact selected font keys and LCD composition, without reproducing this Godot variation transform. | Bake and independently compare the source variation metrics before asserting full font raster equivalence. |
 | Settings and run setup | Prior preference/input behavior remains implemented, but this batch is not a renewed per-node typography audit of all settings/custom/daily controls. | Enumerate visible normal/bold roles and check exact widths, dropdowns and focus states in the matched build. |
 | Bestiary previews | Every phase-specific multi-creature preview and secondary visual effect has not been independently replayed. | Drive the remaining actual move/state contexts, keeping preview state detached from the run. |
@@ -160,3 +160,57 @@ popup text has no newly observed clipping or unintended overlap. Captures and
 contact sheets remain private. This review supplements the independent
 source-derived pixel/input oracles, and is not a side-by-side comparison with
 an unmodified running Godot build.
+
+
+## F matched front acceptance and G source follow-up
+
+Frozen F `361c36c27f06c4905e1899b8bdc2ab281ba9b9cc` passes the15 front
+targets in each language. Its ordinary offline HTML passes18 checks and41
+captures with no page errors or external requests, including English→Chinese→
+English and saved-language reload. The tested HTML and the closed final
+package's HTML were compared byte for byte. Twenty key F front/menu renders
+also match the previously reviewed E captures exactly. The receipts are
+`ui10f-front-eng-6adea22e0605.json`, `ui10f-front-zhs-335b830e492f.json` and
+`ui10f-ordinary-browser-94cec6d351c1.json`; these validate F, not later G edits.
+
+G restores the remaining History body's source24/28px labels to5px, the
+original rarity-category summaries, source card colors and20–24px fitted
+card labels with the authored U+22EF ellipsis. Acts use one60px entry row
+without the former18-column artificial wrap. Relics use68px holders in19
+columns; cards use240×32px holders in five columns, with their original
+32px tiny card, enchantment child and8px focus label shift. Card focus
+interruptions fast-forward the prior tween as the source requires. The
+scrolling viewport is the full1260px screen, with the original25px bottom
+padding. Source extrema and the maximum192-card fixture replace the old
+oversized rows as the reason the scrolling test needs a scrollbar.
+
+The death-quote/badge HBox now uses saved run character/cause/seed values,
+original conditional badge visibility, source equal expansion/minimums and
+ordinary source hover tips. It does not borrow the current live character or
+consume canonical run RNG. Source22px italic quotes project to4px; the shared
+4px readability floor remains when the source would shrink to16px. Chapter
+labels and captions use their authored cream; upgraded/enchantment labels use
+source chartreuse/violet. Historical relics also receive their existing
+original black half-alpha outlines. Presentation focus ID ranges are separated
+so the maximum320 relics cannot overlap card focus IDs.
+
+Format39 appends32 original History room image/outline pairs from the pinned
+`ImageHelper` mapping, including unknown rooms, bosses and ancients. They are
+kept at their maximum13px hover resolution, preserve alpha and aspect, and
+retain the source outline's47→128→64 opacity plus black/white focus color.
+Existing image/glyph payloads remain unchanged. Old packs retain an explicit
+HUD-icon fallback. The append metadata is source-only; original image data
+remains private. The shared G converter also appends independently reviewed
+settings artwork after the64 History entries.
+
+G syntax and bounded synthetic artwork checks pass. Mixed short diagnostics
+recompile every App-dependent translation unit against current headers before
+linking unchanged F simulation objects; they are not matching G release gates.
+Both Profiles locales pass the new press/release and known/unknown Continue
+pixel cases. History's no-pack navigation/state checks pass62 assertions.
+Its E-pack exact oracle exposes the expected newly required English4px regular
+U+22EF and Chinese4px regular U+7D2F in the new quote coverage. Both failures
+are retained and both glyphs are required by the new font metadata; neither
+oracle is relaxed. Earlier Chinese body/header checks passed before the final
+quote-band case was added. Final acceptance must use G's complete matching
+font and artwork append.

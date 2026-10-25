@@ -48,18 +48,19 @@ static bool progress_hover(const App&a,int x,int y,int width,int height){return 
 static void compendium_button(Canvas&c,unsigned index,int x,int y,int width,int height,int base,int icon,const char*prefix,UiAction action,bool bottom=false){
     auto&a=c.a;const bool focused=progress_hover(a,x,y,width,height)||(!a.pointer.visible&&a.compendium_selection==index);
     const bool pressed=focused&&a.pointer.held&&a.pointer.captured.kind==HitKind::UiAction&&a.pointer.captured.value==int(action);
-    auto&motion=a.compendium_motion[index];const unsigned scale=motion.observe(pressed?2:focused?1:0,a.map_clock_ms,bottom,bottom?950:980),alpha=motion.alpha(a.map_clock_ms);
-    const ProfileTransform transform{x+reference_viewport::project(bottom?136:180),y+reference_viewport::project(bottom?96:240),int((scale*4096+500)/1000)};
-    if(a.content.version()>=Ui7ContentVersion){profile_image(c,base+motion.previous,x,y,width,height,transform);profile_image(c,base+motion.state,x,y,width,height,transform,alpha);}
-    else c.dim(x,y,width,height,150);
-    if(bottom){const bool history=index==5;profile_image(c,icon,x+(history?4:10),y+(history?6:5),history?45:33,history?20:21,transform);}
-    else profile_image(c,icon,x+9,y+17,50,38,transform);
+    auto&motion=a.compendium_motion[index];const auto visual=motion.observe_compendium(pressed?2:focused?1:0,a.map_clock_ms,bottom);
+    const ProfileTransform transform{x+reference_viewport::project(bottom?136:180),y+reference_viewport::project(bottom?96:240),int((visual.scale*4096+500)/1000)};
+    Canvas button=c;button.brightness=uint8_t(div255(unsigned(button.brightness)*visual.shade));
+    if(a.content.version()>=Ui7ContentVersion){profile_image(button,base,x,y,width,height,transform);if(visual.focus)profile_image(button,base+1,x,y,width,height,transform,visual.focus);}
+    else button.dim(x,y,width,height,150);
+    if(bottom){const bool history=index==5;profile_image(button,icon,x+(history?4:10),y+(history?6:5),history?45:33,history?20:21,transform);}
+    else profile_image(button,icon,x+9,y+17,50,38,transform);
     char key[128]{};TextBuffer k{key,sizeof key,0};k.text(prefix);k.text(".title");
     const char*title=frontend_text(a,"main_menu_ui",key,prefix);
     ProfileTextStyle title_style{5,source_label_face(a.content.english(),5),rgb(239,200,81),32,2,rgb(51,49,39),1};title_style.shadow_y=1;
-    profile_text_box(c,title,x+(bottom?3:4),y+(bottom?26:7),bottom?47:60,10,title_style,true,false,transform);
+    profile_text_box(button,title,x+(bottom?3:4),y+(bottom?26:7),bottom?47:60,10,title_style,true,false,transform);
     if(!bottom){key[0]=0;k.n=0;k.text(prefix);k.text(".description");const char*description=frontend_text(a,"main_menu_ui",key,"");
-        profile_text_box(c,description,x+8,y+56,53,29,{5,0,rgb(255,246,226),64},true,true,transform);}
+        profile_text_box(button,description,x+8,y+56,53,29,{5,0,rgb(255,246,226),64},true,true,transform);}
     c.action(x,y,width,height,action);
 }
 static void compendium_screen(Canvas&c){
@@ -254,8 +255,74 @@ static const char* history_room_key(const UiFloorHistory&f){
     case WorldRoom::Boss:return "ELITE";case WorldRoom::Rest:return "REST_SITE";case WorldRoom::Shop:return "SHOP";
     case WorldRoom::Treasure:return "TREASURE";default:return "EVENT";}
 }
-static int history_focus_id(const App&a,const UiRunHistory&r,const uint16_t*indices,unsigned groups){
+static int history_label_width(const Canvas&,const char*,const ProfileTextStyle&);
+static int history_room_asset(const UiFloorHistory&floor){
+    using reference::PointType;
+    if(floor.map_type==unsigned(PointType::Unassigned)||floor.room==unsigned(WorldRoom::Map))return -1;
+    const char*key=history_room_key(floor);char variant[64]{};
+    if(floor.map_type==unsigned(PointType::Unknown)&&floor.room!=unsigned(WorldRoom::Event)){
+        TextBuffer out{variant,sizeof variant,0};out.text("UNKNOWN_");out.text(key);key=variant;
+    }
+    for(unsigned i=0;i<sizeof HistoryRoomKeys/sizeof(*HistoryRoomKeys);++i)if(wt_equal(key,HistoryRoomKeys[i]))return I10_HistoryRoomFirst+int(i)*2;
+    return -1;
+}
+struct HistoryTextValues {const App*app;const UiRunHistory*record;uint16_t rarity[11]{};bool relics=false;};
+static LocalizedValue history_text_value(const void*context,const char*key){
+    const auto&v=*static_cast<const HistoryTextValues*>(context);const auto&a=*v.app;const auto&r=*v.record;
+    if(wt_equal(key,"totalCards"))return wt_number(r.deck_count);if(wt_equal(key,"totalRelics"))return wt_number(r.relic_count);
+    static constexpr const char*cards[]={"NoneCards","BasicCards","CommonCards","UncommonCards","RareCards","AncientCards","EventCards","TokenCards","StatusCards","CurseCards","QuestCards"};
+    static constexpr const char*relics[]={"NoneRelics","StarterRelics","CommonRelics","UncommonRelics","RareRelics","ShopRelics","EventRelics","AncientRelics"};
+    for(unsigned i=0;i<(v.relics?8u:11u);++i)if(wt_equal(key,v.relics?relics[i]:cards[i]))return wt_number(v.rarity[i]);
+    const unsigned character=r.character<CharacterKinds?r.character:0;const char*id=character_definitions[character].key;
+    if(wt_equal(key,"character"))return wt_string(a.content.world_title("characters",id));
+    if(wt_equal(key,"characterGender"))return wt_string(character==unsigned(Character::Silent)||character==unsigned(Character::Necrobinder)?"feminine":character==unsigned(Character::Defect)?"neutral":"masculine");
+    if(wt_equal(key,"characterObject")||wt_equal(key,"possessiveAdjective")||wt_equal(key,"pronounObject")||wt_equal(key,"pronounPossessive")||wt_equal(key,"pronounSubject")){
+        char name[80]{};TextBuffer out{name,sizeof name,0};out.text(id);out.ch('.');out.text(wt_equal(key,"characterObject")?"titleObject":key);return wt_string(a.content.world_string("characters",name));
+    }
+    if(wt_equal(key,"encounter")){const auto*d=encounter_definition(EncounterId(r.encounter));return d?wt_string(a.content.world_title("encounters",d->key)):LocalizedValue{};}
+    if(wt_equal(key,"event")&&r.event<OriginalEventKinds)return wt_string(a.content.world_title(ui_ancient_event(OriginalEventId(r.event))?"ancients":"events",original_event_key(OriginalEventId(r.event))));
+    return {};
+}
+static void history_summary_text(const App&a,const UiRunHistory&r,bool relics,char*out,unsigned capacity){
+    HistoryTextValues values{&a,&r,{},relics};
+    if(relics){for(unsigned i=0;i<r.relic_count;++i)if(r.relics[i]<WorldRelicKinds){const unsigned rarity=world_relic_definitions[r.relics[i]].rarity;if(rarity<8)++values.rarity[rarity];}}
+    else for(unsigned i=0;i<r.deck_count;++i){const unsigned rarity=unsigned(card_rarity(r.deck[i].card.kind));if(rarity<11)++values.rarity[rarity];}
+    char heading[192]{},categories[384]{};
+    LocalizedTemplate(heading,sizeof heading,history_text_value,&values,"Energy","Stars",a.content.english()).format(a.content.world_string("run_history",relics?"RELIC_HISTORY.header":"DECK_HISTORY.header"));
+    LocalizedTemplate(categories,sizeof categories,history_text_value,&values,"Energy","Stars",a.content.english()).format(a.content.world_string("run_history",relics?"RELIC_HISTORY.categories":"DECK_HISTORY.categories"));
+    // The pinned implementation trims ASCII commas only, including in zhs.
+    char*start=categories;while(*start==',')++start;unsigned length=0;while(start[length])++length;while(length&&start[length-1]==',')start[--length]=0;
+    TextBuffer text{out,capacity,0};text.text("[gold][b]");text.text(heading);text.text("[/b][/gold]");text.text(start);
+}
+static void history_death_quote(const App&a,const UiRunHistory&r,char*out,unsigned capacity){
+    reference::Random random;unsigned length=0;while(r.seed_text[length])++length;random.reset(reference::hash64(r.seed_text,length));
+    char key[128]{};TextBuffer k{key,sizeof key,0};const char*table="run_history";
+    if(r.outcome==1){k.text("MAP_POINT_HISTORY.falseVictory.");k.number(random.below(2));}
+    else if(r.abandoned||r.outcome==3){k.text("MAP_POINT_HISTORY.abandon.");k.number(random.below(3));}
+    else if(r.outcome==2){const unsigned room=r.floor_count?r.floors[r.floor_count-1].room:r.facts.last_room;
+        if(r.last_battle!=r.finished_battle||room==unsigned(WorldRoom::Monster)||room==unsigned(WorldRoom::Elite)||room==unsigned(WorldRoom::Boss)){
+            const auto*d=encounter_definition(EncounterId(r.encounter));if(d){table="encounters";k.text(d->key);k.text(".loss");}
+        }else if(room==unsigned(WorldRoom::Event)&&r.event<OriginalEventKinds){table=ui_ancient_event(OriginalEventId(r.event))?"ancients":"events";k.text(original_event_key(OriginalEventId(r.event)));k.text(".loss");
+            if(!*a.content.world_string(table,key)){table="run_history";key[0]=0;k.n=0;k.text("DEFAULT_EVENT_LOSS_MESSAGE");}}
+    }
+    const HistoryTextValues values{&a,&r};char body[2048]{};
+    LocalizedTemplate(body,sizeof body,history_text_value,&values,"Energy","Stars",a.content.english()).format(a.content.world_string(table,key));
+    TextBuffer text{out,capacity,0};text.text(a.content.world_string("game_over_screen","ENCOUNTER_QUOTE_LEFT"));text.text(body);text.text(a.content.world_string("game_over_screen","ENCOUNTER_QUOTE_RIGHT"));
+}
+static void history_card_label(Canvas&c,const char*title,int x,int y,uint16_t color){
+    const int width=reference_viewport::project(196);ProfileTextStyle style{5,0,color,192};
+    if(history_label_width(c,title,style)>width)style.size=4;
+    char shortened[384]{};const char*shown=title;
+    if(history_label_width(c,title,style)>width){
+        const int ellipsis=c.a.content.glyph_metrics(0x22ef,style.size,0).advance;TextBuffer text{shortened,sizeof shortened,0};
+        int advance=0;const char*p=title;while(*p){const char*begin=p;const auto cp=utf8(p);const auto g=c.a.content.glyph_metrics(cp,style.size,0);if(advance+mx(g.w,g.advance)+ellipsis>width)break;
+            while(begin<p)text.ch(*begin++);advance+=g.advance;}text.text("⋯");shown=shortened;
+    }
+    profile_text_box(c,shown,x,y,width,reference_viewport::project(50),style,false,false,{},true);
+}
+static int history_focus_id(const App&a,const UiRunHistory&r,const uint16_t*indices,unsigned groups,const UiHistoryLayout&layout,int dx,int offset){
     if(!a.pointer.visible)return a.history_presentation.focus;
+    if(!a.pointer.dragging)for(unsigned i=0;i<UiRunBadgeCount;++i)if((layout.badge_tiers>>(i*2))&3){const auto point=layout.badge(i);if(progress_hover(a,point.x+dx,point.y-offset,point.w,point.h))return UiHistoryLayout::BadgeFirst+int(i);}
     if(a.history_tooltip.source==1&&a.history_tooltip.serial==r.serial&&a.history_tooltip.contains(a.pointer.x,a.pointer.y))return a.history_tooltip.floor;
     const auto*hit=a.hit_at(a.pointer.x,a.pointer.y);if(!hit)return -1;
     if(hit->kind==HitKind::HistoryFloor&&hit->value>=0&&hit->value<r.floor_count)return hit->value;
@@ -264,6 +331,13 @@ static int history_focus_id(const App&a,const UiRunHistory&r,const uint16_t*indi
     return -1;
 }
 static void history_tooltip(Canvas&c,const UiRunHistory&r,int focus,const UiHistoryLayout&layout,int dx,int offset){
+    if(focus>=UiHistoryLayout::BadgeFirst&&unsigned(focus-UiHistoryLayout::BadgeFirst)<UiRunBadgeCount){
+        const unsigned id=unsigned(focus-UiHistoryLayout::BadgeFirst),tier=unsigned(layout.badge_tiers>>(id*2))&3;if(!tier)return;
+        const auto point=layout.badge(id);if(point.y-offset+point.h<=0||point.y-offset>=240)return;
+        const auto entry=game_over_ui::BadgeTexts[id];const char*packed=c.a.content.string(entry.first+(entry.tiers==3?tier-1:0));
+        char title[192]{},body[768]{};TextBuffer text{title,sizeof title,0};while(*packed&&*packed!='\n')text.ch(*packed++);if(*packed)++packed;TextBuffer{body,sizeof body,0}.text(packed);
+        source_hover_box(c,title,body,point.x+dx+2,point.y-offset-25);return;
+    }
     if(focus<0||focus>=UiHistoryLayout::CardFirst)return;
     UiHistoryLayout::Point point{};if(!layout.point(r,focus,point))return;
     const int py=point.y-offset+UiHistoryLayout::ViewTop;
@@ -277,6 +351,11 @@ static int history_label_width(const Canvas&c,const char*text,const ProfileTextS
     RichReader reader(text);RichChar ch{};int width=0,count=0;
     while(reader.next(ch)){if(ch.codepoint=='\n')break;width+=c.a.content.glyph_metrics(ch.codepoint,style.size,metrics.font_style(ch)).advance;++count;}
     return width+reference_viewport::project((count>0?count-1:0)*style.tracking_source);
+}
+static void history_section_header(Canvas&c,const UiRunHistory&r,bool relics,int dx,int y){
+    char text[768]{};history_summary_text(c.a,r,relics,text,sizeof text);
+    ProfileTextStyle style{5,0,rgb(255,246,226),relics?0u:128u};style.tracking_source=c.a.content.english()?1:0;
+    profile_text_box(c,text,UiHistoryLayout::Left+dx,y,UiHistoryLayout::Width,reference_viewport::project(36),style,false,false,{},false,true);
 }
 static void history_header(Canvas&c,const UiRunHistory&r,int dx,int offset){
     using reference_viewport::project;auto&a=c.a;
@@ -302,10 +381,11 @@ static void history_header(Canvas&c,const UiRunHistory&r,int dx,int offset){
     TextBuffer{player_count,sizeof player_count,0}.text(frontend_text(a,"run_history","PLAYER_COUNT.singleplayer",""));
     TextBuffer{game_mode,sizeof game_mode,0}.text(frontend_text(a,"run_history",mode,""));values.player_count=player_count;values.game_mode=game_mode;
     progress_text(a,"run_history","GAME_MODE.title",values,text,sizeof text);label(text,1378,UiHistoryHeaderLayout::info_y(2),172,32,info,true);
-    // UiRunHistory predates a saved build identifier. The currently running
-    // port/reference version cannot stand in for the record's unknown BuildId.
+    // Old records retain unknown BuildId; only a saved record's own value is
+    // displayed, even when the currently running port has a newer version.
     Canvas build=c;build.opacity=uint8_t(div255(unsigned(build.opacity)*128));
-    profile_text_box(build,"—",project(UiHistoryHeaderLayout::InfoRight)-history_label_width(c,"—",info)+dx,yy(UiHistoryHeaderLayout::info_y(3)),history_label_width(c,"—",info),project(32),info,false,false);
+    const char*build_id=r.build_id[0]?r.build_id:"—";
+    profile_text_box(build,build_id,project(UiHistoryHeaderLayout::InfoRight)-history_label_width(c,build_id,info)+dx,yy(UiHistoryHeaderLayout::info_y(3)),history_label_width(c,build_id,info),project(32),info,false,false);
     const auto image=[&](int image_id,int x,int y,int width,int height){const auto picture=a.content.image(image_id);if(!picture.pixels)return;
         const int box_w=project(width),box_h=project(height);int w=box_w,h=box_h;
         if(int(picture.w)*h>int(picture.h)*w)h=mx(1,w*picture.h/picture.w);else w=mx(1,h*picture.w/picture.h);
@@ -335,6 +415,21 @@ static void history_header(Canvas&c,const UiRunHistory&r,int dx,int offset){
     counter.color=rgb(197,218,206);label(floor,layout.floor,32,layout.floor_width,height,counter);
     image(a.content.ui_image(I9_RunTimerIcon),layout.timer_icon,32,48,height);counter.color=rgb(239,200,81);label(duration,layout.time,32,layout.time_width,height,counter);
 }
+static void history_quote_band(Canvas&page,const UiRunHistory&r,const UiHistoryLayout&layout,int dx,int offset,int focused){
+    using reference_viewport::project;auto&a=page.a;
+    char text[2048]{};history_death_quote(a,r,text,sizeof text);
+    // The death quote and optional badges share an expanding HBox. Empty
+    // badge containers disappear, so the quote uses all1420 source pixels.
+    ProfileTextStyle quote{4,source_label_face(a.content.english(),6),r.outcome==1?rgb(127,255,0):rgb(255,85,85),1};
+    profile_text_box(page,text,project(130)+dx,project(158)-offset,project(layout.quote_width),project(64),quote,true,true,{},true);
+    for(unsigned i=0;i<UiRunBadgeCount;++i){const unsigned tier=unsigned(layout.badge_tiers>>(i*2))&3;if(!tier)continue;
+        const auto point=layout.badge(i);const int x=point.x+dx,y=point.y-offset;
+        page.ui(I8_GameOverBadgeBronze+int(tier)-1,x,y,point.w,point.h);page.ui(I8_GameOverBadgeCombo+int(i),x,y,point.w,point.h);
+        if(focused==UiHistoryLayout::BadgeFirst+int(i)&&!a.pointer.visible){const auto reticle=a.content.image(a.content.world_image("map","SELECTION_RETICLE"));
+            if(reticle.pixels&&reticle.format<=3)for(unsigned corner=0;corner<4;++corner){const bool right=corner&2,bottom=corner&1;
+                target_reticle_corner(page,reticle,right?x+point.w-1:x,bottom?y+point.h-1:y,3,right,bottom,255,false);}}
+    }
+}
 static void history_screen(Canvas&c){
     auto&a=c.a;const auto*record=a.history_at(a.history_index);if(!record){a.history_open=false;compendium_screen(c);return;}const auto&r=*record;
     title_background(c,false);c.dim(0,0,320,240,210);a.hit_count=0;
@@ -348,33 +443,47 @@ static void history_screen(Canvas&c){
     for(unsigned i=0;i<r.floor_count;++i)history_hit(c,layout.floor(r,i),dx,offset,HitKind::HistoryFloor,int(i));
     for(unsigned i=0;i<r.relic_count;++i)history_hit(c,layout.relic(i),dx,offset,HitKind::HistoryRelic,int(i));
     for(unsigned i=0;i<groups;++i)history_hit(c,layout.card(i),dx,offset,HitKind::HistoryCard,indices[i]);
-    const int focused=history_focus_id(a,r,indices,groups);motion.observe(focused,a.map_clock_ms);
+    const int focused=history_focus_id(a,r,indices,groups,layout,dx,offset);motion.observe(focused,a.map_clock_ms);
     // The source32px top margin positions the header; it is not a clip.
     // Keep its scaled portrait and scrolling labels visible up to screenY0.
     Canvas header=c;header.opacity=page.opacity;history_header(header,r,dx,offset);
-    char text[384]{};ProgressTextValues values;
+    using reference_viewport::project;
+    history_quote_band(page,r,layout,dx,offset,focused);
+    char text[2048]{};
     uint32_t quests[3]{};const int journal_owner=a.progress.journal.owner(r.serial);
     for(unsigned i=0;i<a.progress.journal.count;++i){const auto&e=a.progress.journal.at(i);if(e.owner==journal_owner&&e.floor<UiHistoryFloors&&(e.kind==RunHistoryEvent::QuestCompleted||e.kind==RunHistoryEvent::FurCoat))quests[e.floor/32]|=uint32_t(1)<<(e.floor%32);}
     for(unsigned i=0;i<r.floor_count;++i){const auto&f=r.floors[i];const auto point=layout.floor(r,i);const int x=point.x+dx,y=point.y-offset;
         if(y+point.h<=0||y>=page.clip_h)continue;
-        if(!i||r.floors[i-1].act!=f.act){const char*act=a.content.world_title("acts",map_colors(f.region).region);page.text_fitted(act,27+dx,y+3,30,8,Gold,8);}
-        const int size=mn(19,12*int(motion.scale(int(i),a.map_clock_ms))/1000);
-        if(a.content.version()>=HudUi7ContentVersion)hud_room_icon(page,history_room_key(f),x+6-size/2,y+7-size/2,size,size);
-        else page.picture(f.room==unsigned(WorldRoom::Rest)?A_MapCamp:f.room==unsigned(WorldRoom::Shop)?A_MapShop:f.room==unsigned(WorldRoom::Treasure)?A_MapTreasure:f.room==unsigned(WorldRoom::Event)?A_MapEvent:A_MapCombat,x,y,12,12);
-        if(quests[i/32]&(uint32_t(1)<<(i%32)))page.picture(a.content.world_image("map","QUEST"),x+7,y-1,5,5);
+        if(!i||r.floors[i-1].act!=f.act){const char*act=a.content.world_title("acts",map_colors(f.region).region);const ProfileTextStyle style{5,0,rgb(255,246,226),128};
+            const int width=history_label_width(page,act,style);profile_text_box(page,act,project(layout.map_source_left+140)-width+dx,y,width,point.h,style,false,false);}
+        const unsigned scale=motion.scale(int(i),a.map_clock_ms);
+        const int size=(448*int(scale)*4+105000)/210000,center_x=x+project(32),center_y=y+project(32);
+        if(a.content.has_history_body_assets()){
+            const int asset=history_room_asset(f);if(asset>=0){const auto visual=motion.outline(int(i),a.map_clock_ms);Canvas outline=page;
+                outline.tint_red=outline.tint_green=outline.tint_blue=uint8_t(visual.color);
+                outline.ui(asset+1,center_x-size/2,center_y-size/2,size,size,visual.alpha);page.ui(asset,center_x-size/2,center_y-size/2,size,size);}
+        }else if(a.content.version()>=HudUi7ContentVersion)hud_room_icon(page,history_room_key(f),center_x-size/2,center_y-size/2,size,size);
+        else page.picture(f.room==unsigned(WorldRoom::Rest)?A_MapCamp:f.room==unsigned(WorldRoom::Shop)?A_MapShop:f.room==unsigned(WorldRoom::Treasure)?A_MapTreasure:f.room==unsigned(WorldRoom::Event)?A_MapEvent:A_MapCombat,center_x-size/2,center_y-size/2,size,size);
+        if(quests[i/32]&(uint32_t(1)<<(i%32))){const int quest=(231*int(scale)*4+105000)/210000;
+            page.picture(a.content.world_image("map","QUEST"),center_x+(70*int(scale)*4+105000)/210000,center_y-(260*int(scale)*4+105000)/210000,quest,quest);}
     }
-    values.total=r.relic_count;progress_text(a,"run_history","RELIC_HISTORY.header",values,text,sizeof text);page.text_fitted(text,29+dx,layout.relic_header-offset,257,10,Gold,8);
+    history_section_header(page,r,true,dx,layout.relic_header-offset);
     for(unsigned i=0;i<r.relic_count;++i){const auto point=layout.relic(i);const int x=point.x+dx,y=point.y-offset;if(y+point.h<=0||y>=page.clip_h)continue;
-        const int size=12*int(motion.scale(UiHistoryLayout::RelicFirst+int(i),a.map_clock_ms))/1000;
-        page.picture(a.relic_face_image(r.relics[i],r.character),x+6-size/2,y+6-size/2,size,size);
+        const int size=(60*int(motion.scale(UiHistoryLayout::RelicFirst+int(i),a.map_clock_ms))*4+10500)/21000,left=x+project(34)-size/2,top=y+project(34)-size/2;
+        if(r.relics[i]<WorldRelicKinds){int outline=collection_assets::RelicOutline[r.relics[i]];
+            if(r.relics[i]==WorldRelicYummyCookie)outline=collection_assets::CookieOutline[r.character<CharacterKinds?r.character:0];
+            if(outline>=0){Canvas shadow=page;shadow.tint_red=shadow.tint_green=shadow.tint_blue=0;shadow.ui(outline,left,top,size,size,128);}}
+        page.picture(a.relic_face_image(r.relics[i],r.character),left,top,size,size);
     }
-    values.total=r.deck_count;progress_text(a,"run_history","DECK_HISTORY.header",values,text,sizeof text);page.text_fitted(text,29+dx,layout.deck_header-offset,257,10,Gold,8);
+    history_section_header(page,r,false,dx,layout.deck_header-offset);
     for(unsigned i=0;i<groups;++i){const auto point=layout.card(i);const int x=point.x+dx,y=point.y-offset;if(y+point.h<=0||y>=page.clip_h)continue;
-        const auto&entry=r.deck[indices[i]];const unsigned scale=motion.scale(UiHistoryLayout::CardFirst+int(i),a.map_clock_ms);const int size=8*int(scale)/1000;
-        history_tiny_card(page,entry,x+4-size/2,y+6-size/2,size);
+        const auto&entry=r.deck[indices[i]];const unsigned scale=motion.scale(UiHistoryLayout::CardFirst+int(i),a.map_clock_ms);const int size=(32*int(scale)*4+10500)/21000;
+        history_tiny_card(page,entry,x+project(16)-size/2,y+project(16)-size/2,size);
+        if(entry.facts.enchantment!=EventEnchantment::None){const int e=(24*int(scale)*4+10500)/21000;
+            page.picture(a.content.world_image("enchantments",event_enchantment_key(entry.facts.enchantment)),x+project(16)+(2*int(scale)*4+10500)/21000,y+project(16)-(4*int(scale)*4+10500)/21000,e,e);}
         text[0]=0;TextBuffer title{text,sizeof text,0};if(counts[i]>1){title.number(counts[i]);title.text("x ");}title.text(a.content.card_string(entry.card.kind));if(entry.card.upgraded)title.ch('+');
-        const int label_shift=int(scale-1000)*2/500;
-        page.text_fitted(text,x+10+label_shift,y+2,point.w-10-label_shift,8,entry.facts.enchantment!=EventEnchantment::None?rgb(197,127,255):entry.card.upgraded?Green:White,8);
+        const int shift=project(int(scale-1000)*8/500);
+        history_card_label(page,text,x+project(42)+shift,y-project(8),entry.facts.enchantment!=EventEnchantment::None?rgb(238,130,238):entry.card.upgraded?rgb(127,255,0):rgb(255,246,226));
     }
     if(a.history_index+1<a.progress.count){c.ui(I7_SettingsArrowLeft,7,111,12,24);c.action(0,100,26,49,UiAction::HistoryPrevious);}
     if(a.history_index){c.ui(I7_SettingsArrowRight,307,111,12,24);c.action(297,100,23,49,UiAction::HistoryNext);}

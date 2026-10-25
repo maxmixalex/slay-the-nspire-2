@@ -42,7 +42,7 @@ static void profile_glyph(Canvas&c,Glyph glyph,int x,int y,uint16_t color,const 
     else for(unsigned i=0;i<unsigned(glyph.w)*glyph.h;++i)emit(glyph.pixels[i]);
 }
 static void profile_text_box(Canvas c,const char*text,int x,int y,int width,int height,const ProfileTextStyle&style,
-                             bool centered,bool wrap,const ProfileTransform&transform={},bool clipped=false){
+                             bool centered,bool wrap,const ProfileTransform&transform={},bool clipped=false,bool top_aligned=false){
     const int size=c.a.content.font_size(style.size,style.face,false,true);c.font_face=uint8_t(style.face);c.bold_face=5;
     const auto metrics=[&](const RichChar&ch,int px){const auto g=c.a.content.glyph_metrics(ch.codepoint,px,c.font_style(ch));return fitted_text::Metric{g.advance,mx(int(g.w),int(g.advance))};};
     fitted_text::Plan plan;plan.size=size;plan.step=size+1;plan.total=wrap?fitted_text::line_count(text,width,size,metrics):1;plan.rows=mn(plan.total,32);plan.truncated=false;
@@ -50,7 +50,7 @@ static void profile_text_box(Canvas c,const char*text,int x,int y,int width,int 
     const auto visit=[&](auto emit){if(wrap)fitted_text::visit(text,width,plan,metrics,emit);
         else{RichReader reader(text);RichChar ch{};int at=0,index=0;while(reader.next(ch)){if(ch.codepoint=='\n')break;emit(ch,at+reference_viewport::project(index++*style.tracking_source),0,size);at+=metrics(ch,size).advance;}}};
     visit([&](const RichChar&ch,int at,int row,int px){widths[row]=at+metrics(ch,px).advance;});
-    const int text_y=y+(height-(plan.rows*plan.step+1))/2;
+    const int text_y=top_aligned?y:y+(height-(plan.rows*plan.step+1))/2;
     const int left=clipped?transform.horizontal(x):0,top=clipped?transform.vertical(y):0;
     const int right=clipped?transform.horizontal(x+width):c.clip_w,bottom=clipped?transform.vertical(y+height):c.clip_h;
     const auto draw=[&](int dx,int dy,unsigned opacity,uint16_t color,bool decoration){Canvas ink=c;ink.opacity=uint8_t(div255(unsigned(ink.opacity)*opacity));

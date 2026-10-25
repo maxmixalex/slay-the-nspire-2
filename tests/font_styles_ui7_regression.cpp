@@ -112,18 +112,20 @@ static void ancient_families(){
  CHECK(pixel(10,27)==0&&pixel(13,27)==shadow&&pixel(17,27)==half_shadow&&app.content.healthy());
 }
 static void sparse_inspection_size(){
+ for(unsigned sparse:{7u,9u}){
  auto bytes=fixture(true,true,false,true);
- // Only the relic-title alphabet has a7px source face. B is deliberately
+ // Only the scene-title alphabet has this source face. B is deliberately
  // absent there, but has its complete existing regular6px representation.
- put(bytes,40+A_Count*16+4*16+8,7|96,2);
+ put(bytes,40+A_Count*16+4*16+8,sparse|96,2);
  CHECK(app.content.open(bytes.data(),bytes.size()));Canvas c{app};c.font_face=5;
- CHECK(app.content.font_size(7,5,false,true)==7&&app.content.font_size(7,5)==6);
- CHECK(app.content.font_size(7,5,true)==6&&app.content.font_size(8,5)==6);
+ CHECK(app.content.font_size(sparse,5,false,true)==int(sparse)&&app.content.font_size(sparse,5)==6);
+ CHECK(app.content.font_size(sparse,5,true)==6&&app.content.font_size(8,5)==6);
  clear();auto ordinary=c.fitted("AB",10,10,8,14,8,5,White,false,true);
  CHECK(ordinary.size==6&&!ordinary.truncated&&pixel(10,10)!=0&&pixel(15,10)!=0);
- clear();c.sparse_scene_sizes=true;auto inspection=c.fitted("A",10,10,20,14,7,5,White,false,true);
- CHECK(inspection.size==7&&!inspection.truncated&&pixel(10,10)==White&&pixel(13,10)==White);
+ clear();c.sparse_scene_sizes=true;auto inspection=c.fitted("A",10,10,20,14,sparse,5,White,false,true);
+ CHECK(inspection.size==int(sparse)&&!inspection.truncated&&pixel(10,10)==White&&pixel(13,10)==White);
  CHECK(app.content.healthy());
+ }
 }
 struct Provider {
  const Bytes*bytes;unsigned calls=0;

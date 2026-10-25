@@ -1,4 +1,4 @@
-// NSZ1 is a host-only envelope. UiProgress, NSH1..8, profile summaries and
+// NSZ1 is a host-only envelope. UiProgress, NSH1..9, profile summaries and
 // browser exports continue to use the unchanged canonical history codec.
 #include "storage_codec.inc"
 static bool load_progress(spire::UiProgress&out){

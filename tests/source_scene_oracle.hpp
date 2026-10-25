@@ -42,7 +42,7 @@ static void scene_pixel(std::vector<uint16_t>&frame,int x,int y,uint16_t color,u
 }
 static void scene_label(std::vector<uint16_t>&frame,const std::vector<SceneLetter>&letters,int x,int y,int width,int height,
                         unsigned size,uint16_t color,unsigned shadow,int outline=0,uint16_t outline_color=0,int shadow_outline=0,
-                        bool center=true,bool wrap=false,unsigned outline_alpha=255,int pivot_x=0,int pivot_y=0,int scale=4096,bool clip=false,int shadow_x=1,int shadow_y=0,unsigned overall_alpha=255){
+                        bool center=true,bool wrap=false,unsigned outline_alpha=255,int pivot_x=0,int pivot_y=0,int scale=4096,bool clip=false,int shadow_x=1,int shadow_y=0,unsigned overall_alpha=255,unsigned brightness=255,bool top_aligned=false){
     std::vector<std::vector<SceneLetter>>lines(1);unsigned line_width=0;
     for(unsigned i=0;i<letters.size();++i){const auto&letter=letters[i];
         if(letter.cp=='\n'){lines.emplace_back();line_width=0;continue;}
@@ -52,7 +52,7 @@ static void scene_label(std::vector<uint16_t>&frame,const std::vector<SceneLette
             if(line_width+std::max(letter.width,letter.advance)>unsigned(width)||(word_width&&word_width<=unsigned(width)&&line_width+word_width>unsigned(width))){lines.emplace_back();line_width=0;}}
         if(wrap&&space&&!line_width)continue;lines.back().push_back(letter);line_width+=letter.advance;
     }
-    const int top=y+(height-(int(lines.size())*int(size+1)+1))/2;
+    const int top=top_aligned?y:y+(height-(int(lines.size())*int(size+1)+1))/2;
     const auto project=[&](int value,int pivot){const int delta=(value-pivot)*scale;return pivot+(delta+(delta<0?-2048:2048))/4096;};
     const auto pass=[&](int dx,int dy,unsigned opacity,uint16_t ink,bool decoration){
         for(unsigned row=0;row<lines.size();++row){int at=x+(center?(width-int(scene_width(lines[row])))/2:0);
@@ -61,7 +61,10 @@ static void scene_label(std::vector<uint16_t>&frame,const std::vector<SceneLette
                     const int px=at+int(xx)+dx,py=top+int(row*(size+1))+int(yy)+dy;
                     for(int sy=project(py,pivot_y);sy<project(py+1,pivot_y);++sy)for(int sx=project(px,pivot_x);sx<project(px+1,pivot_x);++sx){
                         if(clip&&(sx<project(x,pivot_x)||sx>=project(x+width,pivot_x)||sy<project(y,pivot_y)||sy>=project(y+height,pivot_y)))continue;
-                        scene_pixel(frame,sx,sy,decoration?ink:rich,alpha);}}
+                        const uint16_t original=decoration?ink:rich;
+                        const unsigned red=((original>>11)*brightness+127)/255,green=(((original>>5)&63)*brightness+127)/255,blue=((original&31)*brightness+127)/255;
+                        const uint16_t modulated=uint16_t(red<<11|green<<5|blue);
+                        scene_pixel(frame,sx,sy,modulated,alpha);}}
                 at+=letter.advance;}}
     };
     if(shadow)for(int yy=-shadow_outline;yy<=shadow_outline;++yy)for(int xx=-shadow_outline;xx<=shadow_outline;++xx)

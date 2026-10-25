@@ -1,7 +1,7 @@
 void App::open_run_menu(RunMenu screen){
     if(!title||has_save)return;
     run_mode.screen=screen;run_mode.started=map_clock_ms;run_mode.focus=-1;
-    character_select=false;practice_entry=false;progress_page_scroll.reset();pointer_cancel();
+    character_select=false;practice_entry=false;progress_page_scroll.reset();pointer_cancel();character_select_presentation.reset();
     if(screen==RunMenu::Singleplayer){compendium_selection=0;for(auto&motion:compendium_motion)motion={};return;}
     run_mode.pending={};selected_character=Character::Ironclad;selected_ascension=0;
     selected_region=reference::ActKind::Overgrowth;selected_seed[0]=0;
@@ -77,18 +77,18 @@ bool App::run_modes_input(Key key){
     if(key==Key::Quit){frontend_confirm=3;frontend_choice=0;return true;}
     if(key==Key::Back){if(run_mode.screen==RunMenu::Singleplayer)run_mode={};else open_run_menu(RunMenu::Singleplayer);pointer_cancel();return true;}
     if(run_mode.screen==RunMenu::Singleplayer){
-        if(key==Key::Left||key==Key::Up)compendium_selection=uint8_t((compendium_selection+2)%3);
-        else if(key==Key::Right||key==Key::Down)compendium_selection=uint8_t((compendium_selection+1)%3);
+        if(key==Key::Left){if(compendium_selection)--compendium_selection;}
+        else if(key==Key::Right){if(compendium_selection<2)++compendium_selection;}
         else if(key==Key::Confirm){const UiAction actions[]={UiAction::OpenStandardRun,UiAction::OpenDailyRun,UiAction::OpenCustomRun};ui_action(actions[compendium_selection%3]);}
         return true;
     }
     if(key==Key::EndTurn||(run_mode.screen==RunMenu::Daily&&key==Key::Confirm)){ui_action(UiAction::StartConfiguredRun);return true;}
     if(run_mode.screen==RunMenu::Daily){if(key==Key::Up||key==Key::Down)progress_page_scroll.wheel(key==Key::Up?-4:4);return true;}
-    auto&focus=run_mode.focus;if(focus<0)focus=0;
+    auto&focus=run_mode.focus;if(focus<0)focus=0;const int previous=focus;
     if(key==Key::Map)focus=9;
-    else if(key==Key::Right){if(focus<4)++focus;else if(focus==5)focus=6;else if(focus<9)focus=9;}
+    else if(key==Key::Right){if(focus<4)++focus;else if(focus==5)focus=6;else if(focus>=6&&focus<9)focus=9;}
     else if(key==Key::Left){if(focus>=8)focus=7;else if(focus==6)focus=5;else if(focus>0&&focus<5)--focus;}
-    else if(key==Key::Up){if(focus>=10)--focus;else if(focus==9||focus==7)focus=8;else if(focus==5||focus==6)focus=7;else if(focus<5)focus=focus<3?5:6;}
+    else if(key==Key::Up){if(focus>=10)--focus;else if(focus==9||focus==7)focus=8;else if(focus==5||focus==6||focus<5)focus=7;}
     else if(key==Key::Down){if(focus>=9){if(focus<int(9+RunModifierKinds)-1)++focus;}else if(focus==8)focus=9;else if(focus==7)focus=5;
         else if(focus==5||focus==6){for(unsigned i=0;i<CharacterKinds;++i)if(RunModeCharacters[i]==selected_character)focus=int16_t(i);}}
     else if(key==Key::Confirm){
@@ -96,5 +96,8 @@ bool App::run_modes_input(Key key){
             UiAction::RunAscensionDown,UiAction::RunAscensionUp,UiAction::RunSeed,UiAction::RandomizeRun};
         if(focus<9)ui_action(actions[focus]);else run_modifier_select(unsigned(focus-9));
     }
+    // NCharacterSelectButton connects FocusEntered to Select; navigating the
+    // custom portrait row immediately changes the selected character.
+    if(focus!=previous&&focus>=0&&focus<int(CharacterKinds))selected_character=RunModeCharacters[unsigned(focus)];
     return true;
 }

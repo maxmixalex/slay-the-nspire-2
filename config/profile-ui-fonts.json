@@ -717,7 +717,7 @@
   {"key": "main_menu_ui.COMPENDIUM", "pixels": 6, "face": 0, "source_pixels": 32},
   {"key": "main_menu_ui.SETTINGS", "pixels": 6, "face": 0, "source_pixels": 32},
   {"key": "main_menu_ui.QUIT", "pixels": 6, "face": 0, "source_pixels": 32},
-  {"key": "main_menu_ui.CONTINUE_RUN_INFO.saved", "pixels": 5, "face": 0, "source_pixels": 24, "substitutions": {"LastSavedTime": "—"}},
+  {"key": "main_menu_ui.CONTINUE_RUN_INFO.saved", "pixels": 5, "face": 0, "source_pixels": 24, "substitutions": {"LastSavedTime": "0123456789: ,SundayMondayTuesdayWednesdayThursdayFridaySaturdayJanFebMarAprMayJunJulAugSepOctNovDecAMPM—"}, "substitutions_by_locale": {"zhs": {"LastSavedTime": "0123456789: 月星期日一二三四五六上午下午， —"}}},
   {"key": "main_menu_ui.CONTINUE_RUN_INFO.ascension", "pixels": 5, "face": 0, "source_pixels": 28},
   {"key": "main_menu_ui.CONTINUE_RUN_INFO.saved", "pixels": 5, "face": 5, "source_pixels": 24, "substitutions": {"LastSavedTime": "—"}},
   {"key": "main_menu_ui.CONTINUE_RUN_INFO.ascension", "pixels": 5, "face": 5, "source_pixels": 28},
@@ -737,6 +737,8 @@
  "alphabets": [
   {"name": "history-hp-gold-floor-duration", "pixels": 6, "face": 5, "faces": {"eng": 5, "zhs": 0}, "characters": "0123456789/:—", "source_pixels": 32},
   {"name": "history-ascension", "pixels": 4, "face": 0, "characters": "0123456789", "source_pixels": 20},
-  {"name": "history-canonical-seed", "pixels": 5, "face": 0, "characters": " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHJKLMNPQRSTUVWXYZ[\\]^_`{|}~", "source_pixels": 24}
+  {"name": "history-canonical-seed", "pixels": 5, "face": 0, "characters": " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHJKLMNPQRSTUVWXYZ[\\]^_`{|}~", "source_pixels": 24},
+  {"name": "history-card-stack-upgrade-and-ellipsis", "pixels": [4, 5], "face": 0, "characters": "0123456789x +⋯", "source_pixels": [20, 24]},
+  {"name": "history-observed-build-id", "pixels": 5, "face": 0, "characters": "nSpire II 0.17—", "source_pixels": 24}
  ]
 }

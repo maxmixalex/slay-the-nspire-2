@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Compact only the new literal glyph tail of a private NSP2/35-38 font append.
+"""Compact only the new literal glyph tail of a private NSP2/35-39 font append.
 
 The supplied immutable baseline identifies every old glyph. Existing artwork,
 glyph/string groups and their descriptors stay byte-exact at their current
@@ -34,7 +34,7 @@ class Record:
 
 
 def view(data):
-    return tiles.PackView(data, auxiliary_count(data), versions=(34, 35, 36, 37, 38))
+    return tiles.PackView(data, auxiliary_count(data), versions=(34, 35, 36, 37, 38, 39))
 
 
 def write_tail(source, start, records, aliases, cutoff):
@@ -143,7 +143,7 @@ def verify(source, data, new_ids, start):
 
 def compact(data, baseline):
     source, old = view(data), view(baseline)
-    tiles.require(source.version in (35, 36, 37, 38), 'Only an NSP2/35-38 scene-font append is supported')
+    tiles.require(source.version in (35, 36, 37, 38, 39), 'Only an NSP2/35-39 scene-font append is supported')
     tiles.require(source.version == old.version or source.version == 35 and old.version == 34,
                   'Compaction cannot upgrade or downgrade a scene-font resource version')
     tiles.require(source.counts[5] == old.counts[5], 'Baseline auxiliary catalog differs')

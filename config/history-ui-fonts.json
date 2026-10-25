@@ -1,0 +1,84 @@
+{
+  "reference": "v0.111.0 / 41cef1ea",
+  "reason": "RunHistory fixed24px/28px body labels use5px;22px death quotes use4px with the existing4px readability floor. Normal fonts follow locale substitution; explicit bold category titles retain face5. Source keys only, no original prose.",
+  "groups": [
+    {
+      "key_pattern": "^run_history\\.(DECK|RELIC)_HISTORY\\.header$",
+      "pixels": 5,
+      "face": 5,
+      "substitutions": "0123456789"
+    },
+    {
+      "key_pattern": "^run_history\\.(DECK|RELIC)_HISTORY\\.categories$",
+      "pixels": 5,
+      "face": 0,
+      "substitutions": "0123456789"
+    },
+    {
+      "key_pattern": "^acts\\.[A-Z_]+\\.title$",
+      "pixels": 5,
+      "face": 0
+    },
+    {
+      "key_pattern": "^run_history\\.(MAP_POINT_HISTORY\\.(falseVictory|abandon)\\.|DEFAULT_EVENT_LOSS_MESSAGE$)",
+      "pixels": 4,
+      "face": 6,
+      "faces": {
+        "eng": 6,
+        "zhs": 0
+      }
+    },
+    {
+      "key_pattern": "^(encounters|events|ancients)\\.[A-Z_]+\\.(loss|title)$",
+      "pixels": 4,
+      "face": 6,
+      "faces": {
+        "eng": 6,
+        "zhs": 0
+      }
+    },
+    {
+      "key_pattern": "^characters\\.[A-Z_]+\\.(title|titleObject|possessiveAdjective|pronounObject|pronounPossessive|pronounSubject)$",
+      "pixels": 4,
+      "face": 6,
+      "faces": {
+        "eng": 6,
+        "zhs": 0
+      }
+    }
+  ],
+  "labels": [
+    {
+      "key": "game_over_screen.ENCOUNTER_QUOTE_LEFT",
+      "pixels": 4,
+      "face": 6,
+      "faces": {
+        "eng": 6,
+        "zhs": 0
+      }
+    },
+    {
+      "key": "game_over_screen.ENCOUNTER_QUOTE_RIGHT",
+      "pixels": 4,
+      "face": 6,
+      "faces": {
+        "eng": 6,
+        "zhs": 0
+      }
+    }
+  ],
+  "dynamic_labels": [
+    {
+      "families": [
+        "card_titles"
+      ],
+      "pixels": [
+        4,
+        5
+      ],
+      "faces": [
+        0
+      ]
+    }
+  ]
+}

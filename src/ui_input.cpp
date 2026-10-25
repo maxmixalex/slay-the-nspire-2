@@ -5,6 +5,7 @@
 #include "world_card_factory.hpp"
 #include "ui_core_observer.hpp"
 #include "library_search.hpp"
+#include "settings_layout.hpp"
 namespace spire {
 static bool room_shop_context(const App&a){return a.game.phase==Phase::Shop||(a.game.phase==Phase::Event&&a.game.original_events.active&&a.game.original_events.id==OriginalEventId::FakeMerchant&&!a.game.original_events.finished);}
 static bool room_shop_available(const App&a){return room_shop_context(a)&&!a.title&&!a.paused&&!a.help&&!a.panel&&!a.library&&!a.character_select&&!a.map_preview.open&&!a.event_reader&&!a.frontend_confirm&&!a.settings_open&&!a.map_window.is_open&&a.detail_card<0&&a.detail_item<0&&a.status_actor<0&&a.deck_candidate<0;}

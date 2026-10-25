@@ -54,6 +54,8 @@
 #include "ftue_assets.hpp"
 #include "selection_assets.hpp"
 #include "speech_bubble_assets.hpp"
+#include "history_body_ui10_assets.hpp"
+#include "settings_ui10_assets.hpp"
 #include "title_scene.hpp"
 #include "title_menu_presentation.hpp"
 #include "title_assets.hpp"
@@ -64,6 +66,7 @@
 #include "title_particles.hpp"
 #include "ui_preferences.hpp"
 #include "ui_progress.hpp"
+#include "ui_calendar.hpp"
 #include "ui_profiles.hpp"
 #include "ui_statistics.hpp"
 #include "popup_layout.hpp"
@@ -150,9 +153,11 @@ public:
     bool has_selection_assets()const{return version_>=SelectionContentVersion&&(ui_count_==SelectionAuxiliaryCount||has_inspection_assets());}
     bool has_inspection_assets()const{return version_>=SelectionContentVersion&&(ui_count_==InspectionAuxiliaryCount||has_speech_bubble_assets());}
     bool has_speech_bubble_assets()const{return version_>=SpeechBubbleContentVersion&&(ui_count_==SpeechBubbleAuxiliaryCount||has_history_header_assets());}
-    bool has_history_header_assets()const{return version_>=HistoryHeaderContentVersion&&ui_count_==HistoryHeaderAuxiliaryCount;}
+    bool has_history_header_assets()const{return version_>=HistoryHeaderContentVersion&&(ui_count_==HistoryHeaderAuxiliaryCount||has_history_body_assets());}
+    bool has_history_body_assets()const{return version_>=HistoryBodyContentVersion&&ui_count_==SettingsUi10AuxiliaryCount;}
+    bool has_settings_ui10_assets()const{return has_history_body_assets();}
     bool current_profile()const{
-        if(version_<ContentVersion||version_>HistoryHeaderContentVersion||cards_!=CardKinds)return false;
+        if(version_<ContentVersion||version_>HistoryBodyContentVersion||cards_!=CardKinds)return false;
         const unsigned auxiliary=version_>=GameOverTransitionContentVersion?unsigned(GameOverTransitionAuxiliaryCount):version_>=HistoryJournalContentVersion?unsigned(HistoryJournalAuxiliaryCount):version_>=CharacterDeathContentVersion?unsigned(CharacterDeathAuxiliaryCount):version_>=HistoryUi8ContentVersion?unsigned(HistoryUi8AuxiliaryCount):version_>=HudUi7ContentVersion?unsigned(HudUi7AuxiliaryCount):version_>=ProfileContentVersion?unsigned(ProfileAuxiliaryCount):version_>=PhobiaContentVersion?unsigned(PhobiaAuxiliaryCount):version_>=Ui7ContentVersion?unsigned(Ui7AuxiliaryCount):version_>=Ui6ContentVersion?unsigned(Ui6AuxiliaryCount):version_>=FrontendContentVersion?unsigned(FrontendAuxiliaryCount):version_>=TitleEffectsContentVersion?unsigned(TitleEffectsAuxiliaryCount):version_>=MerchantEffectsContentVersion?unsigned(MerchantEffectsAuxiliaryCount):version_==FeedbackContentVersion?unsigned(FeedbackAuxiliaryCount):version_==LocaleContentVersion?unsigned(LocaleAuxiliaryCount):version_==NativeUiContentVersion?unsigned(NativeUiAuxiliaryCount):unsigned(U_Count);
         const unsigned animations=version_>=BestiaryKaiserContentVersion?unsigned(BestiaryKaiserAnimationKinds):version_>=CharacterDeathContentVersion?unsigned(CharacterDeathAnimationKinds):version_>=PhobiaContentVersion?unsigned(PhobiaAnimationKinds):version_>=Ui7ContentVersion?unsigned(Ui7AnimationKinds):version_>=MerchantEffectsContentVersion?unsigned(MerchantEffectsAnimationKinds):version_==FeedbackContentVersion?unsigned(FeedbackAnimationKinds):unsigned(AnimationKinds);
         const bool text=version_>=Ui7ContentVersion?strings_==Ui7StringCount:version_>=LocaleContentVersion?strings_==LocaleStringCount:strings_==ContentStrings||(version_==NativeUiContentVersion&&strings_==NativeUiStringCount);
@@ -408,7 +413,7 @@ struct App {
     unsigned bestiary_entry_model(int row)const;
     uint8_t frontend_confirm=0,frontend_choice=0,settings_item=0,settings_tab=0;
     Character saved_character=Character::Ironclad;
-    uint32_t saved_seed=0;int saved_floor=0,saved_hp=0,saved_max_hp=0,saved_gold=0;
+    uint32_t saved_seed=0,saved_at=0;int saved_floor=0,saved_hp=0,saved_max_hp=0,saved_gold=0;
     uint64_t saved_run_seed=0;
     uint8_t saved_ascension=0,saved_region=0,saved_current_region=0;bool saved_world=false,saved_practice=false;
     bool run_save_linked=false;

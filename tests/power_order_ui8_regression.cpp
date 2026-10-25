@@ -175,8 +175,11 @@ static void test_subject(){
  }
  a.progress.map_drawing.seed=1;a.progress.map_drawing.serial=1;a.progress.map_drawing.act=0;a.progress.map_drawing.count=1;a.progress.map_drawing.points[0].x=10;a.progress.map_drawing.points[0].y_flags=20|0x8000;
  // Isolate the NSH5 migration prefix. NSH6's independently tested observed
- // score/discovery tail is absent from a historical NSH5 fixture.
+ // score/discovery tail and later observed run metadata are absent from a
+ // historical NSH5 fixture.
  a.progress.current.facts={};for(auto&r:a.progress.history)r.facts={};a.progress.current_discoveries={};a.progress.architect_damage=0;a.progress.journal={};
+ a.progress.current_saved_at=a.progress.current_saved_revision=0;
+ for(auto&ch:a.progress.current.build_id)ch=0;for(auto&r:a.progress.history)for(auto&ch:r.build_id)ch=0;
  const size_t n=encode_ui_progress(a.progress,progress_bytes,sizeof progress_bytes);CHECK(n&&progress_bytes[3]=='5');
  CHECK(decode_ui_progress(progress_bytes,n,decoded)&&decoded.test_subject_kills==29&&decoded.map_drawing.count==1);
  UiProgressSummary summary;CHECK(decode_ui_progress_summary(progress_bytes,n,summary)&&summary.exists);

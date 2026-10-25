@@ -146,8 +146,8 @@ def main():
     if resource_version(args.zhs) != version:
         p.error('English and Chinese resources must use the same format version')
     info = dict(reference='v0.111.0 / 41cef1ea', resource_format=version, save_version=17,
-                progress_version=8, settings_version=4, calculator_run_storage='NSZ1 or raw NSV1',
-                calculator_history_storage='NSZ1 or raw NSH1-8',
+                progress_version=9, settings_version=4, calculator_run_storage='NSZ1 or raw NSV1',
+                calculator_history_storage='NSZ1 or raw NSH1-9',
                 stage=args.stage,
                 runtime_checkpoint=args.runtime_checkpoint,
                 resource_checkpoint=args.resource_checkpoint,

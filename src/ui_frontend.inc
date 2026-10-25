@@ -97,11 +97,27 @@ static void title_menu_labels(Canvas&c){
     reticle.tint_red=uint8_t(title_menu_motion::mix(255,239,tint));reticle.tint_green=uint8_t(title_menu_motion::mix(255,200,tint));reticle.tint_blue=uint8_t(title_menu_motion::mix(255,81,tint));
     reticle.picture_region(image,left,motion.top,0,0,8,8);reticle.picture_region(image,right,motion.top,0,0,8,8,true);
 }
-static LocalizedValue continue_saved_value(const void*,const char*key){
-    // NSP canonical runs do not store the original SaveTime. Profile progress
-    // timestamps can also change after settings/history writes, so they must
-    // not be presented as the timestamp of this saved run.
-    return wt_equal(key,"LastSavedTime")?LocalizedValue{true,0,1,"—"}:LocalizedValue{};
+static void continue_saved_time(const App&a,char*out,size_t capacity){
+    TextBuffer text{out,capacity,0};if(!a.saved_at){text.text("—");return;}
+    const auto value=ui_calendar(a.saved_at);
+    // The two pinned savedTimeFormat strings are "dddd MMM d, yyyy h:mmtt"
+    // and "yyyy MMM d， dddd tth:mm". The calendar matches existing profile
+    // dates; the platform's local-zone conversion remains a separate concern.
+    if(a.content.english()){
+        static const char*weekdays[]={"Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"};
+        static const char*months[]={"Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"};
+        text.text(weekdays[value.weekday]);text.ch(' ');text.text(months[value.month-1]);text.ch(' ');
+        text.number(value.day);text.text(", ");text.number(value.year);text.ch(' ');
+    }else{
+        static const char*weekdays[]={"星期日","星期一","星期二","星期三","星期四","星期五","星期六"};
+        text.number(value.year);text.ch(' ');text.number(value.month);text.text("月 ");text.number(value.day);
+        text.text("， ");text.text(weekdays[value.weekday]);text.ch(' ');text.text(value.hour<12?"上午":"下午");
+    }
+    text.number(value.hour%12?value.hour%12:12);text.ch(':');if(value.minute<10)text.ch('0');text.number(value.minute);
+    if(a.content.english())text.text(value.hour<12?"AM":"PM");
+}
+static LocalizedValue continue_saved_value(const void*context,const char*key){
+    return wt_equal(key,"LastSavedTime")?LocalizedValue{true,0,1,static_cast<const char*>(context)}:LocalizedValue{};
 }
 static void continue_run_info(Canvas&c){
     auto&a=c.a;const bool focused=a.has_save&&front_item(a,a.menu)==FrontContinue&&
@@ -119,11 +135,12 @@ static void continue_run_info(Canvas&c){
     if(background>=0){if(!panel.nine_image(background,x(0),y(0),title_scene::ContinueWidth,height,2,2,2,2))panel.picture(background,x(0),y(0),title_scene::ContinueWidth,height);}
     else panel.dim(x(0),y(0),title_scene::ContinueWidth,height,128);
     const ProfileTextStyle style{5,0,rgb(255,246,226),64,0,0,0,255,1,1};
-    char row[192]{};LocalizedTemplate date(row,sizeof row,continue_saved_value,nullptr);
+    char row[192]{},saved_time[96]{};continue_saved_time(a,saved_time,sizeof saved_time);
+    LocalizedTemplate date(row,sizeof row,continue_saved_value,saved_time);
     date.format(frontend_text(a,"main_menu_ui","CONTINUE_RUN_INFO.saved","{LastSavedTime}"));
     // RichTextLabel is top aligned; its90px DateLabel reserves the source
     // gap after the two rendered lines, rather than vertically centering them.
-    profile_text_box(panel,row,x(24),y(17),reference_viewport::project(400),13,style,false,true);
+    profile_text_box(panel,row,x(24),y(17),reference_viewport::project(400),reference_viewport::project(90),style,false,true,{},false,true);
     int portrait=a.content.ui_image(U_TopBarIronclad+int(a.saved_character));
     if(portrait<0)portrait=a.content.ui_image(character_portrait(a.saved_character));
     panel.picture(portrait,x(24),y(107),7,7);
@@ -172,125 +189,7 @@ static void native_pause_screen(Canvas&c){
  }
  native_original_back(c,a.pause_opened);
 }
-static void frontend_settings_screen(Canvas&c){
- auto&a=c.a;a.hit_count=0;c.dim(0,0,320,240,205);
- const bool english=a.content.english(),native=a.content.version()>=FrontendContentVersion;
- // settings_screen.tscn is an unframed list behind a horizontal tab manager.
- // Only implemented settings have tabs; the calculator has no audio/video rows.
- const char*tab_labels[]={frontend_text(a,"settings_ui","TAB_GENERAL","General"),
-                         frontend_text(a,"settings_ui","TAB_INPUT","Input")};
- for(int i=0;i<2;++i){
-  const int x=48+i*112,y=13;const bool selected=a.settings_tab==i;
-  const bool hover=a.pointer.visible&&a.pointer.x>=x&&a.pointer.x<x+112&&a.pointer.y>=y&&a.pointer.y<y+39;
-  // NSettingsTab has no press-size override: focus is 1.05, followed by
-  // a 0.5s EXPO_OUT release. Reuse the bounded UI tween slots, not new storage.
-  ButtonMotion*motion=nullptr;ButtonMotion*oldest=&a.button_motions[0];const uint32_t key=0x738b1000u+unsigned(i);
-  for(auto&candidate:a.button_motions){if(candidate.identity==key){motion=&candidate;break;}if(!candidate.identity)oldest=&candidate;else if(oldest->identity&&uint32_t(a.map_clock_ms-candidate.seen)>uint32_t(a.map_clock_ms-oldest->seen))oldest=&candidate;}
-  if(!motion)motion=oldest;const auto visual=motion->observe(key,ButtonFamily::Action,hover?ButtonState::Focus:ButtonState::Rest,a.map_clock_ms);
-  const int w=(112*visual.scale+2048)/4096,h=(39*visual.scale+2048)/4096,tx=x+(112-w)/2,ty=y+(39-h)/2;
-  if(native){
-   Canvas tab=c;tab.brightness=uint8_t(div255(tab.brightness*229));tab.ui(F_SettingsTab,tx,ty,w,h);
-   if(visual.hover)c.picture(a.content.ui_image(F_SettingsTab),tx,ty,w,h,unsigned(visual.hover)*77/4096,presentation::Add);
-   if(selected)c.picture(a.content.ui_image(F_SettingsTabStroke),tx,ty,w,h,255,presentation::Add);
-  }else if(selected)c.rect(x+10,y+33,92,1,Gold);
-  Canvas label=c;label.opacity=uint8_t(div255(label.opacity*(selected||hover?255:128)));
-  label.text_fitted(tab_labels[i],tx+7,ty+12,w-14,12,hover?Gold:White,10,true,true);
-  c.action(x,y,112,39,i?UiAction::SettingsInputTab:UiAction::SettingsGeneralTab);
- }
- Canvas divider=c;divider.opacity=uint8_t(div255(divider.opacity*64));
- const auto label=[&](const char*key,const char*eng,const char*zhs){return frontend_text(a,"settings_ui",key,english?eng:zhs);};
- const auto checkbox=[&](bool value,int y){
-  if(native)c.ui(value?F_SettingsTicked:F_SettingsUnticked,264,y+3,20,20);
-  else{c.box(266,y+5,16,16,White);if(value)c.picture(a.content.world_image("common","CONFIRM_TICK"),264,y+3,20,20);}
- };
- int hover=-1;
- if(!a.settings_tab){
-  const char*keys[]={a.title?"LANGUAGE":"LANGUAGE_IN_RUN","SCREENSHAKE","FASTMODE","PHOBIA_MODE","SHOW_RUN_TIMER_HEADER","SHOW_HAND_CARD_COUNT_HEADER","TEXT_EFFECTS","SEND_FEEDBACK","CREDITS"};
-  const char*eng[]={a.title?"Language":"Language (main menu only)","Screenshake","Fast Mode","Phobia Mode","Show Run Timer","Show Hand Card Count","Text Effects","Send Feedback","Credits"};
-  const char*zhs[]={a.title?"语言选项":"语言选项（仅可在主菜单调整）","屏幕抖动","加速模式","恐惧症模式","显示计时器","显示手牌计数","文字特效","发送反馈","制作名单"};
-  const UiAction actions[]={UiAction::SettingsLanguage,UiAction::SettingsShakeUp,UiAction::SettingsFastMode,UiAction::SettingsPhobia,UiAction::SettingsRunTimer,UiAction::SettingsCardIndices,UiAction::SettingsTextEffects,UiAction::SettingsFeedback,UiAction::SettingsCredits};
-  const bool checked[]={false,false,a.fast_mode,a.phobia_mode,a.show_run_timer,a.show_card_indices,a.text_effects};
-  if(a.settings_top>4)a.settings_top=4;
-  for(unsigned i=a.settings_top;i<9&&i<a.settings_top+5;++i){
-   const int y=60+int(i-a.settings_top)*28;
-   const bool pointed=a.pointer.visible&&a.pointer.x>=25&&a.pointer.x<295&&a.pointer.y>=y&&a.pointer.y<y+27;
-   if(pointed&&i<7)hover=int(i);
-   const bool focus=pointed||(!a.pointer.visible&&a.settings_item==i),enabled=i!=0||a.title;
-   Canvas row=c;if(!enabled)row.opacity=uint8_t(div255(row.opacity*115));
-   row.text_fitted(label(keys[i],eng[i],zhs[i]),29,y+7,i==0?161:i==1?146:i>=7?174:222,8,focus?Gold:White,8);
-   if(i==0){
-    row.rect(196,y+3,93,22,rgb(44,67,79));
-    row.text_fitted(english?"English":"中文",201,y+7,71,10,Gold,8,true);
-    if(a.content.version()>=RoomUi7ContentVersion)row.ui(I7_SettingsArrowDown,276,y+10,6,6);
-    c.action(194,y,99,27,actions[i],enabled&&a.available_languages()==3);
-   }else if(i==1){
-    static const char*levels[]={"SCREENSHAKE_NONE","SCREENSHAKE_SOME","SCREENSHAKE_NORMAL","SCREENSHAKE_LOTS","SCREENSHAKE_CAAAW"};
-    static const char*levels_en[]={"None","Some","Normal","Lots","CAAAW!"};
-    static const char*levels_zh[]={"无","轻微","正常","剧烈","咔咔！"};
-    c.text_fitted(label(levels[a.screen_shake],levels_en[a.screen_shake],levels_zh[a.screen_shake]),198,y+7,72,10,Gold,8,true);
-    if(a.content.version()>=RoomUi7ContentVersion){c.ui(I7_SettingsArrowLeft,185,y+4,9,17,a.screen_shake?255:70);c.ui(I7_SettingsArrowRight,279,y+4,9,17,a.screen_shake<4?255:70);}
-    c.action(178,y,21,27,UiAction::SettingsShakeDown,a.screen_shake>0);c.action(272,y,22,27,UiAction::SettingsShakeUp,a.screen_shake<4);
-   }else if(i<7){checkbox(checked[i],y);c.action(252,y,42,27,actions[i]);}
-   else{
-    c.button(i==7?label("SEND_FEEDBACK_BUTTON_LABEL","Open","打开"):label("CREDITS_BUTTON_LABEL","View","查看"),209,y+2,80,focus,23);
-    c.action(205,y,90,27,actions[i]);
-   }
-   divider.rect(25,y+27,270,1,rgb(232,220,190));
-  }
-  c.rect(303,61,2,139,rgb(18,33,41));c.rect(301,61+int(a.settings_top)*62/4,6,77,rgb(80,115,132));
-  c.action(296,57,17,72,UiAction::SettingsScrollUp,a.settings_top>0);c.action(296,129,17,74,UiAction::SettingsScrollDown,a.settings_top<4);
- }else{
-  const bool focus=!a.pointer.visible&&a.settings_item==0;
-  c.text_fitted(label("KEYBOARD_ONLY_MODE_HEADER","Keyboard-Only Mode","纯键盘模式"),29,67,218,11,focus?Gold:White);
-  checkbox(a.keyboard_only,60);c.action(252,60,42,27,UiAction::SettingsKeyboardOnly);
-  divider.rect(25,87,270,1,rgb(232,220,190));
-  if(a.pointer.visible&&a.pointer.x>=25&&a.pointer.x<295&&a.pointer.y>=60&&a.pointer.y<87)hover=7;
-  const unsigned bank=a.keyboard_only&&!a.pointer.visible?1:0;
-  c.text_fitted(label("INPUT_SETTINGS.COMMAND_HEADER","Command","指令"),29,92,139,10,Muted,8);
-  c.paragraph(label("INPUT_SETTINGS.MOUSE_KEYBOARD_HEADER","Mouse + Keyboard","鼠标与键盘"),174,91,59,2,0,8,bank==0?Gold:Muted);
-  c.paragraph(label("INPUT_SETTINGS.KEYBOARD_ONLY_MODE_HEADER","Keyboard-Only","纯键盘"),239,91,56,2,0,8,bank==1?Gold:Muted);
-  for(unsigned i=a.settings_top;i<InputCommandCount&&i<a.settings_top+5;++i){const int y=113+int(i-a.settings_top)*18;
-   const bool enabled=input_remappable(bank,i),pointed=a.pointer.visible&&a.pointer.x>=25&&a.pointer.x<296&&a.pointer.y>=y&&a.pointer.y<y+18;
-   const bool selected=pointed||(!a.pointer.visible&&a.settings_item==i+1);Canvas row=c;if(!enabled)row.opacity=uint8_t(div255(row.opacity*120));
-   if(selected&&enabled)row.rect(25,y,271,17,rgb(31,51,62));
-   row.text_fitted(a.input_command_title(i),29,y+3,139,10,selected?Gold:White,8);
-   for(unsigned b=0;b<2;++b){char binding[16]{};input_key_label(a.input_bindings.keys[b][i],binding,sizeof binding);
-    row.text_fitted(binding,174+int(b)*65,y+3,56,10,selected&&b==bank?Gold:White,8,true);}
-   divider.rect(25,y+17,270,1,rgb(232,220,190));c.hit(25,y,271,18,HitKind::InputBinding,int(i),enabled);
-  }
-  c.rect(303,113,2,90,rgb(18,33,41));c.rect(301,113+int(a.settings_top)*72/int(InputCommandCount-5),6,18,rgb(80,115,132));
-  c.action(296,108,17,45,UiAction::SettingsScrollUp,a.settings_top>0);c.action(296,153,17,50,UiAction::SettingsScrollDown,a.settings_top<InputCommandCount-5);
- }
- const unsigned reset_item=a.settings_tab?InputCommandCount+1:9,back_item=reset_item+1;
- native_back(c,7,211,84,28,"返回",true,!a.pointer.visible&&a.settings_item==back_item);c.action(3,207,94,33,UiAction::SettingsBack);
- if(a.settings_tab){c.button(label("INPUT_SETTINGS.RESET_TO_DEFAULT","Reset to Default","恢复默认"),210,211,100,!a.pointer.visible&&a.settings_item==reset_item,25);c.action(206,207,109,33,UiAction::SettingsReset);}
- else{c.button(label("RESET_SETTINGS_BUTTON","Reset","重置"),241,211,69,!a.pointer.visible&&a.settings_item==reset_item,25);c.action(237,207,78,33,UiAction::SettingsReset);}
- if(hover>=1&&!a.settings_language_open&&!a.frontend_confirm){
-  const char*titles[]={"","SCREENSHAKE_HEADER","FASTMODE","PHOBIA_MODE","SHOW_RUN_TIMER_HEADER","SHOW_HAND_CARD_COUNT_HEADER","TEXT_EFFECTS","KEYBOARD_ONLY_MODE_HEADER"};
-  const char*descriptions[]={"","SCREENSHAKE_DESCRIPTION","FASTMODE_DESCRIPTION","PHOBIA_MODE_DESCRIPTION","SHOW_RUN_TIMER_DESCRIPTION","SHOW_HAND_CARD_COUNT_DESCRIPTION","TEXT_EFFECTS_DESCRIPTION","KEYBOARD_ONLY_MODE_DESCRIPTION"};
-  const char*body=a.content.world_string("settings_ui",descriptions[hover]);
-  // NSettingsScreen gives every setting a full HoverTip and offsets it by
-  // (1012,-60) source units from that setting, including its header.
-  if(*body)source_hover_box(c,a.content.world_string("settings_ui",titles[hover]),body,25+193,60+(hover==7?0:hover-int(a.settings_top))*28-11);
- }
- if(a.settings_language_open){
-  a.hit_count=0;c.action(0,0,320,240,UiAction::SettingsLanguageClose);
-  const int top=86;
-  c.rect(196,top,93,46,rgb(18,33,41));
-  for(unsigned i=0;i<2;++i){const int y=top+2+int(i)*21;
-   const bool selected=a.pointer.visible?a.pointer.x>=198&&a.pointer.x<287&&a.pointer.y>=y&&a.pointer.y<y+21:a.settings_language_item==i;
-   if(selected)c.rect(198,y,89,21,rgb(44,88,112));
-   c.text_fitted(i?"中文":"English",201,y+5,83,10,White,8,true);
-   c.action(198,y,89,21,i?UiAction::SettingsLanguageChinese:UiAction::SettingsLanguageEnglish);
-  }
- }
- if(a.binding_listening>=0){
-  a.hit_count=0;c.dim(0,0,320,240,200);
-  c.text_fitted(a.input_command_title(unsigned(a.binding_listening)),30,87,260,12,Gold,10,true);
-  c.text_fitted(label("LISTENING_INPUT","Listening for input...","等待输入……"),30,113,260,12,White,10,true);
-  native_back(c,7,211,84,28,"返回",true);c.action(3,207,94,33,UiAction::SettingsBack);
- }
-}
+#include "settings_ui10.inc"
 #include "frontend_popup_ui10.inc"
 static void frontend_confirm_screen(Canvas&c){
  auto&a=c.a;const bool quitting=a.frontend_confirm==3,reset=a.frontend_confirm==4,erase_profile=a.frontend_confirm==5;a.hit_count=0;

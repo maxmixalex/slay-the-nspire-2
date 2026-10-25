@@ -65,6 +65,7 @@ bool App::progress_navigation_input(Key key){
             for(unsigned i=0;i<r->floor_count;++i)consider(int(i));
             for(unsigned i=0;i<r->relic_count;++i)consider(UiHistoryLayout::RelicFirst+int(i));
             for(unsigned i=0;i<groups;++i)consider(UiHistoryLayout::CardFirst+int(i));
+            for(unsigned i=0;i<UiRunBadgeCount;++i)consider(UiHistoryLayout::BadgeFirst+int(i));
             if(best>=0){focus=int16_t(best);UiHistoryLayout::Point point{};layout.point(*r,best,point);
                 const int top=progress_page_scroll.offset();
                 if(point.y<top)progress_page_scroll.target=point.y*256;

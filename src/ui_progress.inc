@@ -111,6 +111,8 @@ void App::begin_progress(bool resumed){
         progress_seen_phase=255;progress_seen_revision=0;sync_progress();return;
     }
     auto&r=progress.current;progress_clear_run(r);
+    progress.current_saved_at=progress.current_saved_revision=0;
+    if(!resumed)for(unsigned i=0;i<sizeof UiCurrentBuildId;++i)r.build_id[i]=UiCurrentBuildId[i];
     progress.current_discoveries={};r.facts.version=1;r.facts.complete=resumed?0:1;
     progress.map_drawing.count=0;map_drawing.cancel();
     r.serial=progress.next_serial++;if(!progress.next_serial)progress.next_serial=1;

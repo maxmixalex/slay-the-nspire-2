@@ -1,6 +1,7 @@
 #include "app.hpp"
 #include "world_run.hpp"
 #include "original_events.hpp"
+#include "run_setup_layout.hpp"
 #include "content_fixture.hpp"
 #include <cstdio>
 #include <cstdlib>
@@ -21,11 +22,28 @@ static void settle(){for(unsigned i=0;i<40;++i)a.advance(33);a.render();}
 static void capture(const char*name){if(!captures)return;a.render();FILE*f=std::fopen((std::string(captures)+"/"+name+".ppm").c_str(),"wb");CHECK(f);std::fprintf(f,"P6\n320 240\n255\n");for(auto p:a.pixels){const uint8_t pixel[]={uint8_t((p>>11)*255/31),uint8_t(((p>>5)&63)*255/63),uint8_t((p&31)*255/31)};CHECK(std::fwrite(pixel,1,3,f)==3);}CHECK(!std::fclose(f));}
 static HitRegion hit(HitKind kind,int value){a.render();for(int i=a.hit_count-1;i>=0;--i)if(a.hits[i].kind==kind&&a.hits[i].value==value)return a.hits[i];CHECK(false);return {};}
 static void click(HitKind kind,int value){const auto h=hit(kind,value);a.pointer_move(h.x+h.w/2,h.y+h.h/2);a.pointer_button(true);a.pointer_button(false);}
+static void submenu_source_motion(){
+    UiMenuTransition motion;using run_setup_layout::submenu_visual;
+    CHECK(submenu_visual(motion,false,0).scale==1000);
+    auto v=submenu_visual(motion,true,10);CHECK(v.scale==1025&&v.focus==4096);
+    v=submenu_visual(motion,false,200);CHECK(v.scale==1025&&v.focus==4096);
+    v=submenu_visual(motion,false,450);CHECK(v.scale>1000&&v.scale<1025&&v.focus>0&&v.focus<4096);
+    v=submenu_visual(motion,false,700);CHECK(v.scale==1000&&v.focus>0);
+    v=submenu_visual(motion,false,1200);CHECK(v.scale==1000&&v.focus==0);
+    v=submenu_visual(motion,true,1201);CHECK(v.scale==1025&&v.focus==4096);
+}
 int main(int argc,char**argv){
     std::vector<uint8_t> bytes;if(argc>1){FILE*f=std::fopen(argv[1],"rb");CHECK(f);bytes.resize(spire_test::pack_size(f));CHECK(std::fread(bytes.data(),1,bytes.size(),f)==bytes.size());std::fclose(f);CHECK(a.init(bytes.data(),bytes.size(),{}));}if(argc>2)captures=argv[2];
-    a.callbacks.wall_clock=clock_now;a.progress_loaded=true;
+    submenu_source_motion();a.callbacks.wall_clock=clock_now;a.progress_loaded=true;
     a.input(Key::Confirm);CHECK(a.title&&!a.character_select&&a.run_mode.screen==RunMenu::Singleplayer);settle();capture("singleplayer");
+    a.input(Key::Left);a.input(Key::Up);CHECK(a.compendium_selection==0);
+    a.input(Key::Right);a.input(Key::Right);a.input(Key::Right);a.input(Key::Down);CHECK(a.compendium_selection==2);
+    a.input(Key::Left);a.input(Key::Left);CHECK(a.compendium_selection==0);
+    const auto standard=hit(HitKind::UiAction,int(UiAction::OpenStandardRun));CHECK(standard.x==52&&standard.y==53&&standard.w==63&&standard.h==134);
     a.ui_action(UiAction::OpenCustomRun);CHECK(a.run_mode.screen==RunMenu::Custom&&a.run_mode.pending.mode==RunMode::Custom);
+    a.pointer.visible=false;a.run_mode.focus=0;a.input(Key::Right);CHECK(a.selected_character==Character::Silent&&a.run_mode.focus==1);
+    a.input(Key::Up);CHECK(a.run_mode.focus==7);a.run_mode.focus=4;a.input(Key::Right);CHECK(a.run_mode.focus==4);
+    const auto random=hit(HitKind::UiAction,int(UiAction::RandomizeRun));CHECK(random.x==(a.content.english()?213:195)&&random.y==22&&random.w==38&&random.h==10);
     a.ui_action(UiAction::SelectRegent);CHECK(a.selected_character==Character::Regent);
     a.ui_action(UiAction::RunAscensionUp);CHECK(a.selected_ascension==1);
     a.ui_action(UiAction::RunSeed);CHECK(a.map_preview.editing&&a.map_preview.open&&a.run_seed_editing);
@@ -54,12 +72,16 @@ int main(int argc,char**argv){
     CHECK(restored.run_options.mode==RunMode::Custom&&restored.run_options.modifiers==a.game.run_options.modifiers);
     a.progress_time(2200);a.game.phase=Phase::Complete;a.finish_progress();CHECK(a.progress.count&&a.history_at(0)->mode==unsigned(RunMode::Custom));
     CHECK(a.progress.characters[unsigned(a.game.character)].wins==0&&a.progress.characters[unsigned(a.game.character)].highest_ascension==0);
-    const size_t n=encode_ui_progress(a.progress,history_bytes,sizeof history_bytes);CHECK(n&&history_bytes[3]=='7');CHECK(decode_ui_progress(history_bytes,n,history));
+    const size_t n=encode_ui_progress(a.progress,history_bytes,sizeof history_bytes);CHECK(n&&history_bytes[3]=='9');CHECK(decode_ui_progress(history_bytes,n,history));
     CHECK(history.history[0].mode==unsigned(RunMode::Custom)&&history.history[0].modifiers==run_modifier_bit(RunModifier::Flight));
+    CHECK(!std::strcmp(history.history[0].build_id,UiCurrentBuildId));
     UiProgressSummary summary{};CHECK(decode_ui_progress_summary(history_bytes,n,summary)&&summary.play_seconds>=2);
     // Build the actual older NSH3 shape, rather than stamping a new facts
     // tail with its former version. Mode and modifier data survive both.
-    history.current.facts={};for(auto&r:history.history)r.facts={};history.current_discoveries={};history.architect_damage=0;history.journal={};
+    history.current.facts={};history.current.build_id[0]=0;
+    for(auto&r:history.history){r.facts={};std::memset(r.build_id,0,sizeof r.build_id);}
+    std::memset(history.current.build_id,0,sizeof history.current.build_id);history.current_saved_at=history.current_saved_revision=0;
+    history.current_discoveries={};history.architect_damage=0;history.journal=UiHistoryJournal{};
     const size_t legacy_size=encode_ui_progress(history,history_bytes,sizeof history_bytes);CHECK(legacy_size&&history_bytes[3]=='3');
     CHECK(decode_ui_progress(history_bytes,legacy_size,history)&&history.history[0].mode==unsigned(RunMode::Custom)&&history.history[0].modifiers==run_modifier_bit(RunModifier::Flight)&&!history.current.facts.version);
     std::printf("Singleplayer hierarchy, custom/daily seed/modifiers, drag, save/resume and unranked statistics: %u checks\n",checks);

@@ -106,13 +106,15 @@ static void observations(){
  combat.facts=3;
 }
 static void persistence_and_navigation(){
- scenario="NSH7 observed journal and minimal old-prefix compatibility";a.finish_progress(true);a.progress.test_subject_kills=4;a.progress.architect_damage=948;
- const size_t n=encode_ui_progress(a.progress,bytes,sizeof bytes);CHECK(n&&bytes[3]=='7'&&decode_ui_progress(bytes,n,decoded));
+ scenario="NSH9 observed journal and minimal old-prefix compatibility";a.finish_progress(true);a.progress.test_subject_kills=4;a.progress.architect_damage=948;
+ const size_t n=encode_ui_progress(a.progress,bytes,sizeof bytes);CHECK(n&&bytes[3]=='9'&&decode_ui_progress(bytes,n,decoded));
  CHECK(decoded.current.facts.combo==1&&decoded.current.floors[decoded.current.floor_count-1].facts==3);
  CHECK(decoded.current_discoveries.count[0]==a.progress.current_discoveries.count[0]&&decoded.architect_damage==948&&decoded.test_subject_kills==4);
  CHECK(!std::memcmp(&decoded.current_discoveries,&a.progress.current_discoveries,sizeof(UiRunDiscoveries)));
  UiProgressSummary summary;CHECK(decode_ui_progress_summary(bytes,n,summary)&&summary.exists);CHECK(!decode_ui_progress(bytes,n-1,decoded));
  old=a.progress;old.current.facts={};for(auto&r:old.history)r.facts={};old.current_discoveries={};old.architect_damage=0;old.journal={};
+ old.current_saved_at=old.current_saved_revision=0;
+ for(auto&ch:old.current.build_id)ch=0;for(auto&r:old.history)for(auto&ch:r.build_id)ch=0;
  const size_t old_size=encode_ui_progress(old,legacy,sizeof legacy);CHECK(old_size&&legacy[3]=='5'&&decode_ui_progress(legacy,old_size,decoded));
  CHECK(decoded.current.facts.version==0&&decoded.current_discoveries.count[0]==0&&decoded.architect_damage==0&&decoded.test_subject_kills==4);
  scenario="legacy resumed prefix stays incomplete";start(0x7195c6);a.progress.current.facts={};a.progress.current_discoveries={};a.begin_progress(true);CHECK(a.progress.current.facts.version==1&&!a.progress.current.facts.complete&&!ui_run_score(a.progress.current).complete);

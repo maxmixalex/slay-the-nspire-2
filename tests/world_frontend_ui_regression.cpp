@@ -443,16 +443,33 @@ static void modal_isolation_and_fast_mode(){
   CHECK(!std::strcmp(a.content.world_string("settings_ui","TAB_GENERAL"),a.content.string(FrontendSettingsGeneralString)));
   CHECK(!std::strcmp(a.content.world_string("settings_ui","TAB_INPUT"),a.content.string(FrontendSettingsInputString)));
  }
- // Labels must paint actual glyphs, including packs whose raster-size table
- // has no 11px entry. Only the text changes colour on keyboard focus here;
- // comparing its own rectangle catches the previous invisible-label bug.
+ // NSettingsTickbox focuses its reticle; its separate cream row label does
+ // not change color. Retain a painted-label check with source-sized bounds.
  a.pointer.visible=false;a.settings_item=0;a.render();
- uint16_t fast_label[182*11]{};
- for(unsigned y=0;y<11;++y)for(unsigned x=0;x<182;++x)fast_label[y*182+x]=a.pixels[(123+y)*ScreenW+29+x];
- a.settings_item=2;a.render();unsigned focused_label_pixels=0;
- for(unsigned y=0;y<11;++y)for(unsigned x=0;x<182;++x)focused_label_pixels+=fast_label[y*182+x]!=a.pixels[(123+y)*ScreenW+29+x];
- CHECK(focused_label_pixels>8);a.settings_item=0;unchanged();
+ uint16_t fast_label[124*12]{},tick[16*16]{};
+ for(unsigned y=0;y<12;++y)for(unsigned x=0;x<124;++x)fast_label[y*124+x]=a.pixels[(71+y)*ScreenW+66+x];
+ for(unsigned y=0;y<16;++y)for(unsigned x=0;x<16;++x)tick[y*16+x]=a.pixels[(69+y)*ScreenW+215+x];
+ a.settings_item=2;a.render();unsigned focused_label_pixels=0,reticle_pixels=0;
+ for(unsigned y=0;y<12;++y)for(unsigned x=0;x<124;++x)focused_label_pixels+=fast_label[y*124+x]!=a.pixels[(71+y)*ScreenW+66+x];
+ for(unsigned y=0;y<16;++y)for(unsigned x=0;x<16;++x)reticle_pixels+=tick[y*16+x]!=a.pixels[(69+y)*ScreenW+215+x];
+ CHECK(!focused_label_pixels&&reticle_pixels>0);a.settings_item=0;unchanged();
+ const auto checkbox=find_hit(HitKind::UiAction,int(UiAction::SettingsFastMode));CHECK(checkbox.x==193&&checkbox.y==71&&checkbox.w==61&&checkbox.h==12);
+ a.input(Key::Up);CHECK(a.settings_item==0);a.input(Key::Left);CHECK(!a.settings_tab&&a.settings_item==0);
+ for(unsigned i=0;i<30;++i)a.input(Key::Down);CHECK(a.settings_item==10);a.input(Key::Down);CHECK(a.settings_item==10);
+ for(unsigned i=0;i<30;++i)a.input(Key::Up);CHECK(a.settings_item==0&&a.settings_top==0);
+ // OpenDropdown initially focuses the first item, clamps its endpoints and
+ // ignores lateral arrows. Choosing the current locale leaves it open.
+ const auto callbacks=a.callbacks;static unsigned locale_requests=0,requested_locale=0;
+ a.callbacks.available_languages=[](){return 3u;};a.callbacks.request_language=[](unsigned language){++locale_requests;requested_locale=language;return true;};
+ action(UiAction::SettingsLanguage);CHECK(a.settings_language_open&&a.settings_language_item==0);
+ a.input(Key::Up);a.input(Key::Left);a.input(Key::Right);CHECK(a.settings_language_item==0);
+ a.input(Key::Down);a.input(Key::Down);CHECK(a.settings_language_item==1);a.input(Key::Left);a.input(Key::Right);CHECK(a.settings_language_item==1);
+ const unsigned current=a.content.english()?1u:2u,before_requests=locale_requests;
+ CHECK(a.request_language(current)&&a.settings_language_open&&locale_requests==before_requests);capture("settings-language");
+ CHECK(a.request_language(3-current)&&!a.settings_language_open&&locale_requests==before_requests+1&&requested_locale==3-current);
+ a.callbacks=callbacks;unchanged();
  capture("settings-general");const auto input=find_hit(HitKind::UiAction,int(UiAction::SettingsInputTab));
+ CHECK(input.w==49&&input.h==17&&input.y==14);
  a.pointer_move(input.x+input.w/2,input.y+input.h/2);a.render();CHECK(a.settings_tab==0);unchanged();
  a.pointer_button(true);CHECK(a.settings_tab==0);a.pointer_button(false);CHECK(a.settings_tab==1&&a.settings_item==0);a.pointer.visible=false;capture("settings-input");unchanged();
  // The original input panel opens a real listening modal rather than the
@@ -463,10 +480,10 @@ static void modal_isolation_and_fast_mode(){
  a.pointer_button(true);a.pointer_button(false);CHECK(a.binding_listening==int(InputCommand::Map)&&a.settings_tab==1);
  a.pointer_move(273,73);a.render();CHECK(a.menu==listening_menu&&a.settings_item==listening_item&&a.fast_mode==fast);
  CHECK(a.physical_key('Y',true)&&a.physical_key('Y',false));CHECK(a.binding_listening<0&&a.settings_open&&a.fast_mode==fast);a.reset_input_bindings();unchanged();
- a.input(Key::Left);CHECK(a.settings_tab==0&&a.settings_item==0);a.render();unchanged();
+ a.input(Key::Left);CHECK(a.settings_tab==1);a.input(Key::Inspect);CHECK(a.settings_tab==0&&a.settings_item==0);a.render();unchanged();
  // A settings row's label supplies focus/description; only its right-side
  // native tickbox is the pointer action. A tab change never toggles a value.
- a.pointer_move(60,73);a.pointer_button(true);a.pointer_button(false);CHECK(a.fast_mode==fast);a.pointer.visible=false;
+ a.pointer_move(80,77);a.pointer_button(true);a.pointer_button(false);CHECK(a.fast_mode==fast);a.pointer.visible=false;
  action(UiAction::SettingsFastMode);CHECK(a.fast_mode!=fast);capture("settings-checked");action(UiAction::SettingsFastMode);CHECK(a.fast_mode==fast);unchanged();
  // Fast changes command waits, not the animation clock. No rules, draws,
  // event offers, RNG stream or encoded field changes during these ticks.

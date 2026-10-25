@@ -28,8 +28,10 @@ bool App::request_language(unsigned language){
     // dropdown relocalizes/reopens the main-menu settings without a popup.
     if(!title||!settings_open||(language!=1&&language!=2)||
        !(available_languages()&(1u<<(language-1))))return false;
-    settings_language_open=false;
+    // NLanguageDropdown ignores the selected locale without dismissing the
+    // open menu. Only a real locale change closes/reopens Settings.
     if(language==(content.english()?1u:2u))return true;
+    settings_language_open=false;
     if(callbacks.request_language&&callbacks.request_language(language))return true;
     message(content.english()?"Could not change language.":"无法切换语言。");return false;
 }
@@ -55,7 +57,7 @@ void App::settings_action(UiAction action){
     case UiAction::SettingsGeneralTab:case UiAction::SettingsInputTab:
         settings_tab=action==UiAction::SettingsInputTab;settings_item=settings_top=0;break;
     case UiAction::SettingsLanguage:
-        if(title&&available_languages()==3){settings_language_open=true;settings_language_item=content.english()?0:1;}break;
+        if(title&&available_languages()==3){settings_language_open=true;settings_language_item=0;}break;
     case UiAction::SettingsFastMode:fast_mode=!fast_mode;persist_preferences();break;
     case UiAction::SettingsCardIndices:show_card_indices=!show_card_indices;persist_preferences();break;
     case UiAction::SettingsRunTimer:show_run_timer=!show_run_timer;persist_preferences();break;
@@ -68,8 +70,8 @@ void App::settings_action(UiAction action){
     case UiAction::SettingsControls:help=true;break;
     case UiAction::SettingsFeedback:open_auxiliary(AuxiliaryScreen::Feedback);break;
     case UiAction::SettingsCredits:open_auxiliary(AuxiliaryScreen::Credits);break;
-    case UiAction::SettingsScrollUp:if(settings_top)settings_top--;break;
-    case UiAction::SettingsScrollDown:if(settings_top<(settings_tab?InputCommandCount-5:4))settings_top++;break;
+    case UiAction::SettingsScrollUp:if(settings_tab&&settings_top)settings_top--;break;
+    case UiAction::SettingsScrollDown:if(settings_tab&&settings_top<settings_layout::InputMaximum)settings_top++;break;
     default:break;
     }
 }
@@ -78,7 +80,8 @@ bool App::settings_input(Key key){
     if(binding_listening>=0){if(key==Key::Back&&pointer.dispatching)binding_listening=-1;return true;}
     if(settings_language_open){
         if(key==Key::Back)settings_language_open=false;
-        else if(key==Key::Up||key==Key::Down||key==Key::Left||key==Key::Right)settings_language_item^=1;
+        else if(key==Key::Up)settings_language_item=0;
+        else if(key==Key::Down)settings_language_item=1;
         else if(key==Key::Confirm)request_language(settings_language_item+1);
         return true;
     }
@@ -86,12 +89,15 @@ bool App::settings_input(Key key){
     if(key==Key::Back)settings_action(UiAction::SettingsBack);
     else if(key==Key::Inspect){settings_tab^=1;settings_item=settings_top=0;}
     else if(key==Key::Up||key==Key::Down){
-        settings_item=uint8_t((settings_item+count+(key==Key::Up?-1:1))%count);
-        if(!settings_tab&&settings_item<9){if(settings_item<settings_top)settings_top=settings_item;else if(settings_item>=settings_top+5)settings_top=settings_item-4;}
-        if(settings_tab&&settings_item>=1&&settings_item<=InputCommandCount){const unsigned row=settings_item-1;if(row<settings_top)settings_top=row;else if(row>=settings_top+5)settings_top=row-4;}
+        if(key==Key::Up){if(settings_item)--settings_item;}
+        else if(settings_item+1<count)++settings_item;
+        if(!settings_tab)settings_top=0;
+        if(settings_tab&&settings_item>=1&&settings_item<=InputCommandCount){const unsigned row=settings_item-1;
+            if(row<settings_top)settings_top=row;else if(row>=settings_top+settings_layout::InputVisible)settings_top=row+1-settings_layout::InputVisible;}
     }else if(key==Key::Left||key==Key::Right){
         if(!settings_tab&&settings_item==1)settings_action(key==Key::Left?UiAction::SettingsShakeDown:UiAction::SettingsShakeUp);
-        else{settings_tab^=1;settings_item=settings_top=0;}
+        // NSettingsPanel assigns left/right to the current control. Inspect
+        // remains the host's separate tab shortcut; arrows do not change tabs.
     }else if(key==Key::Confirm){
         static const UiAction general[]={UiAction::SettingsLanguage,UiAction::SettingsShakeUp,UiAction::SettingsFastMode,
             UiAction::SettingsPhobia,UiAction::SettingsRunTimer,UiAction::SettingsCardIndices,UiAction::SettingsTextEffects,

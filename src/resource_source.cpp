@@ -6,6 +6,7 @@
 #include "scene_font_assets.hpp"
 #include "retained_filter.hpp"
 #include "speech_bubble_assets.hpp"
+#include "history_body_ui10_assets.hpp"
 #include "resource_transfer.hpp"
 #include "lzma2_block.hpp"
 
@@ -72,7 +73,7 @@ bool SplitResourceSource::open(ResourceSource common,ResourceSource localized,Re
     language_id_=expected;valid_=true;
     uint8_t h[40],row[8],marker[4];
     if(!read(0,h,sizeof h)||split_u32(h)!=0x3250534Eu||
-       (split_u32(h+4)<17||split_u32(h+4)>HistoryHeaderContentVersion)||split_u32(h+8)!=0x41cef1eau||
+       (split_u32(h+4)<17||split_u32(h+4)>HistoryBodyContentVersion)||split_u32(h+8)!=0x41cef1eau||
        split_u32(h+12)!=total){
         close();return false;
     }
@@ -92,12 +93,22 @@ bool SplitResourceSource::open(ResourceSource common,ResourceSource localized,Re
     return true;
 }
 bool SplitResourceSource::read_directory(uint32_t offset,void* destination,uint32_t count)const{
+    if(!count)return true;
+    if(offset>=packed_directory_||count>packed_directory_-offset)return false;
+    const uint32_t first=offset/PackedDirectoryBlock;
+    const uint32_t entries=(offset+count-1)/PackedDirectoryBlock-first+1;
+    if(entries>32)return false;
+    // Only this request's rows are read. A full resident-directory load then
+    // consumes its contiguous streams without seeking back to the table for
+    // every block. The bounded table stays on the stack, never in a new pool.
+    uint8_t rows[32*8];
+    if(!split_read(localized_,PackedLanguageHeader+first*8,rows,entries*8))return false;
     auto*out=static_cast<uint8_t*>(destination);
     while(count){
         const uint32_t block=offset/PackedDirectoryBlock,in_block=offset%PackedDirectoryBlock;
         const uint32_t remaining=packed_directory_-block*PackedDirectoryBlock;
         const uint32_t raw=remaining<PackedDirectoryBlock?remaining:PackedDirectoryBlock;
-        uint8_t row[8];if(!split_read(localized_,PackedLanguageHeader+block*8,row,sizeof row))return false;
+        const uint8_t* row=rows+(block-first)*8;
         const uint32_t physical=split_u32(row),stored=split_u32(row+4),encoded=stored&0x7fffffffu;
         const bool literal=(stored&0x80000000u)!=0;
         if(physical<packed_data_||physical>packed_tail_||!encoded||encoded>packed_tail_-physical||

@@ -74,6 +74,8 @@ int main(){
     // per-card wins. Preserve its real history/discoveries, with new fields 0.
     restored=app.progress;restored.current.facts={};for(auto&r:restored.history)r.facts={};
     restored.current_discoveries={};restored.architect_damage=0;restored.journal={};
+    restored.current_saved_at=restored.current_saved_revision=0;
+    for(auto&ch:restored.current.build_id)ch=0;for(auto&r:restored.history)for(auto&ch:r.build_id)ch=0;
     saved_size=encode_ui_progress(restored,bytes,UiProgressCapacity);CHECK(saved_size&&bytes[3]=='2');
     constexpr size_t discovery_bytes=(CardKinds+7)/8+(WorldRelicKinds+7)/8+(PotionKinds+7)/8+(OriginalEventKinds+7)/8;
     const size_t tail=28+discovery_bytes+CardKinds*4,old_size=saved_size-4-CardKinds*4;

@@ -10,6 +10,10 @@ namespace spire {
 // fights or map-point statistics that their format never recorded.
 constexpr unsigned UiHistoryCapacity=32,UiHistoryFloors=96;
 constexpr unsigned UiProgressCapacity=512*1024;
+constexpr unsigned UiBuildIdBytes=16;
+constexpr char UiCurrentBuildId[]="nSpire II 0.17";
+static_assert(sizeof UiCurrentBuildId<=UiBuildIdBytes,"Recorded build identifier must fit");
+constexpr unsigned UiProgressMetadataBytes=8+(UiHistoryCapacity+1)*UiBuildIdBytes;
 struct UiEnemyStatistics {uint32_t seen=0,wins=0,losses=0;};
 struct UiCharacterStatistics {
     uint32_t wins=0,losses=0,current_streak=0,best_streak=0;
@@ -54,6 +58,8 @@ struct UiRunHistory {
     uint16_t relics[WorldRelicCapacity]{};
     UiFloorHistory floors[UiHistoryFloors]{};
     UiRunFacts facts{};
+    // Observed at the start of a new run. Old records stay explicitly unknown.
+    char build_id[UiBuildIdBytes]{};
 };
 struct UiProgress {
     uint32_t next_serial=1;
@@ -78,6 +84,9 @@ struct UiProgress {
     // New profiles use FtueFresh; ordinary tutorial preference and popup
     // completion remain distinct, matching EnableFtues / SeenPopup.
     uint16_t tutorial_flags=0;
+    // Successful canonical-run writes, independent of profile/settings saves.
+    // The current run identity and canonical revision bind this timestamp.
+    uint32_t current_saved_at=0,current_saved_revision=0;
 };
 size_t encode_ui_progress(const UiProgress&,uint8_t*,size_t);
 void clear_ui_progress(UiProgress&);

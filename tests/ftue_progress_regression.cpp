@@ -62,7 +62,7 @@ static void migration(){
  fixture.tutorial_flags=FtueFresh|FtueSeenMask;CHECK(decode_ui_progress(encode(fixture).data(),eight.size(),decoded));
  Bytes malformed=eight;malformed.back()=0x80;CHECK(!decode_ui_progress(malformed.data(),malformed.size(),decoded));
  CHECK(!decode_ui_progress(eight.data(),eight.size()-1,decoded));malformed=eight;malformed.push_back(0);CHECK(!decode_ui_progress(malformed.data(),malformed.size(),decoded));
- malformed=eight;malformed[3]='9';CHECK(!decode_ui_progress(malformed.data(),malformed.size(),decoded)&&!decode_ui_progress_summary(malformed.data(),malformed.size(),summary));
+ malformed=eight;malformed[3]=':';CHECK(!decode_ui_progress(malformed.data(),malformed.size(),decoded)&&!decode_ui_progress_summary(malformed.data(),malformed.size(),summary));
 }
 static void profiles_and_preference(){
  scenario="new profiles initialize after the existing current-run read, without a profile scan";
@@ -123,6 +123,15 @@ static void maximum(){
  CHECK(decode_ui_progress(eight.data(),eight.size(),decoded)&&encode(decoded)==eight);
  export_bytes("full-profile.nsh",eight);
  std::printf("Maximum NSH8=%zu bytes; UiProgress=%zu; tutorial field=%zu bytes.\n",eight.size(),sizeof(UiProgress),sizeof fixture.tutorial_flags);
+ scenario="NSH9 adds only the fixed observed run metadata tail";
+ fixture.current_saved_at=1792884600;fixture.current_saved_revision=17;
+ for(auto&r:fixture.history)std::memcpy(r.build_id,UiCurrentBuildId,sizeof UiCurrentBuildId);
+ std::memcpy(fixture.current.build_id,UiCurrentBuildId,sizeof UiCurrentBuildId);
+ const Bytes nine=encode(fixture);CHECK(nine[3]=='9'&&nine.size()==eight.size()+UiProgressMetadataBytes);
+ CHECK(!std::memcmp(nine.data()+8,eight.data()+8,eight.size()-8));
+ CHECK(decode_ui_progress(nine.data(),nine.size(),decoded)&&encode(decoded)==nine);
+ export_bytes("full-profile-v9.nsh",nine);
+ std::printf("Maximum NSH9=%zu bytes; metadata tail=%u bytes.\n",nine.size(),UiProgressMetadataBytes);
 }
 int main(int argc,char**argv){
  if(argc==3&&!std::strcmp(argv[1],"--export"))export_directory=argv[2];

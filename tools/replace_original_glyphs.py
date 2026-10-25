@@ -24,7 +24,7 @@ from split_content import layout
 
 SIZES = (8, 10, 12, 16, 20)
 SCENE_SIZES = (6, 8, 10, 12, 14, 16, 20)
-NATIVE_SIZES = (4, 5, 7, 18) + SCENE_SIZES
+NATIVE_SIZES = (4, 5, 7, 9, 18) + SCENE_SIZES
 FACE_NAMES = ('regular', 'bold', 'italic', 'bold_italic')
 KNOWN_TAGS = frozenset(('gold', 'red', 'blue', 'green', 'purple', 'orange',
     'aqua', 'white', 'gray', 'b', 'i', 'sine', 'jitter', 'rainbow', 'thinky_dots'))

@@ -2,6 +2,8 @@
 #include "enemy_command_timing.hpp"
 #include "rich_text.hpp"
 #include "source_locale_fonts.hpp"
+#include "settings_layout.hpp"
+#include "run_setup_layout.hpp"
 #include "status.hpp"
 #include "combat_layout.hpp"
 #include "power_strip_layout.hpp"

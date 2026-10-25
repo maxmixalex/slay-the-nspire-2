@@ -2,6 +2,7 @@
 #include "scene_font_assets.hpp"
 #include "retained_filter.hpp"
 #include "speech_bubble_assets.hpp"
+#include "history_body_ui10_assets.hpp"
 #include "frontend_assets.hpp"
 #include "hud_ui7_assets.hpp"
 #include "history_ui8_assets.hpp"
@@ -50,9 +51,13 @@ struct Fixture {
 };
 struct File {
     const Bytes* bytes{};unsigned calls{},read_bytes{},progress_calls{};int64_t fail_at=-1;
+    unsigned seeks{},position{},first_at{},first_bytes{};bool position_known{};
+    void reset_io(){calls=read_bytes=seeks=position=first_at=first_bytes=0;position_known=false;}
     static bool read(void* c,uint32_t at,void*out,uint32_t n){
-        auto& f=*static_cast<File*>(c);++f.calls;f.read_bytes+=n;
+        auto& f=*static_cast<File*>(c);if(!f.calls){f.first_at=at;f.first_bytes=n;}
+        ++f.calls;f.read_bytes+=n;if(!f.position_known||f.position!=at)++f.seeks;f.position_known=false;
         if(at>f.bytes->size()||n>f.bytes->size()-at||(f.fail_at>=int64_t(at)&&f.fail_at<int64_t(at)+n))return false;
+        f.position=at+n;f.position_known=true;
         std::memcpy(out,f.bytes->data()+at,n);return true;
     }
     static void progress(void*c,ResourceStage,uint32_t,uint32_t){++static_cast<File*>(c)->progress_calls;}
@@ -285,6 +290,45 @@ static void packed_reentrant_read(){
     same_read(joined,f,0,79);
 }
 
+static void packed_requested_table_io(){
+    DirectoryFixture f;File common{&f.common},locale{&f.locale};SplitResourceSource joined;
+    CHECK(joined.open(common.source(),locale.source(),ResourceLanguage::English));
+    auto reset=[&](){common.reset_io();locale.reset_io();};
+    reset();same_read(joined,f,0,f.directory);
+    unsigned encoded=0;for(unsigned block=0;block<f.blocks;++block)encoded+=f.stored(block);
+    CHECK(common.calls==0);CHECK(locale.calls==f.blocks+1);
+    CHECK(locale.first_at==128&&locale.first_bytes==f.blocks*8);
+    CHECK(locale.read_bytes==f.blocks*8+encoded);
+    CHECK(locale.seeks==1); // One table read followed by contiguous group streams.
+
+    // Start inside the literal block and finish inside the last compressed
+    // block. Only rows1..3 are fetched, and a literal copies just its slice.
+    reset();same_read(joined,f,DirectoryFixture::Block+13,2*DirectoryFixture::Block+3072);
+    CHECK(common.calls==0&&locale.calls==4);CHECK(locale.first_at==136&&locale.first_bytes==24);
+    CHECK(locale.read_bytes==24+DirectoryFixture::Block-13+f.stored(2)+f.stored(3));
+    CHECK(locale.seeks==2);
+
+    // A boundary-spanning request leaves the compressed directory, crosses
+    // the raw descriptor tail and then enters common artwork unchanged.
+    reset();same_read(joined,f,f.directory-23,23+321+5);
+    CHECK(locale.calls==3&&common.calls==1);CHECK(locale.first_at==152&&locale.first_bytes==8);
+    CHECK(locale.read_bytes==8+f.stored(3)+321&&common.read_bytes==5);
+    CHECK(locale.seeks==2&&common.seeks==1);CHECK(!resource_transfer_uses);
+
+    Bytes output(f.directory+32,0xcd);
+    locale.fail_at=136;reset();CHECK(!joined.read(0,output.data()+16,f.directory));
+    CHECK(locale.calls==1&&locale.first_bytes==f.blocks*8&&common.calls==0);
+    CHECK(std::all_of(output.begin(),output.end(),[](uint8_t value){return value==0xcd;}));
+    CHECK(!resource_transfer_uses);locale.fail_at=-1;
+
+    const unsigned original=f.offset(1);put(f.locale,136,get(f.locale,116)+1);
+    reset();CHECK(!joined.read(0,output.data()+16,f.directory));
+    CHECK(locale.calls==2&&locale.first_bytes==f.blocks*8&&common.calls==0);
+    CHECK(locale.read_bytes==f.blocks*8+f.stored(0));CHECK(!resource_transfer_uses);
+    for(unsigned i=0;i<16;++i)CHECK(output[i]==0xcd&&output[f.directory+16+i]==0xcd);
+    put(f.locale,136,original);same_read(joined,f,0,f.directory);
+}
+
 static void directory_limits(){
     for(unsigned size:{4096u,65536u,2u*1024u*1024u})for(bool chinese:{false,true}){
         DirectoryFixture f(chinese,size,false);SplitResourceSource joined;CHECK(open_directory(joined,f,chinese));
@@ -345,7 +389,7 @@ static void malformed(){
     // A relabeled header must agree with the actual original marker as well.
     CHECK(!joined.open(ResourceSource::memory(f.common.data(),f.common.size()),ResourceSource::memory(f.locale.data(),f.locale.size()),ResourceLanguage::Chinese));
     f=Fixture();CHECK(!joined.open(ResourceSource::memory(f.common.data(),f.common.size()-1),ResourceSource::memory(f.locale.data(),f.locale.size()),ResourceLanguage::English));
-    {Fixture future(false,HistoryHeaderContentVersion+1);CHECK(!joined.open(ResourceSource::memory(future.common.data(),future.common.size()),ResourceSource::memory(future.locale.data(),future.locale.size()),ResourceLanguage::English));}
+    {Fixture future(false,HistoryBodyContentVersion+1);CHECK(!joined.open(ResourceSource::memory(future.common.data(),future.common.size()),ResourceSource::memory(future.locale.data(),future.locale.size()),ResourceLanguage::English));}
     File c{&f.common},l{&f.locale};CHECK(joined.open(c.source(),l.source(),ResourceLanguage::English));
     c.fail_at=64+10;uint8_t out[64];CHECK(!joined.read(f.prefix-4,out,32));
     c.fail_at=-1;l.fail_at=96+f.prefix+2;CHECK(!joined.read(f.prefix+f.art-4,out,16));
@@ -373,10 +417,10 @@ int main(int argc,char**argv){
     else if(argc!=1){std::fprintf(stderr,"usage: split_resource_regression [common locale original eng|zhs]\n");return 2;}
     // The published split format must support the same latest NSP2 catalog
     // as the full-pack runtime, across both languages and source adapters.
-    for(unsigned version=17;version<=HistoryHeaderContentVersion;++version)for(bool chinese:{false,true})for(bool streamed:{false,true})checks_for(chinese,streamed,version);
+    for(unsigned version=17;version<=HistoryBodyContentVersion;++version)for(bool chinese:{false,true})for(bool streamed:{false,true})checks_for(chinese,streamed,version);
     malformed();
     for(bool chinese:{false,true})for(bool streamed:{false,true})for(bool first:{false,true})for(bool last:{false,true})
         directory_checks_for(chinese,streamed,first,last);
-    malformed_directory();packed_lease_conflicts();packed_reentrant_read();directory_limits();
+    malformed_directory();packed_lease_conflicts();packed_reentrant_read();packed_requested_table_io();directory_limits();
     std::printf("split resources: %u checks passed; adapter=%zu bytes\n",checks,sizeof(SplitResourceSource));
 }

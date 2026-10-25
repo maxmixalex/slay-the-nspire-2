@@ -106,7 +106,7 @@ class SceneFontsTest(unittest.TestCase):
             library.rewrite_directory(after,auxiliary,set(),[],output_version=36)
         # A font-only edit of a later resource keeps its actual encoding
         # version and all old payloads. It cannot silently downgrade RGR2.
-        for version in (36,37,38):
+        for version in (36,37,38,39):
             later=bytearray(after);struct.pack_into('<I',later,4,version)
             extra=[(0x20000,7,1,1,1,0,b'\x7f')]
             appended=library.rewrite_directory(bytes(later),auxiliary,set(),extra,output_version=version)

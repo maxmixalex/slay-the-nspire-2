@@ -25,6 +25,7 @@ struct UiHistoryScroll {
 struct UiMenuTransition {
     uint32_t start=0;uint8_t state=0,previous=0;bool bound=false;
     unsigned from_scale=1000;
+    uint16_t from_shade=4096,from_focus=0;
     unsigned observe(unsigned next,uint32_t now,bool bottom,unsigned pressed_scale=950){
         if(!bound){bound=true;state=previous=0;start=now;}
         const unsigned duration=state==1?50:state==2?200:300;
@@ -36,5 +37,22 @@ struct UiMenuTransition {
         return scale;
     }
     unsigned alpha(uint32_t now)const{const unsigned duration=state==1?50:state==2?200:300;const unsigned age=now-start;return age>=duration?255:age*255/duration;}
+    struct Compendium {unsigned scale,shade,focus;};
+    Compendium observe_compendium(unsigned next,uint32_t now,bool bottom){
+        // Both compendium button classes kill the preceding tween. Press
+        // changes parent modulation and scale, retaining the panel's HSV V;
+        // refocus retains modulation until the next unfocus restores white.
+        const unsigned duration=state==1?50:state==2?200:300;
+        const unsigned age=now-start,q=!bound?0:age>=duration?4096:age*4096/duration;
+        const unsigned shade_goal=state==2?3072:state==0?4096:from_shade;
+        const unsigned focus_goal=state==1?4096:state==0?0:from_focus;
+        const unsigned shade=unsigned(int(from_shade)+(int(shade_goal)-int(from_shade))*int(q)/4096);
+        const unsigned focus=unsigned(int(from_focus)+(int(focus_goal)-int(from_focus))*int(q)/4096);
+        const bool changed=next!=state;
+        const unsigned scale=observe(next,now,bottom,bottom?950:980);
+        if(changed){from_shade=uint16_t(shade);from_focus=uint16_t(focus);}
+        return {scale,(shade*255+2048)/4096,(focus*255+2048)/4096};
+    }
 };
+static_assert(sizeof(UiMenuTransition)<=16,"Compendium modulation remains bounded");
 }

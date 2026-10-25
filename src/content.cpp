@@ -202,7 +202,7 @@ bool Content::open(ResourceSource source){
     uint8_t h[40];if(!reader_.read(0,h,sizeof h))return false;const uint32_t n=source.length;
     if(u32(h)!=0x3250534E||u32(h+8)!=0x41CEF1EA||u32(h+12)!=n)return false;
     const uint32_t version=u32(h+4),cards=u32(h+32);
-    if(version<3||version>HistoryHeaderContentVersion||(version==3&&cards)||(version==4&&cards!=24)||(version==5&&cards!=26)||(version==6&&cards!=51)||(version==7&&cards!=58)||(version>=8&&version<=10&&cards!=68)||(version==11&&cards!=114)||(version==12&&cards!=228)||(version==13&&cards!=497)||(version>=14&&cards!=CardKinds))return false;
+    if(version<3||version>HistoryBodyContentVersion||(version==3&&cards)||(version==4&&cards!=24)||(version==5&&cards!=26)||(version==6&&cards!=51)||(version==7&&cards!=58)||(version>=8&&version<=10&&cards!=68)||(version==11&&cards!=114)||(version==12&&cards!=228)||(version==13&&cards!=497)||(version>=14&&cards!=CardKinds))return false;
     auto ni=u32(h+16),ng=u32(h+20),ns=u32(h+24),nc=u32(h+28);
     if(ni<A_Count||ni>(version>=14?65535u:8192u)||ng>(version>=14?scene_font_glyph_limit(version):version==13?16384u:8192u)||ns<66||ns>(version>=14?16384u:2048u)||nc!=(version>=BestiaryKaiserContentVersion?BestiaryKaiserAnimationKinds:version>=CharacterDeathContentVersion?CharacterDeathAnimationKinds:version>=PhobiaContentVersion?PhobiaAnimationKinds:version>=Ui7ContentVersion?Ui7AnimationKinds:version>=MerchantEffectsContentVersion?MerchantEffectsAnimationKinds:version==FeedbackContentVersion?FeedbackAnimationKinds:version>=14?AnimationKinds:version==13?38:version>=6?17:11))return false;
     if((version==11&&ns!=407)||(version==12&&ns!=749)||(version==13&&ns!=1556)||
@@ -243,8 +243,18 @@ bool Content::open(ResourceSource source){
                                 // One optional source History reminder icon.
                                 // This remains a bounded one-ID probe.
                                 if(version<HistoryHeaderContentVersion||u32(room_suffix+20)>=ni||
-                                   !reader_.u32(base+4,next)||next!=0x314c4954u)return false;
+                                   !reader_.u32(base+4,next))return false;
                                 auxiliary=HistoryHeaderAuxiliaryCount;base+=4;
+                                if(next!=0x314c4954u){
+                                    if(version<HistoryBodyContentVersion)return false;
+                                    // v39 appends a fixed History/Settings image catalog.
+                                    // Do not scan an unbounded payload for a TIL1 marker.
+                                    for(unsigned i=HistoryHeaderAuxiliaryCount;i<SettingsUi10AuxiliaryCount;++i){
+                                        if(next>=ni||!reader_.u32(base+4,next))return false;base+=4;
+                                    }
+                                    if(next!=0x314c4954u)return false;
+                                    auxiliary=SettingsUi10AuxiliaryCount;
+                                }
                             }
                         }
                     }
@@ -458,10 +468,10 @@ int Content::font_size(int preferred,unsigned style,bool at_most,bool sparse_sce
         }return font_sizes_[selected];
     };
     uint32_t mask=sizes(face);if(face&4u)mask|=sizes(face&3u);if(face)mask|=sizes(0);
-    // Seven-pixel relic titles are a sparse scene alphabet. Only that
-    // label opts in: computed card sizes and automatic shrink steps keep
+    // Seven-pixel relic titles and nine-pixel setup headings have sparse
+    // scene alphabets. Only those labels opt in: automatic shrink steps keep
     // their complete existing6/8px alphabets and identical old metrics.
-    if(!sparse_scene_sizes)mask&=~(1u<<6);
+    if(!sparse_scene_sizes)mask&=~((1u<<6)|(1u<<8));
     if(!mask)return 8;preferred=preferred<1?1:preferred>32?32:preferred;
     if(at_most){for(int px=preferred;px>0;--px)if(mask&(1u<<(px-1)))return px;
         for(int px=preferred+1;px<=32;++px)if(mask&(1u<<(px-1)))return px;}

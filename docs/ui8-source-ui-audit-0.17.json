@@ -6,7 +6,7 @@
     "dll_sha256": "0861bfa1df347538d932f22d580e75420f08082792eb914e53b4882764acdbe9"
   },
   "supersedes": "ui7-original-ui-inventory-0.17.json",
-  "source_stage": "UI10E matched acceptance: original Statistics group mask and History information/counter header, joined Card Library search, exact Chinese collection Bold coverage and independent title/pause/capture corrections pass frozen E native and bilingual actual-resource gates. Ordinary browser checks pass; concrete remaining source differences and separate device scope are retained.",
+  "source_stage": "UI10F matched front/browser acceptance is preserved. UI10G source now implements Compendium whole-parent press modulation and the remaining History body, original room artwork append, death quote/badge strip and observed BuildId/Continue SaveTime integration. Matching frozen G fonts/art/native/browser acceptance is pending; short diagnostics retain exact missing-new-glyph failures instead of weakening oracles.",
   "scope": {
     "excluded": [
       "audio",
@@ -62,8 +62,8 @@
       ],
       "contract": "Continue preview, abandoned-run confirmation and return",
       "assessment": "implemented_with_documented_limits",
-      "implemented": "Source inherited half-anchors,85x38/44 panel at153,154,5px saved/progress/ascension/HP/gold labels,7px icons, hidden-zero Ascension row and200ms show/hide motion. The prior enlarged character-name panel is removed. Guarded save/continue/abandon and original confirmation ownership remain.",
-      "remaining": "Canonical runs/host interface have no independent run SaveTime. The original saved-time label shows an explicit unknown dash; profile modification timestamps are never substituted.",
+      "implemented": "Source inherited half-anchors,85x38/44 panel at153,154,5px saved/progress/ascension/HP/gold labels,7px icons, hidden-zero Ascension row and200ms show/hide motion. The prior enlarged character-name panel is removed. Guarded save/continue/abandon and original confirmation ownership remain. G records successful canonical-run writes independently from profile/settings changes and renders the saved source weekday/month/date/time in the top-aligned90px date box; prior run timestamps stay unknown.",
+      "remaining": "Matching G save/reload/Continue metadata and host execution remain required. Source local-zone conversion still differs from the port UTC calendar; a profile modification timestamp is never substituted for a run save.",
       "regressions": [
         "world_frontend_ui_regression",
         "profiles_ui7_regression"
@@ -220,19 +220,25 @@
       "original_types": [
         "MegaCrit.Sts2.Core.Nodes.Screens.RunHistoryScreen/NRunHistory.cs",
         "MegaCrit.Sts2.Core.Nodes.Screens.RunHistoryScreen/NMapPointHistory.cs",
-        "MegaCrit.Sts2.Core.Nodes.Screens.RunHistoryScreen/NDeckHistory.cs"
+        "MegaCrit.Sts2.Core.Nodes.Screens.RunHistoryScreen/NDeckHistory.cs",
+        "MegaCrit.Sts2.Core.Nodes.Screens.RunHistoryScreen/NActHistoryEntry.cs",
+        "MegaCrit.Sts2.Core.Nodes.Screens.RunHistoryScreen/NDeckHistoryEntry.cs",
+        "MegaCrit.Sts2.Core.Nodes.Screens.RunHistoryScreen/NRelicHistory.cs",
+        "MegaCrit.Sts2.Core.Nodes.Screens.RunHistoryScreen/NMapPointHistoryEntry.cs"
       ],
       "contract": "Historical run navigation, per-floor map/deck/relic details",
       "assessment": "implemented_with_documented_limits",
-      "implemented": "Observed summaries, map/deck/relic carousel and bounded journal remain. UI10 restores Chinese calendar contents. E replaces the enlarged two-row summary with source24/32px rich information/counters, source right alignment and HBox minimums/colors, selected portrait/Ascension, original potion backdrop/slots and format38 custom/daily lock. Full singleplayer game-mode markup is restored; unavailable recorded BuildId displays an unknown dash.",
-      "remaining": "Source local time zone still differs from UTC. Map act labels, relic/deck captions and grouped-card body retain earlier8px bands/layout; the source history death-quote/badge strip needs a specific comparison. Old/evicted journal facts remain partial, and historical BuildId was never recorded.",
+      "implemented": "Observed summaries, map/deck/relic carousel and bounded journal remain. UI10 restores Chinese calendar contents. E replaces the enlarged two-row summary with source24/32px rich information/counters, source right alignment and HBox minimums/colors, selected portrait/Ascension, original potion backdrop/slots and format38 custom/daily lock. Full singleplayer game-mode markup is restored; unavailable recorded BuildId displays an unknown dash. G restores fixed5px chapter/section labels, original rarity summaries,60px non-wrapping act entries,19-column68px relic holders, five-column240x32px card entries,4/5px fitting and authored ellipsis, source tiny-card/enchantment geometry/colors and fast-forward card focus. The source death quote/badge HBox uses recorded values, source size/visibility/hover and no live-state substitution. Format39 appends64 original room/outline images; old packs keep a fallback. New runs record the actual port BuildId, while old records stay unknown.",
+      "remaining": "Matching G39 source/font/art acceptance is pending. Source UI-only Gaussian room-icon tilt is still upright, although scale and outline color/alpha are restored. Local time zone remains UTC. Old/evicted floor journal facts remain partial, and pre-metadata BuildId stays unknown. Source16px quote fitting uses the documented4px readability floor.",
       "regressions": [
         "history_ui8_regression",
         "run_history_journal_ui8_regression",
         "run_history_acquisition_regression",
-        "map_drawing_ui_regression"
+        "map_drawing_ui_regression",
+        "test_history_body_ui10_assets",
+        "run_metadata_regression"
       ],
-      "acceptance": "Frozen E native checks pass: history_ui8_regression, run_history_journal_ui8_regression, run_history_acquisition_regression, map_drawing_ui_regression. Both matching E format38 actual packs pass: history_ui8_regression, run_history_journal_ui8_regression, map_drawing_ui_regression."
+      "acceptance": "Frozen E native checks pass: history_ui8_regression, run_history_journal_ui8_regression, run_history_acquisition_regression, map_drawing_ui_regression. Both matching E format38 actual packs pass: history_ui8_regression, run_history_journal_ui8_regression, map_drawing_ui_regression. F front actual checks also pass both languages. G source syntax/synthetic asset tests and62 no-pack navigation checks pass. Mixed E-pack diagnostics expose the newly required English4px U+22EF and Chinese4px U+7D2F; both are in required font metadata, and matching G resources are still required."
     },
     {
       "id": "profiles",
@@ -243,13 +249,13 @@
       ],
       "contract": "Profile select/icons/delete confirmation",
       "assessment": "implemented_with_documented_limits",
-      "implemented": "Three independent profiles and host transactions remain intact. UI10 restores exact source header/title/body bands, shared panel/text/icon transforms, menu/delete timing, hidden-delete navigation and Chinese date contents. Ordinary label fonts follow actual English/Chinese runtime substitution.",
-      "remaining": "Source local-time-zone conversion remains UTC on the port. The3px projected menu helper intentionally uses4px. Compendium whole-control light-gray press modulation remains a separate source difference.",
+      "implemented": "Three independent profiles and host transactions remain intact. UI10 restores exact source header/title/body bands, shared panel/text/icon transforms, menu/delete timing, hidden-delete navigation and Chinese date contents. Ordinary label fonts follow actual English/Chinese runtime substitution. G Compendium children share source0.75 parent press modulation while the panel retains its current HSV value; mid-press/release and refocus interrupt correctly without changing long-menu defaults.",
+      "remaining": "Source local-time-zone conversion remains UTC on the port. The3px projected menu helper intentionally uses4px. Matching G native/browser acceptance remains required for the newly observed save metadata and press states.",
       "regressions": [
         "profiles_ui7_regression",
         "ndless_profiles_regression"
       ],
-      "acceptance": "Frozen E native checks pass: profiles_ui7_regression, ndless_profiles_regression. Both matching E format38 actual packs pass: profiles_ui7_regression. The corresponding ordinary browser flow is included in the18 passing E checks; see verification_ui10e for scope and the retained initial launch failure."
+      "acceptance": "Frozen E native checks pass: profiles_ui7_regression, ndless_profiles_regression. Both matching E format38 actual packs pass: profiles_ui7_regression. The corresponding ordinary browser flow is included in the18 passing E checks; see verification_ui10e for scope and the retained initial launch failure. F front actual and ordinary-browser checks pass. G mixed short diagnostics rebuild all App-dependent units and pass both Profiles locales, including36 Compendium states and known/unknown Continue timestamps; this does not replace matching G acceptance."
     },
     {
       "id": "compendium_leaderboards",
@@ -1452,5 +1458,61 @@
     ],
     "device_scope": "Ordinary calculator capacity/save execution is tracked by the release owner separately; no physical-device performance claim is inferred here.",
     "fidelity_percentage": null
+  },
+  "verification_ui10f_front": {
+    "checkpoint": "361c36c27f06c4905e1899b8bdc2ab281ba9b9cc",
+    "tree": "a031c1bc29513b80fbf3fd629bb07ef20fd53453",
+    "scope": "Matched F front15 targets in each locale and ordinary F offline HTML; these are prior to G edits.",
+    "native": {
+      "passed": 119,
+      "total": 119,
+      "journal": "ui10f-native-21c8e26f647b.json"
+    },
+    "front": {
+      "eng": {
+        "passed": 15,
+        "total": 15,
+        "journal": "ui10f-front-eng-6adea22e0605.json"
+      },
+      "zhs": {
+        "passed": 15,
+        "total": 15,
+        "journal": "ui10f-front-zhs-335b830e492f.json"
+      }
+    },
+    "ordinary_browser": {
+      "checks": 18,
+      "captures": 41,
+      "page_errors": 0,
+      "external_requests": 0,
+      "journal": "ui10f-ordinary-browser-94cec6d351c1.json",
+      "html_sha256": "478702eeb66ab5460b428fc0931d44bd617acc0c631cdefb2dc4d24a47fe279b",
+      "final_html_compared_byte_for_byte": true
+    },
+    "reviewed_key_render_hashes_equal_to_E": 20,
+    "restoration_percentage_inferred": false
+  },
+  "verification_ui10g_front_short": {
+    "scope": "Current G App-dependent units recompiled; unchanged simulation objects and old E38 packs reused only for short diagnostics. This is not matching G acceptance.",
+    "syntax": "pass",
+    "synthetic_history_artwork": "pass",
+    "no_pack_history_checks": 62,
+    "profiles_actual_old_pack": {
+      "eng": "pass",
+      "zhs": "pass"
+    },
+    "retained_history_actual_failures": [
+      {
+        "language": "eng",
+        "detail": "Existing E38 lacks newly required U+22EF at4px regular; precise card-label oracle stops.",
+        "covered_by": "profile-ui-fonts alphabets"
+      },
+      {
+        "language": "zhs",
+        "detail": "Final quote/badge-band oracle finds newly required U+7D2F at4px regular missing in E38; earlier body/header pixel cases had passed.",
+        "covered_by": "history-ui-fonts run_history abandon group"
+      }
+    ],
+    "required_next": "Freeze G, append exact missing fonts and original39 images, execute matching native, both-language actual resources and ordinary browser."
   }
 }
