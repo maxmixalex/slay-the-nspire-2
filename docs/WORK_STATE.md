@@ -1,5 +1,103 @@
 # Work state — 2026-10-25
 
+## Final UI10 K runtime and delivery acceptance
+
+The delivered runtime and regenerated resources are frozen at remotely verified
+`61c5a93acbd9730ab345a4add8293bda744820f0`, tree
+`3e155a32748e3917ba8f369de4da7cd8678389fe`. The final closeout changes only
+documentation. Main-menu/Continue/profile/collection/statistics/history and
+General/Input/run-setup work from the earlier UI10 stages remains implemented;
+the final production change skips inactive long-press work while preserving
+input ownership, residual decay, the source threshold and the source bar.
+
+Matching K acceptance is complete:
+
+- Native `c6dc1b85d710`: **121/121 pass**, 104.98 seconds of CTest execution.
+- Python `2c681130c3ef`: **252 + 54 pass**; compileall also passes.
+- ARM `4413aa9add78`: launcher and linked division/LZMA2/tile/RGR instruction
+  and ABI suites pass. WASM `cf00a6665385` also passes.
+- Actual resources: **96/96 bilingual targets pass** (root 17, front 15 and
+  combat 16 per language). Both complete split streams pass separately.
+- Complete image comparison covers **1,228 PPM captures**: root 536, front
+  214 and combat 478. Root uses I except the 38 corrected J FTUE captures;
+  front is exactly I; combat keeps only J's three corrected Settings hover
+  captures and one added Long Press capture per language. All 116 card/HUD
+  captures match J, and both hold-bar states per language match I. Two combat
+  captures per locale are emitted beside their target directory and are
+  included in this total, although the generic per-target receipt lists omit
+  those four files. No unexplained runtime image difference remains.
+- Ordinary offline browser `e70b5849ae91`: **21 flows / 47 captures**, no
+  page errors or external requests. The final HTML SHA matches the closed
+  artifact receipt both before and after execution.
+
+Every completed K source-guarded journal reports `source_changed=false`.
+These tests cover port behavior and source-derived contracts; neither their
+count nor equality between port versions establishes a 95% original-game
+restoration score. See `ui10-front-source-review-0.17.md`,
+`settings-run-setup-ui10-0.17.md`, and `ui8-source-ui-audit-0.17.json`.
+
+Resource conversion `64c1f36fbb05` reproduces both logical NSP2/39 packs and
+all three physical files exactly as H and I. The installed resources total
+**90,114,227 bytes**. K's launcher is **1,490,738 bytes** and the complete
+four-file installation is **91,604,965 bytes**. Actual prefix/image/BSS
+allocation is **16,256,400 bytes**, leaving **520,816 bytes** below the
+unchanged 16 MiB ceiling. Relative to I, the launcher is 102 bytes smaller
+while allocation is 88 bytes larger; these are separate measurements.
+
+K ordinary installation `1f6bbbeca0eb` fully reads back the new launcher and
+associates the identical resources with H's complete USB readbacks. Cold
+execution `9808e0b2a6b0` opens the persisted Long Press control, switches it
+off and on, continues the actual floor-2 reward room, saves, and exits to the
+OS normally. All seven LCD captures are reviewed and all five profile files
+are read back. Matched K validation `a2b145331ee7` confirms the original
+230,540-byte canonical run and backup remain exact, NSH9 records the actual
+save/revision 24, and the 108-byte NSPF5 retains flags 644 and both key banks.
+The original NAND is unchanged; the emulator is stopped. H's four capacity
+cases and I's 9.8-second physical hold remain labeled with their actual
+execution checkpoints rather than being counted again as K tests.
+
+Final performance association `9a986cce7aaf` compares all 25 official core
+objects, their archive order, and the complete 7,756,600-byte benchmark ELF
+exactly with the measured private candidate. The four balanced same-battle
+samples therefore apply to the final native implementation: **4.22% lower
+median CPU time**, with all 14,400 paired frames and canonical bytes equal
+and no warm I/O. The 9.53% mean is influenced by one high I sample and is
+not the preferred general description. Earlier F/I regressions, cold-start
+costs and all raw samples remain in `performance-ui10-0.17.md`. No physical
+calculator FPS or universal speedup is claimed.
+
+Packaging `b42a15d72cae` and independent closed-artifact readback
+`868e0847e8d0` pass all 13 ZIP members. The final private deliverables are:
+
+| Artifact | Bytes | SHA-256 |
+| --- | ---: | --- |
+| `Slay-the-Nspire-2-0.17-ui10-bilingual-calculator.zip` | 90,276,254 | `6ffc75158b29df152502e9b85cac4973f88b9349f70d24d9ea6ecbc3d090c460` |
+| `Slay-the-Nspire-2-0.17-ui10-bilingual-offline.html` | 129,282,581 | `d03be509015e5bb8ad515fd0933ca07236804e57a61e0a265be85bbdf2a576a1` |
+
+Both manifests identify K for runtime and resources; formats remain resource
+39, canonical save 17, history 9, and settings 5. Original assets and embedded
+deliverables remain outside public Git. The K GitHub Actions run
+`40178587658` was still queued at the pre-closeout readback; the I and J runs
+were cancelled and H `40174150511` passed. Local matching acceptance above
+must not be presented as a completed remote K Actions run.
+
+### Honest remaining scope for the next iteration
+
+The source inventory covers 3,538 C# paths, 714 nonempty node-namespace files
+(plus two excluded empty files), 1,022 scenes and 72 flow contracts. Inventory
+and targeted body review do not mean every original method has been audited
+or reproduced. The 95% goal remains unproven. Prioritize the recorded
+phase-specific/multi-creature Bestiary and secondary VFX contexts, original
+glyph ink/kerning and the measured Continue-date advance difference, then
+the remaining original startup/settings platform differences. Keep the
+explicit LCD, bounded-history, UTC and offline-service adaptations visible.
+Audio, multiplayer and Timeline remain excluded by the established scope.
+
+The 30–40 MB storage goal is also unmet. Preserve exact pixels and animation
+data while investigating further bounded compression; do not trade original
+UI fidelity for an unmeasured size target. The measured bitmap/cache/table
+and foreground-workspace improvements are retained, with counterexamples.
+
 ## UI10k adopts the measured idle-off optimization
 
 The final bounded experiment changes only two production branches, keeping

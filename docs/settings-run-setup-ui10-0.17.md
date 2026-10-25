@@ -78,11 +78,11 @@ heading band; two native fixtures also still clicked the old Settings Back
 location. H fixes the bounded format39 grammar and uses the original Back hit
 rectangle. The failed G records remain separate from later successful gates.
 
-Matching I native passes121/121 suites, including Settings/input/profile/run
+Matching K native passes121/121 suites, including Settings/input/profile/run
 setup and long-press regressions. Both format39 actual-language runs pass the
 front15, root17 and combat16 targets. This covers the source fonts/artwork,
 General/Input panels, source Singleplayer/Custom/Daily controls and input
-ownership. I ARM, WASM and Python gates also pass; ARM compilation is not
+ownership. K ARM, WASM and Python gates also pass; ARM compilation is not
 physical-calculator timing evidence. The ordinary browser coordinates are
 derived from the pinned source control positions and use only real DOM/canvas
 input, with no application debug API.
@@ -209,3 +209,42 @@ updates instead and the calculator has no equivalent window-focus lifecycle.
 UploadGameplayData gates original remote metric/Sentry uploads; this offline
 port has no such upload service. These are explicit platform/feature
 differences, not hidden controls or evidence of complete Settings parity.
+
+## K final long-press execution and idle-path correction
+
+Frozen K `61c5a93acbd9730ab345a4add8293bda744820f0` keeps the source long-press
+behavior while removing work from the disabled idle path. `App::advance`
+skips an inactive off-state but continues an existing owner, nonzero residual
+timer or unfinished completion fade. The ordinary End Turn button computes
+the bar visual only when long press is enabled. This changes no App fields,
+font/artwork requirements, save formats or resident pools.
+
+Both matching actual-language `end_turn_hold_regression` executions pass
+155,338 checks. Additional App-level cases cover stopping a zero-time owner
+after the setting turns off, residual progress decaying150→1→0, and an
+owner-free completion fade at125→249→250ms followed by a stable state.
+Canonical bytes remain unchanged. These assertions follow existing capture
+cases, preserving their timing. The half-progress and fired captures remain
+byte-identical to I in both languages.
+
+The final K native gate passes121/121 suites in104.98seconds, and all96
+actual-language targets pass. Relevant journals are
+`ui10k-native-c6dc1b85d710.json`,
+`ui10k-combat-eng-e108fb5b10c6.json`,
+`ui10k-combat-zhs-78d2e47eec1c.json`,
+`ui10k-front-eng-4b2877539a2c.json` and
+`ui10k-front-zhs-ed3b2f4eb41a.json`.
+K incorporates the J fixture corrections: all58 card/HUD captures per locale
+match J, including all four actual Settings hover boxes; the root group's19
+FTUE captures per locale also match J. The earlier I fixture limitations stay
+recorded rather than retroactively becoming valid hover/timing coverage.
+
+The final ordinary K HTML repeats the21 flows/47 captures successfully in
+`ui10k-ordinary-browser-e70b5849ae91.json`. Real short keyboard/toolbar taps
+and pointer exit preserve turn one; held mapped-key and toolbar input each
+end exactly one turn, including repeat and post-completion release handling.
+Reload preserves the preference and run while the other profiles stay exact.
+No page error or external request occurs, and the artifact hash is unchanged.
+The CPU impact is measured separately in `performance-ui10-0.17.md`; this
+functional/capture acceptance does not establish device FPS or remove the
+feature/platform differences listed above.

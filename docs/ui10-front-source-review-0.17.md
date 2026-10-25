@@ -46,20 +46,20 @@ below records their visible effect separately from the source variation.
 | Surface | Concrete change | Verification target |
 | --- | --- | --- |
 | Main menu | The original269×450 centered VBox and200×50 controls project to38px-wide hits,6px regular labels and9/10px rows. English retains fractional source tracking; Chinese substitution removes it. Source3px half-alpha outline,50ms hover, sequential200ms press/release scale then color, and animated8px reticles are restored. | Independent six-label pixel oracle in both visible stacks, source input bounds and browser coordinates. |
-| Continue preview | Inherited half-anchors plus the source145/5px offsets place the shown panel at153,154 with85×38/44 dimensions.5px rich saved/progress/ascension/HP/gold labels,7px icons and the conditional Ascension row replace the enlarged character-name panel.200ms show/hide motion is restored. I keeps the source DateLabel's two explicit lines and measured6px English/7px Chinese line spacing. | Matching I independent label/color/position oracle for zero/nonzero Ascension, unknown/Sunday/long-Wednesday timestamps and read-only run checks. |
+| Continue preview | Inherited half-anchors plus the source145/5px offsets place the shown panel at153,154 with85×38/44 dimensions.5px rich saved/progress/ascension/HP/gold labels,7px icons and the conditional Ascension row replace the enlarged character-name panel.200ms show/hide motion is restored. I keeps the source DateLabel's two explicit lines and measured6px English/7px Chinese line spacing. | Matching K independent label/color/position oracle for zero/nonzero Ascension, unknown/Sunday/long-Wednesday timestamps and read-only run checks. |
 | Profiles | 7px regular header; 6px slot title; 5px description/delete/menu title; source rectangles, panel/icon/text parent scaling, delete label cubic-out motion, menu-specific 50/300ms easing; keyboard navigation skips hidden delete buttons. | `profiles_ui7_regression` persistence/input checks and exact-font scalar pixel oracle. |
 | Profile helper | Authored 18px helper projects to3px; the port deliberately keeps4px for calculator readability. Mouse-only visibility is restored. | Actual locale pack and pointer/keyboard composed review. |
 | Profile/history calendar | Chinese month names and twelve-hour period labels follow the pinned formats. Profiles put the period before the clock; history puts it after. The existing UTC host boundary is unchanged. | Profile/history pixel oracles and exact dynamic glyph requirements at5px. |
-| Compendium | Source5px labels, outlines/shadows, icon rectangles and pivots remain. G restores whole-parent light-gray press modulation, preserves the current HSV value during press, and resumes interrupted shade/scale transitions; short/bottom press scales remain0.98/0.95. | Six-button rest/hover/mid-press/pressed/mid-release/released scalar pixel states and interrupted-refocus values pass both matching I packs. Earlier E-pack short diagnostics remain separately identified. |
+| Compendium | Source5px labels, outlines/shadows, icon rectangles and pivots remain. G restores whole-parent light-gray press modulation, preserves the current HSV value during press, and resumes interrupted shade/scale transitions; short/bottom press scales remain0.98/0.95. | Six-button rest/hover/mid-press/pressed/mid-release/released scalar pixel states and interrupted-refocus values pass both matching K packs. Earlier E-pack short diagnostics remain separately identified. |
 | Statistics | Source container minimums produce a1096px content column at sourceX227; two256x90 tabs, source section backgrounds,5px entries,7px headers,6px tabs and5px character names replace the enlarged generic layout. | `statistics_ui10_regression` source geometry, dynamic row layout and actual packed-font pixel checks. |
 | Statistics conditions | Missing fastest victories and zero ascensions leave their original rows hidden; single visible rows remain vertically centered. Original character colors and red character-ascension prefix are restored. | Empty/full metadata cases, single/pair label pixel cases and saturated counter minimum-band/clipping. |
 | Statistics interaction | Twenty-four bounded entry motions, initial first-entry focus, directional navigation, focus-driven scrolling, original Playtime/Ascension hover text, corrected scrollbar drag geometry. UI state is292bytes and stays outside canonical saves/RNG. | Input/scroll, endpoint checks, captures and canonical-save identity. |
-| Statistics mask | The original128px gradient texture is sampled at the source offsets and composed once over the complete scrolling subtree. At240px the two filtered bands occupy rows29–37 and232–239. A10,880byte temporary stack snapshot preserves only those17rows; no persistent buffer or ordinary-canvas branch is added. | Independent floating-point texture-sampling/group-compositing oracle, overlapping translucent primitives, unchanged central/outside rows and actual scrolled captures pass both matching I packs. |
+| Statistics mask | The original128px gradient texture is sampled at the source offsets and composed once over the complete scrolling subtree. At240px the two filtered bands occupy rows29–37 and232–239. A10,880byte temporary stack snapshot preserves only those17rows; no persistent buffer or ordinary-canvas branch is added. | Independent floating-point texture-sampling/group-compositing oracle, overlapping translucent primitives, unchanged central/outside rows and actual scrolled captures pass both matching K packs. |
 | Card Library | The count follows the original centered rich-text markup. Sort/filter/cost/check labels select each locale's actual normal face. The actual-pack oracle exposed four empty sort captions: they now resolve the original world-text keys instead of searching only the supplemental locale index. | `library_ui7_regression` independent sidebar/count oracle. |
-| Card Library search | Source normalization now streams the joined title, one separating space and description. Queries keep their source lowercase-only behavior and meaningful leading/trailing spaces; blank queries remain unfiltered. A128byte prefix table replaces the old2KiB normalized-copy buffer. | Cross-field phrase/space cases, debounce/input ownership and both matching I actual-language gates pass. |
-| Relic/potion collections | Rich role substitution fixes Chinese relic headings while keeping English's authored regular-bold mapping. D actual acceptance exposed three missing Chinese5px Bold glyphs; E adds exact rich-category/Ancient title requirements. | All20 category variants pass the collection scalar pixel oracle in both matching I packs, with no missing exact glyph keys. |
-| History header | Source24px rich information and32px counters project to5px and6px. Right-aligned date/seed/full game-mode/build rows keep fixed sizes and source overflow behavior. The single HBox retains source minimum widths, counter colors, potion backdrop/slots, selected1.1 portrait, conditional Ascension and original custom/daily lock. The extra character-name heading is removed. | Matching I packs pass the independent full-frame header oracle for Standard/Custom/Daily at scroll0/5, partial time, known/unknown recorded BuildId, source HBox minimum/expansion and exact locale glyphs. The scrolled header remains visible to screen row0. |
-| History body and motion | Source fixed labels, rarity summaries,60px act rows,19-column relics, five-column card entries, death quote/badges and64 original room/outline images are implemented. H restores UI-only random tilt and interrupted focus/unfocus rotation of the icon, outline and quest child. | Matching I History/journal gates pass both languages, including independent body/header pixels, recorded facts, source motion timelines and canonical-state identity. The quantified LCD and bounded-history limits remain below. |
+| Card Library search | Source normalization now streams the joined title, one separating space and description. Queries keep their source lowercase-only behavior and meaningful leading/trailing spaces; blank queries remain unfiltered. A128byte prefix table replaces the old2KiB normalized-copy buffer. | Cross-field phrase/space cases, debounce/input ownership and both matching K actual-language gates pass. |
+| Relic/potion collections | Rich role substitution fixes Chinese relic headings while keeping English's authored regular-bold mapping. D actual acceptance exposed three missing Chinese5px Bold glyphs; E adds exact rich-category/Ancient title requirements. | All20 category variants pass the collection scalar pixel oracle in both matching K packs, with no missing exact glyph keys. |
+| History header | Source24px rich information and32px counters project to5px and6px. Right-aligned date/seed/full game-mode/build rows keep fixed sizes and source overflow behavior. The single HBox retains source minimum widths, counter colors, potion backdrop/slots, selected1.1 portrait, conditional Ascension and original custom/daily lock. The extra character-name heading is removed. | Matching K packs pass the independent full-frame header oracle for Standard/Custom/Daily at scroll0/5, partial time, known/unknown recorded BuildId, source HBox minimum/expansion and exact locale glyphs. The scrolled header remains visible to screen row0. |
+| History body and motion | Source fixed labels, rarity summaries,60px act rows,19-column relics, five-column card entries, death quote/badges and64 original room/outline images are implemented. H restores UI-only random tilt and interrupted focus/unfocus rotation of the icon, outline and quest child. | Matching K History/journal gates pass both languages, including independent body/header pixels, recorded facts, source motion timelines and canonical-state identity. The quantified LCD and bounded-history limits remain below. |
 | Bestiary | Normal-role locale substitution covers the large name, category dividers, Actions/Stats and mode labels; actual rich italic dialogue retains its separate role. | `bestiary_ui7_regression` exact glyph coverage, actions, layouts and captures. |
 | Character selection | Ordinary name/stats/relic-title roles use the actual locale font; name measurement and glyph drawing agree, including tracking. | `five_character_ui_regression` and full actual-language review. |
 | Relic inspection | Chinese title and normal flavor text follow runtime font substitution; rich body bold/italic stays explicit. | `relic_inspect_ui9_regression` checks every actual relic text field and exact glyph key. |
@@ -81,9 +81,9 @@ metadata is invented for excluded Timeline/platform achievements.
 | History partial metadata | Older or evicted floor journal facts remain unavailable. New BuildId is the actual port identifier recorded at new-run creation; pre-metadata records retain an unknown dash. | Keep the verified old/new optional metadata codecs and unknown handling; do not synthesize missing historical values. |
 | Continue date advances | I restores the source nonwrapping two-line date at5px. Integer glyph advances make the tested long English line extend6 LCD pixels beyond the panel and the Chinese line5, while staying on screen. The original source-width measurements are narrower. | Compare future glyph-advance/ink work against the measured source case; do not invent a smaller source font to conceal the difference. |
 | Chinese regular FontVariation | The source resource declares a0.95 transform and−0.05 baseline offset. The targeted Godot experiment found the same advance/ascent/descent as its base at12 sampled sizes; this does not establish identical glyph ink. | Retain the exact face/size coverage and independently compare glyph ink before asserting full font raster equivalence. |
-| Settings and run setup | The implemented General/Input and Standard/Custom/Daily surfaces pass matching I. Source startup-logo skip, desktop background-FPS control and remote gameplay upload service have no corresponding port feature. The Daily4px minimum and offline leaderboard state remain. | Keep these feature/platform differences explicit; see `settings-run-setup-ui10-0.17.md`. |
+| Settings and run setup | The implemented General/Input and Standard/Custom/Daily surfaces pass matching K. Source startup-logo skip, desktop background-FPS control and remote gameplay upload service have no corresponding port feature. The Daily4px minimum and offline leaderboard state remain. | Keep these feature/platform differences explicit; see `settings-run-setup-ui10-0.17.md`. |
 | Bestiary previews | Every phase-specific multi-creature preview and secondary visual effect has not been independently replayed. | Drive the remaining actual move/state contexts, keeping preview state detached from the run. |
-| Original-frame and device scope | I native, actual bilingual and ordinary browser gates pass at the checkpoint below. These source-derived tests do not establish unmodified Godot-frame equality or physical-calculator timing. | Keep original-frame comparison and ordinary calculator capacity/save execution as separate evidence; do not turn passing-test counts into a restoration percentage. |
+| Original-frame and device scope | K native, actual bilingual and ordinary browser gates pass at the checkpoint below. These source-derived tests do not establish unmodified Godot-frame equality or physical-calculator timing. | Keep original-frame comparison and ordinary calculator capacity/save execution as separate evidence; do not turn passing-test counts into a restoration percentage. |
 
 The source-only syntax pass covers profile/statistics/library/relic-inspect/
 Bestiary regression translation units plus the real input and pointer units.
@@ -363,3 +363,69 @@ assertions. All19 FTUE captures per language now match H byte for byte.
 The earlier I timing differences remain recorded. J adds test precision and
 preserves the accepted I runtime; it is not another implemented UI feature or
 an increased restoration percentage.
+
+## K final matched execution and preserved rendering
+
+Frozen K `61c5a93acbd9730ab345a4add8293bda744820f0`, tree
+`3e155a32748e3917ba8f369de4da7cd8678389fe`, passes all121 native suites in
+104.98seconds (`ui10k-native-c6dc1b85d710.json`). All96 actual-language
+targets pass: front15, root17 and combat16 in each language. Both complete
+NSL2 virtual streams match their full packs. Tested binaries, resources and
+the frozen source remain unchanged throughout the corresponding runs.
+
+K removes unnecessary idle long-press work. With the setting off, the update
+path skips an inactive hold; existing ownership, residual progress and an
+unfinished completion fade still advance. The ordinary End Turn renderer
+requests the bar's visual state only when the setting is enabled. App fields,
+resource formats, font requirements and resident pools do not change. The
+final font packs and three physical resource files are byte-identical across
+H, I and K. CPU comparisons and their sampling limits are recorded separately
+in `performance-ui10-0.17.md`; exact rendering is verified below.
+
+The final front journals are `ui10k-front-eng-4b2877539a2c.json` and
+`ui10k-front-zhs-ed3b2f4eb41a.json`. All214 front captures are byte-identical
+to I, with no missing, additional or unexplained capture. The root group has
+268 captures per language: its19 FTUE captures match the accepted J timing,
+and all other captures match I. The combat group has239 captures per language:
+235 match I, the three intended Settings hover corrections and one added
+Long Press hover match J, and all58 card/HUD captures match J exactly.
+The two held/fired progress-bar captures remain identical to I.
+
+The full comparison therefore covers1,228 actual captures:536 root,214 front
+and478 combat. The combat count includes two files per language written at
+the locale root rather than under the target's capture directory; comparing
+only the runner's recorded lists would omit those four files. The complete
+comparisons found no new runtime rendering difference. They compare port
+versions under controlled fixtures, not unmodified original-game frames.
+
+K's final ordinary HTML passes21 real-input flows and47 captures with no page
+errors or external requests. The long-press setting, short/cancelled attempts,
+repeat handling, exactly one turn per held key or toolbar press, reload and
+other-profile save identity all pass again on this final artifact. Its
+journal is `ui10k-ordinary-browser-e70b5849ae91.json`. The HTML is129,282,581
+bytes, SHA256
+`d03be509015e5bb8ad515fd0933ca07236804e57a61e0a265be85bbdf2a576a1`;
+before/after browser hashes agree with the independently read closed-package
+manifest. I and J receipts remain historical evidence, rather than replacing
+these new K executions.
+
+## Original-source scan scope and remaining work
+
+The inventory enumerates all3,538 current C# paths and1,022 pinned scene
+paths. It indexes714 nonempty namespace-declared node files plus two excluded
+empty node paths. Nine in-scope empty bodies were recovered; five remaining
+empty files are generated or excluded paths. Those facts establish the scan
+and recovery scope, not that every method was reviewed. The72 flow contracts
+identify the concrete source methods, implementations and exercised gates;
+their count is not a restoration percentage.
+
+The remaining table above continues to apply after K. Its concrete items
+include UTC versus original local-zone calendars, measured integer date-text
+advances, bounded/partial historical records and quantized icon transforms,
+unsupported original startup-logo/background-FPS/upload features, and
+unreplayed Bestiary phase or multi-creature contexts. The broader audit also
+retains specific secondary particles/materials, formation scale/hue and
+per-monster command-timing gaps. Original glyph-ink/full-frame comparison and
+physical-calculator timing are separate evidence. Audio, multiplayer and
+Timeline remain excluded; unavailable online services are explicit. No95%
+claim is inferred from inventories, passing suites or these capture counts.
