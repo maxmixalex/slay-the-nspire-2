@@ -1,50 +1,79 @@
 # Work state — 2026-10-25
 
-## UI12 recovery and final acceptance in progress
+## UI12 recovered release — acceptance completed
 
-The interrupted workspace was recovered intact at local `af95e293` on
-2026-10-25. Its 228 changed source/document files have now been uploaded to
-`work/0.17-world-parity` as **`fe11b6d756012b889eb48d5911df408caa126da1`**.
-The branch was independently fetched and its complete tree
-`e6a1fd18f3183a988a832d7d3dbe8c605cb0de59` equals the recovered local tree.
-The current user instruction explicitly authorizes source submission. Git CLI
-has no stored write credentials, so the connected GitHub API performs the
-submission; no unresolved approval block applies to this resumed stage.
+Runtime checkpoint: **`169cea998135a47e5f8580b15df798244e0e7e6a`**. The final documentation/source
+checkpoint is synchronized from `work/0.17-world-parity` to **`main`** after
+verification. Every coherent source stage was pushed and independently fetched
+before its long validation; public source excludes private game data, fonts,
+calculator images and generated packs. The earlier approval block described in
+historical notes below was resolved by the user's explicit resumed instruction.
 
-Four unmerged frontend regression corrections were recovered from the prior
-frontend worktree. Further source review found and fixed two remaining runtime
-issues: title/category text still accumulated integer advances, and the right
-merchant card missed the face cache because its capture window crossed the LCD
-edge. Fractional metrics and kerning now cover those headings; bounded cache
-windows preserve exact pixels at all seven stock positions without more cache
-memory or resource payload.
+The interrupted source at `af95e293` was recovered intact, preserved remotely at
+`fe11b6d756012b889eb48d5911df408caa126da1`, and advanced through the integrated
+feedback/console/input/renderer fixes. `ui12-lcd-followup-0.17.md` is the full
+feedback matrix; `validation-ui12-0.17.json` binds the deliverable, executed gates,
+ordinary flows, measured limits and excluded attempts to exact checkpoints.
 
-The f4a7cd59 ARM launcher passed compilation at 1,573,025 bytes and
-20,132,496 bytes allocated. A complete fresh Firebird frontend session passed
-through English collection/search, settings tabs/thumb/tooltip, typed Flag
-console, language change, Chinese credits, normal exit and NAND flush. Full
-Python discovery now passes all 256 tests; the other six Python modules pass
-54 tests. Repaired complete native suites keep original pixel/save/interaction
-oracles while updating the accepted readable layout and physical-key mapping.
+The calculator deliverable has a **1,595,942-byte launcher** and requests
+**20,356,556 bytes** under the 24 MiB ceiling. Common + ENG + ZHS +
+launcher install at **69,509,705 bytes**. All sixteen language resources
+were independently verified; only ENG/ZHS are in the default installation.
+The repaired Necrobinder adds 98,098 shared bytes, the sampled studio-logo
+sequence 165,511, and the swarm/sleep sprites 2,284. The accepted UI11 animation
+precision remains; this stage does not remove animation frames to fit storage.
 
-Ordinary Firebird play exposed two remaining presentation issues: duplicate
-Battle Start banners and a clipped selected-card description. Both are now
-corrected in production and pass the actual-resource native gate (12,594
-checks). The merchant preflight also measured a genuine cold long frame:
-2,285.40 ms total / 1,428.77 ms I/O. That preflight is excluded from matched
-speed claims. Cold inventory work now yields after one decoded image or one
-card's text, acknowledges the open request, permits cancellation, and starts
-the original opening tween after preparation. A 0b smoke then exposed missed
-180ms key taps; it is excluded from matched performance/canonical claims.
-Ndless now samples physical input around 8KiB resource reads into a bounded
-ordered queue; callbacks are dispatched only by the main loop. Preparation
-reuses its first complete background so new flame/actor frames cannot compete
-with inventory decoding. Device remeasurement is pending.
-The source startup-logo timeline and saved NSPF6 Skip Intro Logo setting are
-integrated. Its optional 37 original sampled frames add 165,511 shared bytes;
-all 16 private locale resources were regenerated without duplicating artwork.
-Private assets remain local; no manual WASM/browser acceptance ran.
-The detailed matrix is in `ui12-lcd-followup-0.17.md`.
+### Verified behavior and complete suites
+
+- The complete registered native suite passes **134/134**
+  against the frozen release runtime. Python discovery plus the six additional
+  converter/packaging modules passes **310 tests**. Compilation of tools passes.
+- Actual final-resource gates cover all sixteen locale descriptions/fonts,
+  startup/SkipIntroLogo, merchant preparation and occlusion, English/Chinese
+  combat, and the dedicated UI12 card/banner/cache/early-Loot contracts.
+- Real source-driven screen tests cover rumble/trauma/punch/drunk schedules,
+  normal Smith, sleep/wake tails and sprite bounds, Doom's actual execution
+  boundaries, and Architect Normal/Fast/Off/Continue/terminal lifecycles. These
+  are presentation contracts and do not consume canonical RNG or alter saves.
+- Ordinary Firebird `f4a7cd59` completed an Ancient-to-battle/reward/map/save/
+  Continue flow. `44ebf0e` naturally continued to floor 6, confirmed a single
+  Battle Start then Player Turn, and drew Rage normally. Its selected card
+  revealed the complete `gain 3 Block.` tail. The ordinary saved state was
+  floor 6, turn 5, HP 59/85, gold 280, deck 12, revision 68; it validated and
+  roundtripped exactly through the production decoder.
+- Final `169cea99` ordinary startup/Continue, actual digit-1 / Enter Rage play,
+  SaveQuit and return to the OS pass in `78793058034c`; USB production readback
+  validates and roundtrips revision 69 exactly. Separate Flag-console original
+  `fight`/Tab fixtures verify moving phobia swarm and sleeping Z, then restore
+  the ordinary save/progress with identical USB readback (`ea63bb4cdfce`).
+  Earlier captures are never relabelled as the final binary.
+
+### Performance and real limits
+
+The closed matched Shop fixture compared UI11 N with `1826969c` under the same
+canonical input and protocol. Mean room interval fell 106.880 → 82.053 ms
+(**-23.23%**), while the maximum increased 2,387.054 → 2,703.094 ms
+(**+13.24%**). Canonical readback stayed identical and resource failures were
+zero. Inventory preparation provides visible feedback and bounded image/text
+steps; three separate observed cold 180 ms Esc taps cancelled. Cold I/O latency
+has not been eliminated. These are Firebird SP804 timings, not physical-device
+FPS. `44ebf0e`'s ordinary three-enemy combat sample averaged 38.522 ms over
+1,438 frames, with a 487.305 ms maximum; it is not a matched speed comparison.
+
+Failed/unfinished earlier attempts remain excluded: the old short-tap merchant
+smoke, the ambiguous black-screen/blocked-USB exit attempt, superseded native
+builds, and an optional exhaustive memory/range resource traversal. The latter
+thrashed the shared tiled cache and was interrupted; its passing components have
+separate exit receipts. A new Doom gate exposed a real death-screen target reset;
+the release preserves the original combat scene for the source 300 ms punch and
+verifies visible frames before the real terminal screen. No diagnostic-only
+probe is counted as completion of a feature.
+
+Audio, multiplayer and Timeline retain the agreed exclusions. Full Ancient
+actors retain the user-authorized storage exception. Dense GPU effects and
+exact desktop rasterization remain CPU/LCD mappings. Architect camera timing is
+implemented; this does not claim every authored player-attack/FireBurst particle.
+No manual WASM/browser validation or physical-device speed claim is made.
 
 ## UI12 active feedback correction — historical pre-recovery notes
 

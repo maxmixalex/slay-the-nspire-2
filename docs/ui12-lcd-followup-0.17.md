@@ -5,11 +5,12 @@ adaptation; it does not revert to the earlier small desktop projection. Original
 art, model rules and source interactions are retained, with deliberate reflow,
 clipping, scrolling and physical-key changes for 320 × 240.
 
-This is the integration report. The final acceptance/performance section is
-completed after the remaining ordinary Firebird sessions close. The recovered source tree is now remotely preserved on
-`work/0.17-world-parity` at `fe11b6d`; the interrupted validation and final
-package are being completed in the resumed session. No WASM/browser validation
-is used.
+This is the release integration report. The interrupted workspace was recovered
+and its source preserved on GitHub before validation. The delivered runtime is
+`169cea998135a47e5f8580b15df798244e0e7e6a`; verified source is synchronized to `main`. Exact
+launcher/resource hashes, sizes and closed validation scopes are recorded in
+`validation-ui12-0.17.json`. This release uses ordinary Ndless/Firebird acceptance
+and contains the calculator build; no manual WASM/browser validation ran.
 
 ## Implemented feedback
 
@@ -51,11 +52,18 @@ contracts are in `ui12-front-feedback-0.17.md`.
 
 ## Storage and allocation
 
-The final shared UI40 resource is 61,501,372 bytes. English is 1,133,049 bytes
-and Simplified Chinese is 5,113,330 bytes. The launcher is about 1.57 MB, keeping
-the default installation at about 69.32 MB decimal. The final exact launcher and
-installation counts are bound to the release receipt, not estimated from ZIP
-size.
+The final shared UI40 resource is **61,669,167 bytes**. English is
+**1,130,274 bytes** and Simplified Chinese **5,114,322 bytes**. The delivered
+launcher is **1,595,942 bytes**, so the four-file default installation
+is **69,509,705 bytes** before saves. ZIP size is not the installation
+size. All sixteen language resources together with the common file occupy
+91,975,031 bytes; the default installation includes only English and Chinese.
+
+The original 37-frame, 12 Hz sampled studio-logo sequence adds 165,511 shared
+bytes. The three original swarm/sleep sprites add only 2,284 shared bytes.
+The existing 1,783 clip clocks remain intact. Optional auxiliary endpoints
+2161 / 2198 / 2199 / 2201 retain exact format gates; the partial 2200 extension
+is rejected rather than being treated as a complete feature.
 
 UI10 installed 91,604,965 bytes; accepted UI11 N installed 68,776,461 bytes.
 UI12 is slightly larger than UI11 because it restores missing artwork and adds
@@ -75,13 +83,43 @@ the desired languages with the one shared artwork file. Original missing
 translations and calculator-only text retain the already documented fallback
 in `localization-ui11-0.17.md`.
 
-The allocation ceiling stays 24 MiB. The integrated launchers request about
-20.13 MB / 19.19 MiB, including real 5 MiB image and 6 MiB tile-group caches.
-Ordinary Ndless execution, rather than the ceiling alone, is the acceptance
-gate. The historical UI11 23.87 MB allocation failure remains relevant; this
-release does not claim that Ndless accepted a contiguous 24 MiB block.
+The allocation ceiling stays **24 MiB**. The delivered launcher requests
+**20,356,556 bytes**, including the existing bounded 5 MiB image and
+6 MiB tile-group caches. Actual ordinary Ndless startup and saved-run Continue
+are required acceptance evidence; the ceiling is not itself proof of execution.
+The historical UI11 23.87 MB allocation failure remains recorded. This release
+does not claim that Ndless accepted an arbitrary contiguous 24 MiB allocation.
 
-## Executed native contracts
+## Recovered integration acceptance
+
+The complete final registered native suite and Python conversion/packaging
+results are recorded against the final frozen source in
+`validation-ui12-0.17.json`. Native checks establish functional, pixel-cache,
+format and canonical-state contracts; they do not establish calculator speed.
+
+The actual final-resource work at `44ebf0e` separately passed all sixteen locale
+editions (53,072 model/event descriptions, no missing visible codepoints or
+unexpanded templates), startup/SkipIntroLogo, incremental merchant preparation,
+English and Chinese combat, exact merchant occlusion, and the dedicated UI12
+battle/card gate. The latter exercises one Battle Start banner, the selected
+Rage reader reaching its final value, target-only damage, the real winning-card
+reward boundary, all seven merchant cache positions and label placement.
+
+An extra exhaustive memory/range resource traversal was interrupted because
+alternating two tiled owners deliberately thrashed the shared group pool. Its
+batch is **not** reported as passed. Each already completed component has its
+own exit result; the dedicated UI12 gate has a separately closed passing
+journal. The independent resource inventory still verifies all seventeen stored
+files and sixteen reconstructed logical hashes against conversion receipts.
+
+The source-driven sleep/swarm/camera gates cover real creature identities,
+wake transitions, canonical-state invariance and original sprite bounds.
+Doom and Architect lifecycle acceptance is recorded with its exact final
+runtime; their new observer notices do not change gameplay state, RNG or the
+save layout. The Architect work is its camera timing and terminal-scene hold,
+not a claim to reproduce every authored character-attack or FireBurst particle.
+
+## Historical UI12 pre-recovery native contracts
 
 These establish correctness, not calculator speed or whole-game pixel identity.
 
@@ -101,7 +139,7 @@ accidentally linked J's App renderer; that failed run is excluded and its
 matching-source rebuild is recorded separately. ARM builds compile the complete
 frozen source rather than substituting native execution for the calculator.
 
-## Ordinary Firebird evidence
+## Historical H–K ordinary Firebird evidence
 
 - H ordinary play, without console: new Ironclad run, Neow, map, a four-turn
   battle, actual numeric selection and target damage, failed-energy speech,
@@ -124,7 +162,7 @@ frozen source rather than substituting native execution for the calculator.
   actual world-choice Loot path. Its closed journal has zero controller errors.
   L/M acceptance and matched merchant results are appended after closure.
 
-## Measured limits
+## Historical H measurements
 
 H ordinary combat recorded 1,157 frames: mean interval 36.535 ms, mean render
 30.344 ms, maximum interval 241.272 ms and sixteen intervals over 100 ms. H map
@@ -134,9 +172,62 @@ one second. Those samples use the calculator's emulated SP804 timer; they are
 not host wall-clock or physical-device FPS claims, and different encounters
 are not used to invent a speedup percentage.
 
-The matched merchant comparison uses the identical canonical Shop save and
-matching stock/hover actions on UI11 N and the final UI12 merchant implementation.
-Its closed-session result is required before reporting a speedup.
+## Closed matched merchant comparison
+
+The same canonical Shop fixture and the same open/idle/card-hover/removal-tip/
+close protocol were exercised on UI11 N and UI12 `1826969c`. Both sessions
+closed normally with unchanged canonical readback and zero resource failures.
+This is an emulator Shop fixture, separate from ordinary map progression.
+
+| Whole room protocol | UI11 N | UI12 | Change |
+| --- | ---: | ---: | ---: |
+| Frames | 521 | 674 | Different counts over the same protocol |
+| Mean frame interval | 106.880 ms | 82.053 ms | -23.23% |
+| Mean render | 105.916 ms | 79.793 ms | -24.66% |
+| Maximum frame interval | 2,387.054 ms | 2,703.094 ms | +13.24% |
+
+These are SP804 emulator timer measurements, not host wall-clock or physical
+calculator FPS. The complete protocol includes cold work and hovers; it is not
+an isolated warm-idle benchmark. Progress dots appeared during preparation and
+the first complete inventory sample was at six seconds. Cold stalls remain.
+The 8 KiB I/O input latch preserves sampled press/release transitions for main-
+loop dispatch. Three separately observed 180 ms cold-preparation Esc trials
+cancelled successfully, including the `44ebf0e` repeat; this does not promise
+zero input latency during every resource read.
+
+## Ordinary recovered gameplay and persistence
+
+The `f4a7cd59` ordinary run, without console commands, exercised Ancient choices,
+an actual upgraded Strike, combat and denied-energy speech, a normal win,
+Loot while a corpse remained visible, gold/card pickup, map, save/title and
+Continue. Its production canonical readback was valid and exactly roundtripped
+at floor 5, HP 79/85, gold 280, deck 12. Its 815 combat frames averaged
+37.687 ms with a 300.262 ms maximum. This is encounter-specific evidence, not
+a whole-game FPS claim.
+
+The `44ebf0e` ordinary continuation took the only legal next map node to floor
+6. Real captures show one Battle Start banner followed by Player Turn. By turn
+5 it naturally drew Rage; selecting it then waiting revealed the complete
+`this turn, gain 3 Block.` tail without moving the title, cost or neighbours.
+The saved state for final-launcher Continue is HP 59/85, gold 280, deck 12.
+The final `169cea99` launcher independently continued that real save, selected
+and played Rage with digit 1 / Enter, showed Rage 3 and hand count 5 → 4,
+saved revision 69 and returned normally to the calculator OS. USB readback
+passed production decode, validation and exact canonical roundtrip, with zero
+resource-read failures. The battle was not claimed to be another completed win.
+
+A separate final Flag-console fixture used actual typed `fight` commands and
+Tab completion to exercise Entomancer's moving phobia swarm and the beetle's
+sleeping Z. It returned to the OS and restored the ordinary revision 69 save
+and progress, with identical USB readback. These deliberately constructed
+contexts are not ordinary map progress or another performance benchmark.
+
+Actual startup/SkipIntroLogo persistence was verified at `125adc82`: the
+original sampled logo ran, NSPF6 stored the setting in 108 bytes, a real USB
+readback confirmed its flag, and a fresh launch skipped to the title. Normal
+Quit returned to the operating system. An earlier black-frame/blocked-USB
+attempt remains unknown/excluded; it is not rewritten as a successful exit.
+
 
 ## Explicit platform adaptations
 

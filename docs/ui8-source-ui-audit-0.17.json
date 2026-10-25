@@ -6,7 +6,7 @@
     "dll_sha256": "0861bfa1df347538d932f22d580e75420f08082792eb914e53b4882764acdbe9"
   },
   "supersedes": "ui7-original-ui-inventory-0.17.json",
-  "source_stage": "UI12 current-contract reconciliation after recovery of af95e29 and combat/cache/text completion through ae1359512fd76b6d0d4fd814da699ff366cd7f8c. The named UI12 implementations below supersede stale current gap descriptions; all prior implementation/remaining strings and UI10/UI11 receipts remain historical. Final integrated calculator acceptance and release sizes are owned by WORK_STATE.md and ui12-lcd-followup-0.17.md. No blanket source audit, unmodified desktop frame identity or restoration percentage is asserted. The previously pending startup-logo/SkipIntroLogo feature is now implemented and verified by the explicitly scoped startup-ui12-0.17.md receipts; historical gap strings remain historical.",
+  "source_stage": "UI12 recovered release, runtime 169cea998135a47e5f8580b15df798244e0e7e6a. Current contracts include the readable feedback corrections, saved startup-logo option, original swarm/sleep masks, live rich-text callers and audited camera lifecycles. Historical fields remain historical. The final integration record is validation-ui12-0.17.json; no blanket GPU/frame equality, all-VFX differential audit or restoration percentage is asserted.",
   "scope": {
     "excluded": [
       "audio",
@@ -54,7 +54,7 @@
       "contract": "Title focus/reticles and nested menu ownership",
       "assessment": "implemented_with_documented_limits",
       "implemented": "UI12 preserves the source menu focus/reticles and nested ownership while using the readable LCD layout. The title atlas rotation is corrected, logo/menu anchors move upward, fog alpha is reduced, and oversized original HSV button materials remain visible through hover/press. Shared and specialized title measurement use natural source font metrics. The source MegaCrit first-launch Spine sequence, original stage/cancel clocks and main-menu fade now run once per host, with no replay during locale reload or returning from a run.",
-      "remaining": "Original font chains, fractional advances, pair kerning and bearings are implemented. Final integer LCD rasterization, antialiasing and full-frame desktop Godot equality remain documented limits; this is not a missing-font or wholly omitted-kerning claim. Startup uses a documented 12 Hz sampled Spine stream and bounded CPU fade coverage; final matching Firebird startup remains a release integration gate.",
+      "remaining": "Original font chains, fractional advances, pair kerning and bearings are implemented. Final integer LCD rasterization, antialiasing and full-frame desktop Godot equality remain documented limits; this is not a missing-font or wholly omitted-kerning claim. Startup uses a documented 12 Hz sampled Spine stream and bounded CPU fade coverage; actual logo/SkipIntroLogo startup was verified at 125adc82, and the final 169cea launcher independently passed ordinary Ndless startup/Continue/exit. Exact checkpoints remain separate in the release record.",
       "regressions": [
         "world_frontend_ui_regression",
         "profiles_ui7_regression",
@@ -366,20 +366,25 @@
       "group": "run",
       "original_types": [
         "MegaCrit.Sts2.Core.Nodes.Rooms/NCombatRoom.cs",
-        "MegaCrit.Sts2.Core.Nodes.Combat/NCombatUi.cs"
+        "MegaCrit.Sts2.Core.Nodes.Combat/NCombatUi.cs",
+        "MegaCrit.Sts2.Core.Nodes.Vfx/NSleepingVfx.cs"
       ],
       "contract": "Prepared room fade-in, enemies and hand arrival",
       "assessment": "implemented_with_documented_limits",
-      "implemented": "Original source creature anchors/aspect fitting, entrance timing, actual hand arrival and retained trace. UI12 starts Battle Start before Player Turn with the source lead/fade/backstop clocks, raises the whole banner with the scene, and suppresses replay only for the restored encounter.",
-      "remaining": "The battle-opening sequence and ordinary room/hand arrival are implemented. Separate per-monster entrance particle/material variants remain incompletely reviewed/reproduced; this row does not turn that unresolved scope into a pass.",
+      "implemented": "Original source creature anchors/aspect fitting, entrance timing, actual hand arrival and retained trace. UI12 starts Battle Start before Player Turn with the source lead/fade/backstop clocks, raises the whole banner with the scene, and suppresses replay only for the restored encounter. UI12 also implements the source sleeping-emitter lifecycle for Slumbering Beetle and Lagavulin Matriarch from actually presented IsAwake facts, original localized Z masks and source-scaled SleepVfxPos anchors, with bounded star/Glow companions and existing-particle tails after wake. The beetle wakes on its actual next Stunned move after the preceding encounter actors, while Lagavulin wakes on unblocked damage. The bot FallControl entrance was already present in the converter and is preserved.",
+      "remaining": "Battle opening, ordinary room/hand arrival and the named sleeping-creature effects are implemented. LCD minimum glyph size, integer particle trajectories, bounded stars and GPU/material rendering remain explicit approximations. The inventory of 65 VFX scene families is not 65 missing entrances or an all-family pass; other per-monster GPU variants and a differential audit of every command delay remain unclaimed.",
       "regressions": [
         "combat_ui_regression",
-        "combat_layout_regression"
+        "combat_layout_regression",
+        "screen_effects_ui12_regression"
       ],
       "acceptance": "Historical UI10: Frozen K native checks pass: combat_ui_regression, combat_layout_regression. Both matching K format39 actual packs pass: combat_ui_regression.",
       "pre_ui12_implemented_historical": "Original source creature anchors/aspect fitting, entrance timing, actual hand arrival and retained trace.",
       "pre_ui12_remaining_historical": "All independent enemy entrance VFX are not reproduced.",
-      "ui12_acceptance": "Frozen combat worktree ae13595: actual UI40 gate 1096 checks (34d842ab8fde), five complete combat/canvas suites (c4ac9d4cd5d0), unchanged source fingerprints. H/K device scopes and the independent final-release requirement are recorded in combat-ui12-0.17.md."
+      "ui12_acceptance": "Frozen combat worktree ae13595: actual UI40 gate 1096 checks (34d842ab8fde), five complete combat/canvas suites (c4ac9d4cd5d0), unchanged source fingerprints. H/K device scopes and the independent final-release requirement are recorded in combat-ui12-0.17.md.",
+      "pre_ui12_screen_completion_implemented_historical": "Original source creature anchors/aspect fitting, entrance timing, actual hand arrival and retained trace. UI12 starts Battle Start before Player Turn with the source lead/fade/backstop clocks, raises the whole banner with the scene, and suppresses replay only for the restored encounter.",
+      "pre_ui12_screen_completion_remaining_historical": "The battle-opening sequence and ordinary room/hand arrival are implemented. Separate per-monster entrance particle/material variants remain incompletely reviewed/reproduced; this row does not turn that unresolved scope into a pass.",
+      "ui12_screen_effects_acceptance": "Verified checkpoint 169cea998135a47e5f8580b15df798244e0e7e6a: screen_effects_ui12_regression passes 2,122,118 checks, including original English/Japanese masks and actual command/terminal lifecycles; journal 75aed13c3f47 passed with source_changed=false. All 503 production src/include files match the root checkpoint. Source timing, original pixels, hit targets and canonical save identity are correctness evidence, not calculator-speed measurements. See screen-effects-ui12-0.17.md."
     },
     {
       "id": "event_base",
@@ -539,17 +544,21 @@
       ],
       "contract": "Death/victory summary, score, badges and discoveries",
       "assessment": "implemented_with_documented_limits",
-      "implemented": "Original score, nineteen solo badge predicates, observed discoveries, intro/score/badge/discovery clocks and release-triggered controls remain. UI11 uses a clipped 10px summary article, 28px score rows, 22px badges and a fixed 152x26 confirmation button. Up/Down scroll; Left/Right cycles badge/discovery focus and reveals it in the visible article. Source-hidden View Run remains unavailable.",
-      "remaining": "LCD reflow, integer text rasterization and full-frame Godot shader equality remain documented adaptations. Final ordinary calculator acceptance is separate from the asset-independent correctness target.",
+      "implemented": "Original score, nineteen solo badge predicates, observed discoveries, intro/score/badge/discovery clocks and release-triggered controls remain. UI11 uses a clipped 10px summary article, 28px score rows, 22px badges and a fixed 152x26 confirmation button. Up/Down scroll; Left/Right cycles badge/discovery focus and reveals it in the visible article. Source-hidden View Run remains unavailable. The actual final Architect Proceed now keeps the original room visible through its authored camera sequence before the terminal black fade. Future intro origins clamp safely across 32-bit clock wrap. Normal/Fast timing, Silent dialogue exceptions, Camera Off, repeated leave, Continue/reload and actual return-to-title are covered without canonical changes.",
+      "remaining": "LCD reflow, integer text rasterization and full-frame Godot shader equality remain documented adaptations. Final ordinary calculator acceptance is separate from the asset-independent correctness target. The added Architect sequence covers the source camera triggers on the retained event background; complete per-character attack/Architect/FireBurst VFX tracks are not asserted by this scope.",
       "regressions": [
         "world_game_over_ui_regression",
         "ui_progress_regression",
-        "game_over_facts_ui8_regression"
+        "game_over_facts_ui8_regression",
+        "screen_effects_ui12_regression"
       ],
       "acceptance": "Historical UI10: Frozen K native checks pass: world_game_over_ui_regression, ui_progress_regression. Both matching K format39 actual packs pass: world_game_over_ui_regression.",
       "ui10_implemented_historical": "Actual original score formula/19 solo badge predicates, observed discoveries, source intro/score/badge/discovery timing and release-triggered controls. Pinned View Run is hidden/disabled and remains unavailable; ordinary Compendium Run History stays available. The original dark-red threshold mask and event-only pure-black prelude replace the generic Ink fade, preserving actor layer order.",
       "ui10_remaining_historical": "Unmodified Godot full-frame equality remains unestablished.",
-      "ui11_acceptance": "Final fixture checkpoint 02f0f4b266dc1ac9578a43e02521a07d95d647de passes 176 game_over_facts_ui8_regression checks against recompiled L UI and unchanged I core. The source-timing/release assertions, bounded long-summary scroll, two-category focus wrap/reveal and canonical SaveData/RNG checks pass. Both earlier fixture-only failures remain recorded in verification_ui11.game_over_readability; runtime code was unchanged."
+      "ui11_acceptance": "Final fixture checkpoint 02f0f4b266dc1ac9578a43e02521a07d95d647de passes 176 game_over_facts_ui8_regression checks against recompiled L UI and unchanged I core. The source-timing/release assertions, bounded long-summary scroll, two-category focus wrap/reveal and canonical SaveData/RNG checks pass. Both earlier fixture-only failures remain recorded in verification_ui11.game_over_readability; runtime code was unchanged.",
+      "pre_ui12_screen_completion_implemented_historical": "Original score, nineteen solo badge predicates, observed discoveries, intro/score/badge/discovery clocks and release-triggered controls remain. UI11 uses a clipped 10px summary article, 28px score rows, 22px badges and a fixed 152x26 confirmation button. Up/Down scroll; Left/Right cycles badge/discovery focus and reveals it in the visible article. Source-hidden View Run remains unavailable.",
+      "pre_ui12_screen_completion_remaining_historical": "LCD reflow, integer text rasterization and full-frame Godot shader equality remain documented adaptations. Final ordinary calculator acceptance is separate from the asset-independent correctness target.",
+      "ui12_screen_effects_acceptance": "Verified checkpoint 169cea998135a47e5f8580b15df798244e0e7e6a: screen_effects_ui12_regression passes 2,122,118 checks, including original English/Japanese masks and actual command/terminal lifecycles; journal 75aed13c3f47 passed with source_changed=false. All 503 production src/include files match the root checkpoint. Source timing, original pixels, hit targets and canonical save identity are correctness evidence, not calculator-speed measurements. See screen-effects-ui12-0.17.md."
     },
     {
       "id": "topbar",
@@ -959,7 +968,8 @@
       "pre_ui12_implemented_historical": "Source General/Input layout, original tabs/checkboxes/action controls, language dropdown rules and real local feedback/credits. G/H restores exact source font roles, geometry, release-hidden controls and Input100ms focus fade. I adds the original default-off per-profile Long Press Confirmations row, yielding eleven supported General rows, and its real End Turn hold behavior. NSPF5 uses reserved bit7 in the unchanged108-byte preference record with explicit backward migration; canonical NSV17 and NSH9 remain unchanged. K avoids disabled idle hold/visual computation without suppressing an existing owner, residual timer or unfinished completion fade.",
       "pre_ui12_remaining_historical": "Audio is excluded. The original startup-logo sequence/SkipIntroLogo, desktop background-FPS cap and remote gameplay upload service are not implemented; they are explicit feature/platform differences. CommonTooltips is authored hidden with an unimplemented callback; Reset Tutorials is hidden by the pinned release gate; ShowMpDrawings belongs to excluded multiplayer.",
       "ui12_acceptance": "UI12 scoped frontend source/interaction evidence is recorded in ui12-front-feedback-0.17.md; final integrated Firebird acceptance remains separately bound to its launcher. Historical UI10 acceptance is retained without relabeling it as UI12. Startup resource/native coverage and its final device boundary are documented in startup-ui12-0.17.md.",
-      "ui12_pre_startup_remaining_historical": "Audio, multiplayer drawings and remote service behavior remain excluded/unavailable; CommonTooltips and Reset Tutorials follow the pinned hidden release gates. The original startup-logo sequence and SkipIntroLogo preference remain a concrete pending feature at this reconciliation checkpoint, tracked for the release owner; desktop background FPS limiting is a platform difference."
+      "ui12_pre_startup_remaining_historical": "Audio, multiplayer drawings and remote service behavior remain excluded/unavailable; CommonTooltips and Reset Tutorials follow the pinned hidden release gates. The original startup-logo sequence and SkipIntroLogo preference remain a concrete pending feature at this reconciliation checkpoint, tracked for the release owner; desktop background FPS limiting is a platform difference.",
+      "ui12_release_acceptance": "Actual 125adc82 Firebird USB readback verifies the unchanged 108-byte NSPF6 preference, flags 644 to 2692, normal exit and skip after relaunch. Final169 ordinary lifecycle is separately passed. These are scoped device receipts, not only native settings serialization tests."
     },
     {
       "id": "language",
@@ -1013,13 +1023,16 @@
       ],
       "contract": "Rich-text animation option affects text tags",
       "assessment": "implemented_with_documented_limits",
-      "implemented": "Actual rich-text option and source tag scopes remain separate from combat popups.",
-      "remaining": "All original rich-text animation/material variants are not established.",
+      "implemented": "The actual rich-text preference controls authored tag scopes independently of combat popups. UI12 handles the live source pink color (#FF78A0) and shake tag through every relevant text path. Merchant and Crystal dialogue use source-timed per-character fly-in position/rotation/alpha, with disabled TextEffects preserving the source fade. Existing ThoughtBubble and Fake Merchant transforms remain. Canvas presentation data is read-only with respect to canonical State and RNG.",
+      "remaining": "Integer LCD rasterization and bounded jitter/material sampling are documented adaptations. This does not assert every unused engine custom-effect class or desktop GPU glyph frame is identical. The live tag inventory and actual dialogue callers define the implemented scope; no missing inline reader is hidden by this remaining raster limit.",
       "regressions": [
         "localized_template_regression",
         "font_styles_ui7_regression"
       ],
-      "acceptance": "Historical UI10: Frozen K native checks pass: localized_template_regression, font_styles_ui7_regression. Both matching K format39 actual packs pass: font_styles_ui7_regression."
+      "acceptance": "Historical UI10: Frozen K native checks pass: localized_template_regression, font_styles_ui7_regression. Both matching K format39 actual packs pass: font_styles_ui7_regression.",
+      "pre_ui12_text_completion_implemented_historical": "Actual rich-text option and source tag scopes remain separate from combat popups.",
+      "pre_ui12_text_completion_remaining_historical": "All original rich-text animation/material variants are not established.",
+      "ui12_text_completion_acceptance": "font_styles_ui7_regression and the complete 134-suite native release at 169cea998135a47e5f8580b15df798244e0e7e6a pass. The dedicated actual-source UI12 label/card gate also passes; receipt scope is in validation-ui12-0.17.json."
     },
     {
       "id": "keyboard_rebind",
@@ -1030,7 +1043,7 @@
       ],
       "contract": "Binding capture/conflict/reset and navigation",
       "assessment": "implemented_with_documented_limits",
-      "implemented": "Real two-bank capture/conflict-swap/reset and supported host keys, linked confirm/end-turn handling and card keys persist in NSPF5 with legacy-format support. G/H restores source Input row/command/binding geometry, Listening modal and100ms focus-release fade. I integrates mapped physical/calculator edges and semantic toolbar lifetimes with the shared long-press owner; repeat/release cannot fire an extra turn. UI12 defaults use pad-edge navigation/center selection and Tab/Doc/Home/Del/Var/Menu/Shift/Ctrl, ten direct 1-0 hand slots and Flag for the real typed command console. Labels use official NspireCX glyphs; customized banks are preserved.",
+      "implemented": "Real two-bank capture/conflict-swap/reset and supported host keys, linked confirm/end-turn handling and card keys persist in NSPF6 with legacy-format support. G/H restores source Input row/command/binding geometry, Listening modal and100ms focus-release fade. I integrates mapped physical/calculator edges and semantic toolbar lifetimes with the shared long-press owner; repeat/release cannot fire an extra turn. UI12 defaults use pad-edge navigation/center selection and Tab/Doc/Home/Del/Var/Menu/Shift/Ctrl, ten direct 1-0 hand slots and Flag for the real typed command console. Labels use official NspireCX glyphs; customized banks are preserved.",
       "remaining": "Keys absent from the calculator remain unavailable. This does not prevent the implemented native physical-key defaults, editable bindings or typed console.",
       "regressions": [
         "input_bindings_ui8_regression",
@@ -1047,16 +1060,23 @@
       "original_types": [
         "MegaCrit.Sts2.Core.Nodes.Vfx.Utilities/NScreenShake.cs",
         "MegaCrit.Sts2.Core.Nodes.Vfx.Utilities/ScreenPunchInstance.cs",
-        "MegaCrit.Sts2.Core.Nodes.Screens.Settings/NScreenshakePaginator.cs"
+        "MegaCrit.Sts2.Core.Nodes.Screens.Settings/NScreenshakePaginator.cs",
+        "MegaCrit.Sts2.Core.Nodes.Vfx/NDoomVfx.cs",
+        "MegaCrit.Sts2.Core.Models.Events/TheArchitect.cs"
       ],
-      "contract": "Scene-only latest punch,300ms,5/20/40px and0/.5/1/2/4strength",
+      "contract": "Source punch, rumble/drunk rumble, trauma, saved strength settings and audited actual command hooks",
       "assessment": "implemented_with_documented_limits",
-      "implemented": "Scene-only latest punch, source duration/amplitudes and five persisted strengths.",
-      "remaining": "Original rumble/trauma and all trigger sites remain incomplete.",
+      "implemented": "Bounded scene-only camera model implements source 2/5/20/40/80 strengths, 300/800/1200 ms durations, 0/.5/1/2/4 settings, cubic directional punch, latest-punch precedence, additive trauma/decay/vector cap, and rumble/drunk rumble. Integer noise and in-place scene/hit translation require no extra framebuffer or gameplay RNG. Audited hooks include settings, character selection, Power arrival, 38 explicitly mapped card keys, named heavy/scream monster paths, ordinary/event Smith, Lift/Clone, Dense Vegetation, Punch Off, Amalgamator, Foul Potion and observed history previews. Real Doom execution sends a presentation-only notice; player death retains its scene for the full 300 ms pulse. Architect uses the actual begin/final leave lifecycle, per-character Normal/Fast source hit times and final Strong pulse, correct Silent exceptions, delayed terminal intro, input barriers and no reload replay. Camera Off preserves sequence completion.",
+      "remaining": "Integer gradient noise, bounded LCD displacement and final rasterization approximate Godot FastNoiseLite/material output. Binding a new target clears its bounded trauma state. The named audited camera hooks are implemented; this does not claim a differential audit of every invocation in all 65 VFX scene families. Architect additions here are camera hooks on its retained background, not complete character attack/Architect/FireBurst animation reconstruction.",
       "regressions": [
-        "combat_damage_ui7_regression"
+        "combat_damage_ui7_regression",
+        "screen_effects_ui12_regression"
       ],
-      "acceptance": "Historical UI10: Frozen K native checks pass: combat_damage_ui7_regression. Both matching K format39 actual packs pass: combat_damage_ui7_regression."
+      "acceptance": "Historical UI10: Frozen K native checks pass: combat_damage_ui7_regression. Both matching K format39 actual packs pass: combat_damage_ui7_regression.",
+      "pre_ui12_screen_completion_contract_historical": "Scene-only latest punch,300ms,5/20/40px and0/.5/1/2/4strength",
+      "pre_ui12_screen_completion_implemented_historical": "Scene-only latest punch, source duration/amplitudes and five persisted strengths.",
+      "pre_ui12_screen_completion_remaining_historical": "Original rumble/trauma and all trigger sites remain incomplete.",
+      "ui12_screen_effects_acceptance": "Verified checkpoint 169cea998135a47e5f8580b15df798244e0e7e6a: screen_effects_ui12_regression passes 2,122,118 checks, including original English/Japanese masks and actual command/terminal lifecycles; journal 75aed13c3f47 passed with source_changed=false. All 503 production src/include files match the root checkpoint. Source timing, original pixels, hit targets and canonical save identity are correctness evidence, not calculator-speed measurements. See screen-effects-ui12-0.17.md."
     },
     {
       "id": "patch_notes",
@@ -2345,8 +2365,8 @@
     "native_scope": "Frozen ae13595 combat worktree. All listed journals passed with source_changed=false. These are correctness/pixel comparisons, not physical-calculator performance measurements or acceptance of unrelated later source changes.",
     "firebird_scope": "H ordinary play/save evidence includes a retained host ENOSPC controller error and is not a wholly passed journal. K 2d89c8a26a3f is closed/passed; later console-created rooms are fixtures. H/J/L world and H/J frontend sessions retain the launcher-specific scopes in their module reports. Final integrated launcher and matched merchant speed remain separate release gates.",
     "open_feature_review": [
-      "Independent per-monster entrance effects and every monster command delay are not newly audited by this reconciliation.",
-      "Source rumble/trauma and all shake trigger sites retain their prior documented incomplete scope."
+      "The named source sleep/wake emitters and already-present bot FallControl entry are covered. Other per-monster GPU/material variants and every command delay have not received a blanket differential audit.",
+      "Punch, rumble/drunk rumble, trauma and the explicitly audited command hooks, including Doom/Architect, are implemented and tested. Integer noise/LCD raster and target-reset behavior are documented adaptations; all 65 VFX families are not newly claimed as verified."
     ],
     "platform_limits": [
       "Bounded CPU/LCD particles, noise, trails, HDR approximations and final integer rasterization do not establish full desktop frame identity.",
@@ -2363,6 +2383,35 @@
       "pure_and_boot_journal": "a0799d759d03",
       "resource_journal": "3c833edb5241",
       "scope": "Source clocks, real sampled Spine art, original locale keys, skip/persistence and no replay/canonical mutation pass native/resource gates. Final Firebird startup remains separate."
+    },
+    "pre_screen_completion_open_feature_review_historical": [
+      "Independent per-monster entrance effects and every monster command delay are not newly audited by this reconciliation.",
+      "Source rumble/trauma and all shake trigger sites retain their prior documented incomplete scope."
+    ],
+    "screen_effects_report": "screen-effects-ui12-0.17.md",
+    "screen_effects_completed_native": {
+      "runtime_checkpoint": "169cea998135a47e5f8580b15df798244e0e7e6a",
+      "local_test_commit": "14695dbe334702f01e349ac5f10e473d2dac58a7",
+      "actual_checks": 2122118,
+      "actual_journal": "75aed13c3f47",
+      "target_build_journal": "b09f0b9c1002",
+      "production_files_compared": 503,
+      "production_differences": 0,
+      "source_changed": false,
+      "resources": "Original final English/Japanese packs, auxiliary endpoint 2201; original Z masks retain full source pivots.",
+      "linkage": "Frozen root 44 core archive with current core.cpp, original_events.cpp and ui_input.cpp objects replaced; test includes current app.cpp with final Doom death linger. Same App/State layouts and exact current production source comparison.",
+      "prior_failed_doom_journal": "d91683f26c87",
+      "failure_resolution": "Actual player Doom at tick 30 originally lost its target on tick 31. Final camera work retains its 300 ms scene lifetime; the gate now verifies at least 9 visible samples in a real world combat, nonzero displacement and subsequent actual death screen.",
+      "scope": "Independent source equations, exact in-place raster/hits, actual settings/Smith/Lift/card/Doom/sleep hooks, complete Normal/Fast five-character Architect event/terminal lifecycle, Silent exceptions/Off/input/reload/wrap, actual localized terminal-background pixels, and canonical save identity. No Firebird performance or all-GPU-family equivalence claim."
     }
+  },
+  "verification_ui12_release": {
+    "runtime_checkpoint": "169cea998135a47e5f8580b15df798244e0e7e6a",
+    "native_registered_suites": 134,
+    "python_tests": 310,
+    "ordinary_final_device_journal": "ui12-final-runtime-controlled-78793058034c",
+    "canonical_readback": "production decode/load/validate/exact roundtrip; normal gameplay revision68 to69",
+    "record": "validation-ui12-0.17.json",
+    "unreviewed_contracts": "Unchanged or explicitly limited contract rows are not promoted to universal source parity by the release."
   }
 }

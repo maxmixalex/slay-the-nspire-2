@@ -8,7 +8,50 @@ Native TI-Nspire Ndless adaptation of Slay the Spire 2. Reference: the owner's *
 
 The original three-act route now drives the playable world: Overgrowth or Underdocks, then Hive and Glory, with original regional room queues, encounters, events, ancients and saved map history. The five character/card/potion foundation is retained. There are **558 card models**, including the 61 appended event/curse dependencies, **64 potions**, a **297-model world relic registry** and **109 enemy IDs** including compatibility/display entries. Those are model counts, not a claim that every interaction has original-game differential coverage.
 
-### Current UI8 feedback work
+### UI12 calculator release — 2026-10-25
+
+The interrupted workspace has been recovered, the user's UI/input feedback is
+integrated, and verified source is synchronized to `main`. The deliverable is
+the ordinary Ndless calculator launcher with shared artwork and independently
+installed languages. Runtime: `169cea998135a47e5f8580b15df798244e0e7e6a`.
+
+| Release property | Verified value |
+| --- | --- |
+| Default installed files | 69,509,705 bytes: launcher + common + English + Chinese |
+| Launcher allocation | 20,356,556 bytes; unchanged 24 MiB ceiling |
+| Locales | All 16 original editions; 14 are an optional separate archive |
+| Regression suites | 134 complete registered native suites; 310 Python conversion/packaging tests |
+| Device acceptance | Ordinary Firebird/Ndless startup, actual battles and rewards, save/Continue and return to OS |
+
+The [UI12 feedback matrix](docs/ui12-lcd-followup-0.17.md) covers typography,
+original controls/scrollbars, credits, title, collections, Back-button clearance,
+character selection, rooms, map, combat, rewards, merchant and the Flag-key typed
+console. Startup/SkipIntroLogo, sleep/swarm effects and source-timed camera
+triggers close additional retained feature differences. Selected long hand
+cards now scroll their body without moving their title, cost or neighbours.
+Calculator defaults use the physical touchpad and surrounding keys; digits
+1–9/0 select hand slots directly.
+
+The closed matched merchant fixture measured a 23.23% lower mean frame interval
+than UI11 N, but its maximum cold frame increased from 2,387.054 to 2,703.094 ms.
+Those are emulator protocol measurements, not physical-device FPS or an end to
+cold stalls. The ordinary run and the final launcher receipt have separate
+checkpoints. Exact sizes, hashes, test identities and exclusions are in the
+[release validation record](docs/validation-ui12-0.17.json).
+
+Install `nSpire2.tns`, `nSpire2.common.tns` and the desired language files together.
+The default pair is `nSpire2.eng.tns` / `nSpire2.zhs.tns`. Update these as a matched
+set while preserving all saves/progress/settings/profile files. The first launch
+plays the sampled original studio logo; Select/Cancel/click skips it, and
+Settings can remember Skip Intro Logo. Flag opens the normal typed console.
+
+Full Ancient actors retain the user's storage exception. Dense GPU materials,
+HDR and exact desktop glyph rasterization remain bounded CPU/LCD adaptations;
+no blanket source-pixel equality or 95% restoration score is asserted. Original
+assets stay out of this public repository.
+
+### Historical UI8 development
+
 
 UI8 replaces the retired startup language page, expedition setup and potion
 destination chooser with the original navigation and acquisition flow. The
