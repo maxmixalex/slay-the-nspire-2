@@ -1,5 +1,5 @@
 static void native_reward_header(Canvas&c,const char*label,int y){
- c.ui(U_RewardBanner,98,y,124,31);Canvas title=c;title.font_face=5;
+ c.ui(U_RewardBanner,98,y,124,31);Canvas title=c;title.font_face=source_label_face(c.a.content.english(),5);
  title.fitted(label,125,y-2,70,27,8,6,rgb(255,246,226),true,true,true,false);
 }
 static void native_reward_window(Canvas&c,int dy){

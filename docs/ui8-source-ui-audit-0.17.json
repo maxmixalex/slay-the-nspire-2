@@ -6,7 +6,7 @@
     "dll_sha256": "0861bfa1df347538d932f22d580e75420f08082792eb914e53b4882764acdbe9"
   },
   "supersedes": "ui7-original-ui-inventory-0.17.json",
-  "source_stage": "UI9 Card Library source follow-up after bbb47 matched116 native suites,90 actual bilingual UI targets and18 ordinary-browser flows. Full source-font, new launcher and ordinary-device capacity acceptance remain pending.",
+  "source_stage": "UI10 source follow-up: profile/compendium/statistics geometry and interaction, source locale font roles, centered library count and Chinese calendars. Matching frozen runtime and paired exact-font acceptance remain pending.",
   "scope": {
     "excluded": [
       "audio",
@@ -16,19 +16,20 @@
     "adaptation": "1680x1260 source UI projected to 320x240, with documented physical-input and readable-font constraints"
   },
   "methodology": {
-    "full_path_scan": "All 3538 current C# files and all 1022 PCK scene paths were enumerated. 10 extra top-level/generated files distinguish this directory from the historical 3528-file index.",
-    "nodes": "719 nonempty namespace-declared node files plus 5 initially empty node paths = 724 indexed node files. Complete NCombatRoom, NDropdownContainer and NMapPointHistoryHoverTip were recovered from the pinned assembly; the journal renderer was checked against the recovered method bodies. An initial empty file is not treated as a reviewed method.",
+    "full_path_scan": "All3538 current C# paths and1022 PCK scene paths were enumerated. This turn recovered nine in-scope empty bodies; five remaining empty files are generated or excluded paths. Enumeration/recovery is not a claim that every method was reviewed.",
+    "nodes": "714 nonempty namespace-declared node files plus2 empty excluded node paths = 716 indexed node files. In-scope recovered method bodies are available for targeted source review. Recovery alone is not implementation or verification evidence.",
     "method_review": "Concrete source methods and scenes identified in module audit documents were reviewed and implemented; a path scan does not assert every method has been reviewed.",
     "acceptance": "Native suites, actual bilingual scene review, browser behavior and linked ARM/Firebird checks are separate evidence. No restoration percentage is inferred from file, model, contract or passing-test counts.",
     "privacy": "Only identifiers, counts, independent implementation summaries and test references are public.",
-    "ftue_review": "All thirteen in-scope Ftue classes and their actual callers were reviewed, including mark-on-open versus mark-on-close, two distinct auto-completion counter lifetimes, release-hidden Reset Tutorials, and independent Ascension SeenPopup semantics. See ftue-ui9-0.17.md."
+    "ftue_review": "All thirteen in-scope Ftue classes and their actual callers were reviewed, including mark-on-open versus mark-on-close, two distinct auto-completion counter lifetimes, release-hidden Reset Tutorials, and independent Ascension SeenPopup semantics. See ftue-ui9-0.17.md.",
+    "front_source_review": "UI10 rechecked source runtime font substitution, profile/compendium/statistics scenes and conditional rows. See ui10-front-source-review-0.17.md for concrete remaining differences; source scans and pixel oracle counts are not restoration percentages."
   },
   "counts": {
     "current_cs_paths": 3538,
-    "current_empty_cs": 15,
-    "node_nonempty_namespace_cs": 719,
-    "node_empty_paths": 5,
-    "indexed_nodes": 724,
+    "current_empty_cs": 5,
+    "node_nonempty_namespace_cs": 714,
+    "node_empty_paths": 2,
+    "indexed_nodes": 716,
     "pck_scene_paths": 1022,
     "flow_contracts": 72
   },
@@ -59,12 +60,12 @@
       ],
       "contract": "Continue preview, abandoned-run confirmation and return",
       "assessment": "implemented_with_documented_limits",
-      "implemented": "Real preview, guarded Save & Quit/Continue/Abandon, original confirmation ownership, and atomic host persistence.",
-      "remaining": "Final composed bilingual screenshot review belongs to the integrated runtime gate.",
+      "implemented": "Real preview, guarded Save/Quit/Continue/Abandon, original confirmation ownership and atomic host persistence remain implemented.",
+      "remaining": "Continue preview labels still use the general renderer; exact source label size/padding and matching composed bilingual review remain a named follow-up.",
       "regressions": [
         "world_frontend_ui_regression"
       ],
-      "acceptance": "The a0df baseline native suite passed; final matched stage8e native, actual-resource, browser and calculator gates remain separate and pending."
+      "acceptance": "UI10 source implementation and short syntax check only; matching frozen native, actual bilingual, browser and calculator gates remain separate."
     },
     {
       "id": "character_select",
@@ -76,12 +77,12 @@
       ],
       "contract": "Click-selected character, Ascension, seed and embark",
       "assessment": "implemented_with_documented_limits",
-      "implemented": "Five original sampled character loops, original portrait focus/scale/saturation/outline, fixed source VBox and Name slot, 5px body/relic and 14/12/10px display title with original source glyphs; seed, Ascension and actual start controls remain active.",
-      "remaining": "All independent source particles and exact GPU material/raster equivalence are not established; final matching bilingual composed review remains required.",
+      "implemented": "Five original sampled loops and source character-info geometry remain implemented. UI10 uses actual locale normal fonts for name/stats/relic title, aligns name measurement and drawing, and removes English font-variation tracking from substituted Chinese text.",
+      "remaining": "Independent particle contexts and actual latest bilingual font/layout captures remain to be checked.",
       "regressions": [
         "five_character_ui_regression"
       ],
-      "acceptance": "The a0df baseline native suite passed; final matched stage8e native, actual-resource, browser and calculator gates remain separate and pending."
+      "acceptance": "UI10 source implementation and short syntax check only; matching frozen native, actual bilingual, browser and calculator gates remain separate."
     },
     {
       "id": "act_selector",
@@ -137,12 +138,12 @@
       ],
       "contract": "Filters, discoveries, card grid and inspect",
       "assessment": "implemented_with_documented_limits",
-      "implemented": "Four-column original projection, original pool/filter/discovery rules, delayed search, continuous scroll and inspect. Source sidebar font bands4/5/6px and exact controls replace the remaining8px fitted labels; direct5/6px card statistics replace the8px bitmap rescaler. The immutable v34 font update removes only nine proved-unrendered flavor markup directory keys and adds every required library character within32768.",
-      "remaining": "Matching new-font Card Library pixel/interaction acceptance and final host integration are required. Full Godot material/raster equivalence is not established.",
+      "implemented": "Original grid/filter/discovery/debounce contracts and exact4/5/6px sidebar/card-stat bands are retained. UI10 centers the source count markup and applies actual locale font substitution to ordinary sort/filter/cost/check labels.",
+      "remaining": "Source matches title plus description as one string; the current separate-field search and stronger query trimming remain a concrete mismatch. New font, pixel and host gates remain required.",
       "regressions": [
         "library_ui7_regression"
       ],
-      "acceptance": "The a0df baseline native suite passed; final matched stage8e native, actual-resource, browser and calculator gates remain separate and pending."
+      "acceptance": "UI10 source implementation and short syntax check only; matching frozen native, actual bilingual, browser and calculator gates remain separate."
     },
     {
       "id": "relic_collection",
@@ -152,12 +153,13 @@
       ],
       "contract": "Relic categories and inspect",
       "assessment": "implemented_with_documented_limits",
-      "implemented": "Original category/starter/Ancient groups, discovery gates, icons and source 69px hover columns with associated keywords and separate related-card previews. Cookie canonical/no-owner icons and outlines now share one process-stable presentation variant; owned/history icons use the actual owner character. Fixed source24/inline28 category headings project to5px with exact regular/bold assignments, full unwrapped text, source colors and shadows;20 actual variants per language require no new glyphs.",
-      "remaining": "Exact GPU material equivalence remains unestablished; the new Cookie ownership cases require the next matching regression and actual captures.",
+      "implemented": "Original category/starter/Ancient groups, discovery gates, fixed source headings,69px hover columns and related previews remain implemented. Chinese rich bold headings now use the source runtime Bold substitution, while English relic headings keep their authored regular-bold role.",
+      "remaining": "Matching all-category exact-glyph/pixel acceptance remains required after the locale-face repair.",
       "regressions": [
-        "ui_progress_regression"
+        "library_ui7_regression",
+        "relic_inspect_ui9_regression"
       ],
-      "acceptance": "The a0df baseline native suite passed; final matched stage8e native, actual-resource, browser and calculator gates remain separate and pending."
+      "acceptance": "UI10 source implementation and short syntax check only; matching frozen native, actual bilingual, browser and calculator gates remain separate."
     },
     {
       "id": "potion_lab",
@@ -183,13 +185,13 @@
       ],
       "contract": "Enemy list, layouts, move descriptions and character filtering",
       "assessment": "implemented_with_documented_limits",
-      "implemented": "Original known gates, character/move/stats views, source-derived invariant-culture ordering, detached preview and persisted Test Subject names. Follow-up restores original list/header geometry, explicit title/label faces, action controls and release-triggered actual clip previews; no gameplay State mutation. Eighteen source-clock-matched sparse Kaiser supplements restore344 native samples outside the shared world crop; both final complete poses have actual bilingual inspection.",
-      "remaining": "All phase-specific preview contexts and secondary VFX are not exhaustively equivalent to the original GPU implementation. The matched c3a44 Bestiary actual regression and complete Kaiser poses pass both languages.",
+      "implemented": "Original list/header geometry, known gates, detached actions/statistics previews, persisted names and Kaiser supplements remain implemented. UI10 applies source locale normal-font substitution to the large name, dividers and action/mode labels.",
+      "remaining": "Remaining phase-specific multi-creature preview contexts and secondary visual effects need actual replay; restored ordinary fonts require matching bilingual acceptance.",
       "regressions": [
         "bestiary_ui7_regression",
         "power_order_ui8_regression"
       ],
-      "acceptance": "The a0df baseline native suite passed; final matched stage8e native, actual-resource, browser and calculator gates remain separate and pending."
+      "acceptance": "UI10 source implementation and short syntax check only; matching frozen native, actual bilingual, browser and calculator gates remain separate."
     },
     {
       "id": "statistics",
@@ -201,12 +203,13 @@
       ],
       "contract": "General/character statistics and achievements",
       "assessment": "implemented_with_documented_limits",
-      "implemented": "Observed general/character facts persist independently of game saves; unavailable earlier results are not fabricated.",
-      "remaining": "Source top discovery counts depend on the excluded Timeline. Original Achievements tab is disabled, not a missing enabled solo feature.",
+      "implemented": "UI10 replaces the enlarged generic layout with the source container minimums, original tabs/backgrounds/font roles, conditional single/pair rows, character colors, bounded entry focus/hover motions, tooltip texts, directional navigation and correct scrollbar capture.",
+      "remaining": "Original alpha mask ramps still need bounded compositing. Source top unlock counts depend on the excluded Timeline; original Achievements tab remains disabled. Matching actual-language scene acceptance is required.",
       "regressions": [
-        "ui_progress_regression"
+        "ui_progress_regression",
+        "statistics_ui10_regression"
       ],
-      "acceptance": "The a0df baseline native suite passed; final matched stage8e native, actual-resource, browser and calculator gates remain separate and pending."
+      "acceptance": "UI10 source implementation and short syntax check only; matching frozen native, actual bilingual, browser and calculator gates remain separate."
     },
     {
       "id": "run_history",
@@ -218,15 +221,15 @@
       ],
       "contract": "Historical run navigation, per-floor map/deck/relic details",
       "assessment": "implemented_with_documented_limits",
-      "implemented": "Observed run summary/map/relic/tiny-deck carousel, original map drawing, NSH7/8 bounded per-floor actual acquisitions, transformations, purchases/spending, reward/shop skips and event options; source action/reward/skipped grouping and scrollable visible rows. Actual terminal combat reward groups remain available after Proceed, closing the map and save/load; actual travel records remaining skips. Legacy noncombat encounter data does not draw as observed combat.",
-      "remaining": "Unknown earlier facts and evicted journal entries are explicitly partial. Source69px hover columns preserve actual historical relic keyword/related-card facts without mutating State.",
+      "implemented": "Observed run summaries, map/deck/relic carousel and bounded actual journal remain implemented. UI10 restores the Chinese date/time content format and required glyphs.",
+      "remaining": "The source local time zone still differs from the UTC host boundary. Full history header source typography remains a concrete follow-up; earlier unknown/evicted journal facts remain explicitly partial.",
       "regressions": [
         "history_ui8_regression",
         "run_history_journal_ui8_regression",
         "run_history_acquisition_regression",
         "map_drawing_ui_regression"
       ],
-      "acceptance": "The a0df baseline native suite passed; final matched stage8e native, actual-resource, browser and calculator gates remain separate and pending."
+      "acceptance": "UI10 source implementation and short syntax check only; matching frozen native, actual bilingual, browser and calculator gates remain separate."
     },
     {
       "id": "profiles",
@@ -237,13 +240,13 @@
       ],
       "contract": "Profile select/icons/delete confirmation",
       "assessment": "implemented_with_documented_limits",
-      "implemented": "Three independent profiles, names/icons, delete confirmation/rollback and host routing; language remains global. NSH8 adds two per-profile tutorial bytes with unknown legacy viewing history kept distinct from fresh profiles; existing startup save lookup determines new-profile eligibility.",
-      "remaining": "Final integrated browser/artifact gate still pending.",
+      "implemented": "Three independent profiles and host transactions remain intact. UI10 restores exact source header/title/body bands, shared panel/text/icon transforms, menu/delete timing, hidden-delete navigation and Chinese date contents. Ordinary label fonts follow actual English/Chinese runtime substitution.",
+      "remaining": "Source local-time-zone conversion remains UTC on the port. The 3px projected menu helper intentionally uses4px. Matching profile/compendium pixel oracles and ordinary-host acceptance remain required.",
       "regressions": [
         "profiles_ui7_regression",
         "ndless_profiles_regression"
       ],
-      "acceptance": "The a0df baseline native suite passed; final matched stage8e native, actual-resource, browser and calculator gates remain separate and pending."
+      "acceptance": "UI10 source implementation and short syntax check only; matching frozen native, actual bilingual, browser and calculator gates remain separate."
     },
     {
       "id": "compendium_leaderboards",

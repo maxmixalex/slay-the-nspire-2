@@ -255,16 +255,19 @@ static void ordinary_events(bool synthetic){
  const char*names[]={"event-wellspring","event-colorful-philosophers","event-relic-trader"};
  for(unsigned model=0;model<sizeof ids/sizeof ids[0];++model){
   begin(ids[model],0x6ab19,0);snapshot();a.render();const unsigned count=original_event_option_count(a.game);CHECK(count>0);
-  // Ordinary pages display a fitted body, so vertical navigation selects
-  // options and wraps instead of scrolling a hidden duplicate text panel.
+  // The source VBox grows its body and retains every option that fits. Up/
+  // Down still navigate the saved option list; they do not scroll prose.
   a.cursor=0;a.input(Key::Up);CHECK(a.cursor==int(count)-1);a.input(Key::Down);CHECK(a.cursor==0);
   for(unsigned i=0;i<count;++i)a.input(Key::Down);CHECK(a.cursor==0&&a.scroll==0);unchanged();
   for(unsigned selected=0;selected<count;++selected){
-   a.cursor=int(selected);a.render();CHECK(choice_count()==(count-selected/3*3<3?count-selected/3*3:3));
-   HitRegion previous{};for(unsigned i=selected/3*3;i<count&&i<selected/3*3+3;++i){const auto h=choice(int(i));
-    CHECK(h.x>=128&&h.w>=180&&h.h>=35);if(i%3)CHECK(!overlap(h,previous));previous=h;}
+   a.cursor=int(selected);a.render();const unsigned first=selected/6*6;CHECK(choice_count()==(count-first<6?count-first:6));
+   HitRegion previous{};for(unsigned i=first;i<count&&i<first+6;++i){const auto h=choice(int(i));
+    CHECK(h.x==153&&h.w==152&&h.h==19);if(i>first)CHECK(!overlap(h,previous)&&h.y==previous.y+20);previous=h;}
    unchanged();
   }
+  HitRegion body{};for(int i=0;i<a.hit_count;++i)if(a.hits[i].kind==HitKind::UiAction&&a.hits[i].value==int(UiAction::ReadEvent))body=a.hits[i];
+  CHECK(body.x==153&&body.y==54&&body.w==152&&body.h>=53);
+  CHECK(choice(int(a.cursor/6*6)).y==body.y+body.h+6);
   a.cursor=0;a.pointer.visible=false;a.render();
   if(synthetic){
    // The authored illustration remains unobscured: no repeated option panel

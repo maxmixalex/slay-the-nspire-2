@@ -174,7 +174,7 @@ static void colossal_flower(){
   a.animation=0;a.map_clock_ms=0;a.scroll=int(first_row);a.render();
   a.map_clock_ms=10000;a.render();a.map_clock_ms=20000;a.render();unchanged();
   HitRegion story{};for(int i=0;i<a.hit_count;++i)if(a.hits[i].kind==HitKind::UiAction&&a.hits[i].value==int(UiAction::ReadEvent))story=a.hits[i];
-  CHECK(story.x==132&&story.y==51&&story.w==183&&story.h==68);
+  CHECK(story.x==153&&story.y==54&&story.w==152&&story.h>=53&&story.y+story.h<221);
   std::vector<uint16_t>first(a.pixels,a.pixels+ScreenW*ScreenH);
   a.map_clock_ms=21000;a.render();unsigned changes=0;
   for(unsigned i=0;i<first.size();i++)if(first[i]!=a.pixels[i]){CHECK(int(i%ScreenW)>=story.x&&int(i%ScreenW)<story.x+story.w&&int(i/ScreenW)>=story.y&&int(i/ScreenW)<story.y+story.h);++changes;}

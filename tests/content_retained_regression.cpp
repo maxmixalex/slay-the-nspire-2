@@ -1,5 +1,6 @@
 #include "app.hpp"
 #include "resource_transfer.hpp"
+#include "reference_act.hpp"
 #include <algorithm>
 #include <cstdio>
 #include <cstdlib>
@@ -305,6 +306,9 @@ struct ReentrantRead {
     const SaveData*saved;SaveData*output;unsigned calls=0;
     static void attempt(void*context){
         auto&r=*static_cast<ReentrantRead*>(context);++r.calls;
+        reference::ReferenceMap map;reference::QuotaTrace trace;
+        CHECK(!reference::generate_act_map(map,0x73706163,reference::ActSettings{},trace));
+        CHECK(map.error==reference::MapError::Capacity);
         // Exercise an actual ResourceSource callback after it copied encoded
         // input. Nested serialization must fail before either source or target
         // is touched, and a cold image must remain retryable after the lease.

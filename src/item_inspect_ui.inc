@@ -122,7 +122,7 @@ static void item_detail_screen(Canvas&c){
         Canvas icon=layer;if(!seen)icon.brightness=uint8_t(div255(unsigned(icon.brightness)*26));relic_inspect_fit_image(icon,a.relic_face_image(RelicId(id),a.relic_inspect_character()),142+dx,87+dy,37,37);
         const unsigned rarity=world_relic_definitions[id].rarity;relic_inspect_frame(layer,131+dx,76+dy,rarity);
         char name[256]{},description[4096]{},flavor[1024]{};relic_inspect_text(a,RelicId(id),name,sizeof name,description,sizeof description,flavor,sizeof flavor);
-        Canvas title=layer;title.font_face=a.content.version()>=28?5:0;title.sparse_scene_sizes=true;const int title_size=a.content.font_size(7,title.font_face,false,true);
+        Canvas title=layer;title.font_face=uint8_t(source_label_face(a.content.english(),a.content.version()>=28?5:0));title.sparse_scene_sizes=true;const int title_size=a.content.font_size(7,title.font_face,false,true);
         Canvas shadow=title;shadow.opacity=uint8_t(div255(unsigned(shadow.opacity)*64));shadow.text_fitted(name,88+dx,55+dy,147,title_size,0,5,true);
         title.text_fitted(name,87+dx,54+dy,147,title_size,rgb(239,200,81),5,true);
         if(seen){static const char*const rarities[]={"NONE","STARTER","COMMON","UNCOMMON","RARE","SHOP","EVENT","ANCIENT"};
@@ -131,7 +131,7 @@ static void item_detail_screen(Canvas&c){
         }
         Canvas body=layer;body.font_face=0;body.bold_face=5;
         const int body_height=relic_inspect_paragraph(body,description,118+dx,142+dy,91,5,false,true);
-        Canvas flavor_layer=layer;flavor_layer.font_face=a.content.version()>=28?6:0;
+        Canvas flavor_layer=layer;flavor_layer.font_face=uint8_t(source_label_face(a.content.english(),a.content.version()>=28?6:0));
         const int flavor_height=relic_inspect_paragraph(flavor_layer,flavor,110+dx,0,99,4,true,false);
         // VBox's expanding spacer has a 44px source minimum. Preserve the
         // complete description and flavor rather than adding a scroll pane.

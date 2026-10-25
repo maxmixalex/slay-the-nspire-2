@@ -49,3 +49,7 @@ operation. Web deletion journals now cover the legacy/current preferences
 keys as well as the run/history. A denied write does not silently discard
 pending browser preferences or allow a profile switch. Calendar formatting
 retains the port's UTC boundary and is still a named original difference.
+
+## UI10 source follow-up
+
+The source labels, parent transforms, timing, hidden-delete navigation and Chinese calendar contents are now implemented; see `ui10-front-source-review-0.17.md`. Ordinary Chinese labels select Noto Regular after the original MegaLabel/MegaRichTextLabel runtime substitution, even where the English scene authors a bold face. The profile header is regular36 source pixels projected to7. The source18px main-menu helper uses the documented4px calculator minimum. Exact paired fonts and the new scalar pixel oracle require the matching frozen runtime; this addition does not upgrade the historical acceptance statement above.

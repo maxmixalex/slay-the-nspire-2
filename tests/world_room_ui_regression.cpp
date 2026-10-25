@@ -181,6 +181,9 @@ static void blocked_actions(UiAction action,bool capture_pointer=true){
 }
 static void ordinary_rest(){
  begin_room(WorldRoom::Rest);CHECK(a.camp_options(nullptr,0)==2);a.render();CHECK(choices()==2&&!world_rest_can_proceed(a.game));
+ // rest_site_room.tscn's full1680x1260 Control is separate from the218px
+ // background crop. The source HBox's247px controls have100px separation.
+ for(int i=0;i<2;++i){const auto h=hit(HitKind::Choice,i);CHECK(h.x==103+i*66&&h.y==66&&h.w==47&&h.h==31);}
  snapshot();a.input(Key::EndTurn);unchanged();click(HitKind::Choice,1);CHECK(a.game.phase==Phase::Upgrade);a.input(Key::Back);CHECK(a.game.phase==Phase::Camp&&!a.game.world.rest_used&&!world_rest_can_proceed(a.game));
  a.game.hp=30;present();settle_rest_buttons();const int heal_before=a.game.hp;const uint16_t lit=scene_pixel();rest_scene_pixel("OVERGROWTH");capture("rest-overgrowth-choices");click(HitKind::Choice,0);
  CHECK(a.game.phase==Phase::Camp&&a.game.hp>heal_before&&a.game.world.room_open&&world_rest_can_proceed(a.game));CHECK(!a.camp_options(nullptr,0));settle_rest_completion();a.render();CHECK(!choices()&&exists(HitKind::UiAction,int(UiAction::LeaveCamp)));
@@ -479,7 +482,7 @@ static void event_motion(){
  CHECK(!motion.title_alpha(a.map_clock_ms)&&!motion.body_reveal(a.map_clock_ms));
  CHECK(choices()==2&&!hit(HitKind::Choice,0).enabled&&!hit(HitKind::Choice,1).enabled);
  a.input(Key::Confirm);unchanged();room_clock(500);CHECK(!hit(HitKind::Choice,0).enabled);
- CHECK(hit(HitKind::Choice,0).x==117);room_clock(250);
+ CHECK(hit(HitKind::Choice,0).x==140);room_clock(250);
  CHECK(motion.title_alpha(a.map_clock_ms)>0&&motion.title_alpha(a.map_clock_ms)<255&&!motion.body_reveal(a.map_clock_ms));
  capture("event-options-entering");unchanged();room_clock(250);
  CHECK(motion.title_alpha(a.map_clock_ms)==255&&hit(HitKind::Choice,0).enabled&&!hit(HitKind::Choice,1).enabled);

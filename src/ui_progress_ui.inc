@@ -36,24 +36,27 @@ static void progress_date_text(const App&a,uint32_t timestamp,char*date,size_t d
     while(month<11&&days>=lengths[month]+unsigned(month==1&&leap(year))){days-=lengths[month]+unsigned(month==1&&leap(year));++month;}
     TextBuffer d{date,date_size,0};
     if(a.content.english()){static const char*names[]={"January","February","March","April","May","June","July","August","September","October","November","December"};d.text(names[month]);d.ch(' ');d.number(days+1);d.text(", ");d.number(year);}
-    else{d.number(year);d.ch('/');d.number(month+1);d.ch('/');d.number(days+1);}
+    else{static const char*names[]={"一月","二月","三月","四月","五月","六月","七月","八月","九月","十月","十一月","十二月"};d.number(year);d.ch(' ');d.text(names[month]);d.ch(' ');d.number(days+1);}
     TextBuffer t{time,time_size,0};const unsigned hour=timestamp/3600%24,minute=timestamp/60%60;
-    t.number(a.content.english()?(hour%12?hour%12:12):hour);t.ch(':');if(minute<10)t.ch('0');t.number(minute);
-    if(a.content.english())t.text(hour<12?" AM":" PM");
+    t.number(hour%12?hour%12:12);t.ch(':');if(minute<10)t.ch('0');t.number(minute);
+    t.text(a.content.english()?(hour<12?" AM":" PM"):(hour<12?" 上午":" 下午"));
 }
 static bool progress_hover(const App&a,int x,int y,int width,int height){return a.pointer.visible&&a.pointer.x>=x&&a.pointer.x<x+width&&a.pointer.y>=y&&a.pointer.y<y+height;}
 static void compendium_button(Canvas&c,unsigned index,int x,int y,int width,int height,int base,int icon,const char*prefix,UiAction action,bool bottom=false){
     auto&a=c.a;const bool focused=progress_hover(a,x,y,width,height)||(!a.pointer.visible&&a.compendium_selection==index);
     const bool pressed=focused&&a.pointer.held&&a.pointer.captured.kind==HitKind::UiAction&&a.pointer.captured.value==int(action);
-    auto&motion=a.compendium_motion[index];const unsigned scale=motion.observe(pressed?2:focused?1:0,a.map_clock_ms,bottom),alpha=motion.alpha(a.map_clock_ms);
-    const int w=(width*int(scale)+500)/1000,h=(height*int(scale)+500)/1000,left=x+(width-w)/2,top=y+(height-h)/2;
-    if(a.content.version()>=Ui7ContentVersion){c.ui(base+motion.previous,left,top,w,h);c.ui(base+motion.state,left,top,w,h,alpha);}
-    else c.dim(left,top,w,h,150);
-    c.ui(icon,left+w/2-(bottom?17:25),top+(bottom?4:17),bottom?34:50,bottom?22:38);
+    auto&motion=a.compendium_motion[index];const unsigned scale=motion.observe(pressed?2:focused?1:0,a.map_clock_ms,bottom,bottom?950:980),alpha=motion.alpha(a.map_clock_ms);
+    const ProfileTransform transform{x+reference_viewport::project(bottom?136:180),y+reference_viewport::project(bottom?96:240),int((scale*4096+500)/1000)};
+    if(a.content.version()>=Ui7ContentVersion){profile_image(c,base+motion.previous,x,y,width,height,transform);profile_image(c,base+motion.state,x,y,width,height,transform,alpha);}
+    else c.dim(x,y,width,height,150);
+    if(bottom){const bool history=index==5;profile_image(c,icon,x+(history?4:10),y+(history?6:5),history?45:33,history?20:21,transform);}
+    else profile_image(c,icon,x+9,y+17,50,38,transform);
     char key[128]{};TextBuffer k{key,sizeof key,0};k.text(prefix);k.text(".title");
     const char*title=frontend_text(a,"main_menu_ui",key,prefix);
-    c.text_fitted(title,left+4,top+(bottom?h-13:7),w-8,bottom?10:10,Gold,8,true,true);
-    if(!bottom){key[0]=0;k.n=0;k.text(prefix);k.text(".description");const char*description=frontend_text(a,"main_menu_ui",key,"");c.fitted(description,left+7,top+56,w-14,h-64,8,8,White,false,true,true);}
+    ProfileTextStyle title_style{5,source_label_face(a.content.english(),5),rgb(239,200,81),32,2,rgb(51,49,39),1};title_style.shadow_y=1;
+    profile_text_box(c,title,x+(bottom?3:4),y+(bottom?26:7),bottom?47:60,10,title_style,true,false,transform);
+    if(!bottom){key[0]=0;k.n=0;k.text(prefix);k.text(".description");const char*description=frontend_text(a,"main_menu_ui",key,"");
+        profile_text_box(c,description,x+8,y+56,53,29,{5,0,rgb(255,246,226),64},true,true,transform);}
     c.action(x,y,width,height,action);
 }
 static void compendium_screen(Canvas&c){
@@ -89,25 +92,40 @@ static void progress_page_chrome(Canvas&c){
     }
 }
 static unsigned progress_bit_count(const uint8_t*bits,unsigned count){unsigned n=0;for(unsigned i=0;i<count;++i)n+=(bits[i/8]>>(i%8))&1;return n;}
-static void progress_stat_entry(Canvas&c,int x,int y,int icon,const char*top,const char*bottom,const ProgressTextValues&values){
-    if(y+27<=0||y>=c.clip_h)return;
-    c.ui(icon,x,y+5,18,16);char text[192]{};
-    if(top){progress_text(c.a,"stats_screen",top,values,text,sizeof text);c.text_fitted(text,x+22,y+2,101,9,White,8);}
-    if(bottom){progress_text(c.a,"stats_screen",bottom,values,text,sizeof text);c.text_fitted(text,x+22,y+14,101,9,White,8);}
+static void statistics_entry(Canvas&c,const UiStatisticsLayout&layout,unsigned index,int icon,const char*top,const char*bottom,const ProgressTextValues&top_values,const ProgressTextValues&bottom_values,bool top_red=false){
+    using reference_viewport::project;auto&a=c.a;const auto point=UiStatisticsLayout::projected(layout.entries[index]);
+    const int y=point.y-a.progress_page_scroll.offset(),origin=30;const bool visible=y+point.h>origin&&y<240;
+    const bool hover=visible&&!a.pointer.dragging&&progress_hover(a,point.x,y,point.w,point.h);
+    const bool focus=hover||(!a.pointer.visible&&a.statistics_presentation.selected==index);
+    const int weight=a.statistics_presentation.entries[index].observe(focus,a.map_clock_ms);
+    if(!visible)return;const ProfileTransform transform{point.x+project(50),y-origin+point.h/2,4096+205*weight/4096};
+    const auto source=layout.entries[index];
+    const int icon_y=project(source.y+(source.h-72)/2)-a.progress_page_scroll.offset()-origin;
+    profile_image(c,icon,project(source.x+12),icon_y,project(80),project(72),transform);
+    const int label_x=project(source.x+96),label_width=project(404);const bool pair=top&&bottom;
+    const auto label=[&](const char*key,const ProgressTextValues&values,bool second){if(!key)return;char text[192]{};progress_text(a,"stats_screen",key,values,text,sizeof text);
+        Canvas metrics=c;metrics.font_face=0;metrics.bold_face=5;int size=5;if(metrics.width(text,size)>label_width)size=4;
+        const int source_y=source.y+(pair?(second?36:8):(source.h-48)/2);
+        profile_text_box(c,text,label_x,project(source_y)-a.progress_page_scroll.offset()-origin,label_width,project(48),{size,0,top_red&&!second?rgb(255,85,85):rgb(255,246,226),64},false,false,transform,true);
+    };
+    label(top,top_values,false);label(bottom,bottom_values,true);
+    if(focus&&!a.pointer.visible){const auto image=a.content.image(a.content.world_image("map","SELECTION_RETICLE"));
+        if(image.pixels&&image.format<=3)for(unsigned corner=0;corner<4;++corner){const bool right=corner&2,bottom_corner=corner&1;
+            target_reticle_corner(c,image,right?point.x+point.w-1:point.x,bottom_corner?y-origin+point.h-1:y-origin,4,right,bottom_corner,255,false);}}
+    const int hit_top=mx(origin,y),hit_bottom=mn(240,y+point.h);
+    if(hit_bottom>hit_top){Canvas hits=c;hits.hit(point.x,hit_top,point.w,hit_bottom-hit_top,HitKind::StatisticsEntry,int(index));}
 }
 static void statistics_screen(Canvas&c){
-    auto&a=c.a;title_background(c,false);c.dim(0,0,320,240,210);a.hit_count=0;
-    c.ui(F_SettingsTab,50,3,110,35);c.ui(F_SettingsTabStroke,50,3,110,35);
-    c.text_fitted(frontend_text(a,"stats_screen","TAB_STATS.header","Statistics"),56,13,98,12,Gold,8,true);
-    Canvas disabled=c;disabled.opacity=120;disabled.ui(F_SettingsTab,162,3,110,35);
-    disabled.text_fitted(frontend_text(a,"stats_screen","TAB_ACHIEVEMENT.header","Achievements"),166,13,102,12,White,8,true);
-    disabled.ui(I7_MenuLock,204,8,19,19); // NStatsScreen disables this tab.
-    unsigned character_count=0;for(unsigned i=0;i<CharacterKinds;++i)character_count+=(a.progress.characters_started>>i)&1;
-    a.progress_page_scroll.configure(185+int((character_count+1)/2)*103);
-    c.hit(23,40,271,174,HitKind::ProgressScroll);
-    Canvas page=progress_content_canvas(c);const int offset=a.progress_page_scroll.offset();
-    page.text_fitted(frontend_text(a,"main_menu_ui","STATISTICS.OVERALL.title","Overall Stats"),29,3-offset,251,12,Gold,10);
-    page.dim(26,21-offset,261,148,125);
+    using reference_viewport::project;auto&a=c.a;title_background(c,false);c.dim(0,0,320,240,210);a.hit_count=0;
+    const unsigned age=a.map_clock_ms-a.progress_page_started;Canvas foreground=c;foreground.opacity=uint8_t(div255(unsigned(foreground.opacity)*(age>=400?255:age*255/400)));
+    const UiStatisticsLayout layout(a.progress);a.progress_page_scroll.configure(layout.height,240);
+    c.hit(UiStatisticsLayout::Left,30,UiStatisticsLayout::Width,210,HitKind::ProgressScroll);
+    Canvas page=foreground;page.pixels+=30*page.pitch;if(page.coverage)page.coverage+=30*page.pitch;page.clip_h=210;
+    const int offset=a.progress_page_scroll.offset(),origin=30;
+    ProfileTextStyle header{7,source_label_face(a.content.english(),5),rgb(239,200,81),64,2,rgb(77,59,34)};header.shadow_x=2;header.shadow_y=1;
+    profile_text_box(page,frontend_text(a,"main_menu_ui","STATISTICS.OVERALL.title","Overall Stats"),UiStatisticsLayout::Left,project(200)-offset-origin,UiStatisticsLayout::Width,project(64),header,false,false);
+    Canvas panel=page;panel.opacity=uint8_t(div255(unsigned(panel.opacity)*128));
+    panel.rect(UiStatisticsLayout::Left,project(UiStatisticsLayout::OverallTop)-offset-origin,UiStatisticsLayout::Width,project(UiStatisticsLayout::OverallHeight),rgb(30,43,48));
     uint32_t seconds=0,fastest=0,wins=0,losses=0,slain=0;unsigned ascensions=0,monsters=0;
     for(const auto&s:a.progress.characters){seconds=progress_add(seconds,s.play_seconds);wins=progress_add(wins,s.wins);losses=progress_add(losses,s.losses);ascensions+=s.highest_ascension;if(s.fastest_win_seconds&&(!fastest||s.fastest_win_seconds<fastest))fastest=s.fastest_win_seconds;}
     for(const auto&model:a.progress.enemies){slain=progress_add(slain,model[0].wins);monsters+=bool(model[0].seen);}
@@ -124,34 +142,50 @@ static void statistics_screen(Canvas&c){
         case 3:n.number(ascensions);n.ch('/');n.number(10*CharacterKinds);break;
         case 4:n.number(slain);d.number(monsters);d.ch('/');d.number(101);break;
         case 5:n.text("—");d.number(progress_bit_count(a.progress.discovered_relics,WorldRelicKinds));d.ch('/');d.number(WorldRelicKinds);break;
-        case 6:n.text("—");d.number(PotionKinds);break; // Original bottom uses the complete potion model count.
+        case 6:n.text("—");d.number(PotionKinds);break;
         case 7:n.text("N/A");d.number(progress_bit_count(a.progress.discovered_events,OriginalEventKinds));d.ch('/');d.number(OriginalEventKinds);break;
         case 8:n.number(a.progress.best_streak);break;
         default:break;
         }
-        const int x=29+int(i%2)*130,y=24+int(i/2)*28-offset;values.amount=amount;
-        progress_stat_entry(page,x,y,icons[i],top[i],nullptr,values);values.amount=other;
-        progress_stat_entry(page,x,y,icons[i],nullptr,bottom[i],values);
+        values.amount=amount;ProgressTextValues lower=values;lower.amount=other;
+        statistics_entry(page,layout,i,icons[i],i==3&&!ascensions?nullptr:top[i],i==1&&!fastest?nullptr:bottom[i],values,lower);
     }
-    page.text_fitted(frontend_text(a,"main_menu_ui","STATISTICS.title","Character Stats"),29,173-offset,251,12,Gold,10);
-    static const unsigned order[]={0,1,3,4,2};unsigned visible=0;
-    for(unsigned model:order){if(!(a.progress.characters_started&(1u<<model)))continue;
-        const auto&s=a.progress.characters[model];const int x=27+int(visible%2)*132,y=192+int(visible/2)*103-offset;++visible;
-        if(y>=174||y+96<=0)continue;
-        page.dim(x,y,128,96,125);page.ui(U_TopBarIronclad+int(model),x+3,y+4,19,19);
-        const auto&ch=character_definitions[model];const char*name=a.content.world_title("characters",ch.key);
-        page.text_fitted(*name?name:ch.name,x+25,y+8,99,10,Gold,8);
+    profile_text_box(page,frontend_text(a,"main_menu_ui","STATISTICS.title","Character Stats"),UiStatisticsLayout::Left,project(UiStatisticsLayout::CharacterHeader)-offset-origin,UiStatisticsLayout::Width,project(64),header,false,false);
+    static constexpr uint32_t colors[]={0xff5555,0x7fff00,0x87ceeb,0xffa518,0xee82ee};
+    for(unsigned slot=0;slot<layout.character_count;++slot){const unsigned model=layout.models[slot];const auto&source=layout.characters[slot];const auto point=UiStatisticsLayout::projected(source);const int y=point.y-offset-origin;
+        const auto&s=a.progress.characters[model];panel.rect(point.x,y,point.w,point.h,rgb(30,43,48));
+        page.ui(U_TopBarIronclad+int(model),project(source.x+20),project(source.y+12)-offset-origin,project(48),project(48));
+        const auto&ch=character_definitions[model];const char*name=a.content.world_title("characters",ch.key);const uint32_t color=colors[model];
+        profile_text_box(page,*name?name:ch.name,project(source.x+76),project(source.y+12)-offset-origin,project(444),7,
+            {5,source_label_face(a.content.english(),5),rgb(color>>16,(color>>8)&255,color&255),64},false,false);
         char time[32]{},best[32]{},amount[24]{},best_streak[24]{};progress_time_text(time,sizeof time,s.play_seconds);if(s.fastest_win_seconds)progress_time_text(best,sizeof best,s.fastest_win_seconds);
         ProgressTextValues values;values.playtime=time;values.fastest=s.fastest_win_seconds?best:nullptr;values.wins=s.wins;values.losses=s.losses;
-        progress_stat_entry(page,x+2,y+28,I7_StatsClock,"ENTRY_CHAR_PLAYTIME.top","ENTRY_CHAR_PLAYTIME.bottom",values);
+        statistics_entry(page,layout,9+slot*3,I7_StatsClock,"ENTRY_CHAR_PLAYTIME.top",s.fastest_win_seconds?"ENTRY_CHAR_PLAYTIME.bottom":nullptr,values,values);
         TextBuffer b{amount,sizeof amount,0};b.number(s.highest_ascension);values.amount=amount;
-        progress_stat_entry(page,x+2,y+50,I7_StatsSwords,"ENTRY_CHAR_WIN_LOSS.top","ENTRY_CHAR_WIN_LOSS.bottom",values);
+        statistics_entry(page,layout,10+slot*3,I7_StatsSwords,s.highest_ascension?"ENTRY_CHAR_WIN_LOSS.top":nullptr,"ENTRY_CHAR_WIN_LOSS.bottom",values,values,true);
         b.n=0;amount[0]=0;b.number(s.current_streak);values.amount=amount;
-        progress_stat_entry(page,x+2,y+72,I7_StatsStreak,"ENTRY_CHAR_STREAK.top",nullptr,values);
-        TextBuffer bs{best_streak,sizeof best_streak,0};bs.number(s.best_streak);values.amount=best_streak;
-        progress_stat_entry(page,x+2,y+72,I7_StatsStreak,nullptr,"ENTRY_CHAR_STREAK.bottom",values);
+        TextBuffer bs{best_streak,sizeof best_streak,0};bs.number(s.best_streak);ProgressTextValues lower=values;lower.amount=best_streak;
+        statistics_entry(page,layout,11+slot*3,I7_StatsStreak,"ENTRY_CHAR_STREAK.top","ENTRY_CHAR_STREAK.bottom",values,lower);
     }
-    progress_page_chrome(c);
+    Canvas tab=foreground;tab.brightness=uint8_t(div255(unsigned(tab.brightness)*229));tab.ui(F_SettingsTab,110,25,49,17);
+    foreground.picture(a.content.ui_image(F_SettingsTabStroke),110,25,49,17,255,presentation::Add);
+    profile_text_box(foreground,frontend_text(a,"stats_screen","TAB_STATS.header","Statistics"),110,24,49,19,{6,source_label_face(a.content.english(),5),rgb(255,246,226),128,2,0},true,false);
+    Canvas disabled=foreground;disabled.brightness=uint8_t(div255(unsigned(disabled.brightness)*105));disabled.ui(F_SettingsTab,161,25,49,17);
+    Canvas disabled_text=disabled;disabled_text.opacity=uint8_t(div255(unsigned(disabled_text.opacity)*128));
+    profile_text_box(disabled_text,frontend_text(a,"stats_screen","TAB_ACHIEVEMENT.header","Achievements"),161,24,49,19,{6,source_label_face(a.content.english(),5),rgb(255,246,226),128,2,0},true,false);
+    disabled.ui(I7_MenuLock,175,24,21,21);
+    if(a.progress_page_scroll.maximum){foreground.ui(I6_ScrollbarTrack,268,UiStatisticsLayout::ScrollTop,9,UiStatisticsLayout::ScrollLength);
+        foreground.ui(I6_ScrollbarEdge,268,49,9,9);ui_picture_transform(foreground,a.content.ui_image(I6_ScrollbarEdge),272,216,9,9,0,-1024);
+        const int center=a.progress_page_scroll.thumb_y(UiStatisticsLayout::ScrollTop,UiStatisticsLayout::ScrollLength);foreground.ui(I6_ScrollbarGrabber,265,center-7,14,14);
+        c.hit(263,49,19,171,HitKind::ProgressThumb);}
+    native_original_back(foreground,a.progress_page_started);
+    int focus=-1;if(a.pointer.visible){const auto*hit=a.hit_at(a.pointer.x,a.pointer.y);if(hit&&hit->kind==HitKind::StatisticsEntry&&!a.pointer.held)focus=hit->value;}
+    else focus=a.statistics_presentation.selected;
+    if(focus==1||(focus==3&&ascensions)){const auto point=UiStatisticsLayout::projected(layout.entries[focus]);const int y=point.y-offset;
+        if(y+point.h>30&&y<240){const bool playtime=focus==1;source_hover_box(foreground,
+            frontend_text(a,"stats_screen",playtime?"TIP_PLAYTIME.header":"TIP_WIN_LOSS.header",""),
+            frontend_text(a,"stats_screen",playtime?"TIP_PLAYTIME.description":"TIP_WIN_LOSS.description",""),
+            point.x+(point.x<128?-project(392):project(532)),y);}}
 }
 // NTinyCard is a color-coded silhouette. It never scales the full readable
 // card renderer into a few pixels or rebuilds a card description per history row.

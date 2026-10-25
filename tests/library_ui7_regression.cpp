@@ -183,17 +183,17 @@ static void library_source_label_pixels(const std::vector<uint8_t>&pack){
         // Search is a plain LineEdit: no title color, outline or ellipsis.
         const auto search=library_letters(pack,a.content.locale_string("card_library","SEARCH_PLACEHOLDER"),5,0);
         CHECK(library_text_width(search)<=36);library_oracle_label(expected,search,5,4,source_rgb(153,156,150),255,0);
-        for(unsigned i=0;i<4;++i){const auto text=library_letters(pack,a.content.locale_string("gameplay_ui",sort_keys[i]),4,5);CHECK(library_text_width(text)+2+7<=49);
+        for(unsigned i=0;i<4;++i){const auto text=library_letters(pack,a.content.locale_string("gameplay_ui",sort_keys[i]),4,a.content.english()?5:0);CHECK(library_text_width(text)+2+7<=49);
             library_oracle_label(expected,text,5,sort_y[i]+1,source_rgb(239,200,81),255,128,0,0,2);}
-        for(unsigned i=0;i<4;++i){const auto text=library_letters(pack,a.content.locale_string("card_library",rarity_keys[i]),4,5);CHECK(library_text_width(text)<=37);
+        for(unsigned i=0;i<4;++i){const auto text=library_letters(pack,a.content.locale_string("card_library",rarity_keys[i]),4,a.content.english()?5:0);CHECK(library_text_width(text)<=37);
             // Source OnDisable multiplies the row by gray, retaining alpha.
             const unsigned shade=empty?128:255;const auto creme=source_rgb(255,246,226);
             const auto dimmed=uint16_t((((creme>>11)*shade+127)/255)<<11|((((creme>>5)&63)*shade+127)/255)<<5|((creme&31)*shade+127)/255);
             library_oracle_label(expected,text,13,rarity_y[i],dimmed,255,128,1,1,0,rarity_rgb[i][0],rarity_rgb[i][1],rarity_rgb[i][2]);}
         const char*costs[]={"0","1","2","3+","X"};const int columns[]={5,14,23,32,41};
-        for(unsigned i=0;i<5;++i){const auto text=library_letters(pack,costs[i],5,5);const int width=int(library_text_width(text));
+        for(unsigned i=0;i<5;++i){const auto text=library_letters(pack,costs[i],5,a.content.english()?5:0);const int width=int(library_text_width(text));
             library_oracle_label(expected,text,columns[i]+(10-width)/2,115,source_rgb(255,246,226),255,128,0,0,2);}
-        for(unsigned i=0;i<2;++i){const auto text=library_letters(pack,a.content.locale_string("card_library",i?"VIEW_UPGRADES":"VIEW_STATS"),4,5);CHECK(library_text_width(text)<=40);
+        for(unsigned i=0;i<2;++i){const auto text=library_letters(pack,a.content.locale_string("card_library",i?"VIEW_UPGRADES":"VIEW_STATS"),4,a.content.english()?5:0);CHECK(library_text_width(text)<=40);
             library_oracle_label(expected,text,11,i?230:221,source_rgb(239,200,81));}
         unsigned changed=0;for(unsigned y=0;y<240;++y)for(unsigned x=0;x<320;++x){const unsigned at=y*320+x;
             // Source text can extend beyond its Control (clip_contents=false).
@@ -257,7 +257,7 @@ static void collection_header_pixels(const std::vector<uint8_t>&pack){
             for(unsigned pass=0;pass<2;++pass){
                 RichReader reader(text.c_str());RichChar ch{};int x=start;
                 while(reader.next(ch)){
-                    CHECK(ch.codepoint>=32);const unsigned face=tab==2&&ch.style.bold?5u:0u;
+                    CHECK(ch.codepoint>=32);const unsigned face=ch.style.bold&&(tab==2||!a.content.english())?5u:0u;
                     CHECK(exact_header_glyph(pack,ch.codepoint,face));const auto g=a.content.glyph(ch.codepoint,5,face);
                     CHECK(g.pixels&&g.advance>0);if(g.h>height)height=g.h;std::vector<uint8_t>alpha(unsigned(g.w)*g.h);
                     if(g.encoded_size){unsigned at=0;for(unsigned i=0;i<g.encoded_size;i+=2){CHECK(i+1<g.encoded_size&&at+g.pixels[i]<=alpha.size());for(unsigned n=0;n<g.pixels[i];++n)alpha[at++]=g.pixels[i+1];}CHECK(at==alpha.size());}

@@ -63,7 +63,7 @@ static void ftue_button(Canvas&c,int x,int y,int w,int h,int action,const char*l
   if(focused)c.ui(action?I6_PopupConfirmOutline:I6_PopupCancelOutline,x,y,w,h,160);
   c.ui(action?I6_PopupConfirm:I6_PopupCancel,x,y,w,h);
  }
- Canvas text=c;text.font_face=5;text.fitted(label,x+5,y+2,w-10,h-3,5,5,ordinary?rgb(239,200,81):White,true,true,true,false,rgb(61,25,23));
+ Canvas text=c;text.font_face=source_label_face(c.a.content.english(),5);text.fitted(label,x+5,y+2,w-10,h-3,5,5,ordinary?rgb(239,200,81):White,true,true,true,false,rgb(61,25,23));
  c.hit(x,y,w,h,HitKind::FtueControl,action);
  if(ordinary&&!a.pointer.visible)card_reward_keycap(c,InputCommand::Select,x+w-11,y+3,9);
 }
@@ -95,11 +95,11 @@ static void ftue_lift(Canvas&c){
    const int scale=motion.scale(unsigned(i),a.map_clock_ms),w=CardGridPainter::face_width(scale),h=CardGridPainter::face_height(scale);
    draw_card_face(c,card,motion.x(unsigned(i),a.map_clock_ms)-w/2,134-h/2,w,h,-2,-2,-1,-1,facts);
   }break;}
- case FtueId::RestSite:{uint8_t ids[MaxWorldRestOptions];const unsigned n=a.camp_options(ids,MaxWorldRestOptions),shown=mn(4,int(n));const int start=(320-int(shown)*50-int(shown-1)*21)/2;
+ case FtueId::RestSite:{uint8_t ids[MaxWorldRestOptions];const unsigned n=a.camp_options(ids,MaxWorldRestOptions),shown=mn(4,int(n));const int start=(320-int(shown)*47-int(shown-1)*19)/2;
   Canvas choices=c;choices.opacity=uint8_t(div255(choices.opacity*a.room_presentation.rest.alpha(a.map_clock_ms)));
-  for(unsigned i=0;i<shown;++i){const char*key=world_rest_option_key(s,ids[i]);const int x=start+int(i)*71;
-   camp_icon(choices,a.content.world_image("rest",key),x,76,50,33,world_rest_option_enabled(s,ids[i]),1000);
-   char name[96]{};TextBuffer t{name,sizeof name,0};t.text("OPTION_");t.text(key);t.text(".name");choices.centered(a.content.world_string("rest_site_ui",name),x-7,111,64,10,rgb(212,182,91));
+  choices.brightness=uint8_t(div255(choices.brightness*a.room_presentation.rest.alpha(a.map_clock_ms)));
+  for(unsigned i=0;i<shown;++i){const auto sample=a.room_presentation.rest.buttons[ids[i]].sample(a.map_clock_ms);
+   native_camp_option_picture(choices,ids[i],start+int(i)*66,world_rest_option_enabled(s,ids[i]),sample);
   }break;}
  default:break;
  }
@@ -125,9 +125,9 @@ static void ftue_combat_pages(Canvas&c){
  c.ui(I7_SettingsArrowRight,288,108,24,24);c.hit(288,108,24,24,HitKind::FtueControl,3);
 }
 static void ftue_start_label(Canvas c,const char*text,unsigned scale){
- c.font_face=4;const int size=c.a.content.font_size(18,4);
+ c.font_face=source_label_face(c.a.content.english(),4);const int size=c.a.content.font_size(18,c.font_face);
  int x=160-int(unsigned(c.width(text,size))*scale/4096)/2;
- while(*text){const uint32_t cp=utf8(text);const auto g=c.a.content.glyph(cp,size,4);
+ while(*text){const uint32_t cp=utf8(text);const auto g=c.a.content.glyph(cp,size,c.font_face);
   if(!g.pixels||g.w>48||g.h>48){x+=int(g.advance*scale/4096);continue;}
   uint8_t alpha[48*48]{};unsigned at=0;
   if(g.encoded_size){for(unsigned i=0;i+1<g.encoded_size&&at<unsigned(g.w)*g.h;i+=2)for(unsigned j=0;j<g.pixels[i]&&at<unsigned(g.w)*g.h;++j)alpha[at++]=g.pixels[i+1];}
@@ -168,7 +168,7 @@ static void ftue_screen(Canvas&c){
  ftue_lift(c);
  if(id==FtueId::CombatRules){ftue_combat_pages(c);return;}
  if(id==FtueId::AcceptTutorials){
-  ftue_material(c,I6_PopupVertical,110,63,99,114,true);Canvas text=c;text.font_face=5;
+  ftue_material(c,I6_PopupVertical,110,63,99,114,true);Canvas text=c;text.font_face=source_label_face(c.a.content.english(),5);
   text.fitted(a.content.world_string("main_menu_ui","ENABLE_TUTORIALS.title"),114,74,91,14,6,6,Gold,true,true);
   text.font_face=0;text.bold_face=5;ftue_paragraph(text,a.content.world_string("main_menu_ui","ENABLE_TUTORIALS.description"),120,85,80,63,5,true);
   for(int i=0;i<2;++i)ftue_button(c,110+i*65,148,34,14,i,a.content.world_string("main_menu_ui",i?"GENERIC_POPUP.confirm":"GENERIC_POPUP.cancel"),false);
@@ -178,7 +178,7 @@ static void ftue_screen(Canvas&c){
   const uint32_t age=a.ftue.age(a.map_clock_ms),at=age>1000?age-1000:0;Canvas layer=c;layer.opacity=uint8_t(div255(layer.opacity*255*room_curve::linear(at,300)/4096));
   const int t=int(room_curve::linear(at,300)),u=t-4096;const int ease=4096+int(int64_t(u)*u/4096*(int64_t(11066)*u/4096+6970)/4096);
   const int dy=19*(4096-ease)/4096;ftue_material(layer,I6_PopupVertical,97,48+dy,126,144,true);
-  layer.ui(U_TopBarAscension,104,56+dy,12,12);Canvas title=layer;title.font_face=5;title.fitted(ftue_text(a,"ASCENSION_SINGLEPLAYER_FTUE_TITLE"),116,57+dy,88,14,6,6,Gold,true,true);
+  layer.ui(U_TopBarAscension,104,56+dy,12,12);Canvas title=layer;title.font_face=source_label_face(c.a.content.english(),5);title.fitted(ftue_text(a,"ASCENSION_SINGLEPLAYER_FTUE_TITLE"),116,57+dy,88,14,6,6,Gold,true,true);
   layer.bold_face=5;ftue_paragraph(layer,ftue_text(a,"ASCENSION_SINGLEPLAYER_FTUE_DESCRIPTION"),111,73+dy,98,76,5);
   layer.rect(135,151+dy,49,1,rgb(126,112,98));ftue_paragraph(layer,ftue_text(a,"ASCENSION_SINGLEPLAYER_FTUE_DISCLAIMER"),111,156+dy,98,23,5);
   if(age>=1000)ftue_button(layer,132,178+dy,56,19,1,ftue_text(a,"CONFIRM_BUTTON"));return;
@@ -202,7 +202,7 @@ static void ftue_screen(Canvas&c){
  x=mn(mx(0,x),320-w);y=mn(mx(0,y),240-h-2);
  ftue_material(c,I9_FtuePopup,x,y,w,h);
  char key[64]{};TextBuffer t{key,sizeof key,0};t.text(prefix);t.text(id==FtueId::MapSelect?"_TITLE":"_TITLE");
- Canvas title=c;title.font_face=5;title.fitted(ftue_text(a,key),x+(w==146?19:16),y+(w==146?7:4),w-(w==146?41:23),11,5,5,Gold,false,false,true);
+ Canvas title=c;title.font_face=source_label_face(c.a.content.english(),5);title.fitted(ftue_text(a,key),x+(w==146?19:16),y+(w==146?7:4),w-(w==146?41:23),11,5,5,Gold,false,false,true);
  t.n=0;key[0]=0;t.text(prefix);t.text("_DESCRIPTION");Canvas body=c;body.bold_face=5;
  const int bx=w==146?12:7,by=w==146?20:14,bw=w-bx-(w==146?10:7),bh=h-by-12;
  ftue_paragraph(body,ftue_text(a,key),x+bx,y+by,bw,bh,4,false,4);

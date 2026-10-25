@@ -130,7 +130,12 @@ void App::enemy_trigger(int slot,const char*trigger,int move,bool direct,const E
   for(unsigned i=0;i<m.count;i++)if(ui_visual_equal(m.queue[i].action,trigger))return;
  }
  if(m.count>=MaxEnemyVisualCommands){m.overflow=true;return;}
- auto&command=m.queue[m.count++];command={trigger,facts?*facts:ui_enemy_facts(game,slot),int16_t(move),uint8_t(direct),earliest?earliest:animation};ui_enemy_advance(*this,slot);
+ const uint32_t when=earliest?earliest:animation;unsigned at=m.count;
+ // A move can already have a later AttackEnd/cast queued when its second
+ // AttackCommand hit is observed. Insert by clock, preserving same-clock
+ // source order, within the existing fixed-capacity command array.
+ while(at&&int32_t(when-m.queue[at-1].earliest)<0){m.queue[at]=m.queue[at-1];--at;}
+ m.queue[at]={trigger,facts?*facts:ui_enemy_facts(game,slot),int16_t(move),uint8_t(direct),when};++m.count;ui_enemy_advance(*this,slot);
 }
 CreaturePose App::combat_enemy_pose(int slot)const{
  if(game.enemy_world.active&&slot>=0&&slot<game.enemy_count&&enemy_presentation[slot].identity&&

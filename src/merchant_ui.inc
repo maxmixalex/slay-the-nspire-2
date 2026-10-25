@@ -1,3 +1,4 @@
+#include "room_text_ui.inc"
 // Five class cards, two colorless, three relics/potions and a right-hand removal service.
 static const char* potion_name(int p,const Content*content=nullptr){auto*d=potion_definition((Potion)p);if(d&&content){const char*name=content->world_title("potions",d->key);if(*name)return name;}const char*name=d?d->name:"空药水槽";return content?content->ui_text(name):name;}
 static const char* potion_desc(int p){auto*d=potion_definition((Potion)p);return d?d->description:"药水栏为空。可在商店购买或领取战斗掉落。";}
@@ -47,7 +48,9 @@ static void merchant_dialogue(Canvas&c,bool fake=false){
  }else{const int skin=a.content.world_image("common","HOVER_TIP");if(skin>=0)bubble.nine_image(skin,center_x-35,center_y-24,70,48,28,22,46,16);}
  bubble.text_visible_characters=room_rich_characters(text)*room_curve::linear(age,400)/room_curve::Q;
  bubble.opacity=uint8_t(div255(bubble.opacity*230));
- bubble.fitted(text,m.dialogue_x-40,node_y-15,62,34,8,8,rgb(255,246,226),true,false,false,true);
+ // Source MarginContainer (-182,-66)..(98,64), Text's +2px Y offset,
+ // and 18..24px native font range share the inventory's uniform 2/9 scale.
+ native_room_compact_text(bubble,text,m.dialogue_x-40,node_y-14,62,29,true);
 }
 static void merchant_card(Canvas&c,Card card,int cx,int cy,unsigned scale,bool sold,const EventCardFacts*facts=nullptr){
  if(sold)return;const int w=MerchantInventoryLayout::size(300,scale),h=MerchantInventoryLayout::size(422,scale);

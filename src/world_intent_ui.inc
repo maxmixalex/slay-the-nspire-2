@@ -13,7 +13,7 @@ static int ui_intent_image(const App&a,const UiIntentPart&part,const EnemyIntent
  return a.content.world_image("intents",part.image);
 }
 struct UiIntentValue {char value[16]{},repeat[16]{};int width=0,value_width=0;};
-static unsigned ui_intent_face(const App&a){return a.content.version()>=HistoryUi8ContentVersion?5u:0u;}
+static unsigned ui_intent_face(const App&a){return a.content.version()>=HistoryUi8ContentVersion&&a.content.english()?5u:0u;}
 static int ui_intent_size(const App&a,bool repeat=false){return a.content.font_size(repeat?4:5,ui_intent_face(a));}
 static int ui_intent_text_width(const App&a,const char*text,int size){
  int width=0;while(*text)width+=a.content.glyph_metrics(utf8(text),size,ui_intent_face(a)).advance;return width;
@@ -52,8 +52,9 @@ static void native_enemy_intent(Canvas&c,int slot,CreaturePose pos){
   if(!part)continue;const auto label=ui_intent_value(c.a,*part,intent);const int center=cell.x+cell.w/2;
   faded.picture(ui_intent_image(c.a,*part,intent),center-cell.size/2,cell.y,cell.size,cell.size);
   if(*label.value){
-   // Source22/18px labels use Kreon Bold.5/4px retains the source ratio at
-   // calculator resolution; the previous10/8px labels doubled their size.
+   // Source22/18px normal labels use authored Kreon Bold in English, then
+   // MegaRichTextLabel's Regular locale substitution in Chinese.5/4px keeps
+   // the source ratio; the former10/8px labels doubled their native size.
    const int x=center-label.width/2,y=cell.y+cell.size-2,repeat_y=y+mx(0,main_size-repeat_size);
    for(int dy=-1;dy<=1;dy++)for(int dx=-1;dx<=1;dx++)if(dx||dy){faded.text(label.value,x+dx,y+dy,main_size,Ink);faded.text(label.repeat,x+label.value_width+dx,repeat_y+dy,repeat_size,Ink);}
    faded.text(label.value,x,y,main_size,rgb(255,246,226));faded.text(label.repeat,x+label.value_width,repeat_y,repeat_size,rgb(255,246,226));

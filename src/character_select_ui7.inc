@@ -13,15 +13,16 @@ static void character_info_text(Canvas&c,const char*text,int x,int y,int width,c
     c.fitted(text,x,y,width,height,plan.size,plan.size,color);
 }
 static int character_name_width(Canvas&c,const char*text,int size){
-    size=c.a.content.font_size(size,4);
+    const unsigned face=source_label_face(c.a.content.english(),4);size=c.a.content.font_size(size,face);
     RichReader reader(text);RichChar ch{};int width=0,count=0;
-    while(reader.next(ch)&&ch.codepoint!='\n'){width+=c.a.content.glyph_metrics(ch.codepoint,size,4).advance;++count;}
-    return width+character_select_layout::project(mx(0,count-1)*2);
+    while(reader.next(ch)&&ch.codepoint!='\n'){width+=c.a.content.glyph_metrics(ch.codepoint,size,face).advance;++count;}
+    return width+character_select_layout::project(mx(0,count-1)*(c.a.content.english()?2:0));
 }
 static int character_name_size(Canvas&c,const char*text){
     constexpr int sizes[]={14,12,10};
-    for(int size:sizes)if(character_name_width(c,text,size)<=character_select_layout::InfoWidth)return c.a.content.font_size(size,4);
-    return c.a.content.font_size(10,4);
+    const unsigned face=source_label_face(c.a.content.english(),4);
+    for(int size:sizes)if(character_name_width(c,text,size)<=character_select_layout::InfoWidth)return c.a.content.font_size(size,face);
+    return c.a.content.font_size(10,face);
 }
 static void character_name_outline(Canvas&c,Glyph glyph,int x,int y){
     // Source outline_size=24 projects to five pixels. Build a bounded alpha
@@ -46,14 +47,14 @@ static void character_name_outline(Canvas&c,Glyph glyph,int x,int y){
     shade.glyph(outline,x-Radius,y-Radius,rgb(0,0,0));
 }
 static void character_info_name(Canvas&c,const char*text,int x,int y,int size){
-    RichReader reader(text);RichChar ch{};int at=0,index=0;
+    RichReader reader(text);RichChar ch{};int at=0,index=0;const int spacing=c.a.content.english()?2:0;
     while(reader.next(ch)&&ch.codepoint!='\n'){
-        const auto g=c.a.content.glyph(ch.codepoint,size,4);character_name_outline(c,g,x+at+character_select_layout::project(index++*2),y);at+=g.advance;
+        const auto g=c.a.content.glyph(ch.codepoint,size,source_label_face(c.a.content.english(),4));character_name_outline(c,g,x+at+character_select_layout::project(index++*spacing),y);at+=g.advance;
     }
     reader=RichReader(text);at=index=0;
     while(reader.next(ch)&&ch.codepoint!='\n'){
-        const auto g=c.a.content.glyph(ch.codepoint,size,4);
-        c.character(ch.codepoint,g,x+at+character_select_layout::project(index++*2),y,rgb(239,200,81));at+=g.advance;
+        const auto g=c.a.content.glyph(ch.codepoint,size,source_label_face(c.a.content.english(),4));
+        c.character(ch.codepoint,g,x+at+character_select_layout::project(index++*spacing),y,rgb(239,200,81));at+=g.advance;
     }
 }
 static void character_screen(Canvas&c){
@@ -84,8 +85,8 @@ static void character_screen(Canvas&c){
     const auto*relic=relic_definition(definition.starting_relic);const RelicId relic_id=relic?RelicId(relic-relic_definitions):RelicId(0);
     if(relic)a.relic_description(relic_id,relic_text,sizeof relic_text);
     Canvas body_font=c;body_font.bold_face=5;
-    Canvas bold=c;bold.font_face=5;
-    Canvas name=c;name.font_face=4;
+    Canvas bold=c;bold.font_face=uint8_t(source_label_face(a.content.english(),5));
+    Canvas name=c;name.font_face=uint8_t(source_label_face(a.content.english(),4));
     const auto body_plan=character_info_plan(body_font,body,InfoWidth);
     const auto relic_plan=character_info_plan(body_font,relic_text,RelicTextWidth);
     const int description_height=body_plan.rows*body_plan.step+2;

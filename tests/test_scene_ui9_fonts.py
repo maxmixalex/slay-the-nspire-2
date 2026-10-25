@@ -10,15 +10,24 @@ import card_library_fonts as library
 import content_tiles as tiles
 import scene_ui9_fonts as scene
 from test_card_library_fonts import original_with_flavor_keys
+from test_card_library_fonts import Labels as LibraryLabels
 
 
 class Labels:
     def __init__(self):
         index = scene.text_index()
-        self.values = {}
+        self.values = {slot:'字' for slot in index.values()}
+        self.values.update(LibraryLabels().values)
+        self.values[6110] = 'eng'
+        self.cards=[]
+        self.strings=[None]*8704
         for item in json.loads((scene.ROOT/'config/profile-ui-fonts.json').read_text())['labels']:
             self.values[index[item['key']]] = '[blue]字[/blue]'+''.join(
                 '{'+name+'}' for name in item.get('substitutions', {}))
+        # The overlapping ordinary Card Library labels contain no BBCode in
+        # the pinned source. Keep that premise independent of rich profiles.
+        for key in library.BOLD_LABEL_KEYS:
+            self.values[index[key]] = '字'
         for key, slot in index.items():
             if key.startswith('intents.') and key.endswith(('.title', '.description')):
                 self.values[slot] = '攻势' if key.endswith('.title') else (
@@ -39,6 +48,16 @@ class SceneFontsTest(unittest.TestCase):
             self.assertIn((ord(c),5,0),required)
         for c in '{}[]|':
             self.assertFalse(any(cp==ord(c) for cp,px,face in required))
+        # Ordinary normal fonts are locale-substituted even when the scene
+        # authored Spectral or Bitter; rich bold is collected separately.
+        english_common=scene.room_requirements(Labels(),'common-ui-fonts.json')
+        self.assertIn((ord('字'),18,4),english_common)
+        self.assertIn((ord('字'),4,6),english_common)
+        chinese=Labels();chinese.values[6110]='zhs'
+        chinese_common=scene.room_requirements(chinese,'common-ui-fonts.json')
+        self.assertIn((ord('字'),18,0),chinese_common)
+        self.assertIn((ord('字'),4,0),chinese_common)
+        self.assertFalse(any(face in (4,5,6) for cp,px,face in chinese_common))
         labels=Labels()
         labels.values[scene.text_index()['main_menu_ui.PROFILE_SCREEN.BUTTON.title']]='{Unknown}'
         with self.assertRaisesRegex(ValueError,'Unknown profile substitution'):

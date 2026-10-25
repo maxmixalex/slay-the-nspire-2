@@ -49,9 +49,9 @@ struct MapWorkspace {
     // all 32,768 possible segments. The stable row/column table below retains
     // point identity even after pruning clears a cell in ReferenceMap::grid.
     struct Segment {
-        uint8_t columns[((MaxRows + 2) * 3 + 7) / 8]{};
-        uint8_t first_row = 0, length = 0;
-        int16_t next = 0;
+        uint8_t columns[((MaxRows + 2) * 3 + 7) / 8];
+        uint8_t first_row, length;
+        int16_t next;
         unsigned column(unsigned index) const {
             const unsigned bit = index * 3, byte = bit >> 3, shift = bit & 7;
             unsigned value = columns[byte];
@@ -65,17 +65,21 @@ struct MapWorkspace {
                 (columns[byte + 1] & ~(7u >> (8 - shift))) | (column >> (8 - shift)));
         }
     };
-    struct Group { int16_t first = 0, last = 0; uint16_t count = 0, next = 0; };
-    Segment segments[MaxSegments]{};
-    Group groups[MaxGroups]{};
-    uint16_t order[MaxGroups]{};
-    uint16_t group_buckets[GroupBuckets]{};
-    uint8_t point_ids[MaxRows + 2][Columns]{};
-    uint16_t group_count = 0, segment_count = 0;
-    uint32_t paths = 0;
+    struct Group { int16_t first, last; uint16_t count, next; };
+    // Generation initializes every used entry and every bucket before read.
+    // Trivial scratch activation must not clear the full 794 KiB on each
+    // foreground lease; Segment{} and Group{} still explicitly zero new rows.
+    Segment segments[MaxSegments];
+    Group groups[MaxGroups];
+    uint16_t order[MaxGroups];
+    uint16_t group_buckets[GroupBuckets];
+    uint8_t point_ids[MaxRows + 2][Columns];
+    uint16_t group_count, segment_count;
+    uint32_t paths;
 };
 static_assert(sizeof(MapWorkspace::Segment) == 14 && sizeof(MapWorkspace) <= 794792,
               "Map work storage must keep the full segment capacity within its compact budget");
+static_assert(__is_trivial(MapWorkspace),"Map scratch activation must not clear its full capacity");
 
 // Ports the StandardActMap constructor's explicit-count path. The caller supplies
 // room quotas and the RNG after any quota draws. Gaussian room-pool construction

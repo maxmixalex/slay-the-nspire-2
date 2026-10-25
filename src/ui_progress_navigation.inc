@@ -7,7 +7,7 @@ void App::open_compendium(){
 }
 void App::open_statistics(){
     compendium_open=true;compendium_selection=4;statistics_open=true;history_open=library=false;progress_page_started=map_clock_ms;
-    progress_page_scroll.reset();pointer_cancel();
+    progress_page_scroll.reset();statistics_presentation={};pointer_cancel();
 }
 void App::open_history(){
     if(!progress.count)return;
@@ -34,6 +34,14 @@ bool App::progress_navigation_input(Key key){
             if(r&&floor>=0&&floor<r->floor_count){history_tooltip.bind(r->serial,unsigned(floor),1);history_tooltip.keyboard=true;return true;}
         }
         if(key==Key::Back||key==Key::Collection){statistics_open=history_open=false;if(history_from_game_over){history_from_game_over=false;compendium_open=false;}pointer_cancel();return true;}
+        if(statistics_open&&(key==Key::Up||key==Key::Down||key==Key::Left||key==Key::Right)){
+            const UiStatisticsLayout layout(progress);auto&selected=statistics_presentation.selected;
+            const int next=layout.neighbor(selected,key==Key::Left?-1:key==Key::Right?1:0,key==Key::Up?-1:key==Key::Down?1:0);
+            if(next>=0){selected=uint8_t(next);progress_page_scroll.configure(layout.height,240);
+                const int y=UiStatisticsLayout::projected(layout.entries[selected]).y;
+                progress_page_scroll.target=UiHistoryScroll::clamp((y-120)*256,0,progress_page_scroll.maximum);}
+            return true;
+        }
         if(history_open&&(key==Key::Up||key==Key::Down||key==Key::Left||key==Key::Right||key==Key::Confirm)){
             const auto*r=history_at(history_index);if(!r)return true;
             uint16_t indices[MaxDeck]{};const unsigned groups=ui_history_groups(*r,indices);
@@ -83,10 +91,10 @@ bool App::progress_pointer_button(bool down,const HitRegion&hit){
     if((!statistics_open&&!history_open&&run_mode.screen!=RunMenu::Custom&&run_mode.screen!=RunMenu::Daily)||detail_card>=0||detail_item>=0||settings_open||frontend_confirm)return false;
     auto&scroller=progress_page_scroll;
     if(down){
-        if(hit.kind==HitKind::ProgressThumb||hit.kind==HitKind::ProgressScroll||hit.kind==HitKind::HistoryCard||hit.kind==HitKind::HistoryRelic||hit.kind==HitKind::HistoryFloor||hit.kind==HitKind::RunModifier){
+        if(hit.kind==HitKind::ProgressThumb||hit.kind==HitKind::ProgressScroll||hit.kind==HitKind::HistoryCard||hit.kind==HitKind::HistoryRelic||hit.kind==HitKind::HistoryFloor||hit.kind==HitKind::RunModifier||hit.kind==HitKind::StatisticsEntry){
             pointer.held=true;pointer.dragging=false;pointer.captured=hit;pointer.down_x=pointer.x;pointer.down_y=pointer.y;pointer.context=input_context();pointer.revision=game.revision;
             scroller.dragging=true;scroller.thumb=hit.kind==HitKind::ProgressThumb;scroller.last_y=pointer.y;
-            if(scroller.thumb)scroller.set_thumb(pointer.y,run_mode.screen==RunMenu::Custom?42:61,run_mode.screen==RunMenu::Custom?158:128);return true;
+            if(scroller.thumb)scroller.set_thumb(pointer.y,run_mode.screen==RunMenu::Custom?42:statistics_open?UiStatisticsLayout::ScrollTop:61,run_mode.screen==RunMenu::Custom?158:statistics_open?UiStatisticsLayout::ScrollLength:128);return true;
         }
         return false;
     }

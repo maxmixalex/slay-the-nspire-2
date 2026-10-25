@@ -55,7 +55,7 @@ static void library_sort_button(Canvas&c,int control,int sorter,const char*key,i
     const int width=reference_viewport::project(pressed?256:269),height=reference_viewport::project(focus&&!pressed?44:pressed?40:42);
     small_material_icon(button,a.content.ui_image(U_RewardButton),x+(w-width)/2,y+(h-height)/2,width,height,focus&&!pressed?1000:800,focus&&!pressed?1000:800,true);
     const int label_x=reference_viewport::project(24),label_h=reference_viewport::project(48);
-    const int text_width=library_fixed_label(c,a.content.locale_string("gameplay_ui",key),label_x,y,w,label_h,4,5,rgb(239,200,81),128,0,0,reference_viewport::project(12));
+    const int text_width=library_fixed_label(c,a.content.locale_string("gameplay_ui",key),label_x,y,w,label_h,4,source_label_face(a.content.english(),5),rgb(239,200,81),128,0,0,reference_viewport::project(12));
     Canvas arrow=c;arrow.tint_red=239;arrow.tint_green=200;arrow.tint_blue=81;
     const int image=a.content.ui_image(I6_SortDescending),size=reference_viewport::project(36),arrow_x=label_x+text_width+reference_viewport::project(12);
     ui_picture_transform(arrow,image,arrow_x+size/2,y+label_h/2,size,size,0,a.card_library.sort_descending&(1u<<sorter)?1024:-1024);
@@ -81,7 +81,7 @@ static void library_tick_label(Canvas&c,int control,const char*key,int source_y,
     const bool pressed=library_control_pressed(a,control),focus=library_control_focused(a,control,3,y,49,h);
     c.ui(checked?F_SettingsTicked:F_SettingsUnticked,4,y+1,6,6);
     Canvas label=c;if(pressed)label.brightness=uint8_t(div255(unsigned(label.brightness)*191));
-    library_fixed_label(label,a.content.locale_string("card_library",key),reference_viewport::project(60),y,40,h,4,5,rgb(239,200,81),128,1,1,0,false,focus&&!pressed?1100:1000);
+    library_fixed_label(label,a.content.locale_string("card_library",key),reference_viewport::project(60),y,40,h,4,source_label_face(a.content.english(),5),rgb(239,200,81),128,1,1,0,false,focus&&!pressed?1100:1000);
     c.hit(3,y,49,h,HitKind::LibraryControl,control);
 }
 static void card_library_screen(Canvas&c){
@@ -131,7 +131,7 @@ static void card_library_screen(Canvas&c){
         row.ui(checked?F_SettingsTicked:F_SettingsUnticked,2,y-1,8,8);
         Canvas label=row;label.tint_red=rarity_tints[i][0];label.tint_green=rarity_tints[i][1];label.tint_blue=rarity_tints[i][2];
         if(library_control_pressed(a,control))label.brightness=uint8_t(div255(unsigned(label.brightness)*191));
-        library_fixed_label(label,a.content.locale_string("card_library",rarity_keys[i]),reference_viewport::project(68),y,37,h,4,5,rgb(255,246,226),128,1,1,0,false,focus&&rarity_enabled&&!library_control_pressed(a,control)?1100:1000);
+        library_fixed_label(label,a.content.locale_string("card_library",rarity_keys[i]),reference_viewport::project(68),y,37,h,4,source_label_face(a.content.english(),5),rgb(255,246,226),128,1,1,0,false,focus&&rarity_enabled&&!library_control_pressed(a,control)?1100:1000);
         c.hit(3,y,49,h,HitKind::LibraryControl,control,rarity_enabled);if(focus&&rarity_enabled)hovered=control;
     }
     library_sort_button(c,LibrarySortCost,2,"SORT_COST",558);
@@ -142,7 +142,7 @@ static void card_library_screen(Canvas&c){
         Canvas image=c;image.tint_red=85;image.tint_green=148;image.tint_blue=165;
         small_material_icon(image,a.content.ui_image(I7_LibraryCost),x,y,10,10,1000,1200,true);
         if(checked){Canvas outline=c;outline.tint_red=239;outline.tint_green=200;outline.tint_blue=81;outline.ui(I7_LibraryCostOutline,x,y,10,10);}
-        library_fixed_label(c,costs[i],x,y,10,10,5,5,rgb(255,246,226),128,0,0,reference_viewport::project(12),true);
+        library_fixed_label(c,costs[i],x,y,10,10,5,source_label_face(a.content.english(),5),rgb(255,246,226),128,0,0,reference_viewport::project(12),true);
         c.hit(x,y,9,9,HitKind::LibraryControl,control);if(focus)hovered=control;
     }
     library_sort_button(c,LibrarySortAlphabet,3,"SORT_ALPHABET",666);

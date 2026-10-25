@@ -106,7 +106,7 @@ static void native_pause_screen(Canvas&c){
  // run.tscn's shared OverlayBackstop is black at .85, independent of
  // the unused blue Backstop child of pause_menu.tscn.
  Canvas backstop=c;backstop.opacity=uint8_t(217*room_curve::cubic_out(a.map_clock_ms-a.pause_opened,500)/4096);backstop.rect(0,0,320,240,0);
- Canvas title=c;title.font_face=4;
+ Canvas title=c;title.font_face=uint8_t(source_label_face(a.content.english(),4));
  title.text_fitted(frontend_text(a,"gameplay_ui","PAUSE_MENU.PAUSED","暂停"),0,TitleY,320,TitleFont,rgb(239,200,81),TitleFont,true,true,0);
  const char*keys[]={"PAUSE_MENU.RESUME","PAUSE_MENU.SETTINGS","PAUSE_MENU.COMPENDIUM","PAUSE_MENU.GIVE_UP","PAUSE_MENU.SAVE_AND_QUIT"};
  const char*fallback[]={"继续游戏","设置","图鉴","放弃游戏","保存并返回主菜单"};
@@ -118,7 +118,7 @@ static void native_pause_screen(Canvas&c){
   // Give Up material's h=.5 negates YIQ chroma, without a replacement skin.
   uint16_t pixels[W*H];uint8_t alpha[W*H]{};Canvas tile{a,pixels,W,w,h,alpha};tile.ui(U_RewardButton,0,0,w,h);
   for(int yy=0;yy<h;++yy)for(int xx=0;xx<w;++xx){const int at=yy*W+xx;if(alpha[at])c.paint((top+yy)*c.pitch+left+xx,presentation::yiq_material(pixels[at],i==3?-int(visual.saturation):int(visual.saturation),visual.value,visual.shade),alpha[at]);}
-  Canvas text=c;text.font_face=5;if(!enabled)text.brightness=128;
+  Canvas text=c;text.font_face=uint8_t(source_label_face(a.content.english(),5));if(!enabled)text.brightness=128;
   const int label_y=y+(H-Font)/2+(visual.y+2048)/4096;
   const uint16_t ink=blend(rgb(255,246,226),rgb(239,200,81),unsigned(visual.hover)*255/4096);
   Canvas shadow=text;shadow.opacity=uint8_t(div255(text.opacity*32));shadow.text_fitted(label,X+7,label_y+1,W-12,Font,0,5,true);

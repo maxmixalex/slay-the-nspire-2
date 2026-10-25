@@ -45,7 +45,7 @@ static void source_hover_skin(Canvas&c,HoverRect r,bool debuff=false){
     };draw(1,1,true);draw(0,0,false);
 }
 static void source_hover_title(Canvas&c,const char*title,HoverRect r,int icon=-1){
-    if(!*title)return;Canvas label=c;label.font_face=c.a.content.version()>=28?5:0;
+    if(!*title)return;Canvas label=c;label.font_face=source_label_face(c.a.content.english(),c.a.content.version()>=28?5:0);
     const int size=source_hover_size(c),width=source_hover_body_width(r.w)-(icon>=0?7:0);
     label.text_fitted(title,r.x+SourceHoverLeft,r.y+SourceHoverTop,width,size,rgb(239,200,81),size);
     if(icon>=0)c.picture(icon,r.x+r.w-SourceHoverRight-6,r.y+SourceHoverTop,6,6);

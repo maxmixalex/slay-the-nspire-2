@@ -1,6 +1,7 @@
 #include "app.hpp"
 #include "enemy_command_timing.hpp"
 #include "rich_text.hpp"
+#include "source_locale_fonts.hpp"
 #include "status.hpp"
 #include "combat_layout.hpp"
 #include "power_strip_layout.hpp"

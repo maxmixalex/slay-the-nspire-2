@@ -166,7 +166,7 @@ static void game_over_button(Canvas&c,int x,UiAction action,const char*label,Inp
  using namespace game_over_ui;auto&m=c.a.game_over_presentation;if(!m.ready(c.a.map_clock_ms))return;
  const int y=ButtonY+(c.a.game_over_summary?0:m.continue_offset(c.a.map_clock_ms));const bool hover=enabled&&game_over_hovered(c,x,y,ButtonWidth,ButtonHeight);
  Canvas button=c;button.opacity=uint8_t(div255(button.opacity*m.button_alpha(c.a.map_clock_ms)));button.brightness=enabled?(hover?255:215):110;
- button.ui(U_RewardSkip,x,y,ButtonWidth,ButtonHeight);button.font_face=5;
+ button.ui(U_RewardSkip,x,y,ButtonWidth,ButtonHeight);button.font_face=source_label_face(c.a.content.english(),5);
  button.fitted(label,x+4,y+2,ButtonWidth-8,9,5,5,rgb(253,244,227),true,true,true);
  c.action(x,y,ButtonWidth,ButtonHeight,action,enabled);
  const uint16_t code=c.a.input_bindings.keys[c.a.keyboard_only?1:0][unsigned(command)];
@@ -176,7 +176,7 @@ static void game_over_button(Canvas&c,int x,UiAction action,const char*label,Inp
 static void game_over_score_line(Canvas&c,const char*key,unsigned icon,int y,const char*points,unsigned row){
  using namespace game_over_ui;char label[256]{};game_over_format(c.a,game_over_text(c.a,key),label,sizeof label);
  const auto motion=c.a.game_over_presentation.score(row,c.a.map_clock_ms);if(!motion.visible||!motion.alpha)return;
- Canvas text=c;text.opacity=uint8_t(div255(text.opacity*motion.alpha));const int x=ScoreX+motion.offset;text.ui(int(icon),x,y,8,9);text.font_face=5;
+ Canvas text=c;text.opacity=uint8_t(div255(text.opacity*motion.alpha));const int x=ScoreX+motion.offset;text.ui(int(icon),x,y,8,9);text.font_face=source_label_face(c.a.content.english(),5);
  text.fitted(label,x+10,y+1,72,8,5,5,White,false,true);
  text.fitted(points,x+82,y+1,18,8,5,5,Gold,false,true);
 }
@@ -193,7 +193,7 @@ static void native_game_over_screen(Canvas&c){
  banner.ui(I6_CommonBanner,BannerX,banner_y,BannerWidth,BannerHeight);
  char banner_key[48]{};TextBuffer bk{banner_key,sizeof banner_key,0};
  if(s.phase==Phase::Complete)bk.text("BANNER.falseWin");else{bk.text("BANNER.lose");bk.number(unsigned(s.world.run_seed>>32)%8);}
- Canvas label=c;label.font_face=5;banner.font_face=5;
+ Canvas label=c;label.font_face=source_label_face(c.a.content.english(),5);banner.font_face=source_label_face(c.a.content.english(),5);
  banner.fitted(game_over_text(a,banner_key,s.phase==Phase::Complete?"Victory?":"Defeat"),BannerX+11,banner_y+10,BannerWidth-22,15,10,6,Gold,true,true,true);
  char quote[2048]{};
  if(!a.game_over_summary){
@@ -202,9 +202,9 @@ static void native_game_over_screen(Canvas&c){
    label.opacity=uint8_t(div255(label.opacity*255*room_curve::linear(elapsed,2000)/4096));
    RichReader reader(quote);RichChar ch{};unsigned count=0;while(reader.next(ch))++count;
    label.text_visible_characters=count*room_curve::sine_out(elapsed,2000)/4096;
-   label.paragraph_fitted(quote,42,106,236,72,6,White,5,true);
+   label.font_face=source_label_face(a.content.english(),6);label.paragraph_fitted(quote,42,106,236,72,5,White,5,true);
   }else if(s.phase!=Phase::Complete){char key[24]{};TextBuffer b{key,sizeof key,0};b.text("QUOTES.");unsigned index=unsigned(s.world.run_seed)%17;if(index<10)b.ch('0');b.number(index);
-   game_over_format(a,game_over_text(a,key),quote,sizeof quote);Canvas italic=label;italic.font_face=6;italic.opacity=uint8_t(div255(italic.opacity*motion.quote_alpha(now)));
+   game_over_format(a,game_over_text(a,key),quote,sizeof quote);Canvas italic=label;italic.font_face=source_label_face(a.content.english(),6);italic.opacity=uint8_t(div255(italic.opacity*motion.quote_alpha(now)));
    italic.paragraph_fitted(quote,26,motion.quote_y(now),268,30,5,rgb(255,100,100),5,true);
   }else label.paragraph_fitted(a.content.string(PartialHistoryText),44,111,232,28,5,Muted,5,true);
   game_over_button(c,ContinueX,UiAction::GameOverSummary,game_over_text(a,"BUTTON.continue","Continue"),InputCommand::Select);return;
@@ -212,7 +212,7 @@ static void native_game_over_screen(Canvas&c){
  if(s.phase!=Phase::Complete){
   if(motion.quote_from&&motion.summary_age(now)>=250)a.game_over_quote(quote,sizeof quote);
   else{char key[24]{};TextBuffer b{key,sizeof key,0};b.text("QUOTES.");unsigned index=unsigned(s.world.run_seed)%17;if(index<10)b.ch('0');b.number(index);game_over_format(a,game_over_text(a,key),quote,sizeof quote);}
-  Canvas italic=label;italic.font_face=6;italic.opacity=uint8_t(div255(italic.opacity*motion.quote_alpha(now)));italic.paragraph_fitted(quote,26,motion.quote_y(now),268,22,5,rgb(255,100,100),5,true);
+  Canvas italic=label;italic.font_face=source_label_face(a.content.english(),6);italic.opacity=uint8_t(div255(italic.opacity*motion.quote_alpha(now)));italic.paragraph_fitted(quote,26,motion.quote_y(now),268,22,5,rgb(255,100,100),5,true);
  }
  const unsigned rows=known?motion.rows:2;
  const int score_height=int(rows)*ScoreStep+2;int y=116-(score_height-16)/2;

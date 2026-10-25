@@ -21,6 +21,7 @@ static void collection_header_line(Canvas&c,const char*text,int x,int y,bool rel
     // Both category scenes fix their body to24 source pixels; inline28px
     // titles project to the same5px band at1680x1260. Relic headings use
     // Kreon Regular even for [b], while PotionCategory supplies Kreon Bold.
+    // MegaRichTextLabel substitutes zhs bold spans with Source Han Serif.
     // Header.clip_contents=false and autowrap_mode=0: the full heading may
     // extend past its1020px category width, without fitting or ellipsizing.
     const int size=reference_viewport::project(24);
@@ -29,7 +30,7 @@ static void collection_header_line(Canvas&c,const char*text,int x,int y,bool rel
         Canvas ink=c;if(!pass)ink.opacity=uint8_t(div255(c.opacity*128));
         RichReader reader(text);RichChar ch{};int at=x;
         while(reader.next(ch)){
-            const unsigned face=!relic&&ch.style.bold?5u:0u;
+            const unsigned face=ch.style.bold&&(!relic||!c.a.content.english())?5u:0u;
             const auto glyph=c.a.content.glyph(ch.codepoint,size,face);
             const uint16_t color=ch.style.color==1?rgb(239,200,81):ch.style.color==3?rgb(135,206,235):rgb(255,246,226);
             ink.character(ch.codepoint,glyph,at+(!pass?shadow_x:0),y+(!pass?shadow_y:0),pass?color:0,!pass);

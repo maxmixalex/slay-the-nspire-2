@@ -1,5 +1,6 @@
 #include "reference_act.hpp"
 #include "reference_math.hpp"
+#include "resource_transfer.hpp"
 
 namespace spire::reference {
 bool gaussian_int(Random& rng, int mean, int deviation, int minimum, int maximum,
@@ -93,7 +94,11 @@ bool generate_act_map(ReferenceMap& out, uint64_t run_seed, const ActSettings& s
 }
 bool generate_act_map(ReferenceMap& out, uint64_t run_seed, const ActSettings& settings,
                       QuotaTrace& trace) {
-    static MapWorkspace scratch;
-    return generate_act_map(out,run_seed,settings,scratch,trace);
+    ResourceTransferLease workspace(ResourceTransferUse::Map);
+    if(!workspace){
+        out=ReferenceMap{};out.error=MapError::Capacity;trace=QuotaTrace{};
+        return false;
+    }
+    return generate_act_map(out,run_seed,settings,*workspace.map_workspace(),trace);
 }
 }

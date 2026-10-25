@@ -9,7 +9,7 @@
 #include "power_values.hpp"
 
 namespace spire {
-ResourceTransferWorkspace resource_transfer_workspace{};
+ForegroundWorkspace foreground_workspace{};
 uint8_t resource_transfer_uses=0;
 #include "card_definitions.inc"
 #include "expansion_forward.inc"

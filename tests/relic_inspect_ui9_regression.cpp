@@ -161,7 +161,7 @@ static void source_shader(){
 }
 static void real_art_and_text(){
     if(!actual)return;scenario="actual original artwork and every relic text";CHECK(a.content.has_inspection_assets());setup();a.open_library(1);a.prepare_collection();Canvas c{a};
-    CHECK(a.content.font_size(7,5,false,true)==7&&a.content.font_size(4,6)==4);
+    CHECK(a.content.font_size(7,a.content.english()?5:0,false,true)==7&&a.content.font_size(4,a.content.english()?6:0)==4);
     const auto frame=a.content.image(a.content.ui_image(I9_RelicInspectFrame));CHECK(frame.pixels&&frame.w==58&&frame.h==58&&frame.format<=3);
     // Independent per-pixel source alpha/material composition, including
     // transparent frame texels. No false success from an empty picture.
@@ -173,8 +173,8 @@ static void real_art_and_text(){
     bool rarity_seen[8]{};
     for(unsigned i=0;i<a.collection.count;++i){const auto id=RelicId(a.collection.ids[i]);a.discover_relic(id);a.close_relic_inspect();a.select_library_item(int(i));advance(350);
         char name[256]{},body[4096]{},flavor[1024]{};relic_inspect_text(a,id,name,sizeof name,body,sizeof body,flavor,sizeof flavor);CHECK(*name&&*body);CHECK(!std::strstr(flavor,"[center]")&&!std::strstr(flavor,"[/center]"));
-        Canvas title{a};title.font_face=5;title.sparse_scene_sizes=true;CHECK(title.width(name,7)<=147);
-        for(unsigned field=0;field<3;++field){Canvas text{a};text.font_face=field==0?5:field==2?6:0;text.bold_face=field==1?5:0;const int size=field==0?7:field==2?4:5;RichReader reader(field==0?name:field==1?body:flavor);RichChar ch{};
+        Canvas title{a};title.font_face=a.content.english()?5:0;title.sparse_scene_sizes=true;CHECK(title.width(name,7)<=147);
+        for(unsigned field=0;field<3;++field){Canvas text{a};text.font_face=a.content.english()?(field==0?5:field==2?6:0):0;text.bold_face=field==1?5:0;const int size=field==0?7:field==2?4:5;RichReader reader(field==0?name:field==1?body:flavor);RichChar ch{};
             while(reader.next(ch)){if(ch.codepoint=='\n'||text_format_control(ch.codepoint)||inline_icon(ch.codepoint))continue;
                 const unsigned face=text.font_style(ch);const bool found=exact_glyph(ch.codepoint,size,face);
                 if(!found)std::fprintf(stderr,"missing exact relic glyph: relic=%u field=%u cp=U+%04x size=%u face=%u\n",unsigned(id),field,ch.codepoint,unsigned(size),face);

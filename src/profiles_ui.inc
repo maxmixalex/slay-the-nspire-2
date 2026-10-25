@@ -11,7 +11,7 @@ static void profile_text(const App&a,const char*key,const char*fallback,const Pr
     LocalizedTemplate text(out,capacity,profile_text_value,&values);
     text.format(frontend_text(a,"main_menu_ui",key,fallback));
 }
-// Fixed original profile labels. Pixel fonts are selected once at the source
+// Fixed original front-end labels. Pixel fonts are selected once at the source
 // band; hover scales that same face with its parent rather than fitting it to
 // another size. The small main-menu helper is the documented4px adaptation.
 struct ProfileTransform {
@@ -22,6 +22,7 @@ struct ProfileTransform {
 struct ProfileTextStyle {
     int size;unsigned face;uint16_t color;unsigned shadow=128;
     int outline=0;uint16_t outline_color=0;int shadow_outline=0;unsigned outline_opacity=255;
+    int shadow_x=1,shadow_y=0;
 };
 static void profile_glyph(Canvas&c,Glyph glyph,int x,int y,uint16_t color,const ProfileTransform&transform,
                           int left=0,int top=0,int right=320,int bottom=240){
@@ -54,11 +55,12 @@ static void profile_text_box(Canvas c,const char*text,int x,int y,int width,int 
     const auto draw=[&](int dx,int dy,unsigned opacity,uint16_t color,bool decoration){Canvas ink=c;ink.opacity=uint8_t(div255(unsigned(ink.opacity)*opacity));
         visit([&](const RichChar&ch,int at,int row,int px){if(ch.index>=c.text_visible_characters)return;
             const auto glyph=c.a.content.glyph(ch.codepoint,px,c.font_style(ch));
-            const uint16_t rich=ch.style.color==3?rgb(135,206,235):ch.style.color==1?rgb(239,200,81):style.color;
+            const uint16_t colors[]={style.color,rgb(239,200,81),rgb(255,85,85),rgb(135,206,235),rgb(127,255,0),rgb(238,130,238),rgb(255,165,24),rgb(0,255,255),rgb(255,255,255),rgb(128,128,128)};
+            const uint16_t rich=colors[ch.style.color];
             profile_glyph(ink,glyph,x+at+(centered?(width-widths[row])/2:0)+dx,text_y+row*plan.step+dy,decoration?color:rich,transform,left,top,right,bottom);});};
     if(style.shadow){const int radius=style.shadow_outline;
         for(int yy=-radius;yy<=radius;++yy)for(int xx=-radius;xx<=radius;++xx)
-            if(xx*xx+yy*yy<=radius*radius)draw(xx+1,yy,style.shadow,0,true);}
+            if(xx*xx+yy*yy<=radius*radius)draw(xx+style.shadow_x,yy+style.shadow_y,style.shadow,0,true);}
     for(int yy=-style.outline;yy<=style.outline;++yy)for(int xx=-style.outline;xx<=style.outline;++xx)
         if((xx||yy)&&xx*xx+yy*yy<=style.outline*style.outline)draw(xx,yy,style.outline_opacity,style.outline_color,true);
     draw(0,0,255,style.color,false);
@@ -76,7 +78,7 @@ static void profile_title_button(Canvas&c){
     const ProfileTransform transform{19,9,4096+82*weight/4096};
     if(a.content.version()>=ProfileContentVersion)profile_image(c,ProfileIcon1+int(profile)-1,5,5,9,9,transform);
     profile_text(a,"OPEN_PROFILE_SCREEN.title",a.content.english()?"Profile {Id}":"存档{Id}",{profile},text,sizeof text);
-    profile_text_box(c,text,16,a.pointer.visible?4:6,48,7,{5,5,rgb(239,200,81),0,2,0,0,64},false,false,transform);
+    profile_text_box(c,text,16,a.pointer.visible?4:6,48,7,{5,source_label_face(a.content.english(),5),rgb(239,200,81),0,2,0,0,64},false,false,transform);
     // The authored title has a25%-alpha black12px outline, not the large
     // regular8px label previously shared by all profile text.
     if(a.pointer.visible)profile_text_box(c,frontend_text(a,"main_menu_ui","OPEN_PROFILE_SCREEN.description",a.content.english()?"Click to edit":"点击编辑"),
@@ -102,10 +104,13 @@ static void profiles_screen(Canvas&c){
         if(summary.exists&&!summary.last_saved_at&&!summary.play_seconds){TextBuffer t{playtime,sizeof playtime,0};t.text("—");}
         else progress_time_text(playtime,sizeof playtime,summary.play_seconds);
         progress_date_text(a,summary.last_saved_at,date,sizeof date,time,sizeof time);
-        TextBuffer u{updated,sizeof updated,0};u.text(date);if(summary.last_saved_at){u.ch(' ');u.text(time);}
+        TextBuffer u{updated,sizeof updated,0};u.text(date);if(summary.last_saved_at){
+            if(a.content.english()){u.ch(' ');u.text(time);}
+            else{const unsigned hour=summary.last_saved_at/3600%24,minute=summary.last_saved_at/60%60;
+                u.text(hour<12?"， 上午 ":"， 下午 ");u.number(hour%12?hour%12:12);u.ch(':');if(minute<10)u.ch('0');u.number(minute);}}
         const ProfileTextValues values{i+1,playtime,updated};
         profile_text(a,"PROFILE_SCREEN.BUTTON.title",a.content.english()?"Save Profile {Id}":"{Id}号存档",values,text,sizeof text);
-        profile_text_box(c,text,x+20,y+9,47,8,{6,5,rgb(239,200,81),64,2,rgb(51,47,7),2},true,false,transform);
+        profile_text_box(c,text,x+20,y+9,47,8,{6,source_label_face(a.content.english(),5),rgb(239,200,81),64,2,rgb(51,47,7),2},true,false,transform);
         profile_text(a,summary.exists?"PROFILE_SCREEN.BUTTON.description":"PROFILE_SCREEN.BUTTON.empty",
             summary.exists?"{Playtime}\n\n{LastUpdatedTime}":a.content.english()?"Empty":"空存档",values,text,sizeof text);
         profile_text_box(c,text,x+10,y+29,65,69,{5,0,rgb(255,246,226),96},true,true,transform,true);
@@ -123,7 +128,7 @@ static void profiles_screen(Canvas&c){
         const int label_y=trash_y+reference_viewport::project(trash_focus?48+30*room_curve::cubic_out(age,200)/4096:78);
         if(alpha){Canvas label=c;label.opacity=uint8_t(div255(unsigned(c.opacity)*alpha));
             profile_text_box(label,frontend_text(a,"main_menu_ui","PROFILE_SCREEN.DELETE_BUTTON.label",a.content.english()?"Delete Profile":"删除存档"),
-                center-40,label_y,80,10,{5,5,rgb(255,100,100),128},true,false,trash_transform);}
+                center-40,label_y,80,10,{5,source_label_face(a.content.english(),5),rgb(255,100,100),128},true,false,trash_transform);}
     }
     if(!a.profile_pending)native_original_back(c,a.profiles_started);
 }

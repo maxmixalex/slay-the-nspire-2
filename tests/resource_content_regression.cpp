@@ -47,6 +47,13 @@ static std::vector<uint8_t> glyph_bytes(Glyph p){
     CHECK(p.pixels);const unsigned n=p.encoded_size?p.encoded_size:unsigned(p.w)*p.h;
     return {p.pixels,p.pixels+n};
 }
+static Glyph directory_glyph(Content&content,unsigned cp,unsigned encoded_size){
+    const unsigned face=content.version()>=HistoryUi8ContentVersion?
+        ((encoded_size>>6)&3u)|((encoded_size>>3)&4u):
+        content.version()>=Ui7ContentVersion?(encoded_size>>6)&3u:0u;
+    const unsigned size=encoded_size&(content.version()>=HistoryUi8ContentVersion?31u:63u);
+    return content.glyph(cp,int(size),face);
+}
 int main(int argc,char**argv){
     if(argc!=2&&argc!=3&&argc!=5&&argc!=6){
         std::fprintf(stderr,"Usage: resource_content_regression REAL_PACK [EQUIVALENT_REFERENCE_PACK] [--images FIRST COUNT]\n");return 2;
@@ -106,17 +113,17 @@ int main(int argc,char**argv){
     }else decoded_image_bytes=compare_images(*memory,*ranged,"memory / range");
     for(unsigned id=0;id<glyphs;id++){
         const uint8_t*r=b.data()+40+images*16+id*16;const unsigned cp=word(r),size=half(r+8);
-        Glyph a=memory->glyph(cp,size);auto expected=glyph_bytes(a);Glyph c=ranged->glyph(cp,size);auto actual=glyph_bytes(c);
+        Glyph a=directory_glyph(*memory,cp,size);auto expected=glyph_bytes(a);Glyph c=directory_glyph(*ranged,cp,size);auto actual=glyph_bytes(c);
         CHECK(a.w==c.w&&a.h==c.h&&a.advance==c.advance&&a.encoded_size==c.encoded_size);CHECK(expected==actual);
         if(reference){
             const uint8_t*rr=reference_bytes.data()+40+images*16+id*16;CHECK(word(rr)==cp&&half(rr+8)==size);
-            Glyph g=reference->glyph(cp,size);auto original=glyph_bytes(g);CHECK(a.w==g.w&&a.h==g.h&&a.advance==g.advance&&a.encoded_size==g.encoded_size);CHECK(expected==original);
+            Glyph g=directory_glyph(*reference,cp,size);auto original=glyph_bytes(g);CHECK(a.w==g.w&&a.h==g.h&&a.advance==g.advance&&a.encoded_size==g.encoded_size);CHECK(expected==original);
         }
     }
     for(unsigned id=0;id<strings;id++){const std::string expected=memory->string(id);CHECK(expected==ranged->string(id));if(reference)CHECK(expected==reference->string(id));}
     for(unsigned id=0;id<clips;id++){
-        Clip a=memory->clip(id),c=ranged->clip(id);CHECK(a.first==c.first&&a.count==c.count&&a.frame_ms==c.frame_ms&&a.pivot_x==c.pivot_x&&a.pivot_y==c.pivot_y);
-        if(reference){Clip r=reference->clip(id);CHECK(a.first==r.first&&a.count==r.count&&a.frame_ms==r.frame_ms&&a.pivot_x==r.pivot_x&&a.pivot_y==r.pivot_y);}
+        Clip a=memory->clip(id),c=ranged->clip(id);CHECK(a.first==c.first&&a.count==c.count&&a.frame_ms==c.frame_ms&&a.pivot_x==c.pivot_x&&a.pivot_y==c.pivot_y&&a.sprite_units==c.sprite_units);
+        if(reference){Clip r=reference->clip(id);CHECK(a.first==r.first&&a.count==r.count&&a.frame_ms==r.frame_ms&&a.pivot_x==r.pivot_x&&a.pivot_y==r.pivot_y&&a.sprite_units==r.sprite_units);}
     }
     CHECK(memory->card_count()==ranged->card_count());
     for(unsigned id=0;id<memory->card_count();id++){

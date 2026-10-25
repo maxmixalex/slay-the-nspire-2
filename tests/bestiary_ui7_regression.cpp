@@ -74,11 +74,11 @@ static void actual_glyphs(const std::vector<uint8_t>&pack){
  const auto text=[&](const char*value,unsigned face,unsigned size){RichReader reader(value);RichChar ch{};
   while(reader.next(ch))if(ch.codepoint>=32)CHECK(stored_glyph(pack,ch.codepoint,face,size));};
  clear_ui_progress(app.progress);app.progress.discovered_acts=15;CHECK(app.open_bestiary(true));
- for(int row_index=0;row_index<app.bestiary.row_count;++row_index){const unsigned model=app.bestiary_entry_model(row_index);if(model!=255)text(app.monster_title(EnemyId(model)),4,10);}
- text(app.content.world_title("encounters","DECIMILLIPEDE_ELITE"),4,10);text(app.content.world_string("bestiary","LOCKED.monsterTitle"),4,10);
- for(const char*label:{"ACTIONS.header","MODE.viewActions","MODE.viewStats"})text(app.content.world_string("bestiary",label),5,5);
- text(app.content.world_string("bestiary","EVENTS.title"),5,6);
- for(const char*act:{"OVERGROWTH","UNDERDOCKS","HIVE","GLORY"})text(app.content.world_title("acts",act),5,6);
+ for(int row_index=0;row_index<app.bestiary.row_count;++row_index){const unsigned model=app.bestiary_entry_model(row_index);if(model!=255)text(app.monster_title(EnemyId(model)),app.content.english()?4:0,10);}
+ text(app.content.world_title("encounters","DECIMILLIPEDE_ELITE"),app.content.english()?4:0,10);text(app.content.world_string("bestiary","LOCKED.monsterTitle"),app.content.english()?4:0,10);
+ for(const char*label:{"ACTIONS.header","MODE.viewActions","MODE.viewStats"})text(app.content.world_string("bestiary",label),app.content.english()?5:0,5);
+ text(app.content.world_string("bestiary","EVENTS.title"),app.content.english()?5:0,6);
+ for(const char*act:{"OVERGROWTH","UNDERDOCKS","HIVE","GLORY"})text(app.content.world_title("acts",act),app.content.english()?5:0,6);
  text(app.content.world_string("bestiary","QUOTE_PLACEHOLDER"),6,5);
  app.input(Key::Back);
 }

@@ -129,24 +129,36 @@ static void native_event_screen(Canvas&c){
  if(ui_ancient_event(e.id)){native_ancient_screen(c);return;}
  if(e.id==OriginalEventId::FakeMerchant&&!e.finished){native_fake_merchant_screen(c);return;}
  c.picture(a.content.world_image("events",original_event_key(e.id)),0,22,320,218);
- // default_event_layout.tscn places a centered story above one options VBox
- // on the right of the illustration. No extra dark column or duplicate
- // selected-description box belongs on top of the event artwork.
+ // default_event_layout.tscn: VBox at (viewport/2-38,255-39), width800.
+ // Its64px title,280px minimum body,24px spacer and100px options belong to
+ // the full1680x1260 UI, not the room artwork's cropped218px camera.
+ constexpr int x0=153,width0=152,title_y=41,title_h=12,body_y=54,body_min=53;
+ constexpr int option_h=19,option_step=20,spacer=6,max_visible=6;
  Canvas title=c;title.opacity=uint8_t(div255(title.opacity*motion.title_alpha(a.map_clock_ms)));
- title.fitted(native_event_title(a),131,30,182,19,16,12,Gold,true,true,false,true);
+ title.font_face=a.content.english()?4:0;title.sparse_scene_sizes=true;
+ const int title_size=a.content.font_size(7,title.font_face,false,true);
+ title.fitted(native_event_title(a),x0,title_y+mx(0,title_h-title_size-2),width0,title_h,7,5,rgb(239,200,81),true,true,false,true);
  char text[8192]{};a.original_event_text(-1,true,text,sizeof text);
- Canvas body=c;body.opacity=uint8_t(unsigned(body.opacity)*motion.body_progress(a.map_clock_ms)/room_curve::Q);
+ Canvas body=c;body.bold_face=5;body.opacity=uint8_t(unsigned(body.opacity)*motion.body_progress(a.map_clock_ms)/room_curve::Q);
  body.text_visible_characters=room_rich_characters(text)*motion.body_reveal(a.map_clock_ms)/room_curve::Q;
- const auto story=body.fitted(text,137,54,173,65,10,10,White,true,false,false,true);
- if(story.truncated&&motion.body_progress(a.map_clock_ms)==room_curve::Q)c.text("…",298,106,10,Gold,12);
- c.action(132,51,183,68,UiAction::ReadEvent);
- const int count=original_event_option_count(s);a.cursor=mn(mx(0,a.cursor),mx(0,count-1));int first=a.cursor/3*3;
- for(int i=first;i<mn(count,first+3);i++){const int y=123+(i-first)*38,x=130+motion.option_x(unsigned(i),a.map_clock_ms);
+ const int count=original_event_option_count(s);a.cursor=mn(mx(0,a.cursor),mx(0,count-1));const int first=a.cursor/max_visible*max_visible,shown=mn(count-first,max_visible);
+ const int body_size=a.content.font_size(5);
+ const auto metric=[&](const RichChar&ch,int px){const auto g=a.content.glyph_metrics(ch.codepoint,px,body.font_style(ch));return fitted_text::Metric{g.advance,mx(int(g.advance),int(g.w))};};
+ const int rows=fitted_text::line_count(text,width0,body_size,metric);
+ const int options_height=shown?(shown-1)*option_step+option_h:0;
+ // Godot fit_content grows the body before placing the options. Only prose
+ // that exceeds the calculator viewport uses its existing complete reader;
+ // ordinary four/five-option pages no longer lose rows behind a3-item page.
+ const int body_h=mn(mx(body_min,rows*(body_size+1)+2),240-4-body_y-spacer-options_height);
+ body.fitted(text,x0,body_y,width0,body_h,5,5,rgb(255,246,226),true,false,false,true);
+ c.action(x0,body_y,width0,body_h,UiAction::ReadEvent);
+ const int options_y=body_y+body_h+spacer;
+ for(int i=first;i<first+shown;i++){const int y=options_y+(i-first)*option_step,x=x0+motion.option_x(unsigned(i),a.map_clock_ms);
   const bool enabled=original_event_option_enabled(s,i),ready=motion.option_ready(unsigned(i),a.map_clock_ms);
-  const bool selected=enabled&&ready&&merchant_hovered(a,i,x,y,186,37);
+  const bool selected=enabled&&ready&&merchant_hovered(a,i,x,y,width0,option_h);
   const bool pressed=selected&&a.pointer.held&&a.pointer.captured.kind==HitKind::Choice&&a.pointer.captured.value==i&&a.pointer.captured.enabled;
   const auto visual=motion.buttons[i].observe(pressed?2:selected?1:0,a.map_clock_ms);
-  const int width=186*visual.scale/4096,height=37*visual.scale/4096,left=x+(186-width)/2,top=y+(37-height)/2;
+  const int width=width0*visual.scale/4096,height=option_h*visual.scale/4096,left=x+(width0-width)/2,top=y+(option_h-height)/2;
   Canvas entry=c;entry.opacity=uint8_t(unsigned(entry.opacity)*motion.option_progress(unsigned(i),a.map_clock_ms)/room_curve::Q);
   // NEventOptionButton: a shadow plus a blue additive focus outline, and a
   // single rich label with a gold/red bold title followed by its description.
@@ -159,8 +171,8 @@ static void native_event_screen(Canvas&c){
   TextBuffer body{combined,sizeof combined,0,&a.content};
   if(*label){body.text(enabled?"[gold][b]":"[red][b]");body.text(label);body.text(enabled?"[/b][/gold]":"[/b][/red]");if(*description)body.ch('\n');}body.text(description);
   Canvas words=entry;if(!enabled)words.opacity=uint8_t(div255(words.opacity*179));
-  words.paragraph_fitted(combined,x+10,y+3,164,32,10,White,8);
-  c.hit(x,y,186,37,HitKind::Choice,i,enabled&&ready);
+  native_room_compact_text(words,combined,x+8,y+2,138,14);
+  c.hit(x,y,width0,option_h,HitKind::Choice,i,enabled&&ready);
  }
- if(count>3){char page[32]{};TextBuffer b{page,sizeof page,0,&c.a.content};b.number(first/3+1);b.ch('/');b.number((count+2)/3);c.text(page,285,23,8,White,30);}
+ if(count>max_visible){char page[32]{};TextBuffer b{page,sizeof page,0,&c.a.content};b.number(first/max_visible+1);b.ch('/');b.number((count+max_visible-1)/max_visible);c.text(page,285,23,5,White,30);}
 }

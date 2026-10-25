@@ -62,6 +62,7 @@
 #include "ui_preferences.hpp"
 #include "ui_progress.hpp"
 #include "ui_profiles.hpp"
+#include "ui_statistics.hpp"
 #include "profile_assets.hpp"
 #include "hud_ui7_assets.hpp"
 #include "hud_ui7_presentation.hpp"
@@ -346,6 +347,7 @@ struct App {
     uint32_t progress_page_started=0;
     UiHistoryScroll progress_page_scroll{};
     UiMenuTransition compendium_motion[6]{};
+    UiStatisticsPresentation statistics_presentation{};
     void open_compendium();
     void open_statistics();
     void open_history();

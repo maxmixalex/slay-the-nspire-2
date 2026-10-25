@@ -1,6 +1,7 @@
 #pragma once
 #include <stdint.h>
 #include "health_bar.hpp"
+#include "room_ui7_presentation.hpp"
 
 namespace spire {
 // NPlayerTurnBanner / NEnemyTurnBanner, pinned v0.111.0. All clocks are
@@ -45,8 +46,10 @@ struct TurnBannerPresentation {
         Frame f;
         if(!player_active||int32_t(now-player_start)<0||now-player_start>=(PlayerMs+32)/33)return f;
         const uint32_t ms=(now-player_start)*33;f.kind=Player;f.number=number;f.extra=extra;
-        f.alpha=ms<1900?ease(ms,1000)*255/4096:(ms>=PlayerMs?0:(PlayerMs-ms)*255/300);
-        f.offset=int((ease(ms,1500)*8+2048)/4096);return f;
+        f.alpha=ms<1900?ease(ms,1000)*255/4096:
+            255-255*room_curve::sine_out(ms-1900,300)/room_curve::Q;
+        // Opposite50px scene tweens project to10px at the real1680px UI.
+        f.offset=int((ease(ms,1500)*10+2048)/4096);return f;
     }
     Frame sample(uint32_t now)const{const auto enemy=sample_enemy(now);return enemy.kind!=None?enemy:sample_player(now);}
 };

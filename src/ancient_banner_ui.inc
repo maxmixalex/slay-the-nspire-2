@@ -19,12 +19,12 @@ static void native_ancient_banner(Canvas&c){
  unsigned n=0;for(;*text&&n+1<sizeof title;++text)title[n++]=*text>='a'&&*text<='z'?char(*text-'a'+'A'):*text;
  TextBuffer b{key,sizeof key,0};b.text(original_event_key(id));b.text(".epithet");
  const char*epithet=a.content.world_string("ancients",key);
- Canvas name=c,description=c;name.font_face=4;description.font_face=6;
+ Canvas name=c,description=c;name.font_face=source_label_face(a.content.english(),4);description.font_face=source_label_face(a.content.english(),6);
  if(age>=5500){
   const int x=int(48*4*AncientBannerPresentation::circ(age-5500,2000)/(21*4096));
   name.text(title,x,219,10,rgb(255,246,226),198);
   description.opacity=uint8_t(div255(description.opacity*motion.epithet_alpha(a.map_clock_ms)));
-  description.text(epithet,x,227,6,rgb(255,246,226),198);return;
+  description.text(epithet,x,227,4,rgb(255,246,226),198);return;
  }
  const int root=-200+100*int(AncientBannerPresentation::circ(age,4000))/4096;
  const int offset=18+(age<=1000?0:24*int(room_curve::cubic_out(age-1000,2000))/4096);
@@ -36,12 +36,12 @@ static void native_ancient_banner(Canvas&c){
  const auto epithet_color=rgb(135,206*(4096-red)/4096,235*(4096-red)/4096);
  name.opacity=uint8_t(div255(name.opacity*motion.alpha(a.map_clock_ms)));
  const int width=name.width(title,14);int before=0,count=0,center_index=0;
- const char*p=title;while(*p){const auto cp=utf8(p);const auto metric=a.content.glyph_metrics(cp,14,4);
+ const char*p=title;while(*p){const auto cp=utf8(p);const auto metric=a.content.glyph_metrics(cp,14,name.font_face);
   if(!center_index&&2*(before+metric.advance)>width)center_index=count*4096+(width*2048-before*4096)/mx(1,metric.advance);
   before+=metric.advance;++count;
  }
  p=title;int x=(320-width)/2,index=0;
- while(*p){const auto cp=utf8(p);const auto glyph=a.content.glyph(cp,14,4);
+ while(*p){const auto cp=utf8(p);const auto glyph=a.content.glyph(cp,14,name.font_face);
   const int dx=a.text_effects?int(int64_t(index*4096+2048-center_index)*spacing/(4096*4096)):0;
   Canvas letter=name;if(!a.text_effects)letter.opacity=uint8_t(div255(letter.opacity*unsigned(mn(255,mx(0,int(age*765/1000)-index*4)))));
   Canvas shadow=letter;shadow.opacity=uint8_t(div255(shadow.opacity*96));
@@ -50,5 +50,5 @@ static void native_ancient_banner(Canvas&c){
   x+=glyph.advance;++index;
  }
  description.opacity=uint8_t(div255(description.opacity*motion.epithet_alpha(a.map_clock_ms)));
- description.centered(epithet,0,(630+root+offset)*4/21-3,320,6,epithet_color);
+ description.centered(epithet,0,(630+root+offset)*4/21-3,320,4,epithet_color);
 }

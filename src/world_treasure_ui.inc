@@ -233,7 +233,7 @@ static void native_treasure_screen(Canvas&c){
  const unsigned banner_alpha=a.treasure_banner_opacity();
  if(banner_alpha){Canvas banner=c;banner.opacity=uint8_t(div255(c.opacity*banner_alpha));const int y=a.treasure_banner_offset();
   banner.ui(a.content.version()>=Ui6ContentVersion?I6_CommonBanner:U_RewardBanner,98,56+y,125,31);
-  banner.font_face=5;banner.fitted(treasure_text(a,"TREASURE_BANNER","宝藏"),117,60+y,86,16,6,5,rgb(255,246,226),true,false,true,false,rgb(74,60,42));}
+  banner.font_face=source_label_face(c.a.content.english(),5);banner.fitted(treasure_text(a,"TREASURE_BANNER","宝藏"),117,60+y,86,16,6,5,rgb(255,246,226),true,false,true,false,rgb(74,60,42));}
  if(!s.treasure_state){
   // Projection of the original centered 800x500 Chest control at 1920x1080.
   c.action(87,96,162,101,UiAction::TreasureOpen);

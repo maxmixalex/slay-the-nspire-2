@@ -221,14 +221,14 @@ static void bestiary_rate(BestiaryNumbers&n){
 // foreground tile preserves glyph identity instead of switching to an8/10px
 // font every time a5/6px label is focused. No retained buffer is introduced.
 static void bestiary_label(Canvas&c,const char*text,int x,int y,int width,int face,int size,uint16_t color,int scale=1024,bool centered=false,int minimum=0){
- Canvas label=c;label.font_face=uint8_t(face);label.bold_face=5;
+ Canvas label=c;label.font_face=uint8_t(source_label_face(c.a.content.english(),unsigned(face)));label.bold_face=5;
  if(!minimum)minimum=size;
  if(scale==1024){Canvas shadow=label;shadow.opacity=uint8_t(div255(shadow.opacity*128));
   shadow.fitted(text,x+1,y+1,width,size+5,size,minimum,0,centered,true);
   label.fitted(text,x,y,width,size+5,size,minimum,color,centered,true);return;}
  constexpr int Width=128,Height=16;const int w=mn(width,Width);
  uint16_t pixels[Width*Height]{};uint8_t alpha[Width*Height]{};
- Canvas tile{c.a,pixels,Width,w,Height,alpha};tile.font_face=uint8_t(face);tile.bold_face=5;
+ Canvas tile{c.a,pixels,Width,w,Height,alpha};tile.font_face=uint8_t(source_label_face(c.a.content.english(),unsigned(face)));tile.bold_face=5;
  Canvas shadow=tile;shadow.opacity=128;shadow.fitted(text,1,1,w-1,Height,size,minimum,0,centered,true);
  tile.fitted(text,0,0,w-1,Height,size,minimum,color,centered,true);
  // Picture rows must be tightly packed when the label's source width is
@@ -367,7 +367,7 @@ static void bestiary_screen(Canvas&c){
  auto&a=c.a;auto&b=a.bestiary;a.hit_count=0;title_background(c,false);
  bestiary_actors(c);const auto*entry=bestiary_entry(b.selected);
  const unsigned age=a.map_clock_ms-b.selected_at;const int eased=age>=500?4096:int(health_bar::expo_out(age*2));
- Canvas title=c;title.font_face=4;title.opacity=uint8_t(age>=500?255:age*255/500);
+ Canvas title=c;title.font_face=uint8_t(source_label_face(a.content.english(),4));title.opacity=uint8_t(age>=500?255:age*255/500);
  const char*name=entry?bestiary_title(a,*entry):bestiary_text(a,"LOCKED.monsterTitle","Unknown","未知");
  const int title_y=reference_viewport::project(24+64*eased/4096);
  bestiary_label(title,name,0,title_y+2,320,4,10,rgb(239,200,81),1024,true);

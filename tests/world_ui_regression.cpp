@@ -240,7 +240,7 @@ static int rendered_number(const char*text,int size,int left,int top,int right,i
  // real font strokes need not contain alpha=255, so use their actual alpha
  // over the captured room, not a predicate that can vacuously match no ink.
  struct Point {int x,y;unsigned alpha;};std::vector<Point> ink;int width=0,height=0;
- const unsigned face=a.content.version()>=HistoryUi8ContentVersion?5:0;size=a.content.font_size(size,face);
+ const unsigned face=a.content.version()>=HistoryUi8ContentVersion&&a.content.english()?5:0;size=a.content.font_size(size,face);
  const int repeat_size=a.content.font_size(4,face);
  const auto append=[&](const char*string,int px,int offset_y){
   RichReader reader(string);RichChar ch{};while(reader.next(ch)){const auto g=a.content.glyph(ch.codepoint,px,face);CHECK(g.pixels&&g.w&&g.h);
@@ -324,6 +324,9 @@ static void compound_intent_values(){
 }
 static void source_intent_hover_sets(){
  enemy_visual_fight(EncounterId::MechaKnightElite);a.game.enemy_world.models[0].node=1;
+ // Mecha Knight starts with Artifact; remove it through the real command
+ // before applying the debuff whose retained hover we intend to inspect.
+ queue_extension(a.game,XOp::EnemyRemovePower,0,int(EnemyPower::Artifact));resolve_pending(a.game);
  queue_extension(a.game,XOp::EnemyApplyPower,2,int(EnemyPower::Weak)+80);resolve_pending(a.game);
  a.reset_presentation();a.pointer.visible=false;a.render();
  for(unsigned frame=0;a.combat_preparation.active&&frame<1024;++frame){a.advance(33);a.render();}
@@ -977,17 +980,24 @@ static void sequential_hit_feedback(){
   unsigned impacts=0;for(unsigned i=0;i<a.combat_feedback.count;++i){const auto&q=a.combat_feedback.cues[i];if(q.actor==1&&q.hp==0)++impacts;}
   CHECK(impacts==1);CHECK(a.combat_feedback.end_at<start+TurnBannerPresentation::wait_ticks(700,350,fast!=0));
  }
- // Chomper animates each hit; Axebot's OneTwo explicitly animates once.
+ // Chomper and Byrdonis animate each hit; Axebot's OneTwo animates once.
  // Both use the original 200/100ms post-Damage wait, independent of clips.
- for(unsigned fast=0;fast<2;++fast)for(unsigned once=0;once<2;++once){
-  enemy_visual_fight(once?EncounterId::AxebotsNormal:EncounterId::ChompersNormal);a.fast_mode=fast!=0;
+ for(unsigned fast=0;fast<2;++fast)for(unsigned model=0;model<3;++model){
+  const bool once=model==1;const unsigned hits=model==2?3:2;
+  enemy_visual_fight(once?EncounterId::AxebotsNormal:model==2?EncounterId::ByrdonisElite:EncounterId::ChompersNormal);a.fast_mode=fast!=0;
   for(int slot=0;slot<a.game.enemy_count;++slot)a.game.enemy_world.models[slot].node=uint8_t(once?1:0);
-  a.game.block=2;const auto intent=enemy_intent(a.game,0);CHECK(intent.hits==2&&intent.damage>2);
+  a.game.block=2;const auto intent=enemy_intent(a.game,0);CHECK(intent.hits==hits&&intent.damage>2);
   const int hp=a.game.hp;snapshot();CHECK(load(direct,before.bytes,before.size));CHECK(end_turn(direct));CHECK(save(direct,expected));
   a.input(Key::EndTurn);CHECK(save(a.game,after));CHECK(after.size==expected.size&&!std::memcmp(after.bytes,expected.bytes,after.size));
-  const uint32_t start=a.enemy_presentation[0].queue[0].earliest;const unsigned delay=once?350:300,first=fast?delay/2:delay;
-  const unsigned gap=(fast?100:200)+(once?0:first);snapshot();
-  for(unsigned hit=0;hit<2;++hit){const uint32_t at=start+(first+hit*gap+32)/33;
+  auto&actor=a.enemy_presentation[0];CHECK(actor.count==(once?1:hits)&&!actor.overflow);
+  const uint32_t start=actor.queue[0].earliest;const unsigned delay=once?350:model==2?400:300,first=fast?delay/2:delay;
+  const unsigned gap=(fast?100:200)+(once?0:first);
+  for(unsigned hit=0;hit<actor.count;++hit){CHECK(!std::strcmp(actor.queue[hit].action,"Attack"));CHECK(actor.queue[hit].earliest==start+(hit*gap+32)/33);}
+  snapshot();
+  for(unsigned hit=0;hit<hits;++hit){const uint32_t at=start+(first+hit*gap+32)/33;
+   if(!once||!hit){const uint32_t cue=start+(hit*gap+32)/33;
+    a.animation=cue;a.render();CHECK(actor.start==cue&&!actor.loop); // Actual sprite restart, not only a delayed number.
+   }
    a.animation=at-1;a.render();CHECK(a.combat_health(0).hp==hp-int(hit)*intent.damage+(hit?2:0));
    a.animation=at;a.render();CHECK(a.combat_health(0).hp==hp-int(hit+1)*intent.damage+2&&a.combat_health(0).block==0);CHECK(a.hit_start[0]==int(at));unchanged();}
  }

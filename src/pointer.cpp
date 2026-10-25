@@ -108,7 +108,7 @@ void App::pointer_move(int x,int y){
         list.last_y=pointer.y;return;
     }
     if(pointer.held&&progress_page_scroll.dragging){
-        if(progress_page_scroll.thumb)progress_page_scroll.set_thumb(pointer.y,run_mode.screen==RunMenu::Custom?42:61,run_mode.screen==RunMenu::Custom?158:128);
+        if(progress_page_scroll.thumb)progress_page_scroll.set_thumb(pointer.y,run_mode.screen==RunMenu::Custom?42:statistics_open?UiStatisticsLayout::ScrollTop:61,run_mode.screen==RunMenu::Custom?158:statistics_open?UiStatisticsLayout::ScrollLength:128);
         else progress_page_scroll.target=UiHistoryScroll::clamp(progress_page_scroll.target-(pointer.y-progress_page_scroll.last_y)*256,-progress_page_scroll.viewport*256,progress_page_scroll.maximum+progress_page_scroll.viewport*256);
         progress_page_scroll.last_y=pointer.y;return;
     }

@@ -20,6 +20,19 @@ static bool ui_feedback_bound(const App&a){const auto&f=a.combat_feedback;const 
  return f.active&&s.enemy_world.active&&f.seed==s.seed&&f.floor==s.floor&&f.combat==s.world.combat_count&&f.encounter==int(s.enemy_world.encounter);
 }
 static uint32_t ui_feedback_later(uint32_t a,uint32_t b){return int32_t(a-b)>0?a:b;}
+static const WorldEnemyVisualAction*ui_enemy_attack_action(EnemyId kind,int node){
+ // These source AttackCommands suppress their animator entirely. A zero
+ // delay alone cannot identify that case: Cubex still triggers Attack.
+ if((kind==EnemyId::CeremonialBeast&&node==1)||(kind==EnemyId::ThievingHopper&&node==0)||
+    (kind==EnemyId::Tunneler&&node==2)||(kind==EnemyId::Vantom&&node==2))return nullptr;
+ const auto*move=world_enemy_move(unsigned(kind),node);if(!move)return nullptr;
+ for(unsigned i=0;i<move->action_count;++i){const auto*action=world_enemy_action(*move,i);if(!action||action->direct)continue;
+  // The move directory preserves source order. Only these two commands
+  // precede the AttackCommand's own animation; do not replay that prefix.
+  if((kind==EnemyId::LouseProgenitor||kind==EnemyId::LivingFog)&&i==0&&move->action_count>1)continue;
+  return action;
+ }return nullptr;
+}
 static const char*ui_status_key(int);
 void App::observe_power_flash(const State&s,int receiver,const char*key){
  if(&s!=&game||!key||receiver<-1||receiver>=s.enemy_count)return;
@@ -199,7 +212,16 @@ void App::before_combat_effect(const State&s,Effect effect){
   const auto timing=combat_enemy_attack_timing(kind,f.move,fast_mode);
   f.enemy_attack.begin(f.effect_at,timing.delay,timing.wait,timing.once);
  }else if(op==XOp::EnemyHit&&effect.aux%8==f.move_slot&&f.enemy_attack.active&&f.observed[f.move_slot+1].hp>0&&f.observed[0].hp>0){
+  const bool repeat=f.enemy_attack.hit&&!f.enemy_attack.once;
   f.effect_at=ui_feedback_later(f.effect_at,f.enemy_attack.impact(f.effect_at,0,fast_mode));
+  if(repeat&&combat_enemy_attack_timing(kind,f.move,fast_mode).known)if(const auto*action=ui_enemy_attack_action(kind,f.move)){
+   // AttackCommand restarts its animator after the previous Damage wait,
+   // before this hit's anim delay and optional callback wait. Retain the
+   // millisecond accumulator so repeated rounding cannot drift the cue.
+   const auto&attack=f.enemy_attack;
+   const uint32_t at=attack.base+(attack.clock_ms-attack.delay_ms-attack.wait_ms+32u)/33u;
+   enemy_trigger(f.move_slot,action->name,f.move,false,nullptr,at);
+  }
  }else if(op==XOp::EnemyAttackEnd&&effect.value==f.move_slot&&f.enemy_attack.active){
   f.effect_at=ui_feedback_later(f.effect_at,f.enemy_attack.finish(fast_mode));
   f.move_end=ui_feedback_later(f.move_end,f.effect_at);

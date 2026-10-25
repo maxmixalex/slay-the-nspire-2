@@ -7,6 +7,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <ctime>
 
 // The same source builds against UI6 and UI7. Only fixture/navigation
 // adapters are conditional; timing, resource I/O and state oracles are shared.
@@ -40,15 +41,20 @@ static bool read_resource(void*context,uint32_t offset,void*out,uint32_t count){
 static bool save_game(const State&){++save_attempts;return false;}
 static double milliseconds(Clock::time_point begin){return std::chrono::duration<double,std::milli>(Clock::now()-begin).count();}
 static uint32_t framebuffer_hash(){uint32_t hash=2166136261u;for(uint16_t p:app.pixels){hash=(hash^uint8_t(p))*16777619u;hash=(hash^uint8_t(p>>8))*16777619u;}return hash;}
-struct Mark {Clock::time_point time;Io io;};
-static Mark mark(const Source&s){return {Clock::now(),s.io};}
+struct Mark {Clock::time_point time;std::clock_t cpu;Io io;};
+static Mark mark(const Source&s){return {Clock::now(),std::clock(),s.io};}
 struct Cost {
-    unsigned samples=0;double elapsed=0,maximum=0;Io io{};
+    unsigned samples=0;double elapsed=0,maximum=0,cpu=0,maximum_cpu=0;Io io{};
     void add(const Mark&start,const Source&s){const double duration=milliseconds(start.time);++samples;elapsed+=duration;if(duration>maximum)maximum=duration;
+        const double process=double(std::clock()-start.cpu)*1000/CLOCKS_PER_SEC;cpu+=process;if(process>maximum_cpu)maximum_cpu=process;
         io.calls+=s.io.calls-start.io.calls;io.bytes+=s.io.bytes-start.io.bytes;io.seeks+=s.io.seeks-start.io.seeks;}
     void write(const char*scene,const char*phase)const{
-        std::printf("{\"operation\":\"stage\",\"scene\":\"%s\",\"phase\":\"%s\",\"samples\":%u,\"cpu_elapsed_ms\":%.3f,\"mean_ms\":%.3f,\"maximum_ms\":%.3f,\"source_calls\":%llu,\"source_bytes\":%llu,\"source_seeks\":%llu}\n",
-            scene,phase,samples,elapsed,samples?elapsed/samples:0,maximum,(unsigned long long)io.calls,(unsigned long long)io.bytes,(unsigned long long)io.seeks);
+        // Keep the historical elapsed field for existing report readers.
+        // Process CPU separates scheduling stalls while elapsed time still
+        // includes the production range-read calls and cold-load waits.
+        std::printf("{\"operation\":\"stage\",\"scene\":\"%s\",\"phase\":\"%s\",\"samples\":%u,\"cpu_elapsed_ms\":%.3f,\"mean_ms\":%.3f,\"maximum_ms\":%.3f,\"process_cpu_ms\":%.3f,\"mean_process_cpu_ms\":%.3f,\"maximum_process_cpu_ms\":%.3f,\"source_calls\":%llu,\"source_bytes\":%llu,\"source_seeks\":%llu}\n",
+            scene,phase,samples,elapsed,samples?elapsed/samples:0,maximum,cpu,samples?cpu/samples:0,maximum_cpu,
+            (unsigned long long)io.calls,(unsigned long long)io.bytes,(unsigned long long)io.seeks);
     }
 };
 static bool choice_fixture(){
@@ -185,15 +191,19 @@ int main(int argc,char**argv){
     FILE*file=std::fopen(argv[1],"rb");if(!file)return 3;if(std::fseek(file,0,SEEK_END)){std::fclose(file);return 3;}
     const long length=std::ftell(file);if(length<40||uint64_t(length)>MaxContentFile){std::fclose(file);return 3;}
     Source source{file,uint32_t(length)};
+    // A focused repeat can select one unchanged real fixture and its ordinary
+    // inspector, instead of retiming every unrelated scene after an OS stall.
+    const char* selected=std::getenv("NSPIRE_BENCH_SCENE");bool matched=false;
     // Optional offset-only trace lets the same real-pack driver distinguish
     // card artwork, glyph and string I/O without logging private payloads or
     // changing production cache behavior. Keep tracing off for CPU timing.
     if(const char* path=std::getenv("NSPIRE_RESOURCE_TRACE")){
         source.trace=std::fopen(path,"wb");if(!source.trace){std::fclose(file);return 3;}
     }
-    std::printf("{\"operation\":\"scope\",\"pack_bytes\":%u,\"frames_per_scene\":%u,\"elapsed_ms_per_update\":33,\"continuous_library\":%s,\"known_library_cards\":true,\"automatic_inspector_tips\":%s,\"method\":\"Host steady-clock CPU intervals without pacing; production ranged FILE source; seeded practice fixtures; animations advance on every observed frame. Layout, visible-card counts, font and resource versions can differ.\"}\n",source.length,frames,SPIRE_BENCH_CONTINUOUS_LIBRARY?"true":"false",SPIRE_BENCH_CONTINUOUS_LIBRARY?"true":"false");
+    std::printf("{\"operation\":\"scope\",\"pack_bytes\":%u,\"frames_per_scene\":%u,\"elapsed_ms_per_update\":33,\"continuous_library\":%s,\"known_library_cards\":true,\"automatic_inspector_tips\":%s,\"legacy_cpu_elapsed_is_wall_time\":true,\"method\":\"Host steady-clock elapsed and process CPU intervals without pacing; production ranged FILE source; seeded practice fixtures; animations advance on every observed frame. Layout, visible-card counts, font and resource versions can differ.\"}\n",source.length,frames,SPIRE_BENCH_CONTINUOUS_LIBRARY?"true":"false",SPIRE_BENCH_CONTINUOUS_LIBRARY?"true":"false");
     const char*names[]={"library_ironclad_known","remove_deck","draw_choice","library_rainbow_known"};
     for(unsigned scene=0;scene<4;++scene){
+        if(selected&&std::strcmp(selected,names[scene]))continue;matched=true;
         source.scene=names[scene];source.phase="open_and_fixture";
         Cost opened,preparation,first,warm;auto started=mark(source);
         if(!app.init({&source,source.length,read_resource,nullptr},{save_game,nullptr})||!setup(scene)){std::fclose(file);return 4;}
@@ -270,8 +280,12 @@ int main(int argc,char**argv){
     // These are the actual merchant rug and its seven visible faces. The
     // settled window keeps room actors animating, exercising exact-background
     // cache validity instead of repeatedly painting a static empty surface.
-    for(unsigned hovered=0;hovered<2;++hovered)if(!shop_inventory(source,frames,hovered!=0,argc==4?argv[3]:nullptr)){
-        if(source.trace)std::fclose(source.trace);std::fclose(file);return 17+int(hovered);}
+    for(unsigned hovered=0;hovered<2;++hovered){
+        const char*name=hovered?"shop_inventory_hover_7":"shop_inventory_idle_7";
+        if(selected&&std::strcmp(selected,name))continue;matched=true;
+        if(!shop_inventory(source,frames,hovered!=0,argc==4?argv[3]:nullptr)){
+            if(source.trace)std::fclose(source.trace);std::fclose(file);return 17+int(hovered);}
+    }
     const bool trace_good=!source.trace||std::fclose(source.trace)==0;
-    return std::fclose(file)==0&&trace_good?0:9;
+    return std::fclose(file)==0&&trace_good?(matched?0:2):9;
 }

@@ -25,12 +25,12 @@ struct UiHistoryScroll {
 struct UiMenuTransition {
     uint32_t start=0;uint8_t state=0,previous=0;bool bound=false;
     unsigned from_scale=1000;
-    unsigned observe(unsigned next,uint32_t now,bool bottom){
+    unsigned observe(unsigned next,uint32_t now,bool bottom,unsigned pressed_scale=950){
         if(!bound){bound=true;state=previous=0;start=now;}
         const unsigned duration=state==1?50:state==2?200:300;
         unsigned age=now-start,t=age>=duration?1000:age*1000/duration;
         if(state!=1){const unsigned q=1000-t;t=1000-q*q/1000*q/1000;}
-        const unsigned goal=state==1?(bottom?1050:1020):state==2?950:1000;
+        const unsigned goal=state==1?(bottom?1050:1020):state==2?pressed_scale:1000;
         const unsigned scale=unsigned(int(from_scale)+(int(goal)-int(from_scale))*int(t)/1000);
         if(next!=state){previous=state;state=uint8_t(next);start=now;from_scale=scale;}
         return scale;

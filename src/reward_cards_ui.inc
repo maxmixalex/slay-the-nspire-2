@@ -25,7 +25,7 @@ static void card_reward_alt_picture(Canvas&c,int x,int y,int w,int h,unsigned va
 static void native_card_reward_body(Canvas&c,const uint16_t*ids,unsigned count,bool legacy){
  auto&a=c.a;const auto&s=a.game;auto&motion=a.reward_presentation.cards;
  const uint32_t now=a.map_clock_ms;const bool clickable=motion.clickable(now);
- Canvas banner=c;banner.opacity=uint8_t(div255(banner.opacity*motion.banner_alpha(now)));banner.font_face=5;
+ Canvas banner=c;banner.opacity=uint8_t(div255(banner.opacity*motion.banner_alpha(now)));banner.font_face=source_label_face(c.a.content.english(),5);
  const int by=motion.banner_y(now);
  banner.ui(a.content.version()>=Ui6ContentVersion?I6_CommonBanner:U_RewardBanner,98,by,125,31);
  banner.fitted(card_reward_label(a,"gameplay_ui","CHOOSE_CARD_HEADER","选择一张牌"),117,by+4,86,16,6,6,rgb(255,246,226),true,true,true,false);
@@ -58,10 +58,10 @@ static void native_card_reward_body(Canvas&c,const uint16_t*ids,unsigned count,b
   const auto visual=c.control_visual(label,x,ay,53,14,ButtonFamily::RewardAlternative,false,true);
   const int width=53*visual.scale/4096,height=14*visual.scale/4096;
   card_reward_alt_picture(c,x+(53-width)/2,ay+(14-height)/2,width,height,unsigned(visual.shade));
-  Canvas text=c;text.font_face=5;text.fitted(label,x+2,ay+1,49,12,6,6,rgb(253,244,227),true,true,true,false);
+  Canvas text=c;text.font_face=source_label_face(c.a.content.english(),5);text.fitted(label,x+2,ay+1,49,12,6,6,rgb(253,244,227),true,true,true,false);
   c.action(x,ay,53,14,option==0?UiAction::Back:option==1?UiAction::RerollReward:UiAction::SacrificeReward);
   if(!a.pointer.visible)card_reward_keycap(c,option==0?InputCommand::Cancel:InputCommand::Exhaust,x+48,ay+8);
  }
- if(!a.pointer.visible){card_reward_keycap(c,InputCommand::Confirm,0,227,10);Canvas prompt=c;prompt.font_face=5;
+ if(!a.pointer.visible){card_reward_keycap(c,InputCommand::Confirm,0,227,10);Canvas prompt=c;prompt.font_face=source_label_face(c.a.content.english(),5);
   prompt.text(card_reward_label(a,"gameplay_ui","TO_INSPECT_PROMPT","查看详情"),15,227,6,Gold,84);}
 }

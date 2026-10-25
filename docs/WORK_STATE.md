@@ -1,5 +1,46 @@
 # Work state — 2026-10-25
 
+## UI10 source-sized scenes, locale fonts and shared workspace
+
+The next coherent integration includes the source Statistics layout and real
+row focus/hover tips, Profiles/Compendium independent pixel oracles, localized
+profile/history dates, and normal-font locale substitution across frontend,
+rooms, reward/tutorial, Ancient and run-end labels. Ordinary events now use
+the original text column and option height with dynamic full-page prose;
+rest uses the full UI projection; merchant text and turn banners use their
+source bands and timing. The rest tutorial shares the ordinary option-picture
+renderer. Chomper/Byrdonis multi-hit moves now enqueue each original Attack
+animation; OnlyPlayAnimOnce remains a single cue. Short7655 world checks pass;
+the full matching runtime gate is still required.
+
+The foreground map and resource-transfer workspaces now share mutually
+exclusive storage without reducing their capacities or image caches. The
+static object drops from1,412,116 to794,792 bytes (617,324 saved), with explicit
+Map-vs-Save/Codec/Bytes leases. Dirty workspace/map/save/LZMA cycling passes
+788,050 short checks, and retained-resource callback/reentrancy checks pass
+3,403,377. Actual linked ARM allocation remains a separate gate.
+
+The prior cb52b94 RGR2 conversion has completed:689 of840 retained groups are
+smaller, all51,123 images per locale decode exactly, and glyphs,8704 strings,
+1783 clip clocks and1184 tile/index streams are preserved. That intermediate
+split totals92,183,452 bytes,949,484 fewer than its matching input. The final
+font append changes the locale payload sizes and must be measured separately;
+new output, complete acceptance and ordinary USB migration capacity are pending.
+
+Five stage-A native gates passed (content, content_tiles, split_resource,
+boot_locale and library). Its world_ui/world_text failures were traced to two
+test-fixture premises: missing original hover artwork and Artifact absorbing
+the setup Weak. Both tests retain explicit fallback/source-art distinctions
+and now apply the intended canonical power setup. Short reruns pass; the
+failed formal receipt remains evidence and is not relabeled a pass.
+
+All3538 pinned C# paths are available for review except five generated or
+excluded-platform/multiplayer empty files. Nine in-scope empty bodies were
+recovered. Source availability, a directory scan and test counts are not a
+95% original-game restoration measurement. Matched native/Python/ARM/WASM,
+bilingual rendered scenes, ordinary browser and cloned-OS acceptance, final
+private packages and main synchronization remain the delivery sequence.
+
 ## UI10 integration resumed from the preserved UI9 source — 2026-10-25
 
 The interrupted Card Library stage is now preserved remotely at
