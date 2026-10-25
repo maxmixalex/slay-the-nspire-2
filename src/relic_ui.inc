@@ -44,27 +44,17 @@ static void owned_relic_strip(Canvas&c){
     if(id==WorldRelicYummyCookie)outline=collection_assets::CookieOutline[unsigned(s.character)<5?unsigned(s.character):0];
     if(outline>=0){Canvas shadow=c;shadow.tint_red=shadow.tint_green=shadow.tint_blue=0;shadow.ui(outline,left,top,size,size,128);}}
    Canvas icon=c;if(s.world_relics.active&&world_relic_disabled(s,i))icon.brightness=128;
-   icon.picture(a.relic_face_image(id),left,top,size,size);
+   icon.picture(a.relic_face_image(id,int(s.character)),left,top,size,size);
    int value=0;bool counter=s.world_relics.active?world_relic_display(s,i,value):false;
    if(!s.world_relics.active&&id<RelicKinds){const auto legacy=relic_definitions[id].id;
     counter=relic_counter_limit(legacy)&&(!relic_counter_is_turn_scoped(legacy)||combat_phase(s.phase));value=int(relic_counter(s,legacy));}
    if(counter){char amount[16]{};TextBuffer text{amount,sizeof amount,0};text.number(value);const int tx=x+cell-c.width(amount,8),ty=y+cell-8;
     for(int dx=-1;dx<=1;++dx)for(int dy=-1;dy<=1;++dy)if(dx||dy)c.text(amount,tx+dx,ty+dy,8,Ink);
     c.text(amount,tx,ty,8,rgb(255,246,226));}
-   if(ui_relic_flash(a,id))c.picture(a.relic_face_image(id),left-1,top-1,size+2,size+2,100,presentation::Add);
+   if(ui_relic_flash(a,id))c.picture(a.relic_face_image(id,int(s.character)),left-1,top-1,size+2,size+2,100,presentation::Add);
   }
   c.hit(x,y,cell,cell,HitKind::OwnedRelic,int(i));
  }
-}
-static void owned_relic_tooltip(Canvas&c){
- auto&a=c.a;if(a.event_reader||a.pointer.held||a.title||a.paused||a.help||a.settings_open||a.frontend_confirm||(a.panel&&a.panel!=3)||a.library||a.character_select||a.map_preview.open||a.status_actor>=0||a.detail_card>=0||a.detail_item>=0||a.deck_candidate>=0||choice_phase(a.game.phase))return;
- const HitRegion*hit=a.pointer.visible?a.hit_at(a.pointer.x,a.pointer.y):nullptr;
- if(!a.pointer.visible&&a.hud_focus>=HudRelicFocusFirst)for(int i=0;i<a.hit_count;++i)if(a.hits[i].kind==HitKind::OwnedRelic&&a.hits[i].value==a.hud_focus-HudRelicFocusFirst){hit=&a.hits[i];break;}
- if(!hit||hit->kind!=HitKind::OwnedRelic||hit->value<0||hit->value>=int(ui_owned_relic_count(a.game)))return;
- RelicId id=ui_owned_relic_id(a.game,hit->value);int x=mn(mx(4,hit->x-3),317-SourceHoverWidth),y=hit->y+hit->h+2;
- char progress[128]{},description[2048]{};ui_relic_progress(a.game,hit->value,progress,sizeof progress,&a.content);a.relic_description(id,description,sizeof description,hit->value);
- char body[2304]{};TextBuffer text{body,sizeof body,0};if(*progress){text.text("[green]");text.text(progress);text.text("[/green]\n");}text.text(description);
- source_hover_box(c,a.relic_title(id,hit->value),body,x,y);
 }
 #include "world_treasure_ui.inc"
 static void treasure_screen(Canvas&c){
@@ -80,7 +70,7 @@ static void treasure_screen(Canvas&c){
     c.centered(taken?"已领取":"宝藏",47,40,226,20,Gold);
     unsigned opacity=taken?120:220+(a.animation%16<8?a.animation%8:15-a.animation%16)*4;
     c.picture(A_MapHalo,118,69,84,84,opacity);
-    int image=world_id!=NoWorldRelic?a.relic_face_image(world_id):d?a.relic_face_image((int)(d-relic_definitions)):A_Coin;
+    int image=world_id!=NoWorldRelic?a.relic_face_image(world_id,taken?int(s.character):-1):d?a.relic_face_image((int)(d-relic_definitions),taken?int(s.character):-1):A_Coin;
     c.picture(image,138,88,44,44,taken?135:255);
     c.centered(world_id!=NoWorldRelic?a.relic_title(world_id):d?d->name:"50 金币",13,143,294,16,Gold);
     c.paragraph(world_id!=NoWorldRelic?description:d?d->description:"已获得全部可用遗物，改为获得 [gold]50[/gold] 金币。",31,165,258,2,0,12,White);

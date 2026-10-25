@@ -247,7 +247,7 @@ static void native_treasure_screen(Canvas&c){
   const auto visual=c.control_visual("TREASURE_RELIC",141,85+holder_y,39,39,ButtonFamily::TreasureRelic,!a.pointer.visible&&a.cursor==0,a.treasure_pointer_can_take());
   const int size=mx(1,23*visual.scale/4096),left=149-(size-23+1)/2,top=93+holder_y-(size-23+1)/2;
   int outline=collection_assets::RelicOutline[s.world.treasure_relic];
-  if(s.world.treasure_relic==WorldRelicYummyCookie)outline=collection_assets::CookieOutline[unsigned(s.character)<5?unsigned(s.character):0];
+  if(s.world.treasure_relic==WorldRelicYummyCookie)outline=collection_assets::CookieOutline[a.canonical_cookie_variant()];
   if(outline>=0){Canvas shadow=holder;shadow.tint_red=shadow.tint_green=shadow.tint_blue=0;shadow.ui(outline,left,top,size,size,128);}
   holder.picture(a.relic_face_image(s.world.treasure_relic),left,top,size,size);
   // Omitting the hit while ignored also rejects a press begun before the

@@ -18,6 +18,7 @@ void App::reset_input_bindings(){
 }
 void App::physical_keys_cancel(){
     for(auto&held:held_inputs){if(held.code&&held.key<=unsigned(Key::Debug))map_drawing_key_release(Key(held.key));held={};}
+    bestiary.cancel_presses(map_clock_ms);
 }
 static bool title_patch_notes_available(const App&a){
     return a.title&&!a.paused&&!a.settings_open&&!a.frontend_confirm&&!a.help&&!a.panel&&!a.library&&
@@ -29,6 +30,10 @@ bool App::physical_key(uint16_t code,bool pressed){
     code=normalize_input_key(code);if(!valid_input_key(code))return false;
     HeldInput*held=nullptr;for(auto&entry:held_inputs)if(entry.code==code){held=&entry;break;}
     if(!pressed){if(!held)return false;const unsigned released=held->key;const uint32_t context=held->context;*held={};
+        if(released>=BestiaryPresentation::PhysicalBase&&released<BestiaryPresentation::PhysicalEnd){
+            if(bestiary.open&&context==bestiary.input_serial)bestiary_shortcut(released-BestiaryPresentation::PhysicalBase,false);
+            return true;
+        }
         if(detail_item>=0){if(released<=unsigned(Key::Debug))map_drawing_key_release(Key(released));return true;}
         if(ftue.active()&&released!=243){if(released<=unsigned(Key::Debug))map_drawing_key_release(Key(released));return true;}
         if(released==243&&ftue.active()&&context==input_context())ftue_input(Key::Confirm);
@@ -87,6 +92,19 @@ bool App::physical_key(uint16_t code,bool pressed){
         else if(command==unsigned(InputCommand::Select)||(code==13&&!keyboard_only)){
             if(ftue.id!=FtueId::CombatRules){held->key=243;held->context=input_context();}
         }
+        return true;
+    }
+    if(bestiary.open){
+        // The source action/mode/Back buttons execute on release. Capture the
+        // resolved action and selected entry, so repeat, rebinding or changing
+        // the displayed monster cannot fire a different preview on key-up.
+        int action=bestiary_shortcut(command);
+        if(action<0&&!bank&&code==13)action=11; // Existing desktop Select adapter.
+        if(action>=0){held->key=uint8_t(BestiaryPresentation::PhysicalBase+unsigned(action));held->context=bestiary.input_serial;bestiary_shortcut(unsigned(action),true);return true;}
+        if(command==unsigned(InputCommand::Up))return dispatch(Key::Up);
+        if(command==unsigned(InputCommand::Down))return dispatch(Key::Down);
+        if(command==unsigned(InputCommand::Left))return dispatch(Key::Left);
+        if(command==unsigned(InputCommand::Right))return dispatch(Key::Right);
         return true;
     }
     if(auxiliary.screen!=AuxiliaryScreen::None){

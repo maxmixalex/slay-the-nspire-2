@@ -59,8 +59,13 @@ def build(source:Path,target:Path)->None:
     reloc_data=struct.pack('<I',3)+b''.join(struct.pack('<I',r<<8) for r in sorted(relocs))
     flag_data=b''.join(struct.pack('<I',kind|(data<<8)) for kind,data in flag_pairs)
     prefix=32+len(reloc_data)+len(flag_data)+len(extra)
+    allocation=prefix+memory_end
+    # Ndless allocates the Zehn prefix as well as the loaded image/BSS. An
+    # image below 16 MiB can still exceed our limit once relocations and flags
+    # are included. Reject before compressing or replacing an existing file.
+    if allocation>0x1000000:raise ValueError(f'Zehn allocation exceeds 16 MiB: {allocation}')
     compressed=zlib.compress(image,9)
-    result=struct.pack('<8I',0x6e68655A,1,prefix+len(compressed),len(relocs)+1,len(flag_pairs),len(extra),prefix+memory_end,entry)+reloc_data+flag_data+extra+compressed
+    result=struct.pack('<8I',0x6e68655A,1,prefix+len(compressed),len(relocs)+1,len(flag_pairs),len(extra),allocation,entry)+reloc_data+flag_data+extra+compressed
     target.write_bytes(result)
     # Independent round trip validates bytes, allocation and every rebase word.
     decoded=zlib.decompress(result[prefix:]);assert decoded==image
@@ -69,7 +74,7 @@ def build(source:Path,target:Path)->None:
         for r in relocs:
             v=struct.unpack_from('<I',relocated,r)[0];struct.pack_into('<I',relocated,r,v+base)
         for r in relocs:assert struct.unpack_from('<I',relocated,r)[0]-base==struct.unpack_from('<I',image,r)[0]
-    print(f'{target}: {len(result):,} bytes; allocation {prefix+memory_end:,}; {len(relocs)} absolute relocations; entry 0x{entry:x}')
+    print(f'{target}: {len(result):,} bytes; allocation {allocation:,}; {len(relocs)} absolute relocations; entry 0x{entry:x}')
 
 if __name__=='__main__':
     p=argparse.ArgumentParser(description=__doc__);p.add_argument('input',type=Path);p.add_argument('output',type=Path);a=p.parse_args();build(a.input,a.output)

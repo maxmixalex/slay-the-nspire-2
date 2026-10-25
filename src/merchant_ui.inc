@@ -1,6 +1,4 @@
 // Five class cards, two colorless, three relics/potions and a right-hand removal service.
-static const char* relic_name(RelicMask r){auto*d=relic_definition(r);return d?d->name:"售罄";}
-static const char* relic_desc(RelicMask r){auto*d=relic_definition(r);return d?d->description:"没有剩余的已实现遗物。";}
 static const char* potion_name(int p,const Content*content=nullptr){auto*d=potion_definition((Potion)p);if(d&&content){const char*name=content->world_title("potions",d->key);if(*name)return name;}const char*name=d?d->name:"空药水槽";return content?content->ui_text(name):name;}
 static const char* potion_desc(int p){auto*d=potion_definition((Potion)p);return d?d->description:"药水栏为空。可在商店购买或领取战斗掉落。";}
 static void ui_potion_description(const App&a,int p,char*out,size_t size){
@@ -170,17 +168,6 @@ static void shop_screen(Canvas&c,bool cull_covered=true){
     if(a.shop_open){c.hit(remove_rect.x,mx(22,remove_rect.y),remove_rect.w,mx(0,remove_rect.y+remove_rect.h-mx(22,remove_rect.y)),HitKind::Choice,ShopRemove,!removed);
         native_back(c,3,212,52,28,"返回",true,!a.pointer.visible&&a.cursor==ShopLeave);c.hit(0,209,61,31,HitKind::Choice,ShopLeave);}
     merchant_hand(c);merchant_dialogue(c);
-    // Original slots own hover tips; there is no duplicate title strip or
-    // permanent keyboard-instruction footer over the merchant's rug.
-    if(a.shop_open&&focus>=7&&focus<13&&!a.pointer.held){
-        char description[2048]{};const char*name=nullptr;
-        if(a.cursor<10){name=s.world.active?a.relic_title(s.world.shop_relics[a.cursor-7]):relic_name(s.shop_relics[a.cursor-7]);
-            if(s.world.active)a.relic_description(s.world.shop_relics[a.cursor-7],description,sizeof description);
-            else{TextBuffer b{description,sizeof description,0,&a.content};b.text(relic_desc(s.shop_relics[a.cursor-7]));}}
-        else{name=potion_name(s.shop_potions[a.cursor-10],&a.content);ui_potion_description(a,s.shop_potions[a.cursor-10],description,sizeof description);}
-        const int width=174,lines=mn(5,c.paragraph(description,0,0,width-16,0,0,10)),height=27+lines*13,x=5,y=mx(23,mn(135-height,55));
-        const int skin=a.content.world_image("common","HOVER_TIP");
-        if(skin>=0)c.nine_image(skin,x,y,width,height,28,22,46,16);else{c.rect(x,y,width,height,Panel);c.box(x,y,width,height,Muted);}
-        c.text(name,x+8,y+5,12,Gold,width-16);c.paragraph(description,x+8,y+24,width-16,lines,0,10,rgb(255,246,226));
-    }
+    // NMerchantRelic/Potion expose their complete model hover sets through
+    // the shared source-sized layer after the room and its global UI.
 }

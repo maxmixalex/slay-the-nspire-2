@@ -1,6 +1,17 @@
 // NInspectRelicScreen copies the supplied ordered models and clamps navigation.
 // Its owners are stable while the modal blocks gameplay; keep indices rather
 // than duplicating an inventory or storing anything in canonical State.
+int App::relic_inspect_character()const{
+    if(relic_inspect.source==RelicInspectSource::Owned)return int(game.character);
+    if(history_open){const auto*record=history_at(history_index);if(record)return record->character;}
+    if(relic_inspect.source==RelicInspectSource::Collection)return -1;
+    // EventModel.RelicOption assigns Owner before constructing its option.
+    // Ordinary reward, treasure and merchant stock have no owner yet.
+    const auto&event=game.original_events;
+    if(game.phase==Phase::Event&&event.active&&!event.finished&&event.id!=OriginalEventId::FakeMerchant)
+        for(unsigned i=0;i<event.offer_count&&i<sizeof event.offers/sizeof*event.offers;++i)if(event.offers[i]==relic_inspect.model)return int(game.character);
+    return -1;
+}
 void App::sync_relic_inspect(){
     if(detail_item<0||detail_item>=WorldRelicKinds)return;
     if(relic_inspect.bound&&!relic_inspect.exiting&&relic_inspect.model==detail_item&&relic_inspect.owned==detail_owned)return;

@@ -1,5 +1,39 @@
 # Hover tips and related collection models — UI8 / 0.17
 
+## Merchant follow-up — UI9
+
+The recovered `NMerchantRelic.CreateHoverTip` and
+`NMerchantPotion.CreateHoverTip` expose the complete model hover set. Their
+shared slot chooses left/right alignment at the viewport midpoint, using its
+122px Control at the focused0.8 scale. It does not use the larger purchase
+Hitbox as the tooltip anchor. The port still had a separate174px-wide box,
+12/10px text and a five-line cutoff in the ordinary shop after other hover
+surfaces had been corrected.
+
+The shop now uses the existing69px original text columns, actual5px faces,
+associated card/keyword/power tips, and bounded overflow paging. Its anchor
+uses the projected22px slot Control and the original half-size offset. The
+existing7/6 readability zoom of the rug and goods remains. Unpurchased stock
+uses detached relic facts; it cannot borrow the same relic's mutable values
+from the player's inventory. The separate local box and its now-unused
+fallback text helpers are removed. This adds no persistent buffer or State
+field.
+
+The top-bar owned-relic holder had the same association omission despite
+already using source-sized text. It now shares the complete hover chain,
+retains the actual owned index and dynamic progress paragraph, and uses the
+owner's Cookie variant. The old single-box pass is removed, so there is no
+duplicate primary description. Mouse/keyboard holder ownership, associated
+models, overlay suppression and unchanged saves are covered in the expanded
+room regression alongside shop stock.
+
+The expanded room regression covers all six real stock positions, mouse and
+keyboard ownership, associated Fencing Manual/Cunning Potion models, every
+tooltip page, viewport bounds, press/modal/closed/sold suppression and
+byte-identical run saves. Its syntax check passes; the next matching native
+and actual bilingual gates must execute it. No percentage or device-speed
+claim follows from these implementation checks.
+
 Reference: original v0.111.0 / `41cef1ea`, `NHoverTipSet`,
 `NHoverTipCardContainer`, `hover_tip.tscn`, and `card_hover_tip.tscn`.
 

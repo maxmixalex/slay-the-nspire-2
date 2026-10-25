@@ -534,6 +534,61 @@ static void fake_merchant_layout(){
  snapshot();click(UiAction::CloseShop);CHECK(!a.shop_open);a.render();room_clock(800);unchanged();click(UiAction::LeaveShop);
  CHECK(a.map_window.is_open&&a.game.original_events.active&&a.game.original_events.finished&&a.game.world.room_open==2);
 }
+static void merchant_model_hover_sets(){
+ begin_room(WorldRoom::Shop);a.game.gold=9999;
+ a.game.world.shop_relics[0]=WorldRelicFencingManual;a.game.shop_potions[0]=uint8_t(Potion::CunningPotion);
+ a.game.shop_sold=0;a.render();click(UiAction::OpenShop);room_clock(1000);snapshot();
+ for(int slot=ShopRelicStart;slot<ShopRemove;++slot){
+  a.cursor=slot;a.pointer.visible=false;a.render();CardHoverTarget owner{};CHECK(merchant_hover_target(a,owner));
+  CHECK(owner.merchant&&owner.merchant_left&&owner.owner.w==22&&owner.owner.h==22);
+  CHECK(owner.owner.x==MerchantInventoryLayout::item_x(unsigned(slot-ShopRelicStart)%3)-11);
+  CHECK(owner.owner.y==(slot<ShopPotionStart?150:182)-11);
+  CHECK(slot<ShopPotionStart?owner.relic==a.game.world.shop_relics[slot-ShopRelicStart]&&owner.canonical_relic:owner.potion==a.game.shop_potions[slot-ShopPotionStart]);
+  HoverTipList tips{};if(owner.relic>=0)collect_relic_hover_tips(a,RelicId(owner.relic),tips,true);else collect_potion_hover_tips(a,Potion(owner.potion),tips);
+  CHECK(tips.count>0&&!tips.overflow);if(slot==ShopRelicStart||slot==ShopPotionStart)CHECK(tips.count>1);
+  bool visited[MaxCardHoverTips]{};const auto first=card_hover_page(a,owner,tips,0);CHECK(first.pages>0);
+  for(int page=0;page<first.pages;++page){const auto view=card_hover_page(a,owner,tips,page);CHECK(view.count>0);
+   for(unsigned i=0;i<view.count;++i){const auto&piece=view.pieces[i];const auto&box=piece.box;CHECK(piece.tip<tips.count);visited[piece.tip]=true;
+    CHECK(box.x>=3&&box.y>=24&&box.x+box.w<=317&&box.y+box.h<=218);
+    CHECK(box.w==(tips.items[piece.tip].kind==HoverTipKind::Card?46:69));
+   }
+  }
+  for(unsigned i=0;i<tips.count;++i)CHECK(visited[i]);
+  const auto h=hit(HitKind::Choice,slot);a.cursor=ShopLeave;a.pointer_move(h.x+h.w/2,h.y+h.h/2);a.render();
+  CardHoverTarget pointer{};CHECK(merchant_hover_target(a,pointer)&&pointer.identity==owner.identity);
+  a.pointer.visible=false;a.cursor=slot;
+  if(slot==ShopRelicStart)capture("merchant-relic-associated-hover");
+  if(slot==ShopPotionStart)capture("merchant-potion-associated-hover");
+  unchanged();
+ }
+ a.cursor=ShopRelicStart;a.render();CardHoverTarget owner{};CHECK(merchant_hover_target(a,owner));
+ a.pointer.held=true;CHECK(!merchant_hover_target(a,owner));a.pointer.held=false;
+ a.paused=true;CHECK(!merchant_hover_target(a,owner));a.paused=false;
+ a.panel=4;CHECK(!merchant_hover_target(a,owner));a.panel=0;
+ a.settings_open=true;CHECK(!merchant_hover_target(a,owner));a.settings_open=false;
+ a.detail_card=card_token({Strike,0});CHECK(!merchant_hover_target(a,owner));a.detail_card=-1;
+ a.detail_item=WorldRelicFencingManual;CHECK(!merchant_hover_target(a,owner));a.detail_item=-1;
+ a.shop_open=false;CHECK(!merchant_hover_target(a,owner));a.shop_open=true;
+ unchanged();
+ a.game.shop_sold|=1u<<ShopRelicStart;a.render();CHECK(!merchant_hover_target(a,owner));
+ a.game.shop_sold&=uint16_t(~(1u<<ShopRelicStart));a.render();unchanged();
+ // The top-bar holder exposes the same complete related-model set while
+ // retaining its own inventory position and dynamic progress paragraph.
+ add(WorldRelicFencingManual);int owned=-1;
+ for(unsigned i=0;i<ui_owned_relic_count(a.game);++i)if(ui_owned_relic_id(a.game,i)==WorldRelicFencingManual)owned=int(i);
+ CHECK(owned>=0);a.cursor=ShopLeave;a.hud_focus=HudRelicFocusFirst+owned;a.pointer.visible=false;a.render();snapshot();
+ CHECK(owned_relic_hover_target(a,owner)&&owner.owned_relic==owned&&owner.relic==WorldRelicFencingManual&&!owner.canonical_relic);
+ HoverTipList tips{};collect_relic_hover_tips(a,WorldRelicFencingManual,tips);CHECK(tips.count>1);
+ const auto page=card_hover_page(a,owner,tips);CHECK(page.count>1&&a.keyword_hover.owner==owner.identity);
+ for(unsigned i=0;i<page.count;++i){const auto&box=page.pieces[i].box;CHECK(box.x>=3&&box.x+box.w<=317&&box.y>=24&&box.y+box.h<=218);}
+ capture("owned-relic-associated-hover");unchanged();
+ const auto holder=hit(HitKind::OwnedRelic,owned);a.hud_focus=-1;a.pointer_move(holder.x+holder.w/2,holder.y+holder.h/2);a.render();
+ CHECK(owned_relic_hover_target(a,owner)&&owner.owned_relic==owned);unchanged();
+ a.pointer.held=true;CHECK(!owned_relic_hover_target(a,owner));a.pointer.held=false;
+ a.paused=true;CHECK(!owned_relic_hover_target(a,owner));a.paused=false;
+ a.detail_item=WorldRelicFencingManual;CHECK(!owned_relic_hover_target(a,owner));a.detail_item=-1;
+ a.pointer.visible=false;a.hud_focus=-1;a.render();CHECK(!owned_relic_hover_target(a,owner));unchanged();
+}
 static void direct_removal_preview(){
  begin_event(OriginalEventId::SlipperyBridge);const unsigned index=unsigned(a.game.original_events.values[1]);CHECK(index<a.game.deck_count);
  const auto enchant=card_type(a.game,a.game.deck[index],-1,int(index))==CardType::Attack?EventEnchantment::Sharp:EventEnchantment::Nimble;
@@ -551,7 +606,7 @@ int main(int argc,char**argv){
  std::vector<uint8_t>data;actual_profile=argc>1;if(actual_profile){FILE*f=std::fopen(argv[1],"rb");CHECK(f);data.resize(spire_test::pack_size(f));CHECK(std::fread(data.data(),1,data.size(),f)==data.size());CHECK(!std::fclose(f));}else data=synthetic_profile();
  if(argc>2)capture_directory=argv[2];CHECK(a.init(data.data(),data.size(),{memory_save,memory_load}));CHECK(a.content.current_profile());
  ordinary_rest();rest_actor_layers();combat_backgrounds();paged_tent();closed_chest();opening_and_reload();holder_entry();actual_claim();restored_claim();empty_chest();treasure_clock_wrap();region_captures();
- rest_motion();rest_completion();event_motion();merchant_motion_and_pickups();fake_merchant_layout();direct_removal_preview();
+ rest_motion();rest_completion();event_motion();merchant_motion_and_pickups();fake_merchant_layout();merchant_model_hover_sets();direct_removal_preview();
  const uint32_t presentation_random=a.treasure_random;
  a.treasure_presentation=3;a.treasure_open_tick=17;a.treasure_banner_tick=19;a.treasure_close_tick=23;a.treasure_chest_from=123;a.treasure_banner_from=456;a.treasure_banner_y=7;a.treasure_holder_delay_us=333333;CHECK(a.init(data.data(),data.size(),{memory_save,memory_load}));cleared_treasure();CHECK(a.treasure_random==presentation_random);
  std::printf("world room UI: %u checks passed; %s profile; stable rest choices and real treasure acquisition with presentation-only timing\n",checks,actual_profile?"actual":"synthetic");

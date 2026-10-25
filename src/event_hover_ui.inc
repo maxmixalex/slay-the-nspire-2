@@ -128,6 +128,52 @@ static bool treasure_hover_target(const App&a,CardHoverTarget&target){
     target={};target.relic=int(s.world.treasure_relic);target.owner={hit->x,hit->y,hit->w,hit->h};
     target.identity=0x71000000u|unsigned(s.world.treasure_relic);return true;
 }
+bool merchant_hover_target(const App&a,CardHoverTarget&target){
+    const auto&s=a.game;
+    if(s.phase!=Phase::Shop||!a.shop_open||a.title||a.paused||a.help||a.settings_open||a.frontend_confirm||
+       a.library||a.panel||a.map_window.visible||a.map_preview.open||a.event_reader||a.character_select||
+       a.detail_card>=0||a.detail_item>=0||a.status_actor>=0||a.pointer.held||a.pointer.armed_card>=0||
+       a.ftue.active()||a.map_transition_blocks_pointer())return false;
+    const HitRegion*hit=nullptr;
+    for(int i=0;i<a.hit_count;++i){const auto&h=a.hits[i];
+        if(h.kind!=HitKind::Choice||!h.enabled||h.value<ShopRelicStart||h.value>=ShopRemove||
+           (s.shop_sold&(1u<<h.value)))continue;
+        if(a.pointer.visible?hover_in({h.x,h.y,h.w,h.h},a.pointer.x,a.pointer.y):h.value==a.cursor){hit=&h;break;}
+    }
+    if(!hit)return false;
+    const int slot=hit->value;target={};target.merchant=true;
+    if(slot<ShopPotionStart){
+        if(s.world.active)target.relic=s.world.shop_relics[slot-ShopRelicStart];
+        else for(int i=0;i<RelicKinds;++i)if(relic_definitions[i].id==s.shop_relics[slot-ShopRelicStart]){target.relic=i;break;}
+        if(target.relic<0||target.relic>=WorldRelicKinds)return false;
+        // Stock is a detached model, even when a live run owns that relic.
+        target.canonical_relic=true;
+    }else{
+        target.potion=s.shop_potions[slot-ShopPotionStart];
+        if(!potion_definition(Potion(target.potion)))return false;
+    }
+    // NMerchantRelic/Potion use the slot's122px Control at its focused0.8
+    // scale, not its enlarged Hitbox. The ordinary source hover set is a
+    // separate global UI layer and keeps its69px text columns.
+    const int cx=MerchantInventoryLayout::item_x(unsigned(slot-ShopRelicStart)%3);
+    const int cy=(slot<ShopPotionStart?MerchantInventoryLayout::RelicY:MerchantInventoryLayout::PotionY)+a.room_presentation.merchant.offset(a.map_clock_ms);
+    const int size=MerchantInventoryLayout::size(122,800),half=size/2;
+    target.merchant_left=cx>ScreenW/2;
+    target.owner={cx+(target.merchant_left?-half:half),cy-half,size,size};
+    target.identity=0x75000000u|(unsigned(slot)<<16)|unsigned(target.relic>=0?target.relic:target.potion);
+    return true;
+}
+bool owned_relic_hover_target(const App&a,CardHoverTarget&target){
+    if(a.event_reader||a.pointer.held||a.title||a.paused||a.help||a.settings_open||a.frontend_confirm||
+       (a.panel&&a.panel!=3)||a.library||a.character_select||a.map_preview.open||a.status_actor>=0||
+       a.detail_card>=0||a.detail_item>=0||a.deck_candidate>=0||choice_phase(a.game.phase)||a.ftue.active())return false;
+    const HitRegion*hit=a.pointer.visible?a.hit_at(a.pointer.x,a.pointer.y):nullptr;
+    if(!a.pointer.visible&&a.hud_focus>=HudRelicFocusFirst)for(int i=0;i<a.hit_count;++i)
+        if(a.hits[i].kind==HitKind::OwnedRelic&&a.hits[i].value==a.hud_focus-HudRelicFocusFirst){hit=&a.hits[i];break;}
+    if(!hit||!hit->enabled||hit->kind!=HitKind::OwnedRelic||hit->value<0||hit->value>=int(ui_owned_relic_count(a.game)))return false;
+    target={};target.relic=ui_owned_relic_id(a.game,hit->value);target.owned_relic=hit->value;
+    target.owner={hit->x,hit->y,hit->w,hit->h};target.identity=0x76000000u|(unsigned(hit->value)<<16)|unsigned(target.relic);return true;
+}
 static bool collection_hover_target(const App&a,CardHoverTarget&target){
     if(!a.library||(a.library_tab!=1&&a.library_tab!=2)||a.pointer.held||a.detail_item>=0||a.detail_card>=0||a.paused||a.help||a.settings_open||a.frontend_confirm)return false;
     const HitRegion*hit=nullptr;
@@ -159,18 +205,20 @@ static bool inspect_relic_hover_target(const App&a,CardHoverTarget&target){
     target.inspect_relic=true;target.canonical_relic=collection||a.history_open;target.historical=a.history_open;
     target.identity=0x74000000u|unsigned(a.detail_item)|(unsigned(a.detail_owned+1)<<12);return true;
 }
-static bool keyword_hover_target(const App&a,CardHoverTarget&target){return inspect_relic_hover_target(a,target)||history_relic_hover_target(a,target)||power_hover_target(a,target)||collection_hover_target(a,target)||treasure_hover_target(a,target)||event_hover_target(a,target)||card_hover_target(a,target);}
+static bool keyword_hover_target(const App&a,CardHoverTarget&target){return inspect_relic_hover_target(a,target)||history_relic_hover_target(a,target)||power_hover_target(a,target)||collection_hover_target(a,target)||owned_relic_hover_target(a,target)||treasure_hover_target(a,target)||merchant_hover_target(a,target)||event_hover_target(a,target)||card_hover_target(a,target);}
 static void collect_keyword_hover_tips(const App&a,const CardHoverTarget&owner,HoverTipList&out){
     if(owner.power>=0)collect_power_hover_tips(a,uint16_t(owner.power),out);
     else if(owner.relic>=0){
         if(owner.inspect_relic){out={};event_hover_relic(a,out,RelicId(owner.relic),false,0,owner.historical||owner.canonical_relic);out.finish();}
-        else collect_relic_hover_tips(a,RelicId(owner.relic),out,owner.historical);
+        else collect_relic_hover_tips(a,RelicId(owner.relic),out,owner.historical||owner.canonical_relic);
     }
     else if(owner.potion>0)collect_potion_hover_tips(a,Potion(owner.potion),out);
     else if(owner.event_option>=0)collect_event_hover_tips(a,owner.event_option,out);
     else collect_card_hover_tips(a,owner.card,out,owner.instance,owner.deck,owner.card_facts());
 }
 static HoverRect keyword_hover_column(const CardHoverTarget&owner){
+    if(owner.merchant){const int x=owner.merchant_left?owner.owner.x-SourceHoverWidth:owner.owner.x+owner.owner.w;
+        return {mx(3,mn(317-SourceHoverWidth,x)),24,SourceHoverWidth,194};}
     if(owner.power>=0){const int x=owner.power_left?owner.owner.x-SourceHoverWidth-1:owner.owner.x+owner.owner.w+1;
         return {mx(3,mn(317-SourceHoverWidth,x)),24,SourceHoverWidth,194};}
     if(owner.event_option>=0&&owner.owner.w>240)

@@ -34,6 +34,13 @@ struct Context {
     explicit Context(unsigned width,uint32_t milliseconds):
         edge(unsigned(uint64_t(width>MaximumWidth?MaximumWidth:width)*1000000/Full)),
         time((milliseconds%2000)*30){}
+    unsigned transparent_through()const{
+        // The existing early return is floor(alpha*980000/65535) <=
+        // 980000-edge.divisor. Solve for the greatest inclusive raw alpha.
+        // Reducing by five keeps the numerator below 2^30 over every allowed
+        // width, so this preparation needs only constant 32-bit arithmetic.
+        return 65535u-(edge.divisor*13107u+182893u)/196000u;
+    }
     unsigned alpha(uint16_t original_alpha)const{
         if(!edge.divisor)return 0;
         const unsigned source=source_alpha(original_alpha);

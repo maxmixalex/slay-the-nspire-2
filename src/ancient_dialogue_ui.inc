@@ -140,7 +140,7 @@ static void ancient_option(Canvas&c,Canvas&clipped,int option,int y){
   outline.picture(image,left-3,top-3,width+6,height+6,unsigned(visual.glow)*192/255,presentation::Add);
  }
  const bool icon=!e.finished&&option<e.offer_count&&e.offers[option]<WorldRelicKinds;
- if(icon)clipped.picture(a.relic_face_image(e.offers[option]),x+4-ancient_layout::ClipX,y+4-ancient_layout::ClipY,11,11);
+ if(icon)clipped.picture(a.relic_face_image(e.offers[option],int(a.game.character)),x+4-ancient_layout::ClipX,y+4-ancient_layout::ClipY,11,11);
  char label[256]{},description[4096]{},combined[4480]{};native_event_option(a,option,false,label,sizeof label);native_event_option(a,option,true,description,sizeof description);
  TextBuffer text{combined,sizeof combined,0};
  if(*label){text.text(enabled?"[gold][b]":"[red][b]");text.text(label);text.text(enabled?"[/b][/gold]":"[/b][/red]");if(*description)text.ch('\n');}text.text(description);

@@ -6,7 +6,7 @@
     "dll_sha256": "0861bfa1df347538d932f22d580e75420f08082792eb914e53b4882764acdbe9"
   },
   "supersedes": "ui7-original-ui-inventory-0.17.json",
-  "source_stage": "UI8 stage8e integrated FTUE/reward/map candidate. a0df and d938 verification is historical baseline evidence; matching final verification is pending.",
+  "source_stage": "UI9 follow-up candidate after verified 4e8 font checkpoint. Matched 3e61 native/converter gates passed; new runtime and final resource acceptance remains pending.",
   "scope": {
     "excluded": [
       "audio",
@@ -152,8 +152,8 @@
       ],
       "contract": "Relic categories and inspect",
       "assessment": "implemented_with_documented_limits",
-      "implemented": "Original category/starter/Ancient groups, discovery gates, icons and source 69px hover columns with associated keywords and separate related-card previews.",
-      "remaining": "Randomized Cookie visual variants and exact GPU material equivalence remain incomplete; final matching regression required.",
+      "implemented": "Original category/starter/Ancient groups, discovery gates, icons and source 69px hover columns with associated keywords and separate related-card previews. Cookie canonical/no-owner icons and outlines now share one process-stable presentation variant; owned/history icons use the actual owner character.",
+      "remaining": "Exact GPU material equivalence remains unestablished; the new Cookie ownership cases require the next matching regression and actual captures.",
       "regressions": [
         "ui_progress_regression"
       ],
@@ -183,8 +183,8 @@
       ],
       "contract": "Enemy list, layouts, move descriptions and character filtering",
       "assessment": "implemented_with_documented_limits",
-      "implemented": "Original known gates, character/move/stats views, source-derived invariant-culture ordering, detached preview and persisted Test Subject names.",
-      "remaining": "Every phase-specific move preview and secondary VFX is not reproduced.",
+      "implemented": "Original known gates, character/move/stats views, source-derived invariant-culture ordering, detached preview and persisted Test Subject names. Follow-up restores original list/header geometry, explicit title/label faces, action controls and release-triggered actual clip previews; no gameplay State mutation.",
+      "remaining": "Actual translated shared Kaiser frame coverage, all phase-specific preview contexts and secondary VFX still require separate acceptance.",
       "regressions": [
         "bestiary_ui7_regression",
         "power_order_ui8_regression"
@@ -381,8 +381,8 @@
       ],
       "contract": "Entrance, inventory hover, speech, purchase and sold state",
       "assessment": "implemented_with_documented_limits",
-      "implemented": "Original large inventory composition, sampled hand tracking, dialogue, open/sold animations, actual purchase and source CharacterCards stock weighting.",
-      "remaining": "Full candle/material/secondary particles remain incomplete.",
+      "implemented": "Original large inventory composition, sampled hand tracking, dialogue, open/sold animations, actual purchase and source CharacterCards stock weighting. Legacy large stock tooltips replaced by source69px columns and complete model-related card/keyword/power chains with detached stock facts.",
+      "remaining": "Matching final bilingual room/hover acceptance is pending; full candle/material/secondary particles remain incomplete.",
       "regressions": [
         "world_room_ui_regression",
         "run_modifier_hooks_ui8_regression"

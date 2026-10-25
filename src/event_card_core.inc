@@ -25,8 +25,8 @@ const char* event_card_portrait(const State&s,Card c,int id,int deck){
  if(c.kind!=EventCardMadScience)return nullptr;CardType t=CardType::Attack;event_card_type(s,c,id,deck,t);
  return t==CardType::Skill?"event/mad_science_skill":t==CardType::Power?"event/mad_science_power":"event/mad_science_attack";
 }
-uint8_t event_card_keywords(const State&s,Card c,int id,int deck,uint8_t bits){
- switch(ec_enchantment(s,c,id,deck)){
+uint8_t event_card_keywords(const EventCardFacts&facts,uint8_t bits){
+ switch(facts.enchantment){
  case EventEnchantment::Goopy:bits|=1;break;
  case EventEnchantment::SoulsPower:bits&=uint8_t(~1U);break;
  case EventEnchantment::Steady:bits|=4;break;
@@ -34,6 +34,9 @@ uint8_t event_card_keywords(const State&s,Card c,int id,int deck,uint8_t bits){
  case EventEnchantment::TezcatarasEmber:bits|=64;break;
  default:break;
  }return bits;
+}
+uint8_t event_card_keywords(const State&s,Card c,int id,int deck,uint8_t bits){
+ const auto*f=event_card_facts(s,c,id,deck);return f?event_card_keywords(*f,bits):bits;
 }
 bool event_card_gains_block(const State&s,Card c,int id,int deck){
  if(c.kind==EventCardMadScience){CardType t;event_card_type(s,c,id,deck,t);return t==CardType::Skill;}

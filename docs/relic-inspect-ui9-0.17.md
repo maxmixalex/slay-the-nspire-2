@@ -112,3 +112,36 @@ relic_inspect_ui9_regression <matching-ui9-eng-or-zhs.nsp> <private-capture-dire
 ```
 
 All generated screenshots and original assets remain private.
+
+## Cookie ownership and process cache — recovered source correction
+
+The original `YummyCookie.IconBaseName` uses its actual owner's character for
+a mutable owned model. Canonical models and mutable models without an owner
+share one static, randomly chosen character for the process. The prior port
+used the current game's character for every context, causing collection
+previews to change with the last run and history icons to use the wrong owner.
+
+The renderer now distinguishes these contexts explicitly. HUD relics and
+pickup animations use the current player; `EventModel.RelicOption` assigns
+that same owner before displaying an Ancient option. `NRelicHistory` assigns
+the historical player, so its icon and inspector use the saved run character.
+Ordinary merchant stock, unclaimed treasure/rewards, canonical collection
+models and unrelated hover-tip models have no owner. They use one process
+variant, with the same variant's outline. Collection prewarming now requests
+that actual outline rather than an unrelated fixed outline.
+
+The port keeps only one additional static byte. Its first choice mixes the
+optional host wall clock and the UI clock; it never calls `seed_entropy`,
+uses a canonical RNG stream, or writes State/save metadata. It remains fixed
+across character, profile, presentation and App resets in the same process.
+This follows the source's chaotic presentation lifetime without pretending
+to reproduce an unseeded original process's exact random choice.
+
+The expanded inspector regression checks all five image identities, exactly
+one clock read, zero seed-entropy calls, byte-identical canonical State,
+cross-reset/process-instance stability, owned/collection/Ancient/stock owner
+routes, and an historical Silent icon while the active run is Regent.
+Production captures add owned Regent, canonical, and historical Silent Cookie
+inspection. These new cases have passed syntax checks; matching execution
+and pixel review are pending the next runtime checkpoint, not inferred from
+the earlier inspector diagnostics.

@@ -283,28 +283,46 @@ void App::original_event_text(int option,bool description,char*out,size_t cap)co
  }
  if(original_event_text_key(game,option,description,key,sizeof key)){WorldTextContext x{this,"events",{},int(game.original_events.id)};x.option=option;x.description=description;wt_model_key(x,key);char raw[8192]{};TextBuffer b{raw,sizeof raw,0};b.text(content.world_string("events",key));wt_formatter(out,cap,&x).format(raw);}
 }
+static card_keyword_text::Labels wt_card_keyword_labels(const Content&content){
+ card_keyword_text::Labels labels{};
+ for(unsigned i=0;i<card_keyword_text::Count;++i){TextBuffer b{labels.title[i],sizeof labels.title[i],0};b.text(content.world_title("card_keywords",card_keyword_text::Keys[i]));}
+ TextBuffer period{labels.period,sizeof labels.period,0};period.text(content.world_string("card_keywords","PERIOD"));return labels;
+}
+static unsigned wt_card_display_keywords(const WorldTextContext&x){
+ const auto&a=*x.app;const auto&s=a.game;unsigned bits=card_keywords(x.card);
+ // Canonical library/associated previews must not borrow a same-model card
+ // from the active play. Detached offers supply their own immutable facts.
+ if(!a.library&&x.facts)bits=event_card_keywords(*x.facts,uint8_t(bits));
+ if(wt_live_card(x)&&x.instance>=0&&x.instance<s.card_count&&s.cards[x.instance].kind==x.card.kind){
+  if(s.silent.retain[x.instance])bits|=4;if(s.silent.sly[x.instance])bits|=16;
+  if(s.necro.ethereal[x.instance]||(s.enemy_world.active&&s.enemy_world.affliction[x.instance]==unsigned(EnemyAffliction::Hexed)))bits|=8;
+ }
+ return bits;
+}
+static LocalizedValue wt_replay_value(const void*opaque,const char*name){return wt_equal(name,"Times")?wt_number(int(*static_cast<const unsigned*>(opaque))):LocalizedValue{};}
 void App::world_card_description(Card card,int target,char*out,size_t cap,int instance,int deck,const EventCardFacts*facts)const{
  if(!cap)return;out[0]=0;if(card.kind>=CardKinds)return;
  if(card.kind<EventCardBadLuck&&content.version()<LocaleContentVersion){card_description(card,target,out,cap,instance,deck,facts);return;}
  WorldTextContext x{this,"cards",{},int(card.kind),target,0,card,instance,deck,facts};
- if(!x.facts&&instance>=0&&instance<game.card_count)x.facts=&game.event_cards.cards[instance];
- if(!x.facts&&deck>=0&&deck<game.deck_count)x.facts=&game.event_cards.deck[deck];
+ if(!x.facts)x.facts=event_card_facts(game,card,instance,deck);
  wt_model_key(x,definitions[card.kind].key);char source[8192]{};TextBuffer b{source,sizeof source,0};b.text(content.card_string(card.kind,card.upgraded?2:1));
  wt_formatter(out,cap,&x).format(source);
+ const auto labels=wt_card_keyword_labels(content);
+ if(content.version()>=LocaleContentVersion)card_keyword_text::strip(out,labels);
+ // CardModel adds the model's enchantment/affliction paragraphs before
+ // replay and terminal keyword paragraphs, not after Exhaust/Eternal.
+ card_modifier_text(card,out,cap,instance,deck,x.facts);
  if(content.version()>=LocaleContentVersion&&wt_live_card(x)){
   size_t n=0;while(n+1<cap&&out[n])++n;TextBuffer suffix{out,cap,n,&content};
-  auto keyword=[&](const char*key){suffix.text("\n[gold]");suffix.text(content.world_title("card_keywords",key));suffix.text(content.english()?".[/gold]":"。[/gold]");};
   unsigned replay=card.kind==SovereignBlade?game.regent.powers[(int)RPower::SwordSage]:0;
   if(instance>=0&&instance<game.card_count&&game.cards[instance].kind==card.kind){
-   const auto&d=definitions[card.kind];unsigned keywords=card.upgraded?d.upgraded_keywords:d.keywords;
-   if(game.silent.sly[instance]&&!(keywords&16))keyword("SLY");
-   if(game.silent.retain[instance]&&!card_retains(card))keyword("RETAIN");
-   if(game.necro.ethereal[instance]&&!(keywords&8))keyword("ETHEREAL");
    replay+=game.expansion.replay[instance];
   }
-  if(replay){suffix.text("\n[gold]");suffix.text(content.world_title("static_hover_tips","REPLAY_DYNAMIC"));suffix.ch(' ');suffix.number(replay);suffix.text("[/gold]");}
+  if(replay){char raw[256]{},text[256]{};TextBuffer copy{raw,sizeof raw,0};copy.text(content.world_string("static_hover_tips","REPLAY.extraText"));
+   LocalizedTemplate formatted(text,sizeof text,wt_replay_value,&replay,content.english()?"Energy":"能量",content.english()?"Stars":"辉星",content.english());formatted.format(raw);
+   if(*text){if(suffix.n)suffix.ch('\n');suffix.text(text);}}
  }
- card_modifier_text(card,out,cap,instance,deck,x.facts);
+ if(content.version()>=LocaleContentVersion){TextBuffer copy{source,sizeof source,0};source[0]=0;copy.text(out);card_keyword_text::compose(out,cap,source,wt_card_display_keywords(x),labels);}
 }
 int App::card_face_image(Card card,int instance,int deck,const EventCardFacts*facts)const{
  if(!facts&&instance>=0&&instance<game.card_count)facts=&game.event_cards.cards[instance];
@@ -325,8 +343,19 @@ int App::card_face_frame(Card card,int instance,int deck,const EventCardFacts*fa
 int App::card_offer_cost(Card card,const EventCardFacts*facts)const{
  int n=cost(card);if(facts)event_card_offer_description_value(game,card,*facts,"EnergyCost",n);return n;
 }
-int App::relic_face_image(RelicId id)const{
- if(id==WorldRelicYummyCookie){const char*keys[]={"YUMMY_COOKIE_IRONCLAD","YUMMY_COOKIE_SILENT","YUMMY_COOKIE_DEFECT","YUMMY_COOKIE_REGENT","YUMMY_COOKIE_NECRO"};int image=content.world_image("relics",keys[unsigned(game.character)<5?unsigned(game.character):0]);if(image>=0)return image;}
+unsigned App::canonical_cookie_variant()const{
+ // YummyCookie caches one chaotic character for all canonical/no-owner
+ // models in the process. UI entropy must never consume a run's RNG stream.
+ static uint8_t cached=255;
+ if(cached>=CharacterKinds){uint32_t value=callbacks.wall_clock?callbacks.wall_clock():0;
+  value^=map_clock_ms+0x9e3779b9u;value^=value>>16;value*=0x7feb352du;value^=value>>15;value*=0x846ca68bu;value^=value>>16;
+  cached=uint8_t(value%CharacterKinds);
+ }return cached;
+}
+int App::relic_face_image(RelicId id,int owner_character)const{
+ if(id==WorldRelicYummyCookie){const char*keys[]={"YUMMY_COOKIE_IRONCLAD","YUMMY_COOKIE_SILENT","YUMMY_COOKIE_DEFECT","YUMMY_COOKIE_REGENT","YUMMY_COOKIE_NECRO"};
+  const unsigned character=unsigned(owner_character)<CharacterKinds?unsigned(owner_character):canonical_cookie_variant();
+  int image=content.world_image("relics",keys[character]);if(image>=0)return image;}
  return content.relic_image(id);
 }
 void App::card_modifier_text(Card card,char*out,size_t cap,int instance,int deck,const EventCardFacts*facts)const{

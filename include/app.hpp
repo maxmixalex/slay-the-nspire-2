@@ -387,6 +387,8 @@ struct App {
     BestiaryPresentation bestiary{};
     bool open_bestiary(bool force=false);
     bool bestiary_input(Key);
+    int bestiary_shortcut(unsigned command)const;
+    void bestiary_shortcut(unsigned action,bool pressed);
     bool bestiary_pointer(const HitRegion&);
     void bestiary_scroll(int rows);
     unsigned bestiary_move_count()const;
@@ -750,7 +752,9 @@ struct App {
     CardType card_face_type(Card,int instance=-1,int deck=-1,const EventCardFacts* facts=nullptr)const;
     int card_face_frame(Card,int instance=-1,int deck=-1,const EventCardFacts* facts=nullptr)const;
     int card_offer_cost(Card,const EventCardFacts*)const;
-    int relic_face_image(RelicId)const;
+    unsigned canonical_cookie_variant()const;
+    int relic_face_image(RelicId,int owner_character=-1)const;
+    int relic_inspect_character()const;
     void card_modifier_text(Card,char*,size_t,int instance=-1,int deck=-1,const EventCardFacts* facts=nullptr)const;
     bool reference_input(Key);
     bool screen_input(Key);

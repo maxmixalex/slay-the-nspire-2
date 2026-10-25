@@ -4,6 +4,7 @@ bool event_card_targeted(const State&,Card,int instance,int deck_index,bool&);
 const EventCardFacts* event_card_facts(const State&,Card,int instance=-1,int deck_index=-1);
 const char* event_card_portrait(const State&,Card,int instance=-1,int deck_index=-1);
 uint8_t event_card_keywords(const State&,Card,int instance,int deck_index,uint8_t original);
+uint8_t event_card_keywords(const EventCardFacts&,uint8_t original);
 bool event_card_gains_block(const State&,Card,int instance=-1,int deck_index=-1);
 bool event_card_can_enchant(const State&,int deck_index,EventEnchantment);
 bool event_card_can_enchant(const State&,Card,const EventCardFacts&,EventEnchantment);

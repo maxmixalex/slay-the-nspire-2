@@ -45,8 +45,12 @@ int main(int argc,char**argv){
   for(int i=17;i<30;i++)CHECK(a.content.relic_image(i)==a.content.ui_image(i>=25?U_Kunai+i-25:U_HornCleat+i-17));
   const int starters[]={U_CrackedCore,U_DivineRight,U_BoundPhylactery};
   for(int i=0;i<3;i++)CHECK(a.content.relic_image(30+i)==a.content.ui_image(starters[i]));
-  CHECK(std::strstr(a.content.card_string(Scrawl,2),"保留"));CHECK(!std::strstr(a.content.card_string(Scrawl,1),"保留"));
-  CHECK(std::strstr(a.content.card_string(Purity,1),"保留"));
+  // CanonicalKeywords are assembled by CardModel's description path. Raw
+  // locale bodies do not contain Scrawl+'s or Purity's Retain paragraph.
+  char retain[96]{};std::snprintf(retain,sizeof retain,"%s",a.content.world_title("card_keywords","RETAIN"));CHECK(*retain);
+  char keyword_text[1024]{};a.card_description({Scrawl,1},-1,keyword_text,sizeof keyword_text);CHECK(std::strstr(keyword_text,retain));
+  a.card_description({Scrawl,0},-1,keyword_text,sizeof keyword_text);CHECK(!std::strstr(keyword_text,retain));
+  a.card_description({Purity,0},-1,keyword_text,sizeof keyword_text);CHECK(std::strstr(keyword_text,retain));
   char desc[512];a.card_description({HandOfGreed,1},0,desc,sizeof desc);CHECK(!std::strchr(desc,'{'));CHECK(std::strstr(desc,"25"));
  }
  std::printf("shared UI: %u checks passed\n",checks);

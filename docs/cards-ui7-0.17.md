@@ -227,7 +227,13 @@ as an existing slot with unknown time, while Continue retains its full save
 decoder. Profile summaries temporarily reuse the existing transfer buffer;
 they do not allocate another 512-KiB buffer or load all histories at startup.
 
-## Explicit remaining differences and evidence limits
+## Historical UI7 checkpoint differences and evidence limits
+
+This section records the older UI7 checkpoint. Later integrated work is
+documented in `combat-selection-source-0.17.md`,
+`relic-inspect-ui9-0.17.md`, and the source audit; it must not be read as the
+current implementation inventory. In particular, the related-tip chain,
+relic inspector, run timer and Cookie ownership now have later implementations.
 
 - The scrollbar thumb currently follows the displayed scroll value directly;
   the original thumb has an additional 50 ms SmoothDamp. Content interpolation,
@@ -270,3 +276,45 @@ they do not allocate another 512-KiB buffer or load all histories at startup.
 The physical key adapter uses public Ndless `ndless-sdk/include/keys.h`
 numeric matrix facts, reviewed at blob `71f141c361b8333056117f32ff87403aa7dc6895`.
 The actual device target is the same touchpad/CX keyboard as the existing host.
+
+## Card keyword description assembly — recovered source correction
+
+The pinned `CardModel.GetDescriptionForPile` formats the model body, adds
+enchantment/affliction prose, prepends its current keywords, then appends
+Replay and terminal keywords. `CardKeywordOrder.beforeDescription` is
+iterated with `Insert(0)`, so its displayed order is **Unplayable, Innate,
+Retain, Sly, Ethereal**. Exhaust and Eternal follow the complete body and
+Replay. Keyword titles use the original `card_keywords` table; the localized
+period follows the closing gold tag.
+
+An audit of all558 models in both upgrade states found three missing raw
+paragraphs: Purity, Purity+, and Scrawl+. Their actual gameplay keyword flags
+already included Retain. The common description path now assembles all seven
+keyword paragraphs from the same rules instead of relying on baked locale
+paragraphs. It removes only complete standalone original keyword paragraphs,
+accepting both the old converter's punctuation inside gold and the source's
+punctuation outside gold. A sentence that mentions a keyword remains intact.
+Temporary Retain, Sly and Ethereal, HexPower's live Hexed-to-Ethereal rule,
+plus immutable offer/deck enchantments,
+are merged once. Canonical collection models do not borrow matching live
+instances. Existing modifier descriptions retain their payload; this change
+places them before Replay/Exhaust/Eternal as the source requires.
+
+The extracted pure `card_keywords(Card)` and facts overload reuse the existing
+rule code without changing mechanics. The complete canonical mask fingerprint
+observed before the refactor is `0x4f58d566` across1116 records; the new test
+preserves it and compares the State query with exact supplied facts. No
+keyword rendering query writes State, consumes RNG, or changes saved bytes.
+
+The standalone parser/assembler regression passed784 checks for all flag
+combinations, Chinese punctuation, semantic mentions and bounded writes.
+Release translation units pass short syntax checks. The new
+`card_keywords_ui9_regression` renders all558 base/upgraded card faces and
+checks ordered text, temporary/immutable facts and State purity. With a
+matching original pack it also captures Purity/Scrawl and the combined
+temporary-keyword/replay case. Its integrated execution and bilingual visual
+review remain pending the next remotely preserved runtime checkpoint:
+
+```text
+card_keywords_ui9_regression <matching-ui9-eng-or-zhs.nsp> <private-capture-directory>
+```

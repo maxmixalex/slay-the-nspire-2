@@ -15,6 +15,71 @@ Long commands ran from pushed, immutable source snapshots with
 start/end times, return code and output hash. Names below identify those
 receipts without publishing original-derived packs or captures.
 
+## Recovered stage 8g ARM execution environment — 2026-10-25
+
+The transient executor was recycled during the original stage-8g jobs. Their
+missing completion records remain unknown. After restoring the remotely saved
+`1e50404901ab398574fcf8fa44d863e8961248ef` source, the ARM build was executed
+again from that exact frozen tree with Clang/LLVM 18.1.3. The new production
+launcher is **1,410,125 bytes**, SHA-256
+`293cbb2f8269dcd1d7b45e9b2e394f722894e0b935b3c613c9d75e22dcab2202`.
+Its Zehn allocation is **16,735,620 bytes**, leaving **41,596 bytes** below
+the unchanged 16 MiB gate. This is the linked static allocation, not a claim
+about total process memory or physical-calculator performance.
+
+Reviewing that boundary also found that the packer checked the ELF memory
+extent without its Zehn prefix. The subsequent tool-only correction rejects
+`prefix + memory_end > 16 MiB` before compression or output replacement.
+Two focused synthetic-ELF tests verify an allocation exactly at the limit and
+an otherwise valid image whose prefix pushes the total one byte over it. The
+rejected build preserves its existing output file. This does not enlarge the
+budget or change the already measured stage-8g launcher.
+
+The linked ARM926 gates pass again: **12,880 division/ABI**, **42 LZMA2**, and
+**14 tile-filter** vectors. Receipts are
+`ui9-stage8g-arm-restored-25b331b8a6b5`,
+`ui9-stage8g-arm-division-restored-cb8671f5dca1`,
+`ui9-stage8g-arm-lzma2-restored-96bfe3e7241e`, and
+`ui9-stage8g-arm-tile-restored-8f0a6378fa1d`.
+
+The selected-card highlight is inlined into `CardGridPainter::draw`. Its
+linked pixel loop calls only the alpha evaluator and Canvas paint. The alpha
+evaluator has no helper calls; the ordinary screen's Add/opaque paint branch
+has no division calls. The five highlight setup divisions precede the row and
+pixel loops. Canvas's separate covered-composite branches retain their required
+division; this review does not incorrectly count those as removed.
+
+A subsequent highlight optimization moves its existing transparent-distance
+test before the per-pixel alpha call. For the current edge thickness `d`, the
+greatest excluded raw 16-bit scalar is exactly
+`65535 - (d * 13107 + 182893) / 196000`. This is an algebraic rearrangement
+of the old integer early return. The numerator remains below `2^30`, and the
+threshold is prepared once per card without a new member, buffer or resident
+allocation. The original alpha evaluator remains unchanged for every surviving
+sample. The expanded independent scalar/clipping oracle passes **12,592,419
+checks**, including all reachable widths, clamped larger widths, boundary
+successors, the complete 16-bit scalar domain and time wrap.
+
+A short native screening uses the actual projected SDF at a 116×144 card
+highlight, 360 frames per pass and three alternating old/new pairs. It excludes
+72.0% of alpha calls at settled width and 75.4% in a varying-width sample.
+The isolated kernel medians are 29.487→22.584 ms and 26.736→17.578 ms respectively;
+output sums match in every pair. These are kernel screening measurements,
+with background resource conversion potentially active. They are not whole-frame
+or calculator speed claims. Final matched-resource frame comparisons and
+the new linked ARM path remain separate acceptance work.
+
+The owner's original emulator images were restored with matching historical
+hashes and left unchanged. Ordinary OS 6.4.0.74 boot and Ndless installation
+passed on a disposable clone. A subsequent Firebird snapshot-resume attempt
+failed before executing any USB action; that failed receipt is retained, and
+the acceptance path uses ordinary cold boot. The authorized clean-document
+clone removes only ten prior nZATO project files, **49,492,860 bytes**, while
+retaining the other original document folders and OS/Ndless. The OS reports
+**92.3 MB total and 91.7 MB available** before this game's installation.
+This preparation does not establish the new launcher's ordinary gameplay or
+three-profile write capacity; those gates require the rebuilt final resources.
+
 ## Stage 8e map sampling, final resources and ARM budget
 
 The rotated map-icon inverse is affine along each scanline. It now prepares

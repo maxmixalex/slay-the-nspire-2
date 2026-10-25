@@ -1,5 +1,46 @@
 # Work state — 2026-10-24
 
+## Integrated follow-up candidate — 2026-10-25
+
+The next runtime stage corrects additional visible differences found while
+reviewing the original scenes and methods. Bestiary now follows the original
+list/header geometry, fixed font bands, controls, per-move animation preview,
+and physical key release semantics. Mode preference is persisted on submenu
+close. Its presentation structure increases392 bytes; canonical State and
+save formats do not change. The shared Kaiser frame registration still needs
+actual composed inspection after its corrected0.75 source transform.
+
+Card descriptions now assemble the original keyword prefix/suffix order,
+including the missing Purity / Purity+ / Scrawl+ Retain paragraphs, mutable
+Retain/Sly/Ethereal and Hexed, detached enchantment facts and localized Replay.
+Only complete keyword paragraphs are replaced; prose mentioning the same
+words remains. Cookie relic icons now distinguish canonical/no-owner process
+variation from actual player/history ownership; collection outlines use that
+same process variant. This adds one byte of process UI state, no gameplay RNG
+draw or save field.
+
+Ordinary merchant relic/potion stock now uses the complete original model
+hover set and source-sized columns, replacing the remaining174px legacy box
+and five-line cutoff. Associated cards and keywords, detached stock values,
+modal/input suppression and save purity have focused regression coverage.
+
+The highlight renderer skips source samples proven transparent by an exact
+32-bit threshold. The old scalar shader remains unchanged;12,592,419 oracle
+checks pass. An isolated actual-SDF kernel improved23.41% /34.25% in two
+scenarios; whole-frame and ARM timing remain unmeasured. Zehn's allocation
+gate now includes its serialized prefix as well as loaded memory/BSS and
+rejects overflow before replacing an existing output. The unchanged16MiB
+boundary passes two synthetic ELF cases. Source syntax and pure checks pass;
+all changed runtime code still requires the next matching full/native,
+actual bilingual, browser and ordinary calculator gates.
+
+The exact-font source is already preserved at
+`4e8a6e5377eed0b869de24a829555a5259377e7e`, tree
+`e5ef51a959f85475e3807579fa2504ff133e34a9`, with remote ref readback. The private
+conversion chain has passed fonts, death append, history/journal/transition
+and tooltip glyph stages. The final compression/selection/split chain remains
+running, and is not yet a final resource acceptance result.
+
 ## Recovered full gates and Bestiary font stage — 2026-10-25
 
 The matched `3e61c041ffdc02e82ea8f8e14dc27601e2751aac` native build passed

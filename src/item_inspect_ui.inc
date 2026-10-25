@@ -119,7 +119,7 @@ static void item_detail_screen(Canvas&c){
         layer.ui(U_RewardPanel,78+dx,44+dy,165,165);
         Canvas frame_bg=layer;frame_bg.tint_red=21;frame_bg.tint_green=71;frame_bg.tint_blue=63;frame_bg.opacity=uint8_t(div255(unsigned(frame_bg.opacity)*128));frame_bg.ui(U_RewardPanel,132+dx,76+dy,57,57);
         const bool seen=view.source!=RelicInspectSource::Collection||a.library_item_seen(1,id);
-        Canvas icon=layer;if(!seen)icon.brightness=uint8_t(div255(unsigned(icon.brightness)*26));relic_inspect_fit_image(icon,a.relic_face_image(RelicId(id)),142+dx,87+dy,37,37);
+        Canvas icon=layer;if(!seen)icon.brightness=uint8_t(div255(unsigned(icon.brightness)*26));relic_inspect_fit_image(icon,a.relic_face_image(RelicId(id),a.relic_inspect_character()),142+dx,87+dy,37,37);
         const unsigned rarity=world_relic_definitions[id].rarity;relic_inspect_frame(layer,131+dx,76+dy,rarity);
         char name[256]{},description[4096]{},flavor[1024]{};relic_inspect_text(a,RelicId(id),name,sizeof name,description,sizeof description,flavor,sizeof flavor);
         Canvas title=layer;title.font_face=a.content.version()>=28?5:0;title.sparse_scene_sizes=true;const int title_size=a.content.font_size(7,title.font_face,false,true);

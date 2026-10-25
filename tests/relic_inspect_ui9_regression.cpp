@@ -15,6 +15,9 @@ static App a;
 static State before;
 static unsigned checks;
 static bool actual;
+static unsigned cookie_clock_calls,cookie_entropy_calls;
+static uint32_t cookie_clock(){++cookie_clock_calls;return 0x13572468u;}
+static uint32_t cookie_entropy(){++cookie_entropy_calls;return 0xabcdef12u;}
 static const char*captures;
 static const char*scenario="init";
 static std::vector<uint32_t> actual_glyph_keys;
@@ -39,6 +42,43 @@ static void setup(){
     a.statistics_open=a.history_open=a.map_preview.open=false;a.run_mode={};a.frontend_confirm=0;a.progress.tutorial_flags=0;a.pointer.visible=false;
     a.render();snapshot();const auto animation=a.animation;for(unsigned i=0;i<256&&a.combat_preparation.active;++i)a.advance(33);
     CHECK(!a.combat_preparation.active&&a.animation==animation);unchanged();
+}
+static void cookie_ownership(){
+    scenario="Cookie canonical cache and real owner";
+    const auto callbacks=a.callbacks;a.callbacks.wall_clock=cookie_clock;a.callbacks.seed_entropy=cookie_entropy;
+    static const char*keys[]={"YUMMY_COOKIE_IRONCLAD","YUMMY_COOKIE_SILENT","YUMMY_COOKIE_DEFECT","YUMMY_COOKIE_REGENT","YUMMY_COOKIE_NECRO"};
+    int images[5]{};snapshot();
+    for(unsigned character=0;character<5;++character){images[character]=a.content.world_image("relics",keys[character]);CHECK(images[character]>=0);CHECK(a.relic_face_image(WorldRelicYummyCookie,int(character))==images[character]);
+        for(unsigned previous=0;previous<character;++previous)CHECK(images[character]!=images[previous]);}
+    CHECK(cookie_clock_calls==0&&cookie_entropy_calls==0);unchanged();
+    const unsigned selected=a.canonical_cookie_variant();CHECK(selected<5&&cookie_clock_calls==1&&cookie_entropy_calls==0);CHECK(a.relic_face_image(WorldRelicYummyCookie)==images[selected]);unchanged();
+    // Canonical/no-owner models retain the process choice across other
+    // characters, profile/presentation rebuilds and even another App.
+    for(unsigned character=0;character<5;++character){a.game.character=Character(character);a.map_clock_ms+=7919;a.reset_presentation();snapshot();
+        CHECK(a.canonical_cookie_variant()==selected);CHECK(a.relic_face_image(WorldRelicYummyCookie)==images[selected]);
+        CHECK(a.relic_face_image(WorldRelicYummyCookie,int(character))==images[character]);unchanged();}
+    static App other;CHECK(other.canonical_cookie_variant()==selected);CHECK(cookie_clock_calls==1&&cookie_entropy_calls==0);
+    a.callbacks=callbacks;
+    // Exercise the actual inspector's owner routes, not only image lookup.
+    setup();a.game.character=Character::Regent;gain_world_relic(a.game,WorldRelicYummyCookie);a.reset_presentation();
+    int position=-1;for(unsigned i=0;i<ui_owned_relic_count(a.game);++i)if(ui_owned_relic_id(a.game,i)==WorldRelicYummyCookie)position=int(i);CHECK(position>=0);snapshot();
+    a.open_relic_inspect(WorldRelicYummyCookie,position);CHECK(a.relic_inspect.source==RelicInspectSource::Owned&&a.relic_inspect_character()==int(Character::Regent));advance(350);capture("relic-inspect-cookie-owned-regent");unchanged();
+    a.close_relic_inspect();advance(250);a.open_library(1);a.discover_relic(WorldRelicYummyCookie);a.prepare_collection();int index=-1;
+    for(unsigned i=0;i<a.collection.count;++i)if(a.collection.ids[i]==WorldRelicYummyCookie)index=int(i);CHECK(index>=0);
+    a.select_library_item(index);CHECK(a.relic_inspect.source==RelicInspectSource::Collection&&a.relic_inspect_character()==-1);advance(350);capture("relic-inspect-cookie-canonical");unchanged();
+    // NRelicHistory restores the saved player's ownership even while the
+    // currently active run uses another character. Its text remains an
+    // honest historical snapshot, independent of mutable current facts.
+    a.close_relic_inspect();advance(250);a.library=false;a.history_open=true;a.progress.count=1;a.progress.next_history=1;a.progress.history[0]={};
+    auto&record=a.progress.history[0];record.character=uint8_t(Character::Silent);record.relic_count=1;record.relics[0]=WorldRelicYummyCookie;a.history_index=0;
+    CHECK(a.history_at(0)==&record);a.open_relic_inspect(WorldRelicYummyCookie);CHECK(a.relic_inspect_character()==int(Character::Silent));advance(350);capture("relic-inspect-cookie-history-silent");unchanged();
+    a.close_relic_inspect();advance(250);a.history_open=false;
+    // Original EventModel.RelicOption assigns its current player before
+    // offering the Ancient relic; ordinary unclaimed stock stays ownerless.
+    a.game.phase=Phase::Event;a.game.original_events.active=1;a.game.original_events.finished=0;a.game.original_events.id=OriginalEventId::Tanx;a.game.original_events.offer_count=1;a.game.original_events.offers[0]=WorldRelicYummyCookie;
+    snapshot();a.open_relic_inspect(WorldRelicYummyCookie);CHECK(a.relic_inspect_character()==int(Character::Regent));unchanged();a.close_relic_inspect();advance(250);
+    a.game.phase=Phase::Shop;snapshot();a.open_relic_inspect(WorldRelicYummyCookie);CHECK(a.relic_inspect_character()==-1);unchanged();a.close_relic_inspect();advance(250);
+    CHECK(cookie_clock_calls==1&&cookie_entropy_calls==0);
 }
 static void original_motion(){
     scenario="original geometry and tweens";
@@ -145,10 +185,13 @@ static void real_art_and_text(){
     a.close_relic_inspect();
 }
 int main(int argc,char**argv){
-    Bytes data;if(argc>1){FILE*f=std::fopen(argv[1],"rb");CHECK(f);data.resize(spire_test::pack_size(f));CHECK(std::fread(data.data(),1,data.size(),f)==data.size());std::fclose(f);actual=true;}else data=fixture();
+    Bytes data;if(argc>1){FILE*f=std::fopen(argv[1],"rb");CHECK(f);data.resize(spire_test::pack_size(f));CHECK(std::fread(data.data(),1,data.size(),f)==data.size());std::fclose(f);actual=true;}else{
+        data=fixture();const unsigned ui=40+little_word(data.data()+16)*16+little_word(data.data()+20)*16+little_word(data.data()+24)*8+little_word(data.data()+28)*16+CardKinds*16;
+        const unsigned variants[]={6,8,9,10,12};for(unsigned i=0;i<5;++i)put(data,ui+(702+i)*4,variants[i]);
+    }
     CHECK(a.init(data.data(),data.size(),{}));if(actual){const unsigned images=little_word(data.data()+16),glyphs=little_word(data.data()+20);actual_glyph_keys.reserve(glyphs);
         for(unsigned i=0;i<glyphs;++i){const auto*row=data.data()+40+images*16+i*16;actual_glyph_keys.push_back((uint32_t(row[8]|unsigned(row[9])<<8)<<24)|little_word(row));}
         CHECK(std::is_sorted(actual_glyph_keys.begin(),actual_glyph_keys.end()));}
-    if(argc>2)captures=argv[2];original_motion();inventory();collection();source_shader();real_art_and_text();CHECK(a.content.healthy());
+    if(argc>2)captures=argv[2];original_motion();inventory();cookie_ownership();collection();source_shader();real_art_and_text();CHECK(a.content.healthy());
     std::printf("relic inspection: %u checks passed (%s)\n",checks,actual?"actual":"synthetic");
 }

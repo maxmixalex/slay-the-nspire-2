@@ -24,10 +24,24 @@ int main(){
   const Fraction fraction(denominator);
   for(unsigned value=0;value<=denominator+1;++value)check(fraction.smooth(value)==scalar_smooth(value,denominator));
  }
- for(unsigned width:{0u,1u,2u,17u,997u,4914u,4915u,65535u})
-  for(uint32_t time:{0u,1u,37u,166u,333u,666u,1000u,1999u,0xffffffffu}){
+ // Every reachable width and all 16-bit out-of-range widths preserve the
+ // exact inclusive boundary of the original early return. Its successor
+ // must remain eligible, even when animation time will ultimately hide it.
+ for(unsigned width=0;width<=65535;++width){const Context shader(width,0);
+  const unsigned through=shader.transparent_through();
+  const unsigned reference=unsigned((uint64_t(980000-shader.edge.divisor+1)*65535-1)/980000);
+  check(through==reference);
+  check(source_alpha(uint16_t(through))+20000u<=1000000u-shader.edge.divisor);
+  if(through<65535)check(source_alpha(uint16_t(through+1))+20000u>1000000u-shader.edge.divisor);
+ }
+ for(unsigned width:{0u,1u,2u,17u,997u,4914u,4915u,65535u,0xffffffffu})
+  for(uint32_t time:{0u,1u,37u,166u,333u,666u,1000u,1999u,2000u,0xffffffffu}){
    const Context shader(width,time);
-   for(unsigned alpha=0;alpha<65536;++alpha)check(shader.alpha(uint16_t(alpha))==scalar_alpha(uint16_t(alpha),width,time));
+   const unsigned transparent=shader.transparent_through();
+   for(unsigned alpha=0;alpha<65536;++alpha){const unsigned reference=scalar_alpha(uint16_t(alpha),width,time);
+    check(shader.alpha(uint16_t(alpha))==reference);
+    check((alpha<=transparent?0:shader.alpha(uint16_t(alpha)))==reference);
+   }
   }
  // Full visible-axis range, including left/top clipping, up/down sampling
  // and a partial terminal row. Compare against the old integer map exactly.

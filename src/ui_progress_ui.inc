@@ -258,7 +258,7 @@ static void history_screen(Canvas&c){
     values.total=r.relic_count;progress_text(a,"run_history","RELIC_HISTORY.header",values,text,sizeof text);page.text_fitted(text,29+dx,layout.relic_header-offset,257,10,Gold,8);
     for(unsigned i=0;i<r.relic_count;++i){const auto point=layout.relic(i);const int x=point.x+dx,y=point.y-offset;if(y+point.h<=0||y>=page.clip_h)continue;
         const int size=12*int(motion.scale(UiHistoryLayout::RelicFirst+int(i),a.map_clock_ms))/1000;
-        page.picture(a.content.relic_image(r.relics[i]),x+6-size/2,y+6-size/2,size,size);
+        page.picture(a.relic_face_image(r.relics[i],r.character),x+6-size/2,y+6-size/2,size,size);
     }
     values.total=r.deck_count;progress_text(a,"run_history","DECK_HISTORY.header",values,text,sizeof text);page.text_fitted(text,29+dx,layout.deck_header-offset,257,10,Gold,8);
     for(unsigned i=0;i<groups;++i){const auto point=layout.card(i);const int x=point.x+dx,y=point.y-offset;if(y+point.h<=0||y>=page.clip_h)continue;

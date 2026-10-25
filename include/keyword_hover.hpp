@@ -56,12 +56,14 @@ struct CardHoverTarget {
     bool detail=false;
     int event_option=-1;
     int relic=-1;
+    int owned_relic=-1;
     int potion=0;
     int power=-1;
     bool power_left=false;
     // History stores relic IDs, not their acquisition-time mutable models.
     bool historical=false;
     bool inspect_relic=false,canonical_relic=false;
+    bool merchant=false,merchant_left=false;
 };
 struct HoverPiece {unsigned tip=0;int skip=0,lines=0;HoverRect box{};};
 struct HoverPage {HoverPiece pieces[MaxCardHoverTips]{};unsigned count=0;int pages=1;};
@@ -85,6 +87,8 @@ inline HoverRect card_hover_column(HoverRect owner){
 void collect_card_hover_tips(const App&,Card,HoverTipList&,int instance=-1,int deck=-1,const EventCardFacts*facts=nullptr);
 bool card_hover_target(const App&,CardHoverTarget&);
 bool event_hover_target(const App&,CardHoverTarget&);
+bool merchant_hover_target(const App&,CardHoverTarget&);
+bool owned_relic_hover_target(const App&,CardHoverTarget&);
 bool power_hover_target(const App&,CardHoverTarget&);
 void collect_event_hover_tips(const App&,int option,HoverTipList&);
 void collect_relic_hover_tips(const App&,RelicId,HoverTipList&,bool historical=false);

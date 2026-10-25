@@ -47,7 +47,7 @@ static void reward_pickup_screen(Canvas&c){
    const auto&tile=hand_tile(c,-1,&sprite,deck);
    draw_hand_tile(c,tile,{v.x,v.y,v.scale,CombatCardMotion::sine(v.angle),CombatCardMotion::sine(v.angle+1024)},false,v.shade);
   }else{
-   const int image=f.kind==RewardPickupKind::Potion?a.content.potion_image(Potion(f.model)):a.relic_face_image(RelicId(f.model));
+   const int image=f.kind==RewardPickupKind::Potion?a.content.potion_image(Potion(f.model)):a.relic_face_image(RelicId(f.model),int(a.game.character));
    const int w=f.kind==RewardPickupKind::Potion?14:17,h=f.kind==RewardPickupKind::Potion?18:17;
    c.picture(image,v.x-w/2,v.y-h/2,w,h,v.alpha);
   }

@@ -29,14 +29,18 @@ CardType card_type(const State&s,Card c,int instance,int deck_index){
  CardType result=c.kind<CardKinds?definitions[c.kind].type:CardType::Status;
  event_card_type(s,c,instance,deck_index,result);return result;
 }
-uint8_t card_keywords(const State&s,Card c,int instance,int deck_index){
+uint8_t card_keywords(Card c){
  if(c.kind>=CardKinds)return 128;
- if(instance<0&&deck_index<0&&s.playing>=0&&s.playing<s.card_count&&s.cards[s.playing].kind==c.kind&&s.cards[s.playing].upgraded==c.upgraded)instance=s.playing;
  const auto&d=definitions[c.kind];uint8_t bits=c.upgraded?d.upgraded_keywords:d.keywords;
  if(d.exhausts)bits|=1;
  if(c.kind==Purity||(c.kind==Scrawl&&c.upgraded))bits|=4;
  if(c.kind==Backstab||(c.kind==InfiniteBlades&&c.upgraded))bits|=2;
- return event_card_keywords(s,c,instance,deck_index,bits);
+ return bits;
+}
+uint8_t card_keywords(const State&s,Card c,int instance,int deck_index){
+ if(c.kind>=CardKinds)return 128;
+ if(instance<0&&deck_index<0&&s.playing>=0&&s.playing<s.card_count&&s.cards[s.playing].kind==c.kind&&s.cards[s.playing].upgraded==c.upgraded)instance=s.playing;
+ return event_card_keywords(s,c,instance,deck_index,card_keywords(c));
 }
 bool card_removable(const State&s,Card c,int deck_index){return c.kind<CardKinds&&!(card_keywords(s,c,-1,deck_index)&64);}
 bool card_transformable(const State&s,Card c,int deck_index){return card_removable(s,c,deck_index);}

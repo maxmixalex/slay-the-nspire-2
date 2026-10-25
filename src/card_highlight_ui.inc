@@ -10,6 +10,7 @@ static void card_selection_highlight(Canvas&c,int x,int y,int w,int h,unsigned w
     const int x0=mx(0,-left),x1=mn(wide,c.clip_w-left),y0=mx(0,-top),y1=mn(high,c.clip_h-top);
     if(x0>=x1||y0>=y1)return;
     const card_highlight::Context shader(width,c.a.map_clock_ms);
+    const unsigned transparent=shader.transparent_through();
     uint16_t columns[320];
     const unsigned xstep=145u/unsigned(wide),xrest=145u%unsigned(wide);
     unsigned column=unsigned(x0)*145u/unsigned(wide),remainder=unsigned(x0)*145u%unsigned(wide);
@@ -19,6 +20,7 @@ static void card_selection_highlight(Canvas&c,int x,int y,int w,int h,unsigned w
     for(int yy=y0;yy<y1;++yy){const unsigned row=row_index*580;
         for(int xx=x0;xx<x1;++xx){const unsigned at=row+columns[xx-x0];
             const uint16_t scalar=uint16_t(image.pixels[at]|unsigned(image.pixels[at+1])<<8);
+            if(scalar<=transparent)continue;
             const unsigned alpha=shader.alpha(scalar);if(!alpha)continue;
             const uint16_t original=uint16_t(image.pixels[at+2]|unsigned(image.pixels[at+3])<<8);
             const uint16_t color=uint16_t(((((original>>5)&63)*957+500)/1000<<5)|(((original&31)*988+500)/1000));

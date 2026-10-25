@@ -198,6 +198,7 @@ void power_order_migrate(State&);
 bool valid_power_order(const State&);
 #include "event_card_api.inc"
 CardType card_type(const State&,Card,int instance=-1,int deck_index=-1);
+uint8_t card_keywords(Card);
 uint8_t card_keywords(const State&,Card,int instance=-1,int deck_index=-1);
 bool card_removable(const State&,Card,int deck_index=-1);
 bool card_transformable(const State&,Card,int deck_index=-1);
