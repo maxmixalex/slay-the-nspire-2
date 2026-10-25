@@ -118,15 +118,15 @@ static void press(HitKind kind,int value){const auto h=find_hit(kind,value);a.po
 static void action(UiAction value){press(HitKind::UiAction,int(value));}
 static void settings_back(){
  CHECK(a.settings_open);const auto h=find_hit(HitKind::UiAction,int(UiAction::Back));
- // The source38px Control begins at-8; the visible30px is a real hit.
- CHECK(h.x==0&&h.y==173&&h.w==30&&h.h==21);action(UiAction::Back);
+ // The LCD Back artwork remains outside the narrower content column.
+ CHECK(h.x==0&&h.y==215&&h.w==40&&h.h==24);action(UiAction::Back);
 }
 static void menu_rows(unsigned count){
  a.render();unsigned seen=0;for(int i=0;i<a.hit_count;i++)if(a.hits[i].kind==HitKind::Menu){const auto&hit=a.hits[i];CHECK(hit.value>=0&&unsigned(hit.value)<count);
-  if(a.title){const int source_y=699+(450-int(count)*50)/2+hit.value*50,expected_y=(source_y*4+10)/21;
-   CHECK(hit.x==106&&hit.y==expected_y&&hit.w==38&&hit.h==((source_y+50)*4+10)/21-expected_y);
-  }else{const int pause_y[]={88,104,119,134,149};CHECK(a.paused&&count==5);
-   CHECK(hit.x==125&&hit.y==pause_y[hit.value]&&hit.w==71&&hit.h==15);
+  if(a.title){const int expected_y=206-int(count)*20+hit.value*20;
+   CHECK(hit.x==24&&hit.y==expected_y&&hit.w==174&&hit.h==20);
+  }else{const int pause_y[]={65,94,123,152,181};CHECK(a.paused&&count==5);
+   CHECK(hit.x==72&&hit.y==pause_y[hit.value]&&hit.w==176&&hit.h==27);
   }seen|=1u<<hit.value;}
  CHECK(seen==((1u<<count)-1));
 }
@@ -143,6 +143,7 @@ static void character_click_confirmation(){
  const auto confirm=find_hit(HitKind::UiAction,int(UiAction::StartCharacter));
  a.pointer_move(confirm.x+confirm.w/2,confirm.y+confirm.h/2);a.render();CHECK(a.character_select&&a.run_number==run);
  a.pointer_button(true);CHECK(a.character_select&&a.run_number==run);a.pointer_button(false);a.pointer.visible=false;
+ CHECK(a.character_departure.active());for(unsigned i=0;i<30&&a.character_departure.active();++i){a.advance(100);a.render();}
  CHECK(!a.character_select&&!a.title&&a.game.character==Character::Regent&&a.run_number==run+1);
  CHECK(a.game.world.active&&validate(a.game));
 }
@@ -291,13 +292,13 @@ static void main_menu_and_continue(){
 }
 static void pause_save_failure_and_success(){
  empty_disk();start(Character::Necrobinder,3001);snapshot();a.input(Key::Back);CHECK(a.paused&&!a.title);menu_rows(5);
- const int source_rows[]={88,104,119,134,149};
- for(int i=0;i<5;++i){const auto h=find_hit(HitKind::Menu,i);CHECK(h.x==125&&h.y==source_rows[i]&&h.w==71&&h.h==15);}
+ const int source_rows[]={65,94,123,152,181};
+ for(int i=0;i<5;++i){const auto h=find_hit(HitKind::Menu,i);CHECK(h.x==72&&h.y==source_rows[i]&&h.w==176&&h.h==27);}
  a.advance(500);a.render();capture("frontend-pause");unchanged();
  // Original Back is a partially offscreen Control whose visible region
  // resumes the run. It must not dispatch a map or a covered room action.
  bool back=false;for(int i=0;i<a.hit_count;++i){const auto&h=a.hits[i];if(h.kind==HitKind::UiAction&&h.value==int(UiAction::Back)){
-  back=true;CHECK(h.enabled&&h.x+h.w>0&&h.y==173);a.pointer_move(11,183);a.pointer_button(true);a.pointer_button(false);break;}}
+  back=true;CHECK(h.enabled&&h.x+h.w>0&&h.y==215);a.pointer_move(20,226);a.pointer_button(true);a.pointer_button(false);break;}}
  CHECK(back&&!a.paused&&!a.title);unchanged();a.pointer.visible=false;a.render();a.input(Key::Back);CHECK(a.paused);a.render();
  unsigned w=writes;write_ok=false;press(HitKind::Menu,4);CHECK(a.paused&&!a.title&&!disk_exists&&writes==w+1&&a.notice_ticks);unchanged();
  write_ok=true;press(HitKind::Menu,4);CHECK(a.title&&!a.paused&&a.has_save&&disk_exists);same_saved(disk);unchanged();
@@ -451,24 +452,24 @@ static void modal_isolation_and_fast_mode(){
  // NSettingsTickbox focuses its reticle; its separate cream row label does
  // not change color. Retain a painted-label check with source-sized bounds.
  a.pointer.visible=false;a.settings_item=0;a.render();
- uint16_t fast_label[124*12]{},tick[16*16]{};
- for(unsigned y=0;y<12;++y)for(unsigned x=0;x<124;++x)fast_label[y*124+x]=a.pixels[(71+y)*ScreenW+66+x];
- for(unsigned y=0;y<16;++y)for(unsigned x=0;x<16;++x)tick[y*16+x]=a.pixels[(69+y)*ScreenW+215+x];
+ uint16_t fast_label[122*21]{},tick[24*23]{};
+ for(unsigned y=0;y<21;++y)for(unsigned x=0;x<122;++x)fast_label[y*122+x]=a.pixels[(88+y)*ScreenW+10+x];
+ for(unsigned y=0;y<23;++y)for(unsigned x=0;x<24;++x)tick[y*24+x]=a.pixels[(87+y)*ScreenW+153+x];
  a.settings_item=2;a.render();unsigned focused_label_pixels=0,reticle_pixels=0;
- for(unsigned y=0;y<12;++y)for(unsigned x=0;x<124;++x)focused_label_pixels+=fast_label[y*124+x]!=a.pixels[(71+y)*ScreenW+66+x];
- for(unsigned y=0;y<16;++y)for(unsigned x=0;x<16;++x)reticle_pixels+=tick[y*16+x]!=a.pixels[(69+y)*ScreenW+215+x];
+ for(unsigned y=0;y<21;++y)for(unsigned x=0;x<122;++x)focused_label_pixels+=fast_label[y*122+x]!=a.pixels[(88+y)*ScreenW+10+x];
+ for(unsigned y=0;y<23;++y)for(unsigned x=0;x<24;++x)reticle_pixels+=tick[y*24+x]!=a.pixels[(87+y)*ScreenW+153+x];
  CHECK(!focused_label_pixels&&reticle_pixels>0);a.settings_item=0;unchanged();
- const auto checkbox=find_hit(HitKind::UiAction,int(UiAction::SettingsFastMode));CHECK(checkbox.x==193&&checkbox.y==71&&checkbox.w==61&&checkbox.h==12);
- const auto hold_checkbox=find_hit(HitKind::UiAction,int(UiAction::SettingsLongPress));CHECK(hold_checkbox.x==193&&hold_checkbox.y==134&&hold_checkbox.w==61&&hold_checkbox.h==12);
+ const auto checkbox=find_hit(HitKind::UiAction,int(UiAction::SettingsFastMode));CHECK(checkbox.x==135&&checkbox.y==88&&checkbox.w==58&&checkbox.h==21);
+ const auto hold_checkbox=find_hit(HitKind::UiAction,int(UiAction::SettingsLongPress));CHECK(hold_checkbox.x==135&&hold_checkbox.y==180&&hold_checkbox.w==58&&hold_checkbox.h==21);
  const bool held=a.long_press;action(UiAction::SettingsLongPress);CHECK(a.long_press!=held);action(UiAction::SettingsLongPress);CHECK(a.long_press==held);unchanged();
  a.input(Key::Up);CHECK(a.settings_item==0);a.input(Key::Left);CHECK(!a.settings_tab&&a.settings_item==0);
- for(unsigned i=0;i<30;++i)a.input(Key::Down);CHECK(a.settings_item==11);a.input(Key::Down);CHECK(a.settings_item==11);
+ for(unsigned i=0;i<30;++i)a.input(Key::Down);CHECK(a.settings_item==10);a.input(Key::Down);CHECK(a.settings_item==10);
  for(unsigned i=0;i<30;++i)a.input(Key::Up);CHECK(a.settings_item==0&&a.settings_top==0);
- // OpenDropdown initially focuses the first item, clamps its endpoints and
- // ignores lateral arrows. Choosing the current locale leaves it open.
+ // OpenDropdown initially focuses the current locale, clamps its endpoints
+ // and ignores lateral arrows. Choosing the current locale leaves it open.
  const auto callbacks=a.callbacks;static unsigned locale_requests=0,requested_locale=0;
  a.callbacks.available_languages=[](){return 3u;};a.callbacks.request_language=[](unsigned language){++locale_requests;requested_locale=language;return true;};
- action(UiAction::SettingsLanguage);CHECK(a.settings_language_open&&a.settings_language_item==0);
+ action(UiAction::SettingsLanguage);CHECK(a.settings_language_open&&a.settings_language_item==(a.content.english()?0:1));
  a.input(Key::Up);a.input(Key::Left);a.input(Key::Right);CHECK(a.settings_language_item==0);
  a.input(Key::Down);a.input(Key::Down);CHECK(a.settings_language_item==1);a.input(Key::Left);a.input(Key::Right);CHECK(a.settings_language_item==1);
  const unsigned current=a.content.english()?1u:2u,before_requests=locale_requests;
@@ -476,7 +477,7 @@ static void modal_isolation_and_fast_mode(){
  CHECK(a.request_language(3-current)&&!a.settings_language_open&&locale_requests==before_requests+1&&requested_locale==3-current);
  a.callbacks=callbacks;unchanged();
  capture("settings-general");const auto input=find_hit(HitKind::UiAction,int(UiAction::SettingsInputTab));
- CHECK(input.w==49&&input.h==17&&input.y==14);
+ CHECK(input.w==88&&input.h==24&&input.y==10);
  a.pointer_move(input.x+input.w/2,input.y+input.h/2);a.render();CHECK(a.settings_tab==0);unchanged();
  a.pointer_button(true);CHECK(a.settings_tab==0);a.pointer_button(false);CHECK(a.settings_tab==1&&a.settings_item==0);a.pointer.visible=false;capture("settings-input");unchanged();
  // The original input panel opens a real listening modal rather than the

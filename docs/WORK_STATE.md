@@ -1,6 +1,32 @@
 # Work state — 2026-10-25
 
-## UI12 active feedback correction
+## UI12 recovery and final acceptance in progress
+
+The interrupted workspace was recovered intact at local `af95e293` on
+2026-10-25. Its 228 changed source/document files have now been uploaded to
+`work/0.17-world-parity` as **`fe11b6d756012b889eb48d5911df408caa126da1`**.
+The branch was independently fetched and its complete tree
+`e6a1fd18f3183a988a832d7d3dbe8c605cb0de59` equals the recovered local tree.
+The current user instruction explicitly authorizes source submission. Git CLI
+has no stored write credentials, so the connected GitHub API performs the
+submission; no unresolved approval block applies to this resumed stage.
+
+Four unmerged frontend regression corrections were recovered from the prior
+frontend worktree. Further source review found and fixed two remaining runtime
+issues: title/category text still accumulated integer advances, and the right
+merchant card missed the face cache because its capture window crossed the LCD
+edge. Fractional metrics and kerning now cover those headings; bounded cache
+windows preserve exact pixels at all seven stock positions without more cache
+memory or resource payload.
+
+The final current-source ARM build, same-save UI11/UI12 merchant performance
+comparison, ordinary play/save/continue and release packaging are in progress.
+The earlier timed-out merchant sessions are excluded from speed claims. Private
+assets and system images remain local. No WASM/browser acceptance is requested
+or run. The detailed implementation matrix is in
+`ui12-lcd-followup-0.17.md`; final receipts will replace this in-progress section.
+
+## UI12 active feedback correction — historical pre-recovery notes
 
 The user explicitly authorized pushing UI11, then requested the next complete
 calculator usability pass. Remote main/work were read at UI10 `9dc0c112`.

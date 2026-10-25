@@ -123,10 +123,23 @@ static void reward_overlap(){
 static std::vector<uint8_t>read(const std::string&path){FILE*f=std::fopen(path.c_str(),"rb");CHECK(f);CHECK(!std::fseek(f,0,SEEK_END));const long n=std::ftell(f);CHECK(n>0);CHECK(!std::fseek(f,0,SEEK_SET));std::vector<uint8_t>v(size_t(n),0);CHECK(std::fread(v.data(),1,v.size(),f)==v.size());CHECK(!std::fclose(f));return v;}
 static void merchant_cache(){
  scenario="actual merchant normal card uses exact existing cache";fresh();a.game.phase=Phase::Shop;Canvas c{a};
- invalidate_card_face_cache();begin_card_face_frame();for(auto&pixel:a.pixels)pixel=0x2925;draw_card_face(c,{Strike,0},90,40,65,91);
- bool cached=false;for(const auto&slot:small_card_faces)cached|=slot.valid&&slot.width==65&&slot.height==91;CHECK(cached);
- const std::vector<uint16_t>first(a.pixels,a.pixels+320*240);begin_card_face_frame();for(auto&pixel:a.pixels)pixel=0x2925;draw_card_face(c,{Strike,0},90,40,65,91);
- CHECK(!std::memcmp(first.data(),a.pixels,sizeof a.pixels));CHECK(a.content.healthy());
+ invalidate_card_face_cache();
+ // Use every actual slot, not only a central card. On an identical plain
+ // backdrop moving between central and edge slots also tests padded-window
+ // identity; an incorrect replay shifts the complete face by five pixels.
+ for(int slot:{2,4,0,5,6,4,1,3}){
+  const int x=MerchantInventoryLayout::card_x(slot)-MerchantInventoryLayout::CardW/2;
+  const int y=MerchantInventoryLayout::card_y(slot)-MerchantInventoryLayout::CardH/2;
+  for(unsigned salt:{0u,1u}){
+   const auto background=[&](){for(unsigned i=0;i<320u*240u;++i)a.pixels[i]=salt?uint16_t((i*3917u)^(i>>2)^0x8410):0x2925;};
+   background();render_card_face(c,{Strike,0},x,y,65,91);const std::vector<uint16_t>expected(a.pixels,a.pixels+320*240);
+   for(unsigned repeat=0;repeat<2;++repeat){begin_card_face_frame();background();draw_card_face(c,{Strike,0},x,y,65,91);
+    CHECK(!std::memcmp(expected.data(),a.pixels,sizeof a.pixels));
+    bool cached=false;for(const auto&entry:small_card_faces)cached|=entry.valid&&entry.width==65&&entry.height==91&&entry.seen==small_card_frame;CHECK(cached);
+   }
+  }
+ }
+ CHECK(a.content.healthy());
 }
 static void actual_aimed_descriptions(){
  scenario="actual hand cache changes damage only while aiming";fresh();a.game.enemies[0].vulnerable=2;before=a.game;Canvas c{a};

@@ -85,11 +85,11 @@ static void compendium_scene(const std::vector<uint8_t>&pack){
     transition.observe_compendium(0,1175,false);visual=transition.observe_compendium(0,1475,false);SCENE(visual.scale==1000&&visual.shade==255&&visual.focus==0);
 }
 static void title_source_scene(const std::vector<uint8_t>&pack,const char*captures){
-    SCENE(title_scene::MenuCenter==125&&title_scene::MenuHitLeft==106&&title_scene::MenuHitWidth==38&&title_scene::MenuFont==6);
-    const int fresh_y[]={157,166,176,186},saved_y[]={152,162,171,181,190};
+    SCENE(title_scene::MenuCenter==111&&title_scene::MenuHitLeft==24&&title_scene::MenuHitWidth==174&&title_scene::MenuFont==10);
+    const int fresh_y[]={126,146,166,186},saved_y[]={106,126,146,166,186};
     for(int i=0;i<4;++i)SCENE(title_scene::menu_y(4,i)==fresh_y[i]);for(int i=0;i<5;++i)SCENE(title_scene::menu_y(5,i)==saved_y[i]);
-    SCENE(title_scene::ContinueX==153&&title_scene::ContinueWidth==85&&title_scene::continue_y(5)==158);
-    SCENE(title_scene::continue_height(false)==38&&title_scene::continue_height(true)==44);
+    SCENE(title_scene::ContinueX==184&&title_scene::ContinueWidth==130&&title_scene::continue_y(5)==116);
+    SCENE(title_scene::continue_height(false)==82&&title_scene::continue_height(true)==97);
     title_menu_motion::Label motion{};auto value=motion.observe(true,false,1000);SCENE(value.scale==4096&&value.green==246);
     value=motion.sample(1050);SCENE(value.scale==4301&&value.red==239&&value.green==200&&value.blue==81&&value.alpha==255);
     motion.observe(true,true,1050);value=motion.sample(1250);SCENE(value.scale==3891&&value.green==200&&value.alpha==255);
@@ -164,10 +164,10 @@ static void profile_scene(const std::vector<uint8_t>&pack,const char*captures){
     app.profile_summaries[0]={3723,1792838400,true};app.profile_summaries[1]={};app.profile_summaries[2]={0,0,true};
     for(auto&motion:app.profile_motion)motion={};for(auto&motion:app.profile_labels)motion={};app.map_clock_ms=1000;
     app.hit_count=0;Canvas menu{app};profile_title_button(menu);bool found=false;
-    for(unsigned i=0;i<unsigned(app.hit_count);++i){const auto&hit=app.hits[i];if(hit.kind==HitKind::UiAction&&hit.value==int(UiAction::OpenProfiles)){SCENE(hit.x==3&&hit.y==3&&hit.w==33&&hit.h==12);found=true;}}SCENE(found);
+    for(unsigned i=0;i<unsigned(app.hit_count);++i){const auto&hit=app.hits[i];if(hit.kind==HitKind::UiAction&&hit.value==int(UiAction::OpenProfiles)){SCENE(hit.x==3&&hit.y==3&&hit.w==88&&hit.h==23);found=true;}}SCENE(found);
     Canvas page{app};profiles_screen(page);unsigned deletes=0;
     for(unsigned i=0;i<unsigned(app.hit_count);++i){const auto&hit=app.hits[i];if(hit.kind==HitKind::UiAction&&hit.value>=int(UiAction::DeleteProfile1)&&hit.value<=int(UiAction::DeleteProfile3)){
-        SCENE(hit.w==15&&hit.h==15&&hit.y==192);SCENE(hit.value!=int(UiAction::DeleteProfile2));++deletes;}}SCENE(deletes==2);
+        SCENE(hit.w==15&&hit.h==15&&hit.y==198);SCENE(hit.value!=int(UiAction::DeleteProfile2));++deletes;}}SCENE(deletes==2);
     if(pack.empty()){title_source_scene(pack,captures);return;}
     new_run(app.game,0x1735,false,Character::Ironclad);SCENE(save(app.game,before));
     const auto compare=[&](const std::vector<uint16_t>&actual,const std::vector<uint16_t>&expected){unsigned visible=0;

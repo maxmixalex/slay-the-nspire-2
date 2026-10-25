@@ -38,16 +38,16 @@ static void legacy(){
     UiPreferences loaded{};const uint8_t old1[]={'N','S','P','F',1,1,0,0},old2[]={'N','S','P','F',2,12,2,0};
     CHECK(decode_ui_preferences(old1,sizeof old1,loaded)&&loaded.fast_mode&&!loaded.bindings_saved);
     CHECK(decode_ui_preferences(old2,sizeof old2,loaded)&&loaded.keyboard_only&&!loaded.bindings_saved);
-    present=false;app.calculator_keyboard=true;app.restore_preferences();CHECK(app.input_bindings.keys[0][unsigned(InputCommand::Up)]=='8');
+    present=false;app.calculator_keyboard=true;app.restore_preferences();CHECK(app.input_bindings.keys[0][unsigned(InputCommand::Up)]==InputUp);
     app.persist_preferences();CHECK(disk[4]==5);app.calculator_keyboard=false;app.restore_preferences();
-    CHECK(app.input_bindings.keys[0][unsigned(InputCommand::Up)]=='8'); // Saved map survives a host/language change.
+    CHECK(app.input_bindings.keys[0][unsigned(InputCommand::Map)]==9); // Saved calculator map survives a host/language change.
     app.reset_input_bindings();CHECK(app.input_bindings.keys[0][unsigned(InputCommand::Up)]==InputUp);
     std::memcpy(&loaded.bindings,&app.input_bindings,sizeof loaded.bindings);
     uint8_t broken[UiPreferencesBytes];std::memcpy(broken,disk,sizeof disk);broken[8+2*unsigned(InputCommand::Map)]=0;broken[9+2*unsigned(InputCommand::Map)]=0;
     CHECK(!decode_ui_preferences(broken,sizeof broken,loaded));CHECK(!std::memcmp(&loaded.bindings,&app.input_bindings,sizeof loaded.bindings));
 }
 static void focus_pixel(unsigned visible_row,unsigned alpha){
-    app.render();const unsigned at=(settings_layout::input_row(visible_row)+5)*ScreenW+56;
+    app.render();const unsigned at=(settings_layout::input_row(visible_row)+5)*ScreenW+9;
     const uint16_t painted=app.pixels[at];const auto pointer=app.pointer;const unsigned item=app.settings_item;
     ButtonMotion motions[MaxButtonMotions];std::memcpy(motions,app.button_motions,sizeof motions);
     // Isolate the row coverage over the same-time rendered background. The
@@ -72,7 +72,7 @@ static void input_focus_transitions(){
     app.ui_action(UiAction::SettingsScrollDown);app.render();CHECK(app.settings_top==1);focus_pixel(1,51);
     app.ui_action(UiAction::SettingsScrollUp);app.render();CHECK(app.settings_top==0);focus_pixel(1,51);
     // Source Back is the visible portion of its partially offscreen node.
-    app.pointer_move(15,183);app.pointer_button(true);app.pointer_button(false);CHECK(!app.settings_open);
+    app.pointer_move(20,226);app.pointer_button(true);app.pointer_button(false);CHECK(!app.settings_open);
     app.advance(100);app.menu=1;app.input(Key::Confirm);CHECK(app.settings_open&&app.settings_tab==0);
     app.ui_action(UiAction::SettingsInputTab);app.pointer_move(300,230);focus_pixel(0,0);focus_pixel(1,0);
     app.pointer_move(150,settings_layout::input_row(0)+5);focus_pixel(0,51);
@@ -89,7 +89,7 @@ static void settings(){
     app.pointer.visible=false;app.settings_item=unsigned(InputCommand::Select)+1;press(13);CHECK(app.binding_listening==int(InputCommand::Select)&&app.binding_bank==1);
     press('Q');CHECK(app.input_bindings.keys[1][unsigned(InputCommand::Select)]=='Q'&&app.input_bindings.keys[1][unsigned(InputCommand::Deck)]==' ');
     app.settings_item=unsigned(InputCommand::Card10)+1;app.settings_top=settings_layout::InputMaximum;capture("input-last-shortcuts");
-    for(unsigned i=20;i<InputCommandCount;++i)CHECK(hit(i).enabled);
+    for(unsigned i=InputCommandCount-settings_layout::InputVisible;i<InputCommandCount;++i)CHECK(hit(i).enabled);
     const auto expected=app.input_bindings;app.restore_preferences();CHECK(!std::memcmp(&app.input_bindings,&expected,sizeof expected));unchanged();
     app.ui_action(UiAction::SettingsReset);CHECK(!app.frontend_confirm&&app.settings_open&&valid_input_bindings(app.input_bindings));
     const auto defaults=default_input_bindings();CHECK(!std::memcmp(&app.input_bindings,&defaults,sizeof defaults));

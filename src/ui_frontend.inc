@@ -66,10 +66,8 @@ static void title_logo(Canvas&c){
 }
 #include "profiles_ui.inc"
 static int title_label_width(Canvas&c,const char*text){
-    Canvas label=c;label.font_face=0;const int size=c.a.content.font_size(title_scene::MenuFont,0);
-    RichReader reader(text);RichChar ch{};int width=0,count=0;
-    while(reader.next(ch)){if(ch.codepoint=='\n')break;width+=c.a.content.glyph_metrics(ch.codepoint,size,0).advance;++count;}
-    return width;
+    Canvas label=c;label.font_face=0;
+    return label.width(text,title_scene::MenuFont);
 }
 static void title_menu_labels(Canvas&c){
     auto&a=c.a;const int count=a.title_menu_count();auto&presentation=a.title_presentation;presentation.bind(count);

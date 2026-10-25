@@ -42,19 +42,25 @@ static void mask_group_pixels(){
     CHECK(app.pixels[overlap]!=primitive); // Masking each primitive compounds opacity incorrectly.
 }
 static void layout_and_input(){
-    clear_ui_progress(app.progress);const UiStatisticsLayout empty(app.progress);CHECK(empty.count==9&&empty.character_count==0&&empty.height==240);
-    CHECK(empty.entries[0].x==251&&empty.entries[0].y==276&&empty.entries[0].w==500&&empty.entries[0].h==92);
-    CHECK(empty.entries[1].x==807&&empty.entries[8].y==644&&empty.entries[8].h==88);
+    clear_ui_progress(app.progress);const UiStatisticsLayout empty(app.progress);CHECK(empty.count==8&&empty.character_count==0&&empty.height>240);
+    // The supported statistics occupy one readable column. Achievements and
+    // Timeline have no local data and no longer reserve placeholder rows.
+    CHECK(UiStatisticsLayout::Left==52&&UiStatisticsLayout::Width==236);
+    for(unsigned i=0;i<empty.count;++i){const auto p=UiStatisticsLayout::projected(empty.entries[i]);
+        CHECK(p.x>=52&&p.x+p.w<=290&&p.h>=50);
+        if(i)CHECK(empty.entries[i].x==empty.entries[0].x&&empty.entries[i].y>=empty.entries[i-1].y+empty.entries[i-1].h);}
     app.progress.characters_started=31;for(auto&s:app.progress.characters){s.fastest_win_seconds=60;s.highest_ascension=1;}
-    const UiStatisticsLayout full(app.progress);CHECK(full.count==24&&full.character_count==5&&full.height==392);
-    const unsigned order[]={0,1,3,4,2};for(unsigned i=0;i<5;++i){CHECK(full.models[i]==order[i]);CHECK(full.characters[i].x==227+int(i%2)*564&&full.characters[i].y==836+int(i/2)*384&&full.characters[i].h==352);}
+    const UiStatisticsLayout full(app.progress);CHECK(full.count==23&&full.character_count==5&&full.height>empty.height);
+    const unsigned order[]={0,1,3,4,2};for(unsigned i=0;i<5;++i){CHECK(full.models[i]==order[i]);
+        CHECK(full.characters[i].x==UiStatisticsLayout::SourceLeft&&full.characters[i].w==1240&&full.characters[i].h>=900);
+        if(i)CHECK(full.characters[i].y>full.characters[i-1].y+full.characters[i-1].h);}
     app.progress.characters[0].fastest_win_seconds=0;app.progress.characters[0].highest_ascension=0;
-    const UiStatisticsLayout partial(app.progress);CHECK(partial.characters[0].h==344&&partial.entries[9].h==88&&partial.entries[10].h==88&&partial.entries[11].h==92);
-    CHECK(partial.characters[2].y==1220); // The taller right column sets the row height.
+    const UiStatisticsLayout partial(app.progress);CHECK(partial.count==23&&partial.characters[0].h==full.characters[0].h);
+    CHECK(partial.characters[2].y==full.characters[2].y); // Conditional secondary labels do not collapse readable rows.
     app.title=true;app.open_statistics();CHECK(app.statistics_presentation.selected==0);
-    app.input(Key::Right);CHECK(app.statistics_presentation.selected==1);app.input(Key::Down);CHECK(app.statistics_presentation.selected==3);
-    app.input(Key::Left);CHECK(app.statistics_presentation.selected==2);app.input(Key::Down);CHECK(app.statistics_presentation.selected==4);
-    app.input(Key::Up);CHECK(app.statistics_presentation.selected==2);app.input(Key::Up);CHECK(app.statistics_presentation.selected==0);
+    app.input(Key::Right);CHECK(app.statistics_presentation.selected==0);app.input(Key::Down);CHECK(app.statistics_presentation.selected==1);
+    app.input(Key::Left);CHECK(app.statistics_presentation.selected==1);app.input(Key::Down);CHECK(app.statistics_presentation.selected==2);
+    app.input(Key::Up);CHECK(app.statistics_presentation.selected==1);app.input(Key::Up);CHECK(app.statistics_presentation.selected==0);
     app.statistics_presentation.selected=9;app.input(Key::Down);CHECK(app.statistics_presentation.selected==10&&app.progress_page_scroll.target>0);
     app.input(Key::Back);CHECK(!app.statistics_open&&app.compendium_open);unchanged();
 }

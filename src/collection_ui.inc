@@ -28,13 +28,14 @@ static void collection_header_line(Canvas&c,const char*text,int x,int y,bool rel
     const int shadow_x=reference_viewport::project(relic?3:2),shadow_y=reference_viewport::project(relic?2:3);
     for(unsigned pass=0;pass<2;++pass){
         Canvas ink=c;if(!pass)ink.opacity=uint8_t(div255(c.opacity*128));
-        RichReader reader(text);RichChar ch{};int at=x;
+        RichReader reader(text);RichChar ch{};int advance64=0;unsigned previous_face=0;
         while(reader.next(ch)){
             const unsigned face=ch.style.bold&&(!relic||!c.a.content.original_label_fonts())?5u:0u;
             const auto glyph=c.a.content.glyph(ch.codepoint,size,face);
+            if(advance64&&previous_face==face)advance64+=c.a.content.glyph_kerning64(ch.previous,ch.codepoint,size,face);
             const uint16_t color=ch.style.color==1?rgb(239,200,81):ch.style.color==3?rgb(135,206,235):rgb(255,246,226);
-            ink.character(ch.codepoint,glyph,at+(!pass?shadow_x:0),y+(!pass?shadow_y:0),pass?color:0,!pass);
-            at+=glyph.advance;
+            ink.character(ch.codepoint,glyph,x+text_pixel(advance64)+(!pass?shadow_x:0),y+(!pass?shadow_y:0),pass?color:0,!pass);
+            advance64+=glyph.advance64?glyph.advance64:int(glyph.advance)*64;previous_face=face;
         }
     }
 }

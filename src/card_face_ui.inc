@@ -176,7 +176,7 @@ struct SmallCardFaceCache {
     Card card{};
     int portrait=-1,frame=-1,energy_image=-1,energy=0,stars=0;
     CardType type=CardType::Attack;
-    uint8_t width=0,height=0,resource_styles=0;
+    uint8_t width=0,height=0,resource_styles=0,offset_x=0,offset_y=0;
     bool star_visible=false,resource_cross=false,valid=false;
     char title[128]{},description[512]{};
     uint16_t background[SmallCardCacheW*SmallCardCacheH]{};
@@ -212,12 +212,17 @@ static void draw_card_face(Canvas&c,Card card,int x,int y,int w,int h,int fee=-2
     // collection/history/title previews do not constitute such a binding.
     // This is an O(1) first-observation bit check, never a catalog scan.
     if(known&&!c.a.library&&!c.a.history_open&&!c.a.title&&c.a.game.world.active&&!c.a.game.practice)c.a.discover_card(card.kind);
-    // Energy labels retain a1px outline above the source energy artwork.
-    const int left=x-6,top=y-4;
+    // Keep the fixed cache window inside the destination, including the
+    // rightmost merchant slot. Its card fits on the LCD, but the usual six
+    // pixels of left padding placed the old 84px window five pixels outside.
+    // The face's offset within this window is part of its identity: the same
+    // card on a plain background must not replay a differently padded copy.
+    const int left=mn(mx(0,x-6),c.clip_w-SmallCardCacheW);
+    const int top=mn(mx(0,y-4),c.clip_h-SmallCardCacheH);
     const bool supported_size=(w==65&&h==91)||(w==69&&h==96)||(w==69&&h==97)||(w==68&&h==96)||(w==46&&h==64)||(w==47&&h==66)||(w==43&&h==61)||(w==36&&h==50)||(w==44&&h==62);
     const bool candidate=known&&!description_truncated&&c.a.content.healthy()&&supported_size&&!c.coverage&&c.opacity==255&&c.brightness==255&&
-        c.tint_red==255&&c.tint_green==255&&c.tint_blue==255&&left>=0&&top>=0&&
-        left+SmallCardCacheW<=c.clip_w&&top+SmallCardCacheH<=c.clip_h;
+        c.tint_red==255&&c.tint_green==255&&c.tint_blue==255&&!c.color_matrix&&left>=0&&top>=0&&
+        x>=left&&y>=top&&x+w<=left+SmallCardCacheW&&y+h<=top+SmallCardCacheH;
     if(!candidate){render_card_face(c,card,x,y,w,h,fee,stars,instance,deck,facts,description,description_truncated,known,upgrade_preview);return;}
     auto&a=c.a;if(!facts)facts=event_card_facts(a.game,card,instance,deck);
     char body[1024]{},localized[1024]{};
@@ -248,6 +253,7 @@ static void draw_card_face(Canvas&c,Card card,int x,int y,int w,int h,int fee=-2
         render_card_face(c,card,x,y,w,h,fee,stars,instance,deck,facts,description,nullptr,known,upgrade_preview);return;}
     SmallCardFaceCache* entry=nullptr;
     for(auto&slot:small_card_faces)if(slot.valid&&slot.owner==&a.content&&slot.generation==a.content.generation()&&slot.width==w&&slot.height==h&&
+        slot.offset_x==x-left&&slot.offset_y==y-top&&
         slot.card.kind==card.kind&&slot.card.upgraded==card.upgraded&&slot.portrait==portrait&&slot.frame==frame&&slot.type==type&&
         slot.energy_image==energy_image&&slot.energy==energy&&slot.stars==star_count&&slot.star_visible==star_visible&&slot.resource_styles==resource_styles&&slot.resource_cross==resource_cross&&
         card_cache_text_equal(slot.title,title)&&card_cache_text_equal(slot.description,description)){
@@ -271,6 +277,7 @@ static void draw_card_face(Canvas&c,Card card,int x,int y,int w,int h,int fee=-2
     if(!entry){render_card_face(c,card,x,y,w,h,fee,stars,instance,deck,facts,description,nullptr,known,upgrade_preview);return;}
     entry->valid=false;entry->owner=&a.content;entry->generation=a.content.generation();entry->seen=small_card_frame;
     entry->card=card;entry->portrait=portrait;entry->frame=frame;entry->type=type;entry->width=uint8_t(w);entry->height=uint8_t(h);
+    entry->offset_x=uint8_t(x-left);entry->offset_y=uint8_t(y-top);
     entry->energy_image=energy_image;entry->energy=energy;entry->stars=star_count;entry->star_visible=star_visible;entry->resource_cross=resource_cross;
     entry->resource_styles=uint8_t(resource_styles);
     card_cache_text_copy(entry->title,title);card_cache_text_copy(entry->description,description);

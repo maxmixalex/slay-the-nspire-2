@@ -222,6 +222,9 @@ static void hover(){
  a.pointer_move(rect.x+10,rect.y+10);a.render();a.pointer_scroll(4096);a.render();
  CHECK(a.history_tooltip.offset==a.history_tooltip.maximum&&a.progress_page_scroll.position==page);
  bool hit=false;for(int i=0;i<a.hit_count;++i)hit|=a.hits[i].kind==HitKind::HistoryJournalScroll;CHECK(hit);
+ // The shorter final page can move the anchored tooltip. Reverse scroll
+ // inside its current rectangle, rather than the first page's old bounds.
+ a.pointer_move(a.history_tooltip.x+10,a.history_tooltip.y+10);a.render();
  a.pointer_scroll(-4096);CHECK(a.history_tooltip.offset==0);a.pointer_move(319,239);a.render();
  CHECK(save(a.game,after)&&before.size==after.size&&!std::memcmp(before.bytes,after.bytes,before.size));
 }

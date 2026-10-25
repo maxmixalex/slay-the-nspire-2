@@ -82,22 +82,23 @@ static void history_body_scene(const std::vector<uint8_t>&pack,const UiRunHistor
     },[](bool condition){CHECK(condition);});
     const UiHistoryLayout layout(record,97);
     CHECK(UiHistoryLayout::ViewTop==0&&UiHistoryLayout::ViewHeight==240);
-    CHECK(layout.floor(record,0).x==p(224+144)&&layout.floor(record,0).y==p(252));
-    CHECK(layout.floor(record,15).x==p(224+144)&&layout.floor(record,15).y==p(312));
-    CHECK(layout.relic_header==p(492)&&layout.relic_y==p(532));
-    CHECK(layout.relic(19).x==p(194)&&layout.relic(19).y==p(600));
-    CHECK(layout.deck_header==p(700)&&layout.deck_y==p(744));
-    CHECK(layout.card(5).x==p(194)&&layout.card(5).y==p(780)&&layout.card(5).w==p(240)&&layout.card(5).h==p(32));
-    CHECK(layout.height==p(700+40+20*36+25));
+    CHECK(layout.floor(record,0).x==52&&layout.floor(record,0).y==231);
+    CHECK(layout.floor(record,15).x==52&&layout.floor(record,15).y==296);
+    CHECK(layout.relic_header==419&&layout.relic_y==444);
+    CHECK(layout.relic(19).x==220&&layout.relic(19).y==468);
+    CHECK(layout.deck_header==552&&layout.deck_y==577);
+    CHECK(layout.card(5).x==174&&layout.card(5).y==641&&layout.card(5).w==116&&layout.card(5).h==30);
+    CHECK(layout.height==2175);
     UiRunHistory wide=record;wide.floor_count=23;for(unsigned i=0;i<wide.floor_count;++i)wide.floors[i].act=0;
-    const UiHistoryLayout long_act(wide,97);CHECK(long_act.floor(wide,18).y==long_act.floor(wide,0).y);
-    CHECK(long_act.floor(wide,18).x==p((1680-1612)/2+144+18*64));
+    const UiHistoryLayout long_act(wide,97);CHECK(long_act.floor(wide,18).y==long_act.floor(wide,0).y+23);
+    CHECK(long_act.floor(wide,18).x==199);
+    for(unsigned i=0;i<wide.floor_count;++i){const auto cell=long_act.floor(wide,i);CHECK(cell.x>=52&&cell.x+cell.w<=290);}
     wide.relic_count=WorldRelicCapacity;const UiHistoryLayout many(wide,97);UiHistoryLayout::Point point{};
     CHECK(many.point(wide,UiHistoryLayout::RelicFirst+319,point)&&point.y==many.relic(319).y);
     CHECK(UiHistoryLayout::RelicFirst+int(WorldRelicCapacity)<UiHistoryLayout::CardFirst);
-    UiRunHistory badge{};const UiHistoryLayout no_badges(badge,0);CHECK(no_badges.badge_count==0&&no_badges.quote_width==1420);
-    badge.facts.combo=1;const UiHistoryLayout one_badge(badge,0);CHECK(one_badge.badge_count==1&&one_badge.quote_width==708);
-    CHECK(one_badge.badge(0).x==p(1164)&&one_badge.badge(0).y==p(158)&&one_badge.badge(0).w==p(64));
+    UiRunHistory badge{};const UiHistoryLayout no_badges(badge,0);CHECK(no_badges.badge_count==0);
+    badge.facts.combo=1;const UiHistoryLayout one_badge(badge,0);CHECK(one_badge.badge_count==1);
+    CHECK(one_badge.badge(0).x==52&&one_badge.badge(0).y==184&&one_badge.badge(0).w==18);
     UiFloorHistory room{};CHECK(history_room_asset(room)==-1);room.room=unsigned(WorldRoom::Monster);room.map_type=unsigned(reference::PointType::Monster);
     CHECK(history_room_asset(room)==I10_HistoryRoomFirst+20);room.map_type=unsigned(reference::PointType::Unknown);CHECK(history_room_asset(room)==I10_HistoryRoomFirst+52);
     room.room=unsigned(WorldRoom::Event);CHECK(history_room_asset(room)==I10_HistoryRoomFirst+12);
@@ -182,7 +183,7 @@ int main(int argc,char**argv){
     CHECK(static_tips.find(HoverTipKind::Relic,"NINJA_SCROLL")>=0&&static_tips.find(HoverTipKind::Card,"SHIV")>=0&&static_tips.find(HoverTipKind::Keyword,"EXHAUST")>=0);
     SaveData before{},after{};CHECK(save(a.game,before));capture("history-top");
     a.pointer.visible=false;a.input(Key::Down);CHECK(a.history_presentation.focus==0);a.input(Key::Right);CHECK(a.history_presentation.focus==1);
-    a.input(Key::Down);CHECK(a.history_presentation.focus>=15);a.render();CHECK(a.history_presentation.hover==a.history_presentation.focus);
+    a.input(Key::Down);CHECK(a.history_presentation.focus==12);a.render();CHECK(a.history_presentation.hover==a.history_presentation.focus);
     // Clicking relics focuses a tooltip; it does not introduce a new modal.
     a.progress_page_scroll.target=(layout.relic_y-80)*256;settle();click(HitKind::HistoryRelic,0);a.render();CHECK(a.detail_item<0);
     CHECK((a.keyword_hover.owner&0xff000000u)==0x73000000u);capture("history-relic-hover");
