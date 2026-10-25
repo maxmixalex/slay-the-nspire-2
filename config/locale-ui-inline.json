@@ -563,6 +563,71 @@
       "source": "十二月",
       "eng": "December",
       "note": "Reviewed zh-CN calendar symbol; selected only by the Chinese date formatter."
+    },
+    {
+      "source": "常规",
+      "eng": "General",
+      "note": "Reviewed Settings fallback; original catalog string is preferred when loaded."
+    },
+    {
+      "source": "输入",
+      "eng": "Input",
+      "note": "Reviewed Settings fallback; original catalog string is preferred when loaded."
+    },
+    {
+      "source": "恢复默认设置",
+      "eng": "Reset to Default",
+      "note": "Reviewed Settings fallback; original catalog string is preferred when loaded."
+    },
+    {
+      "source": "星期日",
+      "eng": "Sunday",
+      "note": "Reviewed locale-specific Continue calendar symbol; English dates use their independent pinned format."
+    },
+    {
+      "source": "星期一",
+      "eng": "Monday",
+      "note": "Reviewed locale-specific Continue calendar symbol; English dates use their independent pinned format."
+    },
+    {
+      "source": "星期二",
+      "eng": "Tuesday",
+      "note": "Reviewed locale-specific Continue calendar symbol; English dates use their independent pinned format."
+    },
+    {
+      "source": "星期三",
+      "eng": "Wednesday",
+      "note": "Reviewed locale-specific Continue calendar symbol; English dates use their independent pinned format."
+    },
+    {
+      "source": "星期四",
+      "eng": "Thursday",
+      "note": "Reviewed locale-specific Continue calendar symbol; English dates use their independent pinned format."
+    },
+    {
+      "source": "星期五",
+      "eng": "Friday",
+      "note": "Reviewed locale-specific Continue calendar symbol; English dates use their independent pinned format."
+    },
+    {
+      "source": "星期六",
+      "eng": "Saturday",
+      "note": "Reviewed locale-specific Continue calendar symbol; English dates use their independent pinned format."
+    },
+    {
+      "source": "上午",
+      "eng": "AM",
+      "note": "Reviewed locale-specific Continue calendar symbol; English dates use their independent pinned format."
+    },
+    {
+      "source": "下午",
+      "eng": "PM",
+      "note": "Reviewed locale-specific Continue calendar symbol; English dates use their independent pinned format."
+    },
+    {
+      "source": "月 ",
+      "eng": "month ",
+      "note": "Reviewed locale-specific Continue calendar symbol; English dates use their independent pinned format."
     }
   ]
 }

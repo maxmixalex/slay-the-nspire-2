@@ -116,6 +116,11 @@ static HitRegion find_hit(HitKind kind,int value){
 }
 static void press(HitKind kind,int value){const auto h=find_hit(kind,value);a.pointer_move(h.x+h.w/2,h.y+h.h/2);a.pointer_button(true);a.pointer_button(false);a.pointer.visible=false;}
 static void action(UiAction value){press(HitKind::UiAction,int(value));}
+static void settings_back(){
+ CHECK(a.settings_open);const auto h=find_hit(HitKind::UiAction,int(UiAction::Back));
+ // The source38px Control begins at-8; the visible30px is a real hit.
+ CHECK(h.x==0&&h.y==173&&h.w==30&&h.h==21);action(UiAction::Back);
+}
 static void menu_rows(unsigned count){
  a.render();unsigned seen=0;for(int i=0;i<a.hit_count;i++)if(a.hits[i].kind==HitKind::Menu){const auto&hit=a.hits[i];CHECK(hit.value>=0&&unsigned(hit.value)<count);
   if(a.title){const int source_y=699+(450-int(count)*50)/2+hit.value*50,expected_y=(source_y*4+10)/21;
@@ -265,7 +270,7 @@ static void main_menu_and_continue(){
  action(UiAction::OpenStandardRun);CHECK(a.character_select&&a.title&&!a.practice_entry);a.render();a.advance(500);capture("frontend-character-select");
  a.input(Key::Back);CHECK(!a.character_select&&a.title&&a.run_mode.screen==RunMenu::Singleplayer);unchanged();
  a.input(Key::Back);CHECK(a.run_mode.screen==RunMenu::Closed);unchanged();
- press(HitKind::Menu,1);CHECK(a.settings_open);action(UiAction::SettingsBack);CHECK(!a.settings_open);unchanged();
+ press(HitKind::Menu,1);CHECK(a.settings_open);settings_back();CHECK(!a.settings_open);unchanged();
  press(HitKind::Menu,2);CHECK(a.compendium_open&&a.title&&!a.library);action(UiAction::LibraryCards);CHECK(a.library&&a.title);
  a.input(Key::Back);CHECK(a.compendium_open&&!a.library);a.input(Key::Back);CHECK(!a.compendium_open&&a.title);unchanged();
  press(HitKind::Menu,3);CHECK(a.frontend_confirm==3&&!a.quit);capture("frontend-quit-confirm");a.input(Key::Confirm);CHECK(!a.frontend_confirm&&!a.quit);unchanged();
@@ -490,7 +495,7 @@ static void modal_isolation_and_fast_mode(){
  a.animation=1000;a.tick_remainder=0;a.busy=a.card_fly=a.feedback=a.notice_ticks=12;a.fast_mode=false;
  a.advance(66);CHECK(a.animation==1002&&a.busy==10&&a.card_fly==10);unchanged();
  action(UiAction::SettingsFastMode);CHECK(a.fast_mode);a.advance(66);CHECK(a.animation==1004&&a.busy==8&&a.card_fly==8);a.render();unchanged();
- action(UiAction::SettingsBack);CHECK(!a.settings_open);a.fast_mode=false;
+ settings_back();CHECK(!a.settings_open);a.fast_mode=false;
 }
 int main(int argc,char**argv){
  std::vector<uint8_t>data;if(argc>1){FILE*f=std::fopen(argv[1],"rb");CHECK(f);data.resize(spire_test::pack_size(f));CHECK(std::fread(data.data(),1,data.size(),f)==data.size());CHECK(!std::fclose(f));}else data=synthetic_profile();

@@ -1,6 +1,7 @@
 #include "app.hpp"
 #include "host_physical_input.hpp"
 #include "settings_layout.hpp"
+#include "settings_focus_oracle.hpp"
 #include "world_run.hpp"
 #include "content_fixture.hpp"
 #include <cstdio>
@@ -45,9 +46,42 @@ static void legacy(){
     uint8_t broken[UiPreferencesBytes];std::memcpy(broken,disk,sizeof disk);broken[8+2*unsigned(InputCommand::Map)]=0;broken[9+2*unsigned(InputCommand::Map)]=0;
     CHECK(!decode_ui_preferences(broken,sizeof broken,loaded));CHECK(!std::memcmp(&loaded.bindings,&app.input_bindings,sizeof loaded.bindings));
 }
+static void focus_pixel(unsigned visible_row,unsigned alpha){
+    app.render();const unsigned at=(settings_layout::input_row(visible_row)+5)*ScreenW+56;
+    const uint16_t painted=app.pixels[at];const auto pointer=app.pointer;const unsigned item=app.settings_item;
+    ButtonMotion motions[MaxButtonMotions];std::memcpy(motions,app.button_motions,sizeof motions);
+    // Isolate the row coverage over the same-time rendered background. The
+    // pixel is left of every glyph and away from the pointer/scrollbar.
+    app.pointer.visible=false;app.settings_item=0;
+    for(auto&motion:app.button_motions)if(settings_focus::owns(motion.identity))motion=ButtonMotion{};
+    app.render();const uint16_t base=app.pixels[at];
+    app.pointer=pointer;app.settings_item=item;std::memcpy(app.button_motions,motions,sizeof motions);
+    const uint16_t source=uint16_t((183u>>3)<<11|63u<<5|31u);
+    const auto mix=[&](unsigned back,unsigned color){return unsigned(std::lround((double(back)*(255-alpha)+double(color)*alpha)/255.0));};
+    const uint16_t expected=uint16_t(mix(base>>11,source>>11)<<11|mix((base>>5)&63,(source>>5)&63)<<5|mix(base&31,source&31));
+    if(painted!=expected)std::fprintf(stderr,"focus pixel row=%u alpha=%u clock=%u pointer=%d item=%u top=%u base=%04x actual=%04x expected=%04x\n",visible_row,alpha,app.map_clock_ms,app.pointer.visible,app.settings_item,app.settings_top,base,painted,expected);
+    CHECK(painted==expected);app.render();
+}
+static void input_focus_transitions(){
+    CHECK(source_settings_focus_timeline());CHECK(app.settings_open&&app.settings_tab==1&&app.settings_top==0);
+    app.pointer_move(150,settings_layout::input_row(0)+5);focus_pixel(0,51);
+    app.pointer_move(150,settings_layout::input_row(1)+5);focus_pixel(0,51);focus_pixel(1,51);
+    app.advance(50);focus_pixel(0,26);focus_pixel(1,51);
+    app.input(Key::Down);CHECK(!app.pointer.visible&&app.settings_item==1);focus_pixel(0,51);focus_pixel(1,51);
+    app.advance(50);focus_pixel(1,26);app.pointer_move(151,settings_layout::input_row(1)+5);focus_pixel(1,51);
+    app.ui_action(UiAction::SettingsScrollDown);app.render();CHECK(app.settings_top==1);focus_pixel(1,51);
+    app.ui_action(UiAction::SettingsScrollUp);app.render();CHECK(app.settings_top==0);focus_pixel(1,51);
+    // Source Back is the visible portion of its partially offscreen node.
+    app.pointer_move(15,183);app.pointer_button(true);app.pointer_button(false);CHECK(!app.settings_open);
+    app.advance(100);app.menu=1;app.input(Key::Confirm);CHECK(app.settings_open&&app.settings_tab==0);
+    app.ui_action(UiAction::SettingsInputTab);app.pointer_move(300,230);focus_pixel(0,0);focus_pixel(1,0);
+    app.pointer_move(150,settings_layout::input_row(0)+5);focus_pixel(0,51);
+    app.ui_action(UiAction::SettingsGeneralTab);app.advance(100);app.ui_action(UiAction::SettingsInputTab);
+    app.pointer_move(300,230);focus_pixel(0,0);unchanged();
+}
 static void settings(){
     new_run(app.game,0x1727,false);snapshot();app.title=true;app.menu=1;app.input(Key::Confirm);CHECK(app.settings_open);
-    app.ui_action(UiAction::SettingsInputTab);CHECK(app.settings_tab==1);CHECK(!hit(unsigned(InputCommand::Select)).enabled);capture("input-mouse-keyboard");
+    app.ui_action(UiAction::SettingsInputTab);CHECK(app.settings_tab==1);CHECK(!hit(unsigned(InputCommand::Select)).enabled);input_focus_transitions();capture("input-mouse-keyboard");
     click(unsigned(InputCommand::Map));CHECK(app.binding_listening==int(InputCommand::Map)&&app.binding_bank==0);capture("input-listening");
     const unsigned saved=writes;press('a');CHECK(app.settings_open&&app.binding_listening<0&&writes==saved+1);
     CHECK(app.input_bindings.keys[0][unsigned(InputCommand::Map)]=='A'&&app.input_bindings.keys[0][unsigned(InputCommand::Draw)]=='M');unchanged();

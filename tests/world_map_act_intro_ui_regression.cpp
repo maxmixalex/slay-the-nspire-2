@@ -58,6 +58,11 @@ static HitRegion hit(HitKind kind,int value,bool enabled=true){
     CHECK(found&&found->enabled==enabled);return *found;
 }
 static void click(HitKind kind,int value){const auto h=hit(kind,value);app.pointer_move(h.x+h.w/2,h.y+h.h/2);app.pointer_button(true);app.pointer_button(false);}
+static void settings_back(){
+    CHECK(app.settings_open);const auto h=hit(HitKind::UiAction,int(UiAction::Back));
+    CHECK(h.enabled&&h.x==0&&h.y==173&&h.w==30&&h.h==21);
+    click(HitKind::UiAction,int(UiAction::Back));CHECK(!app.settings_open);
+}
 static void capture(const char*name){
     if(!screenshots)return;app.pointer.visible=false;app.render();const std::string path=std::string(screenshots)+"/"+name+".ppm";
     FILE*f=std::fopen(path.c_str(),"wb");CHECK(f);std::fprintf(f,"P6\n320 240\n255\n");unsigned char row[ScreenW*3];
@@ -68,7 +73,7 @@ static void new_game(bool fast=false,uint32_t clock=1000){
     app.map_clock_ms=clock;app.animation=app.tick_remainder=0;app.run_number=0;
     app.selected_character=Character::Ironclad;app.selected_region=reference::ActKind::Overgrowth;app.selected_ascension=0;app.selected_seed[0]=0;
     app.return_to_title();app.forget_run_checkpoint();CHECK(app.title&&!app.has_save);
-    if(fast){click(HitKind::Menu,1);click(HitKind::UiAction,int(UiAction::SettingsFastMode));click(HitKind::UiAction,int(UiAction::SettingsBack));}
+    if(fast){click(HitKind::Menu,1);click(HitKind::UiAction,int(UiAction::SettingsFastMode));settings_back();}
     click(HitKind::Menu,0);CHECK(app.run_mode.screen==RunMenu::Singleplayer&&!app.character_select);
     click(HitKind::UiAction,int(UiAction::OpenStandardRun));CHECK(app.character_select);app.render();advance_ms(350);click(HitKind::UiAction,int(UiAction::StartCharacter));
     CHECK(!app.title&&app.game.original_events.id==OriginalEventId::Neow&&app.game.world.total_floor==1);
@@ -129,7 +134,7 @@ static void top_bar_and_fast(){
     // Camera durations are readonly MapScreen-construction values; the
     // branch decision and each banner instead read the current preference.
     new_game(true);app.input(Key::Back);CHECK(app.paused);click(HitKind::Menu,1);
-    click(HitKind::UiAction,int(UiAction::SettingsFastMode));click(HitKind::UiAction,int(UiAction::SettingsBack));click(HitKind::Menu,0);
+    click(HitKind::UiAction,int(UiAction::SettingsFastMode));settings_back();click(HitKind::Menu,0);
     CHECK(!app.fast_mode&&!app.paused&&app.map_act_intro.fast_at_construction);proceed_neow();snapshot();
     CHECK(app.map_act_intro.camera_running&&app.map_act_intro.delay()==500&&!app.map_act_intro.banners[0].fast);
     advance_ms(874);CHECK(!app.map_act_intro.interruptible);app.advance(1);CHECK(app.map_act_intro.interruptible);

@@ -1,6 +1,7 @@
 #pragma once
 #include "reference_viewport.hpp"
 #include "input_bindings.hpp"
+#include "settings_focus.hpp"
 
 namespace spire::settings_layout {
 using reference_viewport::project;

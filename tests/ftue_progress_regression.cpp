@@ -136,5 +136,5 @@ static void maximum(){
 int main(int argc,char**argv){
  if(argc==3&&!std::strcmp(argv[1],"--export"))export_directory=argv[2];
  else if(argc!=1){std::fprintf(stderr,"usage: ftue_progress_regression [--export EXISTING_DIRECTORY]\n");return 2;}
- migration();profiles_and_preference();maximum();std::printf("FTUE progress: %u checks passed, per-profile semantics and NSH1-8 migration.\n",checks);
+ migration();profiles_and_preference();maximum();std::printf("FTUE progress: %u checks passed, per-profile semantics and NSH1-9 migration.\n",checks);
 }

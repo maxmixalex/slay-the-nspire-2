@@ -1,5 +1,43 @@
 # Work state — 2026-10-25
 
+## UI10h closes the G acceptance findings
+
+G is remotely preserved at `7d159cb4534c7923c10f1e5570a1befea1c9d687`,
+tree `20460e9f30fc5cc256fa7f3d12653e0e2329deda`; main remains the accepted F
+baseline. The matching G ARM and WASM gates pass. The launcher is1,485,615
+bytes and its actual Zehn-prefix+image+BSS allocation is16,247,324 bytes,
+leaving529,892 bytes below the unchanged16MiB ceiling. Linked ARM division,
+LZMA2, tile and retained-filter regressions pass; WASM is6,761,143 bytes.
+
+G native passes118/120 suites in84.92 seconds. Instrumented production hits
+confirm that the two failed UI tests request the former SettingsBack action
+after Settings adopted the original Back control. H clicks the actual Back
+and adds the strict clipped(0,173,30,21) bounds; both short corrected tests
+pass. The original missing-hit failures remain in their receipts. G Python runs250
+tests with one error: thirteen new Chinese Settings/date fallback literals
+need reviewed inline locale bindings. The subsequent54-test gate was not
+executed. The missing bindings are now reviewed without moving old pack
+string indexes.
+
+The first G resource conversion fails on the new9px source heading band,
+which the offline glyph geometry grammar had not admitted. H keeps old
+formats strict: append the86 original images to create NSP2/39 first, then
+append the exact fonts and compact only their new payload. This retains the
+same old artwork, catalog identities and bounded runtime directory. The
+failed G conversion produced no accepted resource set.
+
+H also closes the explicitly identified History room-icon tilt/hover
+rotation and Input-settings focus-release motion where supported by the
+pinned source. All H code, resources, actual bilingual UI, ordinary browser,
+updated NSH9 capacity and normal cloned-OS flows remain pending until a
+matching frozen H checkpoint is built and executed. The completed F proofs
+are not substituted for these new gates.
+
+The web storage regression retains the maximum295,349-byte NSH8 case and
+adds the295,885-byte NSH9 case, including denied writes, interrupted profile
+deletion and recovery in another host instance. Its opaque-byte short check
+passes; the frozen H execution must also use both valid C++ exported records.
+
 ## UI10g follows the fully accepted F baseline
 
 F is now verified on both `main` and `work/0.17-world-parity` at

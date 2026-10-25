@@ -66,13 +66,13 @@ metadata is invented for excluded Timeline/platform achievements.
 
 | Surface | Remaining difference or unverified scope | Next action |
 | --- | --- | --- |
-| G source batch | Compendium press, History body/art/quote/badges, actual recorded BuildId and separately observed Continue SaveTime are implemented in current source. | Freeze G, append its exact required fonts and64 original History images, then run matching two-language native/browser acceptance. |
+| G/H source batch | Compendium press, History body/art/quote/badges, observed BuildId/Continue SaveTime and bounded room-icon rotation are implemented. G exposed the missing9px offline grammar; H preserves the failure and admits that exact band only in format39. | Freeze H, append39 artwork before its exact fonts, then run matching two-language native/browser acceptance. |
 | Profile/history time zone | The source converts timestamps to the host's local time zone; the port uses UTC. | Supply a bounded host calendar conversion interface if local-zone parity is required on every host. |
-| History icon rotation | Source room icons receive a small UI-only chaotic Gaussian tilt, which eases to zero on focus. G restores their original artwork, outline colors and scale but keeps their angle upright. | Add bounded presentation-only angle state and source easing without consuming canonical run RNG. |
+| History icon rotation | H restores the conditional-normal angle distribution, random initial sign,50ms focus and1000ms unfocus rotation for icon, outline and quest child. Angles use1/16-degree quantization and Q10 inverse sampling at LCD resolution. | Run matching actual39 artwork and ordinary browser gates; retain the quantization and existing eight-transition presentation bound as explicit limits. |
 | History partial metadata | Older or evicted floor journal facts remain unavailable. New BuildId is the actual port identifier recorded at new-run creation; pre-metadata records retain an unknown dash. | Preserve unknown handling and verify old/new optional metadata codecs in matching G. |
 | Continue observed save time | G records successful canonical writes separately from profile/settings updates and restores the source weekday/month/date/time format. Its90px date rectangle is top aligned so longer dates do not shift upward. | Verify the new metadata on real save/reload/Continue paths; old timestamps remain unknown. |
-| Chinese regular FontVariation | The source Chinese Regular resource also contains a0.95 transform and−0.05 baseline offset. The current packed raster/oracles establish exact selected font keys and LCD composition, without reproducing this Godot variation transform. | Bake and independently compare the source variation metrics before asserting full font raster equivalence. |
-| Settings and run setup | Prior preference/input behavior remains implemented, but this batch is not a renewed per-node typography audit of all settings/custom/daily controls. | Enumerate visible normal/bold roles and check exact widths, dropdowns and focus states in the matched build. |
+| Chinese regular FontVariation | The source resource declares a0.95 transform and−0.05 baseline offset. The targeted Godot experiment found the same advance/ascent/descent as its base at12 sampled sizes; this does not establish identical glyph ink. | Retain the exact face/size coverage and independently compare glyph ink before asserting full font raster equivalence. |
+| Settings and run setup | G/H restores source tabs, General/Input panels, language dropdown, Singleplayer cards and Custom/Daily typography, geometry and focus behavior. See `settings-run-setup-ui10-0.17.md`. | Run matching H source/fonts/artwork and browser checks; retain the documented4px Daily readability floor and excluded online leaderboards. |
 | Bestiary previews | Every phase-specific multi-creature preview and secondary visual effect has not been independently replayed. | Drive the remaining actual move/state contexts, keeping preview state detached from the run. |
 | Original-frame and device scope | E native, actual bilingual and ordinary browser gates pass at the checkpoint below. These source-derived tests do not establish unmodified Godot-frame equality or physical-calculator timing. | Keep original-frame comparison and ordinary calculator capacity/save execution as separate evidence; do not turn passing-test counts into a restoration percentage. |
 
@@ -214,3 +214,42 @@ are retained and both glyphs are required by the new font metadata; neither
 oracle is relaxed. Earlier Chinese body/header checks passed before the final
 quote-band case was added. Final acceptance must use G's complete matching
 font and artwork append.
+
+## H strict font band and room rotation
+
+G's first formal font conversion failed because the modern offline parser
+omitted the new9px source heading band. H admits9 only in NSP2/39, including
+the actual Spectral encoded band41. Formats33–38 still reject9; zero or
+oversized glyph geometry, unsupported11px bands, key ordering and payload
+bounds remain checked. Legacy20–23 glyph-tail relocation does not accept
+modern packs and needs no expanded grammar. Runtime font selection already
+discovers bounded present bands; generic fitting still excludes sparse9px.
+The corrected resource order appends39 artwork before fonts and compacts
+only the new glyph payload against that39 artwork baseline.
+
+`NMapPointHistoryEntry` uses a standard normal conditioned on[0,1], then
+multiplies by5; its random initial sign is independent of the positive base
+angle restored on unfocus. H follows that distribution with16-bit CDF
+thresholds and1/16-degree angle steps. Focus kills the previous tween and
+rotates to zero in50ms ExpoOut; unfocus resumes the sampled angle and rotates
+to the positive base over1000ms. A private cosmetic seed and96 visited bits
+fit in the124-byte existing bounded presentation. They never enter canonical
+state or consume saved RNG. Retiring a transition keeps the post-hover
+positive angle and outline alpha64 instead of restoring the initial sign or
+alpha47. At most eight concurrent transitions are retained, as before.
+
+The room icon, its outline and quest child rotate about the parent's authored
+32px pivot. The quest position rotates with its parent, rather than only
+rotating the child's texture. Small LCD boxes use an explicit half-pixel
+alignment and exact rational stepping, avoiding a shifted zero-angle image
+or an extra edge pixel at odd scale ratios. Q10 sine/cosine values and
+nearest sampling are explicit raster adaptations. Other UI transforms retain
+their original hot loop and pixel convention; no image pool was added.
+
+H short checks pass: three font-schema tests,66,076 independent distribution/
+timeline checks,4,147,254 synthetic texture comparisons and syntax for the
+actual App and History regression units. The synthetic comparisons use a
+direct inverse matrix, positive/negative/zero angles,9/12/13px boxes, screen
+edges and nested opacity; they also protect the legacy transform pixels.
+These standalone checks link no prior App core. Matching H full native,
+actual two-language resources and ordinary browser acceptance remain pending.

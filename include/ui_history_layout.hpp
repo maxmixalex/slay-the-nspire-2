@@ -79,10 +79,43 @@ struct UiHistoryLayout {
  }
  int first(const UiRunHistory&r)const{return r.floor_count?0:r.relic_count?RelicFirst:groups?CardFirst:-1;}
 };
+namespace history_angle {
+inline uint32_t mix(uint32_t value){value^=value>>16;value*=0x7feb352du;value^=value>>15;value*=0x846ca68bu;return value^(value>>16);}
+inline int gaussian(unsigned uniform){
+ // Rng.NextGaussianFloat(0,1,0,5) conditions the normal sample on[0,1]
+ // BEFORE scaling. CDF thresholds quantize that distribution to1/16 degree,
+ // rather than clamp an unbounded normal. No libm, rejection loop or RNG
+ // belonging to the run is involved. Thresholds are rounded at16-bit ULPs.
+ static constexpr uint16_t cdf[]={479,1436,2393,3350,4306,5262,6216,7170,8123,9074,10024,10973,11919,12864,13807,14748,
+  15686,16622,17556,18487,19415,20340,21261,22180,23095,24007,24915,25820,26720,27617,28509,29398,30281,31161,32035,32905,
+  33771,34631,35486,36336,37181,38021,38855,39684,40507,41324,42136,42941,43741,44535,45322,46104,46879,47648,48410,49166,
+  49915,50658,51394,52124,52846,53562,54271,54973,55669,56357,57038,57712,58380,59040,59692,60338,60977,61608,62232,62849,
+  63459,64062,64657,65245};
+ unsigned low=0,high=80;while(low<high){const unsigned mid=(low+high)/2;if(uniform<cdf[mid])high=mid;else low=mid+1;}return int(low);
+}
+struct Rotation{int sine,cosine;};
+inline Rotation rotation(int angle){
+ // round(sin(n*pi/2880)*1024), n=0..80; cosine has the same rounded
+ // value as round(cos(...)*1024). Fixed Q10 sampling is shared with the
+ // other small original UI textures, with no image buffer allocation.
+ static constexpr uint8_t sine[]={0,1,2,3,4,6,7,8,9,10,11,12,13,15,16,17,18,19,20,21,22,23,25,26,27,28,29,30,31,32,34,35,
+  36,37,38,39,40,41,42,44,45,46,47,48,49,50,51,52,54,55,56,57,58,59,60,61,63,64,65,66,67,68,69,70,71,73,74,75,76,77,
+  78,79,80,81,83,84,85,86,87,88,89};
+ const unsigned magnitude=unsigned(angle<0?-angle:angle),sn=sine[magnitude>80?80:magnitude];
+ return {angle<0?-int(sn):int(sn),1024-int((sn*sn+1024)/2048)};
+}
+}
 struct UiHistoryPresentation {
- struct Motion{uint32_t start=0;int16_t id=-1;uint16_t from=1000;bool focus=false;uint8_t from_color=0,from_alpha=47;};
+ struct Motion{uint32_t start=0;int16_t id=-1;uint16_t from=1000;bool focus=false;uint8_t from_color=0,from_alpha=47;int8_t from_angle=0;};
  Motion motions[8]{};int16_t focus=-1,hover=-1;uint32_t start=0;int8_t direction=0;
- void open(uint32_t now,int next=0){*this=UiHistoryPresentation{};start=now;direction=int8_t(next);}
+ uint32_t cosmetic_seed=0x6c8e9cf5u,visited[3]{};
+ void open(uint32_t now,int next=0){const uint32_t seed=history_angle::mix(cosmetic_seed^now^0x9e3779b9u);*this=UiHistoryPresentation{};start=now;direction=int8_t(next);cosmetic_seed=seed;}
+ bool touched(int id)const{return id>=0&&id<int(UiHistoryFloors)&&(visited[id/32]&(uint32_t(1)<<(id%32)));}
+ uint32_t random(int id)const{return history_angle::mix(cosmetic_seed+uint32_t(id)*0x9e3779b9u);}
+ int base_angle(int id)const{return id>=0&&id<int(UiHistoryFloors)?history_angle::gaussian(random(id)>>16):0;}
+ int angle(const Motion&m,uint32_t now)const{return room_curve::interpolate(m.from_angle,m.focus?0:base_angle(m.id),room_curve::expo_out(now-m.start,m.focus?50:1000));}
+ int angle(int id,uint32_t now)const{if(id<0||id>=int(UiHistoryFloors))return 0;for(const auto&m:motions)if(m.id==id)return angle(m,now);
+  const int base=base_angle(id);return touched(id)||(random(id)&1)?base:-base;}
  unsigned sample(const Motion&m,uint32_t now)const{
   const unsigned duration=m.focus?50:m.id<UiHistoryLayout::RelicFirst?1000:500;
   const unsigned q=m.focus&&m.id>=UiHistoryLayout::CardFirst?room_curve::linear(now-m.start,duration):room_curve::expo_out(now-m.start,duration);
@@ -94,7 +127,7 @@ struct UiHistoryPresentation {
   return {unsigned(room_curve::interpolate(m.from_color,m.focus?255:0,q)),unsigned(room_curve::interpolate(m.from_alpha,m.focus?128:64,q))};
  }
  void animate(int id,bool selected,uint32_t now){
-  if(id<0)return;Motion*slot=nullptr;
+  if(id<0)return;const int from_angle=angle(id,now);Motion*slot=nullptr;
   for(auto&m:motions)if(m.id==id){slot=&m;break;}
   if(!slot)for(auto&m:motions)if(m.id<0||(!m.focus&&now-m.start>=1000)){slot=&m;break;}
   if(!slot){slot=&motions[0];for(auto&m:motions)if(now-m.start>now-slot->start)slot=&m;}
@@ -102,12 +135,13 @@ struct UiHistoryPresentation {
   // floor icons kill and resume the preceding tween at its current value.
   const bool card=id>=UiHistoryLayout::CardFirst&&id<UiHistoryLayout::BadgeFirst;
   const unsigned from=slot->id==id?(card?(slot->focus?1500:1000):sample(*slot,now)):1000;
-  const auto ink=slot->id==id?outline(*slot,now):Outline{0,47};
-  *slot={now,int16_t(id),uint16_t(from),selected,uint8_t(ink.color),uint8_t(ink.alpha)};
+  const auto ink=slot->id==id?outline(*slot,now):Outline{0,touched(id)?64u:47u};
+  *slot={now,int16_t(id),uint16_t(from),selected,uint8_t(ink.color),uint8_t(ink.alpha),int8_t(from_angle)};
+  if(selected&&id<int(UiHistoryFloors))visited[id/32]|=uint32_t(1)<<(id%32);
  }
  void observe(int id,uint32_t now){if(id==hover)return;animate(hover,false,now);hover=int16_t(id);animate(id,true,now);}
  unsigned scale(int id,uint32_t now)const{for(const auto&m:motions)if(m.id==id)return sample(m,now);return 1000;}
- Outline outline(int id,uint32_t now)const{for(const auto&m:motions)if(m.id==id)return outline(m,now);return {0,47};}
+ Outline outline(int id,uint32_t now)const{for(const auto&m:motions)if(m.id==id)return outline(m,now);return {0,touched(id)?64u:47u};}
  unsigned alpha(uint32_t now)const{return 255*room_curve::linear(now-start,400)/room_curve::Q;}
  int offset(uint32_t now)const{return direction*190*int(room_curve::Q-room_curve::expo_out(now-start,500))/int(room_curve::Q);}
 };

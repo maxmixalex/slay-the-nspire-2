@@ -6,7 +6,7 @@
     "dll_sha256": "0861bfa1df347538d932f22d580e75420f08082792eb914e53b4882764acdbe9"
   },
   "supersedes": "ui7-original-ui-inventory-0.17.json",
-  "source_stage": "UI10F matched front/browser acceptance is preserved. UI10G source now implements Compendium whole-parent press modulation and the remaining History body, original room artwork append, death quote/badge strip and observed BuildId/Continue SaveTime integration. Matching frozen G fonts/art/native/browser acceptance is pending; short diagnostics retain exact missing-new-glyph failures instead of weakening oracles.",
+  "source_stage": "UI10F matched front/browser acceptance is preserved. G implements Compendium press, History body/art/quote/badges, Settings/run setup and observed BuildId/Continue SaveTime. G formal resource conversion failed on the newly required9px band. H keeps that failure, admits9 only in39 and restores bounded History room-icon rotation. Matching frozen H full builds/resources/actual UI/browser acceptance is pending; standalone checks are not substituted.",
   "scope": {
     "excluded": [
       "audio",
@@ -107,8 +107,8 @@
       ],
       "contract": "Modifier/seed setup and real start",
       "assessment": "implemented_with_documented_limits",
-      "implemented": "Original Custom screen, editable seed/character/modifiers, all mode hooks, Neow setup choices and persistent run options.",
-      "remaining": "A renewed per-node typography/geometry audit of every custom/daily control remains separate; source modifier behavior and manual Sealed Deck selection pass matching E gates.",
+      "implemented": "Original Custom screen, editable seed/character/modifiers, all mode hooks, Neow setup choices and persistent run options. G/H restores the authored9px Custom/Daily headings,7px sections,5px body fields, portrait/Ascension layout, modifier controls and source menu focus behavior; see settings-run-setup-ui10-0.17.md.",
+      "remaining": "Matching H source/fonts/artwork/browser acceptance is pending. The4px Daily readability floor and excluded online leaderboards remain explicit adaptations; no full font-raster equality is claimed.",
       "regressions": [
         "run_modes_ui8_regression",
         "neow_modifiers_ui8_regression",
@@ -228,8 +228,8 @@
       ],
       "contract": "Historical run navigation, per-floor map/deck/relic details",
       "assessment": "implemented_with_documented_limits",
-      "implemented": "Observed summaries, map/deck/relic carousel and bounded journal remain. UI10 restores Chinese calendar contents. E replaces the enlarged two-row summary with source24/32px rich information/counters, source right alignment and HBox minimums/colors, selected portrait/Ascension, original potion backdrop/slots and format38 custom/daily lock. Full singleplayer game-mode markup is restored; unavailable recorded BuildId displays an unknown dash. G restores fixed5px chapter/section labels, original rarity summaries,60px non-wrapping act entries,19-column68px relic holders, five-column240x32px card entries,4/5px fitting and authored ellipsis, source tiny-card/enchantment geometry/colors and fast-forward card focus. The source death quote/badge HBox uses recorded values, source size/visibility/hover and no live-state substitution. Format39 appends64 original room/outline images; old packs keep a fallback. New runs record the actual port BuildId, while old records stay unknown.",
-      "remaining": "Matching G39 source/font/art acceptance is pending. Source UI-only Gaussian room-icon tilt is still upright, although scale and outline color/alpha are restored. Local time zone remains UTC. Old/evicted floor journal facts remain partial, and pre-metadata BuildId stays unknown. Source16px quote fitting uses the documented4px readability floor.",
+      "implemented": "Observed summaries, map/deck/relic carousel and bounded journal remain. UI10 restores Chinese calendar contents. E replaces the enlarged two-row summary with source24/32px rich information/counters, source right alignment and HBox minimums/colors, selected portrait/Ascension, original potion backdrop/slots and format38 custom/daily lock. Full singleplayer game-mode markup is restored; unavailable recorded BuildId displays an unknown dash. G restores fixed5px chapter/section labels, original rarity summaries,60px non-wrapping act entries,19-column68px relic holders, five-column240x32px card entries,4/5px fitting and authored ellipsis, source tiny-card/enchantment geometry/colors and fast-forward card focus. The source death quote/badge HBox uses recorded values, source size/visibility/hover and no live-state substitution. Format39 appends64 original room/outline images; old packs keep a fallback. New runs record the actual port BuildId, while old records stay unknown. H restores UI-only conditional-normal room-icon tilt with random initial sign,50ms ExpoOut hover-to-zero and1000ms recovery to the positive base; icon/outline/quest transform together. Presentation remains124B with independent cosmetic state.",
+      "remaining": "Matching H39 source/font/art acceptance is pending. Angles are quantized to1/16 degree, matrix coefficients toQ10 and raster positions to the LCD; the existing eight-transition bound remains. Local time zone remains UTC. Old/evicted floor journal facts remain partial, and pre-metadata BuildId stays unknown. Source16px quote fitting uses the documented4px readability floor.",
       "regressions": [
         "history_ui8_regression",
         "run_history_journal_ui8_regression",
@@ -238,7 +238,7 @@
         "test_history_body_ui10_assets",
         "run_metadata_regression"
       ],
-      "acceptance": "Frozen E native checks pass: history_ui8_regression, run_history_journal_ui8_regression, run_history_acquisition_regression, map_drawing_ui_regression. Both matching E format38 actual packs pass: history_ui8_regression, run_history_journal_ui8_regression, map_drawing_ui_regression. F front actual checks also pass both languages. G source syntax/synthetic asset tests and62 no-pack navigation checks pass. Mixed E-pack diagnostics expose the newly required English4px U+22EF and Chinese4px U+7D2F; both are in required font metadata, and matching G resources are still required."
+      "acceptance": "Frozen E native checks pass: history_ui8_regression, run_history_journal_ui8_regression, run_history_acquisition_regression, map_drawing_ui_regression. Both matching E format38 actual packs pass: history_ui8_regression, run_history_journal_ui8_regression, map_drawing_ui_regression. F front actual checks also pass both languages. G source syntax/synthetic asset tests and62 no-pack navigation checks pass. Mixed E-pack diagnostics expose the newly required English4px U+22EF and Chinese4px U+7D2F; both are in required font metadata, and matching G resources are still required. H standalone motion/distribution/rotation and synthetic inverse-matrix/legacy-pixel checks pass; no matching H release result is implied."
     },
     {
       "id": "profiles",
@@ -1514,5 +1514,15 @@
       }
     ],
     "required_next": "Freeze G, append exact missing fonts and original39 images, execute matching native, both-language actual resources and ordinary browser."
+  },
+  "verification_ui10h_front_short": {
+    "scope": "Standalone production presentation/transform with independent mathematical oracle and App/History source syntax; no old linked App core",
+    "scene_font_schema_tests": 3,
+    "motion_distribution_timeline_checks": 66076,
+    "picture_inverse_matrix_legacy_checks": 4147254,
+    "presentation_bytes": 124,
+    "syntax": "pass",
+    "private_receipt": "/tmp/slay-ui10h-front-short/short-receipt.json",
+    "required_next": "Matching frozen H native39 resources, bilingual actual front targets and ordinary offline browser."
   }
 }

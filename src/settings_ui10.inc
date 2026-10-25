@@ -2,11 +2,15 @@ static void target_reticle_corner(Canvas&,const Picture&,int,int,int,bool,bool,u
 // The existing bounded motion slots also hold the small Settings controls.
 // NTickbox uses50ms linear focus and500ms EXPO_OUT release/press. A tab's
 // focus is immediate; it has no press animation.
-static ButtonVisual setup_control_visual(App&a,uint32_t key,bool focus,bool pressed,bool tab=false){
+static ButtonMotion& setup_control_motion(App&a,uint32_t key){
  ButtonMotion*motion=nullptr,*oldest=&a.button_motions[0];
  for(auto&candidate:a.button_motions){if(candidate.identity==key){motion=&candidate;break;}
   if(!candidate.identity)oldest=&candidate;else if(oldest->identity&&uint32_t(a.map_clock_ms-candidate.seen)>uint32_t(a.map_clock_ms-oldest->seen))oldest=&candidate;}
  if(!motion)motion=oldest;
+ return *motion;
+}
+static ButtonVisual setup_control_visual(App&a,uint32_t key,bool focus,bool pressed,bool tab=false){
+ auto*motion=&setup_control_motion(a,key);
  if(motion->identity!=key){*motion=ButtonMotion{};motion->identity=key;motion->start=a.map_clock_ms;}
  const auto sample=[&](){ButtonVisual to;const bool hover=motion->state==ButtonState::Focus,press=motion->state==ButtonState::Press;
   to.scale=hover?4301:press?3891:4096;to.value=hover?1200:press?800:1000;to.hover=hover?4096:0;
@@ -67,6 +71,7 @@ static void frontend_settings_screen(Canvas&c){
   if(focus&&!a.pointer.visible)settings_reticle(c,x,y,ControlWidth,RowHeight);
   c.action(x,y,ControlWidth,RowHeight,action);};
  if(!a.settings_tab){
+  settings_focus::blur_rows(a.button_motions,MaxButtonMotions,a.map_clock_ms);
   a.settings_top=0;
   const char*keys[]={a.title?"LANGUAGE":"LANGUAGE_IN_RUN","SCREENSHAKE","FASTMODE","PHOBIA_MODE","SHOW_RUN_TIMER_HEADER","SHOW_HAND_CARD_COUNT_HEADER","TEXT_EFFECTS","SEND_FEEDBACK","CREDITS","INPUT_SETTINGS.RESET_TO_DEFAULT"};
   const char*eng[]={a.title?"Language":"Language (main menu only)","Screenshake","Fast Mode","Phobia Mode","Show Run Timer","Show Hand Card Count","Text Effects","Send Feedback","Credits","Reset to Default"};
@@ -106,9 +111,19 @@ static void frontend_settings_screen(Canvas&c){
   const char*headers[]={label("INPUT_SETTINGS.MOUSE_KEYBOARD_HEADER","Mouse + Keyboard","鼠标与键盘"),label("INPUT_SETTINGS.KEYBOARD_ONLY_MODE_HEADER","Keyboard-Only","纯键盘")};
   for(unsigned b=0;b<2;++b)profile_text_box(c,headers[b],binding_left(b),InputHeaderTop,BindingWidth,InputHeaderHeight,header,true,false);
   const unsigned bank=a.keyboard_only&&!a.pointer.visible?1:0;
+  int focused_command=-1;
+  for(unsigned i=a.settings_top;i<InputCommandCount&&i<a.settings_top+InputVisible;++i){const unsigned visible=i-a.settings_top;
+   const int y=input_row(visible),height=input_row(visible+1)-y;
+   if(pointed(InputPanelLeft,y,InputWidth,height)||(!a.pointer.visible&&a.settings_item==i+1))focused_command=int(i);
+  }
+  // Commands retain identity when they scroll. An offscreen old focus starts
+  // its release here, rather than waiting until that row becomes visible.
+  settings_focus::blur_rows(a.button_motions,MaxButtonMotions,a.map_clock_ms,focused_command<0?0:settings_focus::identity(unsigned(focused_command)));
   for(unsigned i=a.settings_top;i<InputCommandCount&&i<a.settings_top+InputVisible;++i){const unsigned visible=i-a.settings_top;const int y=input_row(visible),height=input_row(visible+1)-y;
-   const bool enabled=input_remappable(bank,i),focus=pointed(InputPanelLeft,y,InputWidth,height)||(!a.pointer.visible&&a.settings_item==i+1);
-   if(focus){Canvas highlight=c;highlight.opacity=51;highlight.rect(InputPanelLeft,y,InputWidth,height,rgb(183,255,255));}
+   const bool enabled=input_remappable(bank,i),focus=focused_command==int(i);
+   const uint32_t key=settings_focus::identity(i);
+   const unsigned alpha=settings_focus::observe(setup_control_motion(a,key),key,focus,a.map_clock_ms);
+   if(alpha){Canvas highlight=c;highlight.opacity=uint8_t(div255(unsigned(c.opacity)*alpha));highlight.rect(InputPanelLeft,y,InputWidth,height,rgb(183,255,255));}
    ProfileTextStyle item{LabelFont,0,cream,64};item.tracking_source=english?1:0;
    const char*command=a.input_command_title(i);int command_width=0,characters=0;RichReader reader(command);RichChar ch{};
    while(reader.next(ch)){command_width+=a.content.glyph_metrics(ch.codepoint,LabelFont,0).advance;++characters;}

@@ -38,6 +38,38 @@ class Labels:
 
 
 class SceneFontsTest(unittest.TestCase):
+    def test_nine_pixel_heading_is_versioned_without_weakening_geometry(self):
+        before, auxiliary = original_with_flavor_keys()
+        source = bytearray(before)
+        struct.pack_into('<I', source, 4, 39)
+        # Ordinary Chinese and authored English Spectral share the low band
+        # while retaining their independent face bits and exact coverage.
+        additions = [(0x20000 + face, band | 9, 2, 2, 3, 0,
+                      bytes((0, 127, 255, 63))) for face, band in ((0, 0), (4, 32))]
+        after = library.rewrite_directory(bytes(source), auxiliary, set(), additions,
+                                          output_version=39)
+        current = tiles.PackView(after, auxiliary, versions=(39,))
+        self.assertTrue(library.verify_preserved(bytes(source), after, auxiliary,
+                                                set())['exact_complete_old_payload'])
+        for face, band in ((0, 0), (4, 32)):
+            index = next(i for i, row in enumerate(current.glyphs) if row[0] == 0x20000 + face)
+            self.assertEqual(current.glyph_alpha(index), bytes((0, 127, 255, 63)))
+            at = current.glyph_at + index * tiles.GLYPH.size
+            for offset, fmt, value in ((10, '<B', 0), (11, '<B', 0),
+                                       (10, '<B', 41), (11, '<B', 41),
+                                       (12, '<H', 41), (8, '<H', band | 11)):
+                with self.subTest(face=face, offset=offset, value=value):
+                    malformed = bytearray(after)
+                    struct.pack_into(fmt, malformed, at + offset, value)
+                    with self.assertRaisesRegex(ValueError, 'Invalid glyph geometry'):
+                        tiles.PackView(malformed, auxiliary, versions=(39,))
+        for version in (33, 34, 35, 36, 37, 38):
+            with self.subTest(version=version):
+                old = bytearray(after)
+                struct.pack_into('<I', old, 4, version)
+                with self.assertRaisesRegex(ValueError, 'Invalid glyph geometry'):
+                    tiles.PackView(old, auxiliary, versions=(version,))
+
     def test_source_label_faces_and_template_alphabets(self):
         required = scene.requirements(Labels())
         for px, face in ((7,0),(6,5),(5,0),(5,5),(4,0)):

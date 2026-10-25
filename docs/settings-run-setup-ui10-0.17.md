@@ -58,6 +58,13 @@ layout uses bounded32-line stack bookkeeping and draws each glyph before
 requesting the next glyph; it does not hold cache-owned pixel pointers across
 reads. No resident pixel or text buffer is added by this batch.
 
+The H follow-up closes the Input-row focus-release gap: the row appears at
+alpha0.2 immediately and fades linearly to zero over100ms. Refocus kills the
+interrupted fade. Command identity remains stable when scrolling, and closing
+Settings or leaving Input releases its owned slots without touching other
+controls. The independent floating-point timeline and composed pixel checks
+cover pointer-to-keyboard transitions, interruption, scrolling and reopening.
+
 ## Evidence and remaining limits
 
 A private Godot4.5.1 layout experiment with the original fonts measured the
@@ -78,6 +85,5 @@ The supported Settings panels remain General and Input; unsupported audio,
 graphics and controller panels are not fabricated. Offline Daily leaderboards
 remain explicitly unavailable. The very small Daily Ascension number keeps
 the established4px calculator minimum instead of its approximately3px source
-projection. Input-row focus release currently clears immediately rather than
-the original100ms fade. Those adaptations and limits are not counted as exact
-source restoration.
+projection. Those adaptations and limits are not counted as exact source
+restoration.

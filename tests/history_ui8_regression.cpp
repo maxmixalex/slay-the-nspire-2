@@ -2,6 +2,8 @@
 #include "world_run.hpp"
 #include "content_fixture.hpp"
 #include "source_scene_oracle.hpp"
+#include "history_motion_oracle.hpp"
+#include "history_picture_oracle.hpp"
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -71,6 +73,13 @@ static std::string source_category_text(const char*raw,const unsigned*counts,boo
 }
 static void history_body_scene(const std::vector<uint8_t>&pack,const UiRunHistory&record){
     using namespace spire_test;const auto p=[](int n){return (n*4+(n<0?-10:10))/21;};
+    history_motion_oracle([](bool condition){CHECK(condition);});
+    history_picture_oracle([](const uint8_t*raw,const uint8_t*alpha,int cx,int cy,int size,int angle,bool aligned,unsigned opacity,unsigned parent_opacity){
+        for(auto&pixel:a.pixels)pixel=0x2947;Canvas canvas{a};canvas.opacity=uint8_t(parent_opacity);
+        const auto rotation=history_angle::rotation(angle);const Picture picture{raw,alpha,nullptr,13,13,0};
+        ui_picture_transform(canvas,picture,cx,cy,size,size,rotation.sine,rotation.cosine,aligned,opacity);
+        return std::vector<uint16_t>(a.pixels,a.pixels+320*240);
+    },[](bool condition){CHECK(condition);});
     const UiHistoryLayout layout(record,97);
     CHECK(UiHistoryLayout::ViewTop==0&&UiHistoryLayout::ViewHeight==240);
     CHECK(layout.floor(record,0).x==p(224+144)&&layout.floor(record,0).y==p(252));

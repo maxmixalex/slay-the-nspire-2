@@ -53,8 +53,10 @@ void App::settings_action(UiAction action){
         return;
     }
     switch(action){
-    case UiAction::SettingsBack:case UiAction::Back:settings_open=false;binding_listening=-1;break;
+    case UiAction::SettingsBack:case UiAction::Back:
+        settings_focus::blur_rows(button_motions,MaxButtonMotions,map_clock_ms);settings_open=false;binding_listening=-1;break;
     case UiAction::SettingsGeneralTab:case UiAction::SettingsInputTab:
+        if(settings_tab&&action==UiAction::SettingsGeneralTab)settings_focus::blur_rows(button_motions,MaxButtonMotions,map_clock_ms);
         settings_tab=action==UiAction::SettingsInputTab;settings_item=settings_top=0;break;
     case UiAction::SettingsLanguage:
         if(title&&available_languages()==3){settings_language_open=true;settings_language_item=0;}break;
@@ -87,7 +89,7 @@ bool App::settings_input(Key key){
     }
     const unsigned count=settings_tab?InputCommandCount+3u:11u; // Mode/rows, Reset, Back.
     if(key==Key::Back)settings_action(UiAction::SettingsBack);
-    else if(key==Key::Inspect){settings_tab^=1;settings_item=settings_top=0;}
+    else if(key==Key::Inspect){if(settings_tab)settings_focus::blur_rows(button_motions,MaxButtonMotions,map_clock_ms);settings_tab^=1;settings_item=settings_top=0;}
     else if(key==Key::Up||key==Key::Down){
         if(key==Key::Up){if(settings_item)--settings_item;}
         else if(settings_item+1<count)++settings_item;

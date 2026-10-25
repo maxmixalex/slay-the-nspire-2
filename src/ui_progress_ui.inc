@@ -458,14 +458,23 @@ static void history_screen(Canvas&c){
             const int width=history_label_width(page,act,style);profile_text_box(page,act,project(layout.map_source_left+140)-width+dx,y,width,point.h,style,false,false);}
         const unsigned scale=motion.scale(int(i),a.map_clock_ms);
         const int size=(448*int(scale)*4+105000)/210000,center_x=x+project(32),center_y=y+project(32);
+        const auto rotation=history_angle::rotation(motion.angle(int(i),a.map_clock_ms));
         if(a.content.has_history_body_assets()){
             const int asset=history_room_asset(f);if(asset>=0){const auto visual=motion.outline(int(i),a.map_clock_ms);Canvas outline=page;
                 outline.tint_red=outline.tint_green=outline.tint_blue=uint8_t(visual.color);
-                outline.ui(asset+1,center_x-size/2,center_y-size/2,size,size,visual.alpha);page.ui(asset,center_x-size/2,center_y-size/2,size,size);}
+                ui_picture_transform(outline,a.content.image(a.content.ui_image(asset+1)),center_x,center_y,size,size,rotation.sine,rotation.cosine,true,visual.alpha);
+                ui_picture_transform(page,a.content.image(a.content.ui_image(asset)),center_x,center_y,size,size,rotation.sine,rotation.cosine,true);}
         }else if(a.content.version()>=HudUi7ContentVersion)hud_room_icon(page,history_room_key(f),center_x-size/2,center_y-size/2,size,size);
         else page.picture(f.room==unsigned(WorldRoom::Rest)?A_MapCamp:f.room==unsigned(WorldRoom::Shop)?A_MapShop:f.room==unsigned(WorldRoom::Treasure)?A_MapTreasure:f.room==unsigned(WorldRoom::Event)?A_MapEvent:A_MapCombat,center_x-size/2,center_y-size/2,size,size);
         if(quests[i/32]&(uint32_t(1)<<(i%32))){const int quest=(231*int(scale)*4+105000)/210000;
-            page.picture(a.content.world_image("map","QUEST"),center_x+(70*int(scale)*4+105000)/210000,center_y-(260*int(scale)*4+105000)/210000,quest,quest);}
+            if(a.content.has_history_body_assets()){
+                // The33px QuestIcon is a child of the64px Icon. Relative to
+                // the parent's(32,32) pivot its scaled center is(18.55,-14.45)
+                // source pixels, so both its position and image rotate.
+                const int rx=(1855*rotation.cosine+1445*rotation.sine)/1024,ry=(1855*rotation.sine-1445*rotation.cosine)/1024;
+                const auto projected=[&](int value){const int scaled=value*int(scale)*4;return (scaled+(scaled<0?-1050000:1050000))/2100000;};
+                ui_picture_transform(page,a.content.image(a.content.world_image("map","QUEST")),center_x+projected(rx),center_y+projected(ry),quest,quest,rotation.sine,rotation.cosine,true);
+            }else page.picture(a.content.world_image("map","QUEST"),center_x+(70*int(scale)*4+105000)/210000,center_y-(260*int(scale)*4+105000)/210000,quest,quest);}
     }
     history_section_header(page,r,true,dx,layout.relic_header-offset);
     for(unsigned i=0;i<r.relic_count;++i){const auto point=layout.relic(i);const int x=point.x+dx,y=point.y-offset;if(y+point.h<=0||y>=page.clip_h)continue;

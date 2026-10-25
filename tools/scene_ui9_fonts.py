@@ -166,6 +166,8 @@ def patch(data, regular, bold, display=None, italic=None, fallback=None):
     output_version = max(VERSION, source.version)
     language = source.string_payload(split_content.MARKER)[:-1].decode('ascii')
     required = requirements(source)
+    tiles.require(source.version >= 39 or not any(px == 9 for _cp, px, _face in required),
+                  'Append the NSP2/39 artwork catalog before adding nine-pixel scene fonts')
     known = {(row[0], row[2]) for row in source.glyphs}
     missing = sorted(row for row in required if (row[0], library.encoded_band(row[1], row[2])) not in known)
     additions, fallback_glyphs = [], []
