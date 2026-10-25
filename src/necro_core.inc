@@ -227,11 +227,11 @@ static void necro_player_side_end(State&s){
  // target's own side. Doom's execution precedes those expiry callbacks.
  for(auto&n:v.oblivion)n=0;
  for(unsigned id=0;id<s.card_count;id++){v.flatten_zero[id]=0;v.flatten_origin[id]=0;}
- if(s.hp>0&&v.player_doom>=s.hp&&v.player_doom){s.hp=0;if(!revive(s))death_cleanup(s);}
+ if(s.hp>0&&v.player_doom>=s.hp&&v.player_doom){notify_run_fact(s,CoreRunFact::DoomActivated,0);s.hp=0;if(!revive(s))death_cleanup(s);}
 }
 static void necro_enemy_side_end(State&s){
  auto&v=s.necro;
- for(int t=0;t<s.enemy_count;t++)if(s.enemies[t].hp>0&&s.expansion.doom[t]>=s.enemies[t].hp&&s.expansion.doom[t])s.enemies[t].hp=0;
+ for(int t=0;t<s.enemy_count;t++)if(s.enemies[t].hp>0&&s.expansion.doom[t]>=s.enemies[t].hp&&s.expansion.doom[t]){notify_run_fact(s,CoreRunFact::DoomActivated,unsigned(t+1));s.enemies[t].hp=0;}
  necro_observe_deaths(s);
  for(int t=0;t<MaxEnemies;t++){if(v.debilitate[t])--v.debilitate[t];v.sic_em[t]=0;}
 }
@@ -562,7 +562,7 @@ static bool necro_effect(State&s,Effect e){
  case XOp::NDoom:necro_apply_doom(s,a,b);break;
  case XOp::NDoomFromDamage:necro_apply_doom(s,a,v.attack_total[x.depth]);break;
  case XOp::NCheckDoom:
-  for(int t=0;t<s.enemy_count;t++)if(s.enemies[t].hp>0&&x.doom[t]>=s.enemies[t].hp&&x.doom[t])s.enemies[t].hp=0;
+  for(int t=0;t<s.enemy_count;t++)if(s.enemies[t].hp>0&&x.doom[t]>=s.enemies[t].hp&&x.doom[t]){notify_run_fact(s,CoreRunFact::DoomActivated,unsigned(t+1));s.enemies[t].hp=0;}
   necro_observe_deaths(s);break;
  case XOp::NEnemyPower:{
   int kind=a/MaxEnemies,t=a%MaxEnemies;NDebuff p=kind==0?NDebuff::Debilitate:kind==1?NDebuff::Hang:kind==2?NDebuff::Oblivion:kind==3?NDebuff::SicEm:NDebuff::Strength;

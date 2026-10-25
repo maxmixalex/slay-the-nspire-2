@@ -177,6 +177,15 @@ void App::observe_progress_damage(const State&s,const CoreDamageResult&damage){
     }
 }
 void App::observe_run_fact(const State&s,unsigned kind,unsigned value){
+    if(kind==unsigned(CoreRunFact::ArchitectAttack)){if(&s==&game)ui_architect_screen_effect(*this,value!=0);return;}
+    if(kind==unsigned(CoreRunFact::DoomActivated)){
+        // NDoomVfx starts only when Doom actually executes, including a
+        // protected/reviving owner. A large counter or later HP delta does
+        // not imply that this command ran. This notice is never a run stat.
+        if(&s==&game&&value<=unsigned(s.enemy_count))screen_effect_at(ui_feedback_bound(*this)?combat_feedback.effect_at:animation,
+            ScreenShakePresentation::Punch,ScreenShakePresentation::Weak,300,2048);
+        return;
+    }
     auto&r=progress.current;if(!progress_matches(r,s)||r.outcome)return;
     if(kind==unsigned(CoreRunFact::ShopGoldSpent)){r.facts.shop_spent=progress_add(r.facts.shop_spent,value);observe_history(s,{RunHistoryEvent::GoldSpent,uint16_t(value),uint16_t(value>>16),0,nullptr});}
     else if(kind==unsigned(CoreRunFact::RestChoice)&&value<8){if(auto*f=progress_observe_floor(*this,s))f->rest_choices|=uint8_t(1u<<value);observe_history(s,{RunHistoryEvent::RestChoice,uint16_t(value),0,0,nullptr});}

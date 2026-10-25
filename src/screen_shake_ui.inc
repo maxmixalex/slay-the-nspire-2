@@ -18,6 +18,15 @@ void App::screen_effect_at(uint32_t tick,ScreenShakePresentation::Kind kind,unsi
  sync_screen_motion();const uint32_t now=screen_motion_clock();screen_motion.add(now,tick*33u,kind,strength,duration,angle);
 }
 void App::screen_scene_offset(int&x,int&y)const{screen_motion.sample(screen_motion_clock(),screen_shake,x,y);}
+static void ui_architect_screen_effect(App&a,bool start){
+ if(a.game.original_events.id!=OriginalEventId::TheArchitect)return;
+ const auto plan=source_architect_shake(a.game.character,unsigned(a.game.original_events.values[0]),start,a.fast_mode);if(!plan.complete)return;
+ for(unsigned i=0;i<plan.hits;++i)a.screen_effect(ScreenShakePresentation::Punch,
+  i+1==plan.hits?ScreenShakePresentation::Strong:ScreenShakePresentation::Weak,i+1==plan.hits?800:300,0,plan.hit_at(i));
+ if(plan.architect_at)a.screen_effect(ScreenShakePresentation::Punch,ScreenShakePresentation::Weak,800,0,plan.architect_at);
+ a.screen_effect(ScreenShakePresentation::SequenceEnd,0,0,0,plan.complete);
+ if(!start){a.sync_game_over_presentation();if(a.game_over_presentation.bound)a.game_over_presentation.opened=a.map_clock_ms+plan.complete;}
+}
 static void screen_translate(Canvas&c,int dx,int dy,int first_hit,int top){
  if(!dx&&!dy)return;
  const int first_y=dy>0?239:top,last_y=dy>0?top-1:240,step_y=dy>0?-1:1;

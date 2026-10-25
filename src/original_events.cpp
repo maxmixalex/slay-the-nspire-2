@@ -225,7 +225,9 @@ bool original_event_begin(State&s,OriginalEventId id,uint64_t run_seed,unsigned 
  reset_in_place(s.original_events);auto&e=s.original_events;e.id=id;e.active=1;e.act_index=uint8_t(act);
  reference::Random rng;rng.named(run_seed,original_event_key(id));keep_random(s,rng);
  s.phase=Phase::Event;if(!rules_begin(s)){fail(s);return false;}
- original_event_resume(s);++s.revision;return s.phase!=Phase::Error;
+ original_event_resume(s);++s.revision;const bool ok=s.phase!=Phase::Error;
+ if(ok&&id==OriginalEventId::TheArchitect&&s.character==Character::Silent)notify_run_fact(s,CoreRunFact::ArchitectAttack,1);
+ return ok;
 }
 unsigned original_event_option_count(const State&s){const auto&e=s.original_events;return e.active&&s.phase==Phase::Event&&!e.combat_pending&&!world_relic_pending(s)&&e.selection==OriginalEventSelection::None?e.option_count:0;}
 bool original_event_option_enabled(const State&s,int option){
@@ -345,7 +347,8 @@ bool original_event_reroll_reward(State&s){if(!original_event_can_reroll_reward(
 }
 bool original_event_leave(State&s){auto&e=s.original_events;
  if(!e.active||!e.finished||e.combat_pending||e.selection!=OriginalEventSelection::None||e.step_cursor<e.step_count||world_relic_pending(s)||s.phase!=Phase::Event)return false;
- if(s.world.active)return world_finish_room(s);
+ if(s.world.active){const bool architect=e.id==OriginalEventId::TheArchitect;const bool done=world_finish_room(s);
+  if(done&&architect)notify_run_fact(s,CoreRunFact::ArchitectAttack,0);return done;}
  e.active=0;finish_room(s);++s.revision;return true;
 }
 void original_event_after_combat(State&s,bool won){auto&e=s.original_events;

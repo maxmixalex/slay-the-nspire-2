@@ -7,7 +7,7 @@ namespace spire {
 // Perlin-style lattice noise replaces Godot's floating-point FastNoiseLite;
 // strengths, envelopes, durations and trauma decay keep their source units.
 struct ScreenShakePresentation {
- enum Kind:uint8_t {Punch,Rumble,Drunk,Trauma};
+ enum Kind:uint8_t {Punch,Rumble,Drunk,Trauma,SequenceEnd};
  enum Strength:uint8_t {None,VeryWeak=2,Weak=5,Medium=20,Strong=40,TooMuch=80};
  struct Cue {uint32_t at=0;uint16_t duration=0,angle=0;uint8_t strength=0,kind=0;};
  static constexpr unsigned Capacity=48;
@@ -39,12 +39,15 @@ struct ScreenShakePresentation {
   const uint32_t age=now-trauma_at;return age>=500u?0u:trauma>age*2048u/1000u?trauma-age*2048u/1000u:0u;
  }
  void apply(Cue cue){
+  if(cue.kind==SequenceEnd)return;
   if(cue.kind==Trauma){
    const unsigned add=cue.strength==VeryWeak?72u:cue.strength==Weak?205u:cue.strength==Medium?410u:cue.strength==Strong?614u:cue.strength==TooMuch?1024u:0u;
    const unsigned sum=trauma_now(cue.at)+add;trauma=uint16_t(sum>1024?1024:sum);trauma_at=cue.at;
   }else if(cue.kind==Punch)punch=cue;
   else{rumble=cue;drunk_x=drunk_y=0;noise_seed=hash(target^(++serial*0x9e3779b9u));}
  }
+ bool sequence_active(uint32_t now)const{for(unsigned i=0;i<count;++i)if(cues[i].kind==SequenceEnd&&int32_t(cues[i].at-now)>0)return true;return false;}
+ uint32_t sequence_end(uint32_t now)const{uint32_t end=now;for(unsigned i=0;i<count;++i)if(cues[i].kind==SequenceEnd&&int32_t(cues[i].at-end)>0)end=cues[i].at;return end;}
  void advance(uint32_t now){
   if(!bound)return;const uint32_t elapsed=now-clock;clock=now;
   unsigned consumed=0;while(consumed<count&&int32_t(now-cues[consumed].at)>=0)apply(cues[consumed++]);

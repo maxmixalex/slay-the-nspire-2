@@ -129,6 +129,11 @@ static void native_event_screen(Canvas&c){
  if(ui_ancient_event(e.id)){native_ancient_screen(c);return;}
  if(e.id==OriginalEventId::FakeMerchant&&!e.finished){native_fake_merchant_screen(c);return;}
  c.picture(a.content.world_image("events",original_event_key(e.id)),0,22,320,218);
+ if(e.id==OriginalEventId::TheArchitect&&a.screen_motion.sequence_active(a.map_clock_ms)){
+  // PlayCurrentLine awaits the Silent's initial attack sequence before it
+  // reveals a line or lets Proceed advance the event. Keep the room visible.
+  motion.start=a.screen_motion.sequence_end(a.map_clock_ms);return;
+ }
  // default_event_layout.tscn: VBox at (viewport/2-38,255-39), width800.
  // Its64px title,280px minimum body,24px spacer and100px options belong to
  // the full1680x1260 UI, not the room artwork's cropped218px camera.

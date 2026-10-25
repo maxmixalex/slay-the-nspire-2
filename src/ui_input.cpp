@@ -482,6 +482,7 @@ bool App::room_input(Key key){
     if(title||paused||help||panel||library||character_select||map_preview.open||detail_card>=0||detail_item>=0||deck_candidate>=0)return false;
     const bool fake=game.phase==Phase::Event&&game.original_events.active&&game.original_events.id==OriginalEventId::FakeMerchant&&!game.original_events.finished;
     if(game.phase==Phase::Event&&!fake){
+        if(game.original_events.id==OriginalEventId::TheArchitect&&screen_motion.sequence_active(map_clock_ms)&&key==Key::Confirm)return true;
         if(ancient_dialogue_input(key))return true;
         if(game.original_events.id==OriginalEventId::CrystalSphere&&game.original_events.finished&&game.original_events.crystal_item_count)
             return key==Key::Detail; // Its own Proceed has no default-event option tween.

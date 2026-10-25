@@ -15,7 +15,7 @@ struct GameOverPresentation {
  uint16_t scroll=0,scroll_maximum=0;
  void reset(){*this={};}
  unsigned intro_delay()const{return event_room?1950u:1750u;}
- uint32_t initial_age(uint32_t now)const{return now-opened;}
+ uint32_t initial_age(uint32_t now)const{return int32_t(now-opened)<0?0u:now-opened;}
  uint32_t summary_age(uint32_t now)const{return now-summary_started;}
  unsigned black_alpha(uint32_t now)const{return event_room?255*room_curve::linear(initial_age(now),200)/4096:0;}
  unsigned backstop_phase(uint32_t now)const{

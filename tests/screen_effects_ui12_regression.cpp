@@ -115,11 +115,22 @@ static void actual_sleep(){
  scenario="original encounter initialization and real damage wake share presented facts";
  for(const auto id:{EncounterId::SlumberingBeetleNormal,EncounterId::LagavulinMatriarchBoss}){
   const bool beetle=id==EncounterId::SlumberingBeetleNormal;const int slot=encounter(id,beetle?EnemyId::SlumberingBeetle:EnemyId::LagavulinMatriarch);
+  scenario=beetle?"Slumbering Beetle actual stunned wake":"Lagavulin actual unblocked-damage wake";
   CHECK(a.enemy_presentation[slot].sleep.active);direct=a.game;for(unsigned i=0;i<35;++i){a.advance(33);a.render();}equal_save();
   CHECK(a.enemy_presentation[slot].sleep.active);a.game.enemies[slot].block=0;direct=a.game;
   const unsigned hits=beetle?3u:1u;for(unsigned i=0;i<hits;++i){damage_unpowered(direct,slot,1);resolve_pending(direct);}
   {UiCoreObserver observer(a);a.begin_combat_feedback();for(unsigned i=0;i<hits;++i){damage_unpowered(a.game,slot,1);resolve_pending(a.game);}}
-  for(unsigned i=0;i<120&&a.enemy_presentation[slot].sleep.active;++i){a.advance(33);a.render();}
+  if(beetle){
+   // Slumber schedules WakeUp as the next STUNNED move; unlike Asleep,
+   // its third hit does not invoke that move during the player's action.
+   CHECK(a.game.enemy_world.models[slot].node==31&&a.enemy_presentation[slot].sleep.active);equal_save();
+   CHECK(end_turn(direct));{UiCoreObserver observer(a);a.begin_combat_feedback();CHECK(end_turn(a.game));}
+  }
+  // The beetle is third in its authored encounter. Its WakeUp waits behind
+  // both Bowlbugs' real move cues rather than revealing canonical future
+  // facts during their presentation; allow that bounded command sequence.
+  for(unsigned i=0;i<600&&a.enemy_presentation[slot].sleep.active;++i){a.advance(33);a.render();}
+  if(a.enemy_presentation[slot].sleep.active){int awake=-1;ui_enemy_fact(&a.enemy_presentation[slot].facts,"IsAwake",awake);std::fprintf(stderr,"wake trace: tick=%u end=%u visual=%u phase=%u node=%u saved=%d shown=%d state=%d clip=%d queued=%u\n",a.animation,a.combat_feedback.end_at,a.enemy_visual_clock,unsigned(a.game.phase),a.game.enemy_world.models[slot].node,a.game.enemy_world.models[slot].data[8],awake,a.enemy_presentation[slot].state,a.enemy_presentation[slot].clip,a.enemy_presentation[slot].count);}
   CHECK(!a.enemy_presentation[slot].sleep.active);equal_save();
   const uint32_t stopped=a.enemy_presentation[slot].sleep.stopped;CHECK(a.enemy_presentation[slot].sleep.alive(stopped));
   for(unsigned i=0;i<122;++i){a.advance(33);a.render();}CHECK(!a.enemy_presentation[slot].sleep.alive(a.animation*33u));equal_save();
@@ -141,6 +152,158 @@ static void actual_cards(){
   CHECK(queued&&fired);equal_save();
  }
 }
+static bool doom_camera(){
+ const auto match=[](const Shake::Cue&q){return q.kind==Shake::Punch&&q.strength==5&&q.duration==300&&q.angle==2048;};
+ if(match(a.screen_motion.punch))return true;
+ for(unsigned i=0;i<a.screen_motion.count;++i)if(match(a.screen_motion.cues[i]))return true;
+ return false;
+}
+static void actual_doom(){
+ scenario="Doom's real immediate check emits only on execution";
+ for(unsigned lethal=0;lethal<2;++lethal){
+  encounter(EncounterId::NibbitsNormal,EnemyId::Nibbit);auto&s=a.game;
+  s.card_count=s.hand.count=1;s.draw.count=s.discard.count=s.exhaust.count=0;s.cards[0]={NecroEndOfDays,0};s.hand.ids[0]=0;s.zones[0]=Zone::Hand;
+  for(int i=0;i<s.enemy_count;++i)s.enemies[i].hp=s.enemies[i].max_hp=500;
+  s.enemies[0].hp=lethal?29:100;a.reset_presentation();a.render();a.screen_motion.reset();direct=s;
+  CHECK(play(direct,0,0));{UiCoreObserver observer(a);a.begin_combat_feedback();CHECK(play(s,0,0));}
+  equal_save();CHECK(bool(!s.enemies[0].hp)==bool(lethal));CHECK(doom_camera()==bool(lethal));
+  if(lethal){bool fired=false;for(unsigned i=0;i<200;++i){a.advance(33);a.render();fired|=a.screen_motion.punch.angle==2048&&a.screen_motion.punch.strength==5;}CHECK(fired);equal_save();}
+ }
+ scenario="Doom's own-side hooks cover the enemy and player without changing save bytes";
+ for(unsigned player=0;player<2;++player){
+  encounter(EncounterId::NibbitsNormal,EnemyId::Nibbit);auto&s=a.game;
+  if(player){s.hp=3;s.necro.player_doom=3;}else{s.enemies[0].hp=1;s.expansion.doom[0]=1;}
+  a.reset_presentation();a.render();a.screen_motion.reset();direct=s;CHECK(end_turn(direct));
+  {UiCoreObserver observer(a);a.begin_combat_feedback();CHECK(end_turn(s));}
+  equal_save();CHECK(player?s.phase==Phase::Dead:!s.enemies[0].hp);CHECK(doom_camera());
+  bool fired=false;for(unsigned i=0;i<250;++i){a.advance(33);a.render();fired|=a.screen_motion.punch.angle==2048&&a.screen_motion.punch.strength==5;}
+  CHECK(fired);equal_save();
+ }
+}
+static void advance_room(unsigned ms){while(ms){const unsigned step=std::min(ms,33u);a.advance(step);a.render();ms-=step;}}
+static void architect_equations(){
+ scenario="Architect independent normal and fast command times";
+ for(unsigned fast=0;fast<2;++fast)for(unsigned character=0;character<5;++character)for(unsigned dialogue:{0u,2u}){
+  const auto c=Character(character);const unsigned count=character==1||character==4?4u:5u;
+  for(unsigned start=0;start<2;++start){
+   const unsigned hits=start?(character==1?4u:0u):character==1&&dialogue==2?0u:count;
+   const auto p=source_architect_shake(c,dialogue,start,fast);CHECK(p.hits==hits);
+   if(start&&!hits){CHECK(!p.complete&&!p.architect_at);continue;}
+   const unsigned normal[]={100,300,500,700,900},quick[]={50,200,350,500,650};
+   for(unsigned i=0;i<hits;++i)CHECK(p.hit_at(i)==(start?750u:0u)+(fast?quick[i]:normal[i]));
+   const unsigned tail=hits?(start?750u:0u)+(fast?quick[hits-1]:normal[hits-1])+2000u:0u;
+   CHECK(p.architect_at==(start?0u:tail+(fast?250u:500u)));
+   CHECK(p.complete==(start?tail:tail+(fast?750u:1000u)));
+  }
+ }
+ scenario="future terminal presentation times clamp before origin and cross uint32 wrap";
+ for(uint32_t now:{1000u,0xfffffff0u}){
+  GameOverPresentation g;g.bound=g.event_room=true;g.opened=now+3900u;
+  CHECK(!g.initial_age(now)&&!g.black_alpha(now)&&!g.ui_alpha(now)&&!g.ready(now));
+  CHECK(!g.initial_age(now+3899u)&&!g.ready(now+3899u));
+  CHECK(!g.initial_age(now+3900u)&&g.initial_age(now+4000u)==100u);
+  CHECK(g.black_alpha(now+4100u)==255u&&!g.ready(now+5849u)&&g.ready(now+5850u));
+  Shake s;s.bind(123,now);s.add(now,now+3900u,Shake::SequenceEnd,0,0);
+  CHECK(s.sequence_active(now)&&s.sequence_end(now)==now+3900u);s.advance(now+3899u);CHECK(s.sequence_active(now+3899u));
+  s.advance(now+3900u);CHECK(!s.sequence_active(now+3900u)&&!s.count);
+ }
+}
+static void architect_room(Character character,bool fast,unsigned dialogue,unsigned shake){
+ fresh();new_run(a.game,0x7195c3,false,character);CHECK(world_set_seed(a.game,"NSPIRE-GAME-OVER-017"));CHECK(world_begin_run(a.game,reference::ActKind::Overgrowth,3));
+ a.game.event_run.wins=a.game.event_run.character_wins[unsigned(character)]=dialogue;
+ // Supply prior room outcomes to the normal world controller, exactly as
+ // its routing gate does. These fixtures do not claim combat victories.
+ for(unsigned step=0;step<192;++step){
+  if(world_can_travel(a.game)){uint8_t points[reference::Columns];const unsigned count=world_available_points(a.game,points,reference::Columns);CHECK(count);CHECK(world_choose_point(a.game,points[0]));}
+  else{
+   if(a.game.original_events.active)a.game.original_events={};if(world_room_is_combat(a.game))a.game.phase=Phase::Reward;
+   const auto*m=world_current_map(a.game);CHECK(m);const unsigned end=m->second_boss!=reference::NoPoint?m->second_boss:m->boss;
+   if(a.game.world.act_index==2&&a.game.world.current_point==end){
+    a.reset_presentation();a.fast_mode=fast;a.screen_shake=uint8_t(shake);direct=a.game;CHECK(world_finish_room(direct));
+    {UiCoreObserver observer(a);CHECK(world_finish_room(a.game));}equal_save();
+    CHECK(a.game.phase==Phase::Event&&a.game.original_events.active&&a.game.original_events.id==OriginalEventId::TheArchitect);
+    CHECK(a.game.original_events.values[0]==int(dialogue));return;
+   }
+   CHECK(world_finish_room(a.game));
+  }
+ }
+ CHECK(false);
+}
+static void architect_queue(uint32_t origin,bool start,bool fast,unsigned dialogue){
+ const unsigned character=unsigned(a.game.character),count=character==1||character==4?4u:5u;
+ const unsigned hits=start?(character==1?4u:0u):character==1&&dialogue>=2?0u:count;
+ const unsigned normal[]={100,300,500,700,900},quick[]={50,200,350,500,650};
+ CHECK(a.screen_motion.count==hits+unsigned(!start)+unsigned(!start||hits));
+ for(unsigned i=0;i<hits;++i){const auto&q=a.screen_motion.cues[i];CHECK(q.at==origin+(start?750u:0u)+(fast?quick[i]:normal[i]));CHECK(q.kind==Shake::Punch&&q.strength==(i+1==hits?40:5)&&q.duration==(i+1==hits?800:300));}
+ const unsigned tail=hits?(start?750u:0u)+(fast?quick[hits-1]:normal[hits-1])+2000u:0u;
+ if(!start){const auto&q=a.screen_motion.cues[hits];CHECK(q.at==origin+tail+(fast?250u:500u)&&q.strength==5&&q.duration==800&&q.kind==Shake::Punch);}
+ if(!start||hits){const auto&q=a.screen_motion.cues[a.screen_motion.count-1];CHECK(q.kind==Shake::SequenceEnd&&q.at==origin+tail+(start?0u:fast?750u:1000u));}
+}
+static void actual_architect(Character character,bool fast,unsigned dialogue,unsigned shake){
+ scenario="Architect actual final-room entry, Proceed and terminal lifecycle";
+ architect_room(character,fast,dialogue,shake);const uint32_t started=a.map_clock_ms;architect_queue(started,true,fast,dialogue);
+ if(character==Character::Silent){
+  const uint32_t end=a.screen_motion.sequence_end(a.map_clock_ms);CHECK(end>started);a.render();equal_save();
+  a.input(Key::Confirm);equal_save();
+  // A cached Choice region from the previous frame cannot dispatch through
+  // pointer_button: that path rebuilds hits and also shares room_input.
+  a.hit_count=0;a.add_hit(96,150,216,40,HitKind::Choice,0,true);a.pointer_move(180,170);a.pointer_button(true);a.pointer_button(false);equal_save();
+  CHECK(a.game.phase==Phase::Event&&a.screen_motion.sequence_active(a.map_clock_ms));
+  advance_room(unsigned(end-a.map_clock_ms)-1u);CHECK(a.screen_motion.sequence_active(a.map_clock_ms));a.input(Key::Confirm);equal_save();
+  advance_room(1);CHECK(!a.screen_motion.sequence_active(a.map_clock_ms));equal_save();
+ }
+ a.pointer.visible=false;
+ // Use the real keyboard path for every authored dialogue page and final
+ // Proceed, waiting only for its actual original option tween.
+ uint32_t ending_at=0;
+ for(unsigned page=0;page<5&&a.game.phase==Phase::Event;++page){
+  a.render();for(unsigned i=0;i<200&&!a.room_presentation.event.option_ready(0,a.map_clock_ms);++i)advance_room(33);
+  CHECK(a.room_presentation.event.option_ready(0,a.map_clock_ms));const bool ending=a.game.original_events.finished;
+  const uint32_t at=a.map_clock_ms;direct=a.game;CHECK(original_event_choose(direct,0));a.cursor=0;a.input(Key::Confirm);equal_save();
+  if(ending){ending_at=at;CHECK(a.game.phase==Phase::Complete&&!a.game.original_events.active&&a.game.world.finished);architect_queue(at,false,fast,dialogue);break;}
+  CHECK(a.game.phase==Phase::Event&&!a.screen_motion.sequence_active(a.map_clock_ms));
+ }
+ CHECK(a.game.phase==Phase::Complete);const uint32_t terminal=a.game_over_presentation.opened;
+ CHECK(terminal==a.screen_motion.sequence_end(a.map_clock_ms)&&!a.game_over_presentation.initial_age(a.map_clock_ms));
+ const unsigned queued=a.screen_motion.count;{UiCoreObserver observer(a);CHECK(!original_event_leave(a.game));}CHECK(a.screen_motion.count==queued);equal_save();
+ a.input(Key::Confirm);CHECK(!a.game_over_summary);equal_save();
+ unsigned strong=0;bool visible_frame_checked=false;for(unsigned i=0;i<200&&int32_t(terminal-a.map_clock_ms)>0;++i){
+  CHECK(!a.game_over_presentation.black_alpha(a.map_clock_ms)&&!a.game_over_presentation.ready(a.map_clock_ms));
+  advance_room(std::min(33u,unsigned(terminal-a.map_clock_ms)));const auto&p=a.screen_motion.punch;
+  strong+=p.strength==40&&int32_t(p.at-ending_at)>=0&&a.map_clock_ms-p.at<p.duration;
+  int x=0,y=0;a.screen_scene_offset(x,y);if(!shake)CHECK(!x&&!y);
+  if(!visible_frame_checked&&(x||y)&&a.content.current_profile()){
+   // The completed canonical event has active=false. Render the real
+   // terminal room both ways at one instant, then independently translate
+   // its original background to prove the effect survives that boundary.
+   const auto previous=a.screen_shake;a.screen_shake=0;a.render();std::vector<uint16_t> still(a.pixels,a.pixels+320*240);
+   a.screen_shake=previous;a.render();unsigned changed=0;
+   for(int py=40;py<240;++py)for(int px=0;px<320;++px){
+    const int sx=std::max(0,std::min(319,px-x)),sy=std::max(22,std::min(239,py-y));
+    CHECK(a.pixels[py*320+px]==still[sy*320+sx]);changed+=a.pixels[py*320+px]!=still[py*320+px];
+   }
+   CHECK(changed>1000);visible_frame_checked=true;
+  }
+ }
+ CHECK(a.map_clock_ms==terminal&&!a.screen_motion.sequence_active(a.map_clock_ms));
+ if(shake&&a.content.current_profile())CHECK(visible_frame_checked);
+ CHECK(bool(strong)==!(character==Character::Silent&&dialogue>=2));equal_save();
+ advance_room(1949);CHECK(!a.game_over_button_ready());a.input(Key::Confirm);CHECK(!a.game_over_summary);equal_save();
+ advance_room(1);CHECK(a.game_over_button_ready());a.input(Key::Confirm);CHECK(a.game_over_summary);equal_save();
+ const auto&m=a.game_over_presentation;advance_room(m.menu_start()+1);a.ui_action(UiAction::GameOverMainMenu);CHECK(a.title&&!a.screen_motion.count);equal_save();
+}
+static SaveData architect_saved;
+static bool load_architect(State&s){return load(s,architect_saved.bytes,architect_saved.size);}
+static void architect_reload(){
+ scenario="Architect actual Continue does not replay a transient source attack";
+ architect_room(Character::Silent,false,0,2);CHECK(a.screen_motion.sequence_active(a.map_clock_ms));CHECK(save(a.game,architect_saved));direct=a.game;
+ const auto callbacks=a.callbacks;a.callbacks.load=load_architect;a.return_to_title();CHECK(!a.screen_motion.count&&a.has_save);
+ CHECK(a.load_saved_run());a.title=false;a.render();CHECK(!a.screen_motion.sequence_active(a.map_clock_ms)&&!a.screen_motion.count);equal_save();
+ for(unsigned i=0;i<200&&!a.room_presentation.event.option_ready(0,a.map_clock_ms);++i)advance_room(33);
+ direct=a.game;CHECK(original_event_choose(direct,0));a.input(Key::Confirm);equal_save();CHECK(a.game.phase==Phase::Complete);
+ CHECK(save(a.game,architect_saved));CHECK(load(a.game,architect_saved.bytes,architect_saved.size));a.reset_presentation();a.render();CHECK(!a.screen_motion.sequence_active(a.map_clock_ms)&&!a.screen_motion.count);
+ CHECK(a.game_over_presentation.opened==a.map_clock_ms&&!a.game_over_presentation.initial_age(a.map_clock_ms));equal_save();a.callbacks=callbacks;
+}
 static std::vector<uint8_t> read(const std::string&path){FILE*f=std::fopen(path.c_str(),"rb");CHECK(f);CHECK(!std::fseek(f,0,SEEK_END));const long n=std::ftell(f);CHECK(n>0);CHECK(!std::fseek(f,0,SEEK_SET));std::vector<uint8_t>b(size_t(n),0);CHECK(std::fread(b.data(),1,b.size(),f)==b.size());CHECK(!std::fclose(f));return b;}
 static void actual_masks(const char*root){
  const auto common=read(std::string(root)+"/nSpire2.common.tns");
@@ -151,10 +314,12 @@ static void actual_masks(const char*root){
   a.animation=a.enemy_presentation[slot].sleep.start/33u+31u;std::memset(a.pixels,0,sizeof a.pixels);creature_sleep_particles(c,slot);
   unsigned ink=0;int left=320,right=0,top=240,bottom=0;for(int y=0;y<240;++y)for(int x=0;x<320;++x)if(a.pixels[y*320+x]){++ink;left=std::min(left,x);right=std::max(right,x);top=std::min(top,y);bottom=std::max(bottom,y);}
   CHECK(ink>5&&ink<1000&&left>80&&right<320&&top>=22&&bottom<180);equal_save();CHECK(a.content.healthy());
-  actual_sleep();actual_cards();CHECK(a.content.healthy());
+  actual_sleep();actual_cards();actual_doom();actual_architect(Character::Silent,false,2,2);CHECK(a.content.healthy());
  }
 }
 int main(int argc,char**argv){
- CHECK(argc==1||argc==2);source_equations();sleeping_lifetime();pixels_and_hits();settings_and_smith();actual_sleep();actual_cards();if(argc==2)actual_masks(argv[1]);
+ CHECK(argc==1||argc==2);source_equations();sleeping_lifetime();pixels_and_hits();settings_and_smith();actual_sleep();actual_cards();actual_doom();architect_equations();
+ for(unsigned fast=0;fast<2;++fast)for(unsigned character=0;character<5;++character)actual_architect(Character(character),fast,0,2);
+ actual_architect(Character::Silent,false,2,0);actual_architect(Character::Silent,true,2,0);architect_reload();if(argc==2)actual_masks(argv[1]);
  std::printf("screen effects UI12: %u checks passed%s\n",checks,argc==2?" with original English/Japanese masks":" (asset-independent)");
 }

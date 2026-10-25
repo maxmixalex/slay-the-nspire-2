@@ -282,7 +282,7 @@ struct CoreObserver {
     void(*on_history)(void*,const State&,const RunHistoryNotice&)=nullptr;
     void(*on_orb)(void*,const State&,const CoreOrbNotice&)=nullptr;
 };
-enum class CoreRunFact : uint8_t { ShopGoldSpent,RestChoice };
+enum class CoreRunFact : uint8_t { ShopGoldSpent,RestChoice,DoomActivated,ArchitectAttack };
 CoreObserver set_core_observer(CoreObserver);
 void notify_enemy_animation(const State&,int slot,const char* trigger);
 void notify_power_flash(const State&,int receiver,const char* key);

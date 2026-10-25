@@ -988,16 +988,21 @@
         "MegaCrit.Sts2.Core.Nodes.Combat/NCreatureVisuals.cs",
         "MegaCrit.Sts2.Core.Models/MonsterModel.cs",
         "MegaCrit.Sts2.Core.Models.Monsters/DecimillipedeSegment.cs",
-        "MegaCrit.Sts2.Core.Nodes.Animation/NPhobiaAnimationToggler.cs"
+        "MegaCrit.Sts2.Core.Nodes.Animation/NPhobiaAnimationToggler.cs",
+        "scenes/creature_visuals/entomancer.tscn",
+        "MegaCrit.Sts2.Core.Nodes.Vfx/NEntomancerVfx.cs"
       ],
-      "contract": "5skin models+8alternate bodies+3dead variants+18background layers",
+      "contract": "5skin models+8alternate bodies+3dead variants+18background layers; Entomancer phobia branch has an independent 100-particle, 2-second lifetime/prewarm local swarm",
       "assessment": "implemented_with_documented_limits",
-      "implemented": "43 alternate clips, four complete backgrounds, 13 model flows, death variants and persisted preference.",
-      "remaining": "Entomancer swarm and full background GPU materials remain incomplete; Factory has no pinned ordinary-run route.",
+      "implemented": "43 alternate clips, four complete backgrounds, 13 model flows, death variants and persisted preference. UI12 adds the independent Entomancer swarm to combat and Bestiary using its original 15x15 texture, all 100 warmed particles, the 2-second lifecycle, area-uniform 50..400 ring, source parent transform and sampled authored lifetime curves; no gameplay RNG, per-particle pool or raster cache is added.",
+      "remaining": "Factory has no pinned ordinary-run route. Full background GPU-material equivalence and exact swarm GPU-pixel identity are not established: the LCD renderer uses bounded integer curve integration and pixel coverage for subpixel particles. These limits do not mean that the source swarm emitter is omitted.",
+      "ui10_remaining_historical": "Entomancer swarm and full background GPU materials remain incomplete; Factory has no pinned ordinary-run route.",
       "regressions": [
         "phobia_ui7_regression"
       ],
-      "acceptance": "Historical UI10: Frozen K native checks pass: phobia_ui7_regression. Both matching K format39 actual packs pass: phobia_ui7_regression."
+      "acceptance": "UI12: final-particle-complete-build-447253870acc and final-particle-complete-native-2b8238eae35a passed with source_changed=false at 1fa3d7cd5262afbbc6caf9d3b8c4f5660d1e4c0d. Actual common+16 NSL2 locale inputs cover combat/Bestiary swarm motion, canonical save preservation, 13 alternate models, 32 skin clips, dead segments and legacy fallback. Reported 2474126 checks include individual pixel writes for 32 PPM captures. Separately, final-particle-native-public-ed52e2b0b1db passed 30642 synthetic-resource checks at f1e5dafbc5dec07f5037698786d933f96ee208a8. These are native rendering/resource gates, not final-device performance or complete GPU-shader equivalence.",
+      "ui10_acceptance_historical": "Historical UI10: Frozen K native checks pass: phobia_ui7_regression. Both matching K format39 actual packs pass: phobia_ui7_regression.",
+      "ui12_resources": "final-particle-private-resources-aad6f51a8bca passed with unchanged source. Original swarm and English/Japanese sleeping Z images add 2284 shared bytes; final common is 61669167 bytes, SHA256 a697a233712ca873ac7b5c626515509b017a2685fd3326adf27da7fbae580987. All sixteen compressed locale directories retain old image/string/decoded-cost identity, with no logical pack duplicates. Accepted optional auxiliary endpoints: 2161, 2198, 2199, 2201."
     },
     {
       "id": "text_effects",
