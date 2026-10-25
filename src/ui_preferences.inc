@@ -85,8 +85,8 @@ void App::settings_action(UiAction action){
     }
     case UiAction::SettingsKeyboardOnly:keyboard_only=!keyboard_only;if(!keyboard_only)pointer.visible=true;persist_preferences();break;
     case UiAction::SettingsPhobia:phobia_mode=!phobia_mode;persist_preferences();break;
-    case UiAction::SettingsShakeDown:if(screen_shake){--screen_shake;persist_preferences();}break;
-    case UiAction::SettingsShakeUp:if(screen_shake<4){++screen_shake;persist_preferences();}break;
+    case UiAction::SettingsShakeDown:if(screen_shake){--screen_shake;screen_effect(ScreenShakePresentation::Trauma,ScreenShakePresentation::Medium);persist_preferences();}break;
+    case UiAction::SettingsShakeUp:if(screen_shake<4){++screen_shake;screen_effect(ScreenShakePresentation::Trauma,ScreenShakePresentation::Medium);persist_preferences();}break;
     case UiAction::SettingsReset:if(settings_tab)reset_input_bindings();else{frontend_confirm=4;frontend_choice=0;}break;
     case UiAction::SettingsControls:help=true;break;
     case UiAction::SettingsFeedback:break;

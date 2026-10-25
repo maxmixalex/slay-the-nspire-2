@@ -80,7 +80,11 @@ static void ui_sync_card_queues(App&a){
   m.advance(next);
   // Transfers keep the last visible holder pose before the simultaneous
   // hand order is replaced; a batch discard therefore has ten real origins.
-  while(m.head<m.count&&m.cues[m.head].at==next)m.apply(m.cues[m.head++]);
+  while(m.head<m.count&&m.cues[m.head].at==next){const auto cue=m.cues[m.head++];m.apply(cue);
+   if(cue.to==unsigned(Zone::Power))if(const auto*power=m.find(cue.id)){
+    a.sync_screen_motion();a.screen_motion.add(a.screen_motion_clock(),next*33u+power->duration,ScreenShakePresentation::Punch,ScreenShakePresentation::Medium);
+   }
+  }
   while(m.count_head<m.count_count&&m.count_cues[m.count_head].at==next)m.counts=m.count_cues[m.count_head++].value;
   while(bound&&h.head<h.count&&h.cues[h.head].at==next){h.shown=h.cues[h.head++].cards;m.set_hand(h.shown);}
  }

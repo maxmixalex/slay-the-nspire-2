@@ -77,7 +77,9 @@ static void character_screen(Canvas&c){
     const bool random=a.character_random;
     unsigned selection=CharacterKinds;
     if(!random)for(unsigned i=0;i<CharacterKinds;++i)if(RunModeCharacters[i]==a.selected_character){selection=i;break;}
-    auto&motion=a.character_select_presentation;motion.observe(true,selection,hover,a.map_clock_ms);
+    auto&motion=a.character_select_presentation;
+    if(motion.active&&motion.selected!=selection)a.screen_effect(ScreenShakePresentation::Punch,ScreenShakePresentation::Weak,300,1024);
+    motion.observe(true,selection,hover,a.map_clock_ms);
     const unsigned character=unsigned(a.selected_character);const int dx=motion.panel_offset(a.map_clock_ms);
     const auto&definition=character_definitions[character];
     const auto clip=a.content.version()>=RoomUi7ContentVersion?a.content.clip(int(FirstClip+character)):Clip{};

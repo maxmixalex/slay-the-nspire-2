@@ -264,6 +264,20 @@ bool Content::open(ResourceSource source){
                                             if(next>=ni||!reader_.u32(base+4,next))return false;base+=4;
                                         }
                                         auxiliary=IntroLogoAuxiliaryCount;
+                                        // One optional original Entomancer particle. Keep
+                                        // the old2161/2198 endpoints and reject any further IDs.
+                                        if(next!=0x314c4954u){
+                                            if(next>=ni||!reader_.u32(base+4,next))return false;base+=4;
+                                            auxiliary=PhobiaSwarmAuxiliaryCount;
+                                            // Two localized sleeping particles form one
+                                            // complete append; a lone ID is not a valid catalog.
+                                            if(next!=0x314c4954u){
+                                                for(unsigned i=0;i<2;++i){
+                                                    if(next>=ni||!reader_.u32(base+4,next))return false;base+=4;
+                                                }
+                                                auxiliary=SleepingVfxAuxiliaryCount;
+                                            }
+                                        }
                                     }
                                     if(next!=0x314c4954u)return false;
                                 }

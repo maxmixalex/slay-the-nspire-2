@@ -204,6 +204,7 @@ static void combat_player_speech(Canvas&c){
     layer.text_visible_characters=age<400?unsigned(age*80/400):UINT32_MAX;
     layer.fitted(label,x+7,y+8,98,37,10,10,rgb(255,246,226),true,false,false,true);
 }
+#include "phobia_swarm_ui.inc"
 static void combat_actors(Canvas&c){
     auto&a=c.a;const auto&s=a.game;const auto player=a.combat_player_pose();c.actor(0,player.sprite_x,player.sprite_y,player.scale);
     const bool pet=s.character==Character::Necrobinder||s.expansion.osty_max_hp>0;
@@ -220,7 +221,9 @@ static void combat_actors(Canvas&c){
             if(shared<0||(action&&(!shared_action||int32_t(m.start-a.enemy_presentation[shared].start)>=0))||(!shared_action&&!action&&s.enemies[i].hp>0)){shared=i;shared_action=action;}continue;}
         if(s.enemies[i].hp>0||s.enemy_world.active){auto p=a.combat_enemy_pose(i);Canvas actor=c;
             if(s.enemy_world.active&&a.enemy_presentation[i].instance_hue)actor.color_matrix=presentation::CreatureHue[a.enemy_presentation[i].instance_hue];
-            if(s.enemy_world.active)actor.opacity=uint8_t(a.enemy_opacity(i));actor.actor(i+1,p.sprite_x,p.sprite_y,p.scale);}
+            if(s.enemy_world.active)actor.opacity=uint8_t(a.enemy_opacity(i));actor.actor(i+1,p.sprite_x,p.sprite_y,p.scale);
+            creature_sleep_particles(actor,i);
+            if(s.enemy_world.active)phobia_swarm_body(actor,a.enemy_presentation[i].model,p.sprite_x,p.sprite_y,p.scale,a.animation*33,s.seed^a.enemy_presentation[i].identity);}
     }
     if(shared>=0){int clip;uint32_t elapsed;bool loop;
         // The original Kaiser actor shares one background skeleton. Its baked
@@ -330,11 +333,7 @@ static void combat_scene_shake(Canvas&c,int first_hit){
  // NCombatRoom shakes CombatSceneContainer (background and creatures),
  // while CombatUi and the foreground VFX container are siblings. Move only
  // the already-painted scene, before cards/topbar/popups are composed.
- const int first_y=dy>0?239:22,last_y=dy>0?21:240,step_y=dy>0?-1:1;
- const int first_x=dx>0?319:0,last_x=dx>0?-1:320,step_x=dx>0?-1:1;
- for(int y=first_y;y!=last_y;y+=step_y){const int sy=health_bar::bounded(y-dy,22,239);
-  for(int x=first_x;x!=last_x;x+=step_x){const int sx=health_bar::bounded(x-dx,0,319);c.pixels[y*c.pitch+x]=c.pixels[sy*c.pitch+sx];}}
- for(int i=first_hit;i<c.a.hit_count;++i){c.a.hits[i].x+=dx;c.a.hits[i].y+=dy;}
+ screen_translate(c,dx,dy,first_hit,22);
 }
 #include "combat_orb_ui.inc"
 static void combat_reward_room(Canvas&c){
@@ -348,6 +347,7 @@ static void combat_reward_room(Canvas&c){
     if(a.game.character==Character::Necrobinder||a.game.expansion.osty_max_hp>0){
         const auto pet=a.combat_player_pose(true);c.hp(a.combat_health(MaxEnemies+1),a.health_bars[MaxEnemies+1],creature_health_left(pet),pet.hp,pet.width);
     }
+    combat_scene_shake(c,hits);
     a.hit_count=hits; // The shared reward backstop owns pointer input.
 }
 static void combat_screen(Canvas&c){

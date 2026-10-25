@@ -204,6 +204,9 @@ void App::sync_enemy_feedback(){
    m.hp=hp;
   }
   ui_enemy_advance(*this,i);
+  if(source.kind==EnemyId::SlumberingBeetle||source.kind==EnemyId::LagavulinMatriarch){
+   int awake=1;ui_enemy_fact(&m.facts,"IsAwake",awake);m.sleep.observe(!awake&&!m.dead,animation*33u);
+  }
   ui_enemy_removal(*this,i);
  }
  bool living=false;for(int i=0;i<game.enemy_count;++i)living|=combat_health(i+1).hp>0;
@@ -259,6 +262,11 @@ void App::observe_core(const State&s,Log log){
   }
   if(move){sync_enemy_feedback();auto&m=enemy_presentation[slot];uint32_t when=int32_t(enemy_visual_clock-animation)>0?enemy_visual_clock:animation;
    const uint32_t first=when;uint32_t action_at=when;int projected=m.state;
+   unsigned scream_delay=0;
+   if((kind==EnemyId::DevotedSculptor&&log.b==0)||(kind==EnemyId::CeremonialBeast&&log.b==3))scream_delay=300;
+   else if(kind==EnemyId::TerrorEel&&log.b==3)scream_delay=700;
+   else if(kind==EnemyId::TheInsatiable&&log.b==0)scream_delay=500;
+   if(scream_delay)screen_effect_at(first+(scream_delay+32u)/33u,ScreenShakePresentation::Punch,ScreenShakePresentation::Medium,800);
    const uint32_t command_wait=ui_enemy_move_wait(*this,kind,log.b);
    for(unsigned i=0;i<move->action_count;i++)if(const auto*action=world_enemy_action(*move,i)){
     int clip=-1;

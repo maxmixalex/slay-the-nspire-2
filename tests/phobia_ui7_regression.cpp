@@ -1,4 +1,4 @@
-#include "app.hpp"
+#include "../src/app.cpp"
 #include "content_fixture.hpp"
 #include "ui_core_observer.hpp"
 #include <cstdio>
@@ -121,9 +121,71 @@ static void legacy(){auto bytes=fixture(false);CHECK(app.init(bytes.data(),bytes
  CHECK(app.content.world_clip("phobia","FossilStalker.idle_loop")<0&&app.content.world_image("phobia_backgrounds","HIVE")<0);
  CHECK(app.enemy_frame(slot,alternate,ms,loop)&&normal==alternate);unchanged();
 }
-int main(int argc,char**argv){Bytes bytes;
- if(argc>1){FILE*f=std::fopen(argv[1],"rb");CHECK(f);bytes.resize(spire_test::pack_size(f));CHECK(std::fread(bytes.data(),1,bytes.size(),f)==bytes.size());std::fclose(f);}
- else bytes=fixture(true);
- CHECK(app.init(bytes.data(),bytes.size(),{})&&app.content.version()>=PhobiaContentVersion);models(argc>2?argv[2]:nullptr);backgrounds();legacy();
+static void swarm_samples(){
+ bool ages[100]{};unsigned changed=0;int64_t radius_sum=0;
+ for(unsigned slot=0;slot<100;++slot){const auto p=phobia_swarm::sample(73,slot,0),again=phobia_swarm::sample(73,slot,0),later=phobia_swarm::sample(73,slot,660);
+  CHECK(p.age<2000&&p.age%20==0&&!ages[p.age/20]);ages[p.age/20]=true;
+  CHECK(p.x==again.x&&p.y==again.y&&p.scale==again.scale&&p.age==again.age);changed+=p.x!=later.x||p.y!=later.y;
+  for(const auto q:{p,later})CHECK(q.x>=-803*256&&q.x<=803*256&&q.y>=-803*256&&q.y<=803*256&&q.scale>=0&&q.scale<=1550);
+ }
+ CHECK(changed>95);
+ // At birth no velocity has accumulated. Check the original area-uniform
+ //50..400 ring independently, including its expected squared-radius mean.
+ for(unsigned seed=0;seed<1024;++seed){const auto p=phobia_swarm::sample(seed,0,0);
+  const int64_t squared=(int64_t(p.x)*p.x+int64_t(p.y)*p.y)/65536;
+  CHECK(squared>=2450&&squared<=161000);radius_sum+=squared;
+ }
+ CHECK(radius_sum/1024>76000&&radius_sum/1024<86000);
+ const auto end=phobia_swarm::sample(73,21,419),reborn=phobia_swarm::sample(73,21,420);
+ CHECK(end.age==1999&&reborn.age==0&&end.scale<4&&reborn.scale>100);
+}
+static void swarm(const char*directory){
+ if(!app.content.has_phobia_swarm_assets())return;
+ CHECK(app.content.has_startup_logo_assets()&&app.content.current_profile());
+ const auto image=app.content.image(app.content.ui_image(I12_PhobiaSwarm));CHECK(image.w==15&&image.h==15&&image.pixels);
+ const int slot=setup(EncounterId::EntomancerElite,EnemyId::Entomancer);app.phobia_mode=true;snapshot();
+ // Render the real source texture on an isolated surface. A fixed clock is
+ // stable, the warmed first frame is populated, and only the proper enabled
+ // body emits. This also catches texture/auxiliary-directory mismatches.
+ const auto paint=[&](bool enabled,unsigned model,uint32_t clock,unsigned opacity=255){
+  std::memset(app.pixels,0,sizeof app.pixels);app.phobia_mode=enabled;Canvas c{app};c.opacity=uint8_t(opacity);
+  phobia_swarm_body(c,model,160,190,1024,clock,73);unsigned ink=0;for(auto pixel:app.pixels)ink+=pixel!=0;return ink;
+ };
+ CHECK(paint(true,unsigned(EnemyId::Entomancer),0)>25);
+ const std::vector<uint16_t> first(app.pixels,app.pixels+ScreenW*ScreenH);
+ CHECK(paint(true,unsigned(EnemyId::Entomancer),0)>25&&!std::memcmp(first.data(),app.pixels,sizeof app.pixels));
+ CHECK(paint(true,unsigned(EnemyId::Entomancer),660)>25&&std::memcmp(first.data(),app.pixels,sizeof app.pixels));
+ CHECK(!paint(false,unsigned(EnemyId::Entomancer),660));CHECK(!paint(true,unsigned(EnemyId::Nibbit),660));CHECK(!paint(true,unsigned(EnemyId::Entomancer),660,0));unchanged();
+ app.phobia_mode=true;app.render();capture(directory,"Entomancer","swarm-warm");
+ const auto p=app.combat_enemy_pose(slot);const int cx=p.sprite_x,cy=p.sprite_y-175*p.scale/3906;
+ uint16_t region[81*81]{};for(int y=0;y<81;++y)for(int x=0;x<81;++x){const int px=cx+x-40,py=cy+y-40;if(px>=0&&px<320&&py>=22&&py<240)region[y*81+x]=app.pixels[py*320+px];}
+ // Keep the room clock fixed: the alternate body is static, while its
+ // independent particles follow the combat clock.
+ app.animation+=20;app.render();unsigned differences=0;
+ for(int y=0;y<81;++y)for(int x=0;x<81;++x){const int px=cx+x-40,py=cy+y-40;if(px>=0&&px<320&&py>=22&&py<240)differences+=region[y*81+x]!=app.pixels[py*320+px];}
+ CHECK(differences>20);capture(directory,"Entomancer","swarm-later");unchanged();
+ app.title=true;app.progress.discovered_acts=15;app.progress.enemies[unsigned(EnemyId::Entomancer)][0]={1,0,0};CHECK(app.open_bestiary());
+ int entry=-1;for(int row=0;row<app.bestiary.row_count;++row)if(app.bestiary_entry_model(row)==unsigned(EnemyId::Entomancer))entry=row;CHECK(entry>=0);
+ app.bestiary_pointer({0,0,0,0,HitKind::BestiaryEntry,int16_t(entry),true});for(unsigned i=0;i<60;++i)app.advance(33);app.render();
+ CHECK(app.bestiary.actors[0].model==unsigned(EnemyId::Entomancer));capture(directory,"Entomancer","swarm-bestiary");unchanged();app.input(Key::Back);
+}
+static Bytes read_bytes(const std::string&path){FILE*f=std::fopen(path.c_str(),"rb");CHECK(f);Bytes out(spire_test::pack_size(f));CHECK(std::fread(out.data(),1,out.size(),f)==out.size());std::fclose(f);return out;}
+int main(int argc,char**argv){Bytes bytes,common,locale;SplitResourceSource split;const char*directory=nullptr;
+ if(argc>2&&!std::strcmp(argv[1],"--split")){
+  common=read_bytes(std::string(argv[2])+"/nSpire2.common.tns");locale=read_bytes(std::string(argv[2])+"/nSpire2.eng.tns");
+  CHECK(split.open(ResourceSource::memory(common.data(),common.size()),ResourceSource::memory(locale.data(),locale.size()),ResourceLanguage::English));
+  CHECK(app.init(split.source(),{}));directory=argc>3?argv[3]:nullptr;
+ }else{bytes=argc>1?read_bytes(argv[1]):fixture(true);CHECK(app.init(bytes.data(),bytes.size(),{}));directory=argc>2?argv[2]:nullptr;}
+ CHECK(app.content.version()>=PhobiaContentVersion);swarm_samples();models(directory);backgrounds();swarm(directory);
+ if(!common.empty())for(unsigned language=1;language<=LocaleLanguageCount;++language){
+  const auto info=locale_language_info(language);locale=read_bytes(std::string(argv[2])+"/"+info.file);
+  CHECK(split.open(ResourceSource::memory(common.data(),common.size()),ResourceSource::memory(locale.data(),locale.size()),ResourceLanguage(language)));
+  CHECK(boot_probe_language(split.source())==BootLanguage(language));CHECK(app.init(split.source(),{})&&app.content.current_profile());
+  CHECK(app.content.has_phobia_swarm_assets()&&app.content.has_startup_logo_assets()&&app.content.has_sleeping_vfx_assets());
+  for(unsigned id:{I12_SleepingZEnglish,I12_SleepingZJapanese}){const auto image=app.content.image(app.content.ui_image(id));CHECK(image.pixels&&image.w==32&&image.h==32);}
+  for(const char*key:{"SKIP_INTRO_LOGO_HEADER","SKIP_INTRO_LOGO_DESCRIPTION","TOAST_SKIP_INTRO_LOGO_ON","TOAST_SKIP_INTRO_LOGO_OFF"})CHECK(*app.content.world_string("settings_ui",key));
+  CHECK(app.content.healthy());unchanged();
+ }
+ legacy();
  std::printf("phobia UI7: %u checks passed\n",checks);
 }

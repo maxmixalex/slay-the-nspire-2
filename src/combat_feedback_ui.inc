@@ -86,25 +86,28 @@ void App::observe_combat_damage(const State&s,const CoreDamageResult&result){
  const unsigned actor=result.receiver==-2?MaxEnemies+1:unsigned(result.receiver+1);
  if(actor>=CombatFeedback::Energy)return;
  const auto identity=ui_feedback_identity(s,actor);auto&f=combat_feedback;
+ if(ui_feedback_bound(*this)&&result.receiver>=0){
+  int card=-1;for(const auto&attack:f.attacks)if(attack.active&&attack.card>=0)card=attack.card;
+  if(card>=0&&card<s.card_count){const auto impact=source_card_impact_shake(s.cards[card].kind);
+   if(impact.strength){sync_screen_motion();screen_motion.add(screen_motion_clock(),f.effect_at*33u+impact.delay,ScreenShakePresentation::Punch,impact.strength,impact.duration);}
+   if(s.cards[card].kind==DefectHyperbeam){sync_screen_motion();
+    // The card awaits .5s; the laser begins at .525s and ends .5s later.
+    screen_motion.add(screen_motion_clock(),f.effect_at*33u+25u,ScreenShakePresentation::Punch,ScreenShakePresentation::Medium,800);
+    screen_motion.add(screen_motion_clock(),f.effect_at*33u+525u,ScreenShakePresentation::Punch,ScreenShakePresentation::Strong);
+   }
+  }
+ }
  if(ui_feedback_bound(*this))f.append_damage(actor,result,identity,f.effect_at);
  else if(result.amount()>0||(result.flags&(CoreDamageResult::FullyBlocked|CoreDamageResult::ShowZero)))
   ui_damage_apply(*this,{identity,animation,result.amount(),uint8_t(actor),result.flags,result.shake_strength});
 }
 void App::combat_scene_offset(int&x,int&y)const{
- x=y=0;if(!screen_shake)return;
- static constexpr unsigned multipliers[]={0,512,1024,2048,4096};
- const unsigned multiplier=multipliers[screen_shake<5?screen_shake:2];
+ ScreenShakePresentation::Cue damage{};
  for(unsigned i=combat_status.damage_count;i>0;--i){const auto&d=combat_status.damages[i-1];
-  const int elapsed=int32_t(animation-d.at)*33;if(elapsed<0||!d.shake_strength)continue;if(elapsed>=300)return;
-  // ScreenPunchInstance: cos(remaining*60rad/s), CubicOut(remaining/.3),
-  // one latest punch at a time. The logical viewport is1680->320; UI stays still.
-  const unsigned q=unsigned(elapsed)*1024u/300u,envelope=1024u-q*q/1024u*q/1024u;
-  const int phase=int((unsigned(300-elapsed)*391139u+5000u)/10000u);
-  int amplitude=int(unsigned(d.shake_strength)*multiplier*envelope/1024u);
-  amplitude=amplitude*CombatCardMotion::sine(phase+1024)/1024*4/21;
-  const int xx=amplitude*CombatCardMotion::sine(d.angle+1024)/1024,yy=amplitude*CombatCardMotion::sine(d.angle)/1024;
-  x=(xx+(xx<0?-512:512))/1024;y=(yy+(yy<0?-512:512))/1024;return;
+  if(int32_t(animation-d.at)<0||!d.shake_strength)continue;
+  damage={d.at*33u,300,d.angle,d.shake_strength,ScreenShakePresentation::Punch};break;
  }
+ screen_motion.sample(animation*33u,screen_shake,x,y,&damage);
 }
 void App::sync_combat_damage(){
  auto&f=combat_feedback;
@@ -237,6 +240,11 @@ void App::before_combat_effect(const State&s,Effect effect){
  }else if(op==XOp::EnemyHit&&effect.aux%8==f.move_slot&&f.enemy_attack.active&&f.observed[f.move_slot+1].hp>0&&f.observed[0].hp>0){
   const bool repeat=f.enemy_attack.hit&&!f.enemy_attack.once;
   f.effect_at=ui_feedback_later(f.effect_at,f.enemy_attack.impact(f.effect_at,0,fast_mode));
+  if((kind==EnemyId::CeremonialBeast&&(f.move==1||f.move==4||f.move==5))||(kind==EnemyId::Vantom&&f.move==2))
+   screen_effect_at(f.effect_at,ScreenShakePresentation::Punch,ScreenShakePresentation::Strong,800,2048);
+  else if(kind==EnemyId::Crusher||kind==EnemyId::Rocket){sync_screen_motion();screen_motion.add(screen_motion_clock(),f.effect_at*33u+200u,ScreenShakePresentation::Punch,ScreenShakePresentation::Strong);}
+  else if(kind==EnemyId::MechaKnight){sync_screen_motion();screen_motion.add(screen_motion_clock(),f.effect_at*33u+(f.move==1?0u:100u),ScreenShakePresentation::Punch,
+    f.move==1?ScreenShakePresentation::Weak:ScreenShakePresentation::Strong,f.move==1?800u:300u);}
   if(repeat&&combat_enemy_attack_timing(kind,f.move,fast_mode).known)if(const auto*action=ui_enemy_attack_action(kind,f.move)){
    // AttackCommand restarts its animator after the previous Damage wait,
    // before this hit's anim delay and optional callback wait. Retain the

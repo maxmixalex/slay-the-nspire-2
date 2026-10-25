@@ -246,6 +246,7 @@ static void bestiary_actor(Canvas&c,BestiaryPresentation::Preview&actor,int x,in
  unsigned frame=elapsed/animation.frame_ms;frame=loop?frame%animation.count:unsigned(mn(int(frame),animation.count-1));
  const int id=int(animation.first)+int(frame);const auto image=c.a.content.image(id);if(!image.pixels)return;
  c.picture(image,x-animation.pivot_x*scale/1024,feet-animation.pivot_y*scale/1024,mx(1,image.w*scale/1024),mx(1,image.h*scale/1024));
+ phobia_swarm_body(c,actor.model,x,feet,scale,c.a.map_clock_ms,0xe170aaceu^actor.model);
 }
 #include "bestiary_kaiser_ui.inc"
 static void bestiary_falling_rocks(Canvas&c){

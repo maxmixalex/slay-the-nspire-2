@@ -401,7 +401,16 @@ static void history_screen(Canvas&c){
     for(unsigned i=0;i<r.floor_count;++i)history_hit(c,layout.floor(r,i),dx,offset,HitKind::HistoryFloor,int(i));
     for(unsigned i=0;i<r.relic_count;++i)history_hit(c,layout.relic(i),dx,offset,HitKind::HistoryRelic,int(i));
     for(unsigned i=0;i<groups;++i)history_hit(c,layout.card(i),dx,offset,HitKind::HistoryCard,indices[i]);
-    const int focused=history_focus_id(a,r,indices,groups,layout,dx,offset);motion.observe(focused,a.map_clock_ms);
+    const int focused=history_focus_id(a,r,indices,groups,layout,dx,offset);
+    if(focused!=motion.hover&&focused>=0&&focused<r.floor_count){const auto&floor=r.floors[focused];
+        const auto room=WorldRoom(floor.room);unsigned strength=room==WorldRoom::Monster?ScreenShakePresentation::Weak:room==WorldRoom::Elite?ScreenShakePresentation::Medium:room==WorldRoom::Boss?ScreenShakePresentation::Strong:0;
+        if(strength)a.screen_effect(ScreenShakePresentation::Rumble,strength,800);
+        else if(room==WorldRoom::Rest){
+            if(floor.rest_choices&(1u<<unsigned(WorldRestOption::Smith)))a.screen_effect(ScreenShakePresentation::Rumble,ScreenShakePresentation::Medium);
+            else if(floor.rest_choices&(1u<<unsigned(WorldRestOption::Lift)))a.screen_effect(ScreenShakePresentation::Punch,ScreenShakePresentation::Strong);
+        }
+    }
+    motion.observe(focused,a.map_clock_ms);
     // The source32px top margin positions the header; it is not a clip.
     // Keep its scaled portrait and scrolling labels visible up to screenY0.
     Canvas header=c;header.opacity=page.opacity;history_header(header,r,dx,offset);

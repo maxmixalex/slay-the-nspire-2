@@ -1,6 +1,8 @@
 #include "app.hpp"
 #include "ui12_assets.hpp"
+#include "phobia_swarm.hpp"
 #include "enemy_command_timing.hpp"
+#include "screen_shake_sources.hpp"
 #include "rich_text.hpp"
 #include "source_locale_fonts.hpp"
 #include "settings_layout.hpp"
@@ -41,6 +43,7 @@ namespace spire {
 #include "character_ui.inc"
 #include "combat_feedback_ui.inc"
 #include "canvas.inc"
+#include "screen_shake_ui.inc"
 #include "small_material_ui7.inc"
 #include "room_secondary_vfx_ui11.inc"
 static void world_region_image_key(const State&s,char*out,size_t size){
@@ -118,6 +121,7 @@ static void log_line(App&a,Log l,char*b,size_t n){
 }
 #include "relic_ui.inc"
 #include "ui_picture_transform.inc"
+#include "creature_sleep_ui.inc"
 #include "card_grid_ui.inc"
 #include "deck_selection_ui.inc"
 #include "hud_ui6.inc"
@@ -267,6 +271,7 @@ int App::detail_stars()const{
 
 void App::render(){
     if(startup_logo.active()){Canvas c{*this};startup_logo_screen(c);return;}
+    sync_screen_motion();
 #if SPIRE_DEBUG_COMMANDS
     if(debug_open){
         // Retain the current scene under the console. Rendering it with mouse
@@ -303,9 +308,9 @@ void App::render(){
     if(run_mode.screen!=RunMenu::Closed){const bool mouse=pointer.visible;if(frontend_confirm||ftue.active())pointer.visible=false;run_modes_screen(c);pointer.visible=mouse;if(frontend_confirm)frontend_confirm_screen(c);ftue_screen(c);character_departure_screen(c);pointer_overlay(c);return;}
     if(map_preview.open){reference_map_screen(c);pointer_overlay(c);return;}
     if(library){const bool mouse=pointer.visible;if(frontend_confirm)pointer.visible=false;library_screen(c);if(detail_card>=0||card_inspect.closing(map_clock_ms))detail_screen(c);if(detail_item>=0||relic_inspect.closing(map_clock_ms))item_detail_screen(c);keyword_tooltips(c);pointer.visible=mouse;if(frontend_confirm)frontend_confirm_screen(c);pointer_overlay(c);return;}
-    if(statistics_open||history_open){const bool mouse=pointer.visible;if(frontend_confirm)pointer.visible=false;if(statistics_open)statistics_screen(c);else history_screen(c);if(detail_card>=0||card_inspect.closing(map_clock_ms))detail_screen(c);if(detail_item>=0||relic_inspect.closing(map_clock_ms))item_detail_screen(c);keyword_tooltips(c);pointer.visible=mouse;if(frontend_confirm)frontend_confirm_screen(c);pointer_overlay(c);return;}
+    if(statistics_open||history_open){const bool mouse=pointer.visible;if(frontend_confirm)pointer.visible=false;if(statistics_open)statistics_screen(c);else history_screen(c);screen_scene_shake(c);if(detail_card>=0||card_inspect.closing(map_clock_ms))detail_screen(c);if(detail_item>=0||relic_inspect.closing(map_clock_ms))item_detail_screen(c);keyword_tooltips(c);pointer.visible=mouse;if(frontend_confirm)frontend_confirm_screen(c);pointer_overlay(c);return;}
     if(compendium_open){const bool mouse=pointer.visible;if(frontend_confirm)pointer.visible=false;compendium_screen(c);pointer.visible=mouse;if(frontend_confirm)frontend_confirm_screen(c);pointer_overlay(c);return;}
-    if(character_select){const bool mouse=pointer.visible;if(ftue.active())pointer.visible=false;character_screen(c);pointer.visible=mouse;ftue_screen(c);character_departure_screen(c);pointer_overlay(c);return;}
+    if(character_select){const bool mouse=pointer.visible;if(ftue.active())pointer.visible=false;character_screen(c);screen_scene_shake(c);pointer.visible=mouse;ftue_screen(c);character_departure_screen(c);pointer_overlay(c);return;}
     const bool underlay_pointer_visible=pointer.visible;
     if(settings_open||frontend_confirm||help||ftue.active())pointer.visible=false;
     if(title){title_screen(c);
@@ -331,6 +336,7 @@ void App::render(){
         // The underlying live room may clamp its own navigation while it is
         // hidden. Never let that overwrite the selected map column or a
         // covering capstone's scroll position.
+        if(!screen_combat_target(*this))screen_scene_shake(c,0,22);
         if(map_window.is_open){map_room_cursor=cursor;map_room_scroll=scroll;cursor=map_cursor;scroll=panel_scroll;}
         if(map_window.visible)world_map_window_screen(c);
         if(!combat_linger&&(!panel||panel==4)&&!library&&combat_choice_ready()&&!choice_peeking&&(game.phase==Phase::WorldRelicChoice||game.phase==Phase::OriginalEventChoice))world_choice_screen(c);
@@ -345,6 +351,7 @@ void App::render(){
     }
     pointer.visible=underlay_pointer_visible&&!help&&!frontend_confirm;
     if(settings_open)frontend_settings_screen(c);
+    if(title)screen_scene_shake(c);
     pointer.visible=underlay_pointer_visible&&!help;
     if(frontend_confirm)frontend_confirm_screen(c);
     pointer.visible=underlay_pointer_visible;

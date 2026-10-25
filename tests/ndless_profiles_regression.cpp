@@ -106,14 +106,14 @@ static void recovered_selector(){setup();files[selector_path]={1,2,3};files[sele
  CHECK(files.at(selector_path)==selector(3));
 }
 static void preferences(){setup();spire::UiPreferences first{},second{},loaded{};
- first.fast_mode=first.phobia_mode=first.show_run_timer=first.long_press=true;first.screen_shake=4;
+ first.fast_mode=first.phobia_mode=first.show_run_timer=first.long_press=first.skip_intro_logo=true;first.screen_shake=4;
  second.keyboard_only=second.show_card_indices=true;second.text_effects=second.bestiary_actions_preferred=false;second.screen_shake=0;
  first.bindings=spire::default_input_bindings(true);CHECK(spire::rebind_input(first.bindings,0,unsigned(spire::InputCommand::Map),'B'));
  CHECK(spire::rebind_input(second.bindings,1,unsigned(spire::InputCommand::Map),'P'));
  CHECK(save_preferences(first)&&load_preferences(loaded)&&spire::ui_preference_flags(loaded)==spire::ui_preference_flags(first));
  CHECK(loaded.bindings_saved&&!std::memcmp(&loaded.bindings,&first.bindings,sizeof first.bindings));
  const auto slot_one=files.at(path(1,6));
- CHECK(slot_one.size()==spire::UiPreferencesBytes&&slot_one[4]==5);
+ CHECK(slot_one.size()==spire::UiPreferencesBytes&&slot_one[4]==6);
  CHECK(request_profile(2,false));service_profile();CHECK(app.success&&!load_preferences(loaded));
  CHECK(save_preferences(second)&&load_preferences(loaded)&&spire::ui_preference_flags(loaded)==spire::ui_preference_flags(second));
  CHECK(!std::memcmp(&loaded.bindings,&second.bindings,sizeof second.bindings));

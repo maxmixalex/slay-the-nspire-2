@@ -13,6 +13,7 @@ void App::sync_camp_presentation(){
    unsigned wait=500;const auto option=WorldRestOption(selection.option);
    if(option==WorldRestOption::Heal){wait=fast_mode?1500:2500;m.heal_start=map_clock_ms;m.healing=true;}
    else if(option==WorldRestOption::Smith)wait=fast_mode?1000:2000;
+   else if(option==WorldRestOption::Lift||option==WorldRestOption::Clone)screen_effect(ScreenShakePresentation::Punch,ScreenShakePresentation::Strong);
    m.complete(map_clock_ms,wait);
   }else m.cancel(next,map_clock_ms); // canceled Smith/Cook keeps the room's existing controls
  }

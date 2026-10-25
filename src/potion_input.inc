@@ -53,6 +53,7 @@ bool App::finish_potion_use(int selected_target){
     if(!can_use_potion(game,slot,selected_target))return false;
     begin_combat_feedback();
     if(!use_potion(game,slot,selected_target)){combat_feedback.reset();combat_status.reset();return false;}
+    if(bottle==Potion::FoulPotion&&game.phase==Phase::Shop)screen_effect(ScreenShakePresentation::Rumble,ScreenShakePresentation::Medium);
     remove_potion_visual(bottle,slot,false);close_potion(bottle);
     choice_selected_count=0;choice_revision=game.revision;
     if(target>=game.enemy_count||!enemy_allow_target(game,target))for(int i=0;i<game.enemy_count;++i)if(enemy_allow_target(game,i)){target=i;break;}

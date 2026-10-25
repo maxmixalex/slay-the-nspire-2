@@ -50,6 +50,8 @@
 #include "card_target_presentation.hpp"
 #include "combat_status.hpp"
 #include "combat_spark_motion.hpp"
+#include "screen_shake.hpp"
+#include "creature_sleep.hpp"
 #include "character_select_presentation.hpp"
 #include "turn_banner_presentation.hpp"
 #include "combat_preparation.hpp"
@@ -164,7 +166,9 @@ public:
     bool has_inspection_assets()const{return version_>=SelectionContentVersion&&(ui_count_==InspectionAuxiliaryCount||has_speech_bubble_assets());}
     bool has_speech_bubble_assets()const{return version_>=SpeechBubbleContentVersion&&(ui_count_==SpeechBubbleAuxiliaryCount||has_history_header_assets());}
     bool has_history_header_assets()const{return version_>=HistoryHeaderContentVersion&&(ui_count_==HistoryHeaderAuxiliaryCount||has_history_body_assets());}
-    bool has_startup_logo_assets()const{return version_>=Ui12ContentVersion&&ui_count_==IntroLogoAuxiliaryCount;}
+    bool has_sleeping_vfx_assets()const{return version_>=Ui12ContentVersion&&ui_count_==SleepingVfxAuxiliaryCount;}
+    bool has_phobia_swarm_assets()const{return version_>=Ui12ContentVersion&&(ui_count_==PhobiaSwarmAuxiliaryCount||has_sleeping_vfx_assets());}
+    bool has_startup_logo_assets()const{return version_>=Ui12ContentVersion&&(ui_count_==IntroLogoAuxiliaryCount||has_phobia_swarm_assets());}
     bool has_history_body_assets()const{return version_>=HistoryBodyContentVersion&&(ui_count_==SettingsUi10AuxiliaryCount||(version_>=Ui12ContentVersion&&ui_count_==Ui12AuxiliaryCount)||has_startup_logo_assets());}
     bool has_settings_ui10_assets()const{return has_history_body_assets();}
     bool current_profile()const{
@@ -266,6 +270,7 @@ struct EnemyPresentation {
     bool loop=true,dead=false,overflow=false,direct=false;
     bool removing=false;
     uint32_t fade_start=0,hide_at=0;
+    CreatureSleepPresentation sleep{};
     EnemyVisualFacts facts{};
     EnemyVisualCommand queue[MaxEnemyVisualCommands]{};uint8_t count=0;
 };
@@ -650,6 +655,12 @@ struct App {
     void pointer_aux_button(unsigned button,bool down);
     bool map_drawing_point(bool begin=false);
     uint32_t map_clock_ms=0;
+    ScreenShakePresentation screen_motion{};
+    uint32_t screen_motion_clock()const;
+    void sync_screen_motion();
+    void screen_effect(ScreenShakePresentation::Kind,unsigned strength,unsigned duration=300,unsigned angle=0,unsigned delay=0);
+    void screen_effect_at(uint32_t tick,ScreenShakePresentation::Kind,unsigned strength,unsigned duration=300,unsigned angle=0);
+    void screen_scene_offset(int&x,int&y)const;
     MapPresentationState map_visuals{};
     MapTravel map_travel{};
     MapWindowState map_window{};

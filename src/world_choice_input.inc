@@ -94,6 +94,11 @@ void App::confirm_world_choice(){
  bool done=game.phase==Phase::WorldRelicChoice?world_relic_select(game,choice_selected,choice_selected_count):
   original_event_select(game,choice_selected,choice_selected_count);
  if(done){
+  if(game.original_events.active&&game.original_events.id==OriginalEventId::Amalgamator){
+   screen_effect(ScreenShakePresentation::Trauma,ScreenShakePresentation::Strong);
+   screen_effect(ScreenShakePresentation::Trauma,ScreenShakePresentation::Strong,300,0,300);
+  }
+  if(upgrade_count)for(unsigned i=0;i<3;++i)screen_effect(ScreenShakePresentation::Punch,ScreenShakePresentation::Weak,300,2048,250u+i*250u);
   for(unsigned i=0;i<upgrade_count;++i){const int index=upgrade_ids[i];if(index<game.deck_count&&game.deck[index].upgraded)
    reward_presentation.upgrades.add(game.deck[index],game.event_cards.deck[index],index,map_clock_ms);}
   choice_selected_count=0;choice_revision=game.revision;deck_selection.reset();cursor=0;busy=0;pointer_cancel();}
