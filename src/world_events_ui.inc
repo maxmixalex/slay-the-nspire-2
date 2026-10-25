@@ -126,7 +126,10 @@ static void native_architect_dialogue(Canvas&c){
  constexpr int x=8,y=168,w=304,h=33,tx=x+8,ty=y+5,tw=w-28,th=h-10;
  const bool player=(a.game.character==Character::Regent||a.game.character==Character::Necrobinder)?(e.values[1]%2==0):(e.values[1]%2!=0);
  const auto color=player?ancient_character_color(a.game.character):AncientButtonColor{51,51,51,255};
- Canvas body=c;body.bold_face=5;body.opacity=uint8_t(unsigned(body.opacity)*motion.body_progress(a.map_clock_ms)/room_curve::Q);
+ // NSpeechBubbleVfx starts its alpha and visible_ratio together over400ms;
+ // it has none of the default event body's extra750/450ms title delay.
+ const unsigned reveal=room_curve::linear(a.map_clock_ms-motion.start,400);
+ Canvas body=c;body.bold_face=5;body.opacity=uint8_t(unsigned(body.opacity)*reveal/room_curve::Q);
  Canvas panel=body;panel.tint_red=color.red;panel.tint_green=color.green;panel.tint_blue=color.blue;
  panel.nine_ui(I7_AncientDialogue,x,y,w,h,6,6,6,6);
  const uint32_t key=native_event_revision(e)^(unsigned(e.id)<<24);
@@ -134,7 +137,7 @@ static void native_architect_dialogue(Canvas&c){
  const int size=a.content.font_size(10);const auto metric=[&](const RichChar&ch,int px){return body.text_metric(ch,px);};
  auto&scroll=a.event_body_scroll;scroll.configure(fitted_text::line_count(text,tw,size,metric)*(size+1)+2,th);
  a.event_body_top=ty;a.event_body_height=th;
- body.text_visible_characters=room_rich_characters(text)*motion.body_reveal(a.map_clock_ms)/room_curve::Q;
+ body.text_visible_characters=room_rich_characters(text)*reveal/room_curve::Q;
  native_room_scroll_text(body,text,tx,ty,tw,th,scroll.offset(),size);
  if(scroll.maximum){
   constexpr int sx=x+w-10,sy=ty+6,length=th-12;
@@ -146,7 +149,11 @@ static void native_architect_dialogue(Canvas&c){
  char label[256]{};native_event_option(a,0,false,label,sizeof label);
  if(!e.finished){const char*next=a.content.world_string("ancients",player?"THE_ARCHITECT.CONTINUE":"THE_ARCHITECT.RESPOND");if(*next){label[0]=0;TextBuffer b{label,sizeof label,0};b.text(next);}}
  const bool ready=motion.option_ready(0,a.map_clock_ms);a.cursor=0;
- native_proceed(c,label,ready,!a.pointer.visible);native_proceed_choice(c,0,ready);
+ // NEventOptionButton still delays/enables at1s Normal / .5s Fast. Start
+ // the retained Proceed image when this line is created, not another .5s
+ // after its input gate has opened.
+ Canvas button=c;button.opacity=uint8_t(unsigned(button.opacity)*motion.option_progress(0,a.map_clock_ms)/room_curve::Q);
+ native_proceed(button,label,true,ready&&!a.pointer.visible);native_proceed_choice(c,0,ready);
 }
 static void native_event_screen(Canvas&c){
  auto&a=c.a;const auto&s=a.game;const auto&e=s.original_events;
