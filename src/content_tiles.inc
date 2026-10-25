@@ -158,10 +158,19 @@ static TileGroup* load_retained_group(const Content* owner,const ResourceReader&
     if(!encoded_pixels||length<33||length>ResourceTransferCapacity||!reader.read(offset,encoded_pixels,length))return nullptr;
     const uint8_t* p=encoded_pixels;
     const unsigned size=u32(p+4),encoded=u32(p+8),property=u32(p+12);
-    if(u32(p)!=0x31524752u||!size||size>Lzma2BlockRawLimit||encoded!=length-32||
-       property!=Lzma2DictionaryProperty)return nullptr;
+    if(!size||size>Lzma2BlockRawLimit||property!=Lzma2DictionaryProperty)return nullptr;
+    unsigned start=32,count=0,mode=0;
+    if(u32(p)==FilteredRetainedGroupMagic){
+        count=u32(p+16);mode=u32(p+20);const unsigned table_bytes=u32(p+24);
+        if(owner->version()<RetainedFilterContentVersion||mode<1||mode>2||u32(p+28)||
+           !count||count>(length-32)/8||table_bytes!=count*8||
+           !valid_retained_slices(p+32,count,size))return nullptr;
+        start+=table_bytes;
+    }else if(u32(p)!=0x31524752u)return nullptr;
+    if(!encoded||encoded!=length-start)return nullptr;
     TileGroup* group=reserve_tile_group(size);if(!group)return nullptr;
-    if(!decode_lzma2_block(tile_bytes(*group),group->pages*TilePageBytes,size,p+32,encoded,property)){
+    if(!decode_lzma2_block(tile_bytes(*group),group->pages*TilePageBytes,size,p+start,encoded,property)||
+       (mode&&!restore_retained_group(tile_bytes(*group),size,p+32,count,mode))){
         tile_discard(*group);return nullptr;
     }
     group->id=id;group->size=size;group->items=0;group->age=next_tile_age();

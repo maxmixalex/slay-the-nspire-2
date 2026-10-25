@@ -11,15 +11,62 @@ from __future__ import annotations
 
 import struct
 
-import numpy as np
-
-
 MAX_IMAGE_BYTES = 320 * 240 * 8 + 2 * 240
+CONTENT_VERSION = 36
+GROUP_LIMIT = 512 * 1024
+ENCODED_LIMIT = MAX_IMAGE_BYTES + MAX_IMAGE_BYTES // 255 + 32
+GROUP = struct.Struct('<4s7I')
+SLICE = struct.Struct('<II')
 
 
 def _require(condition, message):
     if not condition:
         raise ValueError(message)
+
+
+def group_layout(payload, version):
+    """Return the bounded retained stream start and optional RGB slice table.
+
+    Header inspection performs no decoding. Both the offline reader and the
+    shared-art splitter use it, matching the runtime's requested-group checks.
+    Legacy RGR1 reserved fields deliberately remain uninterpreted.
+    """
+    _require(GROUP.size < len(payload) <= ENCODED_LIMIT, 'Retained group outside encoded bound')
+    tag, raw_size, encoded, prop, count, mode, table_bytes, reserved = GROUP.unpack_from(payload)
+    _require(0 < raw_size <= GROUP_LIMIT and prop == 14, 'Invalid retained group size/property')
+    if tag == b'RGR1':
+        _require(encoded == len(payload) - GROUP.size, 'Invalid retained group stream length')
+        return raw_size, GROUP.size, 0, ()
+    _require(tag == b'RGR2' and version >= CONTENT_VERSION, 'Unsupported retained group version')
+    _require(mode in (1, 2) and reserved == 0 and 0 < count <= raw_size // 2 and
+             count <= (len(payload) - GROUP.size) // SLICE.size and table_bytes == count * SLICE.size,
+             'Invalid retained color table header')
+    start = GROUP.size + table_bytes
+    _require(0 < encoded == len(payload) - start, 'Invalid retained color stream length')
+    slices, end = [], 0
+    for index in range(count):
+        at, shape = SLICE.unpack_from(payload, GROUP.size + index * SLICE.size)
+        length, fmt = shape & 0xffffff, shape >> 24
+        _require(at == end and fmt <= 4 and 0 < length <= raw_size - end,
+                 'Invalid retained color slice coverage')
+        slices.append((at, shape))
+        end += length
+    _require(end == raw_size, 'Incomplete retained color slice coverage')
+    return raw_size, start, mode, tuple(slices)
+
+
+def transform_group(raw, slices, mode, inverse=False):
+    """Transform each complete image slice, preserving its original offset."""
+    _require(0 < len(raw) <= GROUP_LIMIT and slices, 'Invalid retained group payload')
+    output, end = bytearray(raw), 0
+    for at, shape in slices:
+        length, fmt = shape & 0xffffff, shape >> 24
+        _require(at == end and fmt <= 4 and 0 < length <= len(raw) - end,
+                 'Invalid retained color slice coverage')
+        output[at:at + length] = transform(raw[at:at + length], fmt, mode, inverse)
+        end += length
+    _require(end == len(raw), 'Incomplete retained color slice coverage')
+    return bytes(output)
 
 
 def _color_ranges(raw, fmt, width, height):
@@ -38,7 +85,9 @@ def _color_ranges(raw, fmt, width, height):
         if width is not None:
             _require(len(raw) == prefix + width * height * stride,
                      'Retained image dimensions disagree with its payload')
-        return [(0, 256, 2)] if prefix else [(0, len(raw) // stride, stride)]
+        # Dense RGB+alpha stores two contiguous planes. Sparse spans below
+        # are the only retained representation with interleaved alpha.
+        return [(0, 256, 2)] if prefix else [(0, len(raw) // stride, 2)]
 
     at, rows, ranges = 0, 0, []
     maximum_width = width if width is not None else 320
@@ -75,6 +124,9 @@ def transform(raw, fmt, mode, inverse=False, *, width=None, height=None):
     payload-only API; sparse coordinates still obey the 320x240 image bounds.
     Both forward and inverse paths validate identical unchanged geometry.
     """
+    # Header-only split/pack inspection remains usable with the standard
+    # library. NumPy is needed only by the offline pixel transform itself.
+    import numpy as np
     _require(isinstance(mode, int) and mode in (1, 2), 'Unsupported retained color transform')
     ranges = _color_ranges(raw, fmt, width, height)
     out = bytearray(raw)

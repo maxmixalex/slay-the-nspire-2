@@ -561,11 +561,11 @@ void bestiary_supplement_packages(){
     // both readers against an independently written synthetic directory and
     // retain the previous v33 catalog as a compatible, smaller profile.
     auto direct=std::make_unique<Content>(),range=std::make_unique<Content>();Rejector reject;
-    for(unsigned version:{unsigned(GroupedStringContentVersion),unsigned(BestiaryKaiserContentVersion),unsigned(SceneFontContentVersion)})for(const char*locale:{"eng","zhs"}){
+    for(unsigned version:{unsigned(GroupedStringContentVersion),unsigned(BestiaryKaiserContentVersion),unsigned(SceneFontContentVersion),unsigned(RetainedFilterContentVersion)})for(const char*locale:{"eng","zhs"}){
         label=version>=BestiaryKaiserContentVersion?"v34 sparse Bestiary clip append":"v33 historical catalog remains readable";
         const unsigned animations=version>=BestiaryKaiserContentVersion?BestiaryKaiserAnimationKinds:CharacterDeathAnimationKinds;
         Package p=basic();
-        if(version==SceneFontContentVersion)p.glyphs=32769;
+        if(version>=SceneFontContentVersion)p.glyphs=32769;
         p.encode(false,InspectionAuxiliaryCount,version,Ui7StringCount,animations);
         const unsigned strings=40+p.images*16+p.glyphs*16,clips=strings+Ui7StringCount*8;
         put(p.bytes,strings+LocaleMarkerString*8,unsigned(p.bytes.size()));put(p.bytes,strings+LocaleMarkerString*8+4,3);
@@ -579,7 +579,7 @@ void bestiary_supplement_packages(){
         CHECK(direct->current_profile()&&range->current_profile());
         CHECK(direct->has_inspection_assets()&&range->has_inspection_assets());
         CHECK(direct->english()==(locale[0]=='e')&&range->english()==(locale[0]=='e'));
-        if(version==SceneFontContentVersion){
+        if(version>=SceneFontContentVersion){
             // Exercise an actual key beyond the old directory bound, through
             // both providers, rather than merely accepting a header count.
             for(Content* content:{direct.get(),range.get()}){
@@ -605,7 +605,7 @@ void bestiary_supplement_packages(){
         for(unsigned wrong:{animations-1,animations+1}){
             Bytes bad=p.bytes;put(bad,28,wrong);reject("version requires its exact animation directory",std::move(bad));
         }
-        Bytes bad=p.bytes;put(bad,4,SceneFontContentVersion+1);reject("unknown future profile remains rejected",std::move(bad));
+        Bytes bad=p.bytes;put(bad,4,RetainedFilterContentVersion+1);reject("unknown future profile remains rejected",std::move(bad));
         bad=p.bytes;put(bad,20,scene_font_glyph_limit(version)+1);reject("Versioned glyph count bound",std::move(bad));
     }
 }

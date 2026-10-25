@@ -39,15 +39,17 @@ class RetainedFilterTest(unittest.TestCase):
             self.assertEqual(transform(encoded, 0, mode, True), raw)
             self.assertEqual(transform(transform(raw, 0, mode, True), 0, mode), raw)
 
-    def test_rgb_alpha_interleaving_and_readonly_input(self):
-        raw = b''.join(struct.pack('<HB', color, (color * 37) & 255) for color in range(65536))
+    def test_rgb_alpha_planes_and_readonly_input(self):
+        colors = struct.pack('<65536H', *range(65536))
+        alpha = bytes((color * 37) & 255 for color in range(65536))
+        raw = colors + alpha
         for mode in (1, 2):
             source = bytearray(raw)
             encoded = transform(memoryview(source), 1, mode)
             self.assertEqual(source, raw)
-            self.assertEqual(encoded[2::3], raw[2::3])
-            for at in range(0, len(raw), 3):
-                self.assertEqual(struct.unpack_from('<H', encoded, at)[0], scalar(at // 3, mode))
+            self.assertEqual(encoded[len(colors):], alpha)
+            for at in range(0, len(colors), 2):
+                self.assertEqual(struct.unpack_from('<H', encoded, at)[0], scalar(at // 2, mode))
             self.assertEqual(transform(encoded, 1, mode, True), raw)
 
     def test_palette_only_and_all_palette_colors(self):

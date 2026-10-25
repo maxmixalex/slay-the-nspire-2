@@ -37,8 +37,10 @@ struct Fixture {
     unsigned base=0,costs=0,group=0,group_size=0;
     std::vector<unsigned> descriptors;
     explicit Fixture(unsigned version=20){
-        const unsigned strings=LocaleStringCount,clips=MerchantEffectsAnimationKinds;
-        const unsigned aux=version>=21?unsigned(TitleEffectsAuxiliaryCount):unsigned(MerchantEffectsAuxiliaryCount);
+        const unsigned strings=version>=34?Ui7StringCount:LocaleStringCount;
+        const unsigned clips=version>=34?BestiaryKaiserAnimationKinds:MerchantEffectsAnimationKinds;
+        const unsigned aux=version>=34?unsigned(GameOverTransitionAuxiliaryCount):
+            version>=21?unsigned(TitleEffectsAuxiliaryCount):unsigned(MerchantEffectsAuxiliaryCount);
         base=40+Images*16+16+strings*8+clips*16+CardKinds*16+aux*4;
         const unsigned table=base+64;costs=table+16;
         const unsigned tile_descriptor=costs+((Images+1)&~1u);
@@ -100,6 +102,71 @@ struct Fixture {
         put(bytes,12,unsigned(bytes.size()));
     }
 };
+// Independent scalar encoder: production only contains the inverse. Keep
+// dense alpha in a separate plane, and sparse alpha in its source spans.
+unsigned color_word(const uint8_t*p){return unsigned(p[0])|(unsigned(p[1])<<8);}
+void filter_colors(Bytes&bytes,unsigned offset,unsigned count,unsigned stride,unsigned mode){
+    for(unsigned i=0;i<count;++i){
+        const unsigned at=offset+i*stride,color=color_word(bytes.data()+at),green=(color>>5)&63;
+        unsigned red=((color>>11)+32-green/2)%32,blue=((color&31)+32-green/2)%32;
+        if(mode==2){red=red<16?2*red:2*(32-red)-1;blue=blue<16?2*blue:2*(32-blue)-1;}
+        put(bytes,at,green+64*red+2048*blue,2);
+    }
+}
+Bytes filtered(const Bytes&raw,unsigned format,unsigned mode){
+    Bytes bytes=raw;
+    if(format<2)filter_colors(bytes,0,unsigned(bytes.size())/(format==1?3:2),2,mode);
+    else if(format<4)filter_colors(bytes,0,256,2,mode);
+    else for(unsigned at=0;at<bytes.size();){
+        const unsigned spans=color_word(bytes.data()+at);at+=2;
+        for(unsigned span=0;span<spans;++span){
+            const unsigned count=color_word(bytes.data()+at+2),stride=2+bytes[at+4];at+=5;
+            filter_colors(bytes,at,count,stride,mode);at+=count*stride;
+        }
+    }
+    return bytes;
+}
+void filter_fixture(Fixture&f,unsigned mode){
+    Bytes joined,table;
+    for(unsigned format=0;format<f.raw.size();++format){
+        const unsigned at=unsigned(joined.size()),size=unsigned(f.raw[format].size());
+        const unsigned end=unsigned(table.size());table.resize(end+8);
+        put(table,end,at);put(table,end+4,(format<<24)|size);
+        const Bytes bytes=filtered(f.raw[format],format,mode);joined.insert(joined.end(),bytes.begin(),bytes.end());
+    }
+    const unsigned end=unsigned(table.size()),at=unsigned(joined.size());table.resize(end+8);
+    put(table,end,at);put(table,end+4,8192-at);joined.resize(8192);
+    const Bytes encoded=stored(joined);Bytes block(32);
+    put(block,0,FilteredRetainedGroupMagic);put(block,4,unsigned(joined.size()));put(block,8,unsigned(encoded.size()));
+    put(block,12,14);put(block,16,unsigned(table.size()/8));put(block,20,mode);put(block,24,unsigned(table.size()));
+    block.insert(block.end(),table.begin(),table.end());block.insert(block.end(),encoded.begin(),encoded.end());
+    f.group=append(f.bytes,block);f.group_size=unsigned(block.size());
+    for(unsigned descriptor:f.descriptors){put(f.bytes,descriptor,uint32_t(int64_t(f.group)-descriptor));put(f.bytes,descriptor+4,f.group_size);}
+    put(f.bytes,12,unsigned(f.bytes.size()));
+}
+void filter_all_bits(){
+    for(unsigned mode:{1u,2u})for(unsigned format:{0u,1u}){
+        Bytes original(65536*(format==1?3:2));
+        for(unsigned color=0;color<65536;++color){put(original,color*2,color,2);if(format)original[131072+color]=uint8_t(color*37);}
+        Bytes restored=filtered(original,format,mode);
+        if(format)CHECK(!std::memcmp(restored.data()+131072,original.data()+131072,65536));
+        CHECK(restore_retained_colors(restored.data(),unsigned(restored.size()),format,mode));CHECK(restored==original);
+    }
+    Bytes sparse={0,0,2,0,0,0,2,0,0,0xff,0xff,0x1f,0x78,3,0,2,0,1,0x34,0x12,0,0x1f,0xf8,137};
+    for(unsigned mode:{1u,2u}){
+        Bytes actual=filtered(sparse,4,mode);CHECK(actual[20]==0&&actual[23]==137);
+        CHECK(restore_retained_colors(actual.data(),unsigned(actual.size()),4,mode));CHECK(actual==sparse);
+    }
+    for(unsigned which=0;which<10;++which){
+        Bytes bad=sparse;unsigned size=unsigned(bad.size()),format=4,mode=1;
+        switch(which){case 0:size=0;break;case 1:mode=3;break;case 2:format=5;break;
+        case 3:format=1;size=5;break;case 4:format=3;size=513;bad.resize(size);break;
+        case 5:bad[17]=2;break;case 6:bad[15]=0;break;case 7:bad[13]=1;break;
+        case 8:bad.resize(482);std::fill(bad.begin(),bad.end(),0);size=482;break;
+        default:size=unsigned(bad.size())-1;break;}
+        CHECK(!restore_retained_colors(bad.data(),size,format,mode));
+    }
+}
 struct Provider {
     const Bytes*bytes;uint64_t read_bytes=0;unsigned calls=0;
     void(*after_read)(void*)=nullptr;void*hook=nullptr;bool fail_next=false;
@@ -118,8 +185,9 @@ Picture picture(const Content&content,unsigned image,const Fixture&fixture,unsig
     const uint8_t*data=which==2||which==3?p.palette:p.pixels;
     CHECK(data&&!std::memcmp(data,fixture.raw[which].data(),fixture.raw[which].size()));CHECK(content.healthy());return p;
 }
-void roundtrip(bool streamed,unsigned version){
-    Fixture f(version);Provider source{&f.bytes};auto content=std::make_unique<Content>();
+void roundtrip(bool streamed,unsigned version,unsigned mode=0){
+    Fixture f(version);if(mode)filter_fixture(f,mode);
+    Provider source{&f.bytes};auto content=std::make_unique<Content>();
     CHECK(streamed?content->open(source.source()):content->open(f.bytes.data(),f.bytes.size()));
     CHECK(content->current_profile());const auto initial=source.read_bytes;
     const auto ordinary=content->image_dimensions(0),sparse=content->image_dimensions(4);
@@ -144,6 +212,27 @@ void roundtrip(bool streamed,unsigned version){
         picture(*content,0,historical,0);
     }
 }
+void filtered_bounds(){
+    auto content=std::make_unique<Content>();
+    for(unsigned mode:{1u,2u})for(unsigned test=0;test<15;++test){
+        Fixture f(RetainedFilterContentVersion);filter_fixture(f,mode);
+        switch(test){
+        case 0:put(f.bytes,4,SceneFontContentVersion);break;
+        case 1:put(f.bytes,f.group+20,0);break;case 2:put(f.bytes,f.group+20,3);break;
+        case 3:put(f.bytes,f.group+16,0);break;case 4:put(f.bytes,f.group+16,0x20000000);break;
+        case 5:put(f.bytes,f.group+24,40);break;case 6:put(f.bytes,f.group+28,1);break;
+        case 7:put(f.bytes,f.group+32,1);break;case 8:put(f.bytes,f.group+40,2);break;
+        case 9:put(f.bytes,f.group+36,0);break;case 10:put(f.bytes,f.group+36,(5u<<24)|4);break;
+        case 11:put(f.bytes,f.group+76,6670);break;case 12:put(f.bytes,f.group+36,(1u<<24)|4);break;
+        case 13:put(f.bytes,f.group+8,f.group_size);break;
+        default:f.bytes[f.group+80]=0;break;
+        }
+        Provider provider{&f.bytes};CHECK(content->open(provider.source()));
+        CHECK(!content->image(0).pixels&&!content->healthy());CHECK(!resource_transfer_uses);
+        Fixture good(RetainedFilterContentVersion);filter_fixture(good,mode);provider.bytes=&good.bytes;
+        CHECK(content->open(provider.source()));picture(*content,0,good,0);
+    }
+}
 void requested_bounds(){
     Fixture f;auto content=std::make_unique<Content>();Bytes changed=f.bytes;
     put(changed,36,0xdeadbeef);put(changed,f.group+20,0xffffffff);
@@ -161,8 +250,9 @@ void requested_bounds(){
     changed=f.bytes;put(changed,f.base+60,Fixture::Images+1);CHECK(!content->open(changed.data(),changed.size()));
     changed=f.bytes;put(changed,f.base+56,0xffffffff);CHECK(!content->open(changed.data(),changed.size()));
 }
-void foreground_workspace_reuse(){
-    Fixture f;Provider source{&f.bytes};auto content=std::make_unique<Content>();
+void foreground_workspace_reuse(unsigned mode=0){
+    Fixture f(mode?RetainedFilterContentVersion:20);if(mode)filter_fixture(f,mode);
+    Provider source{&f.bytes};auto content=std::make_unique<Content>();
     CHECK(content->open(source.source()));const Picture retained=picture(*content,0,f,0);
     const Picture tile=content->image(Fixture::Images-1);CHECK(tile.pixels&&tile.format==4);
     const auto warm=source.read_bytes;
@@ -224,8 +314,9 @@ struct ReentrantRead {
         CHECK(!std::memcmp(retained.pixels,r.fixture->raw[0].data(),r.fixture->raw[0].size()));
     }
 };
-void reentrant_transfer_and_failure(){
-    Fixture f;Provider source{&f.bytes};auto content=std::make_unique<Content>();
+void reentrant_transfer_and_failure(unsigned mode=0){
+    Fixture f(mode?RetainedFilterContentVersion:20);if(mode)filter_fixture(f,mode);
+    Provider source{&f.bytes};auto content=std::make_unique<Content>();
     CHECK(content->open(source.source()));picture(*content,0,f,0);
     static State original,target;static SaveData saved,output;
     new_run(original,0x41434,true);new_run(target,0x19811,true,Character::Defect);CHECK(save(original,saved));
@@ -257,4 +348,10 @@ void reentrant_transfer_and_failure(){
     CHECK(!resource_transfer_uses);
 }
 }
-int main(){for(unsigned version:{20u,21u})for(bool streamed:{false,true})roundtrip(streamed,version);requested_bounds();foreground_workspace_reuse();reentrant_transfer_and_failure();std::printf("%u retained-content checks passed\n",checks);}
+int main(){
+    for(unsigned version:{20u,21u,34u,35u,36u})for(bool streamed:{false,true})roundtrip(streamed,version);
+    for(unsigned mode:{1u,2u})for(bool streamed:{false,true})roundtrip(streamed,RetainedFilterContentVersion,mode);
+    filter_all_bits();filtered_bounds();requested_bounds();
+    for(unsigned mode:{0u,1u,2u}){foreground_workspace_reuse(mode);reentrant_transfer_and_failure(mode);}
+    std::printf("%u retained-content checks passed\n",checks);
+}

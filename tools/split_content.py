@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Separate private NSP2/17..35 artwork from locale metadata, glyphs and text.
+"""Separate private NSP2/17..36 artwork from locale metadata, glyphs and text.
 
 The virtual concatenation prefix + artwork + suffix is byte-identical to each
 input. No image/animation is decoded, recompressed, resampled or omitted. This
@@ -14,6 +14,7 @@ import os
 from pathlib import Path
 import struct
 from tempfile import TemporaryDirectory
+from retained_filter import group_layout as retained_group_layout
 
 ROOT = Path(__file__).resolve().parents[1]
 REFERENCE = 0x41CEF1EA
@@ -50,8 +51,8 @@ def layout(data, language):
     require(language in LANGUAGES, "Unsupported language")
     require(40 <= len(data) <= FILE_LIMIT, "Invalid input size")
     magic, version, reference, length, ni, ng, ns, nc, nk, checksum = struct.unpack_from("<4s9I", data)
-    require(magic == b"NSP2" and version in (17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35) and reference == REFERENCE,
-            "Expected pinned NSP2/17 through NSP2/35")
+    require(magic == b"NSP2" and version in (17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36) and reference == REFERENCE,
+            "Expected pinned NSP2/17 through NSP2/36")
     require(length == len(data), "Input length differs")
     require(0 < ni <= 65535 and 0 < ng <= (65535 if version >= 35 else 32768) and MARKER < ns <= 16384 and
             0 < nc <= 65535 and 0 < nk <= 65535, "Invalid directory counts")
@@ -114,11 +115,9 @@ def layout(data, language):
                 group_at = off + relative
                 graphic(group_at, group_size)
                 require(group_size > 32, "Truncated retained group")
-                group = struct.unpack_from("<4s7I", data, group_at)
-                require(group[0] == b"RGR1" and 0 < group[1] <= 512 * 1024 and
-                        group[2] == group_size - 32 and group[3] == 14 and shape >> 24 <= 4 and
-                        0 < (shape & 0xffffff) <= group[1] and
-                        raw_at <= group[1] - (shape & 0xffffff), "Invalid retained group/slice")
+                raw_size, _start, _mode, _slices = retained_group_layout(data[group_at:group_at + group_size], version)
+                require(shape >> 24 <= 4 and 0 < (shape & 0xffffff) <= raw_size and
+                        raw_at <= raw_size - (shape & 0xffffff), "Invalid retained group/slice")
     require(artwork_ranges, "No artwork to share")
     begin = min(r[0] for r in artwork_ranges)
     end = max(r[1] for r in artwork_ranges)

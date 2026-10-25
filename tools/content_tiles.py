@@ -24,6 +24,7 @@ import time
 
 import numpy as np
 from tile_filter import restore_tiles
+from retained_filter import group_layout as retained_group_layout, transform_group as transform_retained_group
 
 try:
     import lz4.block as _lz4
@@ -335,11 +336,10 @@ class PackView:
             else:
                 require(GROUP.size < group_size <= ENCODED_LIMIT, 'Invalid retained group size')
                 group = self.block(group_at, group_size)
-                tag, raw_size, encoded_size, prop, _items, _a, _b, _c = GROUP.unpack_from(group)
-                require(tag == b'RGR1' and 0 < raw_size <= GROUP_LIMIT and
-                        encoded_size == group_size - GROUP.size and prop == 14,
-                        'Invalid retained group header')
-                raw = decode_lzma2(group[GROUP.size:], raw_size)
+                raw_size, start, mode, slices = retained_group_layout(group, self.version)
+                raw = decode_lzma2(group[start:], raw_size)
+                if mode:
+                    raw = transform_retained_group(raw, slices, mode, True)
                 if len(self.retained_cache) == HOST_CACHE_GROUPS:
                     self.retained_cache.popitem(last=False)
                 self.retained_cache[group_at] = raw
@@ -747,7 +747,7 @@ def index_records(raw, count, tile_count):
 class TileReader:
     """Independent host reference decoder for a completed v15 pack."""
     def __init__(self, pack):
-        require(pack.version in (15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35), 'Tiled reader requires version 15 through 35')
+        require(pack.version in (15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36), 'Tiled reader requires version 15 through 36')
         self.pack = pack
         require(pack.base_end + GLOBAL.size <= len(pack.data), 'Truncated tile header')
         fields = GLOBAL.unpack_from(pack.data, pack.base_end)
