@@ -239,5 +239,5 @@ static void text_bounds(){
 int main(int argc,char**argv){
  Bytes data;if(argc>1){FILE*f=std::fopen(argv[1],"rb");CHECK(f);data.resize(spire_test::pack_size(f));CHECK(std::fread(data.data(),1,data.size(),f)==data.size());CHECK(!std::fclose(f));actual=true;}else data=fixture();
  if(argc>2)captures=argv[2];CHECK(a.init(data.data(),data.size(),{}));CHECK(a.content.has_ftue_assets());
- embark();combat_pages();source_checks();long_press_tutorials();calculator_select_release();rooms();shuffle_barrier();real_shuffle();treasure_wait();terminal_boundaries();text_bounds();CHECK(a.content.healthy());std::printf("FTUE UI: %u checks passed (%s)\n",checks,actual?"actual":"synthetic");
+ embark();combat_pages();source_checks();calculator_select_release();rooms();shuffle_barrier();real_shuffle();treasure_wait();terminal_boundaries();text_bounds();long_press_tutorials();CHECK(a.content.healthy());std::printf("FTUE UI: %u checks passed (%s)\n",checks,actual?"actual":"synthetic");
 }

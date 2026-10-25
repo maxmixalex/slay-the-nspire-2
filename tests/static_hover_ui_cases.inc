@@ -29,16 +29,45 @@ static void static_hover_columns(){
         c.hit(x,70,14,14,HitKind::Orb,index);orb_hover_tip(c);column(mode&1?191:56);
         const char*names[]={"source-hover-orb-right","source-hover-orb-left","source-hover-empty-orb-right","source-hover-empty-orb-left"};capture(names[mode]);
     }
-    // Settings supplies titles as well as descriptions. Exercise scrolled
-    // rows and the independent input tab using their real localized labels.
-    setup(Character::Ironclad);app.title=true;app.settings_open=true;app.settings_tab=0;
-    app.settings_top=0;app.settings_item=1;app.pointer.x=150;app.pointer.y=95;
-    CHECK(save(app.game,before));clear();frontend_settings_screen(c);capture("settings-source-hover-shake");
-    CHECK(*app.content.world_string("settings_ui","SCREENSHAKE_HEADER"));
-    app.settings_top=2;app.settings_item=6;app.pointer.y=179;clear();frontend_settings_screen(c);capture("settings-source-hover-text-effects");
-    app.settings_tab=1;app.settings_top=0;app.settings_item=0;app.pointer.y=70;
-    clear();frontend_settings_screen(c);capture("settings-source-hover-keyboard");
-    CHECK(save(app.game,after)&&before.size==after.size&&!std::memcmp(before.bytes,after.bytes,before.size));
+    // Pinned settings_screen.tscn: General begins at187+24, with64px rows
+    // and82px pitch; Keyboard-Only starts at251. These coordinates and the
+    // expected localized bindings are independent of the Settings renderer's
+    // row lookup. General no longer scrolls in the implemented panel.
+    setup(Character::Ironclad);app.title=true;app.settings_open=true;
+    const auto project=[](int source){return (source*4+10)/21;};
+    struct SettingHover {unsigned tab,row;int left,top;const char*title;const char*body;const char*capture;};
+    const SettingHover settings[]={
+        {0,1,334,211+82,"SCREENSHAKE_HEADER","SCREENSHAKE_DESCRIPTION","settings-source-hover-shake"},
+        {0,7,334,211+82*7,"TEXT_EFFECTS","TEXT_EFFECTS_DESCRIPTION","settings-source-hover-text-effects"},
+        {0,6,334,211+82*6,"LONG_PRESS_CONFIRMATION_HEADER","LONG_PRESS_CONFIRMATION_DESCRIPTION","settings-source-hover-long-press"},
+        {1,0,290,251,"KEYBOARD_ONLY_MODE_HEADER","KEYBOARD_ONLY_MODE_DESCRIPTION","settings-source-hover-keyboard"},
+    };
+    CHECK(project(293+32)==62&&project(785+32)==156&&project(703+32)==140&&project(251+32)==54);
+    CHECK(save(app.game,before));
+    for(const auto&setting:settings){
+        app.settings_tab=uint8_t(setting.tab);app.settings_top=0;app.settings_item=uint8_t(setting.row);
+        app.pointer.x=319;app.pointer.y=239;clear();frontend_settings_screen(c);
+        const std::vector<uint16_t> background(app.pixels,app.pixels+ScreenW*ScreenH);
+        // Source x786 lies in the label/hover region, outside every tickbox.
+        app.pointer.x=project(786);app.pointer.y=project(setting.top+32);
+        clear();frontend_settings_screen(c);capture(setting.capture);
+        const std::vector<uint16_t> actual(app.pixels,app.pixels+ScreenW*ScreenH);
+        const std::string title=app.content.world_string("settings_ui",setting.title);
+        const std::string body=app.content.world_string("settings_ui",setting.body);
+        CHECK(!title.empty()&&!body.empty());
+        std::memcpy(app.pixels,background.data(),background.size()*sizeof(uint16_t));
+        // NSettings hover offset is the1012px column width and -60px y.
+        // Reusing the common tooltip painter tests Settings ownership and
+        // binding, not the independent correctness of that common painter.
+        source_hover_box(c,title.c_str(),body.c_str(),project(setting.left)+project(1012),project(setting.top)-project(60));
+        unsigned changed=0;
+        for(unsigned i=0;i<actual.size();++i){
+            if(actual[i]!=app.pixels[i])std::fprintf(stderr,"Settings hover %s mismatch at%u,%u: actual=%04x expected=%04x\n",setting.title,i%ScreenW,i/ScreenW,actual[i],app.pixels[i]);
+            CHECK(actual[i]==app.pixels[i]);changed+=actual[i]!=background[i];
+        }
+        CHECK(changed>25);
+        CHECK(save(app.game,after)&&before.size==after.size&&!std::memcmp(before.bytes,after.bytes,before.size));
+    }
     app.settings_open=false;app.settings_tab=app.settings_top=app.settings_item=0;app.title=false;
     // The map legend tooltip stays below the whole column. Only its focus
     // icon and the 69px tooltip may change between the two paint passes.

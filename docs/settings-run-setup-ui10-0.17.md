@@ -1,8 +1,8 @@
 # UI10 Settings and run setup source review
 
 Pinned reference: v0.111.0 / 41cef1ea. This document records implemented source
-contracts and their limits. It is not a measured restoration percentage or a
-release acceptance receipt. Original scenes, fonts, artwork and captures stay
+contracts, matched execution evidence and their limits. It is not a measured
+restoration percentage. Original scenes, fonts, artwork and captures stay
 outside the public repository.
 
 ## Source layout and rendering
@@ -16,7 +16,7 @@ and the business methods that alter the authored initial appearance.
 | Surface | Implemented source contract |
 | --- | --- |
 | Settings tabs | Source256×90 controls project to49×17 with6px labels. The two supported host tabs are centered without enlarging their controls. English keeps authored tracking; Chinese ordinary labels use the runtime Regular substitution. |
-| General | Source64px rows and82px pitch produce12px controls and the complete ten-row panel, including Reset. Labels use5px regular type. Checkbox artwork is10px after the source child0.8 scale; only directional focus shows the selection corners. Source61×12 action buttons and9px paginator arrows replace enlarged older thumbnails. |
+| General | Source64px rows and82px pitch produce12px controls and eleven supported rows, including Long Press Confirmations and Reset. The separate original platform/feature controls listed below remain unavailable. Labels use5px regular type. Checkbox artwork is10px after the source child0.8 scale; only directional focus shows the selection corners. Source61×12 action buttons and9px paginator arrows replace enlarged older thumbnails. |
 | Input | The source1100px panel,308px command column and64px rows show ten commands. Long command names shrink from5px to4px inside their original column. Binding labels retain their own5px band. The inactive binding bank uses the source disabled red; unavailable bindings remain gray. The Listening modal uses its source267×38 backstop and12px animated label. |
 | Language | The original320px dropdown control projects to61px. Its44px item rows retain4px normal labels, including the original Chinese fallback in the English pack. The dropdown opens on its first item; Up/Down stop at the ends; Left/Right remain on the item. Selecting the current locale leaves the menu open. |
 | Singleplayer | Source330×705 roots project to63×134 atX52/129/205. Their wider362px child backgrounds are69×134. Icons retain the source284×216 aspect at54×41; titles are6px and descriptions5px. Focus immediately applies scale1.025 and material value1. Unfocus uses500ms cubic scale and1000ms exponential material transitions. There is no invented press shrink. |
@@ -72,12 +72,18 @@ English/Chinese Modifiers headings at164/72 source pixels, seed labels at62/84,
 and the expanded Ascension HBox at844. This is a translated native layout and
 font experiment, not an unmodified original-game full-frame screenshot.
 
-The22-image private extraction completed successfully. C++ syntax checks cover
-the changed render/input units and Settings/run-mode regression fixtures;
-Python configuration/tool syntax and the ordinary browser script parse check
-also pass. Matching G native/ARM/WASM builds, actual bilingual font/artwork
-rendering and browser execution are still release gates, to be run only after
-the coherent source checkpoint. The new ordinary browser coordinates are
+The22-image private extraction completed successfully. G's first matching
+resource conversion failed because the offline parser omitted the new9px
+heading band; two native fixtures also still clicked the old Settings Back
+location. H fixes the bounded format39 grammar and uses the original Back hit
+rectangle. The failed G records remain separate from later successful gates.
+
+Matching I native passes121/121 suites, including Settings/input/profile/run
+setup and long-press regressions. Both format39 actual-language runs pass the
+front15, root17 and combat16 targets. This covers the source fonts/artwork,
+General/Input panels, source Singleplayer/Custom/Daily controls and input
+ownership. I ARM, WASM and Python gates also pass; ARM compilation is not
+physical-calculator timing evidence. The ordinary browser coordinates are
 derived from the pinned source control positions and use only real DOM/canvas
 input, with no application debug API.
 
@@ -138,8 +144,39 @@ repress, completion fade and owner conflicts. `end_turn_hold_regression` also
 covers ordinary mouse, mapped physical and calculator input, both keyboard
 modes, semantic release/cancel, stale repeats across turns, canonical-state
 immutability before completion and source bar composition. Preference and
-profile regressions retain explicit legacy-format cases. These short checks
-are not the matching frozen I native/ARM/WASM/actual-resource/browser gates.
+profile regressions retain explicit legacy-format cases. Matching frozen I
+now passes these gates: `ui10i-native-e108c5719b58.json`, the two front journals
+`ui10i-front-eng-484de2c1322c.json` and
+`ui10i-front-zhs-082c1fd5df37.json`, and the two combat journals
+`ui10i-combat-eng-593b644de463.json` and
+`ui10i-combat-zhs-9dae868f268e.json`. Each actual long-press target passes155,303
+checks with its matched pack. Short diagnostic results remain identified as
+short diagnostics, rather than substituted for those executions.
+
+The ordinary final I HTML passes21 flows and47 captures in
+`ui10i-ordinary-browser-3bdf52198bec.json`. The added flows toggle the real
+Long Press checkbox, preserve the actual first-turn save after short toolbar
+and keyboard taps or pointer exit, then advance exactly one turn per held
+mapped key and held HTML toolbar control. A real OS-repeat event cannot
+advance an extra turn, and releasing after completion cannot dispatch into
+the next phase. Save/reload retains the NSPF5 preference and NSV17 run, while
+the other two profiles' canonical saves stay byte-identical. StillCanPlay and
+Shuffle confirmations execute through the normal tutorial UI. The page has
+no errors or external requests, and its before/after hash matches the closed
+delivery manifest.
+
+### J follow-up: precise Settings hover coverage
+
+Final capture review found that three old `card_hud_ui_regression` capture
+names still used pre-restoration Settings coordinates. Their I pass did not
+prove that Screenshake, Text Effects and Keyboard-Only hover boxes were shown.
+J changes only that fixture: independently projected source row coordinates,
+explicit localized title/body bindings and unchanged canonical bytes are
+checked for those three rows and the new Long Press row. The expected hover
+composition reuses the shared tooltip painter, so it verifies Settings
+ownership/binding rather than independently proving that painter's raster.
+Matching J test execution against the production-identical I core and both
+actual packs remains pending; no production or resource change is implied.
 
 ### General rows resolved against release visibility and consumers
 

@@ -1,5 +1,70 @@
 # Work state — 2026-10-25
 
+## UI10j verification follow-up after the accepted I runtime
+
+I runtime/resource source is remotely verified at
+`76c022a1e2db17c49bf3ab8edb335dbb98618582`, tree
+`546128015f0087d2327b28f3514019ccdc53d44d`. Matching native121/121 passes in
+101.74 seconds, Python252+54 passes, ARM linked division/LZMA/tile/RGR and
+WASM pass, and all96 bilingual actual-resource targets plus both complete
+NSL2 stream comparisons pass. The ordinary offline browser passes21 flows
+and47 captures without errors or external requests. Its real long-press
+setting, reload, short taps, pointer cancellation, physical E repeat and HTML
+button lifetimes produce canonical turns1,2,3 while preserving both other
+profile saves. These layers remain distinct from an original-fidelity score.
+
+The launcher is1,490,840 bytes; actual Zehn-prefix+image+BSS allocation is
+16,256,312 bytes, leaving520,904 bytes below the unchanged16MiB ceiling.
+All I-required glyphs already exist in H, so all three final resource files
+are byte-identical to H; their total remains90,114,227 bytes. The full four-
+file installation is91,605,067 bytes. Actual USB readback verifies the I
+launcher and reuses the proven-identical H resource readbacks. The largest
+specified clean history-write case again writes and reads all16 files,
+2,701,448 bytes, successfully with I's actual108-byte NSPF5 record.
+
+The ordinary cloned OS enables Long Press through the real General row and
+persists bit7 with the other settings and both key tables unchanged. From the
+preserved floor2 reward room it enters the next real battle. A250ms short
+release and an Esc-cancelled hold leave the230,556-byte battle save exact;
+holding physical E for9,800ms across enemy action ends exactly one turn.
+The resulting canonical bytes equal one matching-core end_turn operation.
+The original floor2 primary/backup, NSH9 metadata and language are restored;
+an independent cold reopen retains the new preference and the original
+230,540-byte canonical run. H's four capacity cases and two-language cold
+proofs remain separate historical evidence rather than being renamed I.
+
+I's independent closed-artifact readback passes all13 ZIP members. The
+calculator ZIP is90,275,858 bytes (SHA256
+`cb95c73324efb7cc1bc98e87b78400eb72fec87275818bab5e7b71b92a70c976`);
+the offline HTML is129,282,437 bytes (SHA256
+`8ecb49ca4108410fbd634e250a40328ee25ef4886d44cf7ff10090bebda18c06`).
+The browser verifies that exact HTML before and after execution.
+
+Screenshot review found a verification-only gap: three old Settings hover
+captures used obsolete positions. One showed Phobia rather than Screenshake;
+Text Effects and Keyboard-Only did not show the named tooltip. J corrects
+their fixed source-coordinate points, adds Long Press hover, and compares
+the real Settings result with the specified source title/body and anchor.
+It also moves the new long-press FTUE assertions after all older captures, so
+their added elapsed time does not change the old animated-background samples.
+All new assertions remain. These two test changes require their own remote
+checkpoint and focused execution. Production files must compare exactly to I
+before reusing its core; no I launcher, WASM, resource or deliverable changes.
+
+Quiet F/I tests retain the same physical F input. Requested-row batching
+reduces callbacks46->31/62->39 and seeks43->12/59->12 for English/Chinese,
+while total CPU means11.2674->11.32905ms and19.9334->19.6404ms do not show a
+universal CPU gain. One identical actual battle exposes a concrete regression:
+180-frame CPU mean74.73375->85.2925ms (+14.13%), median74.736->82.8135ms
+(+10.81%), despite all720 paired frame fingerprints/canonical bytes matching
+and zero warm I/O. The full raw samples remain. A bounded H/I comparison is
+now separating pre-hold changes from the new input feature before any proposed
+production optimization. Host CPU is not physical-calculator FPS.
+
+The corrected-hover/FTUE gates, performance attribution, final documentation,
+main ref synchronization and private delivery remain to be completed. No95%
+restoration claim is inferred from source inventories or passing tests.
+
 ## UI10i closes two further source-review findings
 
 H is remotely preserved at `0eb82c19b8794f5235e6c5283d339f0c93f3a21f`,
