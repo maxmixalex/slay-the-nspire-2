@@ -187,7 +187,7 @@ class PackView:
         require(magic == b'NSP2' and self.version in versions and reference == REFERENCE,
                 'Expected pinned NSP2 pack version')
         require(size == len(data), 'Pack size mismatch')
-        require(0 < ni <= 65535 and 0 < ng <= 32768 and 0 < ns <= 65535 and
+        require(0 < ni <= 65535 and 0 < ng <= (65535 if self.version >= 35 else 32768) and 0 < ns <= 65535 and
                 0 < nc <= 65535 and 0 < nk <= 65535 and 0 < auxiliary_count <= 65535,
                 'Invalid directory counts')
         if profile is not None:
@@ -747,7 +747,7 @@ def index_records(raw, count, tile_count):
 class TileReader:
     """Independent host reference decoder for a completed v15 pack."""
     def __init__(self, pack):
-        require(pack.version in (15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34), 'Tiled reader requires version 15 through 34')
+        require(pack.version in (15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35), 'Tiled reader requires version 15 through 35')
         self.pack = pack
         require(pack.base_end + GLOBAL.size <= len(pack.data), 'Truncated tile header')
         fields = GLOBAL.unpack_from(pack.data, pack.base_end)

@@ -1,5 +1,44 @@
 # Work state — 2026-10-25
 
+## UI10 integration resumed from the preserved UI9 source — 2026-10-25
+
+The interrupted Card Library stage is now preserved remotely at
+`7332b2f23d0ac41b342326df4eba0e8e6cda13c7`, exact tree
+`f3293d412be66221fbd341c98d440de94bb8fb0a`. It is byte-identical to the
+previous local `f2e4e83` tree. The new frozen conversion in this turn passes:
+English3292 and Chinese32764 glyphs, no missing library labels, unchanged
+old image/animation/text payloads. This does not complete the new runtime gate.
+
+The next coherent source stage restores source-sized Profiles labels, original
+panel/text transforms, delete-label timing and navigation past empty profiles;
+centers the Card Library count; and replaces the legacy combined enemy-intent
+panel with the original independent intent/creature hover chain. Intent motion,
+number fonts and the localized multiplication sign follow the pinned source.
+A bounded glyph-descriptor cache removes repeated binary searches during card
+layout and outlined text. Its final performance and ARM budget are still pending.
+
+NSP2/35 appends exact profile and intent fonts without discarding old glyphs.
+Its versioned glyph count bound grows to65535, while the resident directory
+stays at2MiB and every range/geometry check remains enforced. Old versions
+retain their old limits. The required extra entries are only25 English and28
+Chinese at this source stage; no font bitmap is silently scaled or substituted.
+The final paired resources and exact scene oracles remain required.
+
+Recovered ordinary UI9 save receipts prove the73HP/109gold/floor2 run and
+full canonical run/history decoding; the dense three-profile capacity case
+also passed. The two raw-migration capacity cases failed actual USB writes,
+so neither is counted as a pass. File restoration passed; its last Continue
+journal was left running/unknown. A complete live-payload audit found only
+about1.4KiB of alignment gaps. A new exact retained-color format is being
+implemented separately to address the real migration headroom problem.
+It is not included or accepted by this font/UI source stage.
+
+This turn recovered all pinned C# source again for direct review. Source
+availability and native/backend agreement are not a numerical original-game
+fidelity measurement. Complete source-stage testing, rendered scene review,
+normal browser and cloned-OS acceptance, final packages and verified main
+synchronization remain the delivery gates.
+
 ## Complete matched UI gates and Card Library source follow-up — 2026-10-25
 
 The frozen `bbb47e23e0939bbcf2534ad2ba7d4221e6adce5f` runtime passes all116

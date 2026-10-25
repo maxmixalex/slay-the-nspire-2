@@ -2,6 +2,7 @@
 #include "content_fixture.hpp"
 #include "original_events.hpp"
 #include "rich_text.hpp"
+#include "intent_hover_fixture.hpp"
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -184,11 +185,7 @@ static std::string attack_description(int slot){
  char text[1024]{};a.localized_text("intents","ATTACK.description",text,sizeof text,slot,slot+1);resolved(text);return text;
 }
 static bool intent_panel(){
- const int x=a.pointer.x>=170?8:134,y=48;
- const uint16_t gold=uint16_t((223>>3)<<11|(186>>2)<<5|(112>>3));
- for(int dx=0;dx<178;++dx)if(a.pixels[y*ScreenW+x+dx]!=gold)return false;
- for(int dy=0;dy<20;++dy)if(a.pixels[(y+dy)*ScreenW+x]!=gold)return false;
- return true;
+ return intent_hover_panel(a);
 }
 static void deferred_intent_bindings(){
  struct Sample{EnemyId kind;const char*key;};
@@ -234,14 +231,15 @@ static void deferred_intent_text(){
    CHECK(!a.combat_choice_ready());a.animation=a.combat_feedback.choice_at;a.render();
    CHECK(a.combat_choice_ready()&&!intent_panel());unchanged();a.pointer.visible=false;continue;
   }
-  const int title_x=(a.pointer.x>=170?8:134)+6;std::vector<uint16_t> title;
-  for(int y=53;y<67;++y)for(int x=title_x;x<title_x+166;++x)title.push_back(a.pixels[y*ScreenW+x]);
+  HoverRect rect{};CHECK(intent_hover_panel(a,&rect));std::vector<uint16_t> title;
+  const int title_x=rect.x+4,title_y=rect.y+3,title_height=a.content.font_size(5,5);
+  for(int y=title_y;y<title_y+title_height;++y)for(int x=title_x;x<title_x+56;++x)title.push_back(a.pixels[y*ScreenW+x]);
   // Reusing a canonical slot cannot rename the retained actor. This fixture
   // changes no displayed cue and keeps the complete saved state valid.
   a.game.enemy_world.models[0].kind=EnemyId::LouseProgenitor;
   a.game.enemy_world.models[0].combat_id=a.game.enemy_world.next_creature_id++;
   snapshot();CHECK(attack_description(0)==first);a.render();CHECK(intent_panel());unchanged();
-  size_t title_at=0;for(int y=53;y<67;++y)for(int x=title_x;x<title_x+166;++x)CHECK(a.pixels[y*ScreenW+x]==title[title_at++]);
+  size_t title_at=0;for(int y=title_y;y<title_y+title_height;++y)for(int x=title_x;x<title_x+56;++x)CHECK(a.pixels[y*ScreenW+x]==title[title_at++]);
   a.animation=hide;a.render();CHECK(a.combat_intent(0).flags&&a.combat_intent_alpha(0)==255&&intent_panel());unchanged();
   a.animation=hide+12;a.render();CHECK(a.combat_intent(0).flags&&a.combat_intent_alpha(0)==255&&intent_panel());unchanged();
   a.animation=hide+20;a.render();CHECK(a.combat_intent(0).flags&&a.combat_intent_alpha(0)>0&&a.combat_intent_alpha(0)<255&&intent_panel());unchanged();

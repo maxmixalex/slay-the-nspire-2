@@ -218,6 +218,49 @@ static void glyph_cache_aliases(){
     CHECK(!std::memcmp(ranged->glyph('B',10).pixels,new_bytes.data(),new_bytes.size()));
     CHECK(!std::memcmp(memory->glyph('B',10).pixels,old_bytes.data(),old_bytes.size()));
 }
+static void glyph_record_pressure(){
+    // Exercise the real public metrics/alpha APIs with more distinct keys
+    // than the bounded record memo. All metrics and payloads are independent
+    // generated fixture values, including equal keys in different owners.
+    auto memory=std::make_unique<Content>(),ranged=std::make_unique<Content>();
+    const AliasImage raw{1,1,0,2};std::vector<AliasGlyph>specs,replacements;
+    for(unsigned cp=32;cp<1056;++cp){
+        specs.push_back({cp,8,1+cp%7,1+cp%3,1+cp%17,0});
+        replacements.push_back({cp,8,1+(cp+2)%7,1+(cp+1)%3,1+(cp+3)%17,0});
+    }
+    const std::vector<uint8_t>alpha(21,173);
+    const auto original=alias_pack(raw,raw,{0x34,0x12},specs,alpha);
+    const auto replacement=alias_pack(raw,raw,{0x78,0x56},replacements,alpha);
+    AliasProvider source{&replacement};
+    CHECK(memory->open(original.data(),original.size()));CHECK(ranged->open(source.source()));
+    for(unsigned round=0;round<3;++round)for(unsigned n=0;n<2048;++n){
+        const unsigned cp=32+(n*773u+round*17u)%1024;
+        Content&owner=round==1?*ranged:*memory;const auto&expected=round==1?replacements[cp-32]:specs[cp-32];
+        for(unsigned repeat=0;repeat<3;++repeat){
+            const auto g=owner.glyph_metrics(cp,8),p=owner.glyph(cp,8);
+            CHECK(g.w==expected.w&&g.h==expected.h&&g.advance==expected.advance&&!g.pixels);
+            CHECK(p.w==expected.w&&p.h==expected.h&&p.advance==expected.advance&&p.pixels&&p.pixels[0]==173);
+        }
+        const auto missing=owner.glyph_metrics(0x10fffd,8);
+        const auto&question=round==1?replacements['?'-32]:specs['?'-32];
+        CHECK(missing.w==question.w&&missing.h==question.h&&missing.advance==question.advance);
+        CHECK(owner.healthy());
+    }
+    const auto before=ranged->read_stats();
+    for(unsigned n=0;n<1024;++n){CHECK(ranged->glyph_metrics(32+n,8).advance);CHECK(!ranged->glyph_metrics(32+n,9).pixels);}
+    CHECK(ranged->read_stats().callbacks==before.callbacks&&ranged->read_stats().callback_bytes==before.callback_bytes);
+    // Reopen the same object with the same keys and different metrics. Failed
+    // opens also discard memoized hits and negative/fallback entries.
+    CHECK(memory->open(replacement.data(),replacement.size()));
+    CHECK(memory->glyph_metrics('A',8).advance==replacements['A'-32].advance);
+    CHECK(!memory->open(nullptr,0)&&!memory->glyph_metrics('A',8).advance);
+    CHECK(memory->open(original.data(),original.size()));
+    CHECK(memory->glyph_metrics('A',8).advance==specs['A'-32].advance);
+    auto bad=original;const unsigned malformed=40+160*16+('B'-32)*16;
+    put(bad,malformed+10,41,1);CHECK(memory->open(bad.data(),bad.size()));
+    CHECK(memory->glyph_metrics('A',8).advance);CHECK(!memory->glyph_metrics('B',8).pixels);
+    CHECK(!memory->healthy()&&!memory->glyph_metrics('A',8).advance);
+}
 static void compressed_picture_reads_once(){
     // A selected LZ4 picture larger than the reader page is one physical
     // range, including its header. A second 4 KiB header fetch wastes both
@@ -351,7 +394,7 @@ static void visible_image_batches(){
 int main(int argc,char**argv){
     visible_image_batches();
     image_cache_aliases();
-    glyph_cache_aliases();
+    glyph_cache_aliases();glyph_record_pressure();
     compressed_picture_reads_once();
     text_cache_working_set();
     auto original=pack();Content c;CHECK(c.open(original.data(),original.size()));CHECK(c.card_count()==CardKinds);CHECK(c.current_profile());

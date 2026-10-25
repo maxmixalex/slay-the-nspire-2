@@ -135,12 +135,42 @@ struct ImageReservation {
     }
 };
 #include "content_text_cache.inc"
+// Font layout and eight-pass outlines repeatedly ask for the same immutable
+// directory records before requesting their alpha bytes. Keep a small exact-key
+// memo beside the existing byte cache, rather than repeat a catalog binary
+// search for each measurement/pass. Entries contain only directory indexes;
+// payload views, decoding, fallback order and provider reads stay unchanged.
+struct GlyphRecordCache {
+    static constexpr unsigned Count=256;
+    const Content* owner=nullptr;
+    uint32_t keys[Count]{},indexes[Count]{};
+    static unsigned bucket(uint32_t key){return (key^(key>>9)^(key>>17)^(key>>24))&(Count-1);}
+    void use(const Content* current){
+        if(owner==current)return;
+        for(auto&key:keys)key=0;
+        owner=current;
+    }
+    bool lookup(const Content* current,uint32_t key,const uint8_t*base,const uint8_t*&result){
+        use(current);const unsigned slot=bucket(key);
+        if(keys[slot]!=key)return false;
+        result=indexes[slot]?base+(indexes[slot]-1)*16:nullptr;return true;
+    }
+    const uint8_t* remember(uint32_t key,const uint8_t*base,const uint8_t*result){
+        const unsigned slot=bucket(key);keys[slot]=key;
+        indexes[slot]=result?uint32_t((result-base)/16)+1:0;return result;
+    }
+    void clear(const Content*current){if(owner==current)owner=nullptr;}
+};
+static GlyphRecordCache glyph_records;
+static_assert(sizeof glyph_records<=2048u+sizeof(const Content*),
+              "Glyph record memo must retain its 2 KiB directory-index budget");
+
 #include "content_grouped_glyphs.inc"
 #include "content_grouped_strings.inc"
 static void clear_caches(const Content* owner){
     clear_tile_cache(owner);
     for(auto&v:image_cache)if(v.owner==owner)discard_image(v);
-    glyph_cache.clear(owner);string_cache.clear(owner);
+    glyph_cache.clear(owner);string_cache.clear(owner);glyph_records.clear(owner);
 }
 bool valid_image(const uint8_t* p,unsigned len,unsigned w,unsigned h,unsigned fmt){
     if(fmt<4){unsigned expected=fmt<2?w*h*(fmt?3:2):512+w*h*(fmt==3?2:1);return len==expected;}
@@ -172,9 +202,9 @@ bool Content::open(ResourceSource source){
     uint8_t h[40];if(!reader_.read(0,h,sizeof h))return false;const uint32_t n=source.length;
     if(u32(h)!=0x3250534E||u32(h+8)!=0x41CEF1EA||u32(h+12)!=n)return false;
     const uint32_t version=u32(h+4),cards=u32(h+32);
-    if(version<3||version>BestiaryKaiserContentVersion||(version==3&&cards)||(version==4&&cards!=24)||(version==5&&cards!=26)||(version==6&&cards!=51)||(version==7&&cards!=58)||(version>=8&&version<=10&&cards!=68)||(version==11&&cards!=114)||(version==12&&cards!=228)||(version==13&&cards!=497)||(version>=14&&cards!=CardKinds))return false;
+    if(version<3||version>SceneFontContentVersion||(version==3&&cards)||(version==4&&cards!=24)||(version==5&&cards!=26)||(version==6&&cards!=51)||(version==7&&cards!=58)||(version>=8&&version<=10&&cards!=68)||(version==11&&cards!=114)||(version==12&&cards!=228)||(version==13&&cards!=497)||(version>=14&&cards!=CardKinds))return false;
     auto ni=u32(h+16),ng=u32(h+20),ns=u32(h+24),nc=u32(h+28);
-    if(ni<A_Count||ni>(version>=14?65535u:8192u)||ng>(version>=14?32768u:version==13?16384u:8192u)||ns<66||ns>(version>=14?16384u:2048u)||nc!=(version>=BestiaryKaiserContentVersion?BestiaryKaiserAnimationKinds:version>=CharacterDeathContentVersion?CharacterDeathAnimationKinds:version>=PhobiaContentVersion?PhobiaAnimationKinds:version>=Ui7ContentVersion?Ui7AnimationKinds:version>=MerchantEffectsContentVersion?MerchantEffectsAnimationKinds:version==FeedbackContentVersion?FeedbackAnimationKinds:version>=14?AnimationKinds:version==13?38:version>=6?17:11))return false;
+    if(ni<A_Count||ni>(version>=14?65535u:8192u)||ng>(version>=14?scene_font_glyph_limit(version):version==13?16384u:8192u)||ns<66||ns>(version>=14?16384u:2048u)||nc!=(version>=BestiaryKaiserContentVersion?BestiaryKaiserAnimationKinds:version>=CharacterDeathContentVersion?CharacterDeathAnimationKinds:version>=PhobiaContentVersion?PhobiaAnimationKinds:version>=Ui7ContentVersion?Ui7AnimationKinds:version>=MerchantEffectsContentVersion?MerchantEffectsAnimationKinds:version==FeedbackContentVersion?FeedbackAnimationKinds:version>=14?AnimationKinds:version==13?38:version>=6?17:11))return false;
     if((version==11&&ns!=407)||(version==12&&ns!=749)||(version==13&&ns!=1556)||
        (version>=14&&version<LocaleContentVersion&&ns!=ContentStrings&&!(version==NativeUiContentVersion&&ns==NativeUiStringCount))||
        (version>=LocaleContentVersion&&ns!=(version>=Ui7ContentVersion?Ui7StringCount:LocaleStringCount)))return false;
@@ -433,18 +463,23 @@ const uint8_t* Content::glyph_record(uint32_t cp,int size,unsigned style)const{
     // Sorted resident metadata already proves that absence: skip a whole
     // failed binary search without scanning fonts or adding cache state.
     if(face&&glyphs_&&u16(metadata_+40+images_*16+(glyphs_-1)*16+8)<band){face=band=0;}
-    uint32_t key=((uint32_t(size)|band)<<24)|cp;int lo=0,hi=(int)glyphs_;
-    while(lo<hi){int mid=(lo+hi)/2;const uint8_t*r=metadata_+40+images_*16+mid*16;uint32_t k=(uint32_t)u16(r+8)<<24|u32(r);if(k<key)lo=mid+1;else hi=mid;}
-    if((unsigned)lo<glyphs_){const uint8_t*r=metadata_+40+images_*16+lo*16;if(((uint32_t)u16(r+8)<<24|u32(r))==key){
+    const uint32_t key=((uint32_t(size)|band)<<24)|cp;
+    const uint8_t*base=metadata_+40+images_*16,*cached=nullptr;
+    if(glyph_records.lookup(this,key,base,cached))return cached;
+    int lo=0,hi=(int)glyphs_;
+    while(lo<hi){int mid=(lo+hi)/2;const uint8_t*r=base+mid*16;uint32_t k=(uint32_t)u16(r+8)<<24|u32(r);if(k<key)lo=mid+1;else hi=mid;}
+    if((unsigned)lo<glyphs_){const uint8_t*r=base+lo*16;if(((uint32_t)u16(r+8)<<24|u32(r))==key){
         const unsigned w=r[10],h=r[11],stored=u16(r+14),encoded=stored&~GroupedGlyphFlag;
         const unsigned sized=u16(r+8),pixel_size=sized&(version_>=HistoryUi8ContentVersion?31u:63u);
         if(!w||w>40||!h||h>40||!pixel_size||pixel_size>32||sized>255||(version_<Ui7ContentVersion&&sized>32)||u16(r+12)>40||
            ((stored&GroupedGlyphFlag)&&version_<GroupedGlyphContentVersion)||
            (encoded&&(version_<5||encoded%2||encoded>2*w*h))){io_good_=false;return nullptr;}
-        return r;
+        return glyph_records.remember(key,base,r);
     }}
-    if(face)return glyph_record(cp,size,(face&4u)?face&3u:0);
-    return cp!='?'?glyph_record('?',size,0):nullptr;
+    const uint8_t*fallback=face?glyph_record(cp,size,(face&4u)?face&3u:0):cp!='?'?glyph_record('?',size,0):nullptr;
+    // Recursive fallback may find a malformed record. It must poison this
+    // owner exactly as before and must never publish a successful memo entry.
+    return io_good_?glyph_records.remember(key,base,fallback):nullptr;
 }
 Glyph Content::glyph_metrics(uint32_t cp,int size,unsigned style)const{
     if(!metadata_||!io_good_||text_format_control(cp))return {nullptr,0,0,0};

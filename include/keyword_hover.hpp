@@ -5,12 +5,13 @@
 namespace spire {
 struct App;
 enum class Key;
-enum class HoverTipKind:uint8_t { Keyword,Static,Power,Orb,Card,Enchantment,Affliction,Special,Relic,Potion,Description };
+enum class HoverTipKind:uint8_t { Keyword,Static,Power,Orb,Card,Enchantment,Affliction,Special,Relic,Potion,Description,Intent };
 struct HoverTip {
     HoverTipKind kind=HoverTipKind::Keyword;
     const char* key="";
     Card card{};
     int16_t amount=0,actor=-1;
+    int power=-1;
     bool smart=false,debuff=false,instanced=false;
     bool has_facts=false;
     EventCardFacts facts{};
@@ -60,6 +61,10 @@ struct CardHoverTarget {
     int potion=0;
     int power=-1;
     bool power_left=false;
+    // NIntent delegates to the creature's hitbox. A zero intent filter
+    // means the whole creature's ordered intent/power set.
+    int creature=-1;
+    uint16_t intent=0;
     // History stores relic IDs, not their acquisition-time mutable models.
     bool historical=false;
     bool inspect_relic=false,canonical_relic=false;
@@ -90,10 +95,12 @@ bool event_hover_target(const App&,CardHoverTarget&);
 bool merchant_hover_target(const App&,CardHoverTarget&);
 bool owned_relic_hover_target(const App&,CardHoverTarget&);
 bool power_hover_target(const App&,CardHoverTarget&);
+bool creature_hover_target(const App&,CardHoverTarget&);
 void collect_event_hover_tips(const App&,int option,HoverTipList&);
 void collect_relic_hover_tips(const App&,RelicId,HoverTipList&,bool historical=false);
 void collect_potion_hover_tips(const App&,Potion,HoverTipList&);
 void collect_power_hover_tips(const App&,uint16_t token,HoverTipList&);
+void collect_creature_hover_tips(const App&,const CardHoverTarget&,HoverTipList&);
 void format_card_hover_tip(const App&,const CardHoverTarget&,const HoverTip&,char*title,size_t title_cap,char*body,size_t body_cap);
 HoverPage card_hover_page(App&,const CardHoverTarget&,const HoverTipList&,int page=0);
 bool keyword_hover_scroll(App&,int rows);

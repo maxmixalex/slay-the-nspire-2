@@ -3,6 +3,7 @@
 #include "grouped_glyphs.hpp"
 #include "grouped_strings.hpp"
 #include "bestiary_kaiser_assets.hpp"
+#include "scene_font_assets.hpp"
 
 namespace spire {
 static void resource_copy(void* destination,const uint8_t* source,uint32_t count){
@@ -50,12 +51,12 @@ bool SplitResourceSource::open(ResourceSource common,ResourceSource localized,Re
     language_id_=expected;valid_=true;
     uint8_t h[40],row[8],marker[4];
     if(!read(0,h,sizeof h)||split_u32(h)!=0x3250534Eu||
-       (split_u32(h+4)<17||split_u32(h+4)>BestiaryKaiserContentVersion)||split_u32(h+8)!=0x41cef1eau||
+       (split_u32(h+4)<17||split_u32(h+4)>SceneFontContentVersion)||split_u32(h+8)!=0x41cef1eau||
        split_u32(h+12)!=total){
         close();return false;
     }
     const uint32_t ni=split_u32(h+16),ng=split_u32(h+20),ns=split_u32(h+24);
-    if(!ni||ni>65535||!ng||ng>32768||ns<=6110||ns>16384){close();return false;}
+    if(!ni||ni>65535||!ng||ng>scene_font_glyph_limit(split_u32(h+4))||ns<=6110||ns>16384){close();return false;}
     const uint32_t marker_row=40+ni*16+ng*16+6110*8;
     if(marker_row>prefix||8>prefix-marker_row||!read(marker_row,row,sizeof row)){
         close();return false;

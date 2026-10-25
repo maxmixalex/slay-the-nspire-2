@@ -48,7 +48,12 @@ bool App::profiles_input(Key key){
     if(key==Key::Back){profiles_open=false;pointer_cancel();return true;}
     const unsigned column=profile_selection%UiProfileCount,row=profile_selection/UiProfileCount;
     if(key==Key::Left||key==Key::Right){
-        profile_selection=uint8_t(row*UiProfileCount+(column+UiProfileCount+(key==Key::Left?-1:1))%UiProfileCount);
+        const int step=key==Key::Left?-1:1;unsigned next=column;
+        // Hidden delete controls cannot own Godot focus. Preserve the source
+        // horizontal ring while skipping empty profiles, instead of leaving
+        // calculator focus on an invisible, inactive trash button.
+        for(unsigned i=0;i<UiProfileCount;++i){next=(next+UiProfileCount+step)%UiProfileCount;
+            if(!row||profile_summaries[next].exists){profile_selection=uint8_t(row*UiProfileCount+next);break;}}
     }else if(key==Key::Up)profile_selection=uint8_t(column);
     else if(key==Key::Down&&profile_summaries[column].exists)profile_selection=uint8_t(column+UiProfileCount);
     else if(key==Key::Confirm){

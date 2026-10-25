@@ -100,7 +100,7 @@ static void card_library_screen(Canvas&c){
     if(!count)library_fixed_label(c,a.content.locale_string("card_library","NO_RESULTS"),54,0,266,240,6,0,rgb(255,246,226),64,1,0,0,true);
     char count_text[96]{};LocalizedTemplate count_label(count_text,sizeof count_text,library_count_value,&count);count_label.format(a.content.locale_string("card_library","CARD_COUNT"));
     Canvas counter=c;counter.opacity=uint8_t(div255(unsigned(counter.opacity)*129));
-    library_fixed_label(counter,count_text,reference_viewport::project(1556),reference_viewport::project(1198),reference_viewport::project(102),reference_viewport::project(31),4,0,rgb(255,246,226),64,1,0);
+    library_fixed_label(counter,count_text,reference_viewport::project(1556),reference_viewport::project(1198),reference_viewport::project(102),reference_viewport::project(31),4,0,rgb(255,246,226),64,1,0,0,true);
     Canvas panel=c;panel.opacity=uint8_t(div255(unsigned(panel.opacity)*128));panel.rect(0,0,55,240,rgb(46,66,71));c.rect(55,0,1,240,rgb(60,83,87));
     library_search(c);
     static constexpr int filters[]={1,2,5,6,4,3,7,8};

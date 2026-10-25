@@ -561,14 +561,16 @@ void bestiary_supplement_packages(){
     // both readers against an independently written synthetic directory and
     // retain the previous v33 catalog as a compatible, smaller profile.
     auto direct=std::make_unique<Content>(),range=std::make_unique<Content>();Rejector reject;
-    for(unsigned version:{unsigned(GroupedStringContentVersion),unsigned(BestiaryKaiserContentVersion)})for(const char*locale:{"eng","zhs"}){
-        label=version==BestiaryKaiserContentVersion?"v34 sparse Bestiary clip append":"v33 historical catalog remains readable";
-        const unsigned animations=version==BestiaryKaiserContentVersion?BestiaryKaiserAnimationKinds:CharacterDeathAnimationKinds;
-        Package p=basic();p.encode(false,InspectionAuxiliaryCount,version,Ui7StringCount,animations);
+    for(unsigned version:{unsigned(GroupedStringContentVersion),unsigned(BestiaryKaiserContentVersion),unsigned(SceneFontContentVersion)})for(const char*locale:{"eng","zhs"}){
+        label=version>=BestiaryKaiserContentVersion?"v34 sparse Bestiary clip append":"v33 historical catalog remains readable";
+        const unsigned animations=version>=BestiaryKaiserContentVersion?BestiaryKaiserAnimationKinds:CharacterDeathAnimationKinds;
+        Package p=basic();
+        if(version==SceneFontContentVersion)p.glyphs=32769;
+        p.encode(false,InspectionAuxiliaryCount,version,Ui7StringCount,animations);
         const unsigned strings=40+p.images*16+p.glyphs*16,clips=strings+Ui7StringCount*8;
         put(p.bytes,strings+LocaleMarkerString*8,unsigned(p.bytes.size()));put(p.bytes,strings+LocaleMarkerString*8+4,3);
         p.bytes.insert(p.bytes.end(),locale,locale+4);seal(p.bytes);
-        if(version==BestiaryKaiserContentVersion)for(unsigned i=0;i<18;++i){
+        if(version>=BestiaryKaiserContentVersion)for(unsigned i=0;i<18;++i){
             const unsigned at=clips+(BestiaryKaiserAnimationFirst+i)*16;
             put(p.bytes,at,1);put(p.bytes,at+8,uint16_t(-19),2);put(p.bytes,at+10,uint16_t(-23),2);
             put(p.bytes,at+12,unsigned(bestiary_kaiser::Sources[i])+1);
@@ -577,10 +579,22 @@ void bestiary_supplement_packages(){
         CHECK(direct->current_profile()&&range->current_profile());
         CHECK(direct->has_inspection_assets()&&range->has_inspection_assets());
         CHECK(direct->english()==(locale[0]=='e')&&range->english()==(locale[0]=='e'));
+        if(version==SceneFontContentVersion){
+            // Exercise an actual key beyond the old directory bound, through
+            // both providers, rather than merely accepting a header count.
+            for(Content* content:{direct.get(),range.get()}){
+                const Glyph last=content->glyph('?' + p.glyphs-1,10);
+                CHECK(last.w==1&&last.h==1&&last.advance==1&&last.pixels&&last.pixels[0]==0xab);
+            }
+            Bytes old=p.bytes;put(old,4,BestiaryKaiserContentVersion);
+            reject("v34 retains its historical glyph bound",std::move(old));
+            Bytes too_large=p.bytes;put(too_large,16,65535);put(too_large,20,65535);
+            reject("v35 retains the fixed directory byte bound",std::move(too_large));
+        }
         for(Content*content:{direct.get(),range.get()}){
             const Clip old=content->clip(CharacterDeathAnimationKinds-1);CHECK(old.count==1&&old.frame_ms==33&&old.sprite_units==0);
             CHECK(content->ui_image(InspectionAuxiliaryCount-1)==0&&content->ui_image(InspectionAuxiliaryCount)==-1);
-            if(version==BestiaryKaiserContentVersion)for(unsigned i=0;i<18;++i){
+            if(version>=BestiaryKaiserContentVersion)for(unsigned i=0;i<18;++i){
                 const Clip added=content->clip(BestiaryKaiserAnimationFirst+i);
                 CHECK(added.first==1&&added.count==1&&added.frame_ms==33);
                 CHECK(added.pivot_x==-19&&added.pivot_y==-23&&added.sprite_units==unsigned(bestiary_kaiser::Sources[i])+1);
@@ -591,8 +605,8 @@ void bestiary_supplement_packages(){
         for(unsigned wrong:{animations-1,animations+1}){
             Bytes bad=p.bytes;put(bad,28,wrong);reject("version requires its exact animation directory",std::move(bad));
         }
-        Bytes bad=p.bytes;put(bad,4,BestiaryKaiserContentVersion+1);reject("unknown future profile remains rejected",std::move(bad));
-        bad=p.bytes;put(bad,20,32769);reject("Bestiary append does not raise the glyph bound",std::move(bad));
+        Bytes bad=p.bytes;put(bad,4,SceneFontContentVersion+1);reject("unknown future profile remains rejected",std::move(bad));
+        bad=p.bytes;put(bad,20,scene_font_glyph_limit(version)+1);reject("Versioned glyph count bound",std::move(bad));
     }
 }
 void malformed_container(){

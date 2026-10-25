@@ -3,6 +3,8 @@
 #include "original_events.hpp"
 #include "ui_core_observer.hpp"
 #include "feedback_assets.hpp"
+#include "intent_hover_fixture.hpp"
+#include "rich_text.hpp"
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -17,7 +19,7 @@ static bool actual_pack;
 #define CHECK(x) do{++checks;if(!(x)){std::fprintf(stderr,"FAIL %s:%d %s phase=%d\n",__FILE__,__LINE__,#x,int(a.game.phase));std::exit(1);}}while(0)
 static void put(std::vector<uint8_t>&b,unsigned at,unsigned n,unsigned bytes=4){for(unsigned i=0;i<bytes;i++)b[at+i]=(uint8_t)(n>>(8*i));}
 static std::vector<uint8_t> synthetic_profile(){
-    constexpr unsigned images=CardKinds>U_Count?CardKinds:U_Count,strings=ContentStrings,glyphs=22;
+    constexpr unsigned images=CardKinds>U_Count?CardKinds:U_Count,strings=ContentStrings,glyphs=24;
     constexpr unsigned glyphdir=40+images*16,stringdir=glyphdir+glyphs*16,clipdir=stringdir+strings*8;
     constexpr unsigned carddir=clipdir+AnimationKinds*16,uidir=carddir+CardKinds*16,payload=uidir+U_Count*4;
     std::vector<uint8_t>b(payload+82*60*2);
@@ -31,11 +33,11 @@ static std::vector<uint8_t> synthetic_profile(){
         {30,1,1,14,1,1,30},{2,6,10,18,31,2,2},{31,16,16,30,1,1,30},
         {14,16,16,30,17,17,14},{31,1,2,4,8,8,8},{14,17,17,14,17,17,14},
         {14,17,17,15,1,1,14},{0,0,17,10,4,10,17}};
-    for(unsigned size=0;size<2;++size)for(unsigned ch=0;ch<11;++ch){
-        const unsigned at=glyphdir+(size*11+ch)*16,height=size?7:5;
-        put(b,at,ch<10?'0'+ch:'x');put(b,at+4,unsigned(b.size()));put(b,at+8,size?10:8,2);
+    for(unsigned size=0;size<2;++size)for(unsigned ch=0;ch<12;++ch){
+        const unsigned at=glyphdir+(size*12+ch)*16,height=size?7:5;
+        put(b,at,ch<10?'0'+ch:ch==10?'x':215);put(b,at+4,unsigned(b.size()));put(b,at+8,size?10:8,2);
         put(b,at+10,5,1);put(b,at+11,height,1);put(b,at+12,6,2);
-        for(unsigned y=0;y<height;++y)for(unsigned x=0;x<5;++x)b.push_back(digits[ch][y*7/height]&(16u>>x)?255:0);
+        for(unsigned y=0;y<height;++y)for(unsigned x=0;x<5;++x)b.push_back(digits[ch<11?ch:10][y*7/height]&(16u>>x)?255:0);
     }
     for(unsigned i=0;i<strings;i++){
         unsigned model=i/3;const char*text=i<CardKinds*3?(i%3?"Synthetic card description.":definitions[model].key):"Synthetic UI text.";
@@ -54,8 +56,8 @@ static std::vector<uint8_t> synthetic_profile(){
 static void snapshot(){CHECK(validate(a.game));CHECK(save(a.game,before));}
 static void unchanged(){CHECK(save(a.game,after));CHECK(before.size==after.size&&!std::memcmp(before.bytes,after.bytes,before.size));}
 static bool has(HitKind kind,int value){for(int i=0;i<a.hit_count;i++)if(a.hits[i].kind==kind&&a.hits[i].value==value)return true;return false;}
-static void capture(const char*name){
- if(!screenshot_directory)return;a.pointer.visible=false;a.render();
+static void capture(const char*name,bool keep_pointer=false){
+ if(!screenshot_directory)return;if(!keep_pointer)a.pointer.visible=false;a.render();
  const std::string path=std::string(screenshot_directory)+"/"+name+".ppm";FILE*f=std::fopen(path.c_str(),"wb");CHECK(f);
  std::fprintf(f,"P6\n320 240\n255\n");unsigned char row[ScreenW*3];
  for(int y=0;y<ScreenH;y++){for(int x=0;x<ScreenW;x++){unsigned p=a.pixels[y*ScreenW+x];row[x*3]=(p>>11)*255/31;row[x*3+1]=((p>>5)&63)*255/63;row[x*3+2]=(p&31)*255/31;}CHECK(std::fwrite(row,1,sizeof row,f)==sizeof row);}CHECK(!std::fclose(f));
@@ -238,8 +240,10 @@ static int rendered_number(const char*text,int size,int left,int top,int right,i
  // real font strokes need not contain alpha=255, so use their actual alpha
  // over the captured room, not a predicate that can vacuously match no ink.
  struct Point {int x,y;unsigned alpha;};std::vector<Point> ink;int width=0,height=0;
+ const unsigned face=a.content.version()>=HistoryUi8ContentVersion?5:0;size=a.content.font_size(size,face);
+ const int repeat_size=a.content.font_size(4,face);
  const auto append=[&](const char*string,int px,int offset_y){
-  for(const char*p=string;*p;++p){const auto g=a.content.glyph(unsigned(*p),px);CHECK(g.pixels&&g.w&&g.h);
+  RichReader reader(string);RichChar ch{};while(reader.next(ch)){const auto g=a.content.glyph(ch.codepoint,px,face);CHECK(g.pixels&&g.w&&g.h);
    std::vector<uint8_t> alpha(unsigned(g.w)*g.h,0);
    if(g.encoded_size){unsigned pos=0;for(unsigned i=0;i+1<g.encoded_size&&pos<alpha.size();i+=2)
     for(unsigned n=0;n<g.pixels[i]&&pos<alpha.size();++n)alpha[pos++]=g.pixels[i+1];
@@ -248,7 +252,7 @@ static int rendered_number(const char*text,int size,int left,int top,int right,i
    if(offset_y+int(g.h)>height)height=offset_y+g.h;width+=g.advance;
   }
  };
- append(text,size,0);append(repeat,8,2);CHECK(!ink.empty()&&intent_background.size()==ScreenW*ScreenH);
+ append(text,size,0);append(repeat,repeat_size,size-repeat_size);CHECK(!ink.empty()&&intent_background.size()==ScreenW*ScreenH);
  constexpr uint16_t cream=uint16_t((31u<<11)|(61u<<5)|28u),outline=uint16_t((2u<<11)|(5u<<5)|2u);
  const auto mix=[](uint16_t back,uint16_t fore,unsigned alpha){
   const unsigned r=((back>>11)*(255-alpha)+(fore>>11)*alpha+127)/255;
@@ -264,7 +268,7 @@ static int rendered_number(const char*text,int size,int left,int top,int right,i
   for(int yy=0;yy<rows&&match;++yy)for(int xx=0;xx<stride;++xx){
    // The icon occupies the first 14 rows; its last two rows may overlap a
    // synthetic font's top. Compare all remaining pixels, including holes.
-   if(y+yy-1<top+4)continue;const int at=(y+yy-1)*ScreenW+x+xx-1;
+   if(yy<3)continue;const int at=(y+yy-1)*ScreenW+x+xx-1;
    visible+=expected[yy*stride+xx]!=intent_background[at];if(a.pixels[at]!=expected[yy*stride+xx]){match=false;break;}
   }
   if(match&&visible)return x;
@@ -283,24 +287,24 @@ static void compound_intent_values(){
   CHECK(intent.flags==(EnemyIntentAttack|EnemyIntentStatus)&&intent.damage==test.damage&&intent.hits==1&&intent.status_cards==test.status);
   snapshot();a.begin_combat_feedback();capture_intent_background();const auto pos=enemy_pose(a.game,0);
   char damage[16]{},status[16]{};std::snprintf(damage,sizeof damage,"%d",test.damage);std::snprintf(status,sizeof status,"%d",test.status);
-  const int damage_x=rendered_number(damage,10,pos.x-32,pos.intent+10,pos.x,pos.intent+34);
-  const int status_x=rendered_number(status,10,pos.x,pos.intent+10,pos.x+32,pos.intent+34);
+  const int damage_x=rendered_number(damage,5,pos.x-32,pos.intent+7,pos.x,pos.intent+34);
+  const int status_x=rendered_number(status,5,pos.x,pos.intent+7,pos.x+32,pos.intent+34);
   CHECK(damage_x>=0&&status_x>damage_x);CHECK(has(HitKind::EnemyIntent,0));
   for(int x:{damage_x,status_x}){const auto*hit=a.hit_at(x,pos.intent+16);CHECK(hit&&hit->kind==HitKind::EnemyIntent&&hit->value==0);}
   const std::vector<uint16_t> shown(a.pixels,a.pixels+ScreenW*ScreenH);
   // Removing only the display count must erase visible pixels, while keeping
   // the attack value intact. The former Attack/else-if branch fails this.
   a.combat_feedback.intents[0].status_cards=0;a.render();
-  CHECK(rendered_number(damage,10,pos.x-32,pos.intent+10,pos.x,pos.intent+34)>=0);
-  CHECK(rendered_number(status,10,pos.x,pos.intent+10,pos.x+32,pos.intent+34)<0);
-  bool changed=false;for(int y=pos.intent+10;y<pos.intent+34;++y)for(int x=pos.x;x<pos.x+32;++x)changed|=shown[y*ScreenW+x]!=a.pixels[y*ScreenW+x];CHECK(changed);
+  CHECK(rendered_number(damage,5,pos.x-32,pos.intent+7,pos.x,pos.intent+34)>=0);
+  CHECK(rendered_number(status,5,pos.x,pos.intent+7,pos.x+32,pos.intent+34)<0);
+  bool changed=false;for(int y=pos.intent+7;y<pos.intent+34;++y)for(int x=pos.x;x<pos.x+32;++x)changed|=shown[y*ScreenW+x]!=a.pixels[y*ScreenW+x];CHECK(changed);
   a.combat_feedback.intents[0]=intent;a.render();unchanged();capture(test.name);
   if(test.encounter==EncounterId::MechaKnightElite){
    // Canonical settlement can already point at Windup; the retained labels
    // must still describe the visible Flamethrower until its display cue.
    a.game.enemy_world.models[0].node=2;snapshot();capture_intent_background();CHECK(!(enemy_intent(a.game,0).flags&EnemyIntentAttack));
-   CHECK(rendered_number(damage,10,pos.x-32,pos.intent+10,pos.x,pos.intent+34)>=0);
-   CHECK(rendered_number("4",10,pos.x,pos.intent+10,pos.x+32,pos.intent+34)>=0);unchanged();
+   CHECK(rendered_number(damage,5,pos.x-32,pos.intent+7,pos.x,pos.intent+34)>=0);
+   CHECK(rendered_number("4",5,pos.x,pos.intent+7,pos.x+32,pos.intent+34)>=0);unchanged();
   }
  }
  // Two neighboring real compound attacks retain separate hit targets and
@@ -308,18 +312,58 @@ static void compound_intent_values(){
  enemy_visual_fight(EncounterId::NibbitsNormal);for(int i=0;i<2;++i)a.game.enemy_world.models[i].node=1;
  a.reset_presentation();snapshot();a.begin_combat_feedback();capture_intent_background();for(int i=0;i<2;++i){const auto pos=enemy_pose(a.game,i);const auto intent=enemy_intent(a.game,i);
   CHECK(intent.flags==(EnemyIntentAttack|EnemyIntentBlock)&&intent.damage==6);
-  const int x=rendered_number("6",10,pos.x-32,pos.intent+10,pos.x,pos.intent+34);CHECK(x>=0);
+  const int x=rendered_number("6",5,pos.x-32,pos.intent+7,pos.x,pos.intent+34);CHECK(x>=0);
   const auto*hit=a.hit_at(x,pos.intent+16);CHECK(hit&&hit->kind==HitKind::EnemyIntent&&hit->value==i);
  }capture("intent-two-nibbits-slice");unchanged();
  // Keep the original three-hit display and its smaller suffix, using actual
  // Byrdonis intent data instead of synthesizing a new unsupported flag set.
  enemy_visual_fight(EncounterId::ByrdonisElite);a.game.enemy_world.models[0].node=0;snapshot();a.begin_combat_feedback();capture_intent_background();const auto intent=enemy_intent(a.game,0);const auto pos=enemy_pose(a.game,0);
  CHECK(intent.damage==3&&intent.hits==3&&intent.flags==EnemyIntentAttack);
- const int repeat_x=rendered_number("3",10,pos.x-25,pos.intent+10,pos.x+25,pos.intent+34,"x3");CHECK(repeat_x>=0&&repeat_x<pos.x);
+ const int repeat_x=rendered_number("3",5,pos.x-25,pos.intent+7,pos.x+25,pos.intent+34,a.content.english()?"x3":"×3");CHECK(repeat_x>=0&&repeat_x<pos.x);
  capture("intent-byrdonis-three-hits");unchanged();
 }
+static void source_intent_hover_sets(){
+ enemy_visual_fight(EncounterId::MechaKnightElite);a.game.enemy_world.models[0].node=1;
+ queue_extension(a.game,XOp::EnemyApplyPower,2,int(EnemyPower::Weak)+80);resolve_pending(a.game);
+ a.reset_presentation();a.pointer.visible=false;a.render();
+ for(unsigned frame=0;a.combat_preparation.active&&frame<1024;++frame){a.advance(33);a.render();}
+ CHECK(!a.combat_preparation.active);snapshot();
+ std::vector<HitRegion> icons;for(int i=0;i<a.hit_count;++i)if(a.hits[i].kind==HitKind::EnemyIntent&&a.hits[i].value==0)icons.push_back(a.hits[i]);
+ CHECK(icons.size()==2&&icons[0].x+icons[0].w<=icons[1].x);
+ const uint16_t flags[]={EnemyIntentAttack,EnemyIntentStatus};const char*keys[]={"ATTACK","STATUS"};
+ for(unsigned i=0;i<2;++i){
+  a.pointer_move(icons[i].x+icons[i].w/2,icons[i].y+icons[i].h/2);a.render();
+  CardHoverTarget owner{};CHECK(creature_hover_target(a,owner)&&owner.creature==1&&owner.intent==flags[i]);
+  const auto pose=a.combat_enemy_pose(0);CHECK(owner.owner.x==pose.body_left&&owner.owner.y==pose.body_top&&owner.owner.w==pose.body_width&&owner.owner.h==pose.body_height);
+  HoverTipList tips{};collect_creature_hover_tips(a,owner,tips);CHECK(tips.count==1&&tips.items[0].kind==HoverTipKind::Intent&&!std::strcmp(tips.items[0].key,keys[i]));
+  char title[128]{},body[1024]{};format_card_hover_tip(a,owner,tips.items[0],title,sizeof title,body,sizeof body);
+  CHECK(!std::strcmp(title,a.content.world_title("intents",keys[i]))&&*body&&!std::strchr(body,'{'));
+  CHECK(intent_hover_panel(a));capture(i?"source-intent-status-hover":"source-intent-attack-hover",true);unchanged();
+  // InCardPlay suppresses creature tips for both pointer and keyboard aim.
+  a.keyboard_card=a.game.hand.ids[0];CHECK(!creature_hover_target(a,owner));a.keyboard_card=-1;
+ }
+ // The body owns a complete ordered set, including actual current powers.
+ bool body_found=false;
+ for(int y=25;y<180&&!body_found;++y)for(int x=0;x<320&&!body_found;++x){const auto*h=a.hit_at(x,y);
+  if(h&&h->kind==HitKind::Enemy&&h->value==0){a.pointer_move(x,y);body_found=true;}}
+ CHECK(body_found);a.render();CardHoverTarget owner{};CHECK(creature_hover_target(a,owner)&&!owner.intent&&owner.creature==1);
+ HoverTipList all{};collect_creature_hover_tips(a,owner,all);CHECK(all.count>=3&&all.items[0].kind==HoverTipKind::Intent&&all.items[1].kind==HoverTipKind::Intent);
+ const int weak=all.find(HoverTipKind::Power,"WEAK_POWER");CHECK(weak>=2&&all.items[weak].power==power_token(1,4));
+ char from_body[1024]{},from_power[1024]{},title[128]{};format_card_hover_tip(a,owner,all.items[weak],title,sizeof title,from_body,sizeof from_body);
+ CardHoverTarget individual{};individual.power=power_token(1,4);HoverTipList one{};collect_power_hover_tips(a,uint16_t(individual.power),one);
+ CHECK(one.count>0);format_card_hover_tip(a,individual,one.items[0],title,sizeof title,from_power,sizeof from_power);CHECK(!std::strcmp(from_body,from_power));
+ const auto page=card_hover_page(a,owner,all);CHECK(page.count>=3);for(unsigned i=0;i<page.count;++i)if(all.items[page.pieces[i].tip].kind!=HoverTipKind::Card)CHECK(page.pieces[i].box.w==69);
+ capture("source-creature-intents-and-powers",true);unchanged();
+ // The source direction is Up: at the positive sine peak the first
+ // intent is three pixels above its anchor, rather than below it.
+ a.pointer.visible=false;a.animation=15;a.render();bool peak=false;
+ const auto pose=a.combat_enemy_pose(0);for(int i=0;i<a.hit_count;++i)if(a.hits[i].kind==HitKind::EnemyIntent&&a.hits[i].value==0){CHECK(a.hits[i].y==pose.intent-5);peak=true;break;}
+ CHECK(peak);a.animation=45;a.render();bool trough=false;
+ for(int i=0;i<a.hit_count;++i)if(a.hits[i].kind==HitKind::EnemyIntent&&a.hits[i].value==0){CHECK(a.hits[i].y==pose.intent-2);trough=true;break;}
+ CHECK(trough);unchanged();
+}
 static void original_enemy_presentation(){
- compound_intent_values();
+ compound_intent_values();source_intent_hover_sets();
  CHECK(world_enemy_fact_count()<=MaxEnemyVisualFacts);enemy_visual_fight(EncounterId::NibbitsWeak);
  int clip=-1;uint32_t elapsed=0;bool loop=false;CHECK(a.enemy_frame(0,clip,elapsed,loop));CHECK(clip>=38&&clip<AnimationKinds&&loop);
  CHECK(has(HitKind::EnemyIntent,0));capture("combat-nibbit-idle");const int idle=clip;const unsigned turn=a.game.turn;
@@ -611,15 +655,10 @@ static void deferred_enemy_values(){
    a.pointer.x=a.hits[i].x+a.hits[i].w/2;a.pointer.y=a.hits[i].y+a.hits[i].h/2;found=true;break;
   }
   CHECK(found);a.pointer.visible=true;a.render();
-  const int panel_x=a.pointer.x>=170?8:134,title_x=panel_x+6;
-  const auto intent_panel=[&](){
-   const uint16_t gold=uint16_t((223>>3)<<11|(186>>2)<<5|(112>>3));
-   for(int dx=0;dx<178;++dx)if(a.pixels[48*ScreenW+panel_x+dx]!=gold)return false;
-   for(int dy=0;dy<20;++dy)if(a.pixels[(48+dy)*ScreenW+panel_x]!=gold)return false;
-   return true;
-  };
-  CHECK(intent_panel());std::vector<uint16_t> old_title;
-  for(int y=53;y<67;++y)old_title.insert(old_title.end(),a.pixels+y*ScreenW+title_x,a.pixels+y*ScreenW+title_x+166);
+  const auto intent_panel=[&](){return intent_hover_panel(a);};
+  HoverRect old_tip{};CHECK(intent_hover_panel(a,&old_tip));std::vector<uint16_t> old_title;
+  const int title_height=a.content.font_size(5,5),title_x=old_tip.x+4,title_y=old_tip.y+3;
+  for(int y=title_y;y<title_y+title_height;++y)old_title.insert(old_title.end(),a.pixels+y*ScreenW+title_x,a.pixels+y*ScreenW+title_x+56);
   char old_text[1024]{},retained_text[1024]{};
   a.localized_text("intents","STATUS.description",old_text,sizeof old_text,1,2);
   const uint32_t old_identity=a.enemy_presentation[1].identity,old_bar_identity=a.health_bars[2].identity,replace=a.animation+10;
@@ -640,7 +679,7 @@ static void deferred_enemy_values(){
   CHECK(a.combat_intent(1).flags==old_intent.flags&&a.combat_intent(1).status_cards==old_intent.status_cards);
   CHECK(has(HitKind::EnemyIntent,1)&&intent_panel());
   a.localized_text("intents","STATUS.description",retained_text,sizeof retained_text,1,2);CHECK(!std::strcmp(old_text,retained_text));
-  for(int y=53;y<67;++y)CHECK(!std::memcmp(a.pixels+y*ScreenW+title_x,old_title.data()+(y-53)*166,166*sizeof(uint16_t)));
+  for(int y=title_y;y<title_y+title_height;++y)CHECK(!std::memcmp(a.pixels+y*ScreenW+title_x,old_title.data()+(y-title_y)*56,56*sizeof(uint16_t)));
   unchanged();
   a.animation=replace;a.render();
   CHECK(a.combat_feedback.active&&a.combat_health(2).hp==a.game.enemies[1].hp&&a.enemy_presentation[1].identity==a.game.enemy_world.models[1].combat_id&&a.health_bars[2].identity==a.combat_feedback.identity[2]);
@@ -653,13 +692,13 @@ static void deferred_enemy_values(){
   // actual region after reveal, rather than the removed Eye's old geometry.
   CHECK(has(HitKind::EnemyIntent,1));found=false;
   for(int i=0;i<a.hit_count;++i)if(a.hits[i].kind==HitKind::EnemyIntent&&a.hits[i].value==1){a.pointer.x=a.hits[i].x+a.hits[i].w/2;a.pointer.y=a.hits[i].y+a.hits[i].h/2;found=true;break;}
-  CHECK(found);a.render();CHECK(intent_panel());bool renamed=false;
-  for(int y=53;y<67;++y)renamed|=std::memcmp(a.pixels+y*ScreenW+title_x,old_title.data()+(y-53)*166,166*sizeof(uint16_t))!=0;
+  CHECK(found);a.render();HoverRect new_tip{};CHECK(intent_hover_panel(a,&new_tip));bool renamed=false;
+  for(int y=0;y<title_height;++y)renamed|=std::memcmp(a.pixels+(new_tip.y+3+y)*ScreenW+new_tip.x+4,old_title.data()+y*56,56*sizeof(uint16_t))!=0;
   // synthetic_profile has numeric glyphs only. Its blank alphabetic
-  // title cannot prove a name change; keep every state/intent/hit/panel check
+  // title cannot prove a type change; keep every state/intent/hit/panel check
   // there and require the rendered rename for every actual resource pack.
   if(actual_pack)CHECK(renamed);
-  else CHECK(!a.content.glyph('E',12).pixels&&!a.content.glyph('N',12).pixels);
+  else CHECK(!a.content.glyph('A',title_height,5).pixels&&!a.content.glyph('S',title_height,5).pixels);
   unchanged();a.pointer.visible=false;
  }
  a.fast_mode=false;

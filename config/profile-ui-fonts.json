@@ -1,0 +1,13 @@
+{
+  "reference": "v0.111.0 / 41cef1ea",
+  "viewport": [1680, 1260],
+  "labels": [
+    {"key": "main_menu_ui.PROFILE_SCREEN.BUTTON.chooseProfileMessage", "pixels": 7, "face": 0, "source_pixels": 36},
+    {"key": "main_menu_ui.PROFILE_SCREEN.BUTTON.title", "pixels": 6, "face": 5, "source_pixels": 32, "substitutions": {"Id": "123"}},
+    {"key": "main_menu_ui.PROFILE_SCREEN.BUTTON.description", "pixels": 5, "face": 0, "source_pixels": 26, "substitutions": {"Playtime": "0123456789:—", "LastUpdatedTime": "0123456789:,/ AMPMJanuaryFebruaryMarchAprilMayJuneJulyAugustSeptemberOctoberNovemberDecember—"}},
+    {"key": "main_menu_ui.PROFILE_SCREEN.BUTTON.empty", "pixels": 5, "face": 0, "source_pixels": 26},
+    {"key": "main_menu_ui.PROFILE_SCREEN.DELETE_BUTTON.label", "pixels": 5, "face": 5, "source_pixels": 24},
+    {"key": "main_menu_ui.OPEN_PROFILE_SCREEN.title", "pixels": 5, "face": 5, "source_pixels": 24, "substitutions": {"Id": "123"}},
+    {"key": "main_menu_ui.OPEN_PROFILE_SCREEN.description", "pixels": 4, "face": 0, "source_pixels": 18, "adaptation": "The projected 3px helper line uses the existing 4px minimum for calculator legibility."}
+  ]
+}

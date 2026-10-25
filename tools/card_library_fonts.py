@@ -96,14 +96,15 @@ def retireable_flavor_keys(source, language):
     return retire
 
 
-def rewrite_directory(data, auxiliary, retired, additions, *, profile=None):
+def rewrite_directory(data, auxiliary, retired, additions, *, profile=None, output_version=VERSION):
     """Relocate the directory once; keep the entire old payload suffix.
 
     Relative RGR glyph/string/image descriptors move together with their
     groups. TIL1's absolute offsets are the only payload-adjacent fields
     rewritten. Unreferenced retired glyph payloads are deliberately retained.
     """
-    source = tiles.PackView(data, auxiliary, versions=(VERSION,), profile=profile)
+    source = tiles.PackView(data, auxiliary, versions=(VERSION, 35), profile=profile)
+    tiles.require(source.version <= output_version <= 35, 'Unsupported font version transition')
     old_tiles = tiles.TileReader(source)
     known = {(row[0], row[2]) for row in source.glyphs}
     retired = set(retired)
@@ -114,7 +115,8 @@ def rewrite_directory(data, auxiliary, retired, additions, *, profile=None):
                   'Added Card Library glyph keys must be new and unique')
     ni, ng, ns, nc, nk, _ = source.counts
     count = ng-len(retired)+len(additions)
-    tiles.require(0 < count <= GLYPH_LIMIT, 'Card Library glyph directory exceeds32768')
+    limit = 65535 if output_version >= 35 else GLYPH_LIMIT
+    tiles.require(0 < count <= limit, 'Card Library glyph directory exceeds'+str(limit))
     delta = (count-ng)*tiles.GLYPH.size
     out = bytearray(data[:source.glyph_at])
     out.extend(bytes(count*tiles.GLYPH.size))
@@ -147,16 +149,16 @@ def rewrite_directory(data, auxiliary, retired, additions, *, profile=None):
         at = old_tiles.descriptors+i*16
         global_at, group, offset, length = tiles.DESCRIPTOR.unpack_from(data, at)
         tiles.DESCRIPTOR.pack_into(out, at+delta, global_at+delta, group, offset, length)
-    tiles.HEADER.pack_into(out, 0, b'NSP2', VERSION, tiles.REFERENCE,
+    tiles.HEADER.pack_into(out, 0, b'NSP2', output_version, tiles.REFERENCE,
                            len(out), ni, count, ns, nc, nk, 0)
-    target = tiles.PackView(out, auxiliary, versions=(VERSION,), profile=profile)
+    target = tiles.PackView(out, auxiliary, versions=(output_version,), profile=profile)
     tiles.TileReader(target)
     return bytes(out)
 
 
 def verify_preserved(before, after, auxiliary, retired):
-    source = tiles.PackView(before, auxiliary, versions=(VERSION,))
-    target = tiles.PackView(after, auxiliary, versions=(VERSION,))
+    source = tiles.PackView(before, auxiliary, versions=(VERSION, 35))
+    target = tiles.PackView(after, auxiliary, versions=(VERSION, 35))
     tiles.require(source.cards == target.cards and source.clips == target.clips and
                   source.aux == target.aux, 'Card Library patch changed model or clip indices')
     delta = (len(target.glyphs)-len(source.glyphs))*tiles.GLYPH.size

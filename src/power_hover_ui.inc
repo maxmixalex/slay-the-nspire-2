@@ -22,6 +22,7 @@ void collect_power_hover_tips(const App&a,uint16_t token,HoverTipList&out){
     const char*key=ui_status_key(int(id));if(!key)return;
     HoverTip main{};main.kind=HoverTipKind::Power;main.key=key;main.actor=int16_t(actor);
     main.amount=int16_t(a.combat_power_amount(token));main.smart=true;main.instanced=true;
+    main.power=int(token);
     main.debuff=(CombatStatus::PowerFlags[id]&2)!=0;out.add(main);
     const PowerHoverCatalog*row=nullptr;for(const auto&entry:power_hover_catalog)if(hover_key_equal(entry.key,key)){row=&entry;break;}
     if(!row)return;

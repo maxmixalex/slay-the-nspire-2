@@ -209,10 +209,15 @@ static LocalizedValue hover_text_value(const void*opaque,const char*name){
 }
 void format_card_hover_tip(const App&a,const CardHoverTarget&owner,const HoverTip&tip,char*title,size_t title_cap,char*body,size_t body_cap){
     if(title_cap)title[0]=0;if(body_cap)body[0]=0;
-    if(owner.power>=0&&tip.kind==HoverTipKind::Power&&tip.instanced){
-        const auto token=uint16_t(owner.power);const int id=int(power_id(token)),actor=int(power_actor(token));
+    if((tip.power>=0||owner.power>=0)&&tip.kind==HoverTipKind::Power&&tip.instanced){
+        const auto token=uint16_t(tip.power>=0?tip.power:owner.power);const int id=int(power_id(token)),actor=int(power_actor(token));
         TextBuffer name{title,title_cap,0};name.text(ui_status_title(a,id));
         ui_status_description(a,actor,id,body,body_cap,power_instanced(unsigned(id))?int(power_instance(token)):-1);return;
+    }
+    if(tip.kind==HoverTipKind::Intent){
+        TextBuffer name{title,title_cap,0};name.text(a.content.world_title("intents",tip.key));
+        char key[80]{};TextBuffer path{key,sizeof key,0};path.text(tip.key);path.text(".description");
+        a.localized_text("intents",key,body,body_cap,tip.actor-1,tip.actor);return;
     }
     if(tip.kind==HoverTipKind::Description){
         TextBuffer name{title,title_cap,0,&a.content};name.text(a.content.card_string(owner.card.kind));if(owner.card.upgraded)name.ch('+');
@@ -249,7 +254,7 @@ static HoverPage hover_page(Canvas&c,const CardHoverTarget&owner,const HoverTipL
     const HoverRect column=details?HoverRect{13,52,SourceHoverWidth,139}:inspect?
         HoverRect{mn(318-SourceHoverWidth,owner.owner.x+owner.owner.w+1),owner.owner.y,SourceHoverWidth,235-owner.owner.y}:keyword_hover_column(owner);
     int direction=column.x<owner.owner.x?-1:1;if(owner.relic>=0)direction=owner.owner.x>240?-1:1;
-    if(owner.power>=0)direction=owner.power_left?-1:1;
+    if(owner.power>=0||owner.creature>=0)direction=owner.power_left?-1:1;
     if(owner.merchant)direction=owner.merchant_left?-1:1;
     int card_count=0;for(unsigned i=0;i<tips.count;++i)if(tips.items[i].kind==HoverTipKind::Card)++card_count;
     const int space=direction<0?column.x-3:317-column.x-column.w;
@@ -284,7 +289,7 @@ static HoverPage hover_page(Canvas&c,const CardHoverTarget&owner,const HoverTipL
     int card_x=inspect?owner.owner.x-46:direction>0?owner.owner.x-47:owner.owner.x+owner.owner.w+1;
     if(details)card_x=13+3*70;
     if(hover_compact_event(owner))card_x=column.x+columns*(column.w+1);
-    if((owner.power>=0||owner.merchant)&&!details&&!inspect&&card_count&&result.count){
+    if((owner.power>=0||owner.creature>=0||owner.merchant)&&!details&&!inspect&&card_count&&result.count){
         // NHoverTipSet.CorrectHorizontalOverflow moves the actual containers
         // together. Empty available text columns must not separate a power
         // from its associated card when the original opposite side overflows.
@@ -324,6 +329,10 @@ static void draw_hover_piece(Canvas&c,const CardHoverTarget&owner,const HoverTip
         icon=c.a.relic_face_image(id,character);
     }
     else if(tip.kind==HoverTipKind::Potion)icon=c.a.content.potion_image(Potion(tip.amount));
+    else if(tip.kind==HoverTipKind::Intent){
+        const auto intent=c.a.combat_intent(tip.actor-1);
+        for(const auto&part:ui_intent_parts)if(part.flag==unsigned(tip.amount)){icon=ui_intent_image(c.a,part,intent);break;}
+    }
     else if(tip.kind==HoverTipKind::Enchantment)icon=c.a.content.world_image("enchantments",tip.key);
     else if(tip.kind==HoverTipKind::Static&&hover_key_equal(tip.key,"ENERGY"))icon=c.a.content.energy_image(owner.card);
     source_hover_title(c,title,r,icon);

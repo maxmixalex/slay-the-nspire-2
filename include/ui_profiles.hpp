@@ -25,12 +25,12 @@ struct UiProfileLabelMotion {
 };
 struct UiProfileMotion {
     uint32_t changed=0;int from=0;bool focused=false;
-    int value(uint32_t now)const{
-        const unsigned age=now-changed,duration=focused?50:500;
-        const int t=age>=duration?4096:focused?int(age*4096/duration):int(health_bar::expo_out(age*1000/duration));
+    int value(uint32_t now,bool menu_button=false)const{
+        const unsigned age=now-changed,duration=focused?50:menu_button?300:500;
+        const int t=age>=duration?4096:focused&&!menu_button?int(age*4096/duration):int(health_bar::expo_out(age*1000/duration));
         return from+((focused?4096:0)-from)*t/4096;
     }
-    int observe(bool next,uint32_t now){const int current=value(now);if(next!=focused){focused=next;from=current;changed=now;}return current;}
+    int observe(bool next,uint32_t now,bool menu_button=false){const int current=value(now,menu_button);if(next!=focused){focused=next;from=current;changed=now;}return current;}
 };
 inline unsigned decode_profile_selector(const uint8_t*data,size_t size){
     return data&&size==UiProfileSelectorBytes&&data[0]=='N'&&data[1]=='S'&&data[2]=='L'&&data[3]=='T'&&

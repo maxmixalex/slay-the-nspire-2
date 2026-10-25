@@ -178,7 +178,8 @@ static void library_source_label_pixels(const std::vector<uint8_t>&pack){
         if(empty){auto text=library_letters(pack,a.content.locale_string("card_library","NO_RESULTS"),6,0);
             library_oracle_label(expected,text,54+(266-int(library_text_width(text)))/2,116,source_rgb(255,246,226),255,64,1,0);}
         std::string count=a.content.locale_string("card_library","CARD_COUNT");const auto variable=count.find("{Amount}");CHECK(variable!=std::string::npos);count.replace(variable,8,empty?"0":"85");
-        library_oracle_label(expected,library_letters(pack,count,4,0),296,228,source_rgb(255,246,226),129,64,1,0);
+        const auto count_letters=library_letters(pack,count,4,0);
+        library_oracle_label(expected,count_letters,296+(19-int(library_text_width(count_letters)))/2,228,source_rgb(255,246,226),129,64,1,0);
         // Search is a plain LineEdit: no title color, outline or ellipsis.
         const auto search=library_letters(pack,a.content.locale_string("card_library","SEARCH_PLACEHOLDER"),5,0);
         CHECK(library_text_width(search)<=36);library_oracle_label(expected,search,5,4,source_rgb(153,156,150),255,0);

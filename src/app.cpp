@@ -356,7 +356,7 @@ void App::render(){
     if(!ftue.active()){
     hud_hover_tip(c);
     potion_hover_tip(c);
-    enemy_intent_tooltip(c);
+    
     orb_hover_tip(c);
     keyword_tooltips(c);
     }
