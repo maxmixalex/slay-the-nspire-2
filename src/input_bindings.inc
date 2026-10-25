@@ -25,7 +25,7 @@ void App::physical_keys_cancel(){
 bool App::physical_key(uint16_t code,bool pressed){
     code=normalize_input_key(code);if(!valid_input_key(code))return false;
 #if SPIRE_DEBUG_COMMANDS
-    if(code==InputFlag){if(pressed)input(Key::Debug);return true;}
+    if(code==InputFlag){if(pressed&&!startup_logo.active())input(Key::Debug);return true;}
     if(debug_open){if(pressed){if(code==InputUp)debug_input(Key::Up);else if(code==InputDown)debug_input(Key::Down);
         else if(code==InputLeft)debug_input(Key::Left);else if(code==InputRight)debug_input(Key::Right);
         else if(code==9)debug_text(9);}return true;}
@@ -70,6 +70,14 @@ bool App::physical_key(uint16_t code,bool pressed){
     }
     for(auto&entry:held_inputs)if(!entry.code){held=&entry;break;}if(!held)return true;
     held->code=code;held->key=255;
+    if(startup_logo.active()){
+        const auto&bank=input_bindings.keys[keyboard_only?1:0];
+        if(code==bank[unsigned(InputCommand::Select)]||code==bank[unsigned(InputCommand::Cancel)]||code==13)
+            startup_logo.cancel(map_clock_ms);
+        // Capture even ignored presses until key-up. A held skip key may
+        // not activate Continue when the title screen appears.
+        return true;
+    }
     sync_game_over_presentation();
     if(settings_open&&binding_listening>=0){
         if(rebind_input(input_bindings,binding_bank,unsigned(binding_listening),code)){binding_listening=-1;persist_preferences();}

@@ -3,7 +3,7 @@ void App::restore_preferences(){
     if(callbacks.load_preferences){UiPreferences loaded{};
         if(callbacks.load_preferences(loaded))value=loaded;
     }
-    fast_mode=value.fast_mode;long_press=value.long_press;end_turn_hold={};
+    fast_mode=value.fast_mode;long_press=value.long_press;skip_intro_logo=value.skip_intro_logo;end_turn_hold={};
     show_card_indices=value.show_card_indices;text_effects=value.text_effects;show_run_timer=value.show_run_timer;
     keyboard_only=value.keyboard_only;phobia_mode=value.phobia_mode;screen_shake=value.screen_shake;bestiary_actions_preferred=value.bestiary_actions_preferred;
     input_bindings=value.bindings_saved?value.bindings:default_input_bindings(calculator_keyboard);
@@ -19,7 +19,7 @@ void App::restore_preferences(){
 }
 void App::persist_preferences(){
     UiPreferences value{fast_mode,show_card_indices,text_effects,keyboard_only,phobia_mode,screen_shake,bestiary_actions_preferred};
-    value.bindings=input_bindings;value.bindings_saved=true;value.show_run_timer=show_run_timer;value.long_press=long_press;
+    value.bindings=input_bindings;value.bindings_saved=true;value.show_run_timer=show_run_timer;value.long_press=long_press;value.skip_intro_logo=skip_intro_logo;
     if(callbacks.save_preferences&&!callbacks.save_preferences(value))
         message(content.language()!=2?"Could not save settings.":"设置保存失败，请重试");
 }
@@ -77,6 +77,12 @@ void App::settings_action(UiAction action){
     case UiAction::SettingsRunTimer:show_run_timer=!show_run_timer;persist_preferences();break;
     case UiAction::SettingsLongPress:long_press=!long_press;end_turn_hold={};persist_preferences();break;
     case UiAction::SettingsTextEffects:text_effects=!text_effects;invalidate_hand_tiles();persist_preferences();break;
+    case UiAction::SettingsSkipIntroLogo:{
+        skip_intro_logo=!skip_intro_logo;
+        const char*toast=content.world_string("settings_ui",skip_intro_logo?"TOAST_SKIP_INTRO_LOGO_ON":"TOAST_SKIP_INTRO_LOGO_OFF");
+        message(*toast?toast:(content.language()!=2?(skip_intro_logo?"Intro logo will be skipped.":"Intro logo will be shown."):(skip_intro_logo?"下次启动时跳过开场Logo动画。":"下次启动时显示开场Logo动画。")));
+        persist_preferences();break;
+    }
     case UiAction::SettingsKeyboardOnly:keyboard_only=!keyboard_only;if(!keyboard_only)pointer.visible=true;persist_preferences();break;
     case UiAction::SettingsPhobia:phobia_mode=!phobia_mode;persist_preferences();break;
     case UiAction::SettingsShakeDown:if(screen_shake){--screen_shake;persist_preferences();}break;
@@ -119,7 +125,7 @@ bool App::settings_input(Key key){
     }else if(key==Key::Confirm){
         static const UiAction general[]={UiAction::SettingsLanguage,UiAction::SettingsShakeUp,UiAction::SettingsFastMode,
             UiAction::SettingsPhobia,UiAction::SettingsRunTimer,UiAction::SettingsCardIndices,UiAction::SettingsLongPress,UiAction::SettingsTextEffects,
-            UiAction::SettingsCredits,UiAction::SettingsReset,UiAction::SettingsBack};
+            UiAction::SettingsSkipIntroLogo,UiAction::SettingsCredits,UiAction::SettingsReset,UiAction::SettingsBack};
         if(!settings_tab)settings_action(general[settings_item%(settings_layout::GeneralRows+1)]);
         else if(!settings_item)settings_action(UiAction::SettingsKeyboardOnly);
         else if(settings_item<=InputCommandCount)begin_key_rebind(settings_item-1);

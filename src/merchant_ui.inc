@@ -205,7 +205,20 @@ static void shop_screen(Canvas&c,bool cull_covered=true){
     // always render the complete room; settled inventory can omit only layers
     // proven to be wholly overwritten by the opaque original rug.
     const bool covered=cull_covered&&a.shop_open&&motion.open&&a.map_clock_ms-motion.start>=1000;
-    if(registered){
+    // The preparation overlay is modal. Reuse its first complete room frame
+    // while warming inventory assets; decoding a new idle/flame frame on
+    // each yielded step would compete with the very work being prepared.
+    // This scratch surface adds 136.25 KiB, only once, with no game/save state.
+    struct PreparationBackdrop {
+        const App*owner=nullptr;uint32_t generation=0;
+        uint16_t pixels[ScreenW*(ScreenH-22)]{};
+    };
+    static PreparationBackdrop preparation_backdrop;
+    const bool retained=a.merchant_preparation.active&&a.merchant_preparation.shown&&
+        preparation_backdrop.owner==&a&&preparation_backdrop.generation==a.content.generation();
+    if(retained){
+        for(unsigned i=0;i<ScreenW*(ScreenH-22);++i)a.pixels[ScreenW*22+i]=preparation_backdrop.pixels[i];
+    }else if(registered){
         c.ui(U_MerchantBackdrop,0,22,320,218);
         if(effects)merchant_secondary_lights(c,covered);
         if(effects){
@@ -219,7 +232,12 @@ static void shop_screen(Canvas&c,bool cull_covered=true){
     }else{c.picture(A_ShopBackground,0,22,320,218);c.actor(0,54,170);c.clip(AnimMerchantTop,181,62,a.animation*33,false);c.clip(AnimMerchantBottom,152,132,a.animation*33,false);}
     const char*proceed_label=a.content.world_string("gameplay_ui","PROCEED_BUTTON");
     if(a.merchant_preparation.active){
-        auto&p=a.merchant_preparation;p.shown=true;
+        auto&p=a.merchant_preparation;
+        if(!retained){
+            for(unsigned i=0;i<ScreenW*(ScreenH-22);++i)preparation_backdrop.pixels[i]=a.pixels[ScreenW*22+i];
+            preparation_backdrop.owner=&a;preparation_backdrop.generation=a.content.generation();
+        }
+        p.shown=true;
         c.dim(0,22,320,218,110);
         // Immediate acknowledgement while the original inventory is prepared.
         // The three dots animate without introducing another font or texture.

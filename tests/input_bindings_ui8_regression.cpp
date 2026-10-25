@@ -36,10 +36,14 @@ static HitRegion hit(unsigned command){app.render();for(int i=app.hit_count-1;i>
 static void click(unsigned command){const auto h=hit(command);CHECK(h.enabled);app.pointer_move(h.x+h.w/2,h.y+h.h/2);app.pointer_button(true);app.pointer_button(false);}
 static void legacy(){
     UiPreferences loaded{};const uint8_t old1[]={'N','S','P','F',1,1,0,0},old2[]={'N','S','P','F',2,12,2,0};
-    CHECK(decode_ui_preferences(old1,sizeof old1,loaded)&&loaded.fast_mode&&!loaded.bindings_saved);
-    CHECK(decode_ui_preferences(old2,sizeof old2,loaded)&&loaded.keyboard_only&&!loaded.bindings_saved);
+    CHECK(decode_ui_preferences(old1,sizeof old1,loaded)&&loaded.fast_mode&&!loaded.bindings_saved&&!loaded.skip_intro_logo);
+    CHECK(decode_ui_preferences(old2,sizeof old2,loaded)&&loaded.keyboard_only&&!loaded.bindings_saved&&!loaded.skip_intro_logo);
+    UiPreferences custom{};CHECK(rebind_input(custom.bindings,0,unsigned(InputCommand::Map),'Y'));CHECK(rebind_input(custom.bindings,1,unsigned(InputCommand::Select),'Q'));
+    for(unsigned version=3;version<=5;++version){encode_ui_preferences(custom,disk);disk[4]=uint8_t(version);
+        CHECK(decode_ui_preferences(disk,sizeof disk,loaded)&&loaded.bindings_saved&&!loaded.skip_intro_logo);
+        CHECK(!std::memcmp(&loaded.bindings,&custom.bindings,sizeof custom.bindings));}
     present=false;app.calculator_keyboard=true;app.restore_preferences();CHECK(app.input_bindings.keys[0][unsigned(InputCommand::Up)]==InputUp);
-    app.persist_preferences();CHECK(disk[4]==5);app.calculator_keyboard=false;app.restore_preferences();
+    app.persist_preferences();CHECK(disk[4]==6);app.calculator_keyboard=false;app.restore_preferences();
     CHECK(app.input_bindings.keys[0][unsigned(InputCommand::Map)]==9); // Saved calculator map survives a host/language change.
     app.reset_input_bindings();CHECK(app.input_bindings.keys[0][unsigned(InputCommand::Up)]==InputUp);
     std::memcpy(&loaded.bindings,&app.input_bindings,sizeof loaded.bindings);
@@ -139,5 +143,5 @@ int main(int argc,char**argv){
     std::vector<uint8_t>pack;if(argc>1){FILE*f=std::fopen(argv[1],"rb");CHECK(f);pack.resize(spire_test::pack_size(f));CHECK(std::fread(pack.data(),1,pack.size(),f)==pack.size());std::fclose(f);CHECK(app.content.open(pack.data(),pack.size())&&app.content.current_profile());}if(argc>2)captures=argv[2];
     app.callbacks.load_preferences=read_preferences;app.callbacks.save_preferences=write_preferences;
     legacy();settings();gameplay();map_release();calculator();
-    std::printf("Source keyboard maps: %u checks; listening/conflict swaps, two banks, v1/2/3/4/5 preferences, actual pile/card input, held-key release and calculator matrix passed\n",checks);
+    std::printf("Source keyboard maps: %u checks; listening/conflict swaps, two banks, v1/2/3/4/5/6 preferences, actual pile/card input, held-key release and calculator matrix passed\n",checks);
 }

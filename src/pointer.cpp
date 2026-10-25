@@ -68,6 +68,7 @@ void App::open_choice_detail(int token){
     bind_card_inspect();
 }
 void App::pointer_move(int x,int y){
+    if(startup_logo.active()){pointer.x=clamp(x,0,319);pointer.y=clamp(y,0,239);return;}
 #if SPIRE_DEBUG_COMMANDS
     if(debug_open){pointer.x=clamp(x,0,319);pointer.y=clamp(y,0,239);pointer.visible=true;return;}
 #endif
@@ -192,6 +193,7 @@ void App::pointer_move(int x,int y){
     }
 }
 void App::pointer_scroll(int rows){
+    if(startup_logo.active()){if(rows)startup_logo.cancel(map_clock_ms);return;}
 #if SPIRE_DEBUG_COMMANDS
     if(debug_open){
         if(debug_completing){if(rows)debug_input(rows<0?Key::Up:Key::Down);}
@@ -251,6 +253,7 @@ void App::pointer_scroll(int rows){
         ui_action(rows>0?UiAction::NextDeckPage:UiAction::PreviousDeckPage);
 }
 void App::pointer_button(bool down){
+    if(startup_logo.active()){if(down)startup_logo.cancel(map_clock_ms);pointer_cancel();return;}
     if(character_departure.active()){pointer_cancel();return;}
 #if SPIRE_DEBUG_COMMANDS
     if(debug_open){

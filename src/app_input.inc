@@ -13,6 +13,10 @@ static void invalidate_hud_motion();
 #include "world_map_act_intro.inc"
 #include "world_map_drawing_input.inc"
 #include "world_map_window.inc"
+bool App::begin_startup_logo(){
+    if(!title||!startup_logo.begin(map_clock_ms,content.has_startup_logo_assets(),skip_intro_logo))return false;
+    pointer_cancel();physical_keys_cancel();hit_count=0;return true;
+}
 bool App::init(const uint8_t*p,size_t n,Callbacks cb){invalidate_hand_tiles();invalidate_hud_motion();reset_card_grids();card_library={};collection={};library_search_editing=false;bestiary={};hud_focus=-1;hud_focus_reticle={};hud_relic_motion={};card_inspect={};relic_inspect={};potion_belt_motion={};deck_count_pulse={};for(auto&reticle:target_reticles)reticle={};reward_presentation.reset();combat_feedback.reset();combat_status.reset_visuals();combat_sparks.reset();combat_cards.reset();combat_preparation.reset();merchant_preparation.reset();character_select_presentation.reset();character_departure={};character_random=false;room_presentation.reset();turn_banner.reset();reset_treasure_presentation();reset_map_reticles();for(auto&button:button_motions)button=ButtonMotion{};proceed_motion={};end_turn_glow={};end_turn_hold={};command_held=255;command_hold=false;map_travel={};map_visuals.reset();reset_map_window();reset_map_act_intro();profiles_open=profile_pending=false;for(auto&motion:profile_motion)motion={};for(auto&label:profile_labels)label={};reset_in_place(auxiliary);callbacks=cb;restore_preferences();restore_progress();if(!content.open(p,n)||!content.current_profile())return false;refresh_save();return true;}
 bool App::init(ResourceSource source,Callbacks cb){invalidate_hand_tiles();invalidate_hud_motion();reset_card_grids();card_library={};collection={};library_search_editing=false;bestiary={};hud_focus=-1;hud_focus_reticle={};hud_relic_motion={};card_inspect={};relic_inspect={};potion_belt_motion={};deck_count_pulse={};for(auto&reticle:target_reticles)reticle={};reward_presentation.reset();combat_feedback.reset();combat_status.reset_visuals();combat_sparks.reset();combat_cards.reset();combat_preparation.reset();merchant_preparation.reset();character_select_presentation.reset();character_departure={};character_random=false;room_presentation.reset();turn_banner.reset();reset_treasure_presentation();reset_map_reticles();for(auto&button:button_motions)button=ButtonMotion{};proceed_motion={};end_turn_glow={};end_turn_hold={};command_held=255;command_hold=false;map_travel={};map_visuals.reset();reset_map_window();reset_map_act_intro();profiles_open=profile_pending=false;for(auto&motion:profile_motion)motion={};for(auto&label:profile_labels)label={};reset_in_place(auxiliary);callbacks=cb;restore_preferences();restore_progress();if(!content.open(source)||!content.current_profile())return false;refresh_save();return true;}
 void App::message(const char*s){notice=s;notice_ticks=60;}
@@ -32,6 +36,7 @@ void App::sync_character_feedback(){
     if(clip>=0)osty_motion={clip,animation};last_osty_hp=hp;last_osty_attacks=attacks;
 }
 void App::advance(uint32_t ms){
+    if(startup_logo.active()){map_clock_ms+=ms>250?250:ms;startup_logo.advance(map_clock_ms);return;}
     if(long_press||end_turn_hold.owner||end_turn_hold.timer||
        (end_turn_hold.fired&&end_turn_hold.fade_age<EndTurnHold::FadeDuration))
         advance_end_turn_hold(ms>250?250:ms);
@@ -62,6 +67,7 @@ void App::advance(uint32_t ms){
 }
 void App::draw_frame(){render();}
 void App::tick(){
+    if(startup_logo.active()){map_clock_ms+=33;startup_logo.advance(map_clock_ms);return;}
 #if SPIRE_DEBUG_COMMANDS
     if(debug_open)return;
 #endif
@@ -83,6 +89,10 @@ static void next_target(App&a){for(int i=1;i<=a.game.enemy_count;i++){int t=(a.t
 #include "world_map_input.inc"
 #include "input_bindings.inc"
 void App::input(Key k){
+    if(startup_logo.active()){
+        if(k==Key::Confirm||k==Key::Back)startup_logo.cancel(map_clock_ms);
+        if(k==Key::Quit)quit=true;return;
+    }
 #if SPIRE_DEBUG_COMMANDS
     // The original console has priority over every modal, including tutorial
     // popups, credits, relic inspection and the main menu.

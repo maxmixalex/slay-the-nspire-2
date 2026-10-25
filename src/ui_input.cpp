@@ -54,7 +54,7 @@ void App::select_library_item(int index){
     if(library_card_seen(ids[index]))open_card_detail({ids[index],uint8_t(library_upgraded&&card_upgradeable({ids[index],0}))});
 }
 void App::ui_action(UiAction action){
-    if(character_departure.active())return;
+    if(character_departure.active()||startup_logo.active())return;
     sync_ftues();if(ftue_before_action(action))return;
     if(detail_item>=0&&detail_item<WorldRelicKinds){
         if(action==UiAction::InspectPreviousRelic)move_relic_inspect(-1);

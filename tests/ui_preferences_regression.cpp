@@ -21,13 +21,24 @@ int main(){
     // formerly reserved bit instead of silently enabling a new preference.
     for(unsigned version=1;version<=4;++version){encode_ui_preferences({},encoded);encoded[4]=uint8_t(version);encoded[5]=128;
         CHECK(!decode_ui_preferences(encoded,version<=2?8:UiPreferencesBytes,result));}
-    encode_ui_preferences({},encoded);encoded[4]=6;CHECK(!decode_ui_preferences(encoded,UiPreferencesBytes,result));
+    // The skip-logo bit belongs to v6; it cannot reinterpret a reserved bit
+    // in any previous record, including the two eight-byte formats.
+    for(unsigned version=1;version<=5;++version){encode_ui_preferences({},encoded);encoded[4]=uint8_t(version);encoded[6]|=8;
+        CHECK(!decode_ui_preferences(encoded,version<=2?8:UiPreferencesBytes,result));}
+    encode_ui_preferences({},encoded);encoded[4]=7;CHECK(!decode_ui_preferences(encoded,UiPreferencesBytes,result));
     UiPreferences timer{};timer.show_run_timer=true;timer.long_press=true;timer.bindings.keys[0][unsigned(InputCommand::Map)]='Y';
-    encode_ui_preferences(timer,encoded);CHECK(encoded[4]==5&&UiPreferencesBytes==108);
+    encode_ui_preferences(timer,encoded);CHECK(encoded[4]==6&&UiPreferencesBytes==108);
     CHECK(decode_ui_preferences(encoded,UiPreferencesBytes,result)&&result.show_run_timer&&result.long_press&&result.bindings.keys[0][unsigned(InputCommand::Map)]=='Y');
+    encoded[4]=5;CHECK(decode_ui_preferences(encoded,UiPreferencesBytes,result)&&result.long_press&&!result.skip_intro_logo);
     encoded[4]=4;encoded[5]&=~128;CHECK(decode_ui_preferences(encoded,UiPreferencesBytes,result)&&result.show_run_timer&&!result.long_press);
     encoded[4]=3;encoded[5]&=~64;CHECK(decode_ui_preferences(encoded,UiPreferencesBytes,result)&&!result.show_run_timer&&!result.long_press&&result.bindings.keys[0][unsigned(InputCommand::Map)]=='Y');
     encoded[5]|=64;CHECK(!decode_ui_preferences(encoded,UiPreferencesBytes,result)); // v3 never assigned this bit.
+    for(unsigned shake=0;shake<=4;++shake)for(unsigned skip=0;skip<2;++skip){
+        timer.screen_shake=uint8_t(shake);timer.skip_intro_logo=skip;encode_ui_preferences(timer,encoded);
+        CHECK(decode_ui_preferences(encoded,UiPreferencesBytes,result)&&result.screen_shake==shake&&result.skip_intro_logo==skip&&result.long_press&&result.show_run_timer);
+        CHECK(result.bindings.keys[0][unsigned(InputCommand::Map)]=='Y');
+    }
+    for(unsigned shake=5;shake<=7;++shake){encode_ui_preferences(timer,encoded);encoded[6]=uint8_t(8+shake);CHECK(!decode_ui_preferences(encoded,UiPreferencesBytes,result));}
     app.callbacks.load_preferences=read_settings;app.callbacks.save_preferences=write_settings;
     app.restore_preferences();CHECK(!app.fast_mode);
     app.set_fast_mode(true);CHECK(writes==1&&persisted.fast_mode);
@@ -39,6 +50,14 @@ int main(){
     read_ok=write_ok=true;new_run(app.game,123,true);SaveData before{},after{};CHECK(save(app.game,before));
     app.set_fast_mode(false);app.settings_open=true;app.ui_action(UiAction::SettingsLongPress);CHECK(app.long_press&&persisted.long_press);app.settings_open=false;
     app.long_press=false;app.restore_preferences();CHECK(app.long_press);CHECK(save(app.game,after));CHECK(before.size==after.size&&!std::memcmp(before.bytes,after.bytes,before.size));
+    // Traverse the real general-settings rows, toggle and reload. Preference
+    // changes remain independent of both current-run and historical bytes.
+    app.title=true;app.settings_open=true;app.settings_tab=app.settings_item=app.settings_top=0;
+    for(unsigned i=0;i<8;++i)app.input(Key::Down);CHECK(app.settings_item==8&&!app.skip_intro_logo);
+    app.input(Key::Confirm);CHECK(app.skip_intro_logo&&persisted.skip_intro_logo&&app.notice_ticks>0);
+    app.skip_intro_logo=false;app.restore_preferences();CHECK(app.skip_intro_logo);
+    CHECK(save(app.game,after));CHECK(before.size==after.size&&!std::memcmp(before.bytes,after.bytes,before.size));
+    app.settings_open=false;
     // The real timer reads observed play time and never changes the game save.
     read_ok=write_ok=true;new_run(app.game,7319,false);CHECK(world_begin_run(app.game));
     app.title=app.paused=app.settings_open=false;app.show_run_timer=false;app.reset_presentation();app.begin_progress();
@@ -57,6 +76,6 @@ int main(){
     CHECK(save(app.game,after));CHECK(before.size==after.size&&!std::memcmp(before.bytes,after.bytes,before.size));
     app.title=true;CHECK(!app.run_timer_visible());
     app.settings_open=true;app.ui_action(UiAction::SettingsReset);CHECK(app.frontend_confirm==4);app.frontend_choice=1;app.input(Key::Confirm);
-    CHECK(!app.long_press&&!persisted.long_press&&!app.end_turn_hold.owner);
+    CHECK(!app.long_press&&!persisted.long_press&&!app.end_turn_hold.owner&&!app.skip_intro_logo&&!persisted.skip_intro_logo);
     return 0;
 }

@@ -139,7 +139,8 @@ int start(unsigned n){
     split.close();const spire::ResourceSource resource{nullptr,n,read_resource,nullptr};
     boot_language=spire::boot_probe_language(resource);
     pending_language=0;
-    return app.init(resource,{save_game,load_game,clear_save,seed_entropy,load_preferences,save_preferences,available_languages,request_language,load_progress,save_progress,wall_clock,profiles_enabled?current_profile:nullptr,profiles_enabled?profile_info:nullptr,profiles_enabled?request_profile:nullptr,write_feedback})?1:0;
+    if(!app.init(resource,{save_game,load_game,clear_save,seed_entropy,load_preferences,save_preferences,available_languages,request_language,load_progress,save_progress,wall_clock,profiles_enabled?current_profile:nullptr,profiles_enabled?profile_info:nullptr,profiles_enabled?request_profile:nullptr,write_feedback}))return 0;
+    app.begin_startup_logo();return 1;
 }
 int start_split(unsigned common_bytes,unsigned language_bytes,unsigned language){
     split.close();if(language!=1&&language!=2)return 0;
@@ -147,7 +148,8 @@ int start_split(unsigned common_bytes,unsigned language_bytes,unsigned language)
     if(!split.open({nullptr,common_bytes,read_common,nullptr},
         {nullptr,language_bytes,read_language,nullptr},static_cast<spire::ResourceLanguage>(language)))return 0;
     pending_language=0;
-    return app.init(split.source(),{save_game,load_game,clear_save,seed_entropy,load_preferences,save_preferences,available_languages,request_language,load_progress,save_progress,wall_clock,profiles_enabled?current_profile:nullptr,profiles_enabled?profile_info:nullptr,profiles_enabled?request_profile:nullptr,write_feedback})?1:0;
+    if(!app.init(split.source(),{save_game,load_game,clear_save,seed_entropy,load_preferences,save_preferences,available_languages,request_language,load_progress,save_progress,wall_clock,profiles_enabled?current_profile:nullptr,profiles_enabled?profile_info:nullptr,profiles_enabled?request_profile:nullptr,write_feedback}))return 0;
+    app.begin_startup_logo();return 1;
 }
 void set_available_languages(unsigned mask){language_mask=mask&3u;}
 unsigned language_request(){return pending_language;}

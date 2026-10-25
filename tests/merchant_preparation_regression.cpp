@@ -41,10 +41,12 @@ static void actual(const char*folder){
  for(int i=0;i<a.hit_count;++i)CHECK(a.hits[i].kind!=HitKind::Choice);unchanged();
  a.input(Key::Confirm);unchanged();a.input(Key::Back);CHECK(!p.active&&!a.shop_open);unchanged();
  a.ui_action(UiAction::OpenShop);CHECK(p.active);a.render();
+ uint16_t backdrop[320*65];std::memcpy(backdrop,a.pixels+320*38,sizeof backdrop);
  unsigned steps=0;while(p.active&&steps<128){
   const unsigned decoded=p.cold_images,card=p.card;const uint32_t now=a.map_clock_ms;
   a.advance(33);++steps;CHECK(a.content.healthy()&&p.cold_images-decoded<=1&&p.card-card<=1);
   CHECK(a.map_clock_ms==now+33);unchanged();a.render();
+  if(p.active)CHECK(!std::memcmp(backdrop,a.pixels+320*38,sizeof backdrop));
  }
  CHECK(steps>1&&steps<128&&!p.active&&p.cursor==p.count&&p.card==ShopCardCount);
  CHECK(a.shop_open&&a.room_presentation.merchant.open);

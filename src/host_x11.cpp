@@ -274,6 +274,7 @@ int main(int argc,char**argv){
     const char transparent[1]={0};Pixmap cursor_mask=XCreateBitmapFromData(d,win,transparent,1,1);XColor cursor_color{};
     Cursor hidden_cursor=XCreatePixmapCursor(d,cursor_mask,cursor_mask,&cursor_color,&cursor_color,0,0);XDefineCursor(d,win,hidden_cursor);XFreePixmap(d,cursor_mask);XFreeCursor(d,hidden_cursor);
     GC gc=XCreateGC(d,win,0,nullptr);int width=960,height=720;bool held[256]={};XImage*image=nullptr;
+    app.begin_startup_logo();
     auto last_frame=std::chrono::steady_clock::now();
     while(!app.quit){
         while(XPending(d)){

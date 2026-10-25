@@ -1,5 +1,7 @@
 #include "runtime_performance.hpp"
 #include "resource_file_cursor.hpp"
+#include "host_input_latch.hpp"
+#include "host_physical_input.hpp"
 #include <cstdio>
 #include <cstdlib>
 #include <string>
@@ -72,5 +74,38 @@ int main(){
     file.seek_fail=false;check(cursor.read(&file,0,bytes,4,seek_file,read_file,sought)&&sought);
     check(!cursor.read(&file,UINT32_MAX,bytes,4,seek_file,read_file,sought)&&!cursor.known&&!sought);
     cursor={};File other;check(cursor.read(&other,4,bytes,4,seek_file,read_file,sought)&&sought&&other.seeks==1&&bytes[0]==4);
+    // A press released wholly inside resource work must reach the following
+    // update in order. No App/input callbacks run inside the read callback.
+    CalculatorInputLatch latch;uint16_t matrix[8]{},queued[8]{},prior[8]{};
+    uint8_t repeats[CalculatorPhysicalKeyCount]{};unsigned emitted=0;
+    latch.sample(matrix);check(latch.count==0);latch.reset(matrix,true);
+    matrix[0]=2;latch.sample(matrix);matrix[0]=0;latch.sample(matrix);
+    check(latch.count==2);
+    while(latch.pop(queued)){
+        calculator_physical_edges(queued,prior,repeats,false,[&](uint16_t code,bool down){
+            check(code==13&&down==(emitted==0));++emitted;
+        },false);
+        for(unsigned i=0;i<8;++i)prior[i]=queued[i];
+    }
+    check(emitted==2&&prior[0]==0);
+    // Overflow preserves the final released matrix, and a launch-key reset
+    // never manufactures a press. Identical samples consume no queue slots.
+    for(unsigned i=0;i<100;++i){matrix[0]=(i%2)?0:2;latch.sample(matrix);}
+    check(latch.count==CalculatorInputLatch::Capacity);
+    while(latch.pop(queued)){}check(queued[0]==0);
+    matrix[0]=2;latch.reset(matrix,true);latch.sample(matrix);check(latch.count==0);
+    matrix[0]=0;latch.sample(matrix);check(latch.pop(queued)&&queued[0]==0);
+    latch.reset(matrix,false);matrix[0]=2;latch.sample(matrix);check(latch.count==0);
+    // Chunking preserves exact data/cursor order and stops on short reads;
+    // its maximum gap is one 8-KiB filesystem operation, not a whole image.
+    unsigned char large_bytes[20000]{};File chunked;unsigned polls=0;
+    auto poll=[&](){++polls;};
+    check(sampled_resource_read(large_bytes,sizeof large_bytes,&chunked,read_file,poll)==sizeof large_bytes);
+    check(chunked.reads==3&&polls==4&&chunked.position==sizeof large_bytes);
+    for(unsigned i=0;i<sizeof large_bytes;++i)check(large_bytes[i]==uint8_t(i));
+    chunked={};chunked.short_read=true;polls=0;
+    check(sampled_resource_read(large_bytes,sizeof large_bytes,&chunked,read_file,poll)==8191);
+    check(chunked.reads==1&&polls==2&&chunked.position==8191);
+    polls=0;check(sampled_resource_read(large_bytes,0,&chunked,read_file,poll)==0&&polls==1);
     std::printf("%u runtime performance checks passed; %zu-byte state; %zu-byte report\n",checks,sizeof p,output.text.size());
 }

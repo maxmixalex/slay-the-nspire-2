@@ -18,7 +18,7 @@ template<class Visit>void calculator_physical_keys(Visit visit){
 // A host samples a matrix; saved bindings use the same normalized key codes
 // as desktop/browser. Repeats are emitted for held keys, then App only repeats
 // navigation. Releases always retain their original down-event meaning.
-template<class Emit>void calculator_physical_edges(const uint16_t*current,const uint16_t*previous,uint8_t*repeat,bool text_mode,Emit emit){
+template<class Emit>void calculator_physical_edges(const uint16_t*current,const uint16_t*previous,uint8_t*repeat,bool text_mode,Emit emit,bool allow_repeat=true){
     calculator_physical_keys([&](unsigned index,unsigned row,unsigned mask,uint16_t code){
         const bool down=(current[row]&mask)!=0,was=(previous[row]&mask)!=0;
         if(!down){repeat[index]=0;if(was)emit(code,false);}
@@ -26,7 +26,7 @@ template<class Emit>void calculator_physical_edges(const uint16_t*current,const 
     calculator_physical_keys([&](unsigned index,unsigned row,unsigned mask,uint16_t code){
         const bool down=(current[row]&mask)!=0,was=(previous[row]&mask)!=0;
         if(!down)return;if(!was){repeat[index]=0;if(!text_mode)emit(code,true);return;}
-        if(text_mode)return;if(repeat[index]<12)++repeat[index];else repeat[index]=10;
+        if(text_mode||!allow_repeat)return;if(repeat[index]<12)++repeat[index];else repeat[index]=10;
         if(repeat[index]==12)emit(code,true);
     });
 }

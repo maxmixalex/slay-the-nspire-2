@@ -31,9 +31,12 @@ Put these four files in one calculator folder, then open nSpire2.tns:
   nSpire2.zhs.tns      中文 / Chinese
 需要已安装 Ndless 的彩屏 TI-Nspire。单语言使用可只安装对应的语言包。
 A color TI-Nspire with Ndless is required. Install either or both locale files.
-启动直接进入游戏主菜单。双语安装可在主菜单的设置里切换语言，之后会记住选择。
-Startup opens the game menu directly. With both locales installed, change the
-language in the main menu's Settings. The choice is remembered across launches.
+启动播放原版制作组标志动画，按选择、取消或点击可跳过；设置中的“跳过开场标志”会记住选择。
+The original studio logo plays on startup. Select, Cancel or a click skips it;
+Settings can remember Skip Intro Logo. It does not replay when changing language.
+双语安装可在主菜单设置中切换语言，之后会记住选择。
+With both locales installed, change language in the main menu's Settings.
+The choice is remembered across launches.
 新档案首次选择“启程”时可选择是否启用原版教程；教程进度按档案独立记忆。
 A new profile asks whether to enable tutorials on its first Embark. Tutorial
 progress is remembered separately for each profile.
@@ -172,6 +175,15 @@ that they are unavailable on this offline calculator.
                           '地图图例按 I 或右下角按钮展开，再按 I 或 Esc 收起；长文用触摸板上下键滚动。')
         text=text.replace('I opens full card details or the map legend. Use 8/2 to scroll long tutorials.',
                           'I opens full card details or the map legend. Use touchpad Up/Down to scroll long text.')
+        text=text.replace('主要正文使用10px、标题12px或更大；长文可滚动或翻页。I 打开完整卡牌详情。',
+                          '主要正文使用10px、标题12px或更大；长文可滚动或翻页。I 打开完整卡牌详情。\n'
+                          '选中长描述手牌后，正文会停留片刻再逐行滚动，费用、名称和相邻卡牌保持原位。\n'
+                          '商店首次展开时会显示三个加载圆点；此时可以按 Esc 返回，准备完成后库存展开。')
+        text=text.replace('Main body text uses 10px, with larger headings. Long text scrolls or pages.',
+                          'Main body text uses 10px, with larger headings. Long text scrolls or pages.\n'
+                          'Selected hand cards scroll long descriptions after a pause, within their body box.\n'
+                          'The first cold shop opening shows three progress dots; Esc returns to the room.\n'
+                          'Inventory opens once its artwork and card text are ready.')
     if info.get('local_checkpoints'):
         text=text.replace('Runtime source: https://github.com/maxmixalex/slay-the-nspire-2/tree/'+info['runtime_checkpoint'],
                           'Runtime source checkpoint (local): '+info['runtime_checkpoint'])
@@ -218,7 +230,7 @@ def main():
     if resource_version(args.zhs) != version:
         p.error('English and Chinese resources must use the same format version')
     info = dict(reference='v0.111.0 / 41cef1ea', resource_format=version, save_version=17,
-                progress_version=9, settings_version=5, calculator_run_storage='NSZ1 or raw NSV1',
+                progress_version=9, settings_version=6, calculator_run_storage='NSZ1 or raw NSV1',
                 calculator_history_storage='NSZ1 or raw NSH1-9',
                 stage=args.stage,
                 runtime_checkpoint=args.runtime_checkpoint,

@@ -28,14 +28,22 @@ Python discovery now passes all 256 tests; the other six Python modules pass
 oracles while updating the accepted readable layout and physical-key mapping.
 
 Ordinary Firebird play exposed two remaining presentation issues: duplicate
-Battle Start banners and a clipped selected-card description. Both are being
-corrected. The merchant preflight also measured a genuine cold long frame:
+Battle Start banners and a clipped selected-card description. Both are now
+corrected in production and pass the actual-resource native gate (12,594
+checks). The merchant preflight also measured a genuine cold long frame:
 2,285.40 ms total / 1,428.77 ms I/O. That preflight is excluded from matched
 speed claims. Cold inventory work now yields after one decoded image or one
 card's text, acknowledges the open request, permits cancellation, and starts
-the original opening tween after preparation. Device remeasurement is pending.
-A source startup-logo sequence and its saved Skip Intro setting are being
-completed. Private assets remain local; no manual WASM/browser acceptance ran.
+the original opening tween after preparation. A 0b smoke then exposed missed
+180ms key taps; it is excluded from matched performance/canonical claims.
+Ndless now samples physical input around 8KiB resource reads into a bounded
+ordered queue; callbacks are dispatched only by the main loop. Preparation
+reuses its first complete background so new flame/actor frames cannot compete
+with inventory decoding. Device remeasurement is pending.
+The source startup-logo timeline and saved NSPF6 Skip Intro Logo setting are
+integrated. Its optional 37 original sampled frames add 165,511 shared bytes;
+all 16 private locale resources were regenerated without duplicating artwork.
+Private assets remain local; no manual WASM/browser acceptance ran.
 The detailed matrix is in `ui12-lcd-followup-0.17.md`.
 
 ## UI12 active feedback correction — historical pre-recovery notes

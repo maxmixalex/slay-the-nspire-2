@@ -250,6 +250,7 @@ int App::detail_stars()const{
 #include "card_inspect_ui.inc"
 #include "reference_map_ui.inc"
 #include "ui_frontend.inc"
+#include "startup_logo_ui.inc"
 #include "bestiary_ui7.inc"
 #include "ui_progress_ui.inc"
 #include "run_modes_ui.inc"
@@ -265,6 +266,7 @@ int App::detail_stars()const{
 #include "pointer_ui6.inc"
 
 void App::render(){
+    if(startup_logo.active()){Canvas c{*this};startup_logo_screen(c);return;}
 #if SPIRE_DEBUG_COMMANDS
     if(debug_open){
         // Retain the current scene under the console. Rendering it with mouse

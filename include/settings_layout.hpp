@@ -15,7 +15,7 @@ constexpr int LabelLeft=10,ControlLeft=135,ControlWidth=58;
 constexpr int RowHeight=21,LabelFont=10,TabFont=12;
 constexpr int general_row(unsigned i){return 42+int(i)*23;}
 constexpr int general_divider(unsigned i){return general_row(i)+22;}
-constexpr unsigned GeneralRows=10,GeneralVisible=7,GeneralMaximum=GeneralRows-GeneralVisible;
+constexpr unsigned GeneralRows=11,GeneralVisible=7,GeneralMaximum=GeneralRows-GeneralVisible;
 constexpr int InputPanelLeft=8,InputWidth=186;
 constexpr int InputControlLeft=135,KeyboardTop=40;
 constexpr int InputResetTop=64,InputResetLeft=135;
@@ -37,5 +37,5 @@ constexpr int scroll_maximum(bool input){return input?InputMaximum:GeneralMaximu
 inline unsigned scroll_value(bool input,int y){const int top=scroll_top(input)+7,length=scroll_height(input)-14;
  int position=y-top;if(position<0)position=0;if(position>length)position=length;
  return unsigned((position*scroll_maximum(input)+length/2)/length);}
-static_assert(GeneralRows==10&&InputVisible<InputCommandCount,"LCD settings use readable paged rows");
+static_assert(GeneralRows==11&&InputVisible<InputCommandCount,"LCD settings use readable paged rows");
 }

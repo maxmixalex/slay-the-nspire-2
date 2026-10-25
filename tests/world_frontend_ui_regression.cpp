@@ -463,7 +463,7 @@ static void modal_isolation_and_fast_mode(){
  const auto hold_checkbox=find_hit(HitKind::UiAction,int(UiAction::SettingsLongPress));CHECK(hold_checkbox.x==135&&hold_checkbox.y==180&&hold_checkbox.w==58&&hold_checkbox.h==21);
  const bool held=a.long_press;action(UiAction::SettingsLongPress);CHECK(a.long_press!=held);action(UiAction::SettingsLongPress);CHECK(a.long_press==held);unchanged();
  a.input(Key::Up);CHECK(a.settings_item==0);a.input(Key::Left);CHECK(!a.settings_tab&&a.settings_item==0);
- for(unsigned i=0;i<30;++i)a.input(Key::Down);CHECK(a.settings_item==10);a.input(Key::Down);CHECK(a.settings_item==10);
+ for(unsigned i=0;i<30;++i)a.input(Key::Down);CHECK(a.settings_item==11);a.input(Key::Down);CHECK(a.settings_item==11);
  for(unsigned i=0;i<30;++i)a.input(Key::Up);CHECK(a.settings_item==0&&a.settings_top==0);
  // OpenDropdown initially focuses the current locale, clamps its endpoints
  // and ignores lateral arrows. Choosing the current locale leaves it open.

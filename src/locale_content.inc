@@ -24,6 +24,15 @@ unsigned Content::language()const{
  return language_id_;
 }
 const char* Content::locale_string(const char*table,const char*key)const{
+ if(has_startup_logo_assets()){
+  static const WorldContentIndex startup_text_index[]={
+   {"settings_ui.SKIP_INTRO_LOGO_DESCRIPTION",IntroLogoDescriptionString},
+   {"settings_ui.SKIP_INTRO_LOGO_HEADER",IntroLogoHeaderString},
+   {"settings_ui.TOAST_SKIP_INTRO_LOGO_OFF",IntroLogoOffString},
+   {"settings_ui.TOAST_SKIP_INTRO_LOGO_ON",IntroLogoOnString}
+  };
+  const int index=wc_find(startup_text_index,table,key);if(index>=0)return string(index);
+ }
  if(has_selection_assets()){const int selection=wc_find(selection_text_index,table,key);if(selection>=0)return string(selection);}
  if(version_>=HistoryUi8ContentVersion){
   static const WorldContentIndex mode_text_index[]={

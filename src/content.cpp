@@ -256,8 +256,16 @@ bool Content::open(ResourceSource source){
                                             if(next>=ni||!reader_.u32(base+4,next))return false;base+=4;
                                         }
                                     }
-                                    if(next!=0x314c4954u)return false;
                                     auxiliary=version>=Ui12ContentVersion?Ui12AuxiliaryCount:SettingsUi10AuxiliaryCount;
+                                    if(version>=Ui12ContentVersion&&next!=0x314c4954u){
+                                        // The first-launch logo is exactly37 optional IDs.
+                                        // Older UI40 directories end before this catalog.
+                                        for(unsigned i=0;i<IntroLogoFrames;++i){
+                                            if(next>=ni||!reader_.u32(base+4,next))return false;base+=4;
+                                        }
+                                        auxiliary=IntroLogoAuxiliaryCount;
+                                    }
+                                    if(next!=0x314c4954u)return false;
                                 }
                             }
                         }

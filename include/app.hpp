@@ -54,6 +54,7 @@
 #include "turn_banner_presentation.hpp"
 #include "combat_preparation.hpp"
 #include "merchant_preparation.hpp"
+#include "startup_logo.hpp"
 #include "ftue_presentation.hpp"
 #include "ftue_assets.hpp"
 #include "selection_assets.hpp"
@@ -163,7 +164,8 @@ public:
     bool has_inspection_assets()const{return version_>=SelectionContentVersion&&(ui_count_==InspectionAuxiliaryCount||has_speech_bubble_assets());}
     bool has_speech_bubble_assets()const{return version_>=SpeechBubbleContentVersion&&(ui_count_==SpeechBubbleAuxiliaryCount||has_history_header_assets());}
     bool has_history_header_assets()const{return version_>=HistoryHeaderContentVersion&&(ui_count_==HistoryHeaderAuxiliaryCount||has_history_body_assets());}
-    bool has_history_body_assets()const{return version_>=HistoryBodyContentVersion&&(ui_count_==SettingsUi10AuxiliaryCount||(version_>=Ui12ContentVersion&&ui_count_==Ui12AuxiliaryCount));}
+    bool has_startup_logo_assets()const{return version_>=Ui12ContentVersion&&ui_count_==IntroLogoAuxiliaryCount;}
+    bool has_history_body_assets()const{return version_>=HistoryBodyContentVersion&&(ui_count_==SettingsUi10AuxiliaryCount||(version_>=Ui12ContentVersion&&ui_count_==Ui12AuxiliaryCount)||has_startup_logo_assets());}
     bool has_settings_ui10_assets()const{return has_history_body_assets();}
     bool current_profile()const{
         if(version_<ContentVersion||version_>Ui12ContentVersion||cards_!=CardKinds)return false;
@@ -292,6 +294,8 @@ struct App {
     void sync_turn_banner();
     CombatPreparation combat_preparation{};
     MerchantPreparation merchant_preparation{};
+    StartupLogoPresentation startup_logo{};
+    bool begin_startup_logo();
     FtuePresentation ftue{};
     bool open_ftue(FtueId,int target=-1);
     void sync_ftues();
@@ -334,7 +338,7 @@ struct App {
     void auxiliary_scroll(int);
     void advance_auxiliary(unsigned);
     unsigned feedback_report(char*,unsigned)const;
-    bool show_card_indices=false,text_effects=true,keyboard_only=false,phobia_mode=false,show_run_timer=false,long_press=false;
+    bool show_card_indices=false,text_effects=true,keyboard_only=false,phobia_mode=false,show_run_timer=false,long_press=false,skip_intro_logo=false;
     bool run_timer_visible()const;
     void run_timer_label(char*,size_t)const;
     uint8_t screen_shake=2;

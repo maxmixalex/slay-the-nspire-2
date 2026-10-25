@@ -2,6 +2,7 @@
 #include "app.hpp"
 #include "host_text_input.hpp"
 #include "host_physical_input.hpp"
+#include "host_input_latch.hpp"
 #include "resource_file_cursor.hpp"
 #include "runtime_performance.hpp"
 #include "runtime_scene.hpp"
@@ -34,6 +35,18 @@ static uint32_t wall_clock(){return *(volatile uint32_t*)0x90090000u;}
 static uint32_t timer_ticks(){return *(volatile uint32_t*)0x900D0004u;}
 static uint32_t entropy_start=0;
 static unsigned installed_languages=0,pending_language=0;
+static spire::CalculatorInputLatch input_latch;
+static void read_key_matrix(uint16_t*matrix){
+    for(unsigned row=0;row<8;++row)matrix[row]=*(volatile uint16_t*)(0x900E0010u+row*2);
+}
+static void capture_key_matrix(){uint16_t matrix[8];read_key_matrix(matrix);input_latch.sample(matrix);}
+static int sampled_seek(void*file,long offset,int origin){
+    capture_key_matrix();const int result=nd_seek(file,offset,origin);capture_key_matrix();return result;
+}
+static unsigned sampled_read(void*output,unsigned size,unsigned count,void*file){
+    if(!input_latch.enabled||size!=1)return nd_read(output,size,count,file);
+    return spire::sampled_resource_read(output,count,file,nd_read,capture_key_matrix);
+}
 static unsigned available_languages(){return installed_languages;}
 static bool request_language(unsigned language){
     if(!spire::locale_language_valid(language)||!(installed_languages&spire::locale_language_mask(language)))return false;
@@ -73,7 +86,7 @@ static void resource_progress(void*context,spire::ResourceStage stage,uint32_t c
 static bool read_resource(void* context,uint32_t offset,void* output,uint32_t count){
     auto&source=*static_cast<ResourceFile*>(context);bool seek=false;
     uint32_t started=performance.enabled?timer_ticks():0;
-    bool good=source.cursor.read(source.file,offset,output,count,nd_seek,nd_read,seek);
+    bool good=source.cursor.read(source.file,offset,output,count,sampled_seek,sampled_read,seek);
     if(performance.enabled)performance.read(started-timer_ticks(),count,good,seek);
     return good;
 }
@@ -252,6 +265,7 @@ extern "C" int main(int argc,char**argv){
         }
     };
     while(pressed(0x10,2)){} // Release ENTER used to open the document.
+    app.begin_startup_logo();
     Touchpad pad{};pad.init();spire::TouchpadCursor pad_cursor;spire::CalculatorPadInput pad_keys;
     clock.last=timer_ticks();uint32_t input_clock=0;
     uint16_t text_previous[8]{};uint8_t repeat[spire::CalculatorPhysicalKeyCount]{};bool input_ready=false;unsigned quiet_ms=0;
@@ -288,15 +302,18 @@ extern "C" int main(int argc,char**argv){
         if(input_ready&&(pointer.moved||pointer.down||pointer.up||pointer.tap))app.pointer_move(pointer.x,pointer.y);
         if(input_ready&&(pointer.down||pointer.tap))app.pointer_button(true);
         if(input_ready&&(pointer.up||pointer.tap))app.pointer_button(false);
-        uint16_t text_keys[8];for(unsigned row=0;row<8;++row)text_keys[row]=*(volatile uint16_t*)(0x900E0010u+row*2);
+        uint16_t text_keys[8];read_key_matrix(text_keys);
         if(!input_ready){
             // The document launcher may leave ENTER or the pad held. Require a
             // stable release so opening the program cannot also start a run.
             bool held_key=false;spire::calculator_physical_keys([&](unsigned,unsigned row,unsigned mask,uint16_t){if(text_keys[row]&mask)held_key=true;});
             quiet_ms=(!held_key&&!sample.contact&&!sample.pressed)?quiet_ms+elapsed:0;
             if(quiet_ms>=100)input_ready=true;
+            input_latch.reset(text_keys,input_ready);
             for(unsigned row=0;row<8;++row)text_previous[row]=text_keys[row];pad_cursor.reset();render_frame(update_start,resources_before,update_scene);continue;
         }
+        input_latch.sample(text_keys);
+        const auto dispatch_matrix=[&](bool allow_repeat){
         const bool library_text=app.library&&!app.library_tab&&app.library_search_editing&&app.binding_listening<0;
         const bool seed_text=app.map_preview.open&&app.map_preview.editing&&app.binding_listening<0;
         bool console_text=false;
@@ -306,7 +323,7 @@ extern "C" int main(int argc,char**argv){
         console_text=app.debug_open;
 #endif
         spire::calculator_physical_edges(text_keys,text_previous,repeat,library_text||seed_text||console_text,
-            [](uint16_t code,bool down){if(code!=spire::InputFlag)app.physical_key(code,down);});
+            [](uint16_t code,bool down){if(code!=spire::InputFlag)app.physical_key(code,down);},allow_repeat);
         #if SPIRE_DEBUG_COMMANDS
         if(console_text){spire::calculator_text_edges(text_keys,text_previous,[](int code){app.debug_text(code);});
             if((text_keys[6]&0x200)&&!(text_previous[6]&0x200))app.debug_text(9);}
@@ -315,6 +332,12 @@ extern "C" int main(int argc,char**argv){
         if(library_text)spire::calculator_text_edges(text_keys,text_previous,[](int code){app.library_text(code);});
         else if(seed_text)spire::calculator_text_edges(text_keys,text_previous,[](int code){app.reference_text(code);});
         for(unsigned row=0;row<8;++row)text_previous[row]=text_keys[row];
+        };
+        // Only drain changes captured before dispatch. An action can itself
+        // read resources; input captured there belongs to the next update.
+        const unsigned pending=input_latch.count;
+        for(unsigned i=0;i<pending;++i){input_latch.pop(text_keys);dispatch_matrix(false);}
+        if(!pending)dispatch_matrix(true);
         change_language();service_profile();
         // Quit is already committed. A discarded final frame can perform
         // resource syscalls while ENTER is still held and expose that press

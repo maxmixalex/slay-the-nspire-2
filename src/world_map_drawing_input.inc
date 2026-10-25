@@ -111,6 +111,7 @@ bool App::map_drawing_pointer_button(bool down,const HitRegion&hit){
     return true;
 }
 void App::pointer_aux_button(unsigned button,bool down){
+    if(startup_logo.active()){if(down)startup_logo.cancel(map_clock_ms);pointer_cancel();return;}
     if(ftue.active())return;
     if(button!=2&&button!=3)return;
     pointer.visible=true;pointer.motion_time=map_clock_ms;hud_focus=-1;

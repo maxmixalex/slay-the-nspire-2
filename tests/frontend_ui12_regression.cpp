@@ -25,6 +25,10 @@ int main(int argc,char**argv){
  app.settings_open=true;app.settings_tab=0;app.settings_item=0;app.settings_top=0;app.pointer.visible=true;
  auto track=hit(HitKind::SettingsScroll);app.pointer_move(track.x+track.w/2,track.y+track.h-1);app.pointer_button(true);CHECK(app.settings_top==settings_layout::GeneralMaximum);
  app.pointer_move(track.x+track.w/2,track.y);CHECK(app.settings_top==0);app.pointer_move(track.x+track.w/2,track.y+track.h-1);CHECK(app.settings_top==settings_layout::GeneralMaximum);app.pointer_button(false);CHECK(!app.pointer.held);
+ auto skip=hit(HitKind::UiAction,int(UiAction::SettingsSkipIntroLogo));CHECK(skip.enabled&&skip.x+skip.w<settings_layout::TooltipLeft&&!app.skip_intro_logo);
+ click(HitKind::UiAction,int(UiAction::SettingsSkipIntroLogo));CHECK(app.skip_intro_logo);app.render();
+ CHECK(app.hit_at(skip.x+skip.w/2,skip.y+skip.h/2).value==int(UiAction::SettingsSkipIntroLogo));
+ click(HitKind::UiAction,int(UiAction::SettingsSkipIntroLogo));CHECK(!app.skip_intro_logo);
  auto credits=hit(HitKind::UiAction,int(UiAction::SettingsCredits));CHECK(credits.x+credits.w<settings_layout::TooltipLeft);click(HitKind::UiAction,int(UiAction::SettingsCredits));CHECK(app.auxiliary.screen==AuxiliaryScreen::Credits);
  app.map_clock_ms+=2200;app.input(Key::Back);CHECK(app.auxiliary.closing);for(int tick=0;tick<4;++tick)app.advance(250);CHECK(app.auxiliary.screen==AuxiliaryScreen::None&&app.settings_open);
  click(HitKind::UiAction,int(UiAction::SettingsInputTab));CHECK(app.settings_tab==1);
