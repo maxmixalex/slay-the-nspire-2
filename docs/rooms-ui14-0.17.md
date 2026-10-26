@@ -91,6 +91,18 @@ changing alpha, disjoint composition, independent encoded readback and
 rejection of altered frame dimensions. The actual private conversion and
 Firebird cold/sustained measurements remain separate acceptance gates.
 
+At checkpoint `97a63d78979daba7d12fa8475b305e836fc9503c`, journal
+`merchant-ui14-exact-split-3cfddc4f2303` closes PASS with unchanged source in
+32.72 seconds. All 1,817 encoded moving frames and ten fixed planes recompose
+exactly. Total decoded sparse bytes fall from 15,482,673 to 11,571,712,
+including 44,267 fixed-plane bytes, a reduction of 3,910,961 bytes (25.26%).
+Moving visible pixels fall from 5,440,099 to 3,148,513. These are complete
+catalog totals across all five characters; one room displays only its selected
+character. With 4 KiB allocation rounding, a complete closed-room cycle uses
+1,468 to 1,946 image pages, or 1,759 to 2,237 with both hover skins retained,
+before the small backdrop/light/UI set. Final installed bytes and frame rate
+still require the integrated reclamation and ordinary-OS Firebird gates.
+
 ## Validation scope
 
 The terminal reward regression collects the real first encounter's rewards

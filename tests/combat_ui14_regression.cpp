@@ -7,6 +7,7 @@
 #include <string>
 #include <vector>
 #include <filesystem>
+#include <cmath>
 using namespace spire;
 static App a;
 static State before,direct;
@@ -50,8 +51,8 @@ static void fresh(Character character=Character::Ironclad,EncounterId encounter=
  a.sync_combat_feedback();a.sync_enemy_feedback();CHECK(validate(a.game));
 }
 static void hand(std::initializer_list<CardKind>cards){
- auto&s=a.game;s.card_count=s.hand.count=s.draw.count=s.discard.count=s.exhaust.count=0;
- for(auto&origin:s.event_cards.deck_origin)origin=-1;
+ auto&s=a.game;s.card_count=s.hand.count=s.draw.count=s.discard.count=s.exhaust.count=0;s.expansion.last_drawn=-1;
+ for(auto&origin:s.event_cards.deck_origin)origin=0;
  for(const auto kind:cards){const unsigned id=s.card_count++;s.cards[id]={kind,0};s.zones[id]=Zone::Hand;s.hand.ids[s.hand.count++]=uint16_t(id);
   s.enemy_world.affliction[id]=0;s.enemy_world.affliction_amount[id]=0;s.event_cards.cards[id]={};if(kind==SovereignBlade)s.expansion.blade_damage[id]=10;}
  ++s.revision;a.reset_presentation();a.sync_combat_feedback();a.sync_enemy_feedback();CHECK(validate(s));
@@ -61,6 +62,25 @@ static void scale_equations(){
  CHECK(m.sample(1000)==1024&&m.sample(1375)==768&&m.sample(1750)==512&&m.sample(9999)==512);
  int previous=1024;for(unsigned now=1000;now<=1750;++now){const int current=m.sample(now);CHECK(current<=previous&&current>=512);previous=current;}
  const int midway=m.sample(1400);m.observe(1024,1400);CHECK(m.sample(1400)==midway&&m.sample(2150)==1024);
+ for(unsigned n=0;n<=9999;++n)CHECK(std::abs(CreatureScaleMotion::enlarged(n)-int(std::lround((1+.1*std::log(double(n)+1))*1024)))<=1);
+ m.observe(1536,2200,0);CHECK(m.sample(2200)==1536);m.observe(1126,3000,100);CHECK(m.sample(2999)==1536&&m.sample(3100)==1126);
+}
+static void actual_default_growth(){
+ scenario="Big Mushroom's real acquisition grows the player immediately";fresh();const auto normal=a.combat_player_pose();direct=a.game;
+ CHECK(gain_world_relic(direct,WorldRelicBigMushroom));{UiCoreObserver observer(a);CHECK(gain_world_relic(a.game,WorldRelicBigMushroom));}equal_save();
+ const auto large=a.combat_player_pose();CHECK(large.scale==normal.scale*1536/1024&&large.hp==normal.hp&&large.feet==normal.feet);capture("big-mushroom");
+ scenario="Gardener Enlarge records its true completed count and queues growth";fresh(Character::Ironclad,EncounterId::PhantasmalGardenersElite);
+ const auto garden=a.combat_enemy_pose(3);direct=a.game;CHECK(end_turn(direct));{UiCoreObserver observer(a);a.begin_combat_feedback();CHECK(end_turn(a.game));}equal_save();
+ CHECK(a.game.enemy_world.models[3].data[0]==1&&a.game.enemy_world.models[3].data[1]==1);
+ for(unsigned i=0;i<300;++i){tick(33);a.combat_enemy_pose(3);}
+ const auto grown=a.combat_enemy_pose(3);const auto base=enemy_pose(a.game,3,a.creature_layout);const int initial=creature_instance_scale(a.game,3);
+ CHECK(a.enemy_presentation[3].facts.default_scale==1095);CHECK(grown.scale==mx(1,base.scale*1095/initial)&&grown.hp==garden.hp&&grown.feet==garden.feet);capture("gardener-enlarge");equal_save();
+ scenario="Test Subject's actual respawn keeps its one-tenth growth and100ms tween";fresh(Character::Ironclad,EncounterId::TestSubjectBoss);
+ const auto small=a.combat_enemy_pose(0);direct=a.game;damage_unpowered(direct,0,2000);resolve_pending(direct);
+ {UiCoreObserver observer(a);a.begin_combat_feedback();damage_unpowered(a.game,0,2000);resolve_pending(a.game);}equal_save();
+ CHECK(a.game.enemy_world.models[0].flags&EnemyDown);CHECK(end_turn(direct));{UiCoreObserver observer(a);a.begin_combat_feedback();CHECK(end_turn(a.game));}equal_save();
+ CHECK(a.game.enemy_world.models[0].data[0]==1);for(unsigned i=0;i<300;++i){tick(33);a.combat_enemy_pose(0);}
+ const auto reborn=a.combat_enemy_pose(0);CHECK(a.enemy_presentation[0].facts.default_scale==1126&&reborn.scale==small.scale*1126/1024&&reborn.hp==small.hp);capture("test-subject-respawn");equal_save();
 }
 static void actual_shrink(){
  scenario="Beetle Juice really changes the rendered enemy scale";fresh(Character::Ironclad,EncounterId::ShrinkerBeetleWeak);
@@ -134,7 +154,7 @@ int main(int argc,char**argv){
  if(argc>=2){const std::string root=argv[1];common=read(root+"/data/nSpire2.dat.tns");language=read(root+"/data/nSpire2.eng.dat.tns");
   CHECK(split.open(ResourceSource::memory(common.data(),common.size()),ResourceSource::memory(language.data(),language.size()),ResourceLanguage::English));CHECK(a.init(split.source(),{}));original_art=true;}
  if(argc==3){output=argv[2];std::filesystem::create_directories(output);}
- scale_equations();actual_shrink();actual_forge();actual_enchant();borders_and_cache();
+ scale_equations();actual_shrink();actual_default_growth();actual_forge();actual_enchant();borders_and_cache();
  const char note[]="Controlled UI14 fixtures; earlier room outcomes, cards and resources are supplied. These saves validate and round-trip through the production NSR codec. They are not natural runs.\nui14-card-borders: Neow's Fury, Infection and Bound Strike in hand.\nui14-shrink: Shrinker Beetle before its opening move, Beetle Juice in potion slot1; drink on the enemy, then end turn to shrink the player.\nui14-regent-enchant-forge: choose an Attack for Gnarled Hammer's Sharp enchantment, confirm, then play The Smith in the resumed Regent combat.\n";
  write("README.txt",note,sizeof note-1);std::printf("combat UI14: %u checks passed%s\n",checks,original_art?"; original art decoded and rendered":"");
 }

@@ -172,28 +172,11 @@ static void card_description_window(Canvas&c,const char*text,const card_face::Re
 }
 // One scene-based card renderer for every presentation size. Individual
 // screens supply instance-aware costs/descriptions, never rearranged art.
-static void render_card_face(Canvas&c,Card card,int x,int y,int w,int h,int fee=-2,int stars=-2,int instance=-1,int deck=-1,const EventCardFacts*facts=nullptr,const char*description=nullptr,bool*description_truncated=nullptr,bool known=true,bool upgrade_preview=false,int description_skip=-1,unsigned omit_text=0,uint8_t*overflow=nullptr){
+static void render_card_details(Canvas&c,Card card,int x,int y,int w,int h,int fee,int stars,int instance,int deck,const EventCardFacts*facts,const char*description,bool*description_truncated,bool known,bool upgrade_preview,int description_skip=-1,unsigned omit_text=0,uint8_t*overflow=nullptr){
     auto&a=c.a;if(!facts)facts=event_card_facts(a.game,card,instance,deck);
     const auto type=a.card_face_type(card,instance,deck,facts);
-    const unsigned group=card_face::material_group(unsigned(card_rarity(card.kind)));
-    const int base=U_CardBorderCommonAttack+int(group)*5;
-    const int border=base+(type==CardType::Attack?0:type==CardType::Power?2:1);
+    const int base=U_CardBorderCommonAttack+int(card_face::material_group(unsigned(card_rarity(card.kind))))*5;
     auto l=card_face::layout(x,y,w,h);const auto fonts=card_face_fonts(c,w);
-    // Portrait precedes Frame and PortraitBorder in the original scene.
-    // Drawing it last used to cover the frame's lower edge and description.
-    const bool ancient=card_rarity(card.kind)==5;
-    if(ancient)l.portrait=card_face::region(x,y,w,h,-3,-4,299,421);
-    if(known)c.picture(a.card_face_image(card,instance,deck,facts),l.portrait.x,l.portrait.y,l.portrait.w,l.portrait.h);
-    else library_blurred_portrait(c,a.card_face_image(card,instance,deck,facts),l.portrait);
-    if(ancient){
-     const auto frame=card_face::region(x,y,w,h,-4,-12,306,440),text=card_face::region(x,y,w,h,17,189,264,203);
-     Canvas edge=c;edge.tint_green=249;edge.tint_blue=231;edge.picture(a.card_face_frame(card,instance,deck,facts),frame.x,frame.y,frame.w,frame.h,128,presentation::Add);
-     Canvas shade=c;shade.tint_red=shade.tint_green=shade.tint_blue=0;
-     shade.ui(type==CardType::Attack?I14_AncientTextAttack:type==CardType::Power?I14_AncientTextPower:I14_AncientTextSkill,text.x,text.y,text.w,text.h,168);
-    }else{c.picture(a.card_face_frame(card,instance,deck,facts),x,y,w,h);c.ui(border,l.border.x,l.border.y,l.border.w,l.border.h);}
-    int banner=a.content.ui_image(ancient?I14_AncientBanner:base+4);
-    if(banner<0)banner=a.content.ui_image(group==2?U_RareBanner:group==1?U_BigBanner:U_CommonBanner);
-    c.picture(banner,l.banner.x,l.banner.y,l.banner.w,l.banner.h);
     char title[160]{};TextBuffer name{title,sizeof title,0,&a.content};name.text(known?a.content.card_string(card.kind):a.content.locale_string("card_library","UNKNOWN.title"));if(known&&card.upgraded)name.ch('+');
     const int title_size=fonts.title;
     const int title_y=l.title.y+mx(0,(l.title.h-title_size-4)/2)-mx(1,h/100);
@@ -251,6 +234,30 @@ static void render_card_face(Canvas&c,Card card,int x,int y,int w,int h,int fee=
         if(base_stars||(stars!=-2&&stars))card_resource_cross(c,x,y,w,h,true);
     }
 }
+static void render_card_face(Canvas&c,Card card,int x,int y,int w,int h,int fee=-2,int stars=-2,int instance=-1,int deck=-1,const EventCardFacts*facts=nullptr,const char*description=nullptr,bool*description_truncated=nullptr,bool known=true,bool upgrade_preview=false,int description_skip=-1,unsigned omit_text=0,uint8_t*overflow=nullptr){
+    auto&a=c.a;if(!facts)facts=event_card_facts(a.game,card,instance,deck);
+    const auto type=a.card_face_type(card,instance,deck,facts);
+    const unsigned group=card_face::material_group(unsigned(card_rarity(card.kind)));
+    const int base=U_CardBorderCommonAttack+int(group)*5;
+    const int border=base+(type==CardType::Attack?0:type==CardType::Power?2:1);
+    auto l=card_face::layout(x,y,w,h);const auto fonts=card_face_fonts(c,w);
+    // Portrait precedes Frame and PortraitBorder in the original scene.
+    // Drawing it last used to cover the frame's lower edge and description.
+    const bool ancient=card_rarity(card.kind)==5;
+    if(ancient)l.portrait=card_face::region(x,y,w,h,-3,-4,299,421);
+    if(known)c.picture(a.card_face_image(card,instance,deck,facts),l.portrait.x,l.portrait.y,l.portrait.w,l.portrait.h);
+    else library_blurred_portrait(c,a.card_face_image(card,instance,deck,facts),l.portrait);
+    if(ancient){
+     const auto frame=card_face::region(x,y,w,h,-4,-12,306,440),text=card_face::region(x,y,w,h,17,189,264,203);
+     Canvas edge=c;edge.tint_green=249;edge.tint_blue=231;edge.picture(a.card_face_frame(card,instance,deck,facts),frame.x,frame.y,frame.w,frame.h,128,presentation::Add);
+     Canvas shade=c;shade.tint_red=shade.tint_green=shade.tint_blue=0;
+     shade.ui(type==CardType::Attack?I14_AncientTextAttack:type==CardType::Power?I14_AncientTextPower:I14_AncientTextSkill,text.x,text.y,text.w,text.h,168);
+    }else{c.picture(a.card_face_frame(card,instance,deck,facts),x,y,w,h);c.ui(border,l.border.x,l.border.y,l.border.w,l.border.h);}
+    int banner=a.content.ui_image(ancient?I14_AncientBanner:base+4);
+    if(banner<0)banner=a.content.ui_image(group==2?U_RareBanner:group==1?U_BigBanner:U_CommonBanner);
+    c.picture(banner,l.banner.x,l.banner.y,l.banner.w,l.banner.h);
+    if(!(omit_text&4))render_card_details(c,card,x,y,w,h,fee,stars,instance,deck,facts,description,description_truncated,known,upgrade_preview,description_skip,omit_text,overflow);
+}
 
 namespace {
 // Small-card grids repaint the same eight/ten faces at 30Hz. Store the exact
@@ -300,14 +307,12 @@ static bool card_cache_label_fits(Canvas&c,card_face::Rect icon,int value,bool s
 }
 static void invalidate_card_face_cache(){for(auto&entry:small_card_faces)entry.valid=false;}
 static void begin_card_face_frame(){if(++small_card_frame==0){invalidate_card_face_cache();++small_card_frame;}}
-static void card_cache_scrolling_text(Canvas&c,const SmallCardFaceCache&entry,int x,int y){
+static void card_cache_scrolling_text(Canvas&c,const SmallCardFaceCache&entry,int x,int y,int instance,int deck,const EventCardFacts*facts,bool upgrade_preview){
     if(!entry.overflow)return;
-    auto l=card_face::layout(x,y,entry.width,entry.height);const auto fonts=card_face_fonts(c,entry.width);
-    if(entry.overflow&1){Canvas label=c;label.font_face=uint8_t(source_label_face(c.a.content.original_label_fonts(),5));
-        const int top=l.title.y+mx(0,(l.title.h-fonts.title-4)/2)-mx(1,entry.height/100);
-        label.text_fitted(entry.title,l.title.x,top,l.title.w,fonts.title,entry.card.upgraded?rgb(127,255,0):rgb(255,246,226),fonts.minimum,true,true,card_title_outline(entry.card,true));}
-    if(entry.overflow&2){if(!fonts.compact){const int bottom=l.description.y+l.description.h;l.description.y=mx(l.description.y,l.type.y+mx(11,l.type.h));l.description.h=mx(0,bottom-l.description.y);}
-        c.paragraph_fitted(entry.description,l.description.x,l.description.y,l.description.w,l.description.h,fonts.body,White,fonts.body_minimum,true);}
+    // Keep title -> type plaque -> description -> costs/tab in the exact
+    // original order. On tiny LCD cards these layers can overlap; drawing
+    // only the scrolling text last would cover the cost or the type plaque.
+    render_card_details(c,entry.card,x,y,entry.width,entry.height,entry.energy,entry.stars,instance,deck,facts,entry.description,nullptr,true,upgrade_preview);
 }
 static void draw_card_face(Canvas&c,Card card,int x,int y,int w,int h,int fee=-2,int stars=-2,int instance=-1,int deck=-1,const EventCardFacts*facts=nullptr,const char*description=nullptr,bool*description_truncated=nullptr,bool known=true,bool upgrade_preview=false,bool animated_layers=true){
     // Dynamic borders stay outside the static face cache. A30-frame
@@ -375,7 +380,7 @@ static void draw_card_face(Canvas&c,Card card,int x,int y,int w,int h,int fee=-2
             slot.seen=small_card_frame;
             for(int yy=0;yy<SmallCardCacheH;++yy)for(int xx=0;xx<SmallCardCacheW;++xx)
                 c.pixels[(top+yy)*c.pitch+left+xx]=slot.pixels[yy*SmallCardCacheW+xx];
-            card_cache_scrolling_text(c,slot,x,y);
+            card_cache_scrolling_text(c,slot,x,y,instance,deck,facts,upgrade_preview);
             return;
         }
         // A matching face with a changed backdrop may be rebuilt unless
@@ -399,15 +404,15 @@ static void draw_card_face(Canvas&c,Card card,int x,int y,int w,int h,int fee=-2
     entry->overflow=0;
     render_card_face(c,card,x,y,w,h,fee,stars,instance,deck,facts,description,nullptr,known,upgrade_preview,-1,0,&entry->overflow);
     if(entry->overflow){
-        // Cache the original art and short labels once. Overflow alone is
-        // redrawn each frame, preserving its visible-label clock without
-        // re-decoding or compositing the complete card while it scrolls.
+        // Cache portrait, frame and banner once. Text with its smaller
+        // foreground labels retains the authored composition order and its
+        // visible-label clocks without repainting the large original art.
         for(int yy=0;yy<SmallCardCacheH;++yy)for(int xx=0;xx<SmallCardCacheW;++xx)
             c.pixels[(top+yy)*c.pitch+left+xx]=entry->background[yy*SmallCardCacheW+xx];
-        render_card_face(c,card,x,y,w,h,fee,stars,instance,deck,facts,description,nullptr,known,upgrade_preview,-1,entry->overflow);
+        render_card_face(c,card,x,y,w,h,fee,stars,instance,deck,facts,description,nullptr,known,upgrade_preview,-1,4);
     }
     for(int yy=0;yy<SmallCardCacheH;++yy)for(int xx=0;xx<SmallCardCacheW;++xx)
         entry->pixels[yy*SmallCardCacheW+xx]=c.pixels[(top+yy)*c.pitch+left+xx];
     entry->valid=a.content.healthy();
-    card_cache_scrolling_text(c,*entry,x,y);
+    card_cache_scrolling_text(c,*entry,x,y,instance,deck,facts,upgrade_preview);
 }

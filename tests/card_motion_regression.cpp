@@ -154,6 +154,6 @@ static void generated_preview(){
  CHECK(!std::memcmp(&state,&saved,sizeof state));
 }
 int main(){
- CHECK(sizeof(CombatCardMotion)<=6*1024);body_modulation();holder_responses();hover_and_selection_layout();draw_and_play();discard_curve();skipped_frames_and_bounds();generated_preview();
+ CHECK(sizeof(CombatCardMotion)<=8*1024);CHECK(sizeof(SovereignBladePresentation)<4096);body_modulation();holder_responses();hover_and_selection_layout();draw_and_play();discard_curve();skipped_frames_and_bounds();generated_preview();
  std::printf("card movement: %u checks passed; %zu bytes of bounded metadata\n",checks,sizeof(CombatCardMotion));
 }

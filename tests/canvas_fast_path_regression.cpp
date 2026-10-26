@@ -446,6 +446,22 @@ static void blend_reference(){
   CHECK(blend(a,b,alpha)==uint16_t((r<<11)|(g<<5)|blue));
  }
 }
+static void hidden_picture_io(const Bytes& data){
+ struct Source {const Bytes* data;unsigned reads=0;
+  static bool read(void*context,uint32_t offset,void*out,uint32_t count){
+   auto&s=*static_cast<Source*>(context);++s.reads;
+   if(offset>s.data->size()||count>s.data->size()-offset)return false;
+   std::memcpy(out,s.data->data()+offset,count);return true;
+  }
+ } source{&data};
+ CHECK(app.content.open(ResourceSource{&source,uint32_t(data.size()),Source::read,nullptr}));
+ const unsigned opened=source.reads;uint16_t surface[320*240]{};Canvas c{app,surface};
+ c.picture(0,0,-5);c.picture(0,-7,0);c.picture(0,320,0);c.picture(0,0,240);
+ c.picture(1,0,-84,60,84);c.picture(2,0,0,0,0,0);c.opacity=0;c.picture(3,0,0);
+ CHECK(source.reads==opened);CHECK(!app.content.image_cached(0));
+ c.opacity=255;c.picture(0,0,-4);CHECK(source.reads>opened);CHECK(app.content.image_cached(0));
+ CHECK(app.content.healthy());
+}
 int main(){
  blend_reference();
  const auto data=fixture();CHECK(app.content.open(data.data(),data.size()));
@@ -454,6 +470,6 @@ int main(){
  Bytes unaligned(data.size()+1);std::copy(data.begin(),data.end(),unaligned.begin()+1);
  CHECK(app.content.open(unaligned.data()+1,data.size()));
  CHECK((uintptr_t(app.content.image(0).pixels)&1u)==1u);
- pictures();picture_regions();picture_row_views();map_pictures();CHECK(app.content.healthy());glyphs();
+ pictures();picture_regions();picture_row_views();map_pictures();CHECK(app.content.healthy());glyphs();hidden_picture_io(data);
  std::printf("canvas fast path: %u cases, %u checks; production paint oracle, RGB565 alignment, clipping, pitch, coverage, modulation, additive, scaled, atlas regions, sparse, palette and glyph decode bounds\n",cases,checks);
 }

@@ -107,6 +107,8 @@ static void settled_layer_pixels(){
    const uint8_t*pixel=p.palette?p.palette+unsigned(p.pixels[at])*2:p.pixels+at*2;const unsigned source=pixel[0]|unsigned(pixel[1])<<8;
    const unsigned red=((source>>11)*shade+127)/255,green=(((source>>5)&63)*shade+127)/255,blue=((source&31)*shade+127)/255;
    const bool equal=a.pixels[(y+yy)*ScreenW+x+xx]==uint16_t(red<<11|green<<5|blue);
+   if(!text&&!equal)std::fprintf(stderr,"Source control %d differs at (%d,%d), local (%d,%d): expected %04x, actual %04x\n",
+      slot,x+xx,y+yy,xx,yy,unsigned(red<<11|green<<5|blue),unsigned(a.pixels[(y+yy)*ScreenW+x+xx]));
    if(!text)CHECK(equal);compared+=equal;
   }CHECK(compared>=minimum);CHECK(a.content.healthy());
  };
@@ -115,7 +117,9 @@ static void settled_layer_pixels(){
  // The corrected title occupies y+5..25, centered on the ribbon. Include
  // its one-pixel outline while still checking the top and both source wings.
  verify(I6_CommonBanner,BannerX,a.game_over_presentation.banner_y(a.map_clock_ms),BannerWidth,BannerHeight,9,4,BannerWidth-18,22,255,100);
- verify(U_RewardSkip,a.game_over_summary?MainMenuX:ContinueX,ButtonY,ButtonWidth,ButtonHeight,3,1,ButtonWidth-6,11,215,60);
+ // The centered button label owns (16,2,width-32,22), including its four
+ // one-pixel outline passes. Check the source margins outside that rectangle.
+ verify(U_RewardSkip,a.game_over_summary?MainMenuX:ContinueX,ButtonY,ButtonWidth,ButtonHeight,15,1,ButtonWidth-30,24,215,60);
 }
 static void capture(const char*name){
  if(!capture_directory)return;a.pointer.visible=false;a.render();char path[1024]{};int n=std::snprintf(path,sizeof path,"%s/%s.ppm",capture_directory,name);CHECK(n>0&&unsigned(n)<sizeof path);
@@ -145,7 +149,7 @@ static void intro_stages(const char*prefix){
  advance_to(950);capture_stage(prefix,"intro-950ms");a.render();CHECK(!has_action(UiAction::GameOverSummary));
  advance_to(a.game_over_presentation.intro_delay()-1);a.render();CHECK(!has_action(UiAction::GameOverSummary));unchanged();
  advance_ms(1);CHECK(a.game_over_button_ready());CHECK(a.physical_key(select,false)&&!a.game_over_summary);
- settle_game_over();a.render();settled_layer_pixels();capture_stage(prefix,"intro-settled");unchanged();
+ settle_game_over();a.render();capture_stage(prefix,"intro-settled");settled_layer_pixels();unchanged();
 }
 static void summary_stages(const char*prefix){
  CHECK(a.game_over_summary&&a.game_over_presentation.summary_age(a.map_clock_ms)==0);
@@ -159,7 +163,7 @@ static void summary_stages(const char*prefix){
   advance_to(m.discovery_start()+250);capture_stage(prefix,"summary-discoveries");a.render();reveal_detail(true);}
  advance_to(m.menu_start()-1);a.render();CHECK(!has_action(UiAction::GameOverMainMenu));unchanged();
  advance_ms(1);CHECK(a.game_over_button_ready());CHECK(a.physical_key(select,false)&&!a.title);
- settle_game_over();a.render();settled_layer_pixels();capture_stage(prefix,"summary-settled");unchanged();
+ settle_game_over();a.render();capture_stage(prefix,"summary-settled");settled_layer_pixels();unchanged();
  if(actual_profile){
   // Both source nodes own readable 104px NHoverTipSets at different fixed
   // offsets. Render actual localized badge/discovery content through the

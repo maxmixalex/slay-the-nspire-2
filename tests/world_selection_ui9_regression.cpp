@@ -182,9 +182,24 @@ static void fonts(){
     exact_font(a.content.world_string("gameplay_ui","CHOOSE_A_PACK"),10,5);Canvas canvas{a};
     for(unsigned i=1;i<EventEnchantmentKinds;++i){CardHoverTarget owner{};HoverTip tip{};tip.kind=HoverTipKind::Enchantment;tip.key=event_enchantment_key(EventEnchantment(i));tip.amount=3;char title[128]{},body[2048]{};format_card_hover_tip(a,owner,tip,title,sizeof title,body,sizeof body);exact_font(title,10,5);exact_font(body,10);
         const int lines=source_hover_paragraph(canvas,body,0,0,90,0),visible=(180-source_hover_overhead(canvas))/source_hover_step(canvas);
-        CHECK(lines>0&&visible>0);const int overflow=std::max(0,lines-visible);
-        CHECK(source_hover_scroll(overflow,1800+overflow*950,950)==overflow);
+        CHECK(lines>0&&visible>0);const int overflow=std::max(0,lines-visible)*source_hover_step(canvas);
+        CHECK(text_overflow_offset(1600+(overflow*1000+11)/12,overflow,12)==overflow);
     }
+    scenario="source hover bodies keep partial lines inside their viewport";
+    const char*paragraph="First line.\nSecond line.\nThird line.\nFinal line.";
+    constexpr int x=31,y=37,w=90,lines=2;const int bottom=y+lines*source_hover_step(canvas)+2;
+    std::vector<uint16_t> initial(ScreenW*ScreenH),shifted(ScreenW*ScreenH);
+    for(int offset=0;offset<=1;++offset){auto&pixels=offset?shifted:initial;std::fill(pixels.begin(),pixels.end(),uint16_t(0x1234));canvas.pixels=pixels.data();
+        source_hover_paragraph(canvas,paragraph,x,y,w,lines,0,rgb(255,246,226),offset);unsigned ink=0;bool bounded=true;
+        for(int yy=0;yy<ScreenH;++yy)for(int xx=0;xx<ScreenW;++xx){const auto value=pixels[yy*ScreenW+xx];
+            if(xx<x||xx>=x+w||yy<y||yy>=bottom)bounded&=value==0x1234;else ink+=value!=0x1234;}
+        CHECK(bounded&&ink);
+    }
+    CHECK(initial!=shifted);
+    // The visible first line translates by exactly one pixel rather than
+    // replacing the entire row only after a full line has passed.
+    for(int yy=y;yy<y+source_hover_size(canvas)-1;++yy)for(int xx=x;xx<x+w;++xx)
+        CHECK(shifted[yy*ScreenW+xx]==initial[(yy+1)*ScreenW+xx]);
 }
 int main(int argc,char**argv){
     FILE*file=nullptr;if(argc>1){file=std::fopen(argv[1],"rb");CHECK(file);const unsigned size=unsigned(spire_test::pack_size(file));uint8_t header[40];CHECK(read_pack(file,0,header,sizeof header));const auto read32=[](const uint8_t*p){return unsigned(p[0])|unsigned(p[1])<<8|unsigned(p[2])<<16|unsigned(p[3])<<24;};const unsigned images=read32(header+16),glyphs=read32(header+20);for(unsigned i=0;i<glyphs;++i){uint8_t row[16];CHECK(read_pack(file,40+(images+i)*16,row,16));glyph_keys.push_back(read32(row)|(unsigned(row[8])<<24));}CHECK(std::is_sorted(glyph_keys.begin(),glyph_keys.end()));CHECK(a.content.open(ResourceSource{file,size,read_pack,nullptr}));actual=true;}if(argc>2)captures=argv[2];

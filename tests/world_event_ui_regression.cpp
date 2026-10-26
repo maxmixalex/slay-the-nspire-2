@@ -364,6 +364,26 @@ static void reading_focus(){
  a.input(Key::Confirm);CHECK(a.map_window.visible&&!a.event_reader&&!a.event_body_focus);
  CHECK(save(a.game,after));CHECK(after.size==expected_save.size&&!std::memcmp(after.bytes,expected_save.bytes,after.size));
 }
+static void reported_event_geometry(){
+ begin(OriginalEventId::WoodCarvings,0x6ab19,0);a.cursor=2;a.pointer.visible=false;a.render();snapshot();
+ CardHoverTarget target{};CHECK(event_hover_target(a,target)&&target.event_option==2);
+ HoverTipList tips{};collect_event_hover_tips(a,2,tips);const auto page=card_hover_page(a,target,tips);
+ bool torus=false;
+ for(unsigned i=0;i<page.count;++i){const auto&piece=page.pieces[i];const auto&tip=tips.items[piece.tip];
+  CHECK(piece.box.y>=24&&piece.box.y+piece.box.h<=236);
+  if(tip.kind==HoverTipKind::Card&&tip.card.kind==EventCardToricToughness){
+   torus=true;CHECK(piece.box.y>24&&piece.box.x+piece.box.w<target.owner.x);}}
+ CHECK(torus);capture("event-wood-carvings-torus");unchanged();
+ // The actual fixed-count transformation has no grid Confirm. Its core
+ // completion leaves one label-only Proceed option in the same room.
+ CHECK(original_event_choose(a.game,2));CHECK(a.game.phase==Phase::OriginalEventChoice);a.render();advance_ms(600);
+ for(unsigned i=0;i<a.hit_count;++i)CHECK(a.hits[i].kind!=HitKind::UiAction||a.hits[i].value!=int(UiAction::ConfirmWorldChoice));
+ capture("event-wood-carvings-transform-grid");
+ uint16_t ids[MaxDeck];CHECK(original_event_eligible(a.game,ids,MaxDeck)>0);CHECK(original_event_select(a.game,ids,1));
+ CHECK(a.game.original_events.finished&&a.game.phase==Phase::Event);a.render();advance_ms(1800);
+ char description[2048]{};a.original_event_text(0,true,description,sizeof description);CHECK(!*description);
+ CHECK(choice_count()==1&&choice(0).h==26);snapshot();capture("event-label-only-proceed");unchanged();
+}
 int main(int argc,char**argv){
  const bool reading_only=argc>1&&!std::strcmp(argv[1],"--reading");const int asset_argument=reading_only?2:1;const bool actual=argc>asset_argument;
  std::vector<uint8_t>data;
@@ -371,5 +391,5 @@ int main(int argc,char**argv){
  // Only an explicit caller-selected private directory receives captures.
  if(argc>asset_argument+1)capture_directory=argv[asset_argument+1];CHECK(a.init(data.data(),data.size(),{}));CHECK(a.content.current_profile());
  if(reading_only){reading_focus();std::printf("World inline reading focus and canonical pointer choice: %u checks; %s profile\n",checks,actual?"actual":"synthetic");return 0;}
- if(argc==1)ancient_original_modulation();merchant_welcome();merchant();ancients();ancient_conversation(argc==1);ordinary_events(argc==1);std::printf("world event UI: %u checks passed; %s profile; merchant welcome/inventory, eight ancients, revealed dialogue/history and centered ordinary events\n",checks,argc>1?"actual":"synthetic");
+ if(argc==1)ancient_original_modulation();merchant_welcome();merchant();ancients();ancient_conversation(argc==1);ordinary_events(argc==1);reported_event_geometry();std::printf("world event UI: %u checks passed; %s profile; merchant welcome/inventory, eight ancients, revealed dialogue/history and centered ordinary events\n",checks,argc>1?"actual":"synthetic");
 }

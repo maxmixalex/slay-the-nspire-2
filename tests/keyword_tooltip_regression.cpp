@@ -273,7 +273,10 @@ static void event_pointer_keyboard_and_text(){
             if(enabled){const auto first=card_hover_page(a,owner,t,0);
                 for(int page=0;page<first.pages;++page){const auto layout=card_hover_page(a,owner,t,page);
                     for(unsigned i=0;i<layout.count;++i){const auto&r=layout.pieces[i].box;
-                        CHECK(r.x>=3&&r.y>=24&&r.x+r.w<=owner.owner.x&&r.y+r.h<=218);
+                        // Ordinary events have no bottom control in their
+                        // left preview lane. Its card/keyword group follows
+                        // the option down to the four-pixel screen margin.
+                        CHECK(r.x>=3&&r.y>=24&&r.x+r.w<=owner.owner.x&&r.y+r.h<=236);
                         for(unsigned j=0;j<i;++j){const auto&other=layout.pieces[j].box;
                             CHECK(r.x+r.w<=other.x||other.x+other.w<=r.x||r.y+r.h<=other.y||other.y+other.h<=r.y);
                         }

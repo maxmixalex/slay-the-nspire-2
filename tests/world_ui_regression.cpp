@@ -1358,17 +1358,19 @@ static void feedback_hud_and_merchant(){
   }
   capture((std::string("merchant-")+names[character]).c_str());a.advance(250);a.render();unchanged();
   a.ui_action(UiAction::OpenShop);CHECK(a.shop_open);a.render();
-  // Cold original-resource preparation yields real frames before the rug
-  // starts its authored tween. Loading time must not spend that tween.
+  const uint32_t opened=a.room_presentation.merchant.start;
+  CHECK(a.room_presentation.merchant.y(opened)==-222);
+  // Cold inventory preparation runs alongside the original opening tween;
+  // completion cannot insert a loading screen or restart that animation.
   for(unsigned steps=0;a.merchant_preparation.active&&steps<128;++steps){a.advance(33);a.render();unchanged();}
   CHECK(!a.merchant_preparation.active&&a.content.healthy());
-  CHECK(a.room_presentation.merchant.y(a.map_clock_ms)==-222);
+  CHECK(a.room_presentation.merchant.start==opened);
   a.advance(250);a.advance(250);a.advance(200);a.render();unchanged();
   // UI12 keeps the source rug and fits readable cards into two LCD rows.
   // The rug extends beyond the viewport; its live purchase hits do not.
   constexpr int centers[]={39,99,159,219,279,43,108};
   for(int i=0;i<ShopCardCount;++i){const HitRegion*card=nullptr;for(int j=0;j<a.hit_count;++j)if(a.hits[j].kind==HitKind::Choice&&a.hits[j].value==i)card=&a.hits[j];
-   CHECK(card&&card->x+card->w/2==centers[i]&&card->w==57&&card->h==102);
+   CHECK(card&&card->x+card->w/2==centers[i]&&card->w==57&&card->h==96);
    CHECK(card->x>=0&&card->x+card->w<=320&&card->y>=22&&card->y+card->h<=235);}
   capture((std::string("merchant-inventory-")+names[character]).c_str());a.input(Key::Back);CHECK(!a.shop_open);unchanged();
  }

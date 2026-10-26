@@ -45,7 +45,7 @@ static const HandTile& hand_tile(Canvas&c,int instance,const CombatCardMotion::S
     // tip in the same frame. Reuse the already resolved instance sample;
     // target/revision/card identity guard input arriving between frames.
     const bool locked=a.combat_actions_locked();
-    for(auto&t:hand_tiles)if(!frozen_facts&&!upgrade_preview&&!description_override&&t.valid&&t.owner==&a.content&&t.sampled_generation==a.content.generation()&&t.sampled_locked==locked&&
+    for(auto&t:hand_tiles)if(deck<0&&!frozen_facts&&!upgrade_preview&&!description_override&&t.valid&&t.owner==&a.content&&t.sampled_generation==a.content.generation()&&t.sampled_locked==locked&&
         t.sampled_revision==a.game.revision&&t.sampled_instance==instance&&t.sampled_deck==deck&&
         t.sampled_target==preview_target&&t.sampled_visual==visual&&t.card.kind==card.kind&&t.card.upgraded==card.upgraded&&
         (!visual||(t.energy==visual->energy&&t.stars==visual->stars))){t.used=hand_tile_clock;return t;}

@@ -153,6 +153,11 @@ struct Canvas{
         for(;;){if(!dots||(step/3)%2==0)rect(x,y,1,1,color);if(x==xx&&y==yy)break;int e=err*2;if(e>=dy){err+=dy;x+=sx;}if(e<=dx){err+=dx;y+=sy;}step++;}
     }
     void picture(int id,int x,int y,int width=0,int height=0,unsigned opacity=255,unsigned blend_mode=0){
+        // Dimensions are resident metadata. Hidden entrance/exit layers must
+        // not pull compressed image pages into the cache before they appear.
+        if(!opacity||!this->opacity)return;
+        if(!width||!height){const auto size=a.content.image_dimensions(id);if(!width)width=size.w;if(!height)height=size.h;}
+        if(width<=0||height<=0||x>=clip_w||y>=clip_h||x<=-width||y<=-height)return;
         picture(a.content.image(id),x,y,width,height,opacity,blend_mode);
     }
     // Conservative occlusion for a later normal-blended image. Every visible

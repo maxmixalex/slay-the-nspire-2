@@ -2,7 +2,11 @@
 // predicates change. These snapshots are presentation-only and never saved.
 static bool ui_visual_equal(const char*a,const char*b){if(!a||!b)return false;while(*a&&*a==*b){++a;++b;}return *a==*b;}
 static EnemyVisualFacts ui_enemy_facts(const State&s,int slot){EnemyVisualFacts f;
- const unsigned n=world_enemy_fact_count();for(unsigned i=0;i<n&&i<MaxEnemyVisualFacts;i++)if(enemy_visual_fact(s,slot,world_enemy_fact_name(i),f.values[i]))f.known|=uint64_t(1)<<i;return f;
+ const unsigned n=world_enemy_fact_count();for(unsigned i=0;i<n&&i<MaxEnemyVisualFacts;i++)if(enemy_visual_fact(s,slot,world_enemy_fact_name(i),f.values[i]))f.known|=uint64_t(1)<<i;
+ if(slot>=0&&slot<s.enemy_count){const auto&m=s.enemy_world.models[slot];
+  if(m.kind==EnemyId::PhantasmalGardener&&m.data[1])f.default_scale=int16_t(CreatureScaleMotion::enlarged(unsigned(mx(0,m.data[0]))));
+  else if(m.kind==EnemyId::TestSubject&&m.data[0])f.default_scale=int16_t(1024+(1024*m.data[0]+5)/10);}
+ return f;
 }
 static bool ui_enemy_fact(void* context,const char*key,int&value){const auto&f=*static_cast<const EnemyVisualFacts*>(context);
  for(unsigned i=0;i<world_enemy_fact_count()&&i<MaxEnemyVisualFacts;i++)if(ui_visual_equal(key,world_enemy_fact_name(i))){if(!(f.known&(uint64_t(1)<<i)))return false;value=f.values[i];return true;}return false;
@@ -90,6 +94,7 @@ static void ui_enemy_advance(App&a,int slot){
   }
   if(m.count&&int32_t(a.animation-m.queue[0].earliest)>=0){
    EnemyVisualCommand command=m.queue[0];for(unsigned i=1;i<m.count;i++)m.queue[i-1]=m.queue[i];--m.count;m.move=command.move;
+   if(ui_visual_equal(command.action,"DefaultScaleChanged")){m.facts=command.facts;continue;}
    int state=command.direct?-1:world_enemy_transition(m.model,m.state,command.action,ui_enemy_fact,&command.facts);
    // Original animator triggers interrupt an earlier hurt/spawn track. The
    // command's cue owns the clock, including when a render catches up later.
@@ -138,7 +143,7 @@ void App::enemy_trigger(int slot,const char*trigger,int move,bool direct,const E
  m.queue[at]={trigger,facts?*facts:ui_enemy_facts(game,slot),int16_t(move),uint8_t(direct),when};++m.count;ui_enemy_advance(*this,slot);
 }
 static CreaturePose ui_creature_scaled_pose(const App&a,CreaturePose pose,unsigned actor){
- struct Scale {const App*owner=nullptr;uint32_t seed=0,identity=0,last=0;int floor=-1,combat=-1,encounter=-1;CreatureScaleMotion motion{};};
+ struct Scale {const App*owner=nullptr;uint32_t seed=0,identity=0,last=0;int floor=-1,combat=-1,encounter=-1;bool shrink=false,mushroom=false;CreatureScaleMotion motion{},defaults{};};
  static Scale scales[MaxEnemies+1];if(actor>MaxEnemies)return pose;
  if(actor&&actor<=unsigned(a.game.enemy_count)){
   const auto kind=a.game.enemy_world.models[actor-1].kind;
@@ -146,14 +151,28 @@ static CreaturePose ui_creature_scaled_pose(const App&a,CreaturePose pose,unsign
   // animation already lives in its independently registered baked states.
   if(kind==EnemyId::DecimillipedeSegmentBack||kind==EnemyId::DecimillipedeSegmentFront||kind==EnemyId::DecimillipedeSegmentMiddle||kind==EnemyId::Vantom)return pose;
  }
- const int target=(a.combat_status_amount(int(actor),EnemyStatusStart+int(EnemyPower::Shrink))||
-    (actor&&a.combat_status_amount(int(actor),41)))?512:1024;
+ const bool shrink=a.combat_status_amount(int(actor),EnemyStatusStart+int(EnemyPower::Shrink))||
+    (actor&&a.combat_status_amount(int(actor),41));
+ const bool mushroom=!actor&&has_world_relic(a.game,WorldRelicBigMushroom);
+ const int initial=actor?creature_instance_scale(a.game,int(actor-1)):1024;
+ const int base=actor&&a.enemy_presentation[actor-1].facts.default_scale?a.enemy_presentation[actor-1].facts.default_scale:initial;
  auto&m=scales[actor];const uint32_t now=a.animation*33u,identity=ui_feedback_identity(a.game,actor);
  if(m.owner!=&a||m.seed!=a.game.seed||m.floor!=a.game.floor||m.combat!=a.game.world.combat_count||m.encounter!=int(a.game.enemy_world.encounter)||m.identity!=identity||int32_t(now-m.last)<0){
   m={};m.owner=&a;m.seed=a.game.seed;m.floor=a.game.floor;m.combat=a.game.world.combat_count;m.encounter=int(a.game.enemy_world.encounter);m.identity=identity;
-  m.motion.from=m.motion.to=target;m.motion.started=now;
+  m.shrink=shrink;m.mushroom=mushroom;m.motion.from=m.motion.to=shrink?512:mushroom?1536:1024;m.motion.started=now;
+  m.defaults.from=m.defaults.to=base;m.defaults.started=now;
  }
- m.last=now;m.motion.observe(target,now);const int scale=m.motion.sample(now);
+ m.last=now;
+ // BigMushroom calls ScaleTo(1.5,0) on pickup/room entry. Shrink's removal
+ // explicitly calls ScaleTo(1), so it does not reapply the relic's1.5.
+ if(mushroom&&!m.mushroom){m.motion.from=m.motion.to=1536;m.motion.started=now;}
+ if(shrink!=m.shrink)m.motion.observe(shrink?512:1024,now);
+ m.shrink=shrink;m.mushroom=mushroom;
+ if(actor&&base!=m.defaults.to){const auto&visual=a.enemy_presentation[actor-1];const auto kind=a.game.enemy_world.models[actor-1].kind;
+  m.defaults.observe(base,now,kind==EnemyId::TestSubject?100:kind==EnemyId::PhantasmalGardener&&visual.move==2?350:750);
+  // RespawnTrigger precedes the original.8s wait, then the100ms growth.
+  if(kind==EnemyId::TestSubject)m.defaults.started=visual.start*33u+800u;}
+ const int scale=int(int64_t(m.motion.sample(now))*m.defaults.sample(now)/initial);
  pose.scale=mx(1,pose.scale*scale/1024);pose.sprite_x=pose.x+(pose.sprite_x-pose.x)*scale/1024;pose.sprite_y=pose.feet+(pose.sprite_y-pose.feet)*scale/1024;
  pose.center_x=pose.x+(pose.center_x-pose.x)*scale/1024;pose.center_y=pose.feet+(pose.center_y-pose.feet)*scale/1024;return pose;
 }
@@ -322,6 +341,9 @@ void App::observe_enemy_animation(const State&s,int slot,const char*trigger){
  const auto&source=s.enemy_world.models[slot];const auto&current=enemy_presentation[slot];
  if(!ui_feedback_bound(*this)||current.identity!=source.combat_id||current.model!=unsigned(source.kind))sync_enemy_feedback();
  auto&m=enemy_presentation[slot];auto facts=ui_enemy_facts(s,slot);
+ if(ui_visual_equal(trigger,"DefaultScaleChanged")){
+  const uint32_t at=ui_feedback_bound(*this)?combat_feedback.effect_at:animation;
+  enemy_trigger(slot,trigger,int(source.node),false,&facts,at);return;}
  uint32_t when=int32_t(enemy_visual_clock-animation)>0?enemy_visual_clock:animation;
  if(ui_feedback_bound(*this))when=ui_feedback_later(when,combat_feedback.effect_at);
  int state=world_enemy_transition(m.model,m.state,trigger,ui_enemy_fact,&facts);

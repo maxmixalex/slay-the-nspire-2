@@ -3,6 +3,7 @@
 #include "content_fixture.hpp"
 #include "resource_transfer.hpp"
 #include "ui_core_observer.hpp"
+#include <algorithm>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -230,7 +231,7 @@ static void terminal_boundaries(){
 }
 static void text_bounds(){
  if(!actual)return;scenario="readable tutorial text reaches every final line without shrinking";Canvas c{a};c.bold_face=5;
- const auto reader=[&](const char*text,int w,int h){CHECK(*text);a.ftue.text_scroll=0;
+ const auto reader=[&](const char*text,int w,int h){CHECK(*text);a.ftue.reset_text();
   const auto first=ftue_paragraph(c,text,0,0,w,h,10,false,12,false,true);CHECK(first.size==10&&!first.truncated);
   CHECK(first.total==first.rows+a.ftue.text_maximum);a.ftue.text_scroll=a.ftue.text_maximum;
   const auto last=ftue_paragraph(c,text,0,0,w,h,10,false,12,false,true);CHECK(!last.truncated&&int(a.ftue.text_scroll)+last.rows==last.total);
@@ -243,8 +244,27 @@ static void text_bounds(){
  reader(ftue_text(a,"ASCENSION_SINGLEPLAYER_FTUE_DISCLAIMER"),220,120);
  reader(a.content.world_string("main_menu_ui","ENABLE_TUTORIALS.description"),210,84);
 }
+static void smooth_reader(){
+ scenario="tutorial reading moves within a line, clips and resets with its page";
+ practice();only(FtueId::CombatRules);CHECK(a.open_ftue(FtueId::CombatRules));snapshot();
+ Canvas c{a};c.bold_face=5;constexpr int x=43,y=47,w=110,h=22;
+ const char*text="First instruction.\nSecond instruction.\nThird instruction.\nFinal instruction.";
+ const auto draw=[&](){std::fill(a.pixels,a.pixels+ScreenW*ScreenH,uint16_t(0x1234));
+  const auto plan=ftue_paragraph(c,text,x,y,w,h,10,false,12,false,true);CHECK(!plan.truncated&&plan.size==10);
+  unsigned ink=0;bool bounded=true;for(int yy=0;yy<ScreenH;++yy)for(int xx=0;xx<ScreenW;++xx){const auto value=a.pixels[yy*ScreenW+xx];
+   if(xx<x||xx>=x+w||yy<y||yy>=y+h)bounded&=value==0x1234;else ink+=value!=0x1234;}
+  CHECK(bounded&&ink);};
+ draw();CHECK(a.ftue.text_rows==2&&a.ftue.text_maximum>=2&&!a.ftue.text_offset(a.map_clock_ms));
+ a.ftue_control(6);draw();CHECK(a.ftue.text_scroll==1&&!a.ftue.text_offset(a.map_clock_ms));
+ a.map_clock_ms+=60;draw();const int intermediate=a.ftue.text_offset(a.map_clock_ms);CHECK(intermediate>0&&intermediate<12);
+ a.ftue_control(5);draw();CHECK(a.ftue.text_offset(a.map_clock_ms)==intermediate);
+ a.map_clock_ms+=180;draw();CHECK(!a.ftue.text_offset(a.map_clock_ms));
+ a.ftue_control(6);draw();a.map_clock_ms+=180;draw();CHECK(a.ftue.text_offset(a.map_clock_ms)==12);
+ a.ftue_control(3);CHECK(a.ftue.page==1&&!a.ftue.text_scroll&&!a.ftue.text_offset(a.map_clock_ms));unchanged();
+ a.reset_presentation();
+}
 int main(int argc,char**argv){
  Bytes data;if(argc>1){FILE*f=std::fopen(argv[1],"rb");CHECK(f);data.resize(spire_test::pack_size(f));CHECK(std::fread(data.data(),1,data.size(),f)==data.size());CHECK(!std::fclose(f));actual=true;}else data=fixture();
  if(argc>2)captures=argv[2];CHECK(a.init(data.data(),data.size(),{}));CHECK(a.content.has_ftue_assets());
- embark();combat_pages();source_checks();calculator_select_release();rooms();shuffle_barrier();real_shuffle();treasure_wait();terminal_boundaries();text_bounds();long_press_tutorials();CHECK(a.content.healthy());std::printf("FTUE UI: %u checks passed (%s)\n",checks,actual?"actual":"synthetic");
+ embark();combat_pages();source_checks();calculator_select_release();rooms();shuffle_barrier();real_shuffle();treasure_wait();terminal_boundaries();text_bounds();smooth_reader();long_press_tutorials();CHECK(a.content.healthy());std::printf("FTUE UI: %u checks passed (%s)\n",checks,actual?"actual":"synthetic");
 }

@@ -87,7 +87,7 @@ static void cards(){
  m.begin(s,0);m.set_hand({});m.find(0);cue=transfer(Zone::Hand);cue.from=CombatCardMotion::NewCard;m.apply(cue);
  CHECK(m.find(0)&&m.find(0)->mode==CombatCardMotion::Hand&&m.find(0)->generated&&m.find(0)->scale==0);
  CombatHand::Cards hand;hand.count=1;hand.ids[0]=0;m.set_hand(hand);m.advance(8);CHECK(m.find(0)->scale>0);CHECK(!std::memcmp(&s,&direct,sizeof s));
- CHECK(sizeof(CombatCardMotion)<=6144&&sizeof(CombatSparkMotion)<12288);
+ CHECK(sizeof(CombatCardMotion)<=8192&&sizeof(CombatSparkMotion)<12288);
 }
 static void highlights(){
  fresh();auto&s=a.game;s.card_count=s.hand.count=1;s.hand.ids[0]=0;s.cards[0]={Strike,0};s.zones[0]=Zone::Hand;

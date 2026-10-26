@@ -278,7 +278,7 @@ struct Motion {int clip=-1;uint32_t start=0;};
 // Q12 scale and byte alpha are presentation samples, never saved run state.
 struct MapReticleMotion {uint32_t start=0;uint16_t from_scale=4096;uint8_t from_alpha=0,mode=0;};
 constexpr unsigned MaxEnemyVisualFacts=64,MaxEnemyVisualCommands=24;
-struct EnemyVisualFacts {uint64_t known=0;int values[MaxEnemyVisualFacts]{};};
+struct EnemyVisualFacts {uint64_t known=0;int values[MaxEnemyVisualFacts]{};int16_t default_scale=0;};
 struct EnemyVisualCommand {const char* action=nullptr;EnemyVisualFacts facts{};int16_t move=-1;uint8_t direct=0;uint32_t earliest=0;};
 struct EnemyPresentation {
     uint16_t identity=0;uint8_t model=0,skin=0,instance_hue=0;

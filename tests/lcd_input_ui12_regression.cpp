@@ -78,7 +78,9 @@ int main(int argc,char**argv){
  rooms.boss_count=2;rooms.bosses[1]=EncounterId::QueenBoss;map.second_boss=uint8_t(map.boss+1);
  for(unsigned slots=2;slots<=16;++slots){if(slots>2)CHECK(add_potion_slots(app.game,1));const auto p=hud_room_geometry(app.game);
   CHECK(p.room-hud_potion_layout::Left-hud_potion_layout::width(slots)==8);
-  const int gap=p.floor-p.room-10;CHECK(gap>=6);CHECK(p.boss-p.floor-22==gap);
+  // The six-pixel page button exists only above five potion slots. Sharing
+  // that space across three groups reduces each minimum gap from6 to4.
+  const int gap=p.floor-p.room-10;CHECK(gap>=(slots>5?4:6));CHECK(p.boss-p.floor-22==gap);
   CHECK(p.timer-p.boss-17>=gap&&p.timer==249&&p.timer+7<=257);
  }
  CHECK(hud_portrait_enabled(app.game));app.game.world.ascension=1;CHECK(hud_portrait_enabled(app.game));

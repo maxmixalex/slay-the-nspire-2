@@ -1,3 +1,35 @@
+# UI14 integration checkpoint — 2026-10-26
+
+Stage4 source `97a63d78979daba7d12fa8475b305e836fc9503c` builds both
+native and ARM. ARM is 1,677,286 bytes with 22,738,604 bytes allocated under
+24 MiB. The 277 discovery and 56 supplemental Python tests pass (two tests
+are present in both lists). All sixteen actual locale packs pass 38,686
+checks and 53,072 descriptions, with no unexpanded templates.
+
+The first complete native run passed 129/138. Two executables had local
+non-executable permissions; the remaining failures exposed stale geometry /
+old memory-budget expectations, an invalid new test fixture, and a real
+small-card cache layer-order difference. This checkpoint fixes the identified
+source/test issues without weakening pixel-equivalence assertions. It also
+adds the original Big Mushroom, Phantasmal Gardener and Test Subject scale
+changes, and skips image I/O for fully hidden entrance/exit layers. Fresh
+native and ARM validation remains required for this checkpoint.
+
+The ordinary OS has executed the new installation paths, created state/,
+started a natural Ironclad run, taken Neow's reward, saved and returned to
+the title and OS. Save, progress and language are under state/. This is not
+yet final-resource gameplay or a full-run completion claim.
+
+The first exact merchant split reduces visible moving pixels by 42.12%, but
+increases the common resource from 70,659,306 to 78,354,908 bytes. Do not
+publish that as a storage optimization. Bounded grouped encoding is being
+measured and implemented before final packaging. Resource pixels, frame
+counts, timings and all language tails are preserved. The final package,
+Firebird cold/warm performance, final feature captures and main sync remain
+open; private source artwork and generated resources remain unpublished.
+
+---
+
 # UI14 continuation — 2026-10-26
 
 The user's current report supersedes UI13 acceptance for the reported layouts,

@@ -20,6 +20,7 @@ static void enemy_queue_move(State&s,int t,int node){
   }
   if(m.kind==EnemyId::FrogKnight&&node==3)m.data[0]=1;
   if(m.kind==EnemyId::BowlbugRock&&node==1)m.data[0]=0;
+  if(m.kind==EnemyId::PhantasmalGardener&&node==3)q.special(0);
   q.flush();return;
  }
  switch(m.kind){
@@ -84,6 +85,7 @@ static void enemy_execute_special(State&s,int t,int step){
  case EnemyId::GremlinMerc:{int gold=min(s.gold,enemy_power_value(s,t,EnemyPower::Thievery));s.gold-=(int16_t)gold;m.stolen_gold=(int16_t)min(9999,m.stolen_gold+gold);record(s,LogKind::Gold,-gold);if(gold>0)notify_history(s,RunHistoryEvent::GoldStolen,unsigned(gold));break;}
  case EnemyId::LivingFog:{int slot=enemy_open_slot(s);if(slot>=0)enemy_spawn(s,EnemyId::GasBomb,slot,t);break;}
  case EnemyId::Ovicopter:for(int i=0;i<3;++i){int slot=enemy_open_slot(s,true);if(slot>=0){int spawned=enemy_spawn(s,EnemyId::ToughEgg,slot,t);if(spawned>=0)enemy_apply_power(s,spawned,EnemyPower::Minion,1,t);}}break;
+ case EnemyId::PhantasmalGardener:m.data[0]=(int16_t)min(9999,m.data[0]+1);m.data[1]=1;notify_enemy_animation(s,t,"DefaultScaleChanged");break;
  case EnemyId::TestSubject:if(step==1)m.data[1]=(int16_t)min(996,m.data[1]+1);else{
   ++m.data[0];m.flags&=(uint8_t)~EnemyDown;int hp=value(m.data[0]==1?EnemyValue::SecondFormHp:EnemyValue::ThirdFormHp);s.enemies[t].max_hp=s.enemies[t].hp=hp;
   notify_enemy_animation(s,t,"RespawnTrigger");
