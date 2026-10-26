@@ -16,6 +16,18 @@ class Texture {
         return n<0?0:n>=extent?extent-1:n;
     }
     static unsigned mix(unsigned a,unsigned b,unsigned f){return (a*(256-f)+b*f+128)>>8;}
+    static uint16_t mix_color(uint16_t a,uint16_t b,unsigned f){
+        // Two separated 5-bit lanes fit one 32-bit multiply. Their carry
+        // spaces preserve the exact independent RGB565 round-to-nearest.
+        const uint32_t ar=((uint32_t(a)&0xf800u)<<5)|(a&31u),br=((uint32_t(b)&0xf800u)<<5)|(b&31u);
+        const uint32_t rb=((ar*(256-f)+br*f+0x00800080u)>>8)&0x001f001fu;
+        const uint32_t g=(((a&0x07e0u)*(256-f)+(b&0x07e0u)*f+0x1000u)>>8)&0x07e0u;
+        return uint16_t(((rb>>5)&0xf800u)|g|(rb&31u));
+    }
+    uint16_t dense_color(unsigned at)const{
+        const uint8_t*p=picture_.palette?picture_.palette+2*picture_.pixels[at]:picture_.pixels+2*at;
+        return uint16_t(u16(p));
+    }
 public:
     explicit Texture(Picture p,unsigned logical_width=0,unsigned logical_height=0):picture_(p){
         width_=logical_width?logical_width:p.w;height_=logical_height?logical_height:p.h;
@@ -48,13 +60,29 @@ public:
     Texel bilinear(int u_q16,int v_q16,bool repeat=false)const{
         if(!valid())return {};
         if(repeat){u_q16&=65535;v_q16&=65535;}
-        // Texture coordinates address pixel centres, as in the source GPU
-        // sampler. Eight fractional bits retain subpixel motion on RGB565.
-        int x=u_q16*int(width_)-32768,y=v_q16*int(height_)-32768;
-        int ix=x>>16,iy=y>>16;unsigned fx=unsigned(x&65535)>>8,fy=unsigned(y&65535)>>8;
-        const auto a=at(ix,iy,repeat),b=at(ix+1,iy,repeat),c=at(ix,iy+1,repeat),d=at(ix+1,iy+1,repeat);
-        const auto channel=[&](unsigned shift,unsigned mask){return mix(mix((a.color>>shift)&mask,(b.color>>shift)&mask,fx),mix((c.color>>shift)&mask,(d.color>>shift)&mask,fx),fy);};
-        return {uint16_t((channel(11,31)<<11)|(channel(5,63)<<5)|channel(0,31)),mix(mix(a.alpha,b.alpha,fx),mix(c.alpha,d.alpha,fx),fy)};
+        const int x=u_q16*int(width_)-32768,y=v_q16*int(height_)-32768;
+        const int ix=x>>16,iy=y>>16;const unsigned fx=unsigned(x&65535)>>8,fy=unsigned(y&65535)>>8;
+        Texel a,b,c,d;
+        if(picture_.format!=4){
+            // Decode the storage kind and address each row once. The old
+            // four at() calls repeated format checks and bounds per texel.
+            const unsigned left=unsigned(bound(ix,width_,repeat)),right=unsigned(bound(ix+1,width_,repeat));
+            const unsigned top=unsigned(bound(iy,height_,repeat))*width_,bottom=unsigned(bound(iy+1,height_,repeat))*width_;
+            const unsigned aa=top+left,bb=top+right,cc=bottom+left,dd=bottom+right;
+            a.color=dense_color(aa);b.color=dense_color(bb);c.color=dense_color(cc);d.color=dense_color(dd);
+            if(picture_.alpha){a.alpha=picture_.alpha[aa];b.alpha=picture_.alpha[bb];c.alpha=picture_.alpha[cc];d.alpha=picture_.alpha[dd];}
+            else a.alpha=b.alpha=c.alpha=d.alpha=255;
+        }else{a=at(ix,iy,repeat);b=at(ix+1,iy,repeat);c=at(ix,iy+1,repeat);d=at(ix+1,iy+1,repeat);}
+        return {mix_color(mix_color(a.color,b.color,fx),mix_color(c.color,d.color,fx),fy),mix(mix(a.alpha,b.alpha,fx),mix(c.alpha,d.alpha,fx),fy)};
+    }
+    uint16_t opaque_bilinear(int u_q16,int v_q16)const{
+        if(picture_.format==4)return bilinear(u_q16,v_q16).color;
+        const int x=u_q16*int(width_)-32768,y=v_q16*int(height_)-32768;
+        const unsigned left=unsigned(bound(x>>16,width_,false)),right=unsigned(bound((x>>16)+1,width_,false));
+        const unsigned top=unsigned(bound(y>>16,height_,false))*width_,bottom=unsigned(bound((y>>16)+1,height_,false))*width_;
+        const unsigned fx=unsigned(x&65535)>>8,fy=unsigned(y&65535)>>8;
+        return mix_color(mix_color(dense_color(top+left),dense_color(top+right),fx),
+                         mix_color(dense_color(bottom+left),dense_color(bottom+right),fx),fy);
     }
     unsigned alpha_bilinear(int u_q16,int v_q16,bool repeat=false)const{
         if(!valid())return 0;

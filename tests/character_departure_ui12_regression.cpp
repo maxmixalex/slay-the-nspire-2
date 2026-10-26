@@ -1,11 +1,11 @@
-#include "app.hpp"
+#include "../src/app.cpp"
 #include "world_run.hpp"
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
 using namespace spire;
 static App app;
-static SaveData before,after;
+static SaveData before,after,resume_disk;
 static unsigned checks;
 #define CHECK(x) do{++checks;if(!(x)){std::fprintf(stderr,"character_departure_ui12:%d %s\n",__LINE__,#x);std::exit(1);}}while(0)
 static void step(unsigned ms){while(ms){const unsigned dt=ms>50?50:ms;app.advance(dt);ms-=dt;}app.render();}
@@ -13,6 +13,21 @@ static void select(const char*seed){
     app.reset_presentation();app.title=app.character_select=true;app.practice_entry=false;
     app.run_mode={};app.progress.tutorial_flags=FtueFresh|FtueSeenMask;
     app.selected_character=Character::Ironclad;std::strcpy(app.selected_seed,seed);
+}
+static void black_blend_contract(){
+    constexpr unsigned levels[]={0,1,25,64,127,128,192,254,255};
+    for(unsigned keep:levels)for(unsigned color=0;color<65536;++color){
+        const unsigned red=((color>>11)*keep+127)/255;
+        const unsigned green=(((color>>5)&63)*keep+127)/255;
+        const unsigned blue=((color&31)*keep+127)/255;
+        CHECK(character_departure_black(uint16_t(color),keep)==uint16_t((red<<11)|(green<<5)|blue));
+    }
+    Canvas canvas{app};app.character_departure.phase=2;app.character_departure.started=app.map_clock_ms;
+    for(auto&p:app.pixels)p=0xffff;character_departure_screen(canvas);
+    for(auto p:app.pixels)CHECK(p==0); // Black, rather than the UI's blue Ink.
+    app.map_clock_ms+=400;for(auto&p:app.pixels)p=0xffff;character_departure_screen(canvas);
+    CHECK(app.pixels[0]==uint16_t((4<<11)|(8<<5)|4)); // Source cubic-in at t=.5 retains 1/8.
+    app.character_departure={};
 }
 static void source_order(){
     // Independent source order: NCharacterSelectScreen adds ModelDb's five
@@ -33,8 +48,26 @@ static void source_order(){
     for(int i=int(CharacterKinds)-1;i>=0;--i){app.input(Key::Left);CHECK(!app.character_random&&app.selected_character==expected[i]);}
     CHECK(app.run_number==serial&&!std::strcmp(app.selected_seed,"SOURCE ORDER"));
 }
+static bool restore_run(State&state){return load(state,resume_disk.bytes,resume_disk.size);}
+static void continue_transition(){
+    select("CONTINUE UI14");app.selected_character=Character::Silent;CHECK(app.start_selected_run({}));
+    app.game.gold+=7;CHECK(validate(app.game)&&save(app.game,resume_disk));
+    app.callbacks.load=restore_run;app.return_to_title();CHECK(app.has_save&&app.title);
+    const unsigned serial=app.run_number;app.input(Key::Confirm);app.render();
+    CHECK(app.title&&app.character_departure.phase==1&&app.character_departure.continuing);
+    CHECK(app.character_departure.character==unsigned(Character::Silent)&&!app.character_departure.reveal_ms&&app.run_save_linked);
+    CHECK(!app.hit_count&&app.run_number==serial);
+    app.input(Key::Right);app.input(Key::Confirm);app.input(Key::Back);
+    step(799);CHECK(app.title&&app.character_departure.phase==1);
+    step(1);CHECK(!app.title&&!app.character_select&&app.character_departure.phase==2);
+    step(800);CHECK(!app.character_departure.active()&&app.run_number==serial);
+    CHECK(save(app.game,after)&&after.size==resume_disk.size&&!std::memcmp(after.bytes,resume_disk.bytes,after.size));
+    app.return_to_title();app.input(Key::Load);CHECK(app.character_departure.phase==1&&app.character_departure.continuing);
+    step(1600);CHECK(!app.title&&!app.character_departure.active());
+    CHECK(save(app.game,after)&&after.size==resume_disk.size&&!std::memcmp(after.bytes,resume_disk.bytes,after.size));
+}
 int main(){
-    source_order();
+    black_blend_contract();source_order();
     select("WORLD UI12");const unsigned serial=app.run_number;app.render();
     app.ui_action(UiAction::SelectRandomCharacter);CHECK(app.character_random);
     app.ui_action(UiAction::StartCharacter);
@@ -59,5 +92,6 @@ int main(){
     for(unsigned i=0;i<64;++i){char seed[24]{};std::snprintf(seed,sizeof seed,"RANDOM %u",i);select(seed);const unsigned n=app.run_number;
         app.input(Key::Left);CHECK(app.character_random&&app.run_number==n);CHECK(app.start_selected_run({}));models|=1u<<unsigned(app.game.character);CHECK(validate(app.game));}
     CHECK(models==(1u<<CharacterKinds)-1);
-    std::printf("Random character selection, deterministic run, locked controls and source departure clocks: %u checks\n",checks);
+    continue_transition();
+    std::printf("Random selection, saved-run transition, canonical state and source departure clocks: %u checks\n",checks);
 }

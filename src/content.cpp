@@ -17,13 +17,13 @@ namespace {
 constexpr unsigned MaxImageBytes=320u*240u*8u+2u*240u;
 constexpr unsigned MaxEncodedImage=MaxImageBytes+MaxImageBytes/255u+32u;
 constexpr unsigned MaxGlyphBytes=40u*40u*2u,MaxStringBytes=16384;
-// Keep exactly the existing11 MiB of picture storage. Ordinary scenes use
-//5 MiB of decoded images and6 MiB of tile groups. The merchant's complete
-//original idle layers fit in10 MiB of images, while their expanded tile groups
-//need almost20 MiB. Retaining those finished frames stops recurring decoding.
-//The split changes only at a frame boundary, after invalidating both tiers.
-constexpr unsigned ImagePageBytes=4096,ImagePages=1280,RoomImagePages=2560,ImageEntries=1023;
-constexpr unsigned PictureBufferBudget=11u*1024u*1024u;
+// Keep the total foreground allocation below 24 MiB. Two additional MiB
+// retain complete multi-enemy/card animation working sets after warmup.
+// Ordinary scenes use 7 MiB of decoded images and 6 MiB of tile groups;
+// merchant scenes use 12 MiB of decoded images and a bounded 1 MiB decoder tier.
+// The split changes only at a frame boundary, invalidating both old tiers.
+constexpr unsigned ImagePageBytes=4096,ImagePages=1792,RoomImagePages=3072,ImageEntries=1023;
+constexpr unsigned PictureBufferBudget=13u*1024u*1024u;
 alignas(4) static uint8_t picture_pixels[PictureBufferBudget];
 static uint8_t*const image_pixels=picture_pixels;
 static unsigned image_page_limit=ImagePages;
@@ -51,8 +51,8 @@ static_assert(ImagePageBytes==Content::image_page_bytes()&&ImagePages==Content::
 static_assert(RoomImagePages<65536&&(MaxImageBytes+ImagePageBytes-1)/ImagePageBytes<=255,
               "Image page indexes and lengths must fit the bounded entry");
 static_assert(ImageEntries<1024&&ImageBuckets==64,"Image ids and bucket links must share the existing key word");
-static_assert(sizeof picture_pixels==11u*1024u*1024u,
-              "Both picture tiers must share the unchanged11 MiB budget");
+static_assert(sizeof picture_pixels==13u*1024u*1024u,
+              "Both picture tiers must share the bounded 13 MiB budget");
 static_assert(sizeof image_cache+sizeof image_buckets+sizeof image_used+sizeof image_age<=25u*1024u,
               "Image-cache bookkeeping must remain below25 KiB on the host");
 static uint8_t* image_buffer(const ImageCache& cache){return image_pixels+unsigned(cache.first)*ImagePageBytes;}
@@ -288,7 +288,7 @@ bool Content::open(ResourceSource source){
                                                     RoomsUi13AuxiliaryCount,ArchitectUi13AuxiliaryCount,
                                                     ArchitectAttackUi13AuxiliaryCount,DoomUi13AuxiliaryCount,
                                                     RandomCharacterUi13AuxiliaryCount,FakeMerchantBaseUi13AuxiliaryCount,
-                                                    FakeMerchantUi13AuxiliaryCount};
+                                                    FakeMerchantUi13AuxiliaryCount,CombatUi14AuxiliaryCount};
                                                 for(unsigned end:endpoints){
                                                     if(next==0x314c4954u)break;
                                                     for(unsigned i=auxiliary;i<end;++i){

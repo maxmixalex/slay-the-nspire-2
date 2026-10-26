@@ -151,7 +151,7 @@ static void native_architect_dialogue(Canvas&c){
   constexpr int sx=x+w-10,sy=ty+6,length=th-12;
   c.ui(I6_ScrollbarTrack,sx,sy,5,length);c.ui(I6_ScrollbarEdge,sx,ty,5,6);
   ui_picture_transform(c,a.content.ui_image(I6_ScrollbarEdge),sx+2,ty+th-3,5,6,0,-1024);
-  c.ui(I6_ScrollbarGrabber,sx-2,scroll.thumb_y(sy,length)-5,9,10);
+  native_scrollbar_grabber(c,sx-2,scroll.thumb_y(sy,length)-5,9,10);
   c.hit(tx,ty,tw,th,HitKind::EventScroll,0);c.hit(sx-4,ty,13,th,HitKind::EventScroll,1);
  }
  char label[256]{};a.original_event_text(0,false,label,sizeof label);
@@ -191,7 +191,7 @@ static void native_event_screen(Canvas&c){
  // The event keeps a104px hover lane. Preserve the bevel's source aspect
  // in the NinePatch edges instead of stretching its full image sideways.
  constexpr int x0=126,width0=186,title_y=31,title_h=20,body_y=54,body_min=49;
- constexpr int option_h=40,option_step=42,spacer=6,max_visible=3;
+ constexpr int option_description_h=40,option_label_h=26,option_gap=2,spacer=6,max_visible=3;
  Canvas title=c;title.opacity=uint8_t(div255(title.opacity*motion.title_alpha(a.map_clock_ms)));
  title.font_face=a.content.original_label_fonts()?4:0;title.sparse_scene_sizes=true;
  const int title_size=a.content.font_size(10,title.font_face,false,true);
@@ -203,7 +203,17 @@ static void native_event_screen(Canvas&c){
  const int body_size=a.content.font_size(10);
  const auto metric=[&](const RichChar&ch,int px){return body.text_metric(ch,px);};
  const int rows=fitted_text::line_count(text,width0,body_size,metric);
- const int options_height=shown?(shown-1)*option_step+option_h:0;
+ // The source option is one rich label. A Continue/Leave label with no
+ // description has no second line or empty description container.
+ char labels[max_visible][256]{},descriptions[max_visible][2048]{};
+ int option_heights[max_visible]{},options_height=shown?option_gap*(shown-1):0;
+ for(int slot=0;slot<shown;++slot){
+  native_event_option(a,first+slot,false,labels[slot],sizeof labels[slot]);
+  native_event_option(a,first+slot,true,descriptions[slot],sizeof descriptions[slot]);
+  const int label_rows=fitted_text::line_count(labels[slot],width0-30,body_size,metric);
+  option_heights[slot]=*descriptions[slot]?option_description_h:mn(option_description_h,mx(option_label_h,label_rows*(body_size+1)+12));
+  options_height+=option_heights[slot];
+ }
  // Keep the authored prose and options together. The independent body
  // scroll has real source scrollbar art, wheel/drag and keyboard focus.
  const int body_h=mn(mx(body_min,rows*(body_size+1)+2),240-4-body_y-spacer-options_height);
@@ -218,12 +228,14 @@ static void native_event_screen(Canvas&c){
   const int sx=x0+width0-8,sy=body_y+6,length=mx(1,body_h-12);
   c.ui(I6_ScrollbarTrack,sx,sy,5,length);c.ui(I6_ScrollbarEdge,sx,body_y,5,6);
   ui_picture_transform(c,a.content.ui_image(I6_ScrollbarEdge),sx+2,body_y+body_h-3,5,6,0,-1024);
-  c.ui(I6_ScrollbarGrabber,sx-2,scroller.thumb_y(sy,length)-5,9,10);
+  native_scrollbar_grabber(c,sx-2,scroller.thumb_y(sy,length)-5,9,10);
   c.hit(x0,body_y,prose_width,body_h,HitKind::EventScroll,0);
   c.hit(sx-4,body_y,13,body_h,HitKind::EventScroll,1);
  }
  const int options_y=body_y+body_h+spacer;
- for(int i=first;i<first+shown;i++){const int y=options_y+(i-first)*option_step,x=x0+motion.option_x(unsigned(i),a.map_clock_ms);
+ int option_y=options_y;
+ for(int i=first;i<first+shown;i++){const int option_h=option_heights[i-first],y=option_y,x=x0+motion.option_x(unsigned(i),a.map_clock_ms);
+  option_y+=option_h+option_gap;
   const bool enabled=original_event_option_enabled(s,i),ready=motion.option_ready(unsigned(i),a.map_clock_ms);
   const bool selected=enabled&&ready&&merchant_hovered(a,i,x,y,width0,option_h);
   const bool pressed=selected&&a.pointer.held&&a.pointer.captured.kind==HitKind::Choice&&a.pointer.captured.value==i&&a.pointer.captured.enabled;
@@ -241,7 +253,7 @@ static void native_event_screen(Canvas&c){
   if(visual.glow&&enabled){Canvas outline=entry;outline.tint_red=uint8_t(div255(outline.tint_red*120));outline.tint_blue=uint8_t(div255(outline.tint_blue*254));
    outline.opacity=uint8_t(div255(outline.opacity*unsigned(visual.glow)*192/255));
    outline.nine_ui(outline_id,left-1,top-1,width+2,height+2,12,10,12,10,255,presentation::Add);}
-  char label[256]{},description[2048]{},combined[2432]{};native_event_option(a,i,false,label,sizeof label);native_event_option(a,i,true,description,sizeof description);
+  const char*label=labels[i-first],*description=descriptions[i-first];char combined[2432]{};
   TextBuffer body{combined,sizeof combined,0,&a.content};
   if(*label){body.text(enabled?"[gold][b]":"[red][b]");body.text(label);body.text(enabled?"[/b][/gold]":"[/b][/red]");if(*description)body.ch('\n');}body.text(description);
   Canvas words=entry;if(!enabled)words.opacity=uint8_t(div255(words.opacity*179));

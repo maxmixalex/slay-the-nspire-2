@@ -82,12 +82,12 @@ void collision_and_eviction(){
 }
 void frame_pool_profiles(){
     owner.set_image_cache_profile(false);
-    CHECK(image_page_limit==1280&&tile_page_limit==48);
-    CHECK(tile_pages==picture_pixels+5u*1024u*1024u);
-    CHECK(sizeof picture_pixels==11u*1024u*1024u);
+    CHECK(image_page_limit==1792&&tile_page_limit==48);
+    CHECK(tile_pages==picture_pixels+7u*1024u*1024u);
+    CHECK(sizeof picture_pixels==13u*1024u*1024u);
     owner.set_image_cache_profile(true);
-    CHECK(image_page_limit==2560&&tile_page_limit==8);
-    CHECK(tile_pages==picture_pixels+10u*1024u*1024u);
+    CHECK(image_page_limit==3072&&tile_page_limit==8);
+    CHECK(tile_pages==picture_pixels+12u*1024u*1024u);
     // Exhaust both banks with independent fragmentation patterns. Pin each
     // legal1..4-page index in turn, then require a full512 KiB tile to fit.
     // Fill both allocations and verify the image arena boundary is intact.
@@ -97,11 +97,11 @@ void frame_pool_profiles(){
         TileGroup*index=reserve_tile_group(index_pages*TilePageBytes);CHECK(index);
         index->owner=&owner;index->age=next_tile_age();index->first|=128u;
         std::fill_n(tile_bytes(*index),index_pages*TilePageBytes,uint8_t(0x51));
-        picture_pixels[10u*1024u*1024u-1]=0x7b;
+        picture_pixels[12u*1024u*1024u-1]=0x7b;
         TileGroup*tile=reserve_tile_group(4*TilePageBytes);CHECK(tile&&tile!=index);
         tile->owner=&owner;tile->age=next_tile_age();
         std::fill_n(tile_bytes(*tile),4*TilePageBytes,uint8_t(0xb2));
-        CHECK(picture_pixels[10u*1024u*1024u-1]==0x7b);
+        CHECK(picture_pixels[12u*1024u*1024u-1]==0x7b);
         CHECK((index->first&63u)+index->pages<=8&&(tile->first&63u)+tile->pages<=8);
         for(unsigned j=0;j<index_pages*TilePageBytes;++j)CHECK(tile_bytes(*index)[j]==0x51);
         owner.set_image_cache_profile(true);
@@ -109,7 +109,7 @@ void frame_pool_profiles(){
         index->first&=63u;
     }
     owner.set_image_cache_profile(false);
-    CHECK(image_page_limit==1280&&tile_page_limit==48&&!tile_used);
+    CHECK(image_page_limit==1792&&tile_page_limit==48&&!tile_used);
     for(const auto&group:tile_groups)CHECK(!group.pages&&!group.owner);
     for(const auto&entry:image_cache)CHECK(!entry.pages&&!entry.owner);
     for(auto page:image_used)CHECK(!page);

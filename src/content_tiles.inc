@@ -1,6 +1,6 @@
 // NSP2/15 sparse tiles. Included in content.cpp's private namespace so the
 // existing encoded scratch and image tiers remain the only picture buffers.
-// The ordinary6 MiB group tier shares the original11 MiB picture arena.
+// The ordinary 6 MiB group tier shares the bounded 13 MiB picture arena.
 // Merchant frames use a1 MiB group tier and retain the finished pictures;
 // even that minimum fits a maximum index group plus a maximum tile group.
 constexpr unsigned TileSide=16,TileBytes=770,TilePageBytes=131072,TilePages=48;

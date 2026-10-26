@@ -60,6 +60,16 @@ bool App::load_saved_run(){
  if(!read_saved(*this)||!has_save)return false;
  game=frontend_saved_probe;run_save_linked=true;reset_presentation();reset_map_act_intro(true);begin_progress(true);return true;
 }
+static bool frontend_continue_saved_run(App&a){
+ if(!a.load_saved_run())return false;
+ // NMainMenu uses the saved character's same 0.8s transition as Embark.
+ // Loading the snapshot must not invoke finish_selected_run: that would
+ // reset resumed progress and replace its existing room presentation.
+ auto&m=a.character_departure;m.phase=1;m.character=uint8_t(a.game.character);
+ m.started=a.map_clock_ms;m.reveal_ms=0;m.continuing=true;
+ const int mask=a.content.ui_image(I12_CharacterTransitionFirst+(a.game.character==Character::Silent?1:a.game.character==Character::Necrobinder?2:0));
+ a.content.prepare_images(&mask,1);a.pointer_cancel();a.hit_count=0;return true;
+}
 bool App::save_current_run(){
  if(!callbacks.save||!callbacks.save(game))return false;
  if(progress_matches(progress.current,game)){
@@ -137,10 +147,10 @@ bool App::frontend_input(Key key){
   else if(key==Key::Back){open_profiles();}
   else if(key==Key::Quit){frontend_confirm=3;frontend_choice=0;}
   else if(key==Key::Load){
-   if(load_saved_run())title=false;else{refresh_save();message("没有有效的存档");}
+   if(!frontend_continue_saved_run(*this)){refresh_save();message("没有有效的存档");}
   }else if(key==Key::Confirm){switch(front_item(*this,menu)){
    case FrontStart:open_run_menu(RunMenu::Singleplayer);break;
-   case FrontContinue:if(load_saved_run())title=false;else{refresh_save();menu=0;message("没有有效的存档");}break;
+   case FrontContinue:if(!frontend_continue_saved_run(*this)){refresh_save();menu=0;message("没有有效的存档");}break;
    case FrontAbandon:
     if(refresh_save()){confirmed_run=saved_run_identity(frontend_saved_probe);frontend_confirm=1;frontend_choice=0;}
     else{menu=0;message("无法读取存档，请重试");}break;

@@ -17,24 +17,37 @@ static fitted_text::Plan native_room_compact_text(Canvas c,const char*text,int x
  const auto metric=[&](const RichChar&ch,int size){return c.text_metric(ch,size);};
  auto plan=native_room_compact_plan(c,text,w,h);
  if(!plan.rows||x<0||y<0||x>=c.clip_w||y>=c.clip_h)return plan;
+ const auto visible_plan=plan;int scroll=0;
+ if(plan.truncated){
+  uint32_t owner=c.text_effect_identity?c.text_effect_identity:0x524f4f4du;
+  owner=(owner^unsigned(x))*16777619u;owner=(owner^unsigned(y))*16777619u;
+  owner=(owner^unsigned(w))*16777619u;owner=(owner^unsigned(h))*16777619u;
+  owner=(owner^c.a.content.generation())*16777619u;
+  const auto age=c.a.overflow_label_clocks.observe(owner,RichLabelClocks::hash(text),c.a.map_clock_ms);
+  scroll=text_overflow_offset(age,mx(0,plan.total*plan.step+2-h),12);
+  plan.rows=plan.total;plan.truncated=false;
+ }
  const uint32_t rainbow_time=c.rainbow_elapsed(text,x,y,5);
- int widths[32]{};plan.rows=mn(plan.rows,32);
- if(centered)fitted_text::visit(text,w,plan,metric,[&](const RichChar&ch,int at,int row,int px){widths[row]=at+metric(ch,px).width;});
- Canvas clipped=c;clipped.pixels+=y*c.pitch+x;clipped.clip_w=mn(w,c.clip_w-x);clipped.clip_h=mn(h,c.clip_h-y);
+ int widths[128]{};
+ if(centered)fitted_text::visit(text,w,plan,metric,[&](const RichChar&ch,int at,int row,int px){if(row<128)widths[row]=at+metric(ch,px).width;});
+ Canvas clipped=c;clipped.pixels+=y*c.pitch+x;
+ if(clipped.coverage)clipped.coverage+=y*c.pitch+x;if(clipped.occlusion)clipped.occlusion+=y*c.pitch+x;
+ clipped.clip_w=mn(w,c.clip_w-x);clipped.clip_h=mn(h,c.clip_h-y);
  Canvas shadow=clipped;shadow.opacity=uint8_t(div255(shadow.opacity*64));
- const int top=mx(0,(h-(plan.rows*plan.step+2))/2);
+ const int top=mx(0,(h-(plan.rows*plan.step+2))/2)-scroll;
  const uint16_t colors[]={rgb(255,246,226),Gold,rgb(244,122,102),Blue,Green,rgb(190,145,217),rgb(236,164,92),rgb(104,210,205),White,Muted};
  static const int wave[]={0,1,1,2,2,2,1,1,0,-1,-1,-2,-2,-2,-1,-1};
  fitted_text::visit(text,w,plan,metric,[&](const RichChar&ch,int at,int row,int px){
   if(ch.index>=c.text_visible_characters)return;
+  int xx=at+(centered&&row<128?mx(0,(w-widths[row])/2):0),yy=top+row*plan.step;
+  if(yy+px+3<0||yy>=clipped.clip_h)return;
   const auto glyph=c.a.content.glyph(ch.codepoint,px,c.font_style(ch));
-  int xx=at+(centered?mx(0,(w-widths[row])/2):0),yy=top+row*plan.step;
   if(c.a.text_effects&&ch.style.wave)yy+=wave[(c.a.animation/2+ch.index*2)%16];
   if(c.a.text_effects&&ch.style.thinky_dots)yy+=rich_thinky_offset(c.a.map_clock_ms,ch.index-ch.style.thinky_start);
   if(c.a.text_effects&&ch.style.jitter)xx+=int((c.a.animation/2+ch.index*7)%3)-1;
   const auto ink=c.a.text_effects&&ch.style.rainbow?rich_rainbow_rgb565(ch.style.rainbow_parameters,rainbow_time,at*26000/mx(1,px)):rich_color(ch.style.color,colors);
   shadow.animated_character(ch,glyph,xx+1,yy,0,true);clipped.animated_character(ch,glyph,xx,yy,ink);
- });return plan;
+ });return visible_plan;
 }
 // A clipped full paragraph supplies both event scrolling and focused option
 // marquees. No glyph is painted outside the visible source texture interior.
@@ -61,9 +74,5 @@ static int native_room_scroll_text(Canvas c,const char*text,int x,int y,int w,in
  });return rows*step+2;
 }
 static int native_room_marquee_offset(int overflow,uint32_t age){
- if(overflow<=0)return 0;
- // One second to read each end; twelve pixels/second keeps 10px lines calm.
- const uint32_t travel=uint32_t(overflow)*1000/12,cycle=2000+travel*2,t=age%cycle;
- if(t<1000)return 0;if(t<1000+travel)return int((t-1000)*12/1000);
- if(t<2000+travel)return overflow;return mx(0,overflow-int((t-2000-travel)*12/1000));
+ return text_overflow_offset(age,overflow,12);
 }

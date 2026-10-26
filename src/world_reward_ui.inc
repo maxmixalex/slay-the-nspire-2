@@ -1,6 +1,6 @@
 static void native_reward_header(Canvas&c,const char*label,int y){
  c.ui(U_RewardBanner,70,y,180,45);Canvas title=c;title.font_face=source_label_face(c.a.content.original_label_fonts(),5);
- title.fitted(label,99,y+13,122,19,12,10,rgb(255,246,226),true,true,true,false);
+ title.fitted(label,99,y+17,122,19,12,10,rgb(255,246,226),true,true,true,false);
 }
 static void native_reward_window(Canvas&c,int dy){
  c.ui(U_RewardPanel,73,40+dy,174,174);
@@ -53,7 +53,7 @@ static void native_reward_scrollbar(Canvas&c,int dy){
  const int top=75+dy,bottom=202+dy,center=scroll.thumb_y(top,bottom-top);
  c.ui(I6_ScrollbarTrack,244,top,9,bottom-top);c.ui(I6_ScrollbarEdge,244,top-9,9,9);
  ui_picture_transform(c,c.a.content.ui_image(I6_ScrollbarEdge),248,bottom+4,9,9,0,-1024);
- c.ui(I6_ScrollbarGrabber,244,center-4,9,9);c.hit(241,top-5,15,bottom-top+10,HitKind::RewardScroll);
+ native_scrollbar_grabber(c,244,center-4,9,9);c.hit(241,top-5,15,bottom-top+10,HitKind::RewardScroll);
 }
 #include "reward_cards_ui.inc"
 static void native_reward_content(Canvas&c,bool include_proceed=true,int only=-1){

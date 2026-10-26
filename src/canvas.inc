@@ -5,12 +5,19 @@ static uint16_t rich_color(unsigned style,const uint16_t*colors){return style==1
 static const uint16_t Ink=rgb(16,20,22),Panel=rgb(27,29,31),Gold=rgb(223,186,112),White=rgb(239,229,206),Muted=rgb(153,156,150),Red=rgb(168,57,45),Blue=rgb(88,157,188),Green=rgb(118,180,112);
 static unsigned div255(unsigned v){v+=128;return (v+(v>>8))>>8;}
 static uint16_t blend(uint16_t a,uint16_t b,unsigned alpha){
-    unsigned r=div255((a>>11)*(255-alpha)+(b>>11)*alpha);
-    unsigned ag=(a>>5)&63,bg=(b>>5)&63;
-    unsigned g=div255(ag*(255-alpha)+bg*alpha);
-    unsigned bl=div255((a&31)*(255-alpha)+(b&31)*alpha);
-    return (uint16_t)((r<<11)|(g<<5)|bl);
+    // Red and blue occupy independent 16-bit arithmetic lanes. Each lane
+    // stays below 8192, so exact divide-by-255 rounding cannot carry into its
+    // neighbour. This preserves every RGB565 result with two fewer multiplies.
+    const unsigned inverse=255-alpha;
+    const unsigned first=(a>>11)|(unsigned(a&31)<<16);
+    const unsigned second=(b>>11)|(unsigned(b&31)<<16);
+    unsigned lanes=first*inverse+second*alpha+0x00800080u;
+    lanes=(lanes+((lanes>>8)&0x00ff00ffu))>>8;
+    lanes&=0x001f001fu;
+    const unsigned green=div255(((a>>5)&63)*inverse+((b>>5)&63)*alpha);
+    return uint16_t((lanes<<11)|(green<<5)|(lanes>>16));
 }
+
 struct TextBuffer{
     char*p;size_t cap,n;
     const Content*locale=nullptr;

@@ -2,15 +2,15 @@
 namespace spire {
 // merchant_inventory.tscn uses the original 1680x1260 4:3 canvas. This screen
 // retains the source rug and slot arrangement at2/9. LCD cards deliberately
-// use a further1.5x scale; a focused card draws last so neighboring stock can
-// overlap while its title and text remain readable.
+// fit their60px columns without covering the neighboring title or cost. A
+// focused card draws last and may grow over its neighboring stock.
 struct MerchantInventoryLayout {
  static constexpr int project(int source){return source>=0?(source*2+4)/9:-((-source*2+4)/9);}
  static constexpr int RugX=-27,RugY=18,RugW=388,RugH=217;
- static constexpr int CardW=65,CardH=91,FocusW=80,FocusH=113;
+ static constexpr int CardW=60,CardH=84,FocusW=74,FocusH=104;
  static int card_x(unsigned i){static const int centers[]={39,99,159,219,279,43,108};return centers[i<7?i:0];}
- static int card_y(unsigned i){return i<5?73:176;}
- static unsigned card_scale(unsigned scale){return (scale*3+1)/2;}
+ static int card_y(unsigned i){return i<5?73:180;}
+ static unsigned card_scale(unsigned scale){return (scale*18+6)/13;}
  static int item_x(unsigned i){return 174+int(i)*35;}
  struct Point {int x,y;};
  static Point source_position(unsigned item,bool fake=false){
@@ -22,7 +22,7 @@ struct MerchantInventoryLayout {
  static int fake_x(unsigned item){return project(-122+source_position(item,true).x);}
  static int fake_y(unsigned item){return project(80+source_position(item,true).y);}
  static constexpr int RelicY=151,PotionY=187,RemoveX=291,RemoveY=172;
- static constexpr int CardHitW=57,CardHitH=102,RelicHitY=135,RelicHitH=36,PotionHitY=176,PotionHitH=36;
+ static constexpr int CardHitW=57,CardHitH=96,RelicHitY=135,RelicHitH=36,PotionHitY=176,PotionHitH=36;
  struct Bounds {int x,y,w,h;};
  static Bounds bounds(unsigned item,int dy=0){
   if(item<7)return {card_x(item)-CardHitW/2,card_y(item)-CardH/2+dy,CardHitW,CardHitH};

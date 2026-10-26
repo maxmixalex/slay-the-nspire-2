@@ -50,6 +50,9 @@ bool App::start_selected_run(const RunOptions&options,bool animated){
     if(animated){
         character_departure.phase=1;character_departure.character=uint8_t(selected_character);
         character_departure.started=map_clock_ms;character_departure.reveal_ms=random?CharacterDeparturePresentation::RandomRevealMs:0;
+        character_departure.continuing=false;
+        const int mask=content.ui_image(I12_CharacterTransitionFirst+(selected_character==Character::Silent?1:selected_character==Character::Necrobinder?2:0));
+        content.prepare_images(&mask,1);
         pointer_cancel();hit_count=0;return true;
     }
     finish_selected_run();return true;
@@ -61,7 +64,10 @@ void App::finish_selected_run(){
 void App::advance_character_departure(){
     auto&m=character_departure;if(!m.active())return;
     if(m.phase==1&&map_clock_ms-m.started>=m.reveal_ms+CharacterDeparturePresentation::FadeMs){
-        const auto character=m.character;finish_selected_run();m.phase=2;m.character=character;m.started=map_clock_ms;
+        const auto character=m.character;
+        if(m.continuing){title=character_select=run_settings=false;run_mode={};m.continuing=false;}
+        else finish_selected_run();
+        m.phase=2;m.character=character;m.started=map_clock_ms;
     }else if(m.phase==2&&map_clock_ms-m.started>=CharacterDeparturePresentation::FadeMs)m={};
 }
 bool App::run_modes_action(UiAction action){

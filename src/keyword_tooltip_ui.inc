@@ -315,6 +315,14 @@ static HoverPage hover_page(Canvas&c,const CardHoverTarget&owner,const HoverTipL
     card_x=mx(3,mn(317-card_w,card_x));
     const int visible_cards=mx(0,mn(cards_per_page,card_count-selected*cards_per_page)),card_height=mx(0,visible_cards*card_step-1);
     int card_top=(event_lane||enchant_lane)?24:inspect?121:details?column.y:mn(mx(column.y,owner.owner.y),column.y+column.h-card_height);
+    if(event_lane){
+        // Keep an option's preview beside that option. The old fixed top24
+        // put Wood Carvings' lower Torus choice a screen away from its card.
+        // Associated keyword boxes remain together below the card.
+        const int group_height=card_height+(text_height?text_height+4:0);
+        card_top=mn(mx(24,owner.owner.y+(owner.owner.h-card_height)/2),mx(24,236-group_height));
+        if(text_height)for(unsigned i=0;i<result.count;++i)result.pieces[i].box.y+=card_top+card_height+4-text_top;
+    }
     if(owner.relic>=0&&!owner.inspect_relic&&!owner.merchant&&text_top+text_height+1+card_height<=column.y+column.h){card_x=column.x;card_top=text_top+text_height+1;}
     int card=0;for(unsigned i=0;i<tips.count;++i)if(tips.items[i].kind==HoverTipKind::Card){
         if(card/cards_per_page==selected&&result.count<MaxCardHoverTips)result.pieces[result.count++]={i,0,0,{card_x,card_top+(card%cards_per_page)*card_step,card_w,card_h}};

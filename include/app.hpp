@@ -18,6 +18,7 @@
 #include "keyword_hover.hpp"
 #include "event_assets.hpp"
 #include "assets.hpp"
+#include "combat_ui14_resources.hpp"
 #include "ui_assets.hpp"
 #include "native_ui_assets.hpp"
 #include "locale.hpp"
@@ -153,7 +154,7 @@ public:
     unsigned image_cache_pages(int id)const;
     ImageCacheUsage image_cache_usage()const;
     static constexpr unsigned image_page_bytes(){return 4096;}
-    static constexpr unsigned image_capacity_pages(){return 1280;}
+    static constexpr unsigned image_capacity_pages(){return 1792;}
     static constexpr unsigned image_capacity_entries(){return 1023;}
     // Frame-boundary operation: invalidate picture views and redistribute
     // the existing11 MiB arena between decoded images and tile groups.
@@ -180,7 +181,8 @@ public:
         return ui_count_==FrontendUi13AuxiliaryCount||ui_count_==RoomsUi13AuxiliaryCount||
             ui_count_==ArchitectUi13AuxiliaryCount||ui_count_==ArchitectAttackUi13AuxiliaryCount||
             ui_count_==DoomUi13AuxiliaryCount||ui_count_==RandomCharacterUi13AuxiliaryCount||
-            ui_count_==FakeMerchantBaseUi13AuxiliaryCount||ui_count_==FakeMerchantUi13AuxiliaryCount;
+            ui_count_==FakeMerchantBaseUi13AuxiliaryCount||ui_count_==FakeMerchantUi13AuxiliaryCount||
+            ui_count_==CombatUi14AuxiliaryCount;
     }
     bool has_sleeping_vfx_assets()const{return version_>=Ui12ContentVersion&&(ui_count_==SleepingVfxAuxiliaryCount||has_ui13_assets());}
     bool has_phobia_swarm_assets()const{return version_>=Ui12ContentVersion&&(ui_count_==PhobiaSwarmAuxiliaryCount||has_sleeping_vfx_assets());}

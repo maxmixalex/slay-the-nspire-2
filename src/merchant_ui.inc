@@ -64,7 +64,7 @@ static void merchant_dialogue(Canvas&c,bool fake=false){
  const unsigned age=a.map_clock_ms-m.dialogue_start;
  const int node_y=MerchantInventoryLayout::project(271)-18*(int(room_curve::Q)-room_curve::back_out(room_curve::linear(age,500)))/int(room_curve::Q);
  const unsigned scale=1365+2731*room_curve::expo_out(age,500)/room_curve::Q;
- const int width=int((128*scale+2048)/4096),height=int((80*scale+2048)/4096);
+ const int width=int((128*scale+2048)/4096),height=int((87*scale+2048)/4096);
  // The enlarged readable bubble needs the fake rug's empty left corner;
  // its old centered position covered the first relic's actual price.
  const int center_x=fake&&m.visible(a.map_clock_ms)?66:mn(254,mx(66,int(m.dialogue_x)-10)),center_y=mx(62,node_y-6);
@@ -76,7 +76,13 @@ static void merchant_dialogue(Canvas&c,bool fake=false){
  }else{const int skin=a.content.world_image("common","HOVER_TIP");if(skin>=0)bubble.nine_image(skin,center_x-64,center_y-40,128,80,28,22,46,16);}
  bubble.text_fly_in_elapsed=age;
  bubble.opacity=uint8_t(div255(bubble.opacity*230));
- native_room_compact_text(bubble,text,center_x-56,center_y-30,112,60,true);
+ // The authored315x213.75 bubble has its tail above its main body. The
+ // centered280x130 text control is26px below the texture center, not at
+ // the center of the full texture including that tail. Project its bounds
+ // through the same opening scale so the text stays inside the bubble.
+ const int text_w=width*8/9,text_h=height*130/214;
+ bubble.text_effect_identity=(fake?0x464d444cu:0x4d444c47u)^m.dialogue_start;
+ native_room_compact_text(bubble,text,center_x-text_w/2,center_y-height*39/214,text_w,text_h,true);
 }
 static void merchant_card(Canvas&c,Card card,int cx,int cy,unsigned scale,bool sold,const EventCardFacts*facts=nullptr){
  if(sold)return;const int w=MerchantInventoryLayout::size(300,scale),h=MerchantInventoryLayout::size(422,scale);
@@ -136,7 +142,9 @@ void App::step_merchant_preparation(){
   render_card_face(hidden,card,0,0,MerchantInventoryLayout::size(300,scale),MerchantInventoryLayout::size(422,scale),-2,-2,-1,-1,facts);
   return;
  }
- p.active=false;room_presentation.merchant.set_open(true,map_clock_ms);room_presentation.merchant.speak(4,map_clock_ms);
+ // The original rug tween already started on OpenShop. Preparation must
+ // never postpone or restart it when the final glyph becomes available.
+ p.active=false;
 }
 // Rug coverage is immutable for a resource generation and geometry. Cache
 // the actual alpha proof, including false results, instead of rescanning its
@@ -233,7 +241,7 @@ static void merchant_inventory_background(Canvas&c,const MerchantRugRaster*r,int
   c.pixels[i]=r->alpha[i]==255?r->pixels[i]:blend(c.pixels[i],r->pixels[i],r->alpha[i]);
 }
 static void shop_screen(Canvas&c,bool cull_covered=true){
-    auto&a=c.a;auto&s=a.game;auto&motion=a.room_presentation.merchant;motion.set_open(a.shop_open&&!a.merchant_preparation.active,a.map_clock_ms);const bool registered=a.content.ui_image(U_MerchantBackdrop)>=0&&a.content.clip(AnimMerchantRoomTop).count;
+    auto&a=c.a;auto&s=a.game;auto&motion=a.room_presentation.merchant;motion.set_open(a.shop_open,a.map_clock_ms);const bool registered=a.content.ui_image(U_MerchantBackdrop)>=0&&a.content.clip(AnimMerchantRoomTop).count;
     const int body_x=registered?MerchantLayout::BodyX:181,body_y=registered?MerchantLayout::BodyY:62;
     const int body_w=registered?MerchantLayout::BodyW:105,body_h=registered?MerchantLayout::BodyH:109;
     const bool active=!a.shop_open&&!a.paused&&!a.help&&!a.panel&&!a.library&&!a.settings_open&&!a.frontend_confirm&&
@@ -247,20 +255,7 @@ static void shop_screen(Canvas&c,bool cull_covered=true){
     const bool covered=cull_covered&&a.shop_open&&motion.open&&a.map_clock_ms-motion.start>=1000;
     const auto*rug=covered?merchant_cached_rug(c):nullptr;
     Canvas room=c;if(rug)room.occlusion=rug->alpha;
-    // The preparation overlay is modal. Reuse its first complete room frame
-    // while warming inventory assets; decoding a new idle/flame frame on
-    // each yielded step would compete with the very work being prepared.
-    // This scratch surface adds 136.25 KiB, only once, with no game/save state.
-    struct PreparationBackdrop {
-        const App*owner=nullptr;uint32_t generation=0;
-        uint16_t pixels[ScreenW*(ScreenH-22)]{};
-    };
-    static PreparationBackdrop preparation_backdrop;
-    const bool retained=a.merchant_preparation.active&&a.merchant_preparation.shown&&
-        preparation_backdrop.owner==&a&&preparation_backdrop.generation==a.content.generation();
-    if(retained){
-        for(unsigned i=0;i<ScreenW*(ScreenH-22);++i)a.pixels[ScreenW*22+i]=preparation_backdrop.pixels[i];
-    }else if(registered){
+    if(registered){
         room.ui(U_MerchantBackdrop,0,22,320,218);
         if(effects)merchant_secondary_lights(room,covered);
         if(effects){
@@ -273,20 +268,7 @@ static void shop_screen(Canvas&c,bool cull_covered=true){
         else room.clip(AnimMerchantRoomTop,0,22,a.map_clock_ms);
     }else{c.picture(A_ShopBackground,0,22,320,218);c.actor(0,54,170);c.clip(AnimMerchantTop,181,62,a.animation*33,false);c.clip(AnimMerchantBottom,152,132,a.animation*33,false);}
     const char*proceed_label=a.content.world_string("gameplay_ui","PROCEED_BUTTON");
-    if(a.merchant_preparation.active){
-        auto&p=a.merchant_preparation;
-        if(!retained){
-            for(unsigned i=0;i<ScreenW*(ScreenH-22);++i)preparation_backdrop.pixels[i]=a.pixels[ScreenW*22+i];
-            preparation_backdrop.owner=&a;preparation_backdrop.generation=a.content.generation();
-        }
-        p.shown=true;
-        c.dim(0,22,320,218,110);
-        // Immediate acknowledgement while the original inventory is prepared.
-        // The three dots animate without introducing another font or texture.
-        for(unsigned i=0;i<3;++i)c.rect(147+int(i)*11,119,5,5,(a.map_clock_ms/180)%3==i?Gold:Muted);
-        native_back(c,0,211,31,28,"",true,!a.pointer.visible);c.action(0,209,32,31,UiAction::CloseShop);
-        return;
-    }
+    if(a.merchant_preparation.active)a.merchant_preparation.shown=true;
     native_proceed(c,*proceed_label?proceed_label:"前进",!a.shop_open,!a.pointer.visible&&a.cursor==1);
     if(!a.shop_open){
         const int x=body_x,y=body_y,w=body_w,h=body_h;
@@ -305,7 +287,8 @@ static void shop_screen(Canvas&c,bool cull_covered=true){
     merchant_inventory_background(c,rug,dy,motion.alpha(a.map_clock_ms));
     a.cursor=mn(mx(a.cursor,0),ShopLeave);
     int focus=-1,focus_x=0,focus_y=0;
-    if(a.shop_open)for(unsigned item=0;item<ShopLeave;++item){auto r=MerchantInventoryLayout::bounds(item,dy);
+    const bool ready=a.shop_open&&!a.merchant_preparation.active;
+    if(ready)for(unsigned item=0;item<ShopLeave;++item){auto r=MerchantInventoryLayout::bounds(item,dy);
         if(item>=ShopRelicStart&&item<ShopPotionStart)r=MerchantInventoryLayout::relic_bounds(MerchantInventoryLayout::item_x(item-ShopRelicStart),MerchantInventoryLayout::RelicY+dy,motion.scale(item,a.map_clock_ms));
         if(!(s.shop_sold&(1u<<item))&&merchant_hovered(a,int(item),r.x,r.y,r.w,r.h)){
             focus=int(item);focus_x=item<7?MerchantInventoryLayout::card_x(item):item<13?MerchantInventoryLayout::item_x((item-7)%3):MerchantInventoryLayout::RemoveX;
@@ -326,7 +309,7 @@ static void shop_screen(Canvas&c,bool cull_covered=true){
         merchant_card(c,s.world.active?s.world.shop_cards[i]:Card{s.shop_cards[i],0},cx+motion.wiggle(unsigned(i),a.map_clock_ms),cy,scale,sold,s.world.active?&s.world.shop_facts[i]:nullptr);
         merchant_price(c,i,cx,cy+MerchantInventoryLayout::size(220,scale),scale);
         if(s.world.active&&s.world.shop_sale==i&&!sold){const int sale=a.content.world_image("merchant","SALE_TAG");if(sale>=0)c.picture(sale,cx+MerchantInventoryLayout::size(146,scale)-10,cy-MerchantInventoryLayout::size(153,scale)-8,20,16);}
-        if(a.shop_open)c.hit(r.x,mx(22,r.y),r.w,mx(0,r.y+r.h-mx(22,r.y)),HitKind::Choice,i,!sold);
+        if(ready)c.hit(r.x,mx(22,r.y),r.w,mx(0,r.y+r.h-mx(22,r.y)),HitKind::Choice,i,!sold);
     };
     for(int i=0;i<ShopCardCount;i++)if(i!=focus)draw_stock_card(i);
     for(int i=0;i<3;i++){
@@ -336,12 +319,12 @@ static void shop_screen(Canvas&c,bool cull_covered=true){
         const auto icon=MerchantInventoryLayout::relic_bounds(x,MerchantInventoryLayout::RelicY+dy,scale);
         if(index>=0&&!sold)c.picture(a.relic_face_image(index),icon.x+motion.wiggle(unsigned(item),a.map_clock_ms),icon.y,icon.w,icon.h);
         merchant_price(c,item,x,MerchantInventoryLayout::RelicY+dy+MerchantInventoryLayout::size(52,scale),scale);
-        if(a.shop_open)c.hit(icon.x,mx(22,icon.y),icon.w,mx(0,icon.y+icon.h-mx(22,icon.y)),HitKind::Choice,item,!sold);
+        if(ready)c.hit(icon.x,mx(22,icon.y),icon.w,mx(0,icon.y+icon.h-mx(22,icon.y)),HitKind::Choice,item,!sold);
         item=ShopPotionStart+i;sold=s.shop_sold&(1u<<item);scale=motion.scale(unsigned(item),a.map_clock_ms);const auto r=MerchantInventoryLayout::bounds(unsigned(item),dy);
         const int w=MerchantInventoryLayout::size(90,scale),h=MerchantInventoryLayout::size(120,scale);
         if(!sold)c.picture(a.content.potion_image((Potion)s.shop_potions[i]),x-w/2+motion.wiggle(unsigned(item),a.map_clock_ms),MerchantInventoryLayout::PotionY+dy-h/2,w,h);
         merchant_price(c,item,x,MerchantInventoryLayout::PotionY+dy+MerchantInventoryLayout::size(48,scale),scale);
-        if(a.shop_open)c.hit(r.x,mx(22,r.y),r.w,mx(0,r.y+r.h-mx(22,r.y)),HitKind::Choice,item,!sold);
+        if(ready)c.hit(r.x,mx(22,r.y),r.w,mx(0,r.y+r.h-mx(22,r.y)),HitKind::Choice,item,!sold);
     }
     const bool removed=s.shop_sold&(1u<<ShopRemove);const unsigned remove_scale=motion.scale(ShopRemove,a.map_clock_ms);
     int remove_image=removed?U_ShopRemoveUsed:U_ShopRemove;const unsigned remove_age=a.map_clock_ms-motion.remove_start;
@@ -355,8 +338,9 @@ static void shop_screen(Canvas&c,bool cull_covered=true){
     c.ui(remove_image,MerchantInventoryLayout::RemoveX-remove_size/2+motion.wiggle(ShopRemove,a.map_clock_ms),MerchantInventoryLayout::RemoveY+dy-remove_size/2,remove_size,remove_size);
     merchant_price(c,ShopRemove,MerchantInventoryLayout::RemoveX,MerchantInventoryLayout::RemoveY+dy+MerchantInventoryLayout::size(177,remove_scale),remove_scale);
     if(focus>=0&&focus<ShopCardCount)draw_stock_card(focus);
-    if(a.shop_open){c.hit(remove_rect.x,mx(22,remove_rect.y),remove_rect.w,mx(0,remove_rect.y+remove_rect.h-mx(22,remove_rect.y)),HitKind::Choice,ShopRemove,!removed);
-        native_back(c,0,211,31,28,"",true,!a.pointer.visible&&a.cursor==ShopLeave);c.hit(0,209,32,31,HitKind::Choice,ShopLeave);}
+    if(a.shop_open){if(ready)c.hit(remove_rect.x,mx(22,remove_rect.y),remove_rect.w,mx(0,remove_rect.y+remove_rect.h-mx(22,remove_rect.y)),HitKind::Choice,ShopRemove,!removed);
+        native_back(c,0,211,31,28,"",true,!a.pointer.visible&&a.cursor==ShopLeave);
+        if(ready)c.hit(0,209,32,31,HitKind::Choice,ShopLeave);else c.action(0,209,32,31,UiAction::CloseShop);}
     merchant_hand(c);merchant_dialogue(c);
     if(a.shop_open&&focus==ShopRemove&&!removed&&!a.pointer.held){
         char description[1024]{};const char*title=a.content.world_string("merchant_room","MERCHANT.cardRemovalService.title");

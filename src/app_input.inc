@@ -43,7 +43,9 @@ void App::advance(uint32_t ms){
     if(debug_open){map_clock_ms+=ms>250?250:ms;return;}
     if(bestiary.open){if(ms>250)ms=250;map_clock_ms+=ms;bestiary.advance(ms);return;}
     sync_game_over_presentation();progress_time(ms);
-    if(ms>250)ms=250;sync_combat_preparation();map_clock_ms+=ms;advance_auxiliary(ms);advance_character_departure();
+    if(ms>250)ms=250;sync_combat_preparation();map_clock_ms+=ms;advance_auxiliary(ms);
+    if(combat_preparation.active&&character_departure.phase==2)character_departure.started+=ms;
+    advance_character_departure();
     if(character_departure.phase==1)return;
     if(library&&card_library.query_pending&&map_clock_ms-card_library.query_changed>=250)commit_library_query();
     progress_page_scroll.step(ms);event_body_scroll.step(ms);

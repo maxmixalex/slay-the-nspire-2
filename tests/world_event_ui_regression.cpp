@@ -313,7 +313,7 @@ static void ordinary_events(bool synthetic){
   for(unsigned selected=0;selected<count;++selected){
    a.cursor=int(selected);a.render();const unsigned first=selected/3*3;CHECK(choice_count()==(count-first<3?count-first:3));
    HitRegion previous{};for(unsigned i=first;i<count&&i<first+3;++i){const auto h=choice(int(i));
-    CHECK(h.x==126&&h.x+h.w<=320&&h.w==186&&h.h>=36);if(i>first)CHECK(!overlap(h,previous)&&h.y>previous.y+previous.h);previous=h;}
+    CHECK(h.x==126&&h.x+h.w<=320&&h.w==186&&h.h>=26&&h.h<=40);if(i>first)CHECK(!overlap(h,previous)&&h.y>previous.y+previous.h);previous=h;}
    unchanged();
   }
   CHECK(a.event_body_top>=50&&a.event_body_height>=49);

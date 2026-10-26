@@ -137,25 +137,45 @@ void App::enemy_trigger(int slot,const char*trigger,int move,bool direct,const E
  while(at&&int32_t(when-m.queue[at-1].earliest)<0){m.queue[at]=m.queue[at-1];--at;}
  m.queue[at]={trigger,facts?*facts:ui_enemy_facts(game,slot),int16_t(move),uint8_t(direct),when};++m.count;ui_enemy_advance(*this,slot);
 }
+static CreaturePose ui_creature_scaled_pose(const App&a,CreaturePose pose,unsigned actor){
+ struct Scale {const App*owner=nullptr;uint32_t seed=0,identity=0,last=0;int floor=-1,combat=-1,encounter=-1;CreatureScaleMotion motion{};};
+ static Scale scales[MaxEnemies+1];if(actor>MaxEnemies)return pose;
+ if(actor&&actor<=unsigned(a.game.enemy_count)){
+  const auto kind=a.game.enemy_world.models[actor-1].kind;
+  // Segments explicitly forbid ScaleTo. Vantom's multi-part source shrink
+  // animation already lives in its independently registered baked states.
+  if(kind==EnemyId::DecimillipedeSegmentBack||kind==EnemyId::DecimillipedeSegmentFront||kind==EnemyId::DecimillipedeSegmentMiddle||kind==EnemyId::Vantom)return pose;
+ }
+ const int target=(a.combat_status_amount(int(actor),EnemyStatusStart+int(EnemyPower::Shrink))||
+    (actor&&a.combat_status_amount(int(actor),41)))?512:1024;
+ auto&m=scales[actor];const uint32_t now=a.animation*33u,identity=ui_feedback_identity(a.game,actor);
+ if(m.owner!=&a||m.seed!=a.game.seed||m.floor!=a.game.floor||m.combat!=a.game.world.combat_count||m.encounter!=int(a.game.enemy_world.encounter)||m.identity!=identity||int32_t(now-m.last)<0){
+  m={};m.owner=&a;m.seed=a.game.seed;m.floor=a.game.floor;m.combat=a.game.world.combat_count;m.encounter=int(a.game.enemy_world.encounter);m.identity=identity;
+  m.motion.from=m.motion.to=target;m.motion.started=now;
+ }
+ m.last=now;m.motion.observe(target,now);const int scale=m.motion.sample(now);
+ pose.scale=mx(1,pose.scale*scale/1024);pose.sprite_x=pose.x+(pose.sprite_x-pose.x)*scale/1024;pose.sprite_y=pose.feet+(pose.sprite_y-pose.feet)*scale/1024;
+ pose.center_x=pose.x+(pose.center_x-pose.x)*scale/1024;pose.center_y=pose.feet+(pose.center_y-pose.feet)*scale/1024;return pose;
+}
 CreaturePose App::combat_enemy_pose(int slot)const{
  if(game.enemy_world.active&&slot>=0&&slot<game.enemy_count&&enemy_presentation[slot].identity&&
     enemy_visual_seed==game.seed&&enemy_visual_floor==game.floor&&enemy_visual_combat==game.world.combat_count&&enemy_visual_encounter==int(game.enemy_world.encounter))
-  return enemy_presentation[slot].pose;
+  return ui_creature_scaled_pose(*this,enemy_presentation[slot].pose,unsigned(slot+1));
  const bool bound=creature_layout.right&&enemy_visual_seed==game.seed&&enemy_visual_floor==game.floor&&
   enemy_visual_combat==game.world.combat_count&&enemy_visual_encounter==int(game.enemy_world.encounter);
- return enemy_pose(game,slot,bound?creature_layout:combat_layout_for(game));
+ return ui_creature_scaled_pose(*this,enemy_pose(game,slot,bound?creature_layout:combat_layout_for(game)),unsigned(slot+1));
 }
 CreaturePose App::combat_player_pose(bool pet)const{
  if(creature_layout.right&&game.enemy_world.active&&enemy_visual_seed==game.seed&&enemy_visual_floor==game.floor&&
     enemy_visual_combat==game.world.combat_count&&enemy_visual_encounter==int(game.enemy_world.encounter)){
-  if(!pet)return player_presentation[0];
+  if(!pet)return ui_creature_scaled_pose(*this,player_presentation[0],0);
   const auto camera=encounter_camera(game.enemy_world.encounter);auto point=player_formation_point(game,camera.zoom,true);
   const auto&motion=osty_presentation;const uint32_t now=animation*33u;point.x=motion.x(now);
   const auto registration=player_sprite_registration(game.character,true);
   return project_creature_pose(camera,creature_layout,point,player_anchors(game.character,true),false,
    registration.units,motion.scale(now),motion.bounds_scale,registration.x,registration.y);
  }
- return player_pose(game,combat_layout_for(game),pet);
+ const auto pose=player_pose(game,combat_layout_for(game),pet);return pet?pose:ui_creature_scaled_pose(*this,pose,0);
 }
 void App::sync_enemy_feedback(){
  sync_combat_feedback();

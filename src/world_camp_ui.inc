@@ -94,7 +94,12 @@ static void camp_icon(Canvas&c,int image,int x,int y,int w,int h,bool enabled,un
  small_material_icon(c,image,x,y,w,h,enabled?1000:0,enabled?value:600);
 }
 static void native_camp_option_picture(Canvas&choices,unsigned slot,int x,bool enabled,const RoomUi7Presentation::Rest::Button::Sample&sample){
- auto&a=choices.a;const auto&s=a.game;const char*key=world_rest_option_key(s,slot);constexpr int icon_w=47,icon_h=29;
+ auto&a=choices.a;const auto&s=a.game;const char*key=world_rest_option_key(s,slot);
+ // TextureRect KeepAspectCentered fits the256x169 source icon into its
+ // 250x153 control. The packed80x57 texture includes transparent padding;
+ // scaling that whole texture to44x31 preserves the source's visible44x29
+ // silhouette. Stretching it to47x29 made it wider than its focus outline.
+ constexpr int holder_w=47,icon_w=44,icon_h=31;
  const int w=(icon_w*sample.scale+2048)/4096,h=(icon_h*sample.scale+2048)/4096;
    const unsigned outline_scale=room_curve::multiply(unsigned(sample.scale),unsigned(sample.outline));
    // The source outline child fits248x173 in the250x164 holder. Its .9
@@ -102,13 +107,13 @@ static void native_camp_option_picture(Canvas&choices,unsigned slot,int x,bool e
    const int ow=int((47*outline_scale+2048)/4096),oh=int((33*outline_scale+2048)/4096);
    Canvas outline=choices;outline.tint_red=255;outline.tint_green=179;outline.tint_blue=0;outline.opacity=uint8_t(div255(outline.opacity*192));
    outline.picture(a.content.ui_image(U_RestOutline),x+23-ow/2,82-oh/2,ow,oh,255,presentation::Add);
-   camp_icon(choices,a.content.world_image("rest",key),x+(icon_w-w)/2,68+(icon_h-h)/2,w,h,enabled,unsigned(sample.value));
+   camp_icon(choices,a.content.world_image("rest",key),x+(holder_w-w)/2,82-h/2,w,h,enabled,unsigned(sample.value));
    char title[96]{};TextBuffer b{title,sizeof title,0,&a.content};b.text("OPTION_");b.text(key);b.text(".name");const char*name=a.content.world_string("rest_site_ui",title);
    Canvas label=choices;label.font_face=a.content.original_label_fonts()?5:0;
    const int label_y=97+(sample.label*4+21*2048)/(21*4096);
    Canvas label_rim=label;label_rim.opacity=uint8_t(div255(label_rim.opacity*128));
-   label_rim.centered(*name?name:key,x-4,label_y+1,icon_w+10,10,0);
-   label.centered(*name?name:key,x-5,label_y,icon_w+10,10,rgb(212,182,91));
+   label_rim.centered(*name?name:key,x-4,label_y+1,holder_w+10,10,0);
+   label.centered(*name?name:key,x-5,label_y,holder_w+10,10,rgb(212,182,91));
 }
 static void native_camp_screen(Canvas&c){
  auto&a=c.a;const auto&s=a.game;a.sync_camp_presentation();auto&motion=a.room_presentation.rest;

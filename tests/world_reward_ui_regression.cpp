@@ -207,6 +207,20 @@ static void terminal_combat_cleanup(){
  CHECK(!a.combat_feedback.active&&!hit_count(HitKind::Hand)&&!hit_count(HitKind::OpenPile));
  snapshot();capture("rewards-terminal-card-selection-clean");unchanged();
  a.input(Key::Back);CHECK(a.game.world_relics.choice==WorldRelicChoice::OfferReward&&a.game.world_relics.choice_group==group);
+ // NRewardsScreen.UpdateScreenState marks an empty terminal list complete;
+ // only its Proceed handler opens the map. Claim through the public UI so
+ // the final reward cannot accidentally take the room's Proceed branch.
+ press_reward(reward_position(1));press(HitKind::WorldChoice,0);
+ for(unsigned guard=0;a.game.phase==Phase::WorldRelicChoice&&guard<16;++guard){
+  CHECK(a.game.world_relics.choice==WorldRelicChoice::OfferReward);
+  const auto&reward=a.game.world_relics.rewards[a.game.world_relics.offers[0]];
+  CHECK(reward.kind!=1);press_reward(0);
+ }
+ CHECK(a.game.phase==Phase::Reward&&!world_relic_pending(a.game)&&!a.map_window.is_open);
+ a.render();CHECK(has_action(UiAction::LeaveRewards));snapshot();
+ for(unsigned i=0;i<60;++i){a.advance(33);a.render();}
+ CHECK(!a.map_window.is_open);unchanged();capture("rewards-empty-waits-for-proceed");
+ press_action(UiAction::LeaveRewards);CHECK(a.map_window.is_open&&world_can_travel(a.game));
 }
 static void camp_proceed(bool keyboard){
  reset();a.fast_mode=false;CHECK(world_begin_run(a.game,reference::ActKind::Overgrowth,0));a.game.original_events=OriginalEventState{};a.game.world.room_type=uint8_t(WorldRoom::Rest);a.game.phase=Phase::Camp;
@@ -226,6 +240,10 @@ static void reward_animation_curves(){
  CHECK(p.window(1250).alpha>100&&p.window(1250).alpha<200);CHECK(p.window(1500).alpha==255&&p.window(1500).y==0);
  p.observe_window(1,17,2,1500);CHECK(p.window_start==1000);p.observe_window(1,17,0,1500);
  CHECK(p.window(1625).alpha>100&&p.window(1625).alpha<200);CHECK(p.window(1750).alpha==0);
+ p.reset();p.observe_window(2,19,1,1000);p.configure_list(2,19,1,0,1000);
+ p.observe_window(0,19,0,1500);p.observe_window(1,19,0,2000);
+ CHECK(p.empty&&p.window(2000).alpha==255&&p.window(2000).y==0);
+ CHECK(p.window(2125).alpha==127&&p.window(2250).alpha==0);
  p.append(RewardPickupKind::Potion,unsigned(Potion::Strength),0,86,120,2000);
  CHECK(p.hidden(RewardPickupKind::Potion,0,2349)&&!p.hidden(RewardPickupKind::Potion,0,2350));
  const auto potion=p.sample(p.flights[0],135,11,2175);CHECK(potion.x==122&&potion.y==39);

@@ -80,6 +80,11 @@ static void settle_game_over(){
  const unsigned age=m.summary?m.summary_age(a.map_clock_ms):m.initial_age(a.map_clock_ms),end=(m.summary?m.menu_start():m.intro_delay())+500;
  for(unsigned left=age<end?end-age:0;left;){const unsigned step=left>250?250:left;a.advance(step);left-=step;}
 }
+static void settle_departure(){
+ CHECK(a.character_departure.phase==1&&a.character_departure.continuing&&a.title);
+ for(unsigned frame=0;frame<64&&a.character_departure.active();++frame)a.advance(50);
+ CHECK(!a.character_departure.active()&&!a.title);
+}
 static void start(Character character=Character::Ironclad,uint32_t seed=0x82179,const char*run_seed=nullptr,unsigned ascension=3,reference::ActKind region=reference::ActKind::Overgrowth){
  a.forget_run_checkpoint();new_run(a.game,seed,false,character);if(run_seed)CHECK(world_set_seed(a.game,run_seed));
  CHECK(world_begin_run(a.game,region,ascension));presentation();CHECK(validate(a.game));
@@ -285,7 +290,7 @@ static void main_menu_and_continue(){
  press(HitKind::Menu,2);CHECK(a.settings_open);a.input(Key::Back);CHECK(!a.settings_open);unchanged();
  press(HitKind::Menu,3);CHECK(a.compendium_open&&a.title&&!a.library);a.input(Key::Back);CHECK(!a.compendium_open);unchanged();
  press(HitKind::Menu,4);CHECK(a.frontend_confirm==3);a.input(Key::Back);CHECK(!a.frontend_confirm&&!a.quit);unchanged();
- press(HitKind::Menu,0);CHECK(!a.title&&!a.character_select&&a.game.character==Character::Silent);same_saved(expected);
+ press(HitKind::Menu,0);settle_departure();CHECK(!a.title&&!a.character_select&&a.game.character==Character::Silent);same_saved(expected);
  // A decodable terminal save is not resumable. The shortcut must not replace
  // the visible run before this admission check has succeeded.
  player_kill(a.game,true);resolve_pending(a.game);CHECK(a.game.phase==Phase::Dead);put_disk();
@@ -305,7 +310,7 @@ static void pause_save_failure_and_success(){
  unsigned w=writes;write_ok=false;press(HitKind::Menu,4);CHECK(a.paused&&!a.title&&!disk_exists&&writes==w+1&&a.notice_ticks);unchanged();
  write_ok=true;press(HitKind::Menu,4);CHECK(a.title&&!a.paused&&a.has_save&&disk_exists);same_saved(disk);unchanged();
  // The saved expedition remains exactly resumable after returning to title.
- a.game.gold+=9;CHECK(validate(a.game));a.menu=0;a.input(Key::Confirm);CHECK(!a.title&&!a.paused);same_saved(disk);
+ a.game.gold+=9;CHECK(validate(a.game));a.menu=0;a.input(Key::Confirm);settle_departure();CHECK(!a.title&&!a.paused);same_saved(disk);
  a.input(Key::Back);CHECK(a.paused);press(HitKind::Menu,1);CHECK(a.settings_open&&a.paused);
  // Pointer motion over the covered Resume/Compendium rows must not change
  // pause selection, even before the settings hit list has been refreshed.
@@ -336,7 +341,7 @@ static void protected_saved_expeditions(){
  // A different seed must survive a completed practice/expedition's end UI.
  empty_disk();start(Character::Ironclad,6001);put_disk();start(Character::Ironclad,6002);player_kill(a.game,true);resolve_pending(a.game);snapshot();unsigned d=deletes;
  CHECK(a.finish_saved_run()&&disk_exists&&deletes==d);unchanged();settle_game_over();a.input(Key::Confirm);CHECK(a.game_over_summary);settle_game_over();action(UiAction::GameOverMainMenu);CHECK(a.title&&a.has_save&&disk_exists&&deletes==d);unchanged();
- a.menu=0;a.input(Key::Confirm);CHECK(!a.title);same_saved(expected);
+ a.menu=0;a.input(Key::Confirm);settle_departure();CHECK(!a.title);same_saved(expected);
  // Equal seed with a different character is also a distinct saved run.
  empty_disk();start(Character::Silent,6101);put_disk();start(Character::Defect,6101);player_kill(a.game,true);resolve_pending(a.game);snapshot();d=deletes;
  CHECK(a.finish_saved_run()&&disk_exists&&deletes==d);unchanged();
@@ -380,7 +385,7 @@ static void refreshed_continue_metadata(){
  CHECK(a.saved_character==Character::Silent&&a.saved_seed==6401);unchanged();
  external_run(Character::Regent,6403,"REPLACED_BEFORE_CONTINUE",7,reference::ActKind::Underdocks);expected=disk;
  const uint64_t actual_seed=candidate.world.run_seed;const int actual_hp=candidate.hp,actual_max_hp=candidate.max_hp;
- press(HitKind::Menu,0);CHECK(!a.title&&a.game.character==Character::Regent);same_saved(expected);
+ press(HitKind::Menu,0);settle_departure();CHECK(!a.title&&a.game.character==Character::Regent);same_saved(expected);
  CHECK(a.saved_character==Character::Regent&&a.saved_seed==6403&&a.saved_run_seed==actual_seed&&a.saved_ascension==7&&a.saved_region==unsigned(reference::ActKind::Underdocks));
  CHECK(a.saved_hp==actual_hp&&a.saved_max_hp==actual_max_hp&&a.saved_gold==a.game.gold&&a.saved_floor==a.game.world.total_floor&&a.saved_world&&!a.saved_practice);
  CHECK(a.saved_current_region==unsigned(reference::ActKind::Underdocks));

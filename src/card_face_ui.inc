@@ -16,6 +16,31 @@ static void library_blurred_portrait(Canvas&c,int image,const card_face::Rect&r)
     c.picture(Picture{reinterpret_cast<const uint8_t*>(pixels),nullptr,nullptr,uint16_t(r.w),uint16_t(r.h),0},r.x,r.y);
 }
 struct CardFaceFonts {int title,type,body,body_minimum,energy,star,minimum;bool compact;};
+static unsigned card_face_overlay(const App&a,Card card,int instance){
+ // NCard.ReloadOverlay gives an affliction precedence over the model's
+ // built-in animation. Ancient cards use their dedicated scene instead.
+ if(card_rarity(card.kind)==5)return 0;
+ if(instance>=0&&instance<a.game.card_count){const unsigned kind=a.game.enemy_world.affliction[instance];if(kind&&kind<=7)return kind;}
+ return card.kind==EventCardInfection?8u:0u;
+}
+static int card_overlay_image(const App&a,unsigned kind){
+ if(!kind)return -1;
+ const uint32_t now=a.map_clock_ms;
+ return a.content.ui_image(kind==8?I14_Infection+(a.phobia_mode?0:(now%2000u)*I14_InfectionCount/2000u):
+     I14_Afflictions+(kind-1)*I14_AfflictionFrames+card_affliction_frame(kind,now));
+}
+static void card_face_animated_layers(Canvas&c,Card card,int instance,int x,int y,int w,int h){
+ if(card_rarity(card.kind)==5){
+  const int image=c.a.content.ui_image(I14_AncientFlame+(c.a.map_clock_ms/100)%I14_AncientFlameCount);
+  const auto picture=c.a.content.image(image);if(!picture.pixels)return;
+  const int fw=mx(1,int(picture.w)*w/96),fh=mx(1,int(picture.h)*w/96);
+  // AnimatedSprite Fire is(164,-10) inside AncientBanner(-163,-207).
+  const int cx=x+card_face::scaled(151,w,300),cy=y-card_face::scaled(6,h,422);
+  c.picture(picture,cx-fw/2,cy-fh/2,fw,fh);
+ }else if(const int image=card_overlay_image(c.a,card_face_overlay(c.a,card,instance));image>=0){
+  const auto r=card_face::region(x,y,w,h,-12,-16,324,454);c.picture(image,r.x,r.y,r.w,r.h);
+ }
+}
 static uint32_t card_face_enchantment_key(const App&a,const EventCardFacts*facts,int instance){
     const bool live=instance>=0&&instance<a.game.card_count;
     unsigned kind=facts?unsigned(facts->enchantment):0;
@@ -156,11 +181,17 @@ static void render_card_face(Canvas&c,Card card,int x,int y,int w,int h,int fee=
     auto l=card_face::layout(x,y,w,h);const auto fonts=card_face_fonts(c,w);
     // Portrait precedes Frame and PortraitBorder in the original scene.
     // Drawing it last used to cover the frame's lower edge and description.
+    const bool ancient=card_rarity(card.kind)==5;
+    if(ancient)l.portrait=card_face::region(x,y,w,h,-3,-4,299,421);
     if(known)c.picture(a.card_face_image(card,instance,deck,facts),l.portrait.x,l.portrait.y,l.portrait.w,l.portrait.h);
     else library_blurred_portrait(c,a.card_face_image(card,instance,deck,facts),l.portrait);
-    c.picture(a.card_face_frame(card,instance,deck,facts),x,y,w,h);
-    c.ui(border,l.border.x,l.border.y,l.border.w,l.border.h);
-    int banner=a.content.ui_image(base+4);
+    if(ancient){
+     const auto frame=card_face::region(x,y,w,h,-4,-12,306,440),text=card_face::region(x,y,w,h,17,189,264,203);
+     Canvas edge=c;edge.tint_green=249;edge.tint_blue=231;edge.picture(a.card_face_frame(card,instance,deck,facts),frame.x,frame.y,frame.w,frame.h,128,presentation::Add);
+     Canvas shade=c;shade.tint_red=shade.tint_green=shade.tint_blue=0;
+     shade.ui(type==CardType::Attack?I14_AncientTextAttack:type==CardType::Power?I14_AncientTextPower:I14_AncientTextSkill,text.x,text.y,text.w,text.h,168);
+    }else{c.picture(a.card_face_frame(card,instance,deck,facts),x,y,w,h);c.ui(border,l.border.x,l.border.y,l.border.w,l.border.h);}
+    int banner=a.content.ui_image(ancient?I14_AncientBanner:base+4);
     if(banner<0)banner=a.content.ui_image(group==2?U_RareBanner:group==1?U_BigBanner:U_CommonBanner);
     c.picture(banner,l.banner.x,l.banner.y,l.banner.w,l.banner.h);
     char title[160]{};TextBuffer name{title,sizeof title,0,&a.content};name.text(known?a.content.card_string(card.kind):a.content.locale_string("card_library","UNKNOWN.title"));if(known&&card.upgraded)name.ch('+');
@@ -266,7 +297,12 @@ static bool card_cache_label_fits(Canvas&c,card_face::Rect icon,int value,bool s
 }
 static void invalidate_card_face_cache(){for(auto&entry:small_card_faces)entry.valid=false;}
 static void begin_card_face_frame(){if(++small_card_frame==0){invalidate_card_face_cache();++small_card_frame;}}
-static void draw_card_face(Canvas&c,Card card,int x,int y,int w,int h,int fee=-2,int stars=-2,int instance=-1,int deck=-1,const EventCardFacts*facts=nullptr,const char*description=nullptr,bool*description_truncated=nullptr,bool known=true,bool upgrade_preview=false){
+static void draw_card_face(Canvas&c,Card card,int x,int y,int w,int h,int fee=-2,int stars=-2,int instance=-1,int deck=-1,const EventCardFacts*facts=nullptr,const char*description=nullptr,bool*description_truncated=nullptr,bool known=true,bool upgrade_preview=false,bool animated_layers=true){
+    // Dynamic borders stay outside the static face cache. A30-frame
+    // infection must not remeasure every glyph or rebuild the portrait.
+    struct Finish {Canvas&c;Card card;int instance,x,y,w,h;bool active;
+     ~Finish(){if(active)card_face_animated_layers(c,card,instance,x,y,w,h);}
+    } finish{c,card,instance,x,y,w,h,known&&animated_layers};
     // NCard.Model marks a local run/combat model when it is bound. Canonical
     // collection/history/title previews do not constitute such a binding.
     // This is an O(1) first-observation bit check, never a catalog scan.

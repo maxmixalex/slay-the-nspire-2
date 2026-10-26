@@ -435,7 +435,19 @@ static void map_pictures(){
  }
 }
 }
+static void blend_reference(){
+ // Check all component values at every alpha, with differing opposite lanes.
+ for(unsigned alpha=0;alpha<256;++alpha)for(unsigned left=0;left<64;++left)for(unsigned right=0;right<64;++right){
+  const uint16_t a=uint16_t(((left&31)<<11)|(left<<5)|(31-(right&31)));
+  const uint16_t b=uint16_t(((right&31)<<11)|(right<<5)|(31-(left&31)));
+  const unsigned r=((a>>11)*(255-alpha)+(b>>11)*alpha+127)/255;
+  const unsigned g=(((a>>5)&63)*(255-alpha)+((b>>5)&63)*alpha+127)/255;
+  const unsigned blue=((a&31)*(255-alpha)+(b&31)*alpha+127)/255;
+  CHECK(blend(a,b,alpha)==uint16_t((r<<11)|(g<<5)|blue));
+ }
+}
 int main(){
+ blend_reference();
  const auto data=fixture();CHECK(app.content.open(data.data(),data.size()));
  CHECK((uintptr_t(app.content.image(0).pixels)&1u)==0u);
  rectangles();pictures();opaque_covers();picture_regions();picture_row_views();fake_merchant_atlas();title_particles();scaled_sparse_clipping();CHECK(app.content.healthy());

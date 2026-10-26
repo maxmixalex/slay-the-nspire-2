@@ -193,27 +193,62 @@ static void character_screen(Canvas&c){
     }
 }
 
+static uint16_t character_departure_black(uint16_t color,unsigned keep){
+    // Independent red/blue lanes share one multiply and exact /255 rounding.
+    // The intervening eleven bits prevent either channel carrying into the
+    // other, including the endpoints of the source full-screen black fade.
+    uint32_t rb=(((uint32_t(color)&0xf800u)<<5)|(color&31u))*keep+0x00800080u;
+    rb=(rb+((rb>>8)&0x00ff00ffu))>>8;
+    return uint16_t(((rb>>5)&0xf800u)|(div255(((color>>5)&63u)*keep)<<5)|(rb&31u));
+}
+static bool character_departure_direct(const Canvas&c){
+    return c.opacity==255&&!c.coverage&&!c.occlusion&&!c.color_matrix;
+}
+static void character_departure_dim(Canvas&c,unsigned alpha){
+    if(!alpha)return;if(alpha>=255){c.rect(0,0,320,240,0);return;}
+    const bool direct=character_departure_direct(c);const unsigned keep=255-alpha;
+    for(int y=0;y<mn(c.clip_h,240);++y)for(int x=0;x<mn(c.clip_w,320);++x){
+        const unsigned at=y*c.pitch+x;
+        if(direct)c.pixels[at]=character_departure_black(c.pixels[at],keep);else c.paint(at,0,alpha);
+    }
+}
 static void character_departure_screen(Canvas&c){
     const auto&m=c.a.character_departure;if(!m.active())return;c.a.hit_count=0;
     const unsigned phase=m.progress(c.a.map_clock_ms);
-    if(m.phase==2){c.dim(0,0,320,240,unsigned(255*(4096-phase)/4096));return;}
+    if(m.phase==2){
+        // NTransition.FadeIn: default fade material, CUBIC_IN threshold 1→0.
+        const unsigned cubic=unsigned((uint64_t(phase)*phase*phase+8388608u)>>24);
+        character_departure_dim(c,255*(4096-cubic)/4096);return;
+    }
     if(!phase)return;
+    // FadeOut runs the texture wipe and SimpleTransition QUAD_IN in parallel.
+    const unsigned shade=(phase*phase*255u+8388608u)>>24,keep=255-shade;
     // Original texture_transition shader: step(1-red, mix(-.1,1.1,t)).
     // The RGB565 grayscale ordering permits one comparison per LCD pixel;
     // no full-screen intermediate buffer is allocated for this 800 ms wipe.
     const int cutoff=(255*(11*4096-12*int(phase))+40959)/40960;
-    if(cutoff>255)return;if(cutoff<=0){c.rect(0,0,320,240,0);return;}
+    if(cutoff>255){character_departure_dim(c,shade);return;}if(cutoff<=0){c.rect(0,0,320,240,0);return;}
     const unsigned asset=I12_CharacterTransitionFirst+(m.character==unsigned(Character::Silent)?1:m.character==unsigned(Character::Necrobinder)?2:0);
     const auto mask=c.a.content.image(c.a.content.ui_image(asset));
-    if(c.a.content.version()<Ui12ContentVersion||!mask.pixels||mask.w!=320||mask.h!=240){c.dim(0,0,320,240,phase*255/4096);return;}
+    if(c.a.content.version()<Ui12ContentVersion||!mask.pixels||mask.w!=320||mask.h!=240){character_departure_dim(c,phase*255/4096);return;}
     const uint16_t threshold=rgb(cutoff,cutoff,cutoff);
-    if(mask.format==4){const uint8_t*run=mask.pixels;
+    const bool direct=character_departure_direct(c);
+    if(mask.format==4){character_departure_dim(c,shade);const uint8_t*run=mask.pixels;
         for(int y=0;y<240;++y){const unsigned count=run[0]|unsigned(run[1])<<8;run+=2;
             for(unsigned span=0;span<count;++span){const unsigned left=run[0]|unsigned(run[1])<<8,n=run[2]|unsigned(run[3])<<8,stride=run[4]?3:2;run+=5;
-                for(unsigned i=0;i<n;++i,run+=stride)if((unsigned(run[0])|unsigned(run[1])<<8)>=threshold)c.paint(y*c.pitch+left+i,0);
+                for(unsigned i=0;i<n;++i,run+=stride)if(left+i<unsigned(c.clip_w)&&y<c.clip_h&&(unsigned(run[0])|unsigned(run[1])<<8)>=threshold){
+                    if(direct)c.pixels[y*c.pitch+left+i]=0;else c.paint(y*c.pitch+left+i,0);
+                }
             }
         }
-    }else for(unsigned y=0;y<240;++y)for(unsigned x=0;x<320;++x){const unsigned at=y*320+x;const uint8_t*p=mask.palette?mask.palette+mask.pixels[at]*2:mask.pixels+at*2;
-        if((unsigned(p[0])|unsigned(p[1])<<8)>=threshold)c.paint(y*c.pitch+x,0);
+    }else{
+        uint8_t opaque[256];if(mask.palette)for(unsigned i=0;i<256;++i)opaque[i]=(unsigned(mask.palette[i*2])|unsigned(mask.palette[i*2+1])<<8)>=threshold;
+        for(int y=0;y<mn(c.clip_h,240);++y)for(int x=0;x<mn(c.clip_w,320);++x){
+            const unsigned at=y*320+x;const bool clear=mask.palette?opaque[mask.pixels[at]]:
+                (unsigned(mask.pixels[at*2])|unsigned(mask.pixels[at*2+1])<<8)>=threshold;
+            const unsigned out=y*c.pitch+x;
+            if(direct)c.pixels[out]=clear?0:character_departure_black(c.pixels[out],keep);
+            else if(clear||shade)c.paint(out,0,clear?255:shade);
+        }
     }
 }

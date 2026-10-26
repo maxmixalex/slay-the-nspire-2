@@ -11,7 +11,7 @@ def main()->None:
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--output',type=Path,help='Launcher output path')
     args=parser.parse_args()
-    clang=shutil.which('clang++');link=shutil.which('ld.lld')
+    clang=shutil.which('clang++') or shutil.which('clang++-18');link=shutil.which('ld.lld') or shutil.which('ld.lld-18')
     if not clang or not link:raise SystemExit('Install LLVM with clang++ and ld.lld, and put both on PATH.')
     directory=ROOT/'build'/'ndless';directory.mkdir(parents=True,exist_ok=True);(ROOT/'dist').mkdir(exist_ok=True)
     sources=['src/characters.cpp','src/core.cpp','src/potions_extra.cpp','src/potions.cpp','src/ui_input.cpp','src/relics.cpp','src/run.cpp','src/resource_source.cpp','src/ui_progress_codec.cpp','src/content.cpp','src/app.cpp','src/pointer.cpp','src/world_card_factory.cpp', 'src/original_events.cpp', 'src/world_relics.cpp', 'src/world_rng.cpp','src/reference_rng.cpp','src/reference_map.cpp','src/map_preview.cpp','src/reference_math.cpp','src/reference_act.cpp','src/map_preview_input.cpp','src/freestanding.cpp','platform/ndless/main.cpp','platform/ndless/entry.S','src/lzma2_block.cpp','third_party/lzma2/LzmaDec.c','third_party/lzma2/Lzma2Dec.c']

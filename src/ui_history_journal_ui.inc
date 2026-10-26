@@ -142,7 +142,9 @@ static void journal_floor_tooltip(Canvas&c,const UiRunHistory&run,unsigned floor
  // least five rows. This is not an alternating row-major rewards grid.
  const unsigned splits[3]={groups[0],groups[1],groups[2]};
  const unsigned row_count=splits[0]+splits[1]+splits[2];motion.maximum=int16_t(row_count?row_count-1:0);motion.scroll(0);
- constexpr int width=272,body_width=254,max_height=202;
+ // A hover remains beside its map point. The journal's existing scrolling
+ // carries long entries without covering nearly the whole320px map.
+ constexpr int width=174,body_width=width-18,max_height=202;
  Canvas text=c;text.font_face=0;text.bold_face=5;Canvas bold=text;bold.font_face=5;
  JournalTextValues values;values.floor=point.floor;values.hp=point.hp;values.max_hp=point.max_hp;values.gold=point.gold;
  char title[192]{},player[192]{},room_line[512]{};
@@ -179,14 +181,15 @@ static void journal_floor_tooltip(Canvas&c,const UiRunHistory&run,unsigned floor
  const int skin=a.content.world_image("common","HOVER_TIP");
  if(skin>=0){Canvas shadow=c;shadow.tint_red=shadow.tint_green=shadow.tint_blue=0;shadow.nine_image(skin,x+2,y+2,width,height,28,22,46,16,64);c.nine_image(skin,x,y,width,height,28,22,46,16);}
  else c.nine_ui(U_HoverTip,x,y,width,height,7,7,7,7);
- bold.text(title,x+8,y+5,12,Gold,body_width);text.text(player,x+8,y+23,10,White,body_width);
- text.paragraph(room_line,x+8,y+40,body_width,room_lines,0,10);
+ bold.text_fitted(title,x+8,y+5,body_width,12,Gold,12);text.text_fitted(player,x+8,y+23,body_width,10,White,10);
+ text.paragraph_fitted(room_line,x+8,y+40,body_width,room_lines*13,10,White,10);
  if(partial)text.paragraph(partial_text,x+8,y+40+room_lines*13,body_width,partial_lines,0,10,Muted);
  for(unsigned row=0;row<planned;++row){const auto&plan=rows[row];const int top=y+plan.at,cell_width=plan.columns?(body_width-4)/2:body_width;
   if(plan.header){const char*label=a.content.world_string("run_history",plan.group==1?"HISTORY_ENTRY.rewardsHeader":"HISTORY_ENTRY.skippedHeader");bold.text(*label?label:plan.group==1?"Rewards:":"Skipped:",x+8,top-15,10,Gold,body_width);}
   for(unsigned col=0;col<plan.cells;++col){const auto e=journal_display_entry(journal,plan.indices[col],point);char line[768]{};a.history_journal_line(e,line,sizeof line);const int left=x+7+int(col)*(cell_width+4),icon=journal_icon(e),indent=icon>=0?13:0;
    if(icon>=0&&a.content.version()>=HistoryJournalContentVersion)c.ui(icon,left,top+1,10,10);
-   text.paragraph(line,left+indent,top,cell_width-indent,mn(int(plan.lines[col]),(y+height-(paging?15:5)-top)/13),0,10,White);}
+   const int visible_lines=mn(int(plan.lines[col]),(y+height-(paging?15:5)-top)/13);
+   text.paragraph_fitted(line,left+indent,top,cell_width-indent,visible_lines*13,10,White,10);}
  }
  if(paging){char position[48]{};TextBuffer label{position,sizeof position,0};label.number(unsigned(motion.offset)+1);label.text("–");label.number(visible);label.ch('/');label.number(row_count);text.text(position,x+8,y+height-13,8,Muted,body_width);}
  c.hit(x,y,width,height,HitKind::HistoryJournalScroll,int(floor));

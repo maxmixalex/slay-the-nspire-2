@@ -99,7 +99,15 @@ struct RewardPresentation {
  }
  void observe_window(uint8_t mode,uint32_t key,unsigned count,uint32_t now){
   if(!mode){window_mode=0;return;}
-  if(mode!=window_mode||key!=window_key){window_mode=mode;window_key=key;window_start=now;empty=count==0;empty_start=now;window_from=0;}
+  if(mode!=window_mode||key!=window_key){
+   // The grouped terminal set returns to the room's empty Reward phase
+   // after its last acquisition. It is the same NRewardsScreen, including
+   // when a card picker temporarily hid it; keep its250ms completion fade.
+   const bool completing=!count&&key==window_key&&!empty&&(window_mode||list_mode);
+   const unsigned previous=window_mode?window(now).alpha:now-window_start>=500?255:(now-window_start)*255/500;
+   window_mode=mode;window_key=key;if(!completing)window_start=now;
+   empty=count==0;empty_start=now;window_from=completing?previous:0;
+  }
   else if(!count&&!empty){window_from=window(now).alpha;empty_start=now;empty=true;}
  }
  static unsigned quad_out(unsigned q){const unsigned inverse=4096-q;return 4096-inverse*inverse/4096;}

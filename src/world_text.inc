@@ -354,6 +354,7 @@ CardType App::card_face_type(Card card,int instance,int deck,const EventCardFact
  return card_type(game,card,instance,deck);
 }
 int App::card_face_frame(Card card,int instance,int deck,const EventCardFacts*facts)const{
+ if(card_rarity(card.kind)==5)return content.ui_image(I14_AncientBorder);
  if(card.kind==EventCardMadScience)return content.ui_image(U_ColorlessAttack+int(card_face_type(card,instance,deck,facts)));
  return content.frame_image(card);
 }

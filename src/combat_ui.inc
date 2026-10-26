@@ -4,7 +4,7 @@ namespace {
 struct HandTile {
     bool valid=false,playable=false,resource_cross=false,description_truncated=false,sampled_locked=false;
     uint8_t resource_styles=0;
-    uint8_t glow=0;
+    uint8_t glow=0,overlay=0;
     const Content* owner=nullptr;
     Card card{};
     uint32_t used=0,enchantment=0;
@@ -52,6 +52,7 @@ static const HandTile& hand_tile(Canvas&c,int instance,const CombatCardMotion::S
     int energy=visual?visual->energy:cost(a.game,instance),stars=visual?visual->stars:card_star_cost(a.game,card,instance);
     const auto*facts=frozen_facts?frozen_facts:event_card_facts(a.game,card,instance,deck);
     const uint32_t enchantment=card_face_enchantment_key(a,facts,instance);
+    const unsigned overlay=card_face_overlay(a,card,instance);
     const unsigned resource_styles=card_face_resource_styles(a,card,energy,stars,instance,facts,upgrade_preview);
     const bool resource_cross=card_face_resource_cross(a,card,energy,stars,instance);
     bool playable=visual||can_play_card(a.game,instance);
@@ -66,12 +67,12 @@ static const HandTile& hand_tile(Canvas&c,int instance,const CombatCardMotion::S
     // shifted slot, while keeping ten bounded104x136 cache allocations.
     for(auto&t:hand_tiles){
         if(t.valid&&t.owner==&a.content&&t.card.kind==card.kind&&t.card.upgraded==card.upgraded&&t.energy==energy&&t.stars==stars&&
-           t.playable==playable&&t.glow==glow&&t.resource_cross==resource_cross&&t.resource_styles==resource_styles&&t.enchantment==enchantment&&t.portrait==portrait&&t.frame==frame&&same_text(t.description,description)){t.used=hand_tile_clock;stamp(t);return t;}
+           t.playable==playable&&t.glow==glow&&t.overlay==overlay&&t.resource_cross==resource_cross&&t.resource_styles==resource_styles&&t.enchantment==enchantment&&t.portrait==portrait&&t.frame==frame&&same_text(t.description,description)){t.used=hand_tile_clock;stamp(t);return t;}
         if(!slot||(!t.valid&&slot->valid)||(t.valid==slot->valid&&int32_t(t.used-slot->used)<0))slot=&t;
     }
     auto&t=*slot;t.used=hand_tile_clock;stamp(t);
     t.owner=&a.content;t.card=card;t.energy=energy;t.stars=stars;t.playable=playable;t.portrait=portrait;t.frame=frame;
-    t.glow=uint8_t(glow);t.enchantment=enchantment;
+    t.glow=uint8_t(glow);t.overlay=uint8_t(overlay);t.enchantment=enchantment;
     t.resource_styles=uint8_t(resource_styles);
     t.resource_cross=resource_cross;
     for(unsigned i=0;i<sizeof description;i++)t.description[i]=description[i];
@@ -79,7 +80,7 @@ static const HandTile& hand_tile(Canvas&c,int instance,const CombatCardMotion::S
     Canvas tile{a,t.pixels,HandTileW,HandTileW,HandTileH,t.alpha};
     // Left inset contains the original star cost below the energy icon;
     // neither resource adds a second title row or moves the card portrait.
-    draw_card_face(tile,card,HandFaceX,HandFaceY,HandFaceW,HandFaceH,energy,stars,instance,deck,facts,description,&t.description_truncated,true,upgrade_preview);
+    draw_card_face(tile,card,HandFaceX,HandFaceY,HandFaceW,HandFaceH,energy,stars,instance,deck,facts,description,&t.description_truncated,true,upgrade_preview,false);
     // NHandCardHolder hides its playable highlight; it does not gray the
     // entire portrait, description and resource label when a card cannot play.
     t.built=++hand_build_clock;t.valid=true;return t;
@@ -116,6 +117,19 @@ static const HandTile& selected_hand_tile(Canvas&c,int instance){
     Canvas tile{c.a,t.pixels,HandTileW,HandTileW,HandTileH,t.alpha};
     card_description_window(tile,source.description,rect,size,skip);
     return t;
+}
+static void hand_card_animated_layers(Canvas&c,const HandTile&t,HandPose p,unsigned brightness,unsigned erosion){
+    Canvas layer=c;layer.brightness=uint8_t(div255(unsigned(layer.brightness)*brightness));
+    if(erosion)layer.opacity=uint8_t(unsigned(layer.opacity)*(1024-mn(1024u,erosion))/1024);
+    if(card_rarity(t.card.kind)==5){
+        const int image=c.a.content.ui_image(I14_AncientFlame+(c.a.map_clock_ms/100)%I14_AncientFlameCount);
+        const auto art=c.a.content.image(image);if(!art.pixels)return;
+        const int dx=HandFaceW*1024/300,dy=-217*HandFaceH*1024/422;
+        const int cx=p.cx+int((int64_t(dx)*p.cosine-int64_t(dy)*p.sine)*p.scale/(1024ll*1024*1024));
+        const int cy=p.cy+int((int64_t(dx)*p.sine+int64_t(dy)*p.cosine)*p.scale/(1024ll*1024*1024));
+        ui_picture_transform(layer,art,cx,cy,int(art.w)*HandFaceW*p.scale/(96*1024),int(art.h)*HandFaceW*p.scale/(96*1024),p.sine,p.cosine);
+    }else if(const int image=card_overlay_image(c.a,t.overlay);image>=0)
+        ui_picture_transform(layer,image,p.cx,p.cy,324*HandFaceW*p.scale/(300*1024),454*HandFaceH*p.scale/(422*1024),p.sine,p.cosine);
 }
 static void draw_hand_tile(Canvas&c,const HandTile&t,HandPose p,bool focused,unsigned brightness=255,unsigned erosion=0,bool highlight=false){
     if(p.scale<=0)return;
@@ -163,7 +177,8 @@ static void draw_hand_tile(Canvas&c,const HandTile&t,HandPose p,bool focused,uns
     if(!glow&&!erosion&&p.scale==1024&&p.sine==0&&p.cosine==1024){
         Canvas layer=c;layer.brightness=uint8_t(div255(unsigned(layer.brightness)*brightness));
         layer.picture(Picture{reinterpret_cast<const uint8_t*>(t.pixels),t.alpha,nullptr,HandTileW,HandTileH,1},
-            p.cx-HandPivotX/1024,p.cy-HandPivotY/1024,HandTileW,HandTileH);return;
+            p.cx-HandPivotX/1024,p.cy-HandPivotY/1024,HandTileW,HandTileH);
+        hand_card_animated_layers(c,t,p,brightness,erosion);return;
     }
     for(int y=top;y<bottom;y++){
         int u=HandPivotX+((left-p.cx)*p.cosine+(y-p.cy)*p.sine)*1024/p.scale;
@@ -190,6 +205,7 @@ static void draw_hand_tile(Canvas&c,const HandTile&t,HandPose p,bool focused,uns
             c.paint(y*c.pitch+x,color,t.alpha[at]);
         }
     }
+    hand_card_animated_layers(c,t,p,brightness,erosion);
 }
 static void combat_pile(Canvas&c,int image,int count,int x,int y,int tab){
     // NCombatCardPile scales Icon, not its sibling CountContainer. Focus is

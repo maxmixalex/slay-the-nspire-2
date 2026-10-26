@@ -107,7 +107,11 @@ static void native_world_selection_screen(Canvas&c,const uint16_t*ids,unsigned c
         native_original_confirm(c,UiAction::ConfirmWorldChoice,a.deck_selection.preview_opened,a.world_selection_confirmable());
     }else{
         if(a.world_selection_cancelable())native_original_back(c,a.deck_selection.opened);
-        native_original_confirm(c,UiAction::ConfirmWorldChoice,a.deck_selection.opened,a.world_selection_confirmable());
+        // Fixed-count selectors enter their preview when the last card is
+        // chosen. Their grid has no separate, permanently disabled Confirm.
+        const bool manual=simple?a.world_selection_manual():
+            kind!=WorldSelectionKind::Bundle&&kind!=WorldSelectionKind::Upgrade&&a.world_selection_min()!=a.world_selection_max();
+        if(manual)native_original_confirm(c,UiAction::ConfirmWorldChoice,a.deck_selection.opened,a.world_selection_confirmable());
     }
     if(!bundle){char prompt[512]{};world_selection_text(a,prompt,sizeof prompt);card_selection_prompt(c,prompt);world_selection_upgrades(c);}
     if(kind==WorldSelectionKind::Enchant)world_enchantment_description(c);

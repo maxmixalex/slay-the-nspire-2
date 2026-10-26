@@ -40,6 +40,8 @@
 #include "card_keyword_text.hpp"
 #include "fitted_text.hpp"
 #include "text_overflow_motion.hpp"
+#include "creature_scale_motion.hpp"
+#include "combat_ui14_resources.hpp"
 #include "inplace_reset.hpp"
 #include "map_drawing_raster.hpp"
 #include "run_score.hpp"
