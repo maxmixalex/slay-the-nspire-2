@@ -38,7 +38,7 @@ static void legacy(){
     UiPreferences loaded{};const uint8_t old1[]={'N','S','P','F',1,1,0,0},old2[]={'N','S','P','F',2,12,2,0};
     CHECK(decode_ui_preferences(old1,sizeof old1,loaded)&&loaded.fast_mode&&!loaded.bindings_saved&&!loaded.skip_intro_logo);
     CHECK(decode_ui_preferences(old2,sizeof old2,loaded)&&loaded.keyboard_only&&!loaded.bindings_saved&&!loaded.skip_intro_logo);
-    UiPreferences custom{};CHECK(rebind_input(custom.bindings,0,unsigned(InputCommand::Map),'Y'));CHECK(rebind_input(custom.bindings,1,unsigned(InputCommand::Select),'Q'));
+    UiPreferences custom{};custom.show_run_timer=false;CHECK(rebind_input(custom.bindings,0,unsigned(InputCommand::Map),'Y'));CHECK(rebind_input(custom.bindings,1,unsigned(InputCommand::Select),'Q'));
     for(unsigned version=3;version<=5;++version){encode_ui_preferences(custom,disk);disk[4]=uint8_t(version);
         CHECK(decode_ui_preferences(disk,sizeof disk,loaded)&&loaded.bindings_saved&&!loaded.skip_intro_logo);
         CHECK(!std::memcmp(&loaded.bindings,&custom.bindings,sizeof custom.bindings));}

@@ -5,6 +5,12 @@ This report describes the front-end work, separate from combat, rooms, and
 the new installation layout. Original source data and captured images remain
 private. Pixel-oracle counts are assertions, not feature-coverage percentages.
 
+The final front-end actual-resource gates close at
+`0418cf3e63dabb456e4a9aaa49062d32f7ac747c` with the final 5,275-entry artwork
+catalog. Earlier failed builds and oracles below are retained as intermediate
+results, not current blockers. Calculator frame rates are recorded separately
+by the Firebird integration work.
+
 ## Source behavior and changes
 
 ### Credits
@@ -158,7 +164,7 @@ button's text, although its centered label occupies a 22px-high rectangle.
 Its exclusion now follows that exact rectangle plus the one-pixel outline;
 source-art margins remain checked. Captures now precede the oracle so any
 future failure retains the actual settled screen and reports its first
-different pixel. That corrected gate has not yet run successfully. The
+different pixel. That corrected gate had not yet run at this stage. The
 card/HUD actual gate found unequal direct and cached card pixels in ENG and
 ZHS before reaching the deck captures; the shared card/cache owner is
 correcting that drawing-order issue.
@@ -167,7 +173,39 @@ The fifth checkpoint,
 `023ae87b911093568eae2986b524b54523aa3312`, stopped during core compilation
 because two newly introduced combat-feedback calls referenced `mx` and `mn`
 before those helpers were declared. Its failed journal is retained; no
-fifth-stage runtime pass is claimed. The next checkpoint must build those
-fixes and close the game-over and deck actual-resource gates. Native
-correctness and host timing do not establish Firebird or physical-calculator
-frame rates.
+fifth-stage runtime pass is claimed.
+
+## Final actual-resource closure
+
+The sixth checkpoint built the corrected production core and the focused
+pixel targets. The complete game-over gates passed in both languages. The
+card/HUD gate passed the formerly failing direct-versus-cache comparisons,
+then exposed two obsolete test expectations: a row-based hand-reader clock,
+and a keyboard focus chain that stopped before the restored Timer icon. The
+new test checks one-pixel progression, both end holds and a complete return
+cycle, plus Portrait → Timer → boundary → Portrait keyboard navigation.
+The sixth full build also found a missing standard `<cstring>` include in
+the new canvas fixture; that compilation failure was retained and corrected.
+
+The seventh checkpoint includes those fixes and the product's default-visible
+Timer icon. Its complete Clang 18 build passes all 316 Ninja steps, with the
+source fingerprint unchanged during compilation. Its final actual-resource
+gates pass:
+
+| Gate | ENG assertions | ZHS assertions |
+| --- | ---: | ---: |
+| Complete card/HUD, exact caches, smooth hand-reader cycle, keyboard navigation, deck and original tooltip owners | 713,528 | 791,154 |
+| Five complete defeat actors, source transition/summary timings, release gates and unchanged canonical saves | 85,811 | 86,796 |
+
+The final deck sorters and upgrade views were inspected in both languages.
+The bold gold sorter labels sit above the card grid; the upgrade checkbox and
+label occupy a separate footer row with clear space from the Back tab. The
+grid clips above that control row. Defeat and summary captures show the
+centered ribbon title, narrower main button and score column, and the rebuilt
+score/discovery art at its intended resolution.
+
+The pixel-cache fix retains the source drawing order instead of replacing the
+strict image comparison with a tolerance. None of these gates changes a
+canonical run while exercising presentation. Native correctness and host
+timing do not establish Firebird or physical-calculator frame rates; those
+measurements remain separate integration evidence.

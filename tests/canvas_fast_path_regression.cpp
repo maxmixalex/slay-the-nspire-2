@@ -458,9 +458,12 @@ static void hidden_picture_io(const Bytes& data){
  CHECK(app.content.open(ResourceSource{&source,uint32_t(data.size()),Source::read,nullptr}));
  const unsigned opened=source.reads;uint16_t surface[320*240]{};Canvas c{app,surface};
  c.picture(0,0,-5);c.picture(0,-7,0);c.picture(0,320,0);c.picture(0,0,240);
+ c.picture(8,0,-240);c.picture(8,-320,0);
  c.picture(1,0,-84,60,84);c.picture(2,0,0,0,0,0);c.opacity=0;c.picture(3,0,0);
- CHECK(source.reads==opened);CHECK(!app.content.image_cached(0));
- c.opacity=255;c.picture(0,0,-4);CHECK(source.reads>opened);CHECK(app.content.image_cached(0));
+ CHECK(source.reads==opened);CHECK(!app.content.image_cached(0)&&!app.content.image_cached(8));
+ // The tiny first image shares the metadata reader's cached page. Image8
+ // is beyond that prefix, so a visible row must really fetch its payload.
+ c.opacity=255;c.picture(8,0,-239);CHECK(source.reads>opened);CHECK(app.content.image_cached(8));
  CHECK(app.content.healthy());
 }
 int main(){

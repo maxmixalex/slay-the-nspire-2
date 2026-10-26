@@ -76,4 +76,14 @@ inherit the previous run's shrink tween. Its added checks cover default
 combat-clock hits, elapsed-time pixel isolation, preservation of an explicitly
 disabled preference, and an identical-seed combat restart. The older card/HUD
 test now follows the pixel reader's forward/hold/return clocks and includes
-keyboard navigation to the clock. This final stage requires fresh validation.
+keyboard navigation to the clock.
+The stage7 source `0418cf3e63dabb456e4a9aaa49062d32f7ac747c` subsequently
+passes **11,181 synthetic checks**, **11,430 actual-resource checks**, and the
+existing combat UI12 actual-resource gate's **58,364 checks**. The latter
+checks every scroll pixel against the unchanged background outside the text
+rectangle and verifies that neighboring card caches remain stable. Journals:
+`combat-ui14-stage7-synthetic-a1fd01535e59`,
+`combat-ui14-stage7-original-9094773a2daf`, and
+`combat-ui12-stage7-original-05342323d5ac`. The final three controlled saves
+are byte-identical to the stage6 exports. Calculator gameplay/timing acceptance
+remains a separate integrated gate.
