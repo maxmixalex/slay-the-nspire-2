@@ -66,9 +66,13 @@
 #include "settings_ui10_assets.hpp"
 #include "ui12_assets.hpp"
 #include "doom_assets.hpp"
+#include "random_character_assets.hpp"
+#include "fake_merchant_assets_ui13.hpp"
 #include "font_metrics.hpp"
+#include "rich_label_clock.hpp"
 #include "title_scene.hpp"
 #include "title_menu_presentation.hpp"
+#include "main_menu_backdrop.hpp"
 #include "title_assets.hpp"
 #include "frontend_assets.hpp"
 #include "ui6_assets.hpp"
@@ -175,7 +179,8 @@ public:
         if(version_<Ui12ContentVersion)return false;
         return ui_count_==FrontendUi13AuxiliaryCount||ui_count_==RoomsUi13AuxiliaryCount||
             ui_count_==ArchitectUi13AuxiliaryCount||ui_count_==ArchitectAttackUi13AuxiliaryCount||
-            ui_count_==DoomUi13AuxiliaryCount;
+            ui_count_==DoomUi13AuxiliaryCount||ui_count_==RandomCharacterUi13AuxiliaryCount||
+            ui_count_==FakeMerchantUi13AuxiliaryCount;
     }
     bool has_sleeping_vfx_assets()const{return version_>=Ui12ContentVersion&&(ui_count_==SleepingVfxAuxiliaryCount||has_ui13_assets());}
     bool has_phobia_swarm_assets()const{return version_>=Ui12ContentVersion&&(ui_count_==PhobiaSwarmAuxiliaryCount||has_sleeping_vfx_assets());}
@@ -292,6 +297,7 @@ struct App {
     State game{};Content content{};Callbacks callbacks{};
     ButtonMotion button_motions[MaxButtonMotions]{};
     PopupBackdrop popup_backdrop{};
+    MainMenuBackdrop main_menu_backdrop{};
     ProceedMotion proceed_motion{};
     EndTurnGlowMotion end_turn_glow{};
     EndTurnHold end_turn_hold{};
@@ -667,6 +673,7 @@ struct App {
     void pointer_aux_button(unsigned button,bool down);
     bool map_drawing_point(bool begin=false);
     uint32_t map_clock_ms=0;
+    RichLabelClocks rich_label_clocks;
     ScreenShakePresentation screen_motion{};
     CombatDoomPresentation combat_doom{};
     void observe_doom(unsigned actor);

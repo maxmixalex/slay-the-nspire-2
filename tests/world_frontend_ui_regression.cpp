@@ -500,11 +500,36 @@ static void modal_isolation_and_fast_mode(){
  action(UiAction::SettingsFastMode);CHECK(a.fast_mode);a.advance(66);CHECK(a.animation==1004&&a.busy==8&&a.card_fly==8);a.render();unchanged();
  settings_back();CHECK(!a.settings_open);a.fast_mode=false;
 }
+static void main_menu_source_blur(){
+ if(!a.content.has_settings_ui10_assets())return;
+ empty_disk();start();snapshot();a.return_to_title();a.pointer.visible=false;
+ a.main_menu_backdrop={};a.map_clock_ms=200000;a.settings_open=true;a.render();
+ CHECK(a.main_menu_backdrop.open&&a.main_menu_backdrop.sample(a.map_clock_ms)==0);
+ for(int i=0;i<a.hit_count;++i)CHECK(a.hits[i].kind!=HitKind::Menu);
+ a.map_clock_ms+=125;a.render();CHECK(a.main_menu_backdrop.sample(a.map_clock_ms)==2048);
+ a.map_clock_ms+=125;a.render();CHECK(a.main_menu_backdrop.sample(a.map_clock_ms)==4096);
+ const std::vector<uint16_t> actual(a.pixels,a.pixels+ScreenW*ScreenH);capture("settings-source-blur-steady");
+ // At a fixed animation time this empty title has no foreground controls in
+ // the far-right region. Its mip-filtered pixels must match the Settings
+ // backdrop there, proving the actual screen calls the separately-oracled
+ // shader implementation instead of only drawing a dark rectangle.
+ a.settings_open=false;a.main_menu_backdrop={};a.render();
+ const std::vector<uint16_t> unfiltered(a.pixels,a.pixels+ScreenW*ScreenH);
+ auto filtered=unfiltered;main_menu_backdrop::apply_progress(filtered.data(),320,4096);
+ unsigned changed=0;
+ for(int y=40;y<210;++y)for(int x=286;x<316;++x){const unsigned at=unsigned(y*320+x);CHECK(actual[at]==filtered[at]);changed+=actual[at]!=unfiltered[at];}
+ CHECK(changed>100);unchanged();
+ a.settings_open=true;a.main_menu_backdrop.observe(true,a.map_clock_ms-250);a.render();
+ CHECK(a.main_menu_backdrop.sample(a.map_clock_ms)==4096);
+ a.settings_open=false;a.render();CHECK(!a.main_menu_backdrop.open&&a.main_menu_backdrop.sample(a.map_clock_ms)==4096);
+ a.map_clock_ms+=75;a.render();CHECK(a.main_menu_backdrop.sample(a.map_clock_ms)==2048);
+ a.map_clock_ms+=75;a.render();CHECK(a.main_menu_backdrop.sample(a.map_clock_ms)==0);unchanged();
+}
 int main(int argc,char**argv){
  std::vector<uint8_t>data;if(argc>1){FILE*f=std::fopen(argv[1],"rb");CHECK(f);data.resize(spire_test::pack_size(f));CHECK(std::fread(data.data(),1,data.size(),f)==data.size());CHECK(!std::fclose(f));}else data=synthetic_profile();
  if(argc>2)capture_directory=argv[2];CHECK(a.init(data.data(),data.size(),{store_run,restore_run,erase_run}));CHECK(a.content.current_profile());
  title_glow_curve();title_particle_curves();title_animation_is_bounded_and_repeats();probe_is_read_only();main_menu_and_continue();pause_save_failure_and_success();abandon_saved_with_confirmation();abandon_current_bypasses_prevention();protected_saved_expeditions();
  canonical_identity_and_save_association();refreshed_continue_metadata();title_confirmation_tracks_run_identity();unreadable_save_does_not_abandon();optional_clear_uses_successful_terminal_probe();
- ending_clears_only_its_checkpoint();modal_isolation_and_fast_mode();character_click_confirmation();
+ ending_clears_only_its_checkpoint();modal_isolation_and_fast_mode();character_click_confirmation();main_menu_source_blur();
  std::printf("world frontend UI: %u checks passed; %s profile; guarded save lifecycle and presentation-only settings\n",checks,argc>1?"actual":"synthetic");
 }

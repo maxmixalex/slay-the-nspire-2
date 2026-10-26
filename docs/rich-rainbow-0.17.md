@@ -126,13 +126,26 @@ used as the color phase. Native font metrics, readable wrapping and missing
 Godot shaping remain calculator layout adaptations.
 
 Godot maintains elapsed time separately for each `ItemFX`, updating a visible
-label through process notifications. This implementation uses the existing
-`App::map_clock_ms` presentation clock. It is not accelerated by Fast mode, but
-it does not recreate a label-local time origin when a label is created, hidden
-or reopened. Its phase can consequently differ from the original scene, and
-it inherits the host's existing per-advance time cap. This stage preserves the
-parameterized color function and movement, **not original-frame phase
-equality**. No canonical State field, save version or gameplay RNG changes.
+label through process notifications. UI13 now gives rendered labels independent
+origins through `RichLabelClocks`, a32-entry table bounded below768bytes. An
+outer render-frame guard observes which labels remain present; a label omitted
+from the rendered tree loses its origin, so a newly created or reopened label
+starts at zero. Repeated draws, shadow passes and nested renderer calls do not
+restart it. Different owners of identical text remain independent, and a new
+text or content generation creates a new effect instance.
+
+The generic text, paragraph, fitted, source-hover, compact-room, scrolling-room
+and Ancient-dialogue painters all use that label time. The actual Colossal
+Flower body keeps a stable owner while its paragraph scrolls; Crystal Sphere
+banter keeps a stable owner through its bubble's entrance position/scale and
+uses a new identity for each dialogue instance. Presentation reset clears the
+table. No new bitmap, heap storage, canonical State field, save version or
+gameplay random draw is added.
+
+The elapsed delta still comes from `App::map_clock_ms`, which is not multiplied
+by Fast mode and retains the host's existing per-advance cap. The native
+renderer has frame-sampled creation/visibility and readable LCD glyph layout;
+this implementation does not claim identical desktop GPU frames or shaping.
 
 ## Regression and validation boundaries
 
@@ -150,6 +163,16 @@ elapsed times, verifies that only its description region changes, and checks
 an exact full-frame return after 10 seconds / three rainbow cycles while
 holding the independent sine/jitter frame fixed. Reading, rendering and
 save/load continuation must leave canonical saved bytes unchanged.
+
+The UI13 lifecycle cases additionally cover different creation times for two
+owners of the same text, repeated/nested draws, disappearance/reopening,
+content replacement, clock wrap/rebase and bounded table replacement.
+`card_hud_ui_regression` checks actual pixels for all seven text painters,
+including independent phases, a moved stable owner, the real Normal/Fast
+advance clock and unchanged canonical saves. The original-resource Colossal
+Flower check also covers an opaque Library screen followed by reopening at a
+nonzero global time. These new cases require the integrated UI13 checkpoint
+and their own closed execution receipts; syntax alone is not acceptance.
 
 Pre-checkpoint validation consists of short syntax checks, the standalone
 ASan/UBSan parser/color regression, and the independent official-function

@@ -79,7 +79,7 @@ static void native_ancient_screen(Canvas&c){
 static void native_fake_merchant_screen(Canvas&c){
  auto&a=c.a;const auto&s=a.game;const auto&e=s.original_events;auto&motion=a.room_presentation.merchant;
  motion.set_open(a.shop_open,a.map_clock_ms);
- c.picture(a.content.world_image("events",original_event_key(e.id)),0,22,320,218);
+ if(!fake_merchant_room(c))c.picture(a.content.world_image("events",original_event_key(e.id)),0,22,320,218);
  fake_merchant_welcome(c);
  const char*label=a.content.world_string("gameplay_ui","PROCEED_BUTTON");
  native_proceed(c,*label?label:"前进",!a.shop_open,!a.pointer.visible&&a.cursor==1);
@@ -138,6 +138,7 @@ static void native_architect_dialogue(Canvas&c){
  auto&scroll=a.event_body_scroll;scroll.configure(fitted_text::line_count(text,tw,size,metric)*(size+1)+2,th);
  a.event_body_top=ty;a.event_body_height=th;
  body.text_visible_characters=room_rich_characters(text)*reveal/room_curve::Q;
+ body.text_effect_identity=0x41445242u^key;
  native_room_scroll_text(body,text,tx,ty,tw,th,scroll.offset(),size);
  if(scroll.maximum){
   constexpr int sx=x+w-10,sy=ty+6,length=th-12;
@@ -203,6 +204,7 @@ static void native_event_screen(Canvas&c){
  auto&scroller=a.event_body_scroll;const int prose_width=width0-13;
  const int prose_rows=fitted_text::line_count(text,prose_width,body_size,metric);
  scroller.configure(prose_rows*(body_size+1)+2,body_h);a.event_body_top=body_y;a.event_body_height=body_h;
+ body.text_effect_identity=0x45565442u^body_key;
  native_room_scroll_text(body,text,x0,body_y,prose_width,body_h,scroller.offset(),body_size);
  if(scroller.maximum){
   const int sx=x0+width0-8,sy=body_y+6,length=mx(1,body_h-12);

@@ -179,6 +179,12 @@ static void colossal_flower(){
   a.map_clock_ms=21000;a.render();unsigned changes=0;
   for(unsigned i=0;i<first.size();i++)if(first[i]!=a.pixels[i]){CHECK(int(i%ScreenW)>=story.x&&int(i%ScreenW)<story.x+story.w&&int(i/ScreenW)>=story.y&&int(i/ScreenW)<story.y+story.h);++changes;}
   CHECK(changes>0);unchanged();a.map_clock_ms=30000;a.render();CHECK(!std::memcmp(first.data(),a.pixels,first.size()*sizeof(uint16_t)));unchanged();
+  // An opaque covering screen removes this label from the rendered tree.
+  // Reopening the same body creates a fresh ItemFX origin, even though its
+  // text and the global presentation time have not returned to zero.
+  a.library=true;a.map_clock_ms=31000;a.render();a.library=false;
+  a.map_clock_ms=32000;a.render();CHECK(!std::memcmp(first.data(),a.pixels,first.size()*sizeof(uint16_t)));unchanged();
+  a.map_clock_ms=33000;a.render();CHECK(std::memcmp(first.data(),a.pixels,first.size()*sizeof(uint16_t)));unchanged();
  }
 }
 static std::string attack_description(int slot){

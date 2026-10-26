@@ -64,7 +64,7 @@ static void compendium_button(Canvas&c,unsigned index,int x,int y,int width,int 
     c.action(x,y,width,height,action);
 }
 static void compendium_screen(Canvas&c){
-    auto&a=c.a;title_background(c,false);c.dim(0,0,320,240,165);a.hit_count=0;
+    auto&a=c.a;title_submenu_background(c,165);a.hit_count=0;
     const bool bestiary=a.bestiary_available();const int count=bestiary?4:3;
     // 368x490 source panels, a 12px HBox gap, and centered 714px VBox.
     // The source margin container remains 1920 wide even in the 1680 viewport.
@@ -142,7 +142,7 @@ static void statistics_entry(Canvas&c,const UiStatisticsLayout&layout,unsigned i
     if(hit_bottom>hit_top){Canvas hits=c;hits.hit(point.x,hit_top,point.w,hit_bottom-hit_top,HitKind::StatisticsEntry,int(index));}
 }
 static void statistics_screen(Canvas&c){
-    using reference_viewport::project;auto&a=c.a;title_background(c,false);c.dim(0,0,320,240,210);a.hit_count=0;
+    using reference_viewport::project;auto&a=c.a;title_submenu_background(c,210);a.hit_count=0;
     const unsigned age=a.map_clock_ms-a.progress_page_started;Canvas foreground=c;foreground.opacity=uint8_t(div255(unsigned(foreground.opacity)*(age>=400?255:age*255/400)));
     const UiStatisticsLayout layout(a.progress);a.progress_page_scroll.configure(layout.height,240);
     constexpr int origin=StatisticsMask::Top;const StatisticsMask mask(c);
@@ -390,7 +390,7 @@ static void history_quote_band(Canvas&page,const UiRunHistory&r,const UiHistoryL
 }
 static void history_screen(Canvas&c){
     auto&a=c.a;const auto*record=a.history_at(a.history_index);if(!record){a.history_open=false;compendium_screen(c);return;}const auto&r=*record;
-    title_background(c,false);c.dim(0,0,320,240,210);a.hit_count=0;
+    title_submenu_background(c,210);a.hit_count=0;
     uint16_t indices[MaxDeck]{},counts[MaxDeck]{};const unsigned groups=ui_history_groups(r,indices,counts);
     const UiHistoryLayout layout(r,groups);auto&motion=a.history_presentation;
     a.progress_page_scroll.configure(layout.height,UiHistoryLayout::ViewHeight);

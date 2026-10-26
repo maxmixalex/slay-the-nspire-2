@@ -2,6 +2,7 @@
 #include <stdint.h>
 #include "health_bar.hpp"
 #include "reference_viewport.hpp"
+#include "random_character_presentation.hpp"
 
 namespace spire {
 // NCharacterSelectButton: 1.1 focus scale, 0.5s EXPO_OUT on focus loss.
@@ -14,6 +15,7 @@ struct CharacterSelectPresentation {
     static constexpr int PanelDistance=reference_viewport::project(300);
     struct Portrait {uint16_t from=Scale,focus_scale=Scale,saturation=200,value=400;uint32_t start=0,color_start=0;bool color_tween=false;};
     Portrait portraits[Count]{};
+    RandomCharacterPresentation random_background{};
     uint32_t opened=0,panel_start=0;
     unsigned selected=Count;
     int focused=-1;

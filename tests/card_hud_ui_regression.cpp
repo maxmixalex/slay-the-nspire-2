@@ -579,9 +579,10 @@ static void ui6_screens(){
     app.pointer_cancel();app.pointer.visible=false;app.reset_presentation();
 }
 #include "static_hover_ui_cases.inc"
+#include "rich_label_clock_ui_cases.inc"
 }
 int main(int argc,char**argv){
     Bytes data;if(argc>1){FILE*f=std::fopen(argv[1],"rb");CHECK(f);data.resize(spire_test::pack_size(f));CHECK(std::fread(data.data(),1,data.size(),f)==data.size());CHECK(!std::fclose(f));}else data=fixture();
     if(argc>2)captures=argv[2];CHECK(app.init(data.data(),data.size(),{}));CHECK(app.content.current_profile());new_run(app.game,781,true);
-    glyph_measurement(data);bounded_canvas();title_layout();card_cache_pixels();original_resource_colors();original_resource_crosses();focused_card_scale();if(argc==1)synthetic_pixels();character_hover();top_bar_large_rotation();original_proceed_translation();if(argc>1)character_confirm_art();long_hand_description();ui7_cards();ui7_hud_nodes();ui6_screens();samples();top_bar_session_lifecycle(data);if(argc>1)static_hover_columns();std::printf("card/HUD UI: %u checks passed; %s profile, zero-I/O metrics, exact grid cache, original resource colors/crosses, automatic overflow tooltip, transformed focus, bounded draw and selector samples\n",checks,argc>1?"actual":"synthetic");
+    glyph_measurement(data);bounded_canvas();label_local_rainbow_pixels();title_layout();card_cache_pixels();original_resource_colors();original_resource_crosses();focused_card_scale();if(argc==1)synthetic_pixels();character_hover();top_bar_large_rotation();original_proceed_translation();if(argc>1)character_confirm_art();long_hand_description();ui7_cards();ui7_hud_nodes();ui6_screens();samples();top_bar_session_lifecycle(data);if(argc>1)static_hover_columns();std::printf("card/HUD UI: %u checks passed; %s profile, zero-I/O metrics, exact grid cache, original resource colors/crosses, automatic overflow tooltip, transformed focus, bounded draw and selector samples\n",checks,argc>1?"actual":"synthetic");
 }

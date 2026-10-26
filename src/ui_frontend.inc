@@ -48,6 +48,14 @@ static void title_background(Canvas&c,bool particles=true){
  }
  c.ui(U_TitleForeground,0,0);
 }
+static bool title_source_backstop(const Canvas&c){return c.a.title&&c.a.content.has_settings_ui10_assets();}
+static void title_submenu_background(Canvas&c,unsigned legacy_darkness){
+ const bool source=title_source_backstop(c);title_background(c,source);
+ if(source){
+  auto&motion=c.a.main_menu_backdrop;motion.observe(true,c.a.map_clock_ms);
+  main_menu_backdrop::apply_progress(c.pixels,c.pitch,motion.sample(c.a.map_clock_ms));
+ }else c.dim(0,0,320,240,legacy_darkness);
+}
 static void title_logo(Canvas&c){
  const auto logo=c.a.content.image(A_Logo);
  if(logo.w!=title_scene::AtlasWidth||(logo.h!=title_scene::LegacyAtlasHeight&&logo.h!=title_scene::AtlasHeight)){c.picture(A_Logo,3,5);return;}
@@ -134,7 +142,12 @@ static void continue_run_info(Canvas&c){
  row[0]=0;b.n=0;b.text("[gold]");b.number(a.saved_gold);b.text("[/gold]");panel.picture(A_Coin,x+76,y+bottom,11,11);profile_text_box(panel,row,x+91,y+bottom,33,12,style,false,false);
 }
 static void title_screen(Canvas&c){
-    auto&a=c.a;title_background(c);title_logo(c);profile_title_button(c);
+    auto&a=c.a;
+    if(a.settings_open&&title_source_backstop(c)){title_submenu_background(c,205);return;}
+    title_background(c);
+    if(title_source_backstop(c)){a.main_menu_backdrop.observe(false,a.map_clock_ms);
+        main_menu_backdrop::apply_progress(c.pixels,c.pitch,a.main_menu_backdrop.sample(a.map_clock_ms));}
+    title_logo(c);profile_title_button(c);
     title_menu_labels(c);continue_run_info(c);
     c.text("nSpire II 0.17",235,229,8,White,83);
 }

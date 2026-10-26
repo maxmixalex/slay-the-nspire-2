@@ -42,6 +42,19 @@ struct Canvas{
     const int16_t* color_matrix=nullptr; // Only duplicate-creature sprite layers opt in.
     const uint8_t* occlusion=nullptr; // Exact later opaque coverage; only the main merchant underlay uses it.
     uint32_t text_fly_in_elapsed=UINT32_MAX; // Label-local elapsed time; no layout or RNG changes.
+    uint32_t text_effect_identity=0; // Stable owner for a moving/scrolled label.
+    uint32_t rainbow_elapsed(const char*text,int x,int y,unsigned painter){
+        if(!a.text_effects||clip_w<=0||clip_h<=0||!RichLabelClocks::contains_rainbow(text))return 0;
+        uint32_t owner=text_effect_identity;
+        if(!owner){
+            const uint64_t surface=uint64_t(reinterpret_cast<uintptr_t>(pixels));
+            owner=uint32_t(surface)^uint32_t(surface>>32);
+            owner=(owner^uint32_t(x))*16777619u;owner=(owner^uint32_t(y))*16777619u;
+            owner=(owner^painter)*16777619u;owner=(owner^font_face)*16777619u;
+        }
+        owner=(owner^a.content.generation())*16777619u;
+        return a.rich_label_clocks.observe(owner,RichLabelClocks::hash(text),a.map_clock_ms);
+    }
     unsigned font_style(const RichChar&ch)const{const unsigned style=rich_font_style(ch);return (style==1&&bold_face?unsigned(bold_face):style)|font_face;}
     void paint(int at,uint16_t color,unsigned alpha=255,unsigned mode=0){
         if(occlusion&&occlusion[at]==255)return;
@@ -458,6 +471,7 @@ struct Canvas{
     int text(const char*p,int x,int y,int size=12,uint16_t color=White,int maxwidth=320,int maxlines=1){
         size=a.content.font_size(size,font_face,false,sparse_scene_sizes);
         char localized[1024];p=a.ui_text(p,localized,sizeof localized);
+        const uint32_t rainbow_time=rainbow_elapsed(p,x,y,1);
         const uint16_t colors[]={color,Gold,rgb(244,122,102),Blue,Green,rgb(190,145,217),rgb(236,164,92),rgb(104,210,205),White,Muted};
         static const int wave[16]={0,1,1,2,2,2,1,1,0,-1,-1,-2,-2,-2,-1,-1};
         RichReader reader(p);RichChar ch{};int start=x,line=0,pen64=0;
@@ -470,13 +484,14 @@ struct Canvas{
             int dy=a.text_effects&&ch.style.wave?wave[(a.animation/2+ch.index*2)%16]:0;
             if(a.text_effects&&ch.style.thinky_dots)dy+=rich_thinky_offset(a.map_clock_ms,ch.index-ch.style.thinky_start);
             int dx=a.text_effects&&ch.style.jitter?int((a.animation/2+ch.index*7)%3)-1:0;
-            const auto ink=a.text_effects&&ch.style.rainbow?rich_rainbow_rgb565(ch.style.rainbow_parameters,a.map_clock_ms,(x-start)*26000/mx(1,size)):rich_color(ch.style.color,colors);
+            const auto ink=a.text_effects&&ch.style.rainbow?rich_rainbow_rgb565(ch.style.rainbow_parameters,rainbow_time,(x-start)*26000/mx(1,size)):rich_color(ch.style.color,colors);
             animated_character(ch,g,x+dx,y+dy,ink);x=start+text_pixel(pen64);
         }return x;
     }
     int paragraph(const char*p,int x,int y,int w,int lines,int skip=0,int size=12,uint16_t color=White){
         size=a.content.font_size(size,font_face,false,sparse_scene_sizes);
         char localized[1024];p=a.ui_text(p,localized,sizeof localized);
+        const uint32_t rainbow_time=rainbow_elapsed(p,x,y,2);
         const uint16_t colors[]={color,Gold,rgb(244,122,102),Blue,Green,rgb(190,145,217),rgb(236,164,92),rgb(104,210,205),White,Muted};
         RichReader reader(p);RichChar ch{};int at=x,row=0,pen64=0;bool boundary=true;
         const bool words=a.content.word_wrapping()||wrap_latin_words;
@@ -497,7 +512,7 @@ struct Canvas{
                 int dx=a.text_effects&&ch.style.jitter?(int)((a.animation/2+ch.index*7)%3)-1:0;
                 // Original event body text is 26px. Normalize native glyph
                 // advances to that scale, retaining label-local x after wrap.
-                auto ink=a.text_effects&&ch.style.rainbow?rich_rainbow_rgb565(ch.style.rainbow_parameters,a.map_clock_ms,(at-x)*26000/mx(1,size)):rich_color(ch.style.color,colors);int yy=y+(row-skip)*(size+3)+dy;
+                auto ink=a.text_effects&&ch.style.rainbow?rich_rainbow_rgb565(ch.style.rainbow_parameters,rainbow_time,(at-x)*26000/mx(1,size)):rich_color(ch.style.color,colors);int yy=y+(row-skip)*(size+3)+dy;
                 animated_character(ch,g,at+dx,yy,ink);}
             pen64+=(pen64?metric.kerning64:0)+advance;at=x+text_pixel(pen64);
         }return row+1;
@@ -507,6 +522,7 @@ struct Canvas{
     // actual available glyph bands, then ellipsize within the final visible line.
     fitted_text::Plan fitted(const char*p,int x,int y,int w,int h,int preferred,int minimum,uint16_t color,bool centered=false,bool single_line=false,bool outline=false,bool drop_shadow=false,uint16_t outline_color=Ink){
         char localized[1024];p=a.ui_text(p,localized,sizeof localized);
+        const uint32_t rainbow_time=rainbow_elapsed(p,x,y,3);
         auto metrics=[&](const RichChar&ch,int size){return text_metric(ch,size);};
         minimum=a.content.font_size(minimum,font_face,false,sparse_scene_sizes);preferred=mx(minimum,a.content.font_size(preferred,font_face,false,sparse_scene_sizes));
         fitted_text::Plan plan;
@@ -533,7 +549,7 @@ struct Canvas{
             if(a.text_effects&&ch.style.thinky_dots)dy+=rich_thinky_offset(a.map_clock_ms,ch.index-ch.style.thinky_start);
             int dx=a.text_effects&&ch.style.jitter?int((a.animation/2+ch.index*7)%3)-1:0;
             xx=mx(x,mn(xx+dx,x+w-int(g.w)));yy=mx(y,yy+dy);
-            auto ink=shadow?outline_color:a.text_effects&&ch.style.rainbow?rich_rainbow_rgb565(ch.style.rainbow_parameters,a.map_clock_ms,at*26000/mx(1,size)):rich_color(ch.style.color,colors);
+            auto ink=shadow?outline_color:a.text_effects&&ch.style.rainbow?rich_rainbow_rgb565(ch.style.rainbow_parameters,rainbow_time,at*26000/mx(1,size)):rich_color(ch.style.color,colors);
             clipped.animated_character(ch,g,xx+offset_x,yy+offset_y,ink,shadow);
         });};
         // One LCD pixel is a large fraction of an 8px letter. Four subdued

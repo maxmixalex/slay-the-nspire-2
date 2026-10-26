@@ -17,6 +17,7 @@ static fitted_text::Plan native_room_compact_text(Canvas c,const char*text,int x
  const auto metric=[&](const RichChar&ch,int size){return c.text_metric(ch,size);};
  auto plan=native_room_compact_plan(c,text,w,h);
  if(!plan.rows||x<0||y<0||x>=c.clip_w||y>=c.clip_h)return plan;
+ const uint32_t rainbow_time=c.rainbow_elapsed(text,x,y,5);
  int widths[32]{};plan.rows=mn(plan.rows,32);
  if(centered)fitted_text::visit(text,w,plan,metric,[&](const RichChar&ch,int at,int row,int px){widths[row]=at+metric(ch,px).width;});
  Canvas clipped=c;clipped.pixels+=y*c.pitch+x;clipped.clip_w=mn(w,c.clip_w-x);clipped.clip_h=mn(h,c.clip_h-y);
@@ -31,7 +32,7 @@ static fitted_text::Plan native_room_compact_text(Canvas c,const char*text,int x
   if(c.a.text_effects&&ch.style.wave)yy+=wave[(c.a.animation/2+ch.index*2)%16];
   if(c.a.text_effects&&ch.style.thinky_dots)yy+=rich_thinky_offset(c.a.map_clock_ms,ch.index-ch.style.thinky_start);
   if(c.a.text_effects&&ch.style.jitter)xx+=int((c.a.animation/2+ch.index*7)%3)-1;
-  const auto ink=c.a.text_effects&&ch.style.rainbow?rich_rainbow_rgb565(ch.style.rainbow_parameters,c.a.map_clock_ms,at*26000/mx(1,px)):rich_color(ch.style.color,colors);
+  const auto ink=c.a.text_effects&&ch.style.rainbow?rich_rainbow_rgb565(ch.style.rainbow_parameters,rainbow_time,at*26000/mx(1,px)):rich_color(ch.style.color,colors);
   shadow.animated_character(ch,glyph,xx+1,yy,0,true);clipped.animated_character(ch,glyph,xx,yy,ink);
  });return plan;
 }
@@ -43,6 +44,7 @@ static int native_room_scroll_text(Canvas c,const char*text,int x,int y,int w,in
  const int rows=fitted_text::line_count(text,w,size,metric),step=size+1;
  const int left=mx(0,x),top=mx(0,y),right=mn(c.clip_w,x+w),bottom=mn(c.clip_h,y+h);
  if(w<=0||h<=0||right<=left||bottom<=top)return rows*step+2;
+ const uint32_t rainbow_time=c.rainbow_elapsed(text,x,y,6);
  c.pixels+=top*c.pitch+left;if(c.coverage)c.coverage+=top*c.pitch+left;c.clip_w=right-left;c.clip_h=bottom-top;
  const fitted_text::Plan plan{size,rows,rows,step,false};
  const uint16_t colors[]={rgb(255,246,226),Gold,rgb(244,122,102),Blue,Green,rgb(190,145,217),rgb(236,164,92),rgb(104,210,205),White,Muted};
@@ -52,7 +54,7 @@ static int native_room_scroll_text(Canvas c,const char*text,int x,int y,int w,in
   if(c.a.text_effects&&ch.style.wave)yy+=wave[(c.a.animation/2+ch.index*2)%16];
   if(c.a.text_effects&&ch.style.thinky_dots)yy+=rich_thinky_offset(c.a.map_clock_ms,ch.index-ch.style.thinky_start);
   if(c.a.text_effects&&ch.style.jitter)xx+=int((c.a.animation/2+ch.index*7)%3)-1;
-  const auto color=c.a.text_effects&&ch.style.rainbow?rich_rainbow_rgb565(ch.style.rainbow_parameters,c.a.map_clock_ms,at*26000/mx(1,px)):rich_color(ch.style.color,colors);
+  const auto color=c.a.text_effects&&ch.style.rainbow?rich_rainbow_rgb565(ch.style.rainbow_parameters,rainbow_time,at*26000/mx(1,px)):rich_color(ch.style.color,colors);
   const auto glyph=c.a.content.glyph(ch.codepoint,px,c.font_style(ch));
   Canvas shadow=c;shadow.opacity=uint8_t(div255(shadow.opacity*64));shadow.character(ch.codepoint,glyph,xx+1,yy,0,true);
   c.character(ch.codepoint,glyph,xx,yy,color);

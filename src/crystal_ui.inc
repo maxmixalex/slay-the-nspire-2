@@ -62,6 +62,7 @@ static void crystal_dialogue(Canvas&c){
  b.text(m.dialogue==1?"START.":m.dialogue==2?"REVEAL_GOOD.":m.dialogue==3?"REVEAL_BAD.":"END.");b.number(m.line);
  a.localized_text("events",key,text,sizeof text);layer.opacity=uint8_t(div255(layer.opacity*191));
  layer.text_fly_in_elapsed=age;
+ layer.text_effect_identity=0x43525942u^m.dialogue_start^(uint32_t(m.dialogue)<<24)^uint32_t(m.line);
  layer.fitted(text,center-114,y+7,228,35,10,10,rgb(0,0,0),true,false,false,false);
 }
 static bool crystal_backdrop(Canvas&layer){

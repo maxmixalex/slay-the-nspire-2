@@ -117,7 +117,7 @@ static void profile_title_button(Canvas&c){
     c.action(x,y,width,height,UiAction::OpenProfiles);
 }
 static void profiles_screen(Canvas&c){
-    auto&a=c.a;title_background(c,false);c.dim(0,0,320,240,190);a.hit_count=0;
+    auto&a=c.a;title_submenu_background(c,190);a.hit_count=0;
     profile_text_box(c,frontend_text(a,"main_menu_ui","PROFILE_SCREEN.BUTTON.chooseProfileMessage",a.content.language()!=2?"Choose a save profile to play!":"选择一个存档进行游玩！"),
         18,18,284,22,{10,0,rgb(239,200,81),128},true,false);
     for(unsigned i=0;i<UiProfileCount;++i){

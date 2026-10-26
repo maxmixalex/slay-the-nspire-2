@@ -1,3 +1,4 @@
+#include "random_character_ui13.inc"
 static void character_atmosphere(Canvas&c,unsigned character,uint32_t elapsed,uint32_t seed){
     if(character>=5||c.a.content.version()<Ui7ContentVersion)return;
     // Decode once, then reuse the same small texture for the complete batch.
@@ -84,7 +85,8 @@ static void character_screen(Canvas&c){
     const auto&definition=character_definitions[character];
     const auto clip=a.content.version()>=RoomUi7ContentVersion?a.content.clip(int(FirstClip+character)):Clip{};
     if(random){
-        if(a.content.version()>=SourceVersion)c.ui(I12_RandomBackground,0,0,320,240);
+        if(random_character_background(c,a.map_clock_ms,a.map_clock_ms-motion.panel_start,motion.panel_start)){}
+        else if(a.content.version()>=SourceVersion)c.ui(I12_RandomBackground,0,0,320,240);
         else{c.picture(A_Title,0,0,320,240);c.dim(0,0,320,240,110);}
     }else if(clip.count){
         // Exact disjoint static/dynamic planes keep the full source loop
@@ -96,7 +98,7 @@ static void character_screen(Canvas&c){
         c.picture(int(clip.first)+int(frame(character,a.map_clock_ms-motion.panel_start,clip.count)),0,0,320,240);
     }
     else c.ui(character_background(a.selected_character),0,0);
-    if(!random)character_atmosphere(c,character,a.map_clock_ms-motion.panel_start,motion.panel_start);
+    if(!random){motion.random_background.active=false;character_atmosphere(c,character,a.map_clock_ms-motion.panel_start,motion.panel_start);}
     char description_key[96]{},description[1024]{},relic_text[1024]{};
     const char*character_key=random?"RANDOM_CHARACTER":definition.key;
     TextBuffer key{description_key,sizeof description_key,0};key.text(character_key);key.text(".description");

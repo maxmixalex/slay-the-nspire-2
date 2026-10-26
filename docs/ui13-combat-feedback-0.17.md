@@ -19,6 +19,7 @@ resource-rail, pile-placement, highlight-container and HUD-layout choices.
 | Character / Ascension hover | The source `PORTRAIT_DESCRIPTION` uses a ` +` prefix for each localized Ascension title in all 16 pinned locales. The hover now matches that list and adds the original achievement-lock text for Custom/Daily. A Standard Ascension-zero run has no portrait hover, matching `NTopBarPortraitTip.ShowTip`. |
 | Physical digits | Defaults keep all ten digits as card-slot shortcuts and use the mechanical touchpad arrows for navigation. Each completely untouched historical binding bank upgrades independently. A customized bank is preserved byte-for-byte. The former unbound `5` acceptance fallback is removed; Enter or touchpad center accepts pointer-mode controls, and Catalog opens card details. |
 | Card cache identity | The hand cache includes the enchantment marker state and accepts an explicit detached description for before/after transform snapshots, matching the room-flow implementation without another large bitmap cache. |
+| Map legend label tails | Final screenshot review found that using pen advance as a fitted label's width could replace the end of a complete short name with an ellipsis. The legend now measures the full glyph extent including kerning and any last-glyph overhang. Its icon gap, group centering, maximum label width, six row bounds and paper padding stay the same. |
 
 ## Original source checks
 
@@ -128,16 +129,18 @@ passed real English/Chinese gates (31,901 / 31,898). Raw Q6 font metadata and
 an old 5px Rainbow assumption were corrected in test oracles; the current card
 body keeps its readable font floor and verifies full-description access.
 
-The final runtime checkpoint is
-`d5f9a3c9dfc9bb55e4742239dbb7be4ee5d8c8d1`. The final verification checkpoint
-`78a2cef775ddb6943baf194f7bc9e0e8c568edf8` retains the same production files
-and corrects the remaining old hover-layout test oracles. Its tests link the
-matched runtime core. All six targets now pass with the final UI13 release
-resources:
+The combat runtime below was executed at
+`d5f9a3c9dfc9bb55e4742239dbb7be4ee5d8c8d1`. Verification checkpoint
+`78a2cef775ddb6943baf194f7bc9e0e8c568edf8` corrected the remaining old
+hover-layout test oracles without changing production files. The final legend
+correction at `fca66343d0fee759b95b4b6acdf2d0ba9c7eea06` changes only
+`world_map_ui.inc` among production files relative to d5, and its complete
+Card/HUD target was rebuilt and rerun. All six targets pass with the final
+UI13 release resources:
 
 | Target | Synthetic checks | Final original-resource checks |
 | --- | ---: | --- |
-| Card / HUD UI | 385,861 | English 712,879; Simplified Chinese 790,241 |
+| Card / HUD UI | 385,861 | English 712,891; Simplified Chinese 790,253 |
 | Combat UI | 1,260 | English 154,880; Simplified Chinese 154,880 |
 | World UI | 7,744 | English 31,796; Simplified Chinese 31,796 |
 | Card movement | 1,106 | Asset-independent movement and 5,540-byte metadata checks |
@@ -150,14 +153,18 @@ tooltip's exact localized pixels including a scrolled General row, and all six
 map-legend rows inside their padded paper. It does not read the production
 geometry constants to manufacture expected bounds. The original d5 test run
 retains its two failed Card/HUD cases as evidence of the obsolete 69px and
-pre-scroll Settings assumptions; the complete final Card/HUD run supersedes
-those cases without changing the runtime.
+pre-scroll Settings assumptions; the complete test-only correction passed at
+78a2. Visual review then found the legend's false ellipsis. The fca follow-up
+adds an independent complete-word pixel comparison for all six localized
+names: the oracle draws unwrapped text over the original paper and must match
+the visible row within its existing padded bounds. It does not call the new
+extent helper or the fitting planner.
 
 The private closed receipts are
 `combat-ui13-acceptance-gates-9c1864ea6171` for the first five targets and the
-initial Card/HUD failures, and `combat-cardhud-complete-gates-845c772a6e0a`
+initial Card/HUD failures, and `combat-cardhud-legend-gates-0cd3c02bb676`
 for the completed synthetic/English/Chinese Card/HUD runs. The latter and its
-build receipt `combat-cardhud-complete-build-362b99bcc808` are closed with
+build receipt `combat-cardhud-legend-build-c4ac5b3dc4ef` are closed with
 exit code zero and unchanged source inventories. The final Card/HUD evidence
 includes lossless 320×240 captures and hashes of their original PPM data,
 converted PNGs, executable and input packs.

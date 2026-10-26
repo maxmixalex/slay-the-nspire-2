@@ -286,7 +286,8 @@ bool Content::open(ResourceSource source){
                                                 // catalogs fail without scanning payload data.
                                                 constexpr unsigned endpoints[]={FrontendUi13AuxiliaryCount,
                                                     RoomsUi13AuxiliaryCount,ArchitectUi13AuxiliaryCount,
-                                                    ArchitectAttackUi13AuxiliaryCount,DoomUi13AuxiliaryCount};
+                                                    ArchitectAttackUi13AuxiliaryCount,DoomUi13AuxiliaryCount,
+                                                    RandomCharacterUi13AuxiliaryCount,FakeMerchantUi13AuxiliaryCount};
                                                 for(unsigned end:endpoints){
                                                     if(next==0x314c4954u)break;
                                                     for(unsigned i=auxiliary;i<end;++i){

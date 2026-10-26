@@ -101,6 +101,6 @@ static void collection_screen(Canvas&c){
     if(focused>=0){const int width=SourceHoverWidth,x=focus_x<160?focus_x+15:focus_x-width-15;collection_tooltip(c,focused,x,focus_y,width);}
 }
 static void library_screen(Canvas&c){
-    auto&a=c.a;a.hit_count=0;title_background(c,false);c.dim(0,0,320,240,185);
+    auto&a=c.a;a.hit_count=0;title_submenu_background(c,185);
     if(!a.library_tab)card_library_screen(c);else collection_screen(c);
 }

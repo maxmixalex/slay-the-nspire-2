@@ -50,7 +50,7 @@ static void setup_disclaimer(Canvas&c,const char*text){
  profile_text_box(c,text,57,211,206,27,style,true,true);
 }
 static void singleplayer_screen(Canvas&c){
- using namespace run_setup_layout;auto&a=c.a;title_background(c,false);c.dim(0,0,320,240,165);a.hit_count=0;
+ using namespace run_setup_layout;auto&a=c.a;title_submenu_background(c,165);a.hit_count=0;
  const bool source=a.content.has_settings_ui10_assets();
  const int old_bases[]={I7_MenuStandardPanel,I7_MenuDailyPanel,I7_MenuCustomPanel},old_icons[]={I7_MenuStandardIcon,I7_MenuDailyIcon,I7_MenuCustomIcon};
  const int bases[]={I10_StandardPanel,I10_DailyPanel,I10_CustomPanel},icons[]={I10_StandardIcon,I10_DailyIcon,I10_CustomIcon};
@@ -76,7 +76,7 @@ static void singleplayer_screen(Canvas&c){
  native_original_back(c,a.run_mode.started);
 }
 static void custom_run_screen(Canvas&c){
- using namespace run_setup_layout;auto&a=c.a;auto&mode=a.run_mode;title_background(c,false);c.dim(0,0,320,240,185);a.hit_count=0;
+ using namespace run_setup_layout;auto&a=c.a;auto&mode=a.run_mode;title_submenu_background(c,185);a.hit_count=0;
  const bool editing=a.run_seed_editing&&a.map_preview.open,english=a.content.language()!=2;const unsigned bold=source_label_face(a.content.original_label_fonts(),5);const uint16_t cream=rgb(255,246,226),gold=rgb(239,200,81);
  const auto label=[&](const char*key,const char*fallback){return frontend_text(a,"main_menu_ui",key,fallback);};
  profile_text_box(c,label("CUSTOM_RUN_SCREEN.CUSTOM_MODE_TITLE","Custom Mode"),5,14,150,25,{12,source_label_face(a.content.original_label_fonts(),4),gold,128},true,true);
@@ -143,7 +143,7 @@ static void custom_run_screen(Canvas&c){
  }else{a.hit_count=0;c.hit(seed_left,SeedTop,seed_width,seed_height,HitKind::None);}
 }
 static void daily_run_screen(Canvas&c){
- auto&a=c.a;a.refresh_daily_run();const auto&mode=a.run_mode;title_background(c,false);c.dim(0,0,320,240,185);a.hit_count=0;
+ auto&a=c.a;a.refresh_daily_run();const auto&mode=a.run_mode;title_submenu_background(c,185);a.hit_count=0;
  const unsigned bold=source_label_face(a.content.original_label_fonts(),5);const uint16_t cream=rgb(255,246,226),gold=rgb(239,200,81);
  const auto label=[&](const char*key,const char*fallback){return frontend_text(a,"main_menu_ui",key,fallback);};
  profile_text_box(c,label("DAILY_RUN_MENU.DAILY_TITLE","Daily Challenge"),12,14,296,24,{14,source_label_face(a.content.original_label_fonts(),4),gold,128},true,false);

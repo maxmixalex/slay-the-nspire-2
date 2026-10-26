@@ -46,6 +46,20 @@ physical-device FPS, or natural three-act win is claimed by these native results
 Final identities, measured device limits and downloadable files will be recorded
 in the UI13 acceptance manifest after the remaining runs close.
 
+The final audit of previously explicit omissions additionally found the Random
+character background, the custom Fake Merchant room's original actors and
+particles, the main-menu BlurBackstop, and label-local rainbow effect clocks.
+Their production implementations and source converters are now integrated for
+the next immutable checkpoint. Full resource conversion, new actual-resource
+gates and final device acceptance remain pending; they are not being relabelled
+as completed platform adaptations. The matched
+UI12 late Shop window has now closed through normal OS exit: 586 Room frames,
+101.7496675 ms mean interval, 20,364,684 requested bytes / 1,205 reads / 1,051
+seeks after the initial 120 simulated seconds. A short-key navigation attempt
+that remained inside Settings was interrupted and excluded. Intermediate UI13
+d5 has ordinary OS startup and a natural Ancient/map/first-battle flow in
+progress; those captures will keep their actual runtime identity.
+
 
 ## UI12 playable follow-up — acceptance completed
 

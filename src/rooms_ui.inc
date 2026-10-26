@@ -28,6 +28,7 @@ static void map_screen(Canvas&c,bool inspect=false){
     else{char b[64]={};TextBuffer t{b,sizeof b,0,&c.a.content};t.text("第 ");t.number(s.next_row+1);t.text(" 层  ");t.text(room_name(s.map[s.next_row*3+a.cursor].room));c.centered(b,0,207,320,12,Gold);c.centered("←→ 选路   Enter 进入   ↑↓ 查看远方",0,225,320,10,Muted);}
 }
 #include "merchant_ui.inc"
+#include "fake_merchant_ui13.inc"
 #include "events_ui.inc"
 
 static void deck_select(Canvas&c){

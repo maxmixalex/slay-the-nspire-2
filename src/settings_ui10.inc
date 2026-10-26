@@ -35,7 +35,10 @@ static void setup_tickbox(Canvas&c,uint32_t key,bool value,int center_x,int cent
  small_material_icon(c,c.a.content.ui_image(image),center_x-extent/2,center_y-extent/2,extent,extent,1000,visual.value);
 }
 static void frontend_settings_screen(Canvas&c){
- using namespace settings_layout;auto&a=c.a;a.hit_count=0;c.dim(0,0,320,240,205);
+ using namespace settings_layout;auto&a=c.a;a.hit_count=0;
+ // Main-menu Settings shares NMainMenu's animated mipmapped BlurBackstop.
+ // In-run Settings keeps its independent run-overlay backstop.
+ if(!title_source_backstop(c))c.dim(0,0,320,240,205);
  const bool english=a.content.language()!=2,source_art=a.content.has_settings_ui10_assets();
  const unsigned bold=source_label_face(a.content.original_label_fonts(),5);const uint16_t cream=rgb(255,246,226),gold=rgb(239,200,81);
  const auto label=[&](const char*key,const char*eng,const char*zhs){return frontend_text(a,"settings_ui",key,english?eng:zhs);};

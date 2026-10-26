@@ -2,6 +2,10 @@
 #include "ui13_assets.hpp"
 #include "architect_attack_assets.hpp"
 #include "doom_assets.hpp"
+#include "fake_merchant_assets_ui13.hpp"
+#include "fake_merchant_presentation.hpp"
+#include "random_character_assets.hpp"
+#include "source_water_reflection.hpp"
 #include "phobia_swarm.hpp"
 #include "enemy_command_timing.hpp"
 #include "screen_shake_sources.hpp"
@@ -28,6 +32,8 @@
 #include "feedback_assets.hpp"
 #include "frontend_ui7_assets.hpp"
 #include "character_select_layout.hpp"
+#include "random_character_assets.hpp"
+#include "source_water_reflection.hpp"
 #include "card_face_layout.hpp"
 #include "menu_overlay_layout.hpp"
 #include "card_resource_assets.hpp"
@@ -276,6 +282,7 @@ int App::detail_stars()const{
 #include "pointer_ui6.inc"
 
 void App::render(){
+    RichLabelClocks::Frame label_frame{rich_label_clocks};
     content.set_image_cache_profile(!title&&game.phase==Phase::Shop);
     if(startup_logo.active()){Canvas c{*this};startup_logo_screen(c);return;}
     sync_screen_motion();

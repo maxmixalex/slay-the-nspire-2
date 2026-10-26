@@ -488,7 +488,7 @@ static void bestiary_list(Canvas&c){
  }
 }
 static void bestiary_screen(Canvas&c){
- auto&a=c.a;auto&b=a.bestiary;a.hit_count=0;title_background(c,false);c.dim(0,0,320,240,190);
+ auto&a=c.a;auto&b=a.bestiary;a.hit_count=0;title_submenu_background(c,190);
  bestiary_actors(c);const auto*entry=bestiary_entry(b.selected);
  const unsigned age=a.map_clock_ms-b.selected_at;const int eased=age>=500?4096:int(health_bar::expo_out(age*2));
  Canvas title=c;title.font_face=uint8_t(source_label_face(a.content.original_label_fonts(),4));title.opacity=uint8_t(age>=500?255:age*255/500);

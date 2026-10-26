@@ -1,5 +1,6 @@
 #include "localized_template.hpp"
 #include "rich_text.hpp"
+#include "rich_label_clock.hpp"
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -165,6 +166,25 @@ static void brackets_and_code(){
  std::string deep;for(unsigned i=0;i<17;++i)deep+="[code]";deep+='x';for(unsigned i=0;i<17;++i)deep+="[/code]";
  CHECK(rich_plain(deep.c_str())=="[code]x[/code]");
 }
+static void label_clocks(){
+ RichLabelClocks clocks;const auto text=RichLabelClocks::hash("[rainbow]same text[/rainbow]");
+ CHECK(RichLabelClocks::contains_rainbow("x[rainbow freq=.3]x[/rainbow]"));
+ CHECK(!RichLabelClocks::contains_rainbow("plain [rain text"));
+ {RichLabelClocks::Frame frame{clocks};CHECK(clocks.observe(1,text,9000)==0);}
+ {RichLabelClocks::Frame frame{clocks};CHECK(clocks.observe(1,text,9250)==250);
+  CHECK(clocks.observe(2,text,9250)==0);CHECK(clocks.observe(1,text,9250)==250);
+  {RichLabelClocks::Frame nested{clocks};CHECK(clocks.observe(2,text,9300)==50);}
+  CHECK(clocks.observe(1,text,9300)==300);}
+ {RichLabelClocks::Frame frame{clocks};CHECK(clocks.observe(2,text,9500)==250);}
+ {RichLabelClocks::Frame frame{clocks};CHECK(clocks.observe(1,text,9750)==0);
+  CHECK(clocks.observe(2,text,9750)==500);CHECK(clocks.observe(2,text^1u,9750)==0);}
+ {RichLabelClocks::Frame frame{clocks};}
+ {RichLabelClocks::Frame frame{clocks};CHECK(clocks.observe(2,text,10000)==0);}
+ clocks.reset();CHECK(clocks.observe(1,text,UINT32_MAX-31)==0);
+ CHECK(clocks.observe(1,text,32)==64);CHECK(clocks.observe(1,text,16)==0);
+ clocks.reset();for(unsigned i=0;i<RichLabelClocks::Capacity+12;++i)CHECK(clocks.observe(i+1,text,1000)==0);
+ unsigned used=0;for(const auto&label:clocks.labels)used+=label.text!=0;CHECK(used==RichLabelClocks::Capacity);
+}
 static void rainbow(){
  RichReader reader("x[sine][rainbow freq=0.3 sat=0.8 val=1]a[gold]b[/gold][rainbow speed=-1 sat=0]c[/rainbow]d[/rainbow][/sine]z");RichChar ch{};
  CHECK(reader.next(ch)&&ch.codepoint=='x'&&!ch.style.rainbow);
@@ -231,5 +251,5 @@ int main(){Context x;expect(x,"{N:diff()}","3");expect(x,"{IfUpgraded:show:up {N
  expect(x,"x{Empty}y","xy");expect(x,"{Missing:show:bad|also bad}","{Missing:show:bad|also bad}");expect(x,"{Missing}","{Missing}");expect(x,"{unclosed","{unclosed");
  for(unsigned size=0;size<16;size++){char b[24];std::memset(b,0x5a,sizeof b);LocalizedTemplate(b,size,resolve,&x).format("prefix{N:abs()}long suffix");CHECK((unsigned char)b[size]==0x5a);if(size)CHECK(std::memchr(b,0,size));}
  expect(x,"{WideMin:n()}","-9,223,372,036,854,775,808");expect(x,"{WideMax:n()}","9,223,372,036,854,775,807");expect(x,"{WideRatio:n()}","1");expect(x,"{Low:n()}","0");expect(x,"{Missing:n()}","{Missing:n()}");
- catalog_context();original_culture_grammar();conditional_corpus();thinky_dots();source_font_sizes();brackets_and_code();rainbow();std::printf("localized templates: %u checks passed\n",checks);
+ catalog_context();original_culture_grammar();conditional_corpus();thinky_dots();source_font_sizes();brackets_and_code();label_clocks();rainbow();std::printf("localized templates: %u checks passed\n",checks);
 }
