@@ -276,7 +276,10 @@ static void draw_card_face(Canvas&c,Card card,int x,int y,int w,int h,int fee=-2
     // The face's offset within this window is part of its identity: the same
     // card on a plain background must not replay a differently padded copy.
     const int left=mn(mx(0,x-6),c.clip_w-SmallCardCacheW);
-    const int top=mn(mx(0,y-4),c.clip_h-SmallCardCacheH);
+    // The readable10px source cost label extends above a36px card's
+    // proportional energy icon. Keep its full stroke inside the existing
+    //108px tile; the previous4px pad rejected every such real-font cache.
+    const int top=mn(mx(0,y-8),c.clip_h-SmallCardCacheH);
     const bool supported_size=(w==65&&h==91)||(w==69&&h==96)||(w==69&&h==97)||(w==68&&h==96)||(w==46&&h==64)||(w==47&&h==66)||(w==43&&h==61)||(w==36&&h==50)||(w==44&&h==62);
     const bool candidate=known&&!description_truncated&&c.a.content.healthy()&&supported_size&&!c.coverage&&!c.occlusion&&c.opacity==255&&c.brightness==255&&
         c.tint_red==255&&c.tint_green==255&&c.tint_blue==255&&!c.color_matrix&&left>=0&&top>=0&&
