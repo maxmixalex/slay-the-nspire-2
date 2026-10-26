@@ -636,7 +636,7 @@ void ui13_source_catalogs(){
     for(unsigned end:{unsigned(Ui12AuxiliaryCount),IntroLogoAuxiliaryCount,PhobiaSwarmAuxiliaryCount,
             SleepingVfxAuxiliaryCount,FrontendUi13AuxiliaryCount,RoomsUi13AuxiliaryCount,
             ArchitectUi13AuxiliaryCount,ArchitectAttackUi13AuxiliaryCount,DoomUi13AuxiliaryCount,
-            RandomCharacterUi13AuxiliaryCount,FakeMerchantUi13AuxiliaryCount}){
+            RandomCharacterUi13AuxiliaryCount,FakeMerchantBaseUi13AuxiliaryCount,FakeMerchantUi13AuxiliaryCount}){
         label="UI40 complete optional source catalog";Package p=pack(end);Provider source{&p.bytes};
         CHECK(direct->open(p.bytes.data(),p.bytes.size())&&range->open(source.source()));
         for(Content*content:{direct.get(),range.get()}){
@@ -657,7 +657,7 @@ void ui13_source_catalogs(){
     }
     for(unsigned end:{FrontendUi13AuxiliaryCount,RoomsUi13AuxiliaryCount,
             ArchitectUi13AuxiliaryCount,ArchitectAttackUi13AuxiliaryCount,DoomUi13AuxiliaryCount,
-            RandomCharacterUi13AuxiliaryCount,FakeMerchantUi13AuxiliaryCount}){
+            RandomCharacterUi13AuxiliaryCount,FakeMerchantBaseUi13AuxiliaryCount,FakeMerchantUi13AuxiliaryCount}){
         Package incomplete=pack(end-1);reject("Incomplete source catalog is not accepted",std::move(incomplete.bytes));
         Package wrong=pack(end);put(wrong.bytes,wrong.base-4,wrong.images);
         reject("Source catalog references must stay inside the image directory",std::move(wrong.bytes));

@@ -171,10 +171,12 @@ static void colossal_flower(){
   // Finish the original title/body/option entrance and the focus tween
   // before isolating rainbow time. Hold the unrelated sine/jitter frame.
   // freq=.3 must return to exactly the same colors after three turns / 10s.
-  a.animation=0;a.map_clock_ms=0;a.scroll=int(first_row);a.render();
+  a.animation=0;a.map_clock_ms=0;a.render();
+  CHECK(a.event_body_scroll.maximum>0);
+  a.event_body_scroll.set_thumb(int(first_row)*(a.content.font_size(10)+1),0,a.event_body_scroll.maximum/256);
   a.map_clock_ms=10000;a.render();a.map_clock_ms=20000;a.render();unchanged();
-  HitRegion story{};for(int i=0;i<a.hit_count;++i)if(a.hits[i].kind==HitKind::UiAction&&a.hits[i].value==int(UiAction::ReadEvent))story=a.hits[i];
-  CHECK(story.x==153&&story.y==54&&story.w==152&&story.h>=53&&story.y+story.h<221);
+  HitRegion story{};for(int i=0;i<a.hit_count;++i)if(a.hits[i].kind==HitKind::EventScroll&&a.hits[i].value==0)story=a.hits[i];
+  CHECK(story.x==126&&story.y==54&&story.w==173&&story.h==94);
   std::vector<uint16_t>first(a.pixels,a.pixels+ScreenW*ScreenH);
   a.map_clock_ms=21000;a.render();unsigned changes=0;
   for(unsigned i=0;i<first.size();i++)if(first[i]!=a.pixels[i]){CHECK(int(i%ScreenW)>=story.x&&int(i%ScreenW)<story.x+story.w&&int(i/ScreenW)>=story.y&&int(i/ScreenW)<story.y+story.h);++changes;}

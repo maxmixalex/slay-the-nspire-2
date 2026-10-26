@@ -7,6 +7,7 @@ pixel factoring is exact after RGB565 quantization, before lossless packing.
 from __future__ import annotations
 
 import json
+import hashlib
 import os
 from pathlib import Path
 
@@ -24,6 +25,7 @@ from world_rest_actor_assets import _FrameSampler
 from world_room_shaders import RoomRenderer
 
 BASE_AUXILIARY, AUXILIARY_COUNT = 3343, 5011
+NO_RUG_AUXILIARY_COUNT = 5156
 SCENE = 'scenes/events/custom/fake_merchant.tscn'
 SCALE = 218/1080
 LEFT = (320-1920*SCALE)/2
@@ -143,10 +145,27 @@ class NecrobinderActor:
         return image
 
 
-def _sequence(pack, sampler, cache, spec, first):
+def _sequence(pack, sampler, cache, spec, first, exclude_slots=()):
     key, resource, count, position, scale, skin, crop = spec
     # Explicit sequence names avoid relying on the numeric append directory.
-    clip = 'idle_loop' if key in ('bottom', 'foreground', 'merchant', 'merchant-outline') else 'relaxed_loop'
+    clip = 'idle_loop' if key in ('bottom', 'bottom-no-rug', 'foreground', 'merchant', 'merchant-outline') else 'relaxed_loop'
+    # A failed later actor must not invalidate already complete sequences.
+    # This build-time receipt checks source/code identities and every retained
+    # payload. It adds no integrity pass to the calculator runtime.
+    files = ('fake_merchant_ui13_assets.py','world_enemy_assets.py','SpineSampleAdapter.cs',
+             'world_raster.py','animation.py','world_scene_assets.py','world_room_shaders.py',
+             'world_rest_actor_assets.py','sparse_image.py','patch_feedback_assets.py')
+    identity = hashlib.sha256(b''.join((Path(__file__).parent/name).read_bytes() for name in files)+
+        json.dumps([spec,first,list(exclude_slots)]).encode()+sampler.runtime_identity.encode()).hexdigest()
+    receipt = cache/('fake-'+key+'-receipt.json')
+    if receipt.is_file():
+        previous = json.loads(receipt.read_text())
+        if previous.get('source_identity') == identity:
+            for row in previous['images']:
+                payload = (cache/row['file']).read_bytes()
+                tiles.require(len(payload)==row['bytes'] and tiles.sha256(payload)==row['sha256'],
+                              'Incomplete Fake Merchant sequence payload: '+row['file'])
+            return previous['images'],previous['sequence']
     metadata = sampler.metadata(resource)
     source = next(row for row in metadata['clips'] if row['name'] == clip)
     tiles.require(abs(source['duration']-count/FPS) < .00001,
@@ -158,7 +177,12 @@ def _sequence(pack, sampler, cache, spec, first):
     x, y, w, h = crop
     frames = []
     for frame in sampled:
-        full = attached.image(frame) if attached else _image(sampler.draw(resource, frame), scale*SCALE, origin)
+        drawing = sampler.draw(resource, frame)
+        if exclude_slots:
+            found = {row['slot'] for row in frame['draw'] if row['slot'] in exclude_slots}
+            tiles.require(found==set(exclude_slots), 'Fake Merchant hidden rug slot changed')
+            drawing = [geometry for row, geometry in zip(frame['draw'], drawing) if row['slot'] not in exclude_slots]
+        full = attached.image(frame) if attached else _image(drawing, scale*SCALE, origin)
         pixels = np.asarray(full)
         outside = pixels[:, :, 3].copy(); outside[y:y+h, x:x+w] = 0
         tiles.require(not np.any(outside), 'Fake Merchant frame escaped declared crop: '+key)
@@ -186,6 +210,8 @@ def _sequence(pack, sampler, cache, spec, first):
         summary['attached_shader'] = 'shaders/vfx/vfx_stepped_shader_fire_dark.tres'
         summary['attached_slot'] = 'flameattach'
         summary['shader_sampling'] = 'same24Hz original source times as the complete6s relaxed body period'
+    if exclude_slots:summary['hidden_source_slots'] = list(exclude_slots)
+    tiles.atomic_bytes(receipt,json.dumps(dict(source_identity=identity,images=rows,sequence=summary),indent=2).encode()+b'\n')
     return rows, summary
 
 
@@ -227,3 +253,27 @@ def source_assets(pck, cache, *, runtime=None, dotnet=None, fastnoise_header=Non
     finally:
         pack.close()
     return rows
+
+
+def source_no_rug_assets(pck, cache, *, runtime=None, dotnet=None, base=5011, end=5156):
+    """Only the post-fight acquired-rug variant; never resample the prior1668.
+
+    NFakeMerchant hides the source rug bone after the fight if the genuine
+    FakeMerchantsRug relic was obtained. The remaining animation keeps all
+   144 source samples, rather than painting over its moving highlights.
+    """
+    tiles.require(base==AUXILIARY_COUNT and end==NO_RUG_AUXILIARY_COUNT,'Changed no-rug append range')
+    cache=Path(cache);cache.mkdir(parents=True,exist_ok=True)
+    pack=Pack(pck)
+    try:
+        source_checks(pack)
+        spec=('bottom-no-rug',)+SEQUENCES[0][1:]
+        with SpineSampler(pack,runtime=runtime,dotnet=dotnet,work_dir=cache/'adapter') as sampler:
+            rows,sequence=_sequence(pack,sampler,cache,spec,base,exclude_slots=('rug',))
+        tiles.require(len(rows)==end-base,'Changed no-rug source sample count')
+        evidence=dict(schema=1,source_scene=SCENE,auxiliary_start=base,auxiliary_end=end,
+                      condition='StartedFight && player.HasRelic<FakeMerchantsRug>()',
+                      source_animation_frames=144,sequence=sequence,images=rows)
+        tiles.atomic_bytes(cache/'fake-merchant-no-rug-assets.json',json.dumps(evidence,indent=2).encode()+b'\n')
+        return rows
+    finally:pack.close()

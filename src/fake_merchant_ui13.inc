@@ -121,12 +121,21 @@ static void squares(Canvas&c,const Squares&state){
  }
 }
 }
+static bool fake_merchant_started_fight(const State&s){
+ // FoulPotion already persists the six distinct remaining wares (or-1)
+ // in these fields. Before the fight they are all zero. This retains the
+ // original StartedFight fact without adding a State/RNG/save field.
+ for(unsigned i=0;i<6;++i)if(s.original_events.values[2+i]!=0)return true;
+ return false;
+}
 static bool fake_merchant_room(Canvas&c){
  auto&a=c.a;if(a.content.ui_image(I13_FakeMerchantSquareSpeck)<0)return false;
  if(c.clip_w<=0||c.clip_h<=22)return true;
  auto&v=fake_merchant::room;v.observe(a);const uint32_t elapsed=a.map_clock_ms-v.start;
- const bool focused=!a.shop_open&&merchant_hovered(a,0,195,92,67,95);
- fake_merchant::sequence(c,0,uint64_t(elapsed)*1000);
+ const bool fought=fake_merchant_started_fight(a.game);
+ const bool focused=!fought&&!a.game.original_events.finished&&!a.shop_open&&merchant_hovered(a,0,195,92,67,95);
+ const bool removed=fought&&has_world_relic(a.game,WorldRelicFakeMerchantsRug)&&a.content.ui_image(I13_FakeMerchantWithoutRug)>=0;
+ fake_merchant::sequence(c,removed?9:0,uint64_t(elapsed)*1000);
  Canvas room=c;room.pixels+=22*room.pitch;if(room.coverage)room.coverage+=22*room.pitch;room.clip_h-=22;
  fake_merchant::glitter(room,a.map_clock_ms);
  fake_merchant::lights(room,elapsed,v.seed,false);
@@ -139,7 +148,7 @@ static bool fake_merchant_room(Canvas&c){
  fake_merchant::sequence_frame(c,actor,unsigned(actor_phase/1000000%source.count));
  fake_merchant::lights(room,elapsed,v.seed,true);
  fake_merchant::stars(room,elapsed,v.seed);
- fake_merchant::sequence(c,focused?3:2,uint64_t(elapsed)*1000);
+ if(!fought)fake_merchant::sequence(c,focused?3:2,uint64_t(elapsed)*1000);
  fake_merchant::sequence(c,1,uint64_t(elapsed)*1000);
  return true;
 }

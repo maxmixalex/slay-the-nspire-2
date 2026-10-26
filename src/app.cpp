@@ -283,7 +283,16 @@ int App::detail_stars()const{
 
 void App::render(){
     RichLabelClocks::Frame label_frame{rich_label_clocks};
-    content.set_image_cache_profile(!title&&game.phase==Phase::Shop);
+    const Phase room_parent=game.phase==Phase::WorldRelicChoice?Phase(game.world_relics.return_phase):game.phase;
+    const bool fake_room_frames=!title&&game.original_events.active&&game.original_events.id==OriginalEventId::FakeMerchant&&
+        (game.phase==Phase::Event||game.phase==Phase::OriginalEventChoice||game.phase==Phase::WorldRelicChoice||
+         game.phase==Phase::Upgrade||game.phase==Phase::Remove||game.phase==Phase::Transform)&&
+        !world_room_is_combat(game)&&room_parent!=Phase::Reward&&!combat_phase(room_parent)&&
+        !(combat_feedback.active&&choice_phase(game.phase))&&int32_t(combat_linger_until-animation)<=0&&
+        content.ui_image(I13_FakeMerchantSquareSpeck)>=0;
+    // Both merchant scenes cycle complete source frames. Retain their decoded
+    // pixels in the same 11 MiB arena; combat and its choices keep 5/6 MiB.
+    content.set_image_cache_profile((!title&&game.phase==Phase::Shop)||fake_room_frames);
     if(startup_logo.active()){Canvas c{*this};startup_logo_screen(c);return;}
     sync_screen_motion();
 #if SPIRE_DEBUG_COMMANDS

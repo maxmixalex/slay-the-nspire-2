@@ -180,7 +180,7 @@ public:
         return ui_count_==FrontendUi13AuxiliaryCount||ui_count_==RoomsUi13AuxiliaryCount||
             ui_count_==ArchitectUi13AuxiliaryCount||ui_count_==ArchitectAttackUi13AuxiliaryCount||
             ui_count_==DoomUi13AuxiliaryCount||ui_count_==RandomCharacterUi13AuxiliaryCount||
-            ui_count_==FakeMerchantUi13AuxiliaryCount;
+            ui_count_==FakeMerchantBaseUi13AuxiliaryCount||ui_count_==FakeMerchantUi13AuxiliaryCount;
     }
     bool has_sleeping_vfx_assets()const{return version_>=Ui12ContentVersion&&(ui_count_==SleepingVfxAuxiliaryCount||has_ui13_assets());}
     bool has_phobia_swarm_assets()const{return version_>=Ui12ContentVersion&&(ui_count_==PhobiaSwarmAuxiliaryCount||has_sleeping_vfx_assets());}

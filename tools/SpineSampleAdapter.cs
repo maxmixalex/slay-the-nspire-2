@@ -282,8 +282,11 @@ static class SpineSampleAdapter {
         var frames = new List<object>();
         foreach (var item in request.GetProperty("times").EnumerateArray()) {
             float target = item.GetSingle();
-            if (!float.IsFinite(target) || target < time || target > 120 || frames.Count >= 256)
-                throw new InvalidDataException("Sample times must be ordered within [0, 120], at most 256 frames");
+            // Host-side conversion only. A complete 320-frame relaxed cycle
+            // must retain every output boundary in the same physics solve;
+            // splitting requests would restart constraints from setup pose.
+            if (!float.IsFinite(target) || target < time || target > 120 || frames.Count >= 512)
+                throw new InvalidDataException("Sample times must be ordered within [0, 120], at most 512 frames");
             while (target - time > 0.000001f) {
                 float delta = Math.Min(step, target - time);
                 skeleton.Update(delta); state.Update(delta); state.Apply(skeleton);

@@ -108,10 +108,15 @@ def retained_endpoint():
     return AUXILIARY_COUNT
 
 
+def no_rug_endpoint():
+    from fake_merchant_ui13_assets import NO_RUG_AUXILIARY_COUNT
+    return NO_RUG_AUXILIARY_COUNT
+
+
 def catalog_endpoint(manifest):
     rows=manifest['images'];end=BASE_AUX+len(rows)
     tiles.require(manifest.get('reference')=='v0.111.0 / 41cef1ea' and
-        end in (AUXILIARY,RANDOM_AUXILIARY,retained_endpoint()) and
+        end in (AUXILIARY,RANDOM_AUXILIARY,retained_endpoint(),no_rug_endpoint()) and
         [row['auxiliary'] for row in rows]==list(range(BASE_AUX,end)),
         'Incomplete UI13 source manifest')
     return end
@@ -125,6 +130,8 @@ def extend_retained(args):
     cache=tiles.private_path(args.cache,'Private UI13 source cache')
     path=cache/'ui13-assets.json';original=path.read_bytes();manifest=json.loads(original)
     end=catalog_endpoint(manifest);prefix=manifest['images'][:AUXILIARY-BASE_AUX]
+    tiles.require(end<=retained_endpoint(),
+        'Do not replace the completed no-rug suffix with an earlier retained catalog')
     tiles.require([row['auxiliary'] for row in prefix]==list(range(BASE_AUX,AUXILIARY)),
         'Retained extension needs the complete1138-image source prefix')
     for row in prefix:
@@ -179,6 +186,59 @@ def extend_retained(args):
     catalog_endpoint(manifest)
     tiles.atomic_bytes(path,json.dumps(manifest,indent=2).encode()+b'\n')
     emit('retained_catalog_extended',images=len(added),unchanged_previous_images=len(prefix),auxiliary=retained_endpoint())
+
+
+def extend_fake_rug(args):
+    """Append the original no-rug scene without resampling 2810 prior images."""
+    from fake_merchant_ui13_assets import source_no_rug_assets
+    from pck import Pack
+    cache=tiles.private_path(args.cache,'Private UI13 source cache')
+    path=cache/'ui13-assets.json';original=path.read_bytes();manifest=json.loads(original)
+    end=catalog_endpoint(manifest);start=retained_endpoint();finish=no_rug_endpoint()
+    tiles.require(end in (start,finish),'No-rug extension requires the complete retained source catalog')
+    prefix=manifest['images'][:start-BASE_AUX]
+    tiles.require([row['auxiliary'] for row in prefix]==list(range(BASE_AUX,start)),
+        'No-rug extension lost an earlier source image')
+    for row in prefix:
+        raw=(cache/row['file']).read_bytes()
+        tiles.require(len(raw)==row['bytes'] and tiles.sha256(raw)==row['sha256'],
+            'Earlier retained source image changed')
+    baseline=cache/'ui13-assets.before-fake-rug.json'
+    if end==start:
+        if baseline.exists():tiles.require(baseline.read_bytes()==original,'Different no-rug extension baseline')
+        else:tiles.atomic_bytes(baseline,original)
+    else:
+        tiles.require(baseline.is_file() and json.loads(baseline.read_text())['images']==prefix,
+            'The no-rug extension lost its verified original manifest')
+    pck=tiles.private_path(args.pck,'Original PCK')
+    runtime=tiles.private_path(args.runtime,'Original runtime')
+    stamp=hashlib.sha256((identity()+tiles.sha256(runtime.read_bytes())).encode())
+    pack=Pack(pck)
+    try:
+        for name,entry in sorted(pack.entries.items()):stamp.update(name.encode());stamp.update(entry.md5)
+    finally:pack.close()
+    signature=stamp.hexdigest();receipt=cache/'fake-merchant-no-rug-catalog.json'
+    saved=json.loads(receipt.read_text()) if receipt.exists() else {}
+    if saved.get('signature')==signature:
+        rows=saved['images'];emit('no_rug_source_cache_verified',images=len(rows))
+    else:
+        emit('no_rug_source_sampling')
+        catalog_cache=cache/'retained-ui13'/'fake-merchant-no-rug';catalog_cache.mkdir(parents=True,exist_ok=True)
+        rows=source_no_rug_assets(pck,catalog_cache,runtime=runtime,dotnet=args.dotnet,base=start,end=finish)
+        rows=[dict(row,file=str(catalog_cache.relative_to(cache)/row['file'])) for row in rows]
+        tiles.atomic_bytes(receipt,json.dumps(dict(signature=signature,images=rows),indent=2).encode()+b'\n')
+    tiles.require([row['auxiliary'] for row in rows]==list(range(start,finish)),
+        'Incomplete no-rug source catalog')
+    for row in prefix+rows:
+        raw=(cache/row['file']).read_bytes()
+        tiles.require(len(raw)==row['bytes'] and tiles.sha256(raw)==row['sha256'],
+            'No-rug conversion changed a source image')
+    manifest['images']=prefix+rows
+    manifest['fake_rug_extension']=dict(previous_manifest_sha256=tiles.sha256(baseline.read_bytes()),
+        signature=signature,unchanged_previous_images=len(prefix),added_images=len(rows),auxiliary=finish)
+    catalog_endpoint(manifest)
+    tiles.atomic_bytes(path,json.dumps(manifest,indent=2).encode()+b'\n')
+    emit('no_rug_catalog_extended',images=len(rows),unchanged_previous_images=len(prefix),auxiliary=finish)
 
 
 def pack_editions(args):
@@ -260,16 +320,18 @@ def main():
     extension=sub.add_parser('doom')
     retained=sub.add_parser('extend-retained');retained.add_argument('--runtime',type=Path,required=True)
     retained.add_argument('--dotnet',default='dotnet');retained.add_argument('--fastnoise-header',type=Path,required=True)
+    no_rug=sub.add_parser('extend-fake-rug');no_rug.add_argument('--runtime',type=Path,required=True)
+    no_rug.add_argument('--dotnet',default='dotnet')
     build=sub.add_parser('pack');build.add_argument('--artwork',type=Path,required=True)
     build.add_argument('--base-common',type=Path,required=True)
     build.add_argument('--editions',type=Path,action='append',required=True)
     build.add_argument('--fonts',type=Path,required=True);build.add_argument('--output',type=Path,required=True)
     build.add_argument('--keep-logical',default='eng,zhs')
     build.add_argument('--previous-editions',type=Path)
-    for command in (sample,extension,retained,build):
+    for command in (sample,extension,retained,no_rug,build):
         command.add_argument('--pck',type=Path,required=True);command.add_argument('--cache',type=Path,required=True)
     args=parser.parse_args()
-    dict(assets=assets,doom=extend_doom,**{'extend-retained':extend_retained},pack=pack_editions)[args.stage](args)
+    dict(assets=assets,doom=extend_doom,**{'extend-retained':extend_retained,'extend-fake-rug':extend_fake_rug},pack=pack_editions)[args.stage](args)
 
 
 if __name__=='__main__':main()

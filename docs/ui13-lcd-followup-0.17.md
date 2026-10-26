@@ -6,15 +6,19 @@
 确切版本由 [WORK_STATE.md](WORK_STATE.md) 与最终发行 receipt 统一标识。
 原版 PCK、字体、生成图片和完整资源包保留在私有目录。
 
-本轮已冻结的程序为 `d5f9a3c9dfc9bb55e4742239dbb7be4ee5d8c8d1`，
-资源转换为 `6e40566007bf616b2551c02a5e99c8960216cc5a`。最终 ARM 构建
-已经闭合，16 个语言包已经生成并通过内容保留检查；下文仍单独标明尚未
-闭合的设备操作／性能验收。
+本轮已闭合的一组程序候选为 `d5f9a3c9dfc9bb55e4742239dbb7be4ee5d8c8d1`，
+对应资源转换为 `6e40566007bf616b2551c02a5e99c8960216cc5a`。这组 ARM 构建、
+16 个语言包和下文带有明确身份的 native 检查均已闭合。最后复查又补入了
+此前保留的 Random 动态背景、Fake Merchant 场景层、主菜单模糊和标签独立
+彩虹时钟，集成源为 `2b58ee31eb5ef6674ce95f02ad2eb9694a98a041`。
+新增资源转换、配套实际资源 gate 和最终设备操作／性能验收仍单独闭合；
+不把先前候选的体积、图像或 ARM 身份当成最终发行文件。
 
 追加的 `b96bd0d05e3a4d00b5abda48fe21264f47cbc89e` 只修正测试，生产源码
 与上述程序一致；全部 16 语言的实际 native gate 已在这个测试 checkpoint 闭合。
-最后 CardHUD 测试修正在 `78a2cef775ddb6943baf194f7bc9e0e8c568edf8` 闭合，
-生产程序继续使用同一个 `d5f9a3c` ARM。
+其后的 CardHUD 测试修正在 `78a2cef775ddb6943baf194f7bc9e0e8c568edf8` 闭合。
+地图图例实际字形宽度修正在 `fca66343d0fee759b95b4b6acdf2d0ba9c7eea06`
+通过新一轮双语 CardHUD；上述两个阶段的证据均保留其真实身份。
 
 ## 反馈逐项映射
 
@@ -30,7 +34,7 @@
 | 6 | 游玩时间图标消失；房间、楼层、Boss 间距不均 | 恢复已有原版时钟图；药水栏及 Room/Floor/Boss/Timer 由同一布局计算，统一 4px 间隔，四／五药水槽动态收紧。完整时间仍可通过悬停和键盘焦点查看。 | `include/hud_ui7_presentation.hpp`、`src/hud_ui6.inc`；`combat_ui_regression`、`potion_ui_regression`，包含多槽库存。 |
 | 7 | 当前角色／进阶悬停缺少原版“+”等文本 | 使用原版 `PORTRAIT_DESCRIPTION` 和每项 ` +` 前缀；Custom/Daily 附带原版成就锁定说明，标准进阶 0 按原版不显示该 tooltip。 | `src/hud_ui6.inc`；16 份原版 `ascension.json` 和 `AscensionHelper` 源行为校核、combat UI 检查。 |
 | 8 | 默认键位没有充分利用计算器实体键 | 两套默认键位使用 Tab、Doc、Home/On、Del、Var、Menu、Shift、Ctrl 和 Catalog；纯键盘模式中心键选择／出牌，Enter 确认当前多选或对话框，保留 Select／Confirm 的原版区别；Shift 松开时切换窥视。仅逐套迁移完全未修改的旧默认，自定义键位逐字节保留。 | `include/input_bindings.hpp`、`src/ui_preferences.inc`、`src/input_bindings.inc`；`input_bindings_regression`、`lcd_input_ui12_regression`。 |
-| 9 | 地图图例仍溢出，希望加长、居中和留白 | 图例纸张为 129×170，每一项将图标＋文字作为一组居中，四周保留 padding。16 语言的实际标签最大宽度 55px，小于 83px 文本槽。 | `src/world_map_ui.inc`；`world_map_ui_regression`、原版 16 语言字体测量。 |
+| 9 | 地图图例仍溢出，希望加长、居中和留白 | 图例纸张为 129×170，每一项将图标＋完整文字作为一组居中，四周保留 padding。按实际字形墨迹边界计算词组宽度，修复仅用 pen advance 时误省略英文 Unknown、Merchant、Rest Site 的尾部。 | `src/world_map_ui.inc`；`world_map_ui_regression`、原版 16 语言字体测量；`fca66343` 实际 CardHUD ENG/ZHS 为 712,891／790,253 项，完整词组像素与 padding 均检查。 |
 
 ### 战斗和手牌
 
@@ -114,6 +118,50 @@ canonical RNG。完整双角色＋效果合成 oracle 用于检查大面积 Star
 turbulence 是明确的平台映射。详见 [Architect VFX](architect-vfx-ui13-0.17.md)。
 音频、多人和 Timeline 继续保留原有排除范围。
 
+### Random 选角背景的水波与全部装饰粒子
+
+UI12 的静态 320×240 渐变仅保留为旧资源兼容路径。新实现保留未裁剪的
+64×64 原始 cubic gradient，在真实父容器和 pivot 变换后，用原版 repeat
+noise、全局 shader TIME、speed 0.023 和 strength 0.1 执行水波采样。
+10×5 seamless FastNoiseLite 的原 R8 样本存入 alpha，避免 RGB565 丢失噪声
+精度；全透明度为 255 的原 underdocks mask 逐 texel 核对后省去冗余存储。
+
+源 light/dot 两张 256×256 图片和 1＋20＋20 三个发射器均接入。小灯保留
+3 秒生命周期、缩放曲线、灰度渐变、加法混合和脚本的 0–5 秒整数预热；
+两组 ash 保留 15 秒预热、矩形发射范围、重力、顺时针 orbit、radial force、
+原透明度和入场 ramp。40 个移动粒子的展示状态小于 2KiB，不使用游戏 RNG。
+水波逐像素整数双线性采样，粒子采用有界 Q10 积分；不把它说成桌面 GPU
+浮点粒子逐点等价。见 [Random 背景](random-character-ui13-0.17.md)。
+
+`2b58ee31` 的 source-free seamless／R8 三项测试，以及独立 sampler／particle
+native gate 的 4,534 项检查已闭合；完整实际纹理水波 oracle、动态帧、选角画面
+及 canonical save 检查由同名 native gate 继续验证。
+短素材探针和 syntax 通过没有被计为这项实际资源验收。
+
+### Fake Merchant 自定义房间的原场景层
+
+补入原背景、商人、刀具的独立 Spine 层及其完整动画循环；房内玩家使用
+`Character.CreateVisuals()` 对应普通 atlas 的 relaxed_loop，保留源位置和
+比例。原粒子、小灯和 glitter 材质独立接入；glitter 复用同一水波采样器，
+使用自己的 50×50 seamless noise、原图／alpha mask 和源速度／强度。
+这一组属于自定义事件房间，持续低帧率的普通 Shop 优化仍是另外的实际 gate。
+新场景转换和实际资源合成验收将在同一 immutable checkpoint 的 receipt 中
+记录，不沿用旧静态 Fake Merchant 截图宣称已经通过。
+
+### 主菜单模糊与标签独立彩虹时钟
+
+主菜单子页面恢复 `BlurBackstop` 的真实 screen-texture filter：进入 250ms，
+退出 150ms；LOD 0→3，black mix 0→0.7，中断时从当前数值继续。CPU 版使用
+RGB565 mip、双线性及 mip 层之间插值，额外工作区为 50,400 字节有界栈空间，
+没有新增完整图像缓存或安装素材。主菜单的设置、档案、百科、模式等页面共用
+该滤镜；游戏内覆盖层仍按各自源场景处理。见 [主菜单模糊](main-menu-blur-ui13-0.17.md)。
+
+彩虹文字从共享绝对时间改为标签／ItemFX 独立时间原点，使用少于 768 字节的
+32 槽有界表；重复绘制不重复推进，同内容的不同标签独立，稳定 owner 保持
+移动、滚动与入场期间的相位。沿用原版参数、局部字形横坐标、Normal/Fast
+行为及透明度，状态不进入存档。见 [原版彩虹文本](rich-rainbow-0.17.md)。
+这些新 gate 的正式执行结果与前述旧候选的已闭合检查分开记录。
+
 ## 性能、存储与被拒绝的候选
 
 高清源重采样完整执行于 `7bfc391`，耗时 1,132.19s。Vantom 正常 idle 的实际
@@ -130,7 +178,7 @@ index group，每种逻辑语言包实际节省 **259,740B**。1,155 个 tile gr
 retained image、全部字体和 8,704 个字符串以及所有尺寸／pivot／时序不变。
 两种清理后基底为 69,915,084B（ENG）和 74,402,887B（ZHS）；它们共享图像，
 不是需要同时安装的两个整包。目录清理反映到默认分包安装后节省 307,420B；
-1,138 个新原图的组压缩另节省 1,205,506B。最终四件套如下，均是实际文件
+1,138 个新原图的组压缩另节省 1,205,506B。`d5f9a3c` 候选四件套如下，均是实际文件
 字节数，未把 ZIP 压缩后的下载体积当成安装体积：
 
 | 文件 | 字节数 |
@@ -139,11 +187,13 @@ retained image、全部字体和 8,704 个字符串以及所有尺寸／pivot／
 | `nSpire2.common.tns` | 68,410,158 |
 | `nSpire2.eng.tns` | 1,133,099 |
 | `nSpire2.zhs.tns` | 5,116,394 |
-| 默认双语安装合计 | **76,297,785** |
+| 该候选默认双语安装合计 | **76,297,785** |
 
 这相当于 76.30MB（72.76MiB），不含存档和可选语言；已超过原先的 65–70MB
-目标。高清重采样增加约 6.258MB，最终保留完整动画和真正改善的原图像素，
-没有通过删帧、修改时序或再次降低精度来强凑体积。
+目标。高清重采样增加约 6.258MB，保留完整动画和真正改善的原图像素，
+没有通过删帧、修改时序或再次降低精度来强凑体积。最后补入的 Random／
+Fake Merchant 场景会改变资源和 ARM 的体积；最终安装数值将重新从四件
+实际文件计算，不能继续沿用这张基线表或宣称已经压回 70MB。
 
 真实 Content 文件读取路径检查了九个代表 idle，共 276 帧、连续三遍。
 第二／第三遍的源读取 callbacks 和 bytes 都为 0。Vantom 占 324KiB 图片页，
@@ -181,6 +231,8 @@ ENG/ZHS 为 551,382／591,714 项，asset-independent 为 453 项，world UI 各
 合成 oracle 与实际双语检查同样已经闭合。
 
 `b96bd0d` 的完整已注册 native suite 为 **135/135 passed、0 failures**，43.42s。
+补入 Random、模糊与标签时钟后的 `2b58ee31` 全套已注册 native suite 为
+**137/137 passed、0 failures**，43.63s；这组默认运行仍不替代新增真实素材门。
 Python 检查共 **316 项**：`d8a1025` 在配套 conversion venv 中完整发现的 260 项，
 加上 `6e40566` 的 56 项附加转换器／日志／动画／目录清理检查，均有闭合 passed
 receipt。早先缺少 `lz4` 的错误解释器运行仍保留为失败记录，没有重新标为通过。

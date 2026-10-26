@@ -3,6 +3,7 @@
 #include "content_fixture.hpp"
 #include "original_events.hpp"
 #include "world_run.hpp"
+#include "fake_merchant_assets_ui13.hpp"
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -123,7 +124,11 @@ static void merchant_welcome(){
  const auto start=speech.start;const auto line=speech.line;
  CHECK(start==a.map_clock_ms+750&&line>=1&&line<=4&&!speech.sample(a.map_clock_ms).alpha);
  const auto background=image_hash(77,48,72,54);snapshot();
- advance_ms(749);CHECK(!speech.sample(a.map_clock_ms).alpha&&image_hash(77,48,72,54)==background);unchanged();
+ advance_ms(749);CHECK(!speech.sample(a.map_clock_ms).alpha);
+ // UI13's custom room now has real actors and environmental motion below
+ // the still-hidden bubble. Older profiles retain their static backdrop.
+ if(a.content.ui_image(I13_FakeMerchantSquareSpeck)<0)CHECK(image_hash(77,48,72,54)==background);
+ unchanged();
  advance_ms(1);CHECK(!speech.sample(a.map_clock_ms).alpha);advance_ms(200);
  CHECK(speech.sample(a.map_clock_ms).alpha==127&&speech.sample(a.map_clock_ms).scale>3900);
  if(a.content.has_speech_bubble_assets())CHECK(image_hash(77,48,72,54)!=background);
@@ -338,13 +343,12 @@ static void reading_focus(){
  CHECK(load(expected,before.bytes,before.size));CHECK(event_choice(expected,0));CHECK(save(expected,expected_save));
  press_choice(0);CHECK(!a.event_body_focus);CHECK(save(a.game,after));
  CHECK(after.size==expected_save.size&&!std::memcmp(after.bytes,expected_save.bytes,after.size));
- // The fake merchant uses its own rug while trading, then returns to an
- // ordinary event page. Finished prose must regain the normal reader.
+ // NFakeMerchant stays a custom room after Proceed/returning from the map;
+ // it never acquires an unrelated ordinary-event prose reader.
  begin(OriginalEventId::FakeMerchant,23,1);CHECK(!a.event_body_active());
  CHECK(event_choice(a.game,6));a.render();advance_ms(1000);
- CHECK(a.game.original_events.finished&&a.game.phase==Phase::Event&&a.event_body_active());
- snapshot();a.input(Key::Detail);CHECK(a.event_body_focus&&!a.event_reader);
- a.input(Key::Down);advance_ms(250);a.input(Key::Back);CHECK(!a.event_body_focus);unchanged();
+ CHECK(a.game.original_events.finished&&a.game.phase==Phase::Event&&!a.event_body_active());
+ snapshot();a.input(Key::Detail);CHECK(!a.event_body_focus&&!a.event_reader);unchanged();
 }
 int main(int argc,char**argv){
  const bool reading_only=argc>1&&!std::strcmp(argv[1],"--reading");const int asset_argument=reading_only?2:1;const bool actual=argc>asset_argument;

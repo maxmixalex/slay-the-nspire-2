@@ -478,7 +478,7 @@ bool App::event_body_active()const{
  return !title&&!paused&&!help&&!panel&&!library&&!settings_open&&!frontend_confirm&&!character_select&&
   !map_preview.open&&!map_window.is_open&&detail_card<0&&detail_item<0&&status_actor<0&&deck_candidate<0&&
   game.phase==Phase::Event&&game.original_events.active&&!room_presentation.event.ancient&&
-  !(game.original_events.id==OriginalEventId::FakeMerchant&&!game.original_events.finished)&&
+  game.original_events.id!=OriginalEventId::FakeMerchant&&
   !(game.original_events.id==OriginalEventId::CrystalSphere&&game.original_events.finished&&game.original_events.crystal_item_count);
 }
 bool App::room_input(Key key){

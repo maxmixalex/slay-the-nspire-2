@@ -61,6 +61,33 @@ d5 has ordinary OS startup and a natural Ancient/map/first-battle flow in
 progress; those captures will keep their actual runtime identity.
 
 
+### Retained-scene completion checkpoint
+
+Checkpoint `2b58ee31eb5ef6674ce95f02ad2eb9694a98a041` closes the
+Random background/source particles, source main-menu blur and label-local
+rainbow clocks, with initial complete Fake Merchant scene support. Its full
+registered native run passes **137/137**, zero failures, 43.63 seconds, with
+an unchanged source tree (`retained-registered-045d3e9eec57`). This native result
+is separate from the next resource and device acceptance.
+
+The follow-up stage adds the source Fake Merchant post-combat scene and
+rug-removal clip, using existing canonical event inventory facts without a new
+save field. It also gives that actual room the same bounded 10/1 MiB merchant
+cache split, preserving 5/6 MiB for combat and combat-choice underlays. The
+host-only Spine sampler accepts up to 512 ordered samples so the longest
+320-frame relaxed loop remains one continuous physics solve. The earlier
+256-sample conversion failed closed and is not counted as a completed pack.
+The new resource endpoint is 5,156; the complete 5,011-image base remains an
+explicit compatible endpoint. Final source-matched conversion, actual-resource
+gates, ARM startup, sustained merchant comparison and packaging remain pending.
+
+The intermediate d5 device run has now completed a natural first battle,
+collected gold, a potion and a card reward, returned to the map and saved through
+the ordinary pause menu. Its Continue title visibly clears the logo. Continued
+play and USB readback are being checked under that same recorded d5 identity;
+these captures are not final-runtime evidence.
+
+
 ## UI12 playable follow-up — acceptance completed
 
 Delivered runtime: **`9398633d8fd715c008560cc038f61d8f85c98466`**. Validation source:
