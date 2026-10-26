@@ -158,7 +158,8 @@ static void doom_particles(Canvas&c,Picture texture,const CombatDoomPresentation
   const int w=int(int64_t(sw)*b.unit*scale*curve*width/(4096ll*4096*1000));
   const int vertical=system==0?64:system==1?96:system==2?44:100;
   const int h=int(int64_t(sh)*b.unit*scale*curve*vertical/(4096ll*1000*100));
-  const int angle=globs?int(seed%4096u)+int((int(seed%501u)-250)*t*4096/(360*1000)):0;
+  const int angular=int(seed%(gravity?701u:501u))-(gravity?350:250);
+  const int angle=globs?int(seed%4096u)+int(angular*t*4096/(360*1000)):0;
   Canvas particle=c;if(!globs||gravity)particle.brightness=181;
   doom_quad(particle,texture,(b.ground_x+xx)*1024,(b.ground_y+yy)*1024,w,h,angle,255,0,globs?int((seed>>12)&3u):-1);
  }
@@ -218,7 +219,10 @@ static DoomBodyBounds combat_doom_bounds(const CombatDoomPresentation::Body&b){
 static bool combat_doom_shared_frame(Canvas&c,int clip,uint32_t time,bool loop){
  DoomBodyBounds cuts[MaxEnemies]{};unsigned count=0;
  for(unsigned actor=1;actor<=unsigned(c.a.game.enemy_count);++actor){const auto&b=c.a.combat_doom.bodies[actor];
-  if((b.flags&CombatDoomPresentation::Shared)&&combat_doom_hides(c.a,actor))cuts[count++]=combat_doom_bounds(b);
+  if((b.flags&CombatDoomPresentation::Shared)&&combat_doom_hides(c.a,actor)){cuts[count]=combat_doom_bounds(b);
+   // Remove the original whole body, including feet below the detached
+   // viewport mask; that lower strip must not survive in the shared clip.
+   cuts[count++].bottom=b.ground_y+mx(1,b.height/4);}
  }
  if(!count)return false;
  const auto cl=c.a.content.clip(clip);if(!cl.count||!cl.frame_ms)return true;

@@ -558,15 +558,21 @@ static void ui6_screens(){
     for(unsigned frame=0;frame<20;++frame){app.advance(33);app.render();}
     CHECK(target_arrow_motion.active&&CombatCardMotion::magnitude(target_arrow_motion.x/256-enemy_pose(app.game,app.target).x)<=1);
     capture("card-original-target-arrow");app.input(Key::Back);
-    app.pointer_move(135,10);app.render();capture("potion-original-hover");
+    // Use the actual holder identities; UI13 compacts the belt according
+    // to capacity and deliberately moves the old fixed135/150px points.
+    HitRegion filled{},vacant{};for(int i=0;i<app.hit_count;++i){const auto&hit=app.hits[i];if(hit.kind!=HitKind::PotionSlot)continue;
+        if(hit.value==0)filled=hit;else if(!hit.enabled&&potion_at(app.game,unsigned(hit.value))==Potion::Empty)vacant=hit;}
+    CHECK(filled.kind==HitKind::PotionSlot&&filled.enabled&&vacant.kind==HitKind::PotionSlot&&!vacant.enabled);
+    app.pointer_move(filled.x+filled.w/2,filled.y+filled.h/2);app.render();capture("potion-original-hover");
     // Empty holders keep the original hover explanation but cannot activate
     // the use/discard popup. Disabled hit geometry remains discoverable.
-    app.pointer_move(150,10);app.render();const auto*empty=app.hit_at(150,10);
-    CHECK(empty&&empty->kind==HitKind::PotionSlot&&!empty->enabled&&potion_at(app.game,unsigned(empty->value))==Potion::Empty);
+    const int empty_x=vacant.x+vacant.w/2,empty_y=vacant.y+vacant.h/2;
+    app.pointer_move(empty_x,empty_y);app.render();const auto*empty=app.hit_at(empty_x,empty_y);
+    CHECK(empty&&empty->kind==HitKind::PotionSlot&&empty->value==vacant.value&&!empty->enabled&&potion_at(app.game,unsigned(empty->value))==Potion::Empty);
     const std::vector<uint16_t> hover_frame(app.pixels,app.pixels+ScreenW*ScreenH);
     capture("potion-empty-original-hover");app.pointer.visible=false;app.render();
-    unsigned changed=0;for(int y=27;y<100;++y)for(int x=170;x<315;++x)changed+=hover_frame[y*ScreenW+x]!=app.pixels[y*ScreenW+x];
-    CHECK(changed>100);app.pointer_move(150,10);app.pointer_button(true);app.pointer_button(false);CHECK(!app.panel);
+    unsigned changed=0;for(int y=27;y<180;++y)for(int x=0;x<ScreenW;++x)changed+=hover_frame[y*ScreenW+x]!=app.pixels[y*ScreenW+x];
+    CHECK(changed>100);app.pointer_move(empty_x,empty_y);app.pointer_button(true);app.pointer_button(false);CHECK(!app.panel);
     app.pointer_move(300,10);app.advance(165);app.render();capture("top-settings-hover");
     CHECK(app.content.image(app.content.ui_image(I6_CursorDefault)).w==16);
     CHECK(save(app.game,after)&&before.size==after.size&&!std::memcmp(before.bytes,after.bytes,before.size));

@@ -27,7 +27,10 @@ static void prepare_shop(){
     // The production UI12 cold path yields once per image/card. Advance
     // actual frames until it finishes before measuring the rug's tween.
     a.render();for(unsigned steps=0;a.merchant_preparation.active&&steps<128;++steps){a.advance(33);a.render();}
-    CHECK(!a.merchant_preparation.active&&a.content.healthy());
+    CHECK(!a.merchant_preparation.active);
+    // The no-argument command/geometry fixture intentionally has no open
+    // resource source. Only the actual-resource mode can assert I/O health.
+    CHECK(!actual||a.content.healthy());
 }
 static const HitRegion*hit(HitKind kind,int value){for(int i=a.hit_count-1;i>=0;--i)if(a.hits[i].kind==kind&&a.hits[i].value==value)return &a.hits[i];return nullptr;}
 static void click(HitKind kind,int value){a.render();const auto*h=hit(kind,value);if(!h||!h->enabled)std::fprintf(stderr,"missing hit kind=%u value=%d cursor=%d open=%d clock=%u sold=%u\n",unsigned(kind),value,a.cursor,int(a.shop_open),a.map_clock_ms,a.game.shop_sold);CHECK(h&&h->enabled);const HitRegion copy=*h;CHECK(copy.x+copy.w>0&&copy.x<320&&copy.y>=0&&copy.y+copy.h<=240);a.pointer_move(copy.x+copy.w/2,copy.y+copy.h/2);a.pointer_button(true);a.pointer_button(false);a.render();}

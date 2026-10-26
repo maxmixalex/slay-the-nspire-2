@@ -97,7 +97,16 @@ static void combat_choose_hand_screen(Canvas&c,const uint16_t*ids,unsigned count
             h.id=int16_t(ids[i]);h.current=h.from=h.target=pose;h.at=h.last=now;break;}}
     uint16_t remaining[MaxHand];unsigned remaining_count=0;int hand_focus=-1;
     for(unsigned i=0;i<count&&i<MaxHand;++i)if(!combat_choice_selected(a,ids[i])){remaining[remaining_count]=ids[i];if(!a.pointer.visible&&int(i)==a.cursor)hand_focus=int(remaining_count);++remaining_count;}
-    if(a.pointer.visible){for(unsigned i=0;i<remaining_count;++i)for(const auto&h:motion.holders)if(h.id==remaining[i]&&hand_contains(h.current,a.pointer.x,a.pointer.y))hand_focus=int(i);
+    if(a.pointer.visible){
+        // The focused holder was drawn last. Preserve that frontmost card
+        // while the pointer is still inside it, including the keyboard-to-
+        // pointer transition rebuilt by pointer_button before capturing.
+        // Otherwise an overlapping neighbour can replace the visible hit
+        // between pointer_move and press without either card moving.
+        const int front=a.cursor>=0&&unsigned(a.cursor)<count?ids[a.cursor]:-1;
+        for(unsigned i=0;i<remaining_count;++i)if(remaining[i]==front)
+            for(const auto&h:motion.holders)if(h.id==front&&hand_contains(h.current,a.pointer.x,a.pointer.y))hand_focus=int(i);
+        if(hand_focus<0)for(unsigned i=0;i<remaining_count;++i)for(const auto&h:motion.holders)if(h.id==remaining[i]&&hand_contains(h.current,a.pointer.x,a.pointer.y))hand_focus=int(i);
         if(hand_focus<0)for(int i=int(remaining_count)-1;i>=0;--i)if(hand_contains(hand_pose(int(remaining_count),i,false),a.pointer.x,a.pointer.y)){hand_focus=i;break;}}
     const auto draw=[&](unsigned i){const int id=remaining[i];const bool focused=int(i)==hand_focus;
         const auto pose=motion.hand_pose_for(id,hand_pose(int(remaining_count),int(i),focused,hand_focus),false,now);

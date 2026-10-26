@@ -90,6 +90,24 @@ static void visible_original(int id,unsigned frame,SourcePose pose,unsigned mini
  if(ink<minimum||bad)std::fprintf(stderr,"source sprite probe: clip=%d frame=%u anchor=%d,%d opaque=%u mismatch=%u\n",id,frame,pose.x,pose.y,ink,bad);
  CHECK(ink>=minimum&&!bad);CHECK(a.content.healthy());
 }
+static void visible_source_hit_pair(unsigned character,unsigned windup){
+ if(!original_art)return;
+ // Large source impacts can cover nearly every Architect texel. Compose
+ // the independent source anchors and literal attack/hurt frames over the
+ // original room, then add the retained effect layers. Compare the complete
+ // composition at all opaque actor pixels instead of discarding covered ones.
+ std::vector<uint16_t> expected(ScreenW*ScreenH,0);std::vector<uint8_t> alpha(ScreenW*ScreenH,0);
+ Canvas scene{a};scene.pixels=expected.data();
+ scene.picture(a.content.world_image("events",original_event_key(OriginalEventId::TheArchitect)),0,22,320,218);
+ Canvas actors=scene;actors.coverage=alpha.data();
+ picture_at(actors,attack_clips[character],sample(attack_clips[character],windup,false),source_pose(character));
+ picture_at(actors,50,0,source_pose(character,true));
+ architect_scene_effects(scene);
+ unsigned ink=0,bad=0;for(int y=24;y<166;++y)for(int x=0;x<ScreenW;++x){const unsigned p=y*ScreenW+x;
+  if(alpha[p]==255){++ink;bad+=a.pixels[p]!=expected[p];}}
+ if(ink<40||bad)std::fprintf(stderr,"source hit composition: character=%u windup=%u opaque=%u mismatch=%u\n",character,windup,ink,bad);
+ CHECK(ink>=40&&!bad);CHECK(a.content.healthy());
+}
 static void death_scene(unsigned character,unsigned age){
  if(!original_art)return;
  // WinRun first opens/reparents the VisualOnly cast, then force-kills the
@@ -216,7 +234,7 @@ static void run_character(unsigned character,bool fast){
   until(began+windup+i*step);const auto f=architect_scene_frame(a);
   CHECK(f.player==attack_clips[character]&&!f.player_loop&&f.player_ms==windup);
   CHECK(f.architect==50&&!f.architect_loop&&f.architect_ms==0);
-  visible_original(50,0,enemy);visible_original(attack_clips[character],sample(attack_clips[character],windup,false),pose);equal_save();
+  visible_source_hit_pair(character,windup);equal_save();
   if(!character&&!fast&&i==1)capture("ironclad-repeat-hit");
  }
  until(began+last+733);if(original_art){const auto f=architect_scene_frame(a);CHECK(f.architect==51&&f.architect_loop);}
