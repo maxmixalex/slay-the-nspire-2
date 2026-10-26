@@ -17,7 +17,10 @@ static void static_hover_columns(){
     };
     for(unsigned resource=0;resource<3;++resource){
         setup(resource?Character::Regent:Character::Ironclad);
-        app.pointer.x=resource==2?20:25;app.pointer.y=resource==2?207:resource?161:199;
+        // UI13 preserves the source diagonal rail: Energy(16,164,34),
+        // Stars(6,181,27). Sample nonoverlapping interior pixels so the
+        // correct resource owns the pointer; the independent69px tip stays.
+        app.pointer.x=resource==2?13:41;app.pointer.y=resource==2?201:174;
         CHECK(save(app.game,before));clear();combat_resource_tooltip(c,resource!=0);column(6);
         capture(resource==2?"source-hover-stars":resource?"source-hover-regent-energy":"source-hover-energy");
     }
@@ -69,14 +72,20 @@ static void static_hover_columns(){
         CHECK(save(app.game,after)&&before.size==after.size&&!std::memcmp(before.bytes,after.bytes,before.size));
     }
     app.settings_open=false;app.settings_tab=app.settings_top=app.settings_item=0;app.title=false;
-    // The map legend tooltip stays below the whole column. Only its focus
-    // icon and the 69px tooltip may change between the two paint passes.
-    app.pointer.visible=false;app.map_legend=false;clear();map_legend_screen(c,map_colors(0));
+    // UI13 expands the original paper to(187,63,129,170) and keeps six
+    // centered rows inside12px horizontal padding. Its69px tooltip is to
+    // the LEFT of the paper. Compare two focused rows of the same open
+    // panel, not a collapsed tab against a wholly newly opened panel.
+    app.pointer.visible=false;app.map_legend=true;app.map_legend_item=0;clear();map_legend_screen(c,map_colors(0));
     const std::vector<uint16_t> legend(app.pixels,app.pixels+320*240);
-    app.map_legend=true;app.map_legend_item=1;clear();map_legend_screen(c,map_colors(0));
+    app.map_legend_item=1;clear();map_legend_screen(c,map_colors(0));
     unsigned changed=0;for(int y=0;y<240;++y)for(int x=0;x<320;++x)if(legend[y*320+x]!=app.pixels[y*320+x]){
-        ++changed;CHECK((x>=248&&x<318)||(x>=258&&x<281&&y>=102&&y<127));
+        ++changed;CHECK((x>=114&&x<184)||(x>=199&&x<304&&y>=98&&y<140));
     }
-    CHECK(changed>25);capture("map-legend-source-hover");app.map_legend=false;
+    unsigned rows=0;for(int i=0;i<app.hit_count;++i){const auto&hit=app.hits[i];
+        if(hit.kind!=HitKind::UiAction||hit.value<int(UiAction::MapLegendUnknown)||hit.value>=int(UiAction::MapLegendUnknown)+6)continue;
+        CHECK(hit.x==199&&hit.w==105&&hit.h==19&&hit.y>=100&&hit.y+hit.h<=214);++rows;
+    }
+    CHECK(rows==6&&changed>25);capture("map-legend-source-hover");app.map_legend=false;
     app.pointer.visible=false;app.reset_presentation();
 }

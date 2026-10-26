@@ -98,10 +98,17 @@ static void visible_source_hit_pair(unsigned character,unsigned windup){
  // composition at all opaque actor pixels instead of discarding covered ones.
  std::vector<uint16_t> expected(ScreenW*ScreenH,0);std::vector<uint8_t> alpha(ScreenW*ScreenH,0);
  Canvas scene{a};scene.pixels=expected.data();
- scene.picture(a.content.world_image("events",original_event_key(OriginalEventId::TheArchitect)),0,22,320,218);
  Canvas actors=scene;actors.coverage=alpha.data();
- picture_at(actors,attack_clips[character],sample(attack_clips[character],windup,false),source_pose(character));
- picture_at(actors,50,0,source_pose(character,true));
+ const auto draw_pair=[&](Canvas&layer){
+  picture_at(layer,attack_clips[character],sample(attack_clips[character],windup,false),source_pose(character));
+  picture_at(layer,50,0,source_pose(character,true));
+ };
+ draw_pair(actors);
+ // Coverage stores straight RGBA, not a composition over the existing
+ // background. Repaint normally before a warp samples antialiased edges.
+ scene.rect(0,0,ScreenW,ScreenH,Ink);
+ scene.picture(a.content.world_image("events",original_event_key(OriginalEventId::TheArchitect)),0,22,320,218);
+ draw_pair(scene);
  architect_scene_effects(scene);
  unsigned ink=0,bad=0;for(int y=24;y<166;++y)for(int x=0;x<ScreenW;++x){const unsigned p=y*ScreenW+x;
   if(alpha[p]==255){++ink;bad+=a.pixels[p]!=expected[p];}}
