@@ -8,7 +8,7 @@ outside this public source repository.
 
 | Area | Runtime change and reference |
 | --- | --- |
-| Top bar | The clock occupies one icon slot; elapsed time appears only in its own tooltip. Room/floor tooltips contain no timer. Normal two-slot, double-boss geometry has 15px gaps; five bottles have 6px gaps, and paged six-to-sixteen inventories retain 4px gaps. Character hover remains enabled at Ascension0; the flame and numeral share a centered anchor. |
+| Top bar | The clock occupies one icon slot and is enabled by default in combat; elapsed time appears only in its own tooltip. An explicitly disabled timer preference still hides the combat icon. Room/floor tooltips contain no timer. Normal two-slot, double-boss geometry has 15px gaps; five bottles have 6px gaps, and paged six-to-sixteen inventories retain 4px gaps. Character hover remains enabled at Ascension0; the flame and numeral share a centered anchor. |
 | Pile controls | All three original pile icons use the source50ms focus-to1.25,500ms QuintOut return, and250ms pressed response. Counts remain sibling labels rather than scaling with the icon. |
 | Card art | The nine Ancient cards use full-height original portraits, Ancient border/text background/banner and all ten flame frames. Infection retains all30 source frames. Bound, Entangled, Galvanized, Hexed, Tainted, Ringing and Smog each use their own original scene/material; afflictions take precedence over the model's built-in overlay. |
 | Long descriptions | Selected and hovered hand cards scroll inside a clipped description rectangle in LCD-pixel increments. Only that small rectangle is restored/repainted. Small card caches retain the portrait/frame/banner while the foreground text, plaque and resource labels render in the authored order, so cache hits preserve overflow clocks without covering a cost or type plaque. |
@@ -56,3 +56,24 @@ The following source stage also fixes the strictly detected small-card layer
 order and live deck-flight cache regressions. Final integrated native results,
 ordinary-OS Firebird timing and acceptance are recorded in WORK_STATE rather
 than inferred from this implementation ledger.
+
+The stage6 combat regression is closed PASS at
+`67e2822ef369dc62428dcc0698c0bda62586756f`: **11,149 synthetic checks** and
+**11,395 checks with the actual integrated original resources** (endpoint5275).
+The corresponding unchanged-source journals are
+`combat-ui14-stage6-synthetic-7f00c7ec698a` and
+`combat-ui14-stage6-original-c248f9bdbe38`. All three controlled saves pass the
+production validator and identical save/load/save round trips. Actual captures
+cover both shrinking actors, the three other source scaling cases, Forge,
+enchantment reveal/settling and special card borders. These are native
+correctness and resource-rendering results, not calculator performance results.
+Stage5's intermediate compile failed because the orb helper preceded the
+shared min/max helpers; stage6 replaces those calls with local expressions.
+
+The following final source stage enables the clock icon in fresh preferences
+and binds body-scale motion to the run number, so a repeated seed cannot
+inherit the previous run's shrink tween. Its added checks cover default
+combat-clock hits, elapsed-time pixel isolation, preservation of an explicitly
+disabled preference, and an identical-seed combat restart. The older card/HUD
+test now follows the pixel reader's forward/hold/return clocks and includes
+keyboard navigation to the clock. This final stage requires fresh validation.

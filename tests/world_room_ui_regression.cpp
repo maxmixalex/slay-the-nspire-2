@@ -510,7 +510,7 @@ static void event_motion(){
  CHECK(choices()>=2);capture("ancient-source-dialogue-layout");unchanged();
 }
 static void merchant_motion_and_pickups(){
- begin_room(WorldRoom::Shop);a.game.gold=9999;a.render();snapshot();click(UiAction::OpenShop);CHECK(a.shop_open);
+ begin_room(WorldRoom::Shop);a.game.gold=9999;a.render();capture("merchant-closed-source");snapshot();click(UiAction::OpenShop);CHECK(a.shop_open);
  const uint32_t began=a.room_presentation.merchant.start;a.render();
  CHECK(a.room_presentation.merchant.y(began)==-222);
  // The fixed Back control is immediately available while the original
@@ -542,6 +542,9 @@ static void merchant_motion_and_pickups(){
  CHECK(save(a.game,after)&&after.size==expected.size&&!std::memcmp(after.bytes,expected.bytes,expected.size));
  unsigned flights=0;for(const auto&f:a.reward_presentation.flights)flights+=f.kind==RewardPickupKind::Card;CHECK(flights==1&&a.cursor!=0);
  snapshot();room_clock(150);capture("merchant-card-pickup");unchanged();
+ // Move off the purchased card before capturing the dialogue. Associated
+ // card tooltips otherwise cover the same part of the bubble being checked.
+ a.pointer_move(315,130);room_clock(600);capture("merchant-dialogue-centered");unchanged();
  click(HitKind::Choice,ShopLeave);CHECK(!a.shop_open);a.render();CHECK(!choices());room_clock(500);
  CHECK(a.room_presentation.merchant.y(a.map_clock_ms)==-222);CHECK(a.room_presentation.merchant.alpha(a.map_clock_ms)>0);room_clock(300);
  CHECK(!a.room_presentation.merchant.visible(a.map_clock_ms)&&!a.room_presentation.merchant.alpha(a.map_clock_ms));unchanged();

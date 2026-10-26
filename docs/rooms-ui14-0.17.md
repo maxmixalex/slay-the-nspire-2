@@ -43,7 +43,9 @@ control through the same opening scale, including its approximately
   at the existing readable height. Body scrolling and hit regions use the
   resulting variable-height stack.
 - Event card previews follow the hovered option vertically. Associated
-  keywords stay with the card and remain inside the screen. This corrects
+  keywords stay with the card and remain inside the screen, moving above
+  the card for low options so that reserving their text does not push the
+  actual preview away from the option. This corrects
   Wood Carvings' Torus preview being pinned near the top of the display.
 - Event prose, Architect dialogue and reward scrollbars use the shared
   hover enlargement. Room compact paragraphs retain their full text and
@@ -123,8 +125,25 @@ Moving visible pixels fall from 5,440,099 to 3,148,513. These are complete
 catalog totals across all five characters; one room displays only its selected
 character. With 4 KiB allocation rounding, a complete closed-room cycle uses
 1,468 to 1,946 image pages, or 1,759 to 2,237 with both hover skins retained,
-before the small backdrop/light/UI set. Final installed bytes and frame rate
-still require the integrated reclamation and ordinary-OS Firebird gates.
+before the small backdrop/light/UI set.
+
+The stage6 final resource assembly at
+`67e2822ef369dc62428dcc0698c0bda62586756f` closes PASS in
+`ui14-final-resources-0c2a8ba4cd52`. Its merchant groups physically remove
+6,215,294 bytes, including two-byte alignment, from the intermediate pack.
+Final common artwork is 72,131,134 bytes, compared with the stage4
+independent-frame result of 78,354,908. It remains 1,471,828 bytes larger than
+the previous release's 70,659,306-byte common file, including the other UI14
+art additions. The complete release must report that net increase accurately.
+
+Journal `merchant-ui14-final-pixel-proof-2cd1e0f585cc` independently decodes
+the final English package and the original UI13 source. All 1,817 frame
+pairs recompose from the final ten static layers and final retained moving
+planes with zero RGB565 or alpha differences; dimensions, pivots, order and
+clocks are also identical. The final logical-pack SHA256 is
+`e5523824d43abd94a4bdf25fc0f71502bfd32bd022382ff9060b60c79076e66a`.
+Six public factoring/grouping tests pass at this same checkpoint. Ordinary-OS
+Firebird cold and sustained timing remain separate acceptance gates.
 
 ## Validation scope
 

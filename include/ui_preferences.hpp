@@ -20,7 +20,7 @@ struct UiPreferences {
     bool bestiary_actions_preferred=true;
     InputBindings bindings=default_input_bindings();
     bool bindings_saved=false;
-    bool show_run_timer=false;
+    bool show_run_timer=true;
     bool long_press=false;
     bool skip_intro_logo=false;
 };

@@ -368,11 +368,13 @@ static void reported_event_geometry(){
  begin(OriginalEventId::WoodCarvings,0x6ab19,0);a.cursor=2;a.pointer.visible=false;a.render();snapshot();
  CardHoverTarget target{};CHECK(event_hover_target(a,target)&&target.event_option==2);
  HoverTipList tips{};collect_event_hover_tips(a,2,tips);const auto page=card_hover_page(a,target,tips);
- bool torus=false;
+ bool torus=false;int card_top=0;
  for(unsigned i=0;i<page.count;++i){const auto&piece=page.pieces[i];const auto&tip=tips.items[piece.tip];
   CHECK(piece.box.y>=24&&piece.box.y+piece.box.h<=236);
   if(tip.kind==HoverTipKind::Card&&tip.card.kind==EventCardToricToughness){
-   torus=true;CHECK(piece.box.y>24&&piece.box.x+piece.box.w<target.owner.x);}}
+   torus=true;card_top=piece.box.y;CHECK(piece.box.y+piece.box.h==236&&piece.box.x+piece.box.w<target.owner.x);}}
+ for(unsigned i=0;i<page.count;++i)if(tips.items[page.pieces[i].tip].kind!=HoverTipKind::Card)
+  CHECK(page.pieces[i].box.y+page.pieces[i].box.h<card_top);
  CHECK(torus);capture("event-wood-carvings-torus");unchanged();
  // The actual fixed-count transformation has no grid Confirm. Its core
  // completion leaves one label-only Proceed option in the same room.

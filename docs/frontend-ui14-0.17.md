@@ -29,8 +29,10 @@ also measures its labels instead of separating every entry by the previous
 fixed 26px pitch. Every source move remains reachable through the same paging
 and keyboard actions.
 
-`native_scrollbar_grabber` supplies the same centered 1.15× hover/press scale
-and 500ms exponential recovery to deck/collection grids, bestiary, progress,
+`NScrollbarTrain.OnMouseEntered` immediately applies 1.15× scale; its
+`OnMouseExited` uses a 500ms Expo-Out tween back to one. The shared
+`native_scrollbar_grabber` supplies that centered hover/press scale
+and recovery to deck/collection grids, bestiary, progress,
 settings, run setup, room text/rewards, character descriptions, and the run-end
 summary. The settings language thumb keeps its own original small train
 texture and uses the same motion. Its track, drag range and hit targets retain
@@ -128,7 +130,44 @@ renderer uses before testing scroll/reveal behavior.
 The third full build at
 `80bf6090116b7380825fab54e52ba72b99404746` stopped on the combat module's
 `sizeof(CombatCardMotion)` bound (7888 versus 6144 bytes). No third-stage
-runtime pass is claimed here. The final additive/white-particle fast paths,
-source end-of-credits test, exact deck hit separation test and corrected
-game-over gates remain scheduled for the next build. Native correctness and
-host timing do not establish Firebird or physical-calculator frame rates.
+runtime pass is claimed here.
+
+The fourth checkpoint,
+`97a63d78979daba7d12fa8475b305e836fc9503c`, built all 316 Ninja steps with
+Clang 18. Its actual-resource gates used the new 5,275-entry auxiliary
+catalog, including the 31 rebuilt score/badge/discovery images. All 31 image
+directory sizes match their intended 16×18 or 24×24 dimensions.
+
+| Actual-resource gate | Fourth-stage result |
+| --- | --- |
+| Random shader, particle fast paths and canonical save | Passed, 317,957 assertions |
+| Random frame comparison against the previous general particle painter | Four full-frame PPMs at 0, 1,250, 7,500 and 16,000ms are byte-identical; 307,200 pixels compared |
+| ENG / ZHS frontend and guarded Continue/save lifecycle | Passed, 69,878 / 69,905 assertions |
+| ENG / ZHS credits, including scrolling beyond the end | Passed, 230,436 assertions per locale |
+| ENG / ZHS bestiary | Passed with final-pack captures |
+
+The settled Random selector and both localized port-credit components were
+visually inspected. The random portrait retains its narrow source aspect;
+the port heading is the green bold section style above the separate author
+line. Final-pack bestiary captures retain compact action/catalog rows and an
+arrow centered on the selected text.
+
+Two actual-resource gates exposed remaining validation work. The game-over
+pixel oracle still excluded only the first eleven pixels of the Continue
+button's text, although its centered label occupies a 22px-high rectangle.
+Its exclusion now follows that exact rectangle plus the one-pixel outline;
+source-art margins remain checked. Captures now precede the oracle so any
+future failure retains the actual settled screen and reports its first
+different pixel. That corrected gate has not yet run successfully. The
+card/HUD actual gate found unequal direct and cached card pixels in ENG and
+ZHS before reaching the deck captures; the shared card/cache owner is
+correcting that drawing-order issue.
+
+The fifth checkpoint,
+`023ae87b911093568eae2986b524b54523aa3312`, stopped during core compilation
+because two newly introduced combat-feedback calls referenced `mx` and `mn`
+before those helpers were declared. Its failed journal is retained; no
+fifth-stage runtime pass is claimed. The next checkpoint must build those
+fixes and close the game-over and deck actual-resource gates. Native
+correctness and host timing do not establish Firebird or physical-calculator
+frame rates.

@@ -365,7 +365,7 @@ struct App {
     void auxiliary_scroll(int);
     void advance_auxiliary(unsigned);
     unsigned feedback_report(char*,unsigned)const;
-    bool show_card_indices=false,text_effects=true,keyboard_only=false,phobia_mode=false,show_run_timer=false,long_press=false,skip_intro_logo=false;
+    bool show_card_indices=false,text_effects=true,keyboard_only=false,phobia_mode=false,show_run_timer=true,long_press=false,skip_intro_logo=false;
     bool run_timer_visible()const;
     void run_timer_label(char*,size_t)const;
     uint8_t screen_shake=2;

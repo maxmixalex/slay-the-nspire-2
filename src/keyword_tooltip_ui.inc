@@ -318,10 +318,17 @@ static HoverPage hover_page(Canvas&c,const CardHoverTarget&owner,const HoverTipL
     if(event_lane){
         // Keep an option's preview beside that option. The old fixed top24
         // put Wood Carvings' lower Torus choice a screen away from its card.
-        // Associated keyword boxes remain together below the card.
-        const int group_height=card_height+(text_height?text_height+4:0);
-        card_top=mn(mx(24,owner.owner.y+(owner.owner.h-card_height)/2),mx(24,236-group_height));
-        if(text_height)for(unsigned i=0;i<result.count;++i)result.pieces[i].box.y+=card_top+card_height+4-text_top;
+        // At the bottom, place associated text above the preview instead of
+        // pushing the actual card away from the option to reserve text below.
+        card_top=mn(mx(24,owner.owner.y+(owner.owner.h-card_height)/2),mx(24,236-card_height));
+        if(text_height){
+            int next_text=card_height?card_top+card_height+4:mn(mx(24,owner.owner.y),236-text_height);
+            if(card_height&&next_text+text_height>236){
+                next_text=card_top-text_height-4;
+                if(next_text<24){card_top+=24-next_text;next_text=24;}
+            }
+            for(unsigned i=0;i<result.count;++i)result.pieces[i].box.y+=next_text-text_top;
+        }
     }
     if(owner.relic>=0&&!owner.inspect_relic&&!owner.merchant&&text_top+text_height+1+card_height<=column.y+column.h){card_x=column.x;card_top=text_top+text_height+1;}
     int card=0;for(unsigned i=0;i<tips.count;++i)if(tips.items[i].kind==HoverTipKind::Card){

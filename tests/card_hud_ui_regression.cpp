@@ -433,8 +433,21 @@ static void long_hand_description(){
         CHECK(rainbow.description_truncated==(rows>fitted_text::row_capacity(rect.h,fonts.body_minimum)));
         if(rainbow.description_truncated){
             selected_hand_tile(c,0);CHECK(selected_hand_reader.maximum>0);
-            app.map_clock_ms+=1400u+unsigned(selected_hand_reader.maximum)*1200u;
+            const auto started=selected_hand_reader.started;
+            const unsigned travel=unsigned(selected_hand_reader.maximum)*125u;
+            // UI14 advances one LCD pixel per125ms, with a1400ms hold at
+            // both ends. Keep exact endpoints and the return leg covered;
+            // the old1200ms-per-line delay crosses several new cycles.
+            app.map_clock_ms=started+1400u+125u;
+            selected_hand_tile(c,0);CHECK(selected_hand_reader.skip==1);
+            app.map_clock_ms=started+1400u+travel;
             selected_hand_tile(c,0);CHECK(selected_hand_reader.skip==selected_hand_reader.maximum);
+            app.map_clock_ms=started+2799u+travel;
+            selected_hand_tile(c,0);CHECK(selected_hand_reader.skip==selected_hand_reader.maximum);
+            app.map_clock_ms=started+2800u+travel+125u;
+            selected_hand_tile(c,0);CHECK(selected_hand_reader.skip==selected_hand_reader.maximum-1);
+            app.map_clock_ms=started+2800u+2u*travel;
+            selected_hand_tile(c,0);CHECK(selected_hand_reader.skip==0);
             CardHoverTarget full{};CHECK(card_hover_target(app,full)&&full.instance==0);
             HoverTipList tips{};collect_visible_hover_tips(c,full,tips);CHECK(tips.count&&tips.items[0].kind==HoverTipKind::Description);
         }
@@ -496,6 +509,7 @@ static void ui7_cards(){
 }
 static void ui7_hud_nodes(){
     new_run(app.game,719,false);CHECK(world_begin_run(app.game));app.game.world.ascension=1;app.title=app.library=app.character_select=app.paused=app.settings_open=false;app.reset_presentation();
+    const bool previous_timer=app.show_run_timer;app.show_run_timer=true;
     Canvas c{app};clear();app.hit_count=0;hud(c);auto room=hud_room_info(app.game);
     CHECK(room.room_enabled&&room.boss_enabled&&!std::strcmp(room.room_tip,"ROOM_ANCIENT"));
     CHECK(!std::strcmp(room.room_key,"NEOW"));CHECK(hud_ui7_icon(room.room_key)&&hud_ui7_icon("KAISER_CRAB_BOSS"));
@@ -505,8 +519,11 @@ static void ui7_hud_nodes(){
     hud_hover_tip(c);capture("hud-current-room-tooltip");app.input(Key::Right);CHECK(app.hud_focus==slots+3);
     app.input(Key::Right);CHECK(app.hud_focus==slots+4);
     clear();app.hit_count=0;hud(c);hud_hover_tip(c);capture("hud-act-boss-tooltip");
-    app.input(Key::Right);CHECK(app.hud_focus==slots+5);app.input(Key::Right);CHECK(app.hud_focus==slots+5);
+    app.input(Key::Right);CHECK(app.hud_focus==slots+5);
     clear();app.hit_count=0;hud(c);focus=hud_focused_hit(app);CHECK(focus&&focus->kind==HitKind::HudInfo&&focus->value==HudPortrait);
+    app.input(Key::Right);CHECK(app.hud_focus==slots+6);app.input(Key::Right);CHECK(app.hud_focus==slots+6);
+    clear();app.hit_count=0;hud(c);focus=hud_focused_hit(app);CHECK(focus&&focus->kind==HitKind::HudInfo&&focus->value==HudTimer);
+    app.input(Key::Left);CHECK(app.hud_focus==slots+5);
     app.input(Key::Down);CHECK(app.hud_focus==HudRelicFocusFirst);clear();app.hit_count=0;hud(c);focus=hud_focused_hit(app);CHECK(focus&&focus->kind==HitKind::OwnedRelic&&focus->value==0);
     app.input(Key::Up);CHECK(app.hud_focus==2);app.input(Key::Back);CHECK(app.hud_focus<0);
     CHECK(save(app.game,after)&&before.size==after.size&&!std::memcmp(before.bytes,after.bytes,before.size));
@@ -532,7 +549,7 @@ static void ui7_hud_nodes(){
     HudRelicMotion relic;CHECK(relic.observe(0,1,true,100)==4096);CHECK(relic.observe(0,1,true,150)==5120);
     CHECK(relic.observe(0,1,false,150)==5120);CHECK(relic.observe(0,1,false,1150)==4096);
     CHECK(relic.observe(32,2,true,1200)==4096);CHECK(relic.observe(32,2,true,1250)==5120);CHECK(relic.observe(0,1,false,1250)==4096);
-    app.hud_focus=-1;app.reset_presentation();
+    app.show_run_timer=previous_timer;app.hud_focus=-1;app.reset_presentation();
 }
 static void ui6_screens(){
     if(app.content.version()<Ui6ContentVersion)return;

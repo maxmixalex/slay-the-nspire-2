@@ -143,7 +143,7 @@ void App::enemy_trigger(int slot,const char*trigger,int move,bool direct,const E
  m.queue[at]={trigger,facts?*facts:ui_enemy_facts(game,slot),int16_t(move),uint8_t(direct),when};++m.count;ui_enemy_advance(*this,slot);
 }
 static CreaturePose ui_creature_scaled_pose(const App&a,CreaturePose pose,unsigned actor){
- struct Scale {const App*owner=nullptr;uint32_t seed=0,identity=0,last=0;int floor=-1,combat=-1,encounter=-1;bool shrink=false,mushroom=false;CreatureScaleMotion motion{},defaults{};};
+ struct Scale {const App*owner=nullptr;uint32_t seed=0,run=0,identity=0,last=0;int floor=-1,combat=-1,encounter=-1;bool shrink=false,mushroom=false;CreatureScaleMotion motion{},defaults{};};
  static Scale scales[MaxEnemies+1];if(actor>MaxEnemies)return pose;
  if(actor&&actor<=unsigned(a.game.enemy_count)){
   const auto kind=a.game.enemy_world.models[actor-1].kind;
@@ -157,8 +157,8 @@ static CreaturePose ui_creature_scaled_pose(const App&a,CreaturePose pose,unsign
  const int initial=actor?creature_instance_scale(a.game,int(actor-1)):1024;
  const int base=actor&&a.enemy_presentation[actor-1].facts.default_scale?a.enemy_presentation[actor-1].facts.default_scale:initial;
  auto&m=scales[actor];const uint32_t now=a.animation*33u,identity=ui_feedback_identity(a.game,actor);
- if(m.owner!=&a||m.seed!=a.game.seed||m.floor!=a.game.floor||m.combat!=a.game.world.combat_count||m.encounter!=int(a.game.enemy_world.encounter)||m.identity!=identity||int32_t(now-m.last)<0){
-  m={};m.owner=&a;m.seed=a.game.seed;m.floor=a.game.floor;m.combat=a.game.world.combat_count;m.encounter=int(a.game.enemy_world.encounter);m.identity=identity;
+ if(m.owner!=&a||m.seed!=a.game.seed||m.run!=a.run_number||m.floor!=a.game.floor||m.combat!=a.game.world.combat_count||m.encounter!=int(a.game.enemy_world.encounter)||m.identity!=identity||int32_t(now-m.last)<0){
+  m={};m.owner=&a;m.seed=a.game.seed;m.run=a.run_number;m.floor=a.game.floor;m.combat=a.game.world.combat_count;m.encounter=int(a.game.enemy_world.encounter);m.identity=identity;
   m.shrink=shrink;m.mushroom=mushroom;m.motion.from=m.motion.to=shrink?512:mushroom?1536:1024;m.motion.started=now;
   m.defaults.from=m.defaults.to=base;m.defaults.started=now;
  }

@@ -11,6 +11,7 @@ static bool read_ok=true,write_ok=true;
 static bool read_settings(UiPreferences&out){out=persisted;return read_ok;}
 static bool write_settings(const UiPreferences&value){++writes;if(!write_ok)return false;persisted=value;return true;}
 int main(){
+    CHECK(UiPreferences{}.show_run_timer&&app.show_run_timer);
     uint8_t encoded[UiPreferencesBytes+1]{};UiPreferences result{};
     encode_ui_preferences({true},encoded);CHECK(decode_ui_preferences(encoded,UiPreferencesBytes,result)&&result.fast_mode);
     CHECK(!decode_ui_preferences(encoded,UiPreferencesBytes+1,result));
@@ -29,6 +30,8 @@ int main(){
     UiPreferences timer{};timer.show_run_timer=true;timer.long_press=true;timer.bindings.keys[0][unsigned(InputCommand::Map)]='Y';
     encode_ui_preferences(timer,encoded);CHECK(encoded[4]==6&&UiPreferencesBytes==108);
     CHECK(decode_ui_preferences(encoded,UiPreferencesBytes,result)&&result.show_run_timer&&result.long_press&&result.bindings.keys[0][unsigned(InputCommand::Map)]=='Y');
+    UiPreferences hidden=timer;hidden.show_run_timer=false;encode_ui_preferences(hidden,encoded);
+    CHECK(decode_ui_preferences(encoded,UiPreferencesBytes,result)&&!result.show_run_timer);encode_ui_preferences(timer,encoded);
     encoded[4]=5;CHECK(decode_ui_preferences(encoded,UiPreferencesBytes,result)&&result.long_press&&!result.skip_intro_logo);
     encoded[4]=4;encoded[5]&=~128;CHECK(decode_ui_preferences(encoded,UiPreferencesBytes,result)&&result.show_run_timer&&!result.long_press);
     encoded[4]=3;encoded[5]&=~64;CHECK(decode_ui_preferences(encoded,UiPreferencesBytes,result)&&!result.show_run_timer&&!result.long_press&&result.bindings.keys[0][unsigned(InputCommand::Map)]=='Y');
@@ -76,6 +79,6 @@ int main(){
     CHECK(save(app.game,after));CHECK(before.size==after.size&&!std::memcmp(before.bytes,after.bytes,before.size));
     app.title=true;CHECK(!app.run_timer_visible());
     app.settings_open=true;app.ui_action(UiAction::SettingsReset);CHECK(app.frontend_confirm==4);app.frontend_choice=1;app.input(Key::Confirm);
-    CHECK(!app.long_press&&!persisted.long_press&&!app.end_turn_hold.owner&&!app.skip_intro_logo&&!persisted.skip_intro_logo);
+    CHECK(!app.long_press&&!persisted.long_press&&!app.end_turn_hold.owner&&!app.skip_intro_logo&&!persisted.skip_intro_logo&&app.show_run_timer&&persisted.show_run_timer);
     return 0;
 }

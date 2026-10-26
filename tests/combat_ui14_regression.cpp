@@ -65,6 +65,28 @@ static void scale_equations(){
  for(unsigned n=0;n<=9999;++n)CHECK(std::abs(CreatureScaleMotion::enlarged(n)-int(std::lround((1+.1*std::log(double(n)+1))*1024)))<=1);
  m.observe(1536,2200,0);CHECK(m.sample(2200)==1536);m.observe(1126,3000,100);CHECK(m.sample(2999)==1536&&m.sample(3100)==1126);
 }
+static void clock_icon(){
+ scenario="default combat clock is an icon; elapsed time belongs only to its tooltip";
+ fresh();CHECK(UiPreferences{}.show_run_timer&&a.show_run_timer&&a.run_timer_visible());a.begin_progress();
+ before=a.game;Canvas c{a};a.progress.current.seconds=11;char label[24]{};a.run_timer_label(label,sizeof label);CHECK(!std::strcmp(label,"00:11"));
+ std::memset(a.pixels,0,sizeof a.pixels);a.hit_count=0;hud(c);bool found=false;
+ for(unsigned i=0;i<unsigned(a.hit_count);++i)if(a.hits[i].kind==HitKind::HudInfo&&a.hits[i].value==HudTimer){const auto&h=a.hits[i];CHECK(h.enabled&&h.x==hud_room_geometry(a.game).timer&&h.w==8);found=true;}
+ CHECK(found);const auto initial=std::vector<uint16_t>(a.pixels,a.pixels+ScreenW*ScreenH);
+ a.progress.current.seconds=3723;a.run_timer_label(label,sizeof label);CHECK(!std::strcmp(label,"1:02:03"));
+ std::memset(a.pixels,0,sizeof a.pixels);a.hit_count=0;hud(c);CHECK(!std::memcmp(initial.data(),a.pixels,sizeof a.pixels));
+ if(original_art){
+  const int slots=int(potion_slot_count(a.game));
+  for(int focus:{slots+2,slots+3,slots+6}){
+   a.hud_focus=focus;a.progress.current.seconds=11;std::memset(a.pixels,0,sizeof a.pixels);hud_hover_tip(c);
+   const auto first_tip=std::vector<uint16_t>(a.pixels,a.pixels+ScreenW*ScreenH);
+   a.progress.current.seconds=3723;std::memset(a.pixels,0,sizeof a.pixels);hud_hover_tip(c);
+   CHECK((std::memcmp(first_tip.data(),a.pixels,sizeof a.pixels)!=0)==(focus==slots+6));
+  }
+ }
+ a.show_run_timer=false;CHECK(!a.run_timer_visible());a.hit_count=0;hud(c);
+ for(unsigned i=0;i<unsigned(a.hit_count);++i)CHECK(a.hits[i].kind!=HitKind::HudInfo||a.hits[i].value!=HudTimer);
+ a.show_run_timer=true;a.hud_focus=-1;unchanged();
+}
 static void actual_default_growth(){
  scenario="Big Mushroom's real acquisition grows the player immediately";fresh();const auto normal=a.combat_player_pose();direct=a.game;
  CHECK(gain_world_relic(direct,WorldRelicBigMushroom));{UiCoreObserver observer(a);CHECK(gain_world_relic(a.game,WorldRelicBigMushroom));}equal_save();
@@ -85,6 +107,7 @@ static void actual_default_growth(){
 static void actual_shrink(){
  scenario="Beetle Juice really changes the rendered enemy scale";fresh(Character::Ironclad,EncounterId::ShrinkerBeetleWeak);
  hand({Defend,Defend,Strike});potion_set(a.game,0,Potion::BeetleJuice);export_save("ui14-shrink");
+ const auto initial_save=std::vector<uint8_t>(first.bytes,first.bytes+first.size);
  const auto original_enemy=a.combat_enemy_pose(0),original_player=a.combat_player_pose();capture("shrink-before");
  direct=a.game;CHECK(use_potion(direct,0,0));{UiCoreObserver observer(a);a.begin_combat_feedback();CHECK(use_potion(a.game,0,0));}equal_save();
  int shrunk=0;CHECK(enemy_visual_fact(a.game,0,"Shrink",shrunk)&&shrunk);
@@ -96,6 +119,10 @@ static void actual_shrink(){
  intermediate=false;for(unsigned i=0;i<150;++i){tick(33);const auto p=a.combat_player_pose();intermediate|=p.scale<original_player.scale&&p.scale>original_player.scale/2;
   CHECK(p.feet==original_player.feet&&p.hp==original_player.hp&&p.width==original_player.width);}
  CHECK(enemy_power_value(a.game,-1,EnemyPower::Shrink)!=0);CHECK(intermediate&&a.combat_player_pose().scale==mx(1,original_player.scale/2));capture("shrink-player-half");equal_save();
+ scenario="another run with the identical seed and combat does not inherit a shrink tween";
+ CHECK(load(a.game,initial_save.data(),initial_save.size())&&validate(a.game));++a.run_number;
+ a.reset_presentation();a.sync_combat_feedback();a.sync_enemy_feedback();before=a.game;
+ CHECK(a.combat_player_pose().scale==original_player.scale&&a.combat_enemy_pose(0).scale==original_enemy.scale);unchanged();
 }
 static void actual_forge(){
  scenario="real Forge queues the changed swords and leaves canonical results exact";fresh(Character::Regent);hand({RegentTheSmith,SovereignBlade,RegentDefend});
@@ -155,7 +182,7 @@ int main(int argc,char**argv){
  if(argc>=2){const std::string root=argv[1];common=read(root+"/data/nSpire2.dat.tns");language=read(root+"/data/nSpire2.eng.dat.tns");
   CHECK(split.open(ResourceSource::memory(common.data(),common.size()),ResourceSource::memory(language.data(),language.size()),ResourceLanguage::English));CHECK(a.init(split.source(),{}));original_art=true;}
  if(argc==3){output=argv[2];std::filesystem::create_directories(output);}
- scale_equations();actual_shrink();actual_default_growth();actual_forge();actual_enchant();borders_and_cache();
+ scale_equations();clock_icon();actual_shrink();actual_default_growth();actual_forge();actual_enchant();borders_and_cache();
  const char note[]="Controlled UI14 fixtures; earlier room outcomes, cards and resources are supplied. These saves validate and round-trip through the production NSR codec. They are not natural runs.\nui14-card-borders: Neow's Fury, Infection and Bound Strike in hand.\nui14-shrink: Shrinker Beetle before its opening move, Beetle Juice in potion slot1; drink on the enemy, then end turn to shrink the player.\nui14-regent-enchant-forge: choose an Attack for Gnarled Hammer's Sharp enchantment, confirm, then play The Smith in the resumed Regent combat.\n";
  write("README.txt",note,sizeof note-1);std::printf("combat UI14: %u checks passed%s\n",checks,original_art?"; original art decoded and rendered":"");
 }
