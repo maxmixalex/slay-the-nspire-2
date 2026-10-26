@@ -47,6 +47,10 @@ static void capture(const char*kind,unsigned character){
   CHECK(std::fwrite(row,1,sizeof row,f)==sizeof row);}CHECK(std::fclose(f)==0);
 }
 static void original_sequences(){
+ // Independently reconstructed from every pinned source static/moving pair
+ // after LCD quantization. The source foreground has only 11 distinct views
+ // across its full 144 samples; a generic animation-density threshold is wrong.
+ static constexpr unsigned source_distinct[]={133,11,80,80,259,89,288,290,144,133};
  const bool full=app.content.ui_image(I13_FakeMerchantWithoutRug)>=0;unsigned frames=0;
  for(unsigned n=0;n<(full?10u:9u);++n){const auto&s=FakeMerchantSequences[n];const int fixed_id=app.content.ui_image(s.base);CHECK(fixed_id>=0);
   const unsigned width=n==FakeMerchantRegentSequence?FakeMerchantRegentAtlasWidth:unsigned(s.w);
@@ -63,7 +67,7 @@ static void original_sequences(){
    }
    distinct.insert(hash(moving));++frames;
   }
-  CHECK(distinct.size()>s.count/8);CHECK(fake_merchant_frame(n,0)==0);
+  CHECK(distinct.size()==source_distinct[n]);CHECK(fake_merchant_frame(n,0)==0);
   CHECK(fake_merchant_frame(n,uint64_t(s.count)*1000000/24+1)==0);
  }
  CHECK(frames==(full?1800u:1656u));CHECK(app.content.healthy());

@@ -1,9 +1,12 @@
 #include "app.hpp"
+#include "font_metrics.hpp"
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
 #include <vector>
 #include <memory>
+#include <set>
+#include <cmath>
 #include <string>
 using namespace spire;
 static unsigned checks=0;
@@ -111,8 +114,36 @@ int main(int argc,char**argv){
         decoded_image_bytes=compare_images(*memory,*reference,"new memory / original");
         CHECK(compare_images(*ranged,*reference,"new range / original")==decoded_image_bytes);
     }else decoded_image_bytes=compare_images(*memory,*ranged,"memory / range");
+    // UI12 pairs occupy metadata records in the glyph directory. Their
+    // codepoints deliberately have no drawable raster. Verify every pair at
+    // every exact raster size of its face through the public layout API.
+    std::set<uint64_t> raster_keys;
+    for(unsigned id=0;id<glyphs;++id){const uint8_t*r=b.data()+40+images*16+id*16;
+        if(!kerning_codepoint(word(r)))raster_keys.insert((uint64_t(half(r+8))<<32)|word(r));}
+    unsigned kerning_records=0,kerning_samples=0;
     for(unsigned id=0;id<glyphs;id++){
         const uint8_t*r=b.data()+40+images*16+id*16;const unsigned cp=word(r),size=half(r+8);
+        if(memory->version()>=Ui12ContentVersion&&kerning_codepoint(cp)){
+            CHECK((size&31u)==KerningMetadataSize&&(half(r+12)&0xf000u)==KerningGlyphAdvance);
+            const unsigned band=size&~31u,face=((band>>6)&3u)|((band>>3)&4u);
+            const unsigned pair=cp-KerningGlyphFirst,left=32+pair/95,right=32+pair%95;
+            CHECK(left>=32&&left<=126&&right>=32&&right<=126);
+            CHECK(!memory->glyph(cp,KerningMetadataSize,face).pixels&&!ranged->glyph(cp,KerningMetadataSize,face).pixels);
+            if(reference){const uint8_t*rr=reference_bytes.data()+40+images*16+id*16;
+                CHECK(word(rr)==cp&&half(rr+8)==size&&half(rr+12)==half(r+12));}
+            unsigned sampled=0;
+            for(unsigned px=1;px<=31;++px){
+                if(!raster_keys.count((uint64_t(band|px)<<32)|left)||!raster_keys.count((uint64_t(band|px)<<32)|right))continue;
+                // The directory stores 1/2048-em units; the API returns
+                // 1/64px, rounded to the nearest integer away from zero.
+                const int expected=int(std::lround((int(half(r+12)&4095u)-2048)*double(px)/32.0));
+                CHECK(memory->glyph_kerning64(left,right,int(px),face)==expected);
+                CHECK(ranged->glyph_kerning64(left,right,int(px),face)==expected);
+                if(reference)CHECK(reference->glyph_kerning64(left,right,int(px),face)==expected);
+                ++sampled;++kerning_samples;
+            }
+            CHECK(sampled>0&&memory->healthy()&&ranged->healthy());++kerning_records;continue;
+        }
         Glyph a=directory_glyph(*memory,cp,size);auto expected=glyph_bytes(a);Glyph c=directory_glyph(*ranged,cp,size);auto actual=glyph_bytes(c);
         CHECK(a.w==c.w&&a.h==c.h&&a.advance==c.advance&&a.encoded_size==c.encoded_size);CHECK(expected==actual);
         if(reference){
@@ -147,5 +178,5 @@ int main(int argc,char**argv){
     source.fault=UINT32_MAX;CHECK(ranged->open({&source,(uint32_t)b.size(),read_at,nullptr}));
     CHECK(!ranged->open({&source,(uint32_t)b.size()+1,read_at,nullptr}));CHECK(!ranged->healthy());
     if(reference)CHECK(reference->healthy());
-    std::printf("%u checks; %u of %u images (%llu decoded bytes), %u glyphs, %u strings, %u clips and %u identical memory/range UI frames%s%s; callback reads are bounded\n",checks,measured_images,images,(unsigned long long)decoded_image_bytes,glyphs,strings,clips,frames,reference?"; measured images, metadata and UI also match the independent reference pack":"",requested_images?"; selected image range, not a full catalog proof":"");
+    std::printf("%u checks; %u of %u images (%llu decoded bytes), %u glyph records (%u kerning pairs / %u exact-size samples), %u strings, %u clips and %u identical memory/range UI frames%s%s; callback reads are bounded\n",checks,measured_images,images,(unsigned long long)decoded_image_bytes,glyphs,kerning_records,kerning_samples,strings,clips,frames,reference?"; measured images, metadata and UI also match the independent reference pack":"",requested_images?"; selected image range, not a full catalog proof":"");
 }

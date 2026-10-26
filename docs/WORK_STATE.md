@@ -156,6 +156,44 @@ Final original-resource conversion, complete actual-image decoding and matched
 device acceptance remain pending and are not counted as passed here.
 
 
+### Complete private resources; final test oracles
+
+Converter checkpoint `e606108221fd6f8202f61b3e5ae1372970de0e27` now closes the
+complete 5,156-entry auxiliary catalog and all sixteen locale packs with
+unchanged source (`61ffb1e8372c`). All 2,955 appended source images, including
+1,800 Fake Merchant dynamic frames and the no-rug variant, are retained. The
+original 1,138-image UI13 prefix and seven already verified Fake Merchant
+sequences (1,199 images) match their earlier payload hashes exactly.
+Lossless grouping and 1,013 exact aliases reduce 12,254,308 padded source
+bytes to 2,991,398 stored bytes, saving 9,262,910 bytes. The inherited unreachable
+record pruning additionally saves 307,420 bytes in the default split install.
+
+The actual four-file install is **78,569,446 bytes (78.57 MB / 74.93 MiB)**:
+launcher 1,653,686; common 70,659,306; English 1,140,675; Simplified Chinese
+5,115,779. This is 2,271,661 bytes larger than the d5 UI13 candidate and remains
+above the rough 65–70 MB target. No frame, source timing or source pixel quality
+was dropped to hide that difference. The complete no-rug extension adds only
+26,246 bytes to the common file after exact compression.
+
+Actual-resource validation exposes two outdated test assumptions, both now
+replaced by stronger source-backed checks without a production change. The
+foreground animation has exactly 11 distinct LCD images across 144 original
+samples; all ten sequences now require exact independently reconstructed
+counts [133,11,80,80,259,89,288,290,144,133], not an arbitrary density threshold.
+The whole glyph-directory test must distinguish the 7,124 kerning metadata
+records from drawable glyphs; it now checks every pair through the public
+kerning API at every present font size against independent directory arithmetic,
+while retaining full raster-byte comparison for all ordinary glyphs.
+
+The actual Fake Merchant warm-cache gate passes 14,544 App.render frames over
+eight scenarios (five characters, focus, and both post-fight rug outcomes).
+Every second and third 606-frame window performs zero source reads/bytes/seeks;
+peak usage is 553 entries / 1,730 pages, within the unchanged 1,023-entry and
+10 MiB room tier of the existing 11 MiB arena. This is host correctness/cache
+evidence, not calculator FPS. Final actual-resource gates and ordinary-OS
+device timing/gameplay are still being closed before main and delivery.
+
+
 ## UI12 playable follow-up — acceptance completed
 
 Delivered runtime: **`9398633d8fd715c008560cc038f61d8f85c98466`**. Validation source:
