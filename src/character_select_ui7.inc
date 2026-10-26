@@ -76,6 +76,15 @@ static void character_screen(Canvas&c){
     if(a.pointer.visible&&a.pointer.y>=PortraitTop-2&&a.pointer.y<PortraitTop+PortraitHeight+2)
         for(unsigned i=0;i<=CharacterKinds;++i)if(a.pointer.x>=portrait_x(i)-1&&a.pointer.x<portrait_x(i)+PortraitWidth+1)hover=int(i);
     const bool random=a.character_random;
+    if(a.content.version()>=Ui12ContentVersion&&!a.character_departure.active()){
+        // These shared source masks belong to the currently offered action.
+        // Prepare them while selection is visible, before the timed wipe.
+        int masks[3];unsigned count=random?3:1;
+        for(unsigned i=0;i<count;++i)masks[i]=a.content.ui_image(I12_CharacterTransitionFirst+
+            (random?i:a.selected_character==Character::Silent?1:a.selected_character==Character::Necrobinder?2:0));
+        a.content.prepare_images(masks,count);
+        for(unsigned i=0;i<count;++i)(void)a.content.image(masks[i]);
+    }
     unsigned selection=CharacterKinds;
     if(!random)for(unsigned i=0;i<CharacterKinds;++i)if(RunModeCharacters[i]==a.selected_character){selection=i;break;}
     auto&motion=a.character_select_presentation;
@@ -201,15 +210,29 @@ static uint16_t character_departure_black(uint16_t color,unsigned keep){
     rb=(rb+((rb>>8)&0x00ff00ffu))>>8;
     return uint16_t(((rb>>5)&0xf800u)|(div255(((color>>5)&63u)*keep)<<5)|(rb&31u));
 }
+struct CharacterDepartureShade {
+    uint16_t red[32],green[64],blue[32];
+    explicit CharacterDepartureShade(unsigned keep){
+        for(unsigned i=0;i<64;++i){green[i]=uint16_t(div255(i*keep)<<5);
+            if(i<32){blue[i]=uint16_t(div255(i*keep));red[i]=uint16_t(blue[i]<<11);}}
+    }
+    uint16_t apply(uint16_t color)const{return red[color>>11]|green[(color>>5)&63]|blue[color&31];}
+};
 static bool character_departure_direct(const Canvas&c){
     return c.opacity==255&&!c.coverage&&!c.occlusion&&!c.color_matrix;
 }
 static void character_departure_dim(Canvas&c,unsigned alpha){
     if(!alpha)return;if(alpha>=255){c.rect(0,0,320,240,0);return;}
     const bool direct=character_departure_direct(c);const unsigned keep=255-alpha;
+    if(direct){const CharacterDepartureShade shade(keep);
+        const int width=mn(c.clip_w,320),height=mn(c.clip_h,240);
+        for(int y=0;y<height;++y){auto*out=c.pixels+y*c.pitch;
+            for(int x=0;x<width;++x)out[x]=shade.apply(out[x]);}
+        return;
+    }
     for(int y=0;y<mn(c.clip_h,240);++y)for(int x=0;x<mn(c.clip_w,320);++x){
         const unsigned at=y*c.pitch+x;
-        if(direct)c.pixels[at]=character_departure_black(c.pixels[at],keep);else c.paint(at,0,alpha);
+        c.paint(at,0,alpha);
     }
 }
 static void character_departure_screen(Canvas&c){
@@ -233,6 +256,16 @@ static void character_departure_screen(Canvas&c){
     if(c.a.content.version()<Ui12ContentVersion||!mask.pixels||mask.w!=320||mask.h!=240){character_departure_dim(c,phase*255/4096);return;}
     const uint16_t threshold=rgb(cutoff,cutoff,cutoff);
     const bool direct=character_departure_direct(c);
+    if(direct&&mask.format!=4){
+        const CharacterDepartureShade fade(keep);const int width=mn(c.clip_w,320),height=mn(c.clip_h,240);
+        if(mask.palette){uint8_t opaque[256];
+            for(unsigned i=0;i<256;++i)opaque[i]=(unsigned(mask.palette[i*2])|unsigned(mask.palette[i*2+1])<<8)>=threshold;
+            for(int y=0;y<height;++y){auto*out=c.pixels+y*c.pitch;const auto*row=mask.pixels+y*320;
+                for(int x=0;x<width;++x)out[x]=opaque[row[x]]?0:fade.apply(out[x]);}
+        }else for(int y=0;y<height;++y){auto*out=c.pixels+y*c.pitch;const auto*row=mask.pixels+y*640;
+            for(int x=0;x<width;++x)out[x]=(unsigned(row[x*2])|unsigned(row[x*2+1])<<8)>=threshold?0:fade.apply(out[x]);}
+        return;
+    }
     if(mask.format==4){character_departure_dim(c,shade);const uint8_t*run=mask.pixels;
         for(int y=0;y<240;++y){const unsigned count=run[0]|unsigned(run[1])<<8;run+=2;
             for(unsigned span=0;span<count;++span){const unsigned left=run[0]|unsigned(run[1])<<8,n=run[2]|unsigned(run[3])<<8,stride=run[4]?3:2;run+=5;

@@ -3,6 +3,7 @@
 #include "host_text_input.hpp"
 #include "host_physical_input.hpp"
 #include "host_input_latch.hpp"
+#include "departure_frame_clock.hpp"
 #include "resource_file_cursor.hpp"
 #include "runtime_performance.hpp"
 #include "runtime_scene.hpp"
@@ -283,6 +284,7 @@ extern "C" int main(int argc,char**argv){
     uint32_t first_start=performance.enabled?timer_ticks():0;
     app.render();uint32_t first_present=performance.enabled?timer_ticks():0;blit(app.pixels);
     uint32_t last_present=performance.enabled?timer_ticks():0;
+    spire::DepartureFrameClock departure_clock;
     if(performance.enabled){performance.first_render.add(first_start-first_present);performance.first_present.add(first_present-last_present);}
     auto render_frame=[&](uint32_t update_start,const spire::RuntimeResourceTiming&before,spire::RuntimeScene update_scene){
         uint32_t render_start=performance.enabled?timer_ticks():0;
@@ -296,6 +298,8 @@ extern "C" int main(int argc,char**argv){
                performance_scene()==spire::RuntimeScene::CombatPreparation)scene=spire::RuntimeScene::CombatPreparation;
             performance.frame(scene,last_present-done,update_start-render_start,render_start-present_start,present_start-done,before);
             last_present=done;}
+        if(departure_clock.presented(app.character_departure.phase,app.combat_preparation.active))
+            clock.last=timer_ticks();
     };
     while(!app.quit){
         unsigned elapsed=clock.frame();if(!elapsed)continue;

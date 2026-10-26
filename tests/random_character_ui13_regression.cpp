@@ -185,6 +185,32 @@ static void particle_fast_paths(){
         CHECK(!std::memcmp(reference.data(),app.pixels,reference.size()*sizeof(uint16_t)));
     }
 }
+static void light_rg_contract(){
+    Image physical{320,205,std::vector<uint16_t>(320*205),std::vector<uint8_t>(320*205,255)};
+    std::vector<uint8_t> indices(320*205),palette(512);uint32_t seed=91821;
+    const auto next=[&](){seed=seed*1664525u+1013904223u;return seed;};
+    for(unsigned i=0;i<256;++i){const uint16_t color=uint16_t(i*7919);palette[i*2]=uint8_t(color);palette[i*2+1]=uint8_t(color>>8);}
+    for(unsigned i=0;i<physical.colors.size();++i){physical.colors[i]=i<4096?0:i<8192?31:uint16_t(next()>>8);indices[i]=uint8_t(next()>>16);}
+    for(unsigned indexed=0;indexed<2;++indexed){
+        const Picture storage=indexed?Picture{indices.data(),nullptr,palette.data(),320,205,3}:picture(physical);
+        const water_reflection::Texture texture(storage,256,256);
+        for(unsigned alpha:{1u,102u,255u})for(unsigned tint:{0u,90u,171u,255u}){
+            uint8_t red[32],green[64];for(unsigned i=0;i<64;++i){green[i]=uint8_t(div255(div255(i*tint)*alpha));if(i<32)red[i]=uint8_t(div255(div255(i*tint)*alpha));}
+            const RandomLightSampler light(texture,red,green);CHECK(bool(light));
+            const auto sample=[&](int u,int v){const uint16_t color=texture.opaque_bilinear(u,v);
+                CHECK(light.contribution(u,v)==uint16_t((unsigned(red[color>>11])<<11)|(unsigned(green[(color>>5)&63])<<5)));};
+            for(int u:{0,1,127,128,255,256,257,65534,65535})for(int v:{0,1,127,128,255,256,257,65534,65535})sample(u,v);
+            for(unsigned i=0;i<1000;++i)sample(int(next()&65535),int(next()&65535));
+        }
+        Canvas canvas{app};
+        for(int angle:{-735,0,2023}){
+            const auto render=[&](RandomTextureSource source){for(unsigned i=0;i<320*240;++i)app.pixels[i]=uint16_t(i*37);
+                random_character_particle(canvas,texture,177*65536,-25*65536,500*65536,angle,102,171,113,0,presentation::Add,source);};
+            render(RandomTextureSource::Color);const std::vector<uint16_t> expected(app.pixels,app.pixels+320*240);
+            render(RandomTextureSource::OpaqueColor);CHECK(!std::memcmp(expected.data(),app.pixels,expected.size()*sizeof(uint16_t)));
+        }
+    }
+}
 static std::vector<uint8_t> read(const char*path){FILE*f=std::fopen(path,"rb");CHECK(f);std::vector<uint8_t> data(spire_test::pack_size(f));CHECK(std::fread(data.data(),1,data.size(),f)==data.size());CHECK(!std::fclose(f));return data;}
 static Image decode(Picture p){
     Image out{p.w,p.h,std::vector<uint16_t>(unsigned(p.w)*p.h),std::vector<uint8_t>(unsigned(p.w)*p.h)};
@@ -229,7 +255,7 @@ static void actual(const char*captures){
     CHECK(save(app.game,after)&&before.size==after.size&&!std::memcmp(before.bytes,after.bytes,before.size));
 }
 int main(int argc,char**argv){
-    shader_contract();exact_row_quotient_contract();exact_interpolation_contract();exact_water_cache_contract();particle_contract();linear_texture_contract();particle_fast_paths();
+    shader_contract();exact_row_quotient_contract();exact_interpolation_contract();exact_water_cache_contract();particle_contract();linear_texture_contract();particle_fast_paths();light_rg_contract();
     if(argc>1){auto data=read(argv[1]);std::vector<uint8_t> locale;SplitResourceSource split;
         if(argc>2){locale=read(argv[2]);CHECK(split.open(ResourceSource::memory(data.data(),data.size()),ResourceSource::memory(locale.data(),locale.size()),ResourceLanguage(argc>3?std::atoi(argv[3]):1)));CHECK(app.init(split.source(),{}));}
         else CHECK(app.init(data.data(),data.size(),{}));

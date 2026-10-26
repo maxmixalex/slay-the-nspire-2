@@ -466,6 +466,84 @@ static void hidden_picture_io(const Bytes& data){
  c.opacity=255;c.picture(8,0,-239);CHECK(source.reads>opened);CHECK(app.content.image_cached(8));
  CHECK(app.content.healthy());
 }
+static Bytes fitted_glyph_fixture(){
+ // Distinct generated glyphs occupy different reader pages. Measuring a
+ // line uses metadata; fetching a hidden raster therefore has observable I/O.
+ constexpr unsigned count=66,strings=66,clips=11,cards=26,ui=56,glyphs=13;
+ constexpr unsigned glyph_at=40+count*16,string_at=glyph_at+glyphs*16,clip_at=string_at+strings*8;
+ constexpr unsigned payload=clip_at+clips*16+cards*16+ui*4;
+ Bytes b(8192+glyphs*4096);put(b,0,0x3250534e);put(b,4,5);put(b,8,0x41cef1ea);
+ put(b,12,unsigned(b.size()));put(b,16,count);put(b,20,glyphs);put(b,24,strings);put(b,28,clips);put(b,32,cards);
+ for(unsigned i=0;i<count;++i){put(b,40+i*16,payload);put(b,44+i*16,1,2);put(b,46+i*16,1,2);put(b,52+i*16,2);}
+ for(unsigned i=0;i<strings;++i)put(b,string_at+i*8,payload+2);
+ for(unsigned i=0;i<clips;++i){put(b,clip_at+i*16+4,1,2);put(b,clip_at+i*16+6,33,2);}
+ for(unsigned i=0;i<glyphs;++i){const unsigned row=glyph_at+i*16,at=8192+i*4096;
+  put(b,row,i?unsigned('A')+i-1:unsigned('?'));put(b,row+4,at);put(b,row+8,10,2);
+  put(b,row+10,7,1);put(b,row+11,5,1);put(b,row+12,8,2);put(b,row+14,2,2);
+  b[at]=35;b[at+1]=uint8_t(40+i*17);
+ }
+ return b;
+}
+static void fitted_clip_pixels(const Bytes& data){
+ CHECK(app.content.open(data.data(),data.size()));
+ struct Label {const char*text;int w,h;bool centered,single,outline,shadow,fly;};
+ const Label labels[]={
+  {"A\nB\nC\nD",20,44,false,false,false,false,false},
+  {"A\nB\nC\nD",20,8,true,false,true,false,false},
+  {"ABCDEFGHIJKL",22,13,false,true,false,true,false},
+  {"ABCDEFGHIJKL",22,13,true,true,true,false,false},
+  {"[sine][jitter]AB\nCD\nEF[/jitter][/sine]",25,44,true,false,true,false,false},
+  {"[sine][jitter]AB\nCD\nEF[/jitter][/sine]",25,44,false,false,false,true,false},
+  {"AB\nCD\nEF",25,44,true,false,true,false,true}
+ };
+ constexpr int width=17,height=13,pitch=19,pad=32,wide=192,tall=128;
+ std::vector<uint16_t> small(pitch*height),large(wide*tall);
+ const bool effects=app.text_effects;app.text_effects=true;
+ for(const auto&label:labels)for(auto position:{Placement{-12,-13,0,0},Placement{0,0,0,0},Placement{13,0,0,0},Placement{0,11,0,0},Placement{-12,11,0,0}}){
+  app.overflow_label_clocks.reset();app.rich_label_clocks.reset();
+  Canvas clipped{app,small.data()},complete{app,large.data()};
+  clipped.pitch=pitch;clipped.clip_w=width;clipped.clip_h=height;
+  complete.pitch=wide;complete.clip_w=wide;complete.clip_h=tall;
+  clipped.text_effect_identity=complete.text_effect_identity=0xf177ed;
+  clipped.text_fly_in_elapsed=complete.text_fly_in_elapsed=label.fly?80:UINT32_MAX;
+  for(unsigned age:{0u,1700u,2600u}){
+   ++cases;app.map_clock_ms=100+age;app.animation=age/33+7;
+   for(int y=0;y<tall;++y)for(int x=0;x<wide;++x)large[y*wide+x]=color(unsigned(x+y*wide));
+   for(int y=0;y<height;++y)for(int x=0;x<pitch;++x)small[y*pitch+x]=large[(y+pad)*wide+x+pad];
+   clipped.fitted(label.text,position.x,position.y,label.w,label.h,10,10,0xffff,label.centered,label.single,label.outline,label.shadow);
+   complete.fitted(label.text,position.x+pad,position.y+pad,label.w,label.h,10,10,0xffff,label.centered,label.single,label.outline,label.shadow);
+   // Rendering to a larger viewport and then cropping must give identical
+   // pixels, including partial rows, moving glyphs and translated outlines.
+   for(int y=0;y<height;++y)for(int x=0;x<pitch;++x)
+    CHECK(small[y*pitch+x]==(x<width?large[(y+pad)*wide+x+pad]:color(unsigned(x+pad+(y+pad)*wide))));
+  }
+ }
+ app.text_effects=effects;CHECK(app.content.healthy());
+}
+static void fitted_hidden_glyph_io(const Bytes&data){
+ struct Source {const Bytes*data;unsigned mask=0;
+  static bool read(void*context,uint32_t at,void*out,uint32_t count){
+   auto&s=*static_cast<Source*>(context);if(at>s.data->size()||count>s.data->size()-at)return false;
+   for(unsigned i=0;i<13;++i){const unsigned start=8192+i*4096;if(at<start+2&&at+count>start)s.mask|=1u<<i;}
+   std::memcpy(out,s.data->data()+at,count);return true;
+  }
+ } source{&data};
+ const auto cold=[&](){CHECK(app.content.open(ResourceSource{&source,uint32_t(data.size()),Source::read,nullptr}));
+  source.mask=0;app.overflow_label_clocks.reset();app.map_clock_ms=100;};
+ uint16_t surface[20*12]{};Canvas c{app,surface};c.pitch=20;c.clip_w=20;c.clip_h=6;
+ cold();c.fitted("A\nB\nC\nD",0,0,20,6,10,10,0xffff);
+ CHECK(source.mask==(1u<<1)); // Only the first row owns any visible pixels.
+ source.mask=0;app.map_clock_ms+=2600;c.fitted("A\nB\nC\nD",0,0,20,6,10,10,0xffff);
+ CHECK(source.mask==(1u<<2)); // Smooth twelve-pixel scroll reveals B, not C/D.
+ cold();c.clip_w=7;c.clip_h=12;c.fitted("ABCD",0,0,7,12,10,10,0xffff,false,true);
+ CHECK(source.mask==(1u<<1));
+ source.mask=0;app.map_clock_ms+=2600;c.fitted("ABCD",0,0,7,12,10,10,0xffff,false,true);
+ CHECK(source.mask==((1u<<3)|(1u<<4))); // Eighteen pixels: partial C and D.
+ cold();c.clip_w=20;c.clip_h=6;c.text_fly_in_elapsed=1;
+ c.fitted("A\nB\nC\nD",0,0,20,6,10,10,0xffff);
+ CHECK(source.mask==((1u<<1)|(1u<<2)|(1u<<3)|(1u<<4))); // Rotated fly-in keeps the original path.
+ CHECK(app.content.healthy());
+}
 int main(){
  blend_reference();
  const auto data=fixture();CHECK(app.content.open(data.data(),data.size()));
@@ -475,5 +553,6 @@ int main(){
  CHECK(app.content.open(unaligned.data()+1,data.size()));
  CHECK((uintptr_t(app.content.image(0).pixels)&1u)==1u);
  pictures();picture_regions();picture_row_views();map_pictures();CHECK(app.content.healthy());glyphs();hidden_picture_io(data);
+ const auto text=fitted_glyph_fixture();fitted_clip_pixels(text);fitted_hidden_glyph_io(text);
  std::printf("canvas fast path: %u cases, %u checks; production paint oracle, RGB565 alignment, clipping, pitch, coverage, modulation, additive, scaled, atlas regions, sparse, palette and glyph decode bounds\n",cases,checks);
 }

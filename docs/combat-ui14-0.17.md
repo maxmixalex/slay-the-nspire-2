@@ -87,3 +87,51 @@ rectangle and verifies that neighboring card caches remain stable. Journals:
 `combat-ui12-stage7-original-05342323d5ac`. The final three controlled saves
 are byte-identical to the stage6 exports. Calculator gameplay/timing acceptance
 remains a separate integrated gate.
+
+## Follow-up from actual calculator execution
+
+The stage10 source `6355aef2fa174aa6c6e1134c4a088b4ba7cb6948` passes
+**11,435 actual-resource checks**, including ordinary resume of a pending
+combat enchantment choice. Preparation now finishes before the choice is
+shown: confirming it cannot hide the first second of its reveal under a new
+black preparation interval. Firebird captures at150/400/800/1300ms verify
+this correction. Earlier stage7 captures also verify both real shrink
+commands, the Smith effect and a resulting40-damage Sovereign Blade. These
+are explicitly controlled saves, not natural runs. Journals include
+`combat-ui14-stage10-original-12a335edaa9e` and
+`combat-firebird-regent10-enchant-4ac5f25a8036`.
+
+The source scaling review covers ShrinkPower, Beetle Juice, Big Mushroom,
+Phantasmal Gardener and Test Subject, plus the special Decimillipede/Vantom
+rules above. Existing Osty maximum-HP growth/death shrink is separately
+implemented in `combat_osty_presentation.hpp`; its bounds update after its
+750ms growth completes. Source instance-size/hue variation and aspect-fit
+registration were completed in earlier stages. This inventory is not a
+fresh exhaustive assembly-call-graph claim after the private input cleanup.
+
+`ui14_device_fixtures.cpp` now produces a canonical Haunted Ship save and a
+matching partial progress record with no introductory prompts. Its real first
+End Turn generates five Dazed into Discard; the exporter independently
+executes that command and checks all five instances. The console accepts the
+canonical `HAUNTED_SHIP_NORMAL` key. An unknown encounter now fails before
+state or RNG mutation, rather than entering a random encounter through the
+`None` sentinel.
+
+The first controlled stage10 Haunted Ship measurements expose remaining
+work: the first4s action window averages18.04FPS, while the narrower
+approximately2–4s generated-card window averages21.98FPS. A12s window that
+also contains settled idle averages25.80FPS and is not substituted for the
+animation result. The matched prefixes are identical snapshot/flash copies;
+all counters are exported by normal game exit. The measured cold resource
+reads and ongoing cache correction must not be described as a completed
+performance improvement.
+
+That experiment found a concrete shared-raster cache defect: five identical
+previews replaced the sole instance sample on their shared face and therefore
+reformatted all five descriptions on every frame. The follow-up retains the
+same ten rasters and adds forty small checked instance references. Revision,
+resource generation, presentation reset, lock state, target, snapshot resource
+values and raster-reuse serials invalidate the appropriate samples. Its new
+regression covers the repeated batch, differing affliction facts and recycled
+rasters. Matching checkpoint validation and device measurements remain
+required before closing this follow-up.

@@ -144,6 +144,10 @@ static void continue_run_info(Canvas&c){
 static void title_screen(Canvas&c){
     auto&a=c.a;
     if(a.settings_open&&title_source_backstop(c)){title_submenu_background(c,205);return;}
+    if(a.has_save&&a.content.version()>=Ui12ContentVersion&&!a.character_departure.active()){
+        const int mask=a.content.ui_image(I12_CharacterTransitionFirst+(a.saved_character==Character::Silent?1:a.saved_character==Character::Necrobinder?2:0));
+        a.content.prepare_images(&mask,1);(void)a.content.image(mask);
+    }
     title_background(c);
     if(title_source_backstop(c)){a.main_menu_backdrop.observe(false,a.map_clock_ms);
         main_menu_backdrop::apply_progress(c.pixels,c.pitch,a.main_menu_backdrop.sample(a.map_clock_ms));}

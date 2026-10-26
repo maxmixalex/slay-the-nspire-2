@@ -155,7 +155,11 @@ static void reward_overlap(){
  for(unsigned boss=0;boss<2;++boss)for(unsigned fast=0;fast<2;++fast)for(unsigned barrier:{0u,20u}){
   fresh();CHECK(encounter_setup(a.game,boss?EncounterId::AeonglassBoss:EncounterId::NibbitsNormal));a.fast_mode=fast!=0;
   a.sync_enemy_feedback();CHECK(a.combat_status.had_live_scene);const uint32_t began=a.animation;
-  if(barrier){a.begin_combat_feedback();CHECK(ui_feedback_bound(a));a.combat_feedback.finished=true;a.combat_feedback.end_at=began+barrier;}
+  if(barrier){a.begin_combat_feedback();CHECK(ui_feedback_bound(a));
+   // Binding this fixture's first status projection resets the previous
+   // visual identity. Observe the actual live scene before killing it.
+   a.sync_enemy_feedback();CHECK(a.combat_status.had_live_scene);
+   a.combat_feedback.finished=true;a.combat_feedback.end_at=began+barrier;}
   for(unsigned i=0;i<a.game.enemy_count;++i){a.game.enemies[i].hp=0;auto&m=a.enemy_presentation[i];CHECK(m.clip>=0);
    m.hp=0;m.dead=true;m.loop=false;m.until=began+(i?41u:121u);m.count=0;m.direct=false;m.next_clip=nullptr;
    if(barrier)a.combat_feedback.shown[i+1].hp=a.combat_feedback.observed[i+1].hp=0;
@@ -164,6 +168,8 @@ static void reward_overlap(){
   // The longest finite track ends at121. Normal adds31 ticks (1000ms);
   // Fast ordinary adds16 (500ms); Fast boss halves the101/121 tick remainder.
   const uint32_t expected=began+(fast?(boss?barrier+(122u-barrier)/2u:barrier+16u):152u);
+  if(!a.combat_status.reward_scheduled||a.combat_status.reward_at!=expected)
+   std::fprintf(stderr,"reward case boss=%u fast=%u barrier=%u: scheduled=%d live=%d at=%u expected=%u\n",boss,fast,barrier,int(a.combat_status.reward_scheduled),int(a.combat_status.had_live_scene),a.combat_status.reward_at,expected);
   CHECK(a.combat_status.reward_scheduled&&a.combat_status.reward_at==expected);
   CHECK(int32_t(expected-(began+barrier))>=0);unchanged();
   ++a.animation;a.sync_enemy_feedback();CHECK(a.combat_status.reward_at==expected);unchanged();

@@ -187,12 +187,38 @@ static void borders_and_cache(){
  CHECK(std::memcmp(original.data(),a.pixels,sizeof a.pixels));unchanged();CHECK(a.content.healthy());
 }
 static std::vector<uint8_t>read(const std::string&path){FILE*f=std::fopen(path.c_str(),"rb");CHECK(f);CHECK(!std::fseek(f,0,SEEK_END));const long n=std::ftell(f);CHECK(n>0);CHECK(!std::fseek(f,0,SEEK_SET));std::vector<uint8_t>v(size_t(n),0);CHECK(std::fread(v.data(),1,v.size(),f)==v.size());CHECK(!std::fclose(f));return v;}
+static void identical_generated_samples(){
+ scenario="five identical generated cards share one raster and retain five resolved samples";
+ fresh();hand({Dazed,Dazed,Dazed,Dazed,Dazed});before=a.game;Canvas c{a};invalidate_hand_tiles();
+ CombatCardMotion::Sprite visuals[5]{};uint32_t shared=0;
+ for(unsigned i=0;i<5;++i){visuals[i].id=uint16_t(i);visuals[i].card={Dazed,0};visuals[i].energy=-2;
+  const auto&t=hand_tile(c,int(i),&visuals[i]);if(!i)shared=t.built;CHECK(t.built==shared);}
+ const auto resolved=hand_resolve_clock;
+ for(unsigned frame=0;frame<40;++frame){a.map_clock_ms+=33;begin_card_face_frame();
+  for(unsigned i=0;i<5;++i)CHECK(hand_tile(c,int(i),&visuals[i]).built==shared);
+  CHECK(hand_resolve_clock==resolved);}
+ unchanged();
+ scenario="a revision invalidates shared samples without merging distinct affliction facts";
+ a.game.enemy_world.affliction[2]=unsigned(EnemyAffliction::Bound);a.game.enemy_world.affliction_amount[2]=1;++a.game.revision;before=a.game;
+ CHECK(hand_tile(c,2,&visuals[2]).overlay==1);CHECK(hand_resolve_clock>resolved);
+ for(unsigned i=0;i<5;++i)CHECK(hand_tile(c,int(i),&visuals[i]).overlay==(i==2?1:0));
+ const auto revised=hand_resolve_clock;
+ for(unsigned frame=0;frame<20;++frame)for(unsigned i=0;i<5;++i)CHECK(hand_tile(c,int(i),&visuals[i]).overlay==(i==2?1:0));
+ CHECK(hand_resolve_clock==revised);unchanged();
+ scenario="a recycled raster invalidates every older instance reference";
+ CombatCardMotion::Sprite variant;variant.card={Strike,0};
+ for(unsigned i=0;i<MaxHand+2;++i){variant.energy=int16_t(i);hand_tile(c,0,&variant);}
+ const auto evicted=hand_resolve_clock;const auto&restored=hand_tile(c,1,&visuals[1]);
+ CHECK(restored.card.kind==Dazed&&restored.overlay==0&&hand_resolve_clock==evicted+1);unchanged();
+ scenario="ordinary presentation reset cannot keep a prior resolved sample";
+ const auto reset=hand_resolve_clock;a.reset_presentation();hand_tile(c,1,&visuals[1]);CHECK(hand_resolve_clock==reset+1);unchanged();
+}
 int main(int argc,char**argv){
  CHECK(argc==1||argc==2||argc==3);std::vector<uint8_t>common,language;SplitResourceSource split;
  if(argc>=2){const std::string root=argv[1];common=read(root+"/data/nSpire2.dat.tns");language=read(root+"/data/nSpire2.eng.dat.tns");
   CHECK(split.open(ResourceSource::memory(common.data(),common.size()),ResourceSource::memory(language.data(),language.size()),ResourceLanguage::English));CHECK(a.init(split.source(),{}));original_art=true;}
  if(argc==3){output=argv[2];std::filesystem::create_directories(output);}
- scale_equations();clock_icon();actual_shrink();actual_default_growth();actual_forge();actual_enchant();borders_and_cache();
+ scale_equations();clock_icon();actual_shrink();actual_default_growth();actual_forge();actual_enchant();borders_and_cache();identical_generated_samples();
  const char note[]="Controlled UI14 fixtures; earlier room outcomes, cards and resources are supplied. These saves validate and round-trip through the production NSR codec. They are not natural runs.\nui14-card-borders: Neow's Fury, Infection and Bound Strike in hand.\nui14-shrink: Shrinker Beetle before its opening move, Beetle Juice in potion slot1; drink on the enemy, then end turn to shrink the player.\nui14-regent-enchant-forge: choose an Attack for Gnarled Hammer's Sharp enchantment, confirm, then play The Smith in the resumed Regent combat.\n";
  write("README.txt",note,sizeof note-1);std::printf("combat UI14: %u checks passed%s\n",checks,original_art?"; original art decoded and rendered":"");
 }

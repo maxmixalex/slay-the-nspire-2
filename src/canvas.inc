@@ -581,13 +581,24 @@ struct Canvas{
         if(shadow)clipped.opacity=uint8_t(div255(clipped.opacity*(outline?144u:128u)));
         fitted_text::visit(p,layout_width,plan,metrics,[&](const RichChar&ch,int at,int row,int size){
             if(ch.index>=text_visible_characters)return;
-            const auto g=a.content.glyph(ch.codepoint,size,font_style(ch));int xx=x+at-scroll_x+(centered&&row<128?mx(0,(w-widths[row])/2):0),yy=top+row*plan.step;
+            int xx=x+at-scroll_x+(centered&&row<128?mx(0,(w-widths[row])/2):0),yy=top+row*plan.step;
             // Keep animated rich text within its allocated card rectangle.
             static const int wave[]={0,1,1,2,2,2,1,1,0,-1,-1,-2,-2,-2,-1,-1};
             int dy=a.text_effects&&ch.style.wave?wave[(a.animation/2+ch.index*2)%16]:0;
             if(a.text_effects&&ch.style.thinky_dots)dy+=rich_thinky_offset(a.map_clock_ms,ch.index-ch.style.thinky_start);
             int dx=a.text_effects&&ch.style.jitter?int((a.animation/2+ch.index*7)%3)-1:0;
             xx+=dx;yy+=dy;
+            // Pixel scrolling lays out the whole paragraph, but only visible
+            // glyphs need their compressed raster. Preserve the same bearing,
+            // rich-text motion and translated outline clip before testing it.
+            // Fly-in can rotate a glyph beyond its ordinary rectangle, so it
+            // keeps the original decode/draw path until that effect is absent.
+            if(text_fly_in_elapsed==UINT32_MAX){
+                const auto metric=a.content.glyph_metrics(ch.codepoint,size,font_style(ch));
+                const int gx=xx+offset_x-origin_x+metric.bearing_x,gy=yy+offset_y-origin_y;
+                if(gx>=clipped.clip_w||gy>=clipped.clip_h||gx+metric.w<=0||gy+metric.h<=0)return;
+            }
+            const auto g=a.content.glyph(ch.codepoint,size,font_style(ch));
             auto ink=shadow?outline_color:a.text_effects&&ch.style.rainbow?rich_rainbow_rgb565(ch.style.rainbow_parameters,rainbow_time,at*26000/mx(1,size)):rich_color(ch.style.color,colors);
             clipped.animated_character(ch,g,xx+offset_x-origin_x,yy+offset_y-origin_y,ink,shadow);
         });};

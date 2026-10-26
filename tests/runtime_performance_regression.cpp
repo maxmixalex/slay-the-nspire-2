@@ -2,6 +2,7 @@
 #include "resource_file_cursor.hpp"
 #include "host_input_latch.hpp"
 #include "host_physical_input.hpp"
+#include "departure_frame_clock.hpp"
 #include <cstdio>
 #include <cstdlib>
 #include <string>
@@ -18,6 +19,26 @@ static bool sink(void*context,const char*bytes,size_t count){
 }
 int main(){
     using namespace spire;
+    {
+        DepartureFrameClock departure;RuntimePerformance observed;observed.enabled=true;observed.clock_hz=1000;
+        // Six hundred milliseconds of cold setup are still a measured slow
+        // frame. They must not consume the subsequent visible800ms wipe.
+        uint32_t host_baseline=2000,presented_at=1400;
+        check(!departure.presented(0,false));
+        observed.frame(RuntimeScene::Character,host_baseline-presented_at,600,0,0,{});
+        if(departure.presented(1,false))host_baseline=presented_at;
+        check(host_baseline-1367==33);
+        check(observed.scenes[unsigned(RuntimeScene::Character)].interval.maximum==600);
+        check(observed.scenes[unsigned(RuntimeScene::Character)].over_250ms==1);
+        check(!departure.presented(1,false)); // ordinary frames keep pacing
+        check(departure.presented(2,true));  // first black room preparation
+        check(!departure.presented(2,true));
+        check(departure.presented(2,false)); // first fully prepared room frame
+        check(!departure.presented(2,false));
+        check(!departure.presented(0,false));
+        check(departure.presented(1,false)); // a later Continue has its own clock
+        check(departure.presented(2,false)); // warm room needs no preparation
+    }
     RuntimePerformance p;RuntimeResourceTiming before{};
     p.read(10,4096,true);p.frame(RuntimeScene::Combat,100,1,2,3,before);
     check(p.resources.calls==0&&p.scenes[(unsigned)RuntimeScene::Combat].interval.count==0);

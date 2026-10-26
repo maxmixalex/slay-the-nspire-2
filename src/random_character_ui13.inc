@@ -45,6 +45,56 @@ public:
         if(remainder_>=denominator_){remainder_-=denominator_;++quotient_;}}
 };
 
+// The original light has a256x256 logical texture and a zero blue tint.
+// Keep red and green in separate16-bit lanes, retaining both bilinear
+// rounding steps. The palette variant decodes its256 possible colors once.
+class RandomLightSampler {
+    Picture picture_{};
+    const uint8_t*red_=nullptr,*green_=nullptr;
+    uint32_t palette_[256];
+    bool enabled_=false;
+    static uint32_t packed(uint16_t color){return (uint32_t(color&0xf800u)<<5)|((color>>5)&63u);}
+    static uint32_t mix(uint32_t a,uint32_t b,unsigned f){
+        if(a==b)return a;
+        if(!((a^b)&0x001e003eu))return f<128?a:f>128?b:a|b;
+        return (((a<<8)+(b-a)*f+0x00800080u)>>8)&0x001f003fu;
+    }
+    uint16_t dense(unsigned index)const{const auto*p=picture_.pixels+index*2;return uint16_t(p[0]|unsigned(p[1])<<8);}
+public:
+    RandomLightSampler(const water_reflection::Texture&texture,const uint8_t*red,const uint8_t*green,bool enable=true):
+        picture_(texture.storage()),red_(red),green_(green){
+        enabled_=enable&&texture.valid()&&texture.width()==256&&texture.height()==256&&picture_.format!=4;
+        if(enabled_&&picture_.palette)for(unsigned i=0;i<256;++i)
+            palette_[i]=packed(uint16_t(picture_.palette[i*2]|unsigned(picture_.palette[i*2+1])<<8));
+    }
+    explicit operator bool()const{return enabled_;}
+    uint16_t contribution(int u,int v)const{
+        // u,v are inside the source quad. The rare border samples retain
+        // clamp-to-edge; interior texels need only two adjacent row offsets.
+        const int x=u-128,y=v-128,ix=x>>8,iy=y>>8;
+        unsigned left=unsigned(ix),right=left+1,top=unsigned(iy)*256,bottom=top+256;
+        if(unsigned(ix)>=255){left=ix<0?0:255;right=ix<0?0:255;}
+        if(unsigned(iy)>=255){top=iy<0?0:255*256;bottom=top;}
+        const unsigned aa=top+left,bb=top+right,cc=bottom+left,dd=bottom+right;
+        uint32_t a,b,c,d;
+        if(picture_.palette){
+            a=palette_[picture_.pixels[aa]];b=palette_[picture_.pixels[bb]];
+            c=palette_[picture_.pixels[cc]];d=palette_[picture_.pixels[dd]];
+            const uint32_t bound=a|b|c|d;
+            if(!red_[bound>>16]&&!green_[bound&63])return 0;
+        }else{
+            const uint16_t ac=dense(aa),bc=dense(bb),ccolor=dense(cc),dc=dense(dd),bound=ac|bc|ccolor|dc;
+            // Each channel of OR is a conservative upper bound for all four
+            // texels. Monotone tint/alpha maps prove zero before any mix.
+            if(!red_[bound>>11]&&!green_[(bound>>5)&63])return 0;
+            a=packed(ac);b=packed(bc);c=packed(ccolor);d=packed(dc);
+        }
+        const unsigned fx=unsigned(x)&255,fy=unsigned(y)&255;
+        const uint32_t color=mix(mix(a,b,fx),mix(c,d,fx),fy);
+        return uint16_t((unsigned(red_[color>>16])<<11)|(unsigned(green_[color&63])<<5));
+    }
+};
+
 // Textured particles use the original images, source modulation and source
 // emitter rotation. The source quad is clipped before any inverse sampling.
 enum class RandomTextureSource:uint8_t {Color,WhiteAlpha,OpaqueColor};
@@ -70,6 +120,7 @@ static void random_character_particle(Canvas&c,const water_reflection::Texture&t
         for(unsigned i=0;i<64;++i){add_green[i]=uint8_t(div255(div255(i*green)*alpha));
             if(i<32){add_red[i]=uint8_t(div255(div255(i*red)*alpha));add_blue[i]=uint8_t(div255(div255(i*blue)*alpha));}}
     }
+    const RandomLightSampler light(texture,add_red,add_green,add_fast&&blue==0);
     const int du=int(int64_t(cosine)*65536*64/size_q16),dv=int(int64_t(sine)*65536*64/size_q16);
     const int dx=(left<<16)+32768-center_x_q16,dy=(top<<16)+32768-center_y_q16;
     RandomRowQuotient row_u((int64_t(dx)*cosine+int64_t(dy)*sine)*64,int64_t(sine)*65536*64,size_q16);
@@ -81,7 +132,11 @@ static void random_character_particle(Canvas&c,const water_reflection::Texture&t
             const unsigned at=y*c.pitch+x;
             if(white_fast){const unsigned amount=div255(texture.alpha_bilinear(u,v)*alpha);
                 if(amount)c.pixels[at]=blend(c.pixels[at],dot_color,amount);continue;}
-            if(add_fast){const uint16_t color=texture.opaque_bilinear(u,v),back=c.pixels[at];
+            if(add_fast){
+                if(light){const uint16_t contribution=light.contribution(u,v);if(contribution){const uint16_t back=c.pixels[at];
+                    c.pixels[at]=uint16_t((mn(31,(back>>11)+(contribution>>11))<<11)|
+                        (mn(63,((back>>5)&63)+((contribution>>5)&63))<<5)|(back&31));}continue;}
+                const uint16_t color=texture.opaque_bilinear(u,v),back=c.pixels[at];
                 c.pixels[at]=uint16_t((mn(31,(back>>11)+add_red[color>>11])<<11)|
                     (mn(63,((back>>5)&63)+add_green[(color>>5)&63])<<5)|mn(31,(back&31)+add_blue[color&31]));continue;}
             const auto p=source==RandomTextureSource::WhiteAlpha?water_reflection::Texel{0xffff,texture.alpha_bilinear(u,v)}:

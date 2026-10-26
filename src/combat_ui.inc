@@ -2,22 +2,34 @@
 // The integer fan, tile dimensions and preview are small-screen adaptations.
 namespace {
 struct HandTile {
-    bool valid=false,playable=false,resource_cross=false,description_truncated=false,sampled_locked=false;
+    bool valid=false,playable=false,resource_cross=false,description_truncated=false;
     uint8_t resource_styles=0;
     uint8_t glow=0,overlay=0;
     const Content* owner=nullptr;
     Card card{};
     uint32_t used=0,enchantment=0;
     uint32_t built=0;
-    uint32_t sampled_frame=0,sampled_revision=0,sampled_generation=0;
-    int sampled_instance=-1,sampled_deck=-1,sampled_target=-1;
-    const CombatCardMotion::Sprite*sampled_visual=nullptr;
+    int sampled_instance=-1;
     int energy=0,stars=0,portrait=-1,frame=-1;
     char description[512]{};
     uint16_t pixels[HandTileW*HandTileH]{};
     uint8_t alpha[HandTileW*HandTileH]{};
 };
 static HandTile hand_tiles[MaxHand];
+// Identical cards share a raster, but every live instance needs its own
+// resolved sample. A single sample on the shared raster made five generated
+// Dazed cards evict each other's key and reformat all five faces every frame.
+struct HandSample {
+    HandTile*tile=nullptr;uint32_t built=0;
+    int16_t instance=-1,target=-1,energy=0,stars=0;
+    Card card{};bool visual=false;
+};
+static HandSample hand_samples[MaxHand+CombatCardMotion::Visible];
+struct HandSampleEpoch {
+    const App*owner=nullptr;uint32_t revision=0,generation=0,presentation=0;bool locked=false;
+};
+static HandSampleEpoch hand_sample_epoch;
+static_assert(sizeof hand_samples+sizeof hand_sample_epoch<=1320,"Instance samples never allocate more card rasters");
 struct SelectedHandReader {
     HandTile tile{};
     const HandTile*source=nullptr;
@@ -30,10 +42,10 @@ static SelectedHandReader selected_hand_reader;
 static_assert(sizeof(SelectedHandReader)<56u*1024u,"Only one selected description may animate");
 struct HandGlowSlot {HandCardHighlight motion{};const Content*owner=nullptr;int instance=-1;uint32_t used=0;};
 static HandGlowSlot hand_glows[MaxHand];
-static uint32_t hand_tile_clock=0,hand_build_clock=0;
+static uint32_t hand_tile_clock=0,hand_build_clock=0,hand_resolve_clock=0;
 static bool same_text(const char*a,const char*b){while(*a&&*a==*b){++a;++b;}return *a==*b;}
 }
-static void invalidate_hand_tiles(){for(auto&t:hand_tiles)t.valid=false;for(auto&g:hand_glows)g={};selected_hand_reader.instance=-1;invalidate_card_face_cache();}
+static void invalidate_hand_tiles(){for(auto&t:hand_tiles)t.valid=false;for(auto&s:hand_samples)s.tile=nullptr;hand_sample_epoch={};for(auto&g:hand_glows)g={};selected_hand_reader.instance=-1;invalidate_card_face_cache();}
 static void card_title(Canvas&c,const char*name,int x,int y,int width,uint16_t ink){
     for(int dx=-1;dx<=1;dx++)for(int dy=-1;dy<=1;dy++)if(dx||dy)c.centered(name,x+dx,y+dy,width,10,Ink);
     c.centered(name,x,y,width,10,ink);
@@ -41,15 +53,32 @@ static void card_title(Canvas&c,const char*name,int x,int y,int width,uint16_t i
 static const HandTile& hand_tile(Canvas&c,int instance,const CombatCardMotion::Sprite* visual=nullptr,int deck=-1,const EventCardFacts*frozen_facts=nullptr,bool upgrade_preview=false,const char*description_override=nullptr){
     auto&a=c.a;Card card=visual?visual->card:a.game.cards[instance];
     ++hand_tile_clock;const int preview_target=visual?-1:a.card_preview_target(instance);
-    // A selected face is requested again by its automatic full-description
-    // tip in the same frame. Reuse the already resolved instance sample;
-    // target/revision/card identity guard input arriving between frames.
     const bool locked=a.combat_actions_locked();
-    for(auto&t:hand_tiles)if(deck<0&&!frozen_facts&&!upgrade_preview&&!description_override&&t.valid&&t.owner==&a.content&&t.sampled_generation==a.content.generation()&&t.sampled_locked==locked&&
-        t.sampled_revision==a.game.revision&&t.sampled_instance==instance&&t.sampled_deck==deck&&
-        t.sampled_target==preview_target&&t.sampled_visual==visual&&t.card.kind==card.kind&&t.card.upgraded==card.upgraded&&
-        (!visual||(t.energy==visual->energy&&t.stars==visual->stars))){t.used=hand_tile_clock;return t;}
-    auto stamp=[&](HandTile&t){t.sampled_frame=small_card_frame;t.sampled_revision=a.game.revision;t.sampled_generation=a.content.generation();t.sampled_locked=locked;t.sampled_instance=frozen_facts||description_override||upgrade_preview?-2:instance;t.sampled_deck=deck;t.sampled_target=preview_target;t.sampled_visual=visual;};
+    auto&epoch=hand_sample_epoch;
+    if(epoch.owner!=&a||epoch.revision!=a.game.revision||epoch.generation!=a.content.generation()||epoch.presentation!=a.pile_sort_epoch||epoch.locked!=locked){
+        for(auto&s:hand_samples)s.tile=nullptr;
+        epoch={&a,a.game.revision,a.content.generation(),a.pile_sort_epoch,locked};
+    }
+    HandSample*sample=nullptr;
+    if(instance>=0&&deck<0&&!frozen_facts&&!upgrade_preview&&!description_override){
+        constexpr unsigned count=MaxHand+CombatCardMotion::Visible;const unsigned first=unsigned(instance)%count;
+        // Resolve hash collisions so unrelated live ids40 apart do not evict
+        // each other. A full table still falls back to a checked replacement.
+        for(unsigned i=0;i<count;++i){auto&entry=hand_samples[(first+i)%count];
+            if(!entry.tile||entry.instance==instance){sample=&entry;break;}}
+        if(!sample)sample=&hand_samples[first];
+    }
+    const auto stamp=[&](HandTile&t){
+        t.sampled_instance=frozen_facts||description_override||upgrade_preview?-2:instance;
+        if(sample)*sample={&t,t.built,int16_t(instance),int16_t(preview_target),int16_t(visual?visual->energy:0),int16_t(visual?visual->stars:0),card,visual!=nullptr};
+    };
+    if(sample&&sample->tile&&sample->tile->valid&&sample->tile->owner==&a.content&&sample->built==sample->tile->built&&
+        sample->instance==instance&&sample->target==preview_target&&sample->visual==(visual!=nullptr)&&
+        sample->card.kind==card.kind&&sample->card.upgraded==card.upgraded&&
+        (!visual||(sample->energy==visual->energy&&sample->stars==visual->stars))){
+        auto&t=*sample->tile;t.used=hand_tile_clock;stamp(t);return t;
+    }
+    ++hand_resolve_clock;
     int energy=visual?visual->energy:cost(a.game,instance),stars=visual?visual->stars:card_star_cost(a.game,card,instance);
     const auto*facts=frozen_facts?frozen_facts:event_card_facts(a.game,card,instance,deck);
     const uint32_t enchantment=card_face_enchantment_key(a,facts,instance);
@@ -71,7 +100,7 @@ static const HandTile& hand_tile(Canvas&c,int instance,const CombatCardMotion::S
            t.playable==playable&&t.glow==glow&&t.overlay==overlay&&t.resource_cross==resource_cross&&t.resource_styles==resource_styles&&t.enchantment==enchantment&&t.portrait==portrait&&t.frame==frame&&same_text(t.description,description)){t.used=hand_tile_clock;stamp(t);return t;}
         if(!slot||(!t.valid&&slot->valid)||(t.valid==slot->valid&&int32_t(t.used-slot->used)<0))slot=&t;
     }
-    auto&t=*slot;t.used=hand_tile_clock;stamp(t);
+    auto&t=*slot;t.used=hand_tile_clock;
     t.owner=&a.content;t.card=card;t.energy=energy;t.stars=stars;t.playable=playable;t.portrait=portrait;t.frame=frame;
     t.glow=uint8_t(glow);t.overlay=uint8_t(overlay);t.enchantment=enchantment;
     t.resource_styles=uint8_t(resource_styles);
@@ -84,7 +113,7 @@ static const HandTile& hand_tile(Canvas&c,int instance,const CombatCardMotion::S
     draw_card_face(tile,card,HandFaceX,HandFaceY,HandFaceW,HandFaceH,energy,stars,instance,deck,facts,description,&t.description_truncated,true,upgrade_preview,false);
     // NHandCardHolder hides its playable highlight; it does not gray the
     // entire portrait, description and resource label when a card cannot play.
-    t.built=++hand_build_clock;t.valid=true;return t;
+    t.built=++hand_build_clock;t.valid=true;stamp(t);return t;
 }
 static const HandTile& selected_hand_tile(Canvas&c,int instance){
     const auto&source=hand_tile(c,instance);auto&r=selected_hand_reader;
