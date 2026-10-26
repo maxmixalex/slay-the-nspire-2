@@ -15,9 +15,14 @@ int main(int argc,char**argv){
     app.callbacks.save=save_host;
     CHECK(!app.debug_command("room treasure EXTRA")&&app.title);CHECK(!app.debug_command("new unknown")&&app.title);
     CHECK(app.debug_command("new silent 12345"));CHECK(!app.title&&app.game.character==Character::Silent&&validate(app.game));
+    CHECK(app.debug_command("fight HAUNTED_SHIP_NORMAL")&&app.game.phase==Phase::Combat&&validate(app.game));
+    CHECK(app.game.enemy_world.encounter==EncounterId::HauntedShipNormal&&app.game.enemy_count==1&&app.game.enemy_world.models[0].kind==EnemyId::HauntedShip&&app.game.enemy_world.models[0].node==2);
+    snapshot=app.game;CHECK(end_turn(snapshot)&&validate(snapshot));unsigned generated=0;
+    for(unsigned i=0;i<snapshot.discard.count;++i)generated+=snapshot.cards[snapshot.discard.ids[i]].kind==Dazed;
+    CHECK(generated==5&&snapshot.card_count==app.game.card_count+5);
     CHECK(app.debug_command("room monster BOWLBUGS_WEAK")&&app.game.phase==Phase::Combat&&validate(app.game));
     snapshot=app.game;
-    for(const char*bad:{"energy -1","stars -2","energy 2147483648","act 0","room event NOT_AN_EVENT","relic add NOT_A_RELIC","card NOT_A_CARD","power NOT_A_POWER 2 0","godmode extra","heal -1","potion 1","kill -1"}){
+    for(const char*bad:{"energy -1","stars -2","energy 2147483648","act 0","fight NOT_AN_ENCOUNTER","fight HauntedShipNormal","room event NOT_AN_EVENT","relic add NOT_A_RELIC","card NOT_A_CARD","power NOT_A_POWER 2 0","godmode extra","heal -1","potion 1","kill -1"}){
         CHECK(!app.debug_command(bad));CHECK(!std::memcmp(&snapshot,&app.game,sizeof snapshot));
     }
     const int energy=app.game.energy;CHECK(app.debug_command("energy 77")&&app.game.energy==energy+77);

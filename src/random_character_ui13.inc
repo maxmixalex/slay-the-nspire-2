@@ -1,3 +1,31 @@
+// A water pixel's complete time-dependent input is the shader's quantized
+// noise value. Its UV, strength and immutable gradient determine the exact
+// RGB565 result. Retain only the last result at each display coordinate;
+// changing particles and light are still painted independently every frame.
+struct RandomWaterCache {
+    uint16_t colors[320*240]{};
+    uint8_t noise[320*240]{};
+    const Content*owner=nullptr;
+    Picture gradient{};
+    uint32_t generation=0;
+    unsigned width=0,height=0,logical_width=0,logical_height=0;
+    int strength=0;
+    bool valid=false;
+    bool bind(const Content&content,const water_reflection::Texture&texture,unsigned w,unsigned h,int s){
+        const Picture p=texture.storage();
+        if(owner!=&content||generation!=content.generation()||width!=w||height!=h||strength!=s||
+           logical_width!=texture.width()||logical_height!=texture.height()||
+           gradient.pixels!=p.pixels||gradient.alpha!=p.alpha||gradient.palette!=p.palette||
+           gradient.w!=p.w||gradient.h!=p.h||gradient.format!=p.format){
+            owner=&content;generation=content.generation();width=w;height=h;strength=s;
+            logical_width=texture.width();logical_height=texture.height();gradient=p;valid=false;
+        }
+        return valid;
+    }
+};
+static RandomWaterCache random_water_cache;
+static_assert(sizeof(RandomWaterCache)<=226u*1024u,"Exact water memoization stays within226 KiB");
+
 // Textured particles use the original images, source modulation and source
 // emitter rotation. The source quad is clipped before any inverse sampling.
 enum class RandomTextureSource:uint8_t {Color,WhiteAlpha,OpaqueColor};
@@ -43,7 +71,7 @@ static void random_character_particle(Canvas&c,const water_reflection::Texture&t
     }
 }
 static void random_character_water(Canvas&c,const water_reflection::Texture&gradient,
-        const water_reflection::Texture&noise,uint32_t clock){
+        const water_reflection::Texture&noise,uint32_t clock,RandomWaterCache*cache=nullptr){
     const water_reflection::Parameters parameters(clock,23,100);
     // Pixel-centre UVs after both Control pivots and responsive scale. Keep
     // Q24 increments so truncation cannot accumulate down the 240px image.
@@ -59,16 +87,22 @@ static void random_character_water(Canvas&c,const water_reflection::Texture&grad
         for(int y=0;y<5;++y)noise_rows[y][x]=uint8_t((noise.at(ix,y,true).alpha*(256-fraction)+noise.at(ix+1,y,true).alpha*fraction+128)>>8);
     }
     const bool direct=c.opacity==255&&c.brightness==255&&c.tint_red==255&&c.tint_green==255&&c.tint_blue==255&&!c.color_matrix&&!c.occlusion&&!c.coverage;
+    const unsigned width=unsigned(mx(0,mn(c.clip_w,320))),height=unsigned(mx(0,mn(c.clip_h,240)));
+    const bool reuse=cache&&cache->bind(c.a.content,gradient,width,height,parameters.half_strength_q16);
     for(int y=0;y<c.clip_h&&y<240;++y){
         const int v=(V0+y*VStep)>>8,position=((v-parameters.pan_q16)&65535)*5-32768;
         const int iy=position>>16,top=iy<0?4:iy,bottom=iy+1>=5?0:iy+1;const unsigned fraction=unsigned(position&65535)>>8;
         const auto*a=noise_rows[top],*b=noise_rows[bottom];auto*out=c.pixels+y*c.pitch;
         for(int x=0;x<c.clip_w&&x<320;++x){
             const unsigned n=(unsigned(a[x])*(256-fraction)+unsigned(b[x])*fraction+128)>>8;
-            const int shift=shifts[n];const uint16_t color=gradient.opaque_bilinear(u[x]+shift,v+shift);
+            const unsigned at=unsigned(y)*320+unsigned(x);uint16_t color;
+            if(reuse&&cache->noise[at]==n)color=cache->colors[at];
+            else{const int shift=shifts[n];color=gradient.opaque_bilinear(u[x]+shift,v+shift);
+                if(cache){cache->noise[at]=uint8_t(n);cache->colors[at]=color;}}
             if(direct)out[x]=color;else c.paint(y*c.pitch+x,color);
         }
     }
+    if(cache)cache->valid=true;
 }
 static bool random_character_background(Canvas&c,uint32_t clock,uint32_t elapsed,uint32_t seed){
     using namespace water_reflection;
@@ -78,7 +112,7 @@ static bool random_character_background(Canvas&c,uint32_t clock,uint32_t elapsed
     const Picture dp=c.a.content.image(c.a.content.ui_image(I13_RandomDot));
     if(gp.w!=64||gp.h!=64||np.w!=10||np.h!=5||lp.w!=320||lp.h!=205||dp.w!=320||dp.h!=205)return false;
     const Texture gradient(gp),noise(np),light(lp,256,256),dot(dp,256,256);
-    random_character_water(c,gradient,noise,clock);
+    random_character_water(c,gradient,noise,clock,&random_water_cache);
     auto&particles=c.a.character_select_presentation.random_background;particles.observe(elapsed,seed);
     // little_light_script.gd randomizes only integer preprocess time 0..5.
     const unsigned warm=RandomCharacterPresentation::hash(seed^0x51ba3f21u)%6;

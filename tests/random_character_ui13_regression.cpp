@@ -32,6 +32,50 @@ static bool near(water_reflection::Texel actual,Color expected,double tolerance=
            std::fabs(double(actual.alpha)-expected.a)<=tolerance;
 }
 static Picture picture(const Image&i){return {reinterpret_cast<const uint8_t*>(i.colors.data()),i.alpha.data(),nullptr,uint16_t(i.w),uint16_t(i.h),1};}
+static uint16_t exact_mix(uint16_t a,uint16_t b,unsigned f){
+    const auto channel=[&](unsigned shift,unsigned mask){return ((((a>>shift)&mask)*(256-f)+((b>>shift)&mask)*f+128)>>8)<<shift;};
+    return uint16_t(channel(11,31)|channel(5,63)|channel(0,31));
+}
+static void exact_interpolation_contract(){
+    Image source{2,2,{0,0,0,0},{255,255,255,255}};
+    const water_reflection::Texture texture(picture(source));uint32_t seed=47219;
+    const auto next=[&](){seed=seed*1664525u+1013904223u;return seed;};
+    for(unsigned trial=0;trial<1000;++trial){
+        for(auto&value:source.colors)value=uint16_t(next()>>8);
+        if(trial%4==0)source.colors[1]=uint16_t(source.colors[0]^0x0821u);
+        if(trial%4==1)source.colors[1]=source.colors[0];
+        for(unsigned f:{0u,1u,127u,128u,129u,254u,255u})for(unsigned g:{0u,127u,128u,129u,255u}){
+            const auto expected=exact_mix(exact_mix(source.colors[0],source.colors[1],f),exact_mix(source.colors[2],source.colors[3],f),g);
+            CHECK(texture.opaque_bilinear(int(16384+f*128),int(16384+g*128))==expected);
+        }
+    }
+}
+static void exact_water_cache_contract(){
+    Image gradient{7,5,{},{}},noise{10,5,{},{}},other{7,5,{},{}};
+    for(unsigned i=0;i<35;++i){gradient.colors.push_back(uint16_t(i*1879));gradient.alpha.push_back(255);other.colors.push_back(uint16_t(i*3271));other.alpha.push_back(255);}
+    for(unsigned i=0;i<50;++i){noise.colors.push_back(0xffff);noise.alpha.push_back(uint8_t(i*29));}
+    water_reflection::Texture g(picture(gradient)),n(picture(noise)),g2(picture(other));
+    static RandomWaterCache cache;Canvas c{app};
+    const unsigned times[]={0,33,66,99,100,1000,1250,7500,3599999,3600000,0};
+    for(unsigned mode=0;mode<4;++mode)for(unsigned clock:times){
+        c.clip_w=mode==1?197:320;c.clip_h=mode==1?111:240;
+        c.opacity=mode==2?173:255;c.tint_green=mode==2?127:255;
+        const auto&input=mode==3?g2:g;
+        for(unsigned i=0;i<320*240;++i)app.pixels[i]=uint16_t(i*37);
+        random_character_water(c,input,n,clock);
+        const std::vector<uint16_t> expected(app.pixels,app.pixels+320*240);
+        for(unsigned i=0;i<320*240;++i)app.pixels[i]=uint16_t(i*37);
+        random_character_water(c,input,n,clock,&cache);
+        CHECK(!std::memcmp(expected.data(),app.pixels,expected.size()*sizeof(uint16_t)));
+    }
+    // A fresh resource owner invalidates a geometrically identical image;
+    // reopening the same owner is represented by its generation in the key.
+    static Content other_owner;
+    CHECK(!cache.bind(other_owner,g2,320,240,3276));cache.valid=true;
+    CHECK(cache.bind(other_owner,g2,320,240,3276));
+    CHECK(!cache.bind(app.content,g2,320,240,3276));cache.valid=true;
+    CHECK(!cache.bind(app.content,g2,320,240,3277));
+}
 static void shader_contract(){
     Image image{7,5,{},{}},noise{10,5,{},{}},mask{1,1,{0xffff},{25}};
     for(unsigned n=0;n<35;++n){image.colors.push_back(uint16_t(((n*3%32)<<11)|((n*11%64)<<5)|(n*7%32)));image.alpha.push_back(255);}
@@ -155,6 +199,8 @@ static void actual(const char*captures){
             CHECK(near({app.pixels[y*320+x],255},filtered(gradient,u+shift,v+shift),1.6));
         }
         const auto water=std::vector<uint16_t>(app.pixels,app.pixels+320*240);
+        random_character_water(canvas,g,n,clock,&random_water_cache);
+        CHECK(!std::memcmp(water.data(),app.pixels,water.size()*sizeof(uint16_t)));
         CHECK(random_character_background(canvas,clock,clock,91));
         unsigned decoration=0;for(unsigned i=0;i<water.size();++i)decoration+=water[i]!=app.pixels[i];CHECK(decoration>1000);
         if(!previous.empty()){unsigned changed=0;for(unsigned i=0;i<previous.size();++i)changed+=previous[i]!=app.pixels[i];CHECK(changed>1000);}
@@ -170,7 +216,7 @@ static void actual(const char*captures){
     CHECK(save(app.game,after)&&before.size==after.size&&!std::memcmp(before.bytes,after.bytes,before.size));
 }
 int main(int argc,char**argv){
-    shader_contract();particle_contract();linear_texture_contract();particle_fast_paths();
+    shader_contract();exact_interpolation_contract();exact_water_cache_contract();particle_contract();linear_texture_contract();particle_fast_paths();
     if(argc>1){auto data=read(argv[1]);std::vector<uint8_t> locale;SplitResourceSource split;
         if(argc>2){locale=read(argv[2]);CHECK(split.open(ResourceSource::memory(data.data(),data.size()),ResourceSource::memory(locale.data(),locale.size()),ResourceLanguage(argc>3?std::atoi(argv[3]):1)));CHECK(app.init(split.source(),{}));}
         else CHECK(app.init(data.data(),data.size(),{}));

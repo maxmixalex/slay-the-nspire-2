@@ -59,7 +59,7 @@ static unsigned dazed(const State&s){unsigned n=0;for(unsigned i=0;i<s.card_coun
 int main(int argc,char**argv){
  CHECK(argc==3);output=argv[2];std::filesystem::create_directories(output);
  input=read(argv[1]);matching_progress("ui14-merchant");CHECK(loaded.phase==Phase::Shop);
- app.callbacks={};CHECK(app.debug_command("new IRONCLAD 1104089578"));CHECK(app.debug_command("fight HauntedShipNormal"));
+ app.callbacks={};CHECK(app.debug_command("new IRONCLAD 1104089578"));CHECK(app.debug_command("fight HAUNTED_SHIP_NORMAL"));
  std::printf("HauntedShip setup: valid=%u phase=%u enemies=%u encounter=%u model=%u node=%u reply=%s\n",
   unsigned(validate(app.game)),unsigned(app.game.phase),unsigned(app.game.enemy_count),unsigned(app.game.enemy_world.encounter),
   unsigned(app.game.enemy_world.models[0].kind),unsigned(app.game.enemy_world.models[0].node),app.debug_reply);
@@ -72,7 +72,7 @@ int main(int argc,char**argv){
  CHECK(discarded==5);matching_progress("ui14-enemy-generated-cards");
  const char note[]="Controlled UI14 device fixtures. Not natural runs and not release contents.\n"
   "ui14-merchant: canonical bytes match the supplied complete-paired-merchant save. Its progress is produced by ordinary refresh_save/load_saved_run/begin_progress(true), marks the unobserved prefix partial, and has no FTUE prompts.\n"
-  "ui14-enemy-generated-cards: source console new IRONCLAD 1104089578, then fight HauntedShipNormal. Do not play a card. Press End Turn once. The initial HAUNT_MOVE applies its real Weak and generates exactly five Dazed cards into Discard. No five-card animation is pre-inserted into the save. A separate actual end_turn execution verifies all five generated instances.\n"
+  "ui14-enemy-generated-cards: source console new IRONCLAD 1104089578, then fight HAUNTED_SHIP_NORMAL. Do not play a card. Press End Turn once. The initial HAUNT_MOVE applies its real Weak and generates exactly five Dazed cards into Discard. No five-card animation is pre-inserted into the save. A separate actual end_turn execution verifies all five generated instances.\n"
   "Install the selected save as state/nSpire2.sav.tns and its matching progress as state/nSpire2.progress.tns on an isolated test profile. Readback both files. Do not overwrite the natural-run profile for measurement.\n";
  write("README.txt",note,sizeof note-1);std::printf("UI14 device fixtures: %u checks passed\n",checks);
 }

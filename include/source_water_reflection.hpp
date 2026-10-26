@@ -15,13 +15,18 @@ class Texture {
         if(repeat){if(n>=0&&n<extent)return n;if(n<0&&n>=-extent)return n+extent;if(n>=extent&&n<extent*2)return n-extent;n%=extent;return n<0?n+extent:n;}
         return n<0?0:n>=extent?extent-1:n;
     }
-    static unsigned mix(unsigned a,unsigned b,unsigned f){return (a*(256-f)+b*f+128)>>8;}
+    static unsigned mix(unsigned a,unsigned b,unsigned f){return ((a<<8)+(b-a)*f+128)>>8;}
     static uint16_t mix_color(uint16_t a,uint16_t b,unsigned f){
+        if(a==b)return a;
+        // Adjacent low-bit bands need only the rounding decision. At the
+        // exact midpoint each channel rounds toward its larger endpoint.
+        if(!((a^b)&0xf7deu))return f<128?a:f>128?b:uint16_t(a|b);
         // Two separated 5-bit lanes fit one 32-bit multiply. Their carry
         // spaces preserve the exact independent RGB565 round-to-nearest.
         const uint32_t ar=((uint32_t(a)&0xf800u)<<5)|(a&31u),br=((uint32_t(b)&0xf800u)<<5)|(b&31u);
-        const uint32_t rb=((ar*(256-f)+br*f+0x00800080u)>>8)&0x001f001fu;
-        const uint32_t g=(((a&0x07e0u)*(256-f)+(b&0x07e0u)*f+0x1000u)>>8)&0x07e0u;
+        const uint32_t rb=(((ar<<8)+(br-ar)*f+0x00800080u)>>8)&0x001f001fu;
+        const uint32_t ag=a&0x07e0u,bg=b&0x07e0u;
+        const uint32_t g=(((ag<<8)+(bg-ag)*f+0x1000u)>>8)&0x07e0u;
         return uint16_t(((rb>>5)&0xf800u)|g|(rb&31u));
     }
     uint16_t dense_color(unsigned at)const{
@@ -38,6 +43,7 @@ public:
                 for(unsigned i=0;i<count;++i){unsigned n=u16(row+2),stride=row[4]?3:2;row+=5+n*stride;}}}
     }
     bool valid()const{return picture_.pixels!=nullptr;}
+    Picture storage()const{return picture_;}
     unsigned width()const{return width_;}
     unsigned height()const{return height_;}
     Texel at(int x,int y,bool repeat=false)const{
