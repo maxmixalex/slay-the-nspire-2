@@ -30,7 +30,8 @@ int main(int argc,char**argv){
  const auto language_item=app.settings_language_item;
  app.pointer_move(settings_layout::tab_left(1)+settings_layout::TabWidth/2,settings_layout::TabTop+settings_layout::TabHeight/2);app.render();
  CHECK(setup_control_motion(app,0x738b1001u).state==ButtonState::Rest);
- app.pointer_move(settings_layout::DropdownLeft+1,settings_layout::DropdownTop+11);app.render();
+ // Sample the row away from the rendered pointer's 16px sprite.
+ app.pointer_move(settings_layout::DropdownLeft+24,settings_layout::DropdownTop+11);app.render();
  CHECK(app.pixels[(settings_layout::DropdownTop+11)*320+settings_layout::DropdownLeft+1]==rgb(44,88,112));
  auto language_track=hit(HitKind::SettingsScroll,1);CHECK(language_track.y==64&&language_track.h==154);
  for(unsigned i=0;i<app.hit_count;++i)if(app.hits[i].kind==HitKind::UiAction&&

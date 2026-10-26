@@ -1,4 +1,5 @@
 #include "app.hpp"
+#include "architect_attack_assets.hpp"
 #include <algorithm>
 #include <cstdio>
 #include <cstdlib>
@@ -624,6 +625,34 @@ void bestiary_supplement_packages(){
         bad=p.bytes;put(bad,20,scene_font_glyph_limit(version)+1);reject("Versioned glyph count bound",std::move(bad));
     }
 }
+void ui13_source_catalogs(){
+    auto direct=std::make_unique<Content>(),range=std::make_unique<Content>();Rejector reject;
+    const auto pack=[](unsigned auxiliary){
+        Package p=basic();p.encode(false,auxiliary,Ui12ContentVersion,Ui7StringCount,BestiaryKaiserAnimationKinds);
+        const unsigned strings=40+p.images*16+p.glyphs*16;
+        put(p.bytes,strings+LocaleMarkerString*8,unsigned(p.bytes.size()));put(p.bytes,strings+LocaleMarkerString*8+4,3);
+        p.bytes.insert(p.bytes.end(),{'e','n','g',0});seal(p.bytes);return p;
+    };
+    for(unsigned end:{unsigned(Ui12AuxiliaryCount),IntroLogoAuxiliaryCount,PhobiaSwarmAuxiliaryCount,
+            SleepingVfxAuxiliaryCount,FrontendUi13AuxiliaryCount,RoomsUi13AuxiliaryCount,
+            ArchitectUi13AuxiliaryCount,ArchitectAttackUi13AuxiliaryCount}){
+        label="UI40 complete optional source catalog";Package p=pack(end);Provider source{&p.bytes};
+        CHECK(direct->open(p.bytes.data(),p.bytes.size())&&range->open(source.source()));
+        for(Content*content:{direct.get(),range.get()}){
+            CHECK(content->ui_image(end-1)==0&&content->ui_image(end)==-1);
+            picture(*content,1,p.frames[0]);CHECK(content->healthy());
+        }
+        CHECK(!source.bad_range);
+    }
+    for(unsigned end:{FrontendUi13AuxiliaryCount,RoomsUi13AuxiliaryCount,
+            ArchitectUi13AuxiliaryCount,ArchitectAttackUi13AuxiliaryCount}){
+        Package incomplete=pack(end-1);reject("Incomplete source catalog is not accepted",std::move(incomplete.bytes));
+        Package wrong=pack(end);put(wrong.bytes,wrong.base-4,wrong.images);
+        reject("Source catalog references must stay inside the image directory",std::move(wrong.bytes));
+    }
+    Package extra=pack(ArchitectAttackUi13AuxiliaryCount+1);
+    reject("Unknown source catalog suffix is not scanned",std::move(extra.bytes));
+}
 void malformed_container(){
     label="container setup";const Package p=basic();Rejector reject;ImageRejector reject_image;
     const auto field=[&](const char*name,size_t at,uint32_t value,unsigned width=4){Bytes b=p.bytes;put(b,at,value,width);reject(name,std::move(b));};
@@ -997,9 +1026,9 @@ void directory_capacity_without_prescan(const Package&pressure_tiny){
 }
 } // namespace
 int main(int argc,char**argv){
-    if(argc==2&&!std::strcmp(argv[1],"--native-ui")){native_ui_packages();locale_packages();bestiary_supplement_packages();std::printf("native UI and locale content: %u checks passed\n",checks);return 0;}
+    if(argc==2&&!std::strcmp(argv[1],"--native-ui")){native_ui_packages();locale_packages();bestiary_supplement_packages();ui13_source_catalogs();std::printf("native UI and locale content: %u checks passed\n",checks);return 0;}
     required_metadata_prefix();progress_contract();valid_packages();malformed_container();malformed_geometry();catalog_metadata_reuse();maximum_frame_and_unused_tile();
-    native_ui_packages();locale_packages();bestiary_supplement_packages();
+    native_ui_packages();locale_packages();bestiary_supplement_packages();ui13_source_catalogs();
     image_pool_cycles_and_fragmentation();
     label="bounded group pressure fixtures";
     const Package medium=pressure(false),tiny=pressure(true);

@@ -47,6 +47,15 @@ def hue(rgb, shift):
     return projection+offset*np.cos(phase)[..., None]+np.cross(gray, offset)*np.sin(phase)[..., None]
 
 
+def process_hue(rgb, shift):
+    # ParticleProcessMaterial uses a luma-weighted hue matrix. The custom
+    # flipbook shader above uses a different gray-axis rotation.
+    base = np.array([[.299, .299, .299], [.587, .587, .587], [.114, .114, .114]])
+    cosine = np.array([[.701, -.299, -.300], [-.587, .413, -.588], [-.114, -.114, .886]])
+    sine = np.array([[.168, -.328, 1.250], [.330, .035, -1.050], [-.497, .292, -.203]])
+    return (base+cosine*math.cos(shift*math.tau)+sine*math.sin(shift*math.tau))@rgb
+
+
 class Resources:
     def __init__(self, pack, loader):
         self.pack, self.loader = pack, loader
@@ -283,7 +292,8 @@ class Emitter:
         self.color_ramp = resources.gradient(_property(self.material, 'color_ramp'))
         self.color_initial = resources.gradient(_property(self.material, 'color_initial_ramp'))
         self.scale_velocity = resources.curve(_property(self.material, 'scale_over_velocity_curve'))
-        self.child = None; self.live = []; self.spawned = 0
+        self.child = None; self.live = []; self.spawned = 0; self.capacity_rejected = 0
+        self.colliders = []
         self.time = start; self.start = start
         self.trails = bool(_property(props, 'trail_enabled', False))
         self.trail_lifetime = float(_property(props, 'trail_lifetime', .3))
@@ -307,7 +317,11 @@ class Emitter:
 
     def spawn(self, time, world=None, inherited=None):
         if len(self.live) >= self.amount:
-            self.live.pop(0)
+            # The renderer accepts a subparticle only in an inactive slot.
+            # Replacing an active oldest particle would suppress its AT_END
+            # spark, changing the source DaggerSpray emitter chain.
+            self.capacity_rejected += 1
+            return
         values = {key: self.random(key, default) for key, default in self.RANDOM_VALUES.items()}
         origin = np.zeros(2)
         shape = int(self.prop('emission_shape', 0)); angle = self.rng.random()*math.tau
@@ -356,6 +370,31 @@ class Emitter:
         for _ in range(count):
             self.child.spawn(time, position, velocity)
 
+    def collide(self, particle):
+        if not self.colliders or not int(self.prop('collision_mode', 0)):
+            return
+        radius = float(_property(self.node.props, 'collision_base_size', 1.))*(self.texture.shape[0]+self.texture.shape[1])/4
+        if self.prop('collision_use_scale', False): radius *= abs(particle['values']['scale'])
+        for polygon in self.colliders:
+            for index, start in enumerate(polygon):
+                delta = polygon[(index+1)%len(polygon)]-start
+                squared = float(delta@delta)
+                if squared < 1e-8: continue
+                relative = particle['position']-start
+                point = start+delta*np.clip(float(relative@delta)/squared, 0, 1)
+                offset = particle['position']-point; distance = np.linalg.norm(offset)
+                if not 1e-9 < distance < radius: continue
+                normal = offset/distance
+                response = float(normal@particle['velocity'])
+                if response >= 0: continue
+                particle['position'] += normal*(radius-distance)
+                friction = float(self.prop('collision_friction', 0.))
+                bounce = float(self.prop('collision_bounce', 0.))
+                tangent = particle['velocity']-normal*response
+                trigger = abs(response) >= 2/min(2., max(1., bounce+1))
+                particle['velocity'] = tangent*(1-friction)-normal*response*bounce*trigger
+                particle['final_velocity'] = particle['velocity'].copy()
+
     def advance(self, time):
         previous = self.time
         while self.pending and self.pending[0] <= time+1e-9:
@@ -401,6 +440,7 @@ class Emitter:
                 animated = animated*(1-influence)+curl*np.linalg.norm(animated)*boost*influence
             p['final_velocity'] = velocity+animated
             p['position'] += p['final_velocity']*dt
+            self.collide(p)
             rotation = values['orbit_velocity']*self.cv('orbit_velocity', age)[0]*dt*math.tau
             if rotation:
                 sn, cs = math.sin(rotation), math.cos(rotation); offset = p['position']-pivot
@@ -445,13 +485,14 @@ class Emitter:
             if self.prop('emission_curve') is not None:
                 color[:3] *= 1+self.cv('emission', age)[0]
             if values['hue_variation']:
-                color[:3] = hue(color[:3], values['hue_variation']*self.cv('hue_variation', age)[0])
-            yield dict(center=position, matrix=matrix, color=color, texture=self.texture,
-                       material=self.draw, age=age, animation=p['animation'])
+                color[:3] = process_hue(color[:3], values['hue_variation']*self.cv('hue_variation', age)[0])
+            if not self.trails:
+                yield dict(center=position, matrix=matrix, color=color, texture=self.texture,
+                           material=self.draw, age=age, animation=p['animation'])
             if self.trails and len(p['history'])>1:
-                # The source 2D trail uses its own texture, capacity, section
-                # count and age window. A strip through sampled particle poses
-                # preserves it instead of replacing it with radial light dots.
+                # GPUParticles2D builds one strip instead of a billboard. Its
+                # v coordinate spans the complete trail; never repeat a whole
+                # texture per segment or invent an extra opacity fade.
                 history = p['history'][-self.trail_sections:]
                 for i in range(len(history)-1):
                     a, b = history[i][1], history[i+1][1]
@@ -460,11 +501,11 @@ class Emitter:
                     axis = delta/length; half = (a+b)/2
                     ribbon = self.item.matrix[:2, :2]@np.column_stack((np.array([-axis[1], axis[0]])*size[0],
                                                                  axis*length/self.texture.shape[0]))
-                    fade = max(0., 1-(p['age']-history[i][0])/self.trail_lifetime)
-                    tint = color.copy(); tint[3] *= fade
+                    first = (p['age']-history[i][0])/self.trail_lifetime
+                    last = (p['age']-history[i+1][0])/self.trail_lifetime
                     yield dict(center=(self.item.matrix@np.r_[half, 1.])[:2], matrix=ribbon,
-                               color=tint, texture=self.texture, material=self.draw, age=age,
-                               animation=p['animation'])
+                               color=color, texture=self.texture, material=self.draw, age=age,
+                               animation=p['animation'], uv_offset=(0, first), uv_scale=(1, last-first))
 
 
 class Planes:
@@ -492,6 +533,8 @@ class Planes:
         yy, xx = np.mgrid[low[1]:high[1], low[0]:high[0]]
         uv = (np.stack((xx+.5-center[0], yy+.5-center[1]), axis=-1)@np.linalg.inv(matrix).T)/extent+.5
         inside = np.all((uv>=0)&(uv<=1), axis=-1)
+        if 'uv_offset' in particle:
+            uv = uv*np.asarray(particle['uv_scale'])+np.asarray(particle['uv_offset'])
         pixel = material.fragment(texture, uv, particle.get('age', 0.), particle.get('animation', 0.), particle['color'], time)
         target = np.s_[low[1]:high[1], low[0]:high[0]]
         if material.blend == 2:
@@ -555,6 +598,17 @@ def particle_systems(pack, scene, *, effect_index=0):
         systems[path] = Emitter(resources, row, effect_index*100+index, starts[path], path in subpaths.values())
     for path, target in subpaths.items():
         systems[path].child = systems[target]
+    # RockShatter's authored invisible LightOccluder is its SDF floor. Keep
+    # its polygon/collision radius/bounce instead of letting debris fall away.
+    occluders = []
+    for item in items:
+        if item.node.kind == 'LightOccluder2D' and _property(item.node.props, 'sdf_collision', True):
+            _, props = loader.resource(_property(item.node.props, 'occluder'))
+            polygon = np.asarray(sequence(_property(props, 'polygon')), dtype=float).reshape(-1, 2)
+            occluders.append((item.matrix@np.column_stack((polygon, np.ones(len(polygon)))).T).T)
+    for emitter in systems.values():
+        if emitter.prop('collision_mode', 0):
+            emitter.colliders = [(np.linalg.inv(emitter.item.matrix)@polygon.T).T[:, :2] for polygon in occluders]
     # A child's show_behind_parent precedes its ancestor's canvas item, not
     # merely the next sibling. Preserve that for the authored dagger trail.
     order = []

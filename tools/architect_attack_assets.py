@@ -146,6 +146,7 @@ def emitter_report(systems):
         shader=emitter.draw.shader or 'CanvasItemMaterial', blend=emitter.draw.blend,
         flipbook=list(emitter.draw.flip), subemitter=emitter.child.item.path if emitter.child else None,
         subemitter_only=emitter.sub_only, spawned=emitter.spawned,
+        capacity_rejected=emitter.capacity_rejected, collision_polygons=len(emitter.colliders),
         visible=emitter.item.visible, turbulence=bool(emitter.prop('turbulence_enabled', False)),
         trail_sections=emitter.trail_sections if emitter.trails else 0,
         trail_lifetime=emitter.trail_lifetime if emitter.trails else 0.)

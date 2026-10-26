@@ -127,6 +127,24 @@ variable display frame rate are not reproduced.
 frames as sparse 320 × 218 images, auxiliary 2228–2506. This stores only covered
 pixels after packing and does not require another resident scene buffer.
 
+`tools/architect_attack_assets.py` and `architect_attack_particles.py` sample
+the thirteen character attack effects and `NFireBurstVfx` from their own scenes.
+They preserve the two Spine effects, the four-frame Slash, the five-frame
+Lightning, and the GPU effects' original textures, flipbooks, LUTs, curves,
+subemitters and source lifetimes. The 824 auxiliary rows occupy 2507–3330.
+Normal, additive and screen-displacement data remain separate where the source
+requires them. Flying Slash has an independent horizontal pivot so its long
+arrival trajectory is not prematurely clipped by a local image canvas.
+
+The Heavy Blunt and Starry Impact distortion planes encode signed integer
+pixel offsets in RGB565, with a maximum 15-row lookup distance. Their source
+textures and shader masks determine those offsets; the runtime samples the
+untouched framebuffer through a 32 × 320 row window (20 KiB). These data planes
+must be packed losslessly, without the visual 454a6 precision reduction. Fire
+Burst follows the player's original bottom-of-hitbox anchor and is covered by
+the final screen's black backstop, while the pen trail remains with its retained
+creature node above that backstop.
+
 ## Verification status
 
 Short `clang++-18 -fsyntax-only` checks cover the App implementation and changed
