@@ -110,6 +110,24 @@ static void linear_texture_contract(){
     CHECK(!water_reflection::Texture(picture(physical),3,3).valid());
     CHECK(!water_reflection::Texture(picture(physical),2,0).valid());
 }
+static void particle_fast_paths(){
+    // Compare the specialized source-white dot and opaque additive light
+    // against ordinary RGBA compositing, including rotated/clipped quads and
+    // parent modulation which must retain the general painter path.
+    Image light{7,5,{},{}},dot{7,5,{},{}};
+    for(unsigned i=0;i<35;++i){light.colors.push_back(uint16_t(((i*13%32)<<11)|((i*9%64)<<5)|(i*7%32)));light.alpha.push_back(255);
+        dot.colors.push_back(0xffff);dot.alpha.push_back(uint8_t(i*29));}
+    for(unsigned kind=0;kind<2;++kind)for(int angle:{-735,0,942})for(unsigned modulation:{0u,1u,2u}){
+        const water_reflection::Texture texture(picture(kind?light:dot));Canvas c{app};
+        if(modulation==1)c.opacity=179;if(modulation==2)c.brightness=201;
+        const auto render=[&](RandomTextureSource source){for(unsigned i=0;i<320*240;++i)app.pixels[i]=uint16_t(i*37);
+            random_character_particle(c,texture,20*65536,22*65536,84*65536,angle,kind?102:110,128,179,69,
+                kind?presentation::Add:presentation::Normal,source);};
+        render(RandomTextureSource::Color);const std::vector<uint16_t> reference(app.pixels,app.pixels+320*240);
+        render(kind?RandomTextureSource::OpaqueColor:RandomTextureSource::WhiteAlpha);
+        CHECK(!std::memcmp(reference.data(),app.pixels,reference.size()*sizeof(uint16_t)));
+    }
+}
 static std::vector<uint8_t> read(const char*path){FILE*f=std::fopen(path,"rb");CHECK(f);std::vector<uint8_t> data(spire_test::pack_size(f));CHECK(std::fread(data.data(),1,data.size(),f)==data.size());CHECK(!std::fclose(f));return data;}
 static Image decode(Picture p){
     Image out{p.w,p.h,std::vector<uint16_t>(unsigned(p.w)*p.h),std::vector<uint8_t>(unsigned(p.w)*p.h)};
@@ -148,10 +166,11 @@ static void actual(const char*captures){
     app.title=app.character_select=app.character_random=true;app.selected_character=Character::Ironclad;
     app.progress.tutorial_flags=FtueFresh|FtueSeenMask;app.map_clock_ms=24000;app.render();
     capture(captures,"random-screen-24000");CHECK(app.character_random);
+    app.map_clock_ms+=600;app.render();capture(captures,"random-screen-settled-24600");
     CHECK(save(app.game,after)&&before.size==after.size&&!std::memcmp(before.bytes,after.bytes,before.size));
 }
 int main(int argc,char**argv){
-    shader_contract();particle_contract();linear_texture_contract();
+    shader_contract();particle_contract();linear_texture_contract();particle_fast_paths();
     if(argc>1){auto data=read(argv[1]);std::vector<uint8_t> locale;SplitResourceSource split;
         if(argc>2){locale=read(argv[2]);CHECK(split.open(ResourceSource::memory(data.data(),data.size()),ResourceSource::memory(locale.data(),locale.size()),ResourceLanguage(argc>3?std::atoi(argv[3]):1)));CHECK(app.init(split.source(),{}));}
         else CHECK(app.init(data.data(),data.size(),{}));

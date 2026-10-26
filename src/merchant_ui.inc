@@ -172,6 +172,11 @@ static void merchant_room_clip(Canvas&c,int clip,uint32_t milliseconds,bool cove
         const auto size=c.a.content.image_dimensions(image);
         if(size.w&&size.h&&merchant_rug_covers(c,x,y,size.w,size.h))return;
     }
+    // The fixed plane is disjoint from every moving frame, including all
+    // partially transparent pixels. Drawing both at the original pivot is
+    // exactly one original source-over operation at each visible pixel.
+    const int fixed=merchant_fixed_asset(clip);
+    if(fixed>=0)c.picture(c.a.content.ui_image(fixed),x,y);
     c.picture(image,x,y);
 }
 static void merchant_idle(Canvas&c,int clip,bool covered=false){

@@ -15,6 +15,7 @@ import split_content as split
 from ui12_resources import replace_images, view
 from ui14_resources import graft_locale
 from tighten_ui14_resources import tighten
+from reclaim_unused_tiles_ui14 import reclaim
 from test_repack_retained import fixture
 
 
@@ -31,6 +32,26 @@ def current(language='eng', glyphs=1):
 
 
 class Ui14ResourceTests(unittest.TestCase):
+    def test_replaced_frames_reclaim_only_unreferenced_tiles(self):
+        from test_retile_appended_resources import source
+        import retile_appended_resources as retile
+        with tempfile.TemporaryDirectory() as directory:
+            work=Path(directory);original=retile.view(source())
+            plan=retile.make_plan(original,work)
+            tiled,_=retile.rewrite(original,plan,retile.compress_plan(plan,work,work/'tiles',1))
+            replacements={4:Image.new('RGBA',original.images[4][1:3],(24,128,96,198))}
+            replaced,_=replace_images(tiled,replacements)
+            output,report=reclaim(replaced,work/'reclaim',1)
+        self.assertGreater(report['unreferenced_tiles'],0)
+        self.assertGreater(report['reclaimed_groups'],0)
+        self.assertTrue(report['all_live_tile_pixels_unchanged'])
+        before,after=view(replaced),view(output)
+        a,b=tiles.TileReader(before),tiles.TileReader(after)
+        for i,row in enumerate(before.images):
+            old=a.image_raw(i) if row[3]==6 else before.image_raw(i)
+            new=b.image_raw(i) if row[3]==6 else after.image_raw(i)
+            self.assertEqual(old,new)
+
     def test_graft_preserves_grouped_fonts_and_text_after_art_and_directory_growth(self):
         english = current();chinese = current('zhs', 3)
         artwork, _ = replace_images(english, {0: Image.new('RGBA', (80, 96), (39, 116, 215, 173))})

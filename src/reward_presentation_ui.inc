@@ -89,11 +89,13 @@ static void upgraded_card_animation(Canvas&c){
  }
 }
 #include "card_transform_ui.inc"
+#include "card_enchant_ui.inc"
 static void reward_pickup_screen(Canvas&c){
  auto&a=c.a;auto&m=a.reward_presentation;
  if(a.title||a.library||a.character_select||a.map_preview.open)return;
  upgraded_card_animation(c);
  transformed_card_animation(c);
+ enchanted_card_animation(c);
  const auto&removed=m.removed;
  if(removed.alive(a.map_clock_ms)){
   const uint32_t age=a.map_clock_ms-removed.start;

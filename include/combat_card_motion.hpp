@@ -315,5 +315,7 @@ struct CombatCardMotion {
   return result;
  }
 };
-static_assert(sizeof(CombatCardMotion)<=6*1024,"Card paths and six-point trails reuse the existing raster tiles");
+// UI14 adds per-instance blade damage and64 source-clock Forge/attack cues
+// (under2.5KiB). Preserve the original motion capacities within an8KiB total.
+static_assert(sizeof(CombatCardMotion)<=8*1024,"Card and blade movement share an8KiB transient view");
 }

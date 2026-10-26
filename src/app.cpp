@@ -291,7 +291,7 @@ void App::render(){
         !(combat_feedback.active&&choice_phase(game.phase))&&int32_t(combat_linger_until-animation)<=0&&
         content.ui_image(I13_FakeMerchantSquareSpeck)>=0;
     // Both merchant scenes cycle complete source frames. Retain their decoded
-    // pixels in the same 11 MiB arena; combat and its choices keep 5/6 MiB.
+    // pixels in the same 13 MiB arena; combat and its choices keep 7/6 MiB.
     content.set_image_cache_profile((!title&&game.phase==Phase::Shop)||fake_room_frames);
     if(startup_logo.active()){Canvas c{*this};startup_logo_screen(c);return;}
     sync_screen_motion();

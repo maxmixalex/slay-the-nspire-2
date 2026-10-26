@@ -14,12 +14,14 @@ from PIL import Image
 
 import content_tiles as tiles
 import split_content as split
-from combat_ui14_assets import BASE_AUXILIARY, AUXILIARY_COUNT, ancient_portrait_overrides, source_assets
+from combat_ui14_assets import BASE_AUXILIARY, AUXILIARY_COUNT as COMBAT_AUXILIARY, ancient_portrait_overrides, source_assets
+from merchant_ui14_assets import AUXILIARY_COUNT, source_assets as merchant_assets
 from game_over_ui8_assets import build_game_over_images
 from patch_frontend_assets import patch_pack
 from patch_phobia_assets import grouped_art
 from pck import Pack
 from tighten_ui14_resources import tighten
+from reclaim_unused_tiles_ui14 import reclaim
 from ui12_resources import replace_images, view
 from world_scene_assets import load_scene_texture
 
@@ -82,6 +84,7 @@ def main():
         parser.add_argument('--'+key, type=Path, required=True)
     parser.add_argument('--locale-pattern', default='nSpire2.{language}.dat.tns')
     parser.add_argument('--combat-catalog', type=Path)
+    parser.add_argument('--merchant-cache', type=Path)
     parser.add_argument('--workers', type=int, default=4)
     parser.add_argument('--keep-logical', default='eng,zhs')
     parser.add_argument('--skip-tighten', action='store_true')
@@ -101,22 +104,33 @@ def main():
     finally:pack.close()
     portraits = ancient_portrait_overrides(pck, cache)
     for row in portraits:replacements[source.cards[row['card']][0]] = Image.open(row['png']).convert('RGBA')
+    merchant_cache = args.merchant_cache or cache/'merchant'
+    merchant_rows, merchant_overrides = merchant_assets(args.artwork, merchant_cache)
+    for image, png in merchant_overrides.items():replacements[int(image)] = Image.open(png).convert('RGBA')
     artwork, replaced = replace_images(artwork, replacements)
-    emit('replaced_original_art', game_over_images=len(rows), ancient_portraits=len(portraits))
+    emit('replaced_original_art', game_over_images=len(rows), ancient_portraits=len(portraits),
+         merchant_frames=len(merchant_overrides))
     if args.combat_catalog:
         catalog_path = tiles.private_path(args.combat_catalog, 'Verified private combat catalog')
         manifest = json.loads(catalog_path.read_text());rows = manifest['images']
         art_cache = catalog_path.parent
     else:
         art_cache = cache/'combat';rows = source_assets(pck, art_cache)
-    tiles.require([row['auxiliary'] for row in rows] == list(range(BASE_AUXILIARY, AUXILIARY_COUNT)),
+    tiles.require([row['auxiliary'] for row in rows] == list(range(BASE_AUXILIARY, COMBAT_AUXILIARY)),
                   'UI14 combat catalog has missing or reordered images')
+    rows = [dict(row, file=str(art_cache/row['file'])) for row in rows]
+    rows.extend(dict(row, file=str(merchant_cache/row['file'])) for row in merchant_rows)
+    tiles.require([row['auxiliary'] for row in rows] == list(range(BASE_AUXILIARY, AUXILIARY_COUNT)),
+                  'UI14 merchant static directory is incomplete')
+    art_cache = cache
     manifest = dict(images=rows, clips=[], localized_text={code:{} for code in split.LANGUAGES})
     grouped = grouped_art(rows, art_cache)
     artwork, appended = patch_pack(artwork, manifest, art_cache, base_aux=BASE_AUXILIARY,
         auxiliary=AUXILIARY_COUNT, input_version=40, version=40, texts=(),
         base_clips=len(source.clips), base_strings=len(source.strings), appended_art=grouped)
     emit('card_art_appended', auxiliary=AUXILIARY_COUNT, added_images=len(rows))
+    artwork, reclaimed = reclaim(artwork, cache/'reclaimed-tiles', args.workers)
+    emit('unreferenced_payload_reclaimed', **reclaimed)
     compressed = {}
     if not args.skip_tighten:
         artwork, compressed = tighten(artwork, cache/'stronger-streams', args.workers, artwork_only=True)
@@ -141,7 +155,7 @@ def main():
         emit('locale_verified', language=code, **reports[code])
     receipt = dict(schema=1, reference='v0.111.0 / 41cef1ea', version=40,
         auxiliary_count=AUXILIARY_COUNT, common_bytes=len(common), common_sha256=tiles.sha256(common),
-        replacements=replaced, ancient_portraits=portraits, appended=appended,
+        replacements=replaced, ancient_portraits=portraits, appended=appended, reclaimed_tiles=reclaimed,
         appended_grouping=grouped['report'], compression=compressed, languages=reports)
     tiles.atomic_bytes(output/'locales-receipt.json', json.dumps(receipt, ensure_ascii=False, indent=2).encode()+b'\n')
     emit('all_editions_verified', languages=len(reports), common_bytes=len(common))

@@ -34,7 +34,7 @@ def live_directory(source):
     return reader, dict(sorted(descriptors.items())), groups
 
 
-def prune(data):
+def prune(data, tile_payloads=None):
     source = view(data);old, descriptors, live = live_directory(source)
     remap = {group: index for index, group in enumerate(live)}
     old_global = t.GLOBAL.unpack_from(data, source.base_end)
@@ -60,7 +60,7 @@ def prune(data):
 
     def group(previous, index):
         offset, size, *_ = old.groups[previous]
-        payload = bytearray(source.block(offset-32, size+32))
+        payload = bytearray((tile_payloads or {}).get(previous, source.block(offset-32, size+32)))
         struct.pack_into('<I', payload, 8, index)
         new_at = add(payload);struct.pack_into('<II', out, table+index*8, new_at, len(payload))
 
@@ -101,7 +101,7 @@ def prune(data):
         tile_groups=old.tile_groups, artwork_end=artwork_end)
 
 
-def verify(source, output):
+def verify(source, output, live_tiles=None):
     target = view(output);old, descriptors, live = live_directory(source)
     new = t.TileReader(target);mapping = {group: index for index, group in enumerate(live)}
     t.require(source.counts == target.counts and source.clips == target.clips and
@@ -115,9 +115,17 @@ def verify(source, output):
     for old_group, new_group in [(i, i) for i in range(old.tile_groups)]+[
             (old.tile_groups+group, new.tile_groups+index) for index, group in enumerate(live)]:
         a, b = old.groups[old_group], new.groups[new_group]
-        t.require(a[1:] == b[1:] and old.filters[old_group] == new.filters[new_group] and
-                  source.block(a[0], a[1]) == target.block(b[0], b[1]),
-                  'A live compressed group or its decode shape changed')
+        same=(a[1:] == b[1:] and old.filters[old_group] == new.filters[new_group] and
+              source.block(a[0], a[1]) == target.block(b[0], b[1]))
+        if not same and live_tiles is not None and old_group<old.tile_groups:
+            before,_=old.group(old_group);after,_=new.group(new_group)
+            t.require(len(before)==len(after) and a[4:]==b[4:], 'Tile group shape changed')
+            for slot in range(a[5]):
+                if live_tiles[old_group*old.per_group+slot]:
+                    at=slot*t.TILE_BYTES
+                    t.require(before[at:at+t.TILE_BYTES]==after[at:at+t.TILE_BYTES],
+                              'A referenced tile pixel changed')
+        else:t.require(same, 'A live compressed group or its decode shape changed')
     tiled = retained = 0
     for image, (a, b) in enumerate(zip(source.images, target.images)):
         t.require(a[1:] == b[1:], 'An image changed dimensions, format or stored length')
@@ -137,7 +145,9 @@ def verify(source, output):
     return dict(tiled_images_exact=tiled, retained_images_exact=retained,
         glyphs_exact=len(source.glyphs), strings_exact=len(source.strings),
         all_image_dimensions_pivots_samples_and_clocks_exact=True,
-        copied_tile_groups_exact=new.tile_groups, copied_index_groups_exact=new.index_groups)
+        copied_tile_groups_exact=sum(source.block(a[0],a[1])==target.block(b[0],b[1])
+            for a,b in zip(old.groups[:old.tile_groups],new.groups[:new.tile_groups])),
+        copied_index_groups_exact=new.index_groups)
 
 
 def main():

@@ -236,16 +236,16 @@ static void actual_selected_description(){
  const auto rect=card_face::layout(HandFaceX,HandFaceY,HandFaceW,HandFaceH).description;
  const int maximum=selected_hand_reader.maximum;
  for(int skip=1;skip<=maximum;++skip){
-  a.map_clock_ms=selected_hand_reader.started+1401u+unsigned(skip-1)*1200u;begin_card_face_frame();const auto&current=selected_hand_tile(c,0);CHECK(selected_hand_reader.skip==skip);
+  a.map_clock_ms=selected_hand_reader.started+1400u+unsigned(skip)*125u;begin_card_face_frame();const auto&current=selected_hand_tile(c,0);CHECK(selected_hand_reader.skip==skip);
   unsigned changed=0;for(int y=0;y<HandTileH;++y)for(int x=0;x<HandTileW;++x){const unsigned at=y*HandTileW+x;
    if(x<rect.x||x>=rect.x+rect.w||y<rect.y||y>=rect.y+rect.h)CHECK(initial[at]==current.pixels[at]);else changed+=initial[at]!=current.pixels[at];}
   CHECK(changed>10);CHECK(base.built==build&&!std::memcmp(base.pixels,original.data(),sizeof base.pixels));CHECK(hand_tile(c,1).built==neighbour);unchanged();
  }
- a.map_clock_ms=selected_hand_reader.started+3000u+unsigned(maximum)*1200u;begin_card_face_frame();selected_hand_tile(c,0);CHECK(!selected_hand_reader.skip);unchanged();
- a.input(Key::Back);CHECK(a.selected_hand_card()<0);a.render();CHECK(selected_hand_reader.instance<0);unchanged();CHECK(a.content.healthy());
+ a.map_clock_ms=selected_hand_reader.started+2800u+unsigned(maximum)*250u;begin_card_face_frame();selected_hand_tile(c,0);CHECK(!selected_hand_reader.skip);unchanged();
+ a.input(Key::Back);CHECK(a.selected_hand_card()<0);a.hand_focus=false;a.render();CHECK(selected_hand_reader.instance<0);unchanged();CHECK(a.content.healthy());
 }
 int main(int argc,char**argv){CHECK(argc==1||argc==2);aimed_preview();numeric_selection();denied_plays();battle_entry();smith();reward_overlap();
- if(argc==2){const std::string root=argv[1];auto common=read(root+"/nSpire2.common.tns"),language=read(root+"/nSpire2.eng.tns");SplitResourceSource split;
+ if(argc==2){const std::string root=argv[1];auto common=read(root+"/data/nSpire2.dat.tns"),language=read(root+"/data/nSpire2.eng.dat.tns");SplitResourceSource split;
   CHECK(split.open(ResourceSource::memory(common.data(),common.size()),ResourceSource::memory(language.data(),language.size()),ResourceLanguage::English));CHECK(a.init(split.source(),{}));
   aimed_preview();denied_plays();battle_entry();actual_single_battle_banner();smith();reward_overlap();merchant_cache();actual_label_metrics();actual_aimed_descriptions();actual_winning_card();actual_selected_description();
  }

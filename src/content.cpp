@@ -288,7 +288,8 @@ bool Content::open(ResourceSource source){
                                                     RoomsUi13AuxiliaryCount,ArchitectUi13AuxiliaryCount,
                                                     ArchitectAttackUi13AuxiliaryCount,DoomUi13AuxiliaryCount,
                                                     RandomCharacterUi13AuxiliaryCount,FakeMerchantBaseUi13AuxiliaryCount,
-                                                    FakeMerchantUi13AuxiliaryCount,CombatUi14AuxiliaryCount};
+                                                    FakeMerchantUi13AuxiliaryCount,CombatUi14AuxiliaryCount,
+                                                    MerchantUi14AuxiliaryCount};
                                                 for(unsigned end:endpoints){
                                                     if(next==0x314c4954u)break;
                                                     for(unsigned i=auxiliary;i<end;++i){

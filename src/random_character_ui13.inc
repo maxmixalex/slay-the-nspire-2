@@ -1,8 +1,9 @@
 // Textured particles use the original images, source modulation and source
 // emitter rotation. The source quad is clipped before any inverse sampling.
+enum class RandomTextureSource:uint8_t {Color,WhiteAlpha,OpaqueColor};
 static void random_character_particle(Canvas&c,const water_reflection::Texture&texture,
         int center_x_q16,int center_y_q16,int size_q16,int angle,unsigned alpha,
-        unsigned red,unsigned green,unsigned blue,unsigned mode,bool white_texture=false){
+        unsigned red,unsigned green,unsigned blue,unsigned mode,RandomTextureSource source=RandomTextureSource::Color){
     if(size_q16<=0||!alpha)return;
     const int sine=CombatCardMotion::sine(angle),cosine=CombatCardMotion::sine(angle+1024);
     const int half=int(int64_t(size_q16)*((sine<0?-sine:sine)+(cosine<0?-cosine:cosine))/2048);
@@ -10,6 +11,18 @@ static void random_character_particle(Canvas&c,const water_reflection::Texture&t
     const int top=mx(0,(center_y_q16-half)>>16),bottom=mn(c.clip_h,((center_y_q16+half+65535)>>16));
     if(left>=right||top>=bottom)return;
     Canvas layer=c;layer.tint_red=uint8_t(red);layer.tint_green=uint8_t(green);layer.tint_blue=uint8_t(blue);
+    const bool direct=c.opacity==255&&c.brightness==255&&!c.color_matrix&&!c.occlusion&&!c.coverage;
+    const bool white_fast=source==RandomTextureSource::WhiteAlpha&&direct&&mode==presentation::Normal;
+    const bool add_fast=source==RandomTextureSource::OpaqueColor&&direct&&mode==presentation::Add;
+    const uint16_t dot_color=presentation::tint_rgb(0xffff,red,green,blue);
+    uint8_t add_red[32],add_green[64],add_blue[32];
+    if(add_fast){
+        // The source light has opaque alpha. Tint and additive opacity are
+        // independent channel maps, so evaluate each source band once rather
+        // than repeating six divisions at every covered screen pixel.
+        for(unsigned i=0;i<64;++i){add_green[i]=uint8_t(div255(div255(i*green)*alpha));
+            if(i<32){add_red[i]=uint8_t(div255(div255(i*red)*alpha));add_blue[i]=uint8_t(div255(div255(i*blue)*alpha));}}
+    }
     const int du=int(int64_t(cosine)*65536*64/size_q16),dv=int(int64_t(sine)*65536*64/size_q16);
     for(int y=top;y<bottom;++y){
         const int dx=(left<<16)+32768-center_x_q16,dy=(y<<16)+32768-center_y_q16;
@@ -17,7 +30,14 @@ static void random_character_particle(Canvas&c,const water_reflection::Texture&t
         int v=32768+int((int64_t(dy)*cosine-int64_t(dx)*sine)*64/size_q16);
         for(int x=left;x<right;++x,u+=du,v-=dv){
             if(u<0||v<0||u>=65536||v>=65536)continue;
-            const auto p=white_texture?water_reflection::Texel{0xffff,texture.alpha_bilinear(u,v)}:texture.bilinear(u,v);
+            const unsigned at=y*c.pitch+x;
+            if(white_fast){const unsigned amount=div255(texture.alpha_bilinear(u,v)*alpha);
+                if(amount)c.pixels[at]=blend(c.pixels[at],dot_color,amount);continue;}
+            if(add_fast){const uint16_t color=texture.opaque_bilinear(u,v),back=c.pixels[at];
+                c.pixels[at]=uint16_t((mn(31,(back>>11)+add_red[color>>11])<<11)|
+                    (mn(63,((back>>5)&63)+add_green[(color>>5)&63])<<5)|mn(31,(back&31)+add_blue[color&31]));continue;}
+            const auto p=source==RandomTextureSource::WhiteAlpha?water_reflection::Texel{0xffff,texture.alpha_bilinear(u,v)}:
+                source==RandomTextureSource::OpaqueColor?water_reflection::Texel{texture.opaque_bilinear(u,v),255}:texture.bilinear(u,v);
             if(p.alpha)layer.paint(y*c.pitch+x,p.color,div255(p.alpha*alpha),mode);
         }
     }
@@ -67,12 +87,12 @@ static bool random_character_background(Canvas&c,uint32_t clock,uint32_t elapsed
     const int size=int(uint64_t(256*20)*scale*15832249/(4096*1000));
     random_character_particle(c,light,RandomCharacterPresentation::project_q16(1111*1024,false),
         RandomCharacterPresentation::project_q16(-83*1024,true),size,2023,
-        102,171*gray/255,113*gray/255,0,presentation::Add);
+        102,171*gray/255,113*gray/255,0,presentation::Add,RandomTextureSource::OpaqueColor);
     for(unsigned i=0;i<RandomCharacterPresentation::Count;++i){const auto&p=particles.particles[i];
         const unsigned alpha=RandomCharacterPresentation::fade(p.age)*(i<20?35:110)/255;
         const int size=int(uint64_t(256)*p.scale*15832249/(1024*1000));
         random_character_particle(c,dot,RandomCharacterPresentation::project_q16(p.x-107*1024,false),
-            RandomCharacterPresentation::project_q16(p.y+1361*1024,true),size,-int(p.angle),alpha,128,179,69,presentation::Normal,true);
+            RandomCharacterPresentation::project_q16(p.y+1361*1024,true),size,-int(p.angle),alpha,128,179,69,presentation::Normal,RandomTextureSource::WhiteAlpha);
     }
     return true;
 }

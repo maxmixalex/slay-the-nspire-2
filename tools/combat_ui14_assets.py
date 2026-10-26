@@ -18,7 +18,7 @@ from world_scene_assets import (Property, Call, Ref, SceneRenderError, _property
 from world_room_shaders import RoomRenderer, generated_texture, quad_uv, sample_texture, smoothstep
 
 BASE_AUXILIARY = 5156
-AUXILIARY_COUNT = 5264
+AUXILIARY_COUNT = 5265
 AFFLICTIONS = ('bound', 'entangled', 'galvanized', 'hexed', 'tainted', 'ringing', 'smog')
 PERIODS = (4., 40/7, 10., 20., 40/7, 2.5, 20.)
 
@@ -288,6 +288,8 @@ def source_assets(pck, cache):
         for name, size in (('hammer_mark',(40,40)),('impact_circle_smith',(40,40)),('spark_smith',(12,12))):
             path='images/vfx/vfx_smith/'+name+'.png'
             add('smith-'+name,path,load_scene_texture(pack,path).convert('RGBA').resize(size,Image.Resampling.LANCZOS))
+        path='images/vfx/star1.png'
+        add('enchantment-spark',path,load_scene_texture(pack,path).convert('RGBA').resize((16,16),Image.Resampling.LANCZOS))
     finally:
         pack.close()
     if BASE_AUXILIARY+len(rows) != AUXILIARY_COUNT:

@@ -172,7 +172,7 @@ static void card_description_window(Canvas&c,const char*text,const card_face::Re
 }
 // One scene-based card renderer for every presentation size. Individual
 // screens supply instance-aware costs/descriptions, never rearranged art.
-static void render_card_face(Canvas&c,Card card,int x,int y,int w,int h,int fee=-2,int stars=-2,int instance=-1,int deck=-1,const EventCardFacts*facts=nullptr,const char*description=nullptr,bool*description_truncated=nullptr,bool known=true,bool upgrade_preview=false,int description_skip=-1){
+static void render_card_face(Canvas&c,Card card,int x,int y,int w,int h,int fee=-2,int stars=-2,int instance=-1,int deck=-1,const EventCardFacts*facts=nullptr,const char*description=nullptr,bool*description_truncated=nullptr,bool known=true,bool upgrade_preview=false,int description_skip=-1,unsigned omit_text=0,uint8_t*overflow=nullptr){
     auto&a=c.a;if(!facts)facts=event_card_facts(a.game,card,instance,deck);
     const auto type=a.card_face_type(card,instance,deck,facts);
     const unsigned group=card_face::material_group(unsigned(card_rarity(card.kind)));
@@ -198,7 +198,8 @@ static void render_card_face(Canvas&c,Card card,int x,int y,int w,int h,int fee=
     const int title_size=fonts.title;
     const int title_y=l.title.y+mx(0,(l.title.h-title_size-4)/2)-mx(1,h/100);
     Canvas title_label=c;title_label.font_face=uint8_t(source_label_face(a.content.original_label_fonts(),5));
-    title_label.text_fitted(title,l.title.x,title_y,l.title.w,title_size,known&&card.upgraded?rgb(127,255,0):rgb(255,246,226),fonts.minimum,true,true,card_title_outline(card,known));
+    if(!(omit_text&1)){const auto plan=title_label.fitted(title,l.title.x,title_y,l.title.w,title_size+3,title_size,fonts.minimum,known&&card.upgraded?rgb(127,255,0):rgb(255,246,226),true,true,true,false,card_title_outline(card,known));
+        if(overflow&&plan.truncated)*overflow|=1;}
 
     const char*type_text=card_type_label(type,&a.content);Canvas type_label=c;if(fonts.compact)type_label.font_face=uint8_t(source_label_face(a.content.original_label_fonts(),5));
     const int type_size=fonts.type,plaque_h=fonts.compact?mx(type_size+3,l.type.h):mx(11,l.type.h);
@@ -225,9 +226,11 @@ static void render_card_face(Canvas&c,Card card,int x,int y,int w,int h,int fee=
     if(!fonts.compact){const int bottom=l.description.y+l.description.h;
         l.description.y=mx(l.description.y,l.type.y+plaque_h);l.description.h=mx(0,bottom-l.description.y);}
     const int body_size=!known&&fonts.compact?a.content.font_size(card_face::font_pixels(40,w)):fonts.body;
-    if(description_skip>=0)card_description_window(c,description,l.description,body_size,description_skip);
-    else{const auto description_layout=c.paragraph_fitted(description,l.description.x,l.description.y,l.description.w,l.description.h,body_size,White,fonts.body_minimum,true);
-        if(description_truncated)*description_truncated=description_layout.truncated;}
+    if(!(omit_text&2)){
+        if(description_skip>=0)card_description_window(c,description,l.description,body_size,description_skip);
+        else{const auto description_layout=c.paragraph_fitted(description,l.description.x,l.description.y,l.description.w,l.description.h,body_size,White,fonts.body_minimum,true);
+            if(description_truncated)*description_truncated=description_layout.truncated;
+            if(overflow&&description_layout.truncated)*overflow|=2;}}
 
     c.picture(a.content.energy_image(card,!known),l.energy.x,l.energy.y,l.energy.w,l.energy.h);
     const int energy=fee==-2?a.card_offer_cost(card,facts):fee;
@@ -263,7 +266,7 @@ struct SmallCardFaceCache {
     Card card{};
     int portrait=-1,frame=-1,energy_image=-1,energy=0,stars=0;
     CardType type=CardType::Attack;
-    uint8_t width=0,height=0,resource_styles=0,offset_x=0,offset_y=0;
+    uint8_t width=0,height=0,resource_styles=0,offset_x=0,offset_y=0,overflow=0;
     bool star_visible=false,resource_cross=false,valid=false;
     char title[128]{},description[512]{};
     uint16_t background[SmallCardCacheW*SmallCardCacheH]{};
@@ -297,6 +300,15 @@ static bool card_cache_label_fits(Canvas&c,card_face::Rect icon,int value,bool s
 }
 static void invalidate_card_face_cache(){for(auto&entry:small_card_faces)entry.valid=false;}
 static void begin_card_face_frame(){if(++small_card_frame==0){invalidate_card_face_cache();++small_card_frame;}}
+static void card_cache_scrolling_text(Canvas&c,const SmallCardFaceCache&entry,int x,int y){
+    if(!entry.overflow)return;
+    auto l=card_face::layout(x,y,entry.width,entry.height);const auto fonts=card_face_fonts(c,entry.width);
+    if(entry.overflow&1){Canvas label=c;label.font_face=uint8_t(source_label_face(c.a.content.original_label_fonts(),5));
+        const int top=l.title.y+mx(0,(l.title.h-fonts.title-4)/2)-mx(1,entry.height/100);
+        label.text_fitted(entry.title,l.title.x,top,l.title.w,fonts.title,entry.card.upgraded?rgb(127,255,0):rgb(255,246,226),fonts.minimum,true,true,card_title_outline(entry.card,true));}
+    if(entry.overflow&2){if(!fonts.compact){const int bottom=l.description.y+l.description.h;l.description.y=mx(l.description.y,l.type.y+mx(11,l.type.h));l.description.h=mx(0,bottom-l.description.y);}
+        c.paragraph_fitted(entry.description,l.description.x,l.description.y,l.description.w,l.description.h,fonts.body,White,fonts.body_minimum,true);}
+}
 static void draw_card_face(Canvas&c,Card card,int x,int y,int w,int h,int fee=-2,int stars=-2,int instance=-1,int deck=-1,const EventCardFacts*facts=nullptr,const char*description=nullptr,bool*description_truncated=nullptr,bool known=true,bool upgrade_preview=false,bool animated_layers=true){
     // Dynamic borders stay outside the static face cache. A30-frame
     // infection must not remeasure every glyph or rebuild the portrait.
@@ -363,6 +375,7 @@ static void draw_card_face(Canvas&c,Card card,int x,int y,int w,int h,int fee=-2
             slot.seen=small_card_frame;
             for(int yy=0;yy<SmallCardCacheH;++yy)for(int xx=0;xx<SmallCardCacheW;++xx)
                 c.pixels[(top+yy)*c.pitch+left+xx]=slot.pixels[yy*SmallCardCacheW+xx];
+            card_cache_scrolling_text(c,slot,x,y);
             return;
         }
         // A matching face with a changed backdrop may be rebuilt unless
@@ -383,8 +396,18 @@ static void draw_card_face(Canvas&c,Card card,int x,int y,int w,int h,int fee=-2
     card_cache_text_copy(entry->title,title);card_cache_text_copy(entry->description,description);
     for(int yy=0;yy<SmallCardCacheH;++yy)for(int xx=0;xx<SmallCardCacheW;++xx)
         entry->background[yy*SmallCardCacheW+xx]=c.pixels[(top+yy)*c.pitch+left+xx];
-    render_card_face(c,card,x,y,w,h,fee,stars,instance,deck,facts,description,nullptr,known,upgrade_preview);
+    entry->overflow=0;
+    render_card_face(c,card,x,y,w,h,fee,stars,instance,deck,facts,description,nullptr,known,upgrade_preview,-1,0,&entry->overflow);
+    if(entry->overflow){
+        // Cache the original art and short labels once. Overflow alone is
+        // redrawn each frame, preserving its visible-label clock without
+        // re-decoding or compositing the complete card while it scrolls.
+        for(int yy=0;yy<SmallCardCacheH;++yy)for(int xx=0;xx<SmallCardCacheW;++xx)
+            c.pixels[(top+yy)*c.pitch+left+xx]=entry->background[yy*SmallCardCacheW+xx];
+        render_card_face(c,card,x,y,w,h,fee,stars,instance,deck,facts,description,nullptr,known,upgrade_preview,-1,entry->overflow);
+    }
     for(int yy=0;yy<SmallCardCacheH;++yy)for(int xx=0;xx<SmallCardCacheW;++xx)
         entry->pixels[yy*SmallCardCacheW+xx]=c.pixels[(top+yy)*c.pitch+left+xx];
     entry->valid=a.content.healthy();
+    card_cache_scrolling_text(c,*entry,x,y);
 }

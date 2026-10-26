@@ -1,4 +1,4 @@
-#include "app.hpp"
+#include "../src/app.cpp"
 #include "content_fixture.hpp"
 #include "rich_text.hpp"
 #include <cstdio>
@@ -46,7 +46,7 @@ static HitRegion find(HitKind kind,int value){app.render();for(int i=app.hit_cou
 static bool exists(HitKind kind,int value){app.render();for(unsigned i=0;i<app.hit_count;++i)if(app.hits[i].kind==kind&&app.hits[i].value==value)return true;return false;}
 static void click(HitKind kind,int value){const auto hit=find(kind,value);CHECK(hit.enabled);app.pointer_move(hit.x+hit.w/2,hit.y+hit.h/2);app.pointer_button(true);app.pointer_button(false);}
 static void press(uint16_t code){CHECK(app.physical_key(code,true));CHECK(app.physical_key(code,false));}
-static void capture(const char*name){if(!captures)return;app.render();FILE*f=std::fopen((std::string(captures)+"/"+name+".ppm").c_str(),"wb");CHECK(f);std::fprintf(f,"P6\n320 240\n255\n");
+static void capture(const char*name,bool render=true){if(!captures)return;if(render)app.render();FILE*f=std::fopen((std::string(captures)+"/"+name+".ppm").c_str(),"wb");CHECK(f);std::fprintf(f,"P6\n320 240\n255\n");
  for(uint16_t pixel:app.pixels){uint8_t rgb[]={uint8_t((pixel>>11)*255/31),uint8_t(((pixel>>5)&63)*255/63),uint8_t((pixel&31)*255/31)};CHECK(std::fwrite(rgb,1,3,f)==3);}CHECK(!std::fclose(f));}
 static void retired_services(){
  snapshot();CHECK(!exists(HitKind::AuxiliaryControl,AuxiliaryOpenPatchNotes));
@@ -66,6 +66,12 @@ static void settings_entries(){
  app.input(Key::Back);CHECK(!app.auxiliary.closing);advance(2000);CHECK(app.auxiliary.credits_position>0);capture("credits-start");
  const int before_scroll=app.auxiliary.credits_target;app.pointer_scroll(2);CHECK(app.auxiliary.credits_target>before_scroll);
  advance(100);app.auxiliary.credits_position=app.auxiliary.credits_target=560*256;capture("credits-roles");
+ // The original credits keep scrolling past their final image; they only
+ // close after a user action. Neither end-of-content nor a long clock may
+ // replace that behavior with an automatic return to Settings.
+ app.auxiliary.credits_position=app.auxiliary.credits_target=50000*256;advance(3000);
+ CHECK(app.auxiliary.screen==AuxiliaryScreen::Credits&&!app.auxiliary.closing);unchanged();
+ if(captures){Canvas component{app};component.rect(0,0,320,240,0);int y=60;auxiliary_port_credit(component,y);capture("credits-port-major-section",false);}
  app.input(Key::Back);CHECK(app.auxiliary.closing);advance(999);CHECK(app.auxiliary.screen==AuxiliaryScreen::Credits);advance(1);
  CHECK(app.auxiliary.screen==AuxiliaryScreen::None&&app.settings_open&&app.settings_top==top&&app.settings_item==9);unchanged();
  app.settings_action(UiAction::SettingsFeedback);CHECK(app.auxiliary.screen==AuxiliaryScreen::None&&!exports);

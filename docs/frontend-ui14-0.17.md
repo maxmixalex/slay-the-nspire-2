@@ -1,0 +1,134 @@
+# UI14 front-end corrections
+
+Reference: the owner's pinned **v0.111.0 / 41cef1ea** assembly and PCK.
+This report describes the front-end work, separate from combat, rooms, and
+the new installation layout. Original source data and captured images remain
+private. Pixel-oracle counts are assertions, not feature-coverage percentages.
+
+## Source behavior and changes
+
+### Credits
+
+`NCreditsScreen._Process` continuously moves its target upward at the authored
+speed and eases the content toward that target. It has no end-of-content close
+condition. The original waits for a click or Back after its initial close lock,
+then fades out. The port keeps that behavior rather than returning to Settings
+automatically after the final image.
+
+The Nspire port credit now uses the same green major-section style as the
+source localization/trailer headings, with the bold section face. The author
+line remains a separate cream-colored line at the Trailer → FMOD boundary.
+
+### Bestiary and scrolling controls
+
+The right catalog measures each localized label and reserves a compact 14px
+one-line row or the required two-line height. Region headings have their own
+18px band. Row offsets remain in the shared source coordinate system, and the
+selection arrow targets the measured row center. The action list on the left
+also measures its labels instead of separating every entry by the previous
+fixed 26px pitch. Every source move remains reachable through the same paging
+and keyboard actions.
+
+`native_scrollbar_grabber` supplies the same centered 1.15× hover/press scale
+and 500ms exponential recovery to deck/collection grids, bestiary, progress,
+settings, run setup, room text/rewards, character descriptions, and the run-end
+summary. The settings language thumb keeps its own original small train
+texture and uses the same motion. Its track, drag range and hit targets retain
+their existing meaning. The separate FTUE reader follows this motion in the
+room/text follow-up.
+
+### Deck controls and run setup
+
+The deck's upgrade control occupies a reserved row above the footer, to the
+right of the visible Back tab. Its card grid ends above that row. The sorter
+labels use the source bold face, gold ink and separate dark shadow; their full
+localized strings use the shared smooth overflow painter.
+
+Custom-run rich text now clips long ascension descriptions to the actual
+description rectangle and scrolls by pixels. Short text retains its original
+vertical centering. The fallback confirmation paragraph uses the same complete
+bounded-text path instead of showing just its first three lines.
+
+### Random selection and departures
+
+The random portrait uses its source 132:196 aspect ratio. The random background
+retains the complete water material, its full gradient/noise textures, the
+authored light, and all 40 decorative particles. Its renderer now shares the
+five noise rows' horizontal interpolation across the 240 display rows and
+precomputes their 256 possible displacement values per frame. RGB565 bilinear
+interpolation uses separated packed channels with the same rounding.
+
+The original light is opaque and the original dot is RGB white. Dedicated
+color-only and alpha-only sampling avoids fetching/reconstructing unused
+channels. On the ordinary opaque display, the light's tint and additive alpha
+are small precomputed channel maps, and the dot's tint is constant. Parent
+modulation retains the general painter path. The converter rejects changes to
+either source texture contract. No emitter, sprite, source texel, or animation
+clock was removed to make the background faster.
+
+`NMainMenu.OnContinueButtonPressedAsync` uses the saved character's transition
+material and an 800ms FadeOut before loading the saved room, then FadeIn. The
+port's Continue action now shares the departure presentation used by Embark.
+The resumed snapshot never passes through the new-run initializer. Inputs are
+locked throughout the transition; the saved game and RNG remain unchanged.
+The source Regent and Defect materials both reference Ironclad's transition
+image, so three source masks correctly cover all five characters.
+
+The transition also restores the parallel quadratic black fade during the
+texture wipe and the cubic fade-in. Indexed masks use a small threshold table;
+the ordinary frame is shaded directly in RGB565. The mask is prepared before
+the timed wipe. When a continued combat needs pose preparation, integration
+holds the fade-in clock until that preparation finishes.
+
+### Defeat and summary
+
+The main action is 112px wide, and score rows use a centered 216px column with
+22px row bodies and 24px pitch. The death title is centered on the ribbon's
+actual middle rather than its lower edge. Score icons are rebuilt at 16×18,
+and badges/discovery icons at 24×24, from their original source images; no
+rendered icon needs to upscale the previous 8–13px payload. The same existing
+31 auxiliary IDs are replaced, preserving no obsolete resource variant.
+
+The discovery tooltip's first-ten-items rule and literal `....` are original
+`NRunSummary` content: its method takes ten titles and appends that marker when
+the category has more. This is separate from the port's former label clipping.
+
+## Executed validation
+
+The second source checkpoint is
+`8c5593f273d5bf8778d00fe329b4e09d4f7b7246`. Its frozen source was built using
+Clang 18 and Ninja. The focused synthetic/native gates passed for departure,
+random shader/particles, bestiary, frontend save lifecycle, game over, input,
+button motion, and credits. The first CTest launch reported one input-test
+executable without its execute bit; restoring the locally generated ELF's
+mode and rerunning that test passed without a source change.
+
+Owner-resource gates on that checkpoint passed:
+
+| Gate | Result |
+| --- | --- |
+| ENG and ZHS bestiary, real glyphs and supplemental actors | Passed; actual captures inspected for catalog/action spacing and arrow placement |
+| Random material and all emitters | Passed independent floating-point shader samples at four full-frame clocks, repeated-frame checks and unchanged canonical save |
+| ENG frontend | Passed actual title/settings/character paths and guarded Continue/save lifecycle |
+| ZHS credits | Passed actual text, close lock, fade timing and return-to-settings flow |
+
+The initial owner-resource game-over oracle excluded the old title rectangle
+beginning at y+9. It correctly rejected pixels from the newly centered title,
+whose label now starts at y+5. Its exclusion rectangle was updated to the new
+label plus its one-pixel outline while retaining source checks over the top
+and both ribbon wings. That corrected gate and the new higher-resolution icon
+pack still need execution after their next source/resource checkpoint.
+
+The summary focus test also contained a pre-existing fixture identity error:
+it changed only the history record's ascension, so the renderer selected the
+shorter archived run. The corrected fixture preserves the actual run identity,
+constructs a genuinely long score/badge display, and asserts which record the
+renderer uses before testing scroll/reveal behavior.
+
+The third full build at
+`80bf6090116b7380825fab54e52ba72b99404746` stopped on the combat module's
+`sizeof(CombatCardMotion)` bound (7888 versus 6144 bytes). No third-stage
+runtime pass is claimed here. The final additive/white-particle fast paths,
+source end-of-credits test, exact deck hit separation test and corrected
+game-over gates remain scheduled for the next build. Native correctness and
+host timing do not establish Firebird or physical-calculator frame rates.

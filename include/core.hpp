@@ -284,6 +284,7 @@ struct CoreObserver {
     void(*on_run_fact)(void*,const State&,unsigned,unsigned)=nullptr;
     void(*on_history)(void*,const State&,const RunHistoryNotice&)=nullptr;
     void(*on_orb)(void*,const State&,const CoreOrbNotice&)=nullptr;
+    void(*on_deck_enchanted)(void*,const State&,int)=nullptr;
 };
 enum class CoreRunFact : uint8_t { ShopGoldSpent,RestChoice,DoomActivated,ArchitectAttack };
 CoreObserver set_core_observer(CoreObserver);

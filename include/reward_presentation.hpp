@@ -76,6 +76,19 @@ struct RewardPresentation {
    if(!alive(now)||uint32_t(now-start)>400u){count=0;start=now;}if(count<Capacity)cards[count++]={card,facts,int16_t(deck)};
   }
  } upgrades{};
+ struct Enchants {
+  struct CardView {EventDeckSnapshot model{};int16_t energy=0,stars=0,deck=-1;uint32_t start=0;bool launched=false;};
+  static constexpr unsigned Capacity=MaxDeck,Columns=4;
+  CardView cards[Capacity]{};uint16_t count=0;uint32_t batch=0;
+  bool alive(uint32_t now)const{return count&&int32_t(now-cards[count-1].start)<2600;}
+  void add(const EventDeckSnapshot&model,int energy,int stars,int deck,uint32_t now){
+   if(!alive(now)){count=0;batch=now;}if(count==Capacity)return;
+   // Source effects can run in parallel. Four readable LCD cards form a
+   // page; a mass-enchantment keeps every committed card in bounded waves.
+   const uint32_t start=now+(count/Columns)*2100u;
+   cards[count++]={model,int16_t(energy),int16_t(stars),int16_t(deck),start,false};
+  }
+ } enchants{};
  uint32_t serial=0,window_start=0,window_key=0,empty_start=0;
  unsigned window_from=0;
  uint8_t window_mode=0;

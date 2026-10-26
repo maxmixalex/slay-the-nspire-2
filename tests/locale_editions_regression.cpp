@@ -104,7 +104,7 @@ int main(int argc,char**argv){
     CHECK(locale_language_count(mask)==16);for(unsigned i=0;i<16;++i)CHECK(locale_language_at(mask,i)==i+1);
     CHECK(!locale_language_id("")&&!locale_language_id("e")&&!locale_language_id("en")&&!locale_language_id("english"));
     if(argc==1){std::printf("locale registry: %u checks passed\n",checks);return 0;}
-    CHECK(argc==2||argc==3);const std::string directory=argv[1],selected=argc==3?std::string(",")+argv[2]+",":"";const auto common=file(directory+"/nSpire2.common.tns");CHECK(!common.empty());
+    CHECK(argc==2||argc==3);const std::string directory=argv[1],selected=argc==3?std::string(",")+argv[2]+",":"";const auto common=file(directory+"/nSpire2.dat.tns");CHECK(!common.empty());
     for(unsigned id=1;id<=LocaleLanguageCount;++id){const auto&info=locale_language_info(id);if(!selected.empty()&&selected.find(std::string(",")+info.code+",")==std::string::npos)continue;
         const auto language=file(directory+"/"+info.file);CHECK(!language.empty());
         SplitResourceSource split;CHECK(split.open(ResourceSource::memory(common.data(),common.size()),ResourceSource::memory(language.data(),language.size()),ResourceLanguage(id)));

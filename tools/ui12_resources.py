@@ -76,11 +76,14 @@ def replace_images(data,replacements):
     header=tiles.GLOBAL.unpack_from(data,source.base_end);table,cost=header[9],header[14]
     for i,(offset,length,*_) in enumerate(tiled.groups):
         at=copy(offset-32,length+32);struct.pack_into('<II',out,table+i*8,at,length+32)
-    hashes={}
+    hashes={};replacement_payloads={}
     for i,(offset,w,h,fmt,length) in enumerate(source.images):
         if i in replacements:
             image=replacements[i].convert('RGBA');row,payload=stored_image(image,sparse=True)
-            w,h,fmt,length=image.width,image.height,row['format'],len(payload);at=add(payload)
+            w,h,fmt,length=image.width,image.height,row['format'],len(payload)
+            key=w,h,fmt,payload
+            if key not in replacement_payloads:replacement_payloads[key]=add(payload)
+            at=replacement_payloads[key]
             decoded=struct.unpack_from('<I',payload,1)[0] if fmt==5 else len(payload)
             out[cost+i]=(decoded+4095)//4096;hashes[str(i)]=row['raw_sha256']
         else:at=offset if fmt==6 else group_slice(offset) if fmt==7 else copy(offset,length)

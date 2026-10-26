@@ -137,6 +137,9 @@ def source_assets(pck, cache, fastnoise_header=None):
         rows = []
         for i, (key, image, source) in enumerate(specs):
             source_size = list(image.size)
+            if i == 2:
+                tiles.require(image.getchannel('A').getextrema() == (255, 255),
+                              'Random light texture is no longer opaque; update color-only sampler')
             if i == 3:
                 tiles.require(all(channel.getextrema() == (255, 255) for channel in image.split()[:3]),
                               'Random dot texture is no longer RGB white; update alpha-only sampler')

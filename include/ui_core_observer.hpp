@@ -18,7 +18,8 @@ struct UiCoreObserver {
  static void receive_run_fact(void*context,const State&s,unsigned kind,unsigned value){auto*a=static_cast<App*>(context);if(&s==&a->game)a->observe_run_fact(s,kind,value);}
  static void receive_history(void*context,const State&s,const RunHistoryNotice&notice){auto*a=static_cast<App*>(context);if(&s==&a->game){a->observe_history(s,notice);a->observe_ftue_history(notice);a->observe_card_transform(s,notice);}}
  static void receive_orb(void*context,const State&s,const CoreOrbNotice&notice){auto*a=static_cast<App*>(context);if(&s==&a->game)a->observe_orb_activation(s,notice);}
- explicit UiCoreObserver(App&a):app(a),previous(set_core_observer({&a,receive,receive_animation,receive_effect,before_effect,receive_damage,receive_power_flash,receive_deck_removing,receive_enemy_spawned,receive_run_fact,receive_history,receive_orb})),was_combat(combat_phase(a.game.phase)),
+ static void receive_enchantment(void*context,const State&s,int index){auto*a=static_cast<App*>(context);if(&s==&a->game)a->observe_card_enchanted(s,index);}
+ explicit UiCoreObserver(App&a):app(a),previous(set_core_observer({&a,receive,receive_animation,receive_effect,before_effect,receive_damage,receive_power_flash,receive_deck_removing,receive_enemy_spawned,receive_run_fact,receive_history,receive_orb,receive_enchantment})),was_combat(combat_phase(a.game.phase)),
   room_seed(a.game.world.run_seed),window_generation(a.map_window_generation),room_act(a.game.world.act_index),room_point(a.game.world.current_point),room_open(a.game.world.room_open),acquisition(a.reward_acquisition_snapshot()){app.sync_combat_feedback();app.sync_enemy_feedback();app.sync_orb_presentation();}
  ~UiCoreObserver(){
   set_core_observer(previous);app.finish_combat_feedback();app.sync_combat_feedback();app.sync_enemy_feedback();app.sync_turn_banner();app.sync_treasure_presentation();app.sync_camp_presentation();

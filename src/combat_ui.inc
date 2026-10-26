@@ -486,7 +486,7 @@ static void combat_screen(Canvas&c){
     int selected=mn(mx(a.cursor,0),mx(0,hand.count-1));
     const bool focused=a.hand_focus&&a.hand_can_focus();
     const int held_card=a.selected_hand_card();
-    if(held_card<0)selected_hand_reader.instance=-1;
+    if(held_card<0&&(!focused||!hand.count))selected_hand_reader.instance=-1;
     if(ui_cards_bound(a))a.combat_cards.set_focus(focused&&hand.count?hand.ids[selected]:-1);
     // Hitboxes use the same live transformed frame as painting, including
     // hover-neighbour motion and interpolation after a card leaves the hand.
@@ -505,7 +505,7 @@ static void combat_screen(Canvas&c){
     if(hand.count){
         if(focused&&hand.ids[selected]!=held_card){
             const auto pose=visible_hand_pose(unsigned(selected),true);
-            draw_hand_tile(c,hand_tile(c,hand.ids[selected]),pose,true,255,0,true);
+            draw_hand_tile(c,held_card<0?selected_hand_tile(c,hand.ids[selected]):hand_tile(c,hand.ids[selected]),pose,true,255,0,true);
             combat_hand_index(c,unsigned(selected),pose);
             hand_hit(pose,hand.ids[selected],!a.combat_actions_locked());
         }

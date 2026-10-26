@@ -19,6 +19,7 @@
 #include "event_assets.hpp"
 #include "assets.hpp"
 #include "combat_ui14_resources.hpp"
+#include "merchant_ui14_resources.hpp"
 #include "ui_assets.hpp"
 #include "native_ui_assets.hpp"
 #include "locale.hpp"
@@ -182,7 +183,7 @@ public:
             ui_count_==ArchitectUi13AuxiliaryCount||ui_count_==ArchitectAttackUi13AuxiliaryCount||
             ui_count_==DoomUi13AuxiliaryCount||ui_count_==RandomCharacterUi13AuxiliaryCount||
             ui_count_==FakeMerchantBaseUi13AuxiliaryCount||ui_count_==FakeMerchantUi13AuxiliaryCount||
-            ui_count_==CombatUi14AuxiliaryCount;
+            ui_count_==CombatUi14AuxiliaryCount||ui_count_==MerchantUi14AuxiliaryCount;
     }
     bool has_sleeping_vfx_assets()const{return version_>=Ui12ContentVersion&&(ui_count_==SleepingVfxAuxiliaryCount||has_ui13_assets());}
     bool has_phobia_swarm_assets()const{return version_>=Ui12ContentVersion&&(ui_count_==PhobiaSwarmAuxiliaryCount||has_sleeping_vfx_assets());}
@@ -336,6 +337,7 @@ struct App {
     void finish_reward_acquisition(const RewardAcquisitionSnapshot&);
     void observe_deck_removing(const State&,int index);
     void observe_card_transform(const State&,const RunHistoryNotice&);
+    void observe_card_enchanted(const State&,int index);
     void sync_reward_presentation();
     bool card_reward_active()const;
     bool reward_list_interactive()const;

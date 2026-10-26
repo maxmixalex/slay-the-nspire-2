@@ -8,115 +8,47 @@ Native TI-Nspire Ndless adaptation of Slay the Spire 2. Reference: the owner's *
 
 The original three-act route now drives the playable world: Overgrowth or Underdocks, then Hive and Glory, with original regional room queues, encounters, events, ancients and saved map history. The five character/card/potion foundation is retained. There are **558 card models**, including the 61 appended event/curse dependencies, **64 potions**, a **297-model world relic registry** and **109 enemy IDs** including compatibility/display entries. Those are model counts, not a claim that every interaction has original-game differential coverage.
 
-### UI12 calculator release — 2026-10-25
+### Current calculator installation
 
-The interrupted workspace has been recovered, the user's UI/input feedback is
-integrated, and verified source is synchronized to `main`. The deliverable is
-the ordinary Ndless calculator launcher with shared artwork and independently
-installed languages. Runtime: `9398633d8fd715c008560cc038f61d8f85c98466`.
+The UI14 working source uses the following layout. Only the launcher stays at
+installation root; resources are read from `data` and every mutable file is
+written under `state`. The launcher creates `state` when it is absent.
 
-| Release property | Verified value |
+| Path | Purpose |
 | --- | --- |
-| Default installed files | 69,514,501 bytes: launcher + common + English + Chinese |
-| Launcher allocation | 20,363,472 bytes; unchanged 24 MiB ceiling |
-| Locales | All 16 original editions; 14 are an optional separate archive |
-| Regression suites | 135 complete registered native suites; 310 Python conversion/packaging tests |
-| Device acceptance | Ordinary Firebird/Ndless startup, actual battles and rewards, save/Continue and return to OS |
+| `nSpire2.tns` | Ndless launcher; developer console is always included |
+| `data/nSpire2.dat.tns` | Shared artwork and animation |
+| `data/nSpire2.eng.dat.tns` | English text, fonts and directories |
+| `data/nSpire2.zhs.dat.tns` | Simplified Chinese text, fonts and directories |
+| `data/nSpire2.<locale>.dat.tns` | Optional original language editions |
+| `state/nSpire2.sav.tns` | Current run in the first profile |
+| `state/` | Other profiles, progress, preferences, backups and temporary files |
 
-The [UI12 feedback matrix](docs/ui12-lcd-followup-0.17.md) covers typography,
-original controls/scrollbars, credits, title, collections, Back-button clearance,
-character selection, rooms, map, combat, rewards, merchant and the Flag-key typed
-console. Startup/SkipIntroLogo, sleep/swarm effects and source-timed camera
-triggers close additional retained feature differences. Selected long hand
-cards now scroll their body without moving their title, cost or neighbours.
-Calculator defaults use the physical touchpad and surrounding keys; digits
-1–9/0 select hand slots directly.
+Install the launcher and desired language files from the same build. Select an
+installed language in Settings, and select one of three independent profiles
+using the top-left profile control. There is no old-filename search, resource
+fallback or automatic import from an earlier unpublished directory layout.
 
-The final follow-up restores Architect's existing original idle/hurt/attack
-actors, first-dialogue waits, original-position terminal death and readable
-English/Chinese dialogue with its authored next labels. Five characters in
-Normal/Fast mode pass actual-resource checks in both default languages. The
-actor work adds no resources or persistent state. Empty merchant preparation
-canvases also stop before invisible glyph-span raster work; this optimization
-does not carry a new measured frame-rate claim.
+Touchpad edges navigate and the centre clicks. Digits 1–9 and 0 select all ten
+hand slots. Enter aims/confirms, Esc returns/pauses, Menu ends the turn, Tab
+opens the map, Doc opens the deck, and Flag opens the typed developer console.
+The console is part of every ordinary build; no compile flag or alternate
+launcher is required. Both input banks are remappable in Settings.
 
-The closed matched merchant fixture measured a 23.23% lower mean frame interval
-than UI11 N, but its maximum cold frame increased from 2,387.054 to 2,703.094 ms.
-Those are emulator protocol measurements, not physical-device FPS or an end to
-cold stalls. The ordinary run and the final launcher receipt have separate
-checkpoints. Exact sizes, hashes, test identities and exclusions are in the
-[release validation record](docs/validation-ui12-0.17.json).
+The first launch plays the sampled original studio logo. Confirm/Cancel/click
+skips it; Settings can remember Skip Intro Logo. New runs and Continue share
+the original character transition. Credits keep scrolling until Back/click;
+completed rewards wait for Proceed before opening the map.
 
-Install `nSpire2.tns`, `nSpire2.common.tns` and the desired language files together.
-The default pair is `nSpire2.eng.tns` / `nSpire2.zhs.tns`. Update these as a matched
-set while preserving all saves/progress/settings/profile files. The first launch
-plays the sampled original studio logo; Select/Cancel/click skips it, and
-Settings can remember Skip Intro Logo. Flag opens the normal typed console.
+Resources are read and decoded on demand. Startup does not scan full files for
+integrity hashes or CRCs. The runtime retains the bounds and format checks
+needed to load and render the requested content. Original assets remain private.
 
-Full Ancient actors retain the user's storage exception. Dense GPU materials,
-HDR and exact desktop glyph rasterization remain bounded CPU/LCD adaptations;
-no blanket source-pixel equality or 95% restoration score is asserted. Original
-assets stay out of this public repository.
-
-### Historical UI8 development
-
-
-UI8 replaces the retired startup language page, expedition setup and potion
-destination chooser with the original navigation and acquisition flow. The
-current source includes original-scale merchant/map composition, Standard /
-Custom / Daily setup, real two-bank key rebinding, source hand/orb/creature
-geometry, continuous loot/card selection, Crystal Sphere and Ancient dialogue,
-run history, profiles, credits, patch notes and local feedback export. The
-integrated candidate also repairs actual card typography, unavailable-size
-blank text and leaked rich-text markup, and implements solo score/badges and
-discoveries from observed run facts.
-
-The current source-to-UI ledger is
-[the UI8 source audit](docs/ui8-source-ui-audit-0.17.json). It distinguishes
-implemented behavior, unavailable historical facts, original hidden controls,
-scope exclusions and remaining visual differences. The path scan covers the
-supplied C# and scene inventory; it does not turn file or test counts into a
-restoration percentage. Module evidence is recorded in
-[rewards](docs/rewards-ui8-0.17.md),
-[modes and input](docs/ui8-input-and-modes-0.17.md),
-[powers](docs/power-order-ui8-0.17.md),
-[auxiliary screens](docs/auxiliary-ui8-0.17.md), and
-[performance/storage](docs/performance-ui8-0.17.md).
-
-The UI8 resource extension is **NSP2/28**. One launcher can use one shared
-art/animation file and either or both language files:
-
-| File | Purpose |
-| --- | --- |
-| `nSpire2.tns` | Ndless launcher |
-| `nSpire2.common.tns` | Shared artwork and animations |
-| `nSpire2.eng.tns` | English text, glyphs and directories |
-| `nSpire2.zhs.tns` | Chinese text, glyphs and directories |
-
-Install these files together in one calculator directory. Startup goes directly
-to the game menu. With both languages installed, choose the language in the
-main menu's **Settings**; subsequent launches remember it. There is no separate
-startup language screen. Both languages share **v17** gameplay saves, with
-readers for historical v3–v16 saves. All startup stages and
-resource errors have Chinese and English text. See
-[platform-languages.md](docs/platform-languages.md) for browser and native hosts,
-legacy full-pack loading and exact filename rules.
-
-Exit the game normally and keep a backup of `nSpire2.sav.tns` when upgrading.
-TI OS can require temporary space for both copies while replacing the large
-common file. If it rejects the transfer for insufficient space, remove only
-the old `nSpire2.common.tns` before transferring the new common file, then
-finish updating the launcher and both installed locale files. Keep the save
-and language preference files. When migrating from a complete pack with too
-little free space, first back up the old `nSpire2.nsp.tns` to a computer and
-move it off the calculator, then transfer all required new files before launch.
-Otherwise, after confirming the split installation works,
-the old complete `nSpire2.nsp.tns` resource file can be moved out to reclaim its
-space; it is not needed alongside the common and locale files.
-Startup reads the format header, resident directories and language marker.
-Image, glyph and string payloads are decoded when used. Whole-pack integrity
-hashing, integrity-only CRC and eager resource-wide validation are removed;
-the actual ranges and format rules required for decoding remain.
+UI14 validation and exact checkpoints are recorded in
+[WORK_STATE.md](docs/WORK_STATE.md). The current user feedback supersedes earlier
+UI13 layout and performance acceptance. Completed UI12/UI13 results remain
+historical records in [UI12](docs/validation-ui12-0.17.json) and
+[UI13](docs/validation-ui13-0.17.json), with their original source identities.
 
 ### Historical UI3 measurements and delivery
 

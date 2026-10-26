@@ -322,9 +322,11 @@ static void blades_and_generation(){
  auto s=fight(SovereignBlade);cast(s,RegentSeekingEdge);cast(s,RegentConqueror);cast(s,RegentParry);cast(s,RegentSwordSage);
  CHECK(s.expansion.blade_damage[0]==20);s.strength=2;s.dexterity=3;s.vigor=4;act(s);CHECK(s.enemies[0].hp==24&&s.enemies[1].hp==72&&s.block==26&&!s.vigor);ready(s);
 
- scenario="exhausted swords excluded until summoned";auto f=fight(RegentTheSmith);int old=add(f,SovereignBlade,1,Zone::Exhaust);f.expansion.blade_damage[old]=41;act(f);
- CHECK(f.expansion.blade_damage[old]==41&&count_kind(f,SovereignBlade,Zone::Hand)==1&&f.regent.cards_created==1);int fresh=f.hand.ids[0];CHECK(f.expansion.blade_damage[fresh]==40);
- cast(f,RegentSummonForth);CHECK(f.zones[old]==Zone::Hand&&f.expansion.blade_damage[old]==49&&f.expansion.blade_damage[fresh]==48&&f.regent.cards_created==1);ready(f);
+ scenario="Forge strengthens exhausted swords while creating a usable sword";auto f=fight(RegentTheSmith);int old=add(f,SovereignBlade,1,Zone::Exhaust);f.expansion.blade_damage[old]=41;act(f);
+ // ForgeCmd.IncreaseSovereignBladeDamage(includeExhausted:true) is separate
+ // from the non-exhausted search that decides whether a new blade is needed.
+ CHECK(f.expansion.blade_damage[old]==71&&count_kind(f,SovereignBlade,Zone::Hand)==1&&f.regent.cards_created==1);int fresh=f.hand.ids[0];CHECK(f.expansion.blade_damage[fresh]==40);
+ cast(f,RegentSummonForth);CHECK(f.zones[old]==Zone::Hand&&f.expansion.blade_damage[old]==79&&f.expansion.blade_damage[fresh]==48&&f.regent.cards_created==1);ready(f);
 
  scenario="generation powers and transformations";active_kind=RegentGuards;auto g=fight(RegentGuards,1);cast(g,RegentArsenal);cast(g,RegentPillarOfCreation,1);g.dexterity=9;
  int a=add(g,RegentKinglyPunch),b=add(g,RegentKinglyKick);g.regent.punch_damage[a]=11;g.regent.kick_discount[b]=3;g.expansion.replay[a]=2;

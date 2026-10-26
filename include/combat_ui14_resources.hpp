@@ -9,7 +9,7 @@ enum CombatUi14Image : unsigned {
  I14_AfflictionFrames=8,I14_AfflictionCount=7,
  I14_SovereignBlade=I14_Afflictions+I14_AfflictionFrames*I14_AfflictionCount,
  I14_SovereignBladeCount=3,I14_SmithHammer=I14_SovereignBlade+I14_SovereignBladeCount,
- I14_SmithImpact,I14_SmithSpark,CombatUi14AuxiliaryCount
+ I14_SmithImpact,I14_SmithSpark,I14_EnchantSpark,CombatUi14AuxiliaryCount
 };
 // Full original infection sequence is15fps. Shader scenes retain their
 // original time units in eight sampled phases; ringing has a2.5s period.

@@ -5,6 +5,11 @@ static CardTransformPresentation::Face transform_card_snapshot(const App&a,const
  out.model={s.deck[index],s.event_cards.deck[index],s.defect.genetic_deck[index],s.necro.scythe_deck[index]};
  out.energy=int16_t(a.card_offer_cost(out.model.card,&out.model.facts));out.stars=int16_t(card_star_cost(s,out.model.card));return out;
 }
+void App::observe_card_enchanted(const State&s,int index){
+ if(&s!=&game||index<0||index>=s.deck_count)return;
+ const auto face=transform_card_snapshot(*this,s,index);
+ reward_presentation.enchants.add(face.model,face.energy,face.stars,index,map_clock_ms);
+}
 void App::observe_deck_removing(const State&s,int index){
  // The picker already captures its selected card across reset_presentation.
  // Direct event/relic removals bypass that picker but use the same original

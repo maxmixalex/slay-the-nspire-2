@@ -61,6 +61,36 @@ control through the same opening scale, including its approximately
   focus, and preserve the focused-card draw order. The lower card row moves
   four pixels down; prices and hit regions follow the same layout.
 
+## Closed-merchant frame representation
+
+The ten regular merchant clips at directory indexes 1695 through 1704 keep
+their complete 1,817-frame source catalog, dimensions, pivots, frame order
+and clocks. The UI13 pack stored these as full tiled frames. In particular,
+the 145-frame bottom layer repeatedly included identical room pixels, and
+new frames could require several compressed tile groups before being drawn.
+
+`merchant_ui14_assets.py` decodes the owner's existing logical pack and
+compares every frame of each clip. A pixel becomes static only if its
+RGB565 color and alpha are identical in all frames and its alpha is nonzero.
+All other pixels stay in that frame's moving plane. The static layer and
+every moving layer have disjoint coverage, including partially transparent
+edges, so drawing them consecutively performs exactly one source-over
+operation at every visible pixel. The renderer uses the original clip pivot
+for both. No new framebuffer, interpolation, frame skipping or resampling is
+involved.
+
+The ten static layers occupy auxiliary IDs 5265 through 5274. Moving layers
+replace their existing image IDs as independent sparse/LZ4 images. Every
+output plane is independently decoded again and recomposed against the
+original RGB565 and alpha planes; the private manifest contains per-clip
+pixel identities and encoded/decoded storage counts. The release converter
+can then reclaim tile pixels no longer referenced by any live image.
+
+The public small-pixel tests cover opaque black invariants, partial alpha,
+changing alpha, disjoint composition, independent encoded readback and
+rejection of altered frame dimensions. The actual private conversion and
+Firebird cold/sustained measurements remain separate acceptance gates.
+
 ## Validation scope
 
 The terminal reward regression collects the real first encounter's rewards

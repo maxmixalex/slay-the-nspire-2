@@ -53,7 +53,11 @@ static void fake_merchant_welcome(Canvas&c){
  layer.bold_face=5;layer.opacity=uint8_t(div255(layer.opacity*230));
  const auto metric=[&](const RichChar&ch,int px){return layer.text_metric(ch,px);};
  auto plan=native_room_compact_plan(layer,text,53,25);
- const int overflow=mx(0,plan.total*plan.step+2-25),scroll=text_overflow_offset(frame.age,overflow,12),first=scroll/plan.step;
+ const int overflow=mx(0,plan.total*plan.step+2-25);
+ // The original bubble starts fading at3.5s. Longer locales must reach
+ // their final line before that, without extending the source lifetime.
+ const unsigned speed=unsigned(mx(12,(overflow*1000+1699)/1700));
+ const int scroll=text_overflow_offset(frame.age,overflow,speed),first=scroll/plan.step;
  // Keep the original per-glyph fly-in and root rotation, but expose the
  // complete message through its own rotated text viewport instead of
  // replacing the last visible line with an ellipsis.

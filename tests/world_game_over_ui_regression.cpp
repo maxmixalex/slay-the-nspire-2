@@ -112,7 +112,9 @@ static void settled_layer_pixels(){
  };
  // The quote can rise across the banner's bottom rows during its own tween.
  // Limit this oracle to the stable top/wings above that independently drawn text.
- verify(I6_CommonBanner,BannerX,a.game_over_presentation.banner_y(a.map_clock_ms),BannerWidth,BannerHeight,10,9,BannerWidth-20,BannerHeight,255,100);
+ // The corrected title occupies y+5..25, centered on the ribbon. Include
+ // its one-pixel outline while still checking the top and both source wings.
+ verify(I6_CommonBanner,BannerX,a.game_over_presentation.banner_y(a.map_clock_ms),BannerWidth,BannerHeight,9,4,BannerWidth-18,22,255,100);
  verify(U_RewardSkip,a.game_over_summary?MainMenuX:ContinueX,ButtonY,ButtonWidth,ButtonHeight,3,1,ButtonWidth-6,11,215,60);
 }
 static void capture(const char*name){

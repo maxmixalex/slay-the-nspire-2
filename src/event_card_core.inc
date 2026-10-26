@@ -77,6 +77,7 @@ bool event_card_enchant(State&s,int deck,EventEnchantment e,int amount){
  if(!event_card_can_enchant(s,deck,e)||amount<0||amount>9999)return false;
  if(!event_card_apply_enchantment(s.deck[deck],s.event_cards.deck[deck],e,amount))return false;
  notify_history(s,RunHistoryEvent::CardEnchanted,unsigned(card_token(s.deck[deck])),unsigned(amount),unsigned(e));
+ const auto observer=core_observer;if(observer.on_deck_enchanted)observer.on_deck_enchanted(observer.context,s,deck);
  ++s.revision;return true;
 }
 void event_deck_acquired(State&s,int index,bool cloned,bool obtained){
