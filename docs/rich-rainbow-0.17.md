@@ -127,7 +127,7 @@ Godot shaping remain calculator layout adaptations.
 
 Godot maintains elapsed time separately for each `ItemFX`, updating a visible
 label through process notifications. UI13 now gives rendered labels independent
-origins through `RichLabelClocks`, a32-entry table bounded below768bytes. An
+origins through `RichLabelClocks`, a 32-entry table bounded below 768 bytes. An
 outer render-frame guard observes which labels remain present; a label omitted
 from the rendered tree loses its origin, so a newly created or reopened label
 starts at zero. Repeated draws, shadow passes and nested renderer calls do not
@@ -171,12 +171,34 @@ content replacement, clock wrap/rebase and bounded table replacement.
 including independent phases, a moved stable owner, the real Normal/Fast
 advance clock and unchanged canonical saves. The original-resource Colossal
 Flower check also covers an opaque Library screen followed by reopening at a
-nonzero global time. These new cases require the integrated UI13 checkpoint
-and their own closed execution receipts; syntax alone is not acceptance.
+nonzero global time.
 
-Pre-checkpoint validation consists of short syntax checks, the standalone
-ASan/UBSan parser/color regression, and the independent official-function
-diagnostic described above. The new complete App-linked synthetic and
-actual-pack tests require source18 preservation, a frozen build and their own
-journal receipts. No original-PC screenshot comparison or 95% visual
-acceptance is claimed here.
+The integrated lifecycle checks were executed with runtime checkpoint
+`792904cb5e7f5fcbbab7a5320ee0d54d247591c7` and the complete UI13 catalog ending
+at 5156, assembled at `e606108221fd6f8202f61b3e5ae1372970de0e27`. The latter
+changes only the offline Regent visibility guard and its test relative to the
+runtime checkpoint; production C++ is byte-identical. The standalone target
+passed 1,749 checks. World-text validation passed 6,811 synthetic checks,
+2,797 with the actual English pack and 2,688 with Simplified Chinese. The
+seven-painter pixel cases are included in Card/HUD's 385,902 synthetic,
+712,932 English and 790,294 Chinese checks, including the lossless captures.
+These component results and input/executable hashes are recorded in
+`ui13-retained-final-primary-gates-c18fccad9df5` and its individual logs.
+That combined job also exposed an unrelated old resource-test assumption:
+it treated non-raster kerning metadata as drawable glyphs. Its failed aggregate
+receipt is retained; the lifecycle targets themselves returned zero.
+The corrected resource gate then passed at test checkpoint
+`21c3cce61e5870f2018d2e3c231f2b5efa938c87`, which leaves production and
+conversion code unchanged: `ui13-retained-resource-metadata-gates-12ba283c9284`
+closed with exit code zero and unchanged source inventories for English and
+Chinese. It validates all ordinary glyph bytes and every kerning record through
+its actual layout API; no metadata records are silently skipped.
+
+The complete 16-language resources independently passed
+`ui13-retained-final-all16-native-c8adc28428d3`: 38,686 checks, 53,072 rendered
+descriptions and no unresolved interpolation. Those language checks supplement
+the actual English/Chinese lifecycle pixels; they are not a claim that every
+label in every language was visually inspected. The earlier ASan/UBSan
+parser/color checks and official-function numerical diagnostic remain as
+specified above. No original-PC screenshot comparison, Firebird frame-rate
+result or 95% visual acceptance is claimed by this native text gate.

@@ -123,15 +123,21 @@ static void merchant_welcome(){
  begin(OriginalEventId::FakeMerchant,23,1);a.reset_presentation();a.render();auto&speech=a.room_presentation.merchant.welcome;
  const auto start=speech.start;const auto line=speech.line;
  CHECK(start==a.map_clock_ms+750&&line>=1&&line<=4&&!speech.sample(a.map_clock_ms).alpha);
- const auto background=image_hash(77,48,72,54);snapshot();
+ const auto background_at_clock=[&](){
+  // Isolate only the speech at this same clock. Its original start keeps
+  // the animated room's owner/particle/actor phase intact while line0 hides
+  // the bubble. Comparing against entry-time pixels wrongly freezes it.
+  const auto saved=speech;speech.line=0;a.render();CHECK(!speech.line&&speech.start==saved.start);
+  const auto background=image_hash(77,48,72,54);speech=saved;a.render();
+  CHECK(speech.line==saved.line&&speech.start==saved.start);return background;
+ };
+ snapshot();
  advance_ms(749);CHECK(!speech.sample(a.map_clock_ms).alpha);
- // UI13's custom room now has real actors and environmental motion below
- // the still-hidden bubble. Older profiles retain their static backdrop.
- if(a.content.ui_image(I13_FakeMerchantSquareSpeck)<0)CHECK(image_hash(77,48,72,54)==background);
+ CHECK(image_hash(77,48,72,54)==background_at_clock());
  unchanged();
  advance_ms(1);CHECK(!speech.sample(a.map_clock_ms).alpha);advance_ms(200);
  CHECK(speech.sample(a.map_clock_ms).alpha==127&&speech.sample(a.map_clock_ms).scale>3900);
- if(a.content.has_speech_bubble_assets())CHECK(image_hash(77,48,72,54)!=background);
+ if(a.content.has_speech_bubble_assets())CHECK(image_hash(77,48,72,54)!=background_at_clock());
  capture("fake-merchant-welcome-entry");advance_ms(600);
  CHECK(speech.sample(a.map_clock_ms).alpha==255&&speech.sample(a.map_clock_ms).scale==4096&&speech.sample(a.map_clock_ms).angle==0);
  capture("fake-merchant-welcome-full");unchanged();
@@ -143,7 +149,7 @@ static void merchant_welcome(){
   const int expected=int(255*(1-std::sin((age-3500)*3.141592653589793/800)));
   CHECK(std::abs(int(f.alpha)-expected)<=1&&f.brightness==f.alpha);
  }
- advance_ms(start+3900-a.map_clock_ms);CHECK(!speech.sample(a.map_clock_ms).alpha&&image_hash(77,48,72,54)==background);unchanged();
+ advance_ms(start+3900-a.map_clock_ms);CHECK(!speech.sample(a.map_clock_ms).alpha&&image_hash(77,48,72,54)==background_at_clock());unchanged();
  a.reset_presentation();CHECK(!a.room_presentation.merchant.welcome.line);
 }
 static void merchant(){

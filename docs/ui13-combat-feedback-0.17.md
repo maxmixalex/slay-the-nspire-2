@@ -135,8 +135,8 @@ The combat runtime below was executed at
 hover-layout test oracles without changing production files. The final legend
 correction at `fca66343d0fee759b95b4b6acdf2d0ba9c7eea06` changes only
 `world_map_ui.inc` among production files relative to d5, and its complete
-Card/HUD target was rebuilt and rerun. All six targets pass with the final
-UI13 release resources:
+Card/HUD target was rebuilt and rerun. These six targets passed with the
+pre-retained UI13 release resources, whose auxiliary catalog ends at 3339:
 
 | Target | Synthetic checks | Final original-resource checks |
 | --- | ---: | --- |
@@ -146,6 +146,20 @@ UI13 release resources:
 | Card movement | 1,106 | Asset-independent movement and 5,540-byte metadata checks |
 | Combat secondary / orb lifetime | 325,304 | Split English pack 390,445 |
 | Screen effects / Doom / trauma | 1,993,453 | Split English and Japanese masks 2,122,313 |
+
+The later retained-presentation integration keeps all 1,138 earlier appended
+source images byte-identical and adds the original Random selector and full
+Fake Merchant scene. On runtime `792904cb5e7f5fcbbab7a5320ee0d54d247591c7`,
+with complete 5156-endpoint resources from
+`e606108221fd6f8202f61b3e5ae1372970de0e27`, Card/HUD passed again:
+385,902 synthetic, 712,932 English and 790,294 Chinese checks. The increase
+includes the label-local rainbow lifecycle pixels described in
+[rich-rainbow-0.17.md](rich-rainbow-0.17.md). These are the final retained-pack
+Card/HUD results; the earlier combat/orb/Doom receipts below preserve their
+own exact source and resource identities.
+The final source catalog, 16-language verification and exact installation
+sizes are recorded in
+[ui13-retained-resources-0.17.md](ui13-retained-resources-0.17.md).
 
 The final static-hover test independently checks the existing readable
 104px column plus its one-pixel shadow, resource/orb ownership, the Settings
