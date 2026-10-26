@@ -142,10 +142,12 @@ static void next_enemy(State&s,int i){
 }
 static void forge_blade(State&s,int n){
  bool found=false;auto&x=s.expansion;
- for(unsigned id=0;id<s.card_count;id++)if(s.cards[id].kind==SovereignBlade&&s.zones[id]!=Zone::Exhaust){
-  x.blade_damage[id]=(int16_t)min(9999,max(10,x.blade_damage[id])+n);found=true;
- }
- if(!found){int id=create_to_hand(s,{SovereignBlade,0});if(id>=0)x.blade_damage[id]=(int16_t)min(9999,10+n);}
+ for(unsigned id=0;id<s.card_count;id++)if(s.cards[id].kind==SovereignBlade&&s.zones[id]!=Zone::Exhaust)found=true;
+ if(!found)create_to_hand(s,{SovereignBlade,0});
+ // ForgeCmd selects non-exhausted blades only to decide whether to create
+ // one. IncreaseSovereignBladeDamage explicitly includes exhausted copies.
+ for(unsigned id=0;id<s.card_count;id++)if(s.cards[id].kind==SovereignBlade)
+  x.blade_damage[id]=(int16_t)min(9999,max(10,x.blade_damage[id])+n);
 }
 static void extension_effect(State&s,Effect e){
  auto&x=s.expansion;auto op=(XOp)e.target;int a=e.value,b=e.aux;

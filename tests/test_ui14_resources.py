@@ -1,0 +1,62 @@
+"""Exact public fixtures for the current locale graft and stream tightening."""
+from pathlib import Path
+import struct
+import sys
+import tempfile
+import unittest
+from PIL import Image
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]/'tools'))
+import content_tiles as tiles
+import group_glyphs
+import group_strings
+import repack_retained
+import split_content as split
+from ui12_resources import replace_images, view
+from ui14_resources import graft_locale
+from tighten_ui14_resources import tighten
+from test_repack_retained import fixture
+
+
+def current(language='eng', glyphs=1):
+    data, _, _ = repack_retained.repack(fixture(language, glyphs), fast_images='none')
+    def tag(raw):
+        raw = bytearray(raw);struct.pack_into('<I', raw, 4, 40);return bytes(raw)
+    data = tag(data);source = view(data)
+    data, _ = group_glyphs.write(source, group_glyphs.plan(source), split.layout(data, language))
+    data = tag(data);source = view(data)
+    data, _ = group_strings.write(source, group_strings.plan(source),
+        group_strings.nonstring_end(source, split.layout(data, language)))
+    return tag(data)
+
+
+class Ui14ResourceTests(unittest.TestCase):
+    def test_graft_preserves_grouped_fonts_and_text_after_art_and_directory_growth(self):
+        english = current();chinese = current('zhs', 3)
+        artwork, _ = replace_images(english, {0: Image.new('RGBA', (80, 96), (39, 116, 215, 173))})
+        localized, report = graft_locale(artwork, chinese, 'zhs')
+        old, new, art = view(chinese), view(localized), view(artwork)
+        self.assertEqual(new.image_raw(0), art.image_raw(0))
+        self.assertTrue(report['compressed_locale_tail_unchanged'])
+        for i in range(len(old.glyphs)):self.assertEqual(old.glyph_payload(i), new.glyph_payload(i))
+        for i in range(len(old.strings)):self.assertEqual(old.string_payload(i), new.string_payload(i))
+        en, _ = graft_locale(artwork, english, 'eng')
+        common, languages, _ = split.split({'eng':en, 'zhs':localized})
+        self.assertEqual(split.reconstruct(common, languages['zhs'], 'zhs'), localized)
+
+    def test_tightening_preserves_all_pixels_and_grouped_locale_slices(self):
+        before = current('eng', 3)
+        with tempfile.TemporaryDirectory() as directory:
+            after, report = tighten(before, directory, workers=1)
+            cached, again = tighten(before, directory, workers=2)
+        self.assertEqual(cached, after);self.assertLessEqual(len(after), len(before))
+        source, target = view(before), view(after)
+        a, b = tiles.TileReader(source), tiles.TileReader(target)
+        for i, entry in enumerate(source.images):
+            old = a.image_raw(i) if entry[3] == 6 else source.image_raw(i)
+            new = b.image_raw(i) if entry[3] == 6 else target.image_raw(i)
+            self.assertEqual(old, new)
+        self.assertEqual(report['runtime_memory_added'], 0)
+
+
+if __name__ == '__main__':unittest.main()

@@ -563,12 +563,16 @@ struct Canvas{
         const uint16_t colors[]={color,Gold,rgb(244,122,102),Blue,Green,rgb(190,145,217),rgb(236,164,92),rgb(104,210,205),White,Muted};
         const int top=y-scroll_y+(centered&&!single_line?mx(0,(h-(plan.rows*plan.step+2))/2):0);
         const auto draw=[&](int offset_x,int offset_y,bool shadow){
-        const int origin_x=mx(0,x),origin_y=mx(0,y);
-        if(origin_x>=mn(clip_w,x+w)||origin_y>=mn(clip_h,y+h))return;
+        // The outline owns the same translated clip as a separate shadow
+        // label. Clipping all five passes to the foreground box shaved off
+        // the outermost shadow pixel and made cached and direct titles differ.
+        const int clip_x=x+offset_x,clip_y=y+offset_y;
+        const int origin_x=mx(0,clip_x),origin_y=mx(0,clip_y);
+        if(origin_x>=mn(clip_w,clip_x+w)||origin_y>=mn(clip_h,clip_y+h))return;
         Canvas clipped=*this;clipped.pixels+=origin_y*pitch+origin_x;
         if(clipped.coverage)clipped.coverage+=origin_y*pitch+origin_x;
         if(clipped.occlusion)clipped.occlusion+=origin_y*pitch+origin_x;
-        clipped.clip_w=mn(clip_w,x+w)-origin_x;clipped.clip_h=mn(clip_h,y+h)-origin_y;
+        clipped.clip_w=mn(clip_w,clip_x+w)-origin_x;clipped.clip_h=mn(clip_h,clip_y+h)-origin_y;
         if(shadow)clipped.opacity=uint8_t(div255(clipped.opacity*(outline?144u:128u)));
         fitted_text::visit(p,layout_width,plan,metrics,[&](const RichChar&ch,int at,int row,int size){
             if(ch.index>=text_visible_characters)return;

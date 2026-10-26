@@ -25,6 +25,12 @@ int main(){
  auto release=m.observe(1,ButtonFamily::Action,ButtonState::Rest,245);check(release.scale==half.scale&&release.shade==half.shade);
  check(m.sample(745).scale==4096&&m.sample(745).shade==255);
  auto disabled=m.observe(1,ButtonFamily::Action,ButtonState::Disabled,746);check(disabled.hover==0&&disabled.shade==128);
+ ButtonMotion scrollbar;check(scrollbar.observe(25,ButtonFamily::Scrollbar,ButtonState::Rest,0).scale==4096);
+ check(scrollbar.observe(25,ButtonFamily::Scrollbar,ButtonState::Focus,100).scale==4710);
+ check(scrollbar.observe(25,ButtonFamily::Scrollbar,ButtonState::Press,125).scale==4710);
+ scrollbar.observe(25,ButtonFamily::Scrollbar,ButtonState::Rest,150);
+ check(scrollbar.sample(250).scale>4096&&scrollbar.sample(250).scale<4710&&scrollbar.sample(650).scale==4096);
+ check(scrollbar.observe(25,ButtonFamily::Scrollbar,ButtonState::Focus,300).scale==4710);
  auto replacement=m.observe(2,ButtonFamily::Pause,ButtonState::Rest,750);check(replacement.scale==3686&&replacement.shade==255);
  auto pause=m.observe(2,ButtonFamily::Pause,ButtonState::Focus,760);check(pause.hover==4096&&pause.scale==3686);
  check(m.sample(810).scale==3891);

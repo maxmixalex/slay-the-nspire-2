@@ -79,7 +79,7 @@ static void world_choice_screen(Canvas&c){
    if(selected||i==a.cursor)c.box(x-2,y-2,58,65,selected?Green:Gold);
    c.picture(a.relic_face_image(model),x+13,y+1,30,34);
    const char*name=a.relic_title(RelicId(model));
-   c.paragraph(name,x,y+37,54,2,0,10,White);c.hit(x-2,y-2,58,65,HitKind::WorldChoice,at);
+   c.paragraph_fitted(name,x,y+37,54,24,10,White,10);c.hit(x-2,y-2,58,65,HitKind::WorldChoice,at);
   }
  }else{
   const bool large=offer&&count<=3;

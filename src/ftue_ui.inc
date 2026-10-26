@@ -25,21 +25,31 @@ static fitted_text::Plan ftue_paragraph(Canvas c,const char*text,int x,int y,int
  if(!step)step=size+1;
  auto metrics=[&](const RichChar&ch,int px){return c.text_metric(ch,px);};
  fitted_text::Plan plan;plan.size=size;plan.step=step;plan.total=fitted_text::line_count(text,w,size,metrics);
- const int visible=mn(32,mn(plan.total,mx(0,(h-size)/step+1)));int offset=0;
+ const int visible=mn(31,mn(plan.total,mx(0,(h-size)/step+1)));int offset=0;
  if(scroll){auto&f=c.a.ftue;f.text_rows=uint16_t(visible);f.text_maximum=uint16_t(mx(0,plan.total-visible));
-  f.text_scroll=uint16_t(mn(unsigned(f.text_scroll),unsigned(f.text_maximum)));offset=f.text_scroll;}
- plan.rows=offset+visible;plan.truncated=!scroll&&plan.rows<plan.total;
+  f.text_scroll=uint16_t(mn(unsigned(f.text_scroll),unsigned(f.text_maximum)));
+  f.scroll_text(int(f.text_scroll)*step,c.a.map_clock_ms);offset=f.text_offset(c.a.map_clock_ms);
+ }else if(plan.total>visible){
+  const uint32_t owner=0x46545545u^c.a.ftue.serial^unsigned(x*257+y);
+  const auto age=c.a.overflow_label_clocks.observe(owner,RichLabelClocks::hash(text),c.a.map_clock_ms);
+  offset=text_overflow_offset(age,mx(0,(plan.total-1)*step+size-h),12);
+ }
+ const int first=offset/step;plan.rows=mn(plan.total,first+visible+1);plan.truncated=false;
  int widths[32]{};
- if(center)fitted_text::visit(text,w,plan,metrics,[&](const RichChar&ch,int at,int row,int px){if(row>=offset)widths[row-offset]=at+metrics(ch,px).width;});
+ if(center)fitted_text::visit(text,w,plan,metrics,[&](const RichChar&ch,int at,int row,int px){if(row>=first&&row-first<32)widths[row-first]=at+metrics(ch,px).width;});
  const int top=y+((center||middle)?mx(0,(h-(visible-1)*step-size)/2):0);
  const uint16_t colors[]={rgb(255,246,226),Gold,rgb(244,122,102),Blue,Green,rgb(190,145,217),rgb(236,164,92),rgb(104,210,205),White,Muted};
- c.clip_w=mn(c.clip_w,x+w);c.clip_h=mn(c.clip_h,y+h);
+ const int origin_x=mx(0,x),origin_y=mx(0,y),right=mn(c.clip_w,x+w),bottom=mn(c.clip_h,y+h);
+ if(right<=origin_x||bottom<=origin_y){plan.rows=visible;return plan;}
+ c.pixels+=origin_y*c.pitch+origin_x;if(c.coverage)c.coverage+=origin_y*c.pitch+origin_x;
+ if(c.occlusion)c.occlusion+=origin_y*c.pitch+origin_x;c.clip_w=right-origin_x;c.clip_h=bottom-origin_y;
  fitted_text::visit(text,w,plan,metrics,[&](const RichChar&ch,int at,int row,int px){
-  if(row<offset)return;row-=offset;
+  if(row<first)return;
   if(ch.index>=c.text_visible_characters)return;
-  const auto g=c.a.content.glyph(ch.codepoint,px,c.font_style(ch));const int left=x+at+(center?mx(0,(w-widths[row])/2):0);
-  Canvas shadow=c;shadow.opacity=uint8_t(div255(shadow.opacity*128));shadow.character(ch.codepoint,g,left+1,top+row*step+1,0,true);
-  c.character(ch.codepoint,g,left,top+row*step,rich_color(ch.style.color,colors));
+  const int yy=top-origin_y+row*step-offset;if(yy+px+3<0||yy>=c.clip_h)return;
+  const auto g=c.a.content.glyph(ch.codepoint,px,c.font_style(ch));const int left=x-origin_x+at+(center?mx(0,(w-widths[row-first])/2):0);
+  Canvas shadow=c;shadow.opacity=uint8_t(div255(shadow.opacity*128));shadow.character(ch.codepoint,g,left+1,yy+1,0,true);
+  c.character(ch.codepoint,g,left,yy,rich_color(ch.style.color,colors));
  });plan.rows=visible;return plan;
 }
 static void ftue_reader(Canvas&c,const char*text,int x,int y,int w,int h,bool center=false,bool middle=false,bool interactive=true){
@@ -53,7 +63,10 @@ static void ftue_reader(Canvas&c,const char*text,int x,int y,int w,int h,bool ce
  if(interactive){c.hit(bx,y,20,20,HitKind::FtueControl,5,up);c.hit(bx,bottom,20,20,HitKind::FtueControl,6,down);}
  if(bottom-y>28){const int track_y=y+23,track_h=bottom-track_y-3;
   c.rect(bx+9,track_y,2,track_h,rgb(49,76,85));
-  c.rect(bx+7,track_y+int(f.text_scroll)*mx(0,track_h-5)/int(f.text_maximum),6,5,Gold);
+  const int thumb_y=track_y+f.text_offset(c.a.map_clock_ms)*mx(0,track_h-5)/(int(f.text_maximum)*12);
+  const auto hover=c.control_visual("FTUE_SCROLLBAR",bx+4,thumb_y-3,12,11,ButtonFamily::Scrollbar,false,true);
+  const int thumb_w=(6*hover.scale+2048)/4096,thumb_h=(5*hover.scale+2048)/4096;
+  c.rect(bx+7+(6-thumb_w)/2,thumb_y+(5-thumb_h)/2,thumb_w,thumb_h,Gold);
  }
 }
 static void ftue_arrow(Canvas&c,int cx,int cy,int sn=0,int cs=1024,bool flip_h=false,bool flip_v=false,int w=47,int h=39){

@@ -104,6 +104,8 @@ void App::observe_combat_damage(const State&s,const CoreDamageResult&result){
  if(ui_feedback_bound(*this)&&result.receiver>=0){
   int card=-1;for(const auto&attack:f.attacks)if(attack.active&&attack.card>=0)card=attack.card;
   if(card>=0&&card<s.card_count){const auto impact=source_card_impact_shake(s.cards[card].kind);
+   if(s.cards[card].kind==SovereignBlade){const auto target=combat_enemy_pose(result.receiver);
+    combat_cards.blades.attack(unsigned(card),target.center_x,target.center_y,f.effect_at*33u);}
    if(impact.strength){sync_screen_motion();screen_motion.add(screen_motion_clock(),f.effect_at*33u+impact.delay,ScreenShakePresentation::Punch,impact.strength,impact.duration);}
    if(s.cards[card].kind==DefectHyperbeam){sync_screen_motion();
     // The card awaits .5s; the laser begins at .525s and ends .5s later.

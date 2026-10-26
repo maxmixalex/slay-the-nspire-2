@@ -27,7 +27,8 @@ static void world_enchantment_description(Canvas&c){
     const int height=mn(max_height,overhead+lines*step),visible=mx(0,(height-overhead)/step);
     const HoverRect rect{x,y,w,height};const uint32_t age=source_hover_age(a,title,description,x,y);
     source_hover_skin(c,rect);source_hover_title(c,title,rect,image,age);
-    source_hover_paragraph(c,description,x+SourceHoverLeft,y+SourceHoverTop+step,source_hover_body_width(w),visible,source_hover_scroll(lines-visible,age,950));
+    source_hover_paragraph(c,description,x+SourceHoverLeft,y+SourceHoverTop+step,source_hover_body_width(w),visible,0,
+        rgb(255,246,226),text_overflow_offset(age,mx(0,lines-visible)*step,12));
 }
 static void world_bundle_banner(Canvas&c){
     auto&a=c.a;const auto&returned=a.card_grids[unsigned(CardGridSurface::WorldChoice)].faces[15];

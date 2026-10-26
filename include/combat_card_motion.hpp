@@ -1,6 +1,7 @@
 #pragma once
 #include "combat_feedback.hpp"
 #include "combat_layout.hpp"
+#include "sovereign_blade_presentation.hpp"
 
 namespace spire {
 // Original pile commands and the hand holders have different lifetimes:
@@ -33,6 +34,7 @@ struct CombatCardMotion {
  CountCue count_cues[CountCapacity]{};
  CombatHand::Cards hand{};
  Counts counts{},observed_counts{};
+ SovereignBladePresentation blades{};
  uint8_t zones[MaxCards]{};
  uint32_t seed=0,clock=0,cosmetic=0x906b1a4du,manual_started=0,manual_min_end=0,wait_at=0;
  int floor=-1,combat=-1,encounter=-1,focus=-1,selected=-1,manual=-1;
@@ -77,6 +79,7 @@ struct CombatCardMotion {
   return {160,hand_project(630-100),(HandFocusScale*4+2)/5,0,1024};
  }
  void reset(){
+  blades.reset();
   active=overflow=count_overflow=false;head=count=count_head=count_count=0;
   focus=selected=manual=-1;selected_centered=false;hand.count=0;for(auto&s:sprites)s.mode=Empty;
  }
@@ -95,6 +98,7 @@ struct CombatCardMotion {
  void begin(const State&s,uint32_t now){
   reset();active=true;seed=s.seed;floor=s.floor;combat=s.world.combat_count;encounter=int(s.enemy_world.encounter);clock=now;
   cosmetic=0x906b1a4du^(seed?seed:1u);hand=CombatHand::capture(s.hand);counts=observed_counts=capture_counts(s);
+  blades.begin(s,now*33u);
   card_count=s.card_count;for(unsigned id=0;id<card_count;++id)zones[id]=uint8_t(s.zones[id]);
   for(unsigned i=0;i<hand.count;++i){auto&v=claim(hand.ids[i]);v.mode=Hand;v.card=s.cards[v.id];place(v,hand_pose(hand.count,int(i),false));zones[v.id]|=Tracked;}
  }
@@ -261,6 +265,7 @@ struct CombatCardMotion {
   }
  }
  void advance(uint32_t now){
+  blades.advance(now*33u);
   int32_t ticks=int32_t(now-clock);if(ticks<=0)return;
   // All holder responses settle and all finite flights/previews finish inside 128
   // ticks. Large skipped intervals do not create an unbounded catch-up loop.

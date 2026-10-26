@@ -45,9 +45,10 @@ static const HandTile& hand_tile(Canvas&c,int instance,const CombatCardMotion::S
     // tip in the same frame. Reuse the already resolved instance sample;
     // target/revision/card identity guard input arriving between frames.
     const bool locked=a.combat_actions_locked();
-    for(auto&t:hand_tiles)if(!visual&&!frozen_facts&&!upgrade_preview&&!description_override&&t.valid&&t.owner==&a.content&&t.sampled_generation==a.content.generation()&&t.sampled_locked==locked&&
+    for(auto&t:hand_tiles)if(!frozen_facts&&!upgrade_preview&&!description_override&&t.valid&&t.owner==&a.content&&t.sampled_generation==a.content.generation()&&t.sampled_locked==locked&&
         t.sampled_revision==a.game.revision&&t.sampled_instance==instance&&t.sampled_deck==deck&&
-        t.sampled_target==preview_target&&t.sampled_visual==visual&&t.card.kind==card.kind&&t.card.upgraded==card.upgraded){t.used=hand_tile_clock;return t;}
+        t.sampled_target==preview_target&&t.sampled_visual==visual&&t.card.kind==card.kind&&t.card.upgraded==card.upgraded&&
+        (!visual||(t.energy==visual->energy&&t.stars==visual->stars))){t.used=hand_tile_clock;return t;}
     auto stamp=[&](HandTile&t){t.sampled_frame=small_card_frame;t.sampled_revision=a.game.revision;t.sampled_generation=a.content.generation();t.sampled_locked=locked;t.sampled_instance=frozen_facts||description_override||upgrade_preview?-2:instance;t.sampled_deck=deck;t.sampled_target=preview_target;t.sampled_visual=visual;};
     int energy=visual?visual->energy:cost(a.game,instance),stars=visual?visual->stars:card_star_cost(a.game,card,instance);
     const auto*facts=frozen_facts?frozen_facts:event_card_facts(a.game,card,instance,deck);
@@ -207,6 +208,7 @@ static void draw_hand_tile(Canvas&c,const HandTile&t,HandPose p,bool focused,uns
     }
     hand_card_animated_layers(c,t,p,brightness,erosion);
 }
+#include "combat_sovereign_ui.inc"
 static void combat_pile(Canvas&c,int image,int count,int x,int y,int tab){
     // NCombatCardPile scales Icon, not its sibling CountContainer. Focus is
     // a 50ms linear tween to1.25; unfocus returns over500ms with QuintOut.
@@ -276,7 +278,7 @@ static void combat_player_speech(Canvas&c){
 }
 #include "phobia_swarm_ui.inc"
 static void combat_actors(Canvas&c){
-    auto&a=c.a;const auto&s=a.game;const auto player=a.combat_player_pose();c.actor(0,player.sprite_x,player.sprite_y,player.scale);
+    auto&a=c.a;const auto&s=a.game;const auto player=a.combat_player_pose();combat_sovereign_blades(c,true);c.actor(0,player.sprite_x,player.sprite_y,player.scale);combat_sovereign_blades(c,false);
     const bool pet=s.character==Character::Necrobinder||s.expansion.osty_max_hp>0;
     if(pet){const auto p=a.combat_player_pose(true);const auto&m=a.osty_motion;const auto clip=a.content.clip(m.clip);const unsigned elapsed=(a.animation-m.start)*33;
         if(m.clip>=0&&elapsed<(unsigned)clip.count*clip.frame_ms)c.scaled_clip(m.clip,p.sprite_x,p.sprite_y,elapsed,p.scale,false);
@@ -524,6 +526,7 @@ static void combat_screen(Canvas&c){
         draw_hand_tile(c,hand_tile(c,v.id,&v),pose,false,a.combat_cards.brightness(v),v.mode==CombatCardMotion::Exhaust?combat_exhaust_progress(exhaust_age):0u);
     }
     if(a.card_fly>0&&a.fly_card>=0){int age=12-a.card_fly;c.picture(a.content.card_image(a.fly_card),150+age*4,163-age*5,26,19,(unsigned)(a.card_fly*18));}
+    combat_forge_card_previews(c);
     combat_player_speech(c);
     combat_resource_tooltip(c,stars);
 }

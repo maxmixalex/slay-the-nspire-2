@@ -142,7 +142,11 @@ static void readable_summary_navigation(){
  {UiCoreObserver observer(a);player_kill(a.game,true);resolve_pending(a.game);}CHECK(a.game.phase==Phase::Dead&&save(a.game,before));
  // A long recorded summary is a display fixture. It changes neither the
  // finished run nor its RNG, and forces the actual renderer to scroll.
- auto&r=a.progress.current;r.ascension=10;r.facts.elite_rooms=1;r.facts.boss_rooms=1;r.gold=600;
+ auto&r=a.progress.current;r.facts.elite_rooms=3;r.facts.boss_rooms=1;r.facts.combo=1;r.gold=600;
+ // Ascension belongs to the run identity. Changing it here made the
+ // renderer silently select the short archived record instead of this
+ // intended long summary, which happened to scroll at the old row pitch.
+ CHECK(a.game_over_run()==&r);
  a.progress.current_discoveries={};a.progress.current_discoveries.add(0,Strike);a.progress.current_discoveries.add(1,WorldRelicAnchor);
  a.keyboard_only=true;a.pointer.visible=false;
  a.sync_game_over_presentation();advance_ms(a.game_over_presentation.intro_delay());a.show_game_over_summary();

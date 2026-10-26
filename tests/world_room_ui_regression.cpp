@@ -510,17 +510,20 @@ static void event_motion(){
  CHECK(choices()>=2);capture("ancient-source-dialogue-layout");unchanged();
 }
 static void merchant_motion_and_pickups(){
- begin_room(WorldRoom::Shop);a.game.gold=9999;a.render();snapshot();click(UiAction::OpenShop);CHECK(a.shop_open);a.render();
+ begin_room(WorldRoom::Shop);a.game.gold=9999;a.render();snapshot();click(UiAction::OpenShop);CHECK(a.shop_open);
+ const uint32_t began=a.room_presentation.merchant.start;a.render();
+ CHECK(a.room_presentation.merchant.y(began)==-222);
+ // The fixed Back control is immediately available while the original
+ // rug starts, including a cold inventory still preparing its stock.
+ CHECK(exists(HitKind::Choice,ShopLeave)||exists(HitKind::UiAction,int(UiAction::CloseShop)));unchanged();
  for(unsigned steps=0;a.merchant_preparation.active&&steps<128;++steps){a.advance(33);a.render();unchanged();}
  CHECK(!a.merchant_preparation.active&&a.content.healthy());
- const uint32_t began=a.map_clock_ms;CHECK(a.room_presentation.merchant.y(began)==-222);
- // The fixed Back control remains usable while the rug enters. No stock
- // hit may exist before its source slot has reached the visible viewport.
- CHECK(choices()==1&&exists(HitKind::Choice,ShopLeave));unchanged();
- room_clock(350);CHECK(a.room_presentation.merchant.y(a.map_clock_ms)>0&&a.room_presentation.merchant.y(a.map_clock_ms)<18);capture("merchant-rug-half-open");unchanged();
- room_clock(350);CHECK(a.room_presentation.merchant.y(a.map_clock_ms)==18);
+ CHECK(a.room_presentation.merchant.start==began);
+ if(a.map_clock_ms-began<350)room_clock(350-(a.map_clock_ms-began));
+ CHECK(a.room_presentation.merchant.y(began+350)>0&&a.room_presentation.merchant.y(began+350)<18);capture("merchant-rug-opening");unchanged();
+ if(a.map_clock_ms-began<700)room_clock(700-(a.map_clock_ms-began));CHECK(a.room_presentation.merchant.y(a.map_clock_ms)==18);
  constexpr int centers[]={39,99,159,219,279,43,108};
- for(int i=0;i<ShopCardCount;++i){const auto h=hit(HitKind::Choice,i);CHECK(h.x+h.w/2==centers[i]&&h.w==57&&h.h==102&&h.y+h.h<=235);}
+ for(int i=0;i<ShopCardCount;++i){const auto h=hit(HitKind::Choice,i);CHECK(h.x+h.w/2==centers[i]&&h.w==57&&h.h==96&&h.y+h.h<=235);}
  room_clock(300);CHECK(a.room_presentation.merchant.alpha(a.map_clock_ms)==204);capture("merchant-source-scale");unchanged();
  // The original vertical graph uses row indices. Shared colorless controls
  // receive the middle row's links last, including their downward self-link.

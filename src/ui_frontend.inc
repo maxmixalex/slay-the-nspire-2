@@ -191,7 +191,7 @@ static void frontend_confirm_screen(Canvas&c){
  if(a.content.version()>=Ui6ContentVersion){
   native_frontend_popup(c,header,body,erase_profile);
  }else{
-  c.ui(U_RewardPanel,29,43,262,165);c.centered(header,41,63,238,16,Gold);c.paragraph(body,51,98,218,3,0,12,White);
+  c.ui(U_RewardPanel,29,43,262,165);c.centered(header,41,63,238,16,Gold);c.paragraph_fitted(body,51,98,218,45,12,White,12);
   c.button(frontend_text(a,"main_menu_ui","GENERIC_POPUP.cancel","取消"),39,161,109,!a.frontend_choice,31);
   c.button(frontend_text(a,"main_menu_ui","GENERIC_POPUP.confirm","确认"),172,161,109,a.frontend_choice,31);
   c.action(36,151,115,46,UiAction::FrontendCancel);c.action(169,151,115,46,UiAction::FrontendAccept);

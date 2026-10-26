@@ -77,10 +77,11 @@ int main(int argc,char**argv){
  new_run(app.game,0x131313,false);CHECK(world_begin_run(app.game));app.game.potion_slots=2;auto&w=app.game.world;auto&rooms=w.rooms[w.act_index];auto&map=w.maps[w.act_index];
  rooms.boss_count=2;rooms.bosses[1]=EncounterId::QueenBoss;map.second_boss=uint8_t(map.boss+1);
  for(unsigned slots=2;slots<=16;++slots){if(slots>2)CHECK(add_potion_slots(app.game,1));const auto p=hud_room_geometry(app.game);
-  CHECK(p.room-hud_potion_layout::Left-hud_potion_layout::width(slots)==4);CHECK(p.floor-p.room-10==4);CHECK(p.boss-p.floor-22==4);
-  CHECK(p.timer-p.boss-17==4&&p.timer+7<=257);
+  CHECK(p.room-hud_potion_layout::Left-hud_potion_layout::width(slots)==8);
+  const int gap=p.floor-p.room-10;CHECK(gap>=6);CHECK(p.boss-p.floor-22==gap);
+  CHECK(p.timer-p.boss-17>=gap&&p.timer==249&&p.timer+7<=257);
  }
- CHECK(!hud_portrait_enabled(app.game));app.game.world.ascension=1;CHECK(hud_portrait_enabled(app.game));
+ CHECK(hud_portrait_enabled(app.game));app.game.world.ascension=1;CHECK(hud_portrait_enabled(app.game));
  app.game.world.ascension=0;app.game.run_options.mode=RunMode::Custom;CHECK(hud_portrait_enabled(app.game));
  app.show_run_timer=false;app.panel=0;app.map_window.visible=false;app.game.phase=Phase::Map;CHECK(app.run_timer_visible());
  app.game.phase=Phase::Combat;CHECK(!app.run_timer_visible());app.show_run_timer=true;CHECK(app.run_timer_visible());

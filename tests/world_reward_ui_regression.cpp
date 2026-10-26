@@ -217,9 +217,9 @@ static void terminal_combat_cleanup(){
   CHECK(reward.kind!=1);press_reward(0);
  }
  CHECK(a.game.phase==Phase::Reward&&!world_relic_pending(a.game)&&!a.map_window.is_open);
- a.render();CHECK(has_action(UiAction::LeaveRewards));snapshot();
+ a.render();snapshot();
  for(unsigned i=0;i<60;++i){a.advance(33);a.render();}
- CHECK(!a.map_window.is_open);unchanged();capture("rewards-empty-waits-for-proceed");
+ CHECK(!a.map_window.is_open&&has_action(UiAction::LeaveRewards));unchanged();capture("rewards-empty-waits-for-proceed");
  press_action(UiAction::LeaveRewards);CHECK(a.map_window.is_open&&world_can_travel(a.game));
 }
 static void camp_proceed(bool keyboard){

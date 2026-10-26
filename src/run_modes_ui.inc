@@ -38,11 +38,23 @@ static void setup_rich_text(Canvas c,const char*text,int x,int y,int width,int h
   const int extra=c.a.content.english()?reference_viewport::project(int(ch.index+1)*tracking)-reference_viewport::project(int(ch.index)*tracking):0;
   metric.advance64=fitted_text::advance64(metric)+extra*64;metric.advance+=extra;metric.width+=extra;return metric;};
  int widths[32]{};fitted_text::visit(text,width,plan,metric,[&](const RichChar&ch,int at,int row,int px){widths[row]=at+metric(ch,px).advance;});
- const int top=y+(height-(plan.rows*plan.step+1))/2;
+ const int full_height=plan.rows*plan.step+1,overflow=mx(0,full_height-height);
+ int top=y+(height-full_height)/2;
+ if(overflow){
+  const uint64_t surface=uint64_t(reinterpret_cast<uintptr_t>(c.pixels));
+  uint32_t owner=c.text_effect_identity?c.text_effect_identity:uint32_t(surface)^uint32_t(surface>>32);
+  const int bounds[]={x,y,width,height};for(int value:bounds)owner=(owner^uint32_t(value))*16777619u;
+  owner=(owner^c.a.content.generation())*16777619u;
+  const unsigned elapsed=c.a.overflow_label_clocks.observe(owner,RichLabelClocks::hash(text),c.a.map_clock_ms);
+  top=y-text_overflow_offset(elapsed,overflow,12);
+ }
+ const int clip_left=overflow?transform.horizontal(x):0,clip_top=overflow?transform.vertical(y):0;
+ const int clip_right=overflow?transform.horizontal(x+width):c.clip_w,clip_bottom=overflow?transform.vertical(y+height):c.clip_h;
  const uint16_t colors[]={rgb(255,246,226),rgb(239,200,81),rgb(255,85,85),rgb(135,206,235),rgb(127,255,0),rgb(238,130,238),rgb(255,165,24),rgb(0,255,255),rgb(255,255,255),rgb(128,128,128)};
  for(unsigned shadow=0;shadow<2;++shadow){Canvas ink=c;if(!shadow)ink.opacity=uint8_t(div255(unsigned(ink.opacity)*64));
   fitted_text::visit(text,width,plan,metric,[&](const RichChar&ch,int at,int row,int px){const auto glyph=c.a.content.glyph(ch.codepoint,px,c.font_style(ch));
-   profile_glyph(ink,glyph,x+at+(center?(width-widths[row])/2:0)+int(!shadow),top+row*plan.step,shadow?rich_color(ch.style.color,colors):0,transform);});}
+   profile_glyph(ink,glyph,x+at+(center?(width-widths[row])/2:0)+int(!shadow),top+row*plan.step,shadow?rich_color(ch.style.color,colors):0,transform,
+       clip_left,clip_top,clip_right,clip_bottom);});}
 }
 static void setup_disclaimer(Canvas&c,const char*text){
  const unsigned face=source_label_face(c.a.content.original_label_fonts(),6);

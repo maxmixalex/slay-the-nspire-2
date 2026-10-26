@@ -119,7 +119,7 @@ static void crystal_screen(Canvas&c){
   a.localized_text("events","CRYSTAL_SPHERE.minigame.instructions.title",text,sizeof text);
   layer.fitted(text,211,147,100,24,10,10,rgb(254,209,0),true,false,false,true);
   a.localized_text("events","CRYSTAL_SPHERE.minigame.instructions.description",text,sizeof text);
-  layer.paragraph(text,212,175,98,3,0,10,rgb(255,246,226));
+  layer.paragraph_fitted(text,212,175,98,36,10,rgb(255,246,226),10);
   // Keep the instructions readable at one fixed LCD size. The existing
   // article reader provides the whole original text with keyboard/wheel
   // scrolling, so longer translations never require a microscopic font.

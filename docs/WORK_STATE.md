@@ -1,4 +1,4 @@
-# UI14 continuation — 2026-10-27
+# UI14 continuation — 2026-10-26
 
 The user's current report supersedes UI13 acceptance for the reported layouts,
 animations and performance. The unpublished game needs no legacy filename or

@@ -18,7 +18,7 @@ from world_scene_assets import (Property, Call, Ref, SceneRenderError, _property
 from world_room_shaders import RoomRenderer, generated_texture, quad_uv, sample_texture, smoothstep
 
 BASE_AUXILIARY = 5156
-AUXILIARY_COUNT = 5261
+AUXILIARY_COUNT = 5264
 AFFLICTIONS = ('bound', 'entangled', 'galvanized', 'hexed', 'tainted', 'ringing', 'smog')
 PERIODS = (4., 40/7, 10., 20., 40/7, 2.5, 20.)
 
@@ -55,6 +55,13 @@ def _curve(loader, ref, width=256):
 
 
 class CardRenderer(RoomRenderer):
+    def visit(self, node, *args, **kwargs):
+        # Infection's texture track is sampled explicitly by source_assets.
+        # AnimationPlayer is not a CanvasItem and has no independent pixels.
+        if node.kind == 'AnimationPlayer':
+            return
+        return super().visit(node, *args, **kwargs)
+
     def _shader_texture(self, ref):
         attrs, props = self.loader.resource(ref)
         if attrs.get('type') == 'CurveXYZTexture':
@@ -264,12 +271,23 @@ def source_assets(pck, cache):
             root.props['rotation'] = Property('0', path)
             root.props['position'] = Property('Vector2(0, 0)', path)
             for node in _walk(root):
-                if node.name in ('Hilt','Hilt2','Detail','BladeGlow'):
-                    visible = node.name == ('Hilt' if stage == 0 else 'Hilt2') or node.name == 'Detail' and stage == 2
+                if node is root:
+                    continue
+                if stage == 2:
+                    node.props['visible'] = Property('true' if node.name == 'BladeGlow' else 'false', path)
+                    if node.name == 'BladeGlow':
+                        node.props['modulate'] = Property('Color(1, 1, 1, 1)', path)
+                elif node.name in ('Hilt','Hilt2','Detail','BladeGlow'):
+                    # Pinned source checks bladeDamage>=.66 (not normalized
+                    # size), so the decoration is already visible at10.
+                    visible = node.name == ('Hilt' if stage == 0 else 'Hilt2') or node.name == 'Detail'
                     node.props['visible'] = Property('true' if visible else 'false', path)
             renderer.visit(root, _translate(250, 1135), np.array([0., 0.]), np.ones(4), 0, root.name)
             image, info = renderer.finish()
             add('sovereign-blade-'+str(stage), path, image, stage=stage, diagnostics=info)
+        for name, size in (('hammer_mark',(40,40)),('impact_circle_smith',(40,40)),('spark_smith',(12,12))):
+            path='images/vfx/vfx_smith/'+name+'.png'
+            add('smith-'+name,path,load_scene_texture(pack,path).convert('RGBA').resize(size,Image.Resampling.LANCZOS))
     finally:
         pack.close()
     if BASE_AUXILIARY+len(rows) != AUXILIARY_COUNT:

@@ -3,7 +3,7 @@ bool App::open_ftue(FtueId id,int target){
     (id==FtueId::AscensionSingleplayer?seen_popup(id):seen_ftue(id)))return false;
  ftue.backstop_from=ftue.closing&&map_clock_ms-ftue.closing_at<300?uint16_t(ftue.closing_alpha*(300-(map_clock_ms-ftue.closing_at))/300):0;ftue.closing=false;
  ftue.id=id;ftue.target=int16_t(target);ftue.page=0;ftue.focus=1;ftue.page_direction=0;
- ftue.text_scroll=ftue.text_maximum=ftue.text_rows=0;
+ ftue.reset_text();
  ftue.opened=ftue.page_started=map_clock_ms;++ftue.serial;ftue.pending&=uint16_t(~ftue_bit(id));
  pointer_cancel();keyword_hover={};hit_count=0;
  // The three-page lesson and the two account popups mark on completion.
@@ -20,9 +20,9 @@ void App::ftue_control(int control){
   ftue.text_scroll=uint16_t(mn(int(ftue.text_maximum),mx(0,next)));pointer_cancel();return;
  }
  if(id==FtueId::CombatRules){
-  if(control==2&&ftue.page){--ftue.page;ftue.page_direction=-1;ftue.page_started=map_clock_ms;ftue.text_scroll=ftue.text_maximum=0;++ftue.serial;pointer_cancel();return;}
+  if(control==2&&ftue.page){--ftue.page;ftue.page_direction=-1;ftue.page_started=map_clock_ms;ftue.reset_text();++ftue.serial;pointer_cancel();return;}
   if(control!=3)return;
-  if(ftue.page<2){++ftue.page;ftue.page_direction=1;ftue.page_started=map_clock_ms;ftue.text_scroll=ftue.text_maximum=0;++ftue.serial;pointer_cancel();return;}
+  if(ftue.page<2){++ftue.page;ftue.page_direction=1;ftue.page_started=map_clock_ms;ftue.reset_text();++ftue.serial;pointer_cancel();return;}
   mark_ftue(id);
   ftue.banner=true;ftue.banner_player=false;ftue.banner_at=map_clock_ms;
   // The lesson owns the start gate, not a second banner renderer. A

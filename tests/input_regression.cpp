@@ -44,6 +44,15 @@ int main(){
     }
     // Deck always opens its own pile, even after an exhausted-card screen.
     app.input(Key::Inspect);CHECK(app.panel==1&&app.pile_tab==0);app.render();
+    HitRegion toggle{},back{};for(int i=0;i<app.hit_count;++i){const auto&h=app.hits[i];
+        if(h.kind==HitKind::PileUpgrades)toggle=h;
+        if(h.kind==HitKind::UiAction&&h.value==int(UiAction::Back))back=h;
+    }
+    CHECK(toggle.w>0&&back.w>0&&toggle.y>=grid.bottom);
+    CHECK(toggle.x>=back.x+back.w||toggle.y+toggle.h<=back.y||toggle.y>=back.y+back.h);
+    const auto*toggle_hit=app.hit_at(toggle.x+toggle.w/2,toggle.y+toggle.h/2);CHECK(toggle_hit&&toggle_hit->kind==HitKind::PileUpgrades);
+    const bool upgraded=app.pile_upgraded;click(toggle.x+toggle.w/2,toggle.y+toggle.h/2);
+    CHECK(app.pile_upgraded!=upgraded&&app.panel==1&&!app.paused);unchanged(before);
     const HitRegion* settings=nullptr;for(int i=0;i<app.hit_count;++i)if(app.hits[i].kind==HitKind::Command&&app.hits[i].value==int(Key::Back)&&app.hits[i].y==0)settings=&app.hits[i];
     CHECK(settings);click(settings->x+settings->w/2,settings->y+settings->h/2);CHECK(app.paused&&app.panel==1);unchanged(before);
     app.input(Key::Back);CHECK(!app.paused&&app.panel==1);app.input(Key::Back);app.render();

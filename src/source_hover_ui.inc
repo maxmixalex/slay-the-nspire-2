@@ -28,24 +28,28 @@ static int source_hover_scroll(int overflow,uint32_t age,unsigned milliseconds){
     if(phase<2u*pause+travel)return overflow;
     return overflow-int((phase-2u*pause-travel)/milliseconds);
 }
-static int source_hover_paragraph(Canvas&c,const char*body,int x,int y,int width,int lines,int skip=0,uint16_t color=rgb(255,246,226)){
+static int source_hover_paragraph(Canvas&c,const char*body,int x,int y,int width,int lines,int skip=0,uint16_t color=rgb(255,246,226),int pixel_offset=0){
     Canvas text=c;text.font_face=0;text.bold_face=5;const int size=source_hover_size(c);
     char localized[1024];body=c.a.ui_text(body,localized,sizeof localized);
     const auto metrics=[&](const RichChar&ch,int px){return text.text_metric(ch,px);};
     if(!lines)return fitted_text::line_count(body,width,size,metrics);
     const uint32_t rainbow_time=c.rainbow_elapsed(body,x,y,4);
     const uint16_t colors[]={color,Gold,rgb(244,122,102),Blue,Green,rgb(190,145,217),rgb(236,164,92),rgb(104,210,205),White,Muted};
-    const fitted_text::Plan plan{size,skip+lines,skip+lines,size+1,false};
-    text.clip_w=mn(text.clip_w,x+width);text.clip_h=mn(text.clip_h,y+lines*(size+1)+2);
+    const int step=size+1,first=skip+pixel_offset/step,rows=first+lines+(pixel_offset%step?1:0);
+    const fitted_text::Plan plan{size,rows,rows,step,false};
+    const int left=mx(0,x),top=mx(0,y),right=mn(c.clip_w,x+width),bottom=mn(c.clip_h,y+lines*step+2);
+    if(right<=left||bottom<=top)return skip+lines;
+    text.pixels+=top*text.pitch+left;if(text.coverage)text.coverage+=top*text.pitch+left;
+    if(text.occlusion)text.occlusion+=top*text.pitch+left;text.clip_w=right-left;text.clip_h=bottom-top;
     fitted_text::visit(body,width,plan,metrics,[&](const RichChar&ch,int at,int row,int px){
-        if(row<skip||ch.index>=c.text_visible_characters)return;
+        if(row<first||ch.index>=c.text_visible_characters)return;
         static const int wave[]={0,1,1,2,2,2,1,1,0,-1,-1,-2,-2,-2,-1,-1};
         int dy=c.a.text_effects&&ch.style.wave?wave[(c.a.animation/2+ch.index*2)%16]:0;
         if(c.a.text_effects&&ch.style.thinky_dots)dy+=rich_thinky_offset(c.a.map_clock_ms,ch.index-ch.style.thinky_start);
         const int dx=c.a.text_effects&&ch.style.jitter?int((c.a.animation/2+ch.index*7)%3)-1:0;
         const auto ink=c.a.text_effects&&ch.style.rainbow?rich_rainbow_rgb565(ch.style.rainbow_parameters,rainbow_time,at*26000/mx(1,size)):rich_color(ch.style.color,colors);
         const auto g=c.a.content.glyph(ch.codepoint,px,text.font_style(ch));
-        text.character(ch.codepoint,g,x+at+dx,y+(row-skip)*(size+1)+dy,ink);
+        text.character(ch.codepoint,g,x-left+at+dx,y-top+(row-skip)*step-pixel_offset+dy,ink);
     });return skip+lines;
 }
 static void source_hover_skin(Canvas&c,HoverRect r,bool debuff=false){
@@ -86,5 +90,6 @@ static void source_hover_box(Canvas&c,const char*title,const char*body,int x,int
     const HoverRect r{x,y,width,height};const uint32_t age=source_hover_age(c.a,title,body,x,y);
     source_hover_skin(c,r,debuff);source_hover_title(c,title,r,icon,age);
     const int visible=mx(0,(height-overhead)/step);
-    source_hover_paragraph(c,body,x+SourceHoverLeft,y+SourceHoverTop+(*title?step:0),source_hover_body_width(width),visible,source_hover_scroll(lines-visible,age,950));
+    source_hover_paragraph(c,body,x+SourceHoverLeft,y+SourceHoverTop+(*title?step:0),source_hover_body_width(width),visible,0,
+        rgb(255,246,226),text_overflow_offset(age,mx(0,lines-visible)*step,12));
 }

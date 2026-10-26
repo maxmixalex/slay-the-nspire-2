@@ -25,6 +25,7 @@ CombatCardMotion::Counts App::combat_pile_counts()const{
 // actual draws instead of inventing a draw-pile origin for every new card.
 static bool ui_capture_card_changes(App&a,uint32_t at,bool generated_preview=false){
  auto&m=a.combat_cards;const auto&s=a.game;bool awaited_hand_add=false;
+ m.blades.observe(s,m.zones,m.card_count,at*33u);
  if(m.manual>=0&&m.manual<int(s.card_count)&&uint8_t(m.zones[m.manual]&127)==unsigned(Zone::Hand)&&s.zones[m.manual]!=Zone::Hand){
   // The observed physical play starts at AddDuringManualCardPlay. Its power
   // tween may be awaited before the first effect arrives; that does not keep
