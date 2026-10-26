@@ -9,7 +9,9 @@ void App::sync_screen_motion(){
  uint32_t context=title?1u:character_select?2u:screen_combat_target(*this)?3u:
   game.world.active?4u+game.world.room_type:32u+unsigned(game.phase);
  if(!title&&!character_select)context=ScreenShakePresentation::hash(context^game.seed^uint32_t(game.floor+1)*0x91e10da5u);
- screen_motion.bind(context,screen_motion_clock());screen_motion.advance(screen_motion_clock());
+ const uint32_t elapsed=map_clock_ms-screen_motion.wall_clock;
+ screen_motion.bind(context,screen_motion_clock(),elapsed);screen_motion.wall_clock=map_clock_ms;
+ screen_motion.advance(screen_motion_clock());
 }
 void App::screen_effect(ScreenShakePresentation::Kind kind,unsigned strength,unsigned duration,unsigned angle,unsigned delay){
  sync_screen_motion();const uint32_t now=screen_motion_clock();screen_motion.add(now,now+delay,kind,strength,duration,angle);

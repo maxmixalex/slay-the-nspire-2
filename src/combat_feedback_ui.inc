@@ -30,13 +30,28 @@ static CombatOrbPoint combat_orb_point(const App&a,OrbSourcePoint position){
  const int y=s.enemy_world.active?combat_project_y(camera,layout,root.y+int(int64_t(yy)*camera.zoom/1024)):player.feet+yy*4/(21*1024);
  return {x,y,health_bar::bounded(combat_project_extent(camera,layout,90),9,90),health_bar::bounded(combat_project_extent(camera,layout,30),5,30)};
 }
+void App::sync_orb_presentation(){
+ auto&m=orb_presentation;const uint32_t now=animation*33u;m.advance(now);
+ // Pending original commands own topology until their display clock is
+ // reached. A bare load/debug setup can still initialize from live facts.
+ if(m.count)return;
+ const unsigned slots=unsigned(health_bar::bounded(combat_status_fact(CombatStatus::OrbSlots),0,MaxOrbs));
+ const unsigned count=unsigned(health_bar::bounded(combat_status_fact(CombatStatus::OrbCount),0,int(slots)));
+ m.layout(slots,now);for(unsigned i=0;i<slots;++i)m.model(i,i<count?unsigned(combat_status_fact(CombatStatus::OrbKind,int(i))):255u,now);
+}
 void App::observe_orb_activation(const State&s,const CoreOrbNotice&notice){
- if(&s!=&game||notice.kind>=unsigned(DOrb::Count)||!notice.slots||notice.slot>=notice.slots)return;
+ if(&s!=&game)return;
+ auto&m=orb_presentation;const uint32_t now=animation*33u;
+ if(!m.bound){m.layout(s.expansion.orb_slots,now);for(unsigned i=0;i<m.slots;++i)m.model(i,i<s.expansion.orb_count?s.defect.orb_kind[i]:255u,now);}
  const uint32_t at=(ui_feedback_bound(*this)?combat_feedback.effect_at:animation)*33u;
- // Keep the activating slot's position even after an evoke removes it or a
- // new orb of the same kind occupies it. Beam endpoints are the actual
- // command's selected targets, never a second random selection.
- const auto p=combat_orb_point(*this,CombatOrbPresentation::target(notice.slots,notice.slot));
+ if(notice.event!=CoreOrbNotice::Activation){
+  int passive=0,evoke=0;if(notice.event==CoreOrbNotice::Removed)orb_values(s,notice.slot,passive,evoke);
+  m.enqueue({at,int16_t(passive),int16_t(evoke),notice.event,notice.slot,notice.slots,notice.kind},now);return;
+ }
+ if(notice.kind>=unsigned(DOrb::Count)||!notice.slots||notice.slot>=notice.slots)return;
+ // Repeated evokes do not dequeue. The explicit Removed observation
+ // captures the old object and the remaining objects' current positions.
+ const auto p=combat_orb_point(*this,m.activation(notice.slot,notice.kind,notice.removed,at));
  const uint32_t seed=at^(uint32_t(notice.kind+1)*0x4a56b39u)^(uint32_t(notice.slot+1)*0x906b1a4du);
  combat_sparks.secondary(at,p.x,p.y,notice.evoke?CombatSparkMotion::OrbEvoke:CombatSparkMotion::OrbPassive,notice.kind,seed);
  if(notice.evoke)for(unsigned slot=0;slot<unsigned(s.enemy_count);++slot)if(notice.targets&(1u<<slot)){

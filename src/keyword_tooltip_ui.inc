@@ -199,6 +199,10 @@ bool card_hover_target(const App&a,CardHoverTarget&target){
     target.identity^=uint32_t(card_token(target.card))<<1;return target.card.kind<CardKinds;
 }
 
+static bool hover_enchant_selection(const App&a,const CardHoverTarget&owner){
+    return !a.panel&&!a.library&&!owner.detail&&owner.event_option<0&&owner.relic<0&&!owner.potion&&
+        owner.power<0&&owner.creature<0&&a.world_selection_active()&&a.world_selection_kind()==WorldSelectionKind::Enchant;
+}
 #include "event_hover_ui.inc"
 
 struct HoverTextContext {WorldTextContext world;const HoverTip*tip;};
@@ -254,17 +258,18 @@ static HoverPage hover_page(Canvas&c,const CardHoverTarget&owner,const HoverTipL
     const bool details=owner.detail&&c.a.keyword_hover.details,inspect=owner.detail&&!details;
     int card_count=0;for(unsigned i=0;i<tips.count;++i)if(tips.items[i].kind==HoverTipKind::Card)++card_count;
     const bool event_lane=owner.event_option>=0&&!owner.merchant&&!owner.detail&&owner.owner.w>=160&&owner.owner.w<=240;
+    const bool enchant_lane=hover_enchant_selection(c.a,owner);
     // Associated cards share the inspector's right column vertically. They
     // must not cover its text or the enlarged primary card on the left.
-    const int card_w=(details||inspect||event_lane)?69:46,card_h=(details||inspect||event_lane)?96:62,card_step=card_h+1;
-    const HoverRect column=event_lane&&card_count?HoverRect{8,125,SourceHoverWidth,93}:details?HoverRect{8,32,card_count?225:145,178}:inspect?
+    const int card_w=(details||inspect||event_lane||enchant_lane)?69:46,card_h=(details||inspect||event_lane||enchant_lane)?96:62,card_step=card_h+1;
+    const HoverRect column=enchant_lane?(card_count?HoverRect{212,121,104,71}:HoverRect{212,24,104,168}):event_lane&&card_count?HoverRect{8,125,SourceHoverWidth,93}:details?HoverRect{8,32,card_count?225:145,178}:inspect?
         HoverRect{212,8,104,card_count?109:209}:keyword_hover_column(owner);
     int direction=column.x<owner.owner.x?-1:1;if(owner.relic>=0)direction=owner.owner.x>240?-1:1;
     if(owner.power>=0||owner.creature>=0)direction=owner.power_left?-1:1;
     if(owner.merchant)direction=owner.merchant_left?-1:1;
     const int space=direction<0?column.x-3:317-column.x-column.w;
     const bool cards_need_room=card_count&&(hover_compact_event(owner)||(direction>0?owner.owner.x<50:owner.owner.x+owner.owner.w+47>317));
-    const int columns=event_lane?1:details?(card_count?1:2):inspect?1:mn(3,mx(1,1+(space-(cards_need_room?47:0))/(column.w+1)));
+    const int columns=(event_lane||enchant_lane)?1:details?(card_count?1:2):inspect?1:mn(3,mx(1,1+(space-(cards_need_room?47:0))/(column.w+1)));
     const int step=source_hover_step(c),overhead=source_hover_overhead(c),minimum=overhead+step;
     int page=0,lane=0,y=0;HoverPage result{};
     for(unsigned i=0;i<tips.count;++i){
@@ -282,7 +287,7 @@ static HoverPage hover_page(Canvas&c,const CardHoverTarget&owner,const HoverTipL
     }
     int text_height=0;for(unsigned i=0;i<result.count;++i)text_height=mx(text_height,result.pieces[i].box.y+result.pieces[i].box.h-column.y);
     int text_top=column.y;
-    if(!details&&!inspect&&text_height){
+    if(!details&&!inspect&&!enchant_lane&&text_height){
         int requested=owner.relic>=0&&!owner.merchant?owner.owner.y+owner.owner.h+2:owner.owner.y;
         if(owner.relic>=0&&!owner.merchant&&owner.owner.y>180)requested=owner.owner.y-text_height;
         text_top=mn(mx(column.y,requested),column.y+column.h-text_height);
@@ -290,12 +295,13 @@ static HoverPage hover_page(Canvas&c,const CardHoverTarget&owner,const HoverTipL
     }
     // CardHoverTip is a separate 239x323 source container with a 0.75 card;
     // it has no duplicate title or body beside its actual card face.
-    const int cards_per_page=(inspect||event_lane)?1:mx(1,(column.h+1)/card_step),card_pages=mx(1,(card_count+cards_per_page-1)/cards_per_page);
+    const int cards_per_page=(inspect||event_lane||enchant_lane)?1:mx(1,(column.h+1)/card_step),card_pages=mx(1,(card_count+cards_per_page-1)/cards_per_page);
     int card_x=inspect?owner.owner.x-46:direction>0?owner.owner.x-47:owner.owner.x+owner.owner.w+1;
     if(details)card_x=243;
     if(inspect)card_x=column.x+(column.w-card_w)/2;
     if(hover_compact_event(owner))card_x=column.x+columns*(column.w+1);
     if(event_lane)card_x=column.x+column.w-card_w;
+    if(enchant_lane)card_x=column.x+(column.w-card_w)/2;
     if((owner.power>=0||owner.creature>=0||owner.merchant)&&!details&&!inspect&&card_count&&result.count){
         // NHoverTipSet.CorrectHorizontalOverflow moves the actual containers
         // together. Empty available text columns must not separate a power
@@ -308,7 +314,7 @@ static HoverPage hover_page(Canvas&c,const CardHoverTarget&owner,const HoverTipL
     }else if(card_x<3||card_x+card_w>317)card_x=direction>0?column.x+columns*(column.w+1):column.x-(columns-1)*(column.w+1)-card_w-1;
     card_x=mx(3,mn(317-card_w,card_x));
     const int visible_cards=mx(0,mn(cards_per_page,card_count-selected*cards_per_page)),card_height=mx(0,visible_cards*card_step-1);
-    int card_top=event_lane?24:inspect?121:details?column.y:mn(mx(column.y,owner.owner.y),column.y+column.h-card_height);
+    int card_top=(event_lane||enchant_lane)?24:inspect?121:details?column.y:mn(mx(column.y,owner.owner.y),column.y+column.h-card_height);
     if(owner.relic>=0&&!owner.inspect_relic&&!owner.merchant&&text_top+text_height+1+card_height<=column.y+column.h){card_x=column.x;card_top=text_top+text_height+1;}
     int card=0;for(unsigned i=0;i<tips.count;++i)if(tips.items[i].kind==HoverTipKind::Card){
         if(card/cards_per_page==selected&&result.count<MaxCardHoverTips)result.pieces[result.count++]={i,0,0,{card_x,card_top+(card%cards_per_page)*card_step,card_w,card_h}};
@@ -401,7 +407,8 @@ static void keyword_tooltips(Canvas&c){
         c.hit(212,222,45,16,HitKind::Scroll,-1,a.keyword_hover.page>0);
         c.hit(271,222,45,16,HitKind::Scroll,1,a.keyword_hover.page+1<page.pages);
     }else if(page.pages>1){
-        const auto column=keyword_hover_column(owner);const int foot_y=hover_compact_event(owner)?column.y+column.h+1:219;c.rect(column.x,foot_y,column.w,12,Panel);c.centered(footer,column.x,foot_y,column.w,source_hover_size(c),Gold);
+        const auto column=hover_enchant_selection(a,owner)?HoverRect{212,24,104,168}:keyword_hover_column(owner);
+        const int foot_y=hover_enchant_selection(a,owner)?192:hover_compact_event(owner)?column.y+column.h+1:219;c.rect(column.x,foot_y,column.w,12,Panel);c.centered(footer,column.x,foot_y,column.w,source_hover_size(c),Gold);
     }
 }
 bool keyword_hover_scroll(App&a,int rows){

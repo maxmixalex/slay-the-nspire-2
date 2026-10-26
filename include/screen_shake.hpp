@@ -12,7 +12,7 @@ struct ScreenShakePresentation {
  struct Cue {uint32_t at=0;uint16_t duration=0,angle=0;uint8_t strength=0,kind=0;};
  static constexpr unsigned Capacity=48;
  Cue cues[Capacity]{},punch{},rumble{};
- uint32_t target=0,clock=0,trauma_at=0,noise_seed=1,serial=0;
+ uint32_t target=0,clock=0,trauma_at=0,wall_clock=0,noise_seed=1,serial=0;
  int32_t drunk_x=0,drunk_y=0;
  uint16_t trauma=0;
  uint8_t count=0;
@@ -34,7 +34,19 @@ struct ScreenShakePresentation {
  }
  static unsigned root(uint64_t v){uint64_t out=0,bit=uint64_t(1)<<62;while(bit>v)bit>>=2;while(bit){if(v>=out+bit){v-=out+bit;out=(out>>1)+bit;}else out>>=1;bit>>=2;}return unsigned(out);}
  void reset(){*this=ScreenShakePresentation{};}
- void bind(uint32_t id,uint32_t now){if(bound&&target==id)return;reset();bound=true;target=id;clock=trauma_at=now;noise_seed=hash(id^0x74d13ab1u);}
+ void clear_target(uint32_t now){
+  advance(now);trauma=uint16_t(trauma_now(now));trauma_at=clock=now;
+  target=0;bound=false;count=0;punch=rumble={};drunk_x=drunk_y=0;overflow=false;
+ }
+ void bind(uint32_t id,uint32_t now,uint32_t elapsed_between_targets=0){
+  if(bound&&target==id)return;
+  // NScreenShake.ClearTarget drops punch/rumble, but the independent
+  // trauma object keeps decaying across room ownership. Rebase only its
+  // time origin when combat ticks and the room clock change domains.
+  const unsigned remaining=trauma_now(clock+elapsed_between_targets);
+  count=0;punch=rumble={};drunk_x=drunk_y=0;overflow=false;
+  trauma=uint16_t(remaining);bound=true;target=id;clock=trauma_at=now;
+ }
  unsigned trauma_now(uint32_t now)const{
   const uint32_t age=now-trauma_at;return age>=500u?0u:trauma>age*2048u/1000u?trauma-age*2048u/1000u:0u;
  }

@@ -1,8 +1,8 @@
 // NSP2/15 sparse tiles. Included in content.cpp's private namespace so the
 // existing encoded scratch and image tiers remain the only picture buffers.
-// The 6 MiB pool keeps more actors and inspected card artwork warm while
-// leaving room for Ndless's contiguous executable allocation and temporary
-// compressed input. No larger dictionary or decode is required.
+// The ordinary6 MiB group tier shares the original11 MiB picture arena.
+// Merchant frames use a1 MiB group tier and retain the finished pictures;
+// even that minimum fits a maximum index group plus a maximum tile group.
 constexpr unsigned TileSide=16,TileBytes=770,TilePageBytes=131072,TilePages=48;
 constexpr unsigned MaxFrameTiles=300,MaxTileGroups=64;
 // The offline access model uses the same contiguous first-fit allocation and
@@ -15,11 +15,14 @@ struct TileGroup {
     uint8_t first{},pages{}; // first's high bit pins the entry; low six are a page.
 };
 static TileGroup tile_groups[MaxTileGroups];
-alignas(4) static uint8_t tile_pages[TilePages*TilePageBytes];
+static uint8_t* tile_pages=picture_pixels+ImagePages*ImagePageBytes;
+static unsigned tile_page_limit=TilePages;
 static uint64_t tile_used=0;
 static uint32_t tile_age=0;
 static_assert(TilePages<=64&&Lzma2BlockRawLimit/TilePageBytes<64,
               "Tile pages must fit the bitmap and packed first-page index");
+static_assert(PictureBufferBudget-RoomImagePages*ImagePageBytes>=2u*Lzma2BlockRawLimit,
+              "The smallest tier must hold a pinned index and one full tile group");
 static_assert(sizeof tile_groups+sizeof tile_used+sizeof tile_age<=2048,
               "Tile-cache bookkeeping must remain below 2 KiB");
 static_assert(MaxEncodedImage==Lzma2BlockEncodedLimit+32,
@@ -59,10 +62,16 @@ static TileGroup* find_tile_group(const Content* owner,uint32_t id){
 }
 static TileGroup* reserve_tile_group(unsigned bytes){
     const unsigned pages=(bytes+TilePageBytes-1)/TilePageBytes;
+    // In the1 MiB tier, keep every allocation within one512 KiB bank.
+    // Otherwise a pinned four-page index at pages2..5 could strand both
+    // ends and prevent the next four-page tile from fitting. Power-of-two
+    // alignment guarantees that the other bank is reclaimable; no copying
+    // or movement of an existing/pinned group is needed.
+    const unsigned step=tile_page_limit==8?(pages>2?4:pages==2?2:1):1;
     for(;;){
-        unsigned first=TilePages;
-        for(unsigned i=0;i+pages<=TilePages;++i)if(!(tile_used&tile_mask(i,pages))){first=i;break;}
-        if(first<TilePages){
+        unsigned first=tile_page_limit;
+        for(unsigned i=0;i+pages<=tile_page_limit;i+=step)if(!(tile_used&tile_mask(i,pages))){first=i;break;}
+        if(first<tile_page_limit){
             for(auto& group:tile_groups)if(!group.pages){
                 // Ownership is published only after a complete decode.
                 group.first=uint8_t(first);group.pages=uint8_t(pages);

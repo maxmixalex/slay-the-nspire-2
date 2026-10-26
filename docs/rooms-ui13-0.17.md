@@ -26,6 +26,11 @@ Enchant selection uses two columns, a separate scrollbar at x = 187, and a
 fixed 104 px explanation pane at x = 212. The original rich title and body remain
 available; long localized bodies scroll in that pane. Single before/after and
 multiple selection previews remain to its left.
+When a card owns hover, its complete keyword set takes over this same column
+and includes the pending enchantment exactly once. Associated cards and paged
+text remain in the column, above the confirmation control. This removes the
+duplicate fixed-pane/preview-tooltip overlap found in actual English/Chinese
+capture review.
 
 Grid painters explicitly relinquish focus and hit regions while the selection
 confirmation owns the screen. The HUD drawing scope similarly relinquishes its
@@ -36,6 +41,11 @@ hover. Preview cards and confirmation controls keep their own interaction.
 The rest-site focus outline now uses the authored outline-to-button size ratio,
 instead of applying the old extra 55 × 39 enlargement to an already scaled
 button.
+
+The fake merchant's enlarged dialogue bubble uses the inventory's empty upper
+left corner. Its previous centered placement covered the first relic and its
+price: a real 53-to-54 price change was completely hidden by the bubble. The
+original one-gold pixel-change assertion remains in the regression.
 
 ## Enchantment tab and extra card text
 
@@ -56,7 +66,7 @@ one another's rendered marker.
 
 ## Dedicated card transformation
 
-Source owners: `NCardTransformVfx`, `card_transform_vfx.tscn`, its source particle
+Source owners: `NCardTransformVfx`, `scenes/vfx/ui/card/vfx_card_transform.tscn`, its source particle
 materials, anticipation/reveal curves and child textures. Scene properties
 override constructor defaults and determine the implemented schedule.
 
@@ -147,11 +157,33 @@ creature node above that backstop.
 
 ## Verification status
 
-Short `clang++-18 -fsyntax-only` checks cover the App implementation and changed
-selection, keyword, deck-selection and Architect regressions. The four modified
-selection tests cover actual commit/cancel operations, frozen transform facts,
-separate removal/transform state, enchantment marker cache identity, sidebar
-geometry, tooltip non-overlap, and unchanged save bytes during animation.
+Frozen checkpoint `7bfc391` built the eight room/selection regressions. The
+asset-independent selection, deck-selection and keyword gates passed, and the
+Architect's independent geometry, immutable-row distortion and real event
+control gate passed 79,351 checks. With the actual UI12 resources, English and
+Chinese keyword gates passed 635,846/635,881 checks, reward gates passed 4,076
+each, and card keyword/marker-fact gates passed 409,460 each. Architect's five
+characters × Normal/Fast × both languages passed 84,251 checks per language.
+These actual-resource gates prove the existing actor/body/death registration,
+source text, selection facts and save invariance; they do not claim the newly
+appended UI13 particle images have been accepted.
+
+The first actual selection attempt exposed obsolete 4px/5px UI9 font assertions.
+Checkpoint `8c8c900` updates their independent full-label pixel oracle to the
+current 8px label, fractional advances, source kerning, negative bearings and
+one-pixel shadow. It still rejects missing codepoints rather than accepting a
+question-mark fallback. Actual English/Chinese world-selection passes then
+reached 1,396,387/1,436,719 checks and supplied the screenshots that exposed the
+duplicate enchantment pane above. The older deck/room merchant fixtures also
+needed to advance the real yielded preparation frames before timing inventory
+entry; waiting a fixed interval with no rendered loading frame never completed
+that path. Failed and launch-error journals remain separate from passing runs.
+
+The modified gates cover actual commit/cancel operations, frozen transform
+facts, separate removal/transform state, enchantment marker cache identity,
+sidebar geometry, tooltip non-overlap, and unchanged save bytes during
+animation. Short `clang++-18 -fsyntax-only` checks pass for the follow-up
+duplicate-pane and fake-merchant bubble fixes.
 
 Matched-pack execution, source-image visual review, full native gates and
 calculator execution are separate release gates coordinated in `WORK_STATE.md`.

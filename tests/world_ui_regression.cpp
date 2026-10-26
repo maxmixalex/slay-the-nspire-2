@@ -802,7 +802,7 @@ static void deferred_combat_hand(){
   advance_combat_ms(33);a.render();
   for(unsigned draws=1;draws<=5;++draws){
    CombatHand::Cards arriving=next;arriving.count=uint16_t(kept.count+draws);shown_only(arriving);
-   const auto pose=a.combat_hand_pose(arriving.count-1,false);CHECK(pose.cx==16&&pose.cy==223);
+   const auto pose=a.combat_hand_pose(arriving.count-1,false);CHECK(pose.cx==16&&pose.cy==225);
    for(unsigned j=arriving.count;j<next.count;++j)CHECK(!has(HitKind::Hand,next.ids[j]));
    CHECK(a.combat_feedback.active&&a.combat_actions_locked());
    if(draws<5){const uint32_t next_add=player+TurnBannerPresentation::wait_ticks(draws*250,draws*100,fast!=0);
@@ -1274,7 +1274,7 @@ static void original_card_movement(){
    const auto shown=a.combat_hand();CHECK(shown.count==base+n);
    for(unsigned i=0;i<shown.count;++i)CHECK(shown.ids[i]==final_hand.ids[i]&&has(HitKind::Hand,shown.ids[i]));
    for(unsigned i=shown.count;i<final_hand.count;++i)CHECK(!has(HitKind::Hand,final_hand.ids[i]));
-   const auto pose=a.combat_hand_pose(shown.count-1,false);CHECK(pose.cx==16&&pose.cy==223&&!a.combat_hand_settled(shown.count-1,false));
+   const auto pose=a.combat_hand_pose(shown.count-1,false);CHECK(pose.cx==16&&pose.cy==225&&!a.combat_hand_settled(shown.count-1,false));
    if(n==2)capture(fast?"card-draw-second-fast":"card-draw-second");
    if(n<3){const uint32_t next=draw_start+TurnBannerPresentation::wait_ticks(n*250,n*100,fast!=0);
     advance_combat_ms((next-a.animation-1)*33);a.render();CHECK(a.combat_hand().count==base+n);

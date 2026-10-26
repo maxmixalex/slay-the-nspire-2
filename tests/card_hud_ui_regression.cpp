@@ -375,11 +375,12 @@ static void character_confirm_art(){
     Canvas c{app};app.pointer.visible=false;app.pointer.held=false;for(auto&motion:app.button_motions)motion={};
     clear();native_original_confirm(c,UiAction::StartCharacter);const std::vector<uint16_t>actual(app.pixels,app.pixels+320*240);
     clear();const auto info=app.content.image(base);CHECK(info.w&&info.h);
-    // Independent projection of the source Image/Shadow/Icon child nodes,
-    // not a fit of the entire sprite into its smaller Control hit rectangle.
-    const int size=15,tick_x=296,tick_y=175;
-    Canvas shadow=c;shadow.tint_red=shadow.tint_green=shadow.tint_blue=0;shadow.picture(base,286,172,42,29,64);
-    c.picture(base,284,170,42,29);
+    // Independent UI12 LCD placement of the original Image/Shadow/Icon
+    // siblings. Keep the source atlas fit and cream tick tint; the readable
+    // bottom-right control is larger than the old4/21 desktop projection.
+    const int size=20,tick_x=280,tick_y=207;
+    Canvas shadow=c;shadow.tint_red=shadow.tint_green=shadow.tint_blue=0;shadow.picture(base,260,199,61,42,64);
+    c.picture(base,258,197,61,42);
     unsigned changed=0;for(int y=0;y<240;++y)for(int x=0;x<320;++x)if(actual[y*320+x]!=app.pixels[y*320+x]){
         ++changed;CHECK(x>=tick_x&&x<tick_x+size&&y>=tick_y&&y<tick_y+size);
     }
@@ -420,10 +421,24 @@ static void long_hand_description(){
     app.game.card_count=app.game.hand.count=1;app.game.hand.ids[0]=0;app.game.cards[0]={DefectRainbow,0};app.game.zones[0]=Zone::Hand;
     app.game.energy=99;app.cursor=0;app.hand_focus=true;app.pointer.visible=false;
     Canvas c{app};
-    // The native five-pixel font now fits Rainbow's full description.
-    // Keep the overflow requirement on an actually longer original card.
-    if(app.content.version()>=HistoryUi8ContentVersion&&app.content.font_size(5)==5)
-        CHECK(!hand_tile(c,0).description_truncated);
+    // The readable UI12 hand body uses an8px floor; existence of a5px
+    // resource is not evidence that this card uses it. Verify actual line
+    // capacity, then exercise the full text owner and last scroll window.
+    if(app.content.version()>=HistoryUi8ContentVersion&&app.content.font_size(5)==5){
+        const auto&rainbow=hand_tile(c,0);const auto fonts=card_face_fonts(c,HandFaceW);
+        const auto rect=card_face::layout(HandFaceX,HandFaceY,HandFaceW,HandFaceH).description;
+        CHECK(fonts.body>=8&&fonts.body_minimum>=8);
+        const auto metric=[&](const RichChar&ch,int px){return c.text_metric(ch,px);};
+        const int rows=fitted_text::line_count(rainbow.description,rect.w,fonts.body_minimum,metric);
+        CHECK(rainbow.description_truncated==(rows>fitted_text::row_capacity(rect.h,fonts.body_minimum)));
+        if(rainbow.description_truncated){
+            selected_hand_tile(c,0);CHECK(selected_hand_reader.maximum>0);
+            app.map_clock_ms+=1400u+unsigned(selected_hand_reader.maximum)*1200u;
+            selected_hand_tile(c,0);CHECK(selected_hand_reader.skip==selected_hand_reader.maximum);
+            CardHoverTarget full{};CHECK(card_hover_target(app,full)&&full.instance==0);
+            HoverTipList tips{};collect_visible_hover_tips(c,full,tips);CHECK(tips.count&&tips.items[0].kind==HoverTipKind::Description);
+        }
+    }
     app.game.cards[0]={DefectRocketPunch,0};
     const auto&tile=hand_tile(c,0);CHECK(tile.description_truncated);
     CardHoverTarget owner{};CHECK(card_hover_target(app,owner)&&owner.instance==0);

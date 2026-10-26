@@ -261,7 +261,10 @@ struct CoreDamageResult {
 // Actual orb activation, including repeated evokes without dequeuing. The
 // target mask is chosen by the command before damage; observing it consumes
 // no RNG and does not infer an activation from slot/count changes.
-struct CoreOrbNotice {uint8_t kind=0,slot=0,slots=0,targets=0;bool evoke=false;};
+struct CoreOrbNotice {
+    enum Event:uint8_t {Activation,Removed,Channeled,Capacity};
+    uint8_t kind=0,slot=0,slots=0,targets=0;bool evoke=false;uint8_t event=Activation;bool removed=false;
+};
 struct CoreObserver {
     void* context=nullptr;
     void(*on_log)(void*,const State&,Log)=nullptr;

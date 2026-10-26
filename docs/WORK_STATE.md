@@ -1,4 +1,40 @@
-# Work state — 2026-10-25
+# Work state — 2026-10-26
+
+## UI13 feedback implementation — active, final acceptance pending
+
+The current continuation starts from the verified UI12 release below. The user
+explicitly authorized all operations on `maxmixalex/slay-the-nspire-2` and asked
+for parallel implementation, continued optimization and a playable result.
+Source checkpoints are pushed and independently fetched before long jobs;
+`main` still points to the previous accepted release until final verification.
+
+Checkpoint `0c5bb5b2104f3b24dd6aac0ba7052ddeb02a7955` contains the integrated
+frontend/combat/room changes, original-source UI13 converters and 1,138 appended
+source images. The complete eight-model boss resample preserves all 286 clips
+and 5,340 frame samples. English/Chinese and the other fourteen editions are
+being rebuilt together; current intermediate test and asset receipts must not
+be relabelled as final acceptance.
+
+The first full native run passed 124 tests, with eight failures and three host
+executables missing their execute bits. Most failures were stale independent
+layout oracles after intentional source/UI corrections; actual-resource checks
+also found a real small-card cost cache miss, duplicate enchantment tooltips,
+and a fake-merchant bubble obscuring a price. These are being repaired and
+retested with their original pixel/visibility contracts preserved.
+
+Merchant inventory rendering now has conservative per-pixel rug occlusion and
+an exact unmodulated-alpha fast path. A 2,376-frame whole-screen comparison and
+the independent 190,626-case canvas oracle passed. The closed inventory remains
+a separate performance blocker: its third 180-frame native window still read
+10,765,368 bytes. The original private resource trace identifies animation
+working-set churn, not just cold loading. This is not yet considered resolved.
+
+Doom source particles/body sinking, source orb-evocation motion, final boss
+storage optimization, matched ordinary-OS Firebird measurements, natural
+battle/reward/map/save/Continue validation and the final matched artifacts are
+still in progress. Existing exclusions remain audio, multiplayer and Timeline;
+no manual WASM/browser validation or physical-calculator FPS is claimed.
+
 
 ## UI12 playable follow-up — acceptance completed
 

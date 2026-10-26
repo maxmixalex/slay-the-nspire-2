@@ -12,13 +12,17 @@ static void world_selection_upgrades(Canvas&c){
 static void world_enchantment_description(Canvas&c){
     auto&a=c.a;int amount=0;const auto enchantment=a.world_selection_enchantment(&amount);
     if(enchantment==EventEnchantment::None)return;
+    // The hovered card's associated set takes over this same column and
+    // includes the pending enchantment. Drawing both would duplicate its
+    // skin/text and hide subsequent keywords.
+    CardHoverTarget hovered{};if(!a.panel&&!a.library&&card_hover_target(a,hovered)&&!hovered.detail)return;
     CardHoverTarget owner{};HoverTip tip{};tip.kind=HoverTipKind::Enchantment;tip.key=event_enchantment_key(enchantment);tip.amount=int16_t(amount);
     char title[128]{},description[2048]{};format_card_hover_tip(a,owner,tip,title,sizeof title,description,sizeof description);
     const int image=a.content.world_image("enchantments",tip.key);
     // This pane owns a column, so its fit-content height must never move it
     // over the prompt or the bottom confirmation. Long locales scroll in
     // the same source hover skin, independently of the card-grid scrollbar.
-    constexpr int x=212,y=24,w=104,max_height=187;
+    constexpr int x=212,y=24,w=104,max_height=180;
     const int step=source_hover_step(c),overhead=source_hover_overhead(c),lines=source_hover_paragraph(c,description,0,0,source_hover_body_width(w),0);
     const int height=mn(max_height,overhead+lines*step),visible=mx(0,(height-overhead)/step);
     const HoverRect rect{x,y,w,height};const uint32_t age=source_hover_age(a,title,description,x,y);

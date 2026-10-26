@@ -29,8 +29,31 @@ new codec is introduced.
 Source tests cover the independently bounded layout, a distant tail's effect on
 sampling density, complete frame replacement, rejected clock changes, and two
 locales passing the same retile plan without changes to their text and fonts.
-The private rebake receipt records each original and new canvas, all 232 clip
-registrations, frame totals, final sizes and preservation comparisons. A source
-checkpoint alone does not establish the final image or calculator frame rate;
-the full private conversion and Firebird review remain required integration
-gates.
+The full private conversion at checkpoint `7bfc391` completed in 1,132.19s:
+eight models (Vantom, Ceremonial Beast, Waterfall Giant, Mecha Knight, Frog
+Knight, Thieving Hopper, Bygone Effigy and Architect), 286 clips and 5,340 frames.
+Its English/Chinese outputs retain all clocks, 701,988 protected tiles, 546
+pre-existing index groups, all original glyphs and all 8,704 strings exactly.
+Their logical pack sizes are 70,174,824/74,662,627 bytes, adding approximately
+6.258 MB of shared original-source pixels before subsequent tile alignment.
+
+Actual output decoding gives Vantom's normal idle frame91×102 ink pixels,
+previously21×25. Ceremonial Beast changes26×29→96×108, Waterfall Giant
+28×28→96×97, and Mecha Knight37×28→126×95. Their source-world poses and pivots
+are preserved. These observations come from the completed private packs,
+not the earlier short sampling probe. The comparison contains private original
+assets and remains outside the source repository.
+
+`tools/align_enemy_tiles_ui13.py` is the lossless storage follow-up. It keeps
+one tile-grid phase per model/density and only adds transparent margins, moving
+each pivot by the same integer amount. It parses and moves sparse run headers
+without recoloring, resampling, removing frames or changing timing. Every output
+frame is independently compared in source-world coordinates; inverse density,
+span pixels, original fonts and other resources stay exact. It retains the
+existing codec and includes no additional runtime cache or resource scan.
+The receipt records actual encoded sizes, per-clip image-cache pages and group
+working sets. Its group-only LRU simulation is a catalog-cost estimate, not
+elapsed-time or emulator evidence. Expanded transparent margins can change a
+nearest-neighbor boundary pixel under non-integer screen scales, requiring real
+screen review before selecting the optimized candidate. Full Firebird review
+and hot-frame measurement remain required integration gates.

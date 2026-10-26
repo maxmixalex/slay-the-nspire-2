@@ -2,9 +2,9 @@ static int min(int a,int b){return a<b?a:b;}
 static int max(int a,int b){return a>b?a:b;}
 static CoreObserver core_observer{};
 CoreObserver set_core_observer(CoreObserver observer){CoreObserver previous=core_observer;core_observer=observer;return previous;}
-static void notify_orb_activation(const State&s,unsigned kind,unsigned slot,bool evoke,unsigned targets=0){
+static void notify_orb_activation(const State&s,unsigned kind,unsigned slot,bool evoke,unsigned targets=0,unsigned event=CoreOrbNotice::Activation,bool removed=false){
     const CoreObserver observer=core_observer;if(!observer.on_orb)return;
-    const CoreOrbNotice notice{uint8_t(kind),uint8_t(slot),s.expansion.orb_slots,uint8_t(targets),evoke};
+    const CoreOrbNotice notice{uint8_t(kind),uint8_t(slot),s.expansion.orb_slots,uint8_t(targets),evoke,uint8_t(event),removed};
     observer.on_orb(observer.context,s,notice);
 }
 void notify_history(const State&s,RunHistoryEvent kind,unsigned model,unsigned detail,unsigned flags,const char*key){

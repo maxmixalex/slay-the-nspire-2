@@ -511,6 +511,8 @@ static void event_motion(){
 }
 static void merchant_motion_and_pickups(){
  begin_room(WorldRoom::Shop);a.game.gold=9999;a.render();snapshot();click(UiAction::OpenShop);CHECK(a.shop_open);
+ for(unsigned steps=0;a.merchant_preparation.active&&steps<128;++steps){a.advance(33);a.render();unchanged();}
+ CHECK(!a.merchant_preparation.active&&a.content.healthy());
  const uint32_t began=a.map_clock_ms;CHECK(a.room_presentation.merchant.y(began)==-222);CHECK(!choices());unchanged();
  room_clock(350);CHECK(a.room_presentation.merchant.y(a.map_clock_ms)>0&&a.room_presentation.merchant.y(a.map_clock_ms)<18);capture("merchant-rug-half-open");unchanged();
  room_clock(350);CHECK(a.room_presentation.merchant.y(a.map_clock_ms)==18);
@@ -556,7 +558,9 @@ static void fake_merchant_layout(){
 static void merchant_model_hover_sets(){
  begin_room(WorldRoom::Shop);a.game.gold=9999;
  a.game.world.shop_relics[0]=WorldRelicFencingManual;a.game.shop_potions[0]=uint8_t(Potion::CunningPotion);
- a.game.shop_sold=0;a.render();click(UiAction::OpenShop);room_clock(1000);snapshot();
+ a.game.shop_sold=0;a.render();click(UiAction::OpenShop);
+ for(unsigned steps=0;a.merchant_preparation.active&&steps<128;++steps){a.advance(33);a.render();}
+ CHECK(!a.merchant_preparation.active&&a.content.healthy());room_clock(1000);snapshot();
  for(int slot=ShopRelicStart;slot<ShopRemove;++slot){
   a.cursor=slot;a.pointer.visible=false;a.render();CardHoverTarget owner{};CHECK(merchant_hover_target(a,owner));
   CHECK(owner.merchant&&owner.merchant_left&&owner.owner.w==22&&owner.owner.h==22);

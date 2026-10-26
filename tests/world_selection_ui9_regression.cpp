@@ -59,6 +59,16 @@ static void enchantments(){
     WorldSelectionCard left{},right{};CHECK(a.world_selection_preview_card(0,left)&&a.world_selection_preview_card(1,right));CHECK(left.card.kind==right.card.kind&&left.facts.enchantment==EventEnchantment::None&&right.facts.enchantment==EventEnchantment::Imbued&&right.facts.enchantment_amount==1);
     CHECK(left.x+left.w<=right.x&&right.x+right.w<=200);
     a.pointer_move(right.x+right.w/2,right.y+right.h/2);a.render();CardHoverTarget target;CHECK(card_hover_target(a,target)&&target.card_facts()&&target.card_facts()->enchantment==EventEnchantment::Imbued);
+    // A real hovered preview previously drew a second Imbued tooltip over
+    // the fixed enchantment pane. One bounded column now owns the set.
+    Canvas canvas{a};HoverTipList tips;collect_visible_hover_tips(canvas,target,tips);unsigned pending=0;
+    for(unsigned i=0;i<tips.count;++i)pending+=tips.items[i].kind==HoverTipKind::Enchantment&&hover_key_equal(tips.items[i].key,"IMBUED");CHECK(pending==1);
+    const auto pages=card_hover_page(a,target,tips);for(int page=0;page<pages.pages;++page){const auto layout=card_hover_page(a,target,tips,page);
+        for(unsigned i=0;i<layout.count;++i){const auto&r=layout.pieces[i].box;CHECK(r.x>=212&&r.x+r.w<=316&&r.y>=24&&r.y+r.h<=192);
+            for(unsigned j=0;j<i;++j){const auto&other=layout.pieces[j].box;CHECK(r.x+r.w<=other.x||other.x+other.w<=r.x||r.y+r.h<=other.y||other.y+other.h<=r.y);}}
+    }
+    std::vector<uint16_t> duplicate(ScreenW*ScreenH);canvas.pixels=duplicate.data();world_enchantment_description(canvas);
+    CHECK(std::none_of(duplicate.begin(),duplicate.end(),[](uint16_t pixel){return pixel!=0;}));
     const CardHoverTarget copied=target;CHECK(copied.card_facts()!=target.card_facts()&&copied.card_facts()->enchantment==EventEnchantment::Imbued);unchanged();capture("enchant-single-preview");
     click(HitKind::WorldPreviewCard,1);CHECK(a.detail_has_facts&&a.detail_facts.enchantment==EventEnchantment::Imbued);a.input(Key::Back);CHECK(a.detail_card<0&&a.deck_selection.preview);unchanged();
     settle();action(UiAction::ConfirmWorldChoice);CHECK(a.game.event_cards.deck[choices[0]].enchantment==EventEnchantment::Imbued);CHECK(validate(a.game));
@@ -171,7 +181,7 @@ static void fonts(){
     for(const auto&prompt:prompts){char raw[512]{};std::snprintf(raw,sizeof raw,"%s",a.content.world_string(prompt.table,prompt.key));CHECK(*raw);CombatPromptContext context{{&a,prompt.table,{},int(WorldRelicSeaGlass),-1,10},0,10};wt_model_key(context.model,prompt.key);char text[512]{};LocalizedTemplate(text,sizeof text,combat_prompt_value,&context,"Energy","Stars",a.content.english(),combat_prompt_catalog).for_language(a.content.language()).format(raw);exact_font(text,8);}
     exact_font(a.content.world_string("gameplay_ui","CHOOSE_A_PACK"),10,5);Canvas canvas{a};
     for(unsigned i=1;i<EventEnchantmentKinds;++i){CardHoverTarget owner{};HoverTip tip{};tip.kind=HoverTipKind::Enchantment;tip.key=event_enchantment_key(EventEnchantment(i));tip.amount=3;char title[128]{},body[2048]{};format_card_hover_tip(a,owner,tip,title,sizeof title,body,sizeof body);exact_font(title,10,5);exact_font(body,10);
-        const int lines=source_hover_paragraph(canvas,body,0,0,90,0),visible=(187-source_hover_overhead(canvas))/source_hover_step(canvas);
+        const int lines=source_hover_paragraph(canvas,body,0,0,90,0),visible=(180-source_hover_overhead(canvas))/source_hover_step(canvas);
         CHECK(lines>0&&visible>0);const int overflow=std::max(0,lines-visible);
         CHECK(source_hover_scroll(overflow,1800+overflow*950,950)==overflow);
     }

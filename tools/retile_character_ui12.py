@@ -115,7 +115,7 @@ def replacements_from_manifest(source, path):
 
 
 def make_plan(source, work, selected, replacements=None, precision=2, *,
-              allow_geometry=False, clip_overrides=None):
+              allow_geometry=False, clip_overrides=None, raw_transform=None):
     replacements = replacements or {}
     selected = set(selected)
     t.require(set(replacements) <= selected, 'Manifest contains an unselected image')
@@ -144,6 +144,8 @@ def make_plan(source, work, selected, replacements=None, precision=2, *,
                     width, height, fmt, raw = old.image_raw(image)
                 else:
                     width, height, fmt, raw = source.image_raw(image)
+                if raw_transform is not None:
+                    width, height, fmt, raw = raw_transform(image, (width, height, fmt, raw))
                 t.require((allow_geometry or (width, height) == source.images[image][1:3]) and
                           0 < width <= 320 and 0 < height <= 240 and fmt == 4,
                           'Replacement geometry or sparse format differs')

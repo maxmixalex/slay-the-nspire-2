@@ -80,17 +80,52 @@ void collision_and_eviction(){
     for(auto bucket:image_buckets)CHECK(!bucket);
     for(auto page:image_used)CHECK(!page);
 }
+void frame_pool_profiles(){
+    owner.set_image_cache_profile(false);
+    CHECK(image_page_limit==1280&&tile_page_limit==48);
+    CHECK(tile_pages==picture_pixels+5u*1024u*1024u);
+    CHECK(sizeof picture_pixels==11u*1024u*1024u);
+    owner.set_image_cache_profile(true);
+    CHECK(image_page_limit==2560&&tile_page_limit==8);
+    CHECK(tile_pages==picture_pixels+10u*1024u*1024u);
+    // Exhaust both banks with independent fragmentation patterns. Pin each
+    // legal1..4-page index in turn, then require a full512 KiB tile to fit.
+    // Fill both allocations and verify the image arena boundary is intact.
+    for(unsigned initial=0;initial<8;++initial)for(unsigned index_pages=1;index_pages<=4;++index_pages){
+        for(auto&group:tile_groups)tile_discard(group);
+        for(unsigned i=0;i<initial;++i){auto*g=reserve_tile_group(TilePageBytes);CHECK(g);g->owner=&owner;g->age=next_tile_age();}
+        TileGroup*index=reserve_tile_group(index_pages*TilePageBytes);CHECK(index);
+        index->owner=&owner;index->age=next_tile_age();index->first|=128u;
+        std::fill_n(tile_bytes(*index),index_pages*TilePageBytes,uint8_t(0x51));
+        picture_pixels[10u*1024u*1024u-1]=0x7b;
+        TileGroup*tile=reserve_tile_group(4*TilePageBytes);CHECK(tile&&tile!=index);
+        tile->owner=&owner;tile->age=next_tile_age();
+        std::fill_n(tile_bytes(*tile),4*TilePageBytes,uint8_t(0xb2));
+        CHECK(picture_pixels[10u*1024u*1024u-1]==0x7b);
+        CHECK((index->first&63u)+index->pages<=8&&(tile->first&63u)+tile->pages<=8);
+        for(unsigned j=0;j<index_pages*TilePageBytes;++j)CHECK(tile_bytes(*index)[j]==0x51);
+        owner.set_image_cache_profile(true);
+        CHECK(index->owner==&owner&&tile->owner==&owner); // same profile preserves views
+        index->first&=63u;
+    }
+    owner.set_image_cache_profile(false);
+    CHECK(image_page_limit==1280&&tile_page_limit==48&&!tile_used);
+    for(const auto&group:tile_groups)CHECK(!group.pages&&!group.owner);
+    for(const auto&entry:image_cache)CHECK(!entry.pages&&!entry.owner);
+    for(auto page:image_used)CHECK(!page);
+}
 }
 int main(){
     collision_and_eviction();
     // Include indexes on both sides of the former byte boundary. The count,
     // permutation and returned age must survive entries 256 through 319.
-    CHECK(ImageEntries==Content::image_capacity_entries()&&ImageEntries==480);
+    CHECK(ImageEntries==Content::image_capacity_entries()&&ImageEntries==1023);
     std::vector<unsigned> all;
     for(unsigned i=0;i<ImageEntries;++i)all.push_back(i);
     image_wrap(all);
     image_wrap({0,7,63,127,128,191,254,255,256,287,319});
     image_wrap({ImageEntries-1});
     image_wrap({});
-    std::printf("content cache ages: %u checks passed; 480 colliding keys, owner/alias eviction, chain clearing and age wrap\n",checks);
+    frame_pool_profiles();
+    std::printf("content cache ages: %u checks passed;1023 colliding keys, owner/alias eviction, age wrap and bounded frame-pool splits\n",checks);
 }

@@ -59,6 +59,28 @@ static void source_equations(){
  m.bind(11,0);for(unsigned i=0;i<Shake::Capacity+1;++i)m.add(0,i+1,Shake::Trauma,2);CHECK(m.count==48&&m.overflow);
  CHECK(sizeof(Shake)<768&&sizeof(CreatureSleepPresentation)==12);
 }
+static void doom_equations(){
+ scenario="Doom source hold, exponential sink, cubic emitter width and overlay restart";
+ CombatDoomPresentation d;auto&body=d.bodies[1];body.flags=CombatDoomPresentation::Active|CombatDoomPresentation::Disappear;body.at=1000;body.height=48;body.width_q12=4096;
+ for(unsigned age:{0u,250u,500u,749u,750u,751u,850u,1000u,1250u,1499u,1500u,2000u}){
+  const double source=age<=750?0:age>=1500?72:72*std::pow(2.0,10.0*(double(age)-750.0)/750.0-10.0);
+  CHECK(std::abs(double(body.sink(body.at+age))-source)<=1.1);
+ }
+ CHECK(!body.width_scale(999)&&!body.width_scale(1000));CHECK(body.width_scale(1250)==3584);
+ CHECK(body.width_scale(1500)==4096&&body.width_scale(2799)==4096&&body.width_scale(2875)==3584&&body.width_scale(2950)==0);
+ CHECK(body.alive(4499)&&!body.alive(4500));body.flags&=~CombatDoomPresentation::Disappear;CHECK(!body.sink(2300));
+ d.bodies[2].flags=CombatDoomPresentation::Active;d.bodies[2].at=1400;
+ d.sync_overlay(1100);CHECK(d.overlay_at==1000&&d.overlay(1100)>0&&!(d.bodies[2].flags&CombatDoomPresentation::OverlayApplied));
+ const unsigned before=d.overlay(1400);d.sync_overlay(1400);CHECK(d.overlay_at==1400&&d.overlay_from==before&&d.overlay(1400)==before);
+ CHECK(d.overlay(2400)==4096&&d.overlay(3599)==4096&&d.overlay(3850)==2048&&!d.overlay(4100));
+ for(unsigned color:{0x001fu,0x07e0u,0xf800u})CHECK(doom_grayscale(uint16_t(color))==0xffffu);
+ CHECK(doom_grayscale(0)==0&&sizeof d<=384);
+ scenario="ClearTarget preserves independently decaying trauma and discards owned punch cues";
+ Shake shake;shake.bind(1,1000);shake.add(1000,1000,Shake::Trauma,Shake::Strong);shake.add(1000,1500,Shake::Punch,Shake::Strong);
+ shake.clear_target(1100);CHECK(!shake.bound&&!shake.count&&!shake.punch.strength&&shake.trauma==410);
+ shake.bind(2,50,50);CHECK(shake.trauma==308&&shake.trauma_now(50)==308&&shake.trauma_now(201)==0);
+ shake.clear_target(201);CHECK(!shake.trauma);shake.reset();CHECK(!shake.trauma&&!shake.bound);
+}
 static void sleeping_lifetime(){
  scenario="sleep emission stops while existing particles finish";
  CreatureSleepPresentation s;s.observe(false,0);CHECK(!s.alive(0));s.observe(true,100);
@@ -152,10 +174,10 @@ static void actual_cards(){
   CHECK(queued&&fired);equal_save();
  }
 }
+static bool doom_punch(const Shake::Cue&q){return q.kind==Shake::Punch&&q.strength==5&&q.duration==300&&q.angle>=1934&&q.angle<=2162;}
 static bool doom_camera(){
- const auto match=[](const Shake::Cue&q){return q.kind==Shake::Punch&&q.strength==5&&q.duration==300&&q.angle==2048;};
- if(match(a.screen_motion.punch))return true;
- for(unsigned i=0;i<a.screen_motion.count;++i)if(match(a.screen_motion.cues[i]))return true;
+ if(doom_punch(a.screen_motion.punch))return true;
+ for(unsigned i=0;i<a.screen_motion.count;++i)if(doom_punch(a.screen_motion.cues[i]))return true;
  return false;
 }
 static void first_world_combat(){
@@ -179,7 +201,19 @@ static void actual_doom(){
   for(unsigned i=0;a.combat_preparation.active&&i<1024;++i){a.advance(33);a.render();}CHECK(!a.combat_preparation.active);a.screen_motion.reset();direct=s;
   CHECK(play(direct,0,0));{UiCoreObserver observer(a);a.begin_combat_feedback();CHECK(play(s,0,0));}
   equal_save();CHECK(bool(!s.enemies[0].hp)==bool(lethal));CHECK(doom_camera()==bool(lethal));
-  if(lethal){bool fired=false;for(unsigned i=0;i<200;++i){a.advance(33);a.render();fired|=a.screen_motion.punch.angle==2048&&a.screen_motion.punch.strength==5;}CHECK(fired);equal_save();}
+  const auto&body=a.combat_doom.bodies[1];CHECK(bool(body.flags&CombatDoomPresentation::Active)==bool(lethal));
+  if(lethal){CHECK((body.flags&CombatDoomPresentation::Disappear)&&body.height>0&&body.width_q12>0);
+   CHECK(a.combat_feedback.effect_at*33u>=body.at+250u);
+   if(a.content.ui_image(I13_DoomFlameMask)>=0){
+    const auto clock=a.animation;Canvas canvas{a};unsigned previous=0;bool varying=false;
+    for(unsigned age:{330u,990u,1353u,1914u,3498u,3531u}){a.animation=body.at/33u+age/33u;std::memset(a.pixels,0,sizeof a.pixels);
+     combat_doom_layers(canvas,false);combat_doom_bodies(canvas);combat_doom_layers(canvas,true);
+     unsigned ink=0;for(unsigned at=0;at<320*240;++at)ink+=a.pixels[at]!=0;
+     if(age<1500u)CHECK(ink>20);if(age>=3500u)CHECK(!ink);if(previous&&previous!=ink)varying=true;previous=ink;
+    }CHECK(varying);a.animation=clock;CHECK(a.content.healthy());equal_save();
+   }
+  }
+  if(lethal){bool fired=false;for(unsigned i=0;i<200;++i){a.advance(33);a.render();fired|=doom_punch(a.screen_motion.punch);}CHECK(fired);equal_save();}
  }
  scenario="Doom's own-side hooks cover the enemy and player without changing save bytes";
  for(unsigned player=0;player<2;++player){
@@ -191,9 +225,9 @@ static void actual_doom(){
   {UiCoreObserver observer(a);a.begin_combat_feedback();CHECK(end_turn(s));}
   equal_save();CHECK(player?s.phase==Phase::Dead:!s.enemies[0].hp);CHECK(doom_camera());
   const auto queued=a.screen_motion;const unsigned at=a.animation,linger=a.combat_linger_until;
-  uint32_t doom_at=queued.punch.at;for(unsigned i=0;i<queued.count;++i)if(queued.cues[i].angle==2048&&queued.cues[i].strength==5)doom_at=queued.cues[i].at;
+  uint32_t doom_at=queued.punch.at;for(unsigned i=0;i<queued.count;++i)if(doom_punch(queued.cues[i]))doom_at=queued.cues[i].at;
   unsigned retained=0,displaced=0;bool fired=false;for(unsigned i=0;i<250;++i){
-   a.advance(33);a.render();fired|=a.screen_motion.punch.angle==2048&&a.screen_motion.punch.strength==5;
+   a.advance(33);a.render();fired|=doom_punch(a.screen_motion.punch);
    if(player&&a.animation*33u-doom_at<300u){
     CHECK(screen_combat_target(a)&&a.screen_motion.target==queued.target&&a.screen_motion.punch.at==doom_at);
     CHECK(a.game_over_presentation.bound&&a.game.phase==Phase::Dead&&a.game.world.finished);
@@ -342,7 +376,7 @@ static void actual_masks(const char*root){
  }
 }
 int main(int argc,char**argv){
- CHECK(argc==1||argc==2);source_equations();sleeping_lifetime();pixels_and_hits();settings_and_smith();actual_sleep();actual_cards();actual_doom();architect_equations();
+ CHECK(argc==1||argc==2);source_equations();doom_equations();sleeping_lifetime();pixels_and_hits();settings_and_smith();actual_sleep();actual_cards();actual_doom();architect_equations();
  for(unsigned fast=0;fast<2;++fast)for(unsigned character=0;character<5;++character)actual_architect(Character(character),fast,0,2);
  actual_architect(Character::Silent,false,2,0);actual_architect(Character::Silent,true,2,0);architect_reload();if(argc==2)actual_masks(argv[1]);
  std::printf("screen effects UI12: %u checks passed%s\n",checks,argc==2?" with original English/Japanese masks":" (asset-independent)");

@@ -40,6 +40,7 @@
 #include "combat_selection.hpp"
 #include "combat_osty_presentation.hpp"
 #include "combat_orb_presentation.hpp"
+#include "combat_doom_presentation.hpp"
 #include "card_grid_scroll.hpp"
 #include "card_highlight.hpp"
 #include "deck_selection_layout.hpp"
@@ -148,7 +149,10 @@ public:
     ImageCacheUsage image_cache_usage()const;
     static constexpr unsigned image_page_bytes(){return 4096;}
     static constexpr unsigned image_capacity_pages(){return 1280;}
-    static constexpr unsigned image_capacity_entries(){return 480;}
+    static constexpr unsigned image_capacity_entries(){return 1023;}
+    // Frame-boundary operation: invalidate picture views and redistribute
+    // the existing11 MiB arena between decoded images and tile groups.
+    void set_image_cache_profile(bool room_frames)const;
     // Select a real resident font band before layout. This never loads a
     // glyph or scans the resource payload; sparse legacy faces fall back.
     int font_size(int preferred,unsigned style=0,bool at_most=false,bool sparse_scene_sizes=false)const;
@@ -657,6 +661,8 @@ struct App {
     bool map_drawing_point(bool begin=false);
     uint32_t map_clock_ms=0;
     ScreenShakePresentation screen_motion{};
+    CombatDoomPresentation combat_doom{};
+    void observe_doom(unsigned actor);
     uint32_t screen_motion_clock()const;
     void sync_screen_motion();
     void screen_effect(ScreenShakePresentation::Kind,unsigned strength,unsigned duration=300,unsigned angle=0,unsigned delay=0);
@@ -731,6 +737,7 @@ struct App {
     void observe_combat_effect(const State&,Effect);
     void observe_combat_damage(const State&,const CoreDamageResult&);
     void observe_orb_activation(const State&,const CoreOrbNotice&);
+    void sync_orb_presentation();
     void sync_combat_damage();
     void combat_scene_offset(int&x,int&y)const;
     void observe_power_flash(const State&,int receiver,const char*key);

@@ -17,12 +17,16 @@ namespace {
 constexpr unsigned MaxImageBytes=320u*240u*8u+2u*240u;
 constexpr unsigned MaxEncodedImage=MaxImageBytes+MaxImageBytes/255u+32u;
 constexpr unsigned MaxGlyphBytes=40u*40u*2u,MaxStringBytes=16384;
-// The 5 MiB image pool retains more actor loops and readable card surfaces.
-// Keep the complete executable below the 24 MiB ceiling with sufficient
-// contiguous-loader headroom; the larger trial pool failed real OS loading.
-constexpr unsigned ImagePageBytes=4096,ImagePages=1280,ImageEntries=480;
-constexpr unsigned ImageBufferBudget=ImagePages*ImagePageBytes;
-alignas(4) static uint8_t image_pixels[ImagePages*ImagePageBytes];
+// Keep exactly the existing11 MiB of picture storage. Ordinary scenes use
+//5 MiB of decoded images and6 MiB of tile groups. The merchant's complete
+//original idle layers fit in10 MiB of images, while their expanded tile groups
+//need almost20 MiB. Retaining those finished frames stops recurring decoding.
+//The split changes only at a frame boundary, after invalidating both tiers.
+constexpr unsigned ImagePageBytes=4096,ImagePages=1280,RoomImagePages=2560,ImageEntries=1023;
+constexpr unsigned PictureBufferBudget=11u*1024u*1024u;
+alignas(4) static uint8_t picture_pixels[PictureBufferBudget];
+static uint8_t*const image_pixels=picture_pixels;
+static unsigned image_page_limit=ImagePages;
 static_assert(MaxEncodedImage==ResourceTransferCapacity,"Shared transfer capacity must preserve the original decoding bound");
 #include "content_tiles.inc"
 // Keep a directory index in the existing key word. The immutable, resident
@@ -31,26 +35,26 @@ static_assert(MaxEncodedImage==ResourceTransferCapacity,"Shared transfer capacit
 struct ImageCache {
     const Content* owner{};uint32_t image{},age{};
     uint16_t first{};uint8_t pages{},format{};
-    // Low 16 bits retain the image id; the remaining bits hold a 9-bit
-    // one-based chain link and its 7-bit bucket. No cache entry grows.
+    // Low16 bits retain the image id; the remaining bits hold a
+    // one-based10-bit chain link and its6-bit bucket. No cache entry grows.
     unsigned id()const{return image&65535u;}
-    unsigned next()const{return (image>>16)&511u;}
-    unsigned bucket()const{return image>>25;}
-    void link(unsigned next){image=(image&~(511u<<16))|(next<<16);}
+    unsigned next()const{return (image>>16)&1023u;}
+    unsigned bucket()const{return image>>26;}
+    void link(unsigned next){image=(image&~(1023u<<16))|(next<<16);}
 };
 static ImageCache image_cache[ImageEntries];
-constexpr unsigned ImageBuckets=128;
+constexpr unsigned ImageBuckets=64;
 static uint16_t image_buckets[ImageBuckets]{};
-static uint32_t image_used[(ImagePages+31)/32]{},image_age=0;
+static uint32_t image_used[(RoomImagePages+31)/32]{},image_age=0;
 static_assert(ImagePageBytes==Content::image_page_bytes()&&ImagePages==Content::image_capacity_pages()&&
               ImageEntries==Content::image_capacity_entries(),"Public preparation budget must match the cache");
-static_assert(ImagePages<65536&&(MaxImageBytes+ImagePageBytes-1)/ImagePageBytes<=255,
+static_assert(RoomImagePages<65536&&(MaxImageBytes+ImagePageBytes-1)/ImagePageBytes<=255,
               "Image page indexes and lengths must fit the bounded entry");
-static_assert(ImageEntries<512&&ImageBuckets==128,"Image ids and bucket links must share the existing key word");
-static_assert(sizeof image_pixels<=ImageBufferBudget,
-              "Image pixels must remain inside the calculator cache budget");
-static_assert(sizeof image_cache+sizeof image_buckets+sizeof image_used+sizeof image_age<=13u*1024u,
-              "Image-cache bookkeeping must remain below 13 KiB");
+static_assert(ImageEntries<1024&&ImageBuckets==64,"Image ids and bucket links must share the existing key word");
+static_assert(sizeof picture_pixels==11u*1024u*1024u,
+              "Both picture tiers must share the unchanged11 MiB budget");
+static_assert(sizeof image_cache+sizeof image_buckets+sizeof image_used+sizeof image_age<=25u*1024u,
+              "Image-cache bookkeeping must remain below25 KiB on the host");
 static uint8_t* image_buffer(const ImageCache& cache){return image_pixels+unsigned(cache.first)*ImagePageBytes;}
 static unsigned image_bucket(const uint8_t* descriptor){
     const uint32_t offset=u32(descriptor),shape=u32(descriptor+4),size=u32(descriptor+12);
@@ -103,12 +107,12 @@ static ImageCache* reserve_image(unsigned size){
     // At most all published entries can be evicted. No compaction or
     // allocation moves another entry while a caller still holds its view.
     for(unsigned attempt=0;attempt<=ImageEntries;++attempt){
-        unsigned run=0,first=ImagePages;
-        for(unsigned i=0;i<ImagePages;++i){
+        unsigned run=0,first=image_page_limit;
+        for(unsigned i=0;i<image_page_limit;++i){
             run=(image_used[i/32]&(uint32_t(1)<<(i%32)))?0:run+1;
             if(run==pages){first=i+1-pages;break;}
         }
-        if(first<ImagePages)for(auto& cache:image_cache)if(!cache.pages){
+        if(first<image_page_limit)for(auto& cache:image_cache)if(!cache.pages){
             cache.first=uint16_t(first);cache.pages=uint8_t(pages);
             for(unsigned i=first;i<first+pages;++i)image_used[i/32]|=uint32_t(1)<<(i%32);
             return &cache;
@@ -129,7 +133,7 @@ struct ImageReservation {
     uint8_t* bytes()const{return cache?image_buffer(*cache):nullptr;}
     void publish(const Content* owner,const uint8_t* metadata,uint32_t image,unsigned format){
         const unsigned bucket=image_bucket(metadata+40+image*16);
-        cache->image=image|(uint32_t(image_buckets[bucket])<<16)|(bucket<<25);
+        cache->image=image|(uint32_t(image_buckets[bucket])<<16)|(bucket<<26);
         cache->format=uint8_t(format);cache->age=next_image_age();cache->owner=owner;
         image_buckets[bucket]=uint16_t(cache-image_cache+1);
     }
@@ -345,6 +349,18 @@ bool Content::image_cached(int id)const{
     const uint8_t* descriptor=metadata_+40+16*unsigned(id);
     return (data_&&u32(descriptor+8)<5)||find_image(this,metadata_,unsigned(id));
 }
+void Content::set_image_cache_profile(bool room_frames)const{
+    const unsigned pages=room_frames?RoomImagePages:ImagePages;
+    if(image_page_limit==pages)return;
+    // No views may survive a split change. App calls this before requesting
+    // any frame pictures, never from inside decoding or a painter callback.
+    for(auto&group:tile_groups)tile_discard(group);
+    for(auto&entry:image_cache)discard_image(entry);
+    tile_age=image_age=0;
+    image_page_limit=pages;
+    tile_pages=picture_pixels+pages*ImagePageBytes;
+    tile_page_limit=(PictureBufferBudget-pages*ImagePageBytes)/TilePageBytes;
+}
 bool Content::image_alias(int first,int second)const{
     if(!healthy()||first<0||second<0||unsigned(first)>=images_||unsigned(second)>=images_)return false;
     const uint8_t* a=metadata_+40+16*unsigned(first);const uint8_t* b=metadata_+40+16*unsigned(second);
@@ -407,7 +423,7 @@ void Content::prepare_images(const int* ids,unsigned count)const{
             // retain the regular single-image path and its eviction behavior.
             if(next.offset<end||next.offset-end>16||next.length>MaxEncodedImage||
                next.offset-start>MaxEncodedImage-next.length||
-               next.pages>ImagePages-pages)break;
+               next.pages>image_page_limit-pages)break;
             end=next.offset+next.length;pages+=next.pages;++last;
         }
         if(last-first>1){

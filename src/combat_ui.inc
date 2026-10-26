@@ -236,6 +236,7 @@ static void combat_actors(Canvas&c){
         const auto*v=s.enemy_world.active?world_enemy_visual(a.enemy_presentation[i].model):nullptr;
         if(v&&v->shared_group){const auto&m=a.enemy_presentation[i];bool action=!m.loop&&int32_t(a.animation-m.start)>=0&&int32_t(m.until-a.animation)>0;
             if(shared<0||(action&&(!shared_action||int32_t(m.start-a.enemy_presentation[shared].start)>=0))||(!shared_action&&!action&&s.enemies[i].hp>0)){shared=i;shared_action=action;}continue;}
+        if(combat_doom_hides(a,unsigned(i+1)))continue;
         if(s.enemies[i].hp>0||s.enemy_world.active){auto p=a.combat_enemy_pose(i);Canvas actor=c;
             if(s.enemy_world.active&&a.enemy_presentation[i].instance_hue)actor.color_matrix=presentation::CreatureHue[a.enemy_presentation[i].instance_hue];
             if(s.enemy_world.active)actor.opacity=uint8_t(a.enemy_opacity(i));actor.actor(i+1,p.sprite_x,p.sprite_y,p.scale);
@@ -245,7 +246,7 @@ static void combat_actors(Canvas&c){
     if(shared>=0){int clip;uint32_t elapsed;bool loop;
         // The original Kaiser actor shares one background skeleton. Its baked
         // 320 x 218 frame is already in scene coordinates; draw it only once.
-        if(a.enemy_frame(shared,clip,elapsed,loop)){Canvas actor=c;actor.opacity=uint8_t(a.enemy_opacity(shared));actor.clip(clip,0,22-combat_controls::SceneLift,elapsed,false,loop);}
+        if(a.enemy_frame(shared,clip,elapsed,loop)){Canvas actor=c;actor.opacity=uint8_t(a.enemy_opacity(shared));if(!combat_doom_shared_frame(actor,clip,elapsed,loop))actor.clip(clip,0,22-combat_controls::SceneLift,elapsed,false,loop);}
         c.picture(a.content.world_image("background_front","KAISER_CRAB_BOSS"),0,22,320,218);
     }
 }
@@ -365,6 +366,7 @@ static void combat_reward_room(Canvas&c){
         const auto pet=a.combat_player_pose(true);c.hp(a.combat_health(MaxEnemies+1),a.health_bars[MaxEnemies+1],creature_health_left(pet),pet.hp,pet.width);
     }
     combat_scene_shake(c,hits);
+    combat_doom_layers(c,false);combat_doom_bodies(c);combat_doom_layers(c,true);combat_doom_overlay(c);
     a.hit_count=hits; // The shared reward backstop owns pointer input.
 }
 static void combat_screen(Canvas&c){
@@ -381,6 +383,7 @@ static void combat_screen(Canvas&c){
     const bool stars=combat_stars_visible(a);
     status_strip(c,0,player.body_left,player.status,mx(player.body_width+5,48));
     for(int i=0;i<s.enemy_count;i++){
+        if(combat_doom_hides(a,unsigned(i+1)))continue;
         const auto&e=s.enemies[i];const auto pos=a.combat_enemy_pose(i);int x=pos.x;
         if(a.combat_health(i+1).hp<=0){health_block_break(c,a.health_bars[i+1],creature_health_left(pos),pos.hp);if(!s.enemy_world.active)c.centered("已击败",x-32,105,64,10,Muted);continue;}
         c.hit(pos.body_left-2,mn(pos.body_top,pos.intent),pos.body_width+4,pos.status-mn(pos.body_top,pos.intent)+15,HitKind::Enemy,i);
@@ -395,6 +398,9 @@ static void combat_screen(Canvas&c){
 
     }
     combat_scene_shake(c,scene_hits);
+    // NDoomVfx is in the foreground CombatVfxContainer: its detached
+    // body and particles retain their registration while the scene shakes.
+    combat_doom_layers(c,false);combat_doom_bodies(c);combat_doom_layers(c,true);combat_doom_overlay(c);
     combat_hit_sparks(c);
     combat_secondary_sparks(c);
     if(s.enemy_world.active)combat_damage_popups(c);

@@ -56,7 +56,7 @@ static void layouts(){
         }
         a.pointer_move(160,40);a.render();
         auto end=command(HitKind::Command,(int)Key::EndTurn),draw=command(HitKind::OpenPile,1),discard=command(HitKind::OpenPile,2);
-        CHECK(end.x==246&&end.y==166&&end.w==70&&end.h==28&&draw.x<40&&discard.x>280);
+        CHECK(end.x==246&&end.y==156&&end.w==70&&end.h==28&&draw.x<40&&discard.x>280);
         click(draw);CHECK(a.panel==1&&a.pile_tab==1);same(before);a.input(Key::Back);a.render();
         click(command(HitKind::OpenPile,2));CHECK(a.panel==1&&a.pile_tab==2);same(before);a.input(Key::Back);a.render();
         click(command(HitKind::Command,(int)Key::EndTurn));CHECK(a.game.turn==2&&a.game.hp==68);

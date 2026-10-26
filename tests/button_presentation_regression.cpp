@@ -87,7 +87,10 @@ int main(){
  check(!backdrop.open&&backdrop.sample(950)==partial_backdrop&&backdrop.sample(1250)==0);
  backdrop.observe(true,0xfffffff0u);check(backdrop.sample(284)==217);
  check(popup_layout::X==30&&popup_layout::Y==32&&popup_layout::W==260&&popup_layout::H==176);
- check(popup_layout::ButtonY==164&&popup_layout::ButtonW==98&&popup_layout::ButtonH==30);
+ check(popup_layout::ButtonY==166&&popup_layout::ButtonW==80&&popup_layout::ButtonH==24);
+ check(popup_layout::button_x(false)==54&&popup_layout::button_x(true)==186);
+ check(popup_layout::ImageY==162&&popup_layout::ImageW==88&&popup_layout::ImageH==32);
+ check(popup_layout::LabelY==165&&popup_layout::LabelW==72&&popup_layout::LabelH==26&&popup_layout::PivotY==178);
  // Original navigation controls have their own focus/press curve rather
  // than the generic 0.95 action-button press. Compare interrupted samples.
  ButtonMotion back;check(back.observe(4,ButtonFamily::Back,ButtonState::Rest,0).scale==4096);

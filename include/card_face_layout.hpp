@@ -23,8 +23,8 @@ inline Layout layout(int x,int y,int w,int h){
         region(x,y,w,h,-36,22,58,58)};
 }
 // Original card.tscn fonts: title26, body21 (minimum12), type16,
-// energy32 and stars22. A native5px floor is the bounded-screen adaptation;
-// the renderer chooses an actually present band before measuring or painting.
+// energy32 and stars22. Geometry helpers retain the authored scale; the
+// renderer selects present8px-or-larger readable bands before layout.
 inline int font_pixels(int source_size,int width){const int pixels=scaled(source_size,width,300);return pixels<5?5:pixels;}
 // This follows the pinned CardRarity values, not reward rarity ordering.
 // Basic/Token/None share Common; Ancient uses its scene's separate banner.

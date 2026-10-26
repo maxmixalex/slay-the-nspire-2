@@ -46,6 +46,60 @@ resource-rail, pile-placement, highlight-container and HUD-layout choices.
   incorrect. The regression now independently checks capacities 1–10, occupancy
   independence and continuity during capacity increases/decreases.
 
+## Orb object lifetime and Doom completion
+
+The static orb arc was already correct. Original-resource renders at capacities
+1, 2, 3, 5, 7 and 10 confirmed that occupied count did not change it. The real
+missing behavior was `NOrbManager.EvokeOrbAnim`: it removes one **object**, fades
+it for 250 ms, shifts the remaining objects for 450 ms with Sine.InOut, and puts
+a new empty holder at the origin. `AddOrbAnim` replaces that holder at its
+current position and restarts the layout. This now runs from explicit
+`Removed`, `Channeled` and `Capacity` observer events. A repeated activation
+without dequeue cannot shift the queue. Future beam origins are predicted from
+the same bounded presentation facts; no gameplay RNG is consumed. The 128-cue
+object, ten holders and ten fading remnants occupy at most 2 KiB.
+
+Doom now has its separate visual family, rather than only a death clip and
+camera punch. The pinned references are `DoomPower.PlayVfx/StartDoomAnim`,
+`NDoomVfx.PlayVfx/PlayVfxInternal`, `NDoomSubEmitterVfx.ShowOrHide` and
+`NDoomOverlayVfx`, plus `scenes/vfx/vfx_doom.tscn` and its flame material.
+
+- A disappearing creature triggers the source Hit transition. Only a clip
+  named exactly `hurt` freezes at 100 ms, or 40 ms for Inklet. Other tracks
+  continue with their original loop behavior. The detached body retains its
+  registration and the source 1.5× hitbox viewport bounds. The original HSV
+  saturation-zero operation preserves maximum-channel value. After a 750 ms
+  hold, an Expo.In tween sinks the viewport by its height over 750 ms.
+- `ShouldDisappearFromDoom` exceptions remain visible for Ceremonial Beast,
+  Crusher, all Decimillipede segments, Eye With Teeth, Parafright, Rocket and
+  Vantom. Test Subject disappears only after its two respawns; Waterfall Giant
+  depends on Steam Eruption. Player Doom emits particles without detaching or
+  freezing the player's normal death animation. The last ordinary enemy waits
+  1500 ms before the displayed kill; other disappearing enemies wait 250 ms.
+- The original front/back hole, glow, floor fill, globs and eight moving spears
+  use eight private source textures. Their emitters retain separate lifetime,
+  gravity, scale-curve and width-tween behavior. The source flame is animated
+  at runtime with its assigned noise, distortion, blue-channel mask and two
+  step bands. Empty samplers retain the source white default. The LCD samples
+  overlapping subpixel particles at a bounded density rather than allocating
+  Godot particle buffers or a viewport.
+- The YIQ overlay eases in for 1000 ms, holds for 1200 ms and fades over 500 ms.
+  A later actual Doom cue restarts it from current alpha. Future synchronous
+  commands do not prematurely suppress an earlier visible overlay. The weak
+  300 ms camera punch now has independent cosmetic ±10-degree jitter.
+- Detached bodies and effects render in the foreground after the shaken scene,
+  matching `CombatVfxContainer`. Kaiser shared frames are clipped per affected
+  body instead of copying the whole background actor into the Doom viewport.
+  The ordinary game-over branch retains the player's particle tail.
+- `NScreenShake.ClearTarget` now retains decaying trauma while clearing the
+  target's punch/rumble and queued cues. Clock rebasing preserves the amount
+  across combat and room clock domains. Loading resets transient Doom actors.
+
+The Doom registration object is at most 384 bytes. This stage adds no canonical
+State field, save-codec field, new framebuffer, heap allocation or gameplay
+random draw. It reconstructs the named source behavior; desktop GPU bloom,
+continuous particle density and exact noise pixels are not claimed.
+
 ## Resource integration
 
 `tools/combat_ui13_assets.py::source_replacements` re-samples Draw, Discard and
@@ -54,11 +108,25 @@ Exhaust directly from their original textures at 24×24. It replaces image IDs
 previous 18→24 pixel enlargement and adds no new asset slot. The returned PNG
 mapping is compatible with `tools/ui12_resources.py::replace_images`.
 
+`tools/doom_ui13_assets.py::source_assets` appends source textures 3331–3338,
+ending at 3339. It checks every source path against the pinned Doom scene and
+returns the ordinary image manifest rows. The shared UI13 resource assembler
+owns all language-pack integration; the effect needs no localized texture.
+
 ## Validation status
 
-The modified runtime and affected regression translation units passed the short
-Clang 18 syntax gate. Focused executed gates and calculator acceptance are
-recorded by the integrated UI13 checkpoint; syntax checks alone are not a
+The first combat stage was executed with synthetic fixtures and the actual
+UI12 English/Chinese resources. Combat UI passed 983 synthetic / 12,688 real
+checks; secondary effects passed 325,271 / 390,412; potion UI passed 126 /
+1,581 per locale; end-turn hold passed 1,731 / 155,338 per locale. The health
+renderer passed 82,236 independent checks. The corrected LCD-input fixture
+passed real English/Chinese gates (31,901 / 31,898). Raw Q6 font metadata and
+an old 5px Rainbow assumption were corrected in test oracles; the current card
+body keeps its readable font floor and verifies full-description access.
+
+The added Doom/orb lifetime and trauma stage has passed Clang 18 syntax checks.
+Its executed receipts and final UI13 pixel checks are pending the next
+integrated checkpoint. Syntax or private geometry probes alone are not a
 gameplay, visual or device-performance pass.
 
 The regressions exercise actual 0–9 physical input in both banks, repeated-key

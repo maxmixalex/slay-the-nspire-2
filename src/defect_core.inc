@@ -147,29 +147,30 @@ static void defect_add_orb_slots(State&s,int n){
  auto&x=s.expansion;x.orb_slots=(uint8_t)max(0,min(MaxOrbs,x.orb_slots+n));
  // RemoveCapacity drops the newest orbs without evoking them.
  while(x.orb_count>x.orb_slots)defect_remove_orb(s,x.orb_count-1);
+ notify_orb_activation(s,0,0,false,0,CoreOrbNotice::Capacity);
 }
 static int defect_random_enemy(State&s){int ids[MaxEnemies],n=0;for(int i=0;i<s.enemy_count;i++)if(s.enemies[i].hp)ids[n++]=i;return n?ids[random_below(s.rng_cards,n)]:-1;}
 static int defect_enemy_count(const State&s){int n=0;for(int i=0;i<s.enemy_count;i++)if(s.enemies[i].hp)++n;return n;}
-static void defect_orb_fire(State&s,DOrb kind,int raw,bool evoke,int target=-1,unsigned slot=0){
+static void defect_orb_fire(State&s,DOrb kind,int raw,bool evoke,int target=-1,unsigned slot=0,bool removed=false){
  int focus=power_value(s,XPower::Focus),n=0;
  if(kind==DOrb::Dark){
   if(!evoke)return;target=-1;
   for(int i=0;i<s.enemy_count;i++)if(s.enemies[i].hp&&(target<0||s.enemies[i].hp<s.enemies[target].hp))target=i;
-  notify_orb_activation(s,unsigned(kind),slot,true,target>=0?1u<<target:0u);
+  notify_orb_activation(s,unsigned(kind),slot,true,target>=0?1u<<target:0u,CoreOrbNotice::Activation,removed);
   if(target>=0)damage_unpowered(s,target,raw);return;
  }
  if(kind==DOrb::Lightning){
   n=max(0,wr_orb_value(s,kind,(evoke?8:3)+focus));if(target<0)target=defect_random_enemy(s);
-  notify_orb_activation(s,unsigned(kind),slot,evoke,target>=0&&target<s.enemy_count&&s.enemies[target].hp?1u<<target:0u);
+  notify_orb_activation(s,unsigned(kind),slot,evoke,target>=0&&target<s.enemy_count&&s.enemies[target].hp?1u<<target:0u,CoreOrbNotice::Activation,removed);
   if(target>=0&&target<s.enemy_count&&s.enemies[target].hp){
    damage_unpowered(s,target,n);
    if(evoke&&dpower(s,DPower::Thunder)&&s.enemies[target].hp)damage_unpowered(s,target,dpower(s,DPower::Thunder));
   }return;
  }
- if(kind==DOrb::Frost){notify_orb_activation(s,unsigned(kind),slot,evoke);gain_unpowered_block(s,max(0,(evoke?5:2)+focus));return;}
- if(kind==DOrb::Plasma){notify_orb_activation(s,unsigned(kind),slot,evoke);s.energy=(int16_t)min(999,s.energy+(evoke?2:1));record(s,LogKind::Energy,evoke?2:1);return;}
+ if(kind==DOrb::Frost){notify_orb_activation(s,unsigned(kind),slot,evoke,0,CoreOrbNotice::Activation,removed);gain_unpowered_block(s,max(0,(evoke?5:2)+focus));return;}
+ if(kind==DOrb::Plasma){notify_orb_activation(s,unsigned(kind),slot,evoke,0,CoreOrbNotice::Activation,removed);s.energy=(int16_t)min(999,s.energy+(evoke?2:1));record(s,LogKind::Energy,evoke?2:1);return;}
  if(kind==DOrb::Glass){unsigned targets=0;for(int i=0;i<s.enemy_count;++i)if(s.enemies[i].hp)targets|=1u<<i;
-  notify_orb_activation(s,unsigned(kind),slot,evoke,targets);
+  notify_orb_activation(s,unsigned(kind),slot,evoke,targets,CoreOrbNotice::Activation,removed);
   n=min(9999,max(0,raw+focus)*(evoke?2:1));for(int i=0;i<s.enemy_count;i++)damage_unpowered(s,i,n);}
 }
 static void defect_orb_passive(State&s,unsigned at,int target=-1){
@@ -349,6 +350,7 @@ static bool defect_effect(State&s,Effect e){
   if(alive(s)&&x.orb_slots&&x.orb_count<x.orb_slots){
    unsigned i=x.orb_count++;v.orb_kind[i]=(uint8_t)a;x.dark[i]=(int16_t)(a==(int)DOrb::Dark?6:a==(int)DOrb::Glass?4:0);
    if(a==(int)DOrb::Lightning)v.lightning_channeled=(uint16_t)min(9999,v.lightning_channeled+1);
+   notify_orb_activation(s,unsigned(a),i,false,0,CoreOrbNotice::Channeled);
    world_relic_hook(s,WorldRelicHook::AfterOrbChanneled,a,int(i));
   }break;
  case XOp::DOrbPassive:{int count=wr_orb_passive_count(s,a,1,true);for(int i=count-1;i>0;--i)world_stage(s,WorldStage::OrbPassive,a+MaxOrbs*(b+1));defect_orb_passive(s,(unsigned)a,b);break;}
@@ -356,8 +358,8 @@ static bool defect_effect(State&s,Effect e){
  case XOp::DEvoke:{
   if(b<=0||!x.orb_count||!alive(s))break;unsigned at=a<0?x.orb_count-1:(unsigned)a;if(at>=x.orb_count)break;
   DOrb kind=(DOrb)v.orb_kind[at];int raw=x.dark[at];
-  if(b>1)queue_extension(s,XOp::DEvoke,a,b-1,true);else defect_remove_orb(s,at);
-  defect_orb_fire(s,kind,raw,true,-1,at);break;
+  if(b>1)queue_extension(s,XOp::DEvoke,a,b-1,true);else{notify_orb_activation(s,unsigned(kind),at,true,0,CoreOrbNotice::Removed);defect_remove_orb(s,at);}
+  defect_orb_fire(s,kind,raw,true,-1,at,b<=1);break;
  }
  case XOp::DEvokeAll:if(x.orb_count){queue_extension(s,XOp::DEvokeAll,0,0,true);queue_extension(s,XOp::DEvoke,0,2,true);}break;
  case XOp::DPowerTurn:{

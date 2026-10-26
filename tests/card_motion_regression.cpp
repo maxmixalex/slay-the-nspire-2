@@ -89,7 +89,7 @@ static void hover_and_selection_layout(){
 static void draw_and_play(){
  hand(0);CombatCardMotion m;m.begin(state,0);m.apply(transfer(0,Zone::Draw,Zone::Hand));
  CombatHand::Cards next;next.count=1;next.ids[0]=0;m.set_hand(next);
- const auto origin=m.hand_pose_at(0,false);CHECK(origin.cx==16&&origin.cy==223&&origin.scale==1024&&!m.settled(0,false));
+ const auto origin=m.hand_pose_at(0,false);CHECK(origin.cx==16&&origin.cy==225&&origin.scale==1024&&!m.settled(0,false));
  m.advance(1);const auto moved=m.hand_pose_at(0,false);CHECK(moved.cx>origin.cx&&moved.cx<160&&moved.cy<origin.cy&&moved.cy>218);
  m.advance(96);CHECK(m.settled(0,false)&&same_pose(m.hand_pose_at(0,false),hand_pose(1,0,false)));
  for(unsigned fast=0;fast<2;++fast){
@@ -117,7 +117,7 @@ static void discard_curve(){
    time+=speed*.033;speed+=accel*.033;m.advance(tick);const auto*v=m.find(0);CHECK(v);
    if(v->mode==CombatCardMotion::Tail){CHECK(time>=duration-.002&&m.visible_counts().discard==1);arrived=true;break;}
    CHECK(v->mode==CombatCardMotion::Fly&&m.visible_counts().discard==0);
-   const double p=time/duration,x=start.cx+(302-start.cx)*p,y=start.cy+(223-start.cy)*p-2*initial.arc*p*(1-p);
+   const double p=time/duration,x=start.cx+(302-start.cx)*p,y=start.cy+(225-start.cy)*p-2*initial.arc*p*(1-p);
    CHECK(std::abs(v->x/1024.0-x)<.35&&std::abs(v->y/1024.0-y)<.5);
    CHECK(std::abs(v->scale-start.scale*(1-.9*std::fmin(1.0,3*p)))<2);
    CHECK(std::abs(int(m.brightness(*v))-255*(1-std::fmin(1.0,3*p)))<2);

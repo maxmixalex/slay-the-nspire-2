@@ -65,7 +65,9 @@ static void merchant_dialogue(Canvas&c,bool fake=false){
  const int node_y=MerchantInventoryLayout::project(271)-18*(int(room_curve::Q)-room_curve::back_out(room_curve::linear(age,500)))/int(room_curve::Q);
  const unsigned scale=1365+2731*room_curve::expo_out(age,500)/room_curve::Q;
  const int width=int((128*scale+2048)/4096),height=int((80*scale+2048)/4096);
- const int center_x=mn(254,mx(66,int(m.dialogue_x)-10)),center_y=mx(62,node_y-6);
+ // The enlarged readable bubble needs the fake rug's empty left corner;
+ // its old centered position covered the first relic's actual price.
+ const int center_x=fake&&m.visible(a.map_clock_ms)?66:mn(254,mx(66,int(m.dialogue_x)-10)),center_y=mx(62,node_y-6);
  Canvas bubble=c;bubble.opacity=uint8_t(div255(bubble.opacity*alpha));
  if(a.content.version()>=RoomUi7ContentVersion){
   Canvas shadow=bubble;shadow.tint_red=shadow.tint_green=shadow.tint_blue=0;shadow.opacity=uint8_t(div255(shadow.opacity*64));

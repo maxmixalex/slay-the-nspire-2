@@ -23,6 +23,12 @@ static bool read_pack(void*context,uint32_t off,void*out,uint32_t count){auto*f=
 static void snapshot(){CHECK(validate(a.game));CHECK(save(a.game,before));}
 static void unchanged(){CHECK(save(a.game,after));CHECK(after.size==before.size&&!std::memcmp(before.bytes,after.bytes,before.size));}
 static void settle(unsigned time=400){while(time){const unsigned step=time>100?100:time;a.advance(step);time-=step;}a.render();}
+static void prepare_shop(){
+    // The production UI12 cold path yields once per image/card. Advance
+    // actual frames until it finishes before measuring the rug's tween.
+    a.render();for(unsigned steps=0;a.merchant_preparation.active&&steps<128;++steps){a.advance(33);a.render();}
+    CHECK(!a.merchant_preparation.active&&a.content.healthy());
+}
 static const HitRegion*hit(HitKind kind,int value){for(int i=a.hit_count-1;i>=0;--i)if(a.hits[i].kind==kind&&a.hits[i].value==value)return &a.hits[i];return nullptr;}
 static void click(HitKind kind,int value){a.render();const auto*h=hit(kind,value);if(!h||!h->enabled)std::fprintf(stderr,"missing hit kind=%u value=%d cursor=%d open=%d clock=%u sold=%u\n",unsigned(kind),value,a.cursor,int(a.shop_open),a.map_clock_ms,a.game.shop_sold);CHECK(h&&h->enabled);const HitRegion copy=*h;CHECK(copy.x+copy.w>0&&copy.x<320&&copy.y>=0&&copy.y+copy.h<=240);a.pointer_move(copy.x+copy.w/2,copy.y+copy.h/2);a.pointer_button(true);a.pointer_button(false);a.render();}
 static void capture(const char*name){if(!captures)return;const std::string path=std::string(captures)+"/"+name+".ppm";FILE*f=std::fopen(path.c_str(),"wb");CHECK(f);std::fprintf(f,"P6\n320 240\n255\n");for(auto p:a.pixels){const unsigned char rgb[]={static_cast<unsigned char>(((p>>11)&31)*255/31),static_cast<unsigned char>(((p>>5)&63)*255/63),static_cast<unsigned char>((p&31)*255/31)};CHECK(std::fwrite(rgb,1,3,f)==3);}CHECK(!std::fclose(f));}
@@ -69,7 +75,7 @@ static void smith(){
 }
 static void removal(){
     scenario="Merchant curse order / cancel / real price";room(WorldRoom::Shop);a.game.gold=9999;CardKind curse=CardKinds;for(unsigned i=0;i<CardKinds;++i)if(card_type(a.game,{CardKind(i),0})==CardType::Curse&&card_removable({CardKind(i),0})){curse=CardKind(i);break;}CHECK(curse<CardKinds);const int curse_index=event_add_deck_card(a.game,{curse,0});CHECK(curse_index>=0);
-    a.ui_action(UiAction::OpenShop);settle(1000);click(HitKind::Choice,ShopRemove);CHECK(a.game.phase==Phase::Remove);settle();
+    a.ui_action(UiAction::OpenShop);prepare_shop();settle(1000);click(HitKind::Choice,ShopRemove);CHECK(a.game.phase==Phase::Remove);settle();
     uint16_t indices[MaxDeck];CHECK(a.deck_choice_items(indices,MaxDeck)==a.game.deck_count&&indices[0]==curse_index);CHECK(a.card_grids[unsigned(CardGridSurface::DeckChoice)].count==a.game.deck_count);capture("merchant-remove-grid");
     const unsigned count=a.game.deck_count,removals=a.game.removals;const int gold=a.game.gold,price=remove_price(a.game);CHECK(price>0);snapshot();
     click(HitKind::Choice,curse_index);CHECK(a.deck_candidate==curse_index);unchanged();settle();capture("merchant-remove-preview");

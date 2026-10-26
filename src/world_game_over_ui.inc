@@ -158,7 +158,7 @@ static void game_over_backdrop(Canvas&c){
   // hand its original left-side pose to die without a duplicate idle body.
   const bool terminal=int32_t(a.map_clock_ms-m.opened)>=0;
   architect_scene_actors(c,!terminal);if(terminal)game_over_actor(c,age,255);
- }else game_over_actor(c,age,m.event_room?m.black_alpha(a.map_clock_ms):255);
+ }else{combat_doom_layers(c,false);game_over_actor(c,age,m.event_room?m.black_alpha(a.map_clock_ms):255);combat_doom_layers(c,true);combat_doom_overlay(c);}
  // The separate summary backstop subsequently covers retained creatures.
  if(a.game_over_summary){Canvas summary=c;summary.opacity=uint8_t(div255(summary.opacity*224*m.summary_opacity(a.map_clock_ms)/255));summary.rect(0,22,320,218,rgb(29,3,0));}
 }

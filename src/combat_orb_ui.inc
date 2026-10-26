@@ -2,36 +2,40 @@ static const char* combat_orb_key(unsigned kind){
  static const char*const keys[]={"DARK_ORB","LIGHTNING_ORB","FROST_ORB","PLASMA_ORB","GLASS_ORB"};
  return kind<unsigned(DOrb::Count)?keys[kind]:"EMPTY_SLOT";
 }
-static void combat_orbs(Canvas&c){
- auto&a=c.a;const auto&s=a.game;const int slots=health_bar::bounded(a.combat_status_fact(CombatStatus::OrbSlots),0,MaxOrbs);
- const int count=health_bar::bounded(a.combat_status_fact(CombatStatus::OrbCount),0,slots);const uint32_t now=a.animation*33u;
- auto&motion=a.orb_presentation;motion.layout(unsigned(slots),now);
- for(int i=0;i<slots;++i){
-  const int kind=i<count?a.combat_status_fact(CombatStatus::OrbKind,i):255;motion.model(unsigned(i),unsigned(kind),now);
-  const auto point=combat_orb_point(a,motion.position(unsigned(i),now));const int x=point.x,y=point.y,base_size=point.size,radius=point.radius;
-  if(i<count){
-   const unsigned age=now-motion.items[i].born;
-   const int fade=age>=500?4096:int(health_bar::expo_out(age*2));
-   const int scale=age>=500?4096:4096+(4096-fade)*CombatCardMotion::sine(int(age)*40960/1500-1024)/1024;
-   const int size=base_size*scale/4096;
-   if(size>0){Canvas orb=c;if(kind==int(DOrb::Glass)&&!a.combat_status_fact(CombatStatus::OrbPassive,i)){orb.tint_red=0;orb.tint_green=orb.tint_blue=133;}
-    orb.ui(orb_image(unsigned(kind)),x-size/2,y-size/2,size,size);}
-   if(kind!=int(DOrb::Plasma)&&age>=100){
-    const int passive=a.combat_status_fact(CombatStatus::OrbPassive,i),evoke=a.combat_status_fact(CombatStatus::OrbEvoke,i);
-    const int label_x=x+2,label_y=y+(kind==int(DOrb::Dark)?-9:-4);
-    for(int dy=-1;dy<=1;++dy)for(int dx=-1;dx<=1;++dx)if(dx||dy)c.num(passive,label_x+dx,label_y+dy,8,Ink);
-    c.num(passive,label_x,label_y,8,White);
-    if(kind==int(DOrb::Dark)){
-     for(int dy=-1;dy<=1;++dy)for(int dx=-1;dx<=1;++dx)if(dx||dy)c.num(evoke,label_x+dx,label_y+10+dy,8,Ink);
-     c.num(evoke,label_x,label_y+10,8,rgb(94,255,255));
-    }
+static void combat_orb_visual(Canvas&c,unsigned kind,const CombatOrbPoint&point,uint32_t born,int passive,int evoke){
+ const uint32_t now=c.a.animation*33u;const unsigned age=int32_t(now-born)<0?0u:now-born;
+ const int x=point.x,y=point.y;
+ if(kind<unsigned(DOrb::Count)){
+  const int fade=age>=500?4096:int(health_bar::expo_out(age*2));
+  const int scale=age>=500?4096:4096+(4096-fade)*CombatCardMotion::sine(int(age)*40960/1500-1024)/1024;
+  const int size=point.size*scale/4096;
+  if(size>0){Canvas orb=c;if(kind==unsigned(DOrb::Glass)&&!passive){orb.tint_red=0;orb.tint_green=orb.tint_blue=133;}
+   orb.ui(orb_image(kind),x-size/2,y-size/2,size,size);}
+  if(kind!=unsigned(DOrb::Plasma)&&age>=100){
+   const int label_x=x+2,label_y=y+(kind==unsigned(DOrb::Dark)?-9:-4);
+   for(int dy=-1;dy<=1;++dy)for(int dx=-1;dx<=1;++dx)if(dx||dy)c.num(passive,label_x+dx,label_y+dy,8,Ink);
+   c.num(passive,label_x,label_y,8,White);
+   if(kind==unsigned(DOrb::Dark)){
+    for(int dy=-1;dy<=1;++dy)for(int dx=-1;dx<=1;++dx)if(dx||dy)c.num(evoke,label_x+dx,label_y+10+dy,8,Ink);
+    c.num(evoke,label_x,label_y+10,8,rgb(94,255,255));
    }
-  }else{
-   const unsigned age=now-motion.items[i].born;const int size=age>=250?radius*2:int(radius*2*age/250);
-   if(size>0&&a.content.version()>=HistoryUi8ContentVersion)c.ui(I8_EmptyOrb,x-size/2,y-size/2,size,size);
-   else if(size>2)c.box(x-size/2+1,y-size/2+1,size-2,size-2,Muted);
   }
-  c.hit(x-radius,y-radius,radius*2,radius*2,HitKind::Orb,i);
+ }else{
+  const int size=age>=250?point.radius*2:int(point.radius*2*age/250);
+  if(size>0&&c.a.content.version()>=HistoryUi8ContentVersion)c.ui(I8_EmptyOrb,x-size/2,y-size/2,size,size);
+  else if(size>2)c.box(x-size/2+1,y-size/2+1,size-2,size-2,Muted);
+ }
+}
+static void combat_orbs(Canvas&c){
+ auto&a=c.a;const uint32_t now=a.animation*33u;a.sync_orb_presentation();auto&motion=a.orb_presentation;
+ for(const auto&ghost:motion.ghosts)if(ghost.kind<unsigned(DOrb::Count)&&int32_t(now-ghost.at)>=0&&now-ghost.at<250u){
+  Canvas fading=c;fading.opacity=uint8_t(div255(fading.opacity*(250u-(now-ghost.at))*255u/250u));
+  combat_orb_visual(fading,ghost.kind,combat_orb_point(a,ghost.point),ghost.born,ghost.passive,ghost.evoke);
+ }
+ for(unsigned i=0;i<motion.slots;++i){
+  const auto point=combat_orb_point(a,motion.position(i,now));
+  combat_orb_visual(c,motion.items[i].kind,point,motion.items[i].born,a.combat_status_fact(CombatStatus::OrbPassive,int(i)),a.combat_status_fact(CombatStatus::OrbEvoke,int(i)));
+  c.hit(point.x-point.radius,point.y-point.radius,point.radius*2,point.radius*2,HitKind::Orb,int(i));
  }
 }
 struct CombatOrbTipContext {const App*a;int slot;};

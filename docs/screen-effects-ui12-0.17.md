@@ -22,10 +22,10 @@ buffer in place. Hits move with their scene. The persistent top bar remains
 fixed. There is no second frame buffer, heap allocation, gameplay RNG use,
 or save-format addition. The 48-cue presentation object is less than
 768 bytes; future cues retain chronological order and same-command punch
-replacement. Trauma is reset when a different scene target is bound. The
-source `NScreenShake.ClearTarget` clears punch and rumble but retains its
-trauma object; this is an explicit lifecycle difference, not merely an
-unverified noise/pixel match.
+replacement. The subsequent UI13 stage retains the independently decaying
+trauma object across target changes, matching `NScreenShake.ClearTarget`; only
+punch/rumble and target-owned future cues are cleared. See
+`ui13-combat-feedback-0.17.md` for the clock rebase and executed-stage status.
 
 The source audit covers `NScreenShake`, `ScreenPunchInstance`,
 `NScreenshakePaginator`, and the concrete command/VFX owners below. It keeps
@@ -45,15 +45,17 @@ enemy-side end, and the immediate End of Days check. Merely having a large
 Doom counter, or observing a later HP decrease, is not a substitute trigger.
 The notice does not enter run statistics or the canonical save.
 
-The original direction is 180 degrees with small chaotic jitter. The LCD
-uses its deterministic 180-degree centre without consuming gameplay RNG.
+The original direction is 180 degrees with small chaotic jitter. UI13 adds
+the same ±10-degree range from an independent cosmetic hash, without consuming
+gameplay RNG.
 When the player dies, the combat scene remains the camera target through
 the complete 300 ms pulse before the terminal room takes ownership. This
 fixes the case where a one-tick combat linger discarded the effect before
-the next rendered frame. The special frozen-hurt-body, sinking viewport and
-front/back destruction particles from `DoomPower.StartDoomAnim` and
-`NDoomVfx` remain unimplemented. The current death presentation and camera
-pulse are not a CPU reconstruction of that separate visual sequence.
+the next rendered frame. The subsequent UI13 stage implements the frozen
+hurt body, bounded sinking viewport, original front/back particle textures,
+animated flame material and overlay from `DoomPower.StartDoomAnim` and
+`NDoomVfx`. Its exact source cases, RAM bounds and validation status are in
+`ui13-combat-feedback-0.17.md`.
 
 ### Architect
 
@@ -146,7 +148,7 @@ These are distinct from an unknown desktop pixel comparison:
 
 | Source effect and actual owner | Current status |
 | --- | --- |
-| `DoomPower.DoomKill` at a lethal side-end or `EndOfDays`; `StartDoomAnim` / `NDoomVfx` freezes the hurt body and sinks its viewport after 750 ms, with front/back particles | Real Doom rules, death and the Weak/Short camera trigger are implemented. That special sinking/destruction presentation is still missing. |
+| `DoomPower.DoomKill` at a lethal side-end or `EndOfDays`; `StartDoomAnim` / `NDoomVfx` freezes the hurt body and sinks its viewport after 750 ms, with front/back particles | Implemented by the subsequent UI13 stage; see `ui13-combat-feedback-0.17.md` for its separate source references and validation status. |
 | `TheArchitect.OnRoomEnter` and the first `PlayCurrentLine`: `head_reading`, `head_stop_reading`, `head_normal` on a second Spine track | Initial source waits are implemented. These separate overlay clips are inventoried with `used:false` and are not packaged; the new actor layer does not claim them. |
 | `NArchitectVfx` reacts to the attack's `trail_start` and idle's `trail_end` | The original body clips play. The independent inner/outer `NBasicTrail` is not reconstructed by the frame renderer. |
 | `TheArchitect.AnimPlayerAttackIfNecessary` creates score-derived damage numbers, a hit spark and each character's shuffled attack VFX | Original player attack and Architect hurt are now sampled; the corresponding camera pulses were already verified. The per-hit numeric/particle set is not implemented by this actor stage. |
@@ -200,8 +202,9 @@ acceptance report; this report does not duplicate that agent's claim.
 
 The sleep timeline uses 12 bytes per enemy. Camera translation uses the
 existing framebuffer. Doom/Architect append observer notices and reuse the
-existing camera cue array; they add no fields to `App`, `State`, or the
-save codec. Overall launcher allocation and device timing belong to the
+existing camera cue array in the original UI12 stage. UI13 additionally adds
+a bounded Doom presentation object to `App`; `State` and the save codec remain
+unchanged. Overall launcher allocation and device timing belong to the
 parent's final integrated ARM/Firebird receipts.
 
 ## Verification

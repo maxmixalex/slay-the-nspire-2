@@ -1,6 +1,7 @@
 #include "app.hpp"
 #include "ui13_assets.hpp"
 #include "architect_attack_assets.hpp"
+#include "doom_assets.hpp"
 #include "phobia_swarm.hpp"
 #include "enemy_command_timing.hpp"
 #include "screen_shake_sources.hpp"
@@ -61,6 +62,7 @@ static void world_region_image_key(const State&s,char*out,size_t size){
 #include "ui_text.inc"
 #include "ui_history_journal_ui.inc"
 #include "world_enemy_ui.inc"
+#include "combat_doom_ui.inc"
 #include "turn_banner_ui.inc"
 #include "combat_preparation.inc"
 #include "world_map_motion.inc"
@@ -274,6 +276,7 @@ int App::detail_stars()const{
 #include "pointer_ui6.inc"
 
 void App::render(){
+    content.set_image_cache_profile(!title&&game.phase==Phase::Shop);
     if(startup_logo.active()){Canvas c{*this};startup_logo_screen(c);return;}
     sync_screen_motion();
 #if SPIRE_DEBUG_COMMANDS

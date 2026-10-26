@@ -226,6 +226,16 @@ static void collect_keyword_hover_tips(const App&a,const CardHoverTarget&owner,H
     else if(owner.potion>0)collect_potion_hover_tips(a,Potion(owner.potion),out);
     else if(owner.event_option>=0)collect_event_hover_tips(a,owner.event_option,out);
     else collect_card_hover_tips(a,owner.card,out,owner.instance,owner.deck,owner.card_facts());
+    if(hover_enchant_selection(a,owner)){
+        // NDeckEnchant's fixed description and a hovered card share the
+        // reserved right column on the LCD. Keep the pending enchantment
+        // once, followed by the card's complete associated set.
+        int amount=0;const auto enchantment=a.world_selection_enchantment(&amount);
+        const char*key=event_enchantment_key(enchantment);HoverTipList combined;
+        hover_enchantment(combined,key,amount);
+        for(unsigned i=0;i<out.count;++i)if(out.items[i].kind!=HoverTipKind::Enchantment||!hover_key_equal(out.items[i].key,key))combined.add(out.items[i]);
+        combined.overflow|=out.overflow;combined.finish();out=combined;
+    }
 }
 static HoverRect keyword_hover_column(const CardHoverTarget&owner){
     if(owner.merchant){const int x=owner.merchant_left?owner.owner.x-SourceHoverWidth:owner.owner.x+owner.owner.w;

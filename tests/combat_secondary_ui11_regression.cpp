@@ -44,8 +44,10 @@ static void observers(){
   Notices notices;CoreObserver binding;binding.context=&notices;binding.on_orb=Notices::receive;
   const auto old=set_core_observer(binding);queue_extension(s,XOp::DEvoke,0,2);resolve_pending(s);set_core_observer(old);
   queue_extension(direct,XOp::DEvoke,0,2);resolve_pending(direct);
-  canonical_equal(s,direct);CHECK(notices.count==2&&!s.expansion.orb_count);
-  for(unsigned i=0;i<notices.count;++i){const auto&n=notices.values[i];CHECK(n.kind==kind&&n.slot==0&&n.slots==3&&n.evoke);
+  canonical_equal(s,direct);CHECK(notices.count==3&&!s.expansion.orb_count);
+  CHECK(notices.values[1].event==CoreOrbNotice::Removed&&notices.values[0].event==CoreOrbNotice::Activation&&notices.values[2].event==CoreOrbNotice::Activation);
+  CHECK(!notices.values[0].removed&&notices.values[2].removed);
+  for(unsigned i=0;i<notices.count;++i){const auto&n=notices.values[i];CHECK(n.kind==kind&&n.slot==0&&n.slots==3&&n.evoke);if(n.event==CoreOrbNotice::Removed)continue;
    if(kind==unsigned(DOrb::Dark)||kind==unsigned(DOrb::Lightning))CHECK(n.targets&&!(n.targets&(n.targets-1u)));
    if(kind==unsigned(DOrb::Glass))CHECK(n.targets==(1u<<s.enemy_count)-1u);
    if(kind==unsigned(DOrb::Frost)||kind==unsigned(DOrb::Plasma))CHECK(!n.targets);
@@ -119,6 +121,30 @@ static void source_orb_layout(){
  CHECK(layout.position(0,12500).x==initial.x&&layout.position(0,12500).y==initial.y);
  layout.layout(2,12700);const auto settled=layout.position(0,13200),source=CombatOrbPresentation::target(2,0);
  CHECK(settled.x==source.x&&settled.y==source.y);CHECK(!std::memcmp(&before,&a.game,sizeof before));
+ // An actual dequeue moves surviving OBJECTS from their old arc positions,
+ // preserves their birth times, fades exactly the removed object, and
+ // introduces a new empty holder at the manager origin. Repeated evoke
+ // activations above deliberately produce only one Removed event.
+ CombatOrbPresentation moved;moved.layout(3,0);
+ for(unsigned i=0;i<3;++i)moved.model(i,i,0);
+ const auto first=moved.position(0,1000),second=moved.position(1,1000),third=moved.position(2,1000);
+ moved.enqueue({1000,3,8,CoreOrbNotice::Removed,0,3,0},1000);
+ CHECK(moved.items[0].kind==1&&moved.items[1].kind==2&&moved.items[2].kind==255);
+ CHECK(moved.items[0].born==0&&moved.items[1].born==0&&moved.items[2].born==1000);
+ CHECK(moved.position(0,1000).x==second.x&&moved.position(0,1000).y==second.y);
+ CHECK(moved.position(1,1000).x==third.x&&moved.position(1,1000).y==third.y);
+ CHECK(!moved.position(2,1000).x&&!moved.position(2,1000).y);
+ CHECK(moved.activation(0,0,true,1000).x==first.x&&moved.ghosts[0].point.y==first.y);
+ const auto middle=moved.position(0,1225);CHECK(std::abs(middle.x-(second.x+first.x)/2)<=1&&std::abs(middle.y-(second.y+first.y)/2)<=1);
+ const auto old_holder=moved.position(2,1100),surviving=moved.position(0,1100);
+ moved.enqueue({1100,0,0,CoreOrbNotice::Channeled,2,3,1},1100);
+ CHECK(moved.position(2,1100).x==old_holder.x&&moved.position(2,1100).y==old_holder.y);
+ CHECK(moved.position(0,1100).x==surviving.x&&moved.items[0].born==0&&moved.items[2].born==1100);
+ moved.enqueue({1700,0,0,CoreOrbNotice::Capacity,0,5,0},1100);
+ CHECK(moved.slots==3&&moved.count==1);const auto prediction=moved.activation(0,1,false,1800);
+ CHECK(moved.slots==3&&moved.count==1);moved.advance(1800);CHECK(moved.slots==5&&moved.position(0,1800).x==prediction.x);
+ CHECK(!moved.overflow&&sizeof moved<=2048);
+
 }
 static std::vector<uint8_t> read(const std::string&path){FILE*f=std::fopen(path.c_str(),"rb");CHECK(f);CHECK(!std::fseek(f,0,SEEK_END));const long size=std::ftell(f);CHECK(size>0);CHECK(!std::fseek(f,0,SEEK_SET));std::vector<uint8_t>data(size_t(size),0);CHECK(std::fread(data.data(),1,data.size(),f)==data.size());CHECK(!std::fclose(f));return data;}
 static void actual_render(){
