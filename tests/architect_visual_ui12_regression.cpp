@@ -78,7 +78,13 @@ static void visible_original(int id,unsigned frame,SourcePose pose,unsigned mini
  // source actor texels. Inspect the uncovered original actor, then check
  // the real command's separate cue/score/RNG contract below.
  std::vector<uint16_t> effects(ScreenW*ScreenH,0);std::vector<uint8_t> covered(ScreenW*ScreenH,0);
- Canvas effect{a};effect.pixels=effects.data();effect.coverage=covered.data();architect_scene_effects(effect);
+ Canvas effect{a};effect.pixels=effects.data();effect.coverage=covered.data();
+ // WinRun reparents the player's dying creature above CombatVfxContainer.
+ // Its opaque texels must match even where the lower FireBurst has ink;
+ // excluding that lower layer would remove every Silent texel at age0.
+ const bool terminal_player=id>=int(CharacterDeathAnimationFirst)&&id<int(CharacterDeathAnimationFirst+5)&&
+  a.game.phase==Phase::Complete&&int32_t(a.map_clock_ms-a.game_over_presentation.opened)>=0;
+ if(!terminal_player)architect_scene_effects(effect);
  unsigned ink=0,bad=0;for(int y=24;y<166;++y)for(int x=0;x<ScreenW;++x){const unsigned p=y*ScreenW+x;
   if(alpha[p]==255&&!covered[p]){++ink;bad+=a.pixels[p]!=expected[p];}}
  if(ink<minimum||bad)std::fprintf(stderr,"source sprite probe: clip=%d frame=%u anchor=%d,%d opaque=%u mismatch=%u\n",id,frame,pose.x,pose.y,ink,bad);

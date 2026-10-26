@@ -510,10 +510,13 @@ static void event_motion(){
  CHECK(choices()>=2);capture("ancient-source-dialogue-layout");unchanged();
 }
 static void merchant_motion_and_pickups(){
- begin_room(WorldRoom::Shop);a.game.gold=9999;a.render();snapshot();click(UiAction::OpenShop);CHECK(a.shop_open);
+ begin_room(WorldRoom::Shop);a.game.gold=9999;a.render();snapshot();click(UiAction::OpenShop);CHECK(a.shop_open);a.render();
  for(unsigned steps=0;a.merchant_preparation.active&&steps<128;++steps){a.advance(33);a.render();unchanged();}
  CHECK(!a.merchant_preparation.active&&a.content.healthy());
- const uint32_t began=a.map_clock_ms;CHECK(a.room_presentation.merchant.y(began)==-222);CHECK(!choices());unchanged();
+ const uint32_t began=a.map_clock_ms;CHECK(a.room_presentation.merchant.y(began)==-222);
+ // The fixed Back control remains usable while the rug enters. No stock
+ // hit may exist before its source slot has reached the visible viewport.
+ CHECK(choices()==1&&exists(HitKind::Choice,ShopLeave));unchanged();
  room_clock(350);CHECK(a.room_presentation.merchant.y(a.map_clock_ms)>0&&a.room_presentation.merchant.y(a.map_clock_ms)<18);capture("merchant-rug-half-open");unchanged();
  room_clock(350);CHECK(a.room_presentation.merchant.y(a.map_clock_ms)==18);
  constexpr int centers[]={39,99,159,219,279,43,108};

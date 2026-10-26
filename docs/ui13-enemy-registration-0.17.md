@@ -57,3 +57,30 @@ elapsed-time or emulator evidence. Expanded transparent margins can change a
 nearest-neighbor boundary pixel under non-integer screen scales, requiring real
 screen review before selecting the optimized candidate. Full Firebird review
 and hot-frame measurement remain required integration gates.
+
+The full alignment trial at `333b5ec` closed successfully after250.311s.
+Both languages prove all5,340 world-space frames identical, but each logical
+pack grows725,442 bytes. Fewer unique tiles did not improve the compressed
+groups' physical size; some working sets also grew. This candidate is rejected
+and is not part of the selected artwork. The completed source rebake keeps its
+unpadded canvases, preserving the original nearest-neighbor screen behavior.
+
+The separate `tools/prune_tile_directory_ui13.py` pass removes only unreachable
+frame descriptors and entire index groups with no remaining image reference.
+It remaps live directory entries, copies every live compressed tile/index stream
+verbatim, and preserves all dimensions, pivots, pixel samples and frame clocks.
+It also compares every retained image, glyph and string. This avoids both a new
+codec and the rejected padding change. Tests cover real replacement-created
+dead records, decoded image equality, idempotence and rejection of a malformed
+live reference. Its private receipt records the actual byte saving after the
+source checkpoint is frozen and the complete pack is processed.
+
+A native file-reader check of nine representative idle clips, including normal
+and maximum-tail Vantom, observes zero source callbacks/bytes on their second
+and third loops. Vantom's27-frame loops occupy81 image-cache pages (324 KiB),
+Ceremonial Beast and Waterfall Giant128 pages (512 KiB), Mecha Knight131 pages
+(524 KiB), Frog Knight128 pages, and Architect86 pages (344 KiB). Every rebaked
+clip independently fits the ordinary5 MiB image pool; the largest sparse frame
+is38,108 bytes. These are cache/working-set measurements, not an emulator or
+physical-calculator frame-rate claim. Full combat with other active resources
+still receives the final device acceptance gate.
