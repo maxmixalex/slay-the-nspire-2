@@ -149,7 +149,8 @@ void App::pointer_move(int x,int y){
     if(settings_open||frontend_confirm||help){
         if(settings_open&&pointer.held&&pointer.captured.kind==HitKind::SettingsScroll){
             if(pointer.context!=input_context()){pointer_cancel();return;}
-            settings_top=uint8_t(settings_layout::scroll_value(settings_tab,pointer.y));
+            if(settings_language_open&&pointer.captured.value==1)settings_language_top=uint8_t(settings_layout::language_scroll_value(locale_language_count(available_languages()),pointer.y));
+            else if(!settings_language_open)settings_top=uint8_t(settings_layout::scroll_value(settings_tab,pointer.y));
         }hand_focus=false;return;
     }
     if(pointer.held&&card_grid_drag>=0){
@@ -342,7 +343,8 @@ void App::pointer_button(bool down){
         pointer.held=true;pointer.dragging=false;pointer.down_x=pointer.x;pointer.down_y=pointer.y;
         pointer.captured=hit;pointer.context=input_context();pointer.revision=game.revision;
         if(settings_open&&hit.enabled&&hit.kind==HitKind::SettingsScroll){
-            settings_top=uint8_t(settings_layout::scroll_value(settings_tab,pointer.y));return;
+            if(settings_language_open&&hit.value==1)settings_language_top=uint8_t(settings_layout::language_scroll_value(locale_language_count(available_languages()),pointer.y));
+            else if(!settings_language_open)settings_top=uint8_t(settings_layout::scroll_value(settings_tab,pointer.y));return;
         }
         if(ancient_dialogue_ready()&&(hit.kind==HitKind::Choice||hit.kind==HitKind::AncientDialogueNext))event_body_focus=false;
         if(event_body_active()){

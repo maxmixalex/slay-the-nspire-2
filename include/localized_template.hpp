@@ -146,7 +146,10 @@ class LocalizedTemplate {
     if(matched||end==cn){if(!matched)++selected;break;}++selected;choices+=end+1;cn-=end+1;
    }branch(body,bn,selected,v,depth);return;
   }
-  if(same(fmt,second,"cond")&&body&&conditional(body,bn,v,depth))return;
+  // SmartFormat also accepts an empty formatter name. In the original room
+  // history this is {ModelTitle:: {}|}; the nested {} is the selected value.
+  // Resolve only the chosen branch, just as the explicit cond form does.
+  if((!second||same(fmt,second,"cond"))&&body&&conditional(body,bn,v,depth))return;
   if(same(fmt,fn,"diff()")||same(fmt,fn,"inverseDiff()")){if(v.known)value(v);else{ch('{');text(p,name_len);ch('}');}return;}
   if(same(fmt,fn,"abs()")){if(v.known)value(v,true);return;}
   if(same(fmt,fn,"percentMore()")||same(fmt,fn,"percentLess()")){

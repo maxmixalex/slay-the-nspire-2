@@ -2,6 +2,7 @@
 #include "reference_viewport.hpp"
 #include "input_bindings.hpp"
 #include "settings_focus.hpp"
+#include "ui13_assets.hpp"
 
 namespace spire::settings_layout {
 using reference_viewport::project;
@@ -26,9 +27,27 @@ constexpr int BindingWidth=53;
 constexpr int input_row(unsigned i){return 115+int(i)*23;}
 constexpr unsigned InputVisible=4,InputMaximum=InputCommandCount-InputVisible;
 constexpr int InputBottom=207,InputTrackLeft=201;
-constexpr int DropdownTop=64,DropdownHeight=140;
-constexpr int dropdown_row(unsigned i){return DropdownTop+int(i)*20;}
-constexpr int dropdown_row_height(unsigned i){return 20;}
+// The language list opens below the current setting. The readable LCD width
+// holds every native language name; its right lane belongs to the source
+// small scrollbar, independently of the settings page behind the dropdown.
+constexpr int DropdownLeft=82,DropdownWidth=220,DropdownTop=64,DropdownRowHeight=22;
+constexpr unsigned DropdownVisible=7;
+constexpr int DropdownHeight=DropdownVisible*DropdownRowHeight,DropdownThumbHeight=24;
+constexpr int dropdown_row(unsigned i){return DropdownTop+int(i)*DropdownRowHeight;}
+constexpr int dropdown_row_height(unsigned){return DropdownRowHeight;}
+constexpr unsigned language_maximum(unsigned count){return count>DropdownVisible?count-DropdownVisible:0;}
+constexpr int language_height(unsigned count){return int(count<DropdownVisible?count:DropdownVisible)*DropdownRowHeight;}
+constexpr int language_track_left(){return DropdownLeft+DropdownWidth-19;}
+constexpr int language_track_span(unsigned count){return language_height(count)-8-DropdownThumbHeight;}
+inline unsigned language_reveal(unsigned count,unsigned selected,unsigned top){
+ if(selected<top)top=selected;else if(selected>=top+DropdownVisible)top=selected-DropdownVisible+1;
+ const auto maximum=language_maximum(count);return top>maximum?maximum:top;
+}
+inline unsigned language_scroll_value(unsigned count,int y){
+ const unsigned maximum=language_maximum(count);const int span=language_track_span(count);if(!maximum||span<=0)return 0;
+ int position=y-DropdownTop-4-DropdownThumbHeight/2;if(position<0)position=0;if(position>span)position=span;
+ return unsigned((position*int(maximum)+span/2)/span);
+}
 constexpr int DropdownFont=8,TickSize=15,ModifierTickSize=10;
 constexpr int TooltipLeft=213;
 constexpr int scroll_top(bool input){return input?input_row(0):general_row(0);}

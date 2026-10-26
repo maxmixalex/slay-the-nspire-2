@@ -161,20 +161,35 @@ static void frontend_settings_screen(Canvas&c){
   if(*body)source_hover_box(c,hover==8?label(titles[hover],"Skip Intro Logo","跳过开场Logo动画"):a.content.world_string("settings_ui",titles[hover]),body,TooltipLeft,hover_y);
  }
  if(a.settings_language_open){
-  const unsigned count=locale_language_count(a.available_languages()),visible=7;
-  const unsigned top=a.settings_language_item>=visible?a.settings_language_item-visible+1:0;
-  constexpr int left=82,width=220,row_height=22,first_y=40;
+  const unsigned count=locale_language_count(a.available_languages()),visible=DropdownVisible;
+  const unsigned maximum=language_maximum(count);if(a.settings_language_top>maximum)a.settings_language_top=uint8_t(maximum);
+  const unsigned top=a.settings_language_top;
+  constexpr int left=DropdownLeft,width=DropdownWidth,row_height=DropdownRowHeight,first_y=DropdownTop;
+  const int item_width=maximum?width-24:width;
   a.hit_count=0;c.action(0,0,320,240,UiAction::SettingsLanguageClose);
-  c.rect(left,first_y-3,width,int(mn(count,visible))*row_height+6,rgb(18,33,41));
+  // SettingsDropdown and NLanguageDropdownItem author these ColorRects;
+  // the scrollbar uses their separate small_* source textures below.
+  c.rect(left,first_y,width,language_height(count),rgb(18,33,41));
   for(unsigned i=top;i<count&&i<top+visible;++i){const unsigned id=locale_language_at(a.available_languages(),i);
-   const int y=first_y+int(i-top)*row_height;const bool focus=a.pointer.visible?pointed(left,y,width,row_height):a.settings_language_item==i;
-   if(focus)c.rect(left,y,width,row_height,rgb(44,88,112));
-   profile_text_box(c,locale_language_info(id).name,left+8,y,width-16,row_height,{10,0,cream,0},false,false);
-   c.action(left,y,width,row_height,UiAction(unsigned(UiAction::SettingsLanguageFirst)+id-1));
+   const int y=first_y+int(i-top)*row_height;const bool focus=a.pointer.visible?pointed(left,y,item_width,row_height):a.settings_language_item==i;
+   if(focus)c.rect(left,y,item_width,row_height,rgb(44,88,112));
+   profile_text_box(c,locale_language_info(id).name,left+6,y,item_width-12,row_height,{10,0,cream,32},true,false);
+   c.action(left,y,item_width,row_height,UiAction(unsigned(UiAction::SettingsLanguageFirst)+id-1));
   }
-  if(count>visible){c.text("↑",62,44,12,cream);c.text("↓",62,174,12,cream);
-   c.action(54,40,24,36,UiAction::SettingsLanguagePrevious,a.settings_language_item>0);
-   c.action(54,160,24,36,UiAction::SettingsLanguageNext,a.settings_language_item+1<count);}
+  if(maximum){
+   const int track_x=language_track_left(),height=language_height(count);
+   const bool original=a.content.ui_image(I13_SmallScrollbarTrain)>=0;
+   Canvas track=c;if(original){track.tint_red=track.tint_green=track.tint_blue=0;track.opacity=uint8_t(div255(unsigned(track.opacity)*128));}
+   track.ui(original?I13_SmallScrollbarTrackEdge:I6_ScrollbarEdge,track_x,first_y+1,8,8);
+   track.ui(original?I13_SmallScrollbarTrackCenter:I6_ScrollbarTrack,track_x,first_y+9,8,height-18);
+   ui_picture_transform(track,a.content.ui_image(original?I13_SmallScrollbarTrackEdge:I6_ScrollbarEdge),track_x+4,first_y+height-5,8,8,0,-1024);
+   const int thumb_y=first_y+4+int(top)*language_track_span(count)/int(maximum);
+   const bool focus=pointed(track_x-4,first_y,20,height)||(a.pointer.held&&a.pointer.captured.kind==HitKind::SettingsScroll&&a.pointer.captured.value==1);
+   Canvas thumb=c;if(focus){thumb.tint_red=239;thumb.tint_green=200;thumb.tint_blue=81;}else thumb.opacity=uint8_t(div255(unsigned(thumb.opacity)*64));
+   if(original)thumb.nine_ui(I13_SmallScrollbarTrain,track_x,thumb_y,8,DropdownThumbHeight,0,6,0,6);
+   else thumb.ui(I6_ScrollbarGrabber,track_x-2,thumb_y,12,DropdownThumbHeight);
+   c.hit(track_x-4,first_y,20,height,HitKind::SettingsScroll,1);
+  }
  }
  if(a.binding_listening>=0){a.hit_count=0;
   Canvas backstop=c;backstop.opacity=242;backstop.rect(27,101,267,38,rgb(0,73,68));

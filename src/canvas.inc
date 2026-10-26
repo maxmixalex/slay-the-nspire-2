@@ -40,9 +40,11 @@ struct Canvas{
     bool wrap_latin_words=false; // Original article fallback keeps Latin word boundaries in every locale.
     bool sparse_scene_sizes=false; // Opt in only when this label's full alphabet is baked.
     const int16_t* color_matrix=nullptr; // Only duplicate-creature sprite layers opt in.
+    const uint8_t* occlusion=nullptr; // Exact later opaque coverage; only the main merchant underlay uses it.
     uint32_t text_fly_in_elapsed=UINT32_MAX; // Label-local elapsed time; no layout or RNG changes.
     unsigned font_style(const RichChar&ch)const{const unsigned style=rich_font_style(ch);return (style==1&&bold_face?unsigned(bold_face):style)|font_face;}
     void paint(int at,uint16_t color,unsigned alpha=255,unsigned mode=0){
+        if(occlusion&&occlusion[at]==255)return;
         if(opacity!=255)alpha=div255(alpha*opacity);
         if(!alpha)return;
         if(color_matrix)color=presentation::yiq_rotate(color,color_matrix);
@@ -68,7 +70,7 @@ struct Canvas{
         pixels[at]=(uint16_t)((r<<11)|(g<<5)|b);coverage[at]=(uint8_t)total;
     }
     void ui(int id,int x,int y,int w=0,int h=0,unsigned alpha=255){picture(a.content.ui_image(id),x,y,w,h,alpha);}
-    bool nine_image(int id,int x,int y,int w,int h,int l,int t,int r,int b,unsigned alpha=255){
+    bool nine_image(int id,int x,int y,int w,int h,int l,int t,int r,int b,unsigned alpha=255,unsigned mode=0){
         if(w<=0||h<=0||!alpha)return false;
         const auto p=a.content.image(id);if(!p.pixels||p.format>3)return false;
         const int left=mx(0,-x),right=mn(w,clip_w-x),top=mx(0,-y),bottom=mn(h,clip_h-y);
@@ -81,12 +83,12 @@ struct Canvas{
                 const int at=row+columns[xx-left];unsigned coverage=p.alpha?p.alpha[at]:255;
                 if(alpha!=255)coverage=div255(coverage*alpha);if(!coverage)continue;
                 const uint8_t*pixel=p.palette?p.palette+2*p.pixels[at]:p.pixels+2*at;
-                paint((y+yy)*pitch+x+xx,uint16_t(pixel[0]|unsigned(pixel[1])<<8),coverage);
+                paint((y+yy)*pitch+x+xx,uint16_t(pixel[0]|unsigned(pixel[1])<<8),coverage,mode);
             }
         }return true;
     }
-    bool nine_ui(int id,int x,int y,int w,int h,int l,int t,int r,int b,unsigned alpha=255){
-        return nine_image(a.content.ui_image(id),x,y,w,h,l,t,r,b,alpha);
+    bool nine_ui(int id,int x,int y,int w,int h,int l,int t,int r,int b,unsigned alpha=255,unsigned mode=0){
+        return nine_image(a.content.ui_image(id),x,y,w,h,l,t,r,b,alpha,mode);
     }
     ButtonVisual control_visual(const char*label,int x,int y,int w,int h,ButtonFamily family,bool selected,bool enabled,int shift_x=0,bool neutral_initial=false){
         const auto&pointer=a.pointer;
@@ -118,7 +120,7 @@ struct Canvas{
         const int left=mx(0,x),right=mn(clip_w,x+w),top=mx(0,y),bottom=mn(clip_h,y+h);
         // Main-surface clears and opaque plaques need no per-pixel blending
         // state. Cached coverage and every layer modulation keep paint().
-        if(!color_matrix&&!coverage&&opacity==255&&brightness==255&&tint_red==255&&tint_green==255&&tint_blue==255){
+        if(!occlusion&&!color_matrix&&!coverage&&opacity==255&&brightness==255&&tint_red==255&&tint_green==255&&tint_blue==255){
             for(int yy=top;yy<bottom;++yy)for(int xx=left;xx<right;++xx)pixels[yy*pitch+xx]=color;
             return;
         }
@@ -241,7 +243,7 @@ struct Canvas{
                 return;
             }
             // Animation frames are prebaked at native size. Skip transparent runs entirely.
-            const bool direct=!coverage&&this->opacity==255&&opacity==255&&brightness==255&&
+            const bool direct=!occlusion&&!coverage&&this->opacity==255&&opacity==255&&brightness==255&&
                 tint_red==255&&tint_green==255&&tint_blue==255&&!color_matrix&&blend_mode==presentation::Normal;
             const uint8_t* run=p.pixels;
             for(int yy=0;yy<p.h;yy++){
@@ -263,7 +265,7 @@ struct Canvas{
             return;
         }
         if(width==p.w&&height==p.h&&!p.alpha&&!p.palette&&opacity==255){
-            if(!color_matrix&&!coverage&&this->opacity==255&&brightness==255&&tint_red==255&&tint_green==255&&tint_blue==255&&blend_mode==presentation::Normal){
+            if(!occlusion&&!color_matrix&&!coverage&&this->opacity==255&&brightness==255&&tint_red==255&&tint_green==255&&tint_blue==255&&blend_mode==presentation::Normal){
                 // Decoded RGB565 bytes may be unaligned. Preserve the explicit
                 // little-endian load instead of casting the resource pointer.
                 for(int yy=top;yy<bottom;++yy){int at=(y+yy)*pitch+x+left;const uint8_t*src=p.pixels+(yy*p.w+left)*2;

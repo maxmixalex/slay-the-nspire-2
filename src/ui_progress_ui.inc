@@ -461,7 +461,10 @@ static void history_screen(Canvas&c){
         const int shift=project(int(scale-1000)*8/500);
         history_card_label(page,text,x+18+shift,y,entry.facts.enchantment!=EventEnchantment::None?rgb(238,130,238):entry.card.upgraded?rgb(127,255,0):rgb(255,246,226));
     }
-    if(a.history_index+1<a.progress.count){c.ui(I7_SettingsArrowLeft,7,111,12,24);c.action(0,100,26,49,UiAction::HistoryPrevious);}
-    if(a.history_index){c.ui(I7_SettingsArrowRight,307,111,12,24);c.action(297,100,23,49,UiAction::HistoryNext);}
+    // Keep both navigation controls above the scrollbar's track/hit column.
+    // A right arrow at y111 was visually covered and its pointer hit was
+    // overwritten when progress_page_chrome registered the scrollbar last.
+    if(a.history_index+1<a.progress.count){c.ui(I7_SettingsArrowLeft,7,10,12,24);c.action(0,6,26,32,UiAction::HistoryPrevious);}
+    if(a.history_index){c.ui(I7_SettingsArrowRight,304,10,12,24);c.action(294,6,26,32,UiAction::HistoryNext);}
     progress_page_chrome(c);history_tooltip(c,r,focused,layout,dx,offset);
 }

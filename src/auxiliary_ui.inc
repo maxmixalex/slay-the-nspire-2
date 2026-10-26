@@ -26,8 +26,12 @@ static void auxiliary_credit_right(Canvas&c,const char*text,int x,int y,int widt
 }
 static void auxiliary_port_credit(Canvas&layer,int&y){
  const auto&a=layer.a;y+=12;
+ char localized_heading[192]{},localized_author[256]{};
+ const char*payload=a.content.string(PortCreditsString);
  const char*heading=a.content.language()==2||a.content.language()==3?"Nspire 移植":"Nspire port";
  const char*author=a.content.language()==2?"zyf722（基于 Codex）":a.content.language()==3?"zyf722（基於 Codex）":"zyf722 (with Codex)";
+ if(*payload){const char*next=auxiliary_credit_line(payload,localized_heading,sizeof localized_heading);
+  auxiliary_credit_line(next,localized_author,sizeof localized_author);if(*localized_heading&&*localized_author){heading=localized_heading;author=localized_author;}}
  auxiliary_credit_text(layer,heading,12,y,296,20,Gold,true);
  auxiliary_credit_text(layer,author,12,y+26,296,22,rgb(255,246,226),true);y+=72;
 }

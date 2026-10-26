@@ -56,8 +56,10 @@ void App::settings_action(UiAction action){
     if(binding_listening>=0){if(action==UiAction::SettingsBack||action==UiAction::Back)binding_listening=-1;return;}
     if(settings_language_open){
         if(unsigned(action)>=unsigned(UiAction::SettingsLanguageFirst)&&unsigned(action)<=unsigned(UiAction::SettingsLanguageLast))request_language(unsigned(action)-unsigned(UiAction::SettingsLanguageFirst)+1);
-        else if(action==UiAction::SettingsLanguagePrevious){if(settings_language_item)settings_language_item--;}
-        else if(action==UiAction::SettingsLanguageNext){if(settings_language_item+1<locale_language_count(available_languages()))settings_language_item++;}
+        else if(action==UiAction::SettingsLanguagePrevious){if(settings_language_item)settings_language_item--;settings_language_top=uint8_t(settings_layout::language_reveal(locale_language_count(available_languages()),settings_language_item,settings_language_top));}
+        else if(action==UiAction::SettingsLanguageNext){if(settings_language_item+1<locale_language_count(available_languages()))settings_language_item++;settings_language_top=uint8_t(settings_layout::language_reveal(locale_language_count(available_languages()),settings_language_item,settings_language_top));}
+        else if(action==UiAction::SettingsScrollUp){if(settings_language_top)--settings_language_top;}
+        else if(action==UiAction::SettingsScrollDown){if(settings_language_top<settings_layout::language_maximum(locale_language_count(available_languages())))++settings_language_top;}
         else if(action==UiAction::SettingsLanguageEnglish)request_language(1);
         else if(action==UiAction::SettingsLanguageChinese)request_language(2);
         else if(action==UiAction::SettingsLanguageClose||action==UiAction::Back||action==UiAction::SettingsBack)settings_language_open=false;
@@ -71,7 +73,8 @@ void App::settings_action(UiAction action){
         settings_tab=action==UiAction::SettingsInputTab;settings_item=settings_top=0;break;
     case UiAction::SettingsLanguage:
         if(title&&locale_language_count(available_languages())>1){settings_language_open=true;settings_language_item=0;
-            for(unsigned i=0;i<locale_language_count(available_languages());++i)if(locale_language_at(available_languages(),i)==content.language()){settings_language_item=uint8_t(i);break;}}break;
+            for(unsigned i=0;i<locale_language_count(available_languages());++i)if(locale_language_at(available_languages(),i)==content.language()){settings_language_item=uint8_t(i);break;}
+            settings_language_top=uint8_t(settings_layout::language_reveal(locale_language_count(available_languages()),settings_language_item,0));}break;
     case UiAction::SettingsFastMode:fast_mode=!fast_mode;persist_preferences();break;
     case UiAction::SettingsCardIndices:show_card_indices=!show_card_indices;persist_preferences();break;
     case UiAction::SettingsRunTimer:show_run_timer=!show_run_timer;persist_preferences();break;
@@ -101,8 +104,8 @@ bool App::settings_input(Key key){
     if(binding_listening>=0){if(key==Key::Back&&pointer.dispatching)binding_listening=-1;return true;}
     if(settings_language_open){
         if(key==Key::Back)settings_language_open=false;
-        else if(key==Key::Up){if(settings_language_item)settings_language_item--;}
-        else if(key==Key::Down){if(settings_language_item+1<locale_language_count(available_languages()))settings_language_item++;}
+        else if(key==Key::Up){if(settings_language_item)settings_language_item--;settings_language_top=uint8_t(settings_layout::language_reveal(locale_language_count(available_languages()),settings_language_item,settings_language_top));}
+        else if(key==Key::Down){if(settings_language_item+1<locale_language_count(available_languages()))settings_language_item++;settings_language_top=uint8_t(settings_layout::language_reveal(locale_language_count(available_languages()),settings_language_item,settings_language_top));}
         else if(key==Key::Confirm)request_language(locale_language_at(available_languages(),settings_language_item));
         return true;
     }

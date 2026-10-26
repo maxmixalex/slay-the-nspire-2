@@ -94,8 +94,7 @@ static void popup_geometry(){
  if(a.content.version()<Ui6ContentVersion)return;a.render();unsigned found=0;
  for(int i=0;i<a.hit_count;++i){const auto&hit=a.hits[i];if(hit.kind!=HitKind::UiAction)continue;
   const bool accept=hit.value==int(UiAction::FrontendAccept),cancel=hit.value==int(UiAction::FrontendCancel);if(!accept&&!cancel)continue;
-  const int source_x=accept?921:528;
-  CHECK(hit.x==(source_x*4+10)/21&&hit.y==(778*4+10)/21&&hit.w==(180*4+10)/21&&hit.h==(72*4+10)/21&&hit.enabled);found|=accept?2:1;
+  CHECK(hit.x==(accept?186:54)&&hit.y==166&&hit.w==80&&hit.h==24&&hit.enabled);found|=accept?2:1;
  }CHECK(found==3);
 }
 static void capture(const char*name,bool preserve_pointer=false){
@@ -123,8 +122,9 @@ static void settings_back(){
 }
 static void menu_rows(unsigned count){
  a.render();unsigned seen=0;for(int i=0;i<a.hit_count;i++)if(a.hits[i].kind==HitKind::Menu){const auto&hit=a.hits[i];CHECK(hit.value>=0&&unsigned(hit.value)<count);
-  if(a.title){const int expected_y=206-int(count)*20+hit.value*20;
-   CHECK(hit.x==24&&hit.y==expected_y&&hit.w==174&&hit.h==20);
+  if(a.title){const int expected_y=206-int(count)*17+hit.value*17;
+   CHECK(hit.x==24&&hit.y==expected_y&&hit.w==174&&hit.h==17);
+   CHECK(expected_y>=116); // The raised complete logo ends at108.
   }else{const int pause_y[]={65,94,123,152,181};CHECK(a.paused&&count==5);
    CHECK(hit.x==72&&hit.y==pause_y[hit.value]&&hit.w==176&&hit.h==27);
   }seen|=1u<<hit.value;}

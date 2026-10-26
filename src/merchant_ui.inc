@@ -50,9 +50,9 @@ static void merchant_hand(Canvas&c,bool fake=false){
  const int source_x=int(m.hand_x)*9/32;
  const int degrees=-10+(source_x-770)/5;
  const unsigned sample=unsigned(mn(46,mx(0,(degrees+134)/5)));
- // Keep the fingertip at its source slot while reducing the hand to 75%
- // on the LCD. The large transparent source canvas is scaled as one mesh.
- c.ui((fake?I7_FakeMerchantHandStart:I7_MerchantHandStart)+int(sample),m.hand_x/16-120,m.hand_y/16-173,240,180);
+ // The sampled source mesh already uses the LCD canvas. Preserve its
+ // full scale and fingertip anchor; native-size sparse rows avoid resampling.
+ c.ui((fake?I7_FakeMerchantHandStart:I7_MerchantHandStart)+int(sample),m.hand_x/16-160,m.hand_y/16-230,320,240);
 }
 static void merchant_dialogue(Canvas&c,bool fake=false){
  auto&a=c.a;const auto&m=a.room_presentation.merchant;const unsigned alpha=m.dialogue_alpha(a.map_clock_ms);if(!alpha)return;
@@ -192,6 +192,44 @@ static void merchant_secondary_lights(Canvas&c,bool covered){
         if(light.fire)room_vfx_cinders(c,light.x,light.y,4,c.a.map_clock_ms,0x43414e44u+i,120);
     }
 }
+// Sample the fixed rug only once per resource generation. Its exact alpha
+// proves which animated underlay pixels cannot reach the finished frame.
+// Fractional rug edges still draw the complete live room and retain the two
+// original RGB565 roundings: dim, then source-over rug. No animation clock,
+// decoded frame, input or game state is omitted.
+struct MerchantRugRaster {
+ const Content*owner=nullptr;uint32_t generation=0;bool valid=false;
+ uint16_t pixels[ScreenW*ScreenH]{};uint8_t alpha[ScreenW*ScreenH]{};
+};
+static MerchantRugRaster merchant_rug_raster;
+static const MerchantRugRaster* merchant_cached_rug(Canvas&c){
+ if(c.pixels!=c.a.pixels||c.pitch!=ScreenW||c.clip_w!=ScreenW||c.clip_h!=ScreenH||
+    c.coverage||c.opacity!=255||c.brightness!=255||c.tint_red!=255||c.tint_green!=255||
+    c.tint_blue!=255||c.color_matrix||c.occlusion)return nullptr;
+ auto&r=merchant_rug_raster;
+ if(r.owner!=&c.a.content||r.generation!=c.a.content.generation()){
+  r.owner=&c.a.content;r.generation=c.a.content.generation();r.valid=false;
+  for(unsigned i=0;i<ScreenW*ScreenH;++i){r.pixels[i]=0;r.alpha[i]=0;}
+  Canvas tile=c;tile.pixels=r.pixels;tile.coverage=r.alpha;
+  tile.ui(U_MerchantRug,MerchantInventoryLayout::RugX,MerchantInventoryLayout::RugY,
+   MerchantInventoryLayout::RugW,MerchantInventoryLayout::RugH);
+  r.valid=c.a.content.healthy();
+ }
+ return r.valid?&r:nullptr;
+}
+static void merchant_inventory_background(Canvas&c,const MerchantRugRaster*r,int dy,unsigned shade){
+ if(!r){c.dim(0,22,320,218,shade);c.ui(U_MerchantRug,MerchantInventoryLayout::RugX,MerchantInventoryLayout::RugY+dy,MerchantInventoryLayout::RugW,MerchantInventoryLayout::RugH);return;}
+ for(unsigned i=22*ScreenW;i<ScreenW*ScreenH;++i){
+  const unsigned alpha=r->alpha[i];
+  if(alpha==255){c.pixels[i]=r->pixels[i];continue;}
+  uint16_t background=shade==255?Ink:shade?blend(c.pixels[i],Ink,shade):c.pixels[i];
+  c.pixels[i]=alpha?blend(background,r->pixels[i],alpha):background;
+ }
+ // The authored rug begins at18, above the room's22px dim boundary. Keep
+ // that small overlap exact without excluding the independently drawn HUD.
+ for(unsigned i=0;i<22*ScreenW;++i)if(r->alpha[i])
+  c.pixels[i]=r->alpha[i]==255?r->pixels[i]:blend(c.pixels[i],r->pixels[i],r->alpha[i]);
+}
 static void shop_screen(Canvas&c,bool cull_covered=true){
     auto&a=c.a;auto&s=a.game;auto&motion=a.room_presentation.merchant;motion.set_open(a.shop_open&&!a.merchant_preparation.active,a.map_clock_ms);const bool registered=a.content.ui_image(U_MerchantBackdrop)>=0&&a.content.clip(AnimMerchantRoomTop).count;
     const int body_x=registered?MerchantLayout::BodyX:181,body_y=registered?MerchantLayout::BodyY:62;
@@ -205,6 +243,8 @@ static void shop_screen(Canvas&c,bool cull_covered=true){
     // always render the complete room; settled inventory can omit only layers
     // proven to be wholly overwritten by the opaque original rug.
     const bool covered=cull_covered&&a.shop_open&&motion.open&&a.map_clock_ms-motion.start>=1000;
+    const auto*rug=covered?merchant_cached_rug(c):nullptr;
+    Canvas room=c;if(rug)room.occlusion=rug->alpha;
     // The preparation overlay is modal. Reuse its first complete room frame
     // while warming inventory assets; decoding a new idle/flame frame on
     // each yielded step would compete with the very work being prepared.
@@ -219,16 +259,16 @@ static void shop_screen(Canvas&c,bool cull_covered=true){
     if(retained){
         for(unsigned i=0;i<ScreenW*(ScreenH-22);++i)a.pixels[ScreenW*22+i]=preparation_backdrop.pixels[i];
     }else if(registered){
-        c.ui(U_MerchantBackdrop,0,22,320,218);
-        if(effects)merchant_secondary_lights(c,covered);
+        room.ui(U_MerchantBackdrop,0,22,320,218);
+        if(effects)merchant_secondary_lights(room,covered);
         if(effects){
-            merchant_room_clip(c,AnimMerchantFlamesBehind,a.map_clock_ms%MerchantIdleDurationMs,covered);
-            merchant_idle(c,AnimMerchantRoomBottom,covered);
-            merchant_room_clip(c,AnimMerchantFlamesFront,a.map_clock_ms%MerchantIdleDurationMs,covered);
-        }else c.clip(AnimMerchantRoomBottom,0,22,a.map_clock_ms);
-        merchant_room_clip(c,AnimMerchantIronclad+int(s.character),a.map_clock_ms,covered);
-        if(effects)merchant_idle(c,focused?AnimMerchantRoomFocused:AnimMerchantRoomTop,covered);
-        else c.clip(AnimMerchantRoomTop,0,22,a.map_clock_ms);
+            merchant_room_clip(room,AnimMerchantFlamesBehind,a.map_clock_ms%MerchantIdleDurationMs,covered);
+            merchant_idle(room,AnimMerchantRoomBottom,covered);
+            merchant_room_clip(room,AnimMerchantFlamesFront,a.map_clock_ms%MerchantIdleDurationMs,covered);
+        }else room.clip(AnimMerchantRoomBottom,0,22,a.map_clock_ms);
+        merchant_room_clip(room,AnimMerchantIronclad+int(s.character),a.map_clock_ms,covered);
+        if(effects)merchant_idle(room,focused?AnimMerchantRoomFocused:AnimMerchantRoomTop,covered);
+        else room.clip(AnimMerchantRoomTop,0,22,a.map_clock_ms);
     }else{c.picture(A_ShopBackground,0,22,320,218);c.actor(0,54,170);c.clip(AnimMerchantTop,181,62,a.animation*33,false);c.clip(AnimMerchantBottom,152,132,a.animation*33,false);}
     const char*proceed_label=a.content.world_string("gameplay_ui","PROCEED_BUTTON");
     if(a.merchant_preparation.active){
@@ -260,7 +300,7 @@ static void shop_screen(Canvas&c,bool cull_covered=true){
         if(!motion.visible(a.map_clock_ms))return;
     }
     const int dy=motion.offset(a.map_clock_ms);
-    c.dim(0,22,320,218,motion.alpha(a.map_clock_ms));c.ui(U_MerchantRug,MerchantInventoryLayout::RugX,MerchantInventoryLayout::RugY+dy,MerchantInventoryLayout::RugW,MerchantInventoryLayout::RugH);
+    merchant_inventory_background(c,rug,dy,motion.alpha(a.map_clock_ms));
     a.cursor=mn(mx(a.cursor,0),ShopLeave);
     int focus=-1,focus_x=0,focus_y=0;
     if(a.shop_open)for(unsigned item=0;item<ShopLeave;++item){auto r=MerchantInventoryLayout::bounds(item,dy);

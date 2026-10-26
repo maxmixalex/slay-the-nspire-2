@@ -5,10 +5,10 @@
 // Original main-menu logo pose, cropped from the 1920x1080 scene to 320x240.
 namespace spire::title_scene {
 constexpr int AtlasWidth=164,LegacyAtlasHeight=106,AtlasHeight=210;
-constexpr int TextX=40,TextY=36,TextWidth=164,TextHeight=84;
-constexpr int FireX=106,FireY=54,FireWidth=16,FireHeight=22;
+constexpr int TextX=40,TextY=24,TextWidth=164,TextHeight=84;
+constexpr int FireX=106,FireY=42,FireWidth=16,FireHeight=22;
 constexpr int FireAtlasY=84,FireFrames=10,FireFrameMs=100;
-constexpr int GlowAtlasY=106,GlowHeight=104,GlowCenterX=115,GlowCenterY=67;
+constexpr int GlowAtlasY=106,GlowHeight=104,GlowCenterX=115,GlowCenterY=55;
 constexpr unsigned GlowPeriodMs=3000,GlowOpacity=75;
 struct GlowSample {int width,height;unsigned brightness;};
 inline GlowSample glow_sample(uint32_t milliseconds){
@@ -36,12 +36,13 @@ inline GlowSample glow_sample(uint32_t milliseconds){
 // a rounded row height across the stack.
 // LCD adaptation: keep the source menu under the logo, with readable rows.
 constexpr int MenuCenter=111,MenuHitLeft=24,MenuHitWidth=174;
-constexpr int MenuFont=10,MenuRowHeight=20;
+constexpr int MenuFont=10,MenuRowHeight=17;
 constexpr int menu_y(int rows,int row){return 206-rows*MenuRowHeight+row*MenuRowHeight;}
 constexpr int menu_top(int rows){return menu_y(rows,0);}
 constexpr int menu_height(int,int){return MenuRowHeight;}
 constexpr int menu_center_y(int rows,int row){return menu_y(rows,row)+MenuRowHeight/2;}
 constexpr int menu_source_y(int rows,int row=0){return menu_y(rows,row)*21/4;}
+static_assert(TextY+TextHeight+8<=menu_top(5),"The saved-run menu clears the complete logo");
 constexpr int ContinueX=184,ContinueWidth=130;
 constexpr int continue_y(int rows){return menu_y(rows,0)+10;}
 constexpr int continue_height(bool ascension){return ascension?97:82;}

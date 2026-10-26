@@ -108,6 +108,14 @@ static void conditional_corpus(){
  expect(x,"{N:cond:>9223372036854775808?bad|also bad}","{N:cond:>9223372036854775808?bad|also bad}");
  expect(x,"{Missing.StringValue:cond:bad|also bad}","{Missing.StringValue:cond:bad|also bad}");
  expect(x,"{Empty:cond:{Missing}|empty}","empty");expect(x,"{Type:cond:{Missing}|empty}","{Missing}");
+ // The implicit formatter is used by original room-history model titles.
+ // Empty strings suppress the separator, and nested {} uses the branch value.
+ expect(x,"Room{Type:: {}|}","Room Attack");
+ expect(x,"Room{Empty:: {}|}","Room");
+ expect(x,"{Type::[gold]{}[/gold] {N}|{Missing}}","[gold]Attack[/gold] -2");
+ expect(x,"{Empty::{Missing}|none}","none");
+ expect(x,"{N::<0?{} debt|balance}","-2 debt");
+ expect(x,"{Unknown:: {}|}","{Unknown:: {}|}");
  expect(x,"{Type:cond:{N:cond:<0?[gold]{}[/gold]|positive}|empty}","[gold]-2[/gold]");
 }
 static void thinky_dots(){

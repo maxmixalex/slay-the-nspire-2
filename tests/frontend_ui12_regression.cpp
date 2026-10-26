@@ -23,6 +23,23 @@ int main(int argc,char**argv){
   unsigned left=0,right=0;for(int y=0;y<24;++y)for(int x=0;x<width;++x){if(x<width/2)left+=alpha[y*320+x]!=0;else right+=alpha[y*320+x]!=0;}CHECK(left>20&&right>20);
  }
  app.settings_open=true;app.settings_tab=0;app.settings_item=0;app.settings_top=0;app.pointer.visible=true;
+ // All installed languages use one modal list. Dragging/wheeling its own
+ // source scrollbar must not move the Settings page or select a language.
+ app.callbacks.available_languages=[](){return 0xffffu;};
+ click(HitKind::UiAction,int(UiAction::SettingsLanguage));CHECK(app.settings_language_open);
+ const auto language_item=app.settings_language_item;
+ auto language_track=hit(HitKind::SettingsScroll,1);CHECK(language_track.y==64&&language_track.h==154);
+ for(unsigned i=0;i<app.hit_count;++i)if(app.hits[i].kind==HitKind::UiAction&&
+     app.hits[i].value>=int(UiAction::SettingsLanguageFirst)&&app.hits[i].value<=int(UiAction::SettingsLanguageLast))CHECK(!intersects(language_track,app.hits[i]));
+ app.pointer_move(language_track.x+language_track.w/2,language_track.y+language_track.h-1);app.pointer_button(true);
+ CHECK(app.settings_language_top==9&&app.settings_top==0&&app.settings_language_item==language_item);
+ app.pointer_move(language_track.x+language_track.w/2,0);CHECK(app.settings_language_top==0);app.pointer_button(false);
+ app.pointer_scroll(1);CHECK(app.settings_language_top==1&&app.settings_language_item==language_item);
+ for(unsigned i=0;i<16;++i)app.pointer_scroll(1);CHECK(app.settings_language_top==9&&app.settings_top==0);
+ app.input(Key::Up);CHECK(app.settings_language_item>=app.settings_language_top&&app.settings_language_item<app.settings_language_top+7);
+ for(unsigned i=0;i<16;++i)app.input(Key::Down);CHECK(app.settings_language_item==15&&app.settings_language_top==9);
+ app.input(Key::Back);CHECK(!app.settings_language_open&&app.settings_open&&app.settings_top==0);
+ app.callbacks.available_languages=nullptr;app.pointer.visible=true;
  auto track=hit(HitKind::SettingsScroll);app.pointer_move(track.x+track.w/2,track.y+track.h-1);app.pointer_button(true);CHECK(app.settings_top==settings_layout::GeneralMaximum);
  app.pointer_move(track.x+track.w/2,track.y);CHECK(app.settings_top==0);app.pointer_move(track.x+track.w/2,track.y+track.h-1);CHECK(app.settings_top==settings_layout::GeneralMaximum);app.pointer_button(false);CHECK(!app.pointer.held);
  auto skip=hit(HitKind::UiAction,int(UiAction::SettingsSkipIntroLogo));CHECK(skip.enabled&&skip.x+skip.w<settings_layout::TooltipLeft&&!app.skip_intro_logo);
@@ -40,6 +57,12 @@ int main(int argc,char**argv){
  back=hit(HitKind::UiAction,int(UiAction::Back));for(unsigned i=0;i<app.hit_count;++i)if(app.hits[i].kind==HitKind::StatisticsEntry)CHECK(!intersects(back,app.hits[i]));
  CHECK(UiHistoryLayout::Left>=back.x+back.w);UiRunHistory history{};history.floor_count=40;history.relic_count=25;const UiHistoryLayout layout(history,40);
  for(unsigned i=0;i<history.floor_count;++i){auto p=layout.floor(history,i);CHECK(p.x>=52&&p.x+p.w<=290);}for(unsigned i=0;i<40;++i){auto p=layout.card(i);CHECK(p.x>=52&&p.x+p.w<=290);}
+ // History's Next control formerly shared the right thumb's hit region;
+ // exercise a real click with enough contents to make that scrollbar visible.
+ app.statistics_open=false;app.history_open=true;app.history_index=1;app.progress.count=2;app.progress.next_history=2;
+ app.progress.history[0]=history;app.progress.history[1]=history;app.history_presentation.open(app.map_clock_ms-1000);
+ const auto next=hit(HitKind::UiAction,int(UiAction::HistoryNext)),history_track=hit(HitKind::ProgressThumb);
+ CHECK(!intersects(next,history_track));click(HitKind::UiAction,int(UiAction::HistoryNext));CHECK(app.history_index==0);
  CHECK(profile_overflow_offset(90,0)==0&&profile_overflow_offset(90,1400)==0);CHECK(profile_overflow_offset(90,7250)==90);
  CHECK(save(app.game,after)&&before.size==after.size&&!std::memcmp(before.bytes,after.bytes,before.size));CHECK(app.content.healthy());
  std::printf("UI12 frontend: %u checks; real source textures, scrollbar drag, Credits flow, Back separation and canonical bytes pass\n",checks);

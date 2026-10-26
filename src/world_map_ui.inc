@@ -105,7 +105,9 @@ static void map_special_node(Canvas&c,const reference::ReferenceMap&m,unsigned i
 }
 // Keep the source paper, type highlighting and descriptions, but open the
 // readable legend on demand so a 320px map does not lose its rightmost routes.
-constexpr int MapLegendX=191,MapLegendY=88,MapLegendRowY=113,MapLegendRowStep=17,MapLegendWidth=125;
+constexpr int MapLegendX=187,MapLegendY=63,MapLegendRowY=100,MapLegendRowStep=19,MapLegendWidth=129,MapLegendHeight=170;
+static_assert(MapLegendRowY+6*MapLegendRowStep+16<=MapLegendY+MapLegendHeight,
+              "Every legend item has bottom padding inside the paper");
 static int map_legend_hover(const App&a,int offset_x=0){
     if(!a.map_legend||!a.pointer.visible||a.pointer.x<MapLegendX+3+offset_x||a.pointer.x>=MapLegendX+MapLegendWidth+offset_x||
        a.pointer.y<MapLegendRowY||a.pointer.y>=MapLegendRowY+6*MapLegendRowStep)return -1;
@@ -127,18 +129,21 @@ static void map_legend_screen(Canvas&c,const MapColors&colors,int offset_x=0){
         c.fitted(*header?header:(a.content.language()==2?"图例":"Legend"),tab_x+5,tab_y+2,62,18,10,10,colors.ink,true);
         c.action(tab_x,tab_y,72,22,UiAction::ToggleMapLegend);return;
     }
-    map_picture(c,a.content.world_image("map","LEGEND"),x+MapLegendWidth/2,y+65,MapLegendWidth,130,MapShader::Original,0,0,255,0,22,235);
-    c.fitted(*header?header:(a.content.language()==2?"图例":"Legend"),x+5,y+5,MapLegendWidth-23,20,12,10,colors.ink,true);
-    c.text("×",x+MapLegendWidth-17,y+5,12,colors.ink);c.action(x+MapLegendWidth-22,y,22,24,UiAction::ToggleMapLegend);
+    map_picture(c,a.content.world_image("map","LEGEND"),x+MapLegendWidth/2,y+MapLegendHeight/2,MapLegendWidth,MapLegendHeight,MapShader::Original,0,0,255,0,22,235);
+    c.fitted(*header?header:(a.content.language()==2?"图例":"Legend"),x+12,y+10,MapLegendWidth-24,20,12,10,colors.ink,true);
+    c.text("×",x+MapLegendWidth-18,y+7,12,colors.ink);c.action(x+MapLegendWidth-22,y+3,18,22,UiAction::ToggleMapLegend);
     a.room_presentation.legend.observe(a.map_legend?a.map_legend_item:-1,a.map_clock_ms);
     for(unsigned i=0;i<6;++i){const int row=MapLegendRowY+int(i)*MapLegendRowStep;const auto type=map_legend_type(i);
         // NMapLegendItem scales its icon and highlights its point type; the
         // paper itself is always present and is not a separate modal window.
         const int size=int((16*a.room_presentation.legend.scale(i,a.map_clock_ms)+2048)/4096);
-        map_picture(c,world_point_image(type),x+23,row+8,size,size,MapShader::Normal,0,colors.paper,255,0,22,235);
         char key[96]{};const char*label=map_legend_text(a,i,".title",key,sizeof key);
-        c.fitted(*label?label:world_point_name(type),x+38,row-1,MapLegendWidth-48,18,10,10,colors.ink);
-        c.action(x+3,row,MapLegendWidth-6,MapLegendRowStep,UiAction(int(UiAction::MapLegendUnknown)+int(i)));
+        const char*name=*label?label:world_point_name(type);
+        const int text_width=mn(MapLegendWidth-46,c.width(name,10)),group_width=22+text_width;
+        const int left=x+(MapLegendWidth-group_width)/2;
+        map_picture(c,world_point_image(type),left+8,row+MapLegendRowStep/2,size,size,MapShader::Normal,0,colors.paper,255,0,22,235);
+        c.fitted(name,left+22,row,text_width,MapLegendRowStep,10,10,colors.ink,true);
+        c.action(x+12,row,MapLegendWidth-24,MapLegendRowStep,UiAction(int(UiAction::MapLegendUnknown)+int(i)));
     }
     if(a.map_legend){
         char key[96]{},title[160]{};const char*source=map_legend_text(a,a.map_legend_item,".hoverTip.title",key,sizeof key);

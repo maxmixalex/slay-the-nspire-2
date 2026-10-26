@@ -364,7 +364,7 @@ struct App {
     void reset_input_bindings();
     const char* input_command_title(unsigned command)const;
     bool settings_language_open=false;
-    uint8_t settings_language_item=0,settings_top=0;
+    uint8_t settings_language_item=0,settings_language_top=0,settings_top=0;
     void restore_preferences();
     void set_fast_mode(bool value);
     void persist_preferences();

@@ -26,7 +26,7 @@ static void native_frontend_popup(Canvas&c,const char*header,const char*body,boo
   c.action(x,ButtonY,ButtonW,ButtonH,yes?UiAction::FrontendAccept:UiAction::FrontendCancel);
   if(!a.pointer.visible&&a.content.version()>=HistoryUi8ContentVersion){
    char key[20]{};input_key_label(a.input_bindings.keys[a.keyboard_only?1:0][unsigned(yes?InputCommand::Confirm:InputCommand::Cancel)],key,sizeof key);
-   const int kx=x+ButtonW-22,ky=ButtonY+24,kw=mx(12,mn(32,c.width(key,8)+4));
+   const int kx=x+ButtonW-22,ky=ButtonY+ButtonH-3,kw=mx(12,mn(32,c.width(key,8)+4));
    c.ui(I8_KeyboardKeycap,kx,ky,kw,12);profile_text_box(c,key,kx,ky,kw,12,{8,0,White,0},true,false);
   }
  }

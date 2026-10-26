@@ -388,7 +388,8 @@ static void layout_and_input(){
     const auto collapsed=*toggle;app.pointer_move(collapsed.x+collapsed.w/2,collapsed.y+collapsed.h/2);
     app.pointer_button(true);app.pointer_button(false);app.render();CHECK(app.map_legend);unchanged();
     for(unsigned i=0;i<6;++i){const auto*row=find_hit(HitKind::UiAction,int(UiAction::MapLegendUnknown)+int(i));CHECK(row);
-        CHECK(row->x==194&&row->y==113+17*int(i)&&row->w==119&&row->h==17);}
+        CHECK(row->x==199&&row->y==100+19*int(i)&&row->w==105&&row->h==19);
+        CHECK(row->x>=187+12&&row->x+row->w<=316-12&&row->y+row->h<=233-16);}
     const auto*legend=find_hit(HitKind::UiAction,int(UiAction::MapLegendTreasure));CHECK(legend);
     app.pointer_move(legend->x+legend->w/2,legend->y+legend->h/2);app.render();CHECK(app.map_legend&&app.map_legend_item==2);unchanged();
     app.pointer_move(0,0);app.render();CHECK(app.map_legend&&app.map_legend_item==2);unchanged();
