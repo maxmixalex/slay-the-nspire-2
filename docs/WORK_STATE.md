@@ -88,6 +88,48 @@ play and USB readback are being checked under that same recorded d5 identity;
 these captures are not final-runtime evidence.
 
 
+### Final input and ordered-blend corrections
+
+The `e5cdd7f28098a12bfd01d257584d157d12035498` full native run closes with
+136/137 passing and one real input failure: a finished Fake Merchant accepted
+an ordinary-event ReadEvent overlay. Both the keyboard dispatch and direct
+UI-action entry are being corrected; the retained failing assertion is extended
+with canonical Proceed and unfinished-shop interaction checks. This result is
+not reported as 137 passing. The same checkpoint's Python discovery passes 265
+tests and the supplemental converter suite passes 56 (two overlap, **319 unique**).
+A first supplemental invocation omitted the tests module search path and failed;
+the explicit-PYTHONPATH rerun is the accepted result.
+
+Complete source sampling also rejects Regent frame 47 because its additive eye
+crosses a partially transparent body edge. The new representation preserves the
+original Normal/Add/Normal slot order in one bounded sparse frame atlas, rather
+than treating emission as ordinary alpha or doubling cache entries. The seven
+already completed source sequences retain independent receipts and exact
+payload hashes; an explicit validated resume prefix will preserve those frames.
+The complete new scene pack and its actual-resource gates remain pending.
+
+The same integration review catches the original 256×256 Light/Dot textures
+against Content's unchanged 320×240 decoder bound. Their 65,536 texels are now
+stored in original flat order inside 320×205 images, with 64 transparent padding
+texels and a logical 256×256 sampler view. There is no cropping/resampling and
+no decoder-bound relaxation. A short original-image decoder check passes all
+texels through both memory and range-reader LZ4 paths (786,725 checks); that
+pre-check is not substituted for complete resource-pack acceptance. The final
+pack gate will actually decode all 2,955 appended auxiliary images.
+
+The `e5cdd7f` ARM build succeeds with 1,653,701 bytes and a 20,704,060-byte
+allocation. It remains an intermediate artifact pending the input/blend fix.
+The d5 natural playthrough's run/progress USB downloads validate with the
+production codec: Ironclad, seed 27EE432E, floor 2, Reward phase, HP 68/80,
+111 gold, 12 cards and matching revision 30. Its controller journal is failed
+because a later optional settings download timed out; the two completed save
+transfers and observed gameplay are retained with that explicit limitation.
+A separate mismatched snapshot/backing-flash attempt is excluded completely.
+A clean paired OS preparation journal passes, but supplies no final gameplay or
+performance evidence. The final runtime/resources will be installed and verified
+in a separate, matched device run before publishing main.
+
+
 ## UI12 playable follow-up — acceptance completed
 
 Delivered runtime: **`9398633d8fd715c008560cc038f61d8f85c98466`**. Validation source:

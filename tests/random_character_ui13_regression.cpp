@@ -82,6 +82,34 @@ static void particle_contract(){
     CHECK(std::fabs(RandomCharacterPresentation::project_q16(1111*1024,false)/65536.-177.3937714)<.001);
     CHECK(std::fabs(RandomCharacterPresentation::project_q16(-83*1024,true)/65536.+25.125)<.001);
 }
+static void linear_texture_contract(){
+    // A logical row crosses the physical row boundary. RGB565, indexed and
+    // sparse views must all retain flat source order and source UV filtering.
+    Image physical{3,2,{0x1234,0xabcd,0x4567,0x89ab,0xcdef,0x1357},{17,61,101,151,201,255}};
+    const Image logical{2,3,physical.colors,physical.alpha};
+    uint8_t palette[512]{},indices[]={0,1,2,3,4,5};
+    for(unsigned i=0;i<6;++i){palette[i*2]=uint8_t(physical.colors[i]);palette[i*2+1]=uint8_t(physical.colors[i]>>8);}
+    const water_reflection::Texture dense(picture(physical),2,3),indexed({indices,physical.alpha.data(),palette,3,2,3},2,3);
+    const uint8_t spans[]={1,0, 1,0,2,0,0, 0,248,224,7, 1,0, 0,0,2,0,1, 31,0,64,255,255,128};
+    const water_reflection::Texture sparse({spans,nullptr,nullptr,3,2,4},2,3);
+    const Image sparse_logical{2,3,{0,0xf800,0x07e0,0x001f,0xffff,0},{0,255,255,64,128,0}};
+    CHECK(dense.valid()&&dense.width()==2&&dense.height()==3&&indexed.valid()&&sparse.valid());
+    for(bool repeat:{false,true})for(int y=-1;y<=3;++y)for(int x=-1;x<=2;++x){
+        CHECK(near(dense.at(x,y,repeat),at(logical,x,y,repeat),0));
+        CHECK(near(indexed.at(x,y,repeat),at(logical,x,y,repeat),0));
+        CHECK(near(sparse.at(x,y,repeat),at(sparse_logical,x,y,repeat),0));
+    }
+    for(bool repeat:{false,true})for(int v:{-8192,0,8192,32768,61440,65536,73728})for(int u:{-8192,0,8192,32768,61440,65536,73728}){
+        const Color expected=filtered(logical,u/65536.,v/65536.,repeat);
+        CHECK(near(dense.bilinear(u,v,repeat),expected));
+        CHECK(near(indexed.bilinear(u,v,repeat),expected));
+        CHECK(std::fabs(dense.alpha_bilinear(u,v,repeat)-expected.a)<=1.6);
+        CHECK(std::fabs(indexed.alpha_bilinear(u,v,repeat)-expected.a)<=1.6);
+        CHECK(near(sparse.bilinear(u,v,repeat),filtered(sparse_logical,u/65536.,v/65536.,repeat)));
+    }
+    CHECK(!water_reflection::Texture(picture(physical),3,3).valid());
+    CHECK(!water_reflection::Texture(picture(physical),2,0).valid());
+}
 static std::vector<uint8_t> read(const char*path){FILE*f=std::fopen(path,"rb");CHECK(f);std::vector<uint8_t> data(spire_test::pack_size(f));CHECK(std::fread(data.data(),1,data.size(),f)==data.size());CHECK(!std::fclose(f));return data;}
 static Image decode(Picture p){
     Image out{p.w,p.h,std::vector<uint16_t>(unsigned(p.w)*p.h),std::vector<uint8_t>(unsigned(p.w)*p.h)};
@@ -93,7 +121,7 @@ static void capture(const char*directory,const char*name){
     for(unsigned y=0;y<240;++y){uint8_t row[960];for(unsigned x=0;x<320;++x){const uint16_t p=app.pixels[y*320+x];row[x*3]=(p>>11)*255/31;row[x*3+1]=((p>>5)&63)*255/63;row[x*3+2]=(p&31)*255/31;}CHECK(std::fwrite(row,1,sizeof row,f)==sizeof row);}CHECK(!std::fclose(f));
 }
 static void actual(const char*captures){
-    const int ids[]={I13_RandomGradient,I13_RandomNoise,I13_RandomLight,I13_RandomDot};const unsigned widths[]={64,10,256,256},heights[]={64,5,256,256};
+    const int ids[]={I13_RandomGradient,I13_RandomNoise,I13_RandomLight,I13_RandomDot};const unsigned widths[]={64,10,320,320},heights[]={64,5,205,205};
     for(unsigned i=0;i<4;++i){const auto p=app.content.image(app.content.ui_image(ids[i]));CHECK(p.pixels&&p.w==widths[i]&&p.h==heights[i]);}
     const auto gp=app.content.image(app.content.ui_image(I13_RandomGradient)),np=app.content.image(app.content.ui_image(I13_RandomNoise));
     const Image gradient=decode(gp),noise=decode(np);const water_reflection::Texture g(gp),n(np);
@@ -123,7 +151,7 @@ static void actual(const char*captures){
     CHECK(save(app.game,after)&&before.size==after.size&&!std::memcmp(before.bytes,after.bytes,before.size));
 }
 int main(int argc,char**argv){
-    shader_contract();particle_contract();
+    shader_contract();particle_contract();linear_texture_contract();
     if(argc>1){auto data=read(argv[1]);std::vector<uint8_t> locale;SplitResourceSource split;
         if(argc>2){locale=read(argv[2]);CHECK(split.open(ResourceSource::memory(data.data(),data.size()),ResourceSource::memory(locale.data(),locale.size()),ResourceLanguage(argc>3?std::atoi(argv[3]):1)));CHECK(app.init(split.source(),{}));}
         else CHECK(app.init(data.data(),data.size(),{}));

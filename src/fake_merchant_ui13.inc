@@ -46,8 +46,28 @@ static void quad(Canvas c,const water_reflection::Texture&tex,int cx,int cy,int 
   }
  }
 }
+template<class Source> static void atlas(Canvas&c,Source image,int x,int y){
+ for(const auto&band:FakeMerchantRegentBands){
+  // A plane's exact static/moving coverage is disjoint. Complete that plane
+  // before the next authored blend; the eye is never moved above the arms.
+  // Fetch and draw one view at a time: a subsequent Content load is allowed
+  // to evict earlier decoded storage when the pool is under pressure.
+  for(unsigned part=0;part<2;++part){
+   const auto view=image(part!=0);
+   if(!band.sx&&band.w==view.w)c.picture(Canvas::picture_rows(view,band.sy,band.h),x+band.x,y+band.y,band.w,band.h,255,band.blend);
+   else c.picture_region(view,x+band.x,y+band.y,band.sx,band.sy,band.w,band.h,false,255,band.blend);
+  }
+ }
+}
 static void sequence_frame(Canvas&c,unsigned index,unsigned frame){
  const auto&s=FakeMerchantSequences[index];
+ if(index==FakeMerchantRegentSequence){
+  const int fixed_id=c.a.content.ui_image(s.base),moving_id=c.a.content.ui_image(s.base+1+frame);
+  const auto fixed=c.a.content.image_dimensions(fixed_id),moving=c.a.content.image_dimensions(moving_id);
+  if(fixed.w==FakeMerchantRegentAtlasWidth&&fixed.h==FakeMerchantRegentAtlasHeight&&
+     moving.w==fixed.w&&moving.h==fixed.h){
+   atlas(c,[&](bool moving){return c.a.content.image(moving?moving_id:fixed_id);},s.x,22+s.y);return;}
+ }
  c.ui(s.base,s.x,22+s.y,s.w,s.h);
  c.ui(s.base+1+frame,s.x,22+s.y,s.w,s.h);
 }
@@ -82,7 +102,7 @@ static void lights(Canvas&c,uint32_t clock,uint32_t seed,bool ambient){
   {world_x(source(-267)),world_y(source(-7)),size(256*10*1.01),size(256*10*1.01),225,78,81,77},
   {world_x(source(2248)),world_y(source(1165)),size(256*10*1.01),size(256*10*1.01),106,78,168,77}
  };
- const water_reflection::Texture texture(c.a.content.image(c.a.content.ui_image(I13_RandomLight)));
+ const water_reflection::Texture texture(c.a.content.image(c.a.content.ui_image(I13_RandomLight)),256,256);
  const auto*list=ambient?background:candles;const unsigned count=ambient?2:3;
  for(unsigned i=0;i<count;++i){const auto&l=list[i];
   // little_light_script: independent integer preprocessing in[0,5] seconds.
@@ -94,7 +114,7 @@ static void lights(Canvas&c,uint32_t clock,uint32_t seed,bool ambient){
  }
 }
 static void stars(Canvas&c,uint32_t clock,uint32_t seed){
- const water_reflection::Texture texture(c.a.content.image(c.a.content.ui_image(I13_RandomDot)));
+ const water_reflection::Texture texture(c.a.content.image(c.a.content.ui_image(I13_RandomDot)),256,256);
  for(unsigned i=0;i<300;++i){
   const uint64_t t=uint64_t(clock)+5000-i*10;const unsigned age=unsigned(t%3000),cycle=unsigned(t/3000);
   const uint32_t h=hash(seed^i*0x9e3779b9u^cycle*0x85ebca6bu);

@@ -30,6 +30,9 @@ SCENE = 'scenes/events/custom/fake_merchant.tscn'
 SCALE = 218/1080
 LEFT = (320-1920*SCALE)/2
 FPS = 24
+REGENT_BODY = (0, 0, 160, 190)
+REGENT_EYE = (92, 77, 100, 83)
+REGENT_ATLAS = (160, 196)
 # source resource, exact full period expressed in 24Hz samples, world origin,
 # world scale, skin, fixed native crop. The converter rejects escaped ink.
 SEQUENCES = (
@@ -111,6 +114,39 @@ def _image(draw, scale, origin):
     return raster(draw, scale, origin, (320, 218))
 
 
+def regent_atlas(draw, scale, origin):
+    """One cache entry, original Normal/Add/Normal order and straight alpha.
+
+    The complete320-sample eye union is only8x6 pixels. Outside it all source
+    fragments are Normal, so keep their exact normal composite as one body.
+    Inside its hole store Before/Add/After separately. This avoids retaining
+    duplicate large occluded body planes and stays within320x240.
+    """
+    additive = [i for i, row in enumerate(draw) if row[-1] != 0]
+    tiles.require(len(additive) == 1 and draw[additive[0]][-1] == 1,
+                  'Regent relaxed material ordering changed')
+    index = additive[0]
+    # Raster this ONE emissive slot as Normal against transparency so RGB
+    # stays straight. Raster(Add) against black would premultiply RGB, then
+    # runtime Add would multiply by alpha again and visibly dim the edge.
+    eye = [draw[index][:-1] + (0,)]
+    body = raster(draw[:index]+draw[index+1:], scale, origin, (320, 218))
+    emission = raster(eye, scale, origin, (320, 218))
+    outside = np.array(body)[:, :, 3]; x, y, right, bottom = REGENT_BODY
+    outside[y:bottom,x:right] = 0
+    tiles.require(not np.any(outside), 'Regent source body escaped its registered atlas crop')
+    outside = np.array(emission)[:, :, 3]; x, y, right, bottom = REGENT_EYE
+    outside[y:bottom,x:right] = 0
+    tiles.require(not np.any(outside), 'Regent source band escaped its registered atlas crop')
+    atlas = Image.new('RGBA', REGENT_ATLAS)
+    body = body.crop(REGENT_BODY);body.paste((0,0,0,0),REGENT_EYE);atlas.paste(body,(0,0))
+    planes = [raster(draw[:index], scale, origin, (320, 218)),emission,
+              raster(draw[index+1:], scale, origin, (320, 218))]
+    for plane,target in zip(planes,((0,190),(8,190),(16,190))):
+        atlas.paste(plane.crop(REGENT_EYE),target)
+    return atlas
+
+
 class NecrobinderActor:
     """CreateVisuals keeps its flameattach shader alive during relaxed_loop.
 
@@ -182,11 +218,17 @@ def _sequence(pack, sampler, cache, spec, first, exclude_slots=()):
             found = {row['slot'] for row in frame['draw'] if row['slot'] in exclude_slots}
             tiles.require(found==set(exclude_slots), 'Fake Merchant hidden rug slot changed')
             drawing = [geometry for row, geometry in zip(frame['draw'], drawing) if row['slot'] not in exclude_slots]
-        full = attached.image(frame) if attached else _image(drawing, scale*SCALE, origin)
-        pixels = np.asarray(full)
-        outside = pixels[:, :, 3].copy(); outside[y:y+h, x:x+w] = 0
-        tiles.require(not np.any(outside), 'Fake Merchant frame escaped declared crop: '+key)
-        frames.append(full.crop((x, y, x+w, y+h)))
+        if key == 'regent':
+            tiles.require(len(frame['draw'])==32 and frame['draw'][14]['slot']=='eye add' and
+                          [i for i,row in enumerate(drawing) if row[-1]]==[14],
+                          'Regent original eye slot order changed')
+            frames.append(regent_atlas(drawing, scale*SCALE, origin))
+        else:
+            full = attached.image(frame) if attached else _image(drawing, scale*SCALE, origin)
+            pixels = np.asarray(full)
+            outside = pixels[:, :, 3].copy(); outside[y:y+h, x:x+w] = 0
+            tiles.require(not np.any(outside), 'Fake Merchant frame escaped declared crop: '+key)
+            frames.append(full.crop((x, y, x+w, y+h)))
     static, moving, stable_pixels = invariant_planes(frames)
     rows = []
     for index, image in enumerate([static]+moving):
@@ -196,16 +238,24 @@ def _sequence(pack, sampler, cache, spec, first, exclude_slots=()):
                    original_duration_seconds=source['duration'], crop=list(crop),
                    source_position=list(position), source_scale=scale,
                    skin=list(skin) if skin else ['default'])
+        if key == 'regent':row['ordered_bands'] = [0, 0, 1, 0]
         rows.append(row)
     for index in (0, count//3, count*2//3):
-        frames[index].save(cache/f'fake-{key}-source-{index:03d}.png')
+        frames[index].save(cache/f'fake-{key}-{"atlas" if key=="regent" else "source"}-{index:03d}.png')
     static.save(cache/f'fake-{key}-static.png')
     summary = dict(key=key, first=first, frames=count, crop=list(crop),
                    invariant_pixels=stable_pixels, source_version=metadata['source_version'],
                    original_duration_seconds=source['duration'],
                    constraints=metadata.get('constraints'), skin=skin,
                    stored_bytes=sum(row['bytes'] for row in rows),
-                   exact_factoring_frames=count, additive_background_coverage_verified=True)
+                   exact_factoring_frames=count, additive_background_coverage_verified=key != 'regent')
+    if key == 'regent':
+        summary['ordered_bands'] = [dict(source=[0,0,160,190],destination=[0,0],blend='Normal'),
+            dict(source=[0,190,8,6],destination=[92,77],blend='Normal'),
+            dict(source=[8,190,8,6],destination=[92,77],blend='Add',alpha='straight source sample'),
+            dict(source=[16,190,8,6],destination=[92,77],blend='Normal')]
+        summary['body_hole'] = list(REGENT_EYE)
+        summary['packed_dimensions'] = list(REGENT_ATLAS)
     if attached:
         summary['attached_shader'] = 'shaders/vfx/vfx_stepped_shader_fire_dark.tres'
         summary['attached_slot'] = 'flameattach'
@@ -215,14 +265,62 @@ def _sequence(pack, sampler, cache, spec, first, exclude_slots=()):
     return rows, summary
 
 
-def source_assets(pck, cache, *, runtime=None, dotnet=None, fastnoise_header=None):
+def _resume_prefix(path, cache, runtime_identity):
+    """Retain only the seven immutable, successfully sampled cp16 sequences.
+
+    This is an explicit artifact input with its own source provenance, not a
+    relaxed code-cache signature. A fresh invocation still samples all nine.
+    """
+    raw = Path(path).read_bytes(); retained = json.loads(raw)
+    tiles.require(retained.get('schema')==1 and
+        retained.get('source_checkpoint')=='e5cdd7f28098a12bfd01d257584d157d12035498' and
+        retained.get('reference')=='v0.111.0 / 41cef1ea' and
+        retained.get('auxiliary_start')==BASE_AUXILIARY and retained.get('auxiliary_end')==4542 and
+        retained.get('runtime_sha256')==runtime_identity,
+        'Unknown Fake Merchant retained prefix provenance')
+    rows, sequences = retained.get('images', []), retained.get('sequences', [])
+    tiles.require(len(rows)==1199 and len(sequences)==7, 'Incomplete Fake Merchant retained prefix')
+    offset = 0; root = cache.resolve()
+    for spec, sequence in zip(SEQUENCES[:7], sequences):
+        key, source, count, position, scale, skin, crop = spec
+        clip = 'idle_loop' if key in ('bottom','foreground','merchant','merchant-outline') else 'relaxed_loop'
+        tiles.require(sequence.get('key')==key and sequence.get('first')==BASE_AUXILIARY+offset and
+            sequence.get('frames')==count and sequence.get('crop')==list(crop) and
+            sequence.get('exact_factoring_frames')==count and
+            sequence.get('additive_background_coverage_verified') is True,
+            'Fake Merchant retained sequence recipe differs: '+key)
+        for frame, row in enumerate(rows[offset:offset+count+1]):
+            tiles.require(row.get('auxiliary')==BASE_AUXILIARY+offset+frame and row.get('source')==source and
+                row.get('clip')==clip and row.get('frame')==frame-1 and row.get('static')==(frame==0) and
+                row.get('frames')==count and row.get('nominal_fps')==FPS and
+                row.get('crop')==list(crop) and row.get('source_position')==list(position) and
+                row.get('source_scale')==scale and row.get('skin')==(list(skin) if skin else ['default']) and
+                row.get('width')==crop[2] and row.get('height')==crop[3] and
+                abs(row.get('original_duration_seconds',0)-count/FPS)<.00001,
+                'Fake Merchant retained frame recipe differs: '+key)
+            payload_path=(cache/row['file']).resolve()
+            tiles.require(payload_path.is_relative_to(root) and payload_path.name==f'fake-{key}-{frame:03d}.bin',
+                          'Unexpected Fake Merchant retained payload path')
+            payload=payload_path.read_bytes()
+            tiles.require(len(payload)==row.get('bytes') and tiles.sha256(payload)==row.get('sha256'),
+                          'Changed Fake Merchant retained payload: '+row['file'])
+        offset += count+1
+    tiles.require(offset==len(rows), 'Retained Fake Merchant prefix has surplus frames')
+    return rows, sequences, dict(source_checkpoint=retained['source_checkpoint'],
+        prefix_sha256=tiles.sha256(raw), images=len(rows), auxiliary_start=BASE_AUXILIARY, auxiliary_end=4542)
+
+
+def source_assets(pck, cache, *, runtime=None, dotnet=None, fastnoise_header=None, resume_prefix=None):
     cache = Path(cache); cache.mkdir(parents=True, exist_ok=True)
     pack, rows, sequences = Pack(pck), [], []
+    retained = None
     try:
         source_checks(pack)
         with SpineSampler(pack, runtime=runtime, dotnet=dotnet,
                           work_dir=cache/'adapter') as sampler:
-            for spec in SEQUENCES:
+            if resume_prefix:
+                rows, sequences, retained = _resume_prefix(resume_prefix, cache, sampler.runtime_identity)
+            for spec in SEQUENCES[len(sequences):]:
                 frames, metadata = _sequence(pack, sampler, cache, spec, BASE_AUXILIARY+len(rows))
                 rows.extend(frames); sequences.append(metadata)
                 tiles.atomic_bytes(cache/'fake-merchant-progress.json',
@@ -249,6 +347,7 @@ def source_assets(pck, cache, *, runtime=None, dotnet=None, fastnoise_header=Non
             runtime_particles=dict(lights=5, stars=300, square_specks=[30,30],
                 adaptation='bounded 60Hz fixed-point CPU curl field in place of GPU turbulence'),
             images=rows)
+        if retained:evidence['retained_prefix']=retained
         tiles.atomic_bytes(cache/'fake-merchant-assets.json', json.dumps(evidence, indent=2).encode()+b'\n')
     finally:
         pack.close()

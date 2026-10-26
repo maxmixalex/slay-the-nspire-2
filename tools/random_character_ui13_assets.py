@@ -95,6 +95,18 @@ def godot_noise_image(width, height, frequency, skirt, header, cache):
     return Image.fromarray(rgba, 'RGBA')
 
 
+def linear_texture_image(image):
+    """Carry all 256x256 source texels inside native 320x240 image bounds.
+
+    Texture's logical 256x256 view addresses the original flat texel order.
+    No resampling or cropping occurs; the final physical row has64 padding
+    texels, outside the logical view. Dense/indexed sampling needs no divide.
+    """
+    tiles.require(image.mode == 'RGBA' and image.size == (256, 256),
+                  'Original decorative texture dimensions changed')
+    return Image.frombytes('RGBA', (320, 205), image.tobytes()+bytes(64*4))
+
+
 def source_assets(pck, cache, fastnoise_header=None):
     """Four fixed-auxiliary rows; the caller owns append and shared packing."""
     cache = Path(cache)
@@ -124,10 +136,15 @@ def source_assets(pck, cache, fastnoise_header=None):
                  ('random-dot', load_scene_texture(pack, 'images/vfx/dot.png').convert('RGBA'), 'images/vfx/dot.png')]
         rows = []
         for i, (key, image, source) in enumerate(specs):
+            source_size = list(image.size)
+            if i >= 2:
+                image = linear_texture_image(image)
             row = write_image(cache, key, image)
             image.save(cache/(key+'.png'))
-            row.update(auxiliary=BASE_AUX+i, source=source, source_size=list(image.size),
+            row.update(auxiliary=BASE_AUX+i, source=source, source_size=source_size,
                        channel='original R8 noise in alpha; RGB white' if i == 1 else 'original RGBA')
+            if i >= 2:
+                row.update(logical_size=source_size, storage_layout='lossless linear texels;64 transparent padding texels')
             if i == 1:
                 row.update(fastnoise_header_sha256=hashlib.sha256(Path(header).read_bytes()).hexdigest(),
                            generator='Godot 4.5.1 FastNoiseLite FBm and Noise::get_seamless_image',

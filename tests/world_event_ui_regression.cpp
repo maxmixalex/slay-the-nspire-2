@@ -346,9 +346,17 @@ static void reading_focus(){
  // NFakeMerchant stays a custom room after Proceed/returning from the map;
  // it never acquires an unrelated ordinary-event prose reader.
  begin(OriginalEventId::FakeMerchant,23,1);CHECK(!a.event_body_active());
- CHECK(event_choice(a.game,6));a.render();advance_ms(1000);
+ snapshot();a.ui_action(UiAction::ReadEvent);CHECK(!a.event_body_focus&&!a.event_reader);unchanged();
+ a.input(Key::Detail);CHECK(a.shop_open&&!a.event_reader&&!a.event_body_focus);unchanged();
+ a.input(Key::Back);CHECK(!a.shop_open&&!a.event_reader&&!a.event_body_focus);unchanged();
+ CHECK(event_choice(a.game,6));a.render();
  CHECK(a.game.original_events.finished&&a.game.phase==Phase::Event&&!a.event_body_active());
  snapshot();a.input(Key::Detail);CHECK(!a.event_body_focus&&!a.event_reader);unchanged();
+ a.ui_action(UiAction::ReadEvent);CHECK(!a.event_body_focus&&!a.event_reader);unchanged();
+ CHECK(choice_count()==1&&choice(0).enabled);
+ CHECK(load(expected,before.bytes,before.size));CHECK(event_choice(expected,0));CHECK(save(expected,expected_save));
+ a.input(Key::Confirm);CHECK(a.map_window.visible&&!a.event_reader&&!a.event_body_focus);
+ CHECK(save(a.game,after));CHECK(after.size==expected_save.size&&!std::memcmp(after.bytes,expected_save.bytes,after.size));
 }
 int main(int argc,char**argv){
  const bool reading_only=argc>1&&!std::strcmp(argv[1],"--reading");const int asset_argument=reading_only?2:1;const bool actual=argc>asset_argument;

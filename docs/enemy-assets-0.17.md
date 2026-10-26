@@ -150,9 +150,12 @@ after it. Each track command has a `track` index, `clip`, `loop` and optional
 `queued`/`delay` fields. A setup track's optional `time` starts at that exact
 native clip time; this preserves the other Kaiser arm's terminal death pose.
 An empty clip selects an empty track. The sample times
-must be ordered and finite, between zero and 120 seconds, with at most 256 samples
-per request. Physics advances in bounded steps, independently of the output
-frame rate.
+must be ordered and finite, between zero and 120 seconds, with at most 512 samples
+per request. This is the offline host adapter's bound; it does not allocate
+animation samples on the calculator. The larger request preserves a single
+continuous physics pass for the Fake Merchant's complete 288- and 320-frame
+character loops. Existing builders may continue to use smaller batches.
+Physics advances in bounded steps, independently of the output frame rate.
 
 `draw(resource, frame, transform=None)` produces the existing rasterizer's
 `(xy, uv, triangles, texture, tint, blend)` tuples. The texture is an RGBA float

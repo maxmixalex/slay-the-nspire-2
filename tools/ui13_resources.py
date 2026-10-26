@@ -149,6 +149,10 @@ def extend_retained(args):
     runtime=tiles.private_path(args.runtime,'Original runtime')
     noise=tiles.private_path(args.fastnoise_header,'Pinned public Godot FastNoiseLite header')
     stamp=hashlib.sha256((identity()+tiles.sha256(runtime.read_bytes())+tiles.sha256(noise.read_bytes())).encode())
+    resume_path=getattr(args,'preserve_fake_sequences',None)
+    resume=tiles.private_path(resume_path,'Completed original Fake Merchant sequence prefix') if resume_path else None
+    resume_sha256=tiles.sha256(resume.read_bytes()) if resume else None
+    if resume_sha256:stamp.update(resume_sha256.encode())
     pack=Pack(pck)
     try:
         for name,entry in sorted(pack.entries.items()):stamp.update(name.encode());stamp.update(entry.md5)
@@ -156,7 +160,7 @@ def extend_retained(args):
     signature=stamp.hexdigest();added=[]
     for name,builder,start,finish,kwargs in (
         ('random-character',random_character,AUXILIARY,RANDOM_AUXILIARY,{}),
-        ('fake-merchant',fake_merchant,RANDOM_AUXILIARY,retained_endpoint(),dict(runtime=runtime,dotnet=args.dotnet))):
+        ('fake-merchant',fake_merchant,RANDOM_AUXILIARY,retained_endpoint(),dict(runtime=runtime,dotnet=args.dotnet,resume_prefix=resume))):
         receipt=cache/(name+'-retained-catalog.json')
         saved=json.loads(receipt.read_text()) if receipt.exists() else {}
         if saved.get('signature')==signature:
@@ -183,6 +187,7 @@ def extend_retained(args):
     manifest['images']=prefix+added
     manifest['retained_extension']=dict(previous_manifest_sha256=tiles.sha256(baseline.read_bytes()),
         signature=signature,unchanged_previous_images=len(prefix),added_images=len(added),auxiliary=retained_endpoint())
+    if resume_sha256:manifest['retained_extension']['completed_fake_sequences_sha256']=resume_sha256
     catalog_endpoint(manifest)
     tiles.atomic_bytes(path,json.dumps(manifest,indent=2).encode()+b'\n')
     emit('retained_catalog_extended',images=len(added),unchanged_previous_images=len(prefix),auxiliary=retained_endpoint())
@@ -320,6 +325,7 @@ def main():
     extension=sub.add_parser('doom')
     retained=sub.add_parser('extend-retained');retained.add_argument('--runtime',type=Path,required=True)
     retained.add_argument('--dotnet',default='dotnet');retained.add_argument('--fastnoise-header',type=Path,required=True)
+    retained.add_argument('--preserve-fake-sequences',type=Path)
     no_rug=sub.add_parser('extend-fake-rug');no_rug.add_argument('--runtime',type=Path,required=True)
     no_rug.add_argument('--dotnet',default='dotnet')
     build=sub.add_parser('pack');build.add_argument('--artwork',type=Path,required=True)

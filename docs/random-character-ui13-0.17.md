@@ -49,8 +49,13 @@ The water shader is evaluated at the visible LCD pixels with fixed-point
 coordinates and bilinear filtering. Repeat sampling wraps before the pixel
 loop's index operations, avoiding integer remainder calls for normal texture
 coordinates. Noise filtering computes only its scalar channel. No full-frame
-animation is stored. The four new images occupy auxiliary3339–3342; the full
-original light/dot images remain256×256.
+animation is stored. The four new images occupy auxiliary3339–3342. The full
+original light/dot images retain all256×256 source texels. Their flat texel
+sequence is stored in a320×205 physical image, with64 transparent trailing
+padding texels, to respect Content's unchanged320×240 decoder bounds. A logical
+256×256 sampler view preserves the original UVs without cropping or resampling.
+Dense and indexed sampling use the logical flat index directly; only sparse
+storage requires mapping that index to a physical row.
 
 The forty moving ash particles use less than2KiB of presentation state. Their
 force, clockwise orbit and velocity integration follow the source update
@@ -74,9 +79,17 @@ It can write real native frame captures for visual review. Synthetic images
 exercise only sampler behavior and are not evidence of original artwork.
 
 The source-free Python cases independently check literal seamless edge/corner
-values and lossless R8 transport. Formal checkpointed execution, real resource
-captures and device measurements are recorded separately; a conversion probe
-or syntax check is not counted as completed acceptance.
+values and lossless R8 transport. At immutable checkpoint
+`2b58ee31eb5ef6674ce95f02ad2eb9694a98a041`, all three Python cases and the
+4,534-check independent native sampler/particle gate have closed passed journals
+with `source_changed=false`. The matching137-test registered native suite also
+passes. The private Random binary was independently linked from a hash-verified
+copy of the matching core before its shared build directory was reused.
+
+The new actual-source-texture gate and captures await the final matching
+resource directory and runtime profile. Its result is recorded separately
+from these synthetic checks and from device measurements; a conversion probe
+or syntax check is not counted as completed actual-resource acceptance.
 
 Primary engine references: [Godot4.5.1 Noise](https://github.com/godotengine/godot/blob/4.5.1-stable/modules/noise/noise.h),
 [Noise normalization](https://github.com/godotengine/godot/blob/4.5.1-stable/modules/noise/noise.cpp),

@@ -24,6 +24,15 @@ constexpr unsigned I13_FakeMerchantWithoutRug=5011;
 constexpr unsigned FakeMerchantUi13AuxiliaryCount=5156;
 constexpr unsigned FakeMerchantSequenceCount=sizeof(FakeMerchantSequences)/sizeof(FakeMerchantSequences[0]);
 constexpr unsigned FakeMerchantNominalFps=24;
+// Outside the8x6 eye union all slots are Normal and flatten exactly. Within
+// that hole, keep Before/Add/After as three ordered bands in the same image.
+constexpr unsigned FakeMerchantRegentSequence=7;
+constexpr unsigned FakeMerchantRegentAtlasWidth=160,FakeMerchantRegentAtlasHeight=196;
+struct FakeMerchantAtlasBand {int16_t sx,sy,w,h,x,y;uint8_t blend;};
+constexpr FakeMerchantAtlasBand FakeMerchantRegentBands[]={
+ {0,0,160,190,0,0,0},{0,190,8,6,92,77,0},
+ {8,190,8,6,92,77,1},{16,190,8,6,92,77,0}
+};
 constexpr unsigned fake_merchant_frame(unsigned sequence,uint64_t elapsed_us){
  return unsigned(elapsed_us*FakeMerchantNominalFps/1000000u%FakeMerchantSequences[sequence].count);
 }

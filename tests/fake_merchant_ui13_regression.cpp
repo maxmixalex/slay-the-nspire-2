@@ -49,11 +49,19 @@ static void capture(const char*kind,unsigned character){
 static void original_sequences(){
  const bool full=app.content.ui_image(I13_FakeMerchantWithoutRug)>=0;unsigned frames=0;
  for(unsigned n=0;n<(full?10u:9u);++n){const auto&s=FakeMerchantSequences[n];const int fixed_id=app.content.ui_image(s.base);CHECK(fixed_id>=0);
-  auto fixed=picture(app.content.image(fixed_id));CHECK(fixed.size()==unsigned(s.w*s.h));std::set<uint64_t>distinct;
+  const unsigned width=n==FakeMerchantRegentSequence?FakeMerchantRegentAtlasWidth:unsigned(s.w);
+  const unsigned height=n==FakeMerchantRegentSequence?FakeMerchantRegentAtlasHeight:unsigned(s.h);
+  const auto fixed_picture=app.content.image(fixed_id);CHECK(fixed_picture.w==width&&fixed_picture.h==height);
+  auto fixed=picture(fixed_picture);CHECK(fixed.size()==width*height);std::set<uint64_t>distinct;
   for(unsigned frame=0;frame<s.count;++frame){const int image=app.content.ui_image(s.base+1+frame);CHECK(image>=0);
-   const auto p=app.content.image(image);CHECK(p.w==s.w&&p.h==s.h);auto moving=picture(p);unsigned ink=0;
+   const auto p=app.content.image(image);CHECK(p.w==width&&p.h==height);auto moving=picture(p);unsigned ink=0;
    for(unsigned i=0;i<moving.size();++i){CHECK(!(fixed[i]>>16)||!(moving[i]>>16));moving[i]|=fixed[i];ink+=bool(moving[i]>>16);}
-   CHECK(ink>100);distinct.insert(hash(moving));++frames;
+   CHECK(ink>100);
+   if(n==FakeMerchantRegentSequence)for(const auto&band:FakeMerchantRegentBands){unsigned band_ink=0;
+    for(int y=band.sy;y<band.sy+band.h;++y)for(int x=band.sx;x<band.sx+band.w;++x)band_ink+=bool(moving[y*width+x]>>16);
+    if(band.blend)CHECK(band_ink>0);
+   }
+   distinct.insert(hash(moving));++frames;
   }
   CHECK(distinct.size()>s.count/8);CHECK(fake_merchant_frame(n,0)==0);
   CHECK(fake_merchant_frame(n,uint64_t(s.count)*1000000/24+1)==0);

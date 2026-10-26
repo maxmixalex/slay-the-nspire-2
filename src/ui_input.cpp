@@ -145,6 +145,10 @@ void App::ui_action(UiAction action){
     case UiAction::PreviousCampPage:camp_page(-1);break;
     case UiAction::NextCampPage:camp_page(1);break;
     case UiAction::ReadEvent:
+        // The Fake Merchant is a custom shop room both before and after its
+        // fight/Proceed. A generic reader action must not create an overlay
+        // that its scene never exposes.
+        if(game.original_events.active&&game.original_events.id==OriginalEventId::FakeMerchant)break;
         if(event_body_active()){event_body_focus=!event_body_focus;break;}
         if(ancient_dialogue_ready()){event_body_focus=!event_body_focus;break;}
         if(!title&&!paused&&!panel&&!library&&(game.phase==Phase::Event||
@@ -494,7 +498,12 @@ bool App::room_input(Key key){
         return true;
     }
     if(title||paused||help||panel||library||character_select||map_preview.open||detail_card>=0||detail_item>=0||deck_candidate>=0)return false;
-    const bool fake=game.phase==Phase::Event&&game.original_events.active&&game.original_events.id==OriginalEventId::FakeMerchant&&!game.original_events.finished;
+    const bool fake_event=game.phase==Phase::Event&&game.original_events.active&&game.original_events.id==OriginalEventId::FakeMerchant;
+    // The finished custom room has one immediately enabled Proceed. Keep
+    // its normal choice dispatch, without ordinary-event reading or entry
+    // option-tween gates. Unfinished Detail still opens the shop below.
+    if(fake_event&&game.original_events.finished)return key==Key::Detail;
+    const bool fake=fake_event&&!game.original_events.finished;
     if(game.phase==Phase::Event&&!fake){
         if(game.original_events.id==OriginalEventId::TheArchitect&&screen_motion.sequence_active(map_clock_ms)&&key==Key::Confirm)return true;
         if(ancient_dialogue_input(key))return true;

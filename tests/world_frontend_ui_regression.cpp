@@ -217,7 +217,9 @@ static void title_background_layers(){
  for(unsigned time:{1250u,25050u,100050u}){
   a.map_clock_ms=time;a.render();
   for(unsigned y=0;y<ScreenH;++y)for(unsigned x=0;x<ScreenW;++x){const unsigned at=y*ScreenW+x;
-   const bool logo=x>=33&&x<204&&y>=27&&y<132;
+   // UI13 raises the complete source text/fire/glow group. At maximum
+   // scale the glow occupies x33..197,y3..107; the text ends at204,108.
+   const bool logo=x>=33&&x<204&&y>=3&&y<108;
    if(a.pixels[at]!=first[at]){CHECK(logo||(y>=70&&y<219));visible_changes+=!logo;}
    // No menu, logo or footer occupies this right-hand foreground region.
    // Fully opaque buildings must remain above both particle emitters.

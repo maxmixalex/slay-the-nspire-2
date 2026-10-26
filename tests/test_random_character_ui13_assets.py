@@ -5,12 +5,22 @@ import unittest
 from unittest.mock import patch
 
 import numpy as np
+from PIL import Image
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]/'tools'))
 import random_character_ui13_assets as random_assets
 
 
 class SeamlessNoise(unittest.TestCase):
+    def test_particle_linear_view_preserves_every_original_texel(self):
+        original = np.arange(256*256*4, dtype=np.uint32).reshape(256, 256, 4)
+        original = np.uint8(original ^ (original >> 8) ^ (original >> 16))
+        source = Image.fromarray(original, 'RGBA')
+        physical = random_assets.linear_texture_image(source)
+        self.assertEqual(physical.size, (320, 205))
+        self.assertEqual(physical.tobytes()[:256*256*4], source.tobytes())
+        self.assertEqual(physical.tobytes()[256*256*4:], bytes(64*4))
+
     def test_small_original_corner_and_skirts(self):
         # One-texel skirts copy the extended source edges at alpha255.
         # This literal 3x3 image makes all four source quadrants distinct.

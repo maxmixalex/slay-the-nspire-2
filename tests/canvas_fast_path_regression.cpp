@@ -269,6 +269,71 @@ static void picture_row_views(){
   pair.compare();
  }
 }
+static void fake_merchant_atlas(){
+ // Original Regent blend order: Normal outside the eye union, then its
+ // BeforeNormal / straight-alpha Add / AfterNormal planes. The eye must
+ // remain between the source arms; body alpha238 must not be squared.
+ constexpr unsigned w=160,h=196,n=w*h;
+ CHECK(FakeMerchantRegentAtlasWidth==w&&FakeMerchantRegentAtlasHeight==h);
+ std::vector<uint16_t> colors[2]={std::vector<uint16_t>(n),std::vector<uint16_t>(n)};
+ Bytes alpha[2]={Bytes(n),Bytes(n)};
+ const auto put_pixel=[&](unsigned plane,unsigned x,unsigned y,uint16_t color,unsigned a){
+  colors[plane][y*w+x]=color;alpha[plane][y*w+x]=uint8_t(a);
+ };
+ for(unsigned y=30;y<151;++y)for(unsigned x=40;x<124;++x)
+  if(x<92||x>=100||y<77||y>=83)put_pixel((x+y)&1,x,y,0xe984,238);
+ for(unsigned y=0;y<6;++y)for(unsigned x=0;x<8;++x){
+  put_pixel((x+y)&1,x,190+y,0xe984,238);
+  put_pixel((x+y+1)&1,8+x,190+y,0xff0f,128);
+  put_pixel((x+y)&1,16+x,190+y,0x18ff,x%3==0?255:x%3==1?93:0);
+ }
+ const auto combine=[](uint16_t destination,uint16_t source,unsigned a,bool add){
+  const auto channel=[&](unsigned shift,unsigned mask){
+   const unsigned d=(destination>>shift)&mask,s=(source>>shift)&mask;
+   return add?std::min(mask,d+(s*a+127)/255):(d*(255-a)+s*a+127)/255;
+  };
+  return uint16_t((channel(11,31)<<11)|(channel(5,63)<<5)|channel(0,31));
+ };
+ const uint16_t before=combine(0,0xe984,238,false),added=combine(before,0xff0f,128,true);
+ CHECK(added!=combine(before,0xff0f,(128*128+127)/255,true));
+ CHECK(combine(added,0x18ff,93,false)!=combine(combine(before,0x18ff,93,false),0xff0f,128,true));
+ for(unsigned format:{1u,4u}){
+  Bytes encoded[2];
+  for(unsigned plane=0;plane<2;++plane){
+   if(format==1){for(uint16_t color:colors[plane])append(encoded[plane],color,2);encoded[plane].insert(encoded[plane].end(),alpha[plane].begin(),alpha[plane].end());}
+   else for(unsigned y=0;y<h;++y){
+    const unsigned begin=unsigned(encoded[plane].size());append(encoded[plane],0,2);unsigned spans=0;
+    for(unsigned x=0;x<w;){if(!alpha[plane][y*w+x]){++x;continue;}const unsigned left=x;
+     while(x<w&&alpha[plane][y*w+x])++x;
+     append(encoded[plane],left,2);append(encoded[plane],x-left,2);encoded[plane].push_back(1);++spans;
+     for(unsigned col=left;col<x;++col){append(encoded[plane],colors[plane][y*w+col],2);encoded[plane].push_back(alpha[plane][y*w+col]);}
+    }put(encoded[plane],begin,spans,2);
+   }
+  }
+  for(uint16_t background:{uint16_t(0),uint16_t(0xffff),uint16_t(0x8410)})
+  for(Placement position:{Placement{0,0,0,0},Placement{-95,-79,0,0},Placement{220,165,0,0}}){
+   Pair pair({320,240,327},{});std::fill(pair.actual.begin(),pair.actual.end(),background);std::fill(pair.expected.begin(),pair.expected.end(),background);
+   Bytes storage(std::max(encoded[0].size(),encoded[1].size()));unsigned fetches=0;
+   // A single reused decode slot deliberately invalidates the previous view
+   // on every fetch. The production helper must consume each view at once.
+   fake_merchant::atlas(pair.got,[&](bool moving){CHECK(moving==bool(fetches++&1));
+    const auto&source=encoded[moving];std::copy(source.begin(),source.end(),storage.begin());
+    return Picture{storage.data(),format==1?storage.data()+n*2:nullptr,nullptr,w,h,uint8_t(format)};
+   },position.x,position.y);
+   CHECK(fetches==8);
+   for(int y=0;y<240;++y)for(int x=0;x<320;++x){
+    const int sx=x-position.x,sy=y-position.y;uint16_t value=background;
+    if(sx>=40&&sx<124&&sy>=30&&sy<151&&(sx<92||sx>=100||sy<77||sy>=83))value=combine(value,0xe984,238,false);
+    if(sx>=92&&sx<100&&sy>=77&&sy<83){
+     value=combine(value,0xe984,238,false);value=combine(value,0xff0f,128,true);
+     const unsigned a=(sx-92)%3==0?255:(sx-92)%3==1?93:0;value=combine(value,0x18ff,a,false);
+    }
+    pair.expected[Pair::guard+y*327+x]=value;
+   }
+   pair.compare();
+  }
+ }
+}
 static void title_particles(){
  // One shared two-column atlas must not bleed a neighboring fog frame or
  // star into its cropped destination. Destination sampling is independent
@@ -373,7 +438,7 @@ static void map_pictures(){
 int main(){
  const auto data=fixture();CHECK(app.content.open(data.data(),data.size()));
  CHECK((uintptr_t(app.content.image(0).pixels)&1u)==0u);
- rectangles();pictures();opaque_covers();picture_regions();picture_row_views();title_particles();scaled_sparse_clipping();CHECK(app.content.healthy());
+ rectangles();pictures();opaque_covers();picture_regions();picture_row_views();fake_merchant_atlas();title_particles();scaled_sparse_clipping();CHECK(app.content.healthy());
  Bytes unaligned(data.size()+1);std::copy(data.begin(),data.end(),unaligned.begin()+1);
  CHECK(app.content.open(unaligned.data()+1,data.size()));
  CHECK((uintptr_t(app.content.image(0).pixels)&1u)==1u);

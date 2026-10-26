@@ -38,8 +38,8 @@ static bool random_character_background(Canvas&c,uint32_t clock,uint32_t elapsed
     const Picture np=c.a.content.image(c.a.content.ui_image(I13_RandomNoise));
     const Picture lp=c.a.content.image(c.a.content.ui_image(I13_RandomLight));
     const Picture dp=c.a.content.image(c.a.content.ui_image(I13_RandomDot));
-    if(gp.w!=64||gp.h!=64||np.w!=10||np.h!=5||lp.w!=256||lp.h!=256||dp.w!=256||dp.h!=256)return false;
-    const Texture gradient(gp),noise(np),light(lp),dot(dp);
+    if(gp.w!=64||gp.h!=64||np.w!=10||np.h!=5||lp.w!=320||lp.h!=205||dp.w!=320||dp.h!=205)return false;
+    const Texture gradient(gp),noise(np),light(lp,256,256),dot(dp,256,256);
     random_character_water(c,gradient,noise,clock);
     auto&particles=c.a.character_select_presentation.random_background;particles.observe(elapsed,seed);
     // little_light_script.gd randomizes only integer preprocess time 0..5.
