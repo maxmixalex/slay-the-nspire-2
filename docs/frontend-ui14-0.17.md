@@ -5,11 +5,11 @@ This report describes the front-end work, separate from combat, rooms, and
 the new installation layout. Original source data and captured images remain
 private. Pixel-oracle counts are assertions, not feature-coverage percentages.
 
-The final front-end actual-resource gates close at
+The first complete front-end actual-resource gates close at
 `0418cf3e63dabb456e4a9aaa49062d32f7ac747c` with the final 5,275-entry artwork
 catalog. Earlier failed builds and oracles below are retained as intermediate
-results, not current blockers. Calculator frame rates are recorded separately
-by the Firebird integration work.
+results, not current blockers. The later ordinary-OS device measurements below
+found remaining performance work despite these native correctness passes.
 
 ## Source behavior and changes
 
@@ -175,7 +175,7 @@ because two newly introduced combat-feedback calls referenced `mx` and `mn`
 before those helpers were declared. Its failed journal is retained; no
 fifth-stage runtime pass is claimed.
 
-## Final actual-resource closure
+## Seventh-stage actual-resource closure
 
 The sixth checkpoint built the corrected production core and the focused
 pixel targets. The complete game-over gates passed in both languages. The
@@ -209,3 +209,60 @@ strict image comparison with a tolerance. None of these gates changes a
 canonical run while exercising presentation. Native correctness and host
 timing do not establish Firebird or physical-calculator frame rates; those
 measurements remain separate integration evidence.
+
+## Device performance follow-up
+
+The Random measurements use independent ordinary-OS Firebird flash copies.
+Only the snapshot header's flash-path field is retargeted; every other raw
+snapshot byte is compared, and the emulator's actual started-flash path is
+checked. The runtime, common data and language data are installed normally.
+Application exit writes the foreground SP804 report at32,768 Hz. Matching
+scene-counter differences exclude the same Ironclad setup and exit sequence.
+They are actual emulated ARM timings, not native host frame rates.
+
+| Checkpoint | Measured Random window | Frames / hardware seconds | FPS | Mean render | Resource reads in this window |
+| --- | --- | ---: | ---: | ---: | ---: |
+| `0418cf3e` | First30s, including Random's initial load | 293 /30.3011 | 9.6696 |102.961ms |22 |
+| `0418cf3e` | Following60s | 591 /59.9590 |9.8567 |101.118ms |0 |
+| `6355aef2` |10→40s matched window |316 /30.0496 |10.5159 |94.744ms |0 |
+| `a2b9ff73` |10→40s matched window |327 /30.0456 |10.8835 |91.529ms |0 |
+
+These results are not accepted as completed Random performance. They separate
+real CPU rendering cost from loading, and require further optimization while
+retaining every particle, texture sample and source animation clock.
+
+The ninth checkpoint added a225 KiB exact water memo keyed by the complete
+immutable gradient/storage identity, owner generation, dimensions and shader
+strength. Each display pixel reuses its last RGB565 result only when its newly
+calculated noise value is identical. All40 particles and the independent light
+still update and render. Texture interpolation also preserves the exact two
+rounding stages while removing redundant multiplies. The ordinary OS rejected
+this build with `[Zehn] Memory allocation failed!`, despite its22,983,964-byte
+allocation passing the static24 MiB ceiling. USB readback matched the runtime;
+this was a real contiguous-heap limit, not a corrupt transfer.
+
+The tenth checkpoint pays for that memo by reducing the existing picture pool
+by256 KiB. Ordinary scenes retain6.75 MiB of decoded images and6 MiB of tile
+groups; merchant scenes retain11.75 MiB and1 MiB respectively. Its22,722,076-byte
+allocation is below the previously bootable seventh build. Fresh ordinary-OS
+launch and USB readback both pass. The pool-boundary regression writes the
+last image byte while independently fragmenting and filling the tile banks.
+
+The eleventh checkpoint replaces the rotated particles' two dynamic64-bit
+divisions per row with quotient/remainder recurrence. It preserves C++
+division toward zero, including negative UV coordinates and zero crossings.
+The independent direct-division oracle checks72,300 cases. Synthetic tests
+pass112,513 assertions, and actual ENG/ZHS each pass425,309. Four complete
+Random backgrounds remain byte-identical to the earlier general sampler,
+comparing307,200 pixels. Its ordinary-OS launch passes at22,722,636 bytes.
+The measured improvement is modest; the following work targets the light's
+per-pixel color sampling and zero contributions.
+
+The measured tenth-build ordinary Ironclad departure produced only four
+character-scene frames over1.276 hardware seconds, including click/setup and
+the first mask read. The capture sequence confirms a real texture wipe and
+room entry, but this is not satisfactory animation performance. The next
+checkpoint prepares the selected/Continue mask while its action is visible,
+uses exact per-channel RGB565 fade tables and separates first-frame preparation
+from the800ms visual transition clock. Cold click latency, actual frame counts
+and full-frame pixel equivalence must be reported again after that build.

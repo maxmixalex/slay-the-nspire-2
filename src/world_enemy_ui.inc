@@ -147,8 +147,9 @@ static CreaturePose ui_creature_scaled_pose(const App&a,CreaturePose pose,unsign
  static Scale scales[MaxEnemies+1];if(actor>MaxEnemies)return pose;
  if(actor&&actor<=unsigned(a.game.enemy_count)){
   const auto kind=a.game.enemy_world.models[actor-1].kind;
-  // Segments explicitly forbid ScaleTo. Vantom's multi-part source shrink
-  // animation already lives in its independently registered baked states.
+  // Segments explicitly forbid ScaleTo. Vantom has separately baked normal
+  // and half-body endpoints; its750ms root_scale_adjust tween is still absent.
+  // Scaling this whole sprite would also move its independent tail target.
   if(kind==EnemyId::DecimillipedeSegmentBack||kind==EnemyId::DecimillipedeSegmentFront||kind==EnemyId::DecimillipedeSegmentMiddle||kind==EnemyId::Vantom)return pose;
  }
  const bool shrink=a.combat_status_amount(int(actor),EnemyStatusStart+int(EnemyPower::Shrink))||

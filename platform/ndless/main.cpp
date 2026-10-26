@@ -38,6 +38,9 @@ static char progress_path[512],progress_temp[512],progress_backup[512];
 static_assert(spire::UiProgressCapacity+1<=spire::ResourceTransferCapacity,"History transfers fit the shared foreground workspace");
 static uint32_t wall_clock(){return *(volatile uint32_t*)0x90090000u;}
 static uint32_t timer_ticks(){return *(volatile uint32_t*)0x900D0004u;}
+static void performance_render_part(spire::RuntimeRenderPart part,bool begin){
+    performance.render_part(part,begin,timer_ticks());
+}
 static uint32_t entropy_start=0;
 static unsigned installed_languages=0,pending_language=0;
 static spire::CalculatorInputLatch input_latch;
@@ -254,6 +257,7 @@ extern "C" int main(int argc,char**argv){
     if(!valid||!app.init(resource,{save_game,load_game,clear_save,seed_entropy,load_preferences,save_preferences,available_languages,request_language,load_progress,save_progress,wall_clock,current_profile,profile_info,request_profile,write_feedback})){
         boot_error(blit,spire::BootText::InvalidResources,source.language);return 5;
     }
+    if(performance.enabled)app.callbacks.profile_render=performance_render_part;
     if(selected_language&&source.language!=preferred)store_language(source.language);
     performance.pack_bytes=resource.length;
     if(performance.enabled){const uint32_t now=timer_ticks();performance.startup.add(startup_start-now);

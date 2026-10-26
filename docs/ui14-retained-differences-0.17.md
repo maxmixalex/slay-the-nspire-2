@@ -27,7 +27,7 @@ UI14 new-feature total simply because their documentation was reread.
 
 | Area | Concrete implementation |
 | --- | --- |
-| Source body scaling | ShrinkPower and Beetle Juice, Big Mushroom, Phantasmal Gardener growth and Test Subject respawn growth now drive their real source transforms. Decimillipede and Vantom follow their source exceptions. |
+| Source body scaling | ShrinkPower and Beetle Juice, Big Mushroom, Phantasmal Gardener growth and Test Subject respawn growth now drive their source transforms. Decimillipede rejects scaling. Vantom selects the correct separately baked normal/half-body endpoints, but its750ms root-bone transition remains missing; whole-sprite scaling would incorrectly move its independent tail. |
 | Ancient/status/affliction card presentation | Ancient portrait/frame/banner/fire, Infection and Bound/Entangled/Galvanized/Hexed/Tainted/Ringing/Smog materials have explicit source resources and precedence. |
 | Sovereign Blade and permanent enchantment | Real Forge/attack and successful enchantment commits drive their own original effects, queued exact card facts and cancellation rules. They are not ordinary discard flights. |
 | Continue transition | Resume uses the same character departure lifecycle as Embark without creating another run or resetting progress. |

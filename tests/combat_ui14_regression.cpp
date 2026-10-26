@@ -213,12 +213,36 @@ static void identical_generated_samples(){
  scenario="ordinary presentation reset cannot keep a prior resolved sample";
  const auto reset=hand_resolve_clock;a.reset_presentation();hand_tile(c,1,&visuals[1]);CHECK(hand_resolve_clock==reset+1);unchanged();
 }
+static void current_intent_preparation(){
+ scenario="actual preparation retains actor starts and the known Haunt action without predicting later moves";
+ fresh(Character::Ironclad,EncounterId::HauntedShipNormal);
+ CHECK(a.game.enemy_count==1&&a.game.enemy_world.models[0].kind==EnemyId::HauntedShip&&a.game.enemy_world.models[0].node==2);
+ CHECK(enemy_intent(a.game,0).status_cards==5);before=a.game;
+ a.combat_preparation.reset();a.sync_combat_preparation();a.combat_preparation.shown=true;
+ for(unsigned i=0;i<1024&&a.combat_preparation.active;++i)a.step_combat_preparation();
+ CHECK(!a.combat_preparation.active);unchanged();
+ const auto&p=a.combat_preparation;
+ CHECK(p.pages<=CombatPreparation::PageBudget&&p.count<=CombatPreparation::Capacity&&p.first_count<=CombatPreparation::FirstCapacity);
+ if(!original_art)return;
+ const auto selected=a.content.clip(581),idle=a.content.clip(584),hero=a.content.clip(AnimHeroIdle);
+ CHECK(selected.count==23&&idle.count&&hero.count);
+ const auto prepared=[&](unsigned id){for(unsigned i=0;i<p.count;++i)if(a.content.image_alias(int(id),int(p.images[i])))return true;return false;};
+ const auto first=[&](unsigned id){for(unsigned i=0;i<p.first_count;++i)if(p.first[i]==id)return true;return false;};
+ CHECK(first(hero.first+(a.animation*33u/hero.frame_ms)%hero.count));
+ CHECK(first(idle.first));
+ const auto reads=a.content.read_stats();
+ for(unsigned i=0;i<selected.count;++i){const int id=int(selected.first+i);CHECK(prepared(unsigned(id))&&a.content.image_cached(id));CHECK(a.content.image(id).pixels);}
+ CHECK(a.content.read_stats().callbacks==reads.callbacks&&a.content.read_stats().callback_bytes==reads.callback_bytes);
+ for(const int later:{579,580}){const auto clip=a.content.clip(later);CHECK(clip.count);
+  for(unsigned i=0;i<clip.count;++i)CHECK(!prepared(clip.first+i));}
+ unchanged();CHECK(a.content.healthy());
+}
 int main(int argc,char**argv){
  CHECK(argc==1||argc==2||argc==3);std::vector<uint8_t>common,language;SplitResourceSource split;
  if(argc>=2){const std::string root=argv[1];common=read(root+"/data/nSpire2.dat.tns");language=read(root+"/data/nSpire2.eng.dat.tns");
   CHECK(split.open(ResourceSource::memory(common.data(),common.size()),ResourceSource::memory(language.data(),language.size()),ResourceLanguage::English));CHECK(a.init(split.source(),{}));original_art=true;}
  if(argc==3){output=argv[2];std::filesystem::create_directories(output);}
- scale_equations();clock_icon();actual_shrink();actual_default_growth();actual_forge();actual_enchant();borders_and_cache();identical_generated_samples();
+ scale_equations();clock_icon();actual_shrink();actual_default_growth();actual_forge();actual_enchant();borders_and_cache();identical_generated_samples();current_intent_preparation();
  const char note[]="Controlled UI14 fixtures; earlier room outcomes, cards and resources are supplied. These saves validate and round-trip through the production NSR codec. They are not natural runs.\nui14-card-borders: Neow's Fury, Infection and Bound Strike in hand.\nui14-shrink: Shrinker Beetle before its opening move, Beetle Juice in potion slot1; drink on the enemy, then end turn to shrink the player.\nui14-regent-enchant-forge: choose an Attack for Gnarled Hammer's Sharp enchantment, confirm, then play The Smith in the resumed Regent combat.\n";
  write("README.txt",note,sizeof note-1);std::printf("combat UI14: %u checks passed%s\n",checks,original_art?"; original art decoded and rendered":"");
 }

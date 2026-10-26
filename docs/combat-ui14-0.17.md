@@ -13,7 +13,7 @@ outside this public source repository.
 | Card art | The nine Ancient cards use full-height original portraits, Ancient border/text background/banner and all ten flame frames. Infection retains all30 source frames. Bound, Entangled, Galvanized, Hexed, Tainted, Ringing and Smog each use their own original scene/material; afflictions take precedence over the model's built-in overlay. |
 | Long descriptions | Selected and hovered hand cards scroll inside a clipped description rectangle in LCD-pixel increments. Only that small rectangle is restored/repainted. Small card caches retain the portrait/frame/banner while the foreground text, plaque and resource labels render in the authored order, so cache hits preserve overflow clocks without covering a cost or type plaque. |
 | Generated cards | Unchanged combat instances and generated preview sprites reuse measured descriptions and the face raster across frames. Live deck flights continue reading permanent card facts; explicitly detached transformation/enchantment snapshots retain their own facts. |
-| Shrink | ShrinkPower and Beetle Juice animate visual scale to0.5 over750ms with SineInOut. Formation, target bounds, health and intent anchors remain authored. Decimillipede segments explicitly reject scaling. Vantom uses its existing separately sampled multipart Shrink states for both sources. |
+| Shrink | ShrinkPower and Beetle Juice animate ordinary creature visual scale to0.5 over750ms with SineInOut. Formation, target bounds, health and intent anchors remain authored. Decimillipede segments explicitly reject scaling. Both sources select Vantom's correct separately sampled multipart endpoints, but its special750ms skeletal transition is still missing; see the precise remaining difference below. |
 | Other source scaling | BigMushroom immediately calls1.5 on pickup/room entry. PhantasmalGardener retains the completed Enlarge count and applies1+0.1 ln(count+1). TestSubject applies1+0.1 Respawns with its100ms growth after the800ms respawn wait. Defect's orb anchor and manager scale follow NCreature.DoScaleTween. GigantificationPower does not call ScaleTo in this reference, so it receives no invented body growth. |
 | Forge | Actual blade damage/creation/exhaustion and attacks feed a bounded presentation queue. The original hilt variants, orange forge glow, three smith hits and blade orbit are connected to the real Forge command. Forge strengthens all existing blades, including exhausted blades, while creating a usable blade when none exists outside Exhaust. |
 | Enchant | The permanent enchantment commit emits one scoped observer callback. The effect retains the exact committed card, uses the original tab/icon,1s QuadInOut shader reveal,200ms sparkle start and1s hold, then flies to the deck. Failed or canceled choices emit no effect. Multiple committed cards use bounded four-card waves. |
@@ -109,6 +109,20 @@ implemented in `combat_osty_presentation.hpp`; its bounds update after its
 registration were completed in earlier stages. This inventory is not a
 fresh exhaustive assembly-call-graph claim after the private input cleanup.
 
+Vantom remains an exact visual difference. Its source scene scales the
+`root_scale_adjust` bone over750ms with SineInOut while retaining an
+independently controlled `tail_target_bone`. The converter implements this
+driver and accepts `shrink_from`/`shrink_started`, but the integrated profile
+supplies only the settled `shrink` boolean. The runtime therefore selects the
+correct normal or half-body clip without the intermediate skeletal tween.
+The actual retained idle endpoints at tail charge1 have the same sprite
+density5376 but different registrations: normal99x113 at origin42,109 versus
+shrunk76x96 at22,95. Their tail blade stays near its authored height while the
+body shrinks. A whole-sprite scale cannot reproduce that change. The original
+skeleton is needed to bake or otherwise verify the missing bone transition;
+no guessed whole-sprite tween has been substituted. Sewer Clam's separate
+coral growth is already sampled with its source500ms delay and500ms ElasticOut.
+
 `ui14_device_fixtures.cpp` now produces a canonical Haunted Ship save and a
 matching partial progress record with no introductory prompts. Its real first
 End Turn generates five Dazed into Discard; the exporter independently
@@ -135,3 +149,24 @@ values and raster-reuse serials invalidate the appropriate samples. Its new
 regression covers the repeated batch, differing affliction facts and recycled
 rasters. Matching checkpoint validation and device measurements remain
 required before closing this follow-up.
+
+Stage12 `d8510f202454270cb49b79fc4094429885d6ddea` passes11,552 synthetic
+checks and11,803 actual-resource checks. Its ordinary-OS launch and exact USB
+readback pass, but matched Firebird measurements show that the cache defect
+was not the main bottleneck:0–4s averages18.146FPS and the narrower2–4s
+generated-card window22.038FPS. Mean render improves by about0.8–1.1ms, while
+the same cold resource reads remain. The normal game exits produce zero
+resource failures; this is still an open performance result.
+
+The next source stage prepares only the already selected, displayed enemy
+intent's registered action clips within the existing black transition. Actor
+starts remain ahead of these optional tracks; the same28-track,288-image and
+640-page limits apply. Unknown intents, active command presentations and
+future random branches are excluded. The actual Haunted Ship fixture needs
+439 pages including the player/enemy idle clips, background and its known
+Haunt clip, with no new auxiliary images or resident allocation. The new
+actual-pack regression checks that all23 Haunt frames are decoded and served
+without further reads, verifies preserved actor starts, excludes the later
+Swipe/Stomp clips, and compares the complete State before/after preparation.
+This implementation still requires its own checkpoint and matched device
+measurements before the performance result can be closed.

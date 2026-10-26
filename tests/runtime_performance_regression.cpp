@@ -40,9 +40,26 @@ int main(){
         check(departure.presented(2,false)); // warm room needs no preparation
     }
     RuntimePerformance p;RuntimeResourceTiming before{};
+    p.render_part(RuntimeRenderPart::RandomWater,true,100);
+    p.render_part(RuntimeRenderPart::RandomWater,false,40);
+    check(p.render_parts[0].count==0&&p.render_active==0);
     p.read(10,4096,true);p.frame(RuntimeScene::Combat,100,1,2,3,before);
     check(p.resources.calls==0&&p.scenes[(unsigned)RuntimeScene::Combat].interval.count==0);
     p.enabled=true;p.clock_hz=1000;
+    p.render_part(RuntimeRenderPart::RandomWater,false,90); // no matching start
+    p.render_part(RuntimeRenderPart::Count,true,90);        // invalid id
+    check(p.render_active==0&&p.render_parts[0].count==0);
+    p.render_part(RuntimeRenderPart::RandomWater,true,100);
+    p.render_part(RuntimeRenderPart::RandomWater,true,80);  // nested start cannot overwrite
+    p.render_part(RuntimeRenderPart::RandomLight,true,90);
+    p.render_part(RuntimeRenderPart::RandomLight,false,75);
+    p.render_part(RuntimeRenderPart::RandomWater,false,40);
+    p.render_part(RuntimeRenderPart::RandomWater,false,20); // no double counting
+    check(p.render_parts[0].count==1&&p.render_parts[0].total==60);
+    check(p.render_parts[1].count==1&&p.render_parts[1].total==15&&p.render_active==0);
+    p.render_part(RuntimeRenderPart::RandomDots,true,5);
+    p.render_part(RuntimeRenderPart::RandomDots,false,UINT32_MAX-4);
+    check(p.render_parts[2].count==1&&p.render_parts[2].total==10);
     for(unsigned delay:{50u,51u,100u,101u,250u,251u}){
         before=p.resources;p.read(7,4096,true,true);p.read(3,128,false);
         p.frame(RuntimeScene::Combat,delay,2,delay-5,3,before);
@@ -73,6 +90,8 @@ int main(){
     check(output.text.find("\"format\":\"nspire-runtime-perf-1\"")!=std::string::npos);
     check(output.text.find("\"over_50ms\":5,\"over_100ms\":3,\"over_250ms\":1")!=std::string::npos);
     check(output.text.find("\"startup_phases\":{")!=std::string::npos);
+    check(output.text.find("\"render_parts\":{")!=std::string::npos);
+    check(output.text.find("\"random_water\":{\"count\":1,\"total\":60,\"min\":60,\"max\":60}")!=std::string::npos);
     check(output.text.find("\"integrity\":{\"count\":1,\"total\":1234,\"min\":1234,\"max\":1234}")!=std::string::npos);
     check(output.text.find("\"scene\":\"combat_preparation\"")!=std::string::npos);
     check(output.text.front()=='{'&&output.text.substr(output.text.size()-3)=="]}\n");

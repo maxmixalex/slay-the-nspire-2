@@ -29,6 +29,28 @@ void App::sync_combat_preparation(){
         if(const auto*resume=world_enemy_state(m.model,idle))if(resume->loop)
             track(world_enemy_resolve_clip(m.model,resume->clip,m.skin,-1,ui_enemy_fact,const_cast<EnemyVisualFacts*>(&m.facts)));
     }
+    // The already displayed intent names this move. Decode its registered
+    // action tracks inside the existing transition, before it is played.
+    // Actor poses keep priority: append these only after every current/idle
+    // track, and retain the same track, image and page limits. Never advance
+    // the move graph, resolve a random branch or simulate future power facts.
+    if(game.enemy_world.active&&!ui_feedback_bound(*this))for(int i=0;i<game.enemy_count;i++)if(game.enemies[i].hp>0){
+        const auto intent=enemy_intent(game,i);if(!intent.flags||(intent.flags&EnemyIntentUnknown))continue;
+        const auto&m=enemy_presentation[i];const int selected=game.enemy_world.models[i].node;
+        const auto*move=world_enemy_move(m.model,selected);if(!move)continue;
+        auto facts=ui_enemy_facts(game,i);int projected=m.state;
+        for(unsigned j=0;j<move->action_count;++j)if(const auto*action=world_enemy_action(*move,j)){
+            if(action->direct)track(world_enemy_resolve_clip(m.model,action->name,m.skin,selected,ui_enemy_fact,&facts));
+            else{
+                const auto*before=world_enemy_state(m.model,projected);
+                if(before&&!before->loop&&before->next>=0)projected=before->next;
+                const int next=world_enemy_transition(m.model,projected,action->name,ui_enemy_fact,&facts);
+                if(const auto*node=world_enemy_state(m.model,next)){
+                    projected=next;track(world_enemy_resolve_clip(m.model,node->clip,m.skin,selected,ui_enemy_fact,&facts));
+                }
+            }
+        }
+    }
     auto add=[&](int id){
         if(id<0)return true;
         for(unsigned i=0;i<p.count;++i)if(content.image_alias(int(p.images[i]),id))return true;

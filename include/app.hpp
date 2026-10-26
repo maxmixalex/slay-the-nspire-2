@@ -30,6 +30,7 @@
 #include "pointer.hpp"
 #include "map_preview.hpp"
 #include "resource_source.hpp"
+#include "runtime_render_parts.hpp"
 #include "world_enemy_assets.hpp"
 #include "world_map_layout.hpp"
 #include "world_map_presentation.hpp"
@@ -254,6 +255,9 @@ struct Callbacks {
     bool(*profile_info)(unsigned,UiProgressSummary&)=nullptr;
     bool(*request_profile)(unsigned,bool)=nullptr;
     bool(*write_feedback)(const char*,unsigned)=nullptr;
+    // Hosts leave this null unless the existing opt-in timing marker is set.
+    // The callback only samples a clock; it must never re-enter rendering.
+    void(*profile_render)(RuntimeRenderPart,bool begin)=nullptr;
 };
 // Run parameters used by Continue/abandon, without re-encoding saved state.
 struct SavedRunIdentity {

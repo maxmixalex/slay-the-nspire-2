@@ -2,6 +2,7 @@
 #include <stddef.h>
 #include <stdint.h>
 #include "resource_source.hpp"
+#include "runtime_render_parts.hpp"
 
 namespace spire {
 
@@ -34,6 +35,23 @@ struct RuntimePerformance {
     RuntimeTiming startup_phases[(unsigned)ResourceStage::Count]{};
     RuntimeResourceTiming resources{};
     RuntimeFrameTiming scenes[(unsigned)RuntimeScene::Count]{};
+    RuntimeTiming render_parts[(unsigned)RuntimeRenderPart::Count]{};
+    uint32_t render_started[(unsigned)RuntimeRenderPart::Count]{};
+    uint8_t render_active=0;
+
+    void render_part(RuntimeRenderPart part,bool begin,uint32_t down_counter) {
+        if(!enabled)return;
+        const unsigned index=unsigned(part);
+        if(index>=unsigned(RuntimeRenderPart::Count))return;
+        const uint8_t bit=uint8_t(1u<<index);
+        if(begin){
+            if(render_active&bit)return;
+            render_started[index]=down_counter;render_active|=bit;
+        }else if(render_active&bit){
+            render_parts[index].add(render_started[index]-down_counter);
+            render_active&=uint8_t(~bit);
+        }
+    }
 
     void read(uint32_t ticks,uint32_t bytes,bool success,bool seek=false) {
         if(!enabled)return;
@@ -77,6 +95,10 @@ struct RuntimePerformance {
         w.text(",\"startup_phases\":{");
         static const char*const phase_names[]={"header","integrity","directory","images","tile_index","glyphs","strings","ready"};
         for(unsigned i=0;i<(unsigned)ResourceStage::Count;++i){if(i)w.ch(',');w.timing(phase_names[i],startup_phases[i]);}
+        w.ch('}');
+        w.text(",\"render_parts\":{");
+        static const char*const render_names[]={"random_water","random_light","random_dots"};
+        for(unsigned i=0;i<unsigned(RuntimeRenderPart::Count);++i){if(i)w.ch(',');w.timing(render_names[i],render_parts[i]);}
         w.ch('}');
         w.text(",\"resource_total\":{");w.field("ticks",resources.ticks);w.ch(',');w.field("calls",resources.calls);w.ch(',');w.field("bytes_requested",resources.bytes);w.ch(',');w.field("failures",resources.failures);w.ch(',');w.field("seeks",resources.seeks);w.text("},\"scenes\":[");
         static const char*const names[]={"title","character","collection","map","combat","room","overlay","other","combat_preparation"};

@@ -63,31 +63,60 @@ static void exact_interpolation_contract(){
         }
     }
 }
-static void exact_water_cache_contract(){
-    Image gradient{7,5,{},{}},noise{10,5,{},{}},other{7,5,{},{}};
-    for(unsigned i=0;i<35;++i){gradient.colors.push_back(uint16_t(i*1879));gradient.alpha.push_back(255);other.colors.push_back(uint16_t(i*3271));other.alpha.push_back(255);}
+static void exact_gradient_cache_contract(){
+    Image gradient{64,64,{},{}},noise{10,5,{},{}},other{64,64,{},{}},small{7,5,{},{}},many{64,64,{},{}};
+    for(unsigned i=0;i<4096;++i){const unsigned value=(i/64+i%64)%32;
+        gradient.colors.push_back(uint16_t(value*1879));gradient.alpha.push_back(255);
+        other.colors.push_back(uint16_t(value*3271));other.alpha.push_back(255);
+        many.colors.push_back(uint16_t(i*13+1));many.alpha.push_back(255);}
+    for(unsigned i=0;i<35;++i){small.colors.push_back(uint16_t(i*1879));small.alpha.push_back(255);}
     for(unsigned i=0;i<50;++i){noise.colors.push_back(0xffff);noise.alpha.push_back(uint8_t(i*29));}
-    water_reflection::Texture g(picture(gradient)),n(picture(noise)),g2(picture(other));
-    static RandomWaterCache cache;Canvas c{app};
+    water_reflection::Texture g(picture(gradient)),n(picture(noise)),g2(picture(other)),fallback(picture(small)),overflow(picture(many));
+    static RandomGradientCache cache;Canvas c{app};
     const unsigned times[]={0,33,66,99,100,1000,1250,7500,3599999,3600000,0};
-    for(unsigned mode=0;mode<4;++mode)for(unsigned clock:times){
+    for(unsigned mode=0;mode<5;++mode)for(unsigned clock:times){
         c.clip_w=mode==1?197:320;c.clip_h=mode==1?111:240;
         c.opacity=mode==2?173:255;c.tint_green=mode==2?127:255;
-        const auto&input=mode==3?g2:g;
+        const auto&input=mode==3?g2:mode==4?fallback:g;
         for(unsigned i=0;i<320*240;++i)app.pixels[i]=uint16_t(i*37);
         random_character_water(c,input,n,clock);
         const std::vector<uint16_t> expected(app.pixels,app.pixels+320*240);
         for(unsigned i=0;i<320*240;++i)app.pixels[i]=uint16_t(i*37);
         random_character_water(c,input,n,clock,&cache);
         CHECK(!std::memcmp(expected.data(),app.pixels,expected.size()*sizeof(uint16_t)));
+        CHECK(cache.valid==(mode!=4));
     }
-    // A fresh resource owner invalidates a geometrically identical image;
-    // reopening the same owner is represented by its generation in the key.
+    // The complete general sampler is the independent oracle, including
+    // both rounded interpolation stages, every border and indexed storage.
+    uint8_t palette[512]{},indices[4096];
+    for(unsigned i=0;i<256;++i){const uint16_t color=uint16_t(i*1879);palette[i*2]=uint8_t(color);palette[i*2+1]=uint8_t(color>>8);}
+    for(unsigned i=0;i<4096;++i)indices[i]=uint8_t((i/64+i%64)%32);
+    const water_reflection::Texture indexed({indices,nullptr,palette,64,64,2});
+    uint32_t seed=47281;const auto next=[&](){seed=seed*1664525u+1013904223u;return seed;};
+    const water_reflection::Texture*inputs[]={&g,&g2,&indexed};
+    for(const auto*texture:inputs){
+        CHECK(cache.bind(app.content,*texture));CHECK(cache.count&&cache.count<=RandomGradientCache::Capacity);
+        for(int u:{-65536,-8192,0,1,511,512,513,32768,65023,65024,65535,65536,73728})
+            for(int v:{-65536,-8192,0,1,511,512,513,32768,65023,65024,65535,65536,73728})
+                CHECK(cache.sample(u,v)==texture->opaque_bilinear(u,v));
+        for(unsigned i=0;i<10000;++i){const int u=int(next()%98304)-16384,v=int(next()%98304)-16384;
+            CHECK(cache.sample(u,v)==texture->opaque_bilinear(u,v));}
+    }
+    // A source with too many unique pairs must keep all pixels via the
+    // general sampler, and repeated visits must retain that bounded result.
+    CHECK(!cache.bind(app.content,overflow)&&!cache.valid&&cache.count==RandomGradientCache::Capacity);
+    CHECK(!cache.bind(app.content,overflow));
+    random_character_water(c,overflow,n,7500);
+    const std::vector<uint16_t> expected(app.pixels,app.pixels+320*240);
+    random_character_water(c,overflow,n,7500,&cache);
+    CHECK(!std::memcmp(expected.data(),app.pixels,expected.size()*sizeof(uint16_t)));
+    // Reopening even the same Content invalidates otherwise identical
+    // pointers. The new resource generation can publish different texels.
     static Content other_owner;
-    CHECK(!cache.bind(other_owner,g2,320,240,3276));cache.valid=true;
-    CHECK(cache.bind(other_owner,g2,320,240,3276));
-    CHECK(!cache.bind(app.content,g2,320,240,3276));cache.valid=true;
-    CHECK(!cache.bind(app.content,g2,320,240,3277));
+    CHECK(cache.bind(other_owner,g));const uint16_t before=cache.sample(0,0);gradient.colors[0]^=0x1234;
+    CHECK(!other_owner.open(nullptr,0));CHECK(cache.bind(other_owner,g));
+    CHECK(cache.sample(0,0)==gradient.colors[0]&&cache.sample(0,0)!=before);
+    CHECK(cache.bind(app.content,g2));CHECK(cache.sample(0,0)==g2.opaque_bilinear(0,0));
 }
 static void shader_contract(){
     Image image{7,5,{},{}},noise{10,5,{},{}},mask{1,1,{0xffff},{25}};
@@ -221,6 +250,10 @@ static void capture(const char*directory,const char*name){
     CHECK(std::fprintf(f,"P6\n320 240\n255\n")>0);
     for(unsigned y=0;y<240;++y){uint8_t row[960];for(unsigned x=0;x<320;++x){const uint16_t p=app.pixels[y*320+x];row[x*3]=(p>>11)*255/31;row[x*3+1]=((p>>5)&63)*255/63;row[x*3+2]=(p&31)*255/31;}CHECK(std::fwrite(row,1,sizeof row,f)==sizeof row);}CHECK(!std::fclose(f));
 }
+static unsigned profile_count,profile_parts[6];
+static void render_part_probe(RuntimeRenderPart part,bool begin){
+    CHECK(profile_count<6);profile_parts[profile_count++]=unsigned(part)*2+(begin?0:1);
+}
 static void actual(const char*captures){
     const int ids[]={I13_RandomGradient,I13_RandomNoise,I13_RandomLight,I13_RandomDot};const unsigned widths[]={64,10,320,320},heights[]={64,5,205,205};
     for(unsigned i=0;i<4;++i){const auto p=app.content.image(app.content.ui_image(ids[i]));CHECK(p.pixels&&p.w==widths[i]&&p.h==heights[i]);}
@@ -238,9 +271,13 @@ static void actual(const char*captures){
             CHECK(near({app.pixels[y*320+x],255},filtered(gradient,u+shift,v+shift),1.6));
         }
         const auto water=std::vector<uint16_t>(app.pixels,app.pixels+320*240);
-        random_character_water(canvas,g,n,clock,&random_water_cache);
+        random_character_water(canvas,g,n,clock,&random_gradient_cache);
+        CHECK(random_gradient_cache.valid&&random_gradient_cache.count<=RandomGradientCache::Capacity);
         CHECK(!std::memcmp(water.data(),app.pixels,water.size()*sizeof(uint16_t)));
+        profile_count=0;app.callbacks.profile_render=render_part_probe;
         CHECK(random_character_background(canvas,clock,clock,91));
+        app.callbacks.profile_render=nullptr;CHECK(profile_count==6);
+        for(unsigned i=0;i<6;++i)CHECK(profile_parts[i]==i);
         unsigned decoration=0;for(unsigned i=0;i<water.size();++i)decoration+=water[i]!=app.pixels[i];CHECK(decoration>1000);
         if(!previous.empty()){unsigned changed=0;for(unsigned i=0;i<previous.size();++i)changed+=previous[i]!=app.pixels[i];CHECK(changed>1000);}
         previous.assign(app.pixels,app.pixels+320*240);
@@ -255,7 +292,7 @@ static void actual(const char*captures){
     CHECK(save(app.game,after)&&before.size==after.size&&!std::memcmp(before.bytes,after.bytes,before.size));
 }
 int main(int argc,char**argv){
-    shader_contract();exact_row_quotient_contract();exact_interpolation_contract();exact_water_cache_contract();particle_contract();linear_texture_contract();particle_fast_paths();light_rg_contract();
+    shader_contract();exact_row_quotient_contract();exact_interpolation_contract();exact_gradient_cache_contract();particle_contract();linear_texture_contract();particle_fast_paths();light_rg_contract();
     if(argc>1){auto data=read(argv[1]);std::vector<uint8_t> locale;SplitResourceSource split;
         if(argc>2){locale=read(argv[2]);CHECK(split.open(ResourceSource::memory(data.data(),data.size()),ResourceSource::memory(locale.data(),locale.size()),ResourceLanguage(argc>3?std::atoi(argv[3]):1)));CHECK(app.init(split.source(),{}));}
         else CHECK(app.init(data.data(),data.size(),{}));

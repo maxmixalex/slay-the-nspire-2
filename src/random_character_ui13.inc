@@ -1,30 +1,66 @@
-// A water pixel's complete time-dependent input is the shader's quantized
-// noise value. Its UV, strength and immutable gradient determine the exact
-// RGB565 result. Retain only the last result at each display coordinate;
-// changing particles and light are still painted independently every frame.
-struct RandomWaterCache {
-    uint16_t colors[320*240]{};
-    uint8_t noise[320*240]{};
+// Retain the complete first bilinear rounding for each distinct horizontal
+// color pair. The source64x64 gradient has266 pairs, but its actual input is
+// checked against a fixed capacity before publication. Every frame still
+// samples the current noise and applies the original vertical rounding.
+struct RandomGradientCache {
+    static constexpr unsigned Side=64,Capacity=288;
+    uint16_t horizontal[Capacity][256]{};
+    uint16_t pairs[Side*Side]{};
     const Content*owner=nullptr;
     Picture gradient{};
     uint32_t generation=0;
-    unsigned width=0,height=0,logical_width=0,logical_height=0;
-    int strength=0;
-    bool valid=false;
-    bool bind(const Content&content,const water_reflection::Texture&texture,unsigned w,unsigned h,int s){
+    unsigned logical_width=0,logical_height=0,count=0;
+    bool observed=false,valid=false;
+    static uint16_t mix(uint16_t a,uint16_t b,unsigned f){
+        if(a==b)return a;
+        if(!((a^b)&0xf7deu))return f<128?a:f>128?b:uint16_t(a|b);
+        const uint32_t ar=((uint32_t(a)&0xf800u)<<5)|(a&31u),br=((uint32_t(b)&0xf800u)<<5)|(b&31u);
+        const uint32_t rb=(((ar<<8)+(br-ar)*f+0x00800080u)>>8)&0x001f001fu;
+        const uint32_t ag=a&0x07e0u,bg=b&0x07e0u;
+        const uint32_t g=(((ag<<8)+(bg-ag)*f+0x1000u)>>8)&0x07e0u;
+        return uint16_t(((rb>>5)&0xf800u)|g|(rb&31u));
+    }
+    bool bind(const Content&content,const water_reflection::Texture&texture){
         const Picture p=texture.storage();
-        if(owner!=&content||generation!=content.generation()||width!=w||height!=h||strength!=s||
-           logical_width!=texture.width()||logical_height!=texture.height()||
-           gradient.pixels!=p.pixels||gradient.alpha!=p.alpha||gradient.palette!=p.palette||
-           gradient.w!=p.w||gradient.h!=p.h||gradient.format!=p.format){
-            owner=&content;generation=content.generation();width=w;height=h;strength=s;
-            logical_width=texture.width();logical_height=texture.height();gradient=p;valid=false;
+        if(observed&&owner==&content&&generation==content.generation()&&
+           logical_width==texture.width()&&logical_height==texture.height()&&
+           gradient.pixels==p.pixels&&gradient.alpha==p.alpha&&gradient.palette==p.palette&&
+           gradient.w==p.w&&gradient.h==p.h&&gradient.format==p.format)return valid;
+        owner=&content;generation=content.generation();gradient=p;
+        logical_width=texture.width();logical_height=texture.height();
+        observed=true;valid=false;count=0;
+        if(!texture.valid()||p.format>4||logical_width!=Side||logical_height!=Side)return false;
+        uint32_t keys[Capacity];uint16_t buckets[512]{};
+        for(unsigned y=0;y<Side;++y)for(unsigned x=0;x<Side;++x){
+            const uint16_t a=texture.at(x,y).color,b=texture.at(x+1,y).color;
+            const uint32_t key=uint32_t(a)|(uint32_t(b)<<16);
+            unsigned bucket=((key*2654435761u)^(key>>13))&511u;
+            while(buckets[bucket]&&keys[buckets[bucket]-1]!=key)bucket=(bucket+1)&511u;
+            if(!buckets[bucket]){
+                // A changed source with more distinct pairs keeps the
+                // complete general sampler; no table entry may overflow.
+                if(count==Capacity)return false;
+                keys[count]=key;buckets[bucket]=uint16_t(++count);
+                for(unsigned f=0;f<256;++f)horizontal[count-1][f]=mix(a,b,f);
+            }
+            pairs[y*Side+x]=uint16_t(buckets[bucket]-1);
         }
-        return valid;
+        valid=true;return true;
+    }
+    uint16_t sample(int u_q16,int v_q16)const{
+        // width64 turns the source Q16 centre coordinates into these exact
+        // shifts. Clamp-to-edge must also discard the border's fraction.
+        const int x=u_q16-512,y=v_q16-512;
+        int ix=x>>10,iy=y>>10;unsigned fx=(unsigned(x)>>2)&255u,fy=(unsigned(y)>>2)&255u;
+        if(unsigned(ix)>=Side-1){ix=ix<0?0:Side-1;fx=0;}
+        if(unsigned(iy)>=Side-1){iy=iy<0?0:Side-1;fy=0;}
+        const unsigned at=unsigned(iy)*Side+unsigned(ix);
+        const uint16_t top=horizontal[pairs[at]][fx];
+        return fy?mix(top,horizontal[pairs[at+Side]][fx],fy):top;
     }
 };
-static RandomWaterCache random_water_cache;
-static_assert(sizeof(RandomWaterCache)<=226u*1024u,"Exact water memoization stays within226 KiB");
+static RandomGradientCache random_gradient_cache;
+static_assert(sizeof(RandomGradientCache)<=153u*1024u,"Exact gradient interpolation stays within153 KiB");
 
 // ARM926 implements each dynamic64-bit division in software. The rotated
 // quad's row numerators are linear, so retain a floor quotient and a positive
@@ -146,7 +182,7 @@ static void random_character_particle(Canvas&c,const water_reflection::Texture&t
     }
 }
 static void random_character_water(Canvas&c,const water_reflection::Texture&gradient,
-        const water_reflection::Texture&noise,uint32_t clock,RandomWaterCache*cache=nullptr){
+        const water_reflection::Texture&noise,uint32_t clock,RandomGradientCache*cache=nullptr){
     const water_reflection::Parameters parameters(clock,23,100);
     // Pixel-centre UVs after both Control pivots and responsive scale. Keep
     // Q24 increments so truncation cannot accumulate down the 240px image.
@@ -162,22 +198,18 @@ static void random_character_water(Canvas&c,const water_reflection::Texture&grad
         for(int y=0;y<5;++y)noise_rows[y][x]=uint8_t((noise.at(ix,y,true).alpha*(256-fraction)+noise.at(ix+1,y,true).alpha*fraction+128)>>8);
     }
     const bool direct=c.opacity==255&&c.brightness==255&&c.tint_red==255&&c.tint_green==255&&c.tint_blue==255&&!c.color_matrix&&!c.occlusion&&!c.coverage;
-    const unsigned width=unsigned(mx(0,mn(c.clip_w,320))),height=unsigned(mx(0,mn(c.clip_h,240)));
-    const bool reuse=cache&&cache->bind(c.a.content,gradient,width,height,parameters.half_strength_q16);
+    const bool lookup=cache&&cache->bind(c.a.content,gradient);
     for(int y=0;y<c.clip_h&&y<240;++y){
         const int v=(V0+y*VStep)>>8,position=((v-parameters.pan_q16)&65535)*5-32768;
         const int iy=position>>16,top=iy<0?4:iy,bottom=iy+1>=5?0:iy+1;const unsigned fraction=unsigned(position&65535)>>8;
         const auto*a=noise_rows[top],*b=noise_rows[bottom];auto*out=c.pixels+y*c.pitch;
         for(int x=0;x<c.clip_w&&x<320;++x){
             const unsigned n=(unsigned(a[x])*(256-fraction)+unsigned(b[x])*fraction+128)>>8;
-            const unsigned at=unsigned(y)*320+unsigned(x);uint16_t color;
-            if(reuse&&cache->noise[at]==n)color=cache->colors[at];
-            else{const int shift=shifts[n];color=gradient.opaque_bilinear(u[x]+shift,v+shift);
-                if(cache){cache->noise[at]=uint8_t(n);cache->colors[at]=color;}}
+            const int shift=shifts[n];
+            const uint16_t color=lookup?cache->sample(u[x]+shift,v+shift):gradient.opaque_bilinear(u[x]+shift,v+shift);
             if(direct)out[x]=color;else c.paint(y*c.pitch+x,color);
         }
     }
-    if(cache)cache->valid=true;
 }
 static bool random_character_background(Canvas&c,uint32_t clock,uint32_t elapsed,uint32_t seed){
     using namespace water_reflection;
@@ -187,8 +219,11 @@ static bool random_character_background(Canvas&c,uint32_t clock,uint32_t elapsed
     const Picture dp=c.a.content.image(c.a.content.ui_image(I13_RandomDot));
     if(gp.w!=64||gp.h!=64||np.w!=10||np.h!=5||lp.w!=320||lp.h!=205||dp.w!=320||dp.h!=205)return false;
     const Texture gradient(gp),noise(np),light(lp,256,256),dot(dp,256,256);
-    random_character_water(c,gradient,noise,clock,&random_water_cache);
-    auto&particles=c.a.character_select_presentation.random_background;particles.observe(elapsed,seed);
+    const auto profile=c.a.callbacks.profile_render;
+    if(profile)profile(RuntimeRenderPart::RandomWater,true);
+    random_character_water(c,gradient,noise,clock,&random_gradient_cache);
+    if(profile)profile(RuntimeRenderPart::RandomWater,false);
+    if(profile)profile(RuntimeRenderPart::RandomLight,true);
     // little_light_script.gd randomizes only integer preprocess time 0..5.
     const unsigned warm=RandomCharacterPresentation::hash(seed^0x51ba3f21u)%6;
     const unsigned phase=((elapsed+warm*1000)%3000)*4096/3000;
@@ -197,11 +232,15 @@ static bool random_character_background(Canvas&c,uint32_t clock,uint32_t elapsed
     random_character_particle(c,light,RandomCharacterPresentation::project_q16(1111*1024,false),
         RandomCharacterPresentation::project_q16(-83*1024,true),size,2023,
         102,171*gray/255,113*gray/255,0,presentation::Add,RandomTextureSource::OpaqueColor);
+    if(profile)profile(RuntimeRenderPart::RandomLight,false);
+    if(profile)profile(RuntimeRenderPart::RandomDots,true);
+    auto&particles=c.a.character_select_presentation.random_background;particles.observe(elapsed,seed);
     for(unsigned i=0;i<RandomCharacterPresentation::Count;++i){const auto&p=particles.particles[i];
         const unsigned alpha=RandomCharacterPresentation::fade(p.age)*(i<20?35:110)/255;
         const int size=int(uint64_t(256)*p.scale*15832249/(1024*1000));
         random_character_particle(c,dot,RandomCharacterPresentation::project_q16(p.x-107*1024,false),
             RandomCharacterPresentation::project_q16(p.y+1361*1024,true),size,-int(p.angle),alpha,128,179,69,presentation::Normal,RandomTextureSource::WhiteAlpha);
     }
+    if(profile)profile(RuntimeRenderPart::RandomDots,false);
     return true;
 }

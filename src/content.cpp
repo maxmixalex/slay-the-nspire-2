@@ -21,7 +21,7 @@ constexpr unsigned MaxGlyphBytes=40u*40u*2u,MaxStringBytes=16384;
 // retain complete multi-enemy/card animation working sets after warmup.
 // Ordinary scenes use6.75 MiB of decoded images and6 MiB of tile groups;
 // merchant scenes use11.75 MiB of decoded images and a1 MiB decoder tier.
-// The256 KiB reduction pays for the exact225 KiB random-water memo without
+// The256 KiB reduction covers the bounded exact random-water lookup without
 // increasing the allocation required from the ordinary OS's contiguous heap.
 // The split changes only at a frame boundary, invalidating both old tiers.
 constexpr unsigned ImagePageBytes=4096,ImagePages=1728,RoomImagePages=3008,ImageEntries=1023;
@@ -54,7 +54,7 @@ static_assert(RoomImagePages<65536&&(MaxImageBytes+ImagePageBytes-1)/ImagePageBy
               "Image page indexes and lengths must fit the bounded entry");
 static_assert(ImageEntries<1024&&ImageBuckets==64,"Image ids and bucket links must share the existing key word");
 static_assert(sizeof picture_pixels==13u*1024u*1024u-256u*1024u,
-              "Picture tiers reserve256 KiB for the exact water cache");
+              "Picture tiers reserve256 KiB for the exact water lookup");
 static_assert(sizeof image_cache+sizeof image_buckets+sizeof image_used+sizeof image_age<=25u*1024u,
               "Image-cache bookkeeping must remain below25 KiB on the host");
 static uint8_t* image_buffer(const ImageCache& cache){return image_pixels+unsigned(cache.first)*ImagePageBytes;}
