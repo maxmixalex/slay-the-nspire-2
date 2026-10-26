@@ -639,6 +639,16 @@ void ui13_source_catalogs(){
         label="UI40 complete optional source catalog";Package p=pack(end);Provider source{&p.bytes};
         CHECK(direct->open(p.bytes.data(),p.bytes.size())&&range->open(source.source()));
         for(Content*content:{direct.get(),range.get()}){
+            // App::init accepts only a complete playable profile. New suffixes
+            // retain every earlier capability, rather than only opening as data.
+            CHECK(content->current_profile());
+            CHECK(content->has_ftue_assets()&&content->has_selection_assets()&&
+                  content->has_inspection_assets()&&content->has_speech_bubble_assets()&&
+                  content->has_history_header_assets()&&content->has_settings_ui10_assets());
+            CHECK(content->has_startup_logo_assets()==(end>=IntroLogoAuxiliaryCount));
+            CHECK(content->has_phobia_swarm_assets()==(end>=PhobiaSwarmAuxiliaryCount));
+            CHECK(content->has_sleeping_vfx_assets()==(end>=SleepingVfxAuxiliaryCount));
+            CHECK(content->has_ui13_assets()==(end>=FrontendUi13AuxiliaryCount));
             CHECK(content->ui_image(end-1)==0&&content->ui_image(end)==-1);
             picture(*content,1,p.frames[0]);CHECK(content->healthy());
         }

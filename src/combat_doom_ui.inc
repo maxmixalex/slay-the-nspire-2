@@ -96,6 +96,14 @@ static unsigned doom_particle_curve(unsigned age,unsigned life){
   CombatSparkMotion::segment(q,242,754,1024,699,0,-1340):CombatSparkMotion::segment(q,754,1024,699,0,-1340,-3515);
  return unsigned(health_bar::bounded(value,0,1024));
 }
+static void doom_distortion(Picture noise,int u,int v,int time,int&du,int&dv){
+ // Both distortion samplers are assigned to tileable_noise_1 in the
+ // scene. Only Noise1Texture and DistortionMask use the white default.
+ const auto first=doom_texel(noise,u*3/2-time/2,v*3/2-time,true);
+ const auto second=doom_texel(noise,u*121/100+time/2,v*1275/1000-time*8/10,true);
+ du=int((first.color>>11)*205u/31u+(second.color>>11)*82u/31u);
+ dv=int(((first.color>>5)&63)*205u/63u+((second.color>>5)&63)*82u/63u);
+}
 static void doom_flame(Canvas&c,const CombatDoomPresentation::Body&b,uint32_t now){
  const unsigned scale=b.width_scale(now);if(!scale)return;
  const auto noise=c.a.content.image(c.a.content.ui_image(I13_DoomNoise));
@@ -105,13 +113,12 @@ static void doom_flame(Canvas&c,const CombatDoomPresentation::Body&b,uint32_t no
  const int w=mx(1,int(int64_t(377)*b.unit*scale/(4096*4096)));
  const int h=mx(1,int(int64_t(694)*b.unit*mn(int(scale),4096)/(4096*4096)));
  const int left=b.ground_x-b.unit/4096-w/2,top=b.ground_y+2*b.unit/4096-h/2;
- const unsigned age=now-b.at;const int time=int(age*4096u/1000u);
+ // The source shader uses global TIME, not an age reset for each Doom.
+ // Every authored pan repeats after50s, avoiding overflow with no phase loss.
+ const int time=int((c.a.map_clock_ms%50000u)*4096u/1000u);
  for(int y=mx(22,top);y<mn(c.clip_h,top+h);++y)for(int x=mx(0,left);x<mn(c.clip_w,left+w);++x){
   const int u=(2*(x-left)+1)*2048/w,v=(2*(y-top)+1)*2048/h;
-  // The pinned material supplies Noise2/Distortion2. Its unbound first
-  // samplers are Godot's white default; retain their .6/.05 contributions.
-  const auto d=doom_texel(noise,u*121/100+time/2,v*1275/1000-time*8/10,true);
-  const int du=205+int((d.color>>11)*82u/31u),dv=205+int(((d.color>>5)&63)*82u/63u);
+  int du=0,dv=0;doom_distortion(noise,u,v,time,du,dv);
   const int blue=int((doom_texel(flame,u+du,v+dv).color&31)*4096u/31u);
   if(!blue)continue;
   const int n=int((doom_texel(noise,u*122/100+time*74/100,v*2545/1000-time*144/100,true).color&31)*4096u/31u);
@@ -148,8 +155,9 @@ static void doom_particles(Canvas&c,Picture texture,const CombatDoomPresentation
   else yy-=int(150ll*t*t*b.unit/(1000000ll*4096));
   const unsigned scale=globs?(gravity?300u+seed%301u:400u+seed%201u):200u+seed%201u;
   const int sw=globs?32:128,sh=globs?32:43;
-  const int w=int(int64_t(sw)*b.unit*scale*curve/(4096*1000));
-  const int h=int(int64_t(sh)*b.unit*scale*curve/(4096*1000));
+  const int w=int(int64_t(sw)*b.unit*scale*curve*width/(4096ll*4096*1000));
+  const int vertical=system==0?64:system==1?96:system==2?44:100;
+  const int h=int(int64_t(sh)*b.unit*scale*curve*vertical/(4096ll*1000*100));
   const int angle=globs?int(seed%4096u)+int((int(seed%501u)-250)*t*4096/(360*1000)):0;
   Canvas particle=c;if(!globs||gravity)particle.brightness=181;
   doom_quad(particle,texture,(b.ground_x+xx)*1024,(b.ground_y+yy)*1024,w,h,angle,255,0,globs?int((seed>>12)&3u):-1);
@@ -161,13 +169,15 @@ static void doom_spears(Canvas&c,Picture texture,const CombatDoomPresentation::B
   const unsigned life=300u+seed%301u,cycle=age/life,born=cycle*life,t=age-born;if(born>=1500u)continue;
   const uint32_t random=ScreenShakePresentation::hash(seed+cycle);
   const int source_x=int(random%141u)-70-20;
-  const unsigned width=mx(int(b.width_scale(b.at+born)),410);
+  const unsigned width=b.width_scale(b.at+born);if(width<410u)continue;
   const int w=int(int64_t(40)*b.unit*400*4096/(4000ll*width));
   const int h=int(int64_t(206)*b.unit*(1000u+random%501u)*(life-t)/(4096ll*1000*life))*1024;
   const int angle=(source_x*15/100+4)*4096/360;
   const int alpha=int((102u+random%77u)*(t<200u?t*t:40000u)/40000u);
-  const int x=b.ground_x+source_x*b.unit/4096,y=b.ground_y+(front?-7:-8)*b.unit/4096;
-  doom_quad(c,texture,x*1024-h*CombatCardMotion::sine(angle)/2048,y*1024-h*CombatCardMotion::sine(angle+1024)/2048,w,h,angle,unsigned(alpha),presentation::Add);
+  // TextureRect position is its top-left; the authored(20,206)
+  // pivot supplies the missing20px horizontally and bottom=-9px.
+  const int x=b.ground_x+(source_x+20)*b.unit/4096,y=b.ground_y+(front?-16:-17)*b.unit/4096;
+  doom_quad(c,texture,x*1024+h*CombatCardMotion::sine(angle)/2048,y*1024-h*CombatCardMotion::sine(angle+1024)/2048,w,h,angle,unsigned(alpha),presentation::Add);
  }
 }
 static void combat_doom_layers(Canvas&c,bool front){
@@ -178,7 +188,8 @@ static void combat_doom_layers(Canvas&c,bool front){
   for(const auto&b:a.combat_doom.bodies)if(b.alive(now)){
    const unsigned width=b.width_scale(now);if(!width)continue;
    const int w=int(int64_t(256)*b.unit*width/16384),h=int(int64_t(256)*b.unit*85*mn(int(width),4096)/(16384*100));
-   doom_quad(c,glow,b.ground_x*1024,(b.ground_y-28*b.unit/4096)*1024,w,h,0,253,presentation::Add);
+   const int center_y=b.ground_y+int((-400000ll+197568ll*mn(int(width),4096)/4096)*b.unit/(10000ll*4096));
+   doom_quad(c,glow,b.ground_x*1024,center_y*1024,w,h,0,253,presentation::Add);
   }
  }else{
   const auto hole=a.content.image(a.content.ui_image(I13_DoomHole));Canvas black=c;black.brightness=0;
@@ -230,10 +241,9 @@ static bool combat_doom_shared_frame(Canvas&c,int clip,uint32_t time,bool loop){
  }}return true;
 }
 static uint16_t doom_grayscale(uint16_t color){
- // The original hsv.gdshader sets saturation=0 with value unchanged:
- // every channel becomes max(R,G,B), not luminance/YIQ gray.
- const int value=mx(int((color>>11)*255u/31u),mx(int(((color>>5)&63)*255u/63u),int((color&31)*255u/31u)));
- return rgb(value,value,value);
+ // Despite its filename, hsv.gdshader transforms RGB to YIQ, sets
+ // chroma to zero, then applies the inverse matrix (h=1,s=0,v=1).
+ return presentation::yiq_material(color,0,1000);
 }
 static int doom_ceil(int numerator,int denominator){return numerator<0?numerator/denominator:(numerator+denominator-1)/denominator;}
 static void doom_body_image(Canvas&c,Picture p,int x,int y,int width,int height){
@@ -274,7 +284,7 @@ static void combat_doom_overlay(Canvas&c){
  c.a.combat_doom.sync_overlay(c.a.animation*33u);
  const unsigned alpha=c.a.combat_doom.overlay(c.a.animation*33u);if(!alpha)return;
  const int saturation=1000-int(alpha*300u/4096u);const unsigned value=1000-alpha*250u/4096u;
- const int time=int(c.a.animation*33u);const int wave=CombatCardMotion::sine(int(int64_t(time)*13038/1000))+CombatCardMotion::sine(int(int64_t(time)*6519/1000));
+ const uint32_t time=c.a.map_clock_ms;const int wave=CombatCardMotion::sine(int(uint64_t(time)*13037973u/1000000u%4096u))+CombatCardMotion::sine(int(uint64_t(time)*6518986u/1000000u%4096u));
  const unsigned pulse=doom_smooth(wave+10240,0,11264);
  for(int y=22;y<c.clip_h;++y){const unsigned uv=unsigned(y)*4096u/240u,q2=uv*uv/4096u,q3=q2*uv/4096u;
   const unsigned glow=unsigned(uint64_t(q3)*q3/4096u*alpha/4096u*pulse/4096u*7u/10u);

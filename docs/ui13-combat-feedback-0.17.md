@@ -67,8 +67,9 @@ camera punch. The pinned references are `DoomPower.PlayVfx/StartDoomAnim`,
 - A disappearing creature triggers the source Hit transition. Only a clip
   named exactly `hurt` freezes at 100 ms, or 40 ms for Inklet. Other tracks
   continue with their original loop behavior. The detached body retains its
-  registration and the source 1.5× hitbox viewport bounds. The original HSV
-  saturation-zero operation preserves maximum-channel value. After a 750 ms
+  registration and the source 1.5× hitbox viewport bounds. The original `hsv.gdshader`
+  actually performs YIQ desaturation and its inverse-matrix reconstruction;
+  it does not use maximum-channel HSV gray. After a 750 ms
   hold, an Expo.In tween sinks the viewport by its height over 750 ms.
 - `ShouldDisappearFromDoom` exceptions remain visible for Ceremonial Beast,
   Crusher, all Decimillipede segments, Eye With Teeth, Parafright, Rocket and
@@ -80,7 +81,10 @@ camera punch. The pinned references are `DoomPower.PlayVfx/StartDoomAnim`,
   use eight private source textures. Their emitters retain separate lifetime,
   gravity, scale-curve and width-tween behavior. The source flame is animated
   at runtime with its assigned noise, distortion, blue-channel mask and two
-  step bands. Empty samplers retain the source white default. The LCD samples
+  step bands. Both distortion samplers read the assigned original noise at their separate
+  scales and pans; Noise1 and the distortion mask retain the source white
+  defaults. Shader time is global, so another Doom does not reset its phase.
+  The LCD samples
   overlapping subpixel particles at a bounded density rather than allocating
   Godot particle buffers or a viewport.
 - The YIQ overlay eases in for 1000 ms, holds for 1200 ms and fades over 500 ms.

@@ -73,8 +73,22 @@ static void doom_equations(){
  d.sync_overlay(1100);CHECK(d.overlay_at==1000&&d.overlay(1100)>0&&!(d.bodies[2].flags&CombatDoomPresentation::OverlayApplied));
  const unsigned before=d.overlay(1400);d.sync_overlay(1400);CHECK(d.overlay_at==1400&&d.overlay_from==before&&d.overlay(1400)==before);
  CHECK(d.overlay(2400)==4096&&d.overlay(3599)==4096&&d.overlay(3850)==2048&&!d.overlay(4100));
- for(unsigned color:{0x001fu,0x07e0u,0xf800u})CHECK(doom_grayscale(uint16_t(color))==0xffffu);
+ // Invert the actual shader matrix independently. The misleading "hsv"
+ // filename must not turn this into maximum-channel HSV desaturation.
+ const double ar=.2989,ag=.5870,ab=.1140,br=.5959,bg=-.2774,bb=-.3216,cr=.2115,cg=-.5229,cb=.3114;
+ const double det=ar*(bg*cb-bb*cg)-ag*(br*cb-bb*cr)+ab*(br*cg-bg*cr);
+ const double inverse[]={(bg*cb-bb*cg)/det,(bb*cr-br*cb)/det,(br*cg-bg*cr)/det};
+ for(unsigned color:{0u,0x001fu,0x07e0u,0xf800u,0xffffu,0x8c51u,0x55aau}){
+  const double luminance=ar*(color>>11)/31.0+ag*((color>>5)&63)/63.0+ab*(color&31)/31.0;
+  const auto gray=doom_grayscale(uint16_t(color));const unsigned channels[]={unsigned(gray>>11),unsigned((gray>>5)&63),unsigned(gray&31)};
+  for(unsigned channel=0;channel<3;++channel){const double source=std::max(0.0,std::min(1.0,luminance*inverse[channel]))*(channel==1?63:31);CHECK(std::abs(double(channels[channel])-source)<=1.0);}
+ }
  CHECK(doom_grayscale(0)==0&&sizeof d<=384);
+ // A constant colored source proves that BOTH distortion layers are
+ // sampled (.05+.02), including their green component, not a white bias.
+ const uint8_t noise_pixels[]={0x00,0xf8};Picture noise{};noise.pixels=noise_pixels;noise.w=noise.h=1;
+ int du=0,dv=0;doom_distortion(noise,2311,1743,8821,du,dv);CHECK(std::abs(du-int(.07*4096))<=1&&!dv);
+
  scenario="ClearTarget preserves independently decaying trauma and discards owned punch cues";
  Shake shake;shake.bind(1,1000);shake.add(1000,1000,Shake::Trauma,Shake::Strong);shake.add(1000,1500,Shake::Punch,Shake::Strong);
  shake.clear_target(1100);CHECK(!shake.bound&&!shake.count&&!shake.punch.strength&&shake.trauma==410);

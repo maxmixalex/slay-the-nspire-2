@@ -65,6 +65,7 @@
 #include "history_body_ui10_assets.hpp"
 #include "settings_ui10_assets.hpp"
 #include "ui12_assets.hpp"
+#include "doom_assets.hpp"
 #include "font_metrics.hpp"
 #include "title_scene.hpp"
 #include "title_menu_presentation.hpp"
@@ -170,7 +171,13 @@ public:
     bool has_inspection_assets()const{return version_>=SelectionContentVersion&&(ui_count_==InspectionAuxiliaryCount||has_speech_bubble_assets());}
     bool has_speech_bubble_assets()const{return version_>=SpeechBubbleContentVersion&&(ui_count_==SpeechBubbleAuxiliaryCount||has_history_header_assets());}
     bool has_history_header_assets()const{return version_>=HistoryHeaderContentVersion&&(ui_count_==HistoryHeaderAuxiliaryCount||has_history_body_assets());}
-    bool has_sleeping_vfx_assets()const{return version_>=Ui12ContentVersion&&ui_count_==SleepingVfxAuxiliaryCount;}
+    bool has_ui13_assets()const{
+        if(version_<Ui12ContentVersion)return false;
+        return ui_count_==FrontendUi13AuxiliaryCount||ui_count_==RoomsUi13AuxiliaryCount||
+            ui_count_==ArchitectUi13AuxiliaryCount||ui_count_==ArchitectAttackUi13AuxiliaryCount||
+            ui_count_==DoomUi13AuxiliaryCount;
+    }
+    bool has_sleeping_vfx_assets()const{return version_>=Ui12ContentVersion&&(ui_count_==SleepingVfxAuxiliaryCount||has_ui13_assets());}
     bool has_phobia_swarm_assets()const{return version_>=Ui12ContentVersion&&(ui_count_==PhobiaSwarmAuxiliaryCount||has_sleeping_vfx_assets());}
     bool has_startup_logo_assets()const{return version_>=Ui12ContentVersion&&(ui_count_==IntroLogoAuxiliaryCount||has_phobia_swarm_assets());}
     bool has_history_body_assets()const{return version_>=HistoryBodyContentVersion&&(ui_count_==SettingsUi10AuxiliaryCount||(version_>=Ui12ContentVersion&&ui_count_==Ui12AuxiliaryCount)||has_startup_logo_assets());}

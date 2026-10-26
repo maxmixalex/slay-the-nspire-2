@@ -130,7 +130,8 @@ Fast mode. Its input gate therefore remains 1000/500 ms after the line;
 the Proceed image starts entering with the line rather than starting a
 second 500 ms entrance after the gate is already ready. These samplers all
 reuse the existing event start timestamp.
-The head/reading overlays are not included in these three body clips.
+The head/reading overlays are separate from these three body clips and are
+now packaged by the subsequent UI13 stage (`architect-vfx-ui13-0.17.md`).
 
 At the end, `NGameOverScreen.MoveCreaturesToDifferentLayerAndDisableUi`
 retains the VisualOnly creatures above its backstops. The complete caller
@@ -149,10 +150,10 @@ These are distinct from an unknown desktop pixel comparison:
 | Source effect and actual owner | Current status |
 | --- | --- |
 | `DoomPower.DoomKill` at a lethal side-end or `EndOfDays`; `StartDoomAnim` / `NDoomVfx` freezes the hurt body and sinks its viewport after 750 ms, with front/back particles | Implemented by the subsequent UI13 stage; see `ui13-combat-feedback-0.17.md` for its separate source references and validation status. |
-| `TheArchitect.OnRoomEnter` and the first `PlayCurrentLine`: `head_reading`, `head_stop_reading`, `head_normal` on a second Spine track | Initial source waits are implemented. These separate overlay clips are inventoried with `used:false` and are not packaged; the new actor layer does not claim them. |
-| `NArchitectVfx` reacts to the attack's `trail_start` and idle's `trail_end` | The original body clips play. The independent inner/outer `NBasicTrail` is not reconstructed by the frame renderer. |
-| `TheArchitect.AnimPlayerAttackIfNecessary` creates score-derived damage numbers, a hit spark and each character's shuffled attack VFX | Original player attack and Architect hurt are now sampled; the corresponding camera pulses were already verified. The per-hit numeric/particle set is not implemented by this actor stage. |
-| `TheArchitect.AnimArchitectAttackIfNecessary` spawns attack lightning and `NFireBurstVfx` on the player | Architect attack and the real Weak/Normal camera cue are implemented. Its lightning/FireBurst particles remain missing. |
+| `TheArchitect.OnRoomEnter` and the first `PlayCurrentLine`: `head_reading`, `head_stop_reading`, `head_normal` on a second Spine track | Implemented by UI13 with the original second-track reading/stop/normal overlays; see `rooms-ui13-0.17.md` and `architect-vfx-ui13-0.17.md`. |
+| `NArchitectVfx` reacts to the attack's `trail_start` and idle's `trail_end` | Implemented by UI13 with the source inner/outer trail and actual animation events; see `architect-vfx-ui13-0.17.md`. |
+| `TheArchitect.AnimPlayerAttackIfNecessary` creates score-derived damage numbers, a hit spark and each character's shuffled attack VFX | Implemented by UI13, including the source score-derived numbers, hit sparks and character attack effects; see `rooms-ui13-0.17.md` and `architect-vfx-ui13-0.17.md`. |
+| `TheArchitect.AnimArchitectAttackIfNecessary` spawns attack lightning and `NFireBurstVfx` on the player | Implemented by UI13 with the source attack lightning and FireBurst layers; see `architect-vfx-ui13-0.17.md`. |
 
 Integer noise, bounded LCD displacement, the readable subtitle reflow and
 the sleeping-particle mapping are implemented platform adaptations. The
