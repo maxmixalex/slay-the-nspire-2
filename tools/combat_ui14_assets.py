@@ -72,15 +72,17 @@ class CardRenderer(RoomRenderer):
                 index = np.clip(np.searchsorted(offsets, x)-1, 0, len(offsets)-2)
                 a, b = colors[index], colors[index+1]
                 t = np.clip((x-offsets[index])/(offsets[index+1]-offsets[index]), 0., 1.)
-                # Godot Gradient's CUBIC interpolation is smoothstep for
-                # the two-stop galvanized ramp (duplicated endpoints).
-                t = t*t*(3-2*t)
-                result = a+(b-a)*t[:, None]
+                # Godot's cubic_interpolate uses the neighbouring colors;
+                # endpoints repeat their nearest authored stop.
+                p0 = colors[np.maximum(0, index-1)]
+                p3 = colors[np.minimum(len(colors)-1, index+2)]
+                t = t[:, None]
+                result = .5*((2*a)+(-p0+b)*t+(2*p0-5*a+4*b-p3)*t*t+(-p0+3*a-3*b+p3)*t*t*t)
                 return result[None].astype(np.float32)
         return super()._shader_texture(ref)
 
     def shader_layer(self, node, path, image, rect, matrix, tint, shader, material, blend, info):
-        if '/afflictions/' not in shader and shader not in (
+        if not shader or '/afflictions/' not in shader and shader not in (
                 'images/vfx/simple_noise_flat_shader.tres', 'images/vfx/simple_noise_add_shader.tres'):
             return super().shader_layer(node, path, image, rect, matrix, tint, shader, material, blend, info)
         uv, covered = quad_uv(self.canvas, self.screen, matrix, rect)
