@@ -47,13 +47,19 @@ static void aimed_preview(){
  a.game.enemies[0].hp=0;CHECK(a.card_preview_target(0)==-1);
 }
 static void numeric_selection(){
- scenario="ten semantic card shortcuts select, repeat does not play";fresh(10);before=a.game;
+ scenario="ten physical calculator digits select in both input banks";
+ const auto previous_bindings=a.input_bindings;const bool previous_calculator=a.calculator_keyboard,previous_keyboard=a.keyboard_only;
+ for(unsigned bank=0;bank<2;++bank){fresh(10);a.calculator_keyboard=true;a.keyboard_only=bank!=0;a.input_bindings=default_input_bindings(true);before=a.game;
  for(unsigned slot=0;slot<10;++slot){
-  const auto key=a.input_bindings.keys[0][unsigned(InputCommand::Card1)+slot];
+  const auto key=uint16_t(slot==9?'0':'1'+slot);
   CHECK(key&&a.physical_key(key,true));CHECK(a.keyboard_card==int(slot)&&a.cursor==int(slot));unchanged();
   CHECK(a.physical_key(key,true));CHECK(a.keyboard_card==int(slot));unchanged();CHECK(a.physical_key(key,false));
  }
  a.input(Key::Back);CHECK(a.keyboard_card<0);unchanged();
+ a.hand_focus=true;a.cursor=3;CHECK(a.physical_key(InputRight,true));CHECK(a.cursor==4&&a.keyboard_card<0);CHECK(a.physical_key(InputRight,false));unchanged();
+ CHECK(a.physical_key('2',true));CHECK(a.keyboard_card==1&&a.cursor==1);CHECK(a.physical_key('2',false));unchanged();a.input(Key::Back);
+ }
+ a.input_bindings=previous_bindings;a.calculator_keyboard=previous_calculator;a.keyboard_only=previous_keyboard;
  // The enlarged focused face clears the two control rails even at the
  // extreme authored fan positions; every source holder remains addressable.
  for(unsigned count=1;count<=10;++count)for(unsigned slot=0;slot<count;++slot){
@@ -203,6 +209,8 @@ static void actual_aimed_descriptions(){
  a.cursor=0;a.input(Key::Confirm);const std::string aimed=hand_tile(c,0).description;
  CHECK(aimed!=base&&std::strstr(aimed.c_str(),"9"));CHECK(base==hand_tile(c,1).description);unchanged();
  a.input(Key::Back);CHECK(base==hand_tile(c,0).description);unchanged();CHECK(a.content.healthy());
+ begin_card_face_frame();CHECK(std::string(hand_tile(c,0,nullptr,-1,nullptr,false,"detached transform snapshot").description)=="detached transform snapshot");
+ CHECK(base==hand_tile(c,0).description);unchanged();
 }
 static void actual_winning_card(){
  scenario="a real winning card opens Loot while corpses still animate";fresh();CHECK(encounter_setup(a.game,EncounterId::NibbitsNormal));

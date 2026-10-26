@@ -1,6 +1,6 @@
 static void native_reward_header(Canvas&c,const char*label,int y){
  c.ui(U_RewardBanner,70,y,180,45);Canvas title=c;title.font_face=source_label_face(c.a.content.original_label_fonts(),5);
- title.fitted(label,99,y+1,122,32,12,10,rgb(255,246,226),true,true,true,false);
+ title.fitted(label,99,y+13,122,19,12,10,rgb(255,246,226),true,true,true,false);
 }
 static void native_reward_window(Canvas&c,int dy){
  c.ui(U_RewardPanel,73,40+dy,174,174);
@@ -26,7 +26,8 @@ static void native_reward_row(Canvas&c,int y,bool selected){
 static void native_reward_row_content(Canvas&rows,const char*text,int y,int image,bool selected){
  native_reward_row(rows,y,selected);rows.picture(image,93,y+4,16,16);
  const int size=native_reward_label_size(rows.a);
- const auto fit=rows.fitted(text,113,y+1,113,23,size,size,selected?Gold:rgb(255,246,226),false,true,true,false);
+ const int text_y=y+(24-size-2)/2;
+ const auto fit=rows.fitted(text,113,text_y,113,size+3,size,size,selected?Gold:rgb(255,246,226),false,true,true,false);
  if(!fit.truncated||!selected)return;
  // Every reward route shares the original left-aligned row. Keep a long
  // localized name readable while focused, inside the same button inset.
@@ -34,9 +35,9 @@ static void native_reward_row_content(Canvas&rows,const char*text,int y,int imag
  const int travel=mx(0,rows.width(text,size)-113);
  const unsigned span=unsigned(travel)*40u,cycle=span*2u+1800u,t=cycle?rows.a.map_clock_ms%cycle:0;
  const int offset=t<900?0:t<900+span?int((t-900)/40):t<1800+span?travel:mx(0,travel-int((t-1800-span)/40));
- const int top=mx(0,y+5),bottom=mn(rows.clip_h,y+19);
+ const int top=mx(0,text_y),bottom=mn(rows.clip_h,text_y+size+3);
  if(bottom>top){Canvas label=rows;label.pixels+=113+top*label.pitch;if(label.coverage)label.coverage+=113+top*label.pitch;label.clip_w=113;label.clip_h=bottom-top;
-  label.text(text,-offset,y+5-top,size,Gold);}
+  label.text(text,-offset,text_y-top,size,Gold);}
 }
 static Canvas native_reward_list_layer(Canvas&panel,int dy){
  Canvas layer=panel;const int top=70+dy;layer.pixels+=top*layer.pitch;if(layer.coverage)layer.coverage+=top*layer.pitch;

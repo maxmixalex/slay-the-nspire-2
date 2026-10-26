@@ -24,6 +24,7 @@ static void ui_architect_screen_effect(App&a,bool start){
  // Share the already-existing event clock's captured speed with the clip
  // sampler. A later Settings toggle must not retime an in-flight sequence.
  a.room_presentation.event.fast=a.fast_mode;
+ architect_scene_begin(a,start);
  for(unsigned i=0;i<plan.hits;++i)a.screen_effect(ScreenShakePresentation::Punch,
   i+1==plan.hits?ScreenShakePresentation::Strong:ScreenShakePresentation::Weak,i+1==plan.hits?800:300,0,plan.hit_at(i));
  if(plan.architect_at)a.screen_effect(ScreenShakePresentation::Punch,ScreenShakePresentation::Weak,800,0,plan.architect_at);

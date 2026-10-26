@@ -6,6 +6,7 @@
 #include <cstring>
 #include <string>
 #include <vector>
+#include <cmath>
 using namespace spire;
 static App a;
 static State direct;
@@ -97,6 +98,28 @@ static void highlights(){
  CHECK(h.observe(1,true,600)==9830);CHECK(h.observe(1,true,950)==4915);CHECK(h.observe(0,false,950)==4915);CHECK(h.observe(0,false,1450)==0);
  for(unsigned denominator:{74981u,100000u,149993u}){card_highlight::Fraction f(denominator);for(unsigned value=0;value<denominator;++value){const uint64_t q=uint64_t(value)*65536/denominator,q2=q*q/65536;CHECK(f.smooth(value)==q2*(3*65536-2*q)/65536);}}
 }
+static void source_orb_layout(){
+ // Independent pinned NOrbManager formula: capacity controls both the
+ // radius and the 125-degree arc, regardless of the number of filled orbs.
+ fresh();const State before=a.game;CombatOrbPresentation layout;
+ for(unsigned slots=1;slots<=10;++slots){
+  layout.layout(slots,slots*1000);
+  for(unsigned i=0;i<slots;++i){
+   const double degrees=-150.0+(slots>1?125.0*i/(slots-1):0),r=225.0+75.0*(double(slots)-3.0)/7.0;
+   const auto target=layout.position(i,slots*1000+450);
+   CHECK(std::abs(target.x/1024.0+r*std::cos(degrees*3.141592653589793/180.0))<1.0);
+   CHECK(std::abs(target.y/1024.0-r*std::sin(degrees*3.141592653589793/180.0))<1.0);
+   const auto occupied=target;layout.model(i,unsigned(DOrb::Frost),slots*1000+500);layout.model(i,255,slots*1000+600);
+   CHECK(layout.position(i,slots*1000+650).x==occupied.x&&layout.position(i,slots*1000+650).y==occupied.y);
+  }
+ }
+ // A capacity change begins at the visible position; it never snaps an
+ // existing orb to the origin while the new slots are being introduced.
+ layout.layout(3,12000);const auto initial=layout.position(0,12500);layout.layout(6,12500);
+ CHECK(layout.position(0,12500).x==initial.x&&layout.position(0,12500).y==initial.y);
+ layout.layout(2,12700);const auto settled=layout.position(0,13200),source=CombatOrbPresentation::target(2,0);
+ CHECK(settled.x==source.x&&settled.y==source.y);CHECK(!std::memcmp(&before,&a.game,sizeof before));
+}
 static std::vector<uint8_t> read(const std::string&path){FILE*f=std::fopen(path.c_str(),"rb");CHECK(f);CHECK(!std::fseek(f,0,SEEK_END));const long size=std::ftell(f);CHECK(size>0);CHECK(!std::fseek(f,0,SEEK_SET));std::vector<uint8_t>data(size_t(size),0);CHECK(std::fread(data.data(),1,data.size(),f)==data.size());CHECK(!std::fclose(f));return data;}
 static void actual_render(){
  fresh();auto&s=a.game;s.card_count=s.hand.count=1;s.hand.ids[0]=0;s.cards[0]={Strike,0};s.zones[0]=Zone::Hand;s.energy=10;a.animation=a.map_clock_ms=0;direct=s;
@@ -104,12 +127,18 @@ static void actual_render(){
  auto changed=[](const std::vector<uint16_t>&pixels){unsigned n=0;for(unsigned i=0;i<320*240;++i)n+=pixels[i]!=a.pixels[i];return n;};
  Canvas c{a};const auto pose=HandPose{160,150,HandFocusScale,0,1024};fill();draw_hand_tile(c,hand_tile(c,0),pose,false,255,0,true);const auto plain=snapshot();
  a.map_clock_ms=600;fill();draw_hand_tile(c,hand_tile(c,0),pose,false,255,0,true);CHECK(changed(plain)>0);
+ // TextureRect KEEP_ASPECT_CENTERED must not stretch its square SDF to
+ // the taller authored container. The glow stays within a 3px face inset.
+ const int left=pose.cx-HandFaceW/2-3,right=pose.cx+(HandFaceW+1)/2+3;
+ const int top=pose.cy-HandFaceH/2-3,bottom=pose.cy+(HandFaceH+1)/2+3;
+ for(int y=0;y<240;++y)for(int x=0;x<320;++x)if(x<left||x>=right||y<top||y>=bottom)
+  CHECK(a.pixels[y*320+x]==plain[unsigned(y*320+x)]);
  fill();draw_hand_tile(c,hand_tile(c,0),pose,false,255,combat_exhaust_progress(250));CHECK(changed(plain)>100);
  a.combat_cards.begin(s,0);auto cue=transfer(Zone::Exhaust);a.combat_cards.apply(cue);a.combat_cards.set_hand({});a.animation=6;fill();const auto empty=snapshot();combat_card_secondary(c);CHECK(changed(empty)>0);
  for(unsigned kind=0;kind<unsigned(DOrb::Count);++kind){a.combat_sparks.reset();a.combat_sparks.secondary(0,80,90,CombatSparkMotion::OrbEvoke,kind,1);a.animation=5;fill();combat_secondary_sparks(c);CHECK(changed(empty)>0);}
  CHECK(!std::memcmp(&s,&direct,sizeof s));CHECK(a.content.healthy());
 }
-int main(int argc,char**argv){CHECK(argc==1||argc==2);observers();cards();highlights();
+int main(int argc,char**argv){CHECK(argc==1||argc==2);observers();cards();highlights();source_orb_layout();
  if(argc==2){const std::string root=argv[1];auto common=read(root+"/nSpire2.common.tns"),language=read(root+"/nSpire2.eng.tns");SplitResourceSource split;
   CHECK(split.open(ResourceSource::memory(common.data(),common.size()),ResourceSource::memory(language.data(),language.size()),ResourceLanguage::English));CHECK(a.init(split.source(),{}));actual_render();}
  std::printf("combat secondary: %u checks passed; card metadata %zu B, burst pool %zu B%s\n",checks,sizeof(CombatCardMotion),sizeof(CombatSparkMotion),argc==2?", original assets rendered":"");

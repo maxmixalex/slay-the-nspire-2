@@ -3,6 +3,7 @@
 #include "combat_card_motion.hpp"
 #include "card_reward_presentation.hpp"
 #include "ui_history_presentation.hpp"
+#include "card_transform_presentation.hpp"
 
 namespace spire {
 enum class RewardPickupKind:uint8_t {None,Potion,Relic,Card};
@@ -44,10 +45,13 @@ struct RewardPresentation {
   uint16_t speed=1100,accel=2000,duration=1000,arrival=0;
   uint32_t start=0;
   Card card{};
+  EventDeckSnapshot snapshot{};
+  bool has_snapshot=false;
  };
  Flight flights[MaxFlights]{};
  struct RemovedCard {
   Card card{};EventCardFacts facts{};
+  uint16_t genetic=0,scythe=0;
   int16_t energy=0,stars=0;
   uint32_t start=0;
   bool active=false;
@@ -59,6 +63,7 @@ struct RewardPresentation {
    return 4096-unsigned(uint64_t(inverse)*inverse*inverse/16777216);
   }
  } removed{};
+ CardTransformPresentation transforms{};
  // NCardUpgradeVfx displays only cards whose upgrade actually committed.
  // The bounded four-card fan covers Smith/Gnarled Hammer without a State
  // copy; model facts stay attached even if a later deck operation reorders it.
@@ -121,7 +126,7 @@ struct RewardPresentation {
   if(f.kind==RewardPickupKind::Relic)return uint32_t(now-f.start)<2260;
   return alive(f,now);
  }
- void append(RewardPickupKind kind,unsigned model,unsigned slot,int x,int y,uint32_t now,Card card={}){
+ void append(RewardPickupKind kind,unsigned model,unsigned slot,int x,int y,uint32_t now,Card card={},const EventDeckSnapshot*snapshot=nullptr){
   Flight*target=nullptr;
   for(auto&f:flights)if(!retained(f,now)){target=&f;break;}
   if(!target){target=&flights[0];for(auto&f:flights)if(uint32_t(now-f.start)>uint32_t(now-target->start))target=&f;}
@@ -131,6 +136,7 @@ struct RewardPresentation {
   *target=Flight{kind,uint16_t(model),uint16_t(slot),int16_t(x),int16_t(y),uint16_t(1100+hash%151),
                  uint16_t(2000+(hash>>8)%501),uint16_t(1000+(hash>>16)%751),0,now,card};
   if(kind==RewardPickupKind::Card)target->arrival=uint16_t(card_arrival(*target));
+  if(snapshot){target->snapshot=*snapshot;target->has_snapshot=true;}
  }
  bool hidden(RewardPickupKind kind,unsigned slot,uint32_t now)const{
   for(const auto&f:flights)if(f.kind==kind&&f.slot==slot&&alive(f,now))return true;

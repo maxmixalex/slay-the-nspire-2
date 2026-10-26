@@ -29,6 +29,7 @@ struct WorldTextContext {
  mutable char nested[2048]{};
  int option=-1;bool description=true;unsigned depth=0;int relic_position=-1;
  const char*full_key=nullptr;
+ const EventDeckSnapshot*snapshot=nullptr;
 };
 static bool wt_live_card(const WorldTextContext&x){
  const auto&a=*x.app;const auto&s=a.game;
@@ -44,6 +45,10 @@ static LocalizedValue wt_catalog_value(const void*opaque,const char*name,Localiz
   if(!live){int value=int(catalog.number);
    if(permanent)character_deck_description_value(s,x.card,x.deck,name,value);
    else if(!a.library&&x.facts){
+    if(x.snapshot){
+     if(x.card.kind==DefectGeneticAlgorithm&&(wt_equal(name,"Block")||wt_equal(name,"CalculatedBlock")))value=mn(9999,1+x.snapshot->genetic);
+     if(x.card.kind==NecroTheScythe&&wt_equal(name,"Damage"))value=mn(9999,13+x.snapshot->scythe);
+    }
     if(a.detail_has_facts&&a.detail_card==card_token(x.card)&&x.facts==&a.detail_facts){
      if(x.card.kind==DefectGeneticAlgorithm&&(wt_equal(name,"Block")||wt_equal(name,"CalculatedBlock")))value=mn(9999,1+a.detail_genetic);
      if(x.card.kind==NecroTheScythe&&wt_equal(name,"Damage"))value=mn(9999,13+a.detail_scythe);
@@ -311,10 +316,11 @@ static unsigned wt_card_display_keywords(const WorldTextContext&x){
  return bits;
 }
 static LocalizedValue wt_replay_value(const void*opaque,const char*name){return wt_equal(name,"Times")?wt_number(int(*static_cast<const unsigned*>(opaque))):LocalizedValue{};}
-void App::world_card_description(Card card,int target,char*out,size_t cap,int instance,int deck,const EventCardFacts*facts)const{
+void App::world_card_description(Card card,int target,char*out,size_t cap,int instance,int deck,const EventCardFacts*facts,const EventDeckSnapshot*snapshot)const{
  if(!cap)return;out[0]=0;if(card.kind>=CardKinds)return;
  if(card.kind<EventCardBadLuck&&content.version()<LocaleContentVersion){card_description(card,target,out,cap,instance,deck,facts);return;}
  WorldTextContext x{this,"cards",{},int(card.kind),target,0,card,instance,deck,facts};
+ x.snapshot=snapshot;
  if(!x.facts)x.facts=event_card_facts(game,card,instance,deck);
  wt_model_key(x,definitions[card.kind].key);char source[8192]{};TextBuffer b{source,sizeof source,0};b.text(content.card_string(card.kind,card.upgraded?2:1));
  wt_formatter(out,cap,&x).format(source);
@@ -377,13 +383,21 @@ void App::card_modifier_text(Card card,char*out,size_t cap,int instance,int deck
  if(!facts&&deck>=0&&deck<game.deck_count)facts=&game.event_cards.deck[deck];
  size_t n=0;while(n<cap&&out[n])++n;if(n>=cap)return;TextBuffer b{out,cap,n,&content};
  auto append=[&](const char*table,const char*key,int amount){
-  char full[160]{},text[2048]{};TextBuffer k{full,sizeof full,0};k.text(key);k.text(".description");WorldTextContext x{this,table,{},-1,-1,amount,card,instance,deck,facts};wt_model_key(x,full);
+  char full[160]{},text[2048]{};TextBuffer k{full,sizeof full,0};k.text(key);k.text(".extraCardText");WorldTextContext x{this,table,{},-1,-1,amount,card,instance,deck,facts};wt_model_key(x,full);
   char source[4096]{};TextBuffer raw{source,sizeof source,0};raw.text(content.world_string(table,full));wt_formatter(text,sizeof text,&x).format(source);
-  b.text("\n[purple]");b.text(content.world_title(table,key));b.text("[/purple]");if(*text){b.text(content.language()!=2?": ":"：");b.text(text);}
+  if(*text){b.text("\n[purple]");b.text(text);b.text("[/purple]");}
  };
- if(facts&&facts->enchantment!=EventEnchantment::None)append("enchantments",event_enchantment_key(facts->enchantment),facts->enchantment_amount);
+ // CardModel.GetDescription uses DynamicExtraCardText, never the complete
+ // hover description/title. NCard presents the independent enchantment tab.
+ const bool disabled=instance>=0&&instance<game.card_count&&game.event_cards.enchantment_disabled[instance];
+ if(facts&&!disabled)switch(facts->enchantment){
+  case EventEnchantment::Corrupted:case EventEnchantment::Goopy:case EventEnchantment::PerfectFit:
+  case EventEnchantment::Sown:case EventEnchantment::Swift:case EventEnchantment::Momentum:case EventEnchantment::Adroit:
+   append("enchantments",event_enchantment_key(facts->enchantment),facts->enchantment_amount);break;
+  default:break;
+ }
  if(instance>=0&&instance<game.card_count){unsigned affliction=game.enemy_world.affliction[instance];const char*keys[]={"","BOUND","ENTANGLED","GALVANIZED","HEXED","TAINTED","RINGING","SMOG"};
   if(content.version()>=LocaleContentVersion&&game.silent.inky[instance])append("enchantments","INKY",1);
-  if(affliction&&affliction<sizeof keys/sizeof*keys)append("afflictions",keys[affliction],game.enemy_world.affliction_amount[instance]);
+  if(affliction==1||affliction==3||affliction==5||affliction==6)append("afflictions",keys[affliction],game.enemy_world.affliction_amount[instance]);
  }
 }

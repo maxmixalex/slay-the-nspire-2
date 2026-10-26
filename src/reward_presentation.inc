@@ -1,5 +1,10 @@
 // Pinned reward UI observation. Only real acquisitions emitted by a UI input
 // scope create flights; restoring a save and ordinary rendering never do.
+static CardTransformPresentation::Face transform_card_snapshot(const App&a,const State&s,int index){
+ CardTransformPresentation::Face out{};if(index<0||index>=s.deck_count)return out;
+ out.model={s.deck[index],s.event_cards.deck[index],s.defect.genetic_deck[index],s.necro.scythe_deck[index]};
+ out.energy=int16_t(a.card_offer_cost(out.model.card,&out.model.facts));out.stars=int16_t(card_star_cost(s,out.model.card));return out;
+}
 void App::observe_deck_removing(const State&s,int index){
  // The picker already captures its selected card across reset_presentation.
  // Direct event/relic removals bypass that picker but use the same original
@@ -8,9 +13,41 @@ void App::observe_deck_removing(const State&s,int index){
  if(&s!=&game||index<0||index>=s.deck_count||combat_phase(s.phase)||s.phase==Phase::Remove||grimoire_select)return;
  auto&removed=reward_presentation.removed;removed=RewardPresentation::RemovedCard{};
  removed.card=s.deck[index];if(const auto*facts=event_card_facts(s,removed.card,-1,index))removed.facts=*facts;
+ removed.genetic=s.defect.genetic_deck[index];removed.scythe=s.necro.scythe_deck[index];
  removed.energy=int16_t(card_offer_cost(removed.card,&removed.facts));removed.stars=int16_t(card_star_cost(s,removed.card));
  card_description(removed.card,-1,removed.description,sizeof removed.description,-1,index,&removed.facts);
  removed.start=map_clock_ms;removed.active=true;
+ auto&transforms=reward_presentation.transforms;
+ if(transforms.pending){
+  transforms.pending=false;
+  transforms.add(transform_card_snapshot(*this,s,index),transforms.pending_token,index,map_clock_ms);
+  removed.active=false;
+ }
+}
+void App::observe_card_transform(const State&s,const RunHistoryNotice&notice){
+ if(&s!=&game||notice.kind!=RunHistoryEvent::CardTransformed||combat_phase(s.phase))return;
+ auto&m=reward_presentation;auto&t=m.transforms;
+ if(notice.flags==1){t.pending=true;t.pending_token=notice.detail;return;}
+ const int deck=int(s.deck_count)-1;if(deck<0||card_token(s.deck[deck])!=notice.detail)return;
+ if(notice.flags==2){
+  // The batch's source queue sorts the removed indices before append. Use
+  // that retained identity instead of pairing equal cards by visible order.
+  int removed_index=-1;unsigned expected=notice.detail;
+  const auto&w=s.world_relics;if(w.transform_cursor&&w.transform_cursor<=w.transform_count){
+   const auto&entry=w.transforms[w.transform_cursor-1];removed_index=entry.index;expected=entry.card.token;
+  }
+  for(unsigned i=0;i<t.count;++i){const auto&p=t.pairs[i];
+   if(!p.ready&&p.before.model.card.kind==notice.model&&p.expected==expected&&(removed_index<0||p.removed_index==removed_index)){
+    t.finish(i,transform_card_snapshot(*this,s,deck),deck,map_clock_ms);return;
+   }
+  }return;
+ }
+ const auto&removed=m.removed;
+ if(!removed.active||removed.start!=map_clock_ms||card_token(removed.card)!=notice.model)return;
+ CardTransformPresentation::Face before{};before.model={removed.card,removed.facts,removed.genetic,removed.scythe};before.energy=removed.energy;before.stars=removed.stars;
+ const int index=t.add(before,notice.detail,-1,map_clock_ms);
+ if(index>=0)t.finish(unsigned(index),transform_card_snapshot(*this,s,deck),deck,map_clock_ms);
+ m.removed.active=false;
 }
 static uint8_t reward_list_mode(const App&a){
  if(a.game.phase==Phase::Reward&&!a.reward_cards&&!a.grimoire_select)return 1;
@@ -105,7 +142,10 @@ void App::finish_reward_acquisition(const RewardAcquisitionSnapshot&old){
   if(old.potions[i]==Potion::Empty&&potion!=Potion::Empty){m.append(RewardPickupKind::Potion,unsigned(potion),i,old.potion_x,old.potion_y,map_clock_ms);changed=true;}
  }
  for(unsigned i=old.relic_count;i<ui_owned_relic_count(game);++i){m.append(RewardPickupKind::Relic,ui_owned_relic_id(game,i),i,old.relic_x,old.relic_y,map_clock_ms);changed=true;}
- if(old.context==2)for(unsigned i=old.deck_count;i<game.deck_count;++i){m.append(RewardPickupKind::Card,game.deck[i].kind,i,old.x,old.y,map_clock_ms,game.deck[i]);changed=true;}
+ if(old.context==2)for(unsigned i=old.deck_count;i<game.deck_count;++i){
+  bool transformed=false;for(unsigned j=0;j<m.transforms.count;++j){const auto&p=m.transforms.pairs[j];if(p.ready&&p.deck==int(i)&&CardTransformPresentation::active(p,map_clock_ms)){transformed=true;break;}}
+  if(!transformed){m.append(RewardPickupKind::Card,game.deck[i].kind,i,old.x,old.y,map_clock_ms,game.deck[i]);changed=true;}
+ }
  if(old.gold!=game.gold){m.begin_gold(old.gold,game.gold,map_clock_ms);changed=true;}
  if(changed)++m.serial; // Nested pointer/key/action observers share one acquisition.
 }

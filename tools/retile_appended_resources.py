@@ -204,6 +204,11 @@ def rewrite(source, plan, encoded):
     descriptor_at = cost_at + ((len(source.images) + 1) & ~1)
     t.require(descriptor_at <= t.DIRECTORY_LIMIT, 'Retiled directory exceeds resident bound')
     out = bytearray(source.data[:source.base_end])
+    for directory, clip in plan.get('clip_overrides', {}).items():
+        directory = int(directory)
+        t.require(tuple(clip[:3]) == source.clips[directory][:3],
+                  'A retile registration override changed a clip clock or frame range')
+        t.CLIP.pack_into(out, source.clip_at + directory * t.CLIP.size, *clip)
     out.extend(t.GLOBAL.pack(b'TIL1', 1, 16, 14, plan['tiles'], tile_count, index_count,
                             frame_count, descriptor_at, table, t.TILE_BYTES, old.per_group,
                             t.GROUP_LIMIT, t.ENCODED_LIMIT, cost_at, len(source.images)))
@@ -275,9 +280,11 @@ def rewrite(source, plan, encoded):
 
     for image, (offset, width, height, fmt, length) in enumerate(source.images):
         if image in plan['mapping']:
+            frame = plan['frames'][plan['mapping'][image]]
             new_at = descriptor_at + (old.frame_count + plan['mapping'][image]) * 16
+            width, height = frame['width'], frame['height']
             fmt, length = 6, 16
-            out[cost_at + image] = (plan['frames'][plan['mapping'][image]]['raw_bytes'] + 4095) // 4096
+            out[cost_at + image] = (frame['raw_bytes'] + 4095) // 4096
         elif fmt == 6:
             new_at = descriptor_at + offset - old.descriptors
         else:

@@ -316,6 +316,7 @@ struct App {
     RewardAcquisitionSnapshot reward_acquisition_snapshot()const;
     void finish_reward_acquisition(const RewardAcquisitionSnapshot&);
     void observe_deck_removing(const State&,int index);
+    void observe_card_transform(const State&,const RunHistoryNotice&);
     void sync_reward_presentation();
     bool card_reward_active()const;
     bool reward_list_interactive()const;
@@ -873,7 +874,7 @@ struct App {
     uint32_t tick_remainder=0;
     void render();
     void card_description(Card,int,char*,size_t,int instance=-1,int deck_index=-1,const EventCardFacts* facts=nullptr)const;
-    void world_card_description(Card,int,char*,size_t,int instance=-1,int deck_index=-1,const EventCardFacts* facts=nullptr)const;
+    void world_card_description(Card,int,char*,size_t,int instance=-1,int deck_index=-1,const EventCardFacts* facts=nullptr,const EventDeckSnapshot* snapshot=nullptr)const;
     void localized_text(const char* table,const char* key,char*,size_t,int model=-1,int actor=-1,int amount=0)const;
     mutable char monster_title_buffer[128]{};
     const char* monster_title(EnemyId)const;

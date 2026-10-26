@@ -54,7 +54,7 @@ int main(int argc,char**argv){
     click(HitKind::PotionSlot,1);CHECK(app.panel==4&&app.scroll==1&&!app.potion_targeting);app.advance(150);capture("potion-fire-menu");unchanged();
     // Original popup ratio with LCD controls, centered beneath its holder.
     const auto use_control=find(HitKind::Potion,1),discard_control=find(HitKind::UiAction,int(UiAction::DiscardPotion));
-    CHECK(use_control.x+potion_popup_layout::W/2-potion_popup_layout::ControlX==hud_potion_layout::center_x(1));
+    CHECK(use_control.x+potion_popup_layout::W/2-potion_popup_layout::ControlX==hud_potion_layout::center_x(1,potion_slot_count(app.game)));
     CHECK(use_control.y==33+potion_popup_layout::UseY&&use_control.w==potion_popup_layout::ControlW&&use_control.h==potion_popup_layout::ControlH);
     CHECK(discard_control.x==use_control.x&&discard_control.y==33+potion_popup_layout::DiscardY&&discard_control.w==use_control.w&&discard_control.h==use_control.h);
     click(HitKind::Potion,1);CHECK(app.potion_targeting&&app.game.potions[1]==Potion::Fire);CHECK(app.potion_popup_exit.active&&app.potion_popup_exit.alpha==255&&app.potion_popup_exit.thrown);

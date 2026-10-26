@@ -7,7 +7,7 @@ struct HandTile {
     uint8_t glow=0;
     const Content* owner=nullptr;
     Card card{};
-    uint32_t used=0;
+    uint32_t used=0,enchantment=0;
     uint32_t built=0;
     uint32_t sampled_frame=0,sampled_revision=0;
     int sampled_instance=-1,sampled_deck=-1,sampled_target=-1;
@@ -36,23 +36,26 @@ static void card_title(Canvas&c,const char*name,int x,int y,int width,uint16_t i
     for(int dx=-1;dx<=1;dx++)for(int dy=-1;dy<=1;dy++)if(dx||dy)c.centered(name,x+dx,y+dy,width,10,Ink);
     c.centered(name,x,y,width,10,ink);
 }
-static const HandTile& hand_tile(Canvas&c,int instance,const CombatCardMotion::Sprite* visual=nullptr,int deck=-1,const EventCardFacts*frozen_facts=nullptr,bool upgrade_preview=false){
+static const HandTile& hand_tile(Canvas&c,int instance,const CombatCardMotion::Sprite* visual=nullptr,int deck=-1,const EventCardFacts*frozen_facts=nullptr,bool upgrade_preview=false,const char*description_override=nullptr){
     auto&a=c.a;Card card=visual?visual->card:a.game.cards[instance];
     ++hand_tile_clock;const int preview_target=visual?-1:a.card_preview_target(instance);
     // A selected face is requested again by its automatic full-description
     // tip in the same frame. Reuse the already resolved instance sample;
     // target/revision/card identity guard input arriving between frames.
-    for(auto&t:hand_tiles)if(!frozen_facts&&!upgrade_preview&&t.valid&&t.owner==&a.content&&t.sampled_frame==small_card_frame&&
+    for(auto&t:hand_tiles)if(!frozen_facts&&!upgrade_preview&&!description_override&&t.valid&&t.owner==&a.content&&t.sampled_frame==small_card_frame&&
         t.sampled_revision==a.game.revision&&t.sampled_instance==instance&&t.sampled_deck==deck&&
         t.sampled_target==preview_target&&t.sampled_visual==visual&&t.card.kind==card.kind&&t.card.upgraded==card.upgraded){t.used=hand_tile_clock;return t;}
-    auto stamp=[&](HandTile&t){t.sampled_frame=small_card_frame;t.sampled_revision=a.game.revision;t.sampled_instance=frozen_facts?-2:instance;t.sampled_deck=deck;t.sampled_target=preview_target;t.sampled_visual=visual;};
+    auto stamp=[&](HandTile&t){t.sampled_frame=small_card_frame;t.sampled_revision=a.game.revision;t.sampled_instance=frozen_facts||description_override||upgrade_preview?-2:instance;t.sampled_deck=deck;t.sampled_target=preview_target;t.sampled_visual=visual;};
     int energy=visual?visual->energy:cost(a.game,instance),stars=visual?visual->stars:card_star_cost(a.game,card,instance);
     const auto*facts=frozen_facts?frozen_facts:event_card_facts(a.game,card,instance,deck);
+    const uint32_t enchantment=card_face_enchantment_key(a,facts,instance);
     const unsigned resource_styles=card_face_resource_styles(a,card,energy,stars,instance,facts,upgrade_preview);
     const bool resource_cross=card_face_resource_cross(a,card,energy,stars,instance);
     bool playable=visual||can_play_card(a.game,instance);
     const unsigned glow=!visual&&!a.combat_actions_locked()&&a.game.phase==Phase::Combat?hand_card_glow(a.game,card,instance,playable):0;
-    char description[512]{};a.card_description(card,preview_target,description,sizeof description,instance,deck,frozen_facts);
+    char description[512]{};
+    if(description_override){TextBuffer text{description,sizeof description,0};text.text(description_override);}
+    else a.card_description(card,preview_target,description,sizeof description,instance,deck,frozen_facts);
     int portrait=a.card_face_image(card,instance,deck,facts),frame=a.card_face_frame(card,instance,deck,facts);
     HandTile*slot=nullptr;
     // A holder index changes when a neighbour leaves the hand. Reuse the
@@ -60,12 +63,12 @@ static const HandTile& hand_tile(Canvas&c,int instance,const CombatCardMotion::S
     // shifted slot, while keeping ten bounded104x136 cache allocations.
     for(auto&t:hand_tiles){
         if(t.valid&&t.owner==&a.content&&t.card.kind==card.kind&&t.card.upgraded==card.upgraded&&t.energy==energy&&t.stars==stars&&
-           t.playable==playable&&t.glow==glow&&t.resource_cross==resource_cross&&t.resource_styles==resource_styles&&t.portrait==portrait&&t.frame==frame&&same_text(t.description,description)){t.used=hand_tile_clock;stamp(t);return t;}
+           t.playable==playable&&t.glow==glow&&t.resource_cross==resource_cross&&t.resource_styles==resource_styles&&t.enchantment==enchantment&&t.portrait==portrait&&t.frame==frame&&same_text(t.description,description)){t.used=hand_tile_clock;stamp(t);return t;}
         if(!slot||(!t.valid&&slot->valid)||(t.valid==slot->valid&&int32_t(t.used-slot->used)<0))slot=&t;
     }
     auto&t=*slot;t.used=hand_tile_clock;stamp(t);
     t.owner=&a.content;t.card=card;t.energy=energy;t.stars=stars;t.playable=playable;t.portrait=portrait;t.frame=frame;
-    t.glow=uint8_t(glow);
+    t.glow=uint8_t(glow);t.enchantment=enchantment;
     t.resource_styles=uint8_t(resource_styles);
     t.resource_cross=resource_cross;
     for(unsigned i=0;i<sizeof description;i++)t.description[i]=description[i];
@@ -124,8 +127,11 @@ static void draw_hand_tile(Canvas&c,const HandTile&t,HandPose p,bool focused,uns
     glow_width=(glow_width+1u)/2u;
     const bool glow=glow_width&&sdf.pixels&&sdf.format==0&&sdf.w==290&&sdf.h==181;
     const card_highlight::Context shader(glow_width,c.a.map_clock_ms,true);const unsigned transparent=shader.transparent_through();
-    constexpr int glow_x=HandPivotX-381*HandFaceW*1024/300,glow_y=HandPivotY-475*HandFaceH*1024/422;
-    constexpr int glow_w=759*HandFaceW*1024/300,glow_h=951*HandFaceH*1024/422;
+    // Highlight's 759x951 TextureRect uses KEEP_ASPECT_CENTERED on a square
+    // source texture: the actual drawing is 759x759, centered 96px lower.
+    // Stretching it to the container height makes the top protrude by 27px.
+    constexpr int glow_x=HandPivotX-381*HandFaceW*1024/300,glow_y=HandPivotY-379*HandFaceH*1024/422;
+    constexpr int glow_w=759*HandFaceW*1024/300,glow_h=759*HandFaceH*1024/422;
     if(focused){
         // The outline belongs to the card face, not to its transparent cache
         // allocation. Transform the same86x121 face and its2px inset with
@@ -166,12 +172,20 @@ static void draw_hand_tile(Canvas&c,const HandTile&t,HandPose p,bool focused,uns
 }
 static void combat_pile(Canvas&c,int image,int count,int x,int y,int tab){
     constexpr int size=combat_controls::PileSize;c.picture(image,x,y,size,size);
-    const int badge_x=x+(tab==1?12:tab==2?-8:4),badge_y=y+10;
-    if(c.a.content.version()>=Ui12ContentVersion)c.ui(I12_PileCount,badge_x,badge_y,20,20);
     char label[16]{};TextBuffer b{label,sizeof label,0};b.number(count);
     Canvas text=c;text.font_face=uint8_t(source_label_face(c.a.content.original_label_fonts(),5));
-    health_label(text,label,badge_x,badge_y+4,20,10,rgb(255,246,226),rgb(136,31,32),true);
-    c.hit(mn(x,badge_x),y,mx(x+size,badge_x+20)-mn(x,badge_x),30,HitKind::OpenPile,tab);
+    if(tab==3){
+        // Exhaust's pink count belongs in the center of its own embers.
+        // Only Draw/Discard have the separate red count-badge texture.
+        health_label(text,label,x,y+7,size,10,rgb(255,181,226),rgb(52,31,47),true);
+        c.hit(x,y,size,size,HitKind::OpenPile,tab);return;
+    }
+    // The authored badge is 48px on an 80px pile, not nearly as large as
+    // the pile itself. Its 15px LCD size leaves the complete lower edge.
+    constexpr int badge_size=15;const int badge_x=x+(tab==1?14:-5),badge_y=y+11;
+    if(c.a.content.version()>=Ui12ContentVersion)c.ui(I12_PileCount,badge_x,badge_y,badge_size,badge_size);
+    health_label(text,label,badge_x,badge_y+3,badge_size,8,rgb(255,246,226),rgb(136,31,32),true);
+    c.hit(mn(x,badge_x),y,mx(x+size,badge_x+badge_size)-mn(x,badge_x),26,HitKind::OpenPile,tab);
 }
 static void combat_hand_index(Canvas&c,unsigned index,HandPose p){
  if(!c.a.show_card_indices||p.scale<=0)return;
@@ -188,7 +202,10 @@ static void combat_hand_index(Canvas&c,unsigned index,HandPose p){
 static void combat_player_speech(Canvas&c){
     auto&a=c.a;const unsigned age=a.map_clock_ms-a.combat_speech_at;
     if(!a.combat_speech_key||age>=1800u)return;
-    const auto p=a.combat_player_pose();const int x=mx(5,mn(199,p.center_x-24)),y=mx(33,mn(102,p.body_top-43));
+    const auto p=a.combat_player_pose();
+    // The source speaker position is on the player's right. Anchor the last
+    // smoke puff to that side instead of leaving the tail left of the actor.
+    const int x=mx(5,mn(199,p.center_x+p.body_width/4+3)),y=mx(33,mn(102,p.body_top-43));
     const unsigned alpha=age<140?age*255/140:age<1450?255:(1800-age)*255/350;
     Canvas layer=c;layer.opacity=uint8_t(div255(layer.opacity*alpha));
     if(a.content.version()>=Ui12ContentVersion){
@@ -282,7 +299,7 @@ static bool combat_stars_visible(App&a){
 static void combat_energy(Canvas&c,bool stars,bool include_stars=true){
     auto&a=c.a;const auto&s=a.game;const int energy=a.combat_energy();const bool empty=energy==0;
     // Readable LCD resource rail stays below the raised creature bars.
-    // Regent's smaller Stars counter sits beside, never under the energy.
+    // Regent's smaller Stars counter sits tightly below-left of the energy.
     const int left=combat_controls::EnergyX,top=combat_controls::EnergyY;
     const uint32_t delta=a.map_clock_ms-a.energy_rotation_tick;
     a.energy_rotation_mdeg=(a.energy_rotation_mdeg+(delta%72000u)*(a.energy_rotation_zero?5u:30u))%360000u;

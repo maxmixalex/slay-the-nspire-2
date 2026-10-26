@@ -362,6 +362,14 @@ void App::confirm_deck_choice(){
     const auto rest_selection=room_presentation.rest.selection;
     RewardPresentation::Upgrades upgraded;
     RewardPresentation::RemovedCard removed;
+    CardTransformPresentation transformed;
+    int transform_index=-1;
+    if(phase==Phase::Transform){
+        transformed=reward_presentation.transforms;CardTransformPresentation::Face before{};
+        before.model={game.deck[index],game.event_cards.deck[index],game.defect.genetic_deck[index],game.necro.scythe_deck[index]};
+        before.energy=int16_t(card_offer_cost(before.model.card,&before.model.facts));before.stars=int16_t(card_star_cost(game,before.model.card));
+        transform_index=transformed.add(before,0,index,map_clock_ms);
+    }
     if(phase==Phase::Remove||grimoire_select){
         removed.card=game.deck[index];if(const auto*facts=event_card_facts(game,removed.card,-1,index))removed.facts=*facts;
         removed.energy=int16_t(card_offer_cost(removed.card,&removed.facts));removed.stars=int16_t(card_star_cost(game,removed.card));
@@ -375,7 +383,13 @@ void App::confirm_deck_choice(){
     bool ok=phase==Phase::Upgrade?upgrade_card(game,index):phase==Phase::Remove?remove_card(game,index):transform_card(game,index);
     if(ok){
       if(phase==Phase::Upgrade)upgraded.add(game.deck[index],game.event_cards.deck[index],index,map_clock_ms);
+      if(transform_index>=0){CardTransformPresentation::Face after{};
+        after.model={game.deck[index],game.event_cards.deck[index],game.defect.genetic_deck[index],game.necro.scythe_deck[index]};
+        after.energy=int16_t(card_offer_cost(after.model.card,&after.model.facts));after.stars=int16_t(card_star_cost(game,after.model.card));
+        transformed.finish(unsigned(transform_index),after,index,map_clock_ms);
+      }
       reset_presentation(true);if(removed.active)reward_presentation.removed=removed;if(upgraded.count)reward_presentation.upgrades=upgraded;
+      if(transform_index>=0)reward_presentation.transforms=transformed;
       if(upgraded.count)for(unsigned i=0;i<3;++i)screen_effect(ScreenShakePresentation::Punch,ScreenShakePresentation::Weak,300,2048,250u+i*250u);
       if(rest_selection.pending&&game.world.active&&game.world.room_type==unsigned(WorldRoom::Rest)){
         room_presentation.rest.restore_selection(rest_selection,map_clock_ms);sync_camp_presentation();

@@ -99,9 +99,11 @@ static void turn_banner_frame(Canvas&c,TurnBannerPresentation::Frame frame){
         const auto resolve=[](const void*context,const char*key)->LocalizedValue{return wt_equal(key,"turnNumber")?LocalizedValue{true,*static_cast<const int*>(context),1,nullptr}:LocalizedValue{};};
         LocalizedTemplate(number,sizeof number,resolve,&frame.number).for_language(a.content.language()).format(a.content.world_string("gameplay_ui","TURN_COUNT"));
         layer.font_face=a.content.original_label_fonts()?5:0;Canvas counter_outline=layer;counter_outline.opacity=uint8_t(div255(counter_outline.opacity*128));
-        const int counter_border=TurnBannerPresentation::outline_pixels(16);
-        turn_banner_outline(counter_outline,number,160,104+frame.offset-combat_controls::SceneLift,4096,7,counter_border,true);
-        layer.centered(number,0,104+frame.offset-combat_controls::SceneLift,320,7,rgb(135,206,235));
+        // The 7px band contains only sparse scene glyphs. Localized turn
+        // counters need the complete 10px band (including 第 / 回 / 合).
+        const int counter_border=TurnBannerPresentation::outline_pixels(16),counter_y=103+frame.offset-combat_controls::SceneLift;
+        turn_banner_outline(counter_outline,number,160,counter_y,4096,10,counter_border,true);
+        layer.centered(number,0,counter_y,320,10,rgb(135,206,235));
     }
 }
 static void turn_banner_screen(Canvas&c){

@@ -161,7 +161,14 @@ bool App::world_selection_preview_card(unsigned index,WorldSelectionCard&out)con
         const int center=after?960:710,offset=after?((int(at)*2+1)*150*scale/1000+int(at)*30):(-((int(count-at)*2-1)*150*scale/1000)-int(count-at-1)*30);
         cx=(center+offset)*4/21;
     }else if(paired){cx=after?213:107;if(kind==WorldSelectionKind::Enchant){cx=after?156:59;scale=900;}}
-    else{
+    else if(kind==WorldSelectionKind::Enchant){
+        // Keep every preview left of the description column too, including
+        // the three-card Gnarled Hammer/Kifuda selector.
+        scale=count<=2?850:600;
+        const unsigned columns=count<=2?count:3;
+        cx=106+(2*int(at%columns)-int(columns)+1)*(count<=2?98:64)/2;
+        if(count>3)cy=at<3?65:153;
+    }else{
         scale=count>6?550:count>3?800:1000;
         const unsigned displayed=kind==WorldSelectionKind::Bundle?3:count;
         const int slot=kind==WorldSelectionKind::Bundle?int(displayed-1-at):int(at);

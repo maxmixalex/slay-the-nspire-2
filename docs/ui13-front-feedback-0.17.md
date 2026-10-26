@@ -32,7 +32,9 @@ normally and gold on hover/press, as in `NDropdownScrollbar`.
 
 The dropdown has its own nonpersistent scroll offset. Pointer dragging and
 wheel scrolling change that offset without changing the language selection or
-the Settings page behind it. Direction-key navigation keeps the selected
+the Settings page behind it. Its modal layer also suppresses the covered
+Settings controls' hover animation while retaining the list's own hover.
+Direction-key navigation keeps the selected
 language visible, and selecting the active language retains the original
 open-list behavior. Older UI40 resource packs retain a functioning scrollbar
 using their existing large source assets until the matched new pack is loaded.
@@ -66,6 +68,9 @@ directory, publication and complete validation.
   conditions and unknown-value preservation for the empty formatter.
 - The locale binding inventory passes: 935 UI bindings and 142 additional
   original keys, without introducing unreviewed literal translations.
+- Every port-credit grapheme in all sixteen languages successfully rasterizes
+  at 8, 10 and 12 pixels through the restored original font chain, including
+  Thai combining marks and the Cyrillic, Korean, Japanese and Chinese text.
 - The frontend integration regression now exercises the installed sixteen-
   language dropdown's pointer drag, wheel, keyboard focus, modal ownership and
   unchanged canonical save. It also clicks the history Next arrow with an

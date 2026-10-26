@@ -1,5 +1,6 @@
 #include "app.hpp"
-#include "ui12_assets.hpp"
+#include "ui13_assets.hpp"
+#include "architect_attack_assets.hpp"
 #include "phobia_swarm.hpp"
 #include "enemy_command_timing.hpp"
 #include "screen_shake_sources.hpp"
@@ -43,6 +44,7 @@ namespace spire {
 #include "character_ui.inc"
 #include "combat_feedback_ui.inc"
 #include "canvas.inc"
+static void architect_scene_begin(App&,bool);
 #include "screen_shake_ui.inc"
 #include "architect_scene_ui.inc"
 #include "small_material_ui7.inc"
@@ -131,6 +133,7 @@ static void log_line(App&a,Log l,char*b,size_t n){
 #include "status_ui.inc"
 #include "world_intent_ui.inc"
 #include "combat_ui.inc"
+#include "architect_effects_ui13.inc"
 static void large_card(Canvas&c,Card card,int x,int y,bool selected,int fee=-2,int stars=-2,int instance=-1,int deck_index=-1,const EventCardFacts*facts=nullptr){
     if(selected){c.box(x-2,y-2,84,116,Gold);c.box(x-1,y-1,82,114,Gold);}
     draw_card_face(c,card,x,y,80,112,fee,stars,instance,deck_index,facts);
@@ -344,7 +347,12 @@ void App::render(){
         else if(!combat_linger&&!panel&&!library&&combat_choice_ready()&&choice_phase(game.phase)&&!choice_peeking)card_choice_screen(c);
         combat_peek_button(c);
         potion_popup_exit_screen(c);
-        if(panel&&!(panel==3&&map_window.visible)){scroll=panel_scroll;panels(c);}hud(c);
+        if(panel&&!(panel==3&&map_window.visible)){scroll=panel_scroll;panels(c);}
+        const bool selection_confirmation=deck_candidate>=0||(deck_selection.preview&&world_selection_kind()!=WorldSelectionKind::None);
+        const bool hud_pointer=pointer.visible;const int hud_keyboard=hud_focus,hud_hit_count=hit_count;
+        if(selection_confirmation){pointer.visible=false;hud_focus=-1;}
+        hud(c);
+        if(selection_confirmation){pointer.visible=hud_pointer;hud_focus=hud_keyboard;hit_count=hud_hit_count;}
         if(!combat_linger||combat_feedback.active)turn_banner_screen(c);
         reward_pickup_screen(c);
         if(paused)native_pause_screen(c);

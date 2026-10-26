@@ -13,9 +13,17 @@ static void world_enchantment_description(Canvas&c){
     auto&a=c.a;int amount=0;const auto enchantment=a.world_selection_enchantment(&amount);
     if(enchantment==EventEnchantment::None)return;
     CardHoverTarget owner{};HoverTip tip{};tip.kind=HoverTipKind::Enchantment;tip.key=event_enchantment_key(enchantment);tip.amount=int16_t(amount);
-    char title[128]{},description[512]{};format_card_hover_tip(a,owner,tip,title,sizeof title,description,sizeof description);
+    char title[128]{},description[2048]{};format_card_hover_tip(a,owner,tip,title,sizeof title,description,sizeof description);
     const int image=a.content.world_image("enchantments",tip.key);
-    source_hover_box(c,title,description,212,24,104,image);
+    // This pane owns a column, so its fit-content height must never move it
+    // over the prompt or the bottom confirmation. Long locales scroll in
+    // the same source hover skin, independently of the card-grid scrollbar.
+    constexpr int x=212,y=24,w=104,max_height=187;
+    const int step=source_hover_step(c),overhead=source_hover_overhead(c),lines=source_hover_paragraph(c,description,0,0,source_hover_body_width(w),0);
+    const int height=mn(max_height,overhead+lines*step),visible=mx(0,(height-overhead)/step);
+    const HoverRect rect{x,y,w,height};const uint32_t age=source_hover_age(a,title,description,x,y);
+    source_hover_skin(c,rect);source_hover_title(c,title,rect,image,age);
+    source_hover_paragraph(c,description,x+SourceHoverLeft,y+SourceHoverTop+step,source_hover_body_width(w),visible,source_hover_scroll(lines-visible,age,950));
 }
 static void world_bundle_banner(Canvas&c){
     auto&a=c.a;const auto&returned=a.card_grids[unsigned(CardGridSurface::WorldChoice)].faces[15];
@@ -61,7 +69,7 @@ static void native_world_selection_screen(Canvas&c,const uint16_t*ids,unsigned c
     const bool simple=kind==WorldSelectionKind::Simple,bundle=kind==WorldSelectionKind::Bundle;
     if(bundle){a.configure_card_grid(CardGridSurface::WorldChoice,int(count),s.revision);world_bundle_banner(c);if(!a.deck_selection.preview)world_bundle_grid(c,ids,count);}
     else{
-        auto&grid=a.configure_card_grid(CardGridSurface::WorldChoice,int(count),s.revision);CardGridPainter painter{c,grid};
+        auto&grid=a.configure_card_grid(CardGridSurface::WorldChoice,int(count),s.revision);CardGridPainter painter{c,grid,!a.deck_selection.preview};
         int portraits[24];unsigned portrait_count=0;
         for(int i=grid.first();i<grid.last();++i){const int id=ids[i];Card card=simple?card_from_token(s.phase==Phase::WorldRelicChoice?s.world_relics.offers[id]:s.original_events.offers[id]):s.deck[id];
             const EventCardFacts*facts=simple?(s.phase==Phase::WorldRelicChoice?&s.world_relics.offer_facts[id]:&s.original_events.offer_facts[id]):nullptr;
@@ -90,7 +98,7 @@ static void native_world_selection_screen(Canvas&c,const uint16_t*ids,unsigned c
             draw_card_face(face,model.card,x,y,w,h,-2,-2,-1,model.deck,&model.facts,nullptr,nullptr,true,model.upgraded);
             if(model.hover)c.hit(x,y,w,h,HitKind::WorldPreviewCard,int(i));
         }
-        if(kind==WorldSelectionKind::Transform||((kind==WorldSelectionKind::Upgrade||kind==WorldSelectionKind::Enchant)&&a.world_selection_max()==1&&a.choice_selected_count))card_selection_upgrade_arrows(c);
+        if(kind==WorldSelectionKind::Transform||((kind==WorldSelectionKind::Upgrade||kind==WorldSelectionKind::Enchant)&&a.world_selection_max()==1&&a.choice_selected_count))card_selection_upgrade_arrows(c,kind==WorldSelectionKind::Enchant?108:160);
         native_original_back(c,a.deck_selection.preview_opened);
         native_original_confirm(c,UiAction::ConfirmWorldChoice,a.deck_selection.preview_opened,a.world_selection_confirmable());
     }else{

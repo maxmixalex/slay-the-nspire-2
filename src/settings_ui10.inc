@@ -39,7 +39,8 @@ static void frontend_settings_screen(Canvas&c){
  const bool english=a.content.language()!=2,source_art=a.content.has_settings_ui10_assets();
  const unsigned bold=source_label_face(a.content.original_label_fonts(),5);const uint16_t cream=rgb(255,246,226),gold=rgb(239,200,81);
  const auto label=[&](const char*key,const char*eng,const char*zhs){return frontend_text(a,"settings_ui",key,english?eng:zhs);};
- const auto pointed=[&](int x,int y,int w,int h){return a.pointer.visible&&a.pointer.x>=x&&a.pointer.x<x+w&&a.pointer.y>=y&&a.pointer.y<y+h;};
+ bool dropdown_layer=false;
+ const auto pointed=[&](int x,int y,int w,int h){return (!a.settings_language_open||dropdown_layer)&&a.pointer.visible&&a.pointer.x>=x&&a.pointer.x<x+w&&a.pointer.y>=y&&a.pointer.y<y+h;};
  const auto pressed=[&](UiAction action){return a.pointer.held&&a.pointer.captured.kind==HitKind::UiAction&&a.pointer.captured.value==int(action);};
  const auto text=[&](Canvas layer,const char*value,int x,int y,int w,int h,unsigned face=0,uint16_t color=0,bool center=false,int px=LabelFont){
   profile_text_box(layer,value,x,y,w,h,{px,face,color?color:cream,128},center,true,{},true,false,0,pointed(x,y,w,h)||!a.pointer.visible);};
@@ -153,7 +154,8 @@ static void frontend_settings_screen(Canvas&c){
   c.ui(I6_ScrollbarGrabber,InputTrackLeft-3,top+int(a.settings_top)*(height-14)/int(InputMaximum),14,14);
   c.hit(InputTrackLeft-5,top-7,18,height+14,HitKind::SettingsScroll);
  }
- native_original_back(c);
+ const bool back_pointer=a.pointer.visible;if(a.settings_language_open)a.pointer.visible=false;
+ native_original_back(c);a.pointer.visible=back_pointer;
  if(hover>=1&&!a.settings_language_open&&!a.frontend_confirm){
   const char*titles[]={"","SCREENSHAKE_HEADER","FASTMODE","PHOBIA_MODE","SHOW_RUN_TIMER_HEADER","SHOW_HAND_CARD_COUNT_HEADER","LONG_PRESS_CONFIRMATION_HEADER","TEXT_EFFECTS","SKIP_INTRO_LOGO_HEADER","KEYBOARD_ONLY_MODE_HEADER"};
   const char*descriptions[]={"","SCREENSHAKE_DESCRIPTION","FASTMODE_DESCRIPTION","PHOBIA_MODE_DESCRIPTION","SHOW_RUN_TIMER_DESCRIPTION","SHOW_HAND_CARD_COUNT_DESCRIPTION","LONG_PRESS_CONFIRMATION_DESCRIPTION","TEXT_EFFECTS_DESCRIPTION","SKIP_INTRO_LOGO_DESCRIPTION","KEYBOARD_ONLY_MODE_DESCRIPTION"};
@@ -161,6 +163,7 @@ static void frontend_settings_screen(Canvas&c){
   if(*body)source_hover_box(c,hover==8?label(titles[hover],"Skip Intro Logo","跳过开场Logo动画"):a.content.world_string("settings_ui",titles[hover]),body,TooltipLeft,hover_y);
  }
  if(a.settings_language_open){
+  dropdown_layer=true;
   const unsigned count=locale_language_count(a.available_languages()),visible=DropdownVisible;
   const unsigned maximum=language_maximum(count);if(a.settings_language_top>maximum)a.settings_language_top=uint8_t(maximum);
   const unsigned top=a.settings_language_top;

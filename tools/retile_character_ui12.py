@@ -114,10 +114,20 @@ def replacements_from_manifest(source, path):
     return result
 
 
-def make_plan(source, work, selected, replacements=None, precision=2):
+def make_plan(source, work, selected, replacements=None, precision=2, *,
+              allow_geometry=False, clip_overrides=None):
     replacements = replacements or {}
     selected = set(selected)
     t.require(set(replacements) <= selected, 'Manifest contains an unselected image')
+    clip_overrides = clip_overrides or {}
+    for directory, clip in clip_overrides.items():
+        original = source.clips[directory]
+        t.require(allow_geometry and tuple(clip[:3]) == original[:3],
+                  'A replacement may not change frame IDs, counts or clocks')
+        t.require(set(range(clip[0], clip[0]+clip[1])) <= selected,
+                  'A geometry override must replace every frame in its clip')
+        t.require(-640 <= clip[3] <= 640 and -480 <= clip[4] <= 480 and
+                  0 < clip[5] < 1000000, 'Replacement registration is unbounded')
     old = t.TileReader(source)
     used = live_tiles(source, old, selected)
     np.save(work/'protected-tiles.npy', used)
@@ -134,7 +144,8 @@ def make_plan(source, work, selected, replacements=None, precision=2):
                     width, height, fmt, raw = old.image_raw(image)
                 else:
                     width, height, fmt, raw = source.image_raw(image)
-                t.require((width, height) == source.images[image][1:3] and fmt == 4,
+                t.require((allow_geometry or (width, height) == source.images[image][1:3]) and
+                          0 < width <= 320 and 0 < height <= 240 and fmt == 4,
                           'Replacement geometry or sparse format differs')
                 raw = quantize_image(raw, width, height, fmt, precision)
                 original_bytes += len(raw)
@@ -177,7 +188,8 @@ def make_plan(source, work, selected, replacements=None, precision=2):
                     tile_ranges=tile_ranges, index_ranges=ranges, require_smaller=False,
                     precision='454a6' if precision == 2 else 'exact', original_sparse_bytes=original_bytes,
                     dead_slots=len(catalog.free), recycled_slots=catalog.next_free,
-                    reused_tile_references=catalog.reused, protected_tiles=int(np.count_nonzero(used)))
+                    reused_tile_references=catalog.reused, protected_tiles=int(np.count_nonzero(used)),
+                    allow_geometry=allow_geometry, clip_overrides=clip_overrides)
         emit('character_retile_plan', images=len(selected), changed_groups=len(changed),
              new_tiles=catalog.count-old.tile_count, recycled_slots=catalog.next_free,
              reused_references=catalog.reused)
@@ -190,7 +202,10 @@ def verify(source, output, plan, work):
     target = view(output)
     old, new = t.TileReader(source), t.TileReader(target)
     selected = set(plan['selected'])
-    t.require(source.counts == target.counts and source.clips == target.clips and
+    expected_clips = list(source.clips)
+    for directory, clip in plan.get('clip_overrides', {}).items():
+        expected_clips[int(directory)] = tuple(clip)
+    t.require(source.counts == target.counts and expected_clips == target.clips and
               source.cards == target.cards and source.aux == target.aux, 'Stable catalog or clip clock changed')
     used = np.load(work/'protected-tiles.npy')
     checked_tiles = 0
@@ -208,15 +223,18 @@ def verify(source, output, plan, work):
         t.require(old.group(old.tile_groups+group)[0] == new.group(new.tile_groups+group)[0],
                   'A pre-existing index group changed')
     for image, entry in enumerate(source.images):
-        t.require(entry[1:3] == target.images[image][1:3], 'Image dimensions changed')
         if image in selected:
             frame = plan['frames'][plan['mapping'][image]]
+            t.require(target.images[image][1:3] == (frame['width'], frame['height']),
+                      'Replacement image dimensions differ')
             t.require(t.sha256(new.image_raw(image)[3]) == frame['raw_sha256'], 'Repaired character pixels differ')
-        elif entry[3] == 6:
+        else:
+            t.require(entry[1:3] == target.images[image][1:3], 'Protected image dimensions changed')
+        if image not in selected and entry[3] == 6:
             a = t.DESCRIPTOR.unpack_from(source.data, entry[0])
             b = t.DESCRIPTOR.unpack_from(output, target.images[image][0])
             t.require(a == b, 'Protected tiled image registration changed')
-        else:
+        elif image not in selected:
             t.require(source.image_raw(image) == target.image_raw(image), 'Unselected retained image changed')
     for i in range(len(source.glyphs)):
         t.require(source.glyphs[i][:1]+source.glyphs[i][2:] == target.glyphs[i][:1]+target.glyphs[i][2:] and
@@ -225,7 +243,9 @@ def verify(source, output, plan, work):
         t.require(source.string_payload(i) == target.string_payload(i), 'Localized text changed')
     return dict(repaired_images=len(selected), exact_protected_tiles=checked_tiles,
                 existing_index_groups_exact=old.index_groups, glyphs_unchanged=len(source.glyphs),
-                strings_unchanged=len(source.strings), all_frames_dimensions_clocks_preserved=True)
+                strings_unchanged=len(source.strings), all_frames_clocks_preserved=True,
+                all_frames_dimensions_clocks_preserved=not plan.get('allow_geometry', False),
+                registered_clip_layouts=len(plan.get('clip_overrides', {})))
 
 
 def main():

@@ -94,6 +94,7 @@ static void hud_static_tip(Canvas&c,const char*key,int x,int y=27,int width=Sour
     source_hover_box(c,title,body,x,y,width);
 }
 static void hud_portrait_tip(Canvas&c){
+    if(!hud_portrait_enabled(c.a.game))return;
     const auto&definition=character_definitions[unsigned(c.a.game.character)];
     const char*name=c.a.content.world_title("characters",definition.key);
     HudTipContext context{{&c.a,"None"},"","",*name?name:definition.name};
@@ -102,8 +103,10 @@ static void hud_portrait_tip(Canvas&c){
     formatter.for_language(c.a.content.language()).format(c.a.content.world_string("ascension",level?"PORTRAIT_TITLE":"PORTRAIT_TITLE_NO_ASCENSION"));
     TextBuffer description{body,sizeof body,0};
     if(level){for(unsigned i=1;i<=level;++i){char key[32]{};TextBuffer k{key,sizeof key,0};k.text("LEVEL_");if(i<10)k.ch('0');k.number(i);k.text(".title");
-        if(i>1)description.ch('\n');description.text(c.a.content.world_string("ascension",key));}}
-    else{char key[80]{};TextBuffer k{key,sizeof key,0};k.text(definition.key);k.text(".description");c.a.localized_text("characters",key,body,sizeof body);}
+        // PORTRAIT_DESCRIPTION is {ascensions:list: +{}|\n} in every one
+        // of the sixteen pinned locales. Titles remain fully localized.
+        if(i>1)description.ch('\n');description.text(" +");description.text(c.a.content.world_string("ascension",key));}}
+    if(c.a.game.run_options.mode!=RunMode::Standard){if(level)description.ch('\n');description.text(c.a.content.world_string("gameplay_ui","ACHIEVEMENTS_LOCKED"));}
     source_hover_box(c,*title?title:context.character,body,3,26);
 }
 static const HitRegion* hud_focused_hit(const App&a){
@@ -111,7 +114,7 @@ static const HitRegion* hud_focused_hit(const App&a){
     const int slots=int(potion_slot_count(a.game));HitKind kind=HitKind::HudInfo;int value=a.hud_focus;
     if(a.hud_focus>=HudRelicFocusFirst){kind=HitKind::OwnedRelic;value=a.hud_focus-HudRelicFocusFirst;}
     else if(a.hud_focus>=2&&a.hud_focus<slots+2){kind=HitKind::PotionSlot;value=a.hud_focus-2;}
-    else if(a.hud_focus>=slots+2){static const int info[]={HudRoom,HudFloor,HudBoss,HudPortrait};const unsigned at=unsigned(a.hud_focus-slots-2);if(at>=4)return nullptr;value=info[at];}
+    else if(a.hud_focus>=slots+2){static const int info[]={HudRoom,HudFloor,HudBoss,HudPortrait,HudTimer};const unsigned at=unsigned(a.hud_focus-slots-2);if(at>=5)return nullptr;value=info[at];}
     for(int i=0;i<a.hit_count;++i)if(a.hits[i].kind==kind&&a.hits[i].value==value)return &a.hits[i];
     return nullptr;
 }
@@ -124,6 +127,7 @@ static void hud_hover_tip(Canvas&c){
         else if(h->value==HudRoom)hud_static_tip(c,hud_room_info(a.game).room_tip,h->x);
         else if(h->value==HudBoss){const auto info=hud_room_info(a.game);hud_static_tip(c,info.second_boss==EncounterId::None?"BOSS":"DOUBLE_BOSS",h->x);}
         else if(h->value==HudPortrait)hud_portrait_tip(c);
+        else if(h->value==HudTimer){char elapsed[24]{};a.run_timer_label(elapsed,sizeof elapsed);source_hover_box(c,a.content.world_string("stats_screen","TIP_PLAYTIME.header"),elapsed,h->x,27);}
     }else if(h->kind==HitKind::Command&&h->y==0){const auto key=Key(h->value);const char*name=key==Key::Inspect?"DECK":key==Key::Map?"MAP":key==Key::Back?"SETTINGS":nullptr;if(name)hud_static_tip(c,name,h->x+h->w-SourceHoverWidth);}
     else if(h->kind==HitKind::OpenPile){const char*name=h->value==1?"DRAW_PILE":h->value==2?"DISCARD_PILE":h->value==3?"EXHAUST_PILE":nullptr;if(name)hud_static_tip(c,name,h->x<160?h->x+h->w+2:h->x-SourceHoverWidth-2,h->y);}
 }
@@ -149,19 +153,24 @@ static void hud_room_icon(Canvas&c,const char*key,int x,int y,int w,int h,bool p
     hud_room_picture(outline,asset->outline,x,y,w,h,placeholder,tint);hud_room_picture(c,asset->icon,x,y,w,h,placeholder,tint);
 }
 static void hud_room_nodes(Canvas&c){
-    auto&a=c.a;const auto info=hud_room_info(a.game);
-    if(info.room_enabled){hud_room_icon(c,info.room_key,201,2,10,17);c.hit(200,0,12,22,HitKind::HudInfo,HudRoom);}
-    c.ui(U_TopFloor,212,4,11,14);char floor[16]{};TextBuffer text{floor,sizeof floor,0};text.number(a.game.floor);
-    c.text_fitted(floor,223,4,14,10,rgb(197,218,206));c.hit(212,0,25,22,HitKind::HudInfo,HudFloor);
-    if(!info.boss_enabled)return;
-    if(info.second_boss!=EncounterId::None){
+    auto&a=c.a;const auto info=hud_room_info(a.game);const auto p=hud_room_geometry(a.game);
+    if(info.room_enabled){hud_room_icon(c,info.room_key,p.room,2,10,17);c.hit(p.room,0,10,22,HitKind::HudInfo,HudRoom);}
+    c.ui(U_TopFloor,p.floor,4,10,14);char floor[16]{};TextBuffer text{floor,sizeof floor,0};text.number(a.game.floor);
+    c.text_fitted(floor,p.floor+10,4,12,10,rgb(197,218,206));c.hit(p.floor,0,22,22,HitKind::HudInfo,HudFloor);
+    if(info.boss_enabled&&info.second_boss!=EncounterId::None){
         static const uint16_t act_tints[]={rgb(135,114,86),rgb(83,74,98),rgb(110,119,80),rgb(96,113,124)};
         const unsigned region=a.game.world.rooms[a.game.world.act_index].region;
         const auto*second=encounter_definition(info.second_boss);
-        if(second)hud_room_icon(c,second->key,248,6,8,8,info.second_placeholder,act_tints[region<4?region:0]);
+        if(second)hud_room_icon(c,second->key,p.boss+9,6,8,8,info.second_placeholder,act_tints[region<4?region:0]);
     }
-    const auto*boss=encounter_definition(info.boss);if(boss)hud_room_icon(c,boss->key,238,2,11,17);
-    c.hit(237,0,20,22,HitKind::HudInfo,HudBoss);
+    if(info.boss_enabled){const auto*boss=encounter_definition(info.boss);if(boss)hud_room_icon(c,boss->key,p.boss,2,11,17);
+        c.hit(p.boss,0,info.second_boss==EncounterId::None?11:17,22,HitKind::HudInfo,HudBoss);}
+    if(a.run_timer_visible()){
+        c.ui(I9_RunTimerIcon,p.timer,7,7,7);
+        char elapsed[24]{};a.run_timer_label(elapsed,sizeof elapsed);const int available=257-(p.timer+10);
+        if(available>=c.width(elapsed,8))c.text(elapsed,p.timer+10,6,8,rgb(255,246,226));
+        c.hit(p.timer,0,257-p.timer,22,HitKind::HudInfo,HudTimer);
+    }
 }
 static void hud_deck_count(Canvas&c,int right=280){
  auto&a=c.a;char label[16]{};TextBuffer b{label,sizeof label,0};b.number(a.game.deck_count);
@@ -185,11 +194,12 @@ static int hud_potion_shake(const App&a){
 }
 static void hud_potion_container(Canvas&c){
     using namespace hud_potion_layout;auto&s=c.a.game;
-    c.nine_ui(U_TopBarBackdrop,Left,1,Width,20,7,6,7,6);
+    const int slots=potion_slot_count(s),holder_width=cell(slots),belt_width=width(slots);
+    c.nine_ui(U_TopBarBackdrop,Left,1,belt_width,20,7,6,7,6);
     const unsigned error=c.a.potion_belt_motion.error_alpha(c.a.map_clock_ms);
-    if(error&&c.a.content.version()>=Ui7ContentVersion)c.nine_ui(I7_PotionErrorBackground,Left,1,Width,20,7,6,7,6,error);
+    if(error&&c.a.content.version()>=Ui7ContentVersion)c.nine_ui(I7_PotionErrorBackground,Left,1,belt_width,20,7,6,7,6,error);
     const int shake=hud_potion_shake(c.a);
-    const int slots=potion_slot_count(s),width=Cell;
+    const int width=holder_width;
     c.a.potion_page=uint8_t(mn(int(c.a.potion_page),(slots-1)/Visible));
     const int first=int(c.a.potion_page)*Visible,visible=mn(slots-first,Visible);
     for(int i=0;i<visible;i++){
@@ -211,7 +221,7 @@ static void hud_potion_container(Canvas&c){
         }
         c.hit(x,0,width,22,HitKind::PotionSlot,slot,potion!=Potion::Empty);
     }
-    if(slots>Visible){c.text("›",PageX,5,10,Gold);c.hit(PageX,0,PageWidth,22,HitKind::PotionPage,1);}
+    if(slots>Visible){const int page=page_x(slots);c.text("›",page,5,10,Gold);c.hit(page,0,PageWidth,22,HitKind::PotionPage,1);}
 }
 static void hud(Canvas&c){
     auto&s=c.a.game;c.rect(0,0,320,22,Panel);c.ui(U_TopBar,0,0,320,22);
@@ -224,7 +234,7 @@ static void hud(Canvas&c){
     if(const unsigned ascension=world_ascension(s)){
         c.ui(U_TopBarAscension,13,10,7,11);c.num(int(ascension),19,10,8,Gold);
     }
-    c.hit(0,0,26,22,HitKind::HudInfo,HudPortrait);
+    c.hit(0,0,26,22,HitKind::HudInfo,HudPortrait,hud_portrait_enabled(s));
     const auto health=c.a.combat_health(0);
     c.picture(A_Heart,27,4,10,13);char b[32]={};TextBuffer t{b,sizeof b,0,&c.a.content};t.number(health.hp);t.ch('/');t.number(health.max_hp);
     c.text_fitted(b,38,4,40,10,rgb(255,85,85));

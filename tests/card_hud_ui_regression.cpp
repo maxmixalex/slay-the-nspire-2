@@ -472,7 +472,7 @@ static void ui7_cards(){
     app.panel=0;app.reset_presentation();
 }
 static void ui7_hud_nodes(){
-    new_run(app.game,719,false);CHECK(world_begin_run(app.game));app.title=app.library=app.character_select=app.paused=app.settings_open=false;app.reset_presentation();
+    new_run(app.game,719,false);CHECK(world_begin_run(app.game));app.game.world.ascension=1;app.title=app.library=app.character_select=app.paused=app.settings_open=false;app.reset_presentation();
     Canvas c{app};clear();app.hit_count=0;hud(c);auto room=hud_room_info(app.game);
     CHECK(room.room_enabled&&room.boss_enabled&&!std::strcmp(room.room_tip,"ROOM_ANCIENT"));
     CHECK(!std::strcmp(room.room_key,"NEOW"));CHECK(hud_ui7_icon(room.room_key)&&hud_ui7_icon("KAISER_CRAB_BOSS"));

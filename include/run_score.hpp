@@ -10,13 +10,13 @@ struct UiRunScore {
 inline bool ui_run_facts_complete(const UiRunHistory&r){return r.serial&&!r.partial&&r.facts.version&&r.facts.complete;}
 inline unsigned ui_run_elites(const UiRunHistory&r){return r.facts.elite_rooms-unsigned(r.facts.elite_rooms&&r.facts.last_room==unsigned(WorldRoom::Elite));}
 inline unsigned ui_run_bosses(const UiRunHistory&r){return r.facts.boss_rooms-unsigned(r.facts.boss_rooms&&r.outcome!=1&&r.facts.last_room==unsigned(WorldRoom::Boss));}
-inline UiRunScore ui_run_score(const UiRunHistory&r){
+inline UiRunScore ui_run_score(const UiRunHistory&r,bool victorious=false){
     UiRunScore score;score.complete=ui_run_facts_complete(r);
     for(unsigned i=0;i<r.floor_count;++i)score.floor_points+=10u*(r.floors[i].act+1u);
     score.gold_points=r.gold_gained/100u;
     // ScoreUtility excludes the final Elite room unconditionally. A final
     // Boss is excluded only for a loss. Preserve this pinned-build behavior.
-    score.elites=ui_run_elites(r);score.bosses=ui_run_bosses(r);
+    score.elites=ui_run_elites(r);score.bosses=victorious?r.facts.boss_rooms:ui_run_bosses(r);
     const uint32_t base=score.floor_points+score.gold_points+50u*score.elites+100u*score.bosses;
     // Original casts the binary64 multiplication to int. Rational arithmetic
     // is observably different at a few integer boundaries (e.g. 45 * 1.4).

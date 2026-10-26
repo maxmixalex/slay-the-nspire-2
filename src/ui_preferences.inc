@@ -7,13 +7,15 @@ void App::restore_preferences(){
     show_card_indices=value.show_card_indices;text_effects=value.text_effects;show_run_timer=value.show_run_timer;
     keyboard_only=value.keyboard_only;phobia_mode=value.phobia_mode;screen_shake=value.screen_shake;bestiary_actions_preferred=value.bestiary_actions_preferred;
     input_bindings=value.bindings_saved?value.bindings:default_input_bindings(calculator_keyboard);
-    // Upgrade only the untouched old calculator defaults. User rebinding is preserved.
+    // The pointer and keyboard banks are independent. Upgrade a bank only
+    // when every binding still matches its exact historical default.
     if(calculator_keyboard&&value.bindings_saved){
         auto old=default_input_bindings(false);const uint16_t cards[]={'1','3','7','9','0','Z','X','C','V','B'};
         for(unsigned bank=0;bank<2;++bank){auto&keys=old.keys[bank];keys[2]='M';keys[4]='Q';keys[6]='D';keys[7]='F';keys[10]=' ';
             keys[11]='8';keys[12]='2';keys[13]='4';keys[14]='6';for(unsigned i=0;i<10;++i)keys[15+i]=cards[i];}
-        old.keys[1][0]='5';bool same=true;for(unsigned b=0;b<2;++b)for(unsigned i=0;i<InputCommandCount;++i)if(input_bindings.keys[b][i]!=old.keys[b][i])same=false;
-        if(same)input_bindings=default_input_bindings(true);
+        old.keys[1][0]='5';const auto current=default_input_bindings(true);
+        for(unsigned b=0;b<2;++b){bool same=true;for(unsigned i=0;i<InputCommandCount;++i)if(input_bindings.keys[b][i]!=old.keys[b][i])same=false;
+            if(same)for(unsigned i=0;i<InputCommandCount;++i)input_bindings.keys[b][i]=current.keys[b][i];}
     }
     binding_listening=-1;physical_keys_cancel();
 }

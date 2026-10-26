@@ -1,6 +1,7 @@
 // TheArchitectEventEncounter is a VisualOnly combat room. Its background
 // contains environment/desk decoration, not the two creature nodes. Reuse
 // their existing original clips without creating a canonical combat state.
+static void architect_scene_effects(Canvas&);
 static CreaturePose architect_scene_pose(Character character,bool architect){
  const EncounterCamera camera{};const CombatSceneLayout layout{CombatSourceWidth};
  // NCombatRoom's un-slotted single enemy/player positions are (+/-480,200)
@@ -14,12 +15,29 @@ static CreaturePose architect_scene_pose(Character character,bool architect){
   architect?0:registration.x,architect?0:registration.y);
  // This event has no hand. Keep the authored room coordinate instead of
  // the combat-only14px lift used to clear the hand and health bars.
- pose.sprite_y+=combat_controls::SceneLift;return pose;
+ pose.sprite_y+=combat_controls::SceneLift;pose.feet+=combat_controls::SceneLift;
+ pose.body_top+=combat_controls::SceneLift;pose.center_y+=combat_controls::SceneLift;
+ pose.intent+=combat_controls::SceneLift;pose.hp+=combat_controls::SceneLift;pose.status+=combat_controls::SceneLift;
+ return pose;
+}
+static void architect_scene_begin(App&a,bool opening){
+ auto&v=a.room_presentation.architect;const auto&s=a.game;
+ v.begin(s.character,unsigned(s.original_events.values[0]),opening,a.fast_mode,a.map_clock_ms,
+  ui_run_score(a.progress.current,true).total,s.original_events.rng_words,s.original_events.rng_calls,s.seed);
+ a.combat_sparks.reset();const auto target=architect_scene_pose(s.character,true);
+ for(unsigned i=0;i<v.plan.hits;++i)a.combat_sparks.emit(v.start+v.plan.hit_at(i),target.center_x,target.center_y,false,v.hits[i].seed);
 }
 struct ArchitectSceneFrame {int player=-1,architect=-1;uint32_t player_ms=0,architect_ms=0;bool player_loop=true,architect_loop=true;};
 static ArchitectSceneFrame architect_scene_frame(const App&a){
  const auto&s=a.game;const uint32_t now=a.map_clock_ms;
  ArchitectSceneFrame frame{character_animation(s.character,AnimHeroIdle),a.content.world_clip("Architect","idle_loop"),now,now,true,true};
+ const auto&v=a.room_presentation.architect;
+ if(v.bound&&v.opening){
+  uint32_t idle=v.entered;
+  if(v.plan.hits){const uint32_t resumed=v.entered+v.plan.hit_at(v.plan.hits-1)+733u;
+   if(int32_t(now-resumed)>=0)idle=resumed;}
+  frame.architect_ms=int32_t(now-idle)<0?0u:now-idle;
+ }
  const bool ending=s.phase==Phase::Complete;
  if(!ending&&!a.screen_motion.sequence_active(now))return frame;
  // A reloaded completed run has neither the event presentation owner nor
@@ -60,7 +78,17 @@ static void architect_scene_actors(Canvas&c,bool draw_player=true){
  const auto frame=architect_scene_frame(c.a);
  const auto player=architect_scene_pose(c.a.game.character,false),architect=architect_scene_pose(c.a.game.character,true);
  if(draw_player)c.scaled_clip(frame.player,player.sprite_x,player.sprite_y,frame.player_ms,player.scale,frame.player_loop);
- c.scaled_clip(frame.architect,architect.sprite_x,architect.sprite_y,frame.architect_ms,architect.scale,frame.architect_loop);
+ const auto&v=c.a.room_presentation.architect;
+ unsigned reading=I13_ArchitectReading;
+ if(c.a.game.character==Character::Silent)reading=v.fast?I13_ArchitectSilentFastReading:I13_ArchitectSilentReading;
+ const bool read=v.intro(c.a.map_clock_ms)&&c.a.content.ui_image(reading)>=0;
+ if(read)c.ui(reading+(c.a.map_clock_ms-v.start)/50u,0,22,320,218);
+ else{
+  int scale=architect.scale;const auto units=c.a.content.clip(frame.architect).sprite_units;
+  if(units)scale=int(int64_t(scale)*units/creature_sprite_units(EnemyId::Architect));
+  c.scaled_clip(frame.architect,architect.sprite_x,architect.sprite_y,frame.architect_ms,scale,frame.architect_loop);
+ }
+ architect_scene_effects(c);
  // CombatEventVisuals.Allies contains player creatures only. Neither Osty
  // nor another survivor from the previous boss belongs to this event.
 }

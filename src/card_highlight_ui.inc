@@ -4,8 +4,9 @@ static void card_selection_highlight(Canvas&c,int x,int y,int w,int h,unsigned w
     if(!width||!c.a.content.has_selection_assets())return;
     const Picture image=c.a.content.image(c.a.content.ui_image(I9_CardHighlightSdf));
     if(!image.pixels||image.format!=0||image.w!=290||image.h!=181)return;
-    const int left=x+w/2-card_face::scaled(381,w,300),top=y+h/2-card_face::scaled(475,h,422);
-    const int wide=card_face::scaled(759,w,300),high=card_face::scaled(951,h,422);
+    // card.tscn's square SDF is aspect-fitted inside its 759x951 rect.
+    const int left=x+w/2-card_face::scaled(381,w,300),top=y+h/2-card_face::scaled(379,h,422);
+    const int wide=card_face::scaled(759,w,300),high=card_face::scaled(759,h,422);
     if(wide<=0||high<=0)return;
     const int x0=mx(0,-left),x1=mn(wide,c.clip_w-left),y0=mx(0,-top),y1=mn(high,c.clip_h-top);
     if(x0>=x1||y0>=y1)return;

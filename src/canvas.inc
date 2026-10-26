@@ -350,7 +350,15 @@ struct Canvas{
     void actor(int actor,int x,int y,int scale=1024){
         if(actor<0||actor>MaxEnemies)return;
         int id=actor?AnimEnemyIdle:AnimHeroIdle;uint32_t elapsed=a.animation*33;bool loop=true;
-        if(actor&&a.game.enemy_world.active){if(!a.enemy_frame(actor-1,id,elapsed,loop))return;}else{
+        if(actor&&a.game.enemy_world.active){
+            if(!a.enemy_frame(actor-1,id,elapsed,loop))return;
+            // Source-resampled clips may use a closer canvas than the
+            // historical model-wide union. Their independent registration
+            // retains the same world pivot and creature size.
+            const unsigned units=a.content.clip(id).sprite_units;
+            const int baseline=creature_sprite_units(a.game.enemy_world.models[actor-1].kind);
+            if(units&&baseline>0)scale=int(int64_t(scale)*units/baseline);
+        }else{
             const auto&m=a.motion[actor];if(m.clip>=0&&(int32_t)(a.animation-m.start)>=0){int actual=actor?m.clip:character_animation(a.game.character,m.clip);auto c=a.content.clip(actual);uint32_t t=(a.animation-m.start)*33;if(t<(uint32_t)c.count*c.frame_ms){id=m.clip;elapsed=t;loop=false;}}
             if(actor==0)id=character_animation(a.game.character,id);
             elapsed+=((id==AnimEnemyIdle)?actor*347:0);

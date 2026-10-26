@@ -102,7 +102,7 @@ bool App::physical_key(uint16_t code,bool pressed){
     if(ftue.active()){
         if(command==unsigned(InputCommand::Left)||command==unsigned(InputCommand::Right))ftue_input(command==unsigned(InputCommand::Left)?Key::Left:Key::Right);
         else if(command==unsigned(InputCommand::Up)||command==unsigned(InputCommand::Down))ftue_input(command==unsigned(InputCommand::Up)?Key::Up:Key::Down);
-        else if(command==unsigned(InputCommand::Select)||(!keyboard_only&&(code==13||(calculator_keyboard&&code=='5'&&command==InputCommandCount)))){
+        else if(command==unsigned(InputCommand::Select)||(!keyboard_only&&(code==13||(calculator_keyboard&&code==InputPad&&command==InputCommandCount)))){
             if(ftue.id!=FtueId::CombatRules){held->key=243;held->context=input_context();}
         }
         return true;
@@ -187,9 +187,10 @@ bool App::physical_key(uint16_t code,bool pressed){
     case InputCommand::Right:return dispatch(Key::Right);
     default:break;
     }
-    // Enter remains the desktop UI acceptance key in mouse/keyboard mode;
-    // calculator 5 is its physical select button. Explicit mappings win.
-    if(!bank&&(code==13||(calculator_keyboard&&code=='5'))){
+    if(calculator_keyboard&&code==InputCatalog)return dispatch(Key::Detail);
+    // Enter and the touchpad center accept pointer-mode controls. Digits
+    // retain their hand-slot meaning even when no card occupies that slot.
+    if(!bank&&(code==13||(calculator_keyboard&&code==InputPad))){
         if(game_over_available()){if(game_over_button_ready()){held->key=244;held->context=input_context();}return true;}
         return dispatch(Key::Confirm);
     }

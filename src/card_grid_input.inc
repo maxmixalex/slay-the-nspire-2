@@ -2,7 +2,14 @@ CardGridScroll& App::configure_card_grid(CardGridSurface surface,int count,uint3
     auto&grid=card_grids[unsigned(surface)];int top=43,bottom=207,inset=8,left=CardGridScroll::Left;
     if(surface==CardGridSurface::Pile){top=26;bottom=213;inset=pile_tab?8:27;left=42;identity=identity*8+unsigned(pile_tab);}
     else if(surface==CardGridSurface::CombatChoice){top=12;bottom=213;inset=15;}
-    else if(surface==CardGridSurface::WorldChoice&&world_selection_kind()!=WorldSelectionKind::None){top=12;bottom=213;inset=15;}
+    else if(surface==CardGridSurface::WorldChoice&&world_selection_kind()!=WorldSelectionKind::None){
+        top=12;bottom=213;inset=15;
+        if(world_selection_kind()==WorldSelectionKind::Enchant){
+            // The pinned enchant screen owns a description sidebar. Reserve
+            // its column before laying out cards and their scrollbar.
+            grid.bar_inset=25;grid.configure(identity,pile_sort_epoch,count,top,bottom,inset,2,24);return grid;
+        }
+    }
     else if(surface==CardGridSurface::Library){
         if(library_tab){prepare_collection();return card_grids[unsigned(surface)];}
         grid.configure(card_library.epoch,pile_sort_epoch,count,0,213,15,2,117,false);return grid;

@@ -97,7 +97,9 @@ static void native_camp_option_picture(Canvas&choices,unsigned slot,int x,bool e
  auto&a=choices.a;const auto&s=a.game;const char*key=world_rest_option_key(s,slot);constexpr int icon_w=47,icon_h=29;
  const int w=(icon_w*sample.scale+2048)/4096,h=(icon_h*sample.scale+2048)/4096;
    const unsigned outline_scale=room_curve::multiply(unsigned(sample.scale),unsigned(sample.outline));
-   const int ow=int((55*outline_scale+2048)/4096),oh=int((39*outline_scale+2048)/4096);
+   // The source outline child fits248x173 in the250x164 holder. Its .9
+   // resting scale is already in sample.outline; do not enlarge it again.
+   const int ow=int((47*outline_scale+2048)/4096),oh=int((33*outline_scale+2048)/4096);
    Canvas outline=choices;outline.tint_red=255;outline.tint_green=179;outline.tint_blue=0;outline.opacity=uint8_t(div255(outline.opacity*192));
    outline.picture(a.content.ui_image(U_RestOutline),x+23-ow/2,82-oh/2,ow,oh,255,presentation::Add);
    camp_icon(choices,a.content.world_image("rest",key),x+(icon_w-w)/2,68+(icon_h-h)/2,w,h,enabled,unsigned(sample.value));

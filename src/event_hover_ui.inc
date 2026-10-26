@@ -234,6 +234,8 @@ static HoverRect keyword_hover_column(const CardHoverTarget&owner){
         return {mx(3,mn(317-SourceHoverWidth,x)),24,SourceHoverWidth,194};}
     if(owner.event_option>=0&&owner.owner.w>240)
         return {3,24,SourceHoverWidth,mx(56,owner.owner.y-42)};
+    if(owner.event_option>=0&&owner.owner.w>=160&&!owner.detail)
+        return {8,24,SourceHoverWidth,194};
     if(owner.relic>=0){const int x=owner.owner.x<240?owner.owner.x:owner.owner.x+owner.owner.w-SourceHoverWidth;return {mx(3,mn(317-SourceHoverWidth,x)),24,SourceHoverWidth,194};}
     return card_hover_column(owner.owner);
 }

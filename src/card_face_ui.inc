@@ -4,7 +4,7 @@
 static void library_blurred_portrait(Canvas&c,int image,const card_face::Rect&r){
     if(r.w<=0||r.h<=0||r.w>80||r.h>80)return;
     uint16_t pixels[80*80]{},line[80];Canvas tile=c;tile.pixels=pixels;tile.pitch=r.w;tile.clip_w=r.w;tile.clip_h=r.h;
-    tile.coverage=nullptr;tile.opacity=tile.brightness=tile.tint_red=tile.tint_green=tile.tint_blue=255;
+    tile.coverage=nullptr;tile.occlusion=nullptr;tile.opacity=tile.brightness=tile.tint_red=tile.tint_green=tile.tint_blue=255;
     tile.picture(image,0,0,r.w,r.h);
     static constexpr unsigned weights[]={1,6,15,20,15,6,1};
     auto sample=[&](int at,int size){unsigned red=0,green=0,blue=0;
@@ -16,6 +16,41 @@ static void library_blurred_portrait(Canvas&c,int image,const card_face::Rect&r)
     c.picture(Picture{reinterpret_cast<const uint8_t*>(pixels),nullptr,nullptr,uint16_t(r.w),uint16_t(r.h),0},r.x,r.y);
 }
 struct CardFaceFonts {int title,type,body,body_minimum,energy,star,minimum;bool compact;};
+static uint32_t card_face_enchantment_key(const App&a,const EventCardFacts*facts,int instance){
+    const bool live=instance>=0&&instance<a.game.card_count;
+    unsigned kind=facts?unsigned(facts->enchantment):0;
+    int amount=facts?facts->enchantment_amount:0;
+    if(!kind&&live&&a.game.silent.inky[instance]){kind=EventEnchantmentKinds;amount=1;}
+    if(!kind)return 0;
+    return kind|(uint32_t(uint16_t(amount))<<8)|(uint32_t(live&&a.game.event_cards.enchantment_disabled[instance])<<24);
+}
+static void card_enchantment_tab(Canvas&c,int x,int y,int w,int h,bool star_visible,uint32_t key){
+    if(!key||c.a.content.ui_image(I13_CardEnchantment)<0)return;
+    const unsigned kind=key&255;const bool disabled=key&(1u<<24);
+    const char*name=kind==EventEnchantmentKinds?"INKY":event_enchantment_key(EventEnchantment(kind));
+    // card.tscn Enchantment is(-166,-116,72,54), relative to the card's
+    // centre; NCard moves it up45px when there is no star-cost icon.
+    const int top=star_visible?95:50;
+    const auto tab=card_face::region(x,y,w,h,-16,top,72,54),icon=card_face::region(x,y,w,h,-2,top+9,35,35);
+    // Exact h=.25, s=.4/.1, v=.6 source hsv.gdshader matrices, Q12.
+    static constexpr int16_t active_matrix[]={573,1125,769,1056,1405,-8,-496,2471,480};
+    static constexpr int16_t disabled_matrix[]={696,1366,403,815,1432,208,425,1696,329};
+    Canvas layer=c;layer.color_matrix=disabled?disabled_matrix:active_matrix;
+    if(disabled)layer.opacity=uint8_t(div255(layer.opacity*230));
+    layer.ui(I13_CardEnchantment,tab.x,tab.y,tab.w,tab.h);
+    if(!disabled)layer.color_matrix=c.color_matrix;
+    layer.picture(c.a.content.world_image("enchantments",name),icon.x,icon.y,icon.w,icon.h);
+    bool show=false;switch(EventEnchantment(kind)){
+    case EventEnchantment::Sharp:case EventEnchantment::Nimble:case EventEnchantment::Swift:
+    case EventEnchantment::Momentum:case EventEnchantment::Adroit:case EventEnchantment::Vigorous:show=true;break;
+    default:break;}
+    if(show){
+        const auto label=card_face::region(x,y,w,h,10,top+27,40,26);
+        const int size=c.a.content.font_size(w>=80?10:8,5);char text[16]{};TextBuffer value{text,sizeof text,0};value.number(int16_t(key>>8));
+        Canvas words=c;words.font_face=uint8_t(source_label_face(c.a.content.original_label_fonts(),5));
+        words.text_fitted(text,label.x,label.y+(label.h-size-2)/2,mx(label.w,8),size,disabled?Muted:rgb(255,246,226),8,true,true,rgb(9,15,28));
+    }
+}
 // NCard and CardCostHelper distinguish modified costs from an inability to
 // pay. Keep this in the face key: a player's resources can change while the
 // card's numeric price and overall playability both remain unchanged.
@@ -175,6 +210,7 @@ static void render_card_face(Canvas&c,Card card,int x,int y,int w,int h,int fee=
         const int px=l.star.x+(l.star.w-cost_label.width(label,fonts.star))/2,py=l.star.y+(l.star.h-fonts.star-2)/2;
         card_resource_label(cost_label,label,px,py,fonts.star,resource_styles>>2,rgb(23,85,97),true);
     }
+    if(known)card_enchantment_tab(c,x,y,w,h,base_stars||(stars!=-2&&stars),card_face_enchantment_key(a,facts,instance));
     if(known&&card_face_resource_cross(a,card,energy,star_value,instance)){
         if(a.content.energy_image(card)>=0)card_resource_cross(c,x,y,w,h,false);
         if(base_stars||(stars!=-2&&stars))card_resource_cross(c,x,y,w,h,true);
@@ -191,7 +227,7 @@ namespace {
 constexpr int SmallCardCacheW=84,SmallCardCacheH=108,SmallCardCacheCount=8;
 struct SmallCardFaceCache {
     const Content* owner=nullptr;
-    uint32_t generation=0,seen=0;
+    uint32_t generation=0,seen=0,enchantment=0;
     Card card{};
     int portrait=-1,frame=-1,energy_image=-1,energy=0,stars=0;
     CardType type=CardType::Attack;
@@ -242,7 +278,7 @@ static void draw_card_face(Canvas&c,Card card,int x,int y,int w,int h,int fee=-2
     const int left=mn(mx(0,x-6),c.clip_w-SmallCardCacheW);
     const int top=mn(mx(0,y-4),c.clip_h-SmallCardCacheH);
     const bool supported_size=(w==65&&h==91)||(w==69&&h==96)||(w==69&&h==97)||(w==68&&h==96)||(w==46&&h==64)||(w==47&&h==66)||(w==43&&h==61)||(w==36&&h==50)||(w==44&&h==62);
-    const bool candidate=known&&!description_truncated&&c.a.content.healthy()&&supported_size&&!c.coverage&&c.opacity==255&&c.brightness==255&&
+    const bool candidate=known&&!description_truncated&&c.a.content.healthy()&&supported_size&&!c.coverage&&!c.occlusion&&c.opacity==255&&c.brightness==255&&
         c.tint_red==255&&c.tint_green==255&&c.tint_blue==255&&!c.color_matrix&&left>=0&&top>=0&&
         x>=left&&y>=top&&x+w<=left+SmallCardCacheW&&y+h<=top+SmallCardCacheH;
     if(!candidate){render_card_face(c,card,x,y,w,h,fee,stars,instance,deck,facts,description,description_truncated,known,upgrade_preview);return;}
@@ -266,6 +302,7 @@ static void draw_card_face(Canvas&c,Card card,int x,int y,int w,int h,int fee=-2
     const int base_stars=card_star_cost(a.game,card),star_count=stars==-2?base_stars:stars;
     const bool star_visible=base_stars||(stars!=-2&&stars);
     const unsigned resource_styles=card_face_resource_styles(a,card,energy,star_count,instance,facts,upgrade_preview);
+    const uint32_t enchantment=card_face_enchantment_key(a,facts,instance);
     const bool resource_cross=card_face_resource_cross(a,card,energy,star_count,instance);
     const auto geometry=card_face::layout(x,y,w,h);const auto fonts=card_face_fonts(c,w);
     // Large dynamic costs can extend beyond the fixed cache, just as their
@@ -277,7 +314,7 @@ static void draw_card_face(Canvas&c,Card card,int x,int y,int w,int h,int fee=-2
     for(auto&slot:small_card_faces)if(slot.valid&&slot.owner==&a.content&&slot.generation==a.content.generation()&&slot.width==w&&slot.height==h&&
         slot.offset_x==x-left&&slot.offset_y==y-top&&
         slot.card.kind==card.kind&&slot.card.upgraded==card.upgraded&&slot.portrait==portrait&&slot.frame==frame&&slot.type==type&&
-        slot.energy_image==energy_image&&slot.energy==energy&&slot.stars==star_count&&slot.star_visible==star_visible&&slot.resource_styles==resource_styles&&slot.resource_cross==resource_cross&&
+        slot.energy_image==energy_image&&slot.energy==energy&&slot.stars==star_count&&slot.star_visible==star_visible&&slot.resource_styles==resource_styles&&slot.resource_cross==resource_cross&&slot.enchantment==enchantment&&
         card_cache_text_equal(slot.title,title)&&card_cache_text_equal(slot.description,description)){
         bool matches=true;
         for(int yy=0;yy<SmallCardCacheH&&matches;++yy)for(int xx=0;xx<SmallCardCacheW;++xx)
@@ -302,6 +339,7 @@ static void draw_card_face(Canvas&c,Card card,int x,int y,int w,int h,int fee=-2
     entry->offset_x=uint8_t(x-left);entry->offset_y=uint8_t(y-top);
     entry->energy_image=energy_image;entry->energy=energy;entry->stars=star_count;entry->star_visible=star_visible;entry->resource_cross=resource_cross;
     entry->resource_styles=uint8_t(resource_styles);
+    entry->enchantment=enchantment;
     card_cache_text_copy(entry->title,title);card_cache_text_copy(entry->description,description);
     for(int yy=0;yy<SmallCardCacheH;++yy)for(int xx=0;xx<SmallCardCacheW;++xx)
         entry->background[yy*SmallCardCacheW+xx]=c.pixels[(top+yy)*c.pitch+left+xx];

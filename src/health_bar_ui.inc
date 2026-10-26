@@ -178,13 +178,13 @@ void Canvas::hp(const HealthBarValues&v,const HealthBarMotion&motion,int x,int y
   if(v.hp>0&&this->width(label,size)>width-2){b.n=0;label[0]=0;health_amount(b,v.hp);b.ch('/');health_amount(b,v.max_hp);}
   const auto color=layers.poison_lethal?rgb(118,255,64):layers.doom_lethal?rgb(251,141,255):cream;
   const auto outline=v.hp<=0?rgb(144,0,0):layers.poison_lethal?rgb(7,71,0):layers.doom_lethal?rgb(45,18,99):layers.blocked?rgb(27,48,69):rgb(144,0,0);
-  health_label(*this,label,x,y+(health_bar::Height-size)/2,width,size,color,outline);
+  health_label(*this,label,x,y+(health_bar::Height-size)/2,width,size,color,outline,true);
  }
  if(v.block>0){const int block=a.content.world_image("common","HEALTH_BAR_BLOCK"),bx=x-10,by=y-5+motion.block_y(a.animation*33);
   Canvas shield=*this;shield.opacity=uint8_t(div255(unsigned(opacity)*motion.block_alpha(a.animation*33)));
   shield.picture(block>=0?block:A_Block,bx,by,16,16);char label[16]{};TextBuffer b{label,sizeof label,0};b.number(v.block);
   if(this->width(label,8)>16){b.n=0;label[0]=0;health_amount(b,v.block);}
-  health_label(shield,label,bx,by+4,16,8,cream,rgb(11,85,107));
+  health_label(shield,label,bx,by+4,16,8,cream,rgb(11,85,107),true);
  }
  health_block_break(*this,motion,x,y);
 }

@@ -243,10 +243,12 @@ static void bestiary_actor(Canvas&c,BestiaryPresentation::Preview&actor,int x,in
  const auto*row=clip>=0?world_enemy_clip_directory(unsigned(clip)):nullptr;
  const bool dead=actor.hold||(row&&ui_visual_equal(row->native_clip,"dead_loop"));clip=bestiary_phobia(c.a,actor,clip,dead);
  if(clip<0)return;const auto animation=c.a.content.clip(clip);if(!animation.count||!animation.frame_ms)return;
+ const int original_scale=scale,baseline=creature_sprite_units(EnemyId(actor.model));
+ if(animation.sprite_units&&baseline>0)scale=int(int64_t(scale)*animation.sprite_units/baseline);
  unsigned frame=elapsed/animation.frame_ms;frame=loop?frame%animation.count:unsigned(mn(int(frame),animation.count-1));
  const int id=int(animation.first)+int(frame);const auto image=c.a.content.image(id);if(!image.pixels)return;
  c.picture(image,x-animation.pivot_x*scale/1024,feet-animation.pivot_y*scale/1024,mx(1,image.w*scale/1024),mx(1,image.h*scale/1024));
- phobia_swarm_body(c,actor.model,x,feet,scale,c.a.map_clock_ms,0xe170aaceu^actor.model);
+ phobia_swarm_body(c,actor.model,x,feet,original_scale,c.a.map_clock_ms,0xe170aaceu^actor.model);
 }
 #include "bestiary_kaiser_ui.inc"
 static void bestiary_falling_rocks(Canvas&c){

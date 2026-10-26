@@ -80,8 +80,22 @@ static void mutable_facts(){
  for(unsigned e=0;e<unsigned(EventEnchantment::Count);++e){s.event_cards.cards[0].enchantment=EventEnchantment(e);snapshot();
   for(unsigned k=0;k<CardKinds;++k){const Card card{CardKind(k),0};if(k==Purity)CHECK(card_keywords(s,card,0)==event_card_keywords(s.event_cards.cards[0],card_keywords(card)));else CHECK(card_keywords(s,card,0)==card_keywords(card));}unchanged();}
 }
+static void enchantment_tabs(){
+ auto&s=a.game;s.phase=Phase::Event;a.library=false;EventCardFacts facts{};facts.enchantment=EventEnchantment::Sharp;facts.enchantment_amount=3;
+ char text[2048]{};a.world_card_description({Strike,0},-1,text,sizeof text,-1,-1,&facts);
+ CHECK(!std::strstr(text,"[purple]"));const auto sharp=card_face_enchantment_key(a,&facts,-1);CHECK(sharp&&sharp!=card_face_enchantment_key(a,nullptr,-1));
+ facts.enchantment=EventEnchantment::Nimble;CHECK(sharp!=card_face_enchantment_key(a,&facts,-1));
+ s.card_count=1;s.cards[0]={Strike,0};s.event_cards.cards[0]=facts;s.event_cards.enchantment_disabled[0]=0;
+ const auto enabled=card_face_enchantment_key(a,&facts,0);s.event_cards.enchantment_disabled[0]=1;
+ CHECK(enabled!=card_face_enchantment_key(a,&facts,0));s.event_cards.enchantment_disabled[0]=0;
+ if(a.content.ui_image(I13_CardEnchantment)>=0){
+  Canvas c{a};c.rect(0,0,320,240,0);draw_card_face(c,{Strike,0},115,55,86,121,-2,-2,-1,-1,&facts);capture("enchantment-original-tab");
+  const auto tab=card_face::region(115,55,86,121,-16,50,72,54);unsigned lit=0;
+  for(int y=tab.y;y<tab.y+tab.h;++y)for(int x=tab.x;x<115;++x)lit+=a.pixels[y*320+x]!=0;CHECK(lit);
+ }
+}
 int main(int argc,char**argv){
  Bytes data;if(argc>1){FILE*f=std::fopen(argv[1],"rb");CHECK(f);data.resize(spire_test::pack_size(f));CHECK(std::fread(data.data(),1,data.size(),f)==data.size());std::fclose(f);actual=true;}else data=keyword_fixture();
- CHECK(a.init(data.data(),data.size(),{}));if(argc>2)captures=argv[2];all_canonical();mutable_facts();CHECK(a.content.healthy());
+ CHECK(a.init(data.data(),data.size(),{}));if(argc>2)captures=argv[2];all_canonical();mutable_facts();enchantment_tabs();CHECK(a.content.healthy());
  std::printf("card keywords: %u checks passed (%s)\n",checks,actual?"actual":"synthetic");
 }

@@ -14,7 +14,7 @@ bool App::run_timer_visible()const{
     // NRunTimer observes the map and capstone visibility even when the
     // preference is off. The preference requests the same label everywhere.
     return !title&&game.world.active&&!game.practice&&
-        (show_run_timer||map_window.visible||panel==1||panel==3||paused||settings_open);
+        (show_run_timer||game.phase==Phase::Map||map_window.visible||panel==1||panel==3||paused||settings_open);
 }
 void App::run_timer_label(char*out,size_t capacity)const{
     TextBuffer text{out,capacity,0};const auto&r=progress.current;

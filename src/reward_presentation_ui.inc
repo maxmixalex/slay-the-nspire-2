@@ -88,10 +88,12 @@ static void upgraded_card_animation(Canvas&c){
   }
  }
 }
+#include "card_transform_ui.inc"
 static void reward_pickup_screen(Canvas&c){
  auto&a=c.a;auto&m=a.reward_presentation;
  if(a.title||a.library||a.character_select||a.map_preview.open)return;
  upgraded_card_animation(c);
+ transformed_card_animation(c);
  const auto&removed=m.removed;
  if(removed.alive(a.map_clock_ms)){
   const uint32_t age=a.map_clock_ms-removed.start;
@@ -108,7 +110,7 @@ static void reward_pickup_screen(Canvas&c){
   int tx=287,ty=11;
   if(f.kind==RewardPickupKind::Potion){
    // Bottle art, popup and pickup flash share the exact holder anchor.
-   tx=hud_potion_layout::landing_x(f.slot,a.potion_page);
+   tx=hud_potion_layout::landing_x(f.slot,a.potion_page,potion_slot_count(a.game));
   }else if(f.kind==RewardPickupKind::Relic){tx=hud_relic_layout::center_x(f.slot);ty=hud_relic_layout::center_y(f.slot);}
   const auto v=m.sample(f,tx,ty,a.map_clock_ms);if(!v.visible){
    if((f.kind==RewardPickupKind::Potion||f.kind==RewardPickupKind::Relic)&&RewardPresentation::retained(f,a.map_clock_ms))reward_inventory_flash(c,f,tx,ty);
@@ -117,8 +119,10 @@ static void reward_pickup_screen(Canvas&c){
   if(f.kind==RewardPickupKind::Card){
    reward_card_trail(c,f,tx,ty);
    const int deck=f.slot<a.game.deck_count&&card_token(a.game.deck[f.slot])==card_token(f.card)?int(f.slot):-1;
-   CombatCardMotion::Sprite sprite;sprite.card=f.card;sprite.energy=int16_t(a.card_offer_cost(f.card,event_card_facts(a.game,f.card,-1,deck)));sprite.stars=int16_t(card_star_cost(a.game,f.card));
-   const auto&tile=hand_tile(c,-1,&sprite,deck);
+   CombatCardMotion::Sprite sprite;sprite.card=f.card;sprite.energy=int16_t(a.card_offer_cost(f.card,f.has_snapshot?&f.snapshot.facts:event_card_facts(a.game,f.card,-1,deck)));sprite.stars=int16_t(card_star_cost(a.game,f.card));
+   char description[512]{};
+   if(f.has_snapshot)a.world_card_description(f.card,-1,description,sizeof description,-1,-1,&f.snapshot.facts,&f.snapshot);
+   const auto&tile=hand_tile(c,-1,&sprite,f.has_snapshot?-1:deck,f.has_snapshot?&f.snapshot.facts:nullptr,false,f.has_snapshot?description:nullptr);
    draw_hand_tile(c,tile,{v.x,v.y,v.scale,CombatCardMotion::sine(v.angle),CombatCardMotion::sine(v.angle+1024)},false,v.shade);
   }else{
    const int image=f.kind==RewardPickupKind::Potion?a.content.potion_image(Potion(f.model)):a.relic_face_image(RelicId(f.model),int(a.game.character));

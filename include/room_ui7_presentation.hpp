@@ -2,6 +2,7 @@
 #include <stdint.h>
 #include "health_bar.hpp"
 #include "merchant_layout.hpp"
+#include "architect_presentation.hpp"
 
 namespace spire {
 namespace room_curve {
@@ -183,6 +184,7 @@ struct RoomUi7Presentation {
   int option_x(unsigned index,uint32_t now)const{return -13*(int(room_curve::Q)-room_curve::back_out(option_progress(index,now)))/int(room_curve::Q);}
   void press(int index,bool held,uint32_t now){if(!held){pressed=-1;return;}if(pressed!=index){pressed=int8_t(index);press_start=now;}}
  } event;
+ ArchitectPresentation architect{};
  void reset(){*this=RoomUi7Presentation{};}
 };
 }

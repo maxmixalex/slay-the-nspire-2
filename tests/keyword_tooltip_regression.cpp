@@ -270,6 +270,16 @@ static void event_pointer_keyboard_and_text(){
                 CHECK(*title&&*body&&!std::strchr(body,'{')&&!std::strchr(title,'{'));
             }
             auto h=hit(HitKind::Choice,int(option));a.pointer_move(h.x+h.w/2,h.y+h.h/2);a.render();CHECK(event_hover_target(a,owner)==enabled);if(enabled)CHECK(owner.event_option==int(option));
+            if(enabled){const auto first=card_hover_page(a,owner,t,0);
+                for(int page=0;page<first.pages;++page){const auto layout=card_hover_page(a,owner,t,page);
+                    for(unsigned i=0;i<layout.count;++i){const auto&r=layout.pieces[i].box;
+                        CHECK(r.x>=3&&r.y>=24&&r.x+r.w<=owner.owner.x&&r.y+r.h<=218);
+                        for(unsigned j=0;j<i;++j){const auto&other=layout.pieces[j].box;
+                            CHECK(r.x+r.w<=other.x||other.x+other.w<=r.x||r.y+r.h<=other.y||other.y+other.h<=r.y);
+                        }
+                    }
+                }
+            }
             if(t.count&&enabled){a.pointer.visible=false;CHECK(keyword_detail_input(a,Key::Statuses));a.render();CHECK(a.keyword_hover.details);CHECK(event_hover_target(a,owner));
                 const auto pages=card_hover_page(a,owner,t,0);CHECK(pages.pages>0);keyword_hover_scroll(a,1000);a.render();CHECK(a.keyword_hover.page<pages.pages);
                 CHECK(keyword_detail_input(a,Key::Back));CHECK(!a.keyword_hover.details);a.render();}

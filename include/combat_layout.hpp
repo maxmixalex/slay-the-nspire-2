@@ -11,9 +11,11 @@ constexpr int HandPivotX=(HandFaceX*2+HandFaceW)*512,HandPivotY=(HandFaceY*2+Han
 // native glyphs;1:1 sampling keeps its10px description crisp at rest.
 constexpr int HandFocusScale=1024;
 namespace combat_controls {
-constexpr int EnergyX=8,EnergyY=174,EnergySize=34,StarX=43,StarY=176,StarSize=27;
-constexpr int DrawX=4,DrawY=211,DiscardX=290,DiscardY=211,ExhaustX=291,ExhaustY=135,PileSize=24;
-constexpr int EndX=246,EndY=166,EndW=70,EndH=28,SceneLift=14;
+// Regent's source Stars counter is 36 source pixels left and 62 below
+// its energy origin. Preserve that tight diagonal at the readable LCD scale.
+constexpr int EnergyX=16,EnergyY=164,EnergySize=34,StarX=6,StarY=181,StarSize=27;
+constexpr int DrawX=4,DrawY=213,DiscardX=290,DiscardY=213,ExhaustX=291,ExhaustY=189,PileSize=24;
+constexpr int EndX=246,EndY=156,EndW=70,EndH=28,SceneLift=14;
 }
 
 inline int hand_project(int source){return (source*4+10)/21;}

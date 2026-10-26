@@ -36,7 +36,7 @@ static void deck_select(Canvas&c){
     Canvas backstop=c;backstop.opacity=uint8_t(div255(unsigned(backstop.opacity)*shade));backstop.rect(0,0,320,240,0);
     const bool grimoire=a.grimoire_select&&s.phase==Phase::Reward&&s.necro.grimoire_pending;
     uint16_t indices[MaxDeck];const unsigned count=a.deck_choice_items(indices,MaxDeck);
-    auto&grid=a.configure_card_grid(CardGridSurface::DeckChoice,int(count),s.revision);CardGridPainter painter{c,grid};const int first=grid.first();
+    auto&grid=a.configure_card_grid(CardGridSurface::DeckChoice,int(count),s.revision);CardGridPainter painter{c,grid,a.deck_candidate<0};const int first=grid.first();
     int portraits[24];unsigned portrait_count=0;
     for(int i=first;i<grid.last();++i){const int index=indices[i];portraits[portrait_count++]=a.card_face_image(s.deck[index],-1,index);}
     a.content.prepare_images(portraits,portrait_count);
@@ -46,7 +46,7 @@ static void deck_select(Canvas&c){
         painter.card(i,card,a.cursor==index,true,-2,-2,-1,index,nullptr,false,true,preview);
         painter.hit(i,HitKind::Choice,index);
     }
-    painter.finish();card_grid_scrollbar(c,grid,CardGridSurface::DeckChoice);
+    painter.finish();if(a.deck_candidate<0)card_grid_scrollbar(c,grid,CardGridSurface::DeckChoice);
     if(a.deck_candidate<0&&a.deck_selection_cancelable())native_original_back(c,a.deck_selection.opened);
     if(grimoire)native_original_confirm(c,UiAction::SkipGrimoire,a.deck_selection.opened);
     deck_selection_prompt(c);deck_selection_upgrades(c);

@@ -179,7 +179,9 @@ static void native_event_screen(Canvas&c){
  // default_event_layout.tscn: VBox at (viewport/2-38,255-39), width800.
  // Its64px title,280px minimum body,24px spacer and100px options belong to
  // the full1680x1260 UI, not the room artwork's cropped218px camera.
- constexpr int x0=96,width0=216,title_y=31,title_h=20,body_y=54,body_min=49;
+ // The event keeps a104px hover lane. Preserve the bevel's source aspect
+ // in the NinePatch edges instead of stretching its full image sideways.
+ constexpr int x0=126,width0=186,title_y=31,title_h=20,body_y=54,body_min=49;
  constexpr int option_h=40,option_step=42,spacer=6,max_visible=3;
  Canvas title=c;title.opacity=uint8_t(div255(title.opacity*motion.title_alpha(a.map_clock_ms)));
  title.font_face=a.content.original_label_fonts()?4:0;title.sparse_scene_sizes=true;
@@ -220,19 +222,24 @@ static void native_event_screen(Canvas&c){
   Canvas entry=c;entry.opacity=uint8_t(unsigned(entry.opacity)*motion.option_progress(unsigned(i),a.map_clock_ms)/room_curve::Q);
   // NEventOptionButton: a shadow plus a blue additive focus outline, and a
   // single rich label with a gold/red bold title followed by its description.
-  Canvas shadow=entry;shadow.tint_red=shadow.tint_green=shadow.tint_blue=0;shadow.ui(U_EventOutline,left,top+1,width,height,128);
+  const bool source_edges=a.content.ui_image(I13_EventButton)>=0;
+  const unsigned button_id=source_edges?I13_EventButton:U_EventButton,outline_id=source_edges?I13_EventOutline:U_EventOutline;
+  Canvas shadow=entry;shadow.tint_red=shadow.tint_green=shadow.tint_blue=0;shadow.opacity=uint8_t(div255(shadow.opacity*128));
+  shadow.nine_ui(outline_id,left,top+1,width,height,12,10,12,10);
   Canvas button=entry;button.brightness=uint8_t(div255(button.brightness*(enabled?visual.shade:166)));
-  button.ui(U_EventButton,left,top,width,height,230);
+  button.opacity=uint8_t(div255(button.opacity*230));button.nine_ui(button_id,left,top,width,height,12,10,12,10);
   if(visual.glow&&enabled){Canvas outline=entry;outline.tint_red=uint8_t(div255(outline.tint_red*120));outline.tint_blue=uint8_t(div255(outline.tint_blue*254));
-   outline.picture(a.content.ui_image(U_EventOutline),left-1,top-1,width+2,height+2,unsigned(visual.glow)*192/255,presentation::Add);}
+   outline.opacity=uint8_t(div255(outline.opacity*unsigned(visual.glow)*192/255));
+   outline.nine_ui(outline_id,left-1,top-1,width+2,height+2,12,10,12,10,255,presentation::Add);}
   char label[256]{},description[2048]{},combined[2432]{};native_event_option(a,i,false,label,sizeof label);native_event_option(a,i,true,description,sizeof description);
   TextBuffer body{combined,sizeof combined,0,&a.content};
   if(*label){body.text(enabled?"[gold][b]":"[red][b]");body.text(label);body.text(enabled?"[/b][/gold]":"[/b][/red]");if(*description)body.ch('\n');}body.text(description);
   Canvas words=entry;if(!enabled)words.opacity=uint8_t(div255(words.opacity*179));
-  const int tx=left+12,ty=top+5,tw=width-24,th=height-10;
+  const int tx=left+15,ty=top+6,tw=width-30,th=height-12;
   const auto plan=native_room_compact_plan(words,combined,tw,th);
   const int overflow=mx(0,plan.total*plan.step+2-th);
-  native_room_scroll_text(words,combined,tx,ty,tw,th,selected?native_room_marquee_offset(overflow,a.map_clock_ms-motion.buttons[i].start):0);
+  if(overflow)native_room_scroll_text(words,combined,tx,ty,tw,th,selected?native_room_marquee_offset(overflow,a.map_clock_ms-motion.buttons[i].start):0,plan.size);
+  else native_room_compact_text(words,combined,tx,ty,tw,th);
   c.hit(x,y,width0,option_h,HitKind::Choice,i,enabled&&ready);
  }
  if(count>max_visible){char page[32]{};TextBuffer b{page,sizeof page,0,&c.a.content};b.number(first/max_visible+1);b.ch('/');b.number((count+max_visible-1)/max_visible);c.text(page,274,23,8,White,42);}

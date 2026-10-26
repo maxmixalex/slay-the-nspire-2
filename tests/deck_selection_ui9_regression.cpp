@@ -54,6 +54,9 @@ static void smith(){
     click(HitKind::UiAction,int(UiAction::DeckViewUpgrades));CHECK(a.deck_selection.show_upgrades);unchanged();capture("smith-grid-upgrades");
     a.input(Key::Right);a.render();CHECK(!a.deck_selection.show_upgrades&&!hit(HitKind::UiAction,int(UiAction::DeckViewUpgrades)));CHECK(a.cursor==2);unchanged();capture("smith-directional-grid");
     click(HitKind::Choice,1);CHECK(a.deck_candidate==1&&a.deck_candidate_valid()&&a.active_card_grid()<0);unchanged();settle();capture("smith-upgrade-preview");
+    a.pointer_move(grid.card_x(0)+10,grid.card_y(0)+10);a.render();
+    for(const auto&face:grid.faces)CHECK(!face.focused);
+    CHECK(!hit(HitKind::GridScroll,int(CardGridSurface::DeckChoice)));
     // Readable LCD navigation reserves independent bottom corners without
     // overlapping the enlarged preview cards or their selected hit regions.
     const auto*confirm=hit(HitKind::UiAction,int(UiAction::ConfirmDeckChoice));const auto*back=hit(HitKind::UiAction,int(UiAction::Back));CHECK(confirm&&confirm->x==268&&confirm->y==204&&confirm->w==52&&confirm->h==30);CHECK(back&&back->x==0&&back->y==215&&back->w==40&&back->h==24);CHECK(!hit(HitKind::UiAction,int(UiAction::CancelDeckChoice)));

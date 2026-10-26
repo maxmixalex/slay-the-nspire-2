@@ -26,6 +26,24 @@ static void geometry(){
  for(unsigned n=0;n<5;++n)for(bool enemy:{false,true}){
   const auto expected=source_pose(n,enemy);const auto got=architect_scene_pose(Character(n),enemy);
   CHECK(got.sprite_x==expected.x&&got.sprite_y==expected.y&&got.scale==expected.scale);
+  const auto anchor=enemy?creature_anchors(EnemyId::Architect):player_anchors(Character(n));
+  CHECK(got.center_y==(830+anchor.center_y)*4/21&&got.body_top==(830+anchor.top)*4/21);
+  CHECK(got.feet==830*4/21);
+ }
+}
+static void displacement_rows(){
+ scenario="source distortion reads untouched rows without a second framebuffer";
+ std::vector<uint16_t> original(ScreenW*ScreenH),actual(ScreenW*ScreenH);
+ for(unsigned i=0;i<original.size();++i)original[i]=uint16_t((i*1777u)^(i/ScreenW*3141u));
+ actual=original;std::vector<uint16_t> field(64*100);
+ for(int y=0;y<100;++y)for(int x=0;x<64;++x){const int dx=x&1?7:-7,dy=x&2?13:-13;
+  field[y*64+x]=uint16_t((dx+16)<<11|(dy+32)<<5);}
+ Canvas c{a};c.pixels=actual.data();
+ architect_source_displacement(c,Picture{reinterpret_cast<const uint8_t*>(field.data()),nullptr,nullptr,64,100,0},-5,15);
+ for(int y=0;y<ScreenH;++y)for(int x=0;x<ScreenW;++x){uint16_t expected=original[y*ScreenW+x];
+  if(y>=22&&y<115&&x<59){const int source=x+5,dx=source&1?7:-7,dy=source&2?13:-13;
+   const int xx=std::max(0,std::min(ScreenW-1,x+dx)),yy=std::max(22,std::min(ScreenH-1,y+dy));expected=original[yy*ScreenW+xx];}
+  CHECK(actual[y*ScreenW+x]==expected);
  }
 }
 static void until(uint32_t time){CHECK(int32_t(time-a.map_clock_ms)>=0);advance_room(time-a.map_clock_ms);}
@@ -36,8 +54,7 @@ static void repeat_render(){
 static void picture_at(Canvas&canvas,int id,unsigned frame,SourcePose pose,unsigned mode=0){
  const auto clip=a.content.clip(id);CHECK(clip.count&&frame<clip.count);
  const auto image=a.content.image(int(clip.first)+int(frame));CHECK(image.pixels&&image.w&&image.h);
- const bool death=id>=int(CharacterDeathAnimationFirst)&&id<int(CharacterDeathAnimationKinds);
- const int scale=death&&clip.sprite_units?int(int64_t(pose.scale)*clip.sprite_units/pose.units):pose.scale;
+ const int scale=clip.sprite_units?int(int64_t(pose.scale)*clip.sprite_units/pose.units):pose.scale;
  canvas.picture(image,pose.x-clip.pivot_x*scale/1024,pose.y-clip.pivot_y*scale/1024,
                 std::max(1,int(image.w)*scale/1024),std::max(1,int(image.h)*scale/1024),255,mode);
 }
@@ -51,9 +68,19 @@ static void visible_original(int id,unsigned frame,SourcePose pose,unsigned mini
  // frame. No actor-selection, actor-pose or game-over rendering helper is
  // used to manufacture the expected image.
  std::vector<uint16_t> expected(ScreenW*ScreenH,0);std::vector<uint8_t> alpha(ScreenW*ScreenH,0);
- Canvas probe{a};probe.pixels=expected.data();probe.coverage=alpha.data();picture_at(probe,id,frame,pose);
+ Canvas probe{a};probe.pixels=expected.data();probe.coverage=alpha.data();
+ const auto&event=a.room_presentation.architect;
+ const unsigned reading=a.game.character!=Character::Silent?I13_ArchitectReading:event.fast?I13_ArchitectSilentFastReading:I13_ArchitectSilentReading;
+ if(id>=49&&id<=51&&event.intro(a.map_clock_ms)&&a.content.ui_image(reading)>=0)
+  probe.picture(a.content.ui_image(reading+(a.map_clock_ms-event.start)/50u),0,22,320,218);
+ else picture_at(probe,id,frame,pose);
+ // Original impact text/particles and the pen trail legitimately cover
+ // source actor texels. Inspect the uncovered original actor, then check
+ // the real command's separate cue/score/RNG contract below.
+ std::vector<uint16_t> effects(ScreenW*ScreenH,0);std::vector<uint8_t> covered(ScreenW*ScreenH,0);
+ Canvas effect{a};effect.pixels=effects.data();effect.coverage=covered.data();architect_scene_effects(effect);
  unsigned ink=0,bad=0;for(int y=24;y<166;++y)for(int x=0;x<ScreenW;++x){const unsigned p=y*ScreenW+x;
-  if(alpha[p]==255){++ink;bad+=a.pixels[p]!=expected[p];}}
+  if(alpha[p]==255&&!covered[p]){++ink;bad+=a.pixels[p]!=expected[p];}}
  if(ink<minimum||bad)std::fprintf(stderr,"source sprite probe: clip=%d frame=%u anchor=%d,%d opaque=%u mismatch=%u\n",id,frame,pose.x,pose.y,ink,bad);
  CHECK(ink>=minimum&&!bad);CHECK(a.content.healthy());
 }
@@ -75,6 +102,7 @@ static void death_scene(unsigned character,unsigned age){
  // reaches WinRun. It is still within its original1500ms clip at +200.
  const unsigned enemy_age=(a.room_presentation.event.fast?750u:1000u)+age;
  picture_at(canvas,49,sample(49,enemy_age,false),source_pose(character,true));
+ architect_scene_effects(canvas);
  unsigned bad=0,ink=0;for(int y=24;y<166;++y)for(int x=0;x<ScreenW;++x){const unsigned p=y*ScreenW+x;bad+=a.pixels[p]!=expected[p];ink+=expected[p]!=0;}
  if(bad)std::fprintf(stderr,"terminal two-actor band mismatch: character=%u age=%u pixels=%u\n",character,age,bad);
  CHECK(ink>100&&!bad);equal_save();
@@ -125,13 +153,15 @@ static void run_character(unsigned character,bool fast){
  architect_room(Character(character),fast,0,0);const uint32_t entered=a.map_clock_ms;a.render();
  const unsigned intro=character==1?(fast?3750u:3950u):2250u;
  CHECK(a.screen_motion.sequence_end(entered)==entered+intro);
+ CHECK(a.room_presentation.architect.bound&&a.room_presentation.architect.opening&&a.room_presentation.architect.start==entered);
+ CHECK(a.room_presentation.architect.plan.hits==(character==1?4u:0u));
  if(!character&&!fast)export_entry();
  static char stage[96];std::snprintf(stage,sizeof stage,"%s %s source actors and dialogue",names[character],fast?"Fast":"Normal");scenario=stage;
  dialogue_text();
  const auto pose=source_pose(character),enemy=source_pose(character,true);
  if(original_art){CHECK(a.content.world_clip("Architect","attack")==49&&a.content.world_clip("Architect","hurt")==50&&a.content.world_clip("Architect","idle_loop")==51);
   const auto f=architect_scene_frame(a);CHECK(f.player==idle_clips[character]&&f.architect==51&&f.player_loop&&f.architect_loop);
-  visible_original(51,sample(51,entered,true),enemy);visible_original(idle_clips[character],sample(idle_clips[character],entered,true),pose);}
+  visible_original(51,sample(51,f.architect_ms,true),enemy);visible_original(idle_clips[character],sample(idle_clips[character],entered,true),pose);}
  a.input(Key::Confirm);equal_save();CHECK(a.game.phase==Phase::Event);
  if(character==1&&original_art){
   until(entered+750);auto f=architect_scene_frame(a);CHECK(f.player==12&&!f.player_loop&&f.player_ms==0&&f.architect==51);
@@ -143,7 +173,7 @@ static void run_character(unsigned character,bool fast){
  for(unsigned i=0;i<200&&!a.room_presentation.event.option_ready(0,a.map_clock_ms);++i)advance_room(33);
  CHECK(a.room_presentation.event.option_ready(0,a.map_clock_ms));a.render();equal_save();repeat_render();
  if(original_art){const auto f=architect_scene_frame(a);CHECK(f.player==idle_clips[character]&&f.architect==51&&f.player_loop&&f.architect_loop);
-  visible_original(51,sample(51,a.map_clock_ms,true),enemy);visible_original(idle_clips[character],sample(idle_clips[character],a.map_clock_ms,true),pose);}
+  visible_original(51,sample(51,f.architect_ms,true),enemy);visible_original(idle_clips[character],sample(idle_clips[character],a.map_clock_ms,true),pose);}
  char name[128];if(!fast){std::snprintf(name,sizeof name,"%s-idle-dialogue",names[character]);capture(name);}
  if(!fast)read_dialogue_end(character);
  if(character==4&&original_art){
@@ -163,6 +193,19 @@ static void run_character(unsigned character,bool fast){
  const unsigned hits=character==1||character==4?4u:5u,windup=fast?50u:100u,step=fast?150u:200u;
  const unsigned last=windup+(hits-1)*step,architect_start=last+2000u,terminal=architect_start+(fast?750u:1000u);
  CHECK(a.game_over_presentation.opened==began+terminal);
+ const auto&effects=a.room_presentation.architect;
+ CHECK(effects.bound&&!effects.opening&&effects.start==began&&effects.plan.hits==hits);
+ unsigned score_parts=0,seen_vfx=0;
+ for(unsigned i=0;i<hits;++i){CHECK(effects.hits[i].amount>0);score_parts+=effects.hits[i].amount;
+  CHECK(!(seen_vfx&(1u<<effects.hits[i].vfx)));seen_vfx|=1u<<effects.hits[i].vfx;}
+ CHECK(score_parts>=effects.score);if(effects.score>=hits)CHECK(score_parts==effects.score);
+ static constexpr unsigned source_lists[]={
+  (1u<<ArchitectPresentation::Blunt)|(1u<<ArchitectPresentation::HeavyBlunt)|(1u<<ArchitectPresentation::Slash)|(1u<<ArchitectPresentation::BloodyImpact)|(1u<<ArchitectPresentation::RockShatter),
+  (1u<<ArchitectPresentation::DaggerSpray)|(1u<<ArchitectPresentation::FlyingSlash)|(1u<<ArchitectPresentation::DramaticStab)|(1u<<ArchitectPresentation::DaggerThrow),
+  (1u<<ArchitectPresentation::Lightning)|(1u<<ArchitectPresentation::Blunt)|(1u<<ArchitectPresentation::Scratch)|(1u<<ArchitectPresentation::Slash)|(1u<<ArchitectPresentation::HeavyBlunt),
+  (1u<<ArchitectPresentation::StarryImpact)|(1u<<ArchitectPresentation::Blunt)|(1u<<ArchitectPresentation::Slash)|(1u<<ArchitectPresentation::HeavyBlunt)|(1u<<ArchitectPresentation::Lightning),
+  (1u<<ArchitectPresentation::Thrash)|(1u<<ArchitectPresentation::HeavyBlunt)|(1u<<ArchitectPresentation::Slash)|(1u<<ArchitectPresentation::BloodyImpact)};
+ CHECK(seen_vfx==source_lists[character]);
  if(original_art)for(unsigned i=0;i<hits;++i){
   until(began+windup+i*step);const auto f=architect_scene_frame(a);
   CHECK(f.player==attack_clips[character]&&!f.player_loop&&f.player_ms==windup);
@@ -192,13 +235,14 @@ static void run_character(unsigned character,bool fast){
   // reload directly, as the existing terminal compatibility gate does.
   CHECK(!a.has_save&&!a.load_saved_run());CHECK(load(a.game,architect_saved.bytes,architect_saved.size));
   a.title=false;a.reset_presentation();a.render();equal_save();const auto frame=architect_scene_frame(a);
+  CHECK(!a.room_presentation.architect.bound);
   if(original_art)CHECK(frame.player==0&&frame.architect==51&&frame.player_loop&&frame.architect_loop);
   CHECK(!a.screen_motion.sequence_active(a.map_clock_ms)&&a.game_over_presentation.opened==a.map_clock_ms);
   visible_original(int(CharacterDeathAnimationFirst),0,pose);capture("ironclad-complete-reload");a.callbacks=callbacks;
  }
 }
 int main(int argc,char**argv){
- CHECK(argc>=1&&argc<=4);captures=argc>=3?argv[2]:nullptr;geometry();
+ CHECK(argc>=1&&argc<=4);captures=argc>=3?argv[2]:nullptr;geometry();displacement_rows();
  const char*locale=argc==4?argv[3]:"eng";CHECK(!std::strcmp(locale,"eng")||!std::strcmp(locale,"zhs"));
  std::vector<uint8_t> common,language;SplitResourceSource split;
  if(argc>=2){common=read(std::string(argv[1])+"/nSpire2.common.tns");language=read(std::string(argv[1])+"/nSpire2."+locale+".tns");

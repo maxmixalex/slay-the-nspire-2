@@ -8,18 +8,22 @@
 namespace spire {
 // Preserve the historical HudInfo floor id. Keyboard positions follow the
 // source neighbor chain and therefore place Room before Floor.
-enum HudInfoItem {HudHp,HudGold,HudFloor,HudRoom,HudBoss,HudPortrait};
+enum HudInfoItem {HudHp,HudGold,HudFloor,HudRoom,HudBoss,HudPortrait,HudTimer};
 constexpr int HudRelicFocusFirst=32;
 // One geometry owns bottles, focus, popup anchors and acquisition flashes.
 // The canonical inventory supports sixteen slots; five remain visible at once.
 namespace hud_potion_layout {
-constexpr int Visible=5,Left=114,Cell=16,Width=86,PageX=194,PageWidth=6;
+constexpr int Visible=5,Left=114,PageWidth=6;
 inline unsigned pages(unsigned slots){return (slots+Visible-1)/Visible;}
-inline int x(unsigned slot){return Left+int(slot%Visible)*Cell;}
-inline int center_x(unsigned slot){return x(slot)+Cell/2;}
+inline int cell(unsigned slots){return slots>=5?13:slots==4?14:16;}
+inline int page_x(unsigned slots){return Left+int(slots<Visible?slots:Visible)*cell(slots);}
+inline int width(unsigned slots){return page_x(slots)-Left+(slots>Visible?PageWidth:0);}
+inline int x(unsigned slot,unsigned slots){return Left+int(slot%Visible)*cell(slots);}
+inline int center_x(unsigned slot,unsigned slots){return x(slot,slots)+cell(slots)/2;}
 inline int center_y(){return 11;}
-inline int landing_x(unsigned slot,unsigned page){return slot/Visible==page?center_x(slot):PageX+PageWidth/2;}
+inline int landing_x(unsigned slot,unsigned page,unsigned slots){return slot/Visible==page?center_x(slot,slots):page_x(slots)+PageWidth/2;}
 }
+inline bool hud_portrait_enabled(const State&s){return world_ascension(s)>0||s.run_options.mode!=RunMode::Standard;}
 struct HudRoomInfo {
     const char* room_key=nullptr;
     const char* room_tip="ROOM_MAP";
@@ -64,6 +68,15 @@ inline HudRoomInfo hud_room_info(const State&s){
     if(rooms.boss_count)out.boss=rooms.bosses[second_only?1:0];
     if(double_boss&&!second_only){out.second_boss=rooms.bosses[1];out.second_placeholder=w.current_point!=map.boss&&w.current_point!=map.second_boss;}
     return out;
+}
+struct HudRoomGeometry {int room,floor,boss,timer;};
+inline HudRoomGeometry hud_room_geometry(const State&s){
+    // Equal four-pixel gaps separate potion belt, room, floor, boss and
+    // timer. Shrink only the fourth/fifth potion cell, keeping all five
+    // bottles available without consuming the metadata's spacing.
+    const auto info=hud_room_info(s);const int room=hud_potion_layout::Left+hud_potion_layout::width(potion_slot_count(s))+4;
+    const int floor=room+14,boss=floor+26;
+    return {room,floor,boss,info.boss_enabled?boss+(info.second_boss==EncounterId::None?11:17)+4:boss};
 }
 namespace hud_relic_layout {
 constexpr int Columns=(reference_viewport::Width-12-84)/68;

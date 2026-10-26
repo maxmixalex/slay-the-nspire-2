@@ -33,6 +33,8 @@ static void native_control(Canvas&c,const char*kind,int x,int y,int w,int h,cons
 static void native_proceed(Canvas&c,const char*label,bool enabled=true,bool selected=false){
  using namespace proceed_layout;
  auto&a=c.a;const auto&s=a.game;
+ // A retained reward cursor must not keep pointer-driven Proceed focused.
+ selected=selected&&!a.pointer.visible;
  // Overlays retain the room node. Its identity must not change when the map,
  // a hover tip, settings or the merchant inventory opens over that room.
  const uint32_t key=uint32_t(s.world.run_seed)^uint32_t(s.world.run_seed>>32)^
@@ -115,6 +117,7 @@ static void native_original_confirm(Canvas&c,UiAction action,uint32_t opened=UIN
 }
 static void native_end_turn(Canvas&c,bool enabled){
  auto&a=c.a;const auto visual=c.control_visual("END_TURN",combat_controls::EndX,combat_controls::EndY,combat_controls::EndW,combat_controls::EndH,ButtonFamily::EndTurn,false,enabled);
+ const int art_x=combat_controls::EndX-2,art_y=combat_controls::EndY-5,art_w=combat_controls::EndW+4,art_h=combat_controls::EndH+8;
  const int shift=(visual.y+2048)/4096,normal=a.content.ui_image(U_EndTurnNative),hover=a.content.ui_image(U_EndTurnHover);
  bool playable=false;for(unsigned i=0;i<a.game.hand.count;i++)if(can_play_card(a.game,a.game.hand.ids[i])){playable=true;break;}
  const uint16_t encounter=a.game.enemy_world.active?uint16_t(256+unsigned(a.game.enemy_world.encounter)):a.game.encounter;
@@ -124,26 +127,27 @@ static void native_end_turn(Canvas&c,bool enabled){
   if(!alpha||glow_image<0)return;
   // All three original TextureRects have the same 512x256 bounds and
   // (256,128) pivot. Keep their shared center through the 320px adaptation.
-  const int w=(74*scale+2048)/4096,h=(36*scale+2048)/4096;
+  const int w=(art_w*scale+2048)/4096,h=(art_h*scale+2048)/4096;
   Canvas light=c;light.tint_red=uint8_t(div255(unsigned(c.tint_red)*red));
   light.tint_green=uint8_t(div255(unsigned(c.tint_green)*green));
-  light.picture(glow_image,244+(74-w)/2,161+shift+(36-h)/2,w,h,unsigned(alpha)*255/4096,presentation::Add);
+  light.picture(glow_image,art_x+(art_w-w)/2,art_y+shift+(art_h-h)/2,w,h,unsigned(alpha)*255/4096,presentation::Add);
  };
  draw_glow(glow.pulse_alpha,glow.pulse_scale,64,223);
  Canvas layer=c;layer.brightness=uint8_t(div255(unsigned(c.brightness)*visual.shade));
- if(normal>=0){layer.picture(normal,244,161+shift,74,36);
-  if(visual.hover&&hover>=0)layer.picture(hover,244,161+shift,74,36,unsigned(visual.hover)*255/4096);
- }else layer.picture(A_EndTurn,244,161+shift,74,36);
+ if(normal>=0){layer.picture(normal,art_x,art_y+shift,art_w,art_h);
+  if(visual.hover&&hover>=0)layer.picture(hover,art_x,art_y+shift,art_w,art_h,unsigned(visual.hover)*255/4096);
+ }else layer.picture(A_EndTurn,art_x,art_y+shift,art_w,art_h);
  draw_glow(glow.base_alpha,glow.base_scale,0,212);
  const uint16_t cream=rgb(255,246,226),focus=playable?rgb(255,79,67):rgb(0,255,255);
  uint16_t color=enabled?blend(cream,focus,unsigned(visual.hover)*255/4096):Muted;
- layer.centered("结束回合",248,174+shift,68,10,rgb(19,31,46));layer.centered("结束回合",247,173+shift,68,10,color);
+ layer.centered("结束回合",combat_controls::EndX+2,combat_controls::EndY+8+shift,combat_controls::EndW-2,10,rgb(19,31,46));
+ layer.centered("结束回合",combat_controls::EndX+1,combat_controls::EndY+7+shift,combat_controls::EndW-2,10,color);
  // Bar is a sibling of Visuals: its authored (8,-11) offset does not
  // inherit the pressed artwork's downward shift. No temporary image/pool.
  if(a.long_press){
  const auto bar=a.end_turn_hold.visual();
  if(bar.alpha_q12){
-  const int x=249,y=163,w=int((uint64_t(bar.width_q12)*4+21*2048)/(21*4096)),h=1;
+  const int x=combat_controls::EndX+3,y=combat_controls::EndY-3,w=int((uint64_t(bar.width_q12)*4+21*2048)/(21*4096)),h=1;
   const unsigned alpha=(bar.alpha_q12*255+2048)/4096;
   Canvas outline=c;outline.opacity=uint8_t(div255(unsigned(c.opacity)*div255(alpha*128)));
   outline.rect(x-1,y-1,w+2,h+2,rgb(0,0,0));

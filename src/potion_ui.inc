@@ -1,5 +1,5 @@
 static int potion_belt_x(const App&a,int slot){
-    (void)a;return hud_potion_layout::x(unsigned(slot));
+    return hud_potion_layout::x(unsigned(slot),potion_slot_count(a.game));
 }
 static void potion_tip(Canvas&c,int slot,int x,int y,int width){
     const Potion bottle=potion_at(c.a.game,unsigned(slot));if(bottle==Potion::Empty){hud_static_tip(c,"POTION_SLOT",x,y,width);return;}if(!potion_definition(bottle))return;
@@ -33,7 +33,7 @@ static void potion_popup_screen(Canvas&c){
     const unsigned age=a.map_clock_ms-a.potion_popup_start;
     // NPotionPopup: alpha 100 ms; position -25 -> 0 in 150 ms Sine/In.
     const int elapsed=mn(int(age),150);
-    const int holder_width=hud_potion_layout::Cell;
+    const int holder_width=hud_potion_layout::cell(potion_slot_count(s));
     const int x=mx(0,mn(320-W,potion_belt_x(a,a.scroll)+holder_width/2-W/2));
     const int y=33-5*CombatCardMotion::sine(1024+elapsed*1024/150)/1024;
     Canvas layer=c;layer.opacity=uint8_t(age>=100?255:(1024-CombatCardMotion::sine(1024+int(age)*2048/100))*255/2048);
