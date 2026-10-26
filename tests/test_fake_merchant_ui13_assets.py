@@ -5,7 +5,7 @@ from pathlib import Path
 import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'tools'))
-from fake_merchant_ui13_assets import regent_atlas, invariant_planes, quantized, _image
+from fake_merchant_ui13_assets import regent_atlas, regent_material_order, invariant_planes, quantized, _image
 
 
 def quad(color, blend=0, x=92, y=77):
@@ -57,6 +57,22 @@ class FakeMerchantOrderedAtlasTests(unittest.TestCase):
     def test_changed_eye_registration_is_rejected(self):
         with self.assertRaisesRegex(ValueError,'escaped'):
             regent_atlas([quad((1,1,1,1)),quad((1,1,1,.5),1,x=91)],1,np.zeros(2))
+
+    def test_visible_normal_attachments_do_not_change_material_order(self):
+        base=[{'slot':'body','blend':0},{'slot':'eye add','blend':1},{'slot':'hand','blend':0}]
+        self.assertTrue(regent_material_order({'draw':base}))
+        self.assertTrue(regent_material_order({'draw':base+[{'slot':'minion sweat','blend':0}]}))
+        self.assertFalse(regent_material_order({'draw':[base[0],base[2]]}))
+        for invalid in ([{'slot':'unknown','blend':1}],[{'slot':'eye add','blend':2}],base+[{'slot':'eye add','blend':1}]):
+            with self.assertRaisesRegex(ValueError,'unreviewed'):regent_material_order({'draw':invalid})
+
+    def test_hidden_eye_retains_normal_body_without_inventing_light(self):
+        draws=[quad((1,0,.25,.5)),quad((0,.25,1,.25))]
+        atlas=np.asarray(regent_atlas(draws,1,np.zeros(2)))
+        self.assertTrue(np.any(atlas[77:83,92:100,3]))
+        self.assertFalse(np.any(atlas[190:]))
+        expected=np.asarray(_image(draws,1,np.zeros(2)))[:190,:160]
+        np.testing.assert_array_equal(atlas[:190],expected)
 
 
 if __name__=='__main__':unittest.main()

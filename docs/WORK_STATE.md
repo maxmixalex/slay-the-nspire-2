@@ -130,6 +130,32 @@ performance evidence. The final runtime/resources will be installed and verified
 in a separate, matched device run before publishing main.
 
 
+### Runtime accepted; final converter visibility correction
+
+Runtime checkpoint `792904cb5e7f5fcbbab7a5320ee0d54d247591c7` now passes the
+complete **137/137** registered native suite, zero failures, 42.68 seconds,
+with `source_changed=false` (`cp17-registered-3b0638b5ead5`). Its Python runs
+pass 269 discovered plus 56 supplemental tests (two repeated, **323 unique**).
+The final runtime ARM is 1,653,686 bytes, SHA-256
+`77a41a60cdd99c2a4d2011e567a69afdb6b61851947e9692624f99612e28be4b`,
+with a 20,703,800-byte allocation. Its ordinary-OS USB upload/readback matches;
+full new-pack gameplay and timing still await the resource build.
+
+The complete Regent converter run exposes one overly rigid new build-time
+assertion: 258 source frames contain 32 visible draws; 62 contain an additional
+Normal `minion sweat` attachment, beginning at frame 234 (9.75 seconds). Every
+one of the 320 samples still contains exactly the reviewed `eye add` Add layer;
+the eye union remains [92,77,100,83]. The converter now validates source slot
+identity and blend materials while retaining each frame's actual visible order,
+instead of asserting a constant total length. Five source-free tests, full
+320-frame metadata/crop audit and eight key-frame atlas checks pass before this
+checkpoint. The failed earlier conversion is retained separately. This follow-up
+changes only the converter and its tests/documentation: runtime `src`, `include`
+and `platform` remain byte-identical, so the accepted runtime/ARM is preserved.
+Final original-resource conversion, complete actual-image decoding and matched
+device acceptance remain pending and are not counted as passed here.
+
+
 ## UI12 playable follow-up — acceptance completed
 
 Delivered runtime: **`9398633d8fd715c008560cc038f61d8f85c98466`**. Validation source:

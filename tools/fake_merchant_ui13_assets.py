@@ -114,6 +114,16 @@ def _image(draw, scale, origin):
     return raster(draw, scale, origin, (320, 218))
 
 
+def regent_material_order(frame):
+    # Visible source attachments are not a fixed-length list: the minion's
+    # Normal sweat appears for62 of the320 samples. Keep that actual order.
+    # An invisible eye also must remain invisible, never synthesized.
+    materials=[(row['slot'],row['blend']) for row in frame['draw'] if row['blend']]
+    tiles.require(not materials or materials==[('eye add',1)],
+                  'Regent relaxed source contains an unreviewed emissive slot or material')
+    return bool(materials)
+
+
 def regent_atlas(draw, scale, origin):
     """One cache entry, original Normal/Add/Normal order and straight alpha.
 
@@ -123,8 +133,14 @@ def regent_atlas(draw, scale, origin):
     duplicate large occluded body planes and stays within320x240.
     """
     additive = [i for i, row in enumerate(draw) if row[-1] != 0]
-    tiles.require(len(additive) == 1 and draw[additive[0]][-1] == 1,
+    tiles.require(not additive or len(additive) == 1 and draw[additive[0]][-1] == 1,
                   'Regent relaxed material ordering changed')
+    if not additive:
+        body=raster(draw,scale,origin,(320,218));outside=np.array(body)[:,:,3]
+        outside[:190,:160]=0
+        tiles.require(not np.any(outside),'Regent source body escaped its registered atlas crop')
+        atlas=Image.new('RGBA',REGENT_ATLAS);atlas.paste(body.crop(REGENT_BODY),(0,0))
+        return atlas
     index = additive[0]
     # Raster this ONE emissive slot as Normal against transparency so RGB
     # stays straight. Raster(Add) against black would premultiply RGB, then
@@ -211,7 +227,7 @@ def _sequence(pack, sampler, cache, spec, first, exclude_slots=()):
     origin = np.array([LEFT+position[0]*SCALE, position[1]*SCALE])
     attached = NecrobinderActor(pack, sampler, resource, metadata) if key == 'necrobinder' else None
     x, y, w, h = crop
-    frames = []
+    frames = [];visible_draw_counts={};visible_eye_frames=0
     for frame in sampled:
         drawing = sampler.draw(resource, frame)
         if exclude_slots:
@@ -219,9 +235,8 @@ def _sequence(pack, sampler, cache, spec, first, exclude_slots=()):
             tiles.require(found==set(exclude_slots), 'Fake Merchant hidden rug slot changed')
             drawing = [geometry for row, geometry in zip(frame['draw'], drawing) if row['slot'] not in exclude_slots]
         if key == 'regent':
-            tiles.require(len(frame['draw'])==32 and frame['draw'][14]['slot']=='eye add' and
-                          [i for i,row in enumerate(drawing) if row[-1]]==[14],
-                          'Regent original eye slot order changed')
+            visible_eye_frames+=int(regent_material_order(frame))
+            visible_draw_counts[len(frame['draw'])]=visible_draw_counts.get(len(frame['draw']),0)+1
             frames.append(regent_atlas(drawing, scale*SCALE, origin))
         else:
             full = attached.image(frame) if attached else _image(drawing, scale*SCALE, origin)
@@ -256,6 +271,8 @@ def _sequence(pack, sampler, cache, spec, first, exclude_slots=()):
             dict(source=[16,190,8,6],destination=[92,77],blend='Normal')]
         summary['body_hole'] = list(REGENT_EYE)
         summary['packed_dimensions'] = list(REGENT_ATLAS)
+        summary['visible_draw_counts'] = visible_draw_counts
+        summary['visible_eye_add_frames'] = visible_eye_frames
     if attached:
         summary['attached_shader'] = 'shaders/vfx/vfx_stepped_shader_fire_dark.tres'
         summary['attached_slot'] = 'flameattach'
