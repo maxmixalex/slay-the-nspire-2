@@ -194,6 +194,11 @@ struct Canvas{
     void picture(Picture p,int x,int y,int width=0,int height=0,unsigned opacity=255,unsigned blend_mode=0){
         if(!p.pixels||!opacity)return;if(!width)width=p.w;if(!height)height=p.h;
         if(width<=0||height<=0)return;int left=mx(0,-x),right=mn(width,clip_w-x),top=mx(0,-y),bottom=mn(height,clip_h-y);if(left>=right||top>=bottom)return;
+        // Most room animation planes have partial alpha but no layer tint,
+        // coverage, blend override or mask. Prove that once for the entire
+        // draw instead of reloading every modulation field for each pixel.
+        const bool direct=!occlusion&&!coverage&&this->opacity==255&&opacity==255&&brightness==255&&
+            tint_red==255&&tint_green==255&&tint_blue==255&&!color_matrix&&blend_mode==presentation::Normal;
         if(p.format==4){
             if(width!=p.w||height!=p.h){
                 // Inverse nearest sampling visits only visible destination
@@ -232,7 +237,9 @@ struct Canvas{
                                 for(int xx=begin;xx<end;++xx,++at){
                                     const uint8_t*src=run+(unsigned(source[xx])-sx)*stride;
                                     unsigned alpha=mode?src[2]:255;if(opacity!=255)alpha=div255(alpha*opacity);
-                                    if(alpha)paint(at,uint16_t(src[0]|uint16_t(src[1])<<8),alpha,blend_mode);
+                                    if(alpha){const uint16_t color=uint16_t(src[0]|uint16_t(src[1])<<8);
+                                        if(direct)pixels[at]=alpha==255?color:blend(pixels[at],color,alpha);
+                                        else paint(at,color,alpha,blend_mode);}
                                 }
                             }
                         }
@@ -243,8 +250,6 @@ struct Canvas{
                 return;
             }
             // Animation frames are prebaked at native size. Skip transparent runs entirely.
-            const bool direct=!occlusion&&!coverage&&this->opacity==255&&opacity==255&&brightness==255&&
-                tint_red==255&&tint_green==255&&tint_blue==255&&!color_matrix&&blend_mode==presentation::Normal;
             const uint8_t* run=p.pixels;
             for(int yy=0;yy<p.h;yy++){
                 unsigned spans=run[0]|(unsigned)run[1]<<8;run+=2;
@@ -258,6 +263,9 @@ struct Canvas{
                         // modulation. Keep explicit loads: sparse row headers
                         // can place RGB565 bytes at an odd address.
                         if(direct&&!mode){for(int xx=l;xx<h;++xx,++at,src+=2)pixels[at]=uint16_t(src[0]|(uint16_t(src[1])<<8));}
+                        else if(direct){for(int xx=l;xx<h;++xx,++at,src+=3){
+                            const unsigned alpha=src[2];const uint16_t value=uint16_t(src[0]|uint16_t(src[1])<<8);
+                            if(alpha)pixels[at]=alpha==255?value:blend(pixels[at],value,alpha);}}
                         else for(int xx=l;xx<h;xx++,at++,src+=stride){unsigned alpha=mode?src[2]:255;if(opacity!=255)alpha=div255(alpha*opacity);uint16_t v=src[0]|(uint16_t)src[1]<<8;paint(at,v,alpha,blend_mode);}}
                     run+=n*stride;
                 }
@@ -265,7 +273,7 @@ struct Canvas{
             return;
         }
         if(width==p.w&&height==p.h&&!p.alpha&&!p.palette&&opacity==255){
-            if(!occlusion&&!color_matrix&&!coverage&&this->opacity==255&&brightness==255&&tint_red==255&&tint_green==255&&tint_blue==255&&blend_mode==presentation::Normal){
+            if(direct){
                 // Decoded RGB565 bytes may be unaligned. Preserve the explicit
                 // little-endian load instead of casting the resource pointer.
                 for(int yy=top;yy<bottom;++yy){int at=(y+yy)*pitch+x+left;const uint8_t*src=p.pixels+(yy*p.w+left)*2;
@@ -294,7 +302,8 @@ struct Canvas{
             for(int xx=left;xx<right;xx++,at++){
                 int i=row+source[xx-left];unsigned alpha=p.alpha?p.alpha[i]:255;if(opacity!=255)alpha=div255(alpha*opacity);if(!alpha)continue;
                 const uint8_t*pixel=p.palette?p.palette+p.pixels[i]*2:p.pixels+i*2;uint16_t color=pixel[0]|(uint16_t)pixel[1]<<8;
-                paint(at,color,alpha,blend_mode);
+                if(direct)pixels[at]=alpha==255?color:blend(pixels[at],color,alpha);
+                else paint(at,color,alpha,blend_mode);
             }
             row_index+=row_step;row_remainder+=row_advance;
             if(row_remainder>=row_divisor){row_remainder-=row_divisor;++row_index;}

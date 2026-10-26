@@ -488,7 +488,9 @@ static void event_motion(){
  CHECK(!motion.title_alpha(a.map_clock_ms)&&!motion.body_reveal(a.map_clock_ms));
  CHECK(choices()==2&&!hit(HitKind::Choice,0).enabled&&!hit(HitKind::Choice,1).enabled);
  a.input(Key::Confirm);unchanged();room_clock(500);CHECK(!hit(HitKind::Choice,0).enabled);
- CHECK(hit(HitKind::Choice,0).x==83);room_clock(250);
+ // The readable event reserves a104px hover lane. Its13px entry offset
+ // is unchanged, while the settled option now begins at x126.
+ CHECK(hit(HitKind::Choice,0).x==113&&hit(HitKind::Choice,0).w==186);room_clock(250);
  CHECK(motion.title_alpha(a.map_clock_ms)>0&&motion.title_alpha(a.map_clock_ms)<255&&!motion.body_reveal(a.map_clock_ms));
  capture("event-options-entering");unchanged();room_clock(250);
  CHECK(motion.title_alpha(a.map_clock_ms)==255&&hit(HitKind::Choice,0).enabled&&!hit(HitKind::Choice,1).enabled);

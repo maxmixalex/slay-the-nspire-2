@@ -74,7 +74,7 @@ int main(int argc,char**argv){
  app.open_potion(15);CHECK(app.potion_page==3&&app.panel==4);app.close_potion();
  for(unsigned relic:{0u,23u,24u,40u})CHECK(hud_relic_layout::center_y(relic)>=22);
  CHECK(save(app.game,after)&&before.size==after.size&&!std::memcmp(before.bytes,after.bytes,before.size));if(argc>1)CHECK(app.content.healthy());
- new_run(app.game,0x131313,false);CHECK(world_begin_run(app.game));auto&w=app.game.world;auto&rooms=w.rooms[w.act_index];auto&map=w.maps[w.act_index];
+ new_run(app.game,0x131313,false);CHECK(world_begin_run(app.game));app.game.potion_slots=2;auto&w=app.game.world;auto&rooms=w.rooms[w.act_index];auto&map=w.maps[w.act_index];
  rooms.boss_count=2;rooms.bosses[1]=EncounterId::QueenBoss;map.second_boss=uint8_t(map.boss+1);
  for(unsigned slots=2;slots<=16;++slots){if(slots>2)CHECK(add_potion_slots(app.game,1));const auto p=hud_room_geometry(app.game);
   CHECK(p.room-hud_potion_layout::Left-hud_potion_layout::width(slots)==4);CHECK(p.floor-p.room-10==4);CHECK(p.boss-p.floor-22==4);

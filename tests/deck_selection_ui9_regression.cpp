@@ -41,8 +41,8 @@ static void room(WorldRoom target){
 }
 static void begin_smith(){unsigned option=0;while(option<a.game.world.rest_count&&a.game.world.rest_options[option]!=unsigned(WorldRestOption::Smith))++option;CHECK(option<a.game.world.rest_count);click(HitKind::Choice,int(option));CHECK(a.game.phase==Phase::Upgrade&&a.room_presentation.rest.selection.pending);a.render();settle();}
 static void font(const char*key,unsigned size,unsigned face){
-    if(!actual)return;const char*text=a.content.world_string("card_selection",key);CHECK(*text);char formatted[256]{};LocalizedTemplate value(formatted,sizeof formatted,deck_selection_amount,nullptr);value.format(text);RichReader reader(formatted);RichChar ch{};
-    while(reader.next(ch))if(ch.codepoint>32){const unsigned style=face?face:(ch.style.bold?5:0);const unsigned band=((style&3)<<6)|((style&4)<<3);CHECK(std::binary_search(glyph_keys.begin(),glyph_keys.end(),uint32_t((size|band)<<24)|ch.codepoint));CHECK(a.content.glyph(ch.codepoint,size,style).pixels);}
+    if(!actual)return;const char*text=a.content.world_string("card_selection",key);CHECK(*text);char formatted[256]{};LocalizedTemplate value(formatted,sizeof formatted,deck_selection_amount,nullptr);value.for_language(a.content.language()).format(text);
+    CHECK(spire_test::selection_exact_glyphs(a,formatted,size,face,glyph_keys));
 }
 static void smith(){
     scenario="Smith grid/filter/toggle/cancel/confirm";room(WorldRoom::Rest);
@@ -90,5 +90,5 @@ static void long_grid(){
 }
 int main(int argc,char**argv){
     FILE*file=nullptr;if(argc>1){file=std::fopen(argv[1],"rb");CHECK(file);const size_t size=spire_test::pack_size(file);uint8_t header[40];CHECK(read_pack(file,0,header,sizeof header));const auto read32=[](const uint8_t*p){return unsigned(p[0])|unsigned(p[1])<<8|unsigned(p[2])<<16|unsigned(p[3])<<24;};const unsigned images=read32(header+16),glyphs=read32(header+20);for(unsigned i=0;i<glyphs;++i){uint8_t row[16];CHECK(read_pack(file,40+(images+i)*16,row,16));glyph_keys.push_back(read32(row)|(unsigned(row[8])<<24));}CHECK(std::is_sorted(glyph_keys.begin(),glyph_keys.end()));CHECK(a.content.open(ResourceSource{file,uint32_t(size),read_pack,nullptr}));actual=true;}if(argc>2)captures=argv[2];
-    font("TO_UPGRADE",5,0);font("TO_REMOVE",5,0);font("TO_TRANSFORM",5,0);font("VIEW_UPGRADES",4,5);smith();removal();long_grid();CHECK(!actual||a.content.healthy());if(file)CHECK(!std::fclose(file));std::printf("deck selection UI: %u checks passed%s\n",checks,actual?" (actual source assets)":"");
+    font("TO_UPGRADE",8,0);font("TO_REMOVE",8,0);font("TO_TRANSFORM",8,0);font("VIEW_UPGRADES",8,5);smith();removal();long_grid();CHECK(!actual||a.content.healthy());if(file)CHECK(!std::fclose(file));std::printf("deck selection UI: %u checks passed%s\n",checks,actual?" (actual source assets)":"");
 }

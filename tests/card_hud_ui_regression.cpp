@@ -102,8 +102,16 @@ static void glyph_measurement(const Bytes&data){
     const auto stats=content->read_stats();const unsigned calls=provider.calls;
     // Measuring the complete catalog must neither read pixels nor evict the
     // 64 glyphs just prepared for painting. This catches layout-cache churn.
-    for(unsigned i=0;i<count;++i){const unsigned at=first+i*16;
-        const auto g=glyph_request(at,false);CHECK(!g.pixels&&g.w==data[at+10]&&g.h==data[at+11]&&g.advance==(data[at+12]|unsigned(data[at+13])<<8));}
+    for(unsigned i=0;i<count;++i){const unsigned at=first+i*16,cp=word(at);
+        const auto g=glyph_request(at,false);
+        if(kerning_codepoint(cp)||text_format_control(cp)){CHECK(!g.pixels&&!g.w&&!g.h&&!g.advance);continue;}
+        // UI40 stores fractional advances in Q6 and negative bearings in
+        // the high bits; pair metadata is deliberately not a paint glyph.
+        const unsigned stored=data[at+12]|unsigned(data[at+13])<<8;
+        const unsigned advance64=stored&0x8000u?stored&4095u:stored*64u;
+        const int bearing=stored&0x8000u?-int((stored>>12)&7u):0;
+        CHECK(!g.pixels&&g.w==data[at+10]&&g.h==data[at+11]&&g.advance==(advance64+32u)/64u);
+        CHECK(g.advance64==advance64&&g.bearing_x==bearing);}
     const auto measured=content->read_stats();
     CHECK(provider.calls==calls&&measured.callback_bytes==stats.callback_bytes&&measured.callbacks==stats.callbacks&&
         measured.cache_hits==stats.cache_hits&&measured.cache_misses==stats.cache_misses&&measured.bypasses==stats.bypasses&&measured.direct_reads==stats.direct_reads);

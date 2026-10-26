@@ -64,7 +64,7 @@ bool shop_route(const reference::ReferenceMap&m,unsigned point,unsigned depth=0)
 bool setup(unsigned scene){
  new_run(app.game,0x7195c3,false,Character::Ironclad);
  if(!world_set_seed(app.game,"NSPIRE-WORLD-017")||!world_begin_run(app.game))return false;
- if(scene==1){
+ if(scene==1||scene==6){
   for(unsigned guard=0;guard<120;++guard){
    if(app.game.world.room_open&&app.game.world.room_type==unsigned(WorldRoom::Shop))break;
    if(world_can_travel(app.game)){
@@ -98,10 +98,19 @@ bool frame(Source&source,Cost&cost,unsigned step){
  return app.content.healthy();
 }
 bool run_scene(Source&source,unsigned scene,unsigned frames){
- static const char*names[]={"map","merchant","card_reward","crystal_full","crystal_revealed","ancient"};
+ static const char*names[]={"map","merchant","card_reward","crystal_full","crystal_revealed","ancient","merchant_closed"};
  source.scene=names[scene];source.window="open_and_fixture";Cost init,entry;
  auto io=source.io;auto start=Clock::now();
  if(!app.init({&source,source.length,read_at,nullptr},{save_game})||!setup(scene))return false;
+ if(const char*directory=std::getenv("NSPIRE_FIXTURE_DIRECTORY")){
+  // Explicit developer export for matched emulator measurements. This is a
+  // generated canonical fixture, never evidence of an ordinary playthrough.
+  char path[1024];const int n=std::snprintf(path,sizeof path,"%s/%s.sav.tns",directory,source.scene);
+  if(n<0||n>=int(sizeof path)||!save(app.game,before))return false;
+  FILE*f=std::fopen(path,"wb");if(!f)return false;
+  const bool good=std::fwrite(before.bytes,1,before.size,f)==before.size;
+  if(std::fclose(f)||!good)return false;
+ }
  init.add(start,io,source);init.output(source);source.window="first_and_preparation";
  if(!frame(source,entry,0))return false;
  for(unsigned i=0;app.combat_preparation.active;++i)if(i>=1024||!frame(source,entry,33))return false;
@@ -133,6 +142,6 @@ int main(int argc,char**argv){
  if(const char*trace=std::getenv("NSPIRE_RESOURCE_TRACE")){source.trace=std::fopen(trace,"wb");if(!source.trace)return 3;}
  if(argc==5){source.frames=std::fopen(argv[4],"wb");if(!source.frames)return 3;}
  std::printf("{\"operation\":\"scope\",\"pack_bytes\":%u,\"frames_per_window\":%u,\"windows\":3,\"step_ms\":33,\"method\":\"Frozen native renderer; real range-read resources; host CPU intervals without pacing; frame hashes outside timed intervals; fixtures do not certify whole-run play\"}\n",source.length,frames);
- for(unsigned i=0;i<6;++i)if(!run_scene(source,i,frames)){std::fprintf(stderr,"room benchmark failed scene %u phase %u healthy %u\n",i,unsigned(app.game.phase),app.content.healthy());return 10+int(i);}
+ for(unsigned i=0;i<7;++i)if(!run_scene(source,i,frames)){std::fprintf(stderr,"room benchmark failed scene %u phase %u healthy %u\n",i,unsigned(app.game.phase),app.content.healthy());return 10+int(i);}
  const bool trace_ok=!source.trace||!std::fclose(source.trace),frames_ok=!source.frames||!std::fclose(source.frames);return !std::fclose(source.file)&&trace_ok&&frames_ok?0:4;
 }

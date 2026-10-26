@@ -162,16 +162,19 @@ static void potion_focus_only(){
     scenario="real Potion Courier group retains focus";reset();CHECK(original_event_begin(a.game,OriginalEventId::PotionCourier,19,1));CHECK(original_event_choose(a.game,0));CHECK(a.game.phase==Phase::OriginalEventChoice&&a.game.original_events.selection==OriginalEventSelection::Rewards);focus();
 }
 static void exact_font(const char*text,unsigned size,unsigned face=0){
-    if(!actual)return;CHECK(text&&*text);RichReader reader(text);RichChar ch{};
-    while(reader.next(ch))if(ch.codepoint>32){const unsigned style=face?face:(ch.style.bold?5:0),band=((style&3)<<6)|((style&4)<<3);CHECK(std::binary_search(glyph_keys.begin(),glyph_keys.end(),uint32_t((size|band)<<24)|ch.codepoint));CHECK(a.content.glyph(ch.codepoint,size,style).pixels);}
+    if(actual)CHECK(spire_test::selection_exact_glyphs(a,text,size,face,glyph_keys));
 }
 static void fonts(){
     if(!actual)return;scenario="exact source prompt and enchantment glyphs";
-    exact_font(a.content.world_string("card_selection","VIEW_UPGRADES"),4,5);
+    exact_font(a.content.world_string("card_selection","VIEW_UPGRADES"),8,5);
     const CombatSelectionPrompt prompts[]={{"card_selection","TO_ENCHANT"},{"relics","DOLLYS_MIRROR.selectionScreenPrompt"},{"relics","CLAWS.selectionScreenPrompt"},{"relics","SEA_GLASS.selectionScreenPrompt"},{"events","BRAIN_LEECH.pages.SHARE_KNOWLEDGE.selectionScreenPrompt"},{"events","ROOM_FULL_OF_CHEESE.pages.GORGE.selectionScreenPrompt"},{"gameplay_ui","COMBAT_REWARD_CARD_REMOVAL.selectionScreenPrompt"},{"modifiers","SEALED_DECK.selectionPrompt"}};
-    for(const auto&prompt:prompts){char raw[512]{};std::snprintf(raw,sizeof raw,"%s",a.content.world_string(prompt.table,prompt.key));CHECK(*raw);CombatPromptContext context{{&a,prompt.table,{},int(WorldRelicSeaGlass),-1,10},0,10};wt_model_key(context.model,prompt.key);char text[512]{};LocalizedTemplate(text,sizeof text,combat_prompt_value,&context,"Energy","Stars",a.content.english(),combat_prompt_catalog).format(raw);exact_font(text,5);}
-    exact_font(a.content.world_string("gameplay_ui","CHOOSE_A_PACK"),6,5);Canvas canvas{a};
-    for(unsigned i=1;i<EventEnchantmentKinds;++i){CardHoverTarget owner{};HoverTip tip{};tip.kind=HoverTipKind::Enchantment;tip.key=event_enchantment_key(EventEnchantment(i));tip.amount=3;char title[128]{},body[512]{};format_card_hover_tip(a,owner,tip,title,sizeof title,body,sizeof body);exact_font(title,5,5);exact_font(body,5);Canvas label=canvas;label.font_face=5;CHECK(label.width(title,5)<=53);CHECK(source_hover_paragraph(canvas,body,0,0,53,0)*source_hover_step(canvas)+12<=120);}
+    for(const auto&prompt:prompts){char raw[512]{};std::snprintf(raw,sizeof raw,"%s",a.content.world_string(prompt.table,prompt.key));CHECK(*raw);CombatPromptContext context{{&a,prompt.table,{},int(WorldRelicSeaGlass),-1,10},0,10};wt_model_key(context.model,prompt.key);char text[512]{};LocalizedTemplate(text,sizeof text,combat_prompt_value,&context,"Energy","Stars",a.content.english(),combat_prompt_catalog).for_language(a.content.language()).format(raw);exact_font(text,8);}
+    exact_font(a.content.world_string("gameplay_ui","CHOOSE_A_PACK"),10,5);Canvas canvas{a};
+    for(unsigned i=1;i<EventEnchantmentKinds;++i){CardHoverTarget owner{};HoverTip tip{};tip.kind=HoverTipKind::Enchantment;tip.key=event_enchantment_key(EventEnchantment(i));tip.amount=3;char title[128]{},body[2048]{};format_card_hover_tip(a,owner,tip,title,sizeof title,body,sizeof body);exact_font(title,10,5);exact_font(body,10);
+        const int lines=source_hover_paragraph(canvas,body,0,0,90,0),visible=(187-source_hover_overhead(canvas))/source_hover_step(canvas);
+        CHECK(lines>0&&visible>0);const int overflow=std::max(0,lines-visible);
+        CHECK(source_hover_scroll(overflow,1800+overflow*950,950)==overflow);
+    }
 }
 int main(int argc,char**argv){
     FILE*file=nullptr;if(argc>1){file=std::fopen(argv[1],"rb");CHECK(file);const unsigned size=unsigned(spire_test::pack_size(file));uint8_t header[40];CHECK(read_pack(file,0,header,sizeof header));const auto read32=[](const uint8_t*p){return unsigned(p[0])|unsigned(p[1])<<8|unsigned(p[2])<<16|unsigned(p[3])<<24;};const unsigned images=read32(header+16),glyphs=read32(header+20);for(unsigned i=0;i<glyphs;++i){uint8_t row[16];CHECK(read_pack(file,40+(images+i)*16,row,16));glyph_keys.push_back(read32(row)|(unsigned(row[8])<<24));}CHECK(std::is_sorted(glyph_keys.begin(),glyph_keys.end()));CHECK(a.content.open(ResourceSource{file,size,read_pack,nullptr}));actual=true;}if(argc>2)captures=argv[2];
