@@ -36,6 +36,19 @@ static uint16_t exact_mix(uint16_t a,uint16_t b,unsigned f){
     const auto channel=[&](unsigned shift,unsigned mask){return ((((a>>shift)&mask)*(256-f)+((b>>shift)&mask)*f+128)>>8)<<shift;};
     return uint16_t(channel(11,31)|channel(5,63)|channel(0,31));
 }
+static void exact_row_quotient_contract(){
+    for(int denominator:{1,7,65536,17*65536,512*65536,0x7fffffff}){
+        const int64_t d=denominator;
+        const int64_t origins[]={-(int64_t(1)<<47)+37,-d-1,-d,-1,0,1,d-1,d,d+1,(int64_t(1)<<47)-1};
+        const int64_t changes[]={-(int64_t(1)<<32),-1,0,1,int64_t(1)<<32};
+        for(int64_t origin:origins)for(int64_t delta:changes){
+            RandomRowQuotient rows(origin,delta,denominator);
+            for(unsigned row=0;row<=240;++row){
+                CHECK(rows.value()==int((origin+int64_t(row)*delta)/denominator));rows.advance();
+            }
+        }
+    }
+}
 static void exact_interpolation_contract(){
     Image source{2,2,{0,0,0,0},{255,255,255,255}};
     const water_reflection::Texture texture(picture(source));uint32_t seed=47219;
@@ -216,7 +229,7 @@ static void actual(const char*captures){
     CHECK(save(app.game,after)&&before.size==after.size&&!std::memcmp(before.bytes,after.bytes,before.size));
 }
 int main(int argc,char**argv){
-    shader_contract();exact_interpolation_contract();exact_water_cache_contract();particle_contract();linear_texture_contract();particle_fast_paths();
+    shader_contract();exact_row_quotient_contract();exact_interpolation_contract();exact_water_cache_contract();particle_contract();linear_texture_contract();particle_fast_paths();
     if(argc>1){auto data=read(argv[1]);std::vector<uint8_t> locale;SplitResourceSource split;
         if(argc>2){locale=read(argv[2]);CHECK(split.open(ResourceSource::memory(data.data(),data.size()),ResourceSource::memory(locale.data(),locale.size()),ResourceLanguage(argc>3?std::atoi(argv[3]):1)));CHECK(app.init(split.source(),{}));}
         else CHECK(app.init(data.data(),data.size(),{}));

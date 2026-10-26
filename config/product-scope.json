@@ -10,16 +10,24 @@
   "animations_in_scope": true,
   "implemented_content_requires_timeline": false,
   "current_models": {
-    "characters_with_single_player_card_pools": 2,
-    "ironclad_pool_cards": 85,
-    "silent_pool_cards": 86,
-    "colorless_cards": 53,
-    "generated_cards": 4,
-    "relics": 30,
-    "potions": 64
+    "characters_with_single_player_card_pools": 5,
+    "characters": [
+      "Ironclad",
+      "Silent",
+      "Defect",
+      "Regent",
+      "Necrobinder"
+    ],
+    "card_models": 558,
+    "event_and_curse_dependency_cards": 61,
+    "world_relic_models": 297,
+    "potions": 64,
+    "enemy_registry_models": 108
   },
-  "complete_original_run": false,
-  "source_version": "0.15.0-prototype",
-  "validation_status": "implemented and regression verified; see docs/validation-0.15.json",
-  "verified_runtime_source": "4df76b04e2a07e6be9a898793f03fd0ab8df4aae"
+  "source_version": "0.17.0-prototype",
+  "validation_status": "UI14 integration; executable checks and final device acceptance are recorded in docs/WORK_STATE.md",
+  "verified_runtime_source": "0418cf3e63dabb456e4a9aaa49062d32f7ac747c",
+  "original_three_act_campaign_implemented": true,
+  "model_counts_are_fidelity_percentages": false,
+  "reference_timing_boundary": "Existing AttackCommand profiles are implemented; some move-level awaited commands retain clip-duration presentation until their pinned reference can be re-audited."
 }

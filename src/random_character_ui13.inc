@@ -26,6 +26,25 @@ struct RandomWaterCache {
 static RandomWaterCache random_water_cache;
 static_assert(sizeof(RandomWaterCache)<=226u*1024u,"Exact water memoization stays within226 KiB");
 
+// ARM926 implements each dynamic64-bit division in software. The rotated
+// quad's row numerators are linear, so retain a floor quotient and a positive
+// remainder. One carry reproduces the next row, including negative UVs;
+// value() restores C++'s original division toward zero exactly.
+class RandomRowQuotient {
+    int64_t quotient_,step_;
+    uint32_t remainder_,increment_,denominator_;
+public:
+    RandomRowQuotient(int64_t first,int64_t delta,int denominator):denominator_(unsigned(denominator)){
+        quotient_=first/denominator;int64_t remainder=first-quotient_*denominator;
+        if(remainder<0){--quotient_;remainder+=denominator;}remainder_=uint32_t(remainder);
+        step_=delta/denominator;remainder=delta-step_*denominator;
+        if(remainder<0){--step_;remainder+=denominator;}increment_=uint32_t(remainder);
+    }
+    int value()const{return int(quotient_+(quotient_<0&&remainder_?1:0));}
+    void advance(){quotient_+=step_;remainder_+=increment_;
+        if(remainder_>=denominator_){remainder_-=denominator_;++quotient_;}}
+};
+
 // Textured particles use the original images, source modulation and source
 // emitter rotation. The source quad is clipped before any inverse sampling.
 enum class RandomTextureSource:uint8_t {Color,WhiteAlpha,OpaqueColor};
@@ -52,10 +71,11 @@ static void random_character_particle(Canvas&c,const water_reflection::Texture&t
             if(i<32){add_red[i]=uint8_t(div255(div255(i*red)*alpha));add_blue[i]=uint8_t(div255(div255(i*blue)*alpha));}}
     }
     const int du=int(int64_t(cosine)*65536*64/size_q16),dv=int(int64_t(sine)*65536*64/size_q16);
-    for(int y=top;y<bottom;++y){
-        const int dx=(left<<16)+32768-center_x_q16,dy=(y<<16)+32768-center_y_q16;
-        int u=32768+int((int64_t(dx)*cosine+int64_t(dy)*sine)*64/size_q16);
-        int v=32768+int((int64_t(dy)*cosine-int64_t(dx)*sine)*64/size_q16);
+    const int dx=(left<<16)+32768-center_x_q16,dy=(top<<16)+32768-center_y_q16;
+    RandomRowQuotient row_u((int64_t(dx)*cosine+int64_t(dy)*sine)*64,int64_t(sine)*65536*64,size_q16);
+    RandomRowQuotient row_v((int64_t(dy)*cosine-int64_t(dx)*sine)*64,int64_t(cosine)*65536*64,size_q16);
+    for(int y=top;y<bottom;++y,row_u.advance(),row_v.advance()){
+        int u=32768+row_u.value(),v=32768+row_v.value();
         for(int x=left;x<right;++x,u+=du,v-=dv){
             if(u<0||v<0||u>=65536||v>=65536)continue;
             const unsigned at=y*c.pitch+x;

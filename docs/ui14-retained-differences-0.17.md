@@ -56,13 +56,38 @@ and requires its own next-checkpoint regression result.
 ## Actual remaining fidelity and evidence limits
 
 The named old visual families above have implementations. The source still
-does not claim every original per-monster command duration: the explicit
+does not claim every original per-monster command duration. The explicit
 `enemy_command_timing` table covers Leaf Slimes and Damp Cultist, with
-Nibbit/Louse-specific waits in `ui_enemy_move_wait`; other unmapped actions
-retain the registered clip-duration fallback. That is a concrete timing
-difference, not a missing card/enemy rule or a claim that every combat is
-unplayable. The reward-entry rule has its own restored four-branch timing
-and must not be confused with this broader audit boundary.
+Nibbit/Louse-specific waits in `ui_enemy_move_wait`. Separately,
+`combat_command_timing.hpp` already contains 196 original AttackCommand
+profiles, and the effect observer uses their animation delay, callback wait,
+repeat/once flag and Damage tail for each actual hit. Those implemented
+attack waits must not be counted as absent features. A move's earlier or
+later dialogue, cast, block, power and other awaited commands can still use
+the registered clip-duration fallback; animation length is not evidence for
+the original command's return time.
+
+The 107 solo model entries contain 327 move nodes. Twelve nodes have the
+complete named move wait and three explicitly return `Task.CompletedTask`.
+Of the remainder, 189 have an existing AttackCommand profile and 123 are
+outside that table. The latter group also includes raw-damage commands, so
+it cannot simply be called 123 non-attack moves. These counts describe the
+available timing evidence, not 312 missing rules. Examples still requiring
+their original method bodies include Aeonglass `IncreasingIntensityMove`,
+Axebot `BootUpMove`, Calcified Cultist `IncantationMove`, Corpse Slug
+`GoopMove`, Crossbow Ruby Raider `ReloadMove`, and Crusher's raw-damage
+move family. Existing explicit selection, generated-card, respawn and
+Decimillipede sequencing remain separately implemented.
+
+The retained UI13 evidence archive and release metadata contain no C#/IL
+method bodies or additional await parameters. The existing model JSON
+preserves method names/tokens and animator data, not those command bodies.
+Completing this specific audit requires the pinned v0.111.0 `sts2.dll`
+(`0861bfa1df347538d932f22d580e75420f08082792eb914e53b4882764acdbe9`)
+or its matching private decompilation; the earlier private source directory
+was removed during this session's environment cleanup. No guessed wait
+table is substituted. The reward-entry rule has its own restored
+four-branch timing and must not be confused with this broader boundary.
 
 Every desktop GPU secondary material, every Bestiary move combination, and
 an exhaustive comparison against an unmodified Godot application have not

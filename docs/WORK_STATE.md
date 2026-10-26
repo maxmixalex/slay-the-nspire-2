@@ -1,3 +1,65 @@
+# UI14 final-device integration — 2026-10-26
+
+Runtime stage10 `6355aef2fa174aa6c6e1134c4a088b4ba7cb6948` is pushed and all
+ten changed blobs have been compared with the remote tree. Its ARM build is
+1,681,970 bytes, SHA256
+`f9f9f4810d99c1717c6d6e5bf9fce9e13a244e8c3ebc2a30ef40e59aec3d1c23`,
+with22,722,076 bytes allocated. Ordinary OS startup and exact USB readback
+succeeded independently for the natural-run, merchant and combat fixtures.
+Final native, actual-resource and device timing gates for this stage are
+running; no final package/main acceptance is claimed at this checkpoint.
+
+Stage7's full native suite, with the corrected stage8 input/canvas fixtures,
+passes138/138. Relevant Python source is unchanged after its334 unique passing
+tests. All16 final locale editions pass38,686 checks and53,072 descriptions.
+The final common pack is72,131,134 bytes. Exact merchant factoring preserves
+all1,817 original frames, while bounded grouped compression saves6,215,294
+bytes against the independent-frame moving payload. The complete new install
+is still larger than UI13 after adding missing original card/score/effect art.
+
+The actual natural first-encounter loop on stage7 is complete: fresh Ironclad
+run, Neow, original map route, ordinary seven-turn Nibbit victory,15 gold,
+Colorless Potion and Headbutt, empty reward fade, explicit Proceed to the map,
+Save and Quit, animated Continue, and normal OS exit with save/progress
+readback. The resumed state has56/80HP,114 gold, one potion,11 cards and floor2.
+This is not a natural three-act victory. Its2525-frame mixed cold/interaction
+combat window averages28.4681FPS in Firebird, with6 frames above250ms and zero
+resource failures. Stage10 repeats ordinary resume/readback of that same run.
+
+Independent stage7 closed-merchant timing is26.8840FPS for the cold first16s,
+then30.0028FPS in the matched60s window after120s; that warm window has zero
+reads and zero frames above50ms. Initial entry has two frames above250ms and
+is reported separately. Final stage10 repeats these windows because its image
+pool changes; earlier timings cannot substitute for that gate.
+
+Stage7 Random failed performance acceptance: its last60s average9.8567FPS.
+Stage9's exact pixel memo and interpolation optimization passes40,213 synthetic
+and353,009 checks per actual English/Chinese pack; all307,200 separately
+compared background pixels match the earlier general sampler. Stage9 ARM
+nevertheless fails ordinary-OS Zehn memory allocation at22,983,964 bytes.
+Stage10 subtracts256KiB from the existing picture pool while retaining the
+225KiB water memo, so its total allocation is30,184 bytes below stage7. This
+actual allocation failure is not concealed by the nominal24MiB budget.
+
+Stage10 also restores the original four death-to-reward timing branches and
+prepares saved combat relic choices before displaying them, so confirming an
+enchantment cannot conceal its first second behind a newly started decoder.
+Invalid console fight IDs now fail without altering State or RNG; the earlier
+fixture's class-name typo exposed a real unintended random-encounter fallback.
+
+The earlier-difference reconciliation is
+[ui14-retained-differences-0.17.md](ui14-retained-differences-0.17.md). Most old
+visual omissions have implemented source. Complete move-level await timing
+still requires the pinned original assembly: existing196 AttackCommand
+profiles do not reconstruct every move's surrounding waits. The former
+private DLL/PCK copies were cleared by the environment, and no DLL is present
+in the preserved evidence archive. Do not invent source wait values from clip
+lengths or report every historical timing gap closed. The accepted Ancient
+actor-animation storage exception and excluded audio/multiplayer/Timeline
+scope are unchanged.
+
+---
+
 # UI14 integration checkpoint — 2026-10-26
 
 Stage4 source `97a63d78979daba7d12fa8475b305e836fc9503c` builds both
