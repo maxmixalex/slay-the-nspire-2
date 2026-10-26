@@ -138,8 +138,18 @@ static void actual_enchant(){
  scenario="a real pending enchantment selection survives save/load and commits once";fresh(Character::Regent);hand({RegentTheSmith,SovereignBlade,RegentDefend});
  CHECK(gain_world_relic(a.game,WorldRelicGnarledHammer));CHECK(a.game.phase==Phase::WorldRelicChoice);
  export_save("ui14-regent-enchant-forge");uint16_t eligible[MaxDeck];const unsigned count=world_relic_eligible(a.game,eligible,MaxDeck);CHECK(count);
+ // Ordinary resume clears presentation state while preserving the pending
+ // combat choice. Preparation must finish before that choice is usable.
+ a.reset_presentation();before=a.game;a.sync_combat_preparation();
+ if(original_art)CHECK(a.combat_preparation.initialized);
+ a.combat_preparation.shown=true;
+ for(unsigned i=0;i<1024&&a.combat_preparation.active;++i)a.step_combat_preparation();
+ CHECK(!a.combat_preparation.active);unchanged();
+ const auto preparation_updates=a.combat_preparation.updates;
  const uint16_t chosen=eligible[0];direct=a.game;CHECK(world_relic_select(direct,&chosen,1));
  {UiCoreObserver observer(a);CHECK(world_relic_select(a.game,&chosen,1));}equal_save();
+ a.sync_combat_preparation();CHECK(!a.combat_preparation.active&&a.combat_preparation.updates==preparation_updates);
+ if(original_art)CHECK(a.combat_preparation.initialized);
  CHECK(a.reward_presentation.enchants.count==1);const auto&view=a.reward_presentation.enchants.cards[0];
  CHECK(view.deck==chosen&&view.model.card.kind==a.game.deck[chosen].kind&&view.model.facts.enchantment==EventEnchantment::Sharp&&view.model.facts.enchantment_amount==3);
  const auto start=view.start;before=a.game;Canvas c{a};

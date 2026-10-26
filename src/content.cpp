@@ -19,11 +19,13 @@ constexpr unsigned MaxEncodedImage=MaxImageBytes+MaxImageBytes/255u+32u;
 constexpr unsigned MaxGlyphBytes=40u*40u*2u,MaxStringBytes=16384;
 // Keep the total foreground allocation below 24 MiB. Two additional MiB
 // retain complete multi-enemy/card animation working sets after warmup.
-// Ordinary scenes use 7 MiB of decoded images and 6 MiB of tile groups;
-// merchant scenes use 12 MiB of decoded images and a bounded 1 MiB decoder tier.
+// Ordinary scenes use6.75 MiB of decoded images and6 MiB of tile groups;
+// merchant scenes use11.75 MiB of decoded images and a1 MiB decoder tier.
+// The256 KiB reduction pays for the exact225 KiB random-water memo without
+// increasing the allocation required from the ordinary OS's contiguous heap.
 // The split changes only at a frame boundary, invalidating both old tiers.
-constexpr unsigned ImagePageBytes=4096,ImagePages=1792,RoomImagePages=3072,ImageEntries=1023;
-constexpr unsigned PictureBufferBudget=13u*1024u*1024u;
+constexpr unsigned ImagePageBytes=4096,ImagePages=1728,RoomImagePages=3008,ImageEntries=1023;
+constexpr unsigned PictureBufferBudget=13u*1024u*1024u-256u*1024u;
 alignas(4) static uint8_t picture_pixels[PictureBufferBudget];
 static uint8_t*const image_pixels=picture_pixels;
 static unsigned image_page_limit=ImagePages;
@@ -51,8 +53,8 @@ static_assert(ImagePageBytes==Content::image_page_bytes()&&ImagePages==Content::
 static_assert(RoomImagePages<65536&&(MaxImageBytes+ImagePageBytes-1)/ImagePageBytes<=255,
               "Image page indexes and lengths must fit the bounded entry");
 static_assert(ImageEntries<1024&&ImageBuckets==64,"Image ids and bucket links must share the existing key word");
-static_assert(sizeof picture_pixels==13u*1024u*1024u,
-              "Both picture tiers must share the bounded 13 MiB budget");
+static_assert(sizeof picture_pixels==13u*1024u*1024u-256u*1024u,
+              "Picture tiers reserve256 KiB for the exact water cache");
 static_assert(sizeof image_cache+sizeof image_buckets+sizeof image_used+sizeof image_age<=25u*1024u,
               "Image-cache bookkeeping must remain below25 KiB on the host");
 static uint8_t* image_buffer(const ImageCache& cache){return image_pixels+unsigned(cache.first)*ImagePageBytes;}

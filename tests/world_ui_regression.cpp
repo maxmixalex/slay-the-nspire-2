@@ -934,7 +934,8 @@ static void ui6_combat_fidelity(){
  for(unsigned fast=0;fast<2;++fast){enemy_visual_fight(EncounterId::NibbitsWeak);a.fast_mode=fast!=0;
   {UiCoreObserver observer(a);damage_unpowered(a.game,0,9999);resolve_pending(a.game);}
   CHECK(a.combat_status.reward_scheduled);const auto&m=a.enemy_presentation[0];
-  CHECK(a.combat_status.reward_at==a.animation+(fast?8u:16u));
+  const unsigned death_left=m.clip>=0&&!m.loop&&int32_t(m.until-a.animation)>0?m.until-a.animation:0;
+  CHECK(a.combat_status.reward_at==a.animation+(fast?16u:death_left+31u));
   CHECK(a.combat_status.reward_at<m.hide_at);const uint32_t deadline=a.combat_status.reward_at;
   a.animation+=2;a.sync_enemy_feedback();CHECK(a.combat_status.reward_at==deadline&&a.combat_linger_until==deadline);
  }

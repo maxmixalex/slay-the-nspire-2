@@ -1,5 +1,9 @@
 void App::sync_combat_preparation(){
-    if(title||character_select||!combat_phase(game.phase)||!content.current_profile())return;
+    // A saved relic choice still belongs to its combat. Prepare that room
+    // before displaying the choice, so confirming an enchantment cannot
+    // start a new black preparation interval over its reveal animation.
+    const Phase parent=game.phase==Phase::WorldRelicChoice?Phase(game.world_relics.return_phase):game.phase;
+    if(title||character_select||!combat_phase(parent)||!content.current_profile())return;
     auto&p=combat_preparation;
     const int encounter=game.enemy_world.active?int(game.enemy_world.encounter):-1;
     if(p.initialized&&p.seed==game.seed&&p.floor==game.floor&&p.combat==game.world.combat_count&&p.encounter==encounter)return;

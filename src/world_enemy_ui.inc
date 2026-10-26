@@ -251,12 +251,23 @@ void App::sync_enemy_feedback(){
  bool living=false;for(int i=0;i<game.enemy_count;++i)living|=combat_health(i+1).hp>0;
  if(living)combat_status.had_live_scene=true;
  if(!living&&combat_status.had_live_scene&&!combat_phase(game.phase)&&game.phase!=Phase::Dead&&!combat_status.reward_scheduled){
-  // NCombatUi.ShowRewards normally waits for the death track in Standard.
-  // The calculator's requested responsiveness adaptation overlaps that
-  // noninteractive tail with Loot. Actual damage/status commands still
-  // finish first; no corpse clip length can prolong the reward barrier.
+  // NCombatUi.ShowRewards waits the longest remaining death track +1s in
+  // Normal. Fast uses .5s for an ordinary room and half the remaining track
+  // for a boss. Damage/generated-card commands finish before this clock;
+  // the later corpse hold/dissolve never gates the reward window.
   const uint32_t at=ui_feedback_bound(*this)?ui_feedback_later(animation,combat_feedback.end_at):animation;
-  const unsigned wait=fast_mode?8u:16u;
+  uint32_t remaining=0;
+  for(int i=0;i<game.enemy_count;++i){const auto&m=enemy_presentation[i];if(!m.dead)continue;
+   uint32_t end=at;
+   // A terminal dead_loop is a held pose, not an unfinished death command.
+   // Counting its next loop deadline could keep rewards waiting forever.
+   if(m.clip>=0&&!m.loop)end=m.until;
+   else if(m.clip<0&&(game.enemy_world.models[i].kind==EnemyId::Rocket||game.enemy_world.models[i].kind==EnemyId::Crusher))
+    end=m.removing?m.fade_start:animation+76u;
+   if(int32_t(end-at)>int32_t(remaining))remaining=end-at;
+  }
+  const auto*encounter=encounter_definition(game.enemy_world.encounter);const bool boss=encounter&&encounter->type==EncounterClass::Boss;
+  const unsigned wait=fast_mode?(boss?(remaining+1u)/2u:16u):remaining+31u;
   combat_status.reward_scheduled=true;combat_status.reward_at=at+wait;
   combat_linger_until=ui_feedback_later(combat_linger_until,combat_status.reward_at);
  }

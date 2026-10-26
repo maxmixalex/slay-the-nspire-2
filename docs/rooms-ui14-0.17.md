@@ -113,8 +113,8 @@ changing alpha, disjoint composition, independent encoded readback and
 rejection of altered frame dimensions. Retained-group tests additionally
 cover frame/byte bounds, clip boundaries, cheaper independent fallbacks,
 physical removal of old blocks and preservation of foreign tile, glyph and
-localized-string data. The actual private conversion and
-Firebird cold/sustained measurements remain separate acceptance gates.
+localized-string data. The actual private conversion and Firebird
+cold/sustained measurements have separate receipts below.
 
 At checkpoint `97a63d78979daba7d12fa8475b305e836fc9503c`, journal
 `merchant-ui14-exact-split-3cfddc4f2303` closes PASS with unchanged source in
@@ -143,7 +143,7 @@ planes with zero RGB565 or alpha differences; dimensions, pivots, order and
 clocks are also identical. The final logical-pack SHA256 is
 `e5523824d43abd94a4bdf25fc0f71502bfd32bd022382ff9060b60c79076e66a`.
 Six public factoring/grouping tests pass at this same checkpoint. Ordinary-OS
-Firebird cold and sustained timing remain separate acceptance gates.
+Firebird cold and sustained timing is recorded independently below.
 
 ## Validation scope
 
@@ -154,7 +154,81 @@ immediate opening, cancellation, bounded preparation steps and a stable
 opening clock. Ordinary event geometry checks accept the variable-height
 buttons while retaining viewport and non-overlap constraints.
 
-These regressions do not establish calculator performance. The reported
-closed-merchant frame-rate regression still requires matched ordinary-OS
-Firebird measurements, including the first animation cycle and sustained
-idle; warmed inventory measurements alone cannot close that report.
+The stage7 runtime `0418cf3e63dabb456e4a9aaa49062d32f7ac747c` passes nine
+actual-resource gates: English/Chinese event, room, reward and associated
+keyword-tooltip tests, plus the full merchant-occlusion comparison. The
+private receipt is `rooms-ui14-stage7/receipt.json`; journals use the prefix
+`rooms-stage7-`. Captures include label-only Continue, fixed-count Transform,
+Torus with its lower preview and keywords above it, closed/open merchant,
+dialogue bubble and rest outlines. These correctness checks do not establish
+calculator performance.
+
+## Ordinary-OS Firebird merchant measurements
+
+The stage7 ARM is 1,681,232 bytes, SHA256
+`88b9c0dcb75b843a94ee0b10ab57df380498d57a80683419f2b0dcc854e9dc35`.
+It was read back byte-for-byte from the installed isolated calculator before
+measurement. The final Chinese logical resource is 78,904,352 bytes, SHA256
+`f33d8871063b18d9392e148fcdc88cdf3b78618a38daa9ab8effc80fe7ace18f`.
+
+The controlled Ironclad merchant fixture uses seed 7443907, floor14, HP80,
+gold99 and a matching production progress record marked partial. It is not
+a natural run. Both branches start from one fresh application title snapshot,
+before any merchant rendering. The cold branch performs Continue and observes
+16 simulated seconds. The other branch performs Continue and observes120
+seconds, then forks into matched A/B emulator states. A exits immediately;
+B runs exactly60 additional seconds and follows the identical exit sequence.
+Each branch uses ordinary Pause, Save and Return, confirmed Quit, and OS USB
+readback of `state/nSpire2.perf.tns`.
+
+| Room sample | Frames | Interval ticks | FPS | Mean render | Resource reads / bytes | Intervals over50 /100 /250ms |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| First16s after Continue | 407 | 496,078 | 26.8840 | 21.6001ms | 249 /1,639,165 | 19 /3 /2 |
+| First120s cumulative | 3,528 | 3,903,913 | 29.6127 | 16.2341ms | 249 /1,639,165 | 19 /3 /2 |
+| Matched additional60s after120s | 1,800 | 1,965,896 | 30.0028 | 15.5379ms | 0 /0 | 0 /0 /0 |
+
+The clock is the emulated CX foreground SP804 timer at32,768Hz, hardware1.
+Actual Room-classified duration differs from the controller's requested time
+because Continue includes the original title/departure lifecycle. This is
+Firebird emulated-device timing, not physical-handheld FPS. The A/B result
+subtracts counts and totals; it never subtracts minima or maxima. All reports
+have zero resource failures. The unchanged249 reads at16 and120 seconds show
+that this complete closed-room cycle no longer repeatedly decodes old tiles.
+
+The cold sample still contains two intervals over250ms, with a longest interval
+of1,190.552ms. Its separately aggregated render and resource maxima are
+1,125.763ms and894.684ms. They are not a correlated per-frame decomposition
+and must not be subtracted to claim CPU time. A read-only native callback
+attribution of the first Room frame identifies45 calls /410,493 bytes:
+139,935 image-group bytes,171,101 glyph-group bytes,13,441 string-group bytes,
+and86,016 descriptor/page bytes. It establishes cold resource ownership,
+not device timing. No new loading animation, delayed measurement boundary,
+frame deletion or speculative resource prefetch was introduced.
+
+The emulator clone changes only the v3 snapshot's512-byte flash-path field.
+All other decompressed snapshot bytes retain the same hash; the paired flash
+is a distinct copy. Every branch's `started.flash` was verified before its
+measurement. The independent natural-run flash was never opened. Accepted
+journals are `merchant-stage7-cold16-40ab630383ca`,
+`merchant-stage7-warm120-3c6e254c43f1`,
+`merchant-stage7-warm-a-measure-7bd6dae4d0f7`, and
+`merchant-stage7-warm-b-measure-e3e0d0365ed6`. All close PASS with unchanged
+source; the private aggregate is `merchant-firebird-stage7/receipt.json`.
+
+## Restored original death-to-reward timing
+
+The UI14 historical-difference audit identified the old early-Loot behavior
+as a real remaining timing difference. The current source restores
+`NCombatUi.ShowRewards`: Normal waits the longest remaining finite death
+track plus1 second; Fast waits500ms in ordinary rooms and half the remaining
+track for a boss. Actual damage and generated-card command barriers still
+finish first. Corpse hold/dissolve stays independent. A held `dead_loop` or
+missing ordinary clip cannot extend the deadline, and repeated renders do
+not reschedule it. The original four-branch rule was also independently
+preserved in the historical `3d6d799` implementation and
+[UI6 source timing record](combat-ui6-0.17.md).
+
+The added tests cover all four mode/room combinations, delayed real-command
+barriers, fixed deadlines, held loops, absent clips and a real winning-card
+canonical comparison. This source correction is later than stage7; its
+executed gate must retain the next integration checkpoint's identity.

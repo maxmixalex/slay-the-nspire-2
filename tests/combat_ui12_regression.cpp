@@ -151,12 +151,35 @@ static void smith(){
  a.confirm_deck_choice();CHECK(!a.reward_presentation.upgrades.count);unchanged();
 }
 static void reward_overlap(){
- scenario="Loot barrier excludes the remaining death clip";
- for(unsigned fast=0;fast<2;++fast){fresh();CHECK(encounter_setup(a.game,EncounterId::NibbitsNormal));a.fast_mode=fast!=0;
-  a.sync_enemy_feedback();CHECK(a.combat_status.had_live_scene);
-  for(unsigned i=0;i<a.game.enemy_count;++i)a.game.enemies[i].hp=0;
-  a.game.phase=Phase::Reward;a.enemy_visual_clock=a.animation+1000;before=a.game;a.sync_enemy_feedback();
-  CHECK(a.combat_status.reward_scheduled&&a.combat_status.reward_at==a.animation+(fast?8u:16u));unchanged();
+ scenario="source Normal/Fast ordinary/boss reward clock retains the command barrier";
+ for(unsigned boss=0;boss<2;++boss)for(unsigned fast=0;fast<2;++fast)for(unsigned barrier:{0u,20u}){
+  fresh();CHECK(encounter_setup(a.game,boss?EncounterId::AeonglassBoss:EncounterId::NibbitsNormal));a.fast_mode=fast!=0;
+  a.sync_enemy_feedback();CHECK(a.combat_status.had_live_scene);const uint32_t began=a.animation;
+  if(barrier){a.begin_combat_feedback();CHECK(ui_feedback_bound(a));a.combat_feedback.finished=true;a.combat_feedback.end_at=began+barrier;}
+  for(unsigned i=0;i<a.game.enemy_count;++i){a.game.enemies[i].hp=0;auto&m=a.enemy_presentation[i];CHECK(m.clip>=0);
+   m.hp=0;m.dead=true;m.loop=false;m.until=began+(i?41u:121u);m.count=0;m.direct=false;m.next_clip=nullptr;
+   if(barrier)a.combat_feedback.shown[i+1].hp=a.combat_feedback.observed[i+1].hp=0;
+  }
+  a.game.phase=Phase::Reward;a.enemy_visual_clock=began+1000;before=a.game;a.sync_enemy_feedback();
+  // The longest finite track ends at121. Normal adds31 ticks (1000ms);
+  // Fast ordinary adds16 (500ms); Fast boss halves the101/121 tick remainder.
+  const uint32_t expected=began+(fast?(boss?barrier+(122u-barrier)/2u:barrier+16u):152u);
+  CHECK(a.combat_status.reward_scheduled&&a.combat_status.reward_at==expected);
+  CHECK(int32_t(expected-(began+barrier))>=0);unchanged();
+  ++a.animation;a.sync_enemy_feedback();CHECK(a.combat_status.reward_at==expected);unchanged();
+  a.animation=expected;a.sync_enemy_feedback();CHECK(a.combat_status.reward_at==expected);unchanged();
+ }
+ scenario="held dead loops and absent clips cannot prolong the reward clock";
+ for(unsigned boss=0;boss<2;++boss)for(unsigned fast=0;fast<2;++fast)for(unsigned missing=0;missing<2;++missing){
+  fresh();CHECK(encounter_setup(a.game,boss?EncounterId::AeonglassBoss:EncounterId::NibbitsNormal));a.fast_mode=fast!=0;
+  a.sync_enemy_feedback();const uint32_t began=a.animation;
+  for(unsigned i=0;i<a.game.enemy_count;++i){a.game.enemies[i].hp=0;auto&m=a.enemy_presentation[i];
+   m.hp=0;m.dead=true;m.loop=true;m.until=began+1000000u;m.count=0;m.direct=false;m.next_clip=nullptr;if(missing)m.clip=-1;
+  }
+  a.game.phase=Phase::Reward;before=a.game;a.sync_enemy_feedback();
+  const uint32_t expected=began+(fast?(boss?0u:16u):31u);
+  CHECK(a.combat_status.reward_scheduled&&a.combat_status.reward_at==expected);unchanged();
+  a.animation=expected+1;a.sync_enemy_feedback();CHECK(a.combat_status.reward_at==expected);unchanged();
  }
 }
 static std::vector<uint8_t>read(const std::string&path){FILE*f=std::fopen(path.c_str(),"rb");CHECK(f);CHECK(!std::fseek(f,0,SEEK_END));const long n=std::ftell(f);CHECK(n>0);CHECK(!std::fseek(f,0,SEEK_SET));std::vector<uint8_t>v(size_t(n),0);CHECK(std::fread(v.data(),1,v.size(),f)==v.size());CHECK(!std::fclose(f));return v;}
@@ -213,14 +236,14 @@ static void actual_aimed_descriptions(){
  CHECK(base==hand_tile(c,0).description);unchanged();
 }
 static void actual_winning_card(){
- scenario="a real winning card opens Loot while corpses still animate";fresh();CHECK(encounter_setup(a.game,EncounterId::NibbitsNormal));
+ scenario="a real winning card keeps the original Fast500ms reward wait";fresh();CHECK(encounter_setup(a.game,EncounterId::NibbitsNormal));
  a.game.cards[0]={Thunderclap,0};for(unsigned i=0;i<a.game.enemy_count;++i)a.game.enemies[i].hp=1;a.fast_mode=true;
  a.sync_combat_preparation();a.combat_preparation.shown=true;for(unsigned i=0;i<256&&a.combat_preparation.active;++i)a.step_combat_preparation();CHECK(!a.combat_preparation.active);
  direct=a.game;a.begin_combat_feedback(0);{UiCoreObserver observer(a);CHECK(play(a.game,0,0));}
  CHECK(play(direct,0,0));canonical_equal(a.game,direct);CHECK(a.game.phase==Phase::Reward&&a.combat_feedback.finished);
  before=a.game;for(unsigned i=0;i<256&&!a.combat_status.reward_scheduled;++i){a.advance(33);a.sync_enemy_feedback();}
  CHECK(a.combat_status.reward_scheduled);const auto ready=a.combat_status.reward_at;
- CHECK(ready<=ui_feedback_later(a.animation,a.combat_feedback.end_at)+8u);
+ CHECK(int32_t(ready-a.combat_feedback.end_at)>=16&&ready<=ui_feedback_later(a.animation,a.combat_feedback.end_at)+16u);
  while(int32_t(ready-a.animation)>0){a.advance(33);a.sync_enemy_feedback();}unchanged();
  bool retained=false;for(unsigned i=0;i<a.game.enemy_count;++i)retained|=a.enemy_opacity(int(i))>0;
  CHECK(retained&&int32_t(a.combat_linger_until-a.animation)<=0);CHECK(a.content.healthy());

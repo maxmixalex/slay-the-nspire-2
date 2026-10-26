@@ -155,7 +155,7 @@ public:
     unsigned image_cache_pages(int id)const;
     ImageCacheUsage image_cache_usage()const;
     static constexpr unsigned image_page_bytes(){return 4096;}
-    static constexpr unsigned image_capacity_pages(){return 1792;}
+    static constexpr unsigned image_capacity_pages(){return 1728;}
     static constexpr unsigned image_capacity_entries(){return 1023;}
     // Frame-boundary operation: invalidate picture views and redistribute
     // the existing11 MiB arena between decoded images and tile groups.
