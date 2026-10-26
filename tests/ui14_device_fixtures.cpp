@@ -60,7 +60,10 @@ int main(int argc,char**argv){
  CHECK(argc==3);output=argv[2];std::filesystem::create_directories(output);
  input=read(argv[1]);matching_progress("ui14-merchant");CHECK(loaded.phase==Phase::Shop);
  app.callbacks={};CHECK(app.debug_command("new IRONCLAD 1104089578"));CHECK(app.debug_command("fight HauntedShipNormal"));
- CHECK(validate(app.game)&&app.game.phase==Phase::Combat&&app.game.enemy_count==1);
+ std::printf("HauntedShip setup: valid=%u phase=%u enemies=%u encounter=%u model=%u node=%u reply=%s\n",
+  unsigned(validate(app.game)),unsigned(app.game.phase),unsigned(app.game.enemy_count),unsigned(app.game.enemy_world.encounter),
+  unsigned(app.game.enemy_world.models[0].kind),unsigned(app.game.enemy_world.models[0].node),app.debug_reply);
+ CHECK(validate(app.game));CHECK(app.game.phase==Phase::Combat);CHECK(app.game.enemy_count==1);
  CHECK(app.game.enemy_world.models[0].kind==EnemyId::HauntedShip&&app.game.enemy_world.models[0].node==2);
  const unsigned count=dazed(app.game),cards=app.game.card_count;CHECK(count==0);
  CHECK(save(app.game,original));input.assign(original.bytes,original.bytes+original.size);
