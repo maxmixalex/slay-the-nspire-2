@@ -22,7 +22,7 @@ from patch_phobia_assets import grouped_art
 from ui12_resources import replace_images, view
 
 ROOT = Path(__file__).resolve().parents[1]
-BASE_AUX, AUXILIARY = 2201, 3331
+BASE_AUX, AUXILIARY = 2201, 3339
 
 
 def emit(stage, **values):
@@ -45,6 +45,7 @@ def assets(args):
     from rooms_ui13_assets import source_assets as rooms
     from architect_ui13_assets import source_assets as architect
     from architect_attack_assets import source_assets as attacks
+    from doom_ui13_assets import source_assets as doom
     from pck import Pack
     cache=tiles.private_path(args.cache, 'Private UI13 source cache');cache.mkdir(parents=True, exist_ok=True)
     pck=tiles.private_path(args.pck, 'Original PCK');runtime=tiles.private_path(args.runtime, 'Original runtime')
@@ -57,7 +58,8 @@ def assets(args):
     for name, builder, kwargs in (
         ('frontend', frontend, {}), ('rooms', rooms, {}),
         ('architect', architect, dict(runtime=runtime, dotnet=args.dotnet)),
-        ('attacks', attacks, dict(runtime=runtime, dotnet=args.dotnet))):
+        ('attacks', attacks, dict(runtime=runtime, dotnet=args.dotnet)),
+        ('doom', doom, {})):
         receipt=cache/(name+'-catalog.json')
         saved=json.loads(receipt.read_text()) if receipt.exists() else {}
         if saved.get('signature')==signature:
@@ -77,6 +79,27 @@ def assets(args):
         images=rows,clips=[],localized_text={language:{} for language in LANGUAGES})
     tiles.atomic_bytes(cache/'ui13-assets.json',json.dumps(manifest,indent=2).encode()+b'\n')
     emit('source_catalog_complete', images=len(rows),auxiliary=AUXILIARY)
+
+
+def extend_doom(args):
+    """Extend an already verified1130-image source build without resampling it."""
+    from doom_ui13_assets import source_assets, BASE_AUXILIARY
+    cache=tiles.private_path(args.cache,'Private UI13 source cache')
+    path=cache/'ui13-assets.json';original=path.read_bytes();manifest=json.loads(original)
+    tiles.require(manifest.get('reference')=='v0.111.0 / 41cef1ea' and
+        [row['auxiliary'] for row in manifest['images']]==list(range(BASE_AUX,BASE_AUXILIARY)),
+        'Doom extension requires a complete earlier UI13 source catalog')
+    for row in manifest['images']:
+        raw=(cache/row['file']).read_bytes()
+        tiles.require(len(raw)==row['bytes'] and tiles.sha256(raw)==row['sha256'],'Earlier source image changed')
+    rows=source_assets(tiles.private_path(args.pck,'Original PCK'),cache)
+    tiles.require([row['auxiliary'] for row in rows]==list(range(BASE_AUXILIARY,AUXILIARY)), 'Incomplete Doom source catalog')
+    manifest['images'].extend(rows)
+    manifest['extension']=dict(previous_manifest_sha256=tiles.sha256(original),
+        source_sha256=tiles.sha256((ROOT/'tools/doom_ui13_assets.py').read_bytes()),
+        unchanged_previous_images=BASE_AUXILIARY-BASE_AUX)
+    tiles.atomic_bytes(path,json.dumps(manifest,indent=2).encode()+b'\n')
+    emit('doom_catalog_extended',images=len(rows),auxiliary=AUXILIARY)
 
 
 def pack_editions(args):
@@ -144,15 +167,16 @@ def main():
     parser=argparse.ArgumentParser(description=__doc__);sub=parser.add_subparsers(dest='stage',required=True)
     sample=sub.add_parser('assets');sample.add_argument('--runtime',type=Path,required=True)
     sample.add_argument('--dotnet',default='dotnet')
+    extension=sub.add_parser('doom')
     build=sub.add_parser('pack');build.add_argument('--artwork',type=Path,required=True)
     build.add_argument('--base-common',type=Path,required=True)
     build.add_argument('--editions',type=Path,action='append',required=True)
     build.add_argument('--fonts',type=Path,required=True);build.add_argument('--output',type=Path,required=True)
     build.add_argument('--keep-logical',default='eng,zhs')
-    for command in (sample,build):
+    for command in (sample,extension,build):
         command.add_argument('--pck',type=Path,required=True);command.add_argument('--cache',type=Path,required=True)
     args=parser.parse_args()
-    (assets if args.stage=='assets' else pack_editions)(args)
+    dict(assets=assets,doom=extend_doom,pack=pack_editions)[args.stage](args)
 
 
 if __name__=='__main__':main()

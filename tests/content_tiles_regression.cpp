@@ -1,5 +1,5 @@
 #include "app.hpp"
-#include "architect_attack_assets.hpp"
+#include "doom_assets.hpp"
 #include <algorithm>
 #include <cstdio>
 #include <cstdlib>
@@ -635,7 +635,7 @@ void ui13_source_catalogs(){
     };
     for(unsigned end:{unsigned(Ui12AuxiliaryCount),IntroLogoAuxiliaryCount,PhobiaSwarmAuxiliaryCount,
             SleepingVfxAuxiliaryCount,FrontendUi13AuxiliaryCount,RoomsUi13AuxiliaryCount,
-            ArchitectUi13AuxiliaryCount,ArchitectAttackUi13AuxiliaryCount}){
+            ArchitectUi13AuxiliaryCount,ArchitectAttackUi13AuxiliaryCount,DoomUi13AuxiliaryCount}){
         label="UI40 complete optional source catalog";Package p=pack(end);Provider source{&p.bytes};
         CHECK(direct->open(p.bytes.data(),p.bytes.size())&&range->open(source.source()));
         for(Content*content:{direct.get(),range.get()}){
@@ -645,12 +645,12 @@ void ui13_source_catalogs(){
         CHECK(!source.bad_range);
     }
     for(unsigned end:{FrontendUi13AuxiliaryCount,RoomsUi13AuxiliaryCount,
-            ArchitectUi13AuxiliaryCount,ArchitectAttackUi13AuxiliaryCount}){
+            ArchitectUi13AuxiliaryCount,ArchitectAttackUi13AuxiliaryCount,DoomUi13AuxiliaryCount}){
         Package incomplete=pack(end-1);reject("Incomplete source catalog is not accepted",std::move(incomplete.bytes));
         Package wrong=pack(end);put(wrong.bytes,wrong.base-4,wrong.images);
         reject("Source catalog references must stay inside the image directory",std::move(wrong.bytes));
     }
-    Package extra=pack(ArchitectAttackUi13AuxiliaryCount+1);
+    Package extra=pack(DoomUi13AuxiliaryCount+1);
     reject("Unknown source catalog suffix is not scanned",std::move(extra.bytes));
 }
 void malformed_container(){

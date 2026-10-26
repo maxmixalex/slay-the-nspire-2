@@ -5,7 +5,7 @@
 #include "unicode_text.hpp"
 #include "resource_transfer.hpp"
 #include "tile_filter.hpp"
-#include "architect_attack_assets.hpp"
+#include "doom_assets.hpp"
 namespace spire {
 static uint16_t u16(const uint8_t*p){return p[0]|(uint16_t)p[1]<<8;}
 static uint32_t u32(const uint8_t*p){return u16(p)|(uint32_t)u16(p+2)<<16;}
@@ -282,7 +282,7 @@ bool Content::open(ResourceSource source){
                                                 // catalogs fail without scanning payload data.
                                                 constexpr unsigned endpoints[]={FrontendUi13AuxiliaryCount,
                                                     RoomsUi13AuxiliaryCount,ArchitectUi13AuxiliaryCount,
-                                                    ArchitectAttackUi13AuxiliaryCount};
+                                                    ArchitectAttackUi13AuxiliaryCount,DoomUi13AuxiliaryCount};
                                                 for(unsigned end:endpoints){
                                                     if(next==0x314c4954u)break;
                                                     for(unsigned i=auxiliary;i<end;++i){
