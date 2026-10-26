@@ -1358,6 +1358,10 @@ static void feedback_hud_and_merchant(){
   }
   capture((std::string("merchant-")+names[character]).c_str());a.advance(250);a.render();unchanged();
   a.ui_action(UiAction::OpenShop);CHECK(a.shop_open);a.render();
+  // Cold original-resource preparation yields real frames before the rug
+  // starts its authored tween. Loading time must not spend that tween.
+  for(unsigned steps=0;a.merchant_preparation.active&&steps<128;++steps){a.advance(33);a.render();unchanged();}
+  CHECK(!a.merchant_preparation.active&&a.content.healthy());
   CHECK(a.room_presentation.merchant.y(a.map_clock_ms)==-222);
   a.advance(250);a.advance(250);a.advance(200);a.render();unchanged();
   // UI12 keeps the source rug and fits readable cards into two LCD rows.
