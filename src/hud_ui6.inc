@@ -86,11 +86,6 @@ static void hud_static_tip(Canvas&c,const char*key,int x,int y=27,int width=Sour
     LocalizedTemplate format_body(formatted_body,sizeof formatted_body,hud_tip_value,&context);
     format_title.for_language(c.a.content.language()).format(title);format_body.for_language(c.a.content.language()).format(body);
     if(!format_title.truncated())title=formatted_title;if(!format_body.truncated())body=formatted_body;
-    char timed_body[1200]{};
-    if(c.a.run_timer_visible()&&(wt_equal(key,"FLOOR")||wt_equal(key,"ROOM_MAP")||wt_equal(key,"ROOM_ANCIENT"))){
-        char elapsed[24]{};c.a.run_timer_label(elapsed,sizeof elapsed);TextBuffer combined{timed_body,sizeof timed_body,0};
-        combined.text(body);combined.text("\n\n");combined.text(c.a.content.world_string("stats_screen","TIP_PLAYTIME.header"));combined.text(": ");combined.text(elapsed);body=timed_body;
-    }
     source_hover_box(c,title,body,x,y,width);
 }
 static void hud_portrait_tip(Canvas&c){
@@ -167,8 +162,6 @@ static void hud_room_nodes(Canvas&c){
         c.hit(p.boss,0,info.second_boss==EncounterId::None?11:17,22,HitKind::HudInfo,HudBoss);}
     if(a.run_timer_visible()){
         c.ui(I9_RunTimerIcon,p.timer,7,7,7);
-        char elapsed[24]{};a.run_timer_label(elapsed,sizeof elapsed);const int available=257-(p.timer+10);
-        if(available>=c.width(elapsed,8))c.text(elapsed,p.timer+10,6,8,rgb(255,246,226));
         c.hit(p.timer,0,257-p.timer,22,HitKind::HudInfo,HudTimer);
     }
 }
@@ -232,7 +225,9 @@ static void hud(Canvas&c){
     if(portrait<0)portrait=c.a.content.ui_image(character_portrait(s.character));
     c.picture(portrait,3,1,20,20);
     if(const unsigned ascension=world_ascension(s)){
-        c.ui(U_TopBarAscension,13,10,7,11);c.num(int(ascension),19,10,8,Gold);
+        c.ui(U_TopBarAscension,12,7,12,15);
+        char level[8]{};TextBuffer text{level,sizeof level,0};text.number(int(ascension));
+        health_label(c,level,12,11,12,8,Gold,Ink,true);
     }
     c.hit(0,0,26,22,HitKind::HudInfo,HudPortrait,hud_portrait_enabled(s));
     const auto health=c.a.combat_health(0);

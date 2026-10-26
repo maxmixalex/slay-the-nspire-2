@@ -9,6 +9,7 @@
 #include "touchpad.hpp"
 #include "loading_screen.hpp"
 #include "resource_transfer.hpp"
+#include "installation_paths.hpp"
 extern "C" {
 void* nd_open(const char*,const char*);
 unsigned nd_read(void*,unsigned,unsigned,void*);
@@ -18,6 +19,9 @@ int nd_seek(void*,long,int);
 long nd_tell(void*);
 int nd_rename(const char*,const char*);
 int nd_unlink(const char*);
+int nd_mkdir(const char*);
+void* nd_opendir(const char*);
+int nd_closedir(void*);
 unsigned nd_hwtype();
 unsigned nd_revision();
 int nd_lcd_init(int);
@@ -90,12 +94,17 @@ static bool read_resource(void* context,uint32_t offset,void* output,uint32_t co
     if(performance.enabled)performance.read(started-timer_ticks(),count,good,seek);
     return good;
 }
-static bool sibling(char*out,const char*launcher,const char*filename){
-    int slash=-1,n=0;while(launcher&&launcher[n]){if(n>=420)return false;if(launcher[n]=='/')slash=n;n++;}
-    int at=0;while(at<=slash){out[at]=launcher[at];at++;}while(*filename&&at<510)out[at++]=*filename++;out[at]=0;return !*filename;
+static bool state_sibling(char*out,const char*launcher,const char*filename){
+    return spire::installation_path(out,512,launcher,spire::InstallationDirectory::State,filename);
+}
+static bool ensure_state_directory(const char*launcher){
+    char directory[512];
+    if(!spire::installation_path(directory,sizeof directory,launcher,spire::InstallationDirectory::Root,"state"))return false;
+    if(void*existing=nd_opendir(directory))return nd_closedir(existing)==0;
+    return nd_mkdir(directory)==0;
 }
 #include "profile_storage.inc"
-static void* open_sibling(const char*launcher,const char*name){return sibling(pack_path,launcher,name)?nd_open(pack_path,"rb"):nullptr;}
+static void* open_data_file(const char*launcher,const char*name){return spire::installation_path(pack_path,sizeof pack_path,launcher,spire::InstallationDirectory::Data,name)?nd_open(pack_path,"rb"):nullptr;}
 static spire::ResourceSource file_source(ResourceFile&file){
     file.cursor={}; // This length probe moves the underlying stream as well.
     if(!file.file||nd_seek(file.file,0,2)!=0)return {};
@@ -198,10 +207,11 @@ extern "C" int main(int argc,char**argv){
     if(nd_revision()<2022||nd_hwtype()==0)return 2;
     const char*launcher=argc>0&&argv&&argv[0]?argv[0]:"";
     profile_launcher=launcher;
-    if(!sibling(performance_path,launcher,"nSpire2.perf.tns")||!sibling(profile_path,launcher,"nSpire2.profile.tns")||!sibling(language_path,launcher,"nSpire2.lang.tns")||!sibling(selector_path,launcher,"nSpire2.slots.tns")||!sibling(selector_temp,launcher,"nSpire2.slots.tmp.tns")||!sibling(selector_backup,launcher,"nSpire2.slots.bak.tns"))return 3;
+    if(!ensure_state_directory(launcher))return 3;
+    if(!state_sibling(performance_path,launcher,"nSpire2.perf.tns")||!state_sibling(profile_path,launcher,"nSpire2.profile.tns")||!state_sibling(language_path,launcher,"nSpire2.lang.tns")||!state_sibling(selector_path,launcher,"nSpire2.slots.tns")||!state_sibling(selector_temp,launcher,"nSpire2.slots.tmp.tns")||!state_sibling(selector_backup,launcher,"nSpire2.slots.bak.tns"))return 3;
     selected_profile=load_profile_selector();if(!configure_profile_paths(selected_profile))return 3;
     // Ndless may wait for all launch keys to be released before entering main,
-    // so a held CTRL alone cannot reliably opt in. An owner-created sibling
+    // so a held CTRL alone cannot reliably opt in. An owner-created state/profile
     // marker enables startup timing without a loader/key timing dependency.
     // Open read-only and close immediately; never create/remove this marker.
     performance.enabled=pressed(0x1E,0x200);
@@ -216,28 +226,29 @@ extern "C" int main(int argc,char**argv){
     for(auto&pixel:app.pixels)pixel=0;blit(app.pixels);
     ResourceFile common{},source{};spire::SplitResourceSource split;
     const auto preferred=language_preference();bool selected_language=false;
-    common.file=open_sibling(launcher,"nSpire2.common.tns");
+    common.file=open_data_file(launcher,spire::SharedDataFilename);
+    if(!common.file){boot_error(blit,spire::BootText::MissingResources,spire::BootLanguage::Unknown);return 4;}
     if(common.file){
         // Probe installed optional language files; retain only the chosen handle.
         // A language change reloads metadata/fonts while artwork stays shared.
         for(unsigned id=1;id<=spire::LocaleLanguageCount;++id){
-            void*f=open_sibling(launcher,spire::locale_language_info(id).file);
+            void*f=open_data_file(launcher,spire::locale_language_info(id).file);
             if(f){installed_languages|=spire::locale_language_mask(id);nd_close(f);}
         }
         if(!installed_languages){boot_error(blit,spire::BootText::MissingLanguage,spire::BootLanguage::Unknown);return 4;}
         unsigned selected=unsigned(preferred);
         if(!(installed_languages&spire::locale_language_mask(selected)))selected=(installed_languages&2u)?2u:spire::locale_language_at(installed_languages,0);
         source.language=static_cast<spire::BootLanguage>(selected);
-        source.file=open_sibling(launcher,spire::locale_language_info(selected).file);
+        source.file=open_data_file(launcher,spire::locale_language_info(selected).file);
         selected_language=true;
-    }else source.file=open_sibling(launcher,"nSpire2.nsp.tns");
+    }
     if(!source.file){boot_error(blit,spire::BootText::MissingResources,spire::BootLanguage::Unknown);return 4;}
     const uint32_t startup_start=performance.enabled?timer_ticks():0;
     source.blit=blit;auto resource=file_source(source);bool valid=resource.length!=0;
     if(common.file){
         valid=valid&&split.open(file_source(common),resource,static_cast<spire::ResourceLanguage>(source.language));
         if(valid)resource=split.source();
-    }else{source.language=spire::boot_probe_language(resource);installed_languages=spire::locale_language_mask(unsigned(source.language));}
+    }
     app.calculator_keyboard=true;
     if(!valid||!app.init(resource,{save_game,load_game,clear_save,seed_entropy,load_preferences,save_preferences,available_languages,request_language,load_progress,save_progress,wall_clock,current_profile,profile_info,request_profile,write_feedback})){
         boot_error(blit,spire::BootText::InvalidResources,source.language);return 5;
@@ -250,7 +261,7 @@ extern "C" int main(int argc,char**argv){
     auto change_language=[&](){
         const unsigned requested=pending_language;pending_language=0;
         if(!requested||!common.file||!app.title)return;
-        void*next=open_sibling(launcher,spire::locale_language_info(requested).file);
+        void*next=open_data_file(launcher,spire::locale_language_info(requested).file);
         if(!next){app.message(app.content.language()!=2?"Language resources are unavailable.":"无法读取语言资源。");return;}
         void*previous=source.file;const auto old_language=source.language;
         source.file=next;source.language=static_cast<spire::BootLanguage>(requested);
@@ -317,18 +328,14 @@ extern "C" int main(int argc,char**argv){
         const bool library_text=app.library&&!app.library_tab&&app.library_search_editing&&app.binding_listening<0;
         const bool seed_text=app.map_preview.open&&app.map_preview.editing&&app.binding_listening<0;
         bool console_text=false;
-#if SPIRE_DEBUG_COMMANDS
         console_text=app.debug_open;
         if((text_keys[6]&1)&&!(text_previous[6]&1))app.input(spire::Key::Debug);
         console_text=app.debug_open;
-#endif
         spire::calculator_physical_edges(text_keys,text_previous,repeat,library_text||seed_text||console_text,
             [](uint16_t code,bool down){if(code!=spire::InputFlag)app.physical_key(code,down);},allow_repeat);
-        #if SPIRE_DEBUG_COMMANDS
         if(console_text){spire::calculator_text_edges(text_keys,text_previous,[](int code){app.debug_text(code);});
             if((text_keys[6]&0x200)&&!(text_previous[6]&0x200))app.debug_text(9);}
         else
-#endif
         if(library_text)spire::calculator_text_edges(text_keys,text_previous,[](int code){app.library_text(code);});
         else if(seed_text)spire::calculator_text_edges(text_keys,text_previous,[](int code){app.reference_text(code);});
         for(unsigned row=0;row<8;++row)text_previous[row]=text_keys[row];

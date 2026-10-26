@@ -155,9 +155,7 @@ bool world_retained_reward_group(const State&s){
     return w.current_point!=end&&r.group_active[group]&&r.group_skip[group]&&!r.group_owner[group];
 }
 bool world_can_travel(const State&s){
-#if SPIRE_DEBUG_COMMANDS
     if(debug_travel(s))return s.world.active&&s.hp>0&&s.phase!=Phase::Error;
-#endif
     const auto&w=s.world;
     if(!w.active||w.finished||w.final_event||s.hp<=0||w.finish_pending||w.rest_pending||
        w.shop_free_remove||w.shop_auto_active||w.shop_pending_item!=255||
@@ -186,9 +184,7 @@ bool world_can_travel(const State&s){
 }
 bool world_reachable(const State&s,unsigned point){
     const auto*map=world_current_map(s);const auto&w=s.world;
-#if SPIRE_DEBUG_COMMANDS
     if(debug_travel(s))return map&&s.hp>0&&point<map->count&&map->points[point].active;
-#endif
     if(!map||!world_can_travel(s)||point>=map->count||!map->points[point].active||w.visited[w.act_index][point])return false;
     if(w.current_point>=map->count)return point==map->root;
     if(map->points[w.current_point].children.contains(uint8_t(point)))return true;
@@ -204,9 +200,7 @@ bool world_choose_column(State&s,int col){
 }
 static void world_history_leave(const State&);
 bool world_choose_point(State&s,unsigned point){
-#if SPIRE_DEBUG_COMMANDS
     if(debug_travel(s)&&!debug_detail::transaction_active())return debug_travel_to(s,point);
-#endif
     if(!world_reachable(s,point))return false;
     auto&w=s.world;
     // Opening/closing the UI never exits a room. A direct top-bar selection
@@ -229,9 +223,7 @@ bool world_choose_point(State&s,unsigned point){
     if(p.type==PointType::Unknown)room=world_roll_unknown(s,point);
     if(room==WorldRoom::None)return world_fail(s);
     if(w.current_point<w.maps[w.act_index].count&&!w.maps[w.act_index].points[w.current_point].children.contains(uint8_t(point)))
-#if SPIRE_DEBUG_COMMANDS
         if(!debug_travel(s))
-#endif
         world_use_free_travel(s);
     // Retain all old room offers until now, including unopened chest relics,
     // optional rest actions and finished event text. No UI-only action can

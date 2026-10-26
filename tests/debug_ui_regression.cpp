@@ -75,7 +75,6 @@ int main(int argc,char**argv){
     CHECK(!std::memcmp(&progress_before,&app.progress,sizeof progress_before)&&progress_saves==previous_profile_saves);
     CHECK(!std::memcmp(&snapshot,&app.game,sizeof snapshot));
     app.input(Key::Debug);CHECK(app.debug_open&&app.debug_editing);snapshot=app.game;app.input(Key::Save);app.advance(100);CHECK(!saves&&!std::memcmp(&snapshot,&app.game,sizeof snapshot));
-#if SPIRE_DEBUG_TEXT_INPUT
     app.debug_text(21);text("ene");app.debug_text(9);CHECK(!std::strcmp(app.debug_line,"energy ")&&!app.debug_completing);
     app.debug_text(21);text("room res");app.debug_text(9);CHECK(!std::strcmp(app.debug_line,"room RestSite "));app.debug_text(13);CHECK(app.debug_open&&app.game.phase==Phase::Camp&&validate(app.game));
     app.input(Key::Up);CHECK(!std::strcmp(app.debug_line,"room RestSite "));app.input(Key::Down);CHECK(!*app.debug_line);
@@ -83,7 +82,6 @@ int main(int argc,char**argv){
     text("relic ");app.debug_text(9);CHECK(app.debug_completing&&app.debug_completion_total>2);app.input(Key::Down);app.debug_text(13);CHECK(!app.debug_completing&&!std::strcmp(app.debug_line,"relic remove "));
     app.debug_text(21);text("power ");app.debug_text(9);CHECK(app.debug_completing);app.debug_text(27);CHECK(app.debug_open&&!app.debug_completing);
     app.debug_text(21);text("help");app.debug_text(13);CHECK(app.debug_output_count>4&&app.debug_open);
-#endif
     if(argc>1){app.render();const HitRegion*close=nullptr;for(unsigned i=0;i<app.hit_count;++i)if(app.hits[i].kind==HitKind::Close)close=&app.hits[i];CHECK(close);const int x=close->x+close->w/2,y=close->y+close->h/2;app.pointer_move(x,y);app.pointer_button(true);app.pointer_button(false);CHECK(!app.debug_open);}
     else app.input(Key::Back);
     CHECK(saves==0&&!app.run_save_linked&&validate(app.game));CHECK(app.debug_command("die")&&app.game.phase==Phase::Dead&&validate(app.game));

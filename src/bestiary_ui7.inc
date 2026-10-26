@@ -95,7 +95,14 @@ bool App::open_bestiary(bool force){
   if(int(region)!=previous_region){b.rows[b.row_count++]=int16_t(-1-int(region));previous_region=int(region);}
   b.rows[b.row_count++]=int16_t(entry);
  }
- b.layout_rows();
+ uint8_t heights[BestiaryPresentation::Capacity]{};Canvas measure{*this,nullptr};
+ for(int row=0;row<b.row_count;++row){
+  const auto*entry=bestiary_entry(b.rows[row]);if(!entry){heights[row]=18;continue;}
+  const char*label=bestiary_known(*this,b.rows[row])?bestiary_title(*this,*entry):bestiary_text(*this,"UNSEEN.monsterName","Unknown","未知");
+  const auto metric=[&](const RichChar&ch,int px){return measure.text_metric(ch,px);};
+  heights[row]=uint8_t(mx(14,mn(2,fitted_text::line_count(label,BestiaryPresentation::Right-BestiaryPresentation::Left,10,metric))*11+3));
+ }
+ b.layout_rows(heights);
  for(int row=0;row<b.row_count;++row)if(bestiary_known(*this,b.rows[row])){bestiary_select(*this,row);break;}
  hit_count=0;return true;
 }
@@ -393,11 +400,15 @@ static void bestiary_controls(Canvas&c){
    const unsigned pages=(moves.count+BestiaryPresentation::ActionsPerPage-1)/BestiaryPresentation::ActionsPerPage;
    const unsigned page=unsigned(b.action)/BestiaryPresentation::ActionsPerPage;
    const unsigned begin=page*BestiaryPresentation::ActionsPerPage,end=mn(unsigned(moves.count),begin+BestiaryPresentation::ActionsPerPage);
-   const int top=mx(38,108-int(end-begin)*13),first=top+18;
+   int heights[9]{},total=0;
+   for(unsigned i=begin;i<end;++i){const char*name=bestiary_move_label(a,bestiary_moves[moves.first+i]);
+    const auto metric=[&](const RichChar&ch,int px){return panel.text_metric(ch,px);};
+    heights[i]=mx(16,mn(2,fitted_text::line_count(name,134,10,metric))*11+5);total+=heights[i];}
+   const int top=mx(38,110-total/2-18),first=top+18;int row_y=first;
    bestiary_label(panel,bestiary_text(a,"ACTIONS.header","Actions","行动"),left,top,140,5,10,rgb(239,200,81));
    static constexpr InputCommand shortcuts[]={InputCommand::Deck,InputCommand::Exhaust,InputCommand::Discard,InputCommand::Draw,InputCommand::TopPanel};
    for(unsigned i=0;i<moves.count;++i)if(i<begin||i>=end)b.moves[i].focus(false,a.map_clock_ms);
-   for(unsigned i=begin;i<end;++i){const int y=first+int(i-begin)*26,h=26;const char*name=bestiary_move_label(a,bestiary_moves[moves.first+i]);
+   for(unsigned i=begin;i<end;++i){const int y=row_y,h=heights[i];row_y+=h;const char*name=bestiary_move_label(a,bestiary_moves[moves.first+i]);
     constexpr int width=158;
     const bool hover=a.pointer.visible&&a.pointer.x>=left&&a.pointer.x<left+width&&a.pointer.y>=y&&a.pointer.y<y+h;
     const bool selected=!a.pointer.visible&&b.focus==1&&b.action==i;
@@ -408,7 +419,7 @@ static void bestiary_controls(Canvas&c){
     if(motion.phase==1)color=blend(color,rgb(191,191,191),mn(255,int(color_age)*255/50));
     else if(motion.phase==2)color=blend(rgb(127,255,0),color,mn(255,int(color_age)*255/200));
     const int scale=motion.focus_scale(a.map_clock_ms)*motion.press_scale(a.map_clock_ms)/1024;
-    bestiary_label(panel,name,left+16,y+2,width-24,0,10,color,scale,false,10,24,false);
+    bestiary_label(panel,name,left+16,y+2,width-24,0,10,color,scale,false,10,h-3,false);
     if(i<5)bestiary_keycap(panel,shortcuts[i],left-2,y+(h-13)/2);
     c.hit(left,y,width,h,HitKind::BestiaryMove,int(i));
    }
@@ -465,7 +476,7 @@ static void bestiary_list(Canvas&c){
   const int index=b.rows[row];const auto*entry=bestiary_entry(index);
   if(!entry){const int region=-1-index;const char*regions[]={"OVERGROWTH","UNDERDOCKS","HIVE","GLORY"};
    const char*label=region>=0&&region<4?a.content.world_title("acts",regions[region]):bestiary_text(a,"EVENTS.title","Events","事件");
-   bestiary_label(layer,label,left,y-top+(height-24)/2,BestiaryPresentation::Right-left,5,10,rgb(135,206,235),1024,false,10,24,false);continue;}
+   bestiary_label(layer,label,left,y-top+(height-12)/2,BestiaryPresentation::Right-left,5,10,rgb(135,206,235),1024,false,10,12,false);continue;}
   const bool enabled=bestiary_known(a,index),hover=enabled&&a.pointer.visible&&!b.thumb_drag&&!(b.dragging&&a.pointer.dragging)&&a.pointer.x>=left&&a.pointer.x<BestiaryPresentation::Right&&a.pointer.y>=y&&a.pointer.y<y+height;
   const bool focused=enabled&&!a.pointer.visible&&!b.focus&&b.focused==row;
   const int scale=b.scale(unsigned(row),hover||focused,a.map_clock_ms);
@@ -473,7 +484,9 @@ static void bestiary_list(Canvas&c){
   const uint16_t color=!enabled?rgb(128,128,128):entry->room==3?rgb(255,85,85):entry->room==2?rgb(238,130,238):rgb(255,246,226);
   if(focused){Canvas highlight=layer;highlight.opacity=75;highlight.rect(left-3,y-top,BestiaryPresentation::Right-left+6,height+1,rgb(0,197,242));}
   Canvas text=layer;text.clip_w=BestiaryPresentation::Right+1;
-  bestiary_label(text,label,left,y-top+(height-24)/2,BestiaryPresentation::Right-left,0,10,color,scale,false,10,24,false);
+  const auto metric=[&](const RichChar&ch,int px){return text.text_metric(ch,px);};
+  const int text_height=mx(1,mn(2,fitted_text::line_count(label,BestiaryPresentation::Right-left,10,metric)))*11;
+  bestiary_label(text,label,left,y-top+(height-text_height)/2,BestiaryPresentation::Right-left,0,10,color,scale,false,10,text_height,false);
   const int hit_top=mx(y,top),hit_bottom=mn(y+height,bottom);if(hit_bottom>hit_top)c.hit(left,hit_top,BestiaryPresentation::Right-left,hit_bottom-hit_top,HitKind::BestiaryEntry,row,enabled);
  }
  if(b.selected_row>=0){const int y=b.arrow_y(a.map_clock_ms)-top;
@@ -483,7 +496,7 @@ static void bestiary_list(Canvas&c){
   Canvas track=c;track.tint_red=42;track.tint_green=74;track.tint_blue=82;
   track.ui(I6_ScrollbarTrack,sx,sy,project(50),sh);track.ui(I6_ScrollbarEdge,sx,sy-project(48),project(50),project(48));
   ui_picture_transform(track,a.content.ui_image(I6_ScrollbarEdge),sx+project(25),sy+sh+project(24),project(50),project(48),0,-1024);
-  c.ui(I6_ScrollbarGrabber,sx+project(25)-project(36),thumb-project(36),project(72),project(72));
+  native_scrollbar_grabber(c,sx+project(25)-project(36),thumb-project(36),project(72),project(72));
   c.hit(sx-project(11),sy-project(36),project(72),sh+project(72),HitKind::BestiaryScroll);
  }
 }

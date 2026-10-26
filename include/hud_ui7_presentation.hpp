@@ -15,7 +15,7 @@ constexpr int HudRelicFocusFirst=32;
 namespace hud_potion_layout {
 constexpr int Visible=5,Left=114,PageWidth=6;
 inline unsigned pages(unsigned slots){return (slots+Visible-1)/Visible;}
-inline int cell(unsigned slots){return slots>=5?13:slots==4?14:16;}
+inline int cell(unsigned slots){return slots>=5?12:slots==4?14:16;}
 inline int page_x(unsigned slots){return Left+int(slots<Visible?slots:Visible)*cell(slots);}
 inline int width(unsigned slots){return page_x(slots)-Left+(slots>Visible?PageWidth:0);}
 inline int x(unsigned slot,unsigned slots){return Left+int(slot%Visible)*cell(slots);}
@@ -23,7 +23,7 @@ inline int center_x(unsigned slot,unsigned slots){return x(slot,slots)+cell(slot
 inline int center_y(){return 11;}
 inline int landing_x(unsigned slot,unsigned page,unsigned slots){return slot/Visible==page?center_x(slot,slots):page_x(slots)+PageWidth/2;}
 }
-inline bool hud_portrait_enabled(const State&s){return world_ascension(s)>0||s.run_options.mode!=RunMode::Standard;}
+inline bool hud_portrait_enabled(const State&){return true;}
 struct HudRoomInfo {
     const char* room_key=nullptr;
     const char* room_tip="ROOM_MAP";
@@ -71,12 +71,14 @@ inline HudRoomInfo hud_room_info(const State&s){
 }
 struct HudRoomGeometry {int room,floor,boss,timer;};
 inline HudRoomGeometry hud_room_geometry(const State&s){
-    // Equal four-pixel gaps separate potion belt, room, floor, boss and
-    // timer. Shrink only the fourth/fifth potion cell, keeping all five
-    // bottles available without consuming the metadata's spacing.
-    const auto info=hud_room_info(s);const int room=hud_potion_layout::Left+hud_potion_layout::width(potion_slot_count(s))+4;
-    const int floor=room+14,boss=floor+26;
-    return {room,floor,boss,info.boss_enabled?boss+(info.second_boss==EncounterId::None?11:17)+4:boss};
+    // Clock has a stable slot immediately before navigation. Distribute the
+    // remaining space between the three metadata groups, rather than packing
+    // room/floor together to reserve a visible timer string.
+    const auto info=hud_room_info(s);
+    const int room=hud_potion_layout::Left+hud_potion_layout::width(potion_slot_count(s))+8;
+    const int boss_width=info.second_boss==EncounterId::None?11:17;
+    const int gap=(249-room-10-22-boss_width)/3;
+    return {room,room+10+gap,room+32+gap*2,249};
 }
 namespace hud_relic_layout {
 constexpr int Columns=(reference_viewport::Width-12-84)/68;

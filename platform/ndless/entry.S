@@ -25,6 +25,10 @@ nd_call nd_close,3
 /* Stable Ndless SDK syscall-list.h: nuc_fseek=33, nuc_ftell=89. */
 nd_call nd_seek,33
 nd_call nd_tell,89
+/* Nucleus directory calls from the stable Ndless syscall list. */
+nd_call nd_mkdir,15
+nd_call nd_opendir,95
+nd_call nd_closedir,97
 nd_call nd_unlink,19
 nd_call nd_rename,20
 nd_call nd_touch_read,75

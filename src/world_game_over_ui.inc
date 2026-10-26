@@ -178,8 +178,8 @@ static void game_over_score_line(Canvas&c,const char*key,unsigned icon,int y,con
  using namespace game_over_ui;char label[256]{};game_over_format(c.a,game_over_text(c.a,key),label,sizeof label);
  const auto motion=c.a.game_over_presentation.score(row,c.a.map_clock_ms);if(!motion.visible||!motion.alpha)return;
  Canvas text=c;text.opacity=uint8_t(div255(text.opacity*motion.alpha));const int x=ScoreX+motion.offset;text.ui(int(icon),x,y+4,14,16);text.font_face=source_label_face(c.a.content.original_label_fonts(),5);
- text.fitted(label,x+20,y+1,196,26,10,10,White);
- text.fitted(points,x+220,y+5,44,15,10,10,Gold,false,true);
+ text.fitted(label,x+20,y+1,ScoreWidth-64,22,10,10,White);
+ text.fitted(points,x+ScoreWidth-40,y+5,40,15,10,10,Gold,false,true);
 }
 static void game_over_hover(Canvas&c,int focus,int anchor_x,int anchor_y){
  char title[192]{},body[2048]{};c.a.game_over_detail(focus,title,sizeof title,body,sizeof body);if(!*title)return;
@@ -195,7 +195,7 @@ static void native_game_over_screen(Canvas&c){
  char banner_key[48]{};TextBuffer bk{banner_key,sizeof banner_key,0};
  if(s.phase==Phase::Complete)bk.text("BANNER.falseWin");else{bk.text("BANNER.lose");bk.number(unsigned(s.world.run_seed>>32)%8);}
  Canvas label=c;label.font_face=source_label_face(c.a.content.original_label_fonts(),5);banner.font_face=source_label_face(c.a.content.original_label_fonts(),5);
- banner.fitted(game_over_text(a,banner_key,s.phase==Phase::Complete?"Victory?":"Defeat"),BannerX+11,banner_y+10,BannerWidth-22,18,12,10,Gold,true,true,true);
+ banner.fitted(game_over_text(a,banner_key,s.phase==Phase::Complete?"Victory?":"Defeat"),BannerX+11,banner_y+5,BannerWidth-22,20,12,10,Gold,true,true,true);
  char quote[2048]{};
  if(!a.game_over_summary){
   if(s.phase==Phase::Complete&&known){game_over_format(a,game_over_text(a,"VICTORY_DAMAGE_LOCAL"),quote,sizeof quote);
@@ -277,8 +277,8 @@ static void native_game_over_screen(Canvas&c){
    detail_hit(x,py,53,22,int(kind+32));
   }
  }
- if(motion.scroll_maximum){c.rect(309,BodyTop,2,BodyHeight,Muted);const int thumb=mx(10,BodyHeight*BodyHeight/full_height);
-  c.rect(308,BodyTop+(BodyHeight-thumb)*motion.scroll/motion.scroll_maximum,4,thumb,Gold);}
+ if(motion.scroll_maximum){c.ui(I6_ScrollbarTrack,302,BodyTop,6,BodyHeight);const int thumb=mx(10,BodyHeight*BodyHeight/full_height);
+  native_scrollbar_grabber(c,299,BodyTop+(BodyHeight-thumb)*motion.scroll/motion.scroll_maximum,12,thumb);}
  const char*view_label=a.content.string(ViewRunText);if(!*view_label)view_label=a.content.language()!=2?"View Run":"查看本局";
  if(ViewRunEnabled)game_over_button(c,ViewRunX,UiAction::GameOverViewRun,view_label,InputCommand::Confirm,r&&r->outcome&&a.progress.count);
  game_over_button(c,MainMenuX,UiAction::GameOverMainMenu,game_over_text(a,"BUTTON.mainMenu","Main Menu"),InputCommand::Select);

@@ -301,11 +301,11 @@ def main():
             localized,layout_report=rewrite(data,texts,glyphs,language)
             row=split.layout(localized,language);art=localized[row['prefix']:row['prefix']+row['artwork']]
             candidate=split.common_file(art)
-            if common is None:common=candidate;tiles.atomic_bytes(output/'nSpire2.common.tns',common)
+            if common is None:common=candidate;tiles.atomic_bytes(output/'nSpire2.dat.tns',common)
             tiles.require(candidate==common,'Locale editions do not share exact artwork')
             language_file=split.compress_language_directory(split.language_file(localized,row,language,common[32:64]))
             tiles.require(split.reconstruct(common,language_file,language)==localized,'Split locale readback differs')
-            tiles.atomic_bytes(output/f'nSpire2.{language}.tns',language_file)
+            tiles.atomic_bytes(output/f'nSpire2.{language}.dat.tns',language_file)
             if args.keep_logical:tiles.atomic_bytes(output/f'ui11-{language}.nsp',localized)
             reports[language]=dict(**text_report,fonts=font_report,layout=layout_report,
                 bytes=len(language_file),sha256=tiles.sha256(language_file),logical_bytes=len(localized))

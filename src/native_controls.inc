@@ -1,3 +1,10 @@
+// Every source scrollbar train has the same hover enlargement. Keep the
+// track and hit target fixed while scaling its artwork about its own centre.
+static void native_scrollbar_grabber(Canvas&c,int x,int y,int w,int h){
+ const auto visual=c.control_visual("SCROLLBAR_GRABBER",x-3,y-3,w+6,h+6,ButtonFamily::Scrollbar,false,true);
+ const int width=mx(1,(w*visual.scale+2048)/4096),height=mx(1,(h*visual.scale+2048)/4096);
+ c.ui(I6_ScrollbarGrabber,x+(w-width)/2,y+(h-height)/2,width,height);
+}
 // Original component artwork preserves its aspect ratio, including the
 // authored transparent margins. Callers own the larger readable hit target.
 static void native_control(Canvas&c,const char*kind,int x,int y,int w,int h,const char*label,bool enabled,bool selected,bool cross=false){

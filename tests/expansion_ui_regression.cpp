@@ -145,17 +145,9 @@ static void acquisitions(){
 }
 static void acquisition_guards(){
     setup();open_model(Discovery);auto locked=snapshot();
-#if SPIRE_DEBUG_COMMANDS
     action(UiAction::LabCard);CHECK(!a.library&&a.detail_card<0);
-#else
-    CHECK(!exists(HitKind::UiAction,(int)UiAction::LabCard));a.ui_action(UiAction::LabCard);a.input(Key::EndTurn);unchanged(locked);
-#endif
     setup();open_potion(Potion::ColorlessPotion);locked=snapshot();
-#if SPIRE_DEBUG_COMMANDS
     a.detail_item=WorldRelicKinds+int(Potion::ColorlessPotion)-1;a.ui_action(UiAction::LabPotion);CHECK(!a.library&&a.detail_item<0);
-#else
-    CHECK(!exists(HitKind::UiAction,(int)UiAction::LabPotion));a.ui_action(UiAction::LabPotion);a.input(Key::EndTurn);unchanged(locked);
-#endif
     for(int mode=0;mode<5;mode++){
         const auto block=[&](){if(mode==1)a.title=true;if(mode==2)a.paused=true;if(mode==3)a.help=true;if(mode==4)a.panel=1;};
         setup(mode!=0);open_model(Discovery);
@@ -172,20 +164,12 @@ static void acquisition_guards(){
     CHECK(a.game.hand.count==MaxHand&&a.game.zones[id]==Zone::Discard);CHECK(validate(a.game));
     setup();while(a.game.card_count<MaxCards)append({Strike,0},Zone::Discard);
     open_model(Discovery);auto before=snapshot();CHECK(!lab_card(a.game,{Discovery,0}));
-#if SPIRE_DEBUG_COMMANDS
     CHECK(!hit(HitKind::UiAction,(int)UiAction::LabCard).enabled);action(UiAction::LabCard);
-#else
-    CHECK(!exists(HitKind::UiAction,(int)UiAction::LabCard));a.ui_action(UiAction::LabCard);
-#endif
     a.input(Key::EndTurn);unchanged(before);
     setup();a.game.potions[0]=Potion::Block;a.game.potions[1]=Potion::Fire;open_potion(Potion::ColorlessPotion);before=snapshot();
     CHECK(!lab_potion(a.game,Potion::ColorlessPotion));
-#if SPIRE_DEBUG_COMMANDS
     a.detail_item=WorldRelicKinds+int(Potion::ColorlessPotion)-1;
     CHECK(!hit(HitKind::UiAction,(int)UiAction::LabPotion).enabled);action(UiAction::LabPotion);
-#else
-    CHECK(!exists(HitKind::UiAction,(int)UiAction::LabPotion));a.ui_action(UiAction::LabPotion);
-#endif
     a.input(Key::EndTurn);unchanged(before);
     setup();acquire_potion(Potion::ColorlessPotion);drink();CHECK(a.game.phase==Phase::ExtendedChoice);
     a.input(Key::Collection);open_model(Discovery);before=snapshot();CHECK(!exists(HitKind::UiAction,(int)UiAction::LabCard));

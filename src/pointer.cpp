@@ -69,9 +69,7 @@ void App::open_choice_detail(int token){
 }
 void App::pointer_move(int x,int y){
     if(startup_logo.active()){pointer.x=clamp(x,0,319);pointer.y=clamp(y,0,239);return;}
-#if SPIRE_DEBUG_COMMANDS
     if(debug_open){pointer.x=clamp(x,0,319);pointer.y=clamp(y,0,239);pointer.visible=true;return;}
-#endif
     const int px=clamp(x,0,319),py=clamp(y,0,239),dx=px-pointer.x,dy=py-pointer.y;
     const unsigned distance=unsigned(dx*dx+dy*dy),elapsed=map_clock_ms-pointer.motion_time;
     pointer.x=px;pointer.y=py;
@@ -195,13 +193,11 @@ void App::pointer_move(int x,int y){
 }
 void App::pointer_scroll(int rows){
     if(startup_logo.active()){if(rows)startup_logo.cancel(map_clock_ms);return;}
-#if SPIRE_DEBUG_COMMANDS
     if(debug_open){
         if(debug_completing){if(rows)debug_input(rows<0?Key::Up:Key::Down);}
         else debug_output_scroll=uint8_t(clamp(int(debug_output_scroll)-rows,0,int(debug_output_count)>13?int(debug_output_count)-13:0));
         return;
     }
-#endif
     if(ftue.active()){if(rows)ftue_control(rows<0?5:6);return;}
     if(auxiliary.screen!=AuxiliaryScreen::None){pointer_cancel();auxiliary_scroll(rows);return;}
     if(map_drawing_ready()&&map_drawing.mode!=MapDrawingMode::None)return;
@@ -256,7 +252,6 @@ void App::pointer_scroll(int rows){
 void App::pointer_button(bool down){
     if(startup_logo.active()){if(down)startup_logo.cancel(map_clock_ms);pointer_cancel();return;}
     if(character_departure.active()){pointer_cancel();return;}
-#if SPIRE_DEBUG_COMMANDS
     if(debug_open){
         render();const auto*h=hit_at(pointer.x,pointer.y);
         if(down){pointer.held=true;pointer.captured=h?*h:HitRegion{};}
@@ -267,7 +262,6 @@ void App::pointer_button(bool down){
                 else if(chosen.kind==HitKind::Command)debug_input(Key(chosen.value));}}
         return;
     }
-#endif
     if(!down&&end_turn_hold.owner==EndTurnHold::Mouse){release_end_turn_hold(EndTurnHold::Mouse);pointer_cancel();return;}
     sync_ftues();
     if(ftue.active()){

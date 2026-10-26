@@ -39,13 +39,12 @@
 #include "card_resource_assets.hpp"
 #include "card_keyword_text.hpp"
 #include "fitted_text.hpp"
+#include "text_overflow_motion.hpp"
 #include "inplace_reset.hpp"
 #include "map_drawing_raster.hpp"
 #include "run_score.hpp"
 #include "game_over_ui.hpp"
-#if SPIRE_DEBUG_COMMANDS
 #include "debug_commands.hpp"
-#endif
 namespace spire {
 #include "world_enemy_assets.inc"
 #include "character_ui.inc"
@@ -76,9 +75,7 @@ static bool ui_ancient_event(OriginalEventId);
 static void crystal_screen(Canvas&);
 #include "ancient_banner_ui.inc"
 #include "app_input.inc"
-#if SPIRE_DEBUG_COMMANDS
 #include "debug_ui.inc"
-#endif
 #include "reward_presentation.inc"
 static const char* card_type_label(CardType type,const Content*content=nullptr){
     const char*keys[]={"CARD_TYPE.ATTACK","CARD_TYPE.SKILL","CARD_TYPE.POWER","CARD_TYPE.STATUS","CARD_TYPE.CURSE","CARD_TYPE.QUEST"};
@@ -283,6 +280,7 @@ int App::detail_stars()const{
 
 void App::render(){
     RichLabelClocks::Frame label_frame{rich_label_clocks};
+    RichLabelClocks::Frame overflow_frame{overflow_label_clocks};
     const Phase room_parent=game.phase==Phase::WorldRelicChoice?Phase(game.world_relics.return_phase):game.phase;
     const bool fake_room_frames=!title&&game.original_events.active&&game.original_events.id==OriginalEventId::FakeMerchant&&
         (game.phase==Phase::Event||game.phase==Phase::OriginalEventChoice||game.phase==Phase::WorldRelicChoice||
@@ -295,14 +293,12 @@ void App::render(){
     content.set_image_cache_profile((!title&&game.phase==Phase::Shop)||fake_room_frames);
     if(startup_logo.active()){Canvas c{*this};startup_logo_screen(c);return;}
     sync_screen_motion();
-#if SPIRE_DEBUG_COMMANDS
     if(debug_open){
         // Retain the current scene under the console. Rendering it with mouse
         // focus suppressed cannot expose any background control to input.
         const bool mouse=pointer.visible;debug_open=false;pointer.visible=false;render();debug_open=true;pointer.visible=mouse;
         Canvas c{*this};debug_screen(c);pointer_overlay(c);return;
     }
-#endif
     begin_card_face_frame();
     popup_backdrop.observe(frontend_confirm!=0,map_clock_ms);
     if(!paused)pause_visible=false;

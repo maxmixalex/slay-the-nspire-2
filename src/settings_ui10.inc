@@ -109,7 +109,7 @@ static void frontend_settings_screen(Canvas&c){
   c.ui(I6_ScrollbarTrack,InputTrackLeft,track_y,8,track_h);
   c.ui(I6_ScrollbarEdge,InputTrackLeft,track_y-7,8,8);
   ui_picture_transform(c,a.content.ui_image(I6_ScrollbarEdge),InputTrackLeft+4,track_y+track_h+3,8,8,0,-1024);
-  c.ui(I6_ScrollbarGrabber,InputTrackLeft-3,track_y+int(a.settings_top)*(track_h-14)/int(GeneralMaximum),14,14);
+  native_scrollbar_grabber(c,InputTrackLeft-3,track_y+int(a.settings_top)*(track_h-14)/int(GeneralMaximum),14,14);
   c.hit(InputTrackLeft-5,track_y-7,18,track_h+14,HitKind::SettingsScroll);
  }else{
   if(a.settings_top>InputMaximum)a.settings_top=InputMaximum;
@@ -154,7 +154,7 @@ static void frontend_settings_screen(Canvas&c){
   c.ui(I6_ScrollbarTrack,InputTrackLeft,top,8,height);
   c.ui(I6_ScrollbarEdge,InputTrackLeft,top-7,8,8);
   ui_picture_transform(c,a.content.ui_image(I6_ScrollbarEdge),InputTrackLeft+4,top+height+3,8,8,0,-1024);
-  c.ui(I6_ScrollbarGrabber,InputTrackLeft-3,top+int(a.settings_top)*(height-14)/int(InputMaximum),14,14);
+  native_scrollbar_grabber(c,InputTrackLeft-3,top+int(a.settings_top)*(height-14)/int(InputMaximum),14,14);
   c.hit(InputTrackLeft-5,top-7,18,height+14,HitKind::SettingsScroll);
  }
  const bool back_pointer=a.pointer.visible;if(a.settings_language_open)a.pointer.visible=false;
@@ -192,8 +192,10 @@ static void frontend_settings_screen(Canvas&c){
    const int thumb_y=first_y+4+int(top)*language_track_span(count)/int(maximum);
    const bool focus=pointed(track_x-4,first_y,20,height)||(a.pointer.held&&a.pointer.captured.kind==HitKind::SettingsScroll&&a.pointer.captured.value==1);
    Canvas thumb=c;if(focus){thumb.tint_red=239;thumb.tint_green=200;thumb.tint_blue=81;}else thumb.opacity=uint8_t(div255(unsigned(thumb.opacity)*64));
-   if(original)thumb.nine_ui(I13_SmallScrollbarTrain,track_x,thumb_y,8,DropdownThumbHeight,0,6,0,6);
-   else thumb.ui(I6_ScrollbarGrabber,track_x-2,thumb_y,12,DropdownThumbHeight);
+   if(original){const auto motion=c.control_visual("LANGUAGE_SCROLLBAR",track_x-3,thumb_y-2,14,DropdownThumbHeight+4,ButtonFamily::Scrollbar,focus,true);
+    const int width=(8*motion.scale+2048)/4096,height=(DropdownThumbHeight*motion.scale+2048)/4096;
+    thumb.nine_ui(I13_SmallScrollbarTrain,track_x+(8-width)/2,thumb_y+(DropdownThumbHeight-height)/2,width,height,0,6,0,6);}
+   else native_scrollbar_grabber(thumb,track_x-2,thumb_y,12,DropdownThumbHeight);
    c.hit(track_x-4,first_y,20,height,HitKind::SettingsScroll,1);
   }
  }

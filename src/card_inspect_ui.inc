@@ -52,11 +52,9 @@ static void detail_screen(Canvas&c){
         if(view.index>0&&arrow_alpha)card_inspect_arrow(arrows,0,card_inspect_layout::LeftArrowX+shift,card_inspect_layout::ArrowY,UiAction::InspectPreviousCard,!closing);
         if(view.index+1<view.count&&arrow_alpha)card_inspect_arrow(arrows,1,card_inspect_layout::RightArrowX-shift,card_inspect_layout::ArrowY,UiAction::InspectNextCard,!closing);
     }
-#if SPIRE_DEBUG_COMMANDS
     if(!closing&&a.library&&!a.title&&!a.paused&&!a.help&&!a.panel&&a.game.practice&&a.game.phase==Phase::Combat){
         const bool room=a.game.card_count<MaxCards;
         c.button(room?(a.game.hand.count<MaxHand?"加入手牌":"加入弃牌堆"):"卡牌已满",204,4,112,false,23,room);
         c.action(204,4,112,23,UiAction::LabCard,room);
     }
-#endif
 }

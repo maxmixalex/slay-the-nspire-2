@@ -94,12 +94,8 @@ void App::ui_action(UiAction action){
     case UiAction::FrontendCancel:frontend_confirm=frontend_choice=0;break;
     case UiAction::SettingsFastMode:if(settings_open)set_fast_mode(!fast_mode);break;
     case UiAction::SettingsControls:if(settings_open)help=true;break;
-#if SPIRE_DEBUG_COMMANDS
     case UiAction::SettingsPractice:if(settings_open&&title){settings_open=false;practice_entry=true;character_select=true;}break;
     case UiAction::SettingsReference:if(settings_open&&title){settings_open=false;map_preview.open=true;if(!map_preview.generated)map_preview.generate();}break;
-#else
-    case UiAction::SettingsPractice:case UiAction::SettingsReference:break;
-#endif
     case UiAction::SettingsBack:settings_open=false;break;
     case UiAction::SettingsGeneralTab:case UiAction::SettingsInputTab:
         if(settings_open){settings_tab=action==UiAction::SettingsInputTab;settings_item=0;pointer_cancel();}break;
@@ -108,7 +104,6 @@ void App::ui_action(UiAction action){
     case UiAction::SettingsKeyboardOnly:case UiAction::SettingsPhobia:case UiAction::SettingsShakeDown:case UiAction::SettingsShakeUp:
     case UiAction::SettingsReset:case UiAction::SettingsScrollUp:case UiAction::SettingsScrollDown:
     case UiAction::SettingsFeedback:case UiAction::SettingsCredits:break;
-#if SPIRE_DEBUG_COMMANDS
     case UiAction::LabCard:{
         const bool overflow=game.hand.count>=MaxHand;
         if(library&&!title&&!paused&&!help&&!panel&&!combat_actions_locked()&&detail_card>=0&&lab_card(game,card_from_token(detail_card))){
@@ -120,11 +115,8 @@ void App::ui_action(UiAction action){
             detail_item=-1;library=false;reset_presentation();
             message("已获得药水");
         }break;
-#else
-    case UiAction::LabCard:case UiAction::LabPotion:break;
-#endif
     case UiAction::OpenShop:
-        if(room_shop_available(*this)){shop_open=true;prepare_merchant_inventory();room_presentation.merchant.set_open(!merchant_preparation.active,map_clock_ms);if(!merchant_preparation.active)room_presentation.merchant.speak(4,map_clock_ms);
+        if(room_shop_available(*this)){shop_open=true;prepare_merchant_inventory();room_presentation.merchant.set_open(true,map_clock_ms);room_presentation.merchant.speak(4,map_clock_ms);
             const bool fake=game.phase==Phase::Event;cursor=merchant_navigation::first(merchant_navigation::stock(game,fake),fake?6:ShopLeave);}break;
     case UiAction::CloseShop:
         if(room_shop_available(*this)){shop_open=false;merchant_preparation.reset();room_presentation.merchant.set_open(false,map_clock_ms);cursor=0;}break;

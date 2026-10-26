@@ -415,9 +415,9 @@ def split(packs, *, compress_directory=False):
     receipt = dict(schema=1, reference="v0.111.0 / 41cef1ea", format="NSC1/NSL2" if compress_directory else "NSC1/NSL1",
         complete=True, original_bytes=original, stored_bytes=stored, saved_bytes=original - stored,
         byte_identical_roundtrip=True, runtime_integrity_checks=False,
-        common=dict(file="nSpire2.common.tns", bytes=len(common), sha256=sha(common),
+        common=dict(file="nSpire2.dat.tns", bytes=len(common), sha256=sha(common),
                     artwork_bytes=len(artwork), artwork_sha256=sha(artwork)),
-        languages={language: dict(row, file=f"nSpire2.{language}.tns", bytes=len(languages[language]),
+        languages={language: dict(row, file=f"nSpire2.{language}.dat.tns", bytes=len(languages[language]),
                                   sha256=sha(languages[language])) for language, row in rows.items()})
     if compress_directory:
         receipt.update(directory_compression=directory_receipts,
@@ -437,7 +437,7 @@ def main():
             "Private derived resources must stay outside the source repository")
     input_paths = {args.eng.resolve(), args.zhs.resolve()}
     require(len(input_paths) == 2, "Languages must have separate source files")
-    names = ["nSpire2.common.tns", "nSpire2.eng.tns", "nSpire2.zhs.tns", "split-receipt.json"]
+    names = ["nSpire2.dat.tns", "nSpire2.eng.dat.tns", "nSpire2.zhs.dat.tns", "split-receipt.json"]
     require(not any((destination / name).resolve() in input_paths for name in names),
             "Outputs must not replace the input packs")
     common, languages, receipt = split({"eng": args.eng.read_bytes(), "zhs": args.zhs.read_bytes()},
@@ -447,7 +447,7 @@ def main():
         stage = Path(temporary)
         (stage / names[0]).write_bytes(common)
         for language, data in languages.items():
-            (stage / f"nSpire2.{language}.tns").write_bytes(data)
+            (stage / f"nSpire2.{language}.dat.tns").write_bytes(data)
         (stage / names[3]).write_text(json.dumps(receipt, ensure_ascii=False, indent=2) + "\n")
         for name in names:
             os.replace(stage / name, destination / name)

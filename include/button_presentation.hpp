@@ -2,7 +2,7 @@
 #include "health_bar.hpp"
 
 namespace spire {
-enum class ButtonFamily : uint8_t { Action, Pause, EndTurn, Back, RewardAlternative, Proceed, TreasureRelic, OriginalPause, PotionPopup, OriginalPopup };
+enum class ButtonFamily : uint8_t { Action, Pause, EndTurn, Back, RewardAlternative, Proceed, TreasureRelic, OriginalPause, PotionPopup, OriginalPopup, Scrollbar };
 enum class ButtonState : uint8_t { Rest, Focus, Press, Disabled, Release };
 struct ButtonVisual {int scale=4096,y=0,hover=0,shade=255;uint16_t saturation=1000,value=1000;};
 inline ButtonVisual button_target(ButtonFamily family,ButtonState state){
@@ -17,6 +17,7 @@ inline ButtonVisual button_target(ButtonFamily family,ButtonState state){
     if(family==ButtonFamily::OriginalPause){v.scale=focus?3891:press?3482:3686;v.y=press?4681:0;v.saturation=focus?1100:800;v.value=focus?1100:900;}
     if(family==ButtonFamily::PotionPopup)v.hover=focus||press?4096:0;
     if(family==ButtonFamily::OriginalPopup){v.scale=focus?4198:press?3994:4096;v.y=0;v.saturation=v.value=focus?1250:press?900:1000;}
+    if(family==ButtonFamily::Scrollbar){v.scale=focus||press?4710:4096;v.y=0;v.shade=255;v.hover=focus||press?4096:0;}
     return v;
 }
 // One bounded, interruptible presentation per visible control. Restoring a
@@ -32,6 +33,11 @@ struct ButtonMotion {
         const bool proceeding_disabled=family==ButtonFamily::Proceed&&state==ButtonState::Disabled;
         const auto sampled_state=proceeding_disabled?disabled_from:state;
         auto to=button_target(family,sampled_state);const uint32_t elapsed=now-start;
+        if(family==ButtonFamily::Scrollbar){
+            if(state==ButtonState::Focus||state==ButtonState::Press)return to;
+            const unsigned q=elapsed>=500?4096:health_bar::expo_out(elapsed*2);
+            to.scale=from.scale+(to.scale-from.scale)*int(q)/4096;return to;
+        }
         if(family==ButtonFamily::OriginalPopup){
             if(state==ButtonState::Disabled)return to;
             // OnPress changes scale/material only. The focused outline is

@@ -126,11 +126,12 @@ static CardFaceFonts card_face_fonts(const Canvas&c,int width){
         content.font_size(mx(readable,card_face::font_pixels(21,width))),content.font_size(readable),
         content.font_size(mx(width>=80?12:10,card_face::font_pixels(32,width)),5),content.font_size(mx(8,card_face::font_pixels(22,width)),5),8,true};
 }
-// The selected hand face can expose every description line within the same
-// authored rectangle. Ordinary cards keep the static fitted/ellipsis path.
-static void card_description_window(Canvas&c,const char*text,const card_face::Rect&r,int size,int skip){
+// Scroll by pixels inside the authored description rectangle; the first and
+// last rows are clipped, so text never jumps by a whole line.
+static void card_description_window(Canvas&c,const char*text,const card_face::Rect&r,int size,int offset){
  if(r.w<=0||r.h<=2)return;
- size=c.a.content.font_size(size,c.font_face);const int visible=mn(32,fitted_text::row_capacity(r.h,size));if(!visible)return;
+ size=c.a.content.font_size(size,c.font_face);const int step=size+1;
+ const int skip=offset/step,visible=mn(32,(r.h+step-1)/step+1);if(!visible)return;
  char localized[1024]{};text=c.a.ui_text(text,localized,sizeof localized);
  const auto metric=[&](const RichChar&ch,int px){return c.text_metric(ch,px);};
  fitted_text::Plan plan{};plan.size=size;plan.step=size+1;plan.rows=plan.total=fitted_text::line_count(text,r.w,size,metric);plan.truncated=false;
@@ -141,7 +142,7 @@ static void card_description_window(Canvas&c,const char*text,const card_face::Re
  fitted_text::visit(text,r.w,plan,metric,[&](const RichChar&ch,int at,int row,int px){
   if(row<skip||row>=skip+visible)return;
   const auto glyph=c.a.content.glyph(ch.codepoint,px,c.font_style(ch));
-  body.character(ch.codepoint,glyph,at+mx(0,(r.w-widths[row-skip])/2),(row-skip)*plan.step,rich_color(ch.style.color,colors));
+  body.character(ch.codepoint,glyph,at+mx(0,(r.w-widths[row-skip])/2),row*plan.step-offset,rich_color(ch.style.color,colors));
  });
 }
 // One scene-based card renderer for every presentation size. Individual

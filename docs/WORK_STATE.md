@@ -1,3 +1,28 @@
+# UI14 continuation — 2026-10-27
+
+The user's current report supersedes UI13 acceptance for the reported layouts,
+animations and performance. The unpublished game needs no legacy filename or
+obsolete-build compatibility. The active implementation now keeps only
+`nSpire2.tns` at installation root, data in `data/nSpire2.dat.tns` and
+`data/nSpire2.<locale>.dat.tns`, and all mutable files under `state/`.
+The developer console is compiled unconditionally, with no separate variant.
+
+Frontend, combat and room work is running in parallel. The first stage includes
+fixed HUD tooltip/ascension placement, smooth hand text, hand-format caching,
+pile hover motion, compact compendium and defeat layouts, full-size score art
+conversion, correct credits section, shared scrollbar hover motion, and deck
+controls outside the return-button area. Shared bounded labels now scroll
+horizontally/vertically at pixel speed rather than ellipsizing. Room selection,
+merchant warmup and the remaining effects are being completed next.
+
+Source-backed behavior: the pinned credits screen does not auto-close at its
+end; the pinned reward screen marks completion and still waits for Proceed to
+open the map. These are retained intentionally. No UI14 validation is claimed
+at this checkpoint. Resource regeneration, fresh ARM build, ordinary-OS
+Firebird gameplay/performance and final packaging remain required.
+
+---
+
 # Work state — 2026-10-26
 
 ## UI13 playable release — final runtime, resources and device acceptance complete

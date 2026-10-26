@@ -138,7 +138,7 @@ static void custom_run_screen(Canvas&c){
  }
  setup_disclaimer(c,label("CUSTOM_RUN_SCREEN.disclaimer",""));
  if(!editing){if(scroller.maximum){c.ui(I6_ScrollbarTrack,311,45,6,153);c.ui(I6_ScrollbarEdge,311,37,6,8);ui_picture_transform(c,a.content.ui_image(I6_ScrollbarEdge),314,202,6,8,0,-1024);
-   c.ui(I6_ScrollbarGrabber,308,scroller.thumb_y(45,153)-7,12,14);c.hit(307,37,13,170,HitKind::ProgressThumb);}
+   native_scrollbar_grabber(c,308,scroller.thumb_y(45,153)-7,12,14);c.hit(307,37,13,170,HitKind::ProgressThumb);}
   native_original_back(c,mode.started);native_original_confirm(c,UiAction::StartConfiguredRun,mode.started);
  }else{a.hit_count=0;c.hit(seed_left,SeedTop,seed_width,seed_height,HitKind::None);}
 }

@@ -93,7 +93,6 @@ static void item_detail_screen(Canvas&c){
     using namespace relic_inspect_layout;
     auto&a=c.a;a.sync_relic_inspect();auto&view=a.relic_inspect;
     if(a.detail_item>=WorldRelicKinds){
-#if SPIRE_DEBUG_COMMANDS
         // The developer-only potion mutation tool is intentionally separate
         // from the release PotionLab, whose entries remain hover-only.
         if(a.library&&!a.title&&!a.paused&&!a.help&&!a.panel&&a.game.practice&&a.game.phase==Phase::Combat){
@@ -102,7 +101,6 @@ static void item_detail_screen(Canvas&c){
             c.button(room?"获得药水":"药水栏已满",95,121,130,false,24);c.action(95,121,130,24,UiAction::LabPotion,room);
             c.hit(0,0,320,80,HitKind::Command,int(Key::Back));
         }
-#endif
         return;
     }
     const bool closing=a.detail_item<0;if(closing&&!view.closing(a.map_clock_ms))return;

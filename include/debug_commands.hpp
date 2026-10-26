@@ -1,18 +1,10 @@
 #pragma once
-#ifndef SPIRE_DEBUG_COMMANDS
-#define SPIRE_DEBUG_COMMANDS 1
-#endif
-#ifndef SPIRE_DEBUG_TEXT_INPUT
-#define SPIRE_DEBUG_TEXT_INPUT 1
-#endif
 
-#if SPIRE_DEBUG_COMMANDS
 #include "world_run.hpp"
 #include "original_events.hpp"
 
 namespace spire {
-// The original developer console is available in normal builds. These entry
-// points remain removable for reduced builds. A failed command preserves the
+// The original developer console is included in every build. A failed command preserves the
 // complete State, including RNG words.
 // Kill-all also cancels a suspended combat choice. A single-target kill is
 // accepted only at an idle player-action boundary.
@@ -55,4 +47,3 @@ void abandon_room(State&);
 bool transaction_active();
 }
 } // namespace spire
-#endif

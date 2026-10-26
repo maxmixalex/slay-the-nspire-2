@@ -124,7 +124,7 @@ def generated_files():
         # Debug-only labels must not change ordinary runtime bytes or legacy
         # private-pack slots when a developer-menu hint is corrected.
         line=f' {{0x{h:08x}u,{n},{json.dumps(eng,ensure_ascii=True)}}},\n'
-        inline_text+=('#if SPIRE_DEBUG_COMMANDS\n'+line+'#endif\n') if debug_only else line
+        inline_text+=line
     status=json.loads((ROOT/'config/locale-status-keys.json').read_text())['keys']
     potion_numbers=[]
     for key,values in sorted(json.loads((ROOT/'config/locale-potion-values.json').read_text())['potions'].items()):

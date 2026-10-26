@@ -46,8 +46,12 @@ static void ordered_catalog(){
 static void source_layout(){
  BestiaryPresentation list{};list.row_count=4;list.rows[0]=-1;list.rows[1]=0;list.rows[2]=1;list.rows[3]=-2;list.layout_rows();
  CHECK(list.Top==23&&list.Bottom==217&&list.Left==212&&list.Right==300);
- CHECK(list.row_offsets[0]==0&&list.row_offsets[1]==142&&list.row_offsets[2]==298&&list.row_offsets[3]==454&&list.row_offsets[4]==592);
- CHECK(list.row_y(0)==23&&list.row_height(0)==26&&list.row_y(1)==50&&list.row_height(1)==29&&list.row_y(2)==80);
+ CHECK(list.row_offsets[0]==0&&list.row_offsets[1]==100&&list.row_offsets[2]==179&&list.row_offsets[3]==258&&list.row_offsets[4]==353);
+ CHECK(list.row_y(0)==23&&list.row_height(0)==18&&list.row_y(1)==42&&list.row_height(1)==14&&list.row_y(2)==57);
+ const uint8_t measured[]={18,14,25,18};list.layout_rows(measured);
+ CHECK(list.row_height(1)==14&&list.row_height(2)==25);
+ list.selected_row=2;list.arrow_at=0;CHECK(list.arrow_y(500)==list.row_y(2)+list.row_height(2)/2);
+ CHECK(list.row_y(3)>=list.row_y(2)+list.row_height(2));
  CHECK(list.ModeX==76&&list.ModeY==215&&list.ModeWidth==118&&list.ModeHeight==22);
  // Source50ms focus and300ms release use the same glyph band throughout.
  BestiaryPresentation::MoveMotion move{};move.focus(true,100);CHECK(move.focus_scale(100)==1024&&move.focus_scale(150)==1075);

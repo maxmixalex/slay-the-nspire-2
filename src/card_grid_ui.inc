@@ -94,12 +94,7 @@ static void card_grid_scrollbar(Canvas&c,CardGridScroll&grid,CardGridSurface sur
     const int x=surface==CardGridSurface::WorldChoice&&c.a.world_selection_kind()==WorldSelectionKind::Enchant?187:301;
     c.ui(I6_ScrollbarTrack,x,top,10,bottom-top);c.ui(I6_ScrollbarEdge,x,top-10,10,10);
     ui_picture_transform(c,c.a.content.ui_image(I6_ScrollbarEdge),x+5,bottom+5,10,10,0,-1024);
-    const bool hover=c.a.pointer.visible&&c.a.pointer.x>=x-6&&c.a.pointer.x<x+15&&c.a.pointer.y>=center-10&&c.a.pointer.y<center+10;
-    if(hover!=grid.thumb_hover){grid.thumb_hover=hover;grid.hover_changed=c.a.map_clock_ms;}
-    const unsigned elapsed=c.a.map_clock_ms-grid.hover_changed;
-    const int recovery=elapsed>=500?0:4096-int(health_bar::expo_out(elapsed*2));
-    const int scale=hover?1178:1024+154*recovery/4096;
-    const int size=CardGridScroll::ThumbSize*scale/1024;
-    c.ui(I6_ScrollbarGrabber,x+5-size/2,center-size/2,size,size);
+    native_scrollbar_grabber(c,x+5-CardGridScroll::ThumbSize/2,center-CardGridScroll::ThumbSize/2,
+                             CardGridScroll::ThumbSize,CardGridScroll::ThumbSize);
     c.hit(x-7,top-8,23,bottom-top+16,HitKind::GridScroll,int(surface));
 }

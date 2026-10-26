@@ -23,9 +23,7 @@ void enter_combat(State&s){
     for(int i=0;i<s.deck_count;i++){int id=make_card(s,s.deck[i]);if(id>=0){notify_deck_card_created(s,id,i);put(s,s.discard,id,Zone::Discard);}}
     shuffle(s,true);
     event_card_combat_start(s);
-#if SPIRE_DEBUG_COMMANDS
     debug_combat_setup(s);
-#endif
     if(world_shared_active(s)){
         s.turn=1;world_stage(s,WorldStage::EnterRoom);resolve_pending(s);++s.revision;return;
     }
@@ -49,9 +47,7 @@ void enter_combat(State&s){
     record(s,LogKind::Turn,1);finish_combat_if_won(s);s.revision++;
 }
 void new_run(State&s,uint32_t seed,bool practice,Character character){
-#if SPIRE_DEBUG_COMMANDS
     debug_reset_session(s);
-#endif
     const EventRunFacts previous_facts=s.event_run;
     reset_in_place(s);
     s.event_run=previous_facts;

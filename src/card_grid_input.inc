@@ -1,6 +1,6 @@
 CardGridScroll& App::configure_card_grid(CardGridSurface surface,int count,uint32_t identity){
     auto&grid=card_grids[unsigned(surface)];int top=43,bottom=207,inset=8,left=CardGridScroll::Left;
-    if(surface==CardGridSurface::Pile){top=26;bottom=213;inset=pile_tab?8:27;left=42;identity=identity*8+unsigned(pile_tab);}
+    if(surface==CardGridSurface::Pile){top=26;bottom=pile_tab?213:202;inset=pile_tab?8:27;left=42;identity=identity*8+unsigned(pile_tab);}
     else if(surface==CardGridSurface::CombatChoice){top=12;bottom=213;inset=15;}
     else if(surface==CardGridSurface::WorldChoice&&world_selection_kind()!=WorldSelectionKind::None){
         top=12;bottom=213;inset=15;

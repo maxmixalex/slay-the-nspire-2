@@ -16,13 +16,11 @@ void App::reference_text(int code) {
 }
 bool App::reference_input(Key key) {
     auto& view = map_preview;
-#if SPIRE_DEBUG_COMMANDS
     if (key == Key::ReferenceMap) {
         pointer_cancel(); view.editing = false; view.open = !view.open;
         if (view.open && !view.generated) view.generate();
         return true;
     }
-#endif
     if (!view.open) return false;
     if (view.editing) {
         if(run_seed_editing&&run_mode.screen==RunMenu::Custom){

@@ -273,7 +273,5 @@ bool leave_treasure(State&s){
     finish_room(s);return true;
 }
 #include "world_run.inc"
-#if SPIRE_DEBUG_COMMANDS
 #include "debug_world.inc"
-#endif
 } // namespace spire

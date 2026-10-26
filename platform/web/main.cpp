@@ -1,9 +1,7 @@
 #include "app.hpp"
 #include "locale_boot.hpp"
 #include "runtime_scene.hpp"
-#if SPIRE_DEBUG_COMMANDS
 #include "original_events.hpp"
-#endif
 extern "C" {
 __attribute__((import_module("env"),import_name("save"))) int host_save(const uint8_t*,unsigned);
 __attribute__((import_module("env"),import_name("load"))) int host_load(uint8_t*,unsigned);
@@ -180,20 +178,15 @@ int key_binding_listening(){return app.binding_listening>=0;}
 void pointer_cancel(){app.pointer_cancel();app.pointer.visible=false;}
 void pointer_scroll(int rows){app.pointer_scroll(rows);}
 int text_entry_active(){
-#if SPIRE_DEBUG_COMMANDS
     if(app.debug_open)return app.debug_editing;
-#endif
     return feedback_text_active()||(app.library&&!app.library_tab&&app.library_search_editing&&app.detail_card<0)||(app.map_preview.open&&app.map_preview.editing);
 }
 void text_input(int ch){
     if(app.auxiliary_text(ch))return;
-#if SPIRE_DEBUG_COMMANDS
     if(app.debug_open){app.debug_text(ch);return;}
-#endif
     if(app.library&&!app.library_tab&&app.library_search_editing){app.library_text(ch);return;}
     app.reference_text(ch);
 }
-#if SPIRE_DEBUG_COMMANDS
 unsigned debug_buffer(){return (unsigned)(size_t)app.debug_line;}
 unsigned debug_capacity(){return sizeof(app.debug_line);}
 int debug_execute(){return app.debug_command(app.debug_line)?1:0;}
@@ -205,7 +198,6 @@ unsigned debug_catalog(unsigned kind,unsigned index){
     if(kind==2&&index<unsigned(spire::OriginalEventId::Count))key=spire::original_event_key(spire::OriginalEventId(index));
     return (unsigned)(size_t)key;
 }
-#endif
 int closed(){return app.quit?1:0;}
 // Read-only scene classification for opt-in host timing; no gameplay mutation.
 int performance_scene(){

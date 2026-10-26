@@ -3,9 +3,6 @@
 #include <cstdlib>
 #include <cstring>
 
-#if !SPIRE_DEBUG_COMMANDS
-#error This regression must only be built with SPIRE_DEBUG_COMMANDS enabled.
-#endif
 
 using namespace spire;
 static State game,original,loaded;

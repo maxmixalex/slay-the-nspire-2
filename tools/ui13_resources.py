@@ -265,10 +265,10 @@ def pack_editions(args):
         input_version=40,version=40,texts=(),base_clips=len(source.clips),
         base_strings=len(source.strings),appended_art=grouped)
     art=view(artwork);common=None;reports={}
-    previous_common=(tiles.private_path(args.previous_editions,'Previous UI13 editions')/'nSpire2.common.tns').read_bytes() if args.previous_editions else None
+    previous_common=(tiles.private_path(args.previous_editions,'Previous UI13 editions')/'nSpire2.dat.tns').read_bytes() if args.previous_editions else None
     keep=set(args.keep_logical.split(',')) if args.keep_logical else set()
     for language in LANGUAGES:
-        candidates=[Path(folder)/f'nSpire2.{language}.tns' for folder in args.editions]
+        candidates=[Path(folder)/f'nSpire2.{language}.dat.tns' for folder in args.editions]
         candidates=[path for path in candidates if path.is_file()]
         tiles.require(len(candidates)==1,'Expected one previous locale file: '+language)
         old_locale=candidates[0].read_bytes()
@@ -288,7 +288,7 @@ def pack_editions(args):
                 'Pre-existing glyph raster or metrics changed')
         previous_locale=None
         if previous_common is not None:
-            previous_locale=(args.previous_editions/f'nSpire2.{language}.tns').read_bytes()
+            previous_locale=(args.previous_editions/f'nSpire2.{language}.dat.tns').read_bytes()
             previous=view(split.reconstruct(previous_common,previous_locale,language))
             tiles.require(all(final.string_payload(i)==previous.string_payload(i)
                 for i in range(len(previous.strings)) if i!=CREDIT_SLOT),'Previous UI13 localized text changed')
@@ -298,11 +298,11 @@ def pack_editions(args):
         bounds=split.layout(localized,language)
         candidate=split.common_file(localized[bounds['prefix']:bounds['prefix']+bounds['artwork']])
         if common is None:
-            common=candidate;tiles.atomic_bytes(output/'nSpire2.common.tns',common)
+            common=candidate;tiles.atomic_bytes(output/'nSpire2.dat.tns',common)
         tiles.require(candidate==common,'Locale art differs')
         directory=split.compress_language_directory(split.language_file(localized,bounds,language,common[32:64]))
         tiles.require(split.reconstruct(common,directory,language)==localized,'Split directory differs')
-        tiles.atomic_bytes(output/f'nSpire2.{language}.tns',directory)
+        tiles.atomic_bytes(output/f'nSpire2.{language}.dat.tns',directory)
         if language in keep:tiles.atomic_bytes(output/f'ui13-{language}.nsp',localized)
         reports[language]=dict(bytes=len(directory),sha256=tiles.sha256(directory),
             logical_bytes=len(localized),layout=layout_report,credits=credits,

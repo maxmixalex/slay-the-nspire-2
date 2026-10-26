@@ -10,10 +10,10 @@ BADGES = ('CCCCOMBO','CURSES','DOUBLE_SNECKO','ELITE','FAMISHED','GLUTTON',
           'HIGHLANDER','HONED','BIG_DECK','ILIKESHINY','KACHING','MONEY_MONEY',
           'MYSTERY_MACHINE','PERFECT','RESTFUL','RESTLESS','SPEEDY','TABLET','TINY_DECK')
 TIERED = {'ELITE','GLUTTON','BIG_DECK','MONEY_MONEY','PERFECT','SPEEDY','TINY_DECK'}
-IMAGE_SPECS = tuple((name,(8,9)) for name in ('score_floor','score_gold','score_elite','score_boss','score_ascension')) + tuple(
-    (name,(13,13)) for name in ('badge_bronze','badge_silver','badge_gold')) + tuple(
-    ('badge_'+name.lower(),(13,13)) for name in BADGES) + tuple(
-    ('discovery_'+name,(10,10)) for name in ('card','relic','potion','monster'))
+IMAGE_SPECS = tuple((name,(16,18)) for name in ('score_floor','score_gold','score_elite','score_boss','score_ascension')) + tuple(
+    (name,(24,24)) for name in ('badge_bronze','badge_silver','badge_gold')) + tuple(
+    ('badge_'+name.lower(),(24,24)) for name in BADGES) + tuple(
+    ('discovery_'+name,(24,24)) for name in ('card','relic','potion','monster'))
 TEXTS=[]
 BADGE_SLOTS=[]
 for badge in BADGES:

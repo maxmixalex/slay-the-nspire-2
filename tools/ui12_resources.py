@@ -193,8 +193,8 @@ def main():
     parser.add_argument('--languages',default='all')
     args=parser.parse_args();out=tiles.private_path(args.output,'UI12 output');out.mkdir(parents=True,exist_ok=True)
     cache=tiles.private_path(args.cache,'UI12 cache');cache.mkdir(parents=True,exist_ok=True)
-    original_common=(args.editions/'nSpire2.common.tns').read_bytes()
-    data=args.art_source.read_bytes() if args.art_source else split.reconstruct(original_common,(args.editions/'nSpire2.eng.tns').read_bytes(),'eng');source=view(data)
+    original_common=(args.editions/'nSpire2.dat.tns').read_bytes()
+    data=args.art_source.read_bytes() if args.art_source else split.reconstruct(original_common,(args.editions/'nSpire2.eng.dat.tns').read_bytes(),'eng');source=view(data)
     replacements={}
     if args.replacements:
         for row in json.loads(args.replacements.read_text()):
@@ -212,16 +212,16 @@ def main():
     old_manifest=json.loads((args.editions/'locales-receipt.json').read_text())
     languages=list(split.LANGUAGES) if args.languages=='all' else args.languages.split(',')
     for language in languages:
-        old=split.reconstruct(original_common,(args.editions/f'nSpire2.{language}.tns').read_bytes(),language);previous=view(old)
+        old=split.reconstruct(original_common,(args.editions/f'nSpire2.{language}.dat.tns').read_bytes(),language);previous=view(old)
         texts=[previous.string_payload(i)[:-1].decode('utf-8') for i in range(len(previous.strings))]
         glyphs,font_report=precise_glyphs(previous,args.fonts,language,cache)
         localized,layout_report=rewrite(data,texts,glyphs,language);bounds=split.layout(localized,language)
         candidate=split.common_file(localized[bounds['prefix']:bounds['prefix']+bounds['artwork']])
-        if common is None:common=candidate;tiles.atomic_bytes(out/'nSpire2.common.tns',common)
+        if common is None:common=candidate;tiles.atomic_bytes(out/'nSpire2.dat.tns',common)
         tiles.require(common==candidate,'Locale artwork differs')
         lang=split.compress_language_directory(split.language_file(localized,bounds,language,common[32:64]))
         tiles.require(split.reconstruct(common,lang,language)==localized,'Split readback differs')
-        tiles.atomic_bytes(out/f'nSpire2.{language}.tns',lang)
+        tiles.atomic_bytes(out/f'nSpire2.{language}.dat.tns',lang)
         if language in ('eng','zhs'):tiles.atomic_bytes(out/f'ui12-{language}.nsp',localized)
         reports[language]=dict(old_manifest['languages'][language],fonts=font_report,layout=layout_report,bytes=len(lang),sha256=tiles.sha256(lang),logical_bytes=len(localized))
         tiles.atomic_bytes(out/f'{language}-receipt.json',json.dumps(reports[language],ensure_ascii=False,indent=2).encode()+b'\n')

@@ -10,8 +10,9 @@ struct BestiaryPresentation {
  static constexpr int Capacity=112,Unit=256;
  static constexpr int Top=reference_viewport::project(120),Bottom=240-Top;
  static constexpr int Left=212,Right=300;
- // Two 10px lines per LCD entry; retain source-space scrolling/tweens.
- static constexpr int EntryHeight=152,HeaderHeight=138,Separation=4;
+ // Compact labels keep their measured one/two-line height; positions and
+ // tweens remain in source space so arrow and scroll coordinates agree.
+ static constexpr int EntryHeight=74,HeaderHeight=95,Separation=5;
  static constexpr unsigned ActionsPerPage=5;
  static constexpr int ModeX=76,ModeY=215;
  static constexpr int ModeWidth=118,ModeHeight=22;
@@ -79,14 +80,14 @@ struct BestiaryPresentation {
  static int clamp(int value,int low,int high){return value<low?low:value>high?high:value;}
  static int fraction(int value,int thousandths){return value/1000*thousandths+value%1000*thousandths/1000;}
  void cancel_presses(uint32_t now){for(auto&move:moves)if(move.phase==1){move.press_from=uint16_t(move.press_scale(now));move.phase=0;move.press_at=now;}}
- void layout_rows(){unsigned y=0;for(int row=0;row<row_count;++row){row_offsets[row]=uint16_t(y);y+=(rows[row]<0?HeaderHeight:EntryHeight)+Separation;}
+ void layout_rows(const uint8_t*heights=nullptr){unsigned y=0;for(int row=0;row<row_count;++row){row_offsets[row]=uint16_t(y);y+=(heights?(unsigned(heights[row])*21+2)/4:rows[row]<0?HeaderHeight:EntryHeight)+Separation;}
   row_offsets[row_count]=uint16_t(y?y-Separation:0);}
  int content_height()const{return reference_viewport::project(row_offsets[row_count]);}
  int maximum()const{return content_height()>Bottom-Top?(content_height()-(Bottom-Top))*Unit:0;}
  int row_top(int row)const{return reference_viewport::project(row_offsets[row]);}
- int row_height(int row)const{return reference_viewport::project(row_offsets[row]+(rows[row]<0?HeaderHeight:EntryHeight))-row_top(row);}
+ int row_height(int row)const{return reference_viewport::project(row_offsets[row+1]-(row+1<row_count?Separation:0))-row_top(row);}
  int row_y(int row)const{return Top+row_top(row)-position/Unit;}
- int row_center(int row)const{return reference_viewport::project(row_offsets[row]+EntryHeight/2)*Unit;}
+ int row_center(int row)const{return (row_top(row)+row_height(row)/2)*Unit;}
  int arrow_y(uint32_t now)const{
   if(selected_row<0)return Top;
   const unsigned age=now-arrow_at;const int target_y=row_center(selected_row);

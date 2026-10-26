@@ -153,7 +153,7 @@ static void character_screen(Canvas&c){
         character_info_text(article,relic_text,text_x+RelicTextX,relic_y+title_plan.rows*title_plan.step+2,RelicTextWidth,relic_plan,rgb(255,246,226));
     }
     if(overflow){const int x=dx+InfoPanelX+InfoPanelWidth-7,thumb=mx(8,body_height*body_height/total_height);
-        c.ui(I6_ScrollbarTrack,x,body_y,4,body_height);c.ui(I6_ScrollbarGrabber,x,body_y+(body_height-thumb)*offset/overflow,4,thumb);}
+        c.ui(I6_ScrollbarTrack,x,body_y,4,body_height);native_scrollbar_grabber(c,x,body_y+(body_height-thumb)*offset/overflow,4,thumb);}
     native_original_back(c,motion.opened);
     const UiAction actions[]={UiAction::SelectIronclad,UiAction::SelectSilent,UiAction::SelectDefect,UiAction::SelectRegent,UiAction::SelectNecrobinder,UiAction::SelectRandomCharacter};
     for(unsigned i=0;i<=CharacterKinds;++i){
@@ -161,7 +161,7 @@ static void character_screen(Canvas&c){
         const int scale=int(motion.portrait_scale(i,a.map_clock_ms));
         // The existing portrait payload contains its original 132:195 image
         // inside a 36x40 transparent canvas. Preserve those margins here.
-        const int pw=(30*scale+512)/1024,ph=(34*scale+512)/1024,ow=(28*scale+512)/1024,oh=(35*scale+512)/1024;
+        const int ph=(34*scale+512)/1024,pw=i==CharacterKinds?(ph*132+98)/196:(30*scale+512)/1024,ow=(28*scale+512)/1024,oh=(35*scale+512)/1024;
         const unsigned model=i==CharacterKinds?CharacterKinds:unsigned(RunModeCharacters[i]);
         const int y=PortraitTop+PortraitHeight/2;const int portrait=a.content.ui_image(i==CharacterKinds?unsigned(I12_RandomCharacter):character_portrait(Character(model)));
         Canvas shade=c;shade.tint_red=shade.tint_green=shade.tint_blue=0;shade.picture(portrait,center-pw/2+2,y-ph/2+2,pw,ph,64);

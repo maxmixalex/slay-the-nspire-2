@@ -307,7 +307,6 @@ bool App::debug_input(Key key){
     return true;
 }
 void App::debug_text(int code){
-#if SPIRE_DEBUG_TEXT_INPUT
     if(!debug_open||!debug_editing)return;
     if(code==27){debug_input(Key::Back);return;}if(code==13||code==10){debug_submit(*this);return;}if(code==9){debug_complete(*this);return;}
     const unsigned n=debug_length(debug_line);unsigned caret=mn(debug_caret,int(n));debug_completing=false;debug_history_index=-1;
@@ -319,9 +318,6 @@ void App::debug_text(int code){
     else if(code==23&&caret){from=caret;while(from&&debug_line[from-1]==' ')--from;while(from&&debug_line[from-1]!=' ')--from;}
     else if(code>=32&&code<=126&&n+1<sizeof debug_line){for(unsigned i=n+1;i>caret;--i)debug_line[i]=debug_line[i-1];debug_line[caret]=char(code);debug_caret=uint8_t(caret+1);return;}
     if(from!=to){for(unsigned i=to;i<=n;++i)debug_line[from+i-to]=debug_line[i];debug_caret=uint8_t(from);}
-#else
-    (void)code;
-#endif
 }
 static void debug_screen(Canvas&c){
     auto&a=c.a;a.hit_count=0;c.dim(0,0,320,224,235);c.rect(0,0,320,26,rgb(23,25,30));c.text("Developer Console",8,7,12,Gold);c.close_button(293,3);

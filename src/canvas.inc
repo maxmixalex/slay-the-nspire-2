@@ -518,8 +518,8 @@ struct Canvas{
         }return row+1;
     }
     void centered(const char*p,int x,int y,int w,int size=12,uint16_t color=White){text(p,x+mx(0,(w-width(p,size))/2),y,size,color,w);}
-    // Card labels have a real rectangle, unlike scrollable detail text. Use
-    // actual available glyph bands, then ellipsize within the final visible line.
+    // Bounded labels retain all text. Overflow moves smoothly within the label
+    // rectangle instead of replacing its unread tail with an ellipsis.
     fitted_text::Plan fitted(const char*p,int x,int y,int w,int h,int preferred,int minimum,uint16_t color,bool centered=false,bool single_line=false,bool outline=false,bool drop_shadow=false,uint16_t outline_color=Ink){
         char localized[1024];p=a.ui_text(p,localized,sizeof localized);
         const uint32_t rainbow_time=rainbow_elapsed(p,x,y,3);
@@ -533,24 +533,47 @@ struct Canvas{
             const int next=a.content.font_size(preferred-1,font_face,true,sparse_scene_sizes);
             if(next>=preferred)break;preferred=mx(minimum,next);
         }
-        int widths[32]{};if(plan.rows>32)plan.rows=32;
-        if(centered)fitted_text::visit(p,w,plan,metrics,[&](const RichChar&ch,int at,int row,int size){widths[row]=at+metrics(ch,size).width;});
+        const auto visible_plan=plan;
+        int scroll_x=0,scroll_y=0,layout_width=w;
+        if(plan.truncated){
+            const uint64_t surface=uint64_t(reinterpret_cast<uintptr_t>(pixels));
+            uint32_t owner=text_effect_identity?text_effect_identity:uint32_t(surface)^uint32_t(surface>>32);
+            owner=(owner^uint32_t(x))*16777619u;owner=(owner^uint32_t(y))*16777619u;
+            owner=(owner^uint32_t(w))*16777619u;owner=(owner^uint32_t(h))*16777619u;
+            owner=(owner^a.content.generation())*16777619u;
+            const auto elapsed=a.overflow_label_clocks.observe(owner,RichLabelClocks::hash(p),a.map_clock_ms);
+            if(single_line){
+                layout_width=32767;plan.rows=plan.total=1;
+                scroll_x=text_overflow_offset(elapsed,mx(0,width(p,plan.size)-w),18);
+            }else{
+                plan.rows=plan.total;
+                scroll_y=text_overflow_offset(elapsed,mx(0,plan.total*plan.step+2-h),12);
+            }
+            plan.truncated=false;
+        }
+        int widths[128]{};
+        if(centered)fitted_text::visit(p,layout_width,plan,metrics,[&](const RichChar&ch,int at,int row,int size){if(row<128)widths[row]=at+metrics(ch,size).width;});
         const uint16_t colors[]={color,Gold,rgb(244,122,102),Blue,Green,rgb(190,145,217),rgb(236,164,92),rgb(104,210,205),White,Muted};
-        const int top=y+(centered&&!single_line?mx(0,(h-(plan.rows*plan.step+2))/2):0);
+        const int top=y-scroll_y+(centered&&!single_line?mx(0,(h-(plan.rows*plan.step+2))/2):0);
         const auto draw=[&](int offset_x,int offset_y,bool shadow){
-        Canvas clipped=*this;clipped.clip_w=mn(clip_w,x+w+offset_x);clipped.clip_h=mn(clip_h,y+h+offset_y);
+        const int origin_x=mx(0,x),origin_y=mx(0,y);
+        if(origin_x>=mn(clip_w,x+w)||origin_y>=mn(clip_h,y+h))return;
+        Canvas clipped=*this;clipped.pixels+=origin_y*pitch+origin_x;
+        if(clipped.coverage)clipped.coverage+=origin_y*pitch+origin_x;
+        if(clipped.occlusion)clipped.occlusion+=origin_y*pitch+origin_x;
+        clipped.clip_w=mn(clip_w,x+w)-origin_x;clipped.clip_h=mn(clip_h,y+h)-origin_y;
         if(shadow)clipped.opacity=uint8_t(div255(clipped.opacity*(outline?144u:128u)));
-        fitted_text::visit(p,w,plan,metrics,[&](const RichChar&ch,int at,int row,int size){
+        fitted_text::visit(p,layout_width,plan,metrics,[&](const RichChar&ch,int at,int row,int size){
             if(ch.index>=text_visible_characters)return;
-            const auto g=a.content.glyph(ch.codepoint,size,font_style(ch));int xx=x+at+(centered?mx(0,(w-widths[row])/2):0),yy=top+row*plan.step;
+            const auto g=a.content.glyph(ch.codepoint,size,font_style(ch));int xx=x+at-scroll_x+(centered&&row<128?mx(0,(w-widths[row])/2):0),yy=top+row*plan.step;
             // Keep animated rich text within its allocated card rectangle.
             static const int wave[]={0,1,1,2,2,2,1,1,0,-1,-1,-2,-2,-2,-1,-1};
             int dy=a.text_effects&&ch.style.wave?wave[(a.animation/2+ch.index*2)%16]:0;
             if(a.text_effects&&ch.style.thinky_dots)dy+=rich_thinky_offset(a.map_clock_ms,ch.index-ch.style.thinky_start);
             int dx=a.text_effects&&ch.style.jitter?int((a.animation/2+ch.index*7)%3)-1:0;
-            xx=mx(x,mn(xx+dx,x+w-int(g.w)));yy=mx(y,yy+dy);
+            xx+=dx;yy+=dy;
             auto ink=shadow?outline_color:a.text_effects&&ch.style.rainbow?rich_rainbow_rgb565(ch.style.rainbow_parameters,rainbow_time,at*26000/mx(1,size)):rich_color(ch.style.color,colors);
-            clipped.animated_character(ch,g,xx+offset_x,yy+offset_y,ink,shadow);
+            clipped.animated_character(ch,g,xx+offset_x-origin_x,yy+offset_y-origin_y,ink,shadow);
         });};
         // One LCD pixel is a large fraction of an 8px letter. Four subdued
         // axial passes separate text from art without filling its counters or
@@ -559,7 +582,7 @@ struct Canvas{
         // The native event labels use a half-alpha offset shadow. One pass
         // keeps that authored shadow instead of paying for an eight-pass rim.
         else if(drop_shadow)draw(1,1,true);
-        draw(0,0,false);return plan;
+        draw(0,0,false);return visible_plan;
     }
     void text_fitted(const char*p,int x,int y,int w,int preferred=10,uint16_t color=White,int minimum=8,bool centered=false,bool outline=false,uint16_t outline_color=Ink){fitted(p,x,y,w,preferred+3,preferred,minimum,color,centered,true,outline,false,outline_color);}
     fitted_text::Plan paragraph_fitted(const char*p,int x,int y,int w,int h,int preferred=10,uint16_t color=White,int minimum=8,bool centered=false){return fitted(p,x,y,w,h,preferred,minimum,color,centered);}

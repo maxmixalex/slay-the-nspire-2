@@ -21,6 +21,9 @@ static void pile_screen(Canvas&c){
             Canvas layer=rows;if(!focused)layer.brightness=204;
             layer.ui(bar,x,bar_y-grid.top,48,12);
             const auto*label=a.content.world_string("gameplay_ui",keys[sort]);
+            layer.font_face=source_label_face(a.content.original_label_fonts(),5);
+            Canvas shadow=layer;shadow.opacity=uint8_t(div255(unsigned(shadow.opacity)*128));
+            shadow.text_fitted(label,x+2,bar_y+3-grid.top,38,8,0,8,true);
             layer.text_fitted(label,x+1,bar_y+2-grid.top,38,8,Gold,8,true);
             const bool descending=(a.pile_sort_descending&(1u<<sort))!=0;
             ui_picture_transform(layer,a.content.ui_image(I6_SortDescending),x+43,bar_y+7-grid.top,7,5,0,descending?1024:-1024);
@@ -56,9 +59,12 @@ static void pile_screen(Canvas&c){
     Canvas plaque=c;plaque.opacity=192;plaque.rect(info_x-2,225,info_w+4,13,0);
     c.text_fitted(info,info_x,227,info_w,8,White,8,true);
     if(deck){
-        c.ui(a.pile_upgraded?F_SettingsTicked:F_SettingsUnticked,3,226,9,9);
-        c.text_fitted(a.content.world_string("gameplay_ui","VIEW_UPGRADES"),14,227,64,8,Gold,8);
-        c.hit(2,223,78,14,HitKind::PileUpgrades);
+        // Reserve the full bottom-left back-tab bounds, including its outline.
+        // A separate row above it keeps the upgrade toggle clear in every locale.
+        c.ui(a.pile_upgraded?F_SettingsTicked:F_SettingsUnticked,53,208,10,10);
+        Canvas label=c;label.font_face=source_label_face(a.content.original_label_fonts(),5);
+        label.text_fitted(a.content.world_string("gameplay_ui","VIEW_UPGRADES"),66,208,138,10,Gold,8);
+        c.hit(51,206,155,15,HitKind::PileUpgrades);
     }
     // back_button.tscn anchors left, about two thirds down the scene. Keep
     // the cropped side tab outside the first card's hit area and the footer.

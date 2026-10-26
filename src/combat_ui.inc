@@ -2,14 +2,14 @@
 // The integer fan, tile dimensions and preview are small-screen adaptations.
 namespace {
 struct HandTile {
-    bool valid=false,playable=false,resource_cross=false,description_truncated=false;
+    bool valid=false,playable=false,resource_cross=false,description_truncated=false,sampled_locked=false;
     uint8_t resource_styles=0;
     uint8_t glow=0;
     const Content* owner=nullptr;
     Card card{};
     uint32_t used=0,enchantment=0;
     uint32_t built=0;
-    uint32_t sampled_frame=0,sampled_revision=0;
+    uint32_t sampled_frame=0,sampled_revision=0,sampled_generation=0;
     int sampled_instance=-1,sampled_deck=-1,sampled_target=-1;
     const CombatCardMotion::Sprite*sampled_visual=nullptr;
     int energy=0,stars=0,portrait=-1,frame=-1;
@@ -23,9 +23,11 @@ struct SelectedHandReader {
     const HandTile*source=nullptr;
     uint32_t built=0,started=0;
     int instance=-1,skip=-1,maximum=0;
+    uint16_t background[72*48]{};
+    uint8_t coverage[72*48]{};
 };
 static SelectedHandReader selected_hand_reader;
-static_assert(sizeof(SelectedHandReader)<48u*1024u,"Only one selected description may animate");
+static_assert(sizeof(SelectedHandReader)<56u*1024u,"Only one selected description may animate");
 struct HandGlowSlot {HandCardHighlight motion{};const Content*owner=nullptr;int instance=-1;uint32_t used=0;};
 static HandGlowSlot hand_glows[MaxHand];
 static uint32_t hand_tile_clock=0,hand_build_clock=0;
@@ -42,10 +44,11 @@ static const HandTile& hand_tile(Canvas&c,int instance,const CombatCardMotion::S
     // A selected face is requested again by its automatic full-description
     // tip in the same frame. Reuse the already resolved instance sample;
     // target/revision/card identity guard input arriving between frames.
-    for(auto&t:hand_tiles)if(!frozen_facts&&!upgrade_preview&&!description_override&&t.valid&&t.owner==&a.content&&t.sampled_frame==small_card_frame&&
+    const bool locked=a.combat_actions_locked();
+    for(auto&t:hand_tiles)if(!visual&&!frozen_facts&&!upgrade_preview&&!description_override&&t.valid&&t.owner==&a.content&&t.sampled_generation==a.content.generation()&&t.sampled_locked==locked&&
         t.sampled_revision==a.game.revision&&t.sampled_instance==instance&&t.sampled_deck==deck&&
         t.sampled_target==preview_target&&t.sampled_visual==visual&&t.card.kind==card.kind&&t.card.upgraded==card.upgraded){t.used=hand_tile_clock;return t;}
-    auto stamp=[&](HandTile&t){t.sampled_frame=small_card_frame;t.sampled_revision=a.game.revision;t.sampled_instance=frozen_facts||description_override||upgrade_preview?-2:instance;t.sampled_deck=deck;t.sampled_target=preview_target;t.sampled_visual=visual;};
+    auto stamp=[&](HandTile&t){t.sampled_frame=small_card_frame;t.sampled_revision=a.game.revision;t.sampled_generation=a.content.generation();t.sampled_locked=locked;t.sampled_instance=frozen_facts||description_override||upgrade_preview?-2:instance;t.sampled_deck=deck;t.sampled_target=preview_target;t.sampled_visual=visual;};
     int energy=visual?visual->energy:cost(a.game,instance),stars=visual?visual->stars:card_star_cost(a.game,card,instance);
     const auto*facts=frozen_facts?frozen_facts:event_card_facts(a.game,card,instance,deck);
     const uint32_t enchantment=card_face_enchantment_key(a,facts,instance);
@@ -90,19 +93,28 @@ static const HandTile& selected_hand_tile(Canvas&c,int instance){
     if(r.instance!=instance||r.source!=&source||r.built!=source.built){
         r.instance=instance;r.source=&source;r.built=source.built;r.started=c.a.map_clock_ms;r.skip=-1;
         const auto metric=[&](const RichChar&ch,int px){return c.text_metric(ch,px);};
-        r.maximum=mx(0,fitted_text::line_count(source.description,rect.w,size,metric)-fitted_text::row_capacity(rect.h,size));
+        r.maximum=mx(0,fitted_text::line_count(source.description,rect.w,size,metric)*(size+1)-rect.h);
+        if(rect.w>72||rect.h>48){r.maximum=0;return source;}
+        r.tile=source;auto&t=r.tile;
+        for(int i=0;i<HandTileW*HandTileH;++i){t.pixels[i]=0;t.alpha[i]=0;}
+        Canvas tile{c.a,t.pixels,HandTileW,HandTileW,HandTileH,t.alpha};
+        const auto*facts=event_card_facts(c.a.game,source.card,instance,-1);
+        render_card_face(tile,source.card,HandFaceX,HandFaceY,HandFaceW,HandFaceH,source.energy,source.stars,instance,-1,facts,"");
+        for(int y=0;y<rect.h;++y)for(int x=0;x<rect.w;++x){const int at=(rect.y+y)*HandTileW+rect.x+x;
+            r.background[y*rect.w+x]=t.pixels[at];r.coverage[y*rect.w+x]=t.alpha[at];}
     }
     if(!r.maximum)return source;
-    // Pause on both ends, expose every line downward, then return to the
-    // beginning. Repaint only this face when the visible row actually changes.
-    const unsigned cycle=3000u+unsigned(r.maximum)*1200u,age=(c.a.map_clock_ms-r.started)%cycle;
-    const int skip=age<1400?0:mn(r.maximum,1+int((age-1400)/1200));
+    // Eight pixels per second with a pause at each end. Restore only the
+    // description background; repainting portrait/frame/cost every pixel used
+    // to turn readable overflow into another combat rendering stall.
+    const unsigned travel=unsigned(r.maximum)*125u,cycle=2800u+travel*2u,age=(c.a.map_clock_ms-r.started)%cycle;
+    const int skip=age<1400?0:age<1400+travel?int((age-1400)/125u):age<2800+travel?r.maximum:mx(0,r.maximum-int((age-2800-travel)/125u));
     if(r.skip==skip)return r.tile;
-    r.skip=skip;r.tile=source;auto&t=r.tile;
-    for(int i=0;i<HandTileW*HandTileH;++i){t.pixels[i]=0;t.alpha[i]=0;}
+    r.skip=skip;auto&t=r.tile;
+    for(int y=0;y<rect.h;++y)for(int x=0;x<rect.w;++x){const int at=(rect.y+y)*HandTileW+rect.x+x;
+        t.pixels[at]=r.background[y*rect.w+x];t.alpha[at]=r.coverage[y*rect.w+x];}
     Canvas tile{c.a,t.pixels,HandTileW,HandTileW,HandTileH,t.alpha};
-    const auto*facts=event_card_facts(c.a.game,source.card,instance,-1);
-    render_card_face(tile,source.card,HandFaceX,HandFaceY,HandFaceW,HandFaceH,source.energy,source.stars,instance,-1,facts,source.description,nullptr,true,false,skip);
+    card_description_window(tile,source.description,rect,size,skip);
     return t;
 }
 static void draw_hand_tile(Canvas&c,const HandTile&t,HandPose p,bool focused,unsigned brightness=255,unsigned erosion=0,bool highlight=false){
@@ -145,6 +157,14 @@ static void draw_hand_tile(Canvas&c,const HandTile&t,HandPose p,bool focused,uns
             py[i]=p.cy+int((int64_t(dx)*p.sine+int64_t(dy)*p.cosine)*p.scale/(1024LL*1024*1024));}
         for(int i=0;i<4;++i)c.line(px[i],py[i],px[(i+1)%4],py[(i+1)%4],t.playable?Gold:Muted);
     }
+    // Generated-card previews and settled unhighlighted holders use the
+    // dense picture path. It skips transparent spans and avoids an affine
+    // division/sampler for an exactly axis-aligned, native-size face.
+    if(!glow&&!erosion&&p.scale==1024&&p.sine==0&&p.cosine==1024){
+        Canvas layer=c;layer.brightness=uint8_t(div255(unsigned(layer.brightness)*brightness));
+        layer.picture(Picture{reinterpret_cast<const uint8_t*>(t.pixels),t.alpha,nullptr,HandTileW,HandTileH,1},
+            p.cx-HandPivotX/1024,p.cy-HandPivotY/1024,HandTileW,HandTileH);return;
+    }
     for(int y=top;y<bottom;y++){
         int u=HandPivotX+((left-p.cx)*p.cosine+(y-p.cy)*p.sine)*1024/p.scale;
         int v=HandPivotY+(-(left-p.cx)*p.sine+(y-p.cy)*p.cosine)*1024/p.scale;
@@ -162,6 +182,7 @@ static void draw_hand_tile(Canvas&c,const HandTile&t,HandPose p,bool focused,uns
                 }
             }
             int at=(v/1024)*HandTileW+u/1024;
+            if(!t.alpha[at])continue;
             uint16_t color=t.pixels[at];
             if(erosion){const int sx=u/1024,sy=v/1024,noise=int((unsigned(sx*73+sy*151)^unsigned(sx*sy*19))&63u)-32;
                 const int edge=(sy-HandFaceY)*1024/HandFaceH+noise-int(erosion);if(edge<0)continue;if(edge<52)color=rgb(255,115+edge*2,45+edge);}
@@ -171,7 +192,23 @@ static void draw_hand_tile(Canvas&c,const HandTile&t,HandPose p,bool focused,uns
     }
 }
 static void combat_pile(Canvas&c,int image,int count,int x,int y,int tab){
-    constexpr int size=combat_controls::PileSize;c.picture(image,x,y,size,size);
+    // NCombatCardPile scales Icon, not its sibling CountContainer. Focus is
+    // a 50ms linear tween to1.25; unfocus returns over500ms with QuintOut.
+    struct Motion {const Content*owner=nullptr;uint32_t generation=0,start=0,last=0;int from=4096,value=4096;unsigned state=0;};
+    static Motion motions[3];auto&m=motions[tab-1];auto&a=c.a;const auto now=a.map_clock_ms;
+    if(m.owner!=&a.content||m.generation!=a.content.generation()||int32_t(now-m.last)<0){m={};m.owner=&a.content;m.generation=a.content.generation();m.start=now;}
+    m.last=now;constexpr int size=combat_controls::PileSize;
+    const int hit_left=x-(tab==2?5:0),hit_right=x+size+(tab==1?5:0);
+    const bool hover=a.pointer.visible&&!a.panel&&!a.paused&&!a.help&&!a.settings_open&&!a.frontend_confirm&&a.detail_card<0&&a.detail_item<0&&a.status_actor<0&&
+        a.pointer.x>=hit_left&&a.pointer.x<hit_right&&a.pointer.y>=y&&a.pointer.y<y+26;
+    const unsigned state=hover?(a.pointer.held?2u:1u):0u;
+    if(state!=m.state){m.from=m.value;m.state=state;m.start=now;}
+    const unsigned duration=state==1?50u:state==2?250u:500u,age=now-m.start;
+    int q=age>=duration?4096:int(age*4096u/duration);
+    if(state!=1){const int inv=4096-q,q2=inv*inv/4096;q=4096-(state==2?q2*inv/4096:q2*q2/4096*inv/4096);}
+    m.value=m.from+((state==1?5120:4096)-m.from)*q/4096;
+    const int draw_size=(size*m.value+2048)/4096;Canvas icon=c;if(state==2)icon.brightness=169;
+    icon.picture(image,x+(size-draw_size)/2,y+(size-draw_size)/2,draw_size,draw_size);
     char label[16]{};TextBuffer b{label,sizeof label,0};b.number(count);
     Canvas text=c;text.font_face=uint8_t(source_label_face(c.a.content.original_label_fonts(),5));
     if(tab==3){

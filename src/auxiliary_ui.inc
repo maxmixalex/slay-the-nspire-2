@@ -32,8 +32,11 @@ static void auxiliary_port_credit(Canvas&layer,int&y){
  const char*author=a.content.language()==2?"zyf722（基于 Codex）":a.content.language()==3?"zyf722（基於 Codex）":"zyf722 (with Codex)";
  if(*payload){const char*next=auxiliary_credit_line(payload,localized_heading,sizeof localized_heading);
   auxiliary_credit_line(next,localized_author,sizeof localized_author);if(*localized_heading&&*localized_author){heading=localized_heading;author=localized_author;}}
- auxiliary_credit_text(layer,heading,12,y,296,20,Gold,true);
- auxiliary_credit_text(layer,author,12,y+26,296,22,rgb(255,246,226),true);y+=72;
+ // Match the source LOC/TRAILER major-section label, including its green
+ // Kreon/locale bold face and the authored spacing before the author line.
+ Canvas section=layer;section.font_face=5;
+ section.text_fitted(heading,12,y+26,296,12,rgb(127,255,0),12,true);
+ auxiliary_credit_text(layer,author,12,y+44,296,22,rgb(255,246,226),true);y+=82;
 }
 static void auxiliary_credits_screen(Canvas&c){
  auto&a=c.a;auto&v=a.auxiliary;c.rect(0,0,320,240,0);a.hit_count=0;Canvas layer=c;layer.opacity=uint8_t(auxiliary_alpha(a));

@@ -1,6 +1,7 @@
 // Foreground-only profile storage. The existing run/progress buffers are
 // reused; opening this menu never constructs another State or UiProgress.
 #include "storage_codec.inc"
+#include "installation_paths.hpp"
 static const char*profile_launcher="";
 static char selector_path[512],selector_temp[512],selector_backup[512];
 static unsigned selected_profile=1,pending_profile=0;
@@ -29,7 +30,7 @@ static const char*const profile_removed_files[]={"nSpire2.sav.deleted.tns","nSpi
     "nSpire2.settings.deleted.tns","nSpire2.settings.tmp.deleted.tns","nSpire2.settings.bak.deleted.tns"};
 static_assert(sizeof profile_files/sizeof profile_files[0]==ProfileFileCount&&sizeof profile_removed_files/sizeof profile_removed_files[0]==ProfileFileCount,"Every profile-owned file has an isolated delete path");
 static bool profile_sibling(char*out,const char*name,unsigned profile){
-    char base[512];return sibling(base,profile_launcher,name)&&spire::profile_scoped_path(out,512,base,profile);
+    char base[512];return spire::installation_path(base,sizeof base,profile_launcher,spire::InstallationDirectory::State,name)&&spire::profile_scoped_path(out,512,base,profile);
 }
 static bool profile_paths(unsigned profile,char(&paths)[ProfileFileCount][512],bool removed=false){
     for(unsigned i=0;i<ProfileFileCount;++i)if(!profile_sibling(paths[i],removed?profile_removed_files[i]:profile_files[i],profile))return false;

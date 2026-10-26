@@ -137,9 +137,7 @@
  {0xe5ea2ce1u,15,"Keyboard Mode"},
  {0xe7718d55u,6,"February"},
  {0xea7b751eu,21,"Restore default settings?"},
-#if SPIRE_DEBUG_COMMANDS
  {0xef557a45u,40,"Up/Down: choose  Left/Right: variant  Enter: run"},
-#endif
  {0xef92ba88u,51,"Enter to aim, Left/Right target, Enter to play"},
  {0xf02a5188u,6,"Normal"},
  {0xf204d665u,12,"View Actions"},

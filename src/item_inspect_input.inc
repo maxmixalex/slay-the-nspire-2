@@ -61,8 +61,6 @@ bool App::relic_inspect_input(Key key){
         if(relic_inspect.reading_keywords||!relic_inspect.scroll_maximum)keyword_hover_scroll(*this,key==Key::Up?-1:1);
         else{const int next=detail_scroll+(key==Key::Up?-12:12),maximum=relic_inspect.scroll_maximum;detail_scroll=next<0?0:next>maximum?maximum:next;}
     }
-#if SPIRE_DEBUG_COMMANDS
     else if(key==Key::EndTurn&&library&&!title&&!paused&&!help&&detail_item>=WorldRelicKinds)ui_action(UiAction::LabPotion);
-#endif
     return true;
 }

@@ -16,6 +16,7 @@
 #include <thread>
 #include <algorithm>
 #include <random>
+#include <sys/stat.h>
 
 static spire::App app;
 static unsigned installed_languages=0,pending_language=0;
@@ -166,28 +167,26 @@ static uint16_t physical_keycode(KeySym sym){
 }
 int main(int argc,char**argv){
     std::string dir=directory(argv[0]),actions,packpath,commonpath,localepath;
-    save_path=dir+"/nSpire2.sav";bool headless=false;const char*shot=nullptr;
-#if SPIRE_DEBUG_COMMANDS
+    bool headless=false;const char*shot=nullptr;
     std::vector<std::string> debug_commands;
-#endif
     auto language=spire::BootLanguage::Unknown;
     for(int i=1;i<argc;i++){
         std::string a=argv[i];if(a=="--headless")headless=true;
-#if SPIRE_DEBUG_COMMANDS
         else if(a=="--debug-command"&&i+1<argc)debug_commands.emplace_back(argv[++i]);
-#endif
         else if((a=="--pack"||a=="--common"||a=="--locale"||a=="--resources"||a=="--language"||a=="--save"||a=="--settings"||a=="--progress"||a=="--capture"||a=="--actions")&&i+1<argc){const char*v=argv[++i];
             if(a=="--pack")packpath=v;else if(a=="--common")commonpath=v;else if(a=="--locale")localepath=v;else if(a=="--resources")dir=v;
             else if(a=="--language"){language=static_cast<spire::BootLanguage>(spire::locale_language_id(v));if(language==spire::BootLanguage::Unknown){fprintf(stderr,"Unsupported original language code: %s\n",v);return 2;}}
             else if(a=="--save")save_path=v;else if(a=="--settings")settings_path=v;else if(a=="--progress")progress_path=v;else if(a=="--capture")shot=v;else actions=v;}
         else {fprintf(stderr,"Usage: %s [--pack FILE | --resources DIR | --common FILE --locale FILE] [--language eng|zhs] [--save FILE] [--headless] [--actions enter,right,...] [--capture FILE.ppm]\n",argv[0]);return 2;}}
     if(!packpath.empty()&&(!commonpath.empty()||!localepath.empty())){fprintf(stderr,"Choose --pack or --common/--locale\n");return 2;}
+    if(save_path.empty())save_path=dir+"/state/nSpire2.sav.tns";
+    if(!headless&&mkdir((dir+"/state").c_str(),0777)!=0&&errno!=EEXIST){perror("state");return 2;}
     const bool explicit_split=!commonpath.empty()||!localepath.empty();
-    if(commonpath.empty())commonpath=dir+"/nSpire2.common.tns";
+    if(commonpath.empty())commonpath=dir+"/data/nSpire2.dat.tns";
     ResourceFile common{packpath.empty()?fopen(commonpath.c_str(),"rb"):nullptr},resource{nullptr};
     spire::SplitResourceSource split;spire::ResourceSource source{};
     auto error=[&](spire::BootText message){fprintf(stderr,"%s\n",spire::boot_text(message,language));return 2;};
-    const std::string preference=directory(commonpath)+"/nSpire2.lang.tns";
+    const std::string preference=dir+"/state/nSpire2.lang.tns";
     if(common.file){
         if(localepath.empty()){
             const std::string root=directory(commonpath);
@@ -210,14 +209,13 @@ int main(int argc,char**argv){
             static_cast<spire::ResourceLanguage>(language)))return error(spire::BootText::InvalidResources);
         source=split.source();
     }else{
-        if(explicit_split)return error(spire::BootText::MissingResources);
-        if(packpath.empty())packpath=dir+"/nSpire2.nsp.tns";
+        if(explicit_split||packpath.empty())return error(spire::BootText::MissingResources);
         resource.file=fopen(packpath.c_str(),"rb");if(!resource.file)return error(spire::BootText::MissingResources);
         source=file_source(resource.file);language=spire::boot_probe_language(source);
     }
     if(!installed_languages)installed_languages=spire::locale_language_mask(unsigned(language));
     if(progress_path.empty()&&!headless)progress_path=directory(save_path)+"/nSpire2.progress.tns";
-    if(settings_path.empty()&&!headless)settings_path=(common.file?directory(commonpath):directory(packpath))+"/nSpire2.settings.tns";
+    if(settings_path.empty()&&!headless)settings_path=dir+"/state/nSpire2.settings.tns";
     base_save_path=save_path;base_progress_path=progress_path;base_settings_path=settings_path;
     if(!headless){profile_selector_path=directory(base_save_path)+"/nSpire2.slots.tns";
         if(FILE*f=fopen(profile_selector_path.c_str(),"rb")){uint8_t bytes[spire::UiProfileSelectorBytes+1];const size_t n=fread(bytes,1,sizeof bytes,f);fclose(f);selected_profile=spire::decode_profile_selector(bytes,n);}
@@ -245,9 +243,7 @@ int main(int argc,char**argv){
             app.message(app.content.language()!=2?"Could not change language.":"无法切换语言。");
         }
     };
-#if SPIRE_DEBUG_COMMANDS
     for(const auto&command:debug_commands){if(!app.debug_command(command.c_str())){fprintf(stderr,"Debug: %s\n",app.debug_reply);return 2;}}
-#endif
     if(!actions.empty()){
         size_t start=0;while(start<actions.size()){
             size_t end=actions.find(',',start);if(end==std::string::npos)end=actions.size();std::string a=actions.substr(start,end-start);
@@ -305,7 +301,6 @@ int main(int argc,char**argv){
                 bool repeat=false;if(XPending(d)){XEvent next;XPeekEvent(d,&next);repeat=next.type==KeyPress&&next.xkey.keycode==e.xkey.keycode&&next.xkey.time==e.xkey.time;}
                 if(!repeat){held[e.xkey.keycode&255]=false;app.physical_key(physical_keycode(XLookupKeysym(&e.xkey,0)),false);}}
             else if(e.type==KeyPress){held[e.xkey.keycode&255]=true;KeySym symbol=XLookupKeysym(&e.xkey,0);
-#if SPIRE_DEBUG_COMMANDS
                 // The console owns keys ahead of search/remapping modals.
                 // F1 / grave are the desktop equivalents of calculator Flag.
                 if(symbol==XK_F1||symbol==XK_grave){app.input(spire::Key::Debug);}
@@ -324,7 +319,6 @@ int main(int argc,char**argv){
                         app.debug_input(actual==XK_Left?spire::Key::Left:actual==XK_Right?spire::Key::Right:actual==XK_Up?spire::Key::Up:spire::Key::Down);
                     else if(!(e.xkey.state&Mod1Mask)&&size==1)app.debug_text((unsigned char)text[0]);
                 }else
-#endif
                 if(app.binding_listening>=0)app.physical_key(physical_keycode(symbol),true);
                 else if(((app.library&&!app.library_tab&&app.library_search_editing)||(app.auxiliary.screen==spire::AuxiliaryScreen::Feedback&&app.auxiliary.editing))&&!(e.xkey.state&(ControlMask|Mod1Mask))){
                     char text[512];KeySym actual=symbol;Status status=XLookupNone;int size=0;

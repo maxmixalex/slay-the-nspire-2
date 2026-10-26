@@ -674,6 +674,7 @@ struct App {
     bool map_drawing_point(bool begin=false);
     uint32_t map_clock_ms=0;
     RichLabelClocks rich_label_clocks;
+    RichLabelClocks overflow_label_clocks;
     ScreenShakePresentation screen_motion{};
     CombatDoomPresentation combat_doom{};
     void observe_doom(unsigned actor);
@@ -905,7 +906,6 @@ struct App {
     int detail_energy()const;
     int detail_stars()const;
     void message(const char*);
-#if SPIRE_DEBUG_COMMANDS
     bool debug_open=false,debug_editing=false;
     int debug_selection=0,debug_variant=0;
     char debug_line[128]{},debug_reply[256]{};
@@ -919,7 +919,6 @@ struct App {
     bool debug_input(Key);
     void debug_text(int);
     void debug_preset();
-#endif
     void animate(int actor,int clip,int delay=0);
     void reset_presentation(bool keep_map_visuals=false);
 };

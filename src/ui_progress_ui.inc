@@ -90,7 +90,7 @@ static void progress_page_chrome(Canvas&c){
     native_original_back(c,a.progress_page_started);
     if(s.maximum){c.ui(I6_ScrollbarTrack,301,61,10,128);c.ui(I6_ScrollbarEdge,301,50,10,11);
         ui_picture_transform(c,a.content.ui_image(I6_ScrollbarEdge),306,195,10,11,0,-1024);
-        const int center=s.thumb_y();c.ui(I6_ScrollbarGrabber,298,center-8,16,16);c.hit(294,51,23,148,HitKind::ProgressThumb);
+        const int center=s.thumb_y();native_scrollbar_grabber(c,298,center-8,16,16);c.hit(294,51,23,148,HitKind::ProgressThumb);
     }
 }
 static unsigned progress_bit_count(const uint8_t*bits,unsigned count){unsigned n=0;for(unsigned i=0;i<count;++i)n+=(bits[i/8]>>(i%8))&1;return n;}
@@ -200,7 +200,7 @@ static void statistics_screen(Canvas&c){
     profile_text_box(foreground,frontend_text(a,"stats_screen","TAB_STATS.header","Statistics"),88,12,144,24,{12,source_label_face(a.content.original_label_fonts(),5),rgb(255,246,226),128,1,0},true,false);
     if(a.progress_page_scroll.maximum){foreground.ui(I6_ScrollbarTrack,305,UiStatisticsLayout::ScrollTop,9,UiStatisticsLayout::ScrollLength);
         foreground.ui(I6_ScrollbarEdge,305,49,9,9);ui_picture_transform(foreground,a.content.ui_image(I6_ScrollbarEdge),309,216,9,9,0,-1024);
-        const int center=a.progress_page_scroll.thumb_y(UiStatisticsLayout::ScrollTop,UiStatisticsLayout::ScrollLength);foreground.ui(I6_ScrollbarGrabber,302,center-7,14,14);
+        const int center=a.progress_page_scroll.thumb_y(UiStatisticsLayout::ScrollTop,UiStatisticsLayout::ScrollLength);native_scrollbar_grabber(foreground,302,center-7,14,14);
         c.hit(300,49,19,171,HitKind::ProgressThumb);}
     native_original_back(foreground,a.progress_page_started);
     int focus=-1;if(a.pointer.visible){const auto*hit=a.hit_at(a.pointer.x,a.pointer.y);if(hit&&hit->kind==HitKind::StatisticsEntry&&!a.pointer.held)focus=hit->value;}

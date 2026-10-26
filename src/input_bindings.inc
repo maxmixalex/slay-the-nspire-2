@@ -24,12 +24,10 @@ void App::physical_keys_cancel(){
 }
 bool App::physical_key(uint16_t code,bool pressed){
     code=normalize_input_key(code);if(!valid_input_key(code))return false;
-#if SPIRE_DEBUG_COMMANDS
     if(code==InputFlag){if(pressed&&!startup_logo.active())input(Key::Debug);return true;}
     if(debug_open){if(pressed){if(code==InputUp)debug_input(Key::Up);else if(code==InputDown)debug_input(Key::Down);
         else if(code==InputLeft)debug_input(Key::Left);else if(code==InputRight)debug_input(Key::Right);
         else if(code==9)debug_text(9);}return true;}
-#endif
     HeldInput*held=nullptr;for(auto&entry:held_inputs)if(entry.code==code){held=&entry;break;}
     if(!pressed){if(!held)return false;const unsigned released=held->key;const uint32_t context=held->context;*held={};
         release_end_turn_hold(code);
@@ -198,9 +196,7 @@ bool App::physical_key(uint16_t code,bool pressed){
     case 'L':return dispatch(Key::Log);case 'O':return dispatch(Key::Load);
     case 'P':return dispatch(Key::Potions);case 'R':return dispatch(Key::Relics);
     case 'I':return dispatch(Key::Detail);case 'C':return dispatch(Key::Collection);case 'V':return dispatch(Key::Statuses);
-#if SPIRE_DEBUG_COMMANDS
     case InputF1:case 'G':return dispatch(Key::Debug);
-#endif
     default:*held={};return false;
     }
 }

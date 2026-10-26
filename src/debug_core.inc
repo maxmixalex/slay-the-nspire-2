@@ -1,4 +1,4 @@
-// Compiled only with SPIRE_DEBUG_COMMANDS. Keep the large rollback state in
+// The always-available console keeps the large rollback state in
 // static storage: the calculator stack cannot hold a second State.
 namespace debug_detail {
 static State rollback{};
