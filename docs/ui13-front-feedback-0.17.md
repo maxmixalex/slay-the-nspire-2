@@ -59,7 +59,7 @@ three fixed image IDs 2201..2203 and `localize_credits(source, language,
 font_dir)` for the text/glyph rewrite. Root integration owns the resource
 directory, publication and complete validation.
 
-## Scoped checks before integrated validation
+## Source checks and completed actual-resource validation
 
 - Clang 18 syntax checking of App, pointer and UI input passes. The existing
   partial-switch warning in UI input remains.
@@ -74,9 +74,24 @@ directory, publication and complete validation.
 - The frontend integration regression now exercises the installed sixteen-
   language dropdown's pointer drag, wheel, keyboard focus, modal ownership and
   unchanged canonical save. It also clicks the history Next arrow with an
-  actual scrollable history. Its execution belongs to the integrated build;
-  this source note does not claim that pending test has passed.
+  actual scrollable history. Matched `d8a1025` core and the complete UI13 packs
+  passed all 138 checks in each of English and Simplified Chinese.
 
-The updated main-menu, popup and map-regression expectations describe the new
-explicit LCD geometry. Resource readback, actual frames, all language packs and
-calculator acceptance remain the release coordinator's matching-source gates.
+The profile/main-menu/Continue/compendium regression also passed against the
+matched UI13 English and Chinese packs. Its independent scalar font oracle
+reads the actual fractional advances, kerning and negative bearings, and still
+compares complete rendered frames. The compact popup geometry additionally
+passes 100,713 independent button-presentation checks. The saved-run main menu
+and compact profile-delete popup were reviewed in actual 320×240 native frames.
+
+The final resource conversion at `6e40566` produced all sixteen matched editions,
+preserving previous glyphs and text except the reserved credit slot. The final
+`b96bd0d` native locale gate initialized every language, checked 53,072 model
+descriptions and their visible 8/10/12px glyphs, and verified all three energy
+sprite sizes: 38,686 checks, no failures and no unexpanded model descriptions.
+This is an actual application/resource check in addition to converter readback.
+
+The final ARM runtime is `d5f9a3c`; these native checks do not claim Firebird
+timing or physical-calculator frame rates. The aggregate status and actual
+76.30 MB default installation size are recorded in
+[`ui13-lcd-followup-0.17.md`](ui13-lcd-followup-0.17.md).

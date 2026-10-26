@@ -35,7 +35,8 @@ Knight, Thieving Hopper, Bygone Effigy and Architect), 286 clips and 5,340 frame
 Its English/Chinese outputs retain all clocks, 701,988 protected tiles, 546
 pre-existing index groups, all original glyphs and all 8,704 strings exactly.
 Their logical pack sizes are 70,174,824/74,662,627 bytes, adding approximately
-6.258 MB of shared original-source pixels before subsequent tile alignment.
+6.258 MB of shared original-source pixels before subsequent directory pruning.
+The transparent-padding alignment trial below was evaluated and rejected.
 
 Actual output decoding gives Vantom's normal idle frame91×102 ink pixels,
 previously21×25. Ceremonial Beast changes26×29→96×108, Waterfall Giant
@@ -72,8 +73,14 @@ verbatim, and preserves all dimensions, pivots, pixel samples and frame clocks.
 It also compares every retained image, glyph and string. This avoids both a new
 codec and the rejected padding change. Tests cover real replacement-created
 dead records, decoded image equality, idempotence and rejection of a malformed
-live reference. Its private receipt records the actual byte saving after the
-source checkpoint is frozen and the complete pack is processed.
+live reference. The complete `6e40566` pass closed successfully in 22.009s.
+It removes 3,006 dead descriptors and 38 entirely unused index groups, saving
+259,740 bytes per logical pack. All 1,155 live tile groups and 556 live index
+groups retain their exact compressed streams; 48,294 tiled images, 2,969
+retained images, all glyphs and 8,704 strings are verified unchanged. The
+unpadded pruned base is 69,915,084 bytes for English and 74,402,887 for Chinese.
+These are logical conversion bases, not two independently installed artwork
+packs. In the final split default installation, pruning saves 307,420 bytes.
 
 A native file-reader check of nine representative idle clips, including normal
 and maximum-tail Vantom, observes zero source callbacks/bytes on their second
@@ -84,3 +91,12 @@ clip independently fits the ordinary5 MiB image pool; the largest sparse frame
 is38,108 bytes. These are cache/working-set measurements, not an emulator or
 physical-calculator frame-rate claim. Full combat with other active resources
 still receives the final device acceptance gate.
+
+The final sixteen-language release uses this unpadded, pruned base. Its shared
+resource is 68,410,158 bytes, English is 1,133,099 and Simplified Chinese is
+5,116,394. With the 1,638,134-byte ARM launcher, the default bilingual four-file
+installation is **76,297,785 bytes / 76.30 MB / 72.76 MiB**, excluding saves.
+This exceeds the earlier 65–70 MB target. Original frame count, clocks and
+improved source resolution were preserved instead of forcing that target by
+removing frames or discarding the new pixels. Final measured device performance
+is recorded separately from these completed storage/cache measurements.

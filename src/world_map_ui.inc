@@ -120,6 +120,19 @@ static const char* map_legend_key(unsigned item){
 static const char* map_legend_text(const App&a,unsigned item,const char*suffix,char*key,size_t capacity){
     TextBuffer text{key,capacity,0};text.text(map_legend_key(item));text.text(suffix);return a.content.world_string("map",key);
 }
+static int map_legend_label_extent(Canvas&c,const char*label){
+    // Advance ends at the next pen position, while the last glyph can extend
+    // beyond it. A fitted label needs the full ink rectangle or a complete
+    // short name such as Unknown/Rest Site acquires a false ellipsis.
+    char localized[160];label=c.a.ui_text(label,localized,sizeof localized);
+    const int size=c.a.content.font_size(10,c.font_face,false,c.sparse_scene_sizes);
+    RichReader reader(label);RichChar ch{};int pen=0,extent=0;
+    while(reader.next(ch)&&ch.codepoint!='\n'){
+        const auto metric=c.text_metric(ch,size);if(pen)pen+=metric.kerning64;
+        extent=mx(extent,text_pixel(pen)+metric.width);pen+=fitted_text::advance64(metric);
+    }
+    return mx(extent,text_pixel(pen));
+}
 static void map_legend_screen(Canvas&c,const MapColors&colors,int offset_x=0){
     auto&a=c.a;const int x=MapLegendX+offset_x,y=MapLegendY;
     const char*header=a.content.world_string("map","LEGEND_HEADER");
@@ -139,7 +152,7 @@ static void map_legend_screen(Canvas&c,const MapColors&colors,int offset_x=0){
         const int size=int((16*a.room_presentation.legend.scale(i,a.map_clock_ms)+2048)/4096);
         char key[96]{};const char*label=map_legend_text(a,i,".title",key,sizeof key);
         const char*name=*label?label:world_point_name(type);
-        const int text_width=mn(MapLegendWidth-46,c.width(name,10)),group_width=22+text_width;
+        const int text_width=mn(MapLegendWidth-46,map_legend_label_extent(c,name)),group_width=22+text_width;
         const int left=x+(MapLegendWidth-group_width)/2;
         map_picture(c,world_point_image(type),left+8,row+MapLegendRowStep/2,size,size,MapShader::Normal,0,colors.paper,255,0,22,235);
         c.fitted(name,left+22,row,text_width,MapLegendRowStep,10,10,colors.ink,true);

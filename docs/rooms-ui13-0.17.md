@@ -38,6 +38,13 @@ pointer, keyboard focus and newly created hit regions during confirmation. This
 covers the top bar's manually calculated focus as well as ordinary card-grid
 hover. Preview cards and confirmation controls keep their own interaction.
 
+Combat hand selections also preserve the current frontmost holder while the
+pointer remains inside it. Actual-resource testing caught a keyboard-to-pointer
+transition where the press-triggered redraw changed overlapping cards' order:
+the visible hit was card 9, but the press captured card 8. Keeping the current
+holder before the ordinary overlap fallback fixes that real wrong-card click.
+The original Toasty Mittens pointer-selection assertion is retained.
+
 The rest-site focus outline now uses the authored outline-to-button size ratio,
 instead of applying the old extra 55 × 39 enlargement to an already scaled
 button.
@@ -155,7 +162,71 @@ Burst follows the player's original bottom-of-hitbox anchor and is covered by
 the final screen's black backstop, while the pen trail remains with its retained
 creature node above that backstop.
 
-## Verification status
+## Actual-resource acceptance
+
+All eight room/selection gates have passed with the original English and
+Simplified Chinese UI13 resources. The receipts distinguish the initial UI13
+pack from the final pack whose unused tile-directory records were removed;
+the pruning preserves image pixels, frame IDs and clocks. The final production
+source is `d5f9a3c`; the last Architect test-only checkpoint is `b96bd0d`, with
+the same production files and core library.
+
+| Gate | Source checkpoint | English checks | Chinese checks |
+| --- | --- | ---: | ---: |
+| World selection, real confirmation/cancellation and transforms | `d8a1025` | 1,396,392 | 1,436,724 |
+| Deck selection, real removal/upgrade and merchant preparation | `d5f9a3c` | 551,382 | 591,714 |
+| Keyword and event-associated hover pages | `d8a1025` | 635,846 | 635,881 |
+| Card keywords, enchantment facts and original tab pixels | `d8a1025` | 486,263 | 486,263 |
+| Rewards, direct claims and animated Proceed | `d8a1025` | 4,076 | 4,076 |
+| Events, fake merchant and ancient conversations | `d8a1025` | 5,841 | 5,818 |
+| Rest, treasure, event and merchant room UI | `6e40566` | 14,689 | 14,689 |
+| Architect, five characters × Normal/Fast | `b96bd0d` | 84,365 | 84,365 |
+
+The final deck gate additionally passes its 453-check resource-independent
+command/geometry fixture. It always waits for merchant preparation to finish;
+I/O health is asserted when a resource source is actually open. The original
+fake-merchant one-gold price-change pixel assertion passes. Actual screenshots
+also confirm a single enchantment sidebar, an unobstructed confirmation button,
+source marker pixels, separate transform masks, centered reward labels,
+contained event text and the thinner authored rest outline.
+
+The final actual `world_ui_regression` passes 31,796 checks per language,
+including the unchanged Toasty Mittens click contract, Normal/Fast delayed
+choice barriers and the original 57 × 102 merchant stock geometry.
+
+The Architect gate covers all twenty character/speed/language combinations,
+real final-room entry, authored dialogue and scrolling, separate source hit
+effects, immutable canonical saves, and terminal two-actor composition. Large
+Starry Impact coverage required a complete compositing oracle: independent
+source anchors and literal attack/hurt frames are composed over the original
+background before effects, and every opaque source-actor pixel must match.
+The separate alpha probe is not used as the compositing surface, so a warp also
+samples the correctly blended antialiased edges. Player death texels remain
+checked above the lower FireBurst layer. None of these pixel comparisons has
+an allowed mismatch count. All thirty final captures loaded as complete
+320 × 240 images; closed journals and copied artifacts have matching hashes.
+
+Actual startup testing also caught a capability-chain omission after the new
+catalogs were appended. `Content::open` could read them, but `App::init` rejected
+their profile. The five explicit UI13 endpoints now inherit the earlier
+sleeping, intro-logo, history, selection and tutorial capabilities. Both direct
+and ranged loader tests assert complete playable profiles while incomplete or
+unknown suffixes still fail.
+
+Private Architect and Vantom entry saves are supplied for separate calculator
+display validation. Both use production world-room entry, validate, and
+round-trip through the real save codec. Prior room outcomes are supplied by
+the fixture and their history is explicitly partial; neither fixture is
+evidence of a naturally played three-act victory. The Vantom fixture enters
+Overgrowth's original boss on seed `UI13-VANTOM-4`, floor 17, with unmodified
+Ironclad 80/80 HP and Vantom 173/173 HP. No enemy slot, HP or move-node editing
+is used to construct that encounter.
+
+Calculator execution and the complete release suite remain separate gates
+coordinated in `WORK_STATE.md`. These native receipts do not claim a physical
+calculator frame rate or GPU noise equivalence.
+
+## Earlier diagnostic receipts
 
 Frozen checkpoint `7bfc391` built the eight room/selection regressions. The
 asset-independent selection, deck-selection and keyword gates passed, and the
@@ -185,7 +256,6 @@ sidebar geometry, tooltip non-overlap, and unchanged save bytes during
 animation. Short `clang++-18 -fsyntax-only` checks pass for the follow-up
 duplicate-pane and fake-merchant bubble fixes.
 
-Matched-pack execution, source-image visual review, full native gates and
-calculator execution are separate release gates coordinated in `WORK_STATE.md`.
-Syntax checks alone do not establish pixel fidelity, a successful full run or
-physical-calculator frame rate.
+Those earlier syntax/old-pack receipts are retained as development evidence;
+the actual-resource acceptance above supersedes their pending room, profile
+and compositing checks.

@@ -1,11 +1,12 @@
-# Architect original attack VFX — UI13 source stage
+# Architect original attack VFX — UI13 implementation and resource acceptance
 
 Reference: the owner's v0.111.0 / 41cef1ea PCK and its matching C# command
 behavior. This stage adds the actual thirteen character attack scenes and the
 terminal `NFireBurstVfx`, alongside the existing hit sparks and damage numbers.
-Original inputs, sampled images and conversion caches remain private. This is
-source implementation and bounded conversion evidence, not a completed full-pack
-or Firebird acceptance receipt.
+Original inputs, sampled images and conversion caches remain private. The full
+conversion and actual-resource native acceptance are complete; the final
+section records their identities. These results do not claim Firebird or
+physical-calculator acceptance.
 
 ## Converter and runtime directory
 
@@ -113,9 +114,37 @@ it never silently truncates a larger vertical warp.
   impact. These are sampled observations; full conversion still validates all
   frames and records maxima in its private `source-report.json`.
 
-Full sampling must run from the final remotely verified source checkpoint with
+Full sampling must run from a remotely verified source checkpoint with
 `tools/run_logged.py`. Invoke `architect_attack_assets.source_assets` from the
 unified append, or use its CLI with `--pck`, `--cache`, `--runtime` and `--dotnet`.
 The development `--max-frames 2` output is partial evidence and must not be
 packaged as the complete 824-row family. The final pack, actual-resource gates
 and Firebird behavior are owned by the parent integration stage.
+
+## Completed full conversion and actual-resource acceptance
+
+The full source conversion closed at `143d510`, generating all 824 attack rows
+alongside 199 reading and 80 trail rows. It did not package the two-frame probes.
+The final `6e40566` sixteen-edition conversion includes this complete family and
+the eight subsequent Doom textures, ending the auxiliary directory at 3339.
+Model IDs, source clip frame counts and clocks remain intact.
+
+The production `d5f9a3c` runtime, final UI13 resources and independent `b96bd0d`
+test oracle pass **84,365 checks per locale** in English and Simplified Chinese.
+Five characters × Normal/Fast × two locales give twenty exercised combinations.
+Independent source anchors and literal attack/hurt frames are checked together
+with the complete effect composite. All opaque actor texels compare exactly;
+death layer order, original text scrolling and unchanged canonical saves pass.
+All thirty captured images were fully decoded and reviewed.
+
+The final large-effect oracle samples the already alpha-composited background
+for displacement. Requiring at least twenty actor pixels to remain uncovered
+was an invalid assumption when StarryImpact legitimately covers the actor;
+the final comparison retains the full composite instead of ignoring the effect.
+
+This is actual-resource native rendering, not a desktop-GPU pixel-equivalence
+claim. The CPU noise, antialiasing, particle and displacement adaptations above
+remain explicit. The exported Architect-entry save is a controlled prior-room
+result fixture and is not proof of a naturally completed three-act run.
+See [`rooms-ui13-0.17.md`](rooms-ui13-0.17.md) and the aggregate
+[`ui13-lcd-followup-0.17.md`](ui13-lcd-followup-0.17.md) for complete acceptance scope.

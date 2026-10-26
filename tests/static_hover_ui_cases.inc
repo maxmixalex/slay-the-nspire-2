@@ -87,6 +87,34 @@ static void static_hover_columns(){
         if(hit.kind!=HitKind::UiAction||hit.value<int(UiAction::MapLegendUnknown)||hit.value>=int(UiAction::MapLegendUnknown)+6)continue;
         CHECK(hit.x==199&&hit.w==105&&hit.h==19&&hit.y>=100&&hit.y+hit.h<=214);++rows;
     }
-    CHECK(rows==6&&changed>25);capture("map-legend-source-hover");app.map_legend=false;
+    CHECK(rows==6&&changed>25);
+    const std::vector<uint16_t> actual_legend(app.pixels,app.pixels+320*240);
+    // Independent full-word pixel oracle: repaint only the original paper,
+    // then draw each localized name with the unwrapped text painter. Search
+    // within the existing padded row for those complete pixels. This cannot
+    // pass when the production fitted label replaces its tail by ellipsis,
+    // and does not call the production extent helper or fitting planner.
+    clear();map_picture(c,app.content.world_image("map","LEGEND"),251,148,129,170,MapShader::Original,0,0,255,0,22,235);
+    const std::vector<uint16_t> paper(app.pixels,app.pixels+320*240);
+    for(unsigned row=0;row<6;++row){
+        char key[96]{};const char*name=map_legend_text(app,row,".title",key,sizeof key);CHECK(*name);
+        const int y=100+int(row)*19;bool complete=false;
+        for(int x=221;x<304&&!complete;++x){
+            if(x+c.width(name,10)>304)continue;
+            std::memcpy(app.pixels,paper.data(),paper.size()*sizeof(uint16_t));
+            c.text(name,x,y+3,10,map_colors(0).ink,320);
+            bool equal=true;unsigned ink=0;
+            for(int yy=y;yy<y+19&&equal;++yy)for(int xx=304;xx<320;++xx)
+                if(app.pixels[yy*320+xx]!=paper[yy*320+xx]){equal=false;break;}
+            for(int yy=y;yy<y+19&&equal;++yy)for(int xx=x;xx<304;++xx){
+                const unsigned at=unsigned(yy*320+xx);ink+=app.pixels[at]!=paper[at];
+                if(app.pixels[at]!=actual_legend[at]){equal=false;break;}
+            }
+            complete=equal&&ink>8;
+        }
+        CHECK(complete);
+    }
+    std::memcpy(app.pixels,actual_legend.data(),actual_legend.size()*sizeof(uint16_t));
+    capture("map-legend-source-hover");app.map_legend=false;
     app.pointer.visible=false;app.reset_presentation();
 }

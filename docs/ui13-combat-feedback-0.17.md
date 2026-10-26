@@ -128,14 +128,54 @@ passed real English/Chinese gates (31,901 / 31,898). Raw Q6 font metadata and
 an old 5px Rainbow assumption were corrected in test oracles; the current card
 body keeps its readable font floor and verifies full-description access.
 
-The added Doom/orb lifetime and trauma stage has passed Clang 18 syntax checks.
-Its executed receipts and final UI13 pixel checks are pending the next
-integrated checkpoint. Syntax or private geometry probes alone are not a
-gameplay, visual or device-performance pass.
+The final runtime checkpoint is
+`d5f9a3c9dfc9bb55e4742239dbb7be4ee5d8c8d1`. The final verification checkpoint
+`78a2cef775ddb6943baf194f7bc9e0e8c568edf8` retains the same production files
+and corrects the remaining old hover-layout test oracles. Its tests link the
+matched runtime core. All six targets now pass with the final UI13 release
+resources:
+
+| Target | Synthetic checks | Final original-resource checks |
+| --- | ---: | --- |
+| Card / HUD UI | 385,861 | English 712,879; Simplified Chinese 790,241 |
+| Combat UI | 1,260 | English 154,880; Simplified Chinese 154,880 |
+| World UI | 7,744 | English 31,796; Simplified Chinese 31,796 |
+| Card movement | 1,106 | Asset-independent movement and 5,540-byte metadata checks |
+| Combat secondary / orb lifetime | 325,304 | Split English pack 390,445 |
+| Screen effects / Doom / trauma | 1,993,453 | Split English and Japanese masks 2,122,313 |
+
+The final static-hover test independently checks the existing readable
+104px column plus its one-pixel shadow, resource/orb ownership, the Settings
+tooltip's exact localized pixels including a scrolled General row, and all six
+map-legend rows inside their padded paper. It does not read the production
+geometry constants to manufacture expected bounds. The original d5 test run
+retains its two failed Card/HUD cases as evidence of the obsolete 69px and
+pre-scroll Settings assumptions; the complete final Card/HUD run supersedes
+those cases without changing the runtime.
+
+The private closed receipts are
+`combat-ui13-acceptance-gates-9c1864ea6171` for the first five targets and the
+initial Card/HUD failures, and `combat-cardhud-complete-gates-845c772a6e0a`
+for the completed synthetic/English/Chinese Card/HUD runs. The latter and its
+build receipt `combat-cardhud-complete-build-362b99bcc808` are closed with
+exit code zero and unchanged source inventories. The final Card/HUD evidence
+includes lossless 320×240 captures and hashes of their original PPM data,
+converted PNGs, executable and input packs.
+
+`combat-ui13-release-frames-71a887841aae` separately executes real
+`DEvoke` with two activations before one dequeue, a two-slot `DSlots` increase,
+and an `EndOfDays` card play in the
+Nibbits encounter using the final English release pack. It captures the orb
+queue transition and expansion through 462ms, and Doom from activation through
+3531ms. Every command and captured time is compared with canonical save bytes
+from the same commands without the UI observer. The closed run passes with
+unchanged sources; the capacity-five layout and the Doom sink/flame frames
+were also visually inspected. This is actual command execution and rendered
+pixel evidence, not a geometry-only probe.
 
 The regressions exercise actual 0–9 physical input in both banks, repeated-key
 ownership, mechanical-arrow navigation, saved-bank migration, 16-slot potion
 geometry, complete localized turn-counter glyphs, source orb geometry and the
 actual-pack highlight's visible extent. Presentation checks preserve canonical
 State/RNG. Merchant performance and Boss re-sampling are separate integration
-work; these combat changes make no unmeasured frame-rate claim.
+work; these native checks do not claim Firebird or calculator frame rates.

@@ -1,39 +1,50 @@
 # Work state — 2026-10-26
 
-## UI13 feedback implementation — active, final acceptance pending
+## UI13 feedback implementation — integrated; final device acceptance in progress
 
-The current continuation starts from the verified UI12 release below. The user
-explicitly authorized all operations on `maxmixalex/slay-the-nspire-2` and asked
+The user authorized all operations on `maxmixalex/slay-the-nspire-2` and asked
 for parallel implementation, continued optimization and a playable result.
-Source checkpoints are pushed and independently fetched before long jobs;
-`main` still points to the previous accepted release until final verification.
+Coherent source stages are pushed and independently fetched before long jobs.
+`main` remains at the accepted UI12 release until the final device flow closes.
 
-Checkpoint `0c5bb5b2104f3b24dd6aac0ba7052ddeb02a7955` contains the integrated
-frontend/combat/room changes, original-source UI13 converters and 1,138 appended
-source images. The complete eight-model boss resample preserves all 286 clips
-and 5,340 frame samples. English/Chinese and the other fourteen editions are
-being rebuilt together; current intermediate test and asset receipts must not
-be relabelled as final acceptance.
+Production checkpoint `d5f9a3c9dfc9bb55e4742239dbb7be4ee5d8c8d1` integrates the
+frontend/combat/room corrections, the real overlapping-card click fix, Doom
+particles and source body disappearance, capacity-aware orb motion, complete
+Architect presentation and bounded merchant animation caching. The full
+8-model boss resample preserves 286 clips / 5,340 frame samples. All 16 final
+locale packs are rebuilt and verified; no private source assets enter GitHub.
 
-The first full native run passed 124 tests, with eight failures and three host
-executables missing their execute bits. Most failures were stale independent
-layout oracles after intentional source/UI corrections; actual-resource checks
-also found a real small-card cost cache miss, duplicate enchantment tooltips,
-and a fake-merchant bubble obscuring a price. These are being repaired and
-retested with their original pixel/visibility contracts preserved.
+Closed native acceptance now includes 135/135 registered tests, 316 Python
+converter tests, all 16 application/locale/glyph gates (38,686 checks and 53,072
+descriptions), and tool compilation. Actual-resource combat and room gates pass
+in English and Chinese. Architect passes 20 five-character × Normal/Fast ×
+language combinations. The last card-HUD gate at test-only checkpoint
+`78a2cef775ddb6943baf194f7bc9e0e8c568edf8` passes 385,861 synthetic, 712,879
+English and 790,241 Chinese checks. Final screenshot review identified a small
+English map-legend ink-width overhang; it is being corrected before the delivered
+ARM is frozen. Earlier oracle failures and failed device attempts remain separate
+from final passed evidence.
 
-Merchant inventory rendering now has conservative per-pixel rug occlusion and
-an exact unmodulated-alpha fast path. A 2,376-frame whole-screen comparison and
-the independent 190,626-case canvas oracle passed. The closed inventory remains
-a separate performance blocker: its third 180-frame native window still read
-10,765,368 bytes. The original private resource trace identifies animation
-working-set churn, not just cold loading. This is not yet considered resolved.
+The merchant cache uses the same 11 MiB image/tile arena with a Shop-specific
+10/1 split. Final native acceptance passes 41,569 checks and 2,376 exact full
+frame comparisons; its third 360-frame closed-inventory window has zero resource
+reads, bytes and seeks. These are correctness/cache facts, not calculator FPS.
+The matched ordinary-OS Firebird baseline and final sustained-window comparison
+are in progress, followed by natural new-game/battle/reward/map/save/Continue
+and separate explicitly controlled Vantom/Architect displays.
 
-Doom source particles/body sinking, source orb-evocation motion, final boss
-storage optimization, matched ordinary-OS Firebird measurements, natural
-battle/reward/map/save/Continue validation and the final matched artifacts are
-still in progress. Existing exclusions remain audio, multiplayer and Timeline;
-no manual WASM/browser validation or physical-calculator FPS is claimed.
+The current four-file candidate installs at 76,297,785 bytes (76.30 MB /
+72.76 MiB), excluding saves. This exceeds the earlier rough 65–70 MB target;
+full higher-resolution boss clips are retained. Exact aliasing and unreachable
+record pruning reduce storage without dropping animation samples. The current
+ARM allocates 20,677,912 bytes, below the unchanged 24 MiB ceiling; ordinary
+startup and final packaging are not yet marked complete.
+
+The user-approved full Ancient-animation storage exception remains, alongside
+audio, multiplayer and Timeline exclusions. No manual WASM/browser verification,
+physical-device FPS, or natural three-act win is claimed by these native results.
+Final identities, measured device limits and downloadable files will be recorded
+in the UI13 acceptance manifest after the remaining runs close.
 
 
 ## UI12 playable follow-up — acceptance completed
