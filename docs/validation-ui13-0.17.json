@@ -1,0 +1,1557 @@
+{
+  "schema": 1,
+  "document": "UI13 final calculator release acceptance",
+  "status": "passed",
+  "target_public_path": "docs/validation-ui13-0.17.json",
+  "owner": "combat_input",
+  "repository": "maxmixalex/slay-the-nspire-2",
+  "reference": "v0.111.0 / 41cef1ea",
+  "identities": {
+    "runtime_checkpoint": "792904cb5e7f5fcbbab7a5320ee0d54d247591c7",
+    "resource_checkpoint": "e606108221fd6f8202f61b3e5ae1372970de0e27",
+    "native_resource_and_fake_test_checkpoint": "21c3cce61e5870f2018d2e3c231f2b5efa938c87",
+    "event_speech_test_checkpoint": "7d4bebdb5049231153ad6b4815d330fa0272fead",
+    "core_sha256": "80396dd88b81e02b00f06e8380e2aaf940a27118c5833fd6b0a827d116d6cb35",
+    "production_equal_across_final_checkpoints": true,
+    "converter_equal_between_resource_and_final_test_checkpoints": true
+  },
+  "registered_native": {
+    "status": "passed",
+    "tests": 137,
+    "passed": 137,
+    "failed": 0,
+    "elapsed_seconds": 42.68,
+    "scope": "Registered native suite at runtime checkpoint; separate actual-resource gates below are not folded into 137.",
+    "build": {
+      "id": "cp17-native-build-33c8521f1af3",
+      "status": "passed",
+      "checkpoint": "792904cb5e7f5fcbbab7a5320ee0d54d247591c7",
+      "returncode": 0,
+      "source_changed": false,
+      "started_at": "2026-10-26T14:03:28.635000+00:00",
+      "ended_at": "2026-10-26T14:07:43.897233+00:00",
+      "journal": {
+        "path": "journals/native/cp17-native-build-33c8521f1af3.json",
+        "bytes": 104664,
+        "sha256": "7b9f150a71987c8e9d50ea0fe54a15e93fd2880e40c5bb5242133cd0be7305d7"
+      },
+      "log": {
+        "path": "journals/native/cp17-native-build-33c8521f1af3.log",
+        "bytes": 18504,
+        "sha256": "10c6b61f022f4b7c3cb2c6d84d6c470e5c6c11d18cdec20e6ebfdb009ddb9366"
+      }
+    },
+    "execution": {
+      "id": "cp17-registered-3b0638b5ead5",
+      "status": "passed",
+      "checkpoint": "792904cb5e7f5fcbbab7a5320ee0d54d247591c7",
+      "returncode": 0,
+      "source_changed": false,
+      "started_at": "2026-10-26T14:08:22.442056+00:00",
+      "ended_at": "2026-10-26T14:09:05.201062+00:00",
+      "journal": {
+        "path": "journals/native/cp17-registered-3b0638b5ead5.json",
+        "bytes": 104672,
+        "sha256": "d03d916703a230d43f1e11ade578bf6249ea1592a60d0345b76a3534328652fe"
+      },
+      "log": {
+        "path": "journals/native/cp17-registered-3b0638b5ead5.log",
+        "bytes": 17799,
+        "sha256": "e113a5b3b6db3be645e3464eeb26f6b936626e521c70ad83992e087f59e21379"
+      }
+    }
+  },
+  "python": {
+    "status": "passed",
+    "discovered": 271,
+    "supplemental": 56,
+    "repeated": 2,
+    "unique": 325,
+    "duplicate_test_ids": [
+      "test_tile_directory_prune_ui13.TileDirectoryPruneTest.test_replaced_descriptors_and_whole_unused_index_group_are_removed",
+      "test_tile_directory_prune_ui13.TileDirectoryPruneTest.test_invalid_live_descriptor_is_not_treated_as_discardable"
+    ],
+    "discovery": {
+      "id": "cp18-python-discovery-abc86961ad66",
+      "status": "passed",
+      "checkpoint": "e606108221fd6f8202f61b3e5ae1372970de0e27",
+      "returncode": 0,
+      "source_changed": false,
+      "started_at": "2026-10-26T14:14:31.574262+00:00",
+      "ended_at": "2026-10-26T14:15:04.607912+00:00",
+      "journal": {
+        "path": "journals/python/cp18-python-discovery-abc86961ad66.json",
+        "bytes": 104728,
+        "sha256": "7cb66144af9e5e6edc14ff202352230270aea17d5198a04462b8dc9f5712ac6a"
+      },
+      "log": {
+        "path": "journals/python/cp18-python-discovery-abc86961ad66.log",
+        "bytes": 1377,
+        "sha256": "4d71c1cd81b43e4329480aa05a5f6c2031174c34b2b0219cd26cafcfb2fb8343"
+      }
+    },
+    "supplement": {
+      "id": "cp18-python-supplemental-2f9ee7ea0c62",
+      "status": "passed",
+      "checkpoint": "e606108221fd6f8202f61b3e5ae1372970de0e27",
+      "returncode": 0,
+      "source_changed": false,
+      "started_at": "2026-10-26T14:14:31.528445+00:00",
+      "ended_at": "2026-10-26T14:14:33.472096+00:00",
+      "journal": {
+        "path": "journals/python/cp18-python-supplemental-2f9ee7ea0c62.json",
+        "bytes": 104976,
+        "sha256": "b969d312ccf81218b334841319f89f5e762609641f75beb4d4b7682aa1adcfb0"
+      },
+      "log": {
+        "path": "journals/python/cp18-python-supplemental-2f9ee7ea0c62.log",
+        "bytes": 155,
+        "sha256": "a1b2d3f0a24b0b625244773ea033f35aac88e91ecda31a1ee508d145e8e6eae3"
+      }
+    }
+  },
+  "arm": {
+    "status": "passed",
+    "bytes": 1653686,
+    "sha256": "77a41a60cdd99c2a4d2011e567a69afdb6b61851947e9692624f99612e28be4b",
+    "linked_allocation_bytes": 20703800,
+    "absolute_relocations": 38683,
+    "entry": "0x0",
+    "evidence": {
+      "id": "cp17-arm-build-ae322d5985b6",
+      "status": "passed",
+      "checkpoint": "792904cb5e7f5fcbbab7a5320ee0d54d247591c7",
+      "returncode": 0,
+      "source_changed": false,
+      "started_at": "2026-10-26T14:03:28.631273+00:00",
+      "ended_at": "2026-10-26T14:04:27.578474+00:00",
+      "journal": {
+        "path": "journals/arm/cp17-arm-build-ae322d5985b6.json",
+        "bytes": 104654,
+        "sha256": "eae623693ce5e9547d117da6973d55f36104cb7d6368f4a1a43415227fad9be0"
+      },
+      "log": {
+        "path": "journals/arm/cp17-arm-build-ae322d5985b6.log",
+        "bytes": 384,
+        "sha256": "3fd25962d53f941dbbba942acc7fe8cf5bb4b75658389383a8849419da4c29fa"
+      }
+    }
+  },
+  "resources": {
+    "status": "passed",
+    "auxiliary_endpoint": 5156,
+    "appended_images": 2955,
+    "total_images": 54218,
+    "unchanged_previous_ui13_images": 1138,
+    "explicitly_preserved_cp16_fake_images": 1199,
+    "source_manifest_sha256": "68e76d45268f2f9e09fae430727332a3c65dce0b47137c5d5346fc86147b147b",
+    "languages": 16,
+    "all_common_art_byte_identical": true,
+    "split_reconstruction_exact": true,
+    "previous_glyph_rasters_metrics_and_texts_preserved_except_credit_slot8703": true,
+    "port_credit_slot": 8703,
+    "receipt": {
+      "path": "reports/resources/locales-receipt.json",
+      "bytes": 21737,
+      "sha256": "814ee876be4891e1233c4fe58afdfa4863b41e2ec2167b45e14726ac04f03968"
+    },
+    "conversion": {
+      "id": "ui13-retained-final-pack16-61ffb1e8372c",
+      "status": "passed",
+      "checkpoint": "e606108221fd6f8202f61b3e5ae1372970de0e27",
+      "returncode": 0,
+      "source_changed": false,
+      "started_at": "2026-10-26T14:17:00.747700+00:00",
+      "ended_at": "2026-10-26T14:19:23.539879+00:00",
+      "journal": {
+        "path": "journals/combat-resource/ui13-retained-final-pack16-61ffb1e8372c.json",
+        "bytes": 105491,
+        "sha256": "180337c194dddedacea31796edb5efe528e0264aff70b634f576a0a8d3360233"
+      },
+      "log": {
+        "path": "journals/combat-resource/ui13-retained-final-pack16-61ffb1e8372c.log",
+        "bytes": 1854,
+        "sha256": "f109150743bdf7e83be8acce1cf67d9cfd218d6e229df405efb327e1634fef59"
+      }
+    },
+    "source_sampling": {
+      "id": "ui13-retained-assets-source-order-e21f0c8e03aa",
+      "status": "passed",
+      "checkpoint": "e606108221fd6f8202f61b3e5ae1372970de0e27",
+      "returncode": 0,
+      "source_changed": false,
+      "started_at": "2026-10-26T14:12:54.054896+00:00",
+      "ended_at": "2026-10-26T14:16:05.251471+00:00",
+      "journal": {
+        "path": "journals/combat-resource/ui13-retained-assets-source-order-e21f0c8e03aa.json",
+        "bytes": 105305,
+        "sha256": "39d057a3ad9a06c4145671c2affd9a6d3c38cd4ae2d9f10bd3ed871e0f29bf2a"
+      },
+      "log": {
+        "path": "journals/combat-resource/ui13-retained-assets-source-order-e21f0c8e03aa.log",
+        "bytes": 244,
+        "sha256": "a818eb5b12a2e14b7a5f1f821ba7d981030bd0f4229ea4998a85bd6a99dc5f6e"
+      }
+    },
+    "no_rug_sampling": {
+      "id": "ui13-retained-no-rug-final-2a974c7ebb21",
+      "status": "passed",
+      "checkpoint": "e606108221fd6f8202f61b3e5ae1372970de0e27",
+      "returncode": 0,
+      "source_changed": false,
+      "started_at": "2026-10-26T14:16:25.082334+00:00",
+      "ended_at": "2026-10-26T14:16:41.416867+00:00",
+      "journal": {
+        "path": "journals/combat-resource/ui13-retained-no-rug-final-2a974c7ebb21.json",
+        "bytes": 105018,
+        "sha256": "d2d00694e964135f2c044174155c103fbb996ca4405f9f7db2e5a6a765f8e251"
+      },
+      "log": {
+        "path": "journals/combat-resource/ui13-retained-no-rug-final-2a974c7ebb21.log",
+        "bytes": 142,
+        "sha256": "a0fa7afac8b0fe695872b3395c77982140d22a7aa0546a76cf0891a44af35d16"
+      }
+    }
+  },
+  "actual_native": {
+    "all_languages": {
+      "status": "passed",
+      "checks": 38686,
+      "descriptions": 53072,
+      "languages": 16,
+      "failures": 0,
+      "unexpanded_per_language": 0,
+      "evidence": {
+        "id": "ui13-retained-final-all16-native-c8adc28428d3",
+        "status": "passed",
+        "checkpoint": "e606108221fd6f8202f61b3e5ae1372970de0e27",
+        "returncode": 0,
+        "source_changed": false,
+        "started_at": "2026-10-26T14:20:48.083272+00:00",
+        "ended_at": "2026-10-26T14:20:51.262538+00:00",
+        "journal": {
+          "path": "journals/combat-resource/ui13-retained-final-all16-native-c8adc28428d3.json",
+          "bytes": 104711,
+          "sha256": "0694b5f1ff0a82f56c4c0103b7c4d931fe82ccb0ccea0a08cf8dd709ba18cda5"
+        },
+        "log": {
+          "path": "journals/combat-resource/ui13-retained-final-all16-native-c8adc28428d3.log",
+          "bytes": 1714,
+          "sha256": "6e9314f7ede12252e75fb506b2edbaae8f00c7ff46ed8c150828a47f0dc76327"
+        }
+      }
+    },
+    "image_and_glyphs": {
+      "status": "passed",
+      "scope": "Complete appended range 2955 of 54218 images, all glyph/string/clip records and 40 memory/range UI frames per locale; not a new proof for every earlier image.",
+      "decoded_images_per_language": 2955,
+      "decoded_image_bytes_per_language": 18225705,
+      "native_physical_image_bounds_pass": true,
+      "languages": {
+        "eng": {
+          "checks": 8387948,
+          "glyph_records": 13299,
+          "kerning_pairs": 7124,
+          "kerning_exact_size_samples": 56019,
+          "strings": 8704,
+          "clips": 1783,
+          "identical_ui_frames": 40
+        },
+        "zhs": {
+          "checks": 8549992,
+          "glyph_records": 53631,
+          "kerning_pairs": 7889,
+          "kerning_exact_size_samples": 56377,
+          "strings": 8704,
+          "clips": 1783,
+          "identical_ui_frames": 40
+        }
+      },
+      "binary_sha256": "a8aed060a095d68f2189a2ae169c6cf846022b8e5dc82b7b56a1ed43d097ffba",
+      "build": {
+        "id": "ui13-retained-resource-metadata-build-d3f5e9d05770",
+        "status": "passed",
+        "checkpoint": "21c3cce61e5870f2018d2e3c231f2b5efa938c87",
+        "returncode": 0,
+        "source_changed": false,
+        "started_at": "2026-10-26T14:22:59.910300+00:00",
+        "ended_at": "2026-10-26T14:23:01.387679+00:00",
+        "journal": {
+          "path": "journals/combat-resource/ui13-retained-resource-metadata-build-d3f5e9d05770.json",
+          "bytes": 104875,
+          "sha256": "26fd4a6761852d3c26b311028e719912f7b63d005014ca00d6e6e03d0072cb23"
+        },
+        "log": {
+          "path": "journals/combat-resource/ui13-retained-resource-metadata-build-d3f5e9d05770.log",
+          "bytes": 730,
+          "sha256": "aceec797995a1bf7c30c6053ee9e68b1449903a04828ed8f314d8fb1eaa92c36"
+        }
+      },
+      "execution": {
+        "id": "ui13-retained-resource-metadata-gates-12ba283c9284",
+        "status": "passed",
+        "checkpoint": "21c3cce61e5870f2018d2e3c231f2b5efa938c87",
+        "returncode": 0,
+        "source_changed": false,
+        "started_at": "2026-10-26T14:23:20.543075+00:00",
+        "ended_at": "2026-10-26T14:24:08.865232+00:00",
+        "journal": {
+          "path": "journals/combat-resource/ui13-retained-resource-metadata-gates-12ba283c9284.json",
+          "bytes": 104887,
+          "sha256": "a77ee794fad977546ad7a08560608e7fba6d7b80908577ff6ffb7a1792be6788"
+        },
+        "log": {
+          "path": "journals/combat-resource/ui13-retained-resource-metadata-gates-12ba283c9284.log",
+          "bytes": 2116,
+          "sha256": "41b375b0be6b9dc5e0c62186de14ddb92af5031bdca4fd8c04d738348d4a968e"
+        }
+      }
+    },
+    "combat_rainbow": {
+      "status": "passed",
+      "label_template_checks": 1749,
+      "content_tiles_native_ui_checks": 3673486,
+      "world_text_checks": {
+        "synthetic": 6811,
+        "eng": 2797,
+        "zhs": 2688
+      },
+      "card_hud_checks": {
+        "synthetic": 385902,
+        "eng": 712932,
+        "zhs": 790294
+      },
+      "captures": 116,
+      "component_results": {
+        "path": "reports/combat/primary-components/run-results.json",
+        "bytes": 5681,
+        "sha256": "5fcaf2f701facb68f05cfc16e8187c47888b32f4f21272973c4c6b7ecb018782"
+      },
+      "aggregate_old_resource_test_failure_separately_resolved": true,
+      "manifest": {
+        "path": "reports/combat/final-overview.json",
+        "bytes": 7588,
+        "sha256": "c4493b540ba4026df01fe166c9dfe3cfdb5434cd9ae5de529d4179cd2cd733f3"
+      }
+    },
+    "frontend": {
+      "status": "passed",
+      "four_targets_times_two_languages": 8,
+      "closed_journals": 19,
+      "captures_decoded": 68,
+      "key_captures_visually_reviewed": 13,
+      "random_checks_each_language": 317696,
+      "world_frontend_checks": {
+        "eng": 69870,
+        "zhs": 69897
+      },
+      "focused_frontend_checks_each_language": 138,
+      "profiles_status_each_language": "passed",
+      "source_texture_checks": 786733,
+      "source_texture_images": 2,
+      "source_texture_texels_each": 65536,
+      "logical_texture_size": [
+        256,
+        256
+      ],
+      "physical_texture_size": [
+        320,
+        205
+      ],
+      "manifest": {
+        "path": "reports/frontend/receipt.json",
+        "bytes": 75279,
+        "sha256": "36136646c05b129be62985fa711463eee19625c871d72c2a69e863e3231b42a2"
+      },
+      "gates": [
+        {
+          "name": "frontend-focused-cp17-actual-eng-571f1d09a7cd",
+          "status": "passed",
+          "summary": "UI12 frontend: 138 checks; real source textures, scrollbar drag, Credits flow, Back separation and canonical bytes pass",
+          "evidence": {
+            "id": "frontend-focused-cp17-actual-eng-571f1d09a7cd",
+            "status": "passed",
+            "checkpoint": "792904cb5e7f5fcbbab7a5320ee0d54d247591c7",
+            "returncode": 0,
+            "source_changed": false,
+            "started_at": "2026-10-26T14:18:05.236415+00:00",
+            "ended_at": "2026-10-26T14:18:05.458932+00:00",
+            "journal": {
+              "path": "journals/frontend/frontend-focused-cp17-actual-eng-571f1d09a7cd.json",
+              "bytes": 104709,
+              "sha256": "a27727efd4838b3a1536bb3924c236eb4c5fbf23b83a9dacaf5cb7a28f231478"
+            },
+            "log": {
+              "path": "journals/frontend/frontend-focused-cp17-actual-eng-571f1d09a7cd.log",
+              "bytes": 120,
+              "sha256": "769d7199a291e190d2c5a34ce8c3960d2b5f344e7b71b09987c2a2acace909b1"
+            }
+          }
+        },
+        {
+          "name": "frontend-focused-cp17-actual-zhs-40f7fd17d06a",
+          "status": "passed",
+          "summary": "UI12 frontend: 138 checks; real source textures, scrollbar drag, Credits flow, Back separation and canonical bytes pass",
+          "evidence": {
+            "id": "frontend-focused-cp17-actual-zhs-40f7fd17d06a",
+            "status": "passed",
+            "checkpoint": "792904cb5e7f5fcbbab7a5320ee0d54d247591c7",
+            "returncode": 0,
+            "source_changed": false,
+            "started_at": "2026-10-26T14:18:34.090128+00:00",
+            "ended_at": "2026-10-26T14:18:34.360129+00:00",
+            "journal": {
+              "path": "journals/frontend/frontend-focused-cp17-actual-zhs-40f7fd17d06a.json",
+              "bytes": 104709,
+              "sha256": "f936aac100db23234395527297965b96ee24ab6d7c50fe4d0d70fbad6376b83f"
+            },
+            "log": {
+              "path": "journals/frontend/frontend-focused-cp17-actual-zhs-40f7fd17d06a.log",
+              "bytes": 120,
+              "sha256": "769d7199a291e190d2c5a34ce8c3960d2b5f344e7b71b09987c2a2acace909b1"
+            }
+          }
+        },
+        {
+          "name": "profiles-cp17-actual-eng-967308049612",
+          "status": "passed",
+          "summary": "profiles: three independent runs/progress, confirmation, failed switch and active deletion passed",
+          "evidence": {
+            "id": "profiles-cp17-actual-eng-967308049612",
+            "status": "passed",
+            "checkpoint": "792904cb5e7f5fcbbab7a5320ee0d54d247591c7",
+            "returncode": 0,
+            "source_changed": false,
+            "started_at": "2026-10-26T14:18:05.279389+00:00",
+            "ended_at": "2026-10-26T14:18:05.553805+00:00",
+            "journal": {
+              "path": "journals/frontend/profiles-cp17-actual-eng-967308049612.json",
+              "bytes": 104750,
+              "sha256": "bb7b24ba4f1546dc6e22d25bf8fde7637160d9613893bff2f9898fd1d1039990"
+            },
+            "log": {
+              "path": "journals/frontend/profiles-cp17-actual-eng-967308049612.log",
+              "bytes": 98,
+              "sha256": "64562f3430d1afad65f87ab85873527a55053c89a53b0cfb833f3a78e812b98e"
+            }
+          }
+        },
+        {
+          "name": "profiles-cp17-actual-zhs-46a8c6b56bd1",
+          "status": "passed",
+          "summary": "profiles: three independent runs/progress, confirmation, failed switch and active deletion passed",
+          "evidence": {
+            "id": "profiles-cp17-actual-zhs-46a8c6b56bd1",
+            "status": "passed",
+            "checkpoint": "792904cb5e7f5fcbbab7a5320ee0d54d247591c7",
+            "returncode": 0,
+            "source_changed": false,
+            "started_at": "2026-10-26T14:18:34.135696+00:00",
+            "ended_at": "2026-10-26T14:18:34.558963+00:00",
+            "journal": {
+              "path": "journals/frontend/profiles-cp17-actual-zhs-46a8c6b56bd1.json",
+              "bytes": 104750,
+              "sha256": "e7b4a87bdd9b7e09fbb69ae5bc421f4c1ec90e242f458efea32b6cfb55c69687"
+            },
+            "log": {
+              "path": "journals/frontend/profiles-cp17-actual-zhs-46a8c6b56bd1.log",
+              "bytes": 98,
+              "sha256": "64562f3430d1afad65f87ab85873527a55053c89a53b0cfb833f3a78e812b98e"
+            }
+          }
+        },
+        {
+          "name": "random-cp17-actual-eng-e9b266f508b0",
+          "status": "passed",
+          "summary": "Random source water, complete particle emitters and unchanged canonical state: 317696 checks passed (actual source textures)",
+          "evidence": {
+            "id": "random-cp17-actual-eng-e9b266f508b0",
+            "status": "passed",
+            "checkpoint": "792904cb5e7f5fcbbab7a5320ee0d54d247591c7",
+            "returncode": 0,
+            "source_changed": false,
+            "started_at": "2026-10-26T14:18:05.254880+00:00",
+            "ended_at": "2026-10-26T14:18:05.478372+00:00",
+            "journal": {
+              "path": "journals/frontend/random-cp17-actual-eng-e9b266f508b0.json",
+              "bytes": 104862,
+              "sha256": "d855df4bba11681049a8f68136a993689f0b997f2db3a7bde27ecbe02db30991"
+            },
+            "log": {
+              "path": "journals/frontend/random-cp17-actual-eng-e9b266f508b0.log",
+              "bytes": 125,
+              "sha256": "cf554faa26890567df7cd35cf6040782bab667211a25c702516efc8e980ed7b9"
+            }
+          }
+        },
+        {
+          "name": "random-cp17-actual-zhs-673f0a61d41c",
+          "status": "passed",
+          "summary": "Random source water, complete particle emitters and unchanged canonical state: 317696 checks passed (actual source textures)",
+          "evidence": {
+            "id": "random-cp17-actual-zhs-673f0a61d41c",
+            "status": "passed",
+            "checkpoint": "792904cb5e7f5fcbbab7a5320ee0d54d247591c7",
+            "returncode": 0,
+            "source_changed": false,
+            "started_at": "2026-10-26T14:18:34.110679+00:00",
+            "ended_at": "2026-10-26T14:18:34.436580+00:00",
+            "journal": {
+              "path": "journals/frontend/random-cp17-actual-zhs-673f0a61d41c.json",
+              "bytes": 104862,
+              "sha256": "422371d3c94e904efb85de225299159c8a98caab22f5cf5cc98c40c433157b95"
+            },
+            "log": {
+              "path": "journals/frontend/random-cp17-actual-zhs-673f0a61d41c.log",
+              "bytes": 125,
+              "sha256": "cf554faa26890567df7cd35cf6040782bab667211a25c702516efc8e980ed7b9"
+            }
+          }
+        },
+        {
+          "name": "texture-final-source-exact-508f8b9f73f7",
+          "status": "passed",
+          "summary": "{\"status\":\"passed\",\"checks\":786733,\"original_texels_per_image\":65536,\"images\":2,\"decode_modes\":[\"Content memory\",\"Content range\"],\"logical_size\":[256,256],\"physical_size\":[320,205],\"all_source_rgb565_and_alpha_exact\":true}",
+          "evidence": {
+            "id": "texture-final-source-exact-508f8b9f73f7",
+            "status": "passed",
+            "checkpoint": "792904cb5e7f5fcbbab7a5320ee0d54d247591c7",
+            "returncode": 0,
+            "source_changed": false,
+            "started_at": "2026-10-26T14:25:03.515994+00:00",
+            "ended_at": "2026-10-26T14:25:03.634711+00:00",
+            "journal": {
+              "path": "journals/frontend/texture-final-source-exact-508f8b9f73f7.json",
+              "bytes": 104914,
+              "sha256": "7251da4b94ac44e1d13dc04a1d13f839a105e2553188c678d5828e98bb3d7ccc"
+            },
+            "log": {
+              "path": "journals/frontend/texture-final-source-exact-508f8b9f73f7.log",
+              "bytes": 223,
+              "sha256": "96c045e393ba8921658aa1148066046d8d04bd01d43c69979446dbb18c5a7029"
+            }
+          }
+        },
+        {
+          "name": "world-frontend-cp17-actual-eng-61ec44b9fda0",
+          "status": "passed",
+          "summary": "world frontend UI: 69870 checks passed; actual profile; guarded save lifecycle and presentation-only settings",
+          "evidence": {
+            "id": "world-frontend-cp17-actual-eng-61ec44b9fda0",
+            "status": "passed",
+            "checkpoint": "792904cb5e7f5fcbbab7a5320ee0d54d247591c7",
+            "returncode": 0,
+            "source_changed": false,
+            "started_at": "2026-10-26T14:18:05.271218+00:00",
+            "ended_at": "2026-10-26T14:18:07.748931+00:00",
+            "journal": {
+              "path": "journals/frontend/world-frontend-cp17-actual-eng-61ec44b9fda0.json",
+              "bytes": 104758,
+              "sha256": "5d6bc501484198be0fe9dbf9eac9ef659783250bc5ed99d73d71c29791777443"
+            },
+            "log": {
+              "path": "journals/frontend/world-frontend-cp17-actual-eng-61ec44b9fda0.log",
+              "bytes": 110,
+              "sha256": "24a53257b076386caf8e62aa976c3805bac5d453aec63954ae5cabd98cd5c1ab"
+            }
+          }
+        },
+        {
+          "name": "world-frontend-cp17-actual-zhs-4d2a6f38b46a",
+          "status": "passed",
+          "summary": "world frontend UI: 69897 checks passed; actual profile; guarded save lifecycle and presentation-only settings",
+          "evidence": {
+            "id": "world-frontend-cp17-actual-zhs-4d2a6f38b46a",
+            "status": "passed",
+            "checkpoint": "792904cb5e7f5fcbbab7a5320ee0d54d247591c7",
+            "returncode": 0,
+            "source_changed": false,
+            "started_at": "2026-10-26T14:18:34.126234+00:00",
+            "ended_at": "2026-10-26T14:18:36.856015+00:00",
+            "journal": {
+              "path": "journals/frontend/world-frontend-cp17-actual-zhs-4d2a6f38b46a.json",
+              "bytes": 104758,
+              "sha256": "743c01dfb4cf0dd4cf704fb39a35fb26fa7319def60eae5322e71d515677c04d"
+            },
+            "log": {
+              "path": "journals/frontend/world-frontend-cp17-actual-zhs-4d2a6f38b46a.log",
+              "bytes": 110,
+              "sha256": "5962e6c423b2c427879bfeed1553e1d560ebe0c35010f6ce1a1c06c2ccca7a53"
+            }
+          }
+        }
+      ]
+    },
+    "rooms": {
+      "status": "passed",
+      "closed_gates": 9,
+      "manifest": {
+        "path": "reports/rooms/rooms-final-manifest.json",
+        "bytes": 7813,
+        "sha256": "363aa7552e8f67712e4d4a715b3456435cbf41d6bbbca3385d23925b59cd4f02"
+      },
+      "gates": [
+        {
+          "name": "fake-eng",
+          "status": "passed",
+          "count": 69789393,
+          "count_kind": "assertion_checks",
+          "evidence": {
+            "id": "fake-cp19-fake-eng-be13c83ef389",
+            "status": "passed",
+            "checkpoint": "21c3cce61e5870f2018d2e3c231f2b5efa938c87",
+            "returncode": 0,
+            "source_changed": false,
+            "started_at": "2026-10-26T14:23:57.699023+00:00",
+            "ended_at": "2026-10-26T14:23:58.988401+00:00",
+            "journal": {
+              "path": "journals/rooms/fake-cp19-fake-eng-be13c83ef389.json",
+              "bytes": 104721,
+              "sha256": "4e9f7537b6e7f57e26413f668843aed808301d08953154757ac4a5659a1d13e0"
+            },
+            "log": {
+              "path": "journals/rooms/fake-cp19-fake-eng-be13c83ef389.log",
+              "bytes": 217,
+              "sha256": "759070f3d9ad1acb73b9c09d2b9d8b17cf5c17e1c79f04c51d6fbdafddc2303a"
+            }
+          }
+        },
+        {
+          "name": "fake-zhs",
+          "status": "passed",
+          "count": 69789393,
+          "count_kind": "assertion_checks",
+          "evidence": {
+            "id": "fake-cp19-fake-zhs-e55d657e91fa",
+            "status": "passed",
+            "checkpoint": "21c3cce61e5870f2018d2e3c231f2b5efa938c87",
+            "returncode": 0,
+            "source_changed": false,
+            "started_at": "2026-10-26T14:23:57.698981+00:00",
+            "ended_at": "2026-10-26T14:23:59.180562+00:00",
+            "journal": {
+              "path": "journals/rooms/fake-cp19-fake-zhs-e55d657e91fa.json",
+              "bytes": 104722,
+              "sha256": "23fc5b51686bcdf22720ea0011c08a01ed22e329345fe5fc53f8576dd31bfcd0"
+            },
+            "log": {
+              "path": "journals/rooms/fake-cp19-fake-zhs-e55d657e91fa.log",
+              "bytes": 217,
+              "sha256": "759070f3d9ad1acb73b9c09d2b9d8b17cf5c17e1c79f04c51d6fbdafddc2303a"
+            }
+          }
+        },
+        {
+          "name": "reading-eng",
+          "status": "passed",
+          "count": 55,
+          "count_kind": "assertion_checks",
+          "evidence": {
+            "id": "fake-cp19-reading-eng-6879cad16306",
+            "status": "passed",
+            "checkpoint": "21c3cce61e5870f2018d2e3c231f2b5efa938c87",
+            "returncode": 0,
+            "source_changed": false,
+            "started_at": "2026-10-26T14:23:59.689070+00:00",
+            "ended_at": "2026-10-26T14:23:59.914547+00:00",
+            "journal": {
+              "path": "journals/rooms/fake-cp19-reading-eng-6879cad16306.json",
+              "bytes": 104746,
+              "sha256": "d70c5a89448172bccdc779f0b3cc7f0bf9ef96c3c07aa6636d8ab6bef0e9d098"
+            },
+            "log": {
+              "path": "journals/rooms/fake-cp19-reading-eng-6879cad16306.log",
+              "bytes": 83,
+              "sha256": "27ddc25c5bf17921b1ddbc9119d36d52092e7e2c5059a0d827fc3ce35e74e2b4"
+            }
+          }
+        },
+        {
+          "name": "reading-zhs",
+          "status": "passed",
+          "count": 55,
+          "count_kind": "assertion_checks",
+          "evidence": {
+            "id": "fake-cp19-reading-zhs-54ec02f6a241",
+            "status": "passed",
+            "checkpoint": "21c3cce61e5870f2018d2e3c231f2b5efa938c87",
+            "returncode": 0,
+            "source_changed": false,
+            "started_at": "2026-10-26T14:23:59.919114+00:00",
+            "ended_at": "2026-10-26T14:24:00.190061+00:00",
+            "journal": {
+              "path": "journals/rooms/fake-cp19-reading-zhs-54ec02f6a241.json",
+              "bytes": 104746,
+              "sha256": "abe9603810963b4b36a2d081e7c4ebe9a7ff1b2fd1b54d69a7f0cc5f0561397a"
+            },
+            "log": {
+              "path": "journals/rooms/fake-cp19-reading-zhs-54ec02f6a241.log",
+              "bytes": 83,
+              "sha256": "27ddc25c5bf17921b1ddbc9119d36d52092e7e2c5059a0d827fc3ce35e74e2b4"
+            }
+          }
+        },
+        {
+          "name": "legacy-eng",
+          "status": "passed",
+          "count": 59710237,
+          "count_kind": "assertion_checks",
+          "evidence": {
+            "id": "fake-cp19-legacy-eng-6f1645a7498c",
+            "status": "passed",
+            "checkpoint": "21c3cce61e5870f2018d2e3c231f2b5efa938c87",
+            "returncode": 0,
+            "source_changed": false,
+            "started_at": "2026-10-26T14:23:57.473362+00:00",
+            "ended_at": "2026-10-26T14:23:58.954988+00:00",
+            "journal": {
+              "path": "journals/rooms/fake-cp19-legacy-eng-6f1645a7498c.json",
+              "bytes": 104729,
+              "sha256": "992965e7363a82aeb84347172e253b25074e0b9e87ff9a95bde793fb7a62f75f"
+            },
+            "log": {
+              "path": "journals/rooms/fake-cp19-legacy-eng-6f1645a7498c.log",
+              "bytes": 217,
+              "sha256": "86d215551d1b2faddf01ed350d49cd34b31d248f16f9cef60cbe671978a6ec26"
+            }
+          }
+        },
+        {
+          "name": "warm-eng",
+          "status": "passed",
+          "count": 22100,
+          "count_kind": "assertion_checks",
+          "evidence": {
+            "id": "fake-cp17-warm-eng-24b66d774a5b",
+            "status": "passed",
+            "checkpoint": "792904cb5e7f5fcbbab7a5320ee0d54d247591c7",
+            "returncode": 0,
+            "source_changed": false,
+            "started_at": "2026-10-26T14:17:58.214058+00:00",
+            "ended_at": "2026-10-26T14:18:27.410371+00:00",
+            "journal": {
+              "path": "journals/rooms/fake-cp17-warm-eng-24b66d774a5b.json",
+              "bytes": 104721,
+              "sha256": "88cc369a1672ab0bba4d5ef4c37ece5a380190b267d460dc455e9a1c6d51c617"
+            },
+            "log": {
+              "path": "journals/rooms/fake-cp17-warm-eng-24b66d774a5b.log",
+              "bytes": 9329,
+              "sha256": "771a97f248b41fe58042749ef54220f4ea630d5c42b16edfc220bc2c2cb71812"
+            }
+          }
+        },
+        {
+          "name": "source-distinct",
+          "status": "passed",
+          "count": 1800,
+          "count_kind": "source_frames",
+          "evidence": {
+            "id": "fake-source-distinct-frames-05065585390e",
+            "status": "passed",
+            "checkpoint": "e606108221fd6f8202f61b3e5ae1372970de0e27",
+            "returncode": 0,
+            "source_changed": false,
+            "started_at": "2026-10-26T14:19:12.435799+00:00",
+            "ended_at": "2026-10-26T14:19:16.623856+00:00",
+            "journal": {
+              "path": "journals/rooms/fake-source-distinct-frames-05065585390e.json",
+              "bytes": 104740,
+              "sha256": "49347c9c33a3481130f1fa30c8de5ce18601221964c5fc6562fe673a2195e9f7"
+            },
+            "log": {
+              "path": "journals/rooms/fake-source-distinct-frames-05065585390e.log",
+              "bytes": 1747,
+              "sha256": "11b1d2069286f6bc75c378e3f4628cf9b4e19785d6f1dd6001f7fabebbd4bee7"
+            }
+          }
+        },
+        {
+          "name": "event-eng",
+          "status": "passed",
+          "count": 5850,
+          "count_kind": "assertion_checks",
+          "evidence": {
+            "id": "fake-cp20-event-eng-0b22629fb43b",
+            "status": "passed",
+            "checkpoint": "7d4bebdb5049231153ad6b4815d330fa0272fead",
+            "returncode": 0,
+            "source_changed": false,
+            "started_at": "2026-10-26T14:32:07.382534+00:00",
+            "ended_at": "2026-10-26T14:32:08.303858+00:00",
+            "journal": {
+              "path": "journals/rooms/fake-cp20-event-eng-0b22629fb43b.json",
+              "bytes": 104724,
+              "sha256": "fc07a52905f9ec0fd55cc8bef026163eeb2c9c48f7eb5cd74cf91839ef8da857"
+            },
+            "log": {
+              "path": "journals/rooms/fake-cp20-event-eng-0b22629fb43b.log",
+              "bytes": 151,
+              "sha256": "2c26e6df3ebcb5bc9a029a1c3f18f1b01e0f7e8d6d03690fffa69c924f14c6f0"
+            }
+          }
+        },
+        {
+          "name": "event-zhs",
+          "status": "passed",
+          "count": 5827,
+          "count_kind": "assertion_checks",
+          "evidence": {
+            "id": "fake-cp20-event-zhs-dad8039a034c",
+            "status": "passed",
+            "checkpoint": "7d4bebdb5049231153ad6b4815d330fa0272fead",
+            "returncode": 0,
+            "source_changed": false,
+            "started_at": "2026-10-26T14:32:07.382453+00:00",
+            "ended_at": "2026-10-26T14:32:08.858127+00:00",
+            "journal": {
+              "path": "journals/rooms/fake-cp20-event-zhs-dad8039a034c.json",
+              "bytes": 104725,
+              "sha256": "0e7aba4398a9eadf4b76224b9c29a022c562a292474527e60276d31c0d94131c"
+            },
+            "log": {
+              "path": "journals/rooms/fake-cp20-event-zhs-dad8039a034c.log",
+              "bytes": 151,
+              "sha256": "b2e2b9f70e3155e36113bf878ed22eaf92c7c96bdbffda97da88ab97944cebb7"
+            }
+          }
+        }
+      ],
+      "source_frames": 1800,
+      "source_distinct_counts": [
+        133,
+        11,
+        80,
+        80,
+        259,
+        89,
+        288,
+        290,
+        144,
+        133
+      ],
+      "native_warm": {
+        "frames": 14544,
+        "scenarios": 8,
+        "windows_per_scenario": 3,
+        "simulated_ms_per_scenario": 59994,
+        "all_second_and_third_windows_zero_reads_bytes_seeks": true,
+        "max_cache_entries": 553,
+        "max_cache_pages_4k": 1730,
+        "cache_entry_capacity": 1023,
+        "room_image_tier_bytes": 10485760,
+        "total_shared_arena_bytes": 11534336,
+        "canonical_unchanged": true,
+        "physical_device_fps_claim": false
+      },
+      "controlled_post_fight_fixtures": true
+    },
+    "usb_validator_fixture": {
+      "status": "passed",
+      "fixtures": 6,
+      "raw_and_nsz1_canonical_equal": true,
+      "malformed_inputs_rejected": true,
+      "natural_play": false,
+      "manifest": {
+        "path": "reports/frontend/usb-helper-receipt.json",
+        "bytes": 32919,
+        "sha256": "a046ea42ff03446f0f8933f953c49ea01727a94b12c293ac98e5357fee155f44"
+      }
+    }
+  },
+  "storage": {
+    "default_four_files": [
+      {
+        "name": "nSpire2.tns",
+        "bytes": 1653686,
+        "previous_bytes": 1638134,
+        "delta_bytes": 15552,
+        "sha256": "77a41a60cdd99c2a4d2011e567a69afdb6b61851947e9692624f99612e28be4b"
+      },
+      {
+        "name": "nSpire2.common.tns",
+        "bytes": 70659306,
+        "previous_bytes": 68410158,
+        "delta_bytes": 2249148,
+        "sha256": "134c3bfa37ade7210585f300e55c0a30fba426d0544085f475a012d1fc42649e"
+      },
+      {
+        "name": "nSpire2.eng.tns",
+        "bytes": 1140675,
+        "previous_bytes": 1133099,
+        "delta_bytes": 7576,
+        "sha256": "427ccaafc371c907f70f0c048167c77e53f99b5e4a960089f18dd35198639b49"
+      },
+      {
+        "name": "nSpire2.zhs.tns",
+        "bytes": 5115779,
+        "previous_bytes": 5116394,
+        "delta_bytes": -615,
+        "sha256": "ccabc40125426a8dd0e1bb49fa7af1fb23a20cddfdbc43b8f365cd94e7713880"
+      }
+    ],
+    "total_bytes": 78569446,
+    "decimal_MB": 78.569446,
+    "MiB": 74.92966270446777,
+    "previous_total_bytes": 76297785,
+    "delta_bytes": 2271661,
+    "within_rough_65_to_70_MB_target": false,
+    "excludes": [
+      "saved games",
+      "14 optional locales"
+    ],
+    "lossless_append_grouping": {
+      "retained_groups": 127,
+      "max_group_raw_bytes": 196800,
+      "target_group_raw_bytes": 131072,
+      "exact_frame_aliases": 1013,
+      "original_payload_bytes": 12254308,
+      "stored_payload_bytes": 2991398,
+      "saved_common_art_bytes": 9262910,
+      "unchanged_decoded_pixels": true,
+      "unreachable_payload_bytes": 0,
+      "runtime_buffer_growth": 0
+    },
+    "incremental_retained_grouping": {
+      "previous_complete_grouping_receipt_sha256": "0634f87b6301b504ebb0de54740d89d0b9afa5b9fdfe1b9ab8f7e8293112c368",
+      "previous_images": 1138,
+      "additional_images": 1817,
+      "additional_padded_payload_bytes": 10306552,
+      "additional_stored_payload_bytes": 2249148,
+      "additional_bytes_saved_by_lossless_grouping": 8057404
+    },
+    "inherited_prune": {
+      "logical_bytes_saved_per_language": 259740,
+      "default_split_installation_bytes_saved": 307420,
+      "removed_descriptors": 3006,
+      "removed_unused_index_groups": 38
+    },
+    "no_additional_sampling_resolution_or_clock_reduction_for_storage": true
+  },
+  "merchant_emulated_device_timing": {
+    "status": "passed",
+    "owner": "root",
+    "runtime_checkpoint": "792904cb5e7f5fcbbab7a5320ee0d54d247591c7",
+    "resource_checkpoint": "e606108221fd6f8202f61b3e5ae1372970de0e27",
+    "clock_hz": 32768,
+    "hardware": 1,
+    "scope": "Additional 60 simulated seconds after 120 seconds in the closed merchant; matched snapshot and flash, cumulative ROOM B minus A after ordinary OS exit. Minima/maxima are deliberately not subtracted. This is Firebird emulated-device timing, not physical-device FPS.",
+    "frames": 1800,
+    "mean_interval_ms": 33.33531697591146,
+    "fps": 29.998214827913987,
+    "mean_render_ms": 14.912109375,
+    "read_calls": 1,
+    "read_bytes_requested": 12700,
+    "read_seeks": 1,
+    "over_50ms": 1,
+    "over_100ms": 0,
+    "over_250ms": 0,
+    "resource_failures": 0,
+    "comparison": {
+      "baseline_fps": 9.828041940790316,
+      "fps_ratio": 3.052308385397641,
+      "mean_interval_reduction_percent": 67.23791066512028,
+      "baseline_read_bytes": 20364684,
+      "read_bytes_reduction_percent": 99.93763713691801
+    },
+    "baseline_runtime_checkpoint": "9fcbd7f866c70748598ba58a525ae2b763863551",
+    "baseline_frames": 586,
+    "baseline_mean_interval_ms": 101.74966753546289,
+    "physical_device_fps": false,
+    "summary": {
+      "path": "reports/device-performance/cp17-merchant-final-delta.json",
+      "bytes": 1674,
+      "sha256": "a5ec96f728b28b793049954fb634d6d4fdbcb9dbac80c00b2d11c9225f06e4c0"
+    },
+    "baseline_summary": {
+      "path": "reports/device-performance/baseline-verified-delta.json",
+      "bytes": 1452,
+      "sha256": "514a40c3880cac9f2b413b243ce122eac8b1cd3304742e86e53558bbdbb5585f"
+    },
+    "accepted_controller_journals": [
+      {
+        "id": "cp17-merchant-a-final-9c917389865e",
+        "status": "passed",
+        "checkpoint": "792904cb5e7f5fcbbab7a5320ee0d54d247591c7",
+        "returncode": 0,
+        "source_changed": false,
+        "started_at": "2026-10-26T14:31:56.344693+00:00",
+        "ended_at": "2026-10-26T14:32:34.491412+00:00",
+        "journal": {
+          "path": "journals/device-performance/cp17-merchant-a-final-9c917389865e.json",
+          "bytes": 104994,
+          "sha256": "85dbd8257cc4b4f57bc6f1220e530ac0d592af848a88f1f37da296a73ae46505"
+        },
+        "log": {
+          "path": "journals/device-performance/cp17-merchant-a-final-9c917389865e.log",
+          "bytes": 5233,
+          "sha256": "160629a58133b2dfb47b9564182c87ccb1e21cba1caa1aae9561595516422187"
+        }
+      },
+      {
+        "id": "cp17-merchant-b-final-318a24bd9498",
+        "status": "passed",
+        "checkpoint": "792904cb5e7f5fcbbab7a5320ee0d54d247591c7",
+        "returncode": 0,
+        "source_changed": false,
+        "started_at": "2026-10-26T14:32:42.605526+00:00",
+        "ended_at": "2026-10-26T14:33:44.843239+00:00",
+        "journal": {
+          "path": "journals/device-performance/cp17-merchant-b-final-318a24bd9498.json",
+          "bytes": 104994,
+          "sha256": "b004e980bf26e39709428671018bed50b2d89e346578b9668dd920fd4bd996cf"
+        },
+        "log": {
+          "path": "journals/device-performance/cp17-merchant-b-final-318a24bd9498.log",
+          "bytes": 5609,
+          "sha256": "6298bb83bf5326b0dcce9577ba847ba8fce928947ff73e93dbc2fccb51493a20"
+        }
+      }
+    ],
+    "accepted_baseline_controller_journals": [
+      {
+        "id": "baseline-a-fb191d30b7f9",
+        "status": "passed",
+        "checkpoint": "9fcbd7f866c70748598ba58a525ae2b763863551",
+        "returncode": 0,
+        "source_changed": false,
+        "started_at": "2026-10-26T12:27:31.042781+00:00",
+        "ended_at": "2026-10-26T12:34:32.108869+00:00",
+        "journal": {
+          "path": "journals/device-performance/baseline-a-fb191d30b7f9.json",
+          "bytes": 100298,
+          "sha256": "f58a812a1888b856f3574e1fc8b3aafe7f26c49ee55f89855625e6d3f0059bc4"
+        },
+        "log": {
+          "path": "journals/device-performance/baseline-a-fb191d30b7f9.log",
+          "bytes": 6413,
+          "sha256": "35648d4b63438486e6caf939f502bbbad3f3b4d28b0f7c9e3bc6969d68bae4cc"
+        }
+      },
+      {
+        "id": "baseline-b-final-0d41bb1b27d9",
+        "status": "passed",
+        "checkpoint": "9fcbd7f866c70748598ba58a525ae2b763863551",
+        "returncode": 0,
+        "source_changed": false,
+        "started_at": "2026-10-26T12:39:21.146519+00:00",
+        "ended_at": "2026-10-26T12:42:17.279072+00:00",
+        "journal": {
+          "path": "journals/device-performance/baseline-b-final-0d41bb1b27d9.json",
+          "bytes": 100324,
+          "sha256": "ef17b677a9184e4db35d353bac6698399bc735ab2ef0f690adc232485b0667f9"
+        },
+        "log": {
+          "path": "journals/device-performance/baseline-b-final-0d41bb1b27d9.log",
+          "bytes": 5014,
+          "sha256": "d689e39a7d8ec93ab4693dbb358b52c5d0ee38cfd4ddfbe4f5dd8955bcecad02"
+        }
+      }
+    ]
+  },
+  "failed_or_excluded_attempts": [
+    {
+      "id": "cp15-sampler-cap",
+      "status": "resolved",
+      "reason": "The offline adapter rejected a 288-sample source request at its old 256 cap; bounded cap512 preserves one continuous source integration.",
+      "failed_receipt": "ui13-retained-assets-3f206a0981e2",
+      "accepted_receipt": "ui13-retained-assets-source-order-e21f0c8e03aa",
+      "counts_as_pass": false
+    },
+    {
+      "id": "cp16-regent-add-coverage",
+      "status": "resolved",
+      "reason": "A partially transparent Regent eye could not be flattened safely into Normal. Original ordered emission is retained in one image per frame.",
+      "failed_receipt": "ui13-retained-assets-cap512-1a6324fb7471",
+      "accepted_receipt": "ui13-retained-assets-source-order-e21f0c8e03aa",
+      "counts_as_pass": false
+    },
+    {
+      "id": "cp17-visible-slot-count",
+      "status": "resolved",
+      "reason": "The source has an additional Normal sweat slot in 62 of 320 samples. The converter now validates identity/material/order with actual visibility.",
+      "failed_receipt": "ui13-retained-assets-ordered-0d74c0809ed9",
+      "accepted_receipt": "ui13-retained-assets-source-order-e21f0c8e03aa",
+      "counts_as_pass": false
+    },
+    {
+      "id": "primary-resource-glyph-oracle",
+      "status": "resolved",
+      "reason": "The old resource test requested drawable pixels for explicit non-raster kerning metadata. All ordinary glyph bytes remain compared, and every metadata pair now has an independent numeric layout oracle.",
+      "failed_receipt": "ui13-retained-final-primary-gates-c18fccad9df5",
+      "accepted_receipt": "ui13-retained-resource-metadata-gates-12ba283c9284",
+      "primary_other_eight_components_passed": true,
+      "counts_as_pass": false
+    },
+    {
+      "id": "fake-distinct-density-oracle",
+      "status": "resolved",
+      "reason": "Original foreground has 11 distinct LCD images across 144 source samples. Exact independently reconstructed per-sequence counts replace the arbitrary density threshold while retaining all 1800 frames.",
+      "failed_evidence": {
+        "id": "fake-cp17-legacy-eng-5f45af12cec8",
+        "status": "failed",
+        "checkpoint": "792904cb5e7f5fcbbab7a5320ee0d54d247591c7",
+        "returncode": 1,
+        "source_changed": false,
+        "started_at": "2026-10-26T14:17:18.236792+00:00",
+        "ended_at": "2026-10-26T14:17:18.407813+00:00",
+        "journal": {
+          "path": "journals/excluded/fake-cp17-legacy-eng-5f45af12cec8.json",
+          "bytes": 104729,
+          "sha256": "1be341cccfe982c1b97c084bb0579fdcb0bdb3cb98477cd2b6f54e6eb2e3cf88"
+        },
+        "log": {
+          "path": "journals/excluded/fake-cp17-legacy-eng-5f45af12cec8.log",
+          "bytes": 139,
+          "sha256": "a68e58a1e1c0839fb1d73fb61ac8ca4e6f31a3e652e8aba6b136cb499fef231b"
+        }
+      },
+      "accepted_receipts": [
+        "fake-cp19-fake-eng-be13c83ef389",
+        "fake-cp19-fake-zhs-e55d657e91fa"
+      ],
+      "counts_as_pass": false
+    },
+    {
+      "id": "event-speech-background-oracle",
+      "status": "resolved",
+      "reason": "The old speech-lifetime comparison treated an independently animated room background as static. The test-only same-clock background oracle preserves all speech/input assertions.",
+      "failed_evidence": [
+        {
+          "id": "fake-cp19-event-eng-2efde4bdf71d",
+          "status": "failed",
+          "checkpoint": "21c3cce61e5870f2018d2e3c231f2b5efa938c87",
+          "returncode": 1,
+          "source_changed": false,
+          "started_at": "2026-10-26T14:23:59.206223+00:00",
+          "ended_at": "2026-10-26T14:23:59.480650+00:00",
+          "journal": {
+            "path": "journals/excluded/fake-cp19-event-eng-2efde4bdf71d.json",
+            "bytes": 104725,
+            "sha256": "a9a3df254e3aa79b2d8cb1c75bc3931d3c18637685df6028c78e70e1db2d5023"
+          },
+          "log": {
+            "path": "journals/excluded/fake-cp19-event-eng-2efde4bdf71d.log",
+            "bytes": 210,
+            "sha256": "bbe7a6db4510a66eccb282b22094b407b4008dada78aa9de61ff50b424e44dab"
+          }
+        },
+        {
+          "id": "fake-cp19-event-zhs-a92e798a9562",
+          "status": "failed",
+          "checkpoint": "21c3cce61e5870f2018d2e3c231f2b5efa938c87",
+          "returncode": 1,
+          "source_changed": false,
+          "started_at": "2026-10-26T14:23:59.459823+00:00",
+          "ended_at": "2026-10-26T14:23:59.731372+00:00",
+          "journal": {
+            "path": "journals/excluded/fake-cp19-event-zhs-a92e798a9562.json",
+            "bytes": 104725,
+            "sha256": "5e2179e7a78fd333aa15d18f8f207016ccd4f1c9fbc73c436749810d8ae5cb25"
+          },
+          "log": {
+            "path": "journals/excluded/fake-cp19-event-zhs-a92e798a9562.log",
+            "bytes": 210,
+            "sha256": "bbe7a6db4510a66eccb282b22094b407b4008dada78aa9de61ff50b424e44dab"
+          }
+        }
+      ],
+      "accepted_receipts": [
+        "fake-cp20-event-eng-0b22629fb43b",
+        "fake-cp20-event-zhs-dad8039a034c"
+      ],
+      "counts_as_pass": false
+    },
+    {
+      "id": "old-device-baseline-b",
+      "status": "excluded",
+      "reason": "Short old-runtime navigation was not observed before USB retrieval; screenshot remained Settings. Interrupted invalid attempt, no performance result accepted.",
+      "evidence": {
+        "path": "reports/device-performance/baseline-b-excluded.json",
+        "bytes": 251,
+        "sha256": "0526f2e62e066310f0ac0ab3eba3fd24b2a39c13689edf1939f3e150c48a99b1"
+      },
+      "counts_as_pass": false
+    },
+    {
+      "id": "intermediate-cp16-native",
+      "status": "superseded",
+      "reason": "The earlier 136/137 run exposed a real finished-FakeMerchant Detail leak. Its production correction is in final runtime 792; final registered native 137/137 is counted once.",
+      "counts_as_pass": false
+    },
+    {
+      "id": "historical-python-counts",
+      "status": "superseded",
+      "reason": "Earlier cp17 323 unique is historical; final cp18 is 271 + 56 - 2 = 325. Do not sum historical runs or repeated prune tests.",
+      "counts_as_pass": false
+    }
+  ],
+  "acceptance_limits": [
+    "Registered native/Python tests, native pixel checks and emulated-device timing are distinct scopes.",
+    "Room fight outcomes labelled as controlled fixtures do not establish natural victories.",
+    "Merchant timing is a paired warm cumulative-counter delta; no minimum or maximum values were subtracted.",
+    "No physical calculator FPS or blanket desktop-GPU equivalence claim is made.",
+    "All prior failed/unknown attempts remain excluded from successful gate totals.",
+    "Default 78,569,446-byte install remains above the rough 65–70 MB target; no further quality, frame or clock reduction was used to hide this.",
+    "Natural device acceptance covers a fresh first battle and save/Continue cycle; the four special-room cases are explicitly controlled fixtures.",
+    "Final installation acceptance uses the independent closed cp17-release-restore-f7c4994628da session, not successful substeps of the earlier failed USB-link session."
+  ],
+  "evidence_archive": {
+    "filename": "Slay-the-Nspire-2-0.17-ui13-validation-evidence.zip",
+    "contains": [
+      "this final acceptance manifest",
+      "closed native, converter and device journals",
+      "source/resource/storage and production-codec reports",
+      "selected original-resolution rendered screenshots",
+      "per-member SHA-256 inventory"
+    ],
+    "raw_original_assets_included": false,
+    "executable_resource_ROM_NAND_snapshot_payloads_included": false,
+    "raw_controlled_or_natural_test_saves_included": false,
+    "note": "Archive size and its own SHA are recorded in the final delivery receipt, outside the archive, to avoid self-referential hashes."
+  },
+  "accepted_at_utc": "2026-10-26T15:02:14.317933+00:00",
+  "device_acceptance": {
+    "natural_play_device": {
+      "status": "passed",
+      "observed_route": "Blank progress → Standard Ironclad → Neow two cards → first battle victory in four turns → 20 gold and card reward → map → Save & Quit → Continue same cleared room → Save & Quit → Quit to OS → USB readback.",
+      "result": {
+        "run_state": {
+          "seed": 401460976,
+          "character_id": 0,
+          "character": "IRONCLAD",
+          "phase": "Reward",
+          "turn": 4,
+          "hp": 80,
+          "max_hp": 80,
+          "gold": 119,
+          "revision": 38,
+          "deck_count": 13,
+          "practice": false,
+          "world": {
+            "active": true,
+            "run_seed_decimal": "15973961126522333170",
+            "run_seed_hex": "ddaee902ca4327f2",
+            "seed_text": "FD81C60B",
+            "act_index": 0,
+            "act_number": 1,
+            "region": "Overgrowth",
+            "total_floor": 2,
+            "rooms_completed": 2,
+            "combat_count": 1,
+            "room_type": 1,
+            "room": "Monster",
+            "room_open": 2,
+            "point": 29,
+            "map_column": 0,
+            "map_row": 1,
+            "ascension": 0,
+            "final_event": 0,
+            "finished": 0,
+            "finish_pending": 0
+          }
+        },
+        "progress_current": {
+          "serial": 1,
+          "seed": 401460976,
+          "run_seed_decimal": "15973961126522333170",
+          "run_seed_hex": "ddaee902ca4327f2",
+          "seed_text": "FD81C60B",
+          "character_id": 0,
+          "ascension": 0,
+          "outcome": 0,
+          "abandoned": 0,
+          "floor": 2,
+          "floor_count": 2,
+          "hp": 80,
+          "max_hp": 80,
+          "gold": 119,
+          "deck_count": 13,
+          "seconds": 88,
+          "started_at": 1793025382,
+          "encounter": 29,
+          "last_battle": 1,
+          "finished_battle": 1,
+          "partial": 0,
+          "last_room": 1,
+          "elite_rooms": 0,
+          "boss_rooms": 0,
+          "perfect_bosses": 0,
+          "build_id": "nSpire II 0.17"
+        },
+        "run_progress_association": {
+          "run_seed_matches_current_progress": true,
+          "character_matches_current_progress": true,
+          "saved_revision_matches_run": true,
+          "note": "A finished run can legitimately move from current into history; these are observed comparisons, not forced validity rules."
+        },
+        "canonical_roundtrip_equal": {
+          "run": true,
+          "progress": true
+        },
+        "natural_three_act_win_claimed": false,
+        "physical_hardware_claimed": false
+      },
+      "evidence": {
+        "device": {
+          "checkpoint": "792904cb5e7f5fcbbab7a5320ee0d54d247591c7",
+          "status": "passed",
+          "returncode": 0,
+          "source_changed": false,
+          "source_sha256": "b8133583610bee5fcfef428d27c10aa6ac32482f44dbd719d4efe38490efe700",
+          "log_sha256": "57616d2d55aa6c9d5e69c2d6130b1b3a02d887b0a9fce241ae710768997243f0",
+          "started_at": "2026-10-26T14:34:33.599324+00:00",
+          "ended_at": "2026-10-26T14:46:24.324377+00:00",
+          "id": "cp17-natural-final-4881221c7040",
+          "receipt": {
+            "name": "cp17-natural-final-4881221c7040.json",
+            "bytes": 104988,
+            "sha256": "fd5eea6f906bdb8bb78f792c6496acbe1bf349727b7515cf16ecd96f09ba321b"
+          }
+        },
+        "production_validator": "usb-cp17-natural-final-production-e100ef0d38d0",
+        "production_receipt": {
+          "name": "receipt.json",
+          "bytes": 9364,
+          "sha256": "a44d953efee84dc59a80c983d83b0b2be746efe099d3620273174d7095490052"
+        },
+        "flow_observations": {
+          "name": "cp17-natural-flow-observations.json",
+          "bytes": 1201,
+          "sha256": "2bc1d946194bd0f53061a3c20ea1a34c70dad9db651431ea809c3f509f084815"
+        }
+      }
+    },
+    "special_room_device": {
+      "status": "passed",
+      "provenance": "controlled fixtures; not natural boss progression or three-act victory",
+      "cases": [
+        {
+          "name": "Vantom",
+          "fixture": "vantom-entry-ironclad",
+          "display_journal": "cp17-vantom-display-fa768f5970f6",
+          "status": "passed",
+          "observed": [
+            "ordinary OS launcher and Continue",
+            "higher-resolution complete idle and second-turn pose",
+            "digit2 selected block card and Enter played it",
+            "Menu ended turn; 7 damage minus 5 block left HP78",
+            "turn2 banner and hand draw rendered"
+          ],
+          "evidence": {
+            "checkpoint": "792904cb5e7f5fcbbab7a5320ee0d54d247591c7",
+            "status": "passed",
+            "returncode": 0,
+            "source_changed": false,
+            "source_sha256": "b8133583610bee5fcfef428d27c10aa6ac32482f44dbd719d4efe38490efe700",
+            "log_sha256": "fbc0181d9a1d631302c23fc7f17a088829fc08f34dea5d78f4a9a1174646a676",
+            "started_at": "2026-10-26T14:47:25.605306+00:00",
+            "ended_at": "2026-10-26T14:48:18.923285+00:00",
+            "id": "cp17-vantom-display-fa768f5970f6",
+            "receipt": {
+              "name": "cp17-vantom-display-fa768f5970f6.json",
+              "bytes": 104984,
+              "sha256": "b8555b195e51f1190b33fdfbe4ab254f3af4ea10afff91500e6d2ddc6b1bc666"
+            }
+          }
+        },
+        {
+          "name": "Architect",
+          "fixture": "architect-entry-ironclad",
+          "display_journal": "cp17-architect-display-71ae3a78b747",
+          "status": "passed",
+          "observed": [
+            "ordinary Continue restored two actors and authored first dialogue",
+            "Enter advanced second dialogue then terminal sequence",
+            "player attacks with damage text",
+            "original left actor death and terminal overlay",
+            "Enter reached run-summary discovery rows and Main Menu button",
+            "Enter returned to title with completed run excluded from Continue"
+          ],
+          "capture_limit": "Coarse device stills verify stage transitions; full individual attack/FireBurst pixel equivalence belongs to the separate actual-resource native gate. The supplied controlled progress has intentionally incomplete earlier history.",
+          "evidence": {
+            "checkpoint": "792904cb5e7f5fcbbab7a5320ee0d54d247591c7",
+            "status": "passed",
+            "returncode": 0,
+            "source_changed": false,
+            "source_sha256": "b8133583610bee5fcfef428d27c10aa6ac32482f44dbd719d4efe38490efe700",
+            "log_sha256": "bca3664235e30ff025b4e404b406fadaf90c8e49bbbbbac0e3d9b946ac623706",
+            "started_at": "2026-10-26T14:49:19.940353+00:00",
+            "ended_at": "2026-10-26T14:52:11.605409+00:00",
+            "id": "cp17-architect-display-71ae3a78b747",
+            "receipt": {
+              "name": "cp17-architect-display-71ae3a78b747.json",
+              "bytes": 104996,
+              "sha256": "c00e1b53ee267ad8b867f7335bd6a94c430dbb7e175c744c26e94dbc436882f3"
+            }
+          }
+        },
+        {
+          "name": "Fake Merchant Regent",
+          "fixture": "fake-entry-regent",
+          "display_journal": "cp17-fake-regent-display-796f1603daec",
+          "status": "passed",
+          "observed": [
+            "ordinary Continue entered original custom room with Regent and merchant",
+            "20 additional simulated seconds retained original actors and environment motion",
+            "Catalog opened six-item source inventory with prices",
+            "Esc closed inventory; physical Down and Enter left to map",
+            "Tab returned to finished custom room; Catalog did not open stock or event reader; only Proceed remains"
+          ],
+          "evidence": {
+            "checkpoint": "792904cb5e7f5fcbbab7a5320ee0d54d247591c7",
+            "status": "passed",
+            "returncode": 0,
+            "source_changed": false,
+            "source_sha256": "b8133583610bee5fcfef428d27c10aa6ac32482f44dbd719d4efe38490efe700",
+            "log_sha256": "64725d6b03c88e9503e0936a9b9175357adbca44efb3c4d5a97f4b2ba25b4646",
+            "started_at": "2026-10-26T14:54:13.833007+00:00",
+            "ended_at": "2026-10-26T14:55:17.466580+00:00",
+            "id": "cp17-fake-regent-display-796f1603daec",
+            "receipt": {
+              "name": "cp17-fake-regent-display-796f1603daec.json",
+              "bytes": 105004,
+              "sha256": "21447d9b73ef800ff5027ee2f1d33b608f81c36b1db01dc912093f3f80024f9a"
+            }
+          }
+        },
+        {
+          "name": "Fake Merchant completed no-rug",
+          "fixture": "fake-fought-no-rug-ironclad",
+          "display_journal": "cp17-fake-norug-display-1958b368f2a5",
+          "status": "passed",
+          "observed": [
+            "ordinary Continue restored completed original scene with Ironclad, absent merchant and hidden authored rug attachment",
+            "source green base-background painting retained as authored",
+            "Catalog left the completed scene unchanged and opened no reader or inventory",
+            "Enter used sole Proceed and returned to navigable map"
+          ],
+          "evidence": {
+            "checkpoint": "792904cb5e7f5fcbbab7a5320ee0d54d247591c7",
+            "status": "passed",
+            "returncode": 0,
+            "source_changed": false,
+            "source_sha256": "b8133583610bee5fcfef428d27c10aa6ac32482f44dbd719d4efe38490efe700",
+            "log_sha256": "6e34d154d0534ddf521d4af114f22ec3e0aadfe63f85a85c6e8e1a6210885da0",
+            "started_at": "2026-10-26T14:57:07.857158+00:00",
+            "ended_at": "2026-10-26T14:57:34.192081+00:00",
+            "id": "cp17-fake-norug-display-1958b368f2a5",
+            "receipt": {
+              "name": "cp17-fake-norug-display-1958b368f2a5.json",
+              "bytes": 105000,
+              "sha256": "06645362c3e465238d1173c80aea6e894b9f304d617f03933f46e0fa6843c8ae"
+            }
+          }
+        }
+      ],
+      "observation_receipt": {
+        "name": "cp17-special-observations.json",
+        "bytes": 3091,
+        "sha256": "03bddb6473ebebdfbe58a092a186f2243fa2ac5d9b1d834f2d6e120da23efd29"
+      },
+      "natural_run_preserved": true
+    },
+    "final_installation_readback_and_release_binding": {
+      "status": "passed",
+      "evidence": {
+        "device": {
+          "checkpoint": "792904cb5e7f5fcbbab7a5320ee0d54d247591c7",
+          "status": "passed",
+          "returncode": 0,
+          "source_changed": false,
+          "source_sha256": "b8133583610bee5fcfef428d27c10aa6ac32482f44dbd719d4efe38490efe700",
+          "log_sha256": "3941b22bf6b222a7b3cb8e82ebe0617364ba758ad883ff01ea0bcdbaacf1845b",
+          "started_at": "2026-10-26T14:58:20.665356+00:00",
+          "ended_at": "2026-10-26T14:59:24.263029+00:00",
+          "id": "cp17-release-restore-f7c4994628da",
+          "receipt": {
+            "name": "cp17-release-restore-f7c4994628da.json",
+            "bytes": 104994,
+            "sha256": "988b7d07c5ed21cc9d6393ea4356b107a3d911b1dcbc4e62cb02fe3d3ce8b935"
+          }
+        },
+        "production_validator": "usb-cp17-release-restore-production-dafcd2baea7d",
+        "production_receipt": {
+          "name": "receipt.json",
+          "bytes": 18014,
+          "sha256": "d59a4004b61564d1c70c02f30bebd3dd0c85d7140bef8cb5883dab65135ea022"
+        },
+        "direct_file_binding": {
+          "name": "cp17-release-binding.json",
+          "bytes": 1700,
+          "sha256": "dc569140b716de95428fc06e81b6c881eb01f834628ee0cb31e8e41805f31be2"
+        }
+      },
+      "all_six_readbacks_exact": true,
+      "all_four_installed_files_match_release_sources": true,
+      "raw_run_and_progress_byte_identical": true,
+      "canonical_before_after": {
+        "run": {
+          "canonical_equal": true,
+          "before_sha256": "931f71a12872f26f21ed3e3418ea7b2c27f545ae55c286de4f0182bb171f4028",
+          "after_sha256": "931f71a12872f26f21ed3e3418ea7b2c27f545ae55c286de4f0182bb171f4028",
+          "same_offset_changed_bytes": 0,
+          "first_difference_offset": null,
+          "canonical_size_delta": 0,
+          "state_changes": {}
+        },
+        "progress": {
+          "canonical_equal": true,
+          "before_sha256": "a7111e0eb94e47d462c57c293c1cad3f89377a905c8580eafe66cf1374c2d4b4",
+          "after_sha256": "a7111e0eb94e47d462c57c293c1cad3f89377a905c8580eafe66cf1374c2d4b4",
+          "same_offset_changed_bytes": 0,
+          "first_difference_offset": null,
+          "canonical_size_delta": 0,
+          "state_changes": {}
+        }
+      },
+      "installed_total_bytes": 78569446,
+      "files": [
+        {
+          "name": "nSpire2.tns",
+          "bytes": 1653686,
+          "sha256": "77a41a60cdd99c2a4d2011e567a69afdb6b61851947e9692624f99612e28be4b",
+          "exact": true
+        },
+        {
+          "name": "nSpire2.common.tns",
+          "bytes": 70659306,
+          "sha256": "134c3bfa37ade7210585f300e55c0a30fba426d0544085f475a012d1fc42649e",
+          "exact": true
+        },
+        {
+          "name": "nSpire2.eng.tns",
+          "bytes": 1140675,
+          "sha256": "427ccaafc371c907f70f0c048167c77e53f99b5e4a960089f18dd35198639b49",
+          "exact": true
+        },
+        {
+          "name": "nSpire2.zhs.tns",
+          "bytes": 5115779,
+          "sha256": "ccabc40125426a8dd0e1bb49fa7af1fb23a20cddfdbc43b8f365cd94e7713880",
+          "exact": true
+        }
+      ],
+      "scope": "Fresh independent ordinary-OS USB session after exact natural snapshot/flash restore; no game launches or canonical state changes during this final readback."
+    }
+  },
+  "release_scope": {
+    "reference": "v0.111.0 / 41cef1ea",
+    "target": "offline single-player TI-Nspire/Ndless",
+    "default_install": "program + common + ENG + ZHS",
+    "optional_languages": 14,
+    "controlled_test_saves_in_player_zip": false,
+    "public_original_asset_payloads": false,
+    "full_ancient_animation_storage_exception": "previously accepted by user and retained",
+    "excluded_features": [
+      "audio",
+      "multiplayer",
+      "Timeline"
+    ],
+    "platform_mapping": [
+      "RGB565",
+      "LCD coordinate rounding",
+      "bounded CPU shader and particle integration"
+    ]
+  }
+}

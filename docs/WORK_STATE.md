@@ -1,58 +1,109 @@
 # Work state — 2026-10-26
 
-## UI13 feedback implementation — final resources accepted; device flow in progress
+## UI13 playable release — final runtime, resources and device acceptance complete
 
-The user authorized all operations on `maxmixalex/slay-the-nspire-2` and asked
-for parallel implementation, continued optimization and a playable result.
-Coherent source stages are pushed and independently fetched before long jobs.
-`main` remains at the accepted UI12 release until final device acceptance closes.
+The user authorized all operations on `maxmixalex/slay-the-nspire-2`. Frontend,
+combat/input and room work ran in parallel, with source checkpoints published
+and independently fetched before long builds, conversions and device jobs.
+The complete 28-item mapping is [UI13 LCD follow-up](ui13-lcd-followup-0.17.md);
+precise artifact identities and closed gates are in
+[the final acceptance manifest](validation-ui13-0.17.json).
 
-The final production runtime is `792904cb5e7f5fcbbab7a5320ee0d54d247591c7`;
-the complete converter is `e606108221fd6f8202f61b3e5ae1372970de0e27`.
-The production sources are byte-identical in the later test/document stages.
-All requested frontend, combat/input and room corrections are integrated, along
-with the previous explicit Random/Fake Merchant/BlurBackstop/rainbow omissions,
-Doom particles and source body disappearance, full Architect presentation,
-capacity-aware orb motion and bounded merchant animation caching. The eight
-higher-resolution boss models retain all 286 clips / 5,340 source samples.
+The accepted production runtime is **`792904cb5e7f5fcbbab7a5320ee0d54d247591c7`**;
+the complete converter/resources are **`e606108221fd6f8202f61b3e5ae1372970de0e27`**.
+Later test/document stages preserve all `src/include/platform/CMake` bytes.
+The 1,653,686-byte ARM has SHA-256
+`77a41a60cdd99c2a4d2011e567a69afdb6b61851947e9692624f99612e28be4b`
+and allocates **20,703,800 bytes**, below the unchanged 24 MiB ceiling.
+The final ordinary-OS USB restore/readback journal
+`cp17-release-restore-f7c4994628da` is closed PASS with unchanged source;
+all four installed files match the delivered inputs exactly. The natural run
+and progress also match their preserved pre-fixture readbacks byte for byte.
 
-Closed acceptance includes **137/137 registered native tests**, **325 unique
-Python converter tests**, all sixteen locales (38,686 checks / 53,072 rendered
-descriptions, zero unexpanded templates), final English/Chinese frontend,
-Card/HUD and rainbow gates, and actual decoding of all 2,955 appended images.
-The complete glyph-directory gate includes every kerning metadata pair and
-present font size. Fake Merchant source diversity matches all ten original
-sequences exactly, and all eight sustained native room scenarios have zero
-source reads/bytes/seeks in their second and third windows. These are native
-correctness/cache facts, not calculator FPS. The last event test is being
-rerun with a same-clock background oracle: a dynamic room must not be compared
-to a frozen entry-time background when testing speech disappearance. This is a
-test-only correction, retaining canonical state and original animation clocks.
+### Implemented scope
 
-The final four-file install is **78,569,446 bytes (78.57 MB / 74.93 MiB)**.
-It exceeds the rough 65–70 MB target; full boss quality and animation samples
-are retained. Lossless grouping and exact aliasing save **9,262,910 bytes**
-in the appended image payload, in addition to the inherited 307,420-byte safe
-prune. The 1,653,686-byte ARM allocates **20,703,800 bytes**, below the unchanged
-24 MiB ceiling. All four installed files have already been downloaded through
-ordinary OS USB and independently matched to their final SHA-256 identities.
+All 28 reported areas are corrected: menu/logo/Continue geometry, compact
+confirmation controls, sixteen-language port credits, compendium arrows,
+source language-list/scrollbar assets, shared HUD spacing/clock/ascension text,
+physical-arrow navigation and all ten numeric hand shortcuts, padded map
+legend, banner glyphs, adjacent Stars/Energy, health/block strokes, aspect-fit
+hand aura, orb object lifecycle and capacity layout, original pile art and
+positions, thought bubbles, reward alignment/Proceed hover, bounded event
+options/previews, enchant markers/sidebar, merchant hand/cache performance,
+modal hover and overlapping-card input, distinct transformation VFX, rest
+outlines, SmartFormat history and higher-resolution boss canvases.
 
-The final runtime has reached the same closed merchant room as the accepted
-UI12 baseline and completed its initial 120 simulated seconds. The matched
-late-window comparison, final natural battle/reward/map/save/Continue flow,
-settings and controlled special-room displays are in progress. They will be
-recorded separately from earlier intermediate or failed attempts. The baseline
-late window is 586 Room frames at 101.7496675 ms mean interval (9.8280 FPS),
-20,364,684 requested bytes / 1,205 reads / 1,051 seeks. It is a Firebird timing
-measurement, not a physical-calculator FPS claim.
+The earlier explicit presentation omissions are also implemented: Doom's
+particle/body-disappearance family, complete Architect reading/trails/attacks,
+Random's source water/noise/particles, Fake Merchant's original actors and
+post-fight/no-rug layers, main-menu blur and label-local rainbow clocks.
+The eight boss models retain **286 clips / 5,340 samples**. The complete new
+auxiliary endpoint is 5,156; all **2,955 appended images** are decoded through
+actual memory and range readers, and prior verified payloads remain exact.
 
-The user-approved full Ancient-animation storage exception remains, alongside
-audio, multiplayer and Timeline exclusions. RGB565/CPU rendering remains an
-explicit platform adaptation. No manual WASM/browser verification, physical
-hardware result or natural three-act win is claimed. Final device identities,
-limits and deliverables will be recorded in the UI13 acceptance manifest before
-main is advanced. Historical intermediate states below retain their own dates,
-checkpoints and outcomes; they do not override this current summary.
+### Closed verification
+
+- **137/137 registered native tests**, zero failures, 42.68 seconds.
+- **325 unique Python tests**: converter checkpoint discovery 271 plus
+  supplemental 56, with two duplicates counted once.
+- All **16 locales**, 38,686 checks / 53,072 rendered descriptions, zero
+  unexpanded templates; complete glyph and kerning metadata verification.
+- Final English/Chinese frontend, combat/HUD, label-clock and room gates;
+  Fake Merchant's ten source animation sequences match their independently
+  reconstructed distinct-image counts. Final event gates are 5,850 / 5,827.
+- All eight Fake Merchant sustained native scenarios have zero reads/bytes/
+  seeks in their second and third windows, within the same 11 MiB arena.
+- A normal final-program Ironclad run starts from blank progress, takes Neow
+  rewards, wins the first battle in four turns, collects gold/card, returns
+  to the map, saves, Continues the same cleared room, saves again and exits
+  to the ordinary OS. Journal `cp17-natural-final-4881221c7040` is PASS.
+  Seed **FD81C60B**, Act 1 floor 2, HP **80/80**, gold **119**, deck **13**,
+  revision **38**; production storage decoding and repeated canonical save
+  round trips pass, with matching run/progress identity.
+- Separate, explicitly controlled device cases show Vantom through its next
+  turn, Architect dialogue/attacks/death/summary/title, Regent Fake Merchant
+  animation/inventory/finished-room controls, and the post-fight no-rug room.
+  All four display journals close PASS. They are not natural boss wins or a
+  natural three-act completion; coarse device stills do not replace the
+  complete native VFX pixel gates.
+
+### Measured performance and storage
+
+The same closed merchant room is warmed for 120 simulated seconds, then
+measured over a matched additional 60-second cumulative-counter window.
+The ordinary-OS A/B journals close PASS independently of the earlier failed
+USB-link reuse attempt. **UI12: 9.8280 FPS / 101.7497 ms; final UI13:
+29.9982 FPS / 33.3353 ms**, with 1,800 final frames. Requested resource bytes
+fall from **20,364,684 to 12,700** (99.9376%); calls/seeks fall from
+1,205/1,051 to 1/1. Final mean render is 14.9121 ms. This is Firebird emulated
+calculator timing, not a physical-calculator claim. Device I/O is one read,
+not zero; native warm-cache zero-I/O results are a separate scope.
+
+The default four-file installation is **78,569,446 bytes (78.57 MB /
+74.93 MiB)**, excluding saves, and remains above the rough 65–70 MB target.
+It is 2,271,661 bytes larger than the earlier d5 UI13 candidate after retaining
+higher-resolution bosses and completing the scenes. Lossless grouping and
+1,013 exact aliases save **9,262,910 bytes** in appended image payload;
+the inherited safe prune saves another 307,420 bytes in the default install.
+No additional frames, source timing or source pixel quality were dropped to
+make the storage result appear smaller.
+
+### Release boundaries
+
+The user-approved full Ancient-animation storage exception remains. Audio,
+multiplayer and Timeline remain outside the agreed offline single-player
+scope. RGB565, LCD rounding and bounded CPU shader/particle integration are
+explicit platform adaptations, not blanket desktop-GPU equivalence. There is
+no manual WASM/browser acceptance or physical hardware FPS claim.
+
+Source-only checkpoints and evidence metadata are public; original PCK,
+fonts, assemblies, derived resource packs and ROM/NAND stay out of GitHub.
+The calculator ZIPs contain the final program/resources and installation,
+upgrade/control instructions; controlled test saves are not included.
+Failed, interrupted and superseded attempts retain their original identities
+and are excluded from final passed gates. Historical entries below describe
+only their named intermediate checkpoints; their old pending statements do
+not override this completed release summary.
 
 
 ### Retained-scene completion checkpoint

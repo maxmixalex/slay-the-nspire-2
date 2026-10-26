@@ -53,6 +53,10 @@ The fake merchant's enlarged dialogue bubble uses the inventory's empty upper
 left corner. Its previous centered placement covered the first relic and its
 price: a real 53-to-54 price change was completely hidden by the bubble. The
 original one-gold pixel-change assertion remains in the regression.
+The later [custom Fake Merchant scene](fake-merchant-ui13-0.17.md) restores its
+complete original room layers, five relaxed actors, particles, focus skin and
+post-fight variants. Its final English/Chinese inventory gate retains that
+same one-gold assertion over the live animated room.
 
 ## Enchantment tab and extra card text
 
@@ -162,13 +166,13 @@ Burst follows the player's original bottom-of-hitbox anchor and is covered by
 the final screen's black backstop, while the pen trail remains with its retained
 creature node above that backstop.
 
-## Actual-resource acceptance
+## Initial UI13 actual-resource acceptance
 
 All eight room/selection gates have passed with the original English and
 Simplified Chinese UI13 resources. The receipts distinguish the initial UI13
 pack from the final pack whose unused tile-directory records were removed;
-the pruning preserves image pixels, frame IDs and clocks. The final production
-source is `d5f9a3c`; the last Architect test-only checkpoint is `b96bd0d`, with
+the pruning preserves image pixels, frame IDs and clocks. This initial acceptance
+uses production source `d5f9a3c`; its last Architect test-only checkpoint is `b96bd0d`, with
 the same production files and core library.
 
 | Gate | Source checkpoint | English checks | Chinese checks |
@@ -208,7 +212,7 @@ an allowed mismatch count. All thirty final captures loaded as complete
 
 Actual startup testing also caught a capability-chain omission after the new
 catalogs were appended. `Content::open` could read them, but `App::init` rejected
-their profile. The five explicit UI13 endpoints now inherit the earlier
+their profile. That stage's five explicit UI13 endpoints inherit the earlier
 sleeping, intro-logo, history, selection and tutorial capabilities. Both direct
 and ranged loader tests assert complete playable profiles while incomplete or
 unknown suffixes still fail.

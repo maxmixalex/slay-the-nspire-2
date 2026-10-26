@@ -78,18 +78,37 @@ same-time drawing, selection-screen output and canonical save-byte stability.
 It can write real native frame captures for visual review. Synthetic images
 exercise only sampler behavior and are not evidence of original artwork.
 
-The source-free Python cases independently check literal seamless edge/corner
-values and lossless R8 transport. At immutable checkpoint
-`2b58ee31eb5ef6674ce95f02ad2eb9694a98a041`, all three Python cases and the
-4,534-check independent native sampler/particle gate have closed passed journals
-with `source_changed=false`. The matching137-test registered native suite also
-passes. The private Random binary was independently linked from a hash-verified
-copy of the matching core before its shared build directory was reused.
+The final runtime is `792904cb5e7f5fcbbab7a5320ee0d54d247591c7`; its matching
+resource conversion is `e606108221fd6f8202f61b3e5ae1372970de0e27`, with the
+complete5156-entry auxiliary catalog. English and Simplified Chinese both pass
+**317,696 checks** on these actual resources. Their full-frame water oracles,
+four animated background times, decorative particles, deterministic repeated
+draws, selection screen and canonical save-byte stability are all exercised.
+The input file hashes were rechecked against the closed16-locale conversion
+receipt. Source-matched native captures include both the entrance frame and
+separate fully settled Random selection screens; these are not Firebird images.
 
-The new actual-source-texture gate and captures await the final matching
-resource directory and runtime profile. Its result is recorded separately
-from these synthetic checks and from device measurements; a conversion probe
-or syntax check is not counted as completed actual-resource acceptance.
+The independent synthetic gate now passes **5,147 checks**, including dense,
+indexed and sparse logical texture views whose source rows cross physical rows.
+The four Python cases cover literal seamless edge/corner values, R8 transport
+and exact preservation of every source RGBA texel during linear repacking.
+The matched registered native suite passes137/137.
+
+A separate actual `Content` decoder check reads both final retained-group
+images through memory and range-read providers. All65,536 source texels of each
+Light/Dot image match the original RGB565 color and unmodified alpha exactly,
+including pixel-centre bilinear samples; the64 physical padding texels are
+transparent. Its **786,733 checks** pass against the final pack's format7
+descriptors, rather than relying on the earlier format5 conversion probe.
+
+Closed journals are `random-cp17-actual-eng-e9b266f508b0`,
+`random-cp17-actual-zhs-673f0a61d41c`,
+`random-cp17-synthetic-c05aa9d9b0a0` and
+`texture-final-source-exact-508f8b9f73f7`; all report `source_changed=false`.
+The aggregate frontend receipt records the executable hashes, source and
+resource identities, input files, full captures and lossless PNG copies.
+Device behavior and timing remain separately identified in the final device
+receipt; native correctness does not establish calculator frame rate.
 
 Primary engine references: [Godot4.5.1 Noise](https://github.com/godotengine/godot/blob/4.5.1-stable/modules/noise/noise.h),
 [Noise normalization](https://github.com/godotengine/godot/blob/4.5.1-stable/modules/noise/noise.cpp),
