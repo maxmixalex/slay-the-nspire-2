@@ -80,15 +80,38 @@ for both. No new framebuffer, interpolation, frame skipping or resampling is
 involved.
 
 The ten static layers occupy auxiliary IDs 5265 through 5274. Moving layers
-replace their existing image IDs as independent sparse/LZ4 images. Every
+replace their existing image IDs. Every
 output plane is independently decoded again and recomposed against the
 original RGB565 and alpha planes; the private manifest contains per-clip
 pixel identities and encoded/decoded storage counts. The release converter
 can then reclaim tile pixels no longer referenced by any live image.
 
+The independently encoded intermediate moving planes increased final common
+storage, despite reducing decoded cache pressure. UI14 therefore packs the
+moving planes into existing RGR1 retained groups, each containing at most
+eight consecutive frames of one clip and no more than 64 KiB of decoded
+bytes. One cold frame requests only its small neighboring group; decoded
+individual frames still enter the ordinary image cache. This uses the existing
+codec and cache without adding runtime memory. Groups are used only when
+their complete payload plus descriptors is smaller. The relocation pass
+physically drops the replaced independent blocks.
+
+An all-frame private measurement at stage4 compares the full 1,817 moving
+frames: independent encodings occupy 8,247,744 bytes, versus 2,033,340 for
+eight-frame/64-KiB RGR1 groups. The largest resulting group is 64,239 decoded
+bytes. Four-frame groups occupy 2,436,922; expanding to sixteen-frame/128-KiB
+groups reaches 1,665,386 but increases cold decode work, so UI14 keeps the
+smaller bound. RGB-decorrelated RGR2 mode2 saves only another 31,490 bytes
+and adds a restoration pass; the merchant path retains plain RGR1. These
+measurements are compression and byte-exact readback evidence, not device
+frame-rate measurements.
+
 The public small-pixel tests cover opaque black invariants, partial alpha,
 changing alpha, disjoint composition, independent encoded readback and
-rejection of altered frame dimensions. The actual private conversion and
+rejection of altered frame dimensions. Retained-group tests additionally
+cover frame/byte bounds, clip boundaries, cheaper independent fallbacks,
+physical removal of old blocks and preservation of foreign tile, glyph and
+localized-string data. The actual private conversion and
 Firebird cold/sustained measurements remain separate acceptance gates.
 
 At checkpoint `97a63d78979daba7d12fa8475b305e836fc9503c`, journal

@@ -87,6 +87,7 @@ static void actual_shrink(){
  hand({Defend,Defend,Strike});potion_set(a.game,0,Potion::BeetleJuice);export_save("ui14-shrink");
  const auto original_enemy=a.combat_enemy_pose(0),original_player=a.combat_player_pose();capture("shrink-before");
  direct=a.game;CHECK(use_potion(direct,0,0));{UiCoreObserver observer(a);a.begin_combat_feedback();CHECK(use_potion(a.game,0,0));}equal_save();
+ int shrunk=0;CHECK(enemy_visual_fact(a.game,0,"Shrink",shrunk)&&shrunk);
  bool intermediate=false;for(unsigned i=0;i<90;++i){tick(33);const auto p=a.combat_enemy_pose(0);intermediate|=p.scale<original_enemy.scale&&p.scale>original_enemy.scale/2;
   CHECK(p.feet==original_enemy.feet&&p.hp==original_enemy.hp&&p.intent==original_enemy.intent&&p.width==original_enemy.width);}
  CHECK(intermediate&&a.combat_enemy_pose(0).scale==mx(1,original_enemy.scale/2));capture("shrink-enemy-half");equal_save();

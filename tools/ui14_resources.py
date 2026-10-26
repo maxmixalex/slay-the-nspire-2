@@ -17,6 +17,7 @@ import split_content as split
 from combat_ui14_assets import BASE_AUXILIARY, AUXILIARY_COUNT as COMBAT_AUXILIARY, ancient_portrait_overrides, source_assets
 from merchant_ui14_assets import AUXILIARY_COUNT, source_assets as merchant_assets
 from game_over_ui8_assets import build_game_over_images
+from group_merchant_ui14 import regroup_existing as group_merchant
 from patch_frontend_assets import patch_pack
 from patch_phobia_assets import grouped_art
 from pck import Pack
@@ -129,6 +130,8 @@ def main():
         auxiliary=AUXILIARY_COUNT, input_version=40, version=40, texts=(),
         base_clips=len(source.clips), base_strings=len(source.strings), appended_art=grouped)
     emit('card_art_appended', auxiliary=AUXILIARY_COUNT, added_images=len(rows))
+    artwork, merchant_grouping = group_merchant(artwork)
+    emit('merchant_frames_grouped', **{key: value for key, value in merchant_grouping.items() if key != 'groups'})
     artwork, reclaimed = reclaim(artwork, cache/'reclaimed-tiles', args.workers)
     emit('unreferenced_payload_reclaimed', **reclaimed)
     compressed = {}
@@ -156,7 +159,8 @@ def main():
     receipt = dict(schema=1, reference='v0.111.0 / 41cef1ea', version=40,
         auxiliary_count=AUXILIARY_COUNT, common_bytes=len(common), common_sha256=tiles.sha256(common),
         replacements=replaced, ancient_portraits=portraits, appended=appended, reclaimed_tiles=reclaimed,
-        appended_grouping=grouped['report'], compression=compressed, languages=reports)
+        appended_grouping=grouped['report'], merchant_grouping=merchant_grouping,
+        compression=compressed, languages=reports)
     tiles.atomic_bytes(output/'locales-receipt.json', json.dumps(receipt, ensure_ascii=False, indent=2).encode()+b'\n')
     emit('all_editions_verified', languages=len(reports), common_bytes=len(common))
 

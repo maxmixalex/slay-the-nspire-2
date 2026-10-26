@@ -54,7 +54,7 @@ bool enemy_visual_fact(const State&s,int t,const char*key,int&out){
  const auto&m=s.enemy_world.models[t];const unsigned bits=enemy_visual_bits(s,t);
  auto answer=[&](const char*name,int value){if(!enemy_text_equal(key,name))return false;out=value;return true;};
  if(answer("live_combat",s.enemy_world.active!=0))return true;
- if(answer("EnemyDown",(m.flags&EnemyDown)!=0)||answer("Shrink",enemy_power_value(s,t,EnemyPower::Shrink)!=0))return true;
+ if(answer("EnemyDown",(m.flags&EnemyDown)!=0)||answer("Shrink",enemy_power_value(s,t,EnemyPower::Shrink)!=0||s.expansion.beetle[t]!=0))return true;
  if(m.kind==EnemyId::Crusher||m.kind==EnemyId::Rocket){
   int left=-1,right=-1;for(int other=0;other<s.enemy_count;++other){if(s.enemy_world.models[other].kind==EnemyId::Crusher)left=other;if(s.enemy_world.models[other].kind==EnemyId::Rocket)right=other;}
   if(answer("kaiser_left_dead",left<0||s.enemies[left].hp<=0)||answer("kaiser_right_dead",right<0||s.enemies[right].hp<=0))return true;

@@ -25,10 +25,10 @@ static CombatOrbPoint combat_orb_point(const App&a,OrbSourcePoint position){
  const auto&s=a.game;const auto camera=s.enemy_world.active?encounter_camera(s.enemy_world.encounter):EncounterCamera{};
  const auto layout=a.creature_layout.right?a.creature_layout:combat_layout_for(s);const auto root=player_formation_point(s,camera.zoom);
  const auto player=a.combat_player_pose();const auto anchors=player_anchors(s.character);
- const auto base=player_pose(s,layout);const int scale=player.scale*1024/mx(1,base.scale);
+ const auto base=player_pose(s,layout);const int scale=player.scale*1024/(base.scale>0?base.scale:1);
  // NCreature.DoScaleTween updates OrbManager with the creature: growth
  // moves its anchor only up to1.25, while shrink halves the scale delta.
- const int manager=scale>1024?1024:(scale+1024)/2,anchor=mn(1280,scale);
+ const int manager=scale>1024?1024:(scale+1024)/2,anchor=scale<1280?scale:1280;
  const int xx=anchors.intent_x*anchor+int(int64_t(position.x)*manager/1024),yy=(anchors.intent_y+195)*anchor+int(int64_t(position.y)*manager/1024);
  const int x=s.enemy_world.active?combat_project_x(camera,layout,root.x+int(int64_t(xx)*camera.zoom/1024),false):player.x+xx*4/(21*1024);
  const int y=s.enemy_world.active?combat_project_y(camera,layout,root.y+int(int64_t(yy)*camera.zoom/1024)):player.feet+yy*4/(21*1024);
