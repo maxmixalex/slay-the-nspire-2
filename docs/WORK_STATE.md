@@ -1,62 +1,118 @@
-# UI14 final-device integration — 2026-10-26
+# UI14 calculator delivery — 2026-10-27
 
-Runtime stage10 `6355aef2fa174aa6c6e1134c4a088b4ba7cb6948` is pushed and all
-ten changed blobs have been compared with the remote tree. Its ARM build is
-1,681,970 bytes, SHA256
-`f9f9f4810d99c1717c6d6e5bf9fce9e13a244e8c3ebc2a30ef40e59aec3d1c23`,
-with22,722,076 bytes allocated. Ordinary OS startup and exact USB readback
-succeeded independently for the natural-run, merchant and combat fixtures.
-Final native, actual-resource and device timing gates for this stage are
-running; no final package/main acceptance is claimed at this checkpoint.
+The verified production runtime is `af154470daa96563f0695d043178285d26dcaee4`
+(stage 16); the resource/converter checkpoint is
+`67e2822ef369dc62428dcc0698c0bda62586756f`. Source was pushed and changed
+blob hashes/modes were independently read back before long jobs. Later
+metadata and documentation changes do not alter the delivered runtime.
+The complete feedback map is [ui14-lcd-followup-0.17.md](ui14-lcd-followup-0.17.md),
+and exact identities, completed gates, named device windows and remaining
+boundaries are in [validation-ui14-0.17.json](validation-ui14-0.17.json).
 
-Stage7's full native suite, with the corrected stage8 input/canvas fixtures,
-passes138/138. Relevant Python source is unchanged after its334 unique passing
-tests. All16 final locale editions pass38,686 checks and53,072 descriptions.
-The final common pack is72,131,134 bytes. Exact merchant factoring preserves
-all1,817 original frames, while bounded grouped compression saves6,215,294
-bytes against the independent-frame moving payload. The complete new install
-is still larger than UI13 after adding missing original card/score/effect art.
+The final ARM is **1,689,486 bytes**, SHA256
+`98d1408183e3bff8d99b6fd0cac7143ad7a25783074a3a2297cf69a04adcc375`,
+with **22,676,740 bytes allocated**. It starts in ordinary Firebird CX OS.
+All four installed program/resource files were read back through USB and
+compared byte for byte. That installation has a complete 104-event trace,
+normal stop and no failed operations. The earlier 22,983,964-byte stage 9
+allocation failure is why the nominal 24 MiB ceiling is not used as a substitute
+for the actual ordinary-OS startup gate.
 
-The actual natural first-encounter loop on stage7 is complete: fresh Ironclad
-run, Neow, original map route, ordinary seven-turn Nibbit victory,15 gold,
-Colorless Potion and Headbutt, empty reward fade, explicit Proceed to the map,
-Save and Quit, animated Continue, and normal OS exit with save/progress
-readback. The resumed state has56/80HP,114 gold, one potion,11 cards and floor2.
-This is not a natural three-act victory. Its2525-frame mixed cold/interaction
-combat window averages28.4681FPS in Firebird, with6 frames above250ms and zero
-resource failures. Stage10 repeats ordinary resume/readback of that same run.
+## Implemented behavior and validation
 
-Independent stage7 closed-merchant timing is26.8840FPS for the cold first16s,
-then30.0028FPS in the matched60s window after120s; that warm window has zero
-reads and zero frames above50ms. Initial entry has two frames above250ms and
-is reported separately. Final stage10 repeats these windows because its image
-pool changes; earlier timings cannot substitute for that gate.
+The console is compiled into every build. The only installation-root file is
+`nSpire2.tns`; data and documentation are under `data/`, and all mutable state
+is under `state/`. No old filename fallback or alternate debug launcher is
+included. Fixed frontend, HUD, deck, defeat, scrollbar, event, reward, card
+material, scaling, forge, enchantment, rest and merchant behavior is mapped
+individually in the feedback ledger; its coverage is not a blanket claim that
+every historical source or performance difference is closed.
 
-Stage7 Random failed performance acceptance: its last60s average9.8567FPS.
-Stage9's exact pixel memo and interpolation optimization passes40,213 synthetic
-and353,009 checks per actual English/Chinese pack; all307,200 separately
-compared background pixels match the earlier general sampler. Stage9 ARM
-nevertheless fails ordinary-OS Zehn memory allocation at22,983,964 bytes.
-Stage10 subtracts256KiB from the existing picture pool while retaining the
-225KiB water memo, so its total allocation is30,184 bytes below stage7. This
-actual allocation failure is not concealed by the nominal24MiB budget.
+The final **138/138 local native suites pass in 37.64 s**, using Clang 18.1.3
+Release (`-O3 -DNDEBUG`). This is separate from GitHub's Debug/-O1 ASan/UBSan
+job. The final Random checks pass 297,749 synthetic and 610,601 per actual
+English/Chinese resource edition, with 8 backgrounds and 4 complete pages
+byte-identical to independent earlier renderers. The final combat original-art
+gate passes 11,902 checks. The unchanged converter/package Python source has
+334 unique passing tests. All 16 final locales pass 38,686 checks and 53,072
+descriptions with zero unexpanded templates.
 
-Stage10 also restores the original four death-to-reward timing branches and
-prepares saved combat relic choices before displaying them, so confirming an
-enchantment cannot conceal its first second behind a newly started decoder.
-Invalid console fight IDs now fail without altering State or RNG; the earlier
-fixture's class-name typo exposed a real unintended random-encounter fallback.
+The production runtime's [GitHub CI run 40427358640](https://github.com/maxmixalex/slay-the-nspire-2/actions/runs/40427358640)
+is complete: native, conversion and portable jobs all pass. Its separate
+Clang 18.1.3 Debug / `-O1` ASan/UBSan run passes **138/138 in 253.87 s**.
+The historical stage 11 fixture failure and its stage 12 correction remain
+recorded in the manifest; no sanitizer coverage or strict assertion was removed.
 
-The earlier-difference reconciliation is
-[ui14-retained-differences-0.17.md](ui14-retained-differences-0.17.md). Most old
-visual omissions have implemented source. Complete move-level await timing
-still requires the pinned original assembly: existing196 AttackCommand
-profiles do not reconstruct every move's surrounding waits. The former
-private DLL/PCK copies were cleared by the environment, and no DLL is present
-in the preserved evidence archive. Do not invent source wait values from clip
-lengths or report every historical timing gap closed. The accepted Ancient
-actor-animation storage exception and excluded audio/multiplayer/Timeline
-scope are unchanged.
+The final ordinary-OS Continue follows the saved character's textured wipe,
+black transition and room entry. The genuine earlier natural run resumes at
+56/80 HP, 114 gold, one potion, 11 cards and floor 2; map, Save and Quit, title,
+normal OS exit and USB state readback all succeed. Its 7,377-byte canonical save
+remains byte-identical to the completed natural stage 7 run. The UI progress
+codec records the expected seven additional active seconds and new save
+timestamps; all other encoded progress is unchanged after normalizing only
+those time fields. The earlier natural loop includes Neow, legal map travel,
+a seven-turn Nibbit victory, 15 gold, Colorless Potion and Headbutt. This is
+**not a natural three-act victory**.
+
+## Measured performance boundaries
+
+Final Random's matched 30 s warm window is **611 frames / 29.963654 s = 20.391372 FPS**,
+with 48.7053 ms mean render, zero reads, zero resource failures and no frames
+above 100 ms. The first 10 s window is 19.034958 FPS. The retained water, original
+light and all 40 particles are pixel-exact, and warm throughput is about 2.07×
+the earlier 9.8567 FPS record. It is still below 30 FPS; the original low-FPS
+feedback is improved, not declared fully eliminated.
+
+Ordinary and Random Embark both reach Neow and save/exit normally. Ordinary
+Embark retains an 800 ms visible departure, but its initial input/new-run
+update is about 1.795 s. Random selects Silent and retains the 1000 ms reveal
+followed by 800 ms departure. The 13/38 recorded Character frames include cold
+preparation and are not animation-only FPS. The frontend ledger preserves
+all timestamps and the distinction between the agent's incomplete install
+trace and root's complete independent installation evidence.
+
+The real stage 13 Haunted Ship turn shows five generated Dazed at 29.5419 FPS
+in the 2-4 s preview window, and flies them into Discard while drawing the next
+hand at 28.9576 FPS in the 4-6 s window. The complete first 0-6 s action is 25.3955 FPS
+and still contains one frame above 250 ms. A 12 s record includes settled idle
+and is not used as the action's FPS. Its checkpoint remains explicitly 13;
+it is not relabeled as a final 16 or physical-device measurement.
+
+The stage 12 closed merchant reaches 30.0073 FPS in the matched 60 s window after
+120 s, with zero reads, frames above 50 ms or resource failures. The first rug opening
+still peaks at 3.7716 s render / 3.8987 s frame interval. It has no invented loading
+animation, and the complete goods and dialogue layout are verified, but this
+cold spike is not called resolved. Exact merchant factoring preserves all 1,817
+source frames; the 120-frame rug comparison has 9,216,000 identical pixels.
+
+## Delivery size and remaining source inputs
+
+The bilingual install's four program/resource files total **80,021,945 bytes**
+(80.021945 decimal MB), which is 1,452,499 bytes larger than UI13 after adding
+missing original art. The 6,215,294-byte merchant moving-payload saving is
+against the intermediate independent-frame UI14 encoding, not a net reduction
+of the complete UI13 install. The earlier rough 65–70 MB goal remains unmet.
+Both player ZIPs contain no controlled save, ROM, snapshot, browser player or
+separate debug variant. The calculator ZIP contains an empty `state/`;
+the optional-language ZIP contains only files under `data/`.
+
+Two reference-fidelity items remain blocked on the removed pinned originals:
+complete surrounding awaited commands for every monster move, and Vantom's
+750 ms `root_scale_adjust` bone transition with its independent tail control.
+The 196 AttackCommand profiles and sourced move waits remain; Vantom's full/
+half endpoints are correct for both shrink sources. Do not substitute guessed
+waits or whole-sprite shrinking, and do not turn 123 move nodes outside the
+AttackCommand profile table into an invented missing-rule count. Local files,
+preserved evidence, Library and
+the connected Drive's scoped filename searches did not recover the DLL/PCK.
+The precise required paths/hash are in the retained-differences ledger and
+validation manifest.
+
+The accepted full-Ancient-actor-animation storage exception remains. Special
+card materials use the disclosed bounded CPU phase sampling. Audio,
+multiplayer and Timeline remain outside the agreed offline single-player
+scope. The actual final package hashes and verification scopes, rather than
+historical headings below, govern this delivery.
 
 ---
 

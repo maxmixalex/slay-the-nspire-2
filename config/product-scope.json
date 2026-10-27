@@ -25,9 +25,10 @@
     "enemy_registry_models": 108
   },
   "source_version": "0.17.0-prototype",
-  "validation_status": "UI14 integration; executable checks and final device acceptance are recorded in docs/WORK_STATE.md",
-  "verified_runtime_source": "0418cf3e63dabb456e4a9aaa49062d32f7ac747c",
+  "validation_status": "UI14 calculator delivery; completed native/resource/device gates and exact remaining limits are recorded in docs/validation-ui14-0.17.json",
+  "verified_runtime_source": "af154470daa96563f0695d043178285d26dcaee4",
   "original_three_act_campaign_implemented": true,
   "model_counts_are_fidelity_percentages": false,
-  "reference_timing_boundary": "Existing AttackCommand profiles are implemented; some move-level awaited commands retain clip-duration presentation until their pinned reference can be re-audited."
+  "reference_timing_boundary": "196 AttackCommand profiles and sourced full-move waits are implemented; completing the remaining surrounding waits requires the pinned original assembly. No waits are guessed from clip duration.",
+  "reference_animation_boundary": "Vantom has correct full/half body endpoints; its 750ms independent-bone shrink tween still requires the pinned skeleton/atlas. See docs/ui14-retained-differences-0.17.md."
 }

@@ -232,10 +232,16 @@ They are actual emulated ARM timings, not native host frame rates.
 | `f1ad95b3` | 10→40s matched window | 417 / 29.9666 | 13.9155 | 71.527ms | 0 |
 | `b5c127d8` | First 10s, including Random's initial load | 155 / 10.2951 | 15.0557 | 65.980ms | 22 |
 | `b5c127d8` | 10→40s matched window | 484 / 29.9661 | 16.1516 | 61.578ms | 0 |
+| `41839649` | First 10s, including Random's initial load | 179 / 10.2885 | 17.3980 | 57.052ms | 22 |
+| `41839649` | 10→40s matched window | 551 / 29.9718 | 18.3840 | 54.060ms | 0 |
+| `af154470` | First 10s, including Random's initial load | 196 / 10.2968 | 19.0350 | 52.117ms | 22 |
+| `af154470` | 10→40s matched window | 611 / 29.9637 | 20.3914 | 48.705ms | 0 |
 
-These results are not accepted as completed Random performance. They separate
-real CPU rendering cost from loading, and require further optimization while
-retaining every particle, texture sample and source animation clock.
+The intermediate results drove the successive optimizations below. The final
+sixteenth window is 20.3914 FPS, about 2.07 times the earlier measured warm
+9.8567 FPS; it does not establish 30 FPS. CPU rendering cost and cold loading
+remain separate. Every particle, original texture and source animation clock
+is retained, and host-native speed is not used as calculator FPS evidence.
 
 The ninth checkpoint added a225 KiB exact water memo keyed by the complete
 immutable gradient/storage identity, owner generation, dimensions and shader
@@ -355,9 +361,102 @@ ticks by the number of character frames, not by its call count. The light
 bitset alone saves only about 1ms, so 16.15 FPS is still unfinished Random
 performance. Actual ARM disassembly shows that the optimized-build light
 sampler and dot sampler still save and restore nine registers around every
-covered pixel. The next source stage separates the light/dot loops, proves
-in-bounds source spans once per row, and inlines their small exact hot paths
-and water lookup. Complete border, unsupported-format, unsafe-quad and parent
-modulation paths remain available. Its new source and independent pixel
-oracles await the next verified checkpoint; no native timing substitutes for
-ordinary-OS measurement.
+covered pixel. The fifteenth checkpoint separates the light/dot loops,
+proves in-bounds source spans once per row, and inlines their small exact hot
+paths and water lookup. Complete border, unsupported-format, unsafe-quad and
+parent modulation paths remain available. Synthetic tests pass 255,950
+assertions; actual ENG/ZHS each pass 568,802. The eight background captures
+still match the independent general painter and the four complete page
+captures match the fourteenth build. Ordinary-OS startup and exact USB
+readback pass with 22,671,436 bytes allocated.
+
+The fifteenth matched warm window measures water at 15.208ms, light at
+17.469ms and all dots/simulation at 7.760ms per frame. The light saves 6.689ms
+against the fourteenth window. The remaining UI costs are unchanged; resource
+reads and failures are zero, with 528 of 551 frames above 50ms and none above
+100ms. The 18.38 FPS result still requires improvement. An independent review
+identified why the dot loop's gain is limited: a rotated particle's bounding
+box often has out-of-bounds endpoints even when its middle is inside.
+
+The sixteenth checkpoint trims each dot row to a contiguous interior span,
+retaining the complete sampler for both margins. A 4 KiB light-tile maximum
+table bounds all source quads and their right/bottom texel halo. Across 64
+original light phases and 4,905,934 visible source samples, these 4x4 tiles
+prove zero contribution for 43.816% of samples, versus 47.275% for a 64 KiB
+per-quad maximum table. This is a source hit-rate comparison, not a device
+speed claim. A row-local water cursor also reuses the selected horizontal
+LUT pointer for repeated noise/column keys while applying each pixel's own
+fraction; half-fraction and unsafe vertical cases preserve the full mix.
+No cursor survives a row or changes a source clock.
+
+## Final frontend checkpoint — 2026-10-27
+
+The delivered runtime is `af154470daa96563f0695d043178285d26dcaee4`.
+Its strict synthetic Random gate passes 297,749 assertions; actual English
+and Chinese each pass 610,601. All four background clocks in both languages
+remain byte-identical to the earlier general sampler, and both complete
+Random-page captures per language remain byte-identical to the fifteenth
+build. The new tests retain independent full RGBA rendering and check
+33,792 row-cursor samples, the independently enumerated interior spans,
+generation replacement and the tile-bound halo.
+
+The final ARM allocation is 22,676,740 bytes, and ordinary-OS launch succeeds.
+The runtime is 1,689,486 bytes with SHA256
+`98d1408183e3bff8d99b6fd0cac7143ad7a25783074a3a2297cf69a04adcc375`.
+The frontend installation's runtime readback is exact and its later selector
+screenshots and snapshot were produced, but its event file ends after the
+application-launch command. That partial trace is retained, not described as
+a complete operation audit. An independent final installation has 104 events,
+no operation errors, a recorded stop, four byte-exact USB readbacks and a
+visually confirmed title. Its receipt is
+`private-validation/device-stage16/installed-readback.json`. The frontend's
+six measurement/departure/exit event streams separately close normally and
+confirm their own independent flash paths.
+
+The final cold Random window contains 196 frames in 10.296844 seconds:
+19.034958 FPS with 52.117ms mean rendering. Its 22 reads request 274,989 bytes;
+one frame exceeds 250ms, also accounting for its sole frame above 100ms.
+In the following matched 29.963654 seconds, 611 frames give 20.391372 FPS
+and 48.705ms mean rendering.
+That warm window has zero reads and resource failures, 250 frames above
+50ms, and none above 100ms or 250ms. Final per-frame render costs are:
+
+| Work | Mean per frame |
+| --- | ---: |
+| Water | 13.288ms |
+| Light | 16.532ms |
+| All 40 dots and their simulation | 5.267ms |
+| Character information | 4.670ms |
+| Portraits | 4.987ms |
+| Both controls passes combined | 1.311ms |
+| Ascension controls | 1.311ms |
+| Other rendering and texture access | 1.339ms |
+
+Both ordinary and Random Embark are also exercised through the normal UI on
+independent final-runtime clones. Forty-millisecond LCD captures retain the
+input-to-first-paint preparation time:
+
+| Path | First changed selector/reveal image | Full black | First visible Neow / fully lit | Character frames / mixed scene window |
+| --- | ---: | ---: | ---: | ---: |
+| Ordinary Ironclad | 1.840s | 2.640s | 5.400s / about 5.760s | 13 / 2.647308s |
+| Random, resolved to Silent | 1.160s | 2.920s | 5.920s / about 6.320s | 38 / 3.012970s |
+
+The ordinary captures retain approximately 800ms between the first departure
+image and full black. The Random capture difference is 1,760ms, consistent
+within the 40ms sampling with the original 1,000ms reveal plus 800ms
+departure. The 13-frame and 38-frame windows include cold new-run, resource
+and selected-character setup; dividing those counts by their mixed windows
+does not measure the isolated animation frame rate. Ordinary input/new-run
+update work totals about 1.795s; its first changed image is about 320ms later
+than the earlier twelfth measurement, and this cost is not removed from the
+report. Mean character rendering in the mixed windows is 58.188ms ordinary
+and 62.754ms Random.
+
+Both paths visibly reach Neow and complete natural Save and Quit, return to
+the title and ordinary OS, and read back their saves: 7,025 bytes for Ironclad
+and 7,094 bytes for Silent. The character windows request 302,111 bytes in
+seven reads and 889,994 bytes in 58 reads respectively. Both full runs report
+zero resource failures. The final records, original performance JSON and LCD
+captures are kept under `private-validation/frontend-firebird-stage16`;
+`stage16-summary.json` joins the exact source, ordinary-OS, pixel and device
+evidence without converting these named scenarios into a global 30 FPS claim.
