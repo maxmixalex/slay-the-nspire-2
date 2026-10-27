@@ -97,6 +97,63 @@ struct Canvas{
         if(left>=right||top>=bottom)return true;
         uint16_t columns[320];
         for(int xx=left;xx<right;++xx)columns[xx-left]=uint16_t(nine_patch::coordinate(xx,w,p.w,l,r));
+        const bool black=brightness==0||!(tint_red|tint_green|tint_blue);
+        const bool identity=!color_matrix&&brightness==255&&tint_red==255&&tint_green==255&&tint_blue==255;
+        if(!coverage&&!occlusion&&mode==presentation::Normal&&(black||identity)){
+            // Nine-slice panels often tint the entire source black. Its RGB
+            // and palette are then irrelevant, including after a color
+            // matrix. Preserve both separately rounded alpha operations;
+            // multiplying the three factors together would change edges.
+            const bool alpha_identity=alpha==255&&opacity==255;
+            uint8_t alpha_map[256];
+            if(!alpha_identity)for(unsigned i=0;i<256;++i){
+                unsigned value=alpha==255?i:div255(i*alpha);
+                if(opacity!=255)value=div255(value*opacity);
+                alpha_map[i]=uint8_t(value);
+            }
+            const unsigned full=alpha_identity?255:alpha_map[255];
+            if(!full)return true;
+            if(black){
+                // Opaque source interiors share one resulting alpha. Three
+                // tiny channel tables give the exact RGB565 darkening, with
+                // no per-pixel source colors or integer multiplies. Partial
+                // source edges retain the ordinary exact blend.
+                const bool table=full!=255&&(right-left)*(bottom-top)>=256;
+                uint16_t shade[128];
+                if(table){
+                    const unsigned inverse=255-full;
+                    for(unsigned i=0;i<32;++i){const unsigned v=div255(i*inverse);shade[i]=uint16_t(v<<11);shade[96+i]=uint16_t(v);}
+                    for(unsigned i=0;i<64;++i)shade[32+i]=uint16_t(div255(i*inverse)<<5);
+                }
+                for(int yy=top;yy<bottom;++yy){
+                    const int row=nine_patch::coordinate(yy,h,p.h,t,b)*p.w;
+                    uint16_t*out=pixels+(y+yy)*pitch+x+left;
+                    for(int xx=left;xx<right;++xx,++out){
+                        const unsigned source=p.alpha?p.alpha[row+columns[xx-left]]:255;
+                        const unsigned value=alpha_identity?source:alpha_map[source];
+                        if(!value)continue;
+                        if(value==255)*out=0;
+                        else if(table&&source==255){const unsigned back=*out;*out=uint16_t(shade[back>>11]|shade[32+((back>>5)&63)]|shade[96+(back&31)]);}
+                        else *out=blend(*out,0,value);
+                    }
+                }
+            }else{
+                for(int yy=top;yy<bottom;++yy){
+                    const int row=nine_patch::coordinate(yy,h,p.h,t,b)*p.w;
+                    uint16_t*out=pixels+(y+yy)*pitch+x+left;
+                    for(int xx=left;xx<right;++xx,++out){
+                        const int at=row+columns[xx-left];
+                        const unsigned source=p.alpha?p.alpha[at]:255;
+                        const unsigned value=alpha_identity?source:alpha_map[source];
+                        if(!value)continue;
+                        const uint8_t*pixel=p.palette?p.palette+2*p.pixels[at]:p.pixels+2*at;
+                        const uint16_t color=uint16_t(pixel[0]|unsigned(pixel[1])<<8);
+                        *out=value==255?color:blend(*out,color,value);
+                    }
+                }
+            }
+            return true;
+        }
         for(int yy=top;yy<bottom;++yy){
             const int row=nine_patch::coordinate(yy,h,p.h,t,b)*p.w;
             for(int xx=left;xx<right;++xx){

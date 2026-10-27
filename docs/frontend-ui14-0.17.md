@@ -226,6 +226,10 @@ They are actual emulated ARM timings, not native host frame rates.
 | `0418cf3e` | Following60s | 591 /59.9590 |9.8567 |101.118ms |0 |
 | `6355aef2` |10→40s matched window |316 /30.0496 |10.5159 |94.744ms |0 |
 | `a2b9ff73` |10→40s matched window |327 /30.0456 |10.8835 |91.529ms |0 |
+| `d8510f20` | First 10s, including Random's initial load | 122 / 10.2726 | 11.8763 | 83.613ms | 22 |
+| `d8510f20` | 10→40s matched window | 387 / 29.9874 | 12.9054 | 77.152ms | 0 |
+| `f1ad95b3` | First 10s, including Random's initial load | 134 / 10.2934 | 13.0181 | 76.253ms | 22 |
+| `f1ad95b3` | 10→40s matched window | 417 / 29.9666 | 13.9155 | 71.527ms | 0 |
 
 These results are not accepted as completed Random performance. They separate
 real CPU rendering cost from loading, and require further optimization while
@@ -259,10 +263,67 @@ The measured improvement is modest; the following work targets the light's
 per-pixel color sampling and zero contributions.
 
 The measured tenth-build ordinary Ironclad departure produced only four
-character-scene frames over1.276 hardware seconds, including click/setup and
-the first mask read. The capture sequence confirms a real texture wipe and
-room entry, but this is not satisfactory animation performance. The next
-checkpoint prepares the selected/Continue mask while its action is visible,
-uses exact per-channel RGB565 fade tables and separates first-frame preparation
-from the800ms visual transition clock. Cold click latency, actual frame counts
-and full-frame pixel equivalence must be reported again after that build.
+character-scene frames over 1.276 hardware seconds, including click/setup and
+the first mask read. The twelfth checkpoint prepares the selected/Continue
+mask while its action is visible, uses exact per-channel RGB565 fade tables,
+and separates first-frame preparation from the 800ms visual transition clock.
+Diagnostic intervals still include all of that preparation work.
+
+Fresh ordinary-OS captures at 40ms intervals show the twelfth build's first
+Ironclad departure image about 1.52s after input and a fully black image at
+2.32s: approximately 800ms of visible departure. The room becomes visibly
+lit near 5.00s and fully visible near 5.40s after its cold preparation. The
+character-scene difference contains 11 frames, including about 1.44s spent
+in input/new-run setup; its 4.74 FPS mixed average is not the animation's
+isolated frame rate. Mean rendering in that mixed window is 73.72ms. The
+run reaches Neow, saves and returns through the title to the ordinary OS.
+
+The twelfth-build Random departure resolves to Silent in the measured run.
+Its first selected-character image appears at 2.32s after input and reaches
+full black at 4.08s, consistent within the 40ms capture spacing with the
+original 1000ms reveal plus 800ms departure. The cold creation and selected
+character's asset work are retained in the reported 4.155s mixed window.
+Room entry, natural Save and Quit, and the 7,126-byte save readback pass with
+zero resource failures. These measurements establish the actual transitions;
+they do not claim 30 FPS during every departure frame.
+
+The twelfth checkpoint's light optimization retains both rounded bilinear
+stages while computing only the source's nonzero red/green tint channels.
+Monotone tint bounds skip provably zero contributions. Its synthetic gate
+passes 138,487 assertions; actual ENG/ZHS each pass 451,283. The departure
+gate passes 1,256,703 synthetic assertions and 1,256,761 per actual locale,
+including all 42 complete source-mask/phase/time combinations. Card/HUD
+actual gates again pass 713,528 ENG and 791,154 ZHS assertions. Four Random
+backgrounds per language remain byte-identical to the general sampler's
+307,200-pixel reference. Its 22,726,956-byte allocation launches normally.
+
+The thirteenth checkpoint replaces the 225 KiB water memo with a bounded
+horizontal-interpolation table of at most 288 source color pairs and a 64²
+index. The table retains every first-stage fraction and rounding result;
+the ordinary vertical stage completes the exact filter. Actual pair counts
+are validated before publishing the table, and unsupported dimensions,
+formats or excess pairs use the complete general sampler. Owner, resource
+generation and all Picture storage fields form its input identity. Synthetic
+tests pass 169,071 assertions; actual ENG/ZHS each pass 481,923, including
+capacity fallback, generation changes and exact whole-frame comparisons.
+The runtime's allocation is 22,655,568 bytes, 71,388 below the twelfth build,
+and ordinary-OS launch plus exact USB readback pass.
+
+The existing optional foreground report now separates actual water, light
+and dot work without adding a game UI or changing their clocks. In the
+thirteenth build's matched warm 30s window, the measured means are:
+
+| Render work | Mean per frame |
+| --- | ---: |
+| Water | 16.906ms |
+| Light | 25.185ms |
+| All 40 dots and their simulation | 7.313ms |
+| Remaining UI and texture access | 22.123ms |
+
+That window has zero resource reads and failures; 416 of its 417 frames
+exceed 50ms. This remains unfinished performance work. The next source stage
+targets the measured light and UI costs with exact, source-validated paths.
+Its proposed light quad bitset and vertical water shortcut preserve the
+general sampler for unsafe quads and exact half-fraction cases. Their
+correctness and device benefit are pending the next verified checkpoint;
+neither a new probe nor a native timing is counted as completion.

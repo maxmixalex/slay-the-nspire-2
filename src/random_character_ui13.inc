@@ -6,11 +6,17 @@ struct RandomGradientCache {
     static constexpr unsigned Side=64,Capacity=288;
     uint16_t horizontal[Capacity][256]{};
     uint16_t pairs[Side*Side]{};
+    uint8_t vertical_unit[Side*Side/8]{};
     const Content*owner=nullptr;
     Picture gradient{};
     uint32_t generation=0;
     unsigned logical_width=0,logical_height=0,count=0;
     bool observed=false,valid=false;
+    static bool adjacent(uint16_t a,uint16_t b){
+        return unsigned(int(a>>11)-int(b>>11)+1)<=2&&
+            unsigned(int((a>>5)&63)-int((b>>5)&63)+1)<=2&&
+            unsigned(int(a&31)-int(b&31)+1)<=2;
+    }
     static uint16_t mix(uint16_t a,uint16_t b,unsigned f){
         if(a==b)return a;
         if(!((a^b)&0xf7deu))return f<128?a:f>128?b:uint16_t(a|b);
@@ -30,9 +36,13 @@ struct RandomGradientCache {
         logical_width=texture.width();logical_height=texture.height();
         observed=true;valid=false;count=0;
         if(!texture.valid()||p.format>4||logical_width!=Side||logical_height!=Side)return false;
+        for(auto&byte:vertical_unit)byte=0;
         uint32_t keys[Capacity];uint16_t buckets[512]{};
         for(unsigned y=0;y<Side;++y)for(unsigned x=0;x<Side;++x){
             const uint16_t a=texture.at(x,y).color,b=texture.at(x+1,y).color;
+            const uint16_t c=texture.at(x,y+1).color,d=texture.at(x+1,y+1).color;
+            const unsigned at=y*Side+x;
+            if(adjacent(a,c)&&adjacent(b,d))vertical_unit[at>>3]|=uint8_t(1u<<(at&7));
             const uint32_t key=uint32_t(a)|(uint32_t(b)<<16);
             unsigned bucket=((key*2654435761u)^(key>>13))&511u;
             while(buckets[bucket]&&keys[buckets[bucket]-1]!=key)bucket=(bucket+1)&511u;
@@ -43,7 +53,7 @@ struct RandomGradientCache {
                 keys[count]=key;buckets[bucket]=uint16_t(++count);
                 for(unsigned f=0;f<256;++f)horizontal[count-1][f]=mix(a,b,f);
             }
-            pairs[y*Side+x]=uint16_t(buckets[bucket]-1);
+            pairs[at]=uint16_t(buckets[bucket]-1);
         }
         valid=true;return true;
     }
@@ -55,8 +65,14 @@ struct RandomGradientCache {
         if(unsigned(ix)>=Side-1){ix=ix<0?0:Side-1;fx=0;}
         if(unsigned(iy)>=Side-1){iy=iy<0?0:Side-1;fy=0;}
         const unsigned at=unsigned(iy)*Side+unsigned(ix);
+        if(!fy)return horizontal[pairs[at]][fx];
+        // Equal horizontal weights and equal rounding preserve a per-channel
+        // difference of at most one. Away from the vertical half fraction,
+        // its final rounded mix is exactly one of the horizontal LUT values.
+        if(fy!=128&&(vertical_unit[at>>3]&(1u<<(at&7))))
+            return horizontal[pairs[at+(fy>128?Side:0)]][fx];
         const uint16_t top=horizontal[pairs[at]][fx];
-        return fy?mix(top,horizontal[pairs[at+Side]][fx],fy):top;
+        return mix(top,horizontal[pairs[at+Side]][fx],fy);
     }
 };
 static RandomGradientCache random_gradient_cache;
@@ -81,12 +97,51 @@ public:
         if(remainder_>=denominator_){remainder_-=denominator_;++quotient_;}}
 };
 
+// With each channel's adjacent texels at most one band apart, either
+// rounded interpolation selects its first or second endpoint, except at
+// the exact half fraction. Verify that property for every source quad once;
+// its bit permits one exact corner read, without approximating the filter.
+struct RandomLightQuadCache {
+    uint8_t safe[256*256/8]{};
+    const Content*owner=nullptr;
+    Picture picture{};
+    uint32_t generation=0;
+    unsigned logical_width=0,logical_height=0;
+    bool observed=false,valid=false;
+    static bool adjacent(uint16_t a,uint16_t b){
+        const int red=int(a>>11)-int(b>>11),green=int((a>>5)&63)-int((b>>5)&63);
+        return unsigned(red+1)<=2&&unsigned(green+1)<=2;
+    }
+    bool bind(const Content&content,const water_reflection::Texture&texture){
+        const Picture p=texture.storage();
+        if(observed&&owner==&content&&generation==content.generation()&&
+           logical_width==texture.width()&&logical_height==texture.height()&&
+           picture.pixels==p.pixels&&picture.alpha==p.alpha&&picture.palette==p.palette&&
+           picture.w==p.w&&picture.h==p.h&&picture.format==p.format)return valid;
+        owner=&content;generation=content.generation();picture=p;
+        logical_width=texture.width();logical_height=texture.height();observed=true;valid=false;
+        if(!texture.valid()||p.format>3||logical_width!=256||logical_height!=256)return false;
+        for(auto&byte:safe)byte=0;
+        for(unsigned y=0;y<256;++y)for(unsigned x=0;x<256;++x){
+            const uint16_t a=texture.at(x,y).color,b=texture.at(x+1,y).color;
+            const uint16_t c=texture.at(x,y+1).color,d=texture.at(x+1,y+1).color;
+            if(adjacent(a,b)&&adjacent(c,d)&&adjacent(a,c)&&adjacent(b,d)){
+                const unsigned at=y*256+x;safe[at>>3]|=uint8_t(1u<<(at&7));
+            }
+        }
+        valid=true;return true;
+    }
+};
+static RandomLightQuadCache random_light_quads;
+static_assert(sizeof(RandomLightQuadCache)<=9u*1024u,"Exact light quad bounds stay within9 KiB");
+
 // The original light has a256x256 logical texture and a zero blue tint.
 // Keep red and green in separate16-bit lanes, retaining both bilinear
 // rounding steps. The palette variant decodes its256 possible colors once.
 class RandomLightSampler {
     Picture picture_{};
     const uint8_t*red_=nullptr,*green_=nullptr;
+    const uint8_t*quad_safe_=nullptr;
     uint32_t palette_[256];
     bool enabled_=false;
     static uint32_t packed(uint16_t color){return (uint32_t(color&0xf800u)<<5)|((color>>5)&63u);}
@@ -97,8 +152,8 @@ class RandomLightSampler {
     }
     uint16_t dense(unsigned index)const{const auto*p=picture_.pixels+index*2;return uint16_t(p[0]|unsigned(p[1])<<8);}
 public:
-    RandomLightSampler(const water_reflection::Texture&texture,const uint8_t*red,const uint8_t*green,bool enable=true):
-        picture_(texture.storage()),red_(red),green_(green){
+    RandomLightSampler(const water_reflection::Texture&texture,const uint8_t*red,const uint8_t*green,bool enable=true,const uint8_t*quad_safe=nullptr):
+        picture_(texture.storage()),red_(red),green_(green),quad_safe_(quad_safe){
         enabled_=enable&&texture.valid()&&texture.width()==256&&texture.height()==256&&picture_.format!=4;
         if(enabled_&&picture_.palette)for(unsigned i=0;i<256;++i)
             palette_[i]=packed(uint16_t(picture_.palette[i*2]|unsigned(picture_.palette[i*2+1])<<8));
@@ -112,20 +167,35 @@ public:
         if(unsigned(ix)>=255){left=ix<0?0:255;right=ix<0?0:255;}
         if(unsigned(iy)>=255){top=iy<0?0:255*256;bottom=top;}
         const unsigned aa=top+left,bb=top+right,cc=bottom+left,dd=bottom+right;
+        const unsigned fx=unsigned(x)&255,fy=unsigned(y)&255;
+        if(quad_safe_&&fx!=128&&fy!=128&&(quad_safe_[aa>>3]&(1u<<(aa&7)))){
+            const unsigned at=(fy<128?top:bottom)+(fx<128?left:right);
+            if(picture_.palette){const uint32_t color=palette_[picture_.pixels[at]];
+                return uint16_t((unsigned(red_[color>>16])<<11)|(unsigned(green_[color&63])<<5));}
+            const uint16_t color=dense(at);
+            return uint16_t((unsigned(red_[color>>11])<<11)|(unsigned(green_[(color>>5)&63])<<5));
+        }
         uint32_t a,b,c,d;
         if(picture_.palette){
             a=palette_[picture_.pixels[aa]];b=palette_[picture_.pixels[bb]];
             c=palette_[picture_.pixels[cc]];d=palette_[picture_.pixels[dd]];
-            const uint32_t bound=a|b|c|d;
-            if(!red_[bound>>16]&&!green_[bound&63])return 0;
+            const uint32_t bound=a|b|c|d,lower=a&b&c&d;
+            const unsigned red=red_[bound>>16],green=green_[bound&63];
+            if(!red&&!green)return 0;
+            // AND/OR bound every channel before either rounding. When
+            // both bounds map to the same monotone tint result, all possible
+            // filtered colors contribute that same exact nonzero value.
+            if(red_[lower>>16]==red&&green_[lower&63]==green)return uint16_t((red<<11)|(green<<5));
         }else{
             const uint16_t ac=dense(aa),bc=dense(bb),ccolor=dense(cc),dc=dense(dd),bound=ac|bc|ccolor|dc;
             // Each channel of OR is a conservative upper bound for all four
             // texels. Monotone tint/alpha maps prove zero before any mix.
-            if(!red_[bound>>11]&&!green_[(bound>>5)&63])return 0;
+            const unsigned red=red_[bound>>11],green=green_[(bound>>5)&63];
+            if(!red&&!green)return 0;
+            const uint16_t lower=ac&bc&ccolor&dc;
+            if(red_[lower>>11]==red&&green_[(lower>>5)&63]==green)return uint16_t((red<<11)|(green<<5));
             a=packed(ac);b=packed(bc);c=packed(ccolor);d=packed(dc);
         }
-        const unsigned fx=unsigned(x)&255,fy=unsigned(y)&255;
         const uint32_t color=mix(mix(a,b,fx),mix(c,d,fx),fy);
         return uint16_t((unsigned(red_[color>>16])<<11)|(unsigned(green_[color&63])<<5));
     }
@@ -156,7 +226,9 @@ static void random_character_particle(Canvas&c,const water_reflection::Texture&t
         for(unsigned i=0;i<64;++i){add_green[i]=uint8_t(div255(div255(i*green)*alpha));
             if(i<32){add_red[i]=uint8_t(div255(div255(i*red)*alpha));add_blue[i]=uint8_t(div255(div255(i*blue)*alpha));}}
     }
-    const RandomLightSampler light(texture,add_red,add_green,add_fast&&blue==0);
+    const bool use_light=add_fast&&blue==0;
+    const uint8_t*quad_safe=use_light&&random_light_quads.bind(c.a.content,texture)?random_light_quads.safe:nullptr;
+    const RandomLightSampler light(texture,add_red,add_green,use_light,quad_safe);
     const int du=int(int64_t(cosine)*65536*64/size_q16),dv=int(int64_t(sine)*65536*64/size_q16);
     const int dx=(left<<16)+32768-center_x_q16,dy=(top<<16)+32768-center_y_q16;
     RandomRowQuotient row_u((int64_t(dx)*cosine+int64_t(dy)*sine)*64,int64_t(sine)*65536*64,size_q16);

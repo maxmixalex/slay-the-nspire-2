@@ -129,6 +129,46 @@ static void picture_case(Surface surface,Style style,unsigned id,Placement p,uns
  }
  pair.compare();
 }
+static void nine_panels(){
+ const Style panel_styles[]={styles[0],styles[1],styles[2],styles[3],styles[4],styles[6],styles[16],styles[17],
+  {false,255,255,0,0,0},{false,128,255,0,0,0},{false,1,255,0,0,0},{false,17,255,0,0,0},
+  {false,201,0,91,173,39},{true,128,255,0,0,0}};
+ const Placement positions[]={{0,0,23,19},{-3,-2,29,23},{3,2,11,9},{21,17,7,5},
+  {-30,-20,7,5},{0,0,1,1},{0,0,0,5},{0,0,7,-1}};
+ static const int16_t matrix[]={1731,213,-57,81,1219,37,-21,97,1103};
+ for(auto style:panel_styles)for(unsigned id=0;id<7;++id)for(auto position:positions)
+ for(unsigned opacity:{0u,1u,17u,127u,128u,254u,255u})
+ for(unsigned mode:{unsigned(presentation::Normal),unsigned(presentation::Add),2u})
+ for(unsigned layer=0;layer<3;++layer){
+  const Surface surface{23,19,29};Pair pair(surface,style);Bytes occlusion(pair.actual.size());
+  if(layer==1){pair.got.color_matrix=pair.oracle.color_matrix=matrix;}
+  if(layer==2){for(unsigned i=0;i<occlusion.size();++i)occlusion[i]=i%3?254:255;
+   pair.got.occlusion=pair.oracle.occlusion=occlusion.data()+Pair::guard;}
+  const auto&image=images[id];
+  const bool valid=position.w>0&&position.h>0&&opacity&&image.format<=3;
+  CHECK(pair.got.nine_image(int(id),position.x,position.y,position.w,position.h,2,1,3,2,opacity,mode)==valid);
+  if(valid)for(int y=0;y<surface.h;++y)for(int x=0;x<surface.w;++x){
+   const int dx=x-position.x,dy=y-position.y;
+   if(dx<0||dx>=position.w||dy<0||dy>=position.h)continue;
+   const unsigned sx=nine_patch::coordinate(dx,position.w,int(image.w),2,3);
+   const unsigned sy=nine_patch::coordinate(dy,position.h,int(image.h),1,2),at=sy*image.w+sx;
+   // The old path applies source/call alpha first, then Canvas::paint applies
+   // the layer alpha. Keep both quantizations in the independent oracle.
+   pair.oracle.paint(y*surface.pitch+x,image.colors[at],rounded_alpha(image.alpha[at],opacity),mode);
+  }
+  pair.compare();
+ }
+ // Every destination RGB565 color crosses the common opaque-source table.
+ // These include both almost-transparent and almost-opaque panel shading.
+ for(unsigned opacity:{1u,17u,127u,128u,254u}){
+  Pair pair({256,256,256},{false,201,255,0,0,0});
+  for(unsigned i=0;i<65536;++i)pair.got.pixels[i]=pair.oracle.pixels[i]=uint16_t(i);
+  CHECK(pair.got.nine_image(0,0,0,256,256,2,1,3,2,opacity));
+  for(unsigned i=0;i<65536;++i)pair.oracle.paint(int(i),0,opacity);
+  pair.compare();
+ }
+ Pair missing({13,9,19},{});CHECK(!missing.got.nine_image(-1,0,0,7,5,2,1,3,2));missing.compare();
+}
 static void opaque_covers(){
  Canvas c{app};c.clip_w=23;c.clip_h=19;
  const Placement covers[]={{0,0,0,0},{-5,-3,31,25},{2,1,21,17},{3,2,4,3},{-30,-21,62,43}};
@@ -544,15 +584,73 @@ static void fitted_hidden_glyph_io(const Bytes&data){
  CHECK(source.mask==((1u<<1)|(1u<<2)|(1u<<3)|(1u<<4))); // Rotated fly-in keeps the original path.
  CHECK(app.content.healthy());
 }
+static void character_name_outline_before_ui14(Canvas&c,Glyph glyph,int x,int y){
+ // Keep the former fixed-stride algorithm as an independent pixel oracle.
+ // In particular, it deliberately retains the dynamic division and all
+ // transparent right-hand padding that the production renderer now avoids.
+ constexpr int Radius=1,Stride=48,Height=40;
+ if(!glyph.pixels||glyph.w+2*Radius>Stride||glyph.h+2*Radius>Height)return;
+ uint8_t mask[Stride*Height]{};
+ constexpr int span[3]={0,1,0};
+ const auto pixel=[&](unsigned at,unsigned alpha){
+  if(!alpha)return;const unsigned row=at/glyph.w,column=at-row*glyph.w;
+  for(int dy=-Radius;dy<=Radius;++dy){const int reach=span[dy+Radius];
+   auto*out=mask+(int(row)+Radius+dy)*Stride+int(column)+Radius;
+   for(int dx=-reach;dx<=reach;++dx)out[dx]=uint8_t(mx(out[dx],alpha));
+  }
+ };
+ const unsigned length=unsigned(glyph.w)*glyph.h;
+ if(glyph.encoded_size){unsigned at=0;for(unsigned i=0;i+1<glyph.encoded_size&&at<length;i+=2){
+  const unsigned stop=mn(length,at+glyph.pixels[i]);while(at<stop){pixel(at,glyph.pixels[i+1]);++at;}
+ }}else for(unsigned at=0;at<length;++at)pixel(at,glyph.pixels[at]);
+ Canvas shade=c;shade.opacity=uint8_t(div255(shade.opacity*64));
+ Glyph outline{};outline.pixels=mask;outline.w=Stride;outline.h=uint8_t(glyph.h+2*Radius);
+ shade.glyph(outline,x+glyph.bearing_x-Radius,y-Radius,rgb(0,0,0));
+}
+static void character_name_outlines(){
+ const Surface surface{57,43,63};
+ const Placement placements[]={{2,2,0,0},{-5,-7,0,0},{53,39,0,0},{-52,0,0,0},{60,0,0,0}};
+ const auto verify=[&](Glyph glyph){
+  for(auto style:{styles[0],styles[1],styles[2],styles[4],styles[16],styles[17]})
+  for(auto position:placements)for(int bearing:{-3,2})for(bool masked:{false,true}){
+   Pair pair(surface,style);Bytes occlusion(pair.actual.size());
+   if(masked){for(unsigned i=0;i<occlusion.size();++i)occlusion[i]=i%3?254:255;
+    pair.got.occlusion=pair.oracle.occlusion=occlusion.data()+Pair::guard;}
+   glyph.bearing_x=int8_t(bearing);
+   character_name_outline(pair.got,glyph,position.x,position.y);
+   character_name_outline_before_ui14(pair.oracle,glyph,position.x,position.y);
+   pair.compare();
+  }
+ };
+ for(auto size:{Surface{1,1,0},Surface{1,13,0},Surface{7,5,0},Surface{17,23,0},Surface{46,38,0}}){
+  Bytes raw(unsigned(size.w*size.h)),encoded{0,191};
+  constexpr uint8_t alpha[]={0,1,127,254,255};
+  for(unsigned i=0;i<raw.size();++i)raw[i]=alpha[(i/9+i/73+2)%5];
+  // Runs cross glyph rows, including the one-pixel-wide case. A trailing
+  // partial pair is ignored by the original decoder as well as production.
+  for(unsigned at=0;at<raw.size();){unsigned n=1;
+   while(at+n<raw.size()&&n<255&&raw[at+n]==raw[at])++n;
+   encoded.push_back(uint8_t(n));encoded.push_back(raw[at]);at+=n;
+  }
+  encoded.push_back(17);
+  verify(Glyph{raw.data(),uint8_t(size.w),uint8_t(size.h),uint16_t(size.w)});
+  verify(Glyph{encoded.data(),uint8_t(size.w),uint8_t(size.h),uint16_t(size.w),uint16_t(encoded.size())});
+ }
+ for(const auto&encoded:{Bytes{0,255,3,100,50,255},Bytes{3,100,4},Bytes{0,255}})
+  verify(Glyph{encoded.data(),7,5,8,uint16_t(encoded.size())});
+ const uint8_t unused=255;
+ for(Glyph glyph:{Glyph{},Glyph{&unused,0,5,8},Glyph{&unused,7,0,8},Glyph{&unused,47,5,8},Glyph{&unused,7,39,8}})
+  verify(glyph);
+}
 int main(){
  blend_reference();
  const auto data=fixture();CHECK(app.content.open(data.data(),data.size()));
  CHECK((uintptr_t(app.content.image(0).pixels)&1u)==0u);
- rectangles();pictures();opaque_covers();picture_regions();picture_row_views();fake_merchant_atlas();title_particles();scaled_sparse_clipping();CHECK(app.content.healthy());
+ rectangles();pictures();nine_panels();opaque_covers();picture_regions();picture_row_views();fake_merchant_atlas();title_particles();scaled_sparse_clipping();CHECK(app.content.healthy());
  Bytes unaligned(data.size()+1);std::copy(data.begin(),data.end(),unaligned.begin()+1);
  CHECK(app.content.open(unaligned.data()+1,data.size()));
  CHECK((uintptr_t(app.content.image(0).pixels)&1u)==1u);
- pictures();picture_regions();picture_row_views();map_pictures();CHECK(app.content.healthy());glyphs();hidden_picture_io(data);
- const auto text=fitted_glyph_fixture();fitted_clip_pixels(text);fitted_hidden_glyph_io(text);
+ pictures();nine_panels();picture_regions();picture_row_views();map_pictures();CHECK(app.content.healthy());glyphs();hidden_picture_io(data);
+ const auto text=fitted_glyph_fixture();fitted_clip_pixels(text);fitted_hidden_glyph_io(text);character_name_outlines();
  std::printf("canvas fast path: %u cases, %u checks; production paint oracle, RGB565 alignment, clipping, pitch, coverage, modulation, additive, scaled, atlas regions, sparse, palette and glyph decode bounds\n",cases,checks);
 }

@@ -60,6 +60,17 @@ int main(){
     p.render_part(RuntimeRenderPart::RandomDots,true,5);
     p.render_part(RuntimeRenderPart::RandomDots,false,UINT32_MAX-4);
     check(p.render_parts[2].count==1&&p.render_parts[2].total==10);
+    // Back and Confirm deliberately keep their original layer order. Two
+    // non-overlapping scopes accumulate under one key in the same frame.
+    p.render_part(RuntimeRenderPart::CharacterControls,true,100);
+    p.render_part(RuntimeRenderPart::CharacterControls,false,70);
+    p.render_part(RuntimeRenderPart::CharacterControls,true,60);
+    p.render_part(RuntimeRenderPart::CharacterControls,false,40);
+    const auto&controls=p.render_parts[unsigned(RuntimeRenderPart::CharacterControls)];
+    check(controls.count==2&&controls.total==50&&controls.minimum==20&&controls.maximum==30&&p.render_active==0);
+    p.render_part(RuntimeRenderPart::CharacterAscension,true,5);
+    p.render_part(RuntimeRenderPart::CharacterAscension,false,UINT32_MAX-4);
+    check(p.render_parts[unsigned(RuntimeRenderPart::CharacterAscension)].total==10&&p.render_active==0);
     for(unsigned delay:{50u,51u,100u,101u,250u,251u}){
         before=p.resources;p.read(7,4096,true,true);p.read(3,128,false);
         p.frame(RuntimeScene::Combat,delay,2,delay-5,3,before);
@@ -92,6 +103,8 @@ int main(){
     check(output.text.find("\"startup_phases\":{")!=std::string::npos);
     check(output.text.find("\"render_parts\":{")!=std::string::npos);
     check(output.text.find("\"random_water\":{\"count\":1,\"total\":60,\"min\":60,\"max\":60}")!=std::string::npos);
+    check(output.text.find("\"character_controls\":{\"count\":2,\"total\":50,\"min\":20,\"max\":30}")!=std::string::npos);
+    check(output.text.find("\"character_ascension\":{\"count\":1,\"total\":10,\"min\":10,\"max\":10}")!=std::string::npos);
     check(output.text.find("\"integrity\":{\"count\":1,\"total\":1234,\"min\":1234,\"max\":1234}")!=std::string::npos);
     check(output.text.find("\"scene\":\"combat_preparation\"")!=std::string::npos);
     check(output.text.front()=='{'&&output.text.substr(output.text.size()-3)=="]}\n");

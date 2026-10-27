@@ -39,22 +39,30 @@ static void character_name_outline(Canvas&c,Glyph glyph,int x,int y){
     // One LCD pixel is sufficient; the source five-pixel dilation swallowed
     // small counters and made localized character names unreadable.
     constexpr int Radius=1,Stride=48,Height=40;
-    if(!glyph.pixels||glyph.w+2*Radius>Stride||glyph.h+2*Radius>Height)return;
-    uint8_t mask[Stride*Height]{};
+    if(!glyph.pixels||!glyph.w||!glyph.h||glyph.w+2*Radius>Stride||glyph.h+2*Radius>Height)return;
+    const unsigned width=glyph.w+2*Radius,height=glyph.h+2*Radius;
+    uint8_t mask[Stride*Height];
+    for(unsigned i=0;i<width*height;++i)mask[i]=0;
     constexpr int span[3]={0,1,0};
-    const auto pixel=[&](unsigned at,unsigned alpha){
-        if(!alpha)return;const unsigned row=at/glyph.w,column=at-row*glyph.w;
+    unsigned row=0,column=0;
+    const auto pixel=[&](unsigned alpha){
+        if(alpha){
         for(int dy=-Radius;dy<=Radius;++dy){const int reach=span[dy+Radius];
-            auto*out=mask+(int(row)+Radius+dy)*Stride+int(column)+Radius;
+            auto*out=mask+(int(row)+Radius+dy)*width+column+Radius;
             for(int dx=-reach;dx<=reach;++dx)out[dx]=uint8_t(mx(out[dx],alpha));
-        }
+        }}
+        // Raster order already supplies the row/column. Carry once per
+        // source pixel instead of dividing by a dynamic glyph width on ARM.
+        if(++column==glyph.w){column=0;++row;}
     };
     const unsigned length=unsigned(glyph.w)*glyph.h;
     if(glyph.encoded_size){unsigned at=0;for(unsigned i=0;i+1<glyph.encoded_size&&at<length;i+=2){
-        const unsigned stop=mn(length,at+glyph.pixels[i]);while(at<stop){pixel(at,glyph.pixels[i+1]);++at;}
-    }}else for(unsigned at=0;at<length;++at)pixel(at,glyph.pixels[at]);
+        const unsigned stop=mn(length,at+glyph.pixels[i]);while(at<stop){pixel(glyph.pixels[i+1]);++at;}
+    }}else for(unsigned at=0;at<length;++at)pixel(glyph.pixels[at]);
     Canvas shade=c;shade.opacity=uint8_t(div255(shade.opacity*64));
-    Glyph outline{};outline.pixels=mask;outline.w=Stride;outline.h=uint8_t(glyph.h+2*Radius);
+    // The old48px stride painted transparent padding beside every letter.
+    // A tight row has the same cross-dilated pixels without those visits.
+    Glyph outline{};outline.pixels=mask;outline.w=uint8_t(width);outline.h=uint8_t(height);
     shade.glyph(outline,x+glyph.bearing_x-Radius,y-Radius,rgb(0,0,0));
 }
 static void character_info_name(Canvas&c,const char*text,int x,int y,int size){
@@ -108,6 +116,8 @@ static void character_screen(Canvas&c){
     }
     else c.ui(character_background(a.selected_character),0,0);
     if(!random){motion.random_background.active=false;character_atmosphere(c,character,a.map_clock_ms-motion.panel_start,motion.panel_start);}
+    const auto profile=a.callbacks.profile_render;
+    if(profile)profile(RuntimeRenderPart::CharacterInfo,true);
     char description_key[96]{},description[1024]{},relic_text[1024]{};
     const char*character_key=random?"RANDOM_CHARACTER":definition.key;
     TextBuffer key{description_key,sizeof description_key,0};key.text(character_key);key.text(".description");
@@ -163,8 +173,13 @@ static void character_screen(Canvas&c){
     }
     if(overflow){const int x=dx+InfoPanelX+InfoPanelWidth-7,thumb=mx(8,body_height*body_height/total_height);
         c.ui(I6_ScrollbarTrack,x,body_y,4,body_height);native_scrollbar_grabber(c,x,body_y+(body_height-thumb)*offset/overflow,4,thumb);}
+    if(profile)profile(RuntimeRenderPart::CharacterInfo,false);
+    if(profile)profile(RuntimeRenderPart::CharacterControls,true);
     native_original_back(c,motion.opened);
+    if(profile)profile(RuntimeRenderPart::CharacterControls,false);
+    if(profile)profile(RuntimeRenderPart::CharacterPortraits,true);
     const UiAction actions[]={UiAction::SelectIronclad,UiAction::SelectSilent,UiAction::SelectDefect,UiAction::SelectRegent,UiAction::SelectNecrobinder,UiAction::SelectRandomCharacter};
+    const int portrait_outline=a.content.world_image("character","OUTLINE");
     for(unsigned i=0;i<=CharacterKinds;++i){
         const int center=portrait_center(i);const bool selected=i==selection;
         const int scale=int(motion.portrait_scale(i,a.map_clock_ms));
@@ -174,12 +189,17 @@ static void character_screen(Canvas&c){
         const unsigned model=i==CharacterKinds?CharacterKinds:unsigned(RunModeCharacters[i]);
         const int y=PortraitTop+PortraitHeight/2;const int portrait=a.content.ui_image(i==CharacterKinds?unsigned(I12_RandomCharacter):character_portrait(Character(model)));
         Canvas shade=c;shade.tint_red=shade.tint_green=shade.tint_blue=0;shade.picture(portrait,center-pw/2+2,y-ph/2+2,pw,ph,64);
-        const int outline=a.content.world_image("character","OUTLINE");
-        if(selected&&outline>=0)c.picture(outline,center-ow/2,y-oh/2,ow,oh,motion.outline_alpha(a.map_clock_ms),presentation::Add);
+        if(selected&&portrait_outline>=0)c.picture(portrait_outline,center-ow/2,y-oh/2,ow,oh,motion.outline_alpha(a.map_clock_ms),presentation::Add);
         small_material_icon(c,portrait,center-pw/2,y-ph/2,pw,ph,motion.saturation(i,a.map_clock_ms),motion.value(i,a.map_clock_ms));
         c.action(portrait_x(i)-1,PortraitTop-2,PortraitWidth+2,PortraitHeight+4,actions[model]);
     }
+    if(profile)profile(RuntimeRenderPart::CharacterPortraits,false);
+    // Back and Confirm keep their original positions around the portraits
+    // in draw order. This part has two samples per character-screen frame.
+    if(profile)profile(RuntimeRenderPart::CharacterControls,true);
     native_original_confirm(c,UiAction::StartCharacter,motion.opened);
+    if(profile)profile(RuntimeRenderPart::CharacterControls,false);
+    if(profile)profile(RuntimeRenderPart::CharacterAscension,true);
     if(!a.practice_entry){
         const uint32_t elapsed=a.map_clock_ms-motion.panel_start;
         const unsigned alpha=elapsed>=200?255:unsigned(elapsed)*255/200;
@@ -200,6 +220,7 @@ static void character_screen(Canvas&c){
         // NCharacterSelectScreen.ShouldShowActDropdown is always false in
         // this release. No unrelated Expedition Settings overlay is created.
     }
+    if(profile)profile(RuntimeRenderPart::CharacterAscension,false);
 }
 
 static uint16_t character_departure_black(uint16_t color,unsigned keep){

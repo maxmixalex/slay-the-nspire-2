@@ -230,5 +230,120 @@ preserved in the historical `3d6d799` implementation and
 
 The added tests cover all four mode/room combinations, delayed real-command
 barriers, fixed deadlines, held loops, absent clips and a real winning-card
-canonical comparison. This source correction is later than stage7; its
-executed gate must retain the next integration checkpoint's identity.
+canonical comparison. These now pass at stage12
+`d8510f202454270cb49b79fc4094429885d6ddea`: `combat_ui12_regression`
+passes1,149 synthetic checks and58,696 checks with the actual English cards.
+The earlier stage10 synthetic/English/Chinese `world_ui_regression` gates
+also pass7,749/7,911/7,911 checks. The first stage10 UI12 fixture failure was
+an invalid initial presentation binding: observing the bound live scene before
+simulating its death fixes the fixture without weakening any deadline or
+canonical-State assertion. No actual Chinese UI12 run is claimed.
+
+## Final visible-text and merchant verification
+
+Stage12 changes only the fitted-label visitor's decision to load a glyph
+raster. It still lays out all text using the same metrics, kerning, scrolling
+clock and rich-text offsets, but it skips a raster wholly outside the actual
+translated clip. Bearing, wave/jitter motion, centering, outlines and shadows
+participate in that test. Rotating fly-in retains its previous decode path.
+There is no additional resident cache, image prefetch or loading animation.
+
+The generated-pixel and separated-reader-page regression passes190,749 cases
+and1,459,843 checks. A second, independent test follows ordinary Continue and
+merchant opening with the actual final Chinese pack, renders120 frames at
+the same33ms steps, and compares all9,216,000 RGB565 pixels with stage10.
+All pixels, frame clocks and rug offsets match exactly. The three native gates
+close PASS with unchanged source in journals
+`rooms-stage12-canvas-synthetic-69b0a23e0929`,
+`rooms-stage12-combat-ui12-synthetic-bdd875fd9005`, and
+`rooms-stage12-combat-ui12-eng-f69d3a343535`.
+The private aggregate is `rooms-ui14-stage12/receipt.json`; the actual-pixel
+comparison is `merchant-firebird-stage12/rug-pixel-and-read-comparison.json`.
+
+At the fixed33ms native opening sample, first-render resource callbacks fall
+from75 to62 and requested bytes from665,032 to532,756. Across all120 renders,
+callbacks instead change201 to203 and bytes2,026,361 to2,070,379: previously
+hidden glyphs are loaded when scrolling makes them visible, and some decoded
+groups are read again. This is not a total-I/O reduction or a device-FPS claim.
+The actual device results below determine the practical cold-open benefit.
+
+### Final ARM and ordinary OS path
+
+Stage12 ARM is1,684,316 bytes, allocates22,726,956 bytes and has SHA256
+`1b6d4b3770a4e2b674ae7c05db98a9f9d3833972036687a1bce39fd0e4796421`.
+Ordinary OS launch, exact USB launcher/save/progress readback, Chinese Title,
+Continue, the closed merchant room, opening/closing the rug, Save and Return,
+and normal OS exit all pass. The same final Chinese resource and matching
+merchant fixture documented above are used. The independent natural-run
+flash is not accessed; each clone's snapshot path and `started.flash` are
+verified before input.
+
+The reduced image-pool stage10 had already passed the independent first16s
+closed-room sample:407 frames,26.8804FPS,21.5658ms mean render,246 reads /
+1,617,362 bytes and zero failures. Its matched warm60s sample is30.0034FPS
+with zero reads. These are stage10 measurements, not new stage12 cold16s data.
+Stage12 repeats the complete120s warm-up and matched extra60s to check the
+new fitted-text visitor's actual steady cost:
+
+| Stage12 room sample | Frames | Interval ticks | FPS | Mean render | Resource reads / bytes | Intervals over50 /100 /250ms |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| First120s cumulative after Continue | 3,520 | 3,895,437 | 29.6099 | 16.2528ms | 246 /1,616,859 | 20 /4 /1 |
+| Matched additional60s after120s | 1,801 | 1,966,692 | 30.0073 | 15.5513ms | 0 /0 | 0 /0 /0 |
+
+The extra60s result uses the same A/B subtraction of counts and totals at
+32,768Hz. It contains no resource failures. The closed merchant therefore
+remains at the30FPS limiter without repeated decoding or moving the rug's
+first-use work into the unopened room.
+
+### Remaining first-open cost
+
+The first rug opening is still a measurable cold-load stall. From the same
+stage12 closed-room snapshot after120s, ordinary Enter opens the authored
+rug directly. Captures at4.5,8 and12 seconds show the complete inventory;
+there are no invented loading dots. The job then closes the rug and uses the
+same normal exit sequence as its matched A branch.
+
+| First-open run, separately aggregated maximum | Stage10 | Stage12 |
+| --- | ---: | ---: |
+| Room render | 3,827.820ms | 3,771.576ms |
+| Room resource callback time | 2,959.167ms | 2,975.372ms |
+| Room interval | 3,954.956ms | 3,898.712ms |
+
+These separate maxima are not subtracted from one another as a CPU/I/O
+decomposition. They show that the exact glyph cull does not substantially
+remove the cold-open peak on this device. The matched rug-minus-A window,
+which includes the first12s open and the closing input, contains251 Room
+frames,212 resource callbacks /2,182,126 bytes, and16/6/2 intervals above
+50/100/250ms. Its18.7966FPS is a mixed cold-opening window, not steady rug FPS.
+All reports have zero resource failures.
+
+The remaining work is first-use inventory art/fonts/strings and repeated
+decoded-group reads in the current bounded resource layout. Source code's
+16-byte grouped-glyph descriptor read is already served by the existing
+64-by4KiB ResourceReader cache. In the fixed-step native trace, the first
+render's32 descriptor/page callbacks fetch33 distinct4KiB pages; none is a
+repeat. Across120 renders there are91 such callbacks and only three repeated
+4KiB pages. An additional small descriptor-page cache would therefore not
+address the first peak. Font-group callbacks include42 distinct groups and
+28 repeated reads in that trace; their476,390 repeated encoded bytes are
+reported separately rather than mislabeled unavoidable first-use payload.
+No speculative cache expansion or prewarming was added to conceal this cost.
+
+The earlier stage10 ordinary-input purchase-failure capture also verifies the
+Chinese merchant speech: attempting the201-gold Tongs with99 gold displays
+the original failure line centered in the restored bubble body. Enter is a
+valid confirm binding; premature screenshots during the cold render had
+initially obscured its successful action. The README binding remains correct.
+
+Accepted final device journals are
+`merchant-stage12-install-title-19f0199628c6`,
+`merchant-stage12-warm120-32213fe56d9e`,
+`merchant-stage12-warm-a-measure-9a8a1d16b2aa`,
+`merchant-stage12-warm-b-measure-ab91327c4d88`, and
+`merchant-stage12-rug-visible-measure-84ec90e4cdea`.
+All close PASS with unchanged source. Exact native opening traces are
+`merchant-stage10-rug-pixel-trace-2822545f5583` and
+`merchant-stage12-rug-pixel-trace-5e7aa4860f21`.
+The final private device aggregate is `merchant-firebird-stage12/receipt.json`.
+These measurements belong to the stated stage12 runtime; later unchanged
+merchant/Canvas source does not turn them into a different binary's test run.

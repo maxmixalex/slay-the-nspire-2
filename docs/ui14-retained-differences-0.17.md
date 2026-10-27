@@ -15,7 +15,7 @@ reopens the specifically reported UI13 defects and performance acceptance.
 | Random water and three source particle emitters | UI13 implements the water/noise sampling, original textures and all1+20+20 emitters. UI14 investigates and optimizes the real device cost; named implementation and current FPS acceptance remain separate. `random-character-ui13-0.17.md` and `frontend-ui14-0.17.md` own these results. |
 | Fake Merchant's room, actors and post-fight/no-rug state | UI13 added the exact static/moving scene layers, complete original cycles, five class actors, weighted separate additive planes and canonical event-state visibility. `fake-merchant-ui13-0.17.md` records the full resource/interaction gates. UI14's regular merchant split is a different room path. |
 | Main-menu blur and per-label rainbow clocks | UI13 replaced the unimplemented blur and shared label origin with the source-derived CPU filter and label-local clocks. See `main-menu-blur-ui13-0.17.md` and `ui13-lcd-followup-0.17.md`. |
-| Exhaust erosion, power/discard trails, shuffle backs, generated hand arrival and orb activation | UI11 connected actual command observers and bounded particle/trail effects; repeated orb evokes preserve exact targets and canonical RNG. `combat-secondary-ui11-0.17.md` supersedes the older `combat-card-motion-0.17.md` omission list. UI14 adds the expensive generated-face cache correction. |
+| Exhaust erosion, power/discard trails, shuffle backs, generated hand arrival and orb activation | UI11 connected actual command observers and bounded particle/trail effects; repeated orb evokes preserve exact targets and canonical RNG. `combat-secondary-ui11-0.17.md` supersedes the older `combat-card-motion-0.17.md` omission list. UI14 retains these effects and fixes shared-face instance sampling; its separate bounded current-intent preparation removes the measured generated-card resource bottleneck. |
 | Duplicate-creature scale/hue, sleep effects and camera trauma lifecycle | `creature_instance_scale`, the eight source hue matrices, sleeping-creature presentation and source camera hooks exist. UI13 fixed trauma retention on target changes. The older UI6/UI7 missing-feature statements are superseded; continuous GPU color/noise equality is still not claimed. |
 | Named Bestiary phase/multi-creature contexts | UI11's detached preview facts cover regeneration, charge, burrow, stun, hatch, coral growth, liquefaction, summons and Decimillipede revive states. UI14 fixes row pitch and selected-arrow geometry. This does not claim an exhaustive replay of every possible preview combination. |
 | Full startup logo, skip preference, glyph advances and kerning | UI12 implemented the actual startup sequence and preference, natural1/64-pixel advances, pair kerning and negative bearings. Older UI10 "missing startup" and integer-advance overflow statements describe their historical runtime only. |
@@ -30,6 +30,7 @@ UI14 new-feature total simply because their documentation was reread.
 | Source body scaling | ShrinkPower and Beetle Juice, Big Mushroom, Phantasmal Gardener growth and Test Subject respawn growth now drive their source transforms. Decimillipede rejects scaling. Vantom selects the correct separately baked normal/half-body endpoints, but its750ms root-bone transition remains missing; whole-sprite scaling would incorrectly move its independent tail. |
 | Ancient/status/affliction card presentation | Ancient portrait/frame/banner/fire, Infection and Bound/Entangled/Galvanized/Hexed/Tainted/Ringing/Smog materials have explicit source resources and precedence. |
 | Sovereign Blade and permanent enchantment | Real Forge/attack and successful enchantment commits drive their own original effects, queued exact card facts and cancellation rules. They are not ordinary discard flights. |
+| Generated-card performance | Stage13 prepares the already displayed enemy intent's action clips within the existing640-page limit, after actor starts, without advancing RNG or creating a loading UI. Real five-Dazed generation measures29.5419FPS and its following flight/draw28.9576FPS in matched Firebird windows. The complete first6s measures25.3955FPS and still includes one initial interval above250ms; these scopes remain separate. |
 | Continue transition | Resume uses the same character departure lifecycle as Embark without creating another run or resetting progress. |
 | Reward entry and completion | The historical early-Loot shortcut is replaced by Normal death-track+1s, Fast ordinary500ms, and Fast boss half-track behavior. Actual command barriers are preserved, terminal dead loops cannot stall, and one deadline is scheduled. Empty terminal rewards separately fade250ms and still require Proceed to open the map. |
 | Uniform readable overflow | Shared fitted labels, selected-hand text, source hover descriptions, enchantment text and FTUE pages scroll in pixels inside their actual clipped viewport. Content-defined summary truncation remains a separate original rule. |
@@ -37,8 +38,10 @@ UI14 new-feature total simply because their documentation was reread.
 
 The relevant detailed ledgers are `combat-ui14-0.17.md`,
 `frontend-ui14-0.17.md` and `rooms-ui14-0.17.md`. Their executed checkpoints
-remain authoritative. The final death-to-reward change is later than stage7
-and requires its own next-checkpoint regression result.
+remain authoritative. The final death-to-reward change is later than stage7;
+stage12 now passes its1,149 synthetic and58,696 actual-English UI12 checks,
+including all four timing branches, held loops, command barriers and a real
+winning-card State comparison. The rooms ledger records those receipts.
 
 ## Retained scope and platform boundaries
 
@@ -54,6 +57,22 @@ and requires its own next-checkpoint regression result.
 | Storage | The final UI14 common file is72,131,134 bytes,1,471,828 larger than the preceding common file after adding missing artwork. Grouping saves6,215,294 bytes against the intermediate UI14 candidate. Neither the complete package nor the earlier65–70MB target may be reported as achieved by quoting only the internal savings. |
 
 ## Actual remaining fidelity and evidence limits
+
+Vantom still lacks its750ms skeletal shrink transition. Both shrink sources
+select the correct normal and half-body endpoints, but the integrated bake
+contexts do not carry the converter's `shrink_from`/`shrink_started` values.
+Its independent tail control makes whole-sprite scaling incorrect. Restoring
+the original skeleton/atlas and page textures is required to produce or verify
+the missing intermediate bone poses. Standard creature shrink, the other
+named growth effects and Sewer Clam's sampled coral growth are implemented;
+this precise exception must not be described as completed.
+
+Stage13 closes the specifically measured generated-card and subsequent-flight
+performance verification, with zero resource failures, ordinary OS exit and
+per-prefix saved-game identity against stage12. It does not remove the
+initial0–2s cold stall or establish30FPS for every encounter. Its12s aggregate
+includes idle and is not an animation-FPS substitute. These performance
+measurements also do not supply any missing original await parameters.
 
 The named old visual families above have implementations. The source still
 does not claim every original per-monster command duration. The explicit

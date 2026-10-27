@@ -64,14 +64,18 @@ static void exact_interpolation_contract(){
     }
 }
 static void exact_gradient_cache_contract(){
-    Image gradient{64,64,{},{}},noise{10,5,{},{}},other{64,64,{},{}},small{7,5,{},{}},many{64,64,{},{}};
+    Image gradient{64,64,{},{}},noise{10,5,{},{}},other{64,64,{},{}},small{7,5,{},{}},many{64,64,{},{}},vertical{64,64,{},{}};
     for(unsigned i=0;i<4096;++i){const unsigned value=(i/64+i%64)%32;
         gradient.colors.push_back(uint16_t(value*1879));gradient.alpha.push_back(255);
         other.colors.push_back(uint16_t(value*3271));other.alpha.push_back(255);
-        many.colors.push_back(uint16_t(i*13+1));many.alpha.push_back(255);}
+        many.colors.push_back(uint16_t(i*13+1));many.alpha.push_back(255);
+        // Horizontal jumps may be large; neighboring rows change each RGB
+        // channel by exactly one, in opposite directions, across bit carries.
+        const unsigned x=i%64,t=(i/64)&1;
+        vertical.colors.push_back(uint16_t(((6+x%20+t)<<11)|((10+x%42-t)<<5)|(4+x%24+t)));vertical.alpha.push_back(255);}
     for(unsigned i=0;i<35;++i){small.colors.push_back(uint16_t(i*1879));small.alpha.push_back(255);}
     for(unsigned i=0;i<50;++i){noise.colors.push_back(0xffff);noise.alpha.push_back(uint8_t(i*29));}
-    water_reflection::Texture g(picture(gradient)),n(picture(noise)),g2(picture(other)),fallback(picture(small)),overflow(picture(many));
+    water_reflection::Texture g(picture(gradient)),n(picture(noise)),g2(picture(other)),fallback(picture(small)),overflow(picture(many)),vertical_input(picture(vertical));
     static RandomGradientCache cache;Canvas c{app};
     const unsigned times[]={0,33,66,99,100,1000,1250,7500,3599999,3600000,0};
     for(unsigned mode=0;mode<5;++mode)for(unsigned clock:times){
@@ -93,15 +97,20 @@ static void exact_gradient_cache_contract(){
     for(unsigned i=0;i<4096;++i)indices[i]=uint8_t((i/64+i%64)%32);
     const water_reflection::Texture indexed({indices,nullptr,palette,64,64,2});
     uint32_t seed=47281;const auto next=[&](){seed=seed*1664525u+1013904223u;return seed;};
-    const water_reflection::Texture*inputs[]={&g,&g2,&indexed};
+    const water_reflection::Texture*inputs[]={&g,&g2,&indexed,&vertical_input};
     for(const auto*texture:inputs){
         CHECK(cache.bind(app.content,*texture));CHECK(cache.count&&cache.count<=RandomGradientCache::Capacity);
         for(int u:{-65536,-8192,0,1,511,512,513,32768,65023,65024,65535,65536,73728})
             for(int v:{-65536,-8192,0,1,511,512,513,32768,65023,65024,65535,65536,73728})
                 CHECK(cache.sample(u,v)==texture->opaque_bilinear(u,v));
+        for(unsigned cell:{0u,1u,7u,15u,31u,62u})for(unsigned fx:{0u,127u,128u,129u,255u})for(unsigned fy:{0u,127u,128u,129u,255u}){
+            const int u=int(cell*1024+512+fx*4),v=int(((cell*3+5)%63)*1024+512+fy*4);
+            CHECK(cache.sample(u,v)==texture->opaque_bilinear(u,v));
+        }
         for(unsigned i=0;i<10000;++i){const int u=int(next()%98304)-16384,v=int(next()%98304)-16384;
             CHECK(cache.sample(u,v)==texture->opaque_bilinear(u,v));}
     }
+    CHECK(cache.vertical_unit[0]&1); // The vertical-only fast path was exercised.
     // A source with too many unique pairs must keep all pixels via the
     // general sampler, and repeated visits must retain that bounded result.
     CHECK(!cache.bind(app.content,overflow)&&!cache.valid&&cache.count==RandomGradientCache::Capacity);
@@ -216,19 +225,27 @@ static void particle_fast_paths(){
 }
 static void light_rg_contract(){
     Image physical{320,205,std::vector<uint16_t>(320*205),std::vector<uint8_t>(320*205,255)};
+    Image smooth{320,205,std::vector<uint16_t>(320*205),std::vector<uint8_t>(320*205,255)};
     std::vector<uint8_t> indices(320*205),palette(512);uint32_t seed=91821;
     const auto next=[&](){seed=seed*1664525u+1013904223u;return seed;};
     for(unsigned i=0;i<256;++i){const uint16_t color=uint16_t(i*7919);palette[i*2]=uint8_t(color);palette[i*2+1]=uint8_t(color>>8);}
-    for(unsigned i=0;i<physical.colors.size();++i){physical.colors[i]=i<4096?0:i<8192?31:uint16_t(next()>>8);indices[i]=uint8_t(next()>>16);}
-    for(unsigned indexed=0;indexed<2;++indexed){
-        const Picture storage=indexed?Picture{indices.data(),nullptr,palette.data(),320,205,3}:picture(physical);
+    for(unsigned i=0;i<physical.colors.size();++i){physical.colors[i]=i<4096?0:i<8192?31:uint16_t(next()>>8);indices[i]=uint8_t(next()>>16);
+        const unsigned x=i%256,y=i/256;
+        // Unit steps cross RGB bit carries as well as deliberate wrap edges.
+        // Blue is unrelated and must remain irrelevant to the zero-blue tint.
+        smooth.colors[i]=uint16_t((((x/4+y/8)%32)<<11)|(((x/2+y/4)%64)<<5)|((x*13+y*7)&31));}
+    for(unsigned layout=0;layout<3;++layout){
+        const Picture storage=layout==1?Picture{indices.data(),nullptr,palette.data(),320,205,3}:picture(layout==2?smooth:physical);
         const water_reflection::Texture texture(storage,256,256);
+        CHECK(random_light_quads.bind(app.content,texture));
         for(unsigned alpha:{1u,102u,255u})for(unsigned tint:{0u,90u,171u,255u}){
             uint8_t red[32],green[64];for(unsigned i=0;i<64;++i){green[i]=uint8_t(div255(div255(i*tint)*alpha));if(i<32)red[i]=uint8_t(div255(div255(i*tint)*alpha));}
-            const RandomLightSampler light(texture,red,green);CHECK(bool(light));
+            const RandomLightSampler light(texture,red,green,true,random_light_quads.safe);CHECK(bool(light));
             const auto sample=[&](int u,int v){const uint16_t color=texture.opaque_bilinear(u,v);
                 CHECK(light.contribution(u,v)==uint16_t((unsigned(red[color>>11])<<11)|(unsigned(green[(color>>5)&63])<<5)));};
             for(int u:{0,1,127,128,255,256,257,65534,65535})for(int v:{0,1,127,128,255,256,257,65534,65535})sample(u,v);
+            for(unsigned cell:{0u,1u,7u,31u,63u,127u,254u})for(unsigned fx:{0u,127u,128u,129u,255u})for(unsigned fy:{0u,127u,128u,129u,255u})
+                sample(mn(65535,int(cell*256+128+fx)),mn(65535,int(((cell*3+5)&255)*256+128+fy)));
             for(unsigned i=0;i<1000;++i)sample(int(next()&65535),int(next()&65535));
         }
         Canvas canvas{app};
@@ -239,6 +256,12 @@ static void light_rg_contract(){
             render(RandomTextureSource::OpaqueColor);CHECK(!std::memcmp(expected.data(),app.pixels,expected.size()*sizeof(uint16_t)));
         }
     }
+    // A changed generation at the same resource/pixel addresses must replace
+    // a formerly safe quad when its contents acquire a larger channel jump.
+    const water_reflection::Texture generation_input(picture(physical),256,256);
+    CHECK(random_light_quads.bind(app.content,generation_input));CHECK(random_light_quads.safe[0]&1);
+    physical.colors[0]=0xffe0;CHECK(!app.content.open(nullptr,0));
+    CHECK(random_light_quads.bind(app.content,generation_input));CHECK(!(random_light_quads.safe[0]&1));
 }
 static std::vector<uint8_t> read(const char*path){FILE*f=std::fopen(path,"rb");CHECK(f);std::vector<uint8_t> data(spire_test::pack_size(f));CHECK(std::fread(data.data(),1,data.size(),f)==data.size());CHECK(!std::fclose(f));return data;}
 static Image decode(Picture p){

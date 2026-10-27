@@ -97,7 +97,9 @@ struct RuntimePerformance {
         for(unsigned i=0;i<(unsigned)ResourceStage::Count;++i){if(i)w.ch(',');w.timing(phase_names[i],startup_phases[i]);}
         w.ch('}');
         w.text(",\"render_parts\":{");
-        static const char*const render_names[]={"random_water","random_light","random_dots"};
+        static const char*const render_names[]={"random_water","random_light","random_dots",
+            "character_info","character_portraits","character_controls","character_ascension"};
+        static_assert(sizeof render_names/sizeof render_names[0]==unsigned(RuntimeRenderPart::Count),"Every render scope needs a report key");
         for(unsigned i=0;i<unsigned(RuntimeRenderPart::Count);++i){if(i)w.ch(',');w.timing(render_names[i],render_parts[i]);}
         w.ch('}');
         w.text(",\"resource_total\":{");w.field("ticks",resources.ticks);w.ch(',');w.field("calls",resources.calls);w.ch(',');w.field("bytes_requested",resources.bytes);w.ch(',');w.field("failures",resources.failures);w.ch(',');w.field("seeks",resources.seeks);w.text("},\"scenes\":[");
