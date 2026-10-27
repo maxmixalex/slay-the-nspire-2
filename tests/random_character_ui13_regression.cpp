@@ -223,6 +223,36 @@ static void particle_fast_paths(){
         CHECK(!std::memcmp(reference.data(),app.pixels,reference.size()*sizeof(uint16_t)));
     }
 }
+static void interior_raster_contract(){
+    // Independently visit every UV in admitted/rejected spans, including
+    // descending rows, single-pixel rows and both source half-texel edges.
+    for(int u:{0,127,128,129,32768,65407,65408,65535})
+        for(int v:{0,127,128,129,32768,65407,65408,65535})
+        for(int du:{-257,-1,0,1,257})for(int dv:{-257,-1,0,1,257})for(unsigned count:{0u,1u,2u,17u,320u}){
+            bool safe=count!=0;
+            for(unsigned i=0;i<count;++i){const int64_t x=int64_t(u)+int64_t(du)*i,y=int64_t(v)+int64_t(dv)*i;
+                safe=safe&&x>=128&&x<65408&&y>=128&&y<65408;}
+            CHECK(RandomLightSampler::interior_span(u,v,du,dv,count)==safe);
+        }
+    CHECK(!RandomLightSampler::interior_span(32768,32768,0x7fffffff,0,320));
+    CHECK(!RandomLightSampler::interior_span(32768,32768,0,-0x7fffffff,320));
+    Image physical{320,205,std::vector<uint16_t>(320*205,0xffff),std::vector<uint8_t>(320*205)};
+    for(unsigned i=0;i<physical.alpha.size();++i)physical.alpha[i]=uint8_t((i*17)^(i/256*31));
+    const water_reflection::Texture dot(picture(physical),256,256);
+    for(int u:{128,129,255,256,257,32768,65406,65407})for(int v:{128,129,255,256,257,32768,65406,65407})
+        CHECK(random_dot_alpha(physical.alpha.data(),u,v)==dot.alpha_bilinear(u,v));
+    uint32_t seed=4891;
+    for(unsigned i=0;i<4000;++i){seed=seed*1664525u+1013904223u;const int u=128+int(seed%65280);
+        seed=seed*1664525u+1013904223u;const int v=128+int(seed%65280);
+        CHECK(random_dot_alpha(physical.alpha.data(),u,v)==dot.alpha_bilinear(u,v));}
+    for(int angle:{-735,0,2023})for(int size:{84,500})for(int center:{20,177})for(unsigned clipping:{0u,1u}){
+        Canvas c{app};if(clipping){c.clip_w=197;c.clip_h=111;}
+        const auto render=[&](RandomTextureSource source){for(unsigned i=0;i<320*240;++i)app.pixels[i]=uint16_t(i*37);
+            random_character_particle(c,dot,center*65536,-25*65536,size*65536,angle,110,128,179,69,presentation::Normal,source);};
+        render(RandomTextureSource::Color);const std::vector<uint16_t> expected(app.pixels,app.pixels+320*240);
+        render(RandomTextureSource::WhiteAlpha);CHECK(!std::memcmp(expected.data(),app.pixels,expected.size()*sizeof(uint16_t)));
+    }
+}
 static void light_rg_contract(){
     Image physical{320,205,std::vector<uint16_t>(320*205),std::vector<uint8_t>(320*205,255)};
     Image smooth{320,205,std::vector<uint16_t>(320*205),std::vector<uint8_t>(320*205,255)};
@@ -242,16 +272,20 @@ static void light_rg_contract(){
             uint8_t red[32],green[64];for(unsigned i=0;i<64;++i){green[i]=uint8_t(div255(div255(i*tint)*alpha));if(i<32)red[i]=uint8_t(div255(div255(i*tint)*alpha));}
             const RandomLightSampler light(texture,red,green,true,random_light_quads.safe);CHECK(bool(light));
             const auto sample=[&](int u,int v){const uint16_t color=texture.opaque_bilinear(u,v);
-                CHECK(light.contribution(u,v)==uint16_t((unsigned(red[color>>11])<<11)|(unsigned(green[(color>>5)&63])<<5)));};
-            for(int u:{0,1,127,128,255,256,257,65534,65535})for(int v:{0,1,127,128,255,256,257,65534,65535})sample(u,v);
+                const uint16_t expected=uint16_t((unsigned(red[color>>11])<<11)|(unsigned(green[(color>>5)&63])<<5));
+                CHECK(light.contribution(u,v)==expected);
+                if(u>=128&&u<65408&&v>=128&&v<65408)
+                    CHECK((layout==1?light.interior<true>(u,v):light.interior<false>(u,v))==expected);};
+            for(int u:{0,1,127,128,129,255,256,257,65407,65408,65534,65535})
+                for(int v:{0,1,127,128,129,255,256,257,65407,65408,65534,65535})sample(u,v);
             for(unsigned cell:{0u,1u,7u,31u,63u,127u,254u})for(unsigned fx:{0u,127u,128u,129u,255u})for(unsigned fy:{0u,127u,128u,129u,255u})
                 sample(mn(65535,int(cell*256+128+fx)),mn(65535,int(((cell*3+5)&255)*256+128+fy)));
             for(unsigned i=0;i<1000;++i)sample(int(next()&65535),int(next()&65535));
         }
         Canvas canvas{app};
-        for(int angle:{-735,0,2023}){
+        for(int angle:{-735,0,2023})for(int size:{84,500})for(int center:{20,177}){
             const auto render=[&](RandomTextureSource source){for(unsigned i=0;i<320*240;++i)app.pixels[i]=uint16_t(i*37);
-                random_character_particle(canvas,texture,177*65536,-25*65536,500*65536,angle,102,171,113,0,presentation::Add,source);};
+                random_character_particle(canvas,texture,center*65536,-25*65536,size*65536,angle,102,171,113,0,presentation::Add,source);};
             render(RandomTextureSource::Color);const std::vector<uint16_t> expected(app.pixels,app.pixels+320*240);
             render(RandomTextureSource::OpaqueColor);CHECK(!std::memcmp(expected.data(),app.pixels,expected.size()*sizeof(uint16_t)));
         }
@@ -315,7 +349,7 @@ static void actual(const char*captures){
     CHECK(save(app.game,after)&&before.size==after.size&&!std::memcmp(before.bytes,after.bytes,before.size));
 }
 int main(int argc,char**argv){
-    shader_contract();exact_row_quotient_contract();exact_interpolation_contract();exact_gradient_cache_contract();particle_contract();linear_texture_contract();particle_fast_paths();light_rg_contract();
+    shader_contract();exact_row_quotient_contract();exact_interpolation_contract();exact_gradient_cache_contract();particle_contract();linear_texture_contract();particle_fast_paths();interior_raster_contract();light_rg_contract();
     if(argc>1){auto data=read(argv[1]);std::vector<uint8_t> locale;SplitResourceSource split;
         if(argc>2){locale=read(argv[2]);CHECK(split.open(ResourceSource::memory(data.data(),data.size()),ResourceSource::memory(locale.data(),locale.size()),ResourceLanguage(argc>3?std::atoi(argv[3]):1)));CHECK(app.init(split.source(),{}));}
         else CHECK(app.init(data.data(),data.size(),{}));

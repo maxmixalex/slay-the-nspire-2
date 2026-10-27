@@ -57,7 +57,7 @@ struct RandomGradientCache {
         }
         valid=true;return true;
     }
-    uint16_t sample(int u_q16,int v_q16)const{
+    [[gnu::always_inline]] uint16_t sample(int u_q16,int v_q16)const{
         // width64 turns the source Q16 centre coordinates into these exact
         // shifts. Clamp-to-edge must also discard the border's fraction.
         const int x=u_q16-512,y=v_q16-512;
@@ -159,6 +159,31 @@ public:
             palette_[i]=packed(uint16_t(picture_.palette[i*2]|unsigned(picture_.palette[i*2+1])<<8));
     }
     explicit operator bool()const{return enabled_;}
+    bool indexed()const{return picture_.palette!=nullptr;}
+    static bool interior_span(int u,int v,int du,int dv,unsigned count){
+        if(!count)return false;
+        const int64_t last_u=int64_t(u)+int64_t(du)*(count-1);
+        const int64_t last_v=int64_t(v)+int64_t(dv)*(count-1);
+        // UVs are linear within a row. Both endpoints in this interval
+        // prove that every bilinear quad has four in-bounds source texels.
+        return u>=128&&u<65408&&v>=128&&v<65408&&
+            last_u>=128&&last_u<65408&&last_v>=128&&last_v<65408;
+    }
+    template<bool Indexed>
+    [[gnu::always_inline]] uint16_t interior(int u,int v)const{
+        const unsigned x=unsigned(u)-128,y=unsigned(v)-128;
+        const unsigned quad=(y&0xff00u)|(x>>8);
+        // u/v's zero low byte is the original half fraction. Keep that
+        // exact tie and every unproven quad on the complete sampler path.
+        if(quad_safe_&&(u&255)&&(v&255)&&(quad_safe_[quad>>3]&(1u<<(quad&7)))){
+            const unsigned at=(unsigned(v)&0xff00u)|(unsigned(u)>>8);
+            if(Indexed){const uint32_t color=palette_[picture_.pixels[at]];
+                return uint16_t((unsigned(red_[color>>16])<<11)|(unsigned(green_[color&63])<<5));}
+            const uint16_t color=dense(at);
+            return uint16_t((unsigned(red_[color>>11])<<11)|(unsigned(green_[(color>>5)&63])<<5));
+        }
+        return contribution(u,v);
+    }
     uint16_t contribution(int u,int v)const{
         // u,v are inside the source quad. The rare border samples retain
         // clamp-to-edge; interior texels need only two adjacent row offsets.
@@ -201,6 +226,56 @@ public:
     }
 };
 
+[[gnu::always_inline]] static inline uint16_t random_light_add(uint16_t back,uint16_t contribution){
+    return uint16_t((mn(31,(back>>11)+(contribution>>11))<<11)|
+        (mn(63,((back>>5)&63)+((contribution>>5)&63))<<5)|(back&31));
+}
+template<bool Indexed>
+static void random_character_light(Canvas&c,const RandomLightSampler&light,
+        int left,int top,int right,int bottom,int du,int dv,RandomRowQuotient row_u,RandomRowQuotient row_v){
+    for(int y=top;y<bottom;++y,row_u.advance(),row_v.advance()){
+        int u=32768+row_u.value(),v=32768+row_v.value();auto*out=c.pixels+y*c.pitch;
+        if(RandomLightSampler::interior_span(u,v,du,-dv,unsigned(right-left))){
+            // The actual dense light takes this small inlined sampler.
+            // ARM otherwise saved nine registers around every source pixel
+            // while rediscovering storage format and all four edge clamps.
+            for(int x=left;x<right;++x,u+=du,v-=dv){
+                const uint16_t contribution=light.interior<Indexed>(u,v);
+                if(contribution)out[x]=random_light_add(out[x],contribution);
+            }
+        }else for(int x=left;x<right;++x,u+=du,v-=dv){
+            if(unsigned(u)>=65536||unsigned(v)>=65536)continue;
+            const uint16_t contribution=light.contribution(u,v);
+            if(contribution)out[x]=random_light_add(out[x],contribution);
+        }
+    }
+}
+[[gnu::always_inline]] static inline unsigned random_dot_alpha(const uint8_t*alpha,int u,int v){
+    const unsigned x=unsigned(u)-128,y=unsigned(v)-128,fx=x&255,fy=y&255;
+    const unsigned at=(y&0xff00u)|(x>>8);
+    const unsigned top=(unsigned(alpha[at])*(256-fx)+unsigned(alpha[at+1])*fx+128)>>8;
+    const unsigned bottom=(unsigned(alpha[at+256])*(256-fx)+unsigned(alpha[at+257])*fx+128)>>8;
+    return (top*(256-fy)+bottom*fy+128)>>8;
+}
+static void random_character_white_dot(Canvas&c,const water_reflection::Texture&texture,
+        int left,int top,int right,int bottom,int du,int dv,RandomRowQuotient row_u,RandomRowQuotient row_v,
+        unsigned alpha,uint16_t color){
+    const auto*source=texture.storage().alpha;
+    for(int y=top;y<bottom;++y,row_u.advance(),row_v.advance()){
+        int u=32768+row_u.value(),v=32768+row_v.value();auto*out=c.pixels+y*c.pitch;
+        if(RandomLightSampler::interior_span(u,v,du,-dv,unsigned(right-left))){
+            for(int x=left;x<right;++x,u+=du,v-=dv){
+                const unsigned amount=div255(random_dot_alpha(source,u,v)*alpha);
+                if(amount)out[x]=blend(out[x],color,amount);
+            }
+        }else for(int x=left;x<right;++x,u+=du,v-=dv){
+            if(unsigned(u)>=65536||unsigned(v)>=65536)continue;
+            const unsigned amount=div255(texture.alpha_bilinear(u,v)*alpha);
+            if(amount)out[x]=blend(out[x],color,amount);
+        }
+    }
+}
+
 // Textured particles use the original images, source modulation and source
 // emitter rotation. The source quad is clipped before any inverse sampling.
 enum class RandomTextureSource:uint8_t {Color,WhiteAlpha,OpaqueColor};
@@ -233,6 +308,14 @@ static void random_character_particle(Canvas&c,const water_reflection::Texture&t
     const int dx=(left<<16)+32768-center_x_q16,dy=(top<<16)+32768-center_y_q16;
     RandomRowQuotient row_u((int64_t(dx)*cosine+int64_t(dy)*sine)*64,int64_t(sine)*65536*64,size_q16);
     RandomRowQuotient row_v((int64_t(dy)*cosine-int64_t(dx)*sine)*64,int64_t(cosine)*65536*64,size_q16);
+    if(light){
+        if(light.indexed())random_character_light<true>(c,light,left,top,right,bottom,du,dv,row_u,row_v);
+        else random_character_light<false>(c,light,left,top,right,bottom,du,dv,row_u,row_v);
+        return;
+    }
+    if(white_fast&&texture.width()==256&&texture.height()==256&&texture.storage().format!=4&&texture.storage().alpha){
+        random_character_white_dot(c,texture,left,top,right,bottom,du,dv,row_u,row_v,alpha,dot_color);return;
+    }
     for(int y=top;y<bottom;++y,row_u.advance(),row_v.advance()){
         int u=32768+row_u.value(),v=32768+row_v.value();
         for(int x=left;x<right;++x,u+=du,v-=dv){
@@ -241,9 +324,6 @@ static void random_character_particle(Canvas&c,const water_reflection::Texture&t
             if(white_fast){const unsigned amount=div255(texture.alpha_bilinear(u,v)*alpha);
                 if(amount)c.pixels[at]=blend(c.pixels[at],dot_color,amount);continue;}
             if(add_fast){
-                if(light){const uint16_t contribution=light.contribution(u,v);if(contribution){const uint16_t back=c.pixels[at];
-                    c.pixels[at]=uint16_t((mn(31,(back>>11)+(contribution>>11))<<11)|
-                        (mn(63,((back>>5)&63)+((contribution>>5)&63))<<5)|(back&31));}continue;}
                 const uint16_t color=texture.opaque_bilinear(u,v),back=c.pixels[at];
                 c.pixels[at]=uint16_t((mn(31,(back>>11)+add_red[color>>11])<<11)|
                     (mn(63,((back>>5)&63)+add_green[(color>>5)&63])<<5)|mn(31,(back&31)+add_blue[color&31]));continue;}

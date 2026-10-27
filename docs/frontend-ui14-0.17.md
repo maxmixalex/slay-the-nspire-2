@@ -230,6 +230,8 @@ They are actual emulated ARM timings, not native host frame rates.
 | `d8510f20` | 10→40s matched window | 387 / 29.9874 | 12.9054 | 77.152ms | 0 |
 | `f1ad95b3` | First 10s, including Random's initial load | 134 / 10.2934 | 13.0181 | 76.253ms | 22 |
 | `f1ad95b3` | 10→40s matched window | 417 / 29.9666 | 13.9155 | 71.527ms | 0 |
+| `b5c127d8` | First 10s, including Random's initial load | 155 / 10.2951 | 15.0557 | 65.980ms | 22 |
+| `b5c127d8` | 10→40s matched window | 484 / 29.9661 | 16.1516 | 61.578ms | 0 |
 
 These results are not accepted as completed Random performance. They separate
 real CPU rendering cost from loading, and require further optimization while
@@ -321,9 +323,41 @@ thirteenth build's matched warm 30s window, the measured means are:
 | Remaining UI and texture access | 22.123ms |
 
 That window has zero resource reads and failures; 416 of its 417 frames
-exceed 50ms. This remains unfinished performance work. The next source stage
-targets the measured light and UI costs with exact, source-validated paths.
-Its proposed light quad bitset and vertical water shortcut preserve the
-general sampler for unsafe quads and exact half-fraction cases. Their
-correctness and device benefit are pending the next verified checkpoint;
-neither a new probe nor a native timing is counted as completion.
+exceed 50ms. The fourteenth checkpoint validates a bounded 8 KiB light-quad
+bitset and a 512-byte vertical water bitset. Channel differences of at most
+one permit an exact endpoint selection away from the half fraction; unsafe
+quads and half fractions retain the general bilinear sampler. The character
+UI also avoids transparent title-outline padding, repeated portrait-outline
+lookup, and repeated black-tint image work. All source particles and clocks
+remain unchanged.
+
+The fourteenth synthetic gate passes 199,138 assertions; actual ENG/ZHS each
+pass 511,990. All four full backgrounds in both languages match the earlier
+general sampler byte for byte, and both complete Random-page captures in
+each language match the thirteenth build. Ordinary-OS launch and USB readback
+pass with 22,668,012 bytes allocated. Its matched warm window has no resource
+reads or failures and no frames above 100ms, but 483 of 484 exceed 50ms.
+The seven measured render scopes now identify the remaining work:
+
+| Render work | Fourteenth build, mean per frame |
+| --- | ---: |
+| Water | 15.785ms |
+| Light | 24.158ms |
+| All 40 dots and their simulation | 8.016ms |
+| Character information | 4.667ms |
+| Portraits | 4.987ms |
+| Controls, both drawing passes combined | 1.312ms |
+| Ascension controls | 1.312ms |
+| Other rendering and texture access | 1.341ms |
+
+The controls scope is called twice per frame; the table divides its combined
+ticks by the number of character frames, not by its call count. The light
+bitset alone saves only about 1ms, so 16.15 FPS is still unfinished Random
+performance. Actual ARM disassembly shows that the optimized-build light
+sampler and dot sampler still save and restore nine registers around every
+covered pixel. The next source stage separates the light/dot loops, proves
+in-bounds source spans once per row, and inlines their small exact hot paths
+and water lookup. Complete border, unsupported-format, unsafe-quad and parent
+modulation paths remain available. Its new source and independent pixel
+oracles await the next verified checkpoint; no native timing substitutes for
+ordinary-OS measurement.
