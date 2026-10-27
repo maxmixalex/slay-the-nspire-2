@@ -97,6 +97,8 @@ static void exact_gradient_cache_contract(){
     for(unsigned i=0;i<4096;++i)indices[i]=uint8_t((i/64+i%64)%32);
     const water_reflection::Texture indexed({indices,nullptr,palette,64,64,2});
     uint32_t seed=47281;const auto next=[&](){seed=seed*1664525u+1013904223u;return seed;};
+    int shifts[256];const int strength=water_reflection::Parameters(0,23,100).half_strength_q16;
+    for(unsigned i=0;i<256;++i)shifts[i]=(int(i)-255)*strength/255;
     const water_reflection::Texture*inputs[]={&g,&g2,&indexed,&vertical_input};
     for(const auto*texture:inputs){
         CHECK(cache.bind(app.content,*texture));CHECK(cache.count&&cache.count<=RandomGradientCache::Capacity);
@@ -109,6 +111,17 @@ static void exact_gradient_cache_contract(){
         }
         for(unsigned i=0;i<10000;++i){const int u=int(next()%98304)-16384,v=int(next()%98304)-16384;
             CHECK(cache.sample(u,v)==texture->opaque_bilinear(u,v));}
+        // Repeated keys retain a LUT pointer, never its already sampled
+        // color. Sweep changing horizontal fractions, tile crossings,
+        // clamped columns and vertical half ties against the general filter.
+        for(int v:{-8192,0,512,1024,32768,65023,65024,73728}){
+            RandomGradientRow row(&cache,v,shifts);
+            for(unsigned block=0;block<66;++block)for(unsigned step=0;step<16;++step){
+                const unsigned n=block%4?((block*29)&255):255;
+                const int u=int(block)*1024+int(step)*64-1024,shift=shifts[n];
+                CHECK(row.sample(u,n)==texture->opaque_bilinear(u+shift,v+shift));
+            }
+        }
     }
     CHECK(cache.vertical_unit[0]&1); // The vertical-only fast path was exercised.
     // A source with too many unique pairs must keep all pixels via the
@@ -229,13 +242,18 @@ static void interior_raster_contract(){
     for(int u:{0,127,128,129,32768,65407,65408,65535})
         for(int v:{0,127,128,129,32768,65407,65408,65535})
         for(int du:{-257,-1,0,1,257})for(int dv:{-257,-1,0,1,257})for(unsigned count:{0u,1u,2u,17u,320u}){
-            bool safe=count!=0;
+            bool safe=count!=0;unsigned first=count,last=count;
             for(unsigned i=0;i<count;++i){const int64_t x=int64_t(u)+int64_t(du)*i,y=int64_t(v)+int64_t(dv)*i;
-                safe=safe&&x>=128&&x<65408&&y>=128&&y<65408;}
+                const bool inside=x>=128&&x<65408&&y>=128&&y<65408;safe=safe&&inside;
+                if(inside){if(first==count)first=i;last=i+1;}}
             CHECK(RandomLightSampler::interior_span(u,v,du,dv,count)==safe);
+            const auto range=random_interior_range(u,v,du,dv,count);CHECK(range.first==first&&range.last==last);
         }
     CHECK(!RandomLightSampler::interior_span(32768,32768,0x7fffffff,0,320));
     CHECK(!RandomLightSampler::interior_span(32768,32768,0,-0x7fffffff,320));
+    const auto partial=random_interior_range(-1000,32768,1000,0,100);
+    const auto reverse=random_interior_range(66000,32768,-1000,0,100);
+    CHECK(partial.first==2&&partial.last==67&&reverse.first==1&&reverse.last==66);
     Image physical{320,205,std::vector<uint16_t>(320*205,0xffff),std::vector<uint8_t>(320*205)};
     for(unsigned i=0;i<physical.alpha.size();++i)physical.alpha[i]=uint8_t((i*17)^(i/256*31));
     const water_reflection::Texture dot(picture(physical),256,256);
@@ -270,7 +288,7 @@ static void light_rg_contract(){
         CHECK(random_light_quads.bind(app.content,texture));
         for(unsigned alpha:{1u,102u,255u})for(unsigned tint:{0u,90u,171u,255u}){
             uint8_t red[32],green[64];for(unsigned i=0;i<64;++i){green[i]=uint8_t(div255(div255(i*tint)*alpha));if(i<32)red[i]=uint8_t(div255(div255(i*tint)*alpha));}
-            const RandomLightSampler light(texture,red,green,true,random_light_quads.safe);CHECK(bool(light));
+            const RandomLightSampler light(texture,red,green,true,random_light_quads.safe,random_light_quads.maximum);CHECK(bool(light));
             const auto sample=[&](int u,int v){const uint16_t color=texture.opaque_bilinear(u,v);
                 const uint16_t expected=uint16_t((unsigned(red[color>>11])<<11)|(unsigned(green[(color>>5)&63])<<5));
                 CHECK(light.contribution(u,v)==expected);
@@ -294,8 +312,15 @@ static void light_rg_contract(){
     // a formerly safe quad when its contents acquire a larger channel jump.
     const water_reflection::Texture generation_input(picture(physical),256,256);
     CHECK(random_light_quads.bind(app.content,generation_input));CHECK(random_light_quads.safe[0]&1);
+    CHECK(random_light_quads.maximum[0]==0);
     physical.colors[0]=0xffe0;CHECK(!app.content.open(nullptr,0));
     CHECK(random_light_quads.bind(app.content,generation_input));CHECK(!(random_light_quads.safe[0]&1));
+    CHECK(random_light_quads.maximum[0]==63);
+    // The first 4x4 tile bounds its quads, including source texel (4,4)
+    // beyond that tile's origin cells. Omitting this halo can skip real light.
+    physical.colors[0]=0;physical.colors[4*256+4]=0xffe0;CHECK(!app.content.open(nullptr,0));
+    CHECK(random_light_quads.bind(app.content,generation_input));CHECK(random_light_quads.maximum[0]==63);
+    CHECK(random_light_quads.maximum[2]==0);
 }
 static std::vector<uint8_t> read(const char*path){FILE*f=std::fopen(path,"rb");CHECK(f);std::vector<uint8_t> data(spire_test::pack_size(f));CHECK(std::fread(data.data(),1,data.size(),f)==data.size());CHECK(!std::fclose(f));return data;}
 static Image decode(Picture p){

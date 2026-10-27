@@ -78,6 +78,39 @@ struct RandomGradientCache {
 static RandomGradientCache random_gradient_cache;
 static_assert(sizeof(RandomGradientCache)<=153u*1024u,"Exact gradient interpolation stays within153 KiB");
 
+// A row owns one immutable gradient and one vertical shader coordinate.
+// Repeated (noise, clamped source column) values select the same horizontal
+// LUT, while the current horizontal fraction still selects its exact pixel.
+// Nothing survives the row, so a new clock/generation/gradient cannot reuse
+// an earlier row's pointer or vertical rounding state.
+class RandomGradientRow {
+    const RandomGradientCache*cache_;
+    const int*shifts_;
+    int v_;
+    unsigned key_=~0u,fraction_=0;
+    const uint16_t*top_=nullptr,*bottom_=nullptr;
+public:
+    RandomGradientRow(const RandomGradientCache*cache,int v,const int*shifts):cache_(cache),shifts_(shifts),v_(v){}
+    [[gnu::always_inline]] uint16_t sample(int u,unsigned noise){
+        const int shift=shifts_[noise],x=u+shift-512;
+        int ix=x>>10;unsigned fx=(unsigned(x)>>2)&255u;
+        if(unsigned(ix)>=63){ix=ix<0?0:63;fx=0;}
+        const unsigned key=(noise<<6)|unsigned(ix);
+        if(key!=key_){
+            key_=key;const int y=v_+shift-512;
+            int iy=y>>10;unsigned fy=(unsigned(y)>>2)&255u;
+            if(unsigned(iy)>=63){iy=iy<0?0:63;fy=0;}
+            const unsigned at=unsigned(iy)*64+unsigned(ix);bottom_=nullptr;
+            if(!fy)top_=cache_->horizontal[cache_->pairs[at]];
+            else if(fy!=128&&(cache_->vertical_unit[at>>3]&(1u<<(at&7))))
+                top_=cache_->horizontal[cache_->pairs[at+(fy>128?64:0)]];
+            else{top_=cache_->horizontal[cache_->pairs[at]];bottom_=cache_->horizontal[cache_->pairs[at+64]];fraction_=fy;}
+        }
+        const uint16_t top=top_[fx];
+        return bottom_?RandomGradientCache::mix(top,bottom_[fx],fraction_):top;
+    }
+};
+
 // ARM926 implements each dynamic64-bit division in software. The rotated
 // quad's row numerators are linear, so retain a floor quotient and a positive
 // remainder. One carry reproduces the next row, including negative UVs;
@@ -102,7 +135,9 @@ public:
 // the exact half fraction. Verify that property for every source quad once;
 // its bit permits one exact corner read, without approximating the filter.
 struct RandomLightQuadCache {
+    static constexpr unsigned TileShift=2,TileWidth=256>>TileShift;
     uint8_t safe[256*256/8]{};
+    uint8_t maximum[TileWidth*TileWidth]{};
     const Content*owner=nullptr;
     Picture picture{};
     uint32_t generation=0;
@@ -122,9 +157,14 @@ struct RandomLightQuadCache {
         logical_width=texture.width();logical_height=texture.height();observed=true;valid=false;
         if(!texture.valid()||p.format>3||logical_width!=256||logical_height!=256)return false;
         for(auto&byte:safe)byte=0;
+        for(auto&byte:maximum)byte=0;
         for(unsigned y=0;y<256;++y)for(unsigned x=0;x<256;++x){
             const uint16_t a=texture.at(x,y).color,b=texture.at(x+1,y).color;
             const uint16_t c=texture.at(x,y+1).color,d=texture.at(x+1,y+1).color;
+            const unsigned red=mx(mx(a>>11,b>>11),mx(c>>11,d>>11));
+            const unsigned green=mx(mx((a>>5)&63,(b>>5)&63),mx((c>>5)&63,(d>>5)&63));
+            auto&bound=maximum[(y>>TileShift)*TileWidth+(x>>TileShift)];
+            bound=uint8_t(mx(unsigned(bound),mx(red*2,green)));
             if(adjacent(a,b)&&adjacent(c,d)&&adjacent(a,c)&&adjacent(b,d)){
                 const unsigned at=y*256+x;safe[at>>3]|=uint8_t(1u<<(at&7));
             }
@@ -133,7 +173,7 @@ struct RandomLightQuadCache {
     }
 };
 static RandomLightQuadCache random_light_quads;
-static_assert(sizeof(RandomLightQuadCache)<=9u*1024u,"Exact light quad bounds stay within9 KiB");
+static_assert(sizeof(RandomLightQuadCache)<=13u*1024u,"Exact light quad bounds stay within13 KiB");
 
 // The original light has a256x256 logical texture and a zero blue tint.
 // Keep red and green in separate16-bit lanes, retaining both bilinear
@@ -142,6 +182,8 @@ class RandomLightSampler {
     Picture picture_{};
     const uint8_t*red_=nullptr,*green_=nullptr;
     const uint8_t*quad_safe_=nullptr;
+    const uint8_t*tile_maximum_=nullptr;
+    unsigned zero_limit_=0;
     uint32_t palette_[256];
     bool enabled_=false;
     static uint32_t packed(uint16_t color){return (uint32_t(color&0xf800u)<<5)|((color>>5)&63u);}
@@ -151,12 +193,20 @@ class RandomLightSampler {
         return (((a<<8)+(b-a)*f+0x00800080u)>>8)&0x001f003fu;
     }
     uint16_t dense(unsigned index)const{const auto*p=picture_.pixels+index*2;return uint16_t(p[0]|unsigned(p[1])<<8);}
+    [[gnu::always_inline]] bool zero(unsigned quad)const{
+        return tile_maximum_&&tile_maximum_[((quad>>10)<<6)|((quad>>2)&63)]<=zero_limit_;
+    }
 public:
-    RandomLightSampler(const water_reflection::Texture&texture,const uint8_t*red,const uint8_t*green,bool enable=true,const uint8_t*quad_safe=nullptr):
-        picture_(texture.storage()),red_(red),green_(green),quad_safe_(quad_safe){
+    RandomLightSampler(const water_reflection::Texture&texture,const uint8_t*red,const uint8_t*green,bool enable=true,
+            const uint8_t*quad_safe=nullptr,const uint8_t*tile_maximum=nullptr):
+        picture_(texture.storage()),red_(red),green_(green),quad_safe_(quad_safe),tile_maximum_(tile_maximum){
         enabled_=enable&&texture.valid()&&texture.width()==256&&texture.height()==256&&picture_.format!=4;
         if(enabled_&&picture_.palette)for(unsigned i=0;i<256;++i)
             palette_[i]=packed(uint16_t(picture_.palette[i*2]|unsigned(picture_.palette[i*2+1])<<8));
+        // q bounds every contributing source red by q/2 and green by q.
+        // Tint and opacity are monotone, so one per-frame threshold proves
+        // that an entire 4x4 group of quads contributes exactly zero.
+        if(enabled_&&tile_maximum_)for(unsigned q=1;q<64&&!red_[q>>1]&&!green_[q];++q)zero_limit_=q;
     }
     explicit operator bool()const{return enabled_;}
     bool indexed()const{return picture_.palette!=nullptr;}
@@ -173,6 +223,7 @@ public:
     [[gnu::always_inline]] uint16_t interior(int u,int v)const{
         const unsigned x=unsigned(u)-128,y=unsigned(v)-128;
         const unsigned quad=(y&0xff00u)|(x>>8);
+        if(zero(quad))return 0;
         // u/v's zero low byte is the original half fraction. Keep that
         // exact tie and every unproven quad on the complete sampler path.
         if(quad_safe_&&(u&255)&&(v&255)&&(quad_safe_[quad>>3]&(1u<<(quad&7)))){
@@ -192,6 +243,7 @@ public:
         if(unsigned(ix)>=255){left=ix<0?0:255;right=ix<0?0:255;}
         if(unsigned(iy)>=255){top=iy<0?0:255*256;bottom=top;}
         const unsigned aa=top+left,bb=top+right,cc=bottom+left,dd=bottom+right;
+        if(zero(aa))return 0;
         const unsigned fx=unsigned(x)&255,fy=unsigned(y)&255;
         if(quad_safe_&&fx!=128&&fy!=128&&(quad_safe_[aa>>3]&(1u<<(aa&7)))){
             const unsigned at=(fy<128?top:bottom)+(fx<128?left:right);
@@ -257,18 +309,38 @@ static void random_character_light(Canvas&c,const RandomLightSampler&light,
     const unsigned bottom=(unsigned(alpha[at+256])*(256-fx)+unsigned(alpha[at+257])*fx+128)>>8;
     return (top*(256-fy)+bottom*fy+128)>>8;
 }
+struct RandomInteriorRange {unsigned first,last;};
+static RandomInteriorRange random_interior_range(int u,int v,int du,int dv,unsigned count){
+    if(RandomLightSampler::interior_span(u,v,du,dv,count))return {0,count};
+    unsigned first=0,last=count;int64_t start_u=u,start_v=v;
+    const auto inside=[](int64_t x,int64_t y){return x>=128&&x<65408&&y>=128&&y<65408;};
+    // A rotated quad's bounding-box row often starts and ends outside the
+    // texture even though its middle is visible. Trim only those margins;
+    // the intersection of a line and the interior rectangle is contiguous.
+    while(first<last&&!inside(start_u,start_v)){++first;start_u+=du;start_v+=dv;}
+    if(first==last)return {count,count};
+    int64_t end_u=int64_t(u)+int64_t(du)*(last-1),end_v=int64_t(v)+int64_t(dv)*(last-1);
+    while(last>first&&!inside(end_u,end_v)){--last;end_u-=du;end_v-=dv;}
+    return {first,last};
+}
 static void random_character_white_dot(Canvas&c,const water_reflection::Texture&texture,
         int left,int top,int right,int bottom,int du,int dv,RandomRowQuotient row_u,RandomRowQuotient row_v,
         unsigned alpha,uint16_t color){
     const auto*source=texture.storage().alpha;
     for(int y=top;y<bottom;++y,row_u.advance(),row_v.advance()){
         int u=32768+row_u.value(),v=32768+row_v.value();auto*out=c.pixels+y*c.pitch;
-        if(RandomLightSampler::interior_span(u,v,du,-dv,unsigned(right-left))){
-            for(int x=left;x<right;++x,u+=du,v-=dv){
-                const unsigned amount=div255(random_dot_alpha(source,u,v)*alpha);
-                if(amount)out[x]=blend(out[x],color,amount);
-            }
-        }else for(int x=left;x<right;++x,u+=du,v-=dv){
+        const auto interior=random_interior_range(u,v,du,-dv,unsigned(right-left));
+        const int first=left+int(interior.first),last=left+int(interior.last);int x=left;
+        for(;x<first;++x,u+=du,v-=dv){
+            if(unsigned(u)>=65536||unsigned(v)>=65536)continue;
+            const unsigned amount=div255(texture.alpha_bilinear(u,v)*alpha);
+            if(amount)out[x]=blend(out[x],color,amount);
+        }
+        for(;x<last;++x,u+=du,v-=dv){
+            const unsigned amount=div255(random_dot_alpha(source,u,v)*alpha);
+            if(amount)out[x]=blend(out[x],color,amount);
+        }
+        for(;x<right;++x,u+=du,v-=dv){
             if(unsigned(u)>=65536||unsigned(v)>=65536)continue;
             const unsigned amount=div255(texture.alpha_bilinear(u,v)*alpha);
             if(amount)out[x]=blend(out[x],color,amount);
@@ -303,7 +375,7 @@ static void random_character_particle(Canvas&c,const water_reflection::Texture&t
     }
     const bool use_light=add_fast&&blue==0;
     const uint8_t*quad_safe=use_light&&random_light_quads.bind(c.a.content,texture)?random_light_quads.safe:nullptr;
-    const RandomLightSampler light(texture,add_red,add_green,use_light,quad_safe);
+    const RandomLightSampler light(texture,add_red,add_green,use_light,quad_safe,quad_safe?random_light_quads.maximum:nullptr);
     const int du=int(int64_t(cosine)*65536*64/size_q16),dv=int(int64_t(sine)*65536*64/size_q16);
     const int dx=(left<<16)+32768-center_x_q16,dy=(top<<16)+32768-center_y_q16;
     RandomRowQuotient row_u((int64_t(dx)*cosine+int64_t(dy)*sine)*64,int64_t(sine)*65536*64,size_q16);
@@ -355,10 +427,11 @@ static void random_character_water(Canvas&c,const water_reflection::Texture&grad
         const int v=(V0+y*VStep)>>8,position=((v-parameters.pan_q16)&65535)*5-32768;
         const int iy=position>>16,top=iy<0?4:iy,bottom=iy+1>=5?0:iy+1;const unsigned fraction=unsigned(position&65535)>>8;
         const auto*a=noise_rows[top],*b=noise_rows[bottom];auto*out=c.pixels+y*c.pitch;
+        RandomGradientRow row(cache,v,shifts);
         for(int x=0;x<c.clip_w&&x<320;++x){
             const unsigned n=(unsigned(a[x])*(256-fraction)+unsigned(b[x])*fraction+128)>>8;
             const int shift=shifts[n];
-            const uint16_t color=lookup?cache->sample(u[x]+shift,v+shift):gradient.opaque_bilinear(u[x]+shift,v+shift);
+            const uint16_t color=lookup?row.sample(u[x],n):gradient.opaque_bilinear(u[x]+shift,v+shift);
             if(direct)out[x]=color;else c.paint(y*c.pitch+x,color);
         }
     }
