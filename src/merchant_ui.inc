@@ -113,6 +113,12 @@ void App::prepare_merchant_inventory(const State*stock){
  add(content.ui_image(U_MerchantRug));add(content.ui_image(U_ShopRemove));add(A_Coin);
  add(content.world_image("merchant","SALE_TAG"));
  add(content.world_image("common","HOVER_TIP"));add(content.world_image("common","HOVER_TIP_DEBUFF"));
+ // Hover descriptions can contain sprite-font resources even when every
+ // card of that resource type has already been bought.
+ add(content.ui_image(U_Star));
+ static const int energy_icons[]={-1,U_SilentEnergy,U_DefectEnergy,U_RegentEnergy,U_NecrobinderEnergy};
+ add(!s.world.active?content.ui_image(U_ColorlessEnergy):!unsigned(s.character)?A_Energy:
+     unsigned(s.character)<CharacterKinds?content.ui_image(energy_icons[unsigned(s.character)]):content.ui_image(U_ColorlessEnergy));
  for(int i=0;i<ShopCardCount;++i)if(!(s.shop_sold&(1u<<i))){
   const Card card=s.world.active?s.world.shop_cards[i]:Card{s.shop_cards[i],0};
   const auto*facts=s.world.active?&s.world.shop_facts[i]:nullptr;
@@ -159,9 +165,11 @@ void App::step_merchant_preparation(){
  const State*saved_stock=title_merchant_stock(*this);
  if(!saved_stock&&((title&&!entering)||game.phase!=Phase::Shop)){content.cancel_preload();p.reset();return;}
  ++p.updates;
+ const bool preview_idle=saved_stock&&p.tip_slot==ShopRemove-ShopRelicStart;
+ const bool critical_ready=p.prices_ready&&p.tip_slot==ShopRemove-ShopRelicStart;
  GlyphPreparationBudget budget(callbacks.foreground_clock_ticks,
-  p.prices_ready?GlyphPreparationBudget::Ticks:GlyphPreparationBudget::InventoryTicks);
- const unsigned image_limit=p.prices_ready?p.count:p.stock_count;
+  critical_ready||preview_idle?GlyphPreparationBudget::Ticks:GlyphPreparationBudget::InventoryTicks);
+ const unsigned image_limit=critical_ready||preview_idle?p.count:p.stock_count;
  if(p.cursor<image_limit){
   while(p.cursor<image_limit){const int id=p.images[p.cursor];if(content.image_cached(id)){++p.cursor;continue;}
    if(!budget.take())return;
@@ -177,15 +185,15 @@ void App::step_merchant_preparation(){
  // The pointer that opens the rug can immediately cross an item as its
  // original tween slides underneath. Its complete hover set is visible
  // stock too, not a new cold workload to postpone until that first hover.
- if(p.tip_slot<ShopRemove-ShopRelicStart){
-  prepare_merchant_hover(*this,saved_stock?*saved_stock:game,budget);
+ if(saved_stock&&p.tip_slot<ShopRemove-ShopRelicStart){
+  prepare_merchant_hover(*this,*saved_stock,budget);
   if(!content.healthy()){p.reset();shop_open=false;message("资源读取失败");}
   return;
  }
  // The active game's cost/description state must never be substituted with
  // a saved preview. Continue reads and validates the save again, resets this
  // small queue, and reuses only the exact images already in the byte cache.
- if(saved_stock)return;
+ if(saved_stock){if(p.cursor==p.count)p.active=false;return;}
  // String groups and font groups yield separately. The production fitting
  // path chooses every exact size/style, including the scrolling body tail.
  // Its preparation visitor bypasses raster clipping without painting,
@@ -213,7 +221,15 @@ void App::step_merchant_preparation(){
   for(unsigned i=0;i<ShopLeave;++i)merchant_price(hidden,int(i),0,0,650);
   if(!content.healthy()){p.reset();shop_open=false;message("资源读取失败");return;}
   if(budget.pending)return;
-  p.prices_ready=true;
+  p.prices_ready=true;return;
+ }
+ // After entering a live room, finish its immediately visible card faces
+ // and prices before optional hover sets. A saved-Shop title already warmed
+ // those detached sets and the alternate idle skin in ordinary idle frames.
+ if(p.tip_slot<ShopRemove-ShopRelicStart){
+  prepare_merchant_hover(*this,game,budget);
+  if(!content.healthy()){p.reset();shop_open=false;message("资源读取失败");}
+  return;
  }
  // The original rug tween already started on OpenShop. Preparation must
  // never postpone or restart it when the final glyph becomes available.

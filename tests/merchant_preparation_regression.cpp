@@ -100,9 +100,9 @@ static unsigned missing_hover_glyphs(const State&stock){
  }
  return missing;
 }
-static void actual(const char*folder){
- const std::string root=folder;auto common=read(root+"/data/nSpire2.dat.tns"),locale=read(root+"/data/nSpire2.eng.dat.tns");SplitResourceSource split;
- CHECK(split.open(ResourceSource::memory(common.data(),common.size()),ResourceSource::memory(locale.data(),locale.size()),ResourceLanguage::English));CHECK(a.init(split.source(),{}));shop();
+static void actual(const char*folder,bool chinese=false){
+ const std::string root=folder;auto common=read(root+"/data/nSpire2.dat.tns"),locale=read(root+(chinese?"/data/nSpire2.zhs.dat.tns":"/data/nSpire2.eng.dat.tns"));SplitResourceSource split;
+ CHECK(split.open(ResourceSource::memory(common.data(),common.size()),ResourceSource::memory(locale.data(),locale.size()),chinese?ResourceLanguage::Chinese:ResourceLanguage::English));CHECK(a.init(split.source(),{}));shop();
  // Reading a title summary already exposes immutable saved stock. Prepare
  // its picture bytes during ordinary title frames without installing that
  // run into the active game, starting a tween, or invoking a save callback.
@@ -114,10 +114,12 @@ static void actual(const char*folder){
  saved_progress=a.progress;std::memcpy(saved_pixels,a.pixels,sizeof saved_pixels);
  const auto label_clocks=a.rich_label_clocks,overflow_clocks=a.overflow_label_clocks;const auto hover_state=a.keyword_hover;
  unsigned title_steps=0;
- while((a.merchant_preparation.cursor<a.merchant_preparation.stock_count||a.merchant_preparation.tip_slot<ShopRemove-ShopRelicStart)&&title_steps<8192){
+ while(a.merchant_preparation.active&&title_steps<8192){
   a.advance(33);++title_steps;unchanged();
  }
  CHECK(title_steps>0&&title_steps<8192&&a.content.image_cached(saved_picture));
+ CHECK(!a.merchant_preparation.active&&a.merchant_preparation.cursor==a.merchant_preparation.count);
+ for(unsigned i=0;i<a.merchant_preparation.count;++i)CHECK(a.content.image_cached(a.merchant_preparation.images[i]));
  CHECK(a.merchant_preparation.tip_slot==ShopRemove-ShopRelicStart&&missing_hover_glyphs(saved_shop)==0);
  CHECK(!std::memcmp(&saved_progress,&a.progress,sizeof saved_progress));
  CHECK(!std::memcmp(saved_pixels,a.pixels,sizeof saved_pixels));
@@ -158,10 +160,11 @@ static void actual(const char*folder){
  unsigned steps=0,font_steps=0;const auto room_started=a.map_clock_ms;
  while(p.active&&steps<8192){
   const unsigned decoded=p.cold_images,card=p.card;
-  const unsigned image_limit=p.prices_ready?p.count:p.stock_count;
+  const unsigned image_limit=p.prices_ready&&p.tip_slot==ShopRemove-ShopRelicStart?p.count:p.stock_count;
   const bool fonts=p.cursor==p.stock_count&&p.card<ShopCardCount&&p.text_ready;
   const bool hover_fonts=p.cursor==p.stock_count&&p.tip_slot<ShopRemove-ShopRelicStart&&p.tip_stage==1;
-  const bool bounded=p.cursor<image_limit||fonts||hover_fonts||p.card==ShopCardCount;
+  const bool hover_strings=p.card==ShopCardCount&&p.prices_ready&&p.tip_slot<ShopRemove-ShopRelicStart&&!p.tip_stage;
+  const bool bounded=p.cursor<image_limit||fonts||hover_fonts||(p.card==ShopCardCount&&!hover_strings);
   const auto reads=a.content.read_stats();
   const uint32_t groups=a.content.retained_decode_serial(),now=a.map_clock_ms;
   a.advance(33);++steps;
@@ -211,4 +214,4 @@ static void actual(const char*folder){
  CHECK(!a.room_presentation.merchant.open&&a.room_presentation.merchant.start>=cold_open);
  std::printf("actual cold inventory: %u image decodes, %u font updates in %u yielded closed-room updates; all actual stock glyphs cached, seven stock slots visible\n",decoded,font_steps,steps);
 }
-int main(int argc,char**argv){CHECK(argc==1||argc==2);budgets();pending_controls();if(argc==2)actual(argv[1]);std::printf("merchant preparation: %u checks passed\n",checks);}
+int main(int argc,char**argv){CHECK(argc>=1&&argc<=3);CHECK(argc<3||!std::strcmp(argv[2],"zhs"));budgets();pending_controls();if(argc>=2)actual(argv[1],argc==3);std::printf("merchant preparation: %u checks passed\n",checks);}

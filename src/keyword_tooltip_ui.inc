@@ -380,11 +380,17 @@ static void prepare_merchant_hover(App&a,const State&stock,GlyphPreparationBudge
     }
     if(p.tip_slot>=ShopRemove-ShopRelicStart||!budget.take())return;
     const auto&tip=tips.items[p.tip];char title[160]{},body[2048]{};
+    const unsigned string_reads=a.content.read_stats().callbacks;
     format_card_hover_tip(a,owner,tip,title,sizeof title,body,sizeof body);
     // Formatting one complete template is distinct from bounded binary
     // decoding. Its resource cohorts are at most4KiB, and the next update
     // revisits the retained strings before preparing pixels or glyphs.
-    if(!p.tip_stage){p.tip_stage=1;return;}
+    if(!p.tip_stage){
+        p.tip_stage=1;
+        // Continue revisits a set already prepared on the title. Resident
+        // templates need no empty frame before their equally resident fonts.
+        if(a.content.read_stats().callbacks!=string_reads)return;
+    }
     const auto image=[&](int id){
         if(id<0||a.content.image_cached(id))return true;
         for(;;){
