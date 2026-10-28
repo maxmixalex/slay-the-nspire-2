@@ -13,6 +13,7 @@ static_assert(sizeof(CLzmaProb)==2,"The fixed arena requires the SDK UInt16 ABI"
 static_assert(sizeof(ProbabilityArena::values)==Lzma2ProbabilityBytes,
               "Probability storage must remain exactly bounded");
 ProbabilityArena arena;
+void(*foreground_poll)()=nullptr;
 void* probability_alloc(ISzAllocPtr,size_t);
 void probability_free(ISzAllocPtr,void*);
 const ISzAlloc allocator={probability_alloc,probability_free};
@@ -26,6 +27,7 @@ void probability_free(ISzAllocPtr source,void* address){
     arena.occupied=false;++arena.frees;
 }
 }
+void set_lzma2_foreground_poll(void(*poll)()){foreground_poll=poll;}
 bool decode_lzma2_block(uint8_t* output,uint32_t capacity,uint32_t expected_size,
     const uint8_t* input,uint32_t input_size,uint32_t property){
     if(arena.occupied||!output||!input||!expected_size||expected_size>Lzma2BlockRawLimit||
@@ -34,6 +36,23 @@ bool decode_lzma2_block(uint8_t* output,uint32_t capacity,uint32_t expected_size
     const uintptr_t destination=(uintptr_t)output,source=(uintptr_t)input;
     if(destination<=source?source-destination<expected_size:destination-source<input_size)return false;
     arena.allocations=arena.frees=0;arena.fault=false;
+    if(foreground_poll){
+        // Reuse the synchronous probability arena and the existing streaming
+        // decoder. Each foreground return produces at most4KiB; there is no
+        // new pixel/dictionary allocation and no change to stream framing.
+        Lzma2BlockStream stream;
+        arena.occupied=true;
+        bool valid=begin_lzma2_stream(stream,output,capacity,expected_size,input_size,property,
+            reinterpret_cast<uint8_t*>(arena.values),Lzma2ProbabilityBytes);
+        uint32_t at=0;auto result=Lzma2StepResult::Pending;
+        while(valid&&result==Lzma2StepResult::Pending){
+            uint32_t consumed=0;
+            result=step_lzma2_stream(stream,input+at,input_size-at,consumed,4096);
+            at+=consumed;
+        }
+        arena.occupied=false;
+        return valid&&result==Lzma2StepResult::Ready&&at==input_size;
+    }
     SizeT produced=expected_size,consumed=input_size;
     ELzmaStatus status=LZMA_STATUS_NOT_SPECIFIED;
     const SRes result=Lzma2Decode(output,&produced,input,&consumed,(Byte)property,
@@ -87,10 +106,15 @@ Lzma2StepResult step_lzma2_stream(Lzma2BlockStream&storage,const uint8_t*input,
        !disjoint(s.decoder.decoder.dic,s.expected,input,input_size)||
        !disjoint(s.probabilities,Lzma2ProbabilityBytes,input,input_size))return Lzma2StepResult::Failed;
     const uint32_t before=uint32_t(s.decoder.decoder.dicPos),remaining=s.expected-before;
+    // Incremental preload also runs on the foreground. Capture at the same
+    // bounded decoder boundaries, including calls that consume only headers.
+    const auto poll=foreground_poll;
+    if(poll){if(output_budget>4096)output_budget=4096;poll();}
     const uint32_t count=remaining<output_budget?remaining:output_budget,limit=before+count;
     SizeT available=input_size;ELzmaStatus status=LZMA_STATUS_NOT_SPECIFIED;
     const SRes code=Lzma2Dec_DecodeToDic(&s.decoder,limit,input,&available,
         limit==s.expected?LZMA_FINISH_END:LZMA_FINISH_ANY,&status);
+    if(poll)poll();
     consumed=uint32_t(available);s.consumed+=consumed;
     const uint32_t produced=uint32_t(s.decoder.decoder.dicPos);
     if(code!=SZ_OK||produced<before||produced-before>output_budget){s.valid=false;return Lzma2StepResult::Failed;}

@@ -146,6 +146,7 @@
     }
     unsigned vantom_dissolve(unsigned actor)const{return actor&&actor<=MaxEnemies?vantom_effects()[actor-1].clock.dissolve(a.animation*33u):0;}
     void vantom_particle_image(int image,int32_t cx,int32_t cy,int32_t xx,int32_t xy,int32_t yx,int32_t yy,unsigned red,unsigned green,unsigned blue){
+        poll();
         const auto p=a.content.image(image);if(!p.pixels||p.format>3)return;
         const int64_t det=int64_t(xx)*yy-int64_t(xy)*yx;if(!det)return;
         const int64_t bound_x=int64_t(CombatCardMotion::magnitude(xx))*p.w+int64_t(CombatCardMotion::magnitude(xy))*p.h;
@@ -155,7 +156,7 @@
         if(left>=right||top>=bottom)return;
         const int64_t ia=int64_t(yy)*4294967296ll/det,ib=-int64_t(xy)*4294967296ll/det;
         const int64_t ic=-int64_t(yx)*4294967296ll/det,id=int64_t(xx)*4294967296ll/det;
-        for(int py=top;py<bottom;++py)for(int px=left;px<right;++px){
+        for(int py=top;py<bottom;++py){poll_row(unsigned(py-top));for(int px=left;px<right;++px){
             unsigned coverage=0,r=0,g=0,b=0;
             // Four fixed subpixel samples retain fine9×20 spray coverage on
             // the LCD without magnifying tiny particles or a scratch bitmap.
@@ -171,7 +172,7 @@
             if(!coverage)continue;
             const uint16_t color=uint16_t(((r/coverage)*red/255u)<<11|((g/coverage)*green/255u)<<5|((b/coverage)*blue/255u));
             paint(py*pitch+px,color,(coverage+2u)/4u);
-        }
+        }}
     }
     void vantom_draw_particles(unsigned actor,unsigned kind,int x,int y,int scale,unsigned reference_units){
         if(!actor||actor>MaxEnemies||kind>=vantom_vfx::EmitterCount||!reference_units||scale<=0)return;

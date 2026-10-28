@@ -126,7 +126,7 @@
         uint16_t colors[320],columns[320];uint8_t alpha[320],noise[320];
         const uint8_t*pixel_run=p.pixels,*mask_run=mask.pixels;unsigned decoded=0;
         for(int x=left;x<right;++x)columns[x-left]=uint16_t(unsigned(x)*p.w/unsigned(d.w));
-        for(int y=top;y<bottom;++y){const unsigned row=unsigned(y)*p.h/unsigned(d.h);
+        for(int y=top;y<bottom;++y){poll_row(unsigned(y-top));const unsigned row=unsigned(y)*p.h/unsigned(d.h);
             while(decoded<=row){vantom_pixels(p,decoded,pixel_run,colors,alpha);vantom_pixels(mask,decoded,mask_run,nullptr,noise);++decoded;}
             int at=(d.y+y)*pitch+d.x+left;
             for(int x=left;x<right;++x,++at){const unsigned source=columns[x-left],coverage=div255(alpha[source]*threshold[noise[source]]);
@@ -203,6 +203,7 @@
                 uy=(int64_t(ey0)*v0.u+int64_t(ey1)*v1.u+int64_t(ey2)*v2.u)/area,
                 vy=(int64_t(ey0)*v0.v+int64_t(ey1)*v1.v+int64_t(ey2)*v2.v)/area;
             for(int y=top;y<bottom;++y,row0+=ey0,row1+=ey1,row2+=ey2,ru+=uy,rv+=vy){
+                poll_row(unsigned(y-top));
                 int64_t e0=row0,e1=row1,e2=row2,u=ru,v=rv;int at=y*pitch+left;
                 for(int x=left;x<right;++x,++at,e0+=ex0,e1+=ex1,e2+=ex2,u+=ux,v+=vx){
                     if(e0<0||(!e0&&!inclusive0)||e1<0||(!e1&&!inclusive1)||e2<0||(!e2&&!inclusive2))continue;

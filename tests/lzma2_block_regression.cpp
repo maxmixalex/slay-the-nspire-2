@@ -83,7 +83,9 @@ static std::vector<uint8_t> uncompressed(const std::vector<uint8_t>&raw){
     }
     result.push_back(0);return result;
 }
-int main(){
+static unsigned foreground_polls;
+static void count_poll(){++foreground_polls;}
+static void fixtures(){
     std::vector<uint8_t> raw(4097);
     for(size_t i=0;i<raw.size();++i)raw[i]=(i%31)*5;
     fixture(raw,{context_4_0_1,context_4_0_1+sizeof context_4_0_1});
@@ -108,5 +110,27 @@ int main(){
     CHECK(!decode_lzma2_block(input,sizeof input,2,input+1,sizeof input-1,14));
     CHECK(decode_lzma2_block(output,sizeof output,1,input,sizeof input,14)&&output[0]==0x5a);
     input[3]=0x6b;CHECK(decode_lzma2_block(output,sizeof output,1,input,sizeof input,14)&&output[0]==0x6b);
-    std::printf("Bounded LZMA2: %u checks, 8 synthetic fixtures, adaptive literal contexts, 512 KiB maximum output, 28,544-byte probability arena\n",checks);
+}
+static uint8_t* observed_output;
+static unsigned observed_produced,observed_limit;
+static bool tried_nested;
+static void bounded_poll(){
+    ++foreground_polls;unsigned produced=observed_produced;
+    while(produced<observed_limit&&!observed_output[produced])++produced;
+    CHECK(produced-observed_produced<=4096);observed_produced=produced;
+    // The shared synchronous arena must reject accidental decoder reentry,
+    // including a callback before the first output chunk was produced.
+    if(!tried_nested){tried_nested=true;uint8_t byte=0;const uint8_t one[]={1,0,0,0x71,0};
+        CHECK(!decode_lzma2_block(&byte,1,1,one,sizeof one,14));}
+}
+int main(){
+    fixtures();set_lzma2_foreground_poll(count_poll);fixtures();CHECK(foreground_polls>0);
+    std::vector<uint8_t> output(Lzma2BlockRawLimit,0xcd);observed_output=output.data();observed_limit=output.size();
+    foreground_polls=0;set_lzma2_foreground_poll(bounded_poll);
+    CHECK(decode_lzma2_block(output.data(),output.size(),output.size(),compressed_zeros,sizeof compressed_zeros,14));
+    CHECK(tried_nested&&observed_produced==output.size()&&foreground_polls>=256&&foreground_polls<=258);
+    set_lzma2_foreground_poll(nullptr);
+    // A captured decode must release the same fixed arena for a later caller.
+    const uint8_t one[]={1,0,0,0x71,0};uint8_t byte=0;CHECK(decode_lzma2_block(&byte,1,1,one,sizeof one,14)&&byte==0x71);
+    std::printf("Bounded LZMA2: %u checks, 8 fixtures with/without foreground capture, <=4KiB output between polls, unchanged fixed arena\n",checks);
 }

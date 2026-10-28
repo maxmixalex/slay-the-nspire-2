@@ -51,13 +51,19 @@ struct Canvas{
     uint32_t text_fly_in_elapsed=UINT32_MAX; // Label-local elapsed time; no layout or RNG changes.
     uint32_t text_effect_identity=0; // Stable owner for a moving/scrolled label.
     GlyphPreparationBudget* glyph_preparation=nullptr;
+    // Coarse foreground collection only. Never dispatch an input transaction
+    // while a renderer owns pixels, cached image views or shared workspaces.
+    void poll()const{if(a.callbacks.foreground_poll)a.callbacks.foreground_poll();}
+    void poll_row(unsigned row)const{if(!(row&15u))poll();}
     Glyph resolve_glyph(uint32_t codepoint,int size,unsigned style){
+        poll();
         if(!glyph_preparation)return a.content.glyph(codepoint,size,style);
         auto&budget=*glyph_preparation;
         if(a.content.glyph_cached(codepoint,size,style))return {};
         // Finish or yield this one miss before considering another glyph:
         // switching requests mid-decode would cancel its retained work.
         for(;;){
+            poll();
             if(!budget.take()){budget.pending=true;return {};}
             const auto result=a.content.preload_glyph_step(codepoint,size,style);
             if(result==PreparationResult::Ready)break;
@@ -106,6 +112,7 @@ struct Canvas{
     }
     void ui(int id,int x,int y,int w=0,int h=0,unsigned alpha=255){picture(a.content.ui_image(id),x,y,w,h,alpha);}
     bool nine_image(int id,int x,int y,int w,int h,int l,int t,int r,int b,unsigned alpha=255,unsigned mode=0){
+        poll();
         if(w<=0||h<=0||clip_w<=0||clip_h<=0||!alpha)return false;
         const auto p=a.content.image(id);if(!p.pixels||p.format>3)return false;
         const int left=mx(0,-x),right=mn(w,clip_w-x),top=mx(0,-y),bottom=mn(h,clip_h-y);
@@ -141,6 +148,7 @@ struct Canvas{
                     for(unsigned i=0;i<64;++i)shade[32+i]=uint16_t(div255(i*inverse)<<5);
                 }
                 for(int yy=top;yy<bottom;++yy){
+                    poll_row(unsigned(yy-top));
                     const int row=nine_patch::coordinate(yy,h,p.h,t,b)*p.w;
                     uint16_t*out=pixels+(y+yy)*pitch+x+left;
                     for(int xx=left;xx<right;++xx,++out){
@@ -148,12 +156,17 @@ struct Canvas{
                         const unsigned value=alpha_identity?source:alpha_map[source];
                         if(!value)continue;
                         if(value==255)*out=0;
+                        // Black at128 alpha is exactly floor(channel/2) for
+                        // every RGB565 channel. Common panels can use one
+                        // mask/shift instead of three channel-table loads.
+                        else if(value==128)*out=uint16_t((*out&0xf7deu)>>1);
                         else if(table&&source==255){const unsigned back=*out;*out=uint16_t(shade[back>>11]|shade[32+((back>>5)&63)]|shade[96+(back&31)]);}
                         else *out=blend(*out,0,value);
                     }
                 }
             }else{
                 for(int yy=top;yy<bottom;++yy){
+                    poll_row(unsigned(yy-top));
                     const int row=nine_patch::coordinate(yy,h,p.h,t,b)*p.w;
                     uint16_t*out=pixels+(y+yy)*pitch+x+left;
                     for(int xx=left;xx<right;++xx,++out){
@@ -170,6 +183,7 @@ struct Canvas{
             return true;
         }
         for(int yy=top;yy<bottom;++yy){
+                    poll_row(unsigned(yy-top));
             const int row=nine_patch::coordinate(yy,h,p.h,t,b)*p.w;
             for(int xx=left;xx<right;++xx){
                 const int at=row+columns[xx-left];unsigned coverage=p.alpha?p.alpha[at]:255;
@@ -213,18 +227,24 @@ struct Canvas{
         // Main-surface clears and opaque plaques need no per-pixel blending
         // state. Cached coverage and every layer modulation keep paint().
         if(!occlusion&&!color_matrix&&!coverage&&opacity==255&&brightness==255&&tint_red==255&&tint_green==255&&tint_blue==255){
-            for(int yy=top;yy<bottom;++yy)for(int xx=left;xx<right;++xx)pixels[yy*pitch+xx]=color;
+            for(int yy=top;yy<bottom;++yy){if(right-left>=32)poll_row(unsigned(yy-top));
+                for(int xx=left;xx<right;++xx)pixels[yy*pitch+xx]=color;}
             return;
         }
-        for(int yy=top;yy<bottom;++yy)for(int xx=left;xx<right;++xx)paint(yy*pitch+xx,color);
+        for(int yy=top;yy<bottom;++yy){if(right-left>=32)poll_row(unsigned(yy-top));
+            for(int xx=left;xx<right;++xx)paint(yy*pitch+xx,color);}
     }
     void box(int x,int y,int w,int h,uint16_t c){rect(x,y,w,1,c);rect(x,y+h-1,w,1,c);rect(x,y,1,h,c);rect(x+w-1,y,1,h,c);}
-    void dim(int x,int y,int w,int h,unsigned alpha){for(int yy=mx(0,y);yy<mn(clip_h,y+h);yy++)for(int xx=mx(0,x);xx<mn(clip_w,x+w);xx++){paint(yy*pitch+xx,Ink,alpha);}}
+    void dim(int x,int y,int w,int h,unsigned alpha){
+        for(int yy=mx(0,y);yy<mn(clip_h,y+h);yy++){poll_row(unsigned(yy-mx(0,y)));
+            for(int xx=mx(0,x);xx<mn(clip_w,x+w);xx++)paint(yy*pitch+xx,Ink,alpha);}}
     void line(int x,int y,int xx,int yy,uint16_t color,bool dots=false){
+        poll();
         int dx=xx>x?xx-x:x-xx,dy=yy>y?y-yy:yy-y,sx=x<xx?1:-1,sy=y<yy?1:-1,err=dx+dy,step=0;
         for(;;){if(!dots||(step/3)%2==0)rect(x,y,1,1,color);if(x==xx&&y==yy)break;int e=err*2;if(e>=dy){err+=dy;x+=sx;}if(e<=dx){err+=dx;y+=sy;}step++;}
     }
     void picture(int id,int x,int y,int width=0,int height=0,unsigned opacity=255,unsigned blend_mode=0){
+        poll();
         // Dimensions are resident metadata. Hidden entrance/exit layers must
         // not pull compressed image pages into the cache before they appear.
         if(clip_w<=0||clip_h<=0||!opacity||!this->opacity)return;
@@ -258,6 +278,7 @@ struct Canvas{
         const unsigned initial=unsigned(top-y)*cover.h;
         unsigned row=initial/rows,row_remainder=initial%rows,previous=~0u;
         for(int yy=top;yy<bottom;++yy){
+                    poll_row(unsigned(yy-top));
             if(row!=previous){const auto*alpha=cover.alpha+row*cover.w;
                 for(int xx=0;xx<columns;++xx)if(alpha[source[xx]]!=255)return false;
                 previous=row;
@@ -306,6 +327,7 @@ struct Canvas{
         };
         if(width==p.w&&height==p.h){
             for(int yy=top;yy<bottom;++yy){
+                    poll_row(unsigned(yy-top));
                 uint16_t*destination=pixels+(y+yy)*pitch+x+left;
                 unsigned index=unsigned(yy)*p.w+unsigned(left);
                 const uint8_t*mask=Masked?occlusion+(y+yy)*pitch+x+left:nullptr;
@@ -326,6 +348,7 @@ struct Canvas{
         const unsigned first_row=unsigned(top)*p.h;
         unsigned row_index=first_row/row_divisor,row_remainder=first_row%row_divisor;
         for(int yy=top;yy<bottom;++yy){
+                    poll_row(unsigned(yy-top));
             const unsigned row=row_index*p.w;
             uint16_t*destination=pixels+(y+yy)*pitch+x+left;
             const uint8_t*mask=Masked?occlusion+(y+yy)*pitch+x+left:nullptr;
@@ -336,6 +359,7 @@ struct Canvas{
         }
     }
     void picture(Picture p,int x,int y,int width=0,int height=0,unsigned opacity=255,unsigned blend_mode=0){
+        poll();
         if(!p.pixels||!opacity)return;if(!width)width=p.w;if(!height)height=p.h;
         if(width<=0||height<=0)return;int left=mx(0,-x),right=mn(width,clip_w-x),top=mx(0,-y),bottom=mn(height,clip_h-y);if(left>=right||top>=bottom)return;
         // Most room animation planes have partial alpha but no layer tint,
@@ -388,6 +412,7 @@ struct Canvas{
                 unsigned row_remainder=p.h-1;int y0=0;
                 const uint8_t*run=p.pixels;
                 for(unsigned sy=0;sy<p.h;sy++){
+                    poll_row(sy);
                     int y1=y0+int(row_step);row_remainder+=row_advance;
                     if(row_remainder>=p.h){row_remainder-=p.h;++y1;}
                     const int row_top=mx(top,y0),row_bottom=mn(bottom,y1);
@@ -417,6 +442,7 @@ struct Canvas{
             // Animation frames are prebaked at native size. Skip transparent runs entirely.
             const uint8_t* run=p.pixels;
             for(int yy=0;yy<p.h;yy++){
+                poll_row(unsigned(yy));
                 unsigned spans=run[0]|(unsigned)run[1]<<8;run+=2;
                 for(unsigned s=0;s<spans;s++){
                     unsigned sx=run[0]|(unsigned)run[1]<<8,n=run[2]|(unsigned)run[3]<<8,mode=run[4];run+=5;
@@ -445,11 +471,11 @@ struct Canvas{
             if(direct){
                 // Decoded RGB565 bytes may be unaligned. Preserve the explicit
                 // little-endian load instead of casting the resource pointer.
-                for(int yy=top;yy<bottom;++yy){int at=(y+yy)*pitch+x+left;const uint8_t*src=p.pixels+(yy*p.w+left)*2;
+                for(int yy=top;yy<bottom;++yy){poll_row(unsigned(yy-top));int at=(y+yy)*pitch+x+left;const uint8_t*src=p.pixels+(yy*p.w+left)*2;
                     for(int xx=left;xx<right;++xx,++at,src+=2)pixels[at]=uint16_t(src[0]|(uint16_t(src[1])<<8));}
                 return;
             }
-            for(int yy=top;yy<bottom;yy++){int at=(y+yy)*pitch+x+left;const uint8_t*src=p.pixels+(yy*p.w+left)*2;for(int xx=left;xx<right;xx++,at++,src+=2)paint(at,src[0]|(uint16_t)src[1]<<8,255,blend_mode);}
+            for(int yy=top;yy<bottom;yy++){poll_row(unsigned(yy-top));int at=(y+yy)*pitch+x+left;const uint8_t*src=p.pixels+(yy*p.w+left)*2;for(int xx=left;xx<right;xx++,at++,src+=2)paint(at,src[0]|(uint16_t)src[1]<<8,255,blend_mode);}
             return;
         }
         // Exact nearest-neighbour sampling needs a division only at the
@@ -467,6 +493,7 @@ struct Canvas{
         const unsigned first_row=unsigned(top)*p.h;
         unsigned row_index=first_row/row_divisor,row_remainder=first_row%row_divisor;
         for(int yy=top;yy<bottom;yy++){
+            poll_row(unsigned(yy-top));
             int row=int(row_index*p.w);int at=(y+yy)*pitch+x+left;
             for(int xx=left;xx<right;xx++,at++){
                 int i=row+source[xx-left];unsigned alpha=p.alpha?p.alpha[i]:255;if(opacity!=255)alpha=div255(alpha*opacity);if(!alpha)continue;
@@ -481,6 +508,7 @@ struct Canvas{
     // Atlas regions stay at their prebaked size. A mirrored region shares its
     // original image/cache entry; no second resource or scratch bitmap is needed.
     void picture_region(Picture p,int x,int y,int source_x,int source_y,int width,int height,bool mirror=false,unsigned opacity=255,unsigned mode=0){
+        poll();
         if(!p.pixels||!opacity||width<=0||height<=0)return;
         const int left=mx(0,-x),right=mn(width,clip_w-x),top=mx(0,-y),bottom=mn(height,clip_h-y);
         if(left>=right||top>=bottom)return;
@@ -490,6 +518,7 @@ struct Canvas{
         if(p.format==4){
             const uint8_t*run=p.pixels;
             for(int sy=0;sy<sy1;++sy){
+                poll_row(unsigned(sy));
                 unsigned spans=run[0]|unsigned(run[1])<<8;run+=2;
                 for(unsigned span=0;span<spans;++span){
                     const int sx=run[0]|unsigned(run[1])<<8,n=run[2]|unsigned(run[3])<<8;
@@ -505,13 +534,13 @@ struct Canvas{
             }
             return;
         }
-        for(int sy=sy0;sy<sy1;++sy)for(int sx=sx0;sx<sx1;++sx){
+        for(int sy=sy0;sy<sy1;++sy){poll_row(unsigned(sy-sy0));for(int sx=sx0;sx<sx1;++sx){
             const unsigned at=unsigned(sy)*p.w+unsigned(sx),alpha=div255((p.alpha?p.alpha[at]:255)*opacity);
             if(!alpha)continue;
             const uint8_t*pixel=p.palette?p.palette+2*p.pixels[at]:p.pixels+2*at;
             const int dx=mirror?width-1-(sx-source_x):sx-source_x;
             paint((y+sy-source_y)*pitch+x+dx,uint16_t(pixel[0]|unsigned(pixel[1])<<8),alpha,mode);
-        }
+        }}
     }
     #include "vantom_ui15.inc"
     #include "vantom_vfx_ui15.inc"
@@ -565,6 +594,7 @@ struct Canvas{
         return text_pixel(w);
     }
     void glyph(Glyph g,int x,int y,uint16_t color){
+        poll();
         // The caller has already resolved and cached the glyph. Empty
         // preparation surfaces need no raster-span traversal.
         if(clip_w<=0||clip_h<=0)return;

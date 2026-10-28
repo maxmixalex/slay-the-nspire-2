@@ -16,6 +16,11 @@ constexpr uint32_t Lzma2DictionaryProperty=14u;
 bool decode_lzma2_block(uint8_t* output,uint32_t capacity,uint32_t expected_size,
     const uint8_t* input,uint32_t input_size,uint32_t property);
 
+// Optional foreground hardware collection only: it must not dispatch input,
+// touch decoder/resource state or advance gameplay. Null keeps the ordinary
+// synchronous path. A host may bind its existing bounded input FIFO sampler.
+void set_lzma2_foreground_poll(void(*poll)());
+
 // Foreground preparation keeps its dictionary and probability bytes in the
 // existing retained-picture pool. The small opaque state contains no pixels,
 // owns no allocation, and never borrows the shared transfer workspace.

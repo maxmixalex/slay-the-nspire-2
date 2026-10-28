@@ -26,7 +26,7 @@ struct RandomGradientCache {
         const uint32_t g=(((ag<<8)+(bg-ag)*f+0x1000u)>>8)&0x07e0u;
         return uint16_t(((rb>>5)&0xf800u)|g|(rb&31u));
     }
-    bool bind(const Content&content,const water_reflection::Texture&texture){
+    bool bind(const Content&content,const water_reflection::Texture&texture,void(*poll)()=nullptr){
         const Picture p=texture.storage();
         if(observed&&owner==&content&&generation==content.generation()&&
            logical_width==texture.width()&&logical_height==texture.height()&&
@@ -38,7 +38,7 @@ struct RandomGradientCache {
         if(!texture.valid()||p.format>4||logical_width!=Side||logical_height!=Side)return false;
         for(auto&byte:vertical_unit)byte=0;
         uint32_t keys[Capacity];uint16_t buckets[512]{};
-        for(unsigned y=0;y<Side;++y)for(unsigned x=0;x<Side;++x){
+        for(unsigned y=0;y<Side;++y){if(!(y&15u)&&poll)poll();for(unsigned x=0;x<Side;++x){
             const uint16_t a=texture.at(x,y).color,b=texture.at(x+1,y).color;
             const uint16_t c=texture.at(x,y+1).color,d=texture.at(x+1,y+1).color;
             const unsigned at=y*Side+x;
@@ -50,11 +50,12 @@ struct RandomGradientCache {
                 // A changed source with more distinct pairs keeps the
                 // complete general sampler; no table entry may overflow.
                 if(count==Capacity)return false;
+                if(poll)poll();
                 keys[count]=key;buckets[bucket]=uint16_t(++count);
                 for(unsigned f=0;f<256;++f)horizontal[count-1][f]=mix(a,b,f);
             }
             pairs[at]=uint16_t(buckets[bucket]-1);
-        }
+        }}
         valid=true;return true;
     }
     [[gnu::always_inline]] uint16_t sample(int u_q16,int v_q16)const{
@@ -148,7 +149,7 @@ struct RandomLightQuadCache {
         const int red=int(a>>11)-int(b>>11),green=int((a>>5)&63)-int((b>>5)&63);
         return unsigned(red+1)<=2&&unsigned(green+1)<=2;
     }
-    bool bind(const Content&content,const water_reflection::Texture&texture){
+    bool bind(const Content&content,const water_reflection::Texture&texture,void(*poll)()=nullptr){
         const Picture p=texture.storage();
         if(observed&&owner==&content&&generation==content.generation()&&
            logical_width==texture.width()&&logical_height==texture.height()&&
@@ -160,7 +161,7 @@ struct RandomLightQuadCache {
         for(auto&byte:safe)byte=0;
         for(auto&byte:maximum)byte=0;
         for(auto&byte:minimum)byte=255;
-        for(unsigned y=0;y<256;++y)for(unsigned x=0;x<256;++x){
+        for(unsigned y=0;y<256;++y){if(!(y&15u)&&poll)poll();for(unsigned x=0;x<256;++x){
             const uint16_t a=texture.at(x,y).color,b=texture.at(x+1,y).color;
             const uint16_t c=texture.at(x,y+1).color,d=texture.at(x+1,y+1).color;
             const unsigned red=mx(mx(a>>11,b>>11),mx(c>>11,d>>11));
@@ -174,7 +175,7 @@ struct RandomLightQuadCache {
             if(adjacent(a,b)&&adjacent(c,d)&&adjacent(a,c)&&adjacent(b,d)){
                 const unsigned at=y*256+x;safe[at>>3]|=uint8_t(1u<<(at&7));
             }
-        }
+        }}
         valid=true;return true;
     }
 };
@@ -364,6 +365,7 @@ static void random_character_light(Canvas&c,const RandomLightSampler&light,
         int left,int top,int right,int bottom,int du,int dv,RandomRowQuotient row_u,RandomRowQuotient row_v){
     const RandomLightTileStep u_tiles(du),v_tiles(-dv);
     for(int y=top;y<bottom;++y,row_u.advance(),row_v.advance()){
+        c.poll_row(unsigned(y-top));
         int u=32768+row_u.value(),v=32768+row_v.value();auto*out=c.pixels+y*c.pitch;
         const auto interior=random_interior_range(u,v,du,-dv,unsigned(right-left));
         const int first=left+int(interior.first),last=left+int(interior.last);int x=left;
@@ -411,6 +413,7 @@ static void random_character_white_dot(Canvas&c,const water_reflection::Texture&
         unsigned alpha,uint16_t color){
     const auto*source=texture.storage().alpha;
     for(int y=top;y<bottom;++y,row_u.advance(),row_v.advance()){
+        c.poll_row(unsigned(y-top));
         int u=32768+row_u.value(),v=32768+row_v.value();auto*out=c.pixels+y*c.pitch;
         const auto interior=random_interior_range(u,v,du,-dv,unsigned(right-left));
         const int first=left+int(interior.first),last=left+int(interior.last);int x=left;
@@ -457,7 +460,7 @@ static void random_character_particle(Canvas&c,const water_reflection::Texture&t
             if(i<32){add_red[i]=uint8_t(div255(div255(i*red)*alpha));add_blue[i]=uint8_t(div255(div255(i*blue)*alpha));}}
     }
     const bool use_light=add_fast&&blue==0;
-    const uint8_t*quad_safe=use_light&&random_light_quads.bind(c.a.content,texture)?random_light_quads.safe:nullptr;
+    const uint8_t*quad_safe=use_light&&random_light_quads.bind(c.a.content,texture,c.a.callbacks.foreground_poll)?random_light_quads.safe:nullptr;
     // A direct4096-entry contribution table costs one read per shaded pixel.
     // It lives only in the existing map workspace's render tail for this
     // particle call, avoiding both the calculator stack and a permanent pool.
@@ -478,6 +481,7 @@ static void random_character_particle(Canvas&c,const water_reflection::Texture&t
         random_character_white_dot(c,texture,left,top,right,bottom,du,dv,row_u,row_v,alpha,dot_color);return;
     }
     for(int y=top;y<bottom;++y,row_u.advance(),row_v.advance()){
+        c.poll_row(unsigned(y-top));
         int u=32768+row_u.value(),v=32768+row_v.value();
         for(int x=left;x<right;++x,u+=du,v-=dv){
             if(u<0||v<0||u>=65536||v>=65536)continue;
@@ -527,8 +531,9 @@ static void random_character_water(Canvas&c,const water_reflection::Texture&grad
         for(int y=0;y<5;++y)noise_rows[y][x]=uint8_t((noise.at(ix,y,true).alpha*(256-fraction)+noise.at(ix+1,y,true).alpha*fraction+128)>>8);
     }
     const bool direct=c.opacity==255&&c.brightness==255&&c.tint_red==255&&c.tint_green==255&&c.tint_blue==255&&!c.color_matrix&&!c.occlusion&&!c.coverage;
-    const bool lookup=cache&&cache->bind(c.a.content,gradient);
+    const bool lookup=cache&&cache->bind(c.a.content,gradient,c.a.callbacks.foreground_poll);
     for(int y=0;y<c.clip_h&&y<240;++y){
+        c.poll_row(unsigned(y));
         const int v=(V0+y*VStep)>>8,position=((v-parameters.pan_q16)&65535)*5-32768;
         const int iy=position>>16,top=iy<0?4:iy,bottom=iy+1>=5?0:iy+1;const unsigned fraction=unsigned(position&65535)>>8;
         const auto*a=noise_rows[top],*b=noise_rows[bottom];auto*out=c.pixels+y*c.pitch;

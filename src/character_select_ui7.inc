@@ -247,14 +247,14 @@ static void character_departure_dim(Canvas&c,unsigned alpha){
     const bool direct=character_departure_direct(c);const unsigned keep=255-alpha;
     if(direct){const CharacterDepartureShade shade(keep);
         const int width=mn(c.clip_w,320),height=mn(c.clip_h,240);
-        for(int y=0;y<height;++y){auto*out=c.pixels+y*c.pitch;
+        for(int y=0;y<height;++y){c.poll_row(unsigned(y));auto*out=c.pixels+y*c.pitch;
             for(int x=0;x<width;++x)out[x]=shade.apply(out[x]);}
         return;
     }
-    for(int y=0;y<mn(c.clip_h,240);++y)for(int x=0;x<mn(c.clip_w,320);++x){
+    for(int y=0;y<mn(c.clip_h,240);++y){c.poll_row(unsigned(y));for(int x=0;x<mn(c.clip_w,320);++x){
         const unsigned at=y*c.pitch+x;
         c.paint(at,0,alpha);
-    }
+    }}
 }
 static void character_departure_screen(Canvas&c){
     const auto&m=c.a.character_departure;if(!m.active())return;c.a.hit_count=0;
@@ -281,14 +281,14 @@ static void character_departure_screen(Canvas&c){
         const CharacterDepartureShade fade(keep);const int width=mn(c.clip_w,320),height=mn(c.clip_h,240);
         if(mask.palette){uint8_t opaque[256];
             for(unsigned i=0;i<256;++i)opaque[i]=(unsigned(mask.palette[i*2])|unsigned(mask.palette[i*2+1])<<8)>=threshold;
-            for(int y=0;y<height;++y){auto*out=c.pixels+y*c.pitch;const auto*row=mask.pixels+y*320;
+            for(int y=0;y<height;++y){c.poll_row(unsigned(y));auto*out=c.pixels+y*c.pitch;const auto*row=mask.pixels+y*320;
                 for(int x=0;x<width;++x)out[x]=opaque[row[x]]?0:fade.apply(out[x]);}
-        }else for(int y=0;y<height;++y){auto*out=c.pixels+y*c.pitch;const auto*row=mask.pixels+y*640;
+        }else for(int y=0;y<height;++y){c.poll_row(unsigned(y));auto*out=c.pixels+y*c.pitch;const auto*row=mask.pixels+y*640;
             for(int x=0;x<width;++x)out[x]=(unsigned(row[x*2])|unsigned(row[x*2+1])<<8)>=threshold?0:fade.apply(out[x]);}
         return;
     }
     if(mask.format==4){character_departure_dim(c,shade);const uint8_t*run=mask.pixels;
-        for(int y=0;y<240;++y){const unsigned count=run[0]|unsigned(run[1])<<8;run+=2;
+        for(int y=0;y<240;++y){c.poll_row(unsigned(y));const unsigned count=run[0]|unsigned(run[1])<<8;run+=2;
             for(unsigned span=0;span<count;++span){const unsigned left=run[0]|unsigned(run[1])<<8,n=run[2]|unsigned(run[3])<<8,stride=run[4]?3:2;run+=5;
                 for(unsigned i=0;i<n;++i,run+=stride)if(left+i<unsigned(c.clip_w)&&y<c.clip_h&&(unsigned(run[0])|unsigned(run[1])<<8)>=threshold){
                     if(direct)c.pixels[y*c.pitch+left+i]=0;else c.paint(y*c.pitch+left+i,0);
@@ -297,12 +297,12 @@ static void character_departure_screen(Canvas&c){
         }
     }else{
         uint8_t opaque[256];if(mask.palette)for(unsigned i=0;i<256;++i)opaque[i]=(unsigned(mask.palette[i*2])|unsigned(mask.palette[i*2+1])<<8)>=threshold;
-        for(int y=0;y<mn(c.clip_h,240);++y)for(int x=0;x<mn(c.clip_w,320);++x){
+        for(int y=0;y<mn(c.clip_h,240);++y){c.poll_row(unsigned(y));for(int x=0;x<mn(c.clip_w,320);++x){
             const unsigned at=y*320+x;const bool clear=mask.palette?opaque[mask.pixels[at]]:
                 (unsigned(mask.pixels[at*2])|unsigned(mask.pixels[at*2+1])<<8)>=threshold;
             const unsigned out=y*c.pitch+x;
             if(direct)c.pixels[out]=clear?0:character_departure_black(c.pixels[out],keep);
             else if(clear||shade)c.paint(out,0,clear?255:shade);
-        }
+        }}
     }
 }

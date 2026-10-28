@@ -2,8 +2,8 @@
 #include <stdint.h>
 
 namespace spire {
-// Resource reads can outlast a tap. Remember matrix changes between game
-// updates without dispatching App callbacks from a filesystem operation.
+// Resource reads and CPU rendering can outlast a tap. Remember matrix
+// changes between updates without dispatching App callbacks from that work.
 // The bounded FIFO preserves press/release and text order. In overload the
 // newest entry becomes the actual final state, so no key remains held.
 struct CalculatorInputLatch {
@@ -37,6 +37,20 @@ struct CalculatorInputLatch {
     }
 };
 static_assert(sizeof(CalculatorInputLatch)<616,"Matrix and pad latching share one bounded FIFO");
+
+// The calculator's read-only32768Hz down-counter throttles the complete
+// matrix+pad sample, including many cheap rendering boundaries in one frame.
+// Ordinary main-loop samples mark this same clock; wrap uses unsigned math.
+struct CalculatorForegroundPoll {
+    static constexpr uint32_t Interval=263; // ceil(8ms *32768Hz)
+    uint32_t sampled_ticks=0;
+    bool sampled=false;
+    void mark(uint32_t now){sampled_ticks=now;sampled=true;}
+    bool due(uint32_t now,bool enabled){
+        if(!enabled||(sampled&&sampled_ticks-now<Interval))return false;
+        mark(now);return true;
+    }
+};
 
 // Poll around bounded reads, including a short final read. Startup callers
 // can keep their larger sequential reads until foreground input is enabled.

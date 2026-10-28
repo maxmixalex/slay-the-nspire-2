@@ -12,6 +12,7 @@
 #include "resource_transfer.hpp"
 #include "installation_paths.hpp"
 #include "calculator_system_language.hpp"
+#include "lzma2_block.hpp"
 extern "C" {
 void* nd_open(const char*,const char*);
 unsigned nd_read(void*,unsigned,unsigned,void*);
@@ -56,8 +57,7 @@ static spire::CalculatorInputLatch input_latch;
 struct Touchpad;
 static Touchpad*resource_pad=nullptr;
 static spire::CalculatorPadInput resource_pad_capture;
-static uint32_t pad_sampled_ticks=0;
-static bool pad_sampled=false;
+static spire::CalculatorForegroundPoll foreground_input_poll;
 static void read_key_matrix(uint16_t*matrix){
     for(unsigned row=0;row<8;++row)matrix[row]=*(volatile uint16_t*)(0x900E0010u+row*2);
 }
@@ -256,17 +256,13 @@ struct Touchpad {
     }
 };
 static void capture_key_matrix(){
+    if(!foreground_input_poll.due(timer_ticks(),input_latch.enabled))return;
     uint16_t matrix[8];read_key_matrix(matrix);
-    // These polls occur before/after returned foreground filesystem calls,
-    // never in an IRQ and never while dispatching App input. A side-click's
-    // pure owner key joins the same FIFO as Enter, preserving their order.
-    if(input_latch.enabled&&resource_pad){const uint32_t now=timer_ticks();
-        if(!pad_sampled||pad_sampled_ticks-now>=263u){
-            resource_pad_capture.capture(resource_pad->read(),app.keyboard_only);
-            pad_sampled_ticks=timer_ticks();pad_sampled=true;
-        }
-    }
+    // Filesystem, decoder and coarse rendering boundaries all collect into
+    // one FIFO. No IRQ, App input dispatch or animation update occurs here.
+    if(resource_pad)resource_pad_capture.capture(resource_pad->read(),app.keyboard_only);
     input_latch.sample(matrix,resource_pad_capture.captured);
+    foreground_input_poll.mark(timer_ticks());
 }
 extern "C" int main(int argc,char**argv){
     if(nd_revision()<2022||nd_hwtype()==0)return 2;
@@ -321,6 +317,8 @@ extern "C" int main(int argc,char**argv){
     }
     if(performance.enabled)app.callbacks.profile_render=performance_render_part;
     app.callbacks.foreground_clock_ticks=foreground_clock_ticks;
+    app.callbacks.foreground_poll=capture_key_matrix;
+    spire::set_lzma2_foreground_poll(capture_key_matrix);
     if(selected_language&&source.language!=preferred)store_language(source.language);
     performance.pack_bytes=resource.length;
     if(performance.enabled){const uint32_t now=timer_ticks();performance.startup.add(startup_start-now);
@@ -376,8 +374,9 @@ extern "C" int main(int argc,char**argv){
         app.advance(elapsed);
         input_clock+=elapsed;
         auto sample=pad.read();
-        resource_pad_capture.capture(sample,app.keyboard_only);pad_sampled_ticks=timer_ticks();pad_sampled=true;
+        resource_pad_capture.capture(sample,app.keyboard_only);
         uint16_t text_keys[8];read_key_matrix(text_keys);
+        foreground_input_poll.mark(timer_ticks());
         if(!input_ready){
             // The document launcher may leave ENTER or the pad held. Require a
             // stable release so opening the program cannot also start a run.

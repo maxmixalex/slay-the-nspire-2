@@ -50,7 +50,7 @@ static void spark_quad(Canvas&c,const SparkTexture&p,int cx,int cy,int width,int
  const int x0=mx(0,(cx-ex)/1024),x1=mn(c.clip_w,(cx+ex+1023)/1024),y0=mx(22,(cy-ey)/1024),y1=mn(c.clip_h,(cy+ey+1023)/1024);
  const unsigned erosion=mode==1?unsigned(CombatSparkMotion::bounded(CombatSparkMotion::curve(int(progress),512,1024,1184,0)))*255u/1024u:
   mode==2?unsigned(CombatSparkMotion::bounded(CombatSparkMotion::curve(int(progress),0,1024,2378,237)))*255u/1024u:0u;
- for(int y=y0;y<y1;++y)for(int x=x0;x<x1;++x){const int rx=x*1024+512-cx,ry=y*1024+512-cy;
+ for(int y=y0;y<y1;++y){c.poll_row(unsigned(y-y0));for(int x=x0;x<x1;++x){const int rx=x*1024+512-cx,ry=y*1024+512-cy;
   int u=(rx*cs+ry*sn)/width+512,v=(-rx*sn+ry*cs)/height+512;if(u<0||u>=1024||v<0||v>=1024)continue;
   if(mode==1){const int xx=u-512,yy=v-512;u=int(ui_integer_sqrt(unsigned(xx*xx+yy*yy))*2u)&1023;v=(CombatCardMotion::direction(yy,xx)&4095)/4;}
   else if(mode==2){u=(u+int(frame&1u)*1024)/2;v=(v+int((frame>>1)&1u)*1024)/2;}
@@ -59,7 +59,7 @@ static void spark_quad(Canvas&c,const SparkTexture&p,int cx,int cy,int width,int
   else if(mode==2){alpha=spark_smooth(alpha,erosion,64);const unsigned brightness=red>=144?255u:89u+red*166u/144u;pixel=CombatCardMotion::modulate(color,brightness);}
   else alpha=red;
   c.paint(y*c.pitch+x,pixel,div255(alpha*opacity));
- }
+ }}
 }
 static int spark_glow_scale(unsigned q){
  return q<208?CombatSparkMotion::segment(int(q),0,208,0,863,11819,0):CombatSparkMotion::segment(int(q),208,1024,863,1024,216,202);

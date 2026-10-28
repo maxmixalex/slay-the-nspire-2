@@ -276,6 +276,9 @@ struct Callbacks {
     // uses unsigned differences to bound work between frames, including wrap.
     // This scheduler clock never advances gameplay or animation time.
     uint32_t(*foreground_clock_ticks)()=nullptr;
+    // Cooperative foreground boundaries may capture hardware into the host's
+    // bounded FIFO. This must not dispatch App input or advance any clock.
+    void(*foreground_poll)()=nullptr;
 };
 // Run parameters used by Continue/abandon, without re-encoding saved state.
 struct SavedRunIdentity {
