@@ -122,9 +122,67 @@ static void card_transaction(bool invalid_release){
     CHECK(app.game.revision>before&&app.game.enemies[2].hp<100&&app.keyboard_card<0);
     const auto committed=app.game.revision;app.physical_key(13,false);CHECK(app.game.revision==committed);
 }
+static void hold_with_motion(bool keyboard){
+    setup(Click);CHECK(rebind_input(app.input_bindings,0,unsigned(InputCommand::Left),'J'));
+    unsigned keyboard_downs=0,frames_with_pending=0;
+    auto frame=[&](uint32_t now){
+        bool pad_changed=false,matrix_changed=false;const unsigned pending=latch.count;frames_with_pending+=pending!=0;
+        auto dispatch_matrix=[&](bool repeat){
+            for(unsigned row=0;row<8;++row)matrix_changed|=matrix[row]!=previous[row];
+            calculator_physical_edges(matrix,previous,repeats,false,[&](uint16_t code,bool down){
+                if(code=='J'&&down)++keyboard_downs;app.physical_key(code,down);},repeat);
+            std::memcpy(previous,matrix,sizeof previous);
+        };
+        for(unsigned i=0;i<pending;++i){TouchSample touch;uint16_t pad=0;uint32_t ms=0;CHECK(latch.pop(matrix,&pad,&touch,&ms));
+            pad_changed|=pad!=dispatched.dispatched;dispatch_calculator_sample(dispatched,cursor,touch,pad,ms,host,false,dispatch_matrix);}
+        repeat_calculator_frame(latch,dispatched,now,host,pad_changed,matrix_changed,dispatch_matrix);
+    };
+    auto matrix_key=[&](bool down){calculator_physical_keys([&](unsigned,unsigned row,unsigned mask,uint16_t code){
+        if(code=='J'){if(down)matrix[row]|=mask;else matrix[row]&=~mask;}});};
+    if(keyboard)matrix_key(true);
+    TouchSample touch{5000,1000,10000,10000,true,true,true};
+    for(unsigned f=0;f<120;++f){const unsigned old_pad=directions,old_keyboard=keyboard_downs;const uint32_t now=100+f*16;
+        for(unsigned i=0;i<3;++i){touch.x=uint16_t(4990+((f*3+i)%19));latch.sample(matrix,captured.capture(touch,false),touch,now-2+i);}
+        frame(now);CHECK(directions-old_pad<=1&&keyboard_downs-old_keyboard<=1);
+        if(!f)CHECK(directions==1&&keyboard_downs==unsigned(keyboard));
+        CHECK(app.paused&&app.menu==((int(directions)-int(keyboard_downs))%5+5)%5);
+    }
+    CHECK(frames_with_pending==120&&directions>=10&&directions<=20);
+    CHECK(keyboard?keyboard_downs>=30:keyboard_downs==0);
+    matrix_key(false);touch=released;latch.sample(matrix,captured.capture(touch,false),touch,2100);frame(2100);
+    CHECK(!latch.count&&!dispatched.dispatched&&!app.pointer.held&&!downs&&!ups);
+    for(const auto&held:app.held_inputs)CHECK(!held.code);
+}
+static bool release_collected;
+static unsigned release_polls;
+static void collect_during_dispatch(){
+    ++release_polls;if(release_collected)return;release_collected=true;
+    latch.sample(matrix,captured.capture(released,false),released,300);
+}
+static void capture_during_dispatch(){
+    setup(Tap);SaveData before,after;CHECK(save(app.game,before));
+    auto touch=released;touch.contact=true;latch.sample(matrix,captured.capture(touch,false),touch,100);
+    touch.pressed=true;latch.sample(matrix,captured.capture(touch,false),touch,200);
+    const unsigned pending=latch.count;CHECK(pending==2);release_collected=false;release_polls=0;
+    app.callbacks.foreground_poll=collect_during_dispatch;
+    for(unsigned i=0;i<pending;++i){uint16_t pad=0;uint32_t ms=0;CHECK(latch.pop(matrix,&pad,&touch,&ms));
+        dispatch_calculator_sample(dispatched,cursor,touch,pad,ms,host,false,[](bool){});
+    }
+    app.callbacks.foreground_poll=nullptr;
+    // pointer_button rebuilt real hit geometry and captured a later release;
+    // the current frame must finish with that release still undispatched.
+    CHECK(release_collected&&release_polls>0&&latch.count==1);
+    CHECK(app.paused&&app.pointer.held&&downs==1&&!ups);
+    unsigned repeat_calls=0;repeat_calculator_frame(latch,dispatched,1000,host,false,false,[&](bool){++repeat_calls;});CHECK(!repeat_calls);
+    uint16_t pad=0;uint32_t ms=0;CHECK(latch.pop(matrix,&pad,&touch,&ms));CHECK(ms==300);
+    dispatch_calculator_sample(dispatched,cursor,touch,pad,ms,host,false,[](bool){});
+    CHECK(!latch.count&&!app.paused&&!app.pointer.held&&downs==1&&ups==1);
+    CHECK(save(app.game,after));CHECK(before.size==after.size&&!std::memcmp(before.bytes,after.bytes,before.size));
+}
 int main(){
     overflow_and_clock();
     for(bool decode:{false,true})for(Gesture kind:{Click,Drag,Tap,Invalid})contract(kind,decode);
     card_transaction(false);card_transaction(true);
-    std::printf("foreground pointer: %u checks; real UI contact anchor/motion/click/tap/drag/cancel across render and CPU decode; one activation, unchanged save; side-pad selection/release/invalid/Enter; FIFO %zu bytes\n",checks,sizeof(CalculatorInputLatch));
+    hold_with_motion(false);hold_with_motion(true);capture_during_dispatch();
+    std::printf("foreground pointer: %u checks; real UI contact anchor/motion/click/tap/drag/cancel across render and CPU decode; one activation, unchanged save; side-pad selection/release/invalid/Enter; held-pad/matrix repeat despite jitter; capture during App dispatch deferred; FIFO %zu bytes\n",checks,sizeof(CalculatorInputLatch));
 }

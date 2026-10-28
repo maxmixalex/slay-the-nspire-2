@@ -90,6 +90,18 @@ void dispatch_calculator_sample(CalculatorPadInput&keys,TouchpadCursor&cursor,
     keys.dispatch_key(pad,milliseconds,app,allow_repeat);dispatch_matrix(allow_repeat);
 }
 
+// Raw motion can keep the FIFO busy while a key remains held. Repeat once
+// per foreground frame, never once per historical sample. A newly dispatched
+// press cannot also repeat in that frame, and any input captured by an App
+// callback must be dispatched before a previously held state repeats again.
+template<class App,class Matrix>
+void repeat_calculator_frame(const CalculatorInputLatch&latch,CalculatorPadInput&keys,
+        uint32_t milliseconds,App&app,bool pad_changed,bool matrix_changed,Matrix dispatch_matrix){
+    if(latch.count)return;
+    if(!pad_changed)keys.dispatch_key(keys.dispatched,milliseconds,app,true);
+    if(!latch.count&&!matrix_changed)dispatch_matrix(true);
+}
+
 // Poll around bounded reads, including a short final read. Startup callers
 // can keep their larger sequential reads until foreground input is enabled.
 template<class Read,class Poll>

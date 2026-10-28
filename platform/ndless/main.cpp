@@ -390,7 +390,9 @@ extern "C" int main(int argc,char**argv){
             render_frame(update_start,resources_before,update_scene);continue;
         }
         input_latch.sample(text_keys,resource_pad_capture.captured,sample,input_clock);
+        bool pad_changed=false,matrix_changed=false;
         const auto dispatch_matrix=[&](bool allow_repeat){
+        for(unsigned row=0;row<8;++row)matrix_changed|=text_keys[row]!=text_previous[row];
         const bool library_text=app.library&&!app.library_tab&&app.library_search_editing&&app.binding_listening<0;
         const bool seed_text=app.map_preview.open&&app.map_preview.editing&&app.binding_listening<0;
         bool console_text=false;
@@ -411,8 +413,11 @@ extern "C" int main(int argc,char**argv){
         const unsigned pending=input_latch.count;
         for(unsigned i=0;i<pending;++i){uint16_t pad_key=0;spire::TouchSample touch;uint32_t captured_at=0;
             input_latch.pop(text_keys,&pad_key,&touch,&captured_at);
+            pad_changed|=pad_key!=pad_keys.dispatched;
             spire::dispatch_calculator_sample(pad_keys,pad_cursor,touch,pad_key,captured_at,app,false,dispatch_matrix);}
-        if(!pending)spire::dispatch_calculator_sample(pad_keys,pad_cursor,sample,resource_pad_capture.captured,input_clock,app,true,dispatch_matrix);
+        if(!pending){pad_changed|=resource_pad_capture.captured!=pad_keys.dispatched;
+            spire::dispatch_calculator_sample(pad_keys,pad_cursor,sample,resource_pad_capture.captured,input_clock,app,false,dispatch_matrix);}
+        spire::repeat_calculator_frame(input_latch,pad_keys,input_clock,app,pad_changed,matrix_changed,dispatch_matrix);
         change_language();service_profile();
         // Quit is already committed. A discarded final frame can perform
         // resource syscalls while ENTER is still held and expose that press
