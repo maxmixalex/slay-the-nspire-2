@@ -260,9 +260,10 @@ static void capture_key_matrix(){
     uint16_t matrix[8];read_key_matrix(matrix);
     // Filesystem, decoder and coarse rendering boundaries all collect into
     // one FIFO. No IRQ, App input dispatch or animation update occurs here.
-    if(resource_pad)resource_pad_capture.capture(resource_pad->read(),app.keyboard_only);
-    input_latch.sample(matrix,resource_pad_capture.captured);
+    const auto touch=resource_pad?resource_pad->read():spire::TouchSample{};
+    resource_pad_capture.capture(touch,app.keyboard_only);
     foreground_input_poll.mark(timer_ticks());
+    input_latch.sample(matrix,resource_pad_capture.captured,touch,foreground_input_poll.milliseconds);
 }
 extern "C" int main(int argc,char**argv){
     if(nd_revision()<2022||nd_hwtype()==0)return 2;
@@ -372,28 +373,23 @@ extern "C" int main(int argc,char**argv){
         const auto update_scene=performance.enabled?performance_scene():spire::RuntimeScene::Other;
         const auto resources_before=performance.enabled?performance.resources:spire::RuntimeResourceTiming{};
         app.advance(elapsed);
-        input_clock+=elapsed;
         auto sample=pad.read();
         resource_pad_capture.capture(sample,app.keyboard_only);
         uint16_t text_keys[8];read_key_matrix(text_keys);
         foreground_input_poll.mark(timer_ticks());
+        input_clock=foreground_input_poll.milliseconds;
         if(!input_ready){
             // The document launcher may leave ENTER or the pad held. Require a
             // stable release so opening the program cannot also start a run.
             bool held_key=false;spire::calculator_physical_keys([&](unsigned,unsigned row,unsigned mask,uint16_t){if(text_keys[row]&mask)held_key=true;});
             quiet_ms=(!held_key&&!sample.contact&&!sample.pressed)?quiet_ms+elapsed:0;
             if(quiet_ms>=100)input_ready=true;
-            input_latch.reset(text_keys,input_ready,resource_pad_capture.captured);
-            for(unsigned row=0;row<8;++row)text_previous[row]=text_keys[row];pad_cursor.reset();render_frame(update_start,resources_before,update_scene);continue;
+            input_latch.reset(text_keys,input_ready,resource_pad_capture.captured,sample);
+            for(unsigned row=0;row<8;++row)text_previous[row]=text_keys[row];pad_cursor.reset();
+            if(input_ready)pad_cursor.sample(sample,input_clock);
+            render_frame(update_start,resources_before,update_scene);continue;
         }
-        input_latch.sample(text_keys,resource_pad_capture.captured);
-        const bool pad_navigation=pad_keys.dispatched||resource_pad_capture.captured||input_latch.pending_pad();
-        if(pad_navigation){app.pointer_cancel(true);pad_cursor.reset(app.pointer.x,app.pointer.y);}
-        auto pointer=pad_navigation?spire::PointerUpdate{}:pad_cursor.sample(sample,input_clock);
-        if(pointer.cancelled)app.pointer_cancel();
-        if(pointer.moved||pointer.down||pointer.up||pointer.tap)app.pointer_move(pointer.x,pointer.y);
-        if(pointer.down||pointer.tap)app.pointer_button(true);
-        if(pointer.up||pointer.tap)app.pointer_button(false);
+        input_latch.sample(text_keys,resource_pad_capture.captured,sample,input_clock);
         const auto dispatch_matrix=[&](bool allow_repeat){
         const bool library_text=app.library&&!app.library_tab&&app.library_search_editing&&app.binding_listening<0;
         const bool seed_text=app.map_preview.open&&app.map_preview.editing&&app.binding_listening<0;
@@ -413,9 +409,10 @@ extern "C" int main(int argc,char**argv){
         // Only drain changes captured before dispatch. An action can itself
         // read resources; input captured there belongs to the next update.
         const unsigned pending=input_latch.count;
-        for(unsigned i=0;i<pending;++i){uint16_t pad_key=0;input_latch.pop(text_keys,&pad_key);
-            pad_keys.dispatch_key(pad_key,input_clock,app,false);dispatch_matrix(false);}
-        if(!pending){pad_keys.dispatch_key(resource_pad_capture.captured,input_clock,app);dispatch_matrix(true);}
+        for(unsigned i=0;i<pending;++i){uint16_t pad_key=0;spire::TouchSample touch;uint32_t captured_at=0;
+            input_latch.pop(text_keys,&pad_key,&touch,&captured_at);
+            spire::dispatch_calculator_sample(pad_keys,pad_cursor,touch,pad_key,captured_at,app,false,dispatch_matrix);}
+        if(!pending)spire::dispatch_calculator_sample(pad_keys,pad_cursor,sample,resource_pad_capture.captured,input_clock,app,true,dispatch_matrix);
         change_language();service_profile();
         // Quit is already committed. A discarded final frame can perform
         // resource syscalls while ENTER is still held and expose that press
