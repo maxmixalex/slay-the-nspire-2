@@ -45,6 +45,11 @@ void App::advance(uint32_t ms){
     sync_game_over_presentation();progress_time(ms);
     if(ms>250)ms=250;sync_combat_preparation();map_clock_ms+=ms;advance_auxiliary(ms);
     if(combat_preparation.active&&character_departure.phase==2)character_departure.started+=ms;
+    if(const State*stock=title_merchant_stock(*this)){
+        content.set_image_cache_profile(true);
+        if(!merchant_preparation.planned)prepare_merchant_inventory(stock);
+        merchant_preparation.shown=true;
+    }
     // Continue has already restored the stock before its original800ms
     // character wipe. Use those ordinary frames for bounded preparation;
     // neither the wipe clock nor inventory input waits for this queue.

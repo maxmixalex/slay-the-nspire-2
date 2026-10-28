@@ -9,6 +9,7 @@
 using namespace spire;
 static App a;
 static SaveData before,after;
+static State saved_shop;
 static unsigned checks;
 #define CHECK(x) do{++checks;if(!(x)){std::fprintf(stderr,"merchant preparation:%d %s\n",__LINE__,#x);std::exit(1);}}while(0)
 static uint32_t budget_clock_value=0,budget_clock_step=0;
@@ -78,6 +79,27 @@ static unsigned missing_stock_glyphs(){
 static void actual(const char*folder){
  const std::string root=folder;auto common=read(root+"/data/nSpire2.dat.tns"),locale=read(root+"/data/nSpire2.eng.dat.tns");SplitResourceSource split;
  CHECK(split.open(ResourceSource::memory(common.data(),common.size()),ResourceSource::memory(locale.data(),locale.size()),ResourceLanguage::English));CHECK(a.init(split.source(),{}));shop();
+ // Reading a title summary already exposes immutable saved stock. Prepare
+ // its picture bytes during ordinary title frames without installing that
+ // run into the active game, starting a tween, or invoking a save callback.
+ saved_shop=a.game;frontend_saved_probe=saved_shop;
+ new_run(a.game,74,false);CHECK(a.game.phase!=Phase::Shop);CHECK(save(a.game,before));
+ a.title=true;a.has_save=true;const int saved_picture=a.content.card_image(saved_shop.shop_cards[0]);
+ a.advance(33);CHECK(a.merchant_preparation.planned&&a.merchant_preparation.active);
+ CHECK(a.merchant_preparation.cursor<a.merchant_preparation.stock_count);unchanged();
+ unsigned title_steps=0;
+ while(a.merchant_preparation.cursor<a.merchant_preparation.stock_count&&title_steps<4096){
+  a.advance(33);++title_steps;unchanged();
+ }
+ CHECK(title_steps>0&&title_steps<4096&&a.content.image_cached(saved_picture));
+ CHECK(a.merchant_preparation.card==0&&!a.merchant_preparation.text_ready&&!a.merchant_preparation.prices_ready);
+ CHECK(a.title&&!a.shop_open&&!a.character_departure.active()&&!a.run_save_linked);
+ a.render();a.advance(33);a.render();CHECK(a.content.image_cached(saved_picture));unchanged();
+ a.callbacks.load=[](State&s){s=saved_shop;return true;};a.menu=0;a.input(Key::Confirm);
+ CHECK(a.character_departure.phase==1&&a.character_departure.continuing&&a.run_save_linked);
+ CHECK(a.game.phase==Phase::Shop&&!a.merchant_preparation.planned&&a.content.image_cached(saved_picture));
+ CHECK(save(saved_shop,before));unchanged();
+ CHECK(a.init(split.source(),{}));shop();
  // Resumed merchant stock is known during the original character wipe.
  // That existing interval performs bounded work and keeps its exact800ms
  // transition deadline, even if most of the background queue is unfinished.

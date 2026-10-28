@@ -8,6 +8,17 @@ static bool resumable_run(const State&s){return s.phase!=Phase::Dead&&s.phase!=P
 // Aggregate initialization keeps this freestanding storage in static data;
 // a global default-constructor entry is unsupported by the Ndless loader.
 static State frontend_saved_probe{};
+// The title already holds a validated, read-only saved run for its Continue
+// summary. Its ordinary idle frames may prepare that shop's image bytes;
+// the active simulation is still restored only by the real Continue action.
+static const State* title_merchant_stock(const App&a){
+ return a.title&&a.has_save&&!a.character_departure.active()&&
+  !a.character_select&&!a.profiles_open&&!a.library&&!a.compendium_open&&
+  !a.statistics_open&&!a.history_open&&!a.settings_open&&!a.help&&
+  !a.frontend_confirm&&a.run_mode.screen==RunMenu::Closed&&
+  a.auxiliary.screen==AuxiliaryScreen::None&&frontend_saved_probe.phase==Phase::Shop?
+  &frontend_saved_probe:nullptr;
+}
 static SavedRunIdentity saved_run_identity(const State&s){
  SavedRunIdentity out{};out.seed=s.seed;out.character=s.character;
  out.mode=s.run_options.mode;out.modifiers=s.run_options.modifiers;out.daily_day=s.run_options.daily_day;

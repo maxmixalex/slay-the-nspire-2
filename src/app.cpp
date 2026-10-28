@@ -296,7 +296,8 @@ void App::render(){
     // Both merchant scenes cycle complete source frames. Retain their decoded
     // pixels in the shared bounded arena; combat reserves more tile pages.
     const bool entering_merchant=character_departure.phase==1&&character_departure.continuing&&game.phase==Phase::Shop;
-    content.set_image_cache_profile(((!title||entering_merchant)&&game.phase==Phase::Shop)||fake_room_frames);
+    content.set_image_cache_profile(((!title||entering_merchant)&&game.phase==Phase::Shop)||
+        title_merchant_stock(*this)||fake_room_frames);
     if(startup_logo.active()){Canvas c{*this};startup_logo_screen(c);return;}
     sync_screen_motion();
     if(debug_open){

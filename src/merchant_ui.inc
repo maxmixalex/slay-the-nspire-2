@@ -97,11 +97,12 @@ static void merchant_card(Canvas&c,Card card,int cx,int cy,unsigned scale,bool s
  if(cy+h/2<22||cy-h/2>=240)return;
  draw_card_face(c,card,cx-w/2,cy-h/2,w,h,-2,-2,-1,-1,facts);
 }
-void App::prepare_merchant_inventory(){
+void App::prepare_merchant_inventory(const State*stock){
  auto&p=merchant_preparation;if(p.planned)return;p.reset();
+ const State&s=stock?*stock:game;
  // Old/direct profiles have no cold tile work. Fake Merchant contains only
  // six relics and keeps its separate event inventory lifecycle.
- if(game.phase!=Phase::Shop||content.version()<Ui12ContentVersion)return;
+ if(s.phase!=Phase::Shop||content.version()<Ui12ContentVersion)return;
  p.planned=true;
  const auto add=[&](int image){
   if(image<0||content.image_cached(image))return;
@@ -110,23 +111,25 @@ void App::prepare_merchant_inventory(){
  };
  add(content.ui_image(U_MerchantRug));add(content.ui_image(U_ShopRemove));add(A_Coin);
  add(content.world_image("merchant","SALE_TAG"));
- for(int i=0;i<ShopCardCount;++i)if(!(game.shop_sold&(1u<<i))){
-  const Card card=game.world.active?game.world.shop_cards[i]:Card{game.shop_cards[i],0};
-  const auto*facts=game.world.active?&game.world.shop_facts[i]:nullptr;
-  const auto type=card_face_type(card,-1,-1,facts);
+ for(int i=0;i<ShopCardCount;++i)if(!(s.shop_sold&(1u<<i))){
+  const Card card=s.world.active?s.world.shop_cards[i]:Card{s.shop_cards[i],0};
+  const auto*facts=s.world.active?&s.world.shop_facts[i]:nullptr;
+  const auto type=card.kind==EventCardMadScience&&facts?
+   CardType(facts->science_type<3?facts->science_type:0):card_type(s,card);
   const unsigned group=card_face::material_group(unsigned(card_rarity(card.kind)));
   const int base=U_CardBorderCommonAttack+int(group)*5;
-  add(card_face_image(card,-1,-1,facts));add(card_face_frame(card,-1,-1,facts));
+  add(card_face_image(card,-1,-1,facts));
+  add(card.kind==EventCardMadScience?content.ui_image(U_ColorlessAttack+int(type)):card_face_frame(card,-1,-1,facts));
   add(content.ui_image(base+(type==CardType::Attack?0:type==CardType::Power?2:1)));
   add(content.ui_image(base+3));add(content.ui_image(base+4));add(content.energy_image(card));
  }
  for(int i=0;i<3;++i){
-  if(!(game.shop_sold&(1u<<(ShopRelicStart+i)))){
-   int id=game.world.active?(game.world.shop_relics[i]==NoWorldRelic?-1:game.world.shop_relics[i]):-1;
-   if(!game.world.active)for(int r=0;r<RelicKinds;++r)if(relic_definitions[r].id==game.shop_relics[i])id=r;
+  if(!(s.shop_sold&(1u<<(ShopRelicStart+i)))){
+   int id=s.world.active?(s.world.shop_relics[i]==NoWorldRelic?-1:s.world.shop_relics[i]):-1;
+   if(!s.world.active)for(int r=0;r<RelicKinds;++r)if(relic_definitions[r].id==s.shop_relics[i])id=r;
    if(id>=0)add(relic_face_image(id));
   }
-  if(!(game.shop_sold&(1u<<(ShopPotionStart+i))))add(content.potion_image(Potion(game.shop_potions[i])));
+  if(!(s.shop_sold&(1u<<(ShopPotionStart+i))))add(content.potion_image(Potion(s.shop_potions[i])));
  }
  // Opening removes the body focus while the rug is still transparent. Its
  // ordinary idle skin, Back control and initially offscreen hand therefore
@@ -151,7 +154,8 @@ void App::step_merchant_preparation(){
  auto&p=merchant_preparation;
  if(!p.active||!p.shown||paused||help||panel||library||settings_open||map_window.is_open)return;
  const bool entering=character_departure.phase==1&&character_departure.continuing;
- if((title&&!entering)||game.phase!=Phase::Shop){content.cancel_preload();p.reset();return;}
+ const bool saved_stock=title_merchant_stock(*this)!=nullptr;
+ if(!saved_stock&&((title&&!entering)||game.phase!=Phase::Shop)){content.cancel_preload();p.reset();return;}
  ++p.updates;
  GlyphPreparationBudget budget(callbacks.foreground_clock_ticks,
   p.prices_ready?GlyphPreparationBudget::Ticks:GlyphPreparationBudget::InventoryTicks);
@@ -168,6 +172,10 @@ void App::step_merchant_preparation(){
   }
   return;
  }
+ // The active game's cost/description state must never be substituted with
+ // a saved preview. Continue reads and validates the save again, resets this
+ // small queue, and reuses only the exact images already in the byte cache.
+ if(saved_stock)return;
  // String groups and font groups yield separately. The production fitting
  // path chooses every exact size/style, including the scrolling body tail.
  // Its preparation visitor bypasses raster clipping without painting,

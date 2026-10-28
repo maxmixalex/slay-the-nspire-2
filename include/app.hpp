@@ -373,7 +373,7 @@ struct App {
     int reward_gold()const;
     void sync_combat_preparation();
     void step_combat_preparation();
-    void prepare_merchant_inventory();
+    void prepare_merchant_inventory(const State* stock=nullptr);
     void step_merchant_preparation();
     uint16_t pixels[ScreenW*ScreenH]{};
     bool title=true,paused=false,quit=false,has_save=false,help=false;
