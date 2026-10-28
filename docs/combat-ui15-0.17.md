@@ -1,9 +1,53 @@
-# Combat UI15 integration — implementation and running acceptance
+# Combat UI15 integration — implementation and acceptance
 
-Reference: v0.111.0 / 41cef1ea. Native acceptance is in progress; the outcomes
-below distinguish executed gates from pending calculator acceptance. The complete private C# and
-PCK inputs were restored before this work; neither original input nor decoded
-art belongs in the public repository.
+Reference: v0.111.0 / 41cef1ea. The complete private C# and PCK inputs were
+restored before this work; neither original input nor decoded art belongs in
+the public repository. Historical failures and intermediate pending notes
+below retain their original stage identity. The completed gates in this
+section supersede those intermediate pending states.
+
+## Completed integrated acceptance
+
+The integration9 baseline (`a04451c07e1d63fa50cf95466381fce2a0d96ff8`)
+passes all140 native suites, including the repaired Decimillipede/world-UI
+fixtures, the complete command directory and actual-resource combat gates.
+Its original ASan/UBSan sweep retains four real failures in one intermediate
+enemy-clip pointer expression. The production expression and generator were
+fixed together; the v14 delta passes18/18 native and18/18 sanitizer suites,
+including all four original triggers. This does not relabel136/140 as a clean
+full sanitizer sweep.
+
+At integration16 (`a94050d53ccd8c437be69dd42ebeb10e0f507b8f`), all20 selected
+native and20 sanitizer suites pass, with nine actual-resource paths in each.
+They include real ENG/ZHS deck selection/upgrade paths, Spark, screen effects,
+Vantom attack/death/shrink/restore and all16 languages. Vantom's smaller6,596
+count removes screenshot-file byte-write assertions; its actual effect and
+state cases are retained. Later merchant-only changes do not establish a new
+full combat sweep. The public [validation manifest](validation-ui15-0.17.json)
+records exact source, resource and executable identities.
+
+Ordinary Firebird CX OS acceptance includes a legal new Ironclad run through
+Neow, the first three-Slime victory, rewards, Proceed, SaveQuit and Continue.
+Its7590-byte save is unchanged after action-free Continue and a second save.
+At `bd158d205d877f767f59fe2a1eb33874cb925899`, a50ms card selection,50ms
+target change and one50ms Enter hit the intended middle Slime26→20, consume
+one energy and preserve selection through release. Two normal OS exits and a
+fresh Continue preserve the same7430-byte save/backup. These are actual
+ordinary OS operations, not direct state writes during the action.
+
+The controlled Haunted Ship case at integration16 executes the real enemy
+turn with full strings15 resources. Screens show five Dazed growing from
+small faces at2875ms to full size at3000ms, holding and flying into Discard at
+4375–4500ms. Production decoding after normal SaveQuit/OS exit finds exactly
+five Dazed,15combat cards,10deck cards,playerHP80 and enemyHP63. The7320-byte
+save is identical to v14's same action. This is a controlled fixture rather
+than a natural-run encounter.
+
+The measured0–6s action is13.4592FPS at CX132MHz. Its first2s include hand
+discard, the enemy-turn banner and three frames over250ms (maximum293.9453ms).
+The later growth/hold and flight windows have no frame over250ms. Input
+capture and visible growth are verified; universal smooth30FPS, physical
+calculator timings and a natural three-act completion are not claimed.
 
 ## Real command sequencing
 
@@ -54,8 +98,8 @@ its first visible frame can consume that entire interval. The new combat
 render preparation resolves at most one already-committed upcoming generated
 face per frame into the existing HandTile cache. It does not simulate future
 RNG, allocate another face buffer, advance animation or paint a hidden card.
-Actual calculator cold-action measurements are still required to quantify the
-visible result and the cost moved into preceding frames.
+The completed ordinary-OS cold-action measurement above separates visible
+growth from the preceding turn transition and reports its remaining cold frames.
 
 ## Other integrated presentation
 
@@ -180,7 +224,7 @@ Continuing the same run with the same combat identity and a monotonic clock no
 longer inherits the previous Shrink/Beetle Juice/default-scale tween. This
 reuses the existing static cache and adds no App or State allocation.
 
-## Verification prepared
+## Regression design
 
 `combat_ui15_regression` creates all 108 original actor kinds through actual
 encounters, summons or death replacements. It forces each legal directory
@@ -213,7 +257,11 @@ with its750ms tween; the local burst at2133ms is already at full size. The
 gate follows that actual transition instead of freezing an artificial small
 corpse through the burst.
 
-## Executed acceptance progress
+## Historical implementation-stage acceptance
+
+The following receipts describe their original incremental stages. Their
+then-pending repairs are closed by the integrated gates above; the failures
+are retained as evidence rather than rewritten as passes.
 
 The available remote connector could not complete checkpoint writes, and the
 CLI has no credentials. These acceptance receipts therefore identify real
@@ -249,7 +297,8 @@ CLI has no credentials. These acceptance receipts therefore identify real
   (`ui15-world-map-travel-stage5-14c46e6b7433.json`). The world-UI test passed
   the revised intent anchors, then exposed an obsolete Test Subject
   expectation: regeneration starts while displayed HP is still0. Its test
-  now checks the real1950ms heal boundary and is pending re-run.
+  then checked the real1950ms heal boundary and awaited re-run. The later
+  `2131803` world-UI and integration9 gates below close this fixture.
 * Stage5 extraction of Vantom's five source textures passed with the exact
  9×20 spray image and four48×48 explosion cells, unchanged RGBA payload
   semantics and contiguous auxiliary5404–5408
@@ -273,8 +322,9 @@ CLI has no credentials. These acceptance receipts therefore identify real
  following old single-move Decimillipede fixture omitted the normal input's
  `begin_combat_feedback` transaction; it has been corrected and strengthened
  to require all three segment drivers at the same cue, their original
- alive/dead clips, and direct-track restoration. That revised test still
- requires a frozen re-run; the failed stage7 receipt is
+ alive/dead clips, and direct-track restoration. At stage7 that revision
+ still required a frozen re-run; the later `2131803` world-UI and integration9
+ gates below close it. The failed stage7 receipt remains
  `ui15-world-ui-stage7-1593a70e65d3.json`.
 * Stage7 controlled device fixtures passed136 checks using the production
  save/progress codecs (`ui15-controlled-fixtures-stage7-export-27b3cbc4de65.json`).
@@ -284,9 +334,10 @@ CLI has no credentials. These acceptance receipts therefore identify real
  independently executed before exporting the live pre-action state. These
  are explicitly controlled fixtures, not evidence of a natural run.
 
-All listed stage7 receipts retain `source_changed=false`. Re-run the repaired
-Decimillipede fixture and final compressed resources from the next immutable
-stage. Calculator frame times remain separate from these native receipts.
+All listed stage7 receipts retain `source_changed=false`. The repaired
+Decimillipede fixture and compressed-resource paths subsequently pass the
+integrated gates above. Calculator frame times remain separate from these
+native receipts.
 
 ### Calculator stack and physical confirmation
 

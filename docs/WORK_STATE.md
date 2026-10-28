@@ -1,144 +1,248 @@
-# UI15 continuation — 2026-10-28
+# UI15 calculator delivery — 2026-10-28
 
-## Current unified source and acceptance
+## Current source and delivery state
 
-The immutable local integration checkpoint is
-`a04451c07e1d63fa50cf95466381fce2a0d96ff8` (integration9). Its source-only
-archive and local Git history were preserved before the builds. The remote
-connector repeatedly failed to return a successful write/ref update; these
-commits are **local-only**, with `remote_published:false`. No new remote main
-or GitHub CI result is implied. Do not repeat hanging connector writes during
-this acceptance session.
+The selected delivery runtime is local checkpoint
+`bd158d205d877f767f59fe2a1eb33874cb925899`, with complete strings15 resources
+from converter `de0941ebe70a8d92cd124447ea7cb6d30b4f1524`. All functionality,
+input, save/Continue and named correctness gates are closed. The exact player
+and optional-language ZIPs have been created and read back successfully.
+The selected combination's last controlled map→Shop window also completes
+actual touch opening, normal OS exit and USB counter cross-checks. This is a
+**completed playable delivery with measured performance limits**. Merchant
+first-opening stalls remain: saved-Shop peak256.012ms and map-entry
+peak549.438ms. No zero-stall, universal30FPS or physical-device claim is made.
 
-The latest feedback is mapped in [ui15-lcd-followup-0.17.md](ui15-lcd-followup-0.17.md).
-Frontend, combat and rooms have separate implementation ledgers. The pinned
-v0.111.0 / `41cef1ea` DLL, complete PCK and required private inputs have all
-been recovered. Monster command awaits and Vantom's continuous bone transition
-are implemented and now have complete-source and actual-resource gates;
-they are no longer missing-input exceptions. The owner's zero-ascension
-correction is applied. No legacy installation or save compatibility work is
-part of UI15.
+The f67+strings15, f67+idle21 and99ea+idle21 experiments passed correctness but
+are rejected for performance. V22 reduced saved-Shop text work, but its real
+map→Shop opening regressed to808.289ms and four frames over250ms. Its actual
+screens, normal OS exit and USB counters confirm the result. A better
+saved-Shop result cannot substitute for the normal map path. Production has
+been restored byte-for-byte to bd158; all1067 non-document tracked files
+match that immutable source. None of the three rejected experimental file versions
+belongs in the delivered runtime or converter. Their commits and failure
+evidence remain in the local history.
 
-### Completed integration9 gates
+Source-only archives and local Git history preserve the coherent stages before
+long jobs. Repeated remote connector writes did not return a successful ref
+receipt; `remote_published:false`. Do not repeat those hanging writes or claim
+a new remote main/CI result. The source delivery preserves complete source and
+available local UI15 history; the externally published UI14 history is a
+separate recorded upstream, not a fabricated local ancestor.
 
-* Release native build: all320 build steps pass. The complete native sweep
-  passes **140/140 in149.25s** (`ui15-integration9-native-all-db33ad113b6c`).
-* Converter/package tooling: **354 Python checks pass**. The portable target
-  compiles successfully; no manual browser/WASM acceptance was performed.
-* Actual final-resource loading: all16 editions, **38,686 checks and53,072
-  descriptions, zero unexpanded templates**. English and Chinese text,
-  bestiary, Ancient/ordinary events and card/HUD rendering pass. Complete
-  Vantom effects pass774,616 checks and the full actual-art combat/UI14
-  traversal passes77,480 checks. These are recorded together in
-  `ui15-integration9-actual-changed-paths-ff991b63562c`.
-* Actual English/Chinese profiles, compact Continue, history and credits pass.
-  Credits checks include held/released Space and original close timing.
-* Original English/Japanese sleeping and Architect screen effects pass
-  **2,122,392 checks** (`ui15-integration9-original-screen-effects-c59109970afa`).
-* A stale statistics test still expected the superseded UI10 two-column/4px
-  view. Its independent oracle now describes the existing readable UI11
-  single-column/10px layout. Synthetic and actual English/Chinese cases pass
-  at test-only checkpoint `f828d6a379536a134a00bc77b4edcb11121473c3`; no
-  statistics production layout was changed to satisfy that fixture.
+The feedback map is [ui15-lcd-followup-0.17.md](ui15-lcd-followup-0.17.md);
+exact stage identities and outcomes are in
+[validation-ui15-0.17.json](validation-ui15-0.17.json). The complete pinned
+v0.111.0 / `41cef1ea` assembly/PCK inputs are recovered. Monster awaited
+commands and Vantom's continuous bone transition are actual implementations.
+The owner's corrected zero-ascension behavior is applied. No old installation
+or obsolete-save compatibility work is part of this change.
 
-All completed journals above retain `source_changed:false`. The full
-Debug/-O1 ASan/UBSan build passes; its sweep is still running. It exposed
-an intermediate out-of-bounds pointer expression in the existing enemy clip
-directory accessor (`base+directory-38`). Live production and its generator
-now subtract the integer offset before pointer addition; final changed-path
-sanitizer validation will verify that correction. An explicitly stopped
-precompile journal remains unfinished with a separate interruption receipt;
-it is not counted as a pass or a product failure.
+## Completed correctness gates
 
-### Calculator stack and natural play
+Integration9, `a04451c07e1d63fa50cf95466381fce2a0d96ff8`, passes140/140 native
+suites,354 Python checks and portable compile-only. Complete actual resources
+pass all16 languages and53,072 descriptions with zero unexpanded templates.
+English/Chinese frontend, deck, event, HUD, Bestiary, original screen effects
+and complete Vantom traversal pass their named actual-art gates. No manual
+browser/WASM acceptance was performed.
 
-The first stage4 natural Neow/map route exposed a real data abort on entering
-combat. `combat_hit_sparks` reserved32KiB on the calculator stack before its
-early return. It now samples the source texture directly with exact pixel
-comparisons. Large reward/selection resets reconstruct existing records in
-place. Bounded text, label and temporary raster arrays borrow160KiB from the
-unused tail of the existing foreground map workspace, without growing that
-workspace or reducing card/effect capacities. Nested text/decoder/save cases,
-map exclusion, exhaustion and restoration are covered independently.
+The original full ASan/UBSan baseline is136/140: four real failures share one
+intermediate out-of-bounds enemy-clip pointer expression. Production and its
+generator now evaluate the integer subtraction before pointer addition. At
+`8c2d6e9de3a4f2e4a7b7af0275bf275274bd9ad5`,18/18 native and18/18 sanitizer
+suites pass, including all four original triggers, with nine actual-resource
+paths in each. That clean delta does not relabel the original136/140 sweep.
 
-Integration9 ARM builds successfully with **22,862,384 bytes allocated**;
-its largest single function frame is **5,952 bytes**. Launcher size is
-**1,748,688 bytes**, SHA256
-`ce4391590943e8e55611ee3067f8cd2d4d943ecb04de480eec56c88da43e4f2f`.
-Ordinary CX OS3.1/Ndless2022 startup and USB byte-identical launcher readback
-pass with the complete compressed packs. A legal new run has completed Neow,
-won the first three-Slime fight and collected gold/card rewards. It remains
-on the terminal reward screen until Proceed. SaveQuit, visible Continue
-transition and a second SaveQuit preserve exactly the same7590-byte save;
-normal exit returns to the OS. Canonical validation records HP80/80,114gold,
-12cards and floor2 with unchanged RNG. See the private
-`ui15-natural9/natural-first-victory-acceptance.json` receipt. The final
-integrated executable still needs its own installed identity and pad check.
+Integration16, `a94050d53ccd8c437be69dd42ebeb10e0f507b8f`, passes20/20
+selected native and20/20 sanitizer suites with nine actual-resource paths in
+each: all16 languages/53,072 descriptions, merchant21,323, ENG/ZHS deck
+14,672/55,004, Random4,899,908 each, Spark7,366,687, screen effects2,122,392
+and Vantom6,596 checks. The latter omits PPM file-byte write assertions from
+an older larger count; semantic, texture, attack, shrink, death and restore
+cases are unchanged. The42 executed ELF identities and unchanged17 resource
+hashes are retained. Portable compile-only passes.
 
-The real system `zh_CN` setting selects Chinese without a saved override.
-A separate official-r2022 cold boot confirms that this OS exports neither
-math-language binding339 nor342, so production correctly reads its settings
-XML fallback. An earlier apparent probe hang was actually the OS USB-transfer
-confirmation consuming the selection input; correctly selecting/executing the
-same probe succeeds. Do not change language production code based on that
-invalid initial inference. Shared saved/system/English/first-found chooser
-and adapter tests pass906 checks.
+The bd158 changed-path native and sanitizer gates each pass6/6 selected
+suites and six actual-resource paths. Merchant, hover resources and complete
+merchant occlusion pixels are included. Its formal ARM build and portable
+compile-only pass. The pointer regression executes267,700 checks, including
+contact origin/movement, press/release, side ownership, held-key repeat during
+touch jitter, nested capture and FIFO overflow release. A negative control
+retains the former repeat-starvation failure rather than weakening the gate.
 
-### Remaining performance work
+The subsequent f67 merchant scheduler passes its synthetic/actual native and
+sanitizer gates and portable build, separately from its rejected performance.
+Idle21's necessary resource delta passes actual ASan merchant ENG30,063 and
+ZHS32,314 checks and all16 languages/53,072 descriptions/38,686 checks. All17
+resource files are unchanged across execution. V22's native ENG30,404 and
+ZHS33,025 paths pass, including immutable preview state, RNG, progress, pixels
+and label clocks. V22 ASan/UBSan passes the synthetic merchant suite and the
+same actual ENG/ZHS counts; portable compile-only passes. Four execution
+journals retain `source_changed:false`. These correctness gates do not
+pre-approve its later rejected ordinary-OS performance result.
 
-The matched complete cards9/132MHz CX window measures the closed merchant
-at30.007234FPS (300frames/9.997589s),26.15468ms render, zero reads and no
-frames over100ms. Its warm open rug measures16.297662FPS,60.38661ms render,
-zero reads and no frames over100ms. Real normal-exit USB counters cross-check
-the snapshot method and source identity. Metadata capacity now covers the closed/open stock working set without
-increasing the picture arena. Unrelated cold foreground requests no longer
-cancel a different background preload; only real tile-bank pressure cancels
-it. The actual-resource retained-concurrency, preparation and English/Chinese
-deck gates pass at rooms-preload-v8. The preparation queue is not an input
-lock and there is no added loading graphic.
+## Ordinary calculator OS acceptance
 
-Independent card-art streams reduce the measured early-open maximum from
-2,241.669ms to1,532.01ms. That remaining pause is still an unresolved release
-defect. Full new resources have all card faces prepared at arrival, while
-the critical queue remains at19/38 and remaining materials/fonts still cause
-589,914bytes of first-frame reads. The rooms agent is removing that concrete
-remaining cold work; a read-trace probe is not counted as a functional fix.
+The natural integration9 run starts legally, completes Neow, wins the first
+three-Slime fight, takes gold/card rewards and waits for Proceed. SaveQuit,
+visible Continue and a second SaveQuit preserve the same7590-byte save:
+HP80,114gold,12cards,floor2. Exit returns normally to CX OS3.1/Ndless2022.
+This is a natural first victory, not a natural three-act victory. Stack fixes
+remove the original first-combat data abort without reducing render/effect
+capacities or adding another large pool.
 
-A matched same-OS30s Random comparison measures UI14 at6.681906FPS and current
-UI15 light-span-v2 at9.255827FPS (about38.5% faster), both with zero resource
-reads. The immediate pre-span2 control is8.144128FPS, so that exact light
-change improves this matched window by13.65%. Normal-exit USB counters agree
-with read-only snapshots. These isolated windows use the same earlier partial
-ZHS resources; final full-package timing remains separate. The older
-historical UI14 20.391FPS report must not be compared directly with the new
-132MHz window. A source/read-only timing audit identifies the emulator's
-396MHz CXII versus132MHz CX branch as an exact3× clock distinction; historical
-source27 explicitly used CXII, while UI14's surviving ledger lacks a CPU field.
-That makes the old UI14 clock explanation an inference, not a proven rewrite.
-A second half-texel-span experiment passes exact image comparisons but slows
-the same device window to8.547027FPS; it is rejected, and live production
-retains span2. Both measured windows have normal-exit USB cross-checks. No
-pixel approximation or timer adjustment is used to improve a score.
+The bd158 ordinary-OS input acceptance has7/7 completed journals. A50ms card
+selection,50ms right target change and one50ms Enter hit the intended middle
+Slime26→20 and consume exactly one energy. Complete touch contact/movement
+captured during foreground decoding now opens the merchant rug using the
+original100/100/180ms gesture. Two SaveQuit/normal-OS exits and a fresh Continue
+preserve the same7430-byte save and backup, SHA256
+`041d9a2c072391cd5c4530a45b6ce37728d41d50d0e104e5f846699db3192179`.
+This short-action first-combat save is a different scene from the7590-byte
+natural-victory save above; neither substitutes for the other.
 
-### Resources and final delivery
+Default language selects Chinese from actual OS `zh_CN` with no saved
+language override. Official Ndless2022 on OS3.1 lacks the two optional
+math-language bindings; the settings-XML fallback reads the real system
+locale. Its shared parser/selector/SDK adapter has906 passing checks.
 
-Storage checkpoint `c6ac9c33860942cb1c770a15df7e0c4432afc6d9` produces all16
-complete UI15 locales with bounded Vantom v3 textures/meshes. Its common pack
-is **73,818,830 bytes**, SHA256
-`7b6543a411f8883ffbbd9910dec4108c5c6ad3d73438d161f4e1d5dc45128b19`.
-Grouping the replaced Vantom image IDs saves2,858,220 bytes against the same
-complete UI15 artwork before grouping. It remains1,687,696 bytes larger than
-UI14, so this is not a net size reduction against the previous delivery.
-Merchant grouping experiments must receive new resource identities and may
-not overwrite these verified measurements.
+Integration16's controlled Haunted Ship fixture executes the real enemy turn.
+Screens show five Dazed growing at2875–3000ms, holding and flying into Discard
+at4375–4500ms. Normal SaveQuit/OS exit and production decoding confirm exactly
+five Dazed,15combat cards,10deck cards,HP80 and enemyHP63. The7320-byte save is
+byte-identical to v14's same action. This is a controlled encounter, distinct
+from the natural run and the bd158 short-input save.
 
-No final player ZIP is claimed yet. Final runtime/resource identities, changed
-path sanitizer gates, ordinary-OS natural flow and measured cold-opening
-behavior must be recorded together before packaging. Preserve the root-only
-launcher, `data/` resources and empty `state/` layout. Private original art,
-fonts, ROMs, snapshots and controlled saves remain outside public source and
-player packaging. Audio, multiplayer and Timeline remain outside the agreed
-single-player scope; the accepted full-Ancient-actor storage exception remains.
+The bd158 ARM is1,755,032bytes, SHA256
+`8596f9c1ed5778d229944adf0fbde3d9e2f9c22d770b7ce8fef11c6465666555`,
+with22,879,896bytes linked allocation and largest function frame5,952bytes.
+The rejected v22 candidate was1,756,187bytes with22,883,724bytes linked
+allocation. Its changed-path native/sanitizer and ARM gates pass, but that
+correctness result does not override its actual map-opening regression.
+The selected bd158 main/input/Canvas remain unchanged; input capture does not
+alter canonical state, RNG or animation clocks before normal FIFO dispatch.
+
+## Measured performance and rejected experiments
+
+These windows use ordinary Firebird CX132MHz, AHB66MHz, APB33MHz, JIT enabled,
+SP80432768Hz, hardware1 and Ndless2022. They are not physical-calculator
+measurements. Completed read-only windows are cross-checked against normal
+exit USB performance reports. Peak-frame reads and whole-window reads are
+kept separate. Merchant comparisons retain the fixed original script:30s
+startup/title interval,7s after Continue or committing the Shop route, then
+100ms contact/100ms movement/180ms press. They measure the first opening on
+that route, not an arbitrary zero-preparation click.
+
+* Cold merchant opening progresses from v8's2,241.669ms peak through1,532.013ms
+  with independent card streams,776.093ms at inventory13 and388.062ms at v15.
+  V15 has24reads/113,637bytes in its peak frame but167reads/1,082,490bytes in
+  the complete first-open window. Its controlled map→Shop path peaks450.928ms.
+* Bd158's actual first-open window is11.8485FPS with132reads/919,686bytes and
+  a256.012ms maximum (8reads/39,909bytes in that peak frame). It has13frames
+  above100ms and one above250ms. Closed-room steady rendering is30.0072FPS;
+  a warm opened rug is14.0319FPS,70.2674ms mean render, zero reads. These are
+  measured limits, not a universal30FPS promise.
+* The final bd158+strings15 controlled map→Shop route completes108frames in
+ 10.932098s,9.879165FPS, with255reads/1,409,390bytes. Its549.438477ms peak has
+ 57reads/254,550bytes. The window contains35frames above100ms and three above
+ 250ms. Actual opening screenshots, normal OS exit and USB counters agree.
+  It is better than rejected v22's808.289ms but slower than the earlier v15
+  map result450.928ms; the final choice retains the completed short-input and
+  pointer fixes. This remaining cold stall is not described as eliminated.
+* The f67+strings15 trial regresses to278.534ms,143reads/976,626bytes and
+ 11.8439FPS. Isolating145 Top frames in idle21 reduces their cumulative cold
+  decoding bytes but the same scheduler then regresses to374.329ms,
+ 178reads/1,141,271bytes,10.9577FPS and two frames above250ms. Both performance
+  candidates are rejected; passing resource/sanitizer checks does not accept
+  their latency. V22 restores consecutive frame locality and previews saved
+  card templates: its saved-Shop window is12.0945FPS/110reads/762,561bytes with
+  a256.104ms peak, but its map window is9.8681FPS/279reads/1,490,184bytes with
+  an808.289ms peak. That combination is also rejected. Its stable warm-rug
+  result of14.0105FPS does not conceal the normal-entry regression.
+* A v17 script missed initial touch contact and never opened the rug. Its
+ 153ms/21.97FPS closed-room window is excluded. The contact/pointer defect is
+  now fixed by bd158; that invalid scenario is not rewritten as an improvement.
+* Matched earlier partial-resource Random windows are UI14 6.681906FPS,
+  immediate pre-span2 8.144128FPS and retained exact span2 9.255827FPS.
+  A slower8.547027FPS experiment is rejected. Full inventory13 v14 is
+ 8.994170FPS; full strings15 integration16 is9.415104FPS (282frames in
+ 29.951874s),105.2757ms mean render, zero reads, maximum126.5564ms and no frame
+  above250ms. These are whole-window observations, not isolated attribution
+  of every difference to the exact RGB565 half-black optimization.
+* Integration16's full cold status action is11.3063FPS at0–2s,18.7890FPS at
+ 2–4s and10.1965FPS at4–6s; complete0–6s is13.4592FPS. The first interval
+  includes hand discard/turn banner and three frames above250ms, maximum
+ 293.9453ms. Growth/hold and flight windows have no frame above250ms. Later
+  idle frames are not included to inflate the action result.
+
+The historical UI14 20.391FPS Random figure lacks a matching recorded CPU
+field. The emulator's132MHz CX versus396MHz CXII split is an audit inference,
+not a proven rewrite of the older measurement. Do not compare it directly to
+these132MHz windows. Cooperative capture improves input reliability, not FPS.
+The minimum hardware sample interval is8ms, not a guaranteed maximum latency.
+A proposed16ms idle touch cadence was not implemented: existing whole-update
+timings bound any saving too low to explain the warm-rug rendering difference.
+No dominant I2C cause or unexecuted A/B benefit is claimed.
+
+## Resource identity and delivery layout
+
+Strings15 converter `de0941ebe70a8d92cd124447ea7cb6d30b4f1524` preserves all
+images, glyph pixels and139,264 string rows/8,090,052 UTF-8 bytes. Small strings
+and fonts use4KiB cohorts; selected card/inventory images use independent
+bounded streams. Its common pack is74,024,394bytes, English1,130,938bytes and
+Simplified Chinese5,000,436bytes. All17 SHA256 identities are in the manifest.
+
+Idle21 converter `176eed5b40ddb9d47d87e7747373d9ed8eab78e4` changes compression
+boundaries for only145 original Top merchant idle frames. All decoded images,
+1,655 animation streams, glyphs, strings and clip timings remain exact. It
+adds187,034bytes to common and2,102bytes across all16 locale files, with zero
+runtime memory added. Its common is74,211,428bytes, SHA256
+`73c2f46e48e4c9b97497934c58632981c7e5d4048f5184b0bf4b927400d91c26`;
+English1,131,493bytes; Simplified Chinese4,999,653bytes. Its decoded-resource correctness passes, but idle21 is excluded from the
+shipping combination after the actual map-entry regression. Strings15 is the
+selected delivery resource edition.
+
+Strings15 common saves2,652,656bytes against the same complete UI15 artwork
+before grouping but is1,893,260bytes larger than UI14. Idle21's corresponding
+figures are2,465,622bytes saved internally and2,080,294bytes larger than UI14.
+These are lossless post-LCD grouping changes, not dropped art or animation.
+No net storage reduction against UI14 or completion of the earlier65–70MB
+installation target is claimed.
+
+The verified player ZIP contains only `nSpire2.tns`, `data/` and empty
+`state/` at its root. English/Chinese are included; fourteen other locales are separate.
+No test saves, profiling marker, ROM, snapshots, original DLL/PCK or embedded
+browser player belong in the player/source delivery. Audio, multiplayer and
+Timeline remain outside the agreed scope, together with the accepted full
+Ancient-actor animation storage exception. Ancient gameplay, dialogue,
+healing and card materials are implemented.
+
+
+## Verified package bytes
+
+The calculator-only packaging job uses the immutable bd158 source, reports
+`source_changed:false`, and reads back every ZIP member against its actual
+input. A second inventory check confirms14 player members,15 optional-pack
+members, the exact source/resource identities and empty state directory.
+
+* `Slay-the-Nspire-2-0.17-ui15-bilingual-calculator.zip`:80,205,686bytes,
+  SHA256 `0a497a213b8a4ac533afd2f49fbc06c7d05bcfb48b30fa4e158850f26c801813`.
+* `Slay-the-Nspire-2-0.17-ui15-optional-languages.zip`:17,016,324bytes,
+  SHA256 `9e33741f3aa27efc5e3804665be020c48aba067cec3e2f20e057d13698a97f56`.
+
+The program and three default resources total81,910,800bytes before saves;
+including packaged readme/licenses, the ZIP's uncompressed members total
+81,975,073bytes. Only the fourteen additional languages are in the optional
+archive. Rejected v22 ZIP byte payloads were removed after preserving their
+hashes, inventory and readback receipts; they are not delivery artifacts.
+
+The source delivery is a documentation-only successor of bd158, with complete
+source plus available local UI15 Git history. Its own commit/archive identity
+is recorded externally to avoid a self-referential manifest. No original game
+art/font payloads, game assembly, ROM, generated packs or test saves enter
+that source archive. No new remote main or GitHub Actions result is claimed.
+
 
 ---
 

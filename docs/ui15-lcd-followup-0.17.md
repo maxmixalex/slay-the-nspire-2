@@ -10,7 +10,7 @@ retain separate meanings. No test count is a percentage of original fidelity.
 
 | Feedback | Implemented behavior and evidence |
 | --- | --- |
-| Default language | Saved explicit choice takes precedence; otherwise system language, then installed English, then the first installed language. Shared parser/selector/SDK adapter passes906 checks. An ordinary CX OS3.1 first launch selects Chinese from its actual `zh_CN` settings without a saved override. |
+| Default language | Saved language selection takes precedence; otherwise system language, then installed English, then the first installed language. Shared parser/selector/SDK adapter passes906 checks. An ordinary CX OS3.1 first launch selects Chinese from its actual `zh_CN` settings without a saved override. |
 | Space accelerates credits | Physical held Space advances the original scrolling clock at5×. Release, physical input cancellation and closing reset it. Actual ENG/ZHS credits checks include both rates and source close timing. The original does not automatically dismiss its finished credits. |
 | Bestiary right-side vertical drift | Fixed14px monster rows and18px section rows. A long single-line name moves horizontally within its own viewport; its row never moves vertically. Actual English/Chinese layout and overflow cases pass. |
 | Continue information too large | Shared120px panel with66px/79px height, preserving source date, act/floor, ascension and health/gold hierarchy. Actual English/Chinese long-date comparisons pass. |
@@ -34,7 +34,7 @@ retain separate meanings. No test count is a percentage of original fidelity.
 | History room hover trigger | Only eligible traveled non-current nodes with a real history record trigger it. Leaving/changing/closing clears old hit ownership; entering the visible reader retains that floor for scrolling. Its174px panel no longer covers most of the screen. |
 | Chest glows without hover | When a pointer is visible, only its actual chest rectangle can activate the outline; stale keyboard selection and covered modals cannot light it. |
 | White mismatch on elite/rest map hover | Base and outline images retain the same original128×128 atlas canvas including margins. Their silhouettes now align under source hover scaling. Traveled nodes retain the map-paper outline color. |
-| Merchant rug opening and colorless prices | Source two-row placement, child-relative prices and focus draw order are retained. Lower colorless centers are58/119 at y168. Both settled card sizes use existing face-cache tiles. Hidden price glyphs do not load offscreen font groups. Independent card streams and fair background preload remove unrelated cold reads; final first-open timing remains an explicit gate. No extra loading artwork or input lock is added. |
+| Merchant rug opening and colorless prices | Source two-row placement, child-relative prices and focus draw order are retained. Lower colorless centers are58/119 at y168. Both settled card sizes use existing face-cache tiles. Hidden price glyphs do not load offscreen font groups. Independent card streams and fair background preparation reduce unrelated cold reads. Final first-open peaks are256.012ms from saved Shop and549.438ms after map travel; the remaining cold stall is explicit. No extra loading artwork or input lock is added. |
 | Rest button border proportions | Complete original icon/outline fitted extents and transparent padding are retained in Q8 until final projection. At full focus the icon is49×35 and outline52×37, with the same authored pivot. |
 | Rest Smith sequence | Nine original impact frames, the original hammer and spark sequence drive actual smithing; upgrade commit and temporary reveal follow the real operation. The old static/incorrect impact is replaced. |
 
@@ -51,6 +51,23 @@ retain separate meanings. No test count is a percentage of original fidelity.
 | Rewards and selections | Empty terminal rewards fade and wait for Proceed; they do not automatically open the map. Wood Carvings/Torus previews sit lower. Fixed-count transform selection omits unrelated Confirm. Enchantment and Sovereign Blade forging retain their actual successful-commit animations. |
 | Earlier retained differences | Complete solo-reachable monster command awaits, nested hook timing, conditional summons/dialogue and sequential death callbacks are now connected. Vantom retains the750ms independent root-bone transition, original tail space, compound clips, shader masks and all four source emitters. See the reconciliation ledger. |
 
+## Input completion added during ordinary-OS acceptance
+
+The original cold-render input omission is now repaired for both physical
+keys and complete touch gestures. The shared32-entry FIFO preserves contact
+origin, motion, press/release and their input timestamps until the normal
+foreground dispatcher. Held-key repeat remains once per frame even with touch
+jitter. The actual original merchant touch sequence now opens the rug; real
+50ms selection/target/confirmation plays one card and preserves its selection
+through the side-key release. Normal OS exit, a fresh Continue and a second
+SaveQuit preserve the same7430-byte run exactly at `bd158d205d877f767f59fe2a1eb33874cb925899`.
+
+A final source audit finds no remaining generic ellipsis replacement in these
+bounded text painters. Literal punctuation, the eye fallback symbol and the
+original ten-name discovery summary remain authored content. The pinned
+`NRunSummary.GetDiscoveryBodyText` itself appends the four dots after its first
+ten names; that summary is distinct from a label discarding its unread tail.
+
 ## Executed gates and measurement boundaries
 
 Integration9, local commit `a04451c07e1d63fa50cf95466381fce2a0d96ff8`, passes
@@ -59,14 +76,23 @@ All16 complete packs pass real loading and53,072 descriptions with zero
 unexpanded templates. Actual English/Chinese frontend, event, HUD, deck and
 Bestiary gates pass. Original screen effects and the complete Vantom frame
 traversal pass. Later runtime/resource increments have their own identities
-and must not be relabeled as that full baseline sweep.
+and must not be relabeled as that full baseline sweep. The original full
+sanitizer run is136/140; v14 closes its four shared enemy-pointer failures.
+Integration16 then passes20/20 selected native and sanitizer suites with nine
+actual-resource paths each, and bd158 passes6/6 changed-path suites with six
+actual-resource paths each. Exact identities and the retained failures are
+recorded in [validation-ui15-0.17.json](validation-ui15-0.17.json).
 
-The ordinary CX OS natural run starts legally, finishes Neow's real choices,
+At integration9 (`a044`), the ordinary CX OS natural run starts legally,
+finishes Neow's real choices,
 wins the first three-Slime fight, receives gold/card rewards and waits for
 Proceed. SaveQuit, Continue and a second SaveQuit preserve the same7590-byte
 save exactly. Continue visibly retains the original transition and final exit
-returns to the OS. The complete final package still requires its own installed
-identity and changed-path acceptance, recorded in WORK_STATE.
+returns to the OS. The final bd158/strings15 program and resources have their own matching
+installed identities, changed-path gates, real merchant opening paths and
+normal OS exits. The complete player ZIP is read back and independently
+compared against those exact inputs, as recorded in WORK_STATE. Remaining
+performance limits are reported rather than described as eliminated.
 
 See [frontend-ui15-0.17.md](frontend-ui15-0.17.md),
 [combat-ui15-0.17.md](combat-ui15-0.17.md),

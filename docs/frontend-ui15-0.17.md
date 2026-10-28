@@ -6,22 +6,63 @@ implied to pass because its implementation or test exists.
 
 ## Frontend behavior
 
-| Feedback | Implementation | Remaining acceptance |
+| Feedback | Implementation | Verification |
 | --- | --- | --- |
 | System language by default | Shared ISO language/script/region parser and installed-pack selector: saved selection, system language, English, first installed pack. Desktop uses LC_ALL, LC_MESSAGES, LANG precedence. | Ndless uses the SDK getLangInfo() binding when exported, then the ordinary OS current settings ZIP. Stage4 on CX OS3.1/Ndless2022 has neither newer binding; the real zh_CN settings selected Chinese with no saved language override. Stage5 locale selection/parser gate passes906 checks. |
-| Space speeds credits | Holding physical Space multiplies the authored80px/s target by5; releasing, cancelling physical input or closing resets it. The original easing and end behavior remain. | Actual-resource keyboard/device capture. |
+| Space speeds credits | Holding physical Space multiplies the authored80px/s target by5; releasing, cancelling physical input or closing resets it. The original easing and end behavior remain. | Actual English/Chinese held-Space, release, cancellation and original close timing pass in the integrated frontend gates. |
 | Bestiary right column scrolls vertically | Source one-line monster entries retain14px rows and18px region headings. Overflow travels horizontally in the fixed label viewport. | Stage5 actual English/Chinese resource gates pass; fixed14px rows and horizontal overflow are captured. |
 | Continue hover is oversized | Shared120px width,66px/79px height; original date, act-floor separator, ascension and health/gold row hierarchy. | Actual English/Chinese long-date Continue captures pass the independent source-layout comparison. |
-| Confirm and Back are inconsistent | Shared confirm uses the same40×24 hit size and47×32 source body as Back, including character selection. | Paired-screen captures with real assets. |
-| Short-range scrollbar grows excessively | Grabber artwork is bounded to a square independent of its logical track thumb; character and defeat use fixed10px/12px handles. | Short-overflow and hover/device checks. |
+| Confirm and Back are inconsistent | Shared confirm uses the same40×24 hit size and47×32 source body as Back, including character selection. | Actual original-atlas tick placement and paired control geometry pass; ordinary-OS character-selection captures retain both controls. |
+| Short-range scrollbar grows excessively | Grabber artwork is bounded to a square independent of its logical track thumb; character and defeat use fixed10px/12px handles. | Native short-overflow bounds and focus/return cases pass; ordinary-OS checks remain scoped to the named flows. |
 | Deck upgrades location | Whole checkbox/label group is centered in its own206–221px footer hit row. | Actual English/Chinese footer and paired-control captures pass. |
 | Deck sort fonts and bars | Original left aligned Kreon Bold/substituted Regular labels at readable6px; original250×42 button proportion,50px gaps, separate60px outer strip, image-only material tint. Sparse6px glyphs are explicitly requested. | All16 complete language packs rebuilt; actual English/Chinese font, layout and footer gates pass. |
 | Selection eye overlaps cards | Visible eye and hit target move to x5 together. | Actual English/Chinese selection preview captures pass. |
-| Long description duplicates tooltip | Card description stays in its own smooth scrolling viewport; only mechanics, relic, power and preview tooltips remain. | Native actual-card-description pixel comparison. |
+| Long description duplicates tooltip | Card description stays in its own smooth scrolling viewport; only mechanics, relic, power and preview tooltips remain. | Actual long-card pixel and end-window checks pass; the visible tip set equals its mechanic tips and contains no duplicate Description tip. |
 
 The original references include `deck_view_screen.tscn`,
 `deck_view_sort_button.tscn`, `bestiary_entry.tscn`, `NContinueRunInfo` and
 `NCreditsScreen`. Space acceleration is the owner's requested addition.
+
+## Integrated input and ordinary-OS acceptance
+
+At the integrated source `bd158d205d877f767f59fe2a1eb33874cb925899`, the
+32-entry calculator FIFO retains the complete keyboard and touch sample,
+including contact origin, movement, physical press/release and original input
+time. The1124-byte record is shared by resource reads, CPU decoding and coarse
+rendering checkpoints. These checkpoints only collect samples. The ordinary
+input loop dispatches them after rendering has released its resources; they
+do not advance the game clock or consume run RNG.
+
+An early cooperative version captured keys and pad directions but not the
+initial pointer contact. Actual merchant input exposed that omission: the
+physical press arrived at the unchanged160,120 cursor. The complete FIFO
+fix retains the contact and movement before the click. A second review found
+that raw touch jitter could keep the queue nonempty and suppress long-key
+repeat. Historical samples now dispatch without repetition, followed by at
+most one repeat per frame for the last dispatched held state, provided no
+new release is pending. A deliberate old-gate negative control fails; the
+real-App positive suite passes267,700 checks. It covers CPU-only decoding,
+render callbacks, nested capture, one-shot clicks, drag ownership, cancellation,
+queue overflow, retained card selection and120 frames of held-key jitter.
+
+The same source passes native and ASan/UBSan changed-path gates. Seven ordinary
+CX OS/Ndless2022 journals pass: system-Chinese default,50ms Continue with its
+actual Ironclad wipe,50ms digit/right/single Enter, real Slime damage26→20 and
+energy3→2, SaveQuit, normal OS exit, a fresh process and another Continue.
+The two saved runs and atomic backup are byte-identical7430-byte files, with
+SHA256 `041d9a2c072391cd5c4530a45b6ce37728d41d50d0e104e5f846699db3192179`.
+Production loading validates revision16 and enemy HP13/20/9. The merchant's
+original100ms contact/100ms movement/180ms press also opens its rug correctly.
+These are input correctness results; merchant first-open performance has its
+separate remaining gate.
+
+The retained input sample interval is8ms, a minimum interval between complete
+hardware polls rather than a hard maximum execution gap. A proposed16ms idle
+pad interval was not implemented: the measured complete update phase already
+bounds one full read to a small fraction of a millisecond, so it cannot explain
+the warm-render difference and does not justify changing the accepted input
+ordering. Foreground sampling reads the existing SP804 counter; input and game-animation
+clocks retain separate ownership.
 
 ## Vantom continuous bone transition
 
@@ -97,7 +138,7 @@ the current frame's original slot depths. These effects now have concrete
 runtime and resource implementations; actual full-pack and device acceptance
 are separate gates.
 
-## Executed evidence and open gates
+## Historical conversion and early verification
 
 - Twelve synthetic converter and texture-page tests pass. They reject a warped intermediate scale
   from the rigid path, preserve invisible particle boundaries and dynamic draw
@@ -174,10 +215,11 @@ are separate gates.
   `ui15-local-vantom-combat7-actual-ef0ea4d1a925.json` records exit 0 and
   unchanged source; the host run took 2.281 seconds. This is a functionality
   gate, not a calculator frame-rate measurement.
-- Final compressed-package validation and calculator/device timing remain
-  separate gates. Full storage reporting must include reclaimed
-  old streams and every new layer, mesh, mask and parameter payload; the source
-  catalog's gross payload count alone is not the net package-size result.
+- The subsequent integration9 and named resource-delta gates below complete
+  compressed-resource validation. Calculator timing remains a separate
+  measurement. Full storage reporting includes reclaimed old streams and
+  every new layer, mesh, mask and parameter payload; the source catalog's
+  gross payload count alone is not the net package-size result.
 
 ## Unified integration9 closure
 
@@ -191,11 +233,20 @@ Credits retain the original non-closing end behavior and add held-Space5×
 acceleration. Their230,446 checks per actual edition include release and
 close timing. These source/resource gates do not imply physical-device FPS.
 
-The integrated full-resource Vantom suite passes774,616 checks and its complete
-source-frame combat traversal passes77,480 checks. Dense texture paging,
-source bone interpolation, source death callbacks and same-run restoration
-all use the final compressed pack. The foreground scratch allocator and
-bounded mesh arrays reduce the largest ARM function frame to5,952bytes
-without removing source layers, frames or card/effect capacity. The complete
-ordinary-OS natural gameplay loop and final cold-performance acceptance remain
-active; the source-only local commit is not represented as remote CI.
+At integration9 the full-resource Vantom suite passes774,616 checks and its
+complete source-frame combat traversal passes77,480 checks. Dense texture
+paging, source bone interpolation, source death callbacks and same-run
+restoration use that stage's compressed pack. Integration16's Vantom6,596
+actual-resource checks preserve the semantic and pixel cases while omitting
+PPM file-byte write assertions; the differing counts are not a coverage
+percentage. The foreground scratch allocator and bounded mesh arrays reduce
+the largest ARM function frame to5,952bytes without removing source layers,
+frames or card/effect capacity.
+
+The ordinary-OS legal new-run loop now completes Neow, its first victory,
+rewards, Proceed, SaveQuit, visible Continue and a second save. The independent
+bd158 short-input/pointer gates and same7430-byte save/backup chain are
+complete as detailed above. Final merchant first-open measurements and the verified
+shipping package retain their own bd158/strings15 acceptance identity in
+[WORK_STATE](WORK_STATE.md) and the [validation manifest](validation-ui15-0.17.json).
+Local source checkpoints are not represented as remote CI.

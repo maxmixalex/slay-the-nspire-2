@@ -5,6 +5,203 @@ Original assembly, texture pixels, fonts, generated packs and calculator
 evidence remain private. The public converter records paths, geometry and
 timing parameters.
 
+## Final selection and measurement scope
+
+The selected runtime is local `foreground-pointer-v2`,
+`bd158d205d877f767f59fe2a1eb33874cb925899`, with the complete `strings15`
+resources. The later scheduling, independent-idle and saved-card-template
+experiments are **not included in the delivered runtime or resource pack**.
+Their correctness results, screenshots, normal-exit files and unsuccessful
+performance measurements are retained. No remote publication is implied by
+these local checkpoints.
+
+The selected ARM launcher is 1,755,032 bytes, SHA-256
+`8596f9c1ed5778d229944adf0fbde3d9e2f9c22d770b7ce8fef11c6465666555`,
+with 22,879,896 bytes of linked allocation. The final live rollback restored
+exactly the three files that differ between the rejected v22 and this runtime:
+`src/merchant_ui.inc`, `tests/merchant_preparation_regression.cpp`, and
+`tools/isolate_card_art_ui15.py`. Input, Canvas and the other implemented
+room changes were preserved.
+
+All recent windows below run the production ARM executable through the
+ordinary calculator OS in Firebird, with Ndless r2022, 132 MHz CPU / 66 MHz
+AHB / 33 MHz APB, the unmodified 32768 Hz SP804 counter, and complete common
+plus Chinese resources. They are emulator measurements, not physical-device
+measurements. Normal-exit USB performance files cross-check the read-only
+counter snapshots. No emulated RAM, timing, game state or clock is modified.
+
+The fixed first-opening sequence waits 30 seconds on the title, enters the
+saved Shop or travels from the completed event into the legal Shop, and waits
+7 seconds after entry. It then supplies the same 100 ms touch contact,
+100 ms movement, 180 ms press and 100 ms release, with an 11-second window.
+These are first-opening measurements after a fixed preparation period;
+they are not measurements of an immediate click on a completely cold room.
+The map test uses a controlled production-route fixture: the completed Aroma
+of Chaos on floor 7 has exactly one legal next Shop. It is not described as
+natural multi-floor play, and its title cannot prewarm a saved Shop's stock.
+
+| Runtime / complete resource edition | Actual path | Largest first-open frame | Assessment |
+| --- | --- | --- | --- |
+| v14 / inventory13 | Continue to saved Shop | 776.093 ms | Cold-frame defect remained |
+| v15 / strings15 | Continue to saved Shop | 388.062 ms | Cold-frame defect reduced |
+| v15 / strings15 | Controlled legal map travel into Shop | 450.928 ms | Separate map-entry baseline |
+| v17 / strings15 | Recorded touch sequence | Not an opening measurement | Rejected: rug never opened |
+| v19 pointer-v2 / strings15 | Continue to saved Shop, original touch gesture | 256.012 ms | Selected runtime; input passed, cold-frame limitation remains |
+| v19 pointer-v2 / strings15 | Controlled legal map travel into Shop | 549.438 ms | Selected playable combination with a quantified remaining cold stall |
+| v20 / strings15 | Continue to saved Shop | 278.534 ms | Rejected for performance |
+| v20 ARM / idle21 resources | Continue to saved Shop | 374.329 ms | Rejected for performance |
+| v22 / idle21 resources | Continue to saved Shop | 256.104 ms | Improved some measures, insufficient to accept the combination |
+| v22 / idle21 resources | Controlled legal map travel into Shop | 808.289 ms | Rejected: substantial map-entry regression |
+
+The selected-runtime map-entry record in `os-map-final19` is complete. Its
+launcher, common resource, Chinese resource and matching fixture files all
+passed byte-exact USB readback before launch. Actual screenshots show the
+completed event, legal map entry, opened rug and normal OS exit. Read-only
+SP804 counters agree with the normal-exit USB performance file.
+
+### Selected runtime: first opening, warm windows and controls
+
+The selected v19 first-opening window contains 129 frames over 10.887451 s:
+11.848503 FPS, 132 reads / 919,686 bytes, 13 frames above 100 ms and one above
+250 ms. Its 256.012 ms peak contains 8 reads / 39,909 bytes. Peak-frame and
+whole-window I/O are different measures: v15's 24 reads / 113,637 bytes
+belong to its peak frame, whereas its whole window reads 167 times for
+1,082,490 bytes. The selected runtime reduces the larger cold stall but does
+not eliminate every visible first-opening hitch.
+
+The final map-entry window contains 108 frames over 10.932098 s: 9.879165 FPS,
+255 reads / 1,409,390 bytes, 35 frames above 100 ms and three above 250 ms.
+Its 549.438 ms peak consists of 540.344 ms render, 8.270 ms update and
+294.037 ms resource time, with 57 reads / 254,550 bytes in that frame.
+This is below rejected v22's 808.289 ms peak, but above the earlier v15 map
+baseline of 450.928 ms. The final runtime keeps the complete short-input
+repair and functional changes; it is accepted as the verified playable
+combination with these measured limits, not as a fully smooth or stall-free
+build. At arrival, 32 of 40 critical image entries were ready and card text
+preparation had not yet begun. Actual opening still proceeded immediately;
+no input delay or loading cover conceals the remaining work.
+
+The final map route's normal-exit save is 7,693 bytes and is byte-identical to
+the v22 map route's save, SHA-256
+`f687fb52dc340d26a29a21c7a1c5121a4aa23c57e7958af42da43f31cd868f37`.
+The progress files are also retained; they are not claimed to be byte-identical.
+
+The independent settled closed-room window measures 30.007234 FPS /
+29.068759 ms mean render. The warm open rug measures 14.031902 FPS /
+70.267378 ms mean render. Both windows have zero resource reads and no frame
+above 100 ms. A late opening after the same extended idle period peaks at
+204.865 ms, with two reads / 9,780 bytes across the complete opening window.
+These warm results are not substituted for first-opening results.
+
+The original 100/100/180 ms gesture reaches pointer (234,150) and opens the
+rug. The retained input FIFO fixes the earlier lost contact/movement/press
+sequence without requiring a longer hold. Immediate Open, purchase and Back
+remain available during preparation. The original rug movement and fade
+run without an extra loading graphic, input gate or hidden delay.
+
+The settled OS screenshot places the cursor away from the goods. Both lower
+colorless cards retain their respective prices below their card slots, clear
+of Back. That screenshot contains no speech bubble and therefore is not used
+to claim a separate bubble-centering check. Source/layout tests cover the
+speech text's centered alignment.
+
+### Bounded preparation and complete resources
+
+Live-room preparation prioritizes critical images, all seven card faces and
+prices, then the six stock relic/potion hover sets, followed by the alternate
+145-frame merchant idle. A title which already has a validated Shop save
+prepares its canonical images and hover resources during existing idle
+frames. Continue validates the save again and visits the actual live stock.
+Neither path installs the preview into the active game or alters discoveries,
+serialized game state or gameplay RNG.
+
+Hover preparation uses the same detached model and rich-text font styles as
+visible hover. Its cursors reuse existing padding in the 404-byte merchant
+queue. The two original hover skins and inline star/player-energy images
+are included. There is no new pixel pool. Source reads and decoder outputs
+are bounded individually, but a cold string formatter can touch more than
+one 4 KiB cohort: the 8 ms scheduling allowance is cooperative, not a hard
+upper bound on a frame's elapsed time.
+
+The selected runtime's native and ASan/UBSan gates pass with the actual
+English and Chinese resources: merchant preparation has 25,515 / 27,506
+checks; the related keyword and card-occlusion gates also pass. The latter
+compare 2,376 complete rendered frames exactly for each tested locale.
+Preparation checks cover queued images and stock/hover glyphs, unchanged
+serialized game and RNG bytes, discoveries, pixels, hover pages and both
+label-clock tables. These are correctness proofs, not an FPS estimate.
+
+The complete `strings15` edition uses 74,024,394 bytes for common artwork,
+1,130,938 bytes for English, and 5,000,436 bytes for Chinese. Chinese's
+reconstructed logical NSP is 80,793,488 bytes. All 16 locales retain their
+UTF-8 text, IDs, aliases, glyph payloads and metrics, image pixels and
+animation streams byte-exactly. String regrouping adds 725,820 bytes across
+all 16 locale files in exchange for at-most-4-KiB raw string cohorts;
+unusually long individual texts remain literal. Independent card streams,
+inventory-material isolation and small-font grouping remain in this edition.
+The format uses the existing codec and workspaces.
+
+| Selected resource | SHA-256 |
+| --- | --- |
+| Common | `24f81a1f67e89ccb6da39c4dd98031a16e951662c10083dda6a088bc6afe5d6d` |
+| English | `06d1496be83af9c3b261abaab74054fafa384417715d8efd7adcee4371b320ca` |
+| Chinese | `ba66ef22e4f9eed078d8dbc2bfcbfd5d49f3b9ef50955b0167e72ee2aa59d563` |
+
+### Preserved rejected experiments
+
+The v17 trace does not measure opening: its pointer remained at (160,120)
+and its apparent 153 ms peak came from a closed room. Later scripted
+navigation did not reach the OS, so its interrupted journal is not relabeled
+as a normal-exit success. The failed record remains available.
+
+The v20 scheduling experiment removed artificial yields for cached strings
+and fonts, then repeatedly selected idle images near the current animation
+phase. This scattered work among shared eight-frame decode groups. Only
+7 Top frames were ready at arrival, versus 48 in v19; the complete opening
+window used 143 reads / 976,626 bytes, with two frames above 250 ms. Native,
+ASan/UBSan and ordinary OS exit all passed, but performance was rejected.
+
+The separate `idle21` resource experiment isolated only the original
+145 unfocused Top frames. It preserved all 16 editions, every pixel, clip
+order and timing. Common artwork grew by 187,034 bytes; locale files grew
+by 2,102 bytes in aggregate. Summed independent cold decode work for those
+frames fell from 5,001,122 to 628,985 bytes. The other 57,915 image entries
+and 1,655 animation tile/index streams were unchanged. Despite those byte
+proofs, the unchanged v20 runtime with idle21 used 178 reads / 1,141,271 bytes
+and peaked at 374.329 ms. It was rejected; less decoded data alone did not
+prove lower OS latency.
+
+The v22 source removed that repeated phase reordering and prepared immutable
+saved-Shop card templates and their glyphs during title idle. No active-game
+formatter or gameplay state was changed. This made all seven cards, prices
+and hover sets ready at saved-Shop arrival. Its saved-Shop window used
+110 reads / 762,561 bytes, 12.094533 FPS, and a 256.104 ms peak, but it had
+20 frames above 100 ms. Its settled closed room reached 30.006958 FPS and
+its warm rug 14.010475 FPS, both with zero reads and no frame above 100 ms.
+Late opening peaked at 160.370 ms. The v19, v20, v21 and v22 saved-Shop
+normal-exit saves were identical: 7,424 bytes, SHA-256
+`c69c2769e8bac8618b39b41b3ff9e10219e58a19a5c8e4cab900d360e6766b69`.
+
+However, the controlled map-entry window did not benefit from saved-Shop
+title preparation. v22 arrived with critical images complete but zero of
+seven card text passes complete. Its actual opening used 279 reads /
+1,490,184 bytes and only 9.868134 FPS, with 31 frames above 100 ms and four
+above 250 ms. The 808.289 ms peak contained 77 reads / 343,391 bytes. Actual
+screenshots, source/resource identities and normal-exit USB counters all
+confirm this result. The entire v22/idle21 combination was therefore rejected,
+and its three-file source delta was restored to the selected v19 baseline.
+
+The exact production checkpoints, failed journals and frame traces are kept
+in the private validation records (`os-perf19`, `os-perf20`, `os-perf21`,
+`os-perf22`, `os-map-shop22` and `os-map-final19`). No failed result is deleted
+or replaced by the subsequent successful correctness gate. The rejected
+v22 source is `99ea002ac163a3288f65d7da0d4b32eda73e6d79`; the independent-idle
+tool source is `176eed5b40ddb9d47d87e7747373d9ed8eab78e4`.
+
+The remaining sections describe the implemented room presentation work and
+older retained experiments. Older intermediate pack sizes or offline step
+counts must not be substituted for the selected production measurements.
+
 ## Implemented source changes
 
 ### Ancient options and room focus
@@ -148,9 +345,13 @@ owner isolation, failed-decode release and counter-wrap ordering. A shared
 parent page becomes free only after its final quarter allocation is released.
 Noncontiguous quarter holes cannot satisfy a larger retained allocation.
 
-## Verification status
+## Historical validation and allocation evidence
 
-### Follow-up: bounded work and ordinary-OS evidence
+The following records describe earlier checkpoints and resource experiments.
+Their intermediate counts, pack identities and unfinished-work notes are
+superseded by the final selection at the beginning of this document.
+
+### Bounded work and ordinary-OS evidence
 
 Inventory preparation is background work and no longer controls whether a
 stock item can be selected or purchased. This matches `NMerchantInventory.Open`,
@@ -171,10 +372,10 @@ has its independent512-byte output and4096-byte input bounds.
 The integrated font visitor exposed an additional synchronous read: an energy
 icon with negative coordinates could intersect both axes even though the hidden
 Canvas had a zero-area viewport. `picture`, nine-slice and material paths now
-reject that empty viewport before requesting image payloads. The actual full
-English preparation gate retains its16KiB-per-four-step assertion and passes
-31,373checks, including a purchase while background preparation remains active.
-That gate uses the deterministic four-step clock; its3,093updates are not a
+reject that empty viewport before requesting image payloads. At that intermediate checkpoint, the actual full
+English preparation gate retained its16KiB-per-four-step assertion and passed
+31,373checks, including a purchase while background preparation remained active.
+That gate used the deterministic four-step clock; its3,093updates are not a
 calculator timing claim.
 
 The complete closed-room loops, the alternate skin and inventory exceed the
@@ -196,11 +397,12 @@ calculator stack; its independent pixel oracle passes2,919,376checks.
 The fixed local perf5 source passes656,627Random original-texture checks and
 19,395,167merchant checks across2,376complete frames, all five characters,
 opening/closing/interrupted tweens, boundary clocks and unchanged gameplay
-state. These are correctness results. Later ordinary-OS performance work is
-still active: the perf4 closed room measured30FPS/27.874ms with no resource
-reads, but its immediate open after7seconds contained a1,982.544ms frame and
-744,992bytes of reads. The1151-slot cache and separate critical-work budget
-must close that observed defect in a subsequent ordinary-OS measurement.
+state. These are correctness results. The earlier perf4 record reported
+30FPS/27.874ms in the closed room with no resource reads, but opening after
+7seconds contained a1,982.544ms frame and744,992bytes of reads. This was an
+intermediate resource/runtime combination, not the selected final pack.
+Its failure motivated the subsequent ordinary-OS measurements reported above;
+the old settled figure does not establish the final first-opening behavior.
 
 The source regressions now cover mixed32/64/96KiB retained allocations,
 fragmented quarter holes, full512KiB groups, all pinned-index sizes, owner
@@ -214,7 +416,7 @@ Smith impact frames, six margin-preserving map icons and the corrected reward
 banner were generated from the pinned PCK. The nine-cell contact sheet has
 been inspected as a continuous ring-breakup sequence.
 
-The source was frozen as local commit
+The initial room-work source was frozen as local commit
 `0b00d2a45932b3b17fdd20317df13553b4a1a526` after the connector's remote writes
 were interrupted. That commit is explicitly **not published or remotely
 verified**. Its immutable source archive and local validation receipts retain
@@ -225,7 +427,8 @@ Chinese pack. All53,631 glyph records retain their exact payloads and metrics,
 all strings remain byte-identical and shared artwork is unchanged. The32KiB
 result saves83,744bytes;64KiB saves127,752bytes. Against the same frozen UI14
 renderer, both produce identical full-frame transcripts in all seven room
-scenes. The32KiB grouping is selected for its lower cold-read/decode volume:
+scenes. At that stage,32KiB grouping was selected for its lower
+cold-read/decode volume; later small-font grouping is included in strings15:
 
 | UI14 renderer, Chinese merchant window | Original font groups | 32KiB grouping | 64KiB grouping |
 | --- | --- | --- | --- |
@@ -242,7 +445,9 @@ opening frame. Later opening-animation frames still have their own cold
 resource work. These are native resource-access observations, not calculator
 timing measurements.
 
-The final complete resource package, dedicated actual-art room regressions
-and ordinary-Ndless Firebird cold-opening measurements remain required. The
-historical UI14 first-rug stall of3771.576ms is the comparison baseline, not a
-UI15 result. Reduced reads alone do not complete the cold-opening task.
+The complete resources, actual-art room regressions and ordinary-Ndless
+Firebird opening measurements were subsequently completed and are reported
+under the final selection above. The historical UI14 first-rug stall of
+3771.576ms is retained as an earlier observation, not substituted for a
+matched final-runtime comparison. Reduced reads alone never establish
+first-opening performance acceptance.

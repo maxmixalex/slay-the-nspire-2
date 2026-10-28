@@ -1,0 +1,1482 @@
+{
+  "schema": 1,
+  "document": "UI15 validation identities and bounded evidence",
+  "repository": "maxmixalex/slay-the-nspire-2",
+  "reference": "v0.111.0 / 41cef1ea",
+  "recorded_at_utc": "2026-10-28T03:30:14.481408+00:00",
+  "status": "completed_playable_delivery_with_measured_performance_limits",
+  "remote_published": false,
+  "final_shipping_identity": {
+    "runtime_checkpoint": "bd158d205d877f767f59fe2a1eb33874cb925899",
+    "resource_tool_checkpoint": "de0941ebe70a8d92cd124447ea7cb6d30b4f1524",
+    "resource_edition": "strings15",
+    "resource_file_identities_field": "tested_resources.files",
+    "arm_launcher": {
+      "bytes": 1755032,
+      "sha256": "8596f9c1ed5778d229944adf0fbde3d9e2f9c22d770b7ce8fef11c6465666555"
+    },
+    "arm_allocation_bytes": 22879896,
+    "arm_maximum_static_function_stack_bytes": 5952,
+    "packages": [
+      {
+        "file": "Slay-the-Nspire-2-0.17-ui15-bilingual-calculator.zip",
+        "bytes": 80205686,
+        "sha256": "0a497a213b8a4ac533afd2f49fbc06c7d05bcfb48b30fa4e158850f26c801813",
+        "member_count": 14,
+        "uncompressed_member_bytes": 81975073
+      },
+      {
+        "file": "Slay-the-Nspire-2-0.17-ui15-optional-languages.zip",
+        "bytes": 17016324,
+        "sha256": "9e33741f3aa27efc5e3804665be020c48aba067cec3e2f20e057d13698a97f56",
+        "member_count": 15,
+        "uncompressed_member_bytes": 23870497
+      }
+    ],
+    "player_program_and_resources_bytes": 81910800,
+    "remote_published": false,
+    "source_delivery_identity": "The later documentation-only source child commit and source ZIP digest are recorded in the external SOURCE-IDENTITY/final delivery receipt, not in this self-containing source file."
+  },
+  "execution_environment": {
+    "native": "Local Linux; Clang 18; native Release and Debug O1 ASan/UBSan",
+    "calculator": "Firebird running ordinary TI-Nspire CX OS with matrix/touchpad input and USB transfers",
+    "physical_calculator_measurement": false,
+    "github_ci_claim": false,
+    "natural_three_act_completion_claim": false,
+    "manual_browser_or_wasm_validation": false,
+    "leak_detection": {
+      "enabled": false,
+      "reason": "Restricted process metadata prevents LSan operation; ASan and UBSan remain enabled."
+    }
+  },
+  "identity_policy": "Each result belongs only to its recorded runtime and resource edition. Incremental gates do not relabel earlier full suites; completed builds and successful scripts do not imply performance acceptance.",
+  "completed_chain": [
+    {
+      "stage": "complete_baseline",
+      "runtime_checkpoint": "a04451c07e1d63fa50cf95466381fce2a0d96ff8",
+      "native": {
+        "passed": 140,
+        "total": 140
+      },
+      "asan_ubsan": {
+        "passed": 136,
+        "total": 140,
+        "failed": 4,
+        "failed_suites": [
+          "health_bar_ui_regression",
+          "combat_ui15_regression",
+          "phobia_ui7_regression",
+          "world_map_travel_ui_regression"
+        ],
+        "unique_root_causes": 1,
+        "cause": "Out-of-range intermediate pointer in we_clips + directory - 38; integer subtraction must precede pointer addition."
+      },
+      "python_unique_tests": 354,
+      "portable_compile_only_bytes": 7913085,
+      "evidence": {
+        "native_build": {
+          "file": "ui15-integration9-native-build-f4a5181bd8a8.json",
+          "sha256": "7ccc77c3b70d40003042e24e96b4deee691fdb5d66153eb6f9c07f87e5c019c0",
+          "status": "passed",
+          "source_changed": false,
+          "log_sha256": "1112778aa98eeac8186369bebedfb35e613b346f5e8d0a6c2d84bb6ceaa118ad"
+        },
+        "native_full": {
+          "file": "ui15-integration9-native-all-db33ad113b6c.json",
+          "sha256": "81b9712494729a7b72068a435c41c9fca221dc5257f65f7c59f3d5c722def873",
+          "status": "passed",
+          "source_changed": false,
+          "log_sha256": "7710959c3f348c10e3708ab36c1432feb45f0c8fefc9e885f75bb07e2f4f5fd0"
+        },
+        "asan_completed_build": {
+          "file": "ui15-integration9-asan-resume-build-d9a507f8df12.json",
+          "sha256": "f0064f70ed411501f9404683a2264ed977af4bb88cfff8d85d24d77eb4a56f26",
+          "status": "passed",
+          "source_changed": false,
+          "log_sha256": "c1c281ba95926d36e1c87d8eecfeda78d00a1859011113b5d4ae62699e849b12"
+        },
+        "asan_full_with_real_failures": {
+          "file": "ui15-integration9-asan-all-b3d876c606f4.json",
+          "sha256": "38dfcf7ef627a3cf96f73b9e6deb313d38434fd9afdba6ff26538e85037b00c0",
+          "status": "failed",
+          "source_changed": false,
+          "log_sha256": "e80b0b6dcfed2c84eb790aaaadc2efa546023841e55714ed702c7717d2676cb8"
+        },
+        "python": {
+          "file": "ui15-integration9-python-space-f1731657063d.json",
+          "sha256": "3ba869cec1a0aef115bd95397b7e2484f2204bfba5ab6be40ba435c0d893bccc",
+          "status": "passed",
+          "source_changed": false,
+          "log_sha256": "bc8e632cccfb0d924c3e72f02de4decaa95e661640f26c97fa6b390be4b5f2c4"
+        },
+        "portable": {
+          "file": "ui15-integration9-portable-6b2959f6e9f5.json",
+          "sha256": "5a17474f4605613a38297e2c5db7b28b92c1dd96657e39308ee6e66972bb5709",
+          "status": "passed",
+          "source_changed": false,
+          "log_sha256": "112d196ed8600a581277fe17257774789f472a7d43233e1749eed289fa520f2b"
+        }
+      },
+      "failed_or_interrupted_attempts_retained": true
+    },
+    {
+      "stage": "pointer_undefined_behavior_fix_and_selected_delta",
+      "runtime_checkpoint": "8c2d6e9de3a4f2e4a7b7af0275bf275274bd9ad5",
+      "native": {
+        "passed": 18,
+        "total": 18
+      },
+      "asan_ubsan": {
+        "passed": 18,
+        "total": 18
+      },
+      "all_four_baseline_ub_triggering_suites_passed": true,
+      "actual_paths_per_mode": 9,
+      "actual_resource_edition": "inventory13",
+      "actual_language_editions": 16,
+      "actual_descriptions": 53072,
+      "converter_tests": 39,
+      "portable_compile_only_bytes": 7915957,
+      "evidence": {
+        "native-delta-build": {
+          "file": "ui15-final-v14-native-delta-build-4efec6b726f2.json",
+          "sha256": "279783bed6a786fcd8368b6a0c70c98ed00c29153302161745c7722e18c7744c",
+          "status": "passed",
+          "source_changed": false,
+          "log_sha256": "ec356df18c993e2d91bef047c82afd1d0429644d7bd023a6963d6cc912749b27"
+        },
+        "native-synthetic": {
+          "file": "ui15-final-v14-native-synthetic-c1639ccbd50a.json",
+          "sha256": "00f7008898ccd38ce185e4373d5c825aaa63d37535d72002d9c2c2fc4f25f44c",
+          "status": "passed",
+          "source_changed": false,
+          "log_sha256": "66835c344c243b131100084def28d991afc1002c1f7d251988a2a564b8de5a85"
+        },
+        "native-actual": {
+          "file": "ui15-final-v14-native-actual-e697dbb2c76b.json",
+          "sha256": "68c9344b09e3d1fafd7757698ff606f39a7b54930a5cdfa2733a6a1c7a6d6975",
+          "status": "passed",
+          "source_changed": false,
+          "log_sha256": "d78d463318f7dd83d758a595ed802ea8d28b65d0946f9a07d5d68f0d24d4e19a"
+        },
+        "asan-delta-build": {
+          "file": "ui15-final-v14-asan-delta-build-b9c317edbb21.json",
+          "sha256": "5adac52e1379180b610e5f00c9e2596f044fbdbcab0a1064b0167835eab0d7aa",
+          "status": "passed",
+          "source_changed": false,
+          "log_sha256": "4ddc9a9bfffa31fb5172e2e4d2cdd0044395c25b564a5c032db457ddf7a7327f"
+        },
+        "asan-synthetic": {
+          "file": "ui15-final-v14-asan-synthetic-138f82570d98.json",
+          "sha256": "4bfbeac22a466e051436fb31f31b62ef88e024dc64da10689c7eb7cf96037235",
+          "status": "passed",
+          "source_changed": false,
+          "log_sha256": "dabc8e756cbdc2bd642f9933d90e407dc866b567c775662a68ab913d93fbcbd9"
+        },
+        "asan-actual": {
+          "file": "ui15-final-v14-asan-actual-4db075a25e41.json",
+          "sha256": "93ad899c2ecbee45a66edeb79b3bce2ac475353bbcf5587caa6fe1bf036959f8",
+          "status": "passed",
+          "source_changed": false,
+          "log_sha256": "21fef14b087bdb6eabec7575d3ea2d607471a3f613dfe6bd9b16e3e462e0d44d"
+        },
+        "converter-delta": {
+          "file": "ui15-final-v14-converter-delta-664fcce1615a.json",
+          "sha256": "2532986ad3167e720c8a57465b39c4ae290295ce257f1b846ddadb12b6b11c4d",
+          "status": "passed",
+          "source_changed": false,
+          "log_sha256": "773ab8fe774cb05d107f956304d536b9e4050c61d5e0d8facf8b8a35458d790b"
+        },
+        "portable-compile": {
+          "file": "ui15-final-v14-portable-compile-d45f4d5022c8.json",
+          "sha256": "bce1bd1f2de5050201344c2ac227f11f18d4df7a105086d8d3136cdb3254ddc4",
+          "status": "passed",
+          "source_changed": false,
+          "log_sha256": "88efa5ee69871c5a8e70d15a4421583094e6f42e1a0052a5a5530449b28688dd"
+        }
+      }
+    },
+    {
+      "stage": "integrated_foreground_collection_and_rooms",
+      "runtime_checkpoint": "a94050d53ccd8c437be69dd42ebeb10e0f507b8f",
+      "native": {
+        "passed": 20,
+        "total": 20
+      },
+      "asan_ubsan": {
+        "passed": 20,
+        "total": 20
+      },
+      "actual_paths_per_mode": 9,
+      "actual_resource_edition": "strings15",
+      "actual_scope": [
+        "all16 locale descriptions",
+        "merchant preparation",
+        "ENG/ZHS deck",
+        "ENG/ZHS Random",
+        "screen effects",
+        "Spark",
+        "Vantom"
+      ],
+      "actual_descriptions": 53072,
+      "arm_launcher": {
+        "bytes": 1753046,
+        "sha256": "652a0090c452cef127c2f3003a49994de8036cc5716035447e3461218b1b9572"
+      },
+      "arm_allocation_bytes": 22873464,
+      "portable_compile_only_bytes": 7927388,
+      "evidence": {
+        "native-delta-build": {
+          "file": "ui15-integration16-native-delta-build-8070ca577c4e.json",
+          "sha256": "aa4f09381bfe70f7c198753d9d679b362671d234de910bb4f796e1b1f8246393",
+          "status": "passed",
+          "source_changed": false,
+          "log_sha256": "90a9548a16c2849e303ecfcf80526661eb122cadce53531940dcd6c907a5e52f"
+        },
+        "native-synthetic": {
+          "file": "ui15-integration16-native-synthetic-46937c016809.json",
+          "sha256": "7cf7ccc1c9ae649d1feb1038eb6eb8ee774fa9322d206a708fd3d868f695602f",
+          "status": "passed",
+          "source_changed": false,
+          "log_sha256": "1b95fcb212724ac93e10dd9f70577988a036fa38f096c68b82a2b416c53ec9f8"
+        },
+        "native-actual": {
+          "file": "ui15-integration16-native-actual-ac6c31d394c8.json",
+          "sha256": "a9f861de0807cc35893fafc0f8dcd208009509d5440a09746adc39e80574c465",
+          "status": "passed",
+          "source_changed": false,
+          "log_sha256": "d60a761fefcafe12b3062b21829b85e93464c26f9bd5125b1842ffa56b039986"
+        },
+        "asan-delta-build": {
+          "file": "ui15-integration16-asan-delta-build-d32ead8d0568.json",
+          "sha256": "7720f8a77c662e58c88c8db48eca4e5cb126a628d155392475c6cb8a896b33b3",
+          "status": "passed",
+          "source_changed": false,
+          "log_sha256": "83536aaa9b02df496b8972f8bfd7f8ffb40c5bbacbaf76a32d1b02efde6090fd"
+        },
+        "asan-synthetic": {
+          "file": "ui15-integration16-asan-synthetic-f982085d56bd.json",
+          "sha256": "010da2e57b294addb8392ffbdadf7c110bd6ce1b037601b1cac2b79c0668aa6a",
+          "status": "passed",
+          "source_changed": false,
+          "log_sha256": "8a374deb9194da74c0b716b23ca208d249c2de42a7b37b89a2efbaf743fa408b"
+        },
+        "asan-actual": {
+          "file": "ui15-integration16-asan-actual-f9a32d1b3566.json",
+          "sha256": "a7d3668cda364d901ff0afb33ae02aea0091cc7b962cbf661ce5c8502950c04a",
+          "status": "passed",
+          "source_changed": false,
+          "log_sha256": "da3f6440a606c78da2717d01a9c09c90a96d4e31084ba86cd5b3a06c603e558f"
+        },
+        "arm": {
+          "file": "ui15-integration16-arm-cfeda6466a13.json",
+          "sha256": "34f3230a381b74ff8edf148103d41c914a62068dcd90cfded799c0a8387e1e78",
+          "status": "passed",
+          "source_changed": false,
+          "log_sha256": "d570b9d0fab8784c286e99bf8ab153f6dbc91b1f2262acf5cfcd2af6af8be58c"
+        },
+        "portable-compile": {
+          "file": "ui15-integration16-portable-compile-032da3a14a82.json",
+          "sha256": "5637a81fa866d6fd1f4c1c2358b72646f35cf038f3b7c0ead8b722742bc86560",
+          "status": "passed",
+          "source_changed": false,
+          "log_sha256": "848f808ff9f2c209798785e5f19890f7b49fadebfac2b53ab524180b9d8c7b05"
+        }
+      }
+    },
+    {
+      "stage": "central_touch_fifo_and_merchant_hover_delta",
+      "runtime_checkpoint": "bd158d205d877f767f59fe2a1eb33874cb925899",
+      "native": {
+        "passed": 6,
+        "total": 6
+      },
+      "asan_ubsan": {
+        "passed": 6,
+        "total": 6
+      },
+      "actual_paths_per_mode": 6,
+      "actual_resource_edition": "strings15",
+      "actual_scope": [
+        "ENG/ZHS merchant preparation",
+        "ENG/ZHS keyword tooltip",
+        "ENG/ZHS merchant occlusion"
+      ],
+      "merchant_occlusion_exact_whole_frames_per_language_per_mode": 2376,
+      "executed_elf_hashes_pinned": 14,
+      "arm_launcher": {
+        "bytes": 1755032,
+        "sha256": "8596f9c1ed5778d229944adf0fbde3d9e2f9c22d770b7ce8fef11c6465666555"
+      },
+      "arm_allocation_bytes": 22879896,
+      "arm_maximum_static_function_stack_bytes": 5952,
+      "arm_functions_above_8192_stack_bytes": 0,
+      "portable_compile_only": {
+        "bytes": 7932714,
+        "sha256": "1cbf87b4bad635e68b167ced04f81fbd7581f127642839592331c5439ee81e62"
+      },
+      "source_archive": {
+        "bytes": 4398286,
+        "sha256": "fe15ccfd0b2abdefa6c74298b019579cbfaf7d19cf2939e8b734fcfb679ea185"
+      },
+      "evidence": {
+        "native-delta-build": {
+          "file": "ui15-final-runtime-native-delta-build-4df8f2a02814.json",
+          "sha256": "56e93da8d503c636e9bc82c87dc80f2fc116ed4337a51ffbe02d86eb1ffdcd4f",
+          "status": "passed",
+          "source_changed": false,
+          "log_sha256": "5be2fff1dc03ac9fffc7dc1979225d0ddb6f0d8c4b5d29f2fecd5862ade582ac"
+        },
+        "native-synthetic": {
+          "file": "ui15-final-runtime-native-synthetic-9b58b761cb1f.json",
+          "sha256": "6843e489e45a205c837ffc23a3378fffc7924c4b569ef165eed49e7065369979",
+          "status": "passed",
+          "source_changed": false,
+          "log_sha256": "3d0732f560b6fadfdbd8db204d01815248f9f2a536b5db46ef7c1a4e701c5e70"
+        },
+        "native-actual": {
+          "file": "ui15-final-runtime-native-actual-499d71072f0c.json",
+          "sha256": "2d0732f6f278f24524916df2dfe3a4c2f7b6a15774f2a46ea8e3dc3685c8a32d",
+          "status": "passed",
+          "source_changed": false,
+          "log_sha256": "5d059e98f7aae44e04ec8f650bc5e48744a9d79dc1bb08898cfe241a124560e8"
+        },
+        "asan-delta-build": {
+          "file": "ui15-final-runtime-asan-delta-build-ae2ad9b51b3e.json",
+          "sha256": "83dbe1948666374db1fa5419f9829104cea36e7f5858e75e8b13c33be4f2eaac",
+          "status": "passed",
+          "source_changed": false,
+          "log_sha256": "532636105f538241562e4514ef21e8fcb89f9e11f09f6ac743c4b9efcb795671"
+        },
+        "asan-synthetic": {
+          "file": "ui15-final-runtime-asan-synthetic-d36a1c9e22ce.json",
+          "sha256": "707c9659801ef0f2b68ffd7c7bc62b1ca0cbe57bae5eaf45c4fd89c84523ed21",
+          "status": "passed",
+          "source_changed": false,
+          "log_sha256": "348b662d0ff8bfad38aac3409f62d44f53ed27c240bbdb51f446433199c3bf50"
+        },
+        "asan-actual": {
+          "file": "ui15-final-runtime-asan-actual-322a2c662de5.json",
+          "sha256": "7ed883e09931184a5cfaae21d1b27353f9e74941ab3ccf993a824a7781a15c2d",
+          "status": "passed",
+          "source_changed": false,
+          "log_sha256": "dbcfbdff0cacb0fd2fcd39746a55b44a78d30aa2de59b717032c700bd2c99cc2"
+        },
+        "arm": {
+          "file": "ui15-final-runtime-arm-e9b78f0fe941.json",
+          "sha256": "9a2c797f13216c3a1b379b48e158ac72dcd57d407bbc164a2659c23042cb49e1",
+          "status": "passed",
+          "source_changed": false,
+          "log_sha256": "88766a6daf84237b1369693ea5aa84f03fc5c01627b4d44b275faf98dc55f539"
+        },
+        "portable-compile": {
+          "file": "ui15-final-runtime-portable-compile-9a55fbb943ad.json",
+          "sha256": "47f157154a8ada36cd9504b84942f51bd313780a193ab0cd632e3686a511ba6e",
+          "status": "passed",
+          "source_changed": false,
+          "log_sha256": "44c9fc318c38af54637cf6807cb7905e1a6d84d43812799047d6f1aeb291d8c5"
+        }
+      }
+    },
+    {
+      "stage": "immutable_saved_shop_preview_and_consecutive_idle_delta",
+      "runtime_checkpoint": "99ea002ac163a3288f65d7da0d4b32eda73e6d79",
+      "source_parent": "176eed5b40ddb9d47d87e7747373d9ed8eab78e4",
+      "runtime_delta": [
+        "src/merchant_ui.inc",
+        "tests/merchant_preparation_regression.cpp"
+      ],
+      "status": "changed_path_correctness_passed_performance_rejected",
+      "native_actual": {
+        "paths": 2,
+        "eng_checks": 30404,
+        "zhs_checks": 33025
+      },
+      "asan_ubsan": {
+        "synthetic_passed": 1,
+        "synthetic_total": 1,
+        "actual_paths": 2,
+        "eng_checks": 30404,
+        "zhs_checks": 33025,
+        "executed_elf": {
+          "bytes": 32024432,
+          "sha256": "7656edb5ba70b4ba6efda75fc2ef464c76f6751a18795ef5b1b2cab002f06b5d"
+        }
+      },
+      "actual_resource_edition": "idle21",
+      "resource_tool_checkpoint": "176eed5b40ddb9d47d87e7747373d9ed8eab78e4",
+      "arm_launcher": {
+        "bytes": 1756187,
+        "sha256": "c3a604e169b258b75f8a6ba3fa57b8827d2f7da44aafec506a708722046c5b88"
+      },
+      "arm_elf": {
+        "bytes": 8548656,
+        "sha256": "d5e83bed117ca2bff6d090197df3ea8e1a22d5c3ba401cba362dfd7df661e67a"
+      },
+      "arm_allocation_bytes": 22883724,
+      "arm_maximum_static_function_stack_bytes": 5952,
+      "arm_functions_above_8192_stack_bytes": 0,
+      "arm_stack_usage_scope": "Existing compiler per-function artifacts, including the rebuilt App translation unit; not a whole call-chain maximum.",
+      "arm_artifact_audit": {
+        "file": "v22-arm-existing-artifacts.json",
+        "sha256": "5e92380d757b2d8b3ddeb07edd0ae61dfb7642c7fcafa78661297909cf209e62"
+      },
+      "portable_compile_only": {
+        "bytes": 7937239,
+        "sha256": "6c3467dad44835b873563bcb2f8131d857d066ce847e67da42be97d3244b6c07"
+      },
+      "source_archive": {
+        "bytes": 4400178,
+        "sha256": "dfd1292815a1d36982dd4fa7462547cde8477cd4a3cff3fd02d7f1c382b2e5a7"
+      },
+      "source_archive_receipt": {
+        "file": "rooms-preview-v22-receipt.json",
+        "sha256": "3cb0a4fe60f612038faf99c9b2541b1e6bdc923ebe211804b8cc55033ff254be"
+      },
+      "unchanged_from_bd158": {
+        "src/canvas.inc": {
+          "bytes": 57323,
+          "sha256": "14b59069f1186b660d3ac5549aacfcf18cd818a6a3964e7a7fbbb75cd82f1016"
+        },
+        "include/app.hpp": {
+          "bytes": 48484,
+          "sha256": "faf6507ffcdfd2d0a7afe310f7109e8e2294ba80ee44e5e5108dec4cf73d804b"
+        },
+        "include/host_input_latch.hpp": {
+          "bytes": 5835,
+          "sha256": "44bf8bb979de7ab6af81249039ec7bf735288945ee28a703d61b422b83340bc8"
+        },
+        "platform/ndless/main.cpp": {
+          "bytes": 26276,
+          "sha256": "0a0192400194bbcb182c0799c5ef41f1f6f69f5d081d3e1106cfccb349817514"
+        }
+      },
+      "evidence": {
+        "asan-build": {
+          "file": "ui15-preview-v22-asan-build-860a018f358e.json",
+          "sha256": "f9b7c3f019b54e59ff1124c290ce77ec7f74119184cfd2d576d8bb36c9cfce5a",
+          "status": "passed",
+          "source_changed": false,
+          "log_sha256": "b7804f1fb2cebd74244a8714b4ebf83f33acde9f19a02c4a74b077e088865854"
+        },
+        "asan-synthetic": {
+          "file": "ui15-preview-v22-asan-synthetic-fb3f7ede6c66.json",
+          "sha256": "473643143116ca74d6e47ba760f830fdb7ad3144fde732669ab81c9ec48c84f2",
+          "status": "passed",
+          "source_changed": false,
+          "log_sha256": "e998803c14a84c1c661f6680f5821672963756f77eaafa26ae5d4282b3756ea8"
+        },
+        "asan-actual": {
+          "file": "ui15-preview-v22-asan-actual-ef0abbadd542.json",
+          "sha256": "0fd0544d86ac9017cd7b0b61d56cb805b1138f8ebd1941451f20f26243b2d718",
+          "status": "passed",
+          "source_changed": false,
+          "log_sha256": "d4154a075e3e69d9cdcde08db86b7cfa7befe76cd087c4d57050f44964c12619"
+        },
+        "portable-compile": {
+          "file": "ui15-preview-v22-portable-compile-93791e27a1f7.json",
+          "sha256": "86a9acdd0e0b044be3da073856bd2fe3fe2e6308551deb924cde9da808f75964",
+          "status": "passed",
+          "source_changed": false,
+          "log_sha256": "56d12ad976c38b5f095d06862e1072322171f98045c511ae036359e5b9bfb1ce"
+        },
+        "native": {
+          "file": "ui15-rooms-preview22-native-b013d6bf8919.json",
+          "sha256": "26e82c6ce3bc057dd0d198e8c2841ef2bb934d64cc609d71b9e9f281d706c2cd",
+          "status": "passed",
+          "source_changed": false,
+          "log_sha256": "6a17802f630e3b15eb7012187804954758450e84bb697bfc1c23087b1f3ac1f4"
+        },
+        "arm": {
+          "file": "ui15-rooms-preview22-arm-616594db4203.json",
+          "sha256": "0ef1002d269af61570f8c97bfce9876f2085114f0019e8517b24a91f6f9fd2f6",
+          "status": "passed",
+          "source_changed": false,
+          "log_sha256": "e75012e3c02135e5a8ebf66bff07a0546226fa4e2385b5dd71dc65bee0ee5f6c"
+        }
+      },
+      "summary": {
+        "file": "validation-summary.json",
+        "sha256": "ef5795d5b5c2fcff47db4dea4be86b547e70b32ed7f3ca38f8ce090d1b22e913"
+      },
+      "scope": "Only merchant runtime/test changes were compiled and executed here. Input, Canvas and full-suite evidence remains attached to its original checkpoint; all16 idle21 validation remains at f67."
+    }
+  ],
+  "ordinary_os_input": {
+    "runtime_checkpoint": "bd158d205d877f767f59fe2a1eb33874cb925899",
+    "resource_edition": "strings15",
+    "journals_passed": 7,
+    "journals_total": 7,
+    "scenario": "Previously naturally reached first-combat save, continued through ordinary OS input",
+    "default_system_language": "Chinese OS selected zhs without a saved preference",
+    "continue_wipe_verified_twice": true,
+    "key_holds_ms": {
+      "card_digit": 50,
+      "side_right": 50,
+      "single_Enter": 50
+    },
+    "enemy_hp": [
+      26,
+      20
+    ],
+    "energy": [
+      3,
+      2
+    ],
+    "side_release_preserves_selected_card": true,
+    "normal_SaveQuit_and_OS_exit": true,
+    "fresh_process_continue": true,
+    "first_second_and_backup_saves_byte_identical": true,
+    "canonical_save_valid": true,
+    "save": {
+      "bytes": 7430,
+      "sha256": "041d9a2c072391cd5c4530a45b6ce37728d41d50d0e104e5f846699db3192179"
+    },
+    "launcher_usb_readback": {
+      "bytes": 1755032,
+      "sha256": "8596f9c1ed5778d229944adf0fbde3d9e2f9c22d770b7ce8fef11c6465666555"
+    },
+    "receipt": {
+      "file": "final-pointer-natural-acceptance.json",
+      "sha256": "b63e12776b2c8f36482d86e981ef58ae6f24f9416cd92fa4d411dd4679b793b5"
+    },
+    "evidence": {
+      "ui15-natural-final-pointer-combat-a10afa66cfe6": {
+        "file": "ui15-natural-final-pointer-combat-a10afa66cfe6.json",
+        "sha256": "52f77c8d08b359e4f8f5e6ea5f385501d073851c2c882b4d02d1b29b4606d16b",
+        "status": "passed",
+        "source_changed": false,
+        "log_sha256": "3fc47f0a1b27febc24919b95194ad60e2a067e14e4ab76f4ad2c38c36d1d95c9"
+      },
+      "ui15-natural-final-pointer-final-os-f5ccb04f0a6a": {
+        "file": "ui15-natural-final-pointer-final-os-f5ccb04f0a6a.json",
+        "sha256": "6e5ffd96441ad18c244133c5541659476d98303fe23a0642ad437adc165261b4",
+        "status": "passed",
+        "source_changed": false,
+        "log_sha256": "462000b4ad1cb60e9b67620e900a5e3b3f8a693fda1427d8ef11934cee7cf956"
+      },
+      "ui15-natural-final-pointer-first-exit-56d684e6ec7f": {
+        "file": "ui15-natural-final-pointer-first-exit-56d684e6ec7f.json",
+        "sha256": "ae2f777e592dbea2e7fed6068e296a7ae9de646ece1f5ca70d4526a8495d2048",
+        "status": "passed",
+        "source_changed": false,
+        "log_sha256": "e8d988a599604956b55302c7a7418fb2346494f777c9f90d0ea55ca98b1278ae"
+      },
+      "ui15-natural-final-pointer-installed-7edd3f60466f": {
+        "file": "ui15-natural-final-pointer-installed-7edd3f60466f.json",
+        "sha256": "a825d7cc4514ec619f96f8b04a2456ef9ae56a54a67e14dfc06098d9137aff30",
+        "status": "passed",
+        "source_changed": false,
+        "log_sha256": "de36ef013f1d2e3ef5ffc1a8aae21de013abd602a9980655a1d6acf2d1a150e8"
+      },
+      "ui15-natural-final-pointer-recontinued-0dec58be7bac": {
+        "file": "ui15-natural-final-pointer-recontinued-0dec58be7bac.json",
+        "sha256": "a7453a87c538c136f173cfe8d24aaede7c747bea401cd9f510348ef2c10b475f",
+        "status": "passed",
+        "source_changed": false,
+        "log_sha256": "69b0f274d48c0c021b8a396fa89f5cf1c4a75edc6579c9b14d14d783c3acf7f0"
+      },
+      "ui15-natural-final-pointer-short-play-c5f4dabe3b56": {
+        "file": "ui15-natural-final-pointer-short-play-c5f4dabe3b56.json",
+        "sha256": "d35a6ed5b99ba9ef55665fcbde253c0097af0b03eab917cfdd38b7a28aa5b2e6",
+        "status": "passed",
+        "source_changed": false,
+        "log_sha256": "3da9feacf3e36894bd9c21aeb18e83385a1cee990774c6cf5837f8f853e3be25"
+      },
+      "ui15-natural-final-pointer-title-4dd9431cc386": {
+        "file": "ui15-natural-final-pointer-title-4dd9431cc386.json",
+        "sha256": "cb80a0d4895ce5094ba4dfc850b0857d4838d3b102da331c65d9b907685ff133",
+        "status": "passed",
+        "source_changed": false,
+        "log_sha256": "82c494d0c3c123d4a00b21a2c5a2b8d2510fcf263c48568c6f181fe799bb5af2"
+      }
+    }
+  },
+  "ordinary_os_rendering": {
+    "runtime_checkpoint": "a94050d53ccd8c437be69dd42ebeb10e0f507b8f",
+    "resource_checkpoint": "de0941ebe70a8d92cd124447ea7cb6d30b4f1524",
+    "resource_edition": "strings15",
+    "cpu_hz": 132000000,
+    "ahb_hz": 66000000,
+    "apb_hz": 33000000,
+    "jit": true,
+    "counter_hz": 32768,
+    "measurement": "Read-only deltas of existing production counters, cross-checked after normal OS exit",
+    "random_30s": {
+      "requested_window_ms": [
+        0,
+        30000
+      ],
+      "frames": 282,
+      "interval_seconds": 29.951873779296875,
+      "fps": 9.415103778746627,
+      "render_mean_ms": 105.27568844193263,
+      "read_calls": 0,
+      "read_bytes_requested": 0,
+      "over_250ms": 0,
+      "interval_maximum_observed_ms": 126.556396484375,
+      "receipt": {
+        "file": "integration16-random-window-summary.json",
+        "sha256": "13612252c00a801a10efe5e7055da4be9d8e08c2cf31f88f8915c3509a253b48"
+      },
+      "journal": {
+        "file": "ui15-integration16-random-full30-078106c307ff.json",
+        "sha256": "f04f7cd05f9d09d82613c4dd3c0c8728158d52d9ea17775c6c03284f5aaf813a",
+        "status": "passed",
+        "source_changed": false,
+        "log_sha256": "431ba64868062826d0081efe59cee83348581c70f2ee2ab6fe2c798493833daf"
+      }
+    },
+    "status_insertion_0_to_6s": {
+      "requested_window_ms": [
+        0,
+        6000
+      ],
+      "frames": 81,
+      "interval_seconds": 6.0181884765625,
+      "fps": 13.459199610555567,
+      "render_mean_ms": 71.89376265914352,
+      "read_calls": 37,
+      "read_bytes_requested": 219431,
+      "over_250ms": 3,
+      "interval_maximum_observed_ms": 293.9453125,
+      "controlled_scenario": true,
+      "natural_play_claim": false,
+      "visible_growth_hold_and_flight": true,
+      "canonical_inserted_dazed": 5,
+      "canonical_save_valid": true,
+      "normal_exit": true,
+      "receipt": {
+        "file": "integration16-status-action-summary.json",
+        "sha256": "c238933ee60395b22cc70c1d08fd2614be8975cf3d1a89da84b8bb17397eaf65"
+      },
+      "normal_exit_receipt": {
+        "file": "integration16-status-normal-exit-crosscheck.json",
+        "sha256": "0f2dab871fac13404809199883ec90f2a784ffe98db0ddc7208bfd76b8fa1cc8"
+      },
+      "action_journal": {
+        "file": "ui15-integration16-cold-status-action-f03d8338ee51.json",
+        "sha256": "f9e6bf5a0cd9e8f8eef4195b10d5bf12e4a9105c9f07c601343aca3754231747",
+        "status": "passed",
+        "source_changed": false,
+        "log_sha256": "19b8cf3a84d139a3f552decd87fad3dcd559a8a88acdf5588b1c208f76424875"
+      },
+      "exit_journal": {
+        "file": "ui15-integration16-status-normal-exit-b354324e7143.json",
+        "sha256": "705993d092656cb48025d4a2bfe4339ce824c2938ca73f1fe1597b0bcd1c7959",
+        "status": "passed",
+        "source_changed": false,
+        "log_sha256": "54a7ac4517e1c7d0494426221bc2298180045eb6eac29eacc84cbca36bbda9e3"
+      }
+    }
+  },
+  "tested_resources": {
+    "edition": "strings15",
+    "shipping_identity": true,
+    "language_editions": 16,
+    "files": {
+      "nSpire2.dat.tns": {
+        "bytes": 74024394,
+        "sha256": "24f81a1f67e89ccb6da39c4dd98031a16e951662c10083dda6a088bc6afe5d6d"
+      },
+      "nSpire2.deu.dat.tns": {
+        "bytes": 1162874,
+        "sha256": "7353de256fa42e76c5137ccd5ac96e5804da066dd5247f9015f91499ded3d710"
+      },
+      "nSpire2.eng.dat.tns": {
+        "bytes": 1130938,
+        "sha256": "06d1496be83af9c3b261abaab74054fafa384417715d8efd7adcee4371b320ca"
+      },
+      "nSpire2.esp.dat.tns": {
+        "bytes": 1164461,
+        "sha256": "bf7e1f81b82ed3d553907cd5194fa15a4bb849b06bbe5929fc8d9b13269f1815"
+      },
+      "nSpire2.fra.dat.tns": {
+        "bytes": 1184132,
+        "sha256": "0acd4e4fa311f093cc14fc10a10ea65b6ed0bbf82817999facfa7dc620bb4555"
+      },
+      "nSpire2.ind.dat.tns": {
+        "bytes": 1134074,
+        "sha256": "0e3787ad6699fe2cc335500afa21d8de36ebde72c558494f4fef5f6ec438aaa2"
+      },
+      "nSpire2.ita.dat.tns": {
+        "bytes": 1157275,
+        "sha256": "2494e04cc601ba69a005353d0c5d07e87d51f15b5829cbb883adcac150faa402"
+      },
+      "nSpire2.jpn.dat.tns": {
+        "bytes": 3925710,
+        "sha256": "7447f52d00595ad3afe02f778bb335e42a0c71aa90c37f5039c6f8cfa9723271"
+      },
+      "nSpire2.kor.dat.tns": {
+        "bytes": 1949066,
+        "sha256": "5fd6619beb9a7bc4d2ea5971753eef98809f9a7d875aba834995a68bd29764db"
+      },
+      "nSpire2.pol.dat.tns": {
+        "bytes": 1114594,
+        "sha256": "f78d2fcf978c6002675016ddd4e33ee7adfb28358613feb151a441143104ed84"
+      },
+      "nSpire2.ptb.dat.tns": {
+        "bytes": 1169431,
+        "sha256": "ad9542b80834e010b90786413200d869a647e8a46831a00a157472ac5e0212d4"
+      },
+      "nSpire2.rus.dat.tns": {
+        "bytes": 1187233,
+        "sha256": "29f0ed28a7a20706b3a79ab9bd79bb09d240740da14585b95285a5b6d90066d1"
+      },
+      "nSpire2.spa.dat.tns": {
+        "bytes": 1163335,
+        "sha256": "3e93bdf60394a0298f88f5b424bc1d6b63b008787a392ce2411ebbfa3fb40df5"
+      },
+      "nSpire2.tha.dat.tns": {
+        "bytes": 1215541,
+        "sha256": "3fa54fd588404ffd8acee77391935aef3e85d4212a5c6b7f009730d99db7a8e8"
+      },
+      "nSpire2.tur.dat.tns": {
+        "bytes": 1167450,
+        "sha256": "f70a85dbd2162a9af61268efbc12bd41df3b90c11f78c5f43584d0fa6a1f6a7b"
+      },
+      "nSpire2.zhs.dat.tns": {
+        "bytes": 5000436,
+        "sha256": "ba66ef22e4f9eed078d8dbc2bfcbfd5d49f3b9ef50955b0167e72ee2aa59d563"
+      },
+      "nSpire2.zht.dat.tns": {
+        "bytes": 5174475,
+        "sha256": "67de23cb49966e24e73c857a3a2e335914d42d65691e2a49ee61a0e46dee87fb"
+      }
+    },
+    "sizes": {
+      "common_bytes": 74024394,
+      "all16_locale_bytes": 30001025,
+      "all17_resource_bytes": 104025419,
+      "common_plus_eng_zhs_bytes": 80155768,
+      "initial_ui15_compressed_edition_bytes": 103235507,
+      "delta_from_initial_compressed_edition_bytes": 789912,
+      "inventory13_common_delta_bytes": 164250,
+      "strings15_locale_delta_bytes": 725820
+    },
+    "lossless_conversion": {
+      "comparison_scope": "Exact bytes/pixels/metrics relative to the immediately preceding converter inputs; no original art or text payload is published here.",
+      "all16_strings_exact_rows": 139264,
+      "utf8_bytes_compared": 8090052,
+      "all16_native_glyphs_and_metrics_verified": 344573,
+      "inventory_images_verified_per_edition": 1067,
+      "other_images_unchanged_per_edition": 56993,
+      "animation_streams_exact_per_edition": 1655,
+      "clip_timing_exact": true,
+      "artwork_animation_and_glyph_streams_exact_after_string_regrouping": true,
+      "string_group_raw_limit_bytes": 4096,
+      "runtime_pool_bytes_added_by_these_regroupings": 0,
+      "independent_inventory_cold_decoded_bytes": 10612385,
+      "previous_inventory_cold_decoded_bytes": 31718522,
+      "evidence": [
+        {
+          "file": "locales-receipt.json",
+          "sha256": "43c38a32c13016ebef522a1b54c7371e9bddcd27b49e7482bc4655c39759782b"
+        },
+        {
+          "file": "small-ui-fonts-receipt.json",
+          "sha256": "a161f1e07f47dff8a36342d2e2a55ed28ed9469b31cc307be7cba97eed2a0b65"
+        },
+        {
+          "file": "independent-cards-receipt.json",
+          "sha256": "90f542a6234e1a7ca850370670efaa2dec60e1a708cf8a212953a51d6a57f71b"
+        },
+        {
+          "file": "small-ui-strings-receipt.json",
+          "sha256": "2d96e6769e9ac22f773ba1b4d24b1cd72864f65e4581203433120da635ebd211"
+        }
+      ]
+    },
+    "runtime_validation": {
+      "checkpoint": "a94050d53ccd8c437be69dd42ebeb10e0f507b8f",
+      "all16_editions": true,
+      "descriptions_checked": 53072,
+      "unexpanded_descriptions": 0,
+      "native_and_asan_actual_journals": [
+        "ui15-integration16-native-actual-ac6c31d394c8.json",
+        "ui15-integration16-asan-actual-f9a32d1b3566.json"
+      ]
+    }
+  },
+  "rejected_candidate_resources": {
+    "edition": "idle21",
+    "shipping_identity": false,
+    "resource_tool_checkpoint": "176eed5b40ddb9d47d87e7747373d9ed8eab78e4",
+    "tested_merchant_runtime_checkpoint": "99ea002ac163a3288f65d7da0d4b32eda73e6d79",
+    "language_editions": 16,
+    "files": {
+      "nSpire2.dat.tns": {
+        "bytes": 74211428,
+        "sha256": "73c2f46e48e4c9b97497934c58632981c7e5d4048f5184b0bf4b927400d91c26"
+      },
+      "nSpire2.eng.dat.tns": {
+        "bytes": 1131493,
+        "sha256": "8c1def478c7c4590fca544ea91a6bc1fe0c00199c32a2b7efedd426b1a671a37"
+      },
+      "nSpire2.zhs.dat.tns": {
+        "bytes": 4999653,
+        "sha256": "2bde7cb2326d0142ad13aee06764c09c74ef63bf8b33e2ee8f0b63b561b20dfd"
+      },
+      "nSpire2.zht.dat.tns": {
+        "bytes": 5175709,
+        "sha256": "e5bbf1f9ce3fca16ba7b6533b3b97cd98f249de66e3262b75e92046931f006d6"
+      },
+      "nSpire2.deu.dat.tns": {
+        "bytes": 1163190,
+        "sha256": "3d4fad6c71890191ec1c9bdd566f234cf6edeb67e8358e7586846ce358fb7bd5"
+      },
+      "nSpire2.esp.dat.tns": {
+        "bytes": 1163808,
+        "sha256": "2d3d0b6e82904662bf844f9f0692e0b5d3add2d6869b5dd33f9f8dbca0b6be73"
+      },
+      "nSpire2.fra.dat.tns": {
+        "bytes": 1184506,
+        "sha256": "291b8cc7b04557196aa4e889e8daf70119363f52be399b8916307d890ce48fb5"
+      },
+      "nSpire2.ind.dat.tns": {
+        "bytes": 1134199,
+        "sha256": "9ec82a6e26a72de7e80526aaa5806088f8fee5ffeb40ec03d64a9801869c156b"
+      },
+      "nSpire2.ita.dat.tns": {
+        "bytes": 1157710,
+        "sha256": "13e75cd5964bf9b91b2e1a64dc3c1ed28dafa3fede58215e64fa8e042e039716"
+      },
+      "nSpire2.jpn.dat.tns": {
+        "bytes": 3926048,
+        "sha256": "a486fd0f008bee4a9e6dc47fbce00453b35fa775d72620ab6054dd37183b508b"
+      },
+      "nSpire2.kor.dat.tns": {
+        "bytes": 1948851,
+        "sha256": "61dc2f5fdfcc9b29e3c8c520e63bdf2ecbb662beba9e598c33f4eb4cdaf4ef3e"
+      },
+      "nSpire2.pol.dat.tns": {
+        "bytes": 1114339,
+        "sha256": "384422f3d199635b28daa3b298bcaeae03c7b3758fd0c68fbecb6e28d23a4931"
+      },
+      "nSpire2.ptb.dat.tns": {
+        "bytes": 1169705,
+        "sha256": "a007dc8b83713d6a1869c11cf11d5c72803a233024058dfc96b7e7ecc2320c76"
+      },
+      "nSpire2.rus.dat.tns": {
+        "bytes": 1187147,
+        "sha256": "199e142b10231098b822bf8f8a13a5bc3bbe1939be80e7ecf4e8fe79c1145647"
+      },
+      "nSpire2.spa.dat.tns": {
+        "bytes": 1163667,
+        "sha256": "b2caaf76b00242569f039551027ba0a4829647ee7121a17f972f29d9d39a0de1"
+      },
+      "nSpire2.tha.dat.tns": {
+        "bytes": 1215538,
+        "sha256": "4c77c9f535092d0aac1c041bf5c3d1e75e4d5c245a78c3c10128ce482c026dc6"
+      },
+      "nSpire2.tur.dat.tns": {
+        "bytes": 1167564,
+        "sha256": "e44d09a494b4daec90834118ef00adc03c6e3b60992bc7e0e5c7ecf5fa3999c3"
+      }
+    },
+    "sizes": {
+      "common_bytes": 74211428,
+      "all16_locale_bytes": 30003127,
+      "all17_resource_bytes": 104214555,
+      "common_plus_eng_zhs_bytes": 80342574,
+      "delta_from_strings15_bytes": 189136,
+      "delta_from_initial_compressed_edition_bytes": 979048
+    },
+    "lossless_conversion": {
+      "independent_merchant_idle_frames": 145,
+      "previous_cold_decoded_bytes": 5001122,
+      "independent_cold_decoded_bytes": 628985,
+      "native_pixels_unchanged": true,
+      "runtime_pool_bytes_added": 0,
+      "exact_clip_timing_all16": true,
+      "evidence": {
+        "file": "independent-cards-receipt.json",
+        "sha256": "a32411ec6cef02676d4e8f4c098d883574d3679fc66870db2a3d5930d8104b71"
+      }
+    },
+    "inherited_all16_runtime_validation": {
+      "runtime_checkpoint": "f67c6173875d386d76ded49e18d7db6df34070cd",
+      "editions": 16,
+      "checks": 38686,
+      "descriptions": 53072,
+      "unexpanded": 0,
+      "failures": 0,
+      "evidence": {
+        "file": "ui15-idle21-asan-locale-actual-7f96afd3e7aa.json",
+        "sha256": "ed361bdbbc648c1fa89925daa31d8aa68efc5825729597274d079ea4a62526b5",
+        "status": "passed",
+        "source_changed": false,
+        "log_sha256": "3a11c809bf788707c08d338326add64b16b5fd42c5006c7d072f642252376829"
+      },
+      "rule": "The resource bytes are unchanged for v22; this earlier all16 execution is not relabeled as v22."
+    }
+  },
+  "rejected_candidate_packages": {
+    "status": "readback_passed_runtime_performance_rejected",
+    "shipping_identity": false,
+    "runtime_checkpoint": "99ea002ac163a3288f65d7da0d4b32eda73e6d79",
+    "resource_tool_checkpoint": "176eed5b40ddb9d47d87e7747373d9ed8eab78e4",
+    "files": [
+      {
+        "file": "Slay-the-Nspire-2-0.17-ui15-bilingual-calculator.zip",
+        "bytes": 80386862,
+        "sha256": "6e331a85f9e471f94065fe3e16f2019b10287bfb07b891001b07947c9e0daa8c",
+        "member_count": 14,
+        "uncompressed_member_bytes": 82163034
+      },
+      {
+        "file": "Slay-the-Nspire-2-0.17-ui15-optional-languages.zip",
+        "bytes": 17017910,
+        "sha256": "2e3da1d129616081c8e04b3a2f114aa2a1ee6b720066e9d81032cfd83eafa7c3",
+        "member_count": 15,
+        "uncompressed_member_bytes": 23872827
+      }
+    ],
+    "player_program_and_resources_bytes": 82098761,
+    "optional_locale_count": 14,
+    "layout": {
+      "root_launcher": "nSpire2.tns",
+      "data_directory": "data",
+      "empty_writable_state_directory": "state",
+      "prepopulated_saves": false
+    },
+    "receipt": {
+      "file": "candidate-v22-package-receipt.json",
+      "sha256": "6001da93afd79fc3cf6e141dacafc71bf5eaefca7b16a3ab5881b2af1f914a01"
+    },
+    "verified_before_rejection_receipt": {
+      "file": "candidate-packages-verified-history.json",
+      "sha256": "17e2ec03661955482fb169ab93f2123110d5ef169db5dfe40e369158811447fb"
+    },
+    "reproducible_zip_bytes_may_be_removed": true,
+    "journal": {
+      "file": "ui15-v22-calculator-package-absolute-6a3c2fa48f32.json",
+      "sha256": "f944023d04587ce3cb06101ccc4ff22efff62bdaa28700cd951dbb1de88af744",
+      "status": "passed",
+      "source_changed": false,
+      "log_sha256": "6ad4f5f1a85fdf5a42ac221e8025de24e0ca7a8a0d37ba00f21d1347baf6c811"
+    },
+    "prior_wrapper_failure": {
+      "reason": "The first wrapper invocation repeated a relative script path after changing cwd; packaging code did not start. The absolute-path retry passed.",
+      "journal": {
+        "file": "ui15-v22-calculator-package-c4e21ce8a402.json",
+        "sha256": "baba9662490e53958f52f5e4821c1823735caa2e0f880e97830fce8f5053d216",
+        "status": "failed",
+        "source_changed": false,
+        "log_sha256": "f51deeb2fb3813fd5cd7f6e9a4fb835cd65ed516da19d292db88ba28656e1b4b"
+      }
+    },
+    "source_delivery_identity_policy": "The later documentation-only source commit and source archive digest are recorded outside this manifest to avoid self-reference."
+  },
+  "rejected_performance_candidates": [
+    {
+      "runtime_checkpoint": "f67c6173875d386d76ded49e18d7db6df34070cd",
+      "resource_edition": "strings15",
+      "delta": [
+        "src/merchant_ui.inc",
+        "tests/merchant_preparation_regression.cpp"
+      ],
+      "asan_ubsan": {
+        "synthetic_passed": 1,
+        "synthetic_total": 1,
+        "actual_eng_checks": 35763,
+        "actual_zhs_checks": 36481
+      },
+      "portable_compile_only": {
+        "bytes": 7933563,
+        "sha256": "70c3d23fa4b6769e58c38a8a4c0fb38a1fbddc86336c4063a8fd6af43cebf107"
+      },
+      "evidence": {
+        "asan-build": {
+          "file": "ui15-schedule-v20-asan-build-3934047b1fd4.json",
+          "sha256": "4964cbb9a4b5b9894ce17dddff20454dff9603bc21b325acb8f50786ad2014b6",
+          "status": "passed",
+          "source_changed": false,
+          "log_sha256": "bc6b980087e65749a0e84b9e349879db9dc7207401a33b85406fc3f2ffc76bd9"
+        },
+        "asan-synthetic": {
+          "file": "ui15-schedule-v20-asan-synthetic-1d8c8bbf5816.json",
+          "sha256": "2ba689492036f4b38b012bfe76f1983b7a853f8d6fc668186e731ba0f2cbbf1b",
+          "status": "passed",
+          "source_changed": false,
+          "log_sha256": "54508304f9170f3dae4a982654b0aeb244b0eda864e5425bf4e7c6ecd3a481a5"
+        },
+        "asan-actual": {
+          "file": "ui15-schedule-v20-asan-actual-d99966da1155.json",
+          "sha256": "1e021cbe9033177af0fd8fb84ed58ce88551ed0eac6aee6bee949aa7c3d22fc0",
+          "status": "passed",
+          "source_changed": false,
+          "log_sha256": "9913a8e37ed9d749035cc729aa1496036e733f61441379895bc4e2f3eb032d55"
+        },
+        "portable-compile": {
+          "file": "ui15-schedule-v20-portable-compile-7d0b974a21ee.json",
+          "sha256": "9dbc3c2bd56484b21ae5befe4a9cfdafd0b12a03771584f5e678ab8d78d76c3d",
+          "status": "passed",
+          "source_changed": false,
+          "log_sha256": "29b1f087dcab6b93a5a34f840e07dbe1cf1b8d57c84e234bc695e2197862683f"
+        }
+      },
+      "performance_accepted": false,
+      "reason": "The scheduling-only change worsened first-open latency with the existing grouped idle resources.",
+      "ordinary_os": {
+        "peak_interval_ms": 278.533935546875,
+        "window_reads": 143,
+        "window_read_bytes": 976626,
+        "frames_over_250ms": 2,
+        "summary": {
+          "file": "early-opening.summary.json",
+          "sha256": "1af463e4571849d68d16d00301a47bcea29e3ab63bf96c3454e5ea47e9a33d77"
+        },
+        "journal": {
+          "file": "ui15-rooms-schedule20-first-open-afcf77928b7d.json",
+          "sha256": "3d8f8530109846703ae7614dc5cfc405b99ab672eb63689f3ef4636306a1430f",
+          "status": "passed",
+          "source_changed": false,
+          "log_sha256": "40ab042498a0b715b5f83d482bf08811a704ed90cc2de034c2b8b71890289d2c"
+        }
+      }
+    },
+    {
+      "runtime_checkpoint": "f67c6173875d386d76ded49e18d7db6df34070cd",
+      "resource_tool_checkpoint": "176eed5b40ddb9d47d87e7747373d9ed8eab78e4",
+      "resource_edition": "idle21",
+      "runtime_unchanged_from_f67": true,
+      "resource_manifest": {
+        "file": "independent-cards-receipt.json",
+        "sha256": "a32411ec6cef02676d4e8f4c098d883574d3679fc66870db2a3d5930d8104b71"
+      },
+      "resource_delta": "145 merchant Top frames use independent lossless streams",
+      "asan_ubsan_actual": {
+        "merchant_eng_checks": 30063,
+        "merchant_zhs_checks": 32314,
+        "locale_editions": 16,
+        "locale_checks": 38686,
+        "descriptions": 53072,
+        "failures": 0
+      },
+      "actual_evidence": {
+        "asan-locale-build": {
+          "file": "ui15-idle21-asan-locale-build-ddf071c3840b.json",
+          "sha256": "341f1bbc6c86007506e5b4bb5da3c40e895bdd0161eafdc0d6350cc29f348678",
+          "status": "passed",
+          "source_changed": false,
+          "log_sha256": "6ebd727ed1125ec0deb551293e00a2c4cfea7c7059be0c39abba4e62e2e30c4f"
+        },
+        "asan-locale-actual": {
+          "file": "ui15-idle21-asan-locale-actual-7f96afd3e7aa.json",
+          "sha256": "ed361bdbbc648c1fa89925daa31d8aa68efc5825729597274d079ea4a62526b5",
+          "status": "passed",
+          "source_changed": false,
+          "log_sha256": "3a11c809bf788707c08d338326add64b16b5fd42c5006c7d072f642252376829"
+        },
+        "asan-merchant-actual": {
+          "file": "ui15-idle21-asan-merchant-actual-4e855b1bd113.json",
+          "sha256": "8dcb9e3d0c96abdabf72baf883cb928b6e30b03001d4b3af60b67c5adfad5df9",
+          "status": "passed",
+          "source_changed": false,
+          "log_sha256": "ff7de52dcad73d4104eaf82c48f01e149eb41f36c5f0514979d4d82d32c0a2c5"
+        }
+      },
+      "performance_accepted": false,
+      "reason": "Independent-frame resource correctness passed, but ordinary OS first-open latency remained worse than bd158 with strings15.",
+      "ordinary_os": {
+        "peak_interval_ms": 374.32861328125,
+        "window_fps": 10.9576703357949,
+        "window_reads": 178,
+        "window_read_bytes": 1141271,
+        "frames_over_250ms": 2,
+        "summary": {
+          "file": "early-opening.summary.json",
+          "sha256": "c737687f98c6b19c1b5894a956fd67ab97d1cb832f6104a21765289cb84a9301"
+        },
+        "journal": {
+          "file": "ui15-rooms-idle21-first-open-6c546f8692aa.json",
+          "sha256": "9fec5cfe205602431f459b586120b7b4f05d2fcb7d15d0dd394e48ada5125a23",
+          "status": "passed",
+          "source_changed": false,
+          "log_sha256": "9c9acfc3cfbbada37d164222d99e09328be753c77f4369eb2ec888ba0d38941b",
+          "source_checkpoint": "176eed5b40ddb9d47d87e7747373d9ed8eab78e4"
+        }
+      }
+    },
+    {
+      "runtime_checkpoint": "99ea002ac163a3288f65d7da0d4b32eda73e6d79",
+      "resource_tool_checkpoint": "176eed5b40ddb9d47d87e7747373d9ed8eab78e4",
+      "resource_edition": "idle21",
+      "performance_accepted": false,
+      "correctness": "The v22 changed-path native/ASan, portable and ARM gates passed; those results remain valid and separate from performance acceptance.",
+      "reason": "Map first-open peak808.2886ms and 279reads1490184B regress from measured v15/strings15 controlled-map baseline450.9277ms188reads1155200B; saved-Shop improvement alone does not accept this combination.",
+      "ordinary_os": {
+        "controlled_map_first_open": {
+          "peak_interval_ms": 808.28857421875,
+          "window_fps": 9.868134297018324,
+          "window_reads": 279,
+          "window_read_bytes": 1490184,
+          "frames_over_250ms": 4,
+          "summary": {
+            "file": "window-summary.json",
+            "sha256": "aa29be1ffcad7b4e6830845d1d39f1d4fede61cb3055a636a2be6bd00756c75c"
+          },
+          "journal": {
+            "file": "ui15-rooms-preview22-map-first-open-1515d9bc6d9c.json",
+            "sha256": "3c692915b6a737179cf5bee9c56e67fa318a9513fbcdc80211ff703e4eb2947b",
+            "status": "passed",
+            "source_changed": false,
+            "log_sha256": "952de2efdcfd99285d9d47ca6a9e3191ad733763d2bfdf2cb86f980c8b86cb56"
+          },
+          "fixture": "controlled before-Shop production-route fixture, not natural multi-floor gameplay",
+          "normal_exit_receipt": {
+            "file": "normal-exit-counter-crosscheck.json",
+            "sha256": "ccc3e1e4752b29af173638312c11b1d1fc85b5bced427e60635b33b176dbe944"
+          }
+        },
+        "saved_shop_first_open": {
+          "peak_interval_ms": 256.103515625,
+          "window_fps": 12.094532941111172,
+          "window_reads": 110,
+          "window_read_bytes": 762561,
+          "frames_over_250ms": 1,
+          "summary": {
+            "file": "early-opening.summary.json",
+            "sha256": "66f73b36b41e613bb480694e78c796a9ba23257e6823c800817b2843136a47a7"
+          },
+          "journal": {
+            "file": "ui15-rooms-preview22-first-open-c1b28a3ae5af.json",
+            "sha256": "ad15654d1d6d4c8ac461f8df640f9869ed14f7fa11e7b527d9c904d599a807a9",
+            "status": "passed",
+            "source_changed": false,
+            "log_sha256": "7fe1e32ebd27f76005223a4778428f0ab1ae99eeab6d04ea218f00308b8cd8da"
+          }
+        }
+      },
+      "separate_rendering_scenarios": {
+        "runtime_checkpoint": "99ea002ac163a3288f65d7da0d4b32eda73e6d79",
+        "resource_edition": "idle21",
+        "logical_zhs_bytes": 80980522,
+        "shipping_accepted": false,
+        "ordinary_os_journals_passed": 9,
+        "cpu_hz": 132000000,
+        "ahb_hz": 66000000,
+        "apb_hz": 33000000,
+        "jit": true,
+        "counter_hz": 32768,
+        "random_30s": {
+          "requested_window_ms": [
+            0,
+            30000
+          ],
+          "frames": 281,
+          "interval_seconds": 29.95550537109375,
+          "fps": 9.380579513479262,
+          "render_mean_ms": 105.64903177824733,
+          "read_calls": 0,
+          "read_bytes_requested": 0,
+          "over_250ms": 0,
+          "interval_maximum_observed_ms": 128.41796875,
+          "receipt": {
+            "file": "final22-random-window-summary.json",
+            "sha256": "d224ee538ca961c9d77ae6c1d5369df23b3a3ba89e78e44a7ca776117325a474"
+          },
+          "normal_exit_receipt": {
+            "file": "final22-random-normal-exit-crosscheck.json",
+            "sha256": "c3a4da7444af032381ebdb9b1af70716de375d767f0d0dda5a24c71da851b66a"
+          }
+        },
+        "status_insertion_0_to_6s": {
+          "requested_window_ms": [
+            0,
+            6000
+          ],
+          "frames": 79,
+          "interval_seconds": 5.992279052734375,
+          "fps": 13.183631687504775,
+          "render_mean_ms": 73.39438909216773,
+          "read_calls": 37,
+          "read_bytes_requested": 227623,
+          "over_250ms": 3,
+          "interval_maximum_observed_ms": 317.779541015625,
+          "controlled_scenario": true,
+          "natural_play_claim": false,
+          "visible_growth_hold_and_flight": true,
+          "canonical_inserted_dazed": 5,
+          "canonical_save_valid": true,
+          "normal_exit": true,
+          "save": {
+            "bytes": 7320,
+            "sha256": "3c60a3aa29eb334c3e257b7f72fcfb80011132dbcc35a2ad8003fd2857b30d61"
+          },
+          "save_byte_identical_to_prior_integration16": true,
+          "receipt": {
+            "file": "final22-status-action-summary.json",
+            "sha256": "56ebf1c0c7a6bf56a91f395bf55a0f17ad5110e51fcecdd92ea4c765c1778fef"
+          },
+          "normal_exit_receipt": {
+            "file": "final22-status-normal-exit-crosscheck.json",
+            "sha256": "74a4387bf83f674fa9bedc451767479d12ebd225f431c61d05fed7f984ffb064"
+          }
+        },
+        "scope": "Completed v22 scenarios are historical evidence for this rejected candidate; their FPS and save checks are not relabeled as bd158 delivery measurements.",
+        "receipt": {
+          "file": "final22-candidate-results.json",
+          "sha256": "939cd4ffa10757e710152c7e38975ef3ccf43168d857f938a0237e49afab0934"
+        },
+        "evidence": [
+          {
+            "file": "ui15-final22-root-install-e99f2408878a.json",
+            "sha256": "91f345c9942349c1a5e644c014e9d320608cdc4317a48e83bc3934d5e5369b3b",
+            "status": "passed",
+            "source_changed": false,
+            "log_sha256": "a306a6346cf2dd4eb93e5ccd20f1e0e18e10aa0a14c0df01553eca81dd6f8369"
+          },
+          {
+            "file": "ui15-final22-title-6b836520ba7b.json",
+            "sha256": "5d1b94a2ad1c46be1bd1d504998d232962314402635ee41716420f20ca89e50d",
+            "status": "passed",
+            "source_changed": false,
+            "log_sha256": "ec63d110b2d133dbd03fbc219dbead23df1977daf5db013b7a00d3481d969c1e"
+          },
+          {
+            "file": "ui15-final22-character-7fe1639ab094.json",
+            "sha256": "204bb06636d3484f437fa55f0c00ccfe0b66c7f649c5d0dc9a93cc4227a43e04",
+            "status": "passed",
+            "source_changed": false,
+            "log_sha256": "ba93b69767c08665f1678afedaf87aeaeaaca41b76e928ab52893efeccf0a852"
+          },
+          {
+            "file": "ui15-final22-select-random-e966286c394a.json",
+            "sha256": "a21dc404ee99020e49f5bfee713256bfff6fe9226332d67c838d9832b35540e5",
+            "status": "passed",
+            "source_changed": false,
+            "log_sha256": "90cd2290703b04d4b25b29e02e6e724f6a3676d57b9e7295dc60f9dcd6b8c669"
+          },
+          {
+            "file": "ui15-final22-random-window-d59ef34cc3c2.json",
+            "sha256": "01ecd3213cec73c56aa6cc260241f139cb25516db55503331109da8c3311efac",
+            "status": "passed",
+            "source_changed": false,
+            "log_sha256": "398251cb9d93d7db314a9a27feecec497f05fc956411c56794a2263cfc26d57c"
+          },
+          {
+            "file": "ui15-final22-status-install-5ac5e293cfcb.json",
+            "sha256": "5f371f6a7a3eca2df52303c28f0468d352a6c15d988006fb332f5a3cf4c5ea37",
+            "status": "passed",
+            "source_changed": false,
+            "log_sha256": "314618567ac7a4bd86669edf1cb0d792179ff0c870c13e41c767d4363ebc8a2e"
+          },
+          {
+            "file": "ui15-final22-status-launch-03ee9d2bd26a.json",
+            "sha256": "b9898a83765f1d465d6ec7e0489bbacbf307cec6d719a094fc1e7101fac09f07",
+            "status": "passed",
+            "source_changed": false,
+            "log_sha256": "1b5c2c2eeb9e7ab7d54d5308a6857d75b9701785a839d0870c9193fc378979b0"
+          },
+          {
+            "file": "ui15-final22-status-action-1cdee96c5083.json",
+            "sha256": "0faa0f276b309a6af857736c5e9adc11ef371aa11cd9365436ad0b71e4b4e4d3",
+            "status": "passed",
+            "source_changed": false,
+            "log_sha256": "85de5c690a7b2118588b6a60c0a7688d4d3f7af9516d8cefc36392bcfe5ba719"
+          },
+          {
+            "file": "ui15-final22-status-normal-exit-a0b563c74572.json",
+            "sha256": "5a9d1995b20c40a48bf24d9f7e74c601c443db256d026387f62bf1c7ae7db8ac",
+            "status": "passed",
+            "source_changed": false,
+            "log_sha256": "b6a8acb06be93511df7a8b20d4856d156116e79554bef7596eeb5bc3e9fd84c4"
+          }
+        ]
+      }
+    }
+  ],
+  "remaining_acceptance": [],
+  "ordinary_os_merchant": {
+    "runtime_checkpoint": "bd158d205d877f767f59fe2a1eb33874cb925899",
+    "resource_tool_checkpoint": "de0941ebe70a8d92cd124447ea7cb6d30b4f1524",
+    "resource_edition": "strings15",
+    "logical_zhs_bytes": 80793488,
+    "clock_environment": {
+      "cpu_hz": 132000000,
+      "ahb_hz": 66000000,
+      "apb_hz": 33000000,
+      "timer_hz": 32768,
+      "ndless_revision": 2022,
+      "jit_enabled": true
+    },
+    "execution_and_normal_exit_passed": true,
+    "cold_open_stall_resolved": false,
+    "saved_shop_first_open": {
+      "frames": 129,
+      "interval_seconds": 10.887451171875,
+      "fps": 11.848503195425495,
+      "render_mean_ms": 79.64756692102713,
+      "read_calls": 132,
+      "read_bytes_requested": 919686,
+      "over_100ms": 13,
+      "over_250ms": 1,
+      "interval_maximum_observed_ms": 256.011962890625,
+      "peak_frame_read_calls": 8,
+      "peak_frame_read_bytes": 39909,
+      "receipt": {
+        "file": "window-summary.json",
+        "sha256": "855984e7107a56be72f916f746a898c303d37d78fb7c05346f7f1364f6912cfe"
+      },
+      "journal": {
+        "file": "ui15-rooms-final19-first-open-a14f9fcd0b82.json",
+        "sha256": "c2ddd6e0df16387bbe3d2d6699e4931c7e3e4232d16403fd8f9b0eeecbd8ff83",
+        "status": "passed",
+        "source_changed": false,
+        "log_sha256": "5fe1fcfcf849c2b9bf29a090a53fea8e269b01198af09c3c24c8b4fc1fbd00ba"
+      },
+      "normal_exit_journal": {
+        "file": "ui15-rooms-final19-warm-exit-2f0a0733b0fb.json",
+        "sha256": "deeffcb133913ed4df8f2de1a8c38f330c69862e091d7fedb5ed0807084d7aeb",
+        "status": "passed",
+        "source_changed": false,
+        "log_sha256": "909d36b1d120ac9de5c7e9fd2337d69c1793ffa686644d52760955d0e0c7d28e"
+      }
+    },
+    "controlled_map_first_open": {
+      "frames": 108,
+      "interval_seconds": 10.932098388671875,
+      "fps": 9.879164654419174,
+      "render_mean_ms": 86.97481508608217,
+      "read_calls": 255,
+      "read_bytes_requested": 1409390,
+      "over_100ms": 35,
+      "over_250ms": 3,
+      "interval_maximum_observed_ms": 549.4384765625,
+      "peak_frame_read_calls": 57,
+      "peak_frame_read_bytes": 254550,
+      "fixture": "controlled before-Shop production-route fixture, not natural multi-floor gameplay",
+      "timing": "30s title idle; Continue to completed event, map Enter;7s after map travel;touch contact100ms/move100ms/down180ms/up100ms;11s window",
+      "natural_multi_floor_play_claim": false,
+      "receipt": {
+        "file": "window-summary.json",
+        "sha256": "136ee5819b5b4d83fdd36e4573edf6b173fc257ca79920b8a983968edd1a5e9f"
+      },
+      "normal_exit_receipt": {
+        "file": "normal-exit-counter-crosscheck.json",
+        "sha256": "08dda91243d4a1d8bc6a62a86509c4545ec88ba4a4e7d4554021555d617a17e9"
+      },
+      "installation_readback": {
+        "file": "installation-readback.json",
+        "sha256": "1fc5f231be99d0708840392acdbfd9ed5bb5496664ff5f274127f30147d5ed03"
+      },
+      "install_journal": {
+        "file": "ui15-rooms-final19-map-install-8aaca5d57165.json",
+        "sha256": "a9fe101141e7ab93f4d2ecdd3ce52f4aee6a2ac8e85a6178e32a32c2372bd109",
+        "status": "passed",
+        "source_changed": false,
+        "log_sha256": "41479926eeff318ada7d26d82352246d9a4a29f4a2790cf92053bf5cacf540ee"
+      },
+      "journal": {
+        "file": "ui15-rooms-final19-map-first-open-3f13f6783855.json",
+        "sha256": "4a7adeacd987c7d37f3200e8eb25435f4048e7061ffb3be72de8083091632a77",
+        "status": "passed",
+        "source_changed": false,
+        "log_sha256": "3e613742b0503b5806abb56fba129aaf5b6be0561c5243b1edd0a5ec61aad3a9"
+      },
+      "save": {
+        "bytes": 7693,
+        "sha256": "f687fb52dc340d26a29a21c7a1c5121a4aa23c57e7958af42da43f31cd868f37"
+      },
+      "save_byte_exact_to_rejected_v22_same_map_scenario": true,
+      "progress_byte_exact_to_rejected_v22_same_map_scenario": false
+    },
+    "settled_closed_room": {
+      "frames": 299,
+      "interval_seconds": 9.964263916015625,
+      "fps": 30.007234103807246,
+      "render_mean_ms": 29.068758655152592,
+      "read_calls": 0,
+      "read_bytes_requested": 0,
+      "over_100ms": 0,
+      "over_250ms": 0,
+      "interval_maximum_observed_ms": 33.416748046875,
+      "peak_frame_read_calls": 0,
+      "peak_frame_read_bytes": 0
+    },
+    "settled_open_rug": {
+      "frames": 140,
+      "interval_seconds": 9.977264404296875,
+      "fps": 14.031902365913714,
+      "render_mean_ms": 70.26737758091518,
+      "read_calls": 0,
+      "read_bytes_requested": 0,
+      "over_100ms": 0,
+      "over_250ms": 0,
+      "interval_maximum_observed_ms": 79.40673828125,
+      "peak_frame_read_calls": 0,
+      "peak_frame_read_bytes": 0
+    },
+    "limitation": "Selected measured stable runtime after v20-v22 rejection; map peak549.4384765625ms is below rejectedv22 808.28857421875ms but above pre-pointerv15 450.927734375ms.35frames>100ms and3>250ms remain; no claim of complete cold-frame elimination.",
+    "comparison_scope": "These are fixed-preparation first-opening and separate settled windows on the emulated ordinary OS. Settled zero-read results are not substituted for first-opening latency.",
+    "selection_receipt": {
+      "file": "final-runtime-selection.json",
+      "sha256": "bbbdcbe3b66d50cdfaaf4cf0a83990da820e2efe0277196b401c5caa11603729"
+    }
+  },
+  "selected_delivery": {
+    "runtime_checkpoint": "bd158d205d877f767f59fe2a1eb33874cb925899",
+    "resource_edition": "strings15",
+    "resource_tool_checkpoint": "de0941ebe70a8d92cd124447ea7cb6d30b4f1524",
+    "arm_launcher": {
+      "bytes": 1755032,
+      "sha256": "8596f9c1ed5778d229944adf0fbde3d9e2f9c22d770b7ce8fef11c6465666555"
+    },
+    "status": "selected_for_delivery_with_measured_performance_limits",
+    "packages": {
+      "status": "package_readback_passed",
+      "shipping_identity": true,
+      "files": [
+        {
+          "file": "Slay-the-Nspire-2-0.17-ui15-bilingual-calculator.zip",
+          "bytes": 80205686,
+          "sha256": "0a497a213b8a4ac533afd2f49fbc06c7d05bcfb48b30fa4e158850f26c801813",
+          "member_count": 14,
+          "uncompressed_member_bytes": 81975073
+        },
+        {
+          "file": "Slay-the-Nspire-2-0.17-ui15-optional-languages.zip",
+          "bytes": 17016324,
+          "sha256": "9e33741f3aa27efc5e3804665be020c48aba067cec3e2f20e057d13698a97f56",
+          "member_count": 15,
+          "uncompressed_member_bytes": 23870497
+        }
+      ],
+      "player_program_and_resources_bytes": 81910800,
+      "optional_locale_count": 14,
+      "layout": {
+        "root_launcher": "nSpire2.tns",
+        "data_directory": "data",
+        "empty_writable_state_directory": "state",
+        "prepopulated_saves": false
+      },
+      "receipt": {
+        "file": "final-bd158-package-receipt.json",
+        "sha256": "1b01ae9d7d4520c02c27e12fb1e9f952f0e324698648d310f990c85e11cd6395"
+      },
+      "journal": {
+        "file": "ui15-final-bd158-calculator-package-835eaa3d144a.json",
+        "sha256": "69260c48b379c8883bdd29cf90719c9cea1cb64fe4cd767140cf1c71acb13929",
+        "status": "passed",
+        "source_changed": false,
+        "log_sha256": "63997b3cd7d6452164808c33fe4fe8b1c426a710c7daaf3cd041c791fb4a02ae"
+      }
+    },
+    "production_source_comparison": {
+      "non_document_source_files_compared": 1067,
+      "differences": 0,
+      "receipt": {
+        "file": "live-production-composition.json",
+        "sha256": "b9dc4c9488abd00f160254365a183df0e154410bced63309095a6ac04611b332"
+      }
+    },
+    "selection_reason": "Retain the closed functional/input baseline; later merchant scheduling/resource experiments regressed the controlled map entry path."
+  },
+  "measured_limits": [
+    "Merchant first-opening cold stalls remain: saved-Shop peak256.011962890625ms and controlled-map peak549.4384765625ms.",
+    "The selected controlled-map result is slower than the earlier pre-pointer v15 peak450.927734375ms, while retaining the verified complete input fixes; rejected v22 peaked808.28857421875ms.",
+    "Earlier a940 Random/status FPS retains its recorded source identity. Rejected v22 rendering remains historical evidence and is not relabeled as delivery FPS."
+  ]
+}
