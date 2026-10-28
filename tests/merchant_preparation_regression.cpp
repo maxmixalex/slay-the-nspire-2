@@ -10,6 +10,8 @@ using namespace spire;
 static App a;
 static SaveData before,after;
 static State saved_shop;
+static UiProgress saved_progress;
+static uint16_t saved_pixels[ScreenW*ScreenH];
 static unsigned checks;
 #define CHECK(x) do{++checks;if(!(x)){std::fprintf(stderr,"merchant preparation:%d %s\n",__LINE__,#x);std::exit(1);}}while(0)
 static uint32_t budget_clock_value=0,budget_clock_step=0;
@@ -36,7 +38,7 @@ static void shop(){
 }
 static bool action(UiAction value){for(int i=0;i<a.hit_count;++i)if(a.hits[i].kind==HitKind::UiAction&&a.hits[i].value==int(value))return true;return false;}
 static void pending_controls(){
- shop();auto&p=a.merchant_preparation;a.shop_open=true;p.active=true;p.card=ShopCardCount;p.prices_ready=true;
+ shop();auto&p=a.merchant_preparation;a.shop_open=true;p.active=true;p.card=ShopCardCount;p.prices_ready=true;p.tip_slot=ShopRemove-ShopRelicStart;
  a.step_merchant_preparation();CHECK(p.active&&!p.shown&&!p.updates);unchanged();
  a.input(Key::Right);CHECK(p.active&&a.shop_open&&a.cursor!=0);unchanged();
  a.input(Key::Back);CHECK(p.active&&!a.shop_open);unchanged();
@@ -76,6 +78,28 @@ static unsigned missing_stock_glyphs(){
  }
  return missing;
 }
+static unsigned missing_hover_glyphs(const State&stock){
+ unsigned missing=0;
+ for(int slot=ShopRelicStart;slot<ShopRemove;++slot){
+  CardHoverTarget owner{};if(!merchant_stock_hover_target(a,stock,slot,owner))continue;
+  HoverTipList tips{};collect_keyword_hover_tips(a,owner,tips);
+  for(unsigned i=0;i<tips.count;++i){
+   const auto&tip=tips.items[i];char title[160]{},body[2048]{};
+   format_card_hover_tip(a,owner,tip,title,sizeof title,body,sizeof body);
+   GlyphPreparationBudget expired;expired.remaining=0;
+   Canvas hidden{a};hidden.clip_w=hidden.clip_h=0;hidden.glyph_preparation=&expired;
+   if(tip.kind==HoverTipKind::Card){
+    const EventCardFacts canonical{};
+    render_card_face(hidden,tip.card,0,0,43,60,cost(tip.card),-2,tip.amount>0?tip.amount-1:-1,-1,tip.has_facts?&tip.facts:&canonical,body);
+   }else{
+    source_hover_title(hidden,title,{0,0,SourceHoverWidth,194});
+    source_hover_paragraph(hidden,body,0,0,source_hover_body_width(SourceHoverWidth),1);
+   }
+   missing+=expired.pending;
+  }
+ }
+ return missing;
+}
 static void actual(const char*folder){
  const std::string root=folder;auto common=read(root+"/data/nSpire2.dat.tns"),locale=read(root+"/data/nSpire2.eng.dat.tns");SplitResourceSource split;
  CHECK(split.open(ResourceSource::memory(common.data(),common.size()),ResourceSource::memory(locale.data(),locale.size()),ResourceLanguage::English));CHECK(a.init(split.source(),{}));shop();
@@ -87,11 +111,19 @@ static void actual(const char*folder){
  a.title=true;a.has_save=true;const int saved_picture=a.content.card_image(saved_shop.shop_cards[0]);
  a.advance(33);CHECK(a.merchant_preparation.planned&&a.merchant_preparation.active);
  CHECK(a.merchant_preparation.cursor<a.merchant_preparation.stock_count);unchanged();
+ saved_progress=a.progress;std::memcpy(saved_pixels,a.pixels,sizeof saved_pixels);
+ const auto label_clocks=a.rich_label_clocks,overflow_clocks=a.overflow_label_clocks;const auto hover_state=a.keyword_hover;
  unsigned title_steps=0;
- while(a.merchant_preparation.cursor<a.merchant_preparation.stock_count&&title_steps<4096){
+ while((a.merchant_preparation.cursor<a.merchant_preparation.stock_count||a.merchant_preparation.tip_slot<ShopRemove-ShopRelicStart)&&title_steps<8192){
   a.advance(33);++title_steps;unchanged();
  }
- CHECK(title_steps>0&&title_steps<4096&&a.content.image_cached(saved_picture));
+ CHECK(title_steps>0&&title_steps<8192&&a.content.image_cached(saved_picture));
+ CHECK(a.merchant_preparation.tip_slot==ShopRemove-ShopRelicStart&&missing_hover_glyphs(saved_shop)==0);
+ CHECK(!std::memcmp(&saved_progress,&a.progress,sizeof saved_progress));
+ CHECK(!std::memcmp(saved_pixels,a.pixels,sizeof saved_pixels));
+ CHECK(!std::memcmp(&label_clocks,&a.rich_label_clocks,sizeof label_clocks));
+ CHECK(!std::memcmp(&overflow_clocks,&a.overflow_label_clocks,sizeof overflow_clocks));
+ CHECK(!std::memcmp(&hover_state,&a.keyword_hover,sizeof hover_state));
  CHECK(a.merchant_preparation.card==0&&!a.merchant_preparation.text_ready&&!a.merchant_preparation.prices_ready);
  CHECK(a.title&&!a.shop_open&&!a.character_departure.active()&&!a.run_save_linked);
  a.render();a.advance(33);a.render();CHECK(a.content.image_cached(saved_picture));unchanged();
@@ -124,11 +156,12 @@ static void actual(const char*folder){
  a.step_merchant_preparation();a.callbacks.foreground_clock_ticks=nullptr;
  CHECK(a.content.read_stats().callbacks==expired_reads.callbacks&&p.active);unchanged();
  unsigned steps=0,font_steps=0;const auto room_started=a.map_clock_ms;
- while(p.active&&steps<4096){
+ while(p.active&&steps<8192){
   const unsigned decoded=p.cold_images,card=p.card;
   const unsigned image_limit=p.prices_ready?p.count:p.stock_count;
   const bool fonts=p.cursor==p.stock_count&&p.card<ShopCardCount&&p.text_ready;
-  const bool bounded=p.cursor<image_limit||fonts||p.card==ShopCardCount;
+  const bool hover_fonts=p.cursor==p.stock_count&&p.tip_slot<ShopRemove-ShopRelicStart&&p.tip_stage==1;
+  const bool bounded=p.cursor<image_limit||fonts||hover_fonts||p.card==ShopCardCount;
   const auto reads=a.content.read_stats();
   const uint32_t groups=a.content.retained_decode_serial(),now=a.map_clock_ms;
   a.advance(33);++steps;
@@ -139,8 +172,9 @@ static void actual(const char*folder){
   CHECK(action(UiAction::OpenShop));
   if(a.map_clock_ms-room_started>=500)CHECK(action(UiAction::LeaveShop));
  }
- CHECK(steps>1&&steps<4096&&font_steps>0&&!p.active&&p.prices_ready);
+ CHECK(steps>1&&steps<8192&&font_steps>0&&!p.active&&p.prices_ready);
  CHECK(p.cursor==p.count&&p.card==ShopCardCount&&missing_stock_glyphs()==0);
+ CHECK(p.tip_slot==ShopRemove-ShopRelicStart&&missing_hover_glyphs(a.game)==0);
  const auto start=a.content.read_stats();const unsigned updates=p.updates;
  a.ui_action(UiAction::OpenShop);
  CHECK(a.shop_open&&!p.active&&p.planned&&p.updates==updates);
@@ -172,7 +206,7 @@ static void actual(const char*folder){
  CHECK(a.init(split.source(),{}));shop();a.render();a.ui_action(UiAction::OpenShop);
  CHECK(p.active&&a.shop_open);const auto cold_open=a.map_clock_ms;
  a.input(Key::Right);unchanged();a.input(Key::Back);CHECK(p.active&&!a.shop_open);unchanged();
- for(unsigned i=0;p.active&&i<4096;++i){a.advance(33);a.render();CHECK(!a.shop_open);unchanged();}
+ for(unsigned i=0;p.active&&i<8192;++i){a.advance(33);a.render();CHECK(!a.shop_open);unchanged();}
  CHECK(!p.active&&p.prices_ready&&missing_stock_glyphs()==0);
  CHECK(!a.room_presentation.merchant.open&&a.room_presentation.merchant.start>=cold_open);
  std::printf("actual cold inventory: %u image decodes, %u font updates in %u yielded closed-room updates; all actual stock glyphs cached, seven stock slots visible\n",decoded,font_steps,steps);

@@ -97,6 +97,7 @@ static void merchant_card(Canvas&c,Card card,int cx,int cy,unsigned scale,bool s
  if(cy+h/2<22||cy-h/2>=240)return;
  draw_card_face(c,card,cx-w/2,cy-h/2,w,h,-2,-2,-1,-1,facts);
 }
+static void prepare_merchant_hover(App&,const State&,GlyphPreparationBudget&);
 void App::prepare_merchant_inventory(const State*stock){
  auto&p=merchant_preparation;if(p.planned)return;p.reset();
  const State&s=stock?*stock:game;
@@ -111,6 +112,7 @@ void App::prepare_merchant_inventory(const State*stock){
  };
  add(content.ui_image(U_MerchantRug));add(content.ui_image(U_ShopRemove));add(A_Coin);
  add(content.world_image("merchant","SALE_TAG"));
+ add(content.world_image("common","HOVER_TIP"));add(content.world_image("common","HOVER_TIP_DEBUFF"));
  for(int i=0;i<ShopCardCount;++i)if(!(s.shop_sold&(1u<<i))){
   const Card card=s.world.active?s.world.shop_cards[i]:Card{s.shop_cards[i],0};
   const auto*facts=s.world.active?&s.world.shop_facts[i]:nullptr;
@@ -154,7 +156,7 @@ void App::step_merchant_preparation(){
  auto&p=merchant_preparation;
  if(!p.active||!p.shown||paused||help||panel||library||settings_open||map_window.is_open)return;
  const bool entering=character_departure.phase==1&&character_departure.continuing;
- const bool saved_stock=title_merchant_stock(*this)!=nullptr;
+ const State*saved_stock=title_merchant_stock(*this);
  if(!saved_stock&&((title&&!entering)||game.phase!=Phase::Shop)){content.cancel_preload();p.reset();return;}
  ++p.updates;
  GlyphPreparationBudget budget(callbacks.foreground_clock_ticks,
@@ -170,6 +172,14 @@ void App::step_merchant_preparation(){
     else {p.reset();shop_open=false;message("资源读取失败");return;}
    }
   }
+  return;
+ }
+ // The pointer that opens the rug can immediately cross an item as its
+ // original tween slides underneath. Its complete hover set is visible
+ // stock too, not a new cold workload to postpone until that first hover.
+ if(p.tip_slot<ShopRemove-ShopRelicStart){
+  prepare_merchant_hover(*this,saved_stock?*saved_stock:game,budget);
+  if(!content.healthy()){p.reset();shop_open=false;message("资源读取失败");}
   return;
  }
  // The active game's cost/description state must never be substituted with

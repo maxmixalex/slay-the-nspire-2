@@ -138,20 +138,9 @@ static bool treasure_hover_target(const App&a,CardHoverTarget&target){
     target={};target.relic=int(s.world.treasure_relic);target.owner={hit->x,hit->y,hit->w,hit->h};
     target.identity=0x71000000u|unsigned(s.world.treasure_relic);return true;
 }
-bool merchant_hover_target(const App&a,CardHoverTarget&target){
-    const auto&s=a.game;
-    if(s.phase!=Phase::Shop||!a.shop_open||a.title||a.paused||a.help||a.settings_open||a.frontend_confirm||
-       a.library||a.panel||a.map_window.visible||a.map_preview.open||a.event_reader||a.character_select||
-       a.detail_card>=0||a.detail_item>=0||a.status_actor>=0||a.pointer.held||a.pointer.armed_card>=0||
-       a.ftue.active()||a.map_transition_blocks_pointer())return false;
-    const HitRegion*hit=nullptr;
-    for(int i=0;i<a.hit_count;++i){const auto&h=a.hits[i];
-        if(h.kind!=HitKind::Choice||!h.enabled||h.value<ShopRelicStart||h.value>=ShopRemove||
-           (s.shop_sold&(1u<<h.value)))continue;
-        if(a.pointer.visible?hover_in({h.x,h.y,h.w,h.h},a.pointer.x,a.pointer.y):h.value==a.cursor){hit=&h;break;}
-    }
-    if(!hit)return false;
-    const int slot=hit->value;target={};target.merchant=true;
+static bool merchant_stock_hover_target(const App&a,const State&s,int slot,CardHoverTarget&target){
+    if(slot<ShopRelicStart||slot>=ShopRemove||(s.shop_sold&(1u<<slot)))return false;
+    target={};target.merchant=true;
     if(slot<ShopPotionStart){
         if(s.world.active)target.relic=s.world.shop_relics[slot-ShopRelicStart];
         else for(int i=0;i<RelicKinds;++i)if(relic_definitions[i].id==s.shop_relics[slot-ShopRelicStart]){target.relic=i;break;}
@@ -172,6 +161,20 @@ bool merchant_hover_target(const App&a,CardHoverTarget&target){
     target.owner={cx+(target.merchant_left?-half:half),cy-half,size,size};
     target.identity=0x75000000u|(unsigned(slot)<<16)|unsigned(target.relic>=0?target.relic:target.potion);
     return true;
+}
+bool merchant_hover_target(const App&a,CardHoverTarget&target){
+    const auto&s=a.game;
+    if(s.phase!=Phase::Shop||!a.shop_open||a.title||a.paused||a.help||a.settings_open||a.frontend_confirm||
+       a.library||a.panel||a.map_window.visible||a.map_preview.open||a.event_reader||a.character_select||
+       a.detail_card>=0||a.detail_item>=0||a.status_actor>=0||a.pointer.held||a.pointer.armed_card>=0||
+       a.ftue.active()||a.map_transition_blocks_pointer())return false;
+    for(int i=0;i<a.hit_count;++i){const auto&h=a.hits[i];
+        if(h.kind!=HitKind::Choice||!h.enabled||h.value<ShopRelicStart||h.value>=ShopRemove||
+           (s.shop_sold&(1u<<h.value)))continue;
+        if(a.pointer.visible?hover_in({h.x,h.y,h.w,h.h},a.pointer.x,a.pointer.y):h.value==a.cursor)
+            return merchant_stock_hover_target(a,s,h.value,target);
+    }
+    return false;
 }
 bool owned_relic_hover_target(const App&a,CardHoverTarget&target){
     if(a.event_reader||a.pointer.held||a.title||a.paused||a.help||a.settings_open||a.frontend_confirm||

@@ -27,8 +27,11 @@ struct MerchantPreparation {
  uint16_t images[Capacity]{};
  uint8_t count=0,cursor=0,card=0,stock_count=0;
  bool active=false,shown=false,planned=false,text_ready=false,prices_ready=false;
+ // These three cursors occupy the queue's existing alignment padding.
+ // A stock hover set yields between individual text/image/font work units.
+ uint8_t tip_slot=0,tip=0,tip_stage=0;
  uint32_t updates=0,cold_images=0;
  void reset(){*this=MerchantPreparation{};}
 };
-static_assert(sizeof(MerchantPreparation)<416,"Merchant preparation is only a bounded work queue");
+static_assert(sizeof(MerchantPreparation)==404,"Merchant preparation reuses its bounded queue and padding");
 }

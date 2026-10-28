@@ -32,6 +32,14 @@ static int source_hover_paragraph(Canvas&c,const char*body,int x,int y,int width
     Canvas text=c;text.font_face=0;text.bold_face=5;const int size=source_hover_size(c);
     char localized[1024];body=c.a.ui_text(body,localized,sizeof localized);
     const auto metrics=[&](const RichChar&ch,int px){return text.text_metric(ch,px);};
+    if(c.glyph_preparation){
+        // Hover paragraphs have one fixed native font size. Visit all rich
+        // styles while the surface is empty, including later pages, without
+        // painting or registering a future label's animation clock.
+        RichReader reader(body);RichChar ch{};
+        while(reader.next(ch))if(ch.codepoint!='\n')text.resolve_glyph(ch.codepoint,size,text.font_style(ch));
+        return lines?skip+lines:fitted_text::line_count(body,width,size,metrics);
+    }
     if(!lines)return fitted_text::line_count(body,width,size,metrics);
     const uint32_t rainbow_time=c.rainbow_elapsed(body,x,y,4);
     const uint16_t colors[]={color,Gold,rgb(244,122,102),Blue,Green,rgb(190,145,217),rgb(236,164,92),rgb(104,210,205),White,Muted};
@@ -74,6 +82,7 @@ static void source_hover_skin(Canvas&c,HoverRect r,bool debuff=false){
 static void source_hover_title(Canvas&c,const char*title,HoverRect r,int icon=-1,uint32_t age=0){
     if(!*title)return;Canvas label=c;label.font_face=source_label_face(c.a.content.original_label_fonts(),c.a.content.version()>=28?5:0);
     const int size=source_hover_size(c),width=source_hover_body_width(r.w)-(icon>=0?11:0);
+    if(c.glyph_preparation){label.text(title,0,0,size,rgb(239,200,81),32767);return;}
     const int overflow=mx(0,label.width(title,size)-width),left=r.x+SourceHoverLeft,top=r.y+SourceHoverTop;
     label.pixels+=top*label.pitch+left;if(label.coverage)label.coverage+=top*label.pitch+left;
     label.clip_w=width;label.clip_h=mn(size+4,c.clip_h-top);

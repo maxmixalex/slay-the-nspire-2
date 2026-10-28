@@ -366,6 +366,63 @@ static void draw_hover_piece(Canvas&c,const CardHoverTarget&owner,const HoverTip
     source_hover_title(c,title,r,icon);
     source_hover_paragraph(c,body,r.x+SourceHoverLeft,r.y+SourceHoverTop+source_hover_step(c),source_hover_body_width(r.w),piece.lines,piece.skip);
 }
+static void prepare_merchant_hover(App&a,const State&stock,GlyphPreparationBudget&budget){
+    auto&p=a.merchant_preparation;
+    // Use the same detached stock models as actual hover, without changing
+    // pointer focus, discoveries, pages or the active/saved game. A title
+    // preview can warm canonical resources; Continue revisits the real set.
+    CardHoverTarget owner{};HoverTipList tips{};
+    while(p.tip_slot<ShopRemove-ShopRelicStart){
+        if(merchant_stock_hover_target(a,stock,ShopRelicStart+p.tip_slot,owner))
+            collect_keyword_hover_tips(a,owner,tips);
+        if(p.tip<tips.count)break;
+        ++p.tip_slot;p.tip=p.tip_stage=0;tips={};
+    }
+    if(p.tip_slot>=ShopRemove-ShopRelicStart||!budget.take())return;
+    const auto&tip=tips.items[p.tip];char title[160]{},body[2048]{};
+    format_card_hover_tip(a,owner,tip,title,sizeof title,body,sizeof body);
+    // Formatting one complete template is distinct from bounded binary
+    // decoding. Its resource cohorts are at most4KiB, and the next update
+    // revisits the retained strings before preparing pixels or glyphs.
+    if(!p.tip_stage){p.tip_stage=1;return;}
+    const auto image=[&](int id){
+        if(id<0||a.content.image_cached(id))return true;
+        for(;;){
+            if(!budget.take()){budget.pending=true;return false;}
+            const auto result=a.content.preload_image_step(id);
+            if(result==PreparationResult::Ready)return true;
+            if(result==PreparationResult::Failed){
+                if(a.content.healthy()){a.content.cancel_preload();return true;}
+                budget.pending=true;return false;
+            }
+        }
+    };
+    Canvas hidden{a};hidden.clip_w=hidden.clip_h=0;hidden.glyph_preparation=&budget;
+    if(tip.kind==HoverTipKind::Card){
+        const EventCardFacts canonical{};const auto*facts=tip.has_facts?&tip.facts:&canonical;
+        const int instance=tip.amount>0?tip.amount-1:-1;
+        const auto type=a.card_face_type(tip.card,instance,-1,facts);
+        const int base=U_CardBorderCommonAttack+int(card_face::material_group(unsigned(card_rarity(tip.card.kind))))*5;
+        if(!image(a.card_face_image(tip.card,instance,-1,facts))||
+           !image(a.card_face_frame(tip.card,instance,-1,facts))||
+           !image(a.content.ui_image(base+(type==CardType::Attack?0:type==CardType::Power?2:1)))||
+           !image(a.content.ui_image(base+3))||!image(a.content.ui_image(base+4))||
+           !image(a.content.energy_image(tip.card)))return;
+        // Ordinary merchant-associated cards use the actual43x60 face inside
+        // their46x62 holder. Reuse that fitting path, never raster a new tile.
+        render_card_face(hidden,tip.card,0,0,43,60,cost(tip.card),-2,instance,-1,facts,body);
+    }else{
+        int icon=-1;
+        if(tip.kind==HoverTipKind::Relic)icon=a.relic_face_image(world_relic_id(tip.key));
+        else if(tip.kind==HoverTipKind::Potion)icon=a.content.potion_image(Potion(tip.amount));
+        else if(tip.kind==HoverTipKind::Enchantment)icon=a.content.world_image("enchantments",tip.key);
+        else if(tip.kind==HoverTipKind::Static&&hover_key_equal(tip.key,"ENERGY"))icon=a.content.energy_image(owner.card);
+        if(!image(icon))return;
+        source_hover_title(hidden,title,{0,0,SourceHoverWidth,194},icon);
+        source_hover_paragraph(hidden,body,0,0,source_hover_body_width(SourceHoverWidth),1);
+    }
+    if(!budget.pending){++p.tip;p.tip_stage=0;}
+}
 // Bounded card and event labels already reveal their complete text through
 // smooth scrolling. Hover stacks explain related mechanics and preview cards;
 // they must not repeat the same description beside that scrolling text.
