@@ -1,0 +1,20 @@
+// Append-only world-content models. Existing IDs 0..496 are unchanged.
+EventCardBadLuck,EventCardByrdonisEgg,EventCardCaltrops,EventCardClash,
+EventCardClumsy,EventCardDebt,EventCardDecay,EventCardDistraction,EventCardDoubt,
+EventCardDualWield,EventCardEnlightenment,EventCardEntrench,EventCardExterminate,
+EventCardFeedingFrenzy,EventCardGreed,EventCardGuilty,EventCardHelloWorld,
+EventCardInjury,EventCardLanternKey,EventCardMadScience,EventCardMetamorphosis,
+EventCardNormality,EventCardOutmaneuver,EventCardPeck,EventCardPoorSleep,
+EventCardRebound,EventCardRegret,EventCardRipAndTear,EventCardShame,
+EventCardSpoilsMap,EventCardSporeMind,EventCardSquash,EventCardStack,
+EventCardToricToughness,
+// Enemy-owned status definitions and execution share the same model directory.
+EventCardBeckon,EventCardDisintegration,EventCardFranticEscape,EventCardInfection,
+EventCardMindRot,EventCardSloth,EventCardToxic,EventCardWasteAway,EventCardWither,
+// Relic acquisition closure, followed by Dowsing's completed quest.
+EventCardApotheosis,EventCardApparition,EventCardBrightestFlame,EventCardDowsing,
+EventCardLuminesce,EventCardMaul,EventCardNeowsFury,EventCardRelax,EventCardSoot,
+EventCardWhistle,EventCardWish,EventCardAbundance,
+// Relic transformations and the complete original curse-pool closure.
+EventCardByrdSwoop,EventCardCurseOfTheBell,EventCardEnthralled,EventCardFolly,
+EventCardAscendersBane,EventCardWrithe,

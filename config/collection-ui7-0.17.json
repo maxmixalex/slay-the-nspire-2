@@ -1,0 +1,2985 @@
+{
+  "reference": {
+    "version": "v0.111.0",
+    "build": "41cef1ea"
+  },
+  "first_auxiliary": 1505,
+  "images": [
+    {
+      "key": "relic-outline-vajra",
+      "path": "images/atlases/relic_outline_atlas.sprites/vajra.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-anchor",
+      "path": "images/atlases/relic_outline_atlas.sprites/anchor.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-bag_of_preparation",
+      "path": "images/atlases/relic_outline_atlas.sprites/bag_of_preparation.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-burning_blood",
+      "path": "images/atlases/relic_outline_atlas.sprites/burning_blood.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-lantern",
+      "path": "images/atlases/relic_outline_atlas.sprites/lantern.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-oddly_smooth_stone",
+      "path": "images/atlases/relic_outline_atlas.sprites/oddly_smooth_stone.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-blood_vial",
+      "path": "images/atlases/relic_outline_atlas.sprites/blood_vial.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-happy_flower",
+      "path": "images/atlases/relic_outline_atlas.sprites/happy_flower.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-orichalcum",
+      "path": "images/atlases/relic_outline_atlas.sprites/orichalcum.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-pen_nib",
+      "path": "images/atlases/relic_outline_atlas.sprites/pen_nib.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-strawberry",
+      "path": "images/atlases/relic_outline_atlas.sprites/strawberry.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-pear",
+      "path": "images/atlases/relic_outline_atlas.sprites/pear.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-mango",
+      "path": "images/atlases/relic_outline_atlas.sprites/mango.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-bag_of_marbles",
+      "path": "images/atlases/relic_outline_atlas.sprites/bag_of_marbles.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-akabeko",
+      "path": "images/atlases/relic_outline_atlas.sprites/akabeko.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-bronze_scales",
+      "path": "images/atlases/relic_outline_atlas.sprites/bronze_scales.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-ring_of_the_snake",
+      "path": "images/atlases/relic_outline_atlas.sprites/ring_of_the_snake.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-horn_cleat",
+      "path": "images/atlases/relic_outline_atlas.sprites/horn_cleat.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-captains_wheel",
+      "path": "images/atlases/relic_outline_atlas.sprites/captains_wheel.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-mercury_hourglass",
+      "path": "images/atlases/relic_outline_atlas.sprites/mercury_hourglass.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-art_of_war",
+      "path": "images/atlases/relic_outline_atlas.sprites/art_of_war.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-regal_pillow",
+      "path": "images/atlases/relic_outline_atlas.sprites/regal_pillow.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-meal_ticket",
+      "path": "images/atlases/relic_outline_atlas.sprites/meal_ticket.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-old_coin",
+      "path": "images/atlases/relic_outline_atlas.sprites/old_coin.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-centennial_puzzle",
+      "path": "images/atlases/relic_outline_atlas.sprites/centennial_puzzle.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-kunai",
+      "path": "images/atlases/relic_outline_atlas.sprites/kunai.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-shuriken",
+      "path": "images/atlases/relic_outline_atlas.sprites/shuriken.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-ornamental_fan",
+      "path": "images/atlases/relic_outline_atlas.sprites/ornamental_fan.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-letter_opener",
+      "path": "images/atlases/relic_outline_atlas.sprites/letter_opener.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-nunchaku",
+      "path": "images/atlases/relic_outline_atlas.sprites/nunchaku.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-cracked_core",
+      "path": "images/atlases/relic_outline_atlas.sprites/cracked_core.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-divine_right",
+      "path": "images/atlases/relic_outline_atlas.sprites/divine_right.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-bound_phylactery",
+      "path": "images/atlases/relic_outline_atlas.sprites/bound_phylactery.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-alchemical_coffer",
+      "path": "images/atlases/relic_outline_atlas.sprites/alchemical_coffer.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-amethyst_aubergine",
+      "path": "images/atlases/relic_outline_atlas.sprites/amethyst_aubergine.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-arcane_scroll",
+      "path": "images/atlases/relic_outline_atlas.sprites/arcane_scroll.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-archaic_tooth",
+      "path": "images/atlases/relic_outline_atlas.sprites/archaic_tooth.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-astrolabe",
+      "path": "images/atlases/relic_outline_atlas.sprites/astrolabe.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-beating_remnant",
+      "path": "images/atlases/relic_outline_atlas.sprites/beating_remnant.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-beautiful_bracelet",
+      "path": "images/atlases/relic_outline_atlas.sprites/beautiful_bracelet.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-bellows",
+      "path": "images/atlases/relic_outline_atlas.sprites/bellows.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-belt_buckle",
+      "path": "images/atlases/relic_outline_atlas.sprites/belt_buckle.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-big_hat",
+      "path": "images/atlases/relic_outline_atlas.sprites/big_hat.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-big_mushroom",
+      "path": "images/atlases/relic_outline_atlas.sprites/big_mushroom.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-biiig_hug",
+      "path": "images/atlases/relic_outline_atlas.sprites/biiig_hug.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-bing_bong",
+      "path": "images/atlases/relic_outline_atlas.sprites/bing_bong.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-black_blood",
+      "path": "images/atlases/relic_outline_atlas.sprites/black_blood.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-black_star",
+      "path": "images/atlases/relic_outline_atlas.sprites/black_star.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-blessed_antler",
+      "path": "images/atlases/relic_outline_atlas.sprites/blessed_antler.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-blood_soaked_rose",
+      "path": "images/atlases/relic_outline_atlas.sprites/blood_soaked_rose.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-bone_flute",
+      "path": "images/atlases/relic_outline_atlas.sprites/bone_flute.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-bone_tea",
+      "path": "images/atlases/relic_outline_atlas.sprites/bone_tea.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-book_of_five_rings",
+      "path": "images/atlases/relic_outline_atlas.sprites/book_of_five_rings.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-book_repair_knife",
+      "path": "images/atlases/relic_outline_atlas.sprites/book_repair_knife.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-bookmark",
+      "path": "images/atlases/relic_outline_atlas.sprites/bookmark.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-booming_conch",
+      "path": "images/atlases/relic_outline_atlas.sprites/booming_conch.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-bowler_hat",
+      "path": "images/atlases/relic_outline_atlas.sprites/bowler_hat.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-bread",
+      "path": "images/atlases/relic_outline_atlas.sprites/bread.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-brilliant_scarf",
+      "path": "images/atlases/relic_outline_atlas.sprites/brilliant_scarf.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-brimstone",
+      "path": "images/atlases/relic_outline_atlas.sprites/brimstone.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-burning_sticks",
+      "path": "images/atlases/relic_outline_atlas.sprites/burning_sticks.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-byrdpip",
+      "path": "images/atlases/relic_outline_atlas.sprites/byrdpip.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-calling_bell",
+      "path": "images/atlases/relic_outline_atlas.sprites/calling_bell.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-candelabra",
+      "path": "images/atlases/relic_outline_atlas.sprites/candelabra.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-cauldron",
+      "path": "images/atlases/relic_outline_atlas.sprites/cauldron.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-chandelier",
+      "path": "images/atlases/relic_outline_atlas.sprites/chandelier.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-charons_ashes",
+      "path": "images/atlases/relic_outline_atlas.sprites/charons_ashes.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-chemical_x",
+      "path": "images/atlases/relic_outline_atlas.sprites/chemical_x.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-choices_paradox",
+      "path": "images/atlases/relic_outline_atlas.sprites/choices_paradox.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-chosen_cheese",
+      "path": "images/atlases/relic_outline_atlas.sprites/chosen_cheese.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-circlet",
+      "path": "images/atlases/relic_outline_atlas.sprites/circlet.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-claws",
+      "path": "images/atlases/relic_outline_atlas.sprites/claws.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-cloak_clasp",
+      "path": "images/atlases/relic_outline_atlas.sprites/cloak_clasp.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-crossbow",
+      "path": "images/atlases/relic_outline_atlas.sprites/crossbow.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-cursed_pearl",
+      "path": "images/atlases/relic_outline_atlas.sprites/cursed_pearl.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-darkstone_periapt",
+      "path": "images/atlases/relic_outline_atlas.sprites/darkstone_periapt.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-data_disk",
+      "path": "images/atlases/relic_outline_atlas.sprites/data_disk.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-daughter_of_the_wind",
+      "path": "images/atlases/relic_outline_atlas.sprites/daughter_of_the_wind.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-delicate_frond",
+      "path": "images/atlases/relic_outline_atlas.sprites/delicate_frond.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-demon_tongue",
+      "path": "images/atlases/relic_outline_atlas.sprites/demon_tongue.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-diamond_diadem",
+      "path": "images/atlases/relic_outline_atlas.sprites/diamond_diadem.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-dingy_rug",
+      "path": "images/atlases/relic_outline_atlas.sprites/dingy_rug.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-distinguished_cape",
+      "path": "images/atlases/relic_outline_atlas.sprites/distinguished_cape.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-divine_destiny",
+      "path": "images/atlases/relic_outline_atlas.sprites/divine_destiny.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-dollys_mirror",
+      "path": "images/atlases/relic_outline_atlas.sprites/dollys_mirror.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-dowsing_rod",
+      "path": "images/atlases/relic_outline_atlas.sprites/dowsing_rod.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-dragon_fruit",
+      "path": "images/atlases/relic_outline_atlas.sprites/dragon_fruit.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-dream_catcher",
+      "path": "images/atlases/relic_outline_atlas.sprites/dream_catcher.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-driftwood",
+      "path": "images/atlases/relic_outline_atlas.sprites/driftwood.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-dusty_tome",
+      "path": "images/atlases/relic_outline_atlas.sprites/dusty_tome.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-ectoplasm",
+      "path": "images/atlases/relic_outline_atlas.sprites/ectoplasm.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-electric_shrymp",
+      "path": "images/atlases/relic_outline_atlas.sprites/electric_shrymp.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-ember_tea",
+      "path": "images/atlases/relic_outline_atlas.sprites/ember_tea.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-emotion_chip",
+      "path": "images/atlases/relic_outline_atlas.sprites/emotion_chip.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-empty_cage",
+      "path": "images/atlases/relic_outline_atlas.sprites/empty_cage.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-eternal_feather",
+      "path": "images/atlases/relic_outline_atlas.sprites/eternal_feather.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-fake_anchor",
+      "path": "images/atlases/relic_outline_atlas.sprites/fake_anchor.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-fake_blood_vial",
+      "path": "images/atlases/relic_outline_atlas.sprites/fake_blood_vial.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-fake_happy_flower",
+      "path": "images/atlases/relic_outline_atlas.sprites/fake_happy_flower.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-fake_lees_waffle",
+      "path": "images/atlases/relic_outline_atlas.sprites/fake_lees_waffle.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-fake_mango",
+      "path": "images/atlases/relic_outline_atlas.sprites/fake_mango.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-fake_merchants_rug",
+      "path": "images/atlases/relic_outline_atlas.sprites/fake_merchants_rug.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-fake_orichalcum",
+      "path": "images/atlases/relic_outline_atlas.sprites/fake_orichalcum.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-fake_snecko_eye",
+      "path": "images/atlases/relic_outline_atlas.sprites/fake_snecko_eye.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-fake_strike_dummy",
+      "path": "images/atlases/relic_outline_atlas.sprites/fake_strike_dummy.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-fake_venerable_tea_set",
+      "path": "images/atlases/relic_outline_atlas.sprites/fake_venerable_tea_set.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-fencing_manual",
+      "path": "images/atlases/relic_outline_atlas.sprites/fencing_manual.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-festive_popper",
+      "path": "images/atlases/relic_outline_atlas.sprites/festive_popper.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-fiddle",
+      "path": "images/atlases/relic_outline_atlas.sprites/fiddle.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-fishing_rod",
+      "path": "images/atlases/relic_outline_atlas.sprites/fishing_rod.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-fragrant_mushroom",
+      "path": "images/atlases/relic_outline_atlas.sprites/fragrant_mushroom.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-fresnel_lens",
+      "path": "images/atlases/relic_outline_atlas.sprites/fresnel_lens.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-frozen_egg",
+      "path": "images/atlases/relic_outline_atlas.sprites/frozen_egg.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-funerary_mask",
+      "path": "images/atlases/relic_outline_atlas.sprites/funerary_mask.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-fur_coat",
+      "path": "images/atlases/relic_outline_atlas.sprites/fur_coat.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-galactic_dust",
+      "path": "images/atlases/relic_outline_atlas.sprites/galactic_dust.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-gambling_chip",
+      "path": "images/atlases/relic_outline_atlas.sprites/gambling_chip.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-game_piece",
+      "path": "images/atlases/relic_outline_atlas.sprites/game_piece.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-ghost_seed",
+      "path": "images/atlases/relic_outline_atlas.sprites/ghost_seed.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-girya",
+      "path": "images/atlases/relic_outline_atlas.sprites/girya.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-glass_eye",
+      "path": "images/atlases/relic_outline_atlas.sprites/glass_eye.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-glitter",
+      "path": "images/atlases/relic_outline_atlas.sprites/glitter.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-gnarled_hammer",
+      "path": "images/atlases/relic_outline_atlas.sprites/gnarled_hammer.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-gold_plated_cables",
+      "path": "images/atlases/relic_outline_atlas.sprites/gold_plated_cables.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-golden_compass",
+      "path": "images/atlases/relic_outline_atlas.sprites/golden_compass.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-golden_pearl",
+      "path": "images/atlases/relic_outline_atlas.sprites/golden_pearl.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-gorget",
+      "path": "images/atlases/relic_outline_atlas.sprites/gorget.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-gremlin_horn",
+      "path": "images/atlases/relic_outline_atlas.sprites/gremlin_horn.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-hand_drill",
+      "path": "images/atlases/relic_outline_atlas.sprites/hand_drill.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-hefty_tablet",
+      "path": "images/atlases/relic_outline_atlas.sprites/hefty_tablet.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-helical_dart",
+      "path": "images/atlases/relic_outline_atlas.sprites/helical_dart.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-history_course",
+      "path": "images/atlases/relic_outline_atlas.sprites/history_course.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-ice_cream",
+      "path": "images/atlases/relic_outline_atlas.sprites/ice_cream.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-infused_core",
+      "path": "images/atlases/relic_outline_atlas.sprites/infused_core.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-intimidating_helmet",
+      "path": "images/atlases/relic_outline_atlas.sprites/intimidating_helmet.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-iron_club",
+      "path": "images/atlases/relic_outline_atlas.sprites/iron_club.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-ivory_tile",
+      "path": "images/atlases/relic_outline_atlas.sprites/ivory_tile.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-jeweled_mask",
+      "path": "images/atlases/relic_outline_atlas.sprites/jeweled_mask.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-jewelry_box",
+      "path": "images/atlases/relic_outline_atlas.sprites/jewelry_box.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-joss_paper",
+      "path": "images/atlases/relic_outline_atlas.sprites/joss_paper.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-juzu_bracelet",
+      "path": "images/atlases/relic_outline_atlas.sprites/juzu_bracelet.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-kaleidoscope",
+      "path": "images/atlases/relic_outline_atlas.sprites/kaleidoscope.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-kifuda",
+      "path": "images/atlases/relic_outline_atlas.sprites/kifuda.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-kusarigama",
+      "path": "images/atlases/relic_outline_atlas.sprites/kusarigama.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-large_capsule",
+      "path": "images/atlases/relic_outline_atlas.sprites/large_capsule.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-lasting_candy",
+      "path": "images/atlases/relic_outline_atlas.sprites/lasting_candy.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-lava_lamp",
+      "path": "images/atlases/relic_outline_atlas.sprites/lava_lamp.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-lava_rock",
+      "path": "images/atlases/relic_outline_atlas.sprites/lava_rock.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-lead_paperweight",
+      "path": "images/atlases/relic_outline_atlas.sprites/lead_paperweight.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-leafy_poultice",
+      "path": "images/atlases/relic_outline_atlas.sprites/leafy_poultice.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-lees_waffle",
+      "path": "images/atlases/relic_outline_atlas.sprites/lees_waffle.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-lizard_tail",
+      "path": "images/atlases/relic_outline_atlas.sprites/lizard_tail.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-looming_fruit",
+      "path": "images/atlases/relic_outline_atlas.sprites/looming_fruit.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-lords_parasol",
+      "path": "images/atlases/relic_outline_atlas.sprites/lords_parasol.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-lost_coffer",
+      "path": "images/atlases/relic_outline_atlas.sprites/lost_coffer.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-lost_wisp",
+      "path": "images/atlases/relic_outline_atlas.sprites/lost_wisp.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-lucky_fysh",
+      "path": "images/atlases/relic_outline_atlas.sprites/lucky_fysh.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-lunar_pastry",
+      "path": "images/atlases/relic_outline_atlas.sprites/lunar_pastry.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-maw_bank",
+      "path": "images/atlases/relic_outline_atlas.sprites/maw_bank.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-meat_cleaver",
+      "path": "images/atlases/relic_outline_atlas.sprites/meat_cleaver.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-meat_on_the_bone",
+      "path": "images/atlases/relic_outline_atlas.sprites/meat_on_the_bone.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-membership_card",
+      "path": "images/atlases/relic_outline_atlas.sprites/membership_card.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-metronome",
+      "path": "images/atlases/relic_outline_atlas.sprites/metronome.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-mini_regent",
+      "path": "images/atlases/relic_outline_atlas.sprites/mini_regent.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-miniature_cannon",
+      "path": "images/atlases/relic_outline_atlas.sprites/miniature_cannon.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-miniature_tent",
+      "path": "images/atlases/relic_outline_atlas.sprites/miniature_tent.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-molten_egg",
+      "path": "images/atlases/relic_outline_atlas.sprites/molten_egg.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-mr_struggles",
+      "path": "images/atlases/relic_outline_atlas.sprites/mr_struggles.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-mummified_hand",
+      "path": "images/atlases/relic_outline_atlas.sprites/mummified_hand.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-music_box",
+      "path": "images/atlases/relic_outline_atlas.sprites/music_box.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-mystic_lighter",
+      "path": "images/atlases/relic_outline_atlas.sprites/mystic_lighter.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-neows_bones",
+      "path": "images/atlases/relic_outline_atlas.sprites/neows_bones.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-neows_sacrifice",
+      "path": "images/atlases/relic_outline_atlas.sprites/neows_sacrifice.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-neows_talisman",
+      "path": "images/atlases/relic_outline_atlas.sprites/neows_talisman.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-neows_torment",
+      "path": "images/atlases/relic_outline_atlas.sprites/neows_torment.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-new_leaf",
+      "path": "images/atlases/relic_outline_atlas.sprites/new_leaf.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-ninja_scroll",
+      "path": "images/atlases/relic_outline_atlas.sprites/ninja_scroll.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-nutritious_oyster",
+      "path": "images/atlases/relic_outline_atlas.sprites/nutritious_oyster.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-nutritious_soup",
+      "path": "images/atlases/relic_outline_atlas.sprites/nutritious_soup.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-orange_dough",
+      "path": "images/atlases/relic_outline_atlas.sprites/orange_dough.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-orrery",
+      "path": "images/atlases/relic_outline_atlas.sprites/orrery.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-paels_blood",
+      "path": "images/atlases/relic_outline_atlas.sprites/paels_blood.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-paels_claw",
+      "path": "images/atlases/relic_outline_atlas.sprites/paels_claw.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-paels_eye",
+      "path": "images/atlases/relic_outline_atlas.sprites/paels_eye.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-paels_flesh",
+      "path": "images/atlases/relic_outline_atlas.sprites/paels_flesh.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-paels_growth",
+      "path": "images/atlases/relic_outline_atlas.sprites/paels_growth.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-paels_horn",
+      "path": "images/atlases/relic_outline_atlas.sprites/paels_horn.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-paels_legion",
+      "path": "images/atlases/relic_outline_atlas.sprites/paels_legion.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-paels_tears",
+      "path": "images/atlases/relic_outline_atlas.sprites/paels_tears.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-paels_tooth",
+      "path": "images/atlases/relic_outline_atlas.sprites/paels_tooth.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-paels_wing",
+      "path": "images/atlases/relic_outline_atlas.sprites/paels_wing.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-pandoras_box",
+      "path": "images/atlases/relic_outline_atlas.sprites/pandoras_box.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-pantograph",
+      "path": "images/atlases/relic_outline_atlas.sprites/pantograph.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-paper_krane",
+      "path": "images/atlases/relic_outline_atlas.sprites/paper_krane.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-paper_phrog",
+      "path": "images/atlases/relic_outline_atlas.sprites/paper_phrog.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-parrying_shield",
+      "path": "images/atlases/relic_outline_atlas.sprites/parrying_shield.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-pendulum",
+      "path": "images/atlases/relic_outline_atlas.sprites/pendulum.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-permafrost",
+      "path": "images/atlases/relic_outline_atlas.sprites/permafrost.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-petrified_toad",
+      "path": "images/atlases/relic_outline_atlas.sprites/petrified_toad.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-phial_holster",
+      "path": "images/atlases/relic_outline_atlas.sprites/phial_holster.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-philosophers_stone",
+      "path": "images/atlases/relic_outline_atlas.sprites/philosophers_stone.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-phylactery_unbound",
+      "path": "images/atlases/relic_outline_atlas.sprites/phylactery_unbound.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-planisphere",
+      "path": "images/atlases/relic_outline_atlas.sprites/planisphere.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-pocketwatch",
+      "path": "images/atlases/relic_outline_atlas.sprites/pocketwatch.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-pollinous_core",
+      "path": "images/atlases/relic_outline_atlas.sprites/pollinous_core.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-pomander",
+      "path": "images/atlases/relic_outline_atlas.sprites/pomander.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-potion_belt",
+      "path": "images/atlases/relic_outline_atlas.sprites/potion_belt.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-power_cell",
+      "path": "images/atlases/relic_outline_atlas.sprites/power_cell.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-prayer_wheel",
+      "path": "images/atlases/relic_outline_atlas.sprites/prayer_wheel.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-precarious_shears",
+      "path": "images/atlases/relic_outline_atlas.sprites/precarious_shears.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-precise_scissors",
+      "path": "images/atlases/relic_outline_atlas.sprites/precise_scissors.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-preserved_fog",
+      "path": "images/atlases/relic_outline_atlas.sprites/preserved_fog.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-prismatic_gem",
+      "path": "images/atlases/relic_outline_atlas.sprites/prismatic_gem.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-pumpkin_candle",
+      "path": "images/atlases/relic_outline_atlas.sprites/pumpkin_candle.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-punch_dagger",
+      "path": "images/atlases/relic_outline_atlas.sprites/punch_dagger.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-radiant_pearl",
+      "path": "images/atlases/relic_outline_atlas.sprites/radiant_pearl.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-rainbow_ring",
+      "path": "images/atlases/relic_outline_atlas.sprites/rainbow_ring.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-razor_tooth",
+      "path": "images/atlases/relic_outline_atlas.sprites/razor_tooth.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-red_mask",
+      "path": "images/atlases/relic_outline_atlas.sprites/red_mask.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-red_skull",
+      "path": "images/atlases/relic_outline_atlas.sprites/red_skull.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-regalite",
+      "path": "images/atlases/relic_outline_atlas.sprites/regalite.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-reptile_trinket",
+      "path": "images/atlases/relic_outline_atlas.sprites/reptile_trinket.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-ring_of_the_drake",
+      "path": "images/atlases/relic_outline_atlas.sprites/ring_of_the_drake.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-ringing_triangle",
+      "path": "images/atlases/relic_outline_atlas.sprites/ringing_triangle.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-ripple_basin",
+      "path": "images/atlases/relic_outline_atlas.sprites/ripple_basin.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-royal_poison",
+      "path": "images/atlases/relic_outline_atlas.sprites/royal_poison.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-royal_stamp",
+      "path": "images/atlases/relic_outline_atlas.sprites/royal_stamp.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-ruined_helmet",
+      "path": "images/atlases/relic_outline_atlas.sprites/ruined_helmet.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-runic_capacitor",
+      "path": "images/atlases/relic_outline_atlas.sprites/runic_capacitor.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-runic_pyramid",
+      "path": "images/atlases/relic_outline_atlas.sprites/runic_pyramid.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-sai",
+      "path": "images/atlases/relic_outline_atlas.sprites/sai.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-sand_castle",
+      "path": "images/atlases/relic_outline_atlas.sprites/sand_castle.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-screaming_flagon",
+      "path": "images/atlases/relic_outline_atlas.sprites/screaming_flagon.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-scroll_boxes",
+      "path": "images/atlases/relic_outline_atlas.sprites/scroll_boxes.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-sea_glass",
+      "path": "images/atlases/relic_outline_atlas.sprites/sea_glass.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-seal_of_gold",
+      "path": "images/atlases/relic_outline_atlas.sprites/seal_of_gold.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-self_forming_clay",
+      "path": "images/atlases/relic_outline_atlas.sprites/self_forming_clay.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-sere_talon",
+      "path": "images/atlases/relic_outline_atlas.sprites/sere_talon.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-shovel",
+      "path": "images/atlases/relic_outline_atlas.sprites/shovel.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-signet_ring",
+      "path": "images/atlases/relic_outline_atlas.sprites/signet_ring.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-silken_tress",
+      "path": "images/atlases/relic_outline_atlas.sprites/silken_tress.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-silver_crucible",
+      "path": "images/atlases/relic_outline_atlas.sprites/silver_crucible.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-sling_of_courage",
+      "path": "images/atlases/relic_outline_atlas.sprites/sling_of_courage.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-small_capsule",
+      "path": "images/atlases/relic_outline_atlas.sprites/small_capsule.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-snecko_eye",
+      "path": "images/atlases/relic_outline_atlas.sprites/snecko_eye.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-snecko_skull",
+      "path": "images/atlases/relic_outline_atlas.sprites/snecko_skull.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-sozu",
+      "path": "images/atlases/relic_outline_atlas.sprites/sozu.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-sparkling_rouge",
+      "path": "images/atlases/relic_outline_atlas.sprites/sparkling_rouge.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-spiked_gauntlets",
+      "path": "images/atlases/relic_outline_atlas.sprites/spiked_gauntlets.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-stone_calendar",
+      "path": "images/atlases/relic_outline_atlas.sprites/stone_calendar.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-stone_cracker",
+      "path": "images/atlases/relic_outline_atlas.sprites/stone_cracker.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-stone_humidifier",
+      "path": "images/atlases/relic_outline_atlas.sprites/stone_humidifier.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-storybook",
+      "path": "images/atlases/relic_outline_atlas.sprites/storybook.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-strike_dummy",
+      "path": "images/atlases/relic_outline_atlas.sprites/strike_dummy.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-sturdy_clamp",
+      "path": "images/atlases/relic_outline_atlas.sprites/sturdy_clamp.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-sword_of_jade",
+      "path": "images/atlases/relic_outline_atlas.sprites/sword_of_jade.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-sword_of_stone",
+      "path": "images/atlases/relic_outline_atlas.sprites/sword_of_stone.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-symbiotic_virus",
+      "path": "images/atlases/relic_outline_atlas.sprites/symbiotic_virus.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-tanxs_whistle",
+      "path": "images/atlases/relic_outline_atlas.sprites/tanxs_whistle.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-tea_of_discourtesy",
+      "path": "images/atlases/relic_outline_atlas.sprites/tea_of_discourtesy.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-the_abacus",
+      "path": "images/atlases/relic_outline_atlas.sprites/the_abacus.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-the_boot",
+      "path": "images/atlases/relic_outline_atlas.sprites/the_boot.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-the_courier",
+      "path": "images/atlases/relic_outline_atlas.sprites/the_courier.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-throwing_axe",
+      "path": "images/atlases/relic_outline_atlas.sprites/throwing_axe.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-tingsha",
+      "path": "images/atlases/relic_outline_atlas.sprites/tingsha.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-tiny_mailbox",
+      "path": "images/atlases/relic_outline_atlas.sprites/tiny_mailbox.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-toasty_mittens",
+      "path": "images/atlases/relic_outline_atlas.sprites/toasty_mittens.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-toolbox",
+      "path": "images/atlases/relic_outline_atlas.sprites/toolbox.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-touch_of_orobas",
+      "path": "images/atlases/relic_outline_atlas.sprites/touch_of_orobas.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-tough_bandages",
+      "path": "images/atlases/relic_outline_atlas.sprites/tough_bandages.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-toxic_egg",
+      "path": "images/atlases/relic_outline_atlas.sprites/toxic_egg.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-toy_box",
+      "path": "images/atlases/relic_outline_atlas.sprites/toy_box.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-tri_boomerang",
+      "path": "images/atlases/relic_outline_atlas.sprites/tri_boomerang.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-tungsten_rod",
+      "path": "images/atlases/relic_outline_atlas.sprites/tungsten_rod.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-tuning_fork",
+      "path": "images/atlases/relic_outline_atlas.sprites/tuning_fork.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-twisted_funnel",
+      "path": "images/atlases/relic_outline_atlas.sprites/twisted_funnel.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-unceasing_top",
+      "path": "images/atlases/relic_outline_atlas.sprites/unceasing_top.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-undying_sigil",
+      "path": "images/atlases/relic_outline_atlas.sprites/undying_sigil.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-unsettling_lamp",
+      "path": "images/atlases/relic_outline_atlas.sprites/unsettling_lamp.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-vambrace",
+      "path": "images/atlases/relic_outline_atlas.sprites/vambrace.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-velvet_choker",
+      "path": "images/atlases/relic_outline_atlas.sprites/velvet_choker.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-venerable_tea_set",
+      "path": "images/atlases/relic_outline_atlas.sprites/venerable_tea_set.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-very_hot_cocoa",
+      "path": "images/atlases/relic_outline_atlas.sprites/very_hot_cocoa.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-vexing_puzzlebox",
+      "path": "images/atlases/relic_outline_atlas.sprites/vexing_puzzlebox.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-vitruvian_minion",
+      "path": "images/atlases/relic_outline_atlas.sprites/vitruvian_minion.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-war_hammer",
+      "path": "images/atlases/relic_outline_atlas.sprites/war_hammer.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-war_paint",
+      "path": "images/atlases/relic_outline_atlas.sprites/war_paint.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-whetstone",
+      "path": "images/atlases/relic_outline_atlas.sprites/whetstone.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-whispering_earring",
+      "path": "images/atlases/relic_outline_atlas.sprites/whispering_earring.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-white_beast_statue",
+      "path": "images/atlases/relic_outline_atlas.sprites/white_beast_statue.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-white_star",
+      "path": "images/atlases/relic_outline_atlas.sprites/white_star.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-wing_charm",
+      "path": "images/atlases/relic_outline_atlas.sprites/wing_charm.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-winged_boots",
+      "path": "images/atlases/relic_outline_atlas.sprites/winged_boots.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-wongo_customer_appreciation_badge",
+      "path": "images/atlases/relic_outline_atlas.sprites/wongo_customer_appreciation_badge.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-wongos_mystery_ticket",
+      "path": "images/atlases/relic_outline_atlas.sprites/wongos_mystery_ticket.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-yummy_cookie_ironclad",
+      "path": "images/atlases/relic_outline_atlas.sprites/yummy_cookie_ironclad.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "potion-outline-fire_potion",
+      "path": "images/atlases/potion_outline_atlas.sprites/fire_potion.tres",
+      "size": [
+        17,
+        17
+      ]
+    },
+    {
+      "key": "potion-outline-block_potion",
+      "path": "images/atlases/potion_outline_atlas.sprites/block_potion.tres",
+      "size": [
+        17,
+        17
+      ]
+    },
+    {
+      "key": "potion-outline-blood_potion",
+      "path": "images/atlases/potion_outline_atlas.sprites/blood_potion.tres",
+      "size": [
+        17,
+        17
+      ]
+    },
+    {
+      "key": "potion-outline-energy_potion",
+      "path": "images/atlases/potion_outline_atlas.sprites/energy_potion.tres",
+      "size": [
+        17,
+        17
+      ]
+    },
+    {
+      "key": "potion-outline-strength_potion",
+      "path": "images/atlases/potion_outline_atlas.sprites/strength_potion.tres",
+      "size": [
+        17,
+        17
+      ]
+    },
+    {
+      "key": "potion-outline-dexterity_potion",
+      "path": "images/atlases/potion_outline_atlas.sprites/dexterity_potion.tres",
+      "size": [
+        17,
+        17
+      ]
+    },
+    {
+      "key": "potion-outline-swift_potion",
+      "path": "images/atlases/potion_outline_atlas.sprites/swift_potion.tres",
+      "size": [
+        17,
+        17
+      ]
+    },
+    {
+      "key": "potion-outline-explosive_ampoule",
+      "path": "images/atlases/potion_outline_atlas.sprites/explosive_ampoule.tres",
+      "size": [
+        17,
+        17
+      ]
+    },
+    {
+      "key": "potion-outline-vulnerable_potion",
+      "path": "images/atlases/potion_outline_atlas.sprites/vulnerable_potion.tres",
+      "size": [
+        17,
+        17
+      ]
+    },
+    {
+      "key": "potion-outline-weak_potion",
+      "path": "images/atlases/potion_outline_atlas.sprites/weak_potion.tres",
+      "size": [
+        17,
+        17
+      ]
+    },
+    {
+      "key": "potion-outline-fruit_juice",
+      "path": "images/atlases/potion_outline_atlas.sprites/fruit_juice.tres",
+      "size": [
+        17,
+        17
+      ]
+    },
+    {
+      "key": "potion-outline-blessing_of_the_forge",
+      "path": "images/atlases/potion_outline_atlas.sprites/blessing_of_the_forge.tres",
+      "size": [
+        17,
+        17
+      ]
+    },
+    {
+      "key": "potion-outline-flex_potion",
+      "path": "images/atlases/potion_outline_atlas.sprites/flex_potion.tres",
+      "size": [
+        17,
+        17
+      ]
+    },
+    {
+      "key": "potion-outline-speed_potion",
+      "path": "images/atlases/potion_outline_atlas.sprites/speed_potion.tres",
+      "size": [
+        17,
+        17
+      ]
+    },
+    {
+      "key": "potion-outline-liquid_bronze",
+      "path": "images/atlases/potion_outline_atlas.sprites/liquid_bronze.tres",
+      "size": [
+        17,
+        17
+      ]
+    },
+    {
+      "key": "potion-outline-fortifier",
+      "path": "images/atlases/potion_outline_atlas.sprites/fortifier.tres",
+      "size": [
+        17,
+        17
+      ]
+    },
+    {
+      "key": "potion-outline-attack_potion",
+      "path": "images/atlases/potion_outline_atlas.sprites/attack_potion.tres",
+      "size": [
+        17,
+        17
+      ]
+    },
+    {
+      "key": "potion-outline-beetle_juice",
+      "path": "images/atlases/potion_outline_atlas.sprites/beetle_juice.tres",
+      "size": [
+        17,
+        17
+      ]
+    },
+    {
+      "key": "potion-outline-bottled_potential",
+      "path": "images/atlases/potion_outline_atlas.sprites/bottled_potential.tres",
+      "size": [
+        17,
+        17
+      ]
+    },
+    {
+      "key": "potion-outline-clarity",
+      "path": "images/atlases/potion_outline_atlas.sprites/clarity.tres",
+      "size": [
+        17,
+        17
+      ]
+    },
+    {
+      "key": "potion-outline-colorless_potion",
+      "path": "images/atlases/potion_outline_atlas.sprites/colorless_potion.tres",
+      "size": [
+        17,
+        17
+      ]
+    },
+    {
+      "key": "potion-outline-cure_all",
+      "path": "images/atlases/potion_outline_atlas.sprites/cure_all.tres",
+      "size": [
+        17,
+        17
+      ]
+    },
+    {
+      "key": "potion-outline-distilled_chaos",
+      "path": "images/atlases/potion_outline_atlas.sprites/distilled_chaos.tres",
+      "size": [
+        17,
+        17
+      ]
+    },
+    {
+      "key": "potion-outline-droplet_of_precognition",
+      "path": "images/atlases/potion_outline_atlas.sprites/droplet_of_precognition.tres",
+      "size": [
+        17,
+        17
+      ]
+    },
+    {
+      "key": "potion-outline-duplicator",
+      "path": "images/atlases/potion_outline_atlas.sprites/duplicator.tres",
+      "size": [
+        17,
+        17
+      ]
+    },
+    {
+      "key": "potion-outline-entropic_brew",
+      "path": "images/atlases/potion_outline_atlas.sprites/entropic_brew.tres",
+      "size": [
+        17,
+        17
+      ]
+    },
+    {
+      "key": "potion-outline-fairy_in_a_bottle",
+      "path": "images/atlases/potion_outline_atlas.sprites/fairy_in_a_bottle.tres",
+      "size": [
+        17,
+        17
+      ]
+    },
+    {
+      "key": "potion-outline-fysh_oil",
+      "path": "images/atlases/potion_outline_atlas.sprites/fysh_oil.tres",
+      "size": [
+        17,
+        17
+      ]
+    },
+    {
+      "key": "potion-outline-gamblers_brew",
+      "path": "images/atlases/potion_outline_atlas.sprites/gamblers_brew.tres",
+      "size": [
+        17,
+        17
+      ]
+    },
+    {
+      "key": "potion-outline-gigantification_potion",
+      "path": "images/atlases/potion_outline_atlas.sprites/gigantification_potion.tres",
+      "size": [
+        17,
+        17
+      ]
+    },
+    {
+      "key": "potion-outline-heart_of_iron",
+      "path": "images/atlases/potion_outline_atlas.sprites/heart_of_iron.tres",
+      "size": [
+        17,
+        17
+      ]
+    },
+    {
+      "key": "potion-outline-liquid_memories",
+      "path": "images/atlases/potion_outline_atlas.sprites/liquid_memories.tres",
+      "size": [
+        17,
+        17
+      ]
+    },
+    {
+      "key": "potion-outline-lucky_tonic",
+      "path": "images/atlases/potion_outline_atlas.sprites/lucky_tonic.tres",
+      "size": [
+        17,
+        17
+      ]
+    },
+    {
+      "key": "potion-outline-mazaleths_gift",
+      "path": "images/atlases/potion_outline_atlas.sprites/mazaleths_gift.tres",
+      "size": [
+        17,
+        17
+      ]
+    },
+    {
+      "key": "potion-outline-orobic_acid",
+      "path": "images/atlases/potion_outline_atlas.sprites/orobic_acid.tres",
+      "size": [
+        17,
+        17
+      ]
+    },
+    {
+      "key": "potion-outline-potion_of_binding",
+      "path": "images/atlases/potion_outline_atlas.sprites/potion_of_binding.tres",
+      "size": [
+        17,
+        17
+      ]
+    },
+    {
+      "key": "potion-outline-powdered_demise",
+      "path": "images/atlases/potion_outline_atlas.sprites/powdered_demise.tres",
+      "size": [
+        17,
+        17
+      ]
+    },
+    {
+      "key": "potion-outline-power_potion",
+      "path": "images/atlases/potion_outline_atlas.sprites/power_potion.tres",
+      "size": [
+        17,
+        17
+      ]
+    },
+    {
+      "key": "potion-outline-radiant_tincture",
+      "path": "images/atlases/potion_outline_atlas.sprites/radiant_tincture.tres",
+      "size": [
+        17,
+        17
+      ]
+    },
+    {
+      "key": "potion-outline-regen_potion",
+      "path": "images/atlases/potion_outline_atlas.sprites/regen_potion.tres",
+      "size": [
+        17,
+        17
+      ]
+    },
+    {
+      "key": "potion-outline-shackling_potion",
+      "path": "images/atlases/potion_outline_atlas.sprites/shackling_potion.tres",
+      "size": [
+        17,
+        17
+      ]
+    },
+    {
+      "key": "potion-outline-ship_in_a_bottle",
+      "path": "images/atlases/potion_outline_atlas.sprites/ship_in_a_bottle.tres",
+      "size": [
+        17,
+        17
+      ]
+    },
+    {
+      "key": "potion-outline-skill_potion",
+      "path": "images/atlases/potion_outline_atlas.sprites/skill_potion.tres",
+      "size": [
+        17,
+        17
+      ]
+    },
+    {
+      "key": "potion-outline-snecko_oil",
+      "path": "images/atlases/potion_outline_atlas.sprites/snecko_oil.tres",
+      "size": [
+        17,
+        17
+      ]
+    },
+    {
+      "key": "potion-outline-stable_serum",
+      "path": "images/atlases/potion_outline_atlas.sprites/stable_serum.tres",
+      "size": [
+        17,
+        17
+      ]
+    },
+    {
+      "key": "potion-outline-touch_of_insanity",
+      "path": "images/atlases/potion_outline_atlas.sprites/touch_of_insanity.tres",
+      "size": [
+        17,
+        17
+      ]
+    },
+    {
+      "key": "potion-outline-soldiers_stew",
+      "path": "images/atlases/potion_outline_atlas.sprites/soldiers_stew.tres",
+      "size": [
+        17,
+        17
+      ]
+    },
+    {
+      "key": "potion-outline-ashwater",
+      "path": "images/atlases/potion_outline_atlas.sprites/ashwater.tres",
+      "size": [
+        17,
+        17
+      ]
+    },
+    {
+      "key": "potion-outline-poison_potion",
+      "path": "images/atlases/potion_outline_atlas.sprites/poison_potion.tres",
+      "size": [
+        17,
+        17
+      ]
+    },
+    {
+      "key": "potion-outline-ghost_in_a_jar",
+      "path": "images/atlases/potion_outline_atlas.sprites/ghost_in_a_jar.tres",
+      "size": [
+        17,
+        17
+      ]
+    },
+    {
+      "key": "potion-outline-cunning_potion",
+      "path": "images/atlases/potion_outline_atlas.sprites/cunning_potion.tres",
+      "size": [
+        17,
+        17
+      ]
+    },
+    {
+      "key": "potion-outline-ambergris",
+      "path": "images/atlases/potion_outline_atlas.sprites/ambergris.tres",
+      "size": [
+        17,
+        17
+      ]
+    },
+    {
+      "key": "potion-outline-foul_potion",
+      "path": "images/atlases/potion_outline_atlas.sprites/foul_potion.tres",
+      "size": [
+        17,
+        17
+      ]
+    },
+    {
+      "key": "potion-outline-glowwater_potion",
+      "path": "images/atlases/potion_outline_atlas.sprites/glowwater_potion.tres",
+      "size": [
+        17,
+        17
+      ]
+    },
+    {
+      "key": "potion-outline-potion_shaped_rock",
+      "path": "images/atlases/potion_outline_atlas.sprites/potion_shaped_rock.tres",
+      "size": [
+        17,
+        17
+      ]
+    },
+    {
+      "key": "potion-outline-bone_brew",
+      "path": "images/atlases/potion_outline_atlas.sprites/bone_brew.tres",
+      "size": [
+        17,
+        17
+      ]
+    },
+    {
+      "key": "potion-outline-pot_of_ghouls",
+      "path": "images/atlases/potion_outline_atlas.sprites/pot_of_ghouls.tres",
+      "size": [
+        17,
+        17
+      ]
+    },
+    {
+      "key": "potion-outline-potion_of_doom",
+      "path": "images/atlases/potion_outline_atlas.sprites/potion_of_doom.tres",
+      "size": [
+        17,
+        17
+      ]
+    },
+    {
+      "key": "potion-outline-focus_potion",
+      "path": "images/atlases/potion_outline_atlas.sprites/focus_potion.tres",
+      "size": [
+        17,
+        17
+      ]
+    },
+    {
+      "key": "potion-outline-essence_of_darkness",
+      "path": "images/atlases/potion_outline_atlas.sprites/essence_of_darkness.tres",
+      "size": [
+        17,
+        17
+      ]
+    },
+    {
+      "key": "potion-outline-potion_of_capacity",
+      "path": "images/atlases/potion_outline_atlas.sprites/potion_of_capacity.tres",
+      "size": [
+        17,
+        17
+      ]
+    },
+    {
+      "key": "potion-outline-star_potion",
+      "path": "images/atlases/potion_outline_atlas.sprites/star_potion.tres",
+      "size": [
+        17,
+        17
+      ]
+    },
+    {
+      "key": "potion-outline-cosmic_concoction",
+      "path": "images/atlases/potion_outline_atlas.sprites/cosmic_concoction.tres",
+      "size": [
+        17,
+        17
+      ]
+    },
+    {
+      "key": "potion-outline-kings_courage",
+      "path": "images/atlases/potion_outline_atlas.sprites/kings_courage.tres",
+      "size": [
+        17,
+        17
+      ]
+    },
+    {
+      "key": "relic-outline-yummy-cookie-silent",
+      "path": "images/atlases/relic_outline_atlas.sprites/yummy_cookie_silent.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-yummy-cookie-defect",
+      "path": "images/atlases/relic_outline_atlas.sprites/yummy_cookie_defect.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-yummy-cookie-regent",
+      "path": "images/atlases/relic_outline_atlas.sprites/yummy_cookie_regent.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "relic-outline-yummy-cookie-necro",
+      "path": "images/atlases/relic_outline_atlas.sprites/yummy_cookie_necro.tres",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "key": "collection-ancient-neow",
+      "path": "images/ui/run_history/neow.png",
+      "size": [
+        11,
+        11
+      ]
+    },
+    {
+      "key": "collection-ancient-orobas",
+      "path": "images/ui/run_history/orobas.png",
+      "size": [
+        11,
+        11
+      ]
+    },
+    {
+      "key": "collection-ancient-pael",
+      "path": "images/ui/run_history/pael.png",
+      "size": [
+        11,
+        11
+      ]
+    },
+    {
+      "key": "collection-ancient-tezcatara",
+      "path": "images/ui/run_history/tezcatara.png",
+      "size": [
+        11,
+        11
+      ]
+    },
+    {
+      "key": "collection-ancient-nonupeipe",
+      "path": "images/ui/run_history/nonupeipe.png",
+      "size": [
+        11,
+        11
+      ]
+    },
+    {
+      "key": "collection-ancient-tanx",
+      "path": "images/ui/run_history/tanx.png",
+      "size": [
+        11,
+        11
+      ]
+    },
+    {
+      "key": "collection-ancient-vakuu",
+      "path": "images/ui/run_history/vakuu.png",
+      "size": [
+        11,
+        11
+      ]
+    },
+    {
+      "key": "collection-ancient-darv",
+      "path": "images/ui/run_history/darv.png",
+      "size": [
+        11,
+        11
+      ]
+    }
+  ]
+}

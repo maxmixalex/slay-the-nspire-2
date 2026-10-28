@@ -1,0 +1,117 @@
+{
+  "runtime_commit": "5b665a8b81d70df9215dff31e74a705d7cfeb121",
+  "runtime_tree": "8392667a5d6757df86fdc4d981a71bcf7ec19f70",
+  "scope": "Bounded resource loading and preservation of the completed NSP2/13 content. Does not establish original world or UI parity.",
+  "journals": [
+    {
+      "journal": "resource17-actual-d0f9044810f7.json",
+      "status": "passed",
+      "source_changed": false,
+      "source_sha256": "3edbc1631b804466c0eea88a5d3109f30c9f02c8c3d19563e191b99aa2409f39",
+      "log_sha256": "f491e959313a61b42e65b0574ce0d5febd81ae24cb2503b1d45f12007e8f5246",
+      "command": [
+        "env",
+        "ASAN_OPTIONS=detect_leaks=0:halt_on_error=1",
+        "UBSAN_OPTIONS=halt_on_error=1",
+        "build/native17-resource/resource_content_regression",
+        "dist/nSpire2.nsp.tns"
+      ]
+    },
+    {
+      "journal": "resource17-arm-7a896027aa8f.json",
+      "status": "passed",
+      "source_changed": false,
+      "source_sha256": "3edbc1631b804466c0eea88a5d3109f30c9f02c8c3d19563e191b99aa2409f39",
+      "log_sha256": "d5cbb8af2d573dfd83c070b36d7987b2afe94ab349a797e08ed85f46cc41fa08",
+      "command": [
+        "python",
+        "tools/build_ndless.py"
+      ]
+    },
+    {
+      "journal": "resource17-backends-67c067491be1.json",
+      "status": "passed",
+      "source_changed": false,
+      "source_sha256": "3edbc1631b804466c0eea88a5d3109f30c9f02c8c3d19563e191b99aa2409f39",
+      "log_sha256": "83dd05bae8731e3d4c7afe7971e5465755b4d44a56d4c87f94dcecdac97d605f",
+      "command": [
+        "node",
+        "tools/check_room_backends.js",
+        "build/web/nSpire2.wasm",
+        "dist/nSpire2.nsp.tns",
+        "/tmp/nspire-stage-8c6977d3/build/backend16-captures"
+      ]
+    },
+    {
+      "journal": "resource17-configure-129556993872.json",
+      "status": "passed",
+      "source_changed": false,
+      "source_sha256": "3edbc1631b804466c0eea88a5d3109f30c9f02c8c3d19563e191b99aa2409f39",
+      "log_sha256": "aeef60789f2efcfe4049d2df1f3b0ceacc73e20d0bc2bbfc47856f271eea2812",
+      "command": [
+        "cmake",
+        "-S",
+        ".",
+        "-B",
+        "build/native17-resource",
+        "-G",
+        "Ninja",
+        "-DBUILD_TESTING=ON",
+        "-DSPIRE_X11=ON",
+        "-DCMAKE_BUILD_TYPE=Debug",
+        "-DCMAKE_CXX_COMPILER=/usr/bin/g++",
+        "-DCMAKE_PREFIX_PATH=/tmp/nspire-toolchain/sysroot/usr",
+        "-DCMAKE_CXX_FLAGS=-O1 -g -fsanitize=address,undefined -fno-omit-frame-pointer -fno-pie -fmax-errors=10",
+        "-DCMAKE_EXE_LINKER_FLAGS=-fsanitize=address,undefined -no-pie"
+      ]
+    },
+    {
+      "journal": "resource17-fixtures-9e825008af7d.json",
+      "status": "passed",
+      "source_changed": false,
+      "source_sha256": "3edbc1631b804466c0eea88a5d3109f30c9f02c8c3d19563e191b99aa2409f39",
+      "log_sha256": "352180fd8f04d2ab44d9b5fe5f310684606197729f10b21d4c6949fc3ed1c908",
+      "command": [
+        "env",
+        "ASAN_OPTIONS=detect_leaks=0:halt_on_error=1",
+        "UBSAN_OPTIONS=halt_on_error=1",
+        "ctest",
+        "--test-dir",
+        "build/native17-resource",
+        "-R",
+        "^(resource_source_regression|content_regression)$",
+        "--output-on-failure"
+      ]
+    },
+    {
+      "journal": "resource17-native-95e5accebecd.json",
+      "status": "passed",
+      "source_changed": false,
+      "source_sha256": "3edbc1631b804466c0eea88a5d3109f30c9f02c8c3d19563e191b99aa2409f39",
+      "log_sha256": "848007300819880bbe9c54b2e336f1f3f77aa80e450c69510ff9fadd1d531160",
+      "command": [
+        "cmake",
+        "--build",
+        "build/native17-resource",
+        "--target",
+        "resource_source_regression",
+        "resource_content_regression",
+        "content_regression",
+        "nSpire2",
+        "-j",
+        "4"
+      ]
+    },
+    {
+      "journal": "resource17-web-f4394d2dfa85.json",
+      "status": "passed",
+      "source_changed": false,
+      "source_sha256": "3edbc1631b804466c0eea88a5d3109f30c9f02c8c3d19563e191b99aa2409f39",
+      "log_sha256": "af98c3b00aa140bc519487cbc3c0b48c8fe3830c5029036a420bd6626960fd6f",
+      "command": [
+        "python",
+        "tools/build_web.py"
+      ]
+    }
+  ]
+}

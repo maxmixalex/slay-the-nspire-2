@@ -1,0 +1,312 @@
+{
+  "boundaries": {
+    "input_pack_changed": false,
+    "new_complete_pack_size_measured": false,
+    "new_pack_produced": false,
+    "original_ui_95_percent_established": false,
+    "physical_device_performance_established": false,
+    "production_format_changed": false,
+    "sample_extrapolated_to_full_pack": false,
+    "shader_or_particle_implementation_changed": false
+  },
+  "complete_component_probe": {
+    "conclusion": "Complete retained-picture and glyph group models show further lossless storage potential, but are not a new deliverable pack and do not establish the30\u201340MB goal.",
+    "elapsed_seconds_host": 75.27680903600412,
+    "every_candidate_roundtrip_byte_exact": true,
+    "model_metadata_included": {
+      "descriptor_bytes_per_item": 16,
+      "group_header_bytes": 32,
+      "group_payload_alignment": 2
+    },
+    "scope": "All 3466 unique retained image payloads representing 3535 catalog entries; all 11915 unique glyph payloads. Tiled images, strings and other pack components are not recompressed in this experiment.",
+    "unimplemented_costs_and_limits": [
+      "New global header and group lookup bytes are not included.",
+      "A production format, bounded runtime reader, cache access validation, and whole-pack inverse proof are not implemented.",
+      "The image baseline in the probe includes per-payload two-byte alignment; the production manifest payload count excludes padding. Their 1758-byte difference is not additional savings.",
+      "Picture groups can change cold reads and decoding costs; larger groups are not automatically faster.",
+      "Glyphs preserve existing encoded/RLE bytes and metrics; no font rasterization changes occur."
+    ]
+  },
+  "compression": {
+    "codec": "raw LZMA2",
+    "current_group_encoded_limit_including_header": 617323,
+    "current_group_raw_limit": 524288,
+    "dictionary_bytes": 524288,
+    "preset": 6
+  },
+  "current_size_goal": {
+    "actual_installed_pair_bytes": 81731444,
+    "actual_resource_bytes": 80846058,
+    "actual_source22_launcher_bytes": 885386,
+    "target_achieved": false,
+    "target_installed_bytes": [
+      30000000,
+      40000000
+    ]
+  },
+  "formal_journals": [
+    {
+      "bytes": 45053,
+      "checkpoint": "5d177be78c507c9cd4b3c9d38a4600e84a44c02e",
+      "ended_at": "2026-10-21T09:37:04.343740+00:00",
+      "log": {
+        "bytes": 986,
+        "name": "source22-tile-transform-sample-eecc969de90b.log",
+        "sha256": "16b2c3323d803185003b27b4ccf0ca1230510bbd3783f04c98dbafc4efd0d392"
+      },
+      "name": "source22-tile-transform-sample-eecc969de90b.json",
+      "sha256": "ba3dbef3c64b89513ecd8b945b69e4a9e6c80c79c232bf65fea0fdc835f5c838",
+      "source_sha256": "1742987f36dc2f9cb37ddf7209922de4d8d692ad2aa315f2205c8f2c65ec893c",
+      "started_at": "2026-10-21T09:36:34.454552+00:00",
+      "status": "passed"
+    },
+    {
+      "bytes": 45009,
+      "checkpoint": "5d177be78c507c9cd4b3c9d38a4600e84a44c02e",
+      "ended_at": "2026-10-21T09:37:50.246752+00:00",
+      "log": {
+        "bytes": 398,
+        "name": "source22-retained-compression-f8347774056b.log",
+        "sha256": "b1e35f701a9684226fb8ed084e77358e159d883acb398f15894f19d188da5eae"
+      },
+      "name": "source22-retained-compression-f8347774056b.json",
+      "sha256": "c5600d630b0360c05a46f3a19db2baff69e4d9e129b2915edb54a0730ffcafcd",
+      "source_sha256": "1742987f36dc2f9cb37ddf7209922de4d8d692ad2aa315f2205c8f2c65ec893c",
+      "started_at": "2026-10-21T09:36:34.562706+00:00",
+      "status": "passed"
+    }
+  ],
+  "glyphs": {
+    "catalog_entries": 11915,
+    "complete": true,
+    "group_models": [
+      {
+        "items_retained_over_raw_bound": 0,
+        "maximum_group_payload_bytes": 19002,
+        "maximum_group_raw_bytes": 32766,
+        "modeled_bytes": 1520556,
+        "modeled_choose_smaller_bytes": 1520556,
+        "modeled_group_count": 82,
+        "raw_group_bound": 32768,
+        "retained_over_raw_bound_bytes": 0
+      },
+      {
+        "items_retained_over_raw_bound": 0,
+        "maximum_group_payload_bytes": 72490,
+        "maximum_group_raw_bytes": 131065,
+        "modeled_bytes": 1489858,
+        "modeled_choose_smaller_bytes": 1489858,
+        "modeled_group_count": 21,
+        "raw_group_bound": 131072,
+        "retained_over_raw_bound_bytes": 0
+      }
+    ],
+    "original_payload_bytes": 2649180,
+    "unique_payloads": 11915
+  },
+  "input_pack": {
+    "bytes": 80846058,
+    "encoder_checkpoint": "3f66da839e056fe291c27ca5e93260b3833bd7de",
+    "format": "NSP2/15",
+    "sha256": "407589a297a6e1bf935b6f2a5024ad532efd84423b0374db13c080e6671ba7dd"
+  },
+  "private_receipt_identities": [
+    {
+      "bytes": 41156,
+      "name": "tile-transforms-eight-groups.json",
+      "sha256": "6b00784b58efa20c7d553075540868d093302a9005ab1c70c84211190fbdeb4c"
+    },
+    {
+      "bytes": 97226,
+      "name": "retained-compression-complete.json",
+      "sha256": "cb3d330dacc454ca6e036baaec20e36fe44956c8a8f7c2772c5d19f64b0658d2"
+    }
+  ],
+  "reference": "v0.111.0 / 41cef1ea",
+  "retained_images": {
+    "catalog_entries": 3535,
+    "complete": true,
+    "group_models": [
+      {
+        "items_retained_over_raw_bound": 124,
+        "maximum_group_payload_bytes": 74335,
+        "maximum_group_raw_bytes": 130977,
+        "modeled_bytes": 9868442,
+        "modeled_choose_smaller_bytes": 9868442,
+        "modeled_group_count": 188,
+        "raw_group_bound": 131072,
+        "retained_over_raw_bound_bytes": 3471282
+      },
+      {
+        "items_retained_over_raw_bound": 0,
+        "maximum_group_payload_bytes": 287084,
+        "maximum_group_raw_bytes": 524064,
+        "modeled_bytes": 8467226,
+        "modeled_choose_smaller_bytes": 8467226,
+        "modeled_group_count": 89,
+        "raw_group_bound": 524288,
+        "retained_over_raw_bound_bytes": 0
+      }
+    ],
+    "independent_choose_smaller_modeled_bytes": 11960100,
+    "inner_formats": {
+      "0": 629,
+      "1": 1286,
+      "4": 1551
+    },
+    "input_images_over_512KiB": 0,
+    "input_maximum_decoded_image_bytes": 230400,
+    "measured_payloads": 3466,
+    "measured_raw_bytes": 42096071,
+    "original_aligned_payload_bytes": 15736038,
+    "production_manifest_payload_bytes": 15734280,
+    "sample_selection": "all",
+    "unique_payloads": 3466
+  },
+  "runtime_checkpoint": "5d177be78c507c9cd4b3c9d38a4600e84a44c02e",
+  "runtime_source_fingerprint": "1742987f36dc2f9cb37ddf7209922de4d8d692ad2aa315f2205c8f2c65ec893c",
+  "schema": 1,
+  "source_tools": {
+    "tools/content_tiles.py": "0a984f3023cbeb1cfd3060332437e2428709d2e5dee535c44d118d7be245c338",
+    "tools/probe_retained_compression.py": "b53c6c67d96e4808aa7ab5c3c2596e7a93291720cf6d9be5f040cefa2ab951de",
+    "tools/probe_tile_transforms.py": "000cd7dd9e7a067aa4f234ee3efd8630d4631882fca3f60cad80fa5f1e259a8b"
+  },
+  "status": "passed_diagnostics_only",
+  "tile_sample": {
+    "all_eligible_group_winners": [
+      {
+        "best_eligible_method": "identity",
+        "group": 0,
+        "payload_bytes": 77363
+      },
+      {
+        "best_eligible_method": "identity",
+        "group": 104,
+        "payload_bytes": 61655
+      },
+      {
+        "best_eligible_method": "identity",
+        "group": 208,
+        "payload_bytes": 64466
+      },
+      {
+        "best_eligible_method": "identity",
+        "group": 313,
+        "payload_bytes": 32942
+      },
+      {
+        "best_eligible_method": "identity",
+        "group": 417,
+        "payload_bytes": 59745
+      },
+      {
+        "best_eligible_method": "identity",
+        "group": 522,
+        "payload_bytes": 146191
+      },
+      {
+        "best_eligible_method": "identity",
+        "group": 626,
+        "payload_bytes": 80197
+      },
+      {
+        "best_eligible_method": "identity",
+        "group": 731,
+        "payload_bytes": 9706
+      }
+    ],
+    "candidate_roundtrips": 64,
+    "candidates": [
+      {
+        "all_original_tile_bytes_restored_exactly": true,
+        "groups_over_existing_encoded_bound": 0,
+        "groups_over_existing_raw_bound": 0,
+        "max_transformed_group_bytes": 523600,
+        "method": "identity",
+        "payload_bytes": 532265,
+        "ratio_to_identity": 1.0
+      },
+      {
+        "all_original_tile_bytes_restored_exactly": true,
+        "groups_over_existing_encoded_bound": 0,
+        "groups_over_existing_raw_bound": 0,
+        "max_transformed_group_bytes": 523600,
+        "method": "byte_planes",
+        "payload_bytes": 582055,
+        "ratio_to_identity": 1.0935436295830085
+      },
+      {
+        "all_original_tile_bytes_restored_exactly": true,
+        "groups_over_existing_encoded_bound": 0,
+        "groups_over_existing_raw_bound": 0,
+        "max_transformed_group_bytes": 523600,
+        "method": "byte_row_delta",
+        "payload_bytes": 675947,
+        "ratio_to_identity": 1.269944482541591
+      },
+      {
+        "all_original_tile_bytes_restored_exactly": true,
+        "groups_over_existing_encoded_bound": 0,
+        "groups_over_existing_raw_bound": 7,
+        "max_transformed_group_bytes": 697680,
+        "method": "native_planes",
+        "payload_bytes": 626922,
+        "ratio_to_identity": 1.1778381069580002
+      },
+      {
+        "all_original_tile_bytes_restored_exactly": true,
+        "groups_over_existing_encoded_bound": 0,
+        "groups_over_existing_raw_bound": 7,
+        "max_transformed_group_bytes": 697680,
+        "method": "native_row_delta",
+        "payload_bytes": 717744,
+        "ratio_to_identity": 1.3484711562849332
+      },
+      {
+        "all_original_tile_bytes_restored_exactly": true,
+        "groups_over_existing_encoded_bound": 0,
+        "groups_over_existing_raw_bound": 0,
+        "max_transformed_group_bytes": 483969,
+        "method": "exact_bbox",
+        "payload_bytes": 543878,
+        "ratio_to_identity": 1.0218180793401783
+      },
+      {
+        "all_original_tile_bytes_restored_exactly": true,
+        "groups_over_existing_encoded_bound": 0,
+        "groups_over_existing_raw_bound": 0,
+        "max_transformed_group_bytes": 484649,
+        "method": "exact_bbox_solid",
+        "payload_bytes": 546485,
+        "ratio_to_identity": 1.0267160155185857
+      },
+      {
+        "all_original_tile_bytes_restored_exactly": true,
+        "groups_over_existing_encoded_bound": 0,
+        "groups_over_existing_raw_bound": 0,
+        "max_transformed_group_bytes": 360016,
+        "method": "exact_palette",
+        "payload_bytes": 675704,
+        "ratio_to_identity": 1.2694879430358939
+      }
+    ],
+    "comparison_scope": "Compressed payload bytes; variable-record local offset tables are inside candidate streams. The common existing 32-byte group header and 8-byte lookup are excluded equally. No new runtime format is implemented.",
+    "complete": true,
+    "conclusion": "For each selected group, unchanged identity beats all other tested candidates that satisfy current raw and encoded bounds. This finite sample is not proof that no other lossless representation can improve the complete pack.",
+    "elapsed_seconds_host": 29.466107483996893,
+    "eligible_adaptive_payload_bytes": 532265,
+    "selected_group_count": 8,
+    "selected_group_ids": [
+      0,
+      104,
+      208,
+      313,
+      417,
+      522,
+      626,
+      731
+    ],
+    "tile_records": 5024,
+    "unique_input_tile_record_bytes": 3868480
+  }
+}

@@ -1,0 +1,77 @@
+#pragma once
+#include <stdint.h>
+#include "health_bar.hpp"
+#include "room_ui7_presentation.hpp"
+
+namespace spire {
+// NPlayerTurnBanner / NEnemyTurnBanner, pinned v0.111.0. All clocks are
+// presentation ticks: no event, random stream or saved turn is modified.
+struct TurnBannerPresentation {
+    enum Kind : uint8_t {None,Player,Enemy,Battle};
+    struct Frame {Kind kind=None;unsigned alpha=0,scale=4096,red=0;int offset=0,number=0;bool extra=false;};
+    uint32_t player_start=0,enemy_start=0,battle_start=0;
+    int number=0;
+    bool player_active=false,enemy_active=false,battle_active=false,in_enemy=false,extra=false;
+    static constexpr uint32_t PlayerMs=2200,EnemyMs=2300,EnemyTicks=(EnemyMs+32)/33,BattleMs=2600,BattleTicks=(BattleMs+32)/33;
+    // CombatManager.StartTurn waits 0.8s after creating the banner, then
+    // NCreature.PerformIntent waits 0.4s before TakeTurn in normal speed.
+    static constexpr uint32_t EnemyLeadTicks=(800+32)/33,IntentLeadTicks=(400+32)/33;
+    // Cmd.CustomScaledWait selects independent real-time durations. Fast
+    // changes these waits, not Engine time or the banner/animation clock.
+    static constexpr uint32_t wait_ticks(unsigned normal_ms,unsigned fast_ms,bool fast){return ((fast?fast_ms:normal_ms)+32u)/33u;}
+    static constexpr uint32_t enemy_lead_ticks(bool fast){return wait_ticks(800,500,fast);}
+    static constexpr uint32_t intent_lead_ticks(bool fast){return wait_ticks(400,250,fast);}
+    // The original title/counter outlines are24/16px on the1680px UI.
+    // The enemy label's2 ->1 transform scales its outline with its glyphs.
+    static constexpr int outline_pixels(unsigned source,unsigned scale=4096){return int((source*4u*scale+21u*2048u)/(21u*4096u));}
+    void reset(){*this=TurnBannerPresentation{};}
+    static unsigned ease(uint32_t elapsed,uint32_t duration){return health_bar::expo_out(elapsed>=duration?1000:elapsed*1000/duration);}
+    void begin_enemy(uint32_t now){
+        if(in_enemy)return;enemy_start=now;enemy_active=in_enemy=true;
+    }
+    void begin_player(int turn,uint32_t earliest,bool extra_turn=false){
+        player_start=earliest;number=turn;extra=extra_turn;player_active=true;in_enemy=false;
+    }
+    void begin_battle(uint32_t now){
+        battle_start=now;battle_active=true;begin_player(1,now+BattleTicks);
+    }
+    unsigned battle_backstop(uint32_t now)const{
+        if(!battle_active||int32_t(now-battle_start)<0)return 0;
+        const uint32_t age=(now-battle_start)*33u;if(age<300u||age>=5100u)return 0;
+        if(age<1050u)return ease(age-300u,750u)*64u/4096u;
+        if(age<4100u)return 64u;const unsigned left=(5100u-age)*1024u/1000u;
+        return (((left*left)>>10)*left*64u)>>20;
+    }
+    Frame sample_battle(uint32_t now)const{
+        Frame f;if(!battle_active||int32_t(now-battle_start)<0)return f;
+        const uint32_t age=(now-battle_start)*33u;if(age<300u||age>=BattleMs)return f;
+        const uint32_t ms=age-300u;f.kind=Battle;f.scale=8192-ease(ms,750);
+        if(ms<1300u)f.alpha=ease(ms,1300)*255u/4096u;
+        else {const unsigned left=(2300u-ms)*1024u/1000u;f.alpha=(((left*left)>>10)*left*255u)>>20;}
+        return f;
+    }
+    Frame sample_enemy(uint32_t now)const{
+        Frame f;
+        if(enemy_active&&int32_t(now-enemy_start)>=0&&now-enemy_start<EnemyTicks){
+            const uint32_t ms=(now-enemy_start)*33;f.kind=Enemy;
+            f.scale=8192-ease(ms,750);f.alpha=ease(ms,1300)*255/4096;
+            if(ms>1300){const unsigned t=ms-1300;f.red=ease(t,1000)*255/4096;
+                // CUBIC_OUT fade to zero, unlike the EXPO_OUT color tween.
+                const unsigned left=t>=1000?0:(1000-t)*1024/1000;
+                f.alpha=(((left*left)>>10)*left*255)>>20;
+            }return f;
+        }
+        return f;
+    }
+    Frame sample_player(uint32_t now)const{
+        Frame f;
+        if(!player_active||int32_t(now-player_start)<0||now-player_start>=(PlayerMs+32)/33)return f;
+        const uint32_t ms=(now-player_start)*33;f.kind=Player;f.number=number;f.extra=extra;
+        f.alpha=ms<1900?ease(ms,1000)*255/4096:
+            255-255*room_curve::sine_out(ms-1900,300)/room_curve::Q;
+        // Opposite50px scene tweens project to10px at the real1680px UI.
+        f.offset=int((ease(ms,1500)*10+2048)/4096);return f;
+    }
+    Frame sample(uint32_t now)const{const auto battle=sample_battle(now);if(battle.kind!=None)return battle;const auto enemy=sample_enemy(now);return enemy.kind!=None?enemy:sample_player(now);}
+};
+}

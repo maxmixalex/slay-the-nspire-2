@@ -1,0 +1,10 @@
+/build/
+/dist/
+/.venv/
+__pycache__/
+*.pyc
+*.sav
+*.sav.tns
+*.bak.tns
+*.tmp.tns
+*.o

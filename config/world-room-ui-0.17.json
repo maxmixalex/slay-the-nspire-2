@@ -1,0 +1,193 @@
+{
+  "schema": 1,
+  "reference": "v0.111.0 / 41cef1ea",
+  "purpose": "Source scene recipes for the private room converter. This manifest contains no original textures, skeleton data or dialogue; requested keys are not claims that converted assets already exist.",
+  "conversion_viewport": [1920, 1080],
+  "output": {
+    "size": [320, 218],
+    "screen_origin": [0, 22],
+    "fit": "uniform_cover",
+    "registration": "Use one scene camera for every frame and skin in a family; do not fit each visible bounding box independently."
+  },
+  "rest": {
+    "source_scene": "scenes/rooms/rest_site_room.tscn",
+    "source_method": "MegaCrit.Sts2.Core.Nodes.Rooms/NRestSiteRoom.cs::_Ready",
+    "parent": {
+      "node": "BgContainer",
+      "anchors": [0.5, 0.5, 0.5, 0.5],
+      "offsets": [-934.0, -466.0, -933.55, -465.55],
+      "z_as_relative": false,
+      "evaluated_origin": [26.0, 74.0],
+      "evaluated_size": [0.45, 0.45]
+    },
+    "instancing": {
+      "background_child_index": 0,
+      "root_size": [0.0, 0.0],
+      "note": "The selected act scene is a zero-size Control inserted into BgContainer before the character containers. Its centered descendants resolve anchors against that zero-size root, not the full conversion viewport."
+    },
+    "singleplayer_actor": {
+      "node": "BgContainer/Character_1",
+      "anchors": [0.5, 0.5, 0.5, 0.5],
+      "offsets": [624.775, 641.775, 624.775, 641.775],
+      "scale": [0.5, 0.5],
+      "child_position": [0.0, 0.0],
+      "evaluated_origin": [651.0, 716.0],
+      "flip_x": false,
+      "scenes": {
+        "IRONCLAD": "scenes/rest_site/characters/ironclad_rest_site.tscn",
+        "SILENT": "scenes/rest_site/characters/silent_rest_site.tscn",
+        "REGENT": "scenes/rest_site/characters/regent_rest_site.tscn",
+        "NECROBINDER": "scenes/rest_site/characters/necrobinder_rest_site.tscn",
+        "DEFECT": "scenes/rest_site/characters/defect_rest_site.tscn"
+      },
+      "clips_by_act_index": ["overgrowth_loop", "hive_loop", "glory_loop"],
+      "source_methods": [
+        "MegaCrit.Sts2.Core.Models/CharacterModel.cs::RestSiteAnimPath",
+        "MegaCrit.Sts2.Core.Nodes.RestSite/NRestSiteCharacter.cs::_Ready"
+      ],
+      "note": "The first act clip is overgrowth_loop for both first-act regions. Each direct Spine child is animated; Necrobinder has additional fire nodes. The original random animation phase uses presentation RNG, not run RNG."
+    },
+    "scenes": [
+      {
+        "key": "rest_background.OVERGROWTH",
+        "path": "scenes/rest_site/overgrowth_rest_site.tscn",
+        "root": "OvergrowthRestSite",
+        "background_node": "RestSiteBG",
+        "background_anchors": [0.5, 0.5, 0.5, 0.5],
+        "background_offsets": [-444.0, -139.0, 2320.8, 1157.0],
+        "lighting_node": "RestSiteLighting",
+        "lighting_anchors": [0.5, 0.5, 0.5, 0.5],
+        "lighting_offsets": [-942.0, -507.0, -942.0, -507.0],
+        "fire_node": "RestSiteLighting/SteppedFire",
+        "fire_position": [1881.0, 1213.0],
+        "fire_scale": [0.275026, 0.275241]
+      },
+      {
+        "key": "rest_background.UNDERDOCKS",
+        "path": "scenes/rest_site/underdocks_rest_site.tscn",
+        "root": "GloryRestSite",
+        "background_node": "RestSiteBG",
+        "background_anchors": [0.0, 0.0, 0.0, 0.0],
+        "background_offsets": [-140.0, -56.0, 1924.0, 778.0],
+        "lighting_node": "RestSiteLighting",
+        "lighting_anchors": [0.0, 0.0, 0.0, 0.0],
+        "lighting_offsets": [-6.0, -96.0, -6.0, -96.0],
+        "fire_node": "RestSiteLighting/SteppedFire",
+        "fire_position": [945.0, 802.0],
+        "fire_scale": [0.275026, 0.275241],
+        "note": "The original Underdocks file really names its root GloryRestSite; select by source path, not root name."
+      },
+      {
+        "key": "rest_background.HIVE",
+        "path": "scenes/rest_site/hive_rest_site.tscn",
+        "root": "HiveRestSite",
+        "background_node": "RestSiteBG",
+        "background_anchors": [0.5, 0.5, 0.5, 0.5],
+        "background_offsets": [-444.0, -139.0, 2320.8, 1157.0],
+        "lighting_node": "RestSiteLighting",
+        "lighting_anchors": [0.0, 0.0, 0.0, 0.0],
+        "lighting_offsets": [-65.0, -65.0, -65.0, -65.0],
+        "fire_node": "RestSiteLighting/SteppedFire",
+        "fire_position": [980.0, 746.0],
+        "fire_scale": [-0.229498, 0.229498]
+      },
+      {
+        "key": "rest_background.GLORY",
+        "path": "scenes/rest_site/glory_rest_site.tscn",
+        "root": "GloryRestSite",
+        "background_node": "RestSiteBG",
+        "background_anchors": [0.0, 0.0, 0.0, 0.0],
+        "background_offsets": [-444.0, -139.0, 2320.8, 1157.0],
+        "lighting_node": "RestSiteLighting",
+        "lighting_anchors": [0.0, 0.0, 0.0, 0.0],
+        "lighting_offsets": [-6.0, -96.0, -6.0, -96.0],
+        "fire_node": "RestSiteLighting/SteppedFire",
+        "fire_position": [945.0, 802.0],
+        "fire_scale": [0.275026, 0.275241]
+      }
+    ],
+    "render_requirements": [
+      "Preserve the authored TextureRect, Sprite2D, blend, nested foreground and light transforms before applying the common output camera.",
+      "Report unsupported smoke, particle and fire-shader motion explicitly; a static scene sample is not animated parity.",
+      "If lighting is extinguished, use the original RestSiteLighting state and character _tracks/light_off track where available; do not reuse the lit screenshot.",
+      "The original rest characters are separate scene assets, not the combat idle sprites."
+    ]
+  },
+  "treasure": {
+    "source_scene": "scenes/rooms/treasure_room.tscn",
+    "chest_scene": "scenes/rooms/treasure_room/chest.tscn",
+    "source_methods": [
+      "MegaCrit.Sts2.Core.Nodes.TreasureRooms/NTreasureButton.cs::Setup",
+      "MegaCrit.Sts2.Core.Nodes.TreasureRooms/NTreasureButton.cs::UpdateChestSkin",
+      "MegaCrit.Sts2.Core.Nodes.TreasureRooms/NTreasureButton.cs::AnimOut",
+      "MegaCrit.Sts2.Core.Nodes.TreasureRooms/NTreasureButton.cs::AnimIn"
+    ],
+    "room_clear_color": [0.0, 0.0, 0.0, 1.0],
+    "chest_control": {
+      "node": "Chest",
+      "anchors": [0.5, 0.5, 0.5, 0.5],
+      "offsets": [-358.0, -173.0, 442.0, 327.0],
+      "evaluated_origin": [602.0, 367.0],
+      "evaluated_size": [800.0, 500.0]
+    },
+    "spine_node": {
+      "node": "Chest/ChestVisual",
+      "position": [-604.0, -301.0],
+      "scale": [0.4, 0.4],
+      "evaluated_origin": [-2.0, 66.0]
+    },
+    "families": [
+      {
+        "key": "treasure.ACT1",
+        "regions": ["OVERGROWTH", "UNDERDOCKS"],
+        "path": "animations/backgrounds/treasure_room/chest_room_act_1_skel_data.tres",
+        "skin": "act1",
+        "outline_skin": "act1_stroke"
+      },
+      {
+        "key": "treasure.ACT2",
+        "regions": ["HIVE"],
+        "path": "animations/backgrounds/treasure_room/chest_room_act_2_skel_data.tres",
+        "skin": "act2",
+        "outline_skin": "act2_stroke"
+      },
+      {
+        "key": "treasure.ACT3",
+        "regions": ["GLORY"],
+        "path": "animations/backgrounds/treasure_room/chest_room_act_3_skel_data.tres",
+        "skin": "act3",
+        "outline_skin": "act3_stroke"
+      }
+    ],
+    "animation_queue": [
+      {"clip": "animation", "loop": false, "track": 0, "source_duration_seconds": 1.1333334, "source_events": []},
+      {"clip": "shine_fade", "loop": false, "track": 0, "add_delay": 0.0, "source_duration_seconds": 0.5, "source_events": []}
+    ],
+    "animation_metadata": "All three original skeletons report Spine 4.2.39 and these same durations in the reviewed sampler.",
+    "initial_time_scale": 0.0,
+    "opened_time_scale": 1.0,
+    "requested_states": [
+      {"suffix": "CLOSED", "skin": "normal", "sample": "animation at zero"},
+      {"suffix": "CLOSED_OUTLINE", "skin": "outline", "sample": "animation at zero"},
+      {"suffix": "OPENING", "skin": "normal", "sample": "animation from zero to its source duration"},
+      {"suffix": "SHINE", "skin": "normal", "sample": "shine_fade after the completed animation on the same skeleton"},
+      {"suffix": "OPEN", "skin": "normal", "sample": "the complete two-clip queue at its final source time"}
+    ],
+    "modulation": {
+      "show_relic_selection": {"rgba": [1.0, 1.0, 1.0, 0.5], "seconds": 0.4},
+      "close_relic_selection": {"rgba": [1.0, 1.0, 1.0, 1.0], "seconds": 0.3}
+    },
+    "singleplayer_relic_holder": {
+      "node": "RelicCollection/Container/SingleplayerRelicHolder",
+      "anchors": [0.5, 0.5, 0.5, 0.5],
+      "offsets": [-102.0, -183.0, 102.0, 21.0],
+      "pivot": [102.0, 102.0]
+    },
+    "render_requirements": [
+      "Use the complete act-specific skeleton with its original internal background geometry; preserve the source ChestVisual transform.",
+      "Read clip durations from the reviewed original skeleton. Keep the completed opening pose when advancing to shine_fade.",
+      "Changing normal/outline skin must reset slots and reapply the current animation, preserving the chest pose.",
+      "Keep original room particles and claim animations as separate unsupported items until actually converted."
+    ]
+  }
+}

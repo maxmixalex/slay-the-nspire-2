@@ -1,0 +1,234 @@
+{
+  "schema": 1,
+  "scope": "Final UI3 hybrid resources with the original title glow mask; conversion and exact byte preservation, not a new performance measurement.",
+  "source_checkpoint": "3843e8e626317da0c1508fab02a2ed4a627f9fdd",
+  "original_reference": "v0.111.0 / 41cef1ea",
+  "previous_measured_candidate": {
+    "record": "validation-retained-storage-0.17.json",
+    "bilingual_split_bytes": 81085101,
+    "artwork_bytes": 74740628,
+    "title_atlas_size": [
+      164,
+      106
+    ],
+    "title_raw_bytes": 32274
+  },
+  "title_replacement": {
+    "image_id": 4,
+    "added_image_count": 0,
+    "added_clip_count": 0,
+    "atlas_size": [
+      164,
+      210
+    ],
+    "format": 4,
+    "raw_bytes": 47876,
+    "glow_mask_size": [
+      104,
+      104
+    ],
+    "glow_mask_atlas_x": 30,
+    "glow_mask_atlas_y": 106,
+    "shared_byte_increase": 15602,
+    "algorithm": "One original gray mask, scaled and tinted additively at runtime; no precomputed glow frames."
+  },
+  "final_resources": {
+    "schema": 1,
+    "reference": "v0.111.0 / 41cef1ea",
+    "format": "NSC1/NSL1",
+    "complete": true,
+    "original_bytes": 155856613,
+    "stored_bytes": 81100703,
+    "saved_bytes": 74755910,
+    "byte_identical_roundtrip": true,
+    "runtime_integrity_checks": false,
+    "common": {
+      "file": "nSpire2.common.tns",
+      "bytes": 74756230,
+      "sha256": "4e1200466b8eac523af99e7f054d3a37a04f4fa28c8d2cda873c85e6954ee91e",
+      "artwork_bytes": 74756166,
+      "artwork_sha256": "b85af9fab1633c0d3e2a5f68d9f6708db93a11a3703197e85cf5ac49f15b4cf5"
+    },
+    "languages": {
+      "eng": {
+        "version": 20,
+        "prefix": 1397724,
+        "artwork": 74756166,
+        "suffix": 383067,
+        "original_bytes": 76536957,
+        "original_fnv": 0,
+        "original_sha256": "18826a9777fc2aca55cbbcee43e9b34aafede0597d4ee576e6e87f16199b0dd3",
+        "auxiliary": 1262,
+        "images": 47628,
+        "glyphs": 570,
+        "strings": 8192,
+        "clips": 1705,
+        "file": "nSpire2.eng.tns",
+        "bytes": 1780887,
+        "sha256": "7af8fee6d3a827a4face14d7ffaa178bb54af34a4a40366eedcf4f24e5f4e848"
+      },
+      "zhs": {
+        "version": 20,
+        "prefix": 1579004,
+        "artwork": 74756166,
+        "suffix": 2984486,
+        "original_bytes": 79319656,
+        "original_fnv": 0,
+        "original_sha256": "45f4cb3f0e59348a672c8074a7250837a047214ac22615ecf6ab1b05c6351691",
+        "auxiliary": 1262,
+        "images": 47628,
+        "glyphs": 11900,
+        "strings": 8192,
+        "clips": 1705,
+        "file": "nSpire2.zhs.tns",
+        "bytes": 4563586,
+        "sha256": "34b9fb6ce7b987e1c80f51701145cb4fded49c11166494ad9469cd945e21652f"
+      }
+    }
+  },
+  "conversion": {
+    "schema": 1,
+    "elapsed_seconds": 9.727180704998318,
+    "languages": {
+      "eng": {
+        "schema": 1,
+        "reference": "v0.111.0 / 41cef1ea",
+        "input_version": 19,
+        "output_version": 20,
+        "input_bytes": 89206276,
+        "output_bytes": 76536957,
+        "saved_bytes": 12669319,
+        "group_target_bytes": 131072,
+        "codec_raw_bound_bytes": 524288,
+        "fast_image_policy": "ui",
+        "resident_group_cache_bytes": 5242880,
+        "new_resident_pixel_bytes": 0,
+        "startup_payload_scans": 0,
+        "retained_groups": 200,
+        "grouped_image_entries": 3567,
+        "grouped_raw_bytes": 25134014,
+        "retained_stored_bytes": 14074792,
+        "retained_unique_images": 5368,
+        "maximum_group_raw_bytes": 131063,
+        "tile_groups_copied": 1184,
+        "fast_image_entries": 1872,
+        "fast_unique_images": 1844,
+        "fast_stored_bytes": 9404230,
+        "verification": {
+          "unique_retained_images_verified": 5370,
+          "tile_images_verified": 42189,
+          "animation_groups_verified": 1184,
+          "glyphs_verified": 570,
+          "strings_verified": 8192,
+          "replaced_image_ids": [
+            4
+          ],
+          "catalog_and_timing_unchanged": true,
+          "exact_raw_byte_comparison": true
+        }
+      },
+      "zhs": {
+        "schema": 1,
+        "reference": "v0.111.0 / 41cef1ea",
+        "input_version": 19,
+        "output_version": 20,
+        "input_bytes": 91981954,
+        "output_bytes": 79319656,
+        "saved_bytes": 12662298,
+        "group_target_bytes": 131072,
+        "codec_raw_bound_bytes": 524288,
+        "fast_image_policy": "ui",
+        "resident_group_cache_bytes": 5242880,
+        "new_resident_pixel_bytes": 0,
+        "startup_payload_scans": 0,
+        "retained_groups": 200,
+        "grouped_image_entries": 3567,
+        "grouped_raw_bytes": 25134014,
+        "retained_stored_bytes": 14074792,
+        "retained_unique_images": 5368,
+        "maximum_group_raw_bytes": 131063,
+        "tile_groups_copied": 1184,
+        "fast_image_entries": 1872,
+        "fast_unique_images": 1844,
+        "fast_stored_bytes": 9404230,
+        "verification": {
+          "unique_retained_images_verified": 5370,
+          "tile_images_verified": 42189,
+          "animation_groups_verified": 1184,
+          "glyphs_verified": 11900,
+          "strings_verified": 8192,
+          "replaced_image_ids": [
+            4
+          ],
+          "catalog_and_timing_unchanged": true,
+          "exact_raw_byte_comparison": true
+        }
+      }
+    }
+  },
+  "comparison": {
+    "v19_bilingual_split_bytes": 93783363,
+    "final_bilingual_split_bytes": 81100703,
+    "saved_bytes_vs_v19": 12682660,
+    "added_bytes_vs_previous_measured_hybrid": 15602,
+    "launcher_included": false,
+    "repeated_card_benchmarks": false,
+    "repeated_template_audit": false,
+    "reason": "The sole deliberate image replacement is image 4. The preceding full bilingual text/tooltip audit and card measurements keep their own artifact and runtime identities."
+  },
+  "completed_journals": [
+    {
+      "checkpoint": "3843e8e626317da0c1508fab02a2ed4a627f9fdd",
+      "command": [
+        "python",
+        "tools/repack_retained.py",
+        "--eng",
+        "<workspace>/ui3-assets/v19/merchant-eng.nsp",
+        "--zhs",
+        "<workspace>/ui3-assets/v19/merchant-zhs.nsp",
+        "--output",
+        "<workspace>/ui3-assets/v20-hybrid-glow",
+        "--fast-images",
+        "ui",
+        "--logo-atlas",
+        "<workspace>/title-review/glow-atlas/title-logo.json"
+      ],
+      "started_at": "2026-10-23T15:01:16.402201+00:00",
+      "ended_at": "2026-10-23T15:01:26.305498+00:00",
+      "status": "passed",
+      "returncode": 0,
+      "source_changed": false,
+      "source_sha256": "430d2ad4b1ad50de05ddda73cbd76bab4131f5237ab0203e73e7638151dd27c9",
+      "log": "ui3-glow-hybrid-0821c1ff9e86.log",
+      "log_sha256": "6bbc48e4462028614369f5108d7d8bd47721a3fae719a44a99052150f11393b7",
+      "journal": "ui3-glow-hybrid-0821c1ff9e86.json"
+    },
+    {
+      "checkpoint": "3843e8e626317da0c1508fab02a2ed4a627f9fdd",
+      "command": [
+        "python",
+        "tools/split_content.py",
+        "--eng",
+        "<workspace>/ui3-assets/v20-hybrid-glow/retained-eng.nsp",
+        "--zhs",
+        "<workspace>/ui3-assets/v20-hybrid-glow/retained-zhs.nsp",
+        "--output",
+        "<workspace>/ui3-assets/v20-hybrid-glow-split"
+      ],
+      "started_at": "2026-10-23T15:01:42.107383+00:00",
+      "ended_at": "2026-10-23T15:01:43.177830+00:00",
+      "status": "passed",
+      "returncode": 0,
+      "source_changed": false,
+      "source_sha256": "430d2ad4b1ad50de05ddda73cbd76bab4131f5237ab0203e73e7638151dd27c9",
+      "log": "ui3-glow-split-37d97ce6ce19.log",
+      "log_sha256": "1f4493516379afd93919cbed5bc64b340f00346166d86ce9618c719f56778005",
+      "journal": "ui3-glow-split-37d97ce6ce19.json"
+    }
+  ],
+  "limits": [
+    "This resource record does not establish calculator frame rates or storage latency.",
+    "Title rendering, merchant interaction, ARM/WASM behavior and actual USB installation have separate runtime validation records.",
+    "Recorded output digests identify artifacts for the development record; the runtime performs no whole-pack or group integrity scan."
+  ]
+}

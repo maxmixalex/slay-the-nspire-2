@@ -1,0 +1,33 @@
+{
+  "reference": "v0.111.0 / 41cef1ea",
+  "projection": "1680x1260 to 320x240; merchant inventory retains its documented 7/6 uniform zoom",
+  "labels": [
+    {"key": "rest_site_ui.PROMPT", "pixels": 7, "face": 5, "face_by_locale": {"zhs": 0}},
+    {"key": "events.PROCEED.title", "pixels": 5, "face": 5},
+    {"key": "events.PROCEED.title", "pixels": 4, "face": 5},
+    {"key": "gameplay_ui.ENEMY_TURN", "pixels": 18, "face": 4, "face_by_locale": {"zhs": 0}},
+    {"key": "gameplay_ui.PLAYER_TURN", "pixels": 18, "face": 4, "face_by_locale": {"zhs": 0}},
+    {"key": "gameplay_ui.PLAYER_TURN_EXTRA", "pixels": 18, "face": 4, "face_by_locale": {"zhs": 0}},
+    {"key": "gameplay_ui.TURN_COUNT", "pixels": 7, "face": 5, "face_by_locale": {"zhs": 0}, "substitutions": "0123456789"}
+  ],
+  "groups": [
+    {"key_pattern": "^events\\.(?!PROCEED\\.)[A-Z0-9_]+\\.title$", "pixels": [5, 6, 7], "face": 4, "face_by_locale": {"zhs": 0}},
+    {"key_pattern": "^rest_site_ui\\.OPTION_.*\\.name$", "pixels": [4, 5], "face": 5, "face_by_locale": {"zhs": 0}},
+    {"key_pattern": "^rest_site_ui\\.OPTION_.*\\.description(?:Disabled)?$", "pixels": 5, "face": 0, "substitutions": "0123456789+-/%"},
+    {"key_pattern": "^events\\..*\\.options\\..*\\.title$", "pixels": [4, 5], "face": 5, "substitutions": "0123456789+-/%"},
+    {"key_pattern": "^events\\..*\\.options\\..*\\.description$", "pixels": [4, 5], "face": 0, "substitutions": "0123456789+-/%"},
+    {"key_pattern": "^events\\..*\\.options\\..*\\.description$", "pixels": [4, 5], "face": 5, "rich_face": "bold", "substitutions": "0123456789+-/%"},
+    {"key_pattern": "^(?:merchant_room\\.MERCHANT|events\\.FAKE_MERCHANT)\\.talk\\.", "pixels": [4, 5], "face": 0},
+    {"key_pattern": "^(?:merchant_room\\.MERCHANT|events\\.FAKE_MERCHANT)\\.talk\\.", "pixels": [4, 5], "face": 5, "rich_face": "bold"}
+  ],
+  "dynamic_labels": [
+    {"families": ["card_titles", "relic_titles", "potion_titles", "character_titles"], "pixels": 4, "faces": [0, 5]},
+    {"families": ["card_titles", "relic_titles", "potion_titles", "character_titles"], "pixels": 5, "faces": [0, 5]}
+  ],
+  "notes": [
+    "MegaLabel uses FontType.Regular locale substitution. Authored English Spectral/Kreon Bold labels therefore select Chinese Noto Regular unless a business method subsequently overrides the font.",
+    "The event option title is an explicit rich [b] span, so its Chinese face remains Source Han Bold. Normal event and merchant prose remains regular; rich bold spans use the explicit bold face.",
+    "Event option auto fitting stops at 4 native pixels. Original source allows 12 through 24 at desktop scale; the full existing event reader remains available if the calculator floor still truncates a label.",
+    "Dynamic formatted event fields include numeric values and prepared card, relic, potion or character titles; collect those existing localized title alphabets, not fallback model IDs. No original localized text belongs in this metadata file."
+  ]
+}

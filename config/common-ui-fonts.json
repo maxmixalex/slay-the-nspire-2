@@ -1,0 +1,377 @@
+{
+  "reference": "v0.111.0 / 41cef1ea",
+  "reason": "MegaLabel.RefreshFont and MegaRichTextLabel.RefreshFont replace the normal font with locale Regular; inline bold/italic spans remain separate. Ancient epithets use source22px->4px and final18px with the4px readability floor.",
+  "labels": [
+    {
+      "key": "gameplay_ui.BATTLE_START",
+      "pixels": 18,
+      "face": 4,
+      "faces": {
+        "eng": 4,
+        "zhs": 0
+      }
+    },
+    {
+      "key": "gameplay_ui.CHOOSE_CARD_HEADER",
+      "pixels": 6,
+      "face": 5,
+      "faces": {
+        "eng": 5,
+        "zhs": 0
+      }
+    },
+    {
+      "key": "gameplay_ui.TO_INSPECT_PROMPT",
+      "pixels": 6,
+      "face": 5,
+      "faces": {
+        "eng": 5,
+        "zhs": 0
+      }
+    },
+    {
+      "key": "gameplay_ui.COMBAT_REWARD_HEADER_LOOT",
+      "pixels": [
+        6,
+        8
+      ],
+      "face": 5,
+      "faces": {
+        "eng": 5,
+        "zhs": 0
+      }
+    },
+    {
+      "key": "gameplay_ui.TREASURE_BANNER",
+      "pixels": [
+        5,
+        6
+      ],
+      "face": 5,
+      "faces": {
+        "eng": 5,
+        "zhs": 0
+      }
+    },
+    {
+      "key": "main_menu_ui.ENABLE_TUTORIALS.title",
+      "pixels": 6,
+      "face": 5,
+      "faces": {
+        "eng": 5,
+        "zhs": 0
+      }
+    },
+    {
+      "key": "main_menu_ui.GENERIC_POPUP.confirm",
+      "pixels": [
+        4,
+        5
+      ],
+      "face": 5,
+      "faces": {
+        "eng": 5,
+        "zhs": 0
+      },
+      "substitutions": "0123456789 —"
+    },
+    {
+      "key": "main_menu_ui.GENERIC_POPUP.cancel",
+      "pixels": [
+        4,
+        5
+      ],
+      "face": 5,
+      "faces": {
+        "eng": 5,
+        "zhs": 0
+      },
+      "substitutions": "0123456789 —"
+    },
+    {
+      "key": "ftues.CONFIRM_BUTTON",
+      "pixels": 5,
+      "face": 5,
+      "faces": {
+        "eng": 5,
+        "zhs": 0
+      }
+    },
+    {
+      "key": "ftues.ASCENSION_SINGLEPLAYER_FTUE_TITLE",
+      "pixels": 6,
+      "face": 5,
+      "faces": {
+        "eng": 5,
+        "zhs": 0
+      }
+    },
+    {
+      "key": "game_over_screen.DISCOVERY_HEADER",
+      "pixels": 5,
+      "face": 5,
+      "faces": {
+        "eng": 5,
+        "zhs": 0
+      }
+    },
+    {
+      "key": "main_menu_ui.QUIT_CONFIRM_POPUP.header",
+      "pixels": [
+        4,
+        5,
+        6
+      ],
+      "face": 5,
+      "faces": {
+        "eng": 5,
+        "zhs": 0
+      },
+      "substitutions": "0123456789 —"
+    },
+    {
+      "key": "main_menu_ui.ABANDON_RUN_CONFIRMATION.header",
+      "pixels": [
+        4,
+        5,
+        6
+      ],
+      "face": 5,
+      "faces": {
+        "eng": 5,
+        "zhs": 0
+      },
+      "substitutions": "0123456789 —"
+    },
+    {
+      "key": "main_menu_ui.PROFILE_SCREEN.DELETE_CONFIRM_POPUP.title",
+      "pixels": [
+        4,
+        5,
+        6
+      ],
+      "face": 5,
+      "faces": {
+        "eng": 5,
+        "zhs": 0
+      },
+      "substitutions": "0123456789 —"
+    },
+    {
+      "key": "settings_ui.RESET_CONFIRMATION.header",
+      "pixels": [
+        4,
+        5,
+        6
+      ],
+      "face": 5,
+      "faces": {
+        "eng": 5,
+        "zhs": 0
+      },
+      "substitutions": "0123456789 —"
+    },
+    {
+      "key": "main_menu_ui.QUIT_CONFIRM_POPUP.body",
+      "pixels": [
+        4,
+        5
+      ],
+      "face": 0,
+      "faces": {
+        "eng": 0,
+        "zhs": 0
+      },
+      "substitutions": "0123456789 —"
+    },
+    {
+      "key": "main_menu_ui.ABANDON_RUN_CONFIRMATION.body",
+      "pixels": [
+        4,
+        5
+      ],
+      "face": 0,
+      "faces": {
+        "eng": 0,
+        "zhs": 0
+      },
+      "substitutions": "0123456789 —"
+    },
+    {
+      "key": "main_menu_ui.PROFILE_SCREEN.DELETE_CONFIRM_POPUP.description",
+      "pixels": [
+        4,
+        5
+      ],
+      "face": 0,
+      "faces": {
+        "eng": 0,
+        "zhs": 0
+      },
+      "substitutions": "0123456789 —"
+    },
+    {
+      "key": "settings_ui.RESET_GAMEPLAY_CONFIRMATION.body",
+      "pixels": [
+        4,
+        5
+      ],
+      "face": 0,
+      "faces": {
+        "eng": 0,
+        "zhs": 0
+      },
+      "substitutions": "0123456789 —"
+    },
+    {
+      "key": "main_menu_ui.PROFILE_SCREEN.DELETE_CONFIRM_POPUP.delete",
+      "pixels": [
+        4,
+        5
+      ],
+      "face": 5,
+      "faces": {
+        "eng": 5,
+        "zhs": 0
+      },
+      "substitutions": "0123456789 —"
+    },
+    {
+      "key": "main_menu_ui.PROFILE_SCREEN.DELETE_CONFIRM_POPUP.cancel",
+      "pixels": [
+        4,
+        5
+      ],
+      "face": 5,
+      "faces": {
+        "eng": 5,
+        "zhs": 0
+      },
+      "substitutions": "0123456789 —"
+    }
+  ],
+  "groups": [
+    {
+      "key_pattern": "^gameplay_ui\\.SORT_(?:OBTAINED|TYPE|COST|ALPHABET)$",
+      "pixels": 6,
+      "face": 5,
+      "faces": {"eng": 5, "zhs": 0, "zht": 0, "jpn": 0, "kor": 0, "pol": 0, "rus": 0, "tha": 0}
+    },
+    {
+      "key_pattern": "^relic_collection\\.(?:ANCIENT|ANCIENT_SUBCATEGORY|COMMON|EVENT|RARE|SHOP|STARTER|UNCOMMON)$",
+      "pixels": 5,
+      "face": 0,
+      "faces": {"eng": 0, "zhs": 5},
+      "rich_face": "bold"
+    },
+    {
+      "key_pattern": "^potion_lab\\.(?:COMMON|UNCOMMON|RARE|SPECIAL)$",
+      "pixels": 5,
+      "face": 5,
+      "rich_face": "bold"
+    },
+    {
+      "key_pattern": "^(?:ancients\\.(?:NEOW|OROBAS|PAEL|TEZCATARA|NONUPEIPE|TANX|VAKUU|DARV)\\.title|relic_collection\\.UNKNOWN_ANCIENT)$",
+      "pixels": 5,
+      "face": 0,
+      "faces": {"eng": 0, "zhs": 5}
+    },
+    {
+      "key_pattern": "^card_reward_ui\\..*\\.name$",
+      "pixels": 6,
+      "face": 5,
+      "faces": {
+        "eng": 5,
+        "zhs": 0
+      },
+      "substitutions": "0123456789+.,:?! —"
+    },
+    {
+      "key_pattern": "^ftues\\..*_TITLE$",
+      "pixels": 5,
+      "face": 5,
+      "faces": {
+        "eng": 5,
+        "zhs": 0
+      },
+      "substitutions": "0123456789+.,:?! —"
+    },
+    {
+      "key_pattern": "^ancients\\.[^.]+\\.title$",
+      "pixels": [
+        10,
+        14
+      ],
+      "face": 4,
+      "faces": {
+        "eng": 4,
+        "zhs": 0
+      },
+      "substitutions": "0123456789+.,:?! —"
+    },
+    {
+      "key_pattern": "^ancients\\.[^.]+\\.epithet$",
+      "pixels": 4,
+      "face": 6,
+      "faces": {
+        "eng": 6,
+        "zhs": 0
+      },
+      "substitutions": "0123456789+.,:?! —"
+    },
+    {
+      "key_pattern": "^game_over_screen\\.BANNER\\.",
+      "pixels": [
+        6,
+        8,
+        10
+      ],
+      "face": 5,
+      "faces": {
+        "eng": 5,
+        "zhs": 0
+      },
+      "substitutions": "0123456789+.,:?! —"
+    },
+    {
+      "key_pattern": "^game_over_screen\\.(?:SCORE_LINE|BUTTON)\\.",
+      "pixels": 5,
+      "face": 5,
+      "faces": {
+        "eng": 5,
+        "zhs": 0
+      },
+      "substitutions": "0123456789+.,:?! —"
+    },
+    {
+      "key_pattern": "^game_over_screen\\.(?:QUOTES\\.|ENCOUNTER_QUOTE_|VICTORY_DAMAGE_LOCAL)",
+      "pixels": 5,
+      "face": 6,
+      "faces": {
+        "eng": 6,
+        "zhs": 0
+      },
+      "substitutions": "0123456789+.,:?! —"
+    },
+    {
+      "key_pattern": "^characters\\.[^.]+\\.(?:title|titleObject|possessiveAdjective|pronounObject|pronounPossessive|pronounSubject)$",
+      "pixels": 5,
+      "face": 6,
+      "faces": {
+        "eng": 6,
+        "zhs": 0
+      },
+      "substitutions": "0123456789+.,:?! —"
+    },
+    {
+      "key_pattern": "^(?:encounters|events|ancients)\\.[^.]+\\.(?:loss|title)$",
+      "pixels": 5,
+      "face": 6,
+      "faces": {
+        "eng": 6,
+        "zhs": 0
+      },
+      "substitutions": "0123456789+.,:?! —"
+    }
+  ]
+}

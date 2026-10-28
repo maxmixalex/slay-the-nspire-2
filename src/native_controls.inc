@@ -1,0 +1,172 @@
+// Every source scrollbar train has the same hover enlargement. Keep the
+// track and hit target fixed while scaling its artwork about its own centre.
+static void native_scrollbar_grabber(Canvas&c,int x,int y,int w,int h){
+ const auto visual=c.control_visual("SCROLLBAR_GRABBER",x-3,y-3,w+6,h+6,ButtonFamily::Scrollbar,false,true);
+ // scrollbar_train_large is a square train, not a proportional thumb. A
+ // nearly full-height logical thumb must never stretch its source artwork.
+ const int side=mx(1,(mn(w,h)*visual.scale+2048)/4096);
+ c.ui(I6_ScrollbarGrabber,x+(w-side)/2,y+(h-side)/2,side,side);
+}
+// Original component artwork preserves its aspect ratio, including the
+// authored transparent margins. Callers own the larger readable hit target.
+static void native_control(Canvas&c,const char*kind,int x,int y,int w,int h,const char*label,bool enabled,bool selected,bool cross=false){
+ const auto visual=c.control_visual(label,x,y,w,h,kind[0]=='B'?ButtonFamily::Back:ButtonFamily::Action,selected,enabled);
+ const int image=c.a.content.world_image("common",kind);const unsigned opacity=255;
+ int image_h=h;
+ if(image>=0){const auto info=c.a.content.image(image);
+  if(info.w&&info.h){const int fitted=mn(w,h*info.w/info.h);
+   const int scaled=mx(1,fitted*visual.scale/4096);x+=(w-scaled)/2;w=scaled;image_h=mx(1,w*info.h/info.w);}}
+ Canvas layer=c;layer.brightness=uint8_t(div255(unsigned(c.brightness)*visual.shade));
+ if(image>=0){
+  const int height=image_h,top=y+(h-height)/2;
+  Canvas shadow=layer;shadow.tint_red=shadow.tint_green=shadow.tint_blue=0;shadow.picture(image,x+2,top+2,w,height,64);
+  layer.picture(image,x,top,w,height,opacity);
+  char key[48]{};TextBuffer b{key,sizeof key,0};b.text(kind);b.text("_OUTLINE");
+  if(visual.hover&&enabled){int outline=c.a.content.world_image("common",key);if(outline>=0){Canvas glow=layer;glow.tint_red=240;glow.tint_green=180;glow.tint_blue=0;glow.picture(outline,x,top,w,height,unsigned(visual.hover)*255/4096,presentation::Add);}}
+ }else layer.ui(U_RewardSkip,x,y,w,h,opacity);
+ int label_x=x+3,label_w=w-6;
+ if(image>=0&&(kind[0]=='B'||kind[0]=='C')){int icon=cross&&c.a.content.version()>=Ui6ContentVersion?c.a.content.ui_image(I6_CloseX):c.a.content.world_image("common",kind[0]=='B'?"BACK_ARROW":"CONFIRM_TICK");
+  if(icon>=0){
+   if(!*label){
+    // The character-select ConfirmButton contains an 80px cream tick on
+    // its 267px image, and no text node. Keep the glyph centered in the
+    // calculator target while bounding it to the available height.
+    const int size=mn(h,mx(1,w*80/267));Canvas glyph=layer;
+    glyph.tint_green=uint8_t(div255(unsigned(glyph.tint_green)*246));glyph.tint_blue=uint8_t(div255(unsigned(glyph.tint_blue)*226));
+    glyph.picture(icon,x+(w-size)/2,y+(h-size)/2,size,size,opacity);return;
+   }
+   layer.picture(icon,x+10,y+(h-15)/2,15,15,opacity);label_x=x+28;label_w=w-36;}}
+ layer.centered(label,label_x+1,y+(h-12)/2+1,label_w,12,Ink);
+ layer.centered(label,label_x,y+(h-12)/2,label_w,12,enabled?rgb(255,246,226):Muted);
+}
+static void native_proceed(Canvas&c,const char*label,bool enabled=true,bool selected=false){
+ using namespace proceed_layout;
+ auto&a=c.a;const auto&s=a.game;
+ // A retained reward cursor must not keep pointer-driven Proceed focused.
+ selected=selected&&!a.pointer.visible;
+ // Overlays retain the room node. Its identity must not change when the map,
+ // a hover tip, settings or the merchant inventory opens over that room.
+ const uint32_t key=uint32_t(s.world.run_seed)^uint32_t(s.world.run_seed>>32)^
+   (uint32_t(s.floor)*0x9e3779b9u)^(uint32_t(s.world.current_point)<<8)^
+   (uint32_t(s.world.act_index)<<16)^uint32_t(s.phase);
+ const auto entry=a.proceed_motion.observe(key,enabled,a.map_clock_ms);
+ const auto visual=c.control_visual("ORIGINAL_PROCEED",X,Y,W,H,ButtonFamily::Proceed,selected,enabled,entry.x);
+ if(ImageX+entry.x>=ScreenW)return;
+ const int normal=c.a.content.world_image("common","PROCEED"),outline=c.a.content.world_image("common","PROCEED_OUTLINE");
+ if(normal<0){native_control(c,"PROCEED",X+entry.x,Y,W,H,label,enabled,selected);return;}
+ const auto px=[&](int value){return entry.x+PivotX+(value-PivotX)*visual.scale/4096;};
+ const auto py=[&](int value){return PivotY+(value-PivotY)*visual.scale/4096;};
+ const int left=px(ImageX),top=py(ImageY),width=mx(1,ImageW*visual.scale/4096),height=mx(1,ImageH*visual.scale/4096);
+ Canvas layer=c;layer.brightness=uint8_t(div255(unsigned(c.brightness)*visual.shade));
+ Canvas shadow=layer;shadow.tint_red=shadow.tint_green=shadow.tint_blue=0;shadow.picture(normal,left+2,top+2,width,height,64);
+ if(outline>=0&&visual.hover&&entry.outline)layer.picture(outline,left,top,width,height,unsigned(visual.hover)*unsigned(entry.outline)/4096,presentation::Add);
+ Canvas face=layer;face.brightness=uint8_t(div255(unsigned(face.brightness)*unsigned(entry.shade)));
+ small_material_icon(face,normal,left,top,width,height,visual.saturation,visual.value,true);
+ // KreonBold/SourceHanSerifSCBold, source 34px at 4/21. Preserve the
+ // original red outline instead of an oversized regular 12px label.
+ layer.font_face=5;
+ const int label_x=px(LabelX),text_y=py(LabelY),label_w=mx(1,LabelW*visual.scale/4096);
+ Canvas text_shadow=layer;text_shadow.opacity=uint8_t(div255(layer.opacity*32));
+ text_shadow.text_fitted(label,label_x+1,text_y+1,label_w,FontSize,0,5,true);
+ layer.fitted(label,label_x,text_y,label_w,FontSize+3,FontSize,5,rgb(255,246,226),true,true,true,false,rgb(87,16,8));
+}
+static void native_proceed_action(Canvas&c,UiAction action,bool enabled=true){
+ if(enabled)c.action(proceed_layout::X+c.a.proceed_motion.sample(c.a.map_clock_ms).x,proceed_layout::Y,proceed_layout::W,proceed_layout::H,action);
+}
+static void native_proceed_choice(Canvas&c,int choice,bool enabled=true){
+ if(enabled)c.hit(proceed_layout::X+c.a.proceed_motion.sample(c.a.map_clock_ms).x,proceed_layout::Y,proceed_layout::W,proceed_layout::H,HitKind::Choice,choice);
+}
+static void native_back(Canvas&c,int x,int y,int w,int h,const char*,bool enabled=true,bool selected=false){native_control(c,"BACK",x,y,w,h,"",enabled,selected);}
+// NBackButton positions its Control separately from its larger child sprite.
+// NGame FourByThree is 1680x1260. Source Image/Outline bounds are 267x150
+// and 273x156; KeepAspectCentered fits the complete 300x202 AtlasTexture
+// (including its margin), not just its 267x160 region. The 80px icon retains
+// its independent Control origin. The hit rectangle is a different node.
+static void native_original_back(Canvas&c,uint32_t opened=UINT32_MAX){
+ auto&a=c.a;const unsigned age=a.map_clock_ms-opened;
+ const int entry=opened==UINT32_MAX||age>=350?0:-27*(4096-room_curve::back_out(age*4096/350))/4096;
+ const auto visual=c.control_visual("ORIGINAL_BACK",0+entry,215,40,24,ButtonFamily::Back,false,true);
+ const int pivot_x=0+entry,pivot_y=226,scale=int(visual.scale);
+ const auto draw=[&](Canvas&layer,int id,int x,int y,int w,int h,unsigned alpha,unsigned mode){
+  if(id>=0)layer.picture(id,pivot_x+(x+entry-pivot_x)*scale/4096,pivot_y+(y-pivot_y)*scale/4096,
+                       mx(1,w*scale/4096),mx(1,h*scale/4096),alpha,mode);
+ };
+ const int back=a.content.world_image("common","BACK"),outline=a.content.world_image("common","BACK_OUTLINE");
+ Canvas shadow=c;shadow.tint_red=shadow.tint_green=shadow.tint_blue=0;
+ draw(shadow,back,1,210,47,32,64,presentation::Normal);
+ if(visual.hover)draw(c,outline,-2,208,49,34,unsigned(visual.hover)*255/4096,presentation::Add);
+ Canvas face=c;face.brightness=uint8_t(div255(unsigned(face.brightness)*visual.shade));
+ draw(face,back,-1,208,47,32,255,presentation::Normal);
+ draw(face,a.content.world_image("common","BACK_ARROW"),11,217,16,16,255,presentation::Normal);
+ c.action(0+entry,215,40,24,UiAction::Back);
+}
+static void native_close(Canvas&c,int x,int y,int w,int h,bool selected=false){native_control(c,"BACK",x,y,w,h,"",true,selected,true);}
+static void native_confirm(Canvas&c,int x,int y,int w,int h,const char*label,bool enabled=true,bool selected=false){native_control(c,"CONFIRM",x,y,w,h,label,enabled,selected);}
+static void native_original_confirm(Canvas&c,UiAction action,uint32_t opened=UINT32_MAX,bool enabled=true){
+ auto&a=c.a;
+ const uint32_t key=NativeConfirmPresentation::identity(opened,a.game.seed,unsigned(action),unsigned(a.game.phase));
+ const int entry=a.native_confirm_motion.observe(key,enabled,opened,a.map_clock_ms);
+ // NConfirmButton derives (1520,906) from the actual 1680x1260 viewport.
+ // Its child textures use the same full AtlasTexture fitting as Back.
+ const auto visual=c.control_visual("ORIGINAL_CONFIRM",280+entry,215,40,24,ButtonFamily::Action,false,true);
+ const int pivot_x=320+entry,pivot_y=226,scale=int(visual.scale);
+ const auto draw=[&](Canvas&layer,int id,int x,int y,int w,int h,unsigned alpha,unsigned mode){
+  if(id>=0)layer.picture(id,pivot_x+(x+entry-pivot_x)*scale/4096,pivot_y+(y-pivot_y)*scale/4096,
+                       mx(1,w*scale/4096),mx(1,h*scale/4096),alpha,mode);
+ };
+ const int face=a.content.world_image("common","CONFIRM"),outline=a.content.world_image("common","CONFIRM_OUTLINE");
+ Canvas shadow=c;shadow.tint_red=shadow.tint_green=shadow.tint_blue=0;
+ draw(shadow,face,276,210,47,32,64,presentation::Normal);
+ if(enabled&&visual.hover)draw(c,outline,273,208,49,34,unsigned(visual.hover)*255/4096,presentation::Add);
+ Canvas button=c;button.brightness=uint8_t(div255(unsigned(c.brightness)*visual.shade));
+ draw(button,face,274,208,47,32,255,presentation::Normal);
+ button.tint_green=uint8_t(div255(unsigned(button.tint_green)*246));button.tint_blue=uint8_t(div255(unsigned(button.tint_blue)*226));
+ draw(button,a.content.world_image("common","CONFIRM_TICK"),293,217,16,16,255,presentation::Normal);
+ c.action(280+entry,215,40,24,action,enabled);
+}
+static void native_end_turn(Canvas&c,bool enabled){
+ auto&a=c.a;const auto visual=c.control_visual("END_TURN",combat_controls::EndX,combat_controls::EndY,combat_controls::EndW,combat_controls::EndH,ButtonFamily::EndTurn,false,enabled);
+ const int art_x=combat_controls::EndX-2,art_y=combat_controls::EndY-5,art_w=combat_controls::EndW+4,art_h=combat_controls::EndH+8;
+ const int shift=(visual.y+2048)/4096,normal=a.content.ui_image(U_EndTurnNative),hover=a.content.ui_image(U_EndTurnHover);
+ bool playable=false;for(unsigned i=0;i<a.game.hand.count;i++)if(can_play_card(a.game,a.game.hand.ids[i])){playable=true;break;}
+ const uint16_t encounter=a.game.enemy_world.active?uint16_t(256+unsigned(a.game.enemy_world.encounter)):a.game.encounter;
+ const auto glow=a.end_turn_glow.observe({a.game.seed,a.game.floor,a.game.world.combat_count,encounter},enabled&&!playable,a.map_clock_ms);
+ const int glow_image=a.content.ui_image(U_EndTurnGlow);
+ const auto draw_glow=[&](int alpha,int scale,unsigned red,unsigned green){
+  if(!alpha||glow_image<0)return;
+  // All three original TextureRects have the same 512x256 bounds and
+  // (256,128) pivot. Keep their shared center through the 320px adaptation.
+  const int w=(art_w*scale+2048)/4096,h=(art_h*scale+2048)/4096;
+  Canvas light=c;light.tint_red=uint8_t(div255(unsigned(c.tint_red)*red));
+  light.tint_green=uint8_t(div255(unsigned(c.tint_green)*green));
+  light.picture(glow_image,art_x+(art_w-w)/2,art_y+shift+(art_h-h)/2,w,h,unsigned(alpha)*255/4096,presentation::Add);
+ };
+ draw_glow(glow.pulse_alpha,glow.pulse_scale,64,223);
+ Canvas layer=c;layer.brightness=uint8_t(div255(unsigned(c.brightness)*visual.shade));
+ if(normal>=0){layer.picture(normal,art_x,art_y+shift,art_w,art_h);
+  if(visual.hover&&hover>=0)layer.picture(hover,art_x,art_y+shift,art_w,art_h,unsigned(visual.hover)*255/4096);
+ }else layer.picture(A_EndTurn,art_x,art_y+shift,art_w,art_h);
+ draw_glow(glow.base_alpha,glow.base_scale,0,212);
+ const uint16_t cream=rgb(255,246,226),focus=playable?rgb(255,79,67):rgb(0,255,255);
+ uint16_t color=enabled?blend(cream,focus,unsigned(visual.hover)*255/4096):Muted;
+ layer.centered("结束回合",combat_controls::EndX+2,combat_controls::EndY+8+shift,combat_controls::EndW-2,10,rgb(19,31,46));
+ layer.centered("结束回合",combat_controls::EndX+1,combat_controls::EndY+7+shift,combat_controls::EndW-2,10,color);
+ // Bar is a sibling of Visuals: its authored (8,-11) offset does not
+ // inherit the pressed artwork's downward shift. No temporary image/pool.
+ if(a.long_press){
+ const auto bar=a.end_turn_hold.visual();
+ if(bar.alpha_q12){
+  const int x=combat_controls::EndX+3,y=combat_controls::EndY-3,w=int((uint64_t(bar.width_q12)*4+21*2048)/(21*4096)),h=1;
+  const unsigned alpha=(bar.alpha_q12*255+2048)/4096;
+  Canvas outline=c;outline.opacity=uint8_t(div255(unsigned(c.opacity)*div255(alpha*128)));
+  outline.rect(x-1,y-1,w+2,h+2,rgb(0,0,0));
+  // Source red/green exceed1.0. Multiply by the fading alpha before
+  // clamping their additive contribution; premature color clamping dims it.
+  const unsigned coverage=div255(alpha*c.opacity);
+  const uint16_t color=rgb(mn(255,div255(bar.red*coverage)),mn(255,div255(bar.green*coverage)),mn(255,div255(bar.blue*coverage)));
+  Canvas fill=c;fill.opacity=255;
+  for(int yy=mx(0,y);yy<mn(c.clip_h,y+h);++yy)for(int xx=mx(0,x);xx<mn(c.clip_w,x+w);++xx)fill.paint(yy*c.pitch+xx,color,255,presentation::Add);
+ }
+ }
+ c.hit(combat_controls::EndX,combat_controls::EndY,combat_controls::EndW,combat_controls::EndH,HitKind::Command,(int)Key::EndTurn,enabled);
+}

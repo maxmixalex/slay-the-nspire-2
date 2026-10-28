@@ -1,0 +1,277 @@
+{
+  "schema": 1,
+  "status": "passed",
+  "reference": "v0.111.0 / 41cef1ea",
+  "scope": "Isolated Chromium DOM and Canvas using the actual self-contained offline HTML; private captures and generated save remain outside source control. Browser timings are not calculator performance.",
+  "browser": "134.0.6998.35",
+  "playwright": "1.51.1",
+  "rejected_candidate": {
+    "runtime_checkpoint": "1ad378862fae54fc8c8b346c2680b5f448e26883",
+    "html_bytes": 115768824,
+    "html_sha256": "9531c22d25be4a29d355e7b0d5293fd379c9813578b02469c0337957c3fe4e76",
+    "package_journal": "ui5-package-release-final-20c09a397e65",
+    "browser_journal": "ui5-offline-browser-isolated-c54f6a9cff7e",
+    "native_reproduction_journal": "ui5-split-v22-reproduction-22fbea92d591",
+    "checks_completed": 0,
+    "page_error": "Startup failed. Please check the resource files. The content pack failed validation.",
+    "root_cause": "SplitResourceSource::open retained an inner NSP2 maximum of 21; both actual published NSL1 language files contain version 22. Full-pack runtime entry accepted the same content, so full-pack regressions did not exercise this gate.",
+    "external_requests": 0
+  },
+  "earlier_host_failure": {
+    "journal": "ui5-offline-browser-69e6533ec8f6",
+    "finding": "Ordinary tool sandbox blocked Chromium launch: sandbox_host_linux.cc shutdown EPERM. No page loaded. Retried through approved isolated execution using a fresh temporary browser profile."
+  },
+  "repair": {
+    "runtime_file": "src/resource_source.cpp",
+    "change": "Use FrontendContentVersion for the split adapter upper bound; keep structural/locale/bounds checks and retain no integrity-only payload scan.",
+    "test": "tests/split_resource_regression.cpp",
+    "coverage": "Every supported version 17..FrontendContentVersion, both languages, direct and streaming sources; current+1 remains rejected.",
+    "quick_checks": 1932,
+    "native_adapter_bytes": 104
+  },
+  "acceptance": {
+    "runtime_checkpoint": "1c774c0847ef8e47b2bd23fd3bc6a11635d8e219",
+    "resource_checkpoint": "1ad378862fae54fc8c8b346c2680b5f448e26883",
+    "package": {
+      "journal": "ui5-final-package-8fec722742ee",
+      "status": "passed",
+      "source_changed": false,
+      "log_sha256": "afbab38cfb0279ba669969899c4b4b44319a6beb520253dddb0fef5818543e45"
+    },
+    "artifacts": [
+      {
+        "file": "Slay-the-Nspire-2-0.17-ui5-bilingual-calculator.zip",
+        "bytes": 76867136,
+        "sha256": "efa945025d9a4597ca28be5ac1ff5094d66596fa7972cb48a0317438e5f09af9"
+      },
+      {
+        "file": "Slay-the-Nspire-2-0.17-ui5-bilingual-offline.html",
+        "bytes": 115769276,
+        "sha256": "2cf225ac0cef59a943fb603c3cd44b00ac4cabfc6da91bd76c50b953cc05fdd6"
+      }
+    ],
+    "calculator_installed_bytes_before_saves": 82267347,
+    "browser_run": {
+      "journal": "ui5-final-offline-browser-9fa0aa71f594",
+      "status": "passed",
+      "source_changed": false,
+      "log_sha256": "afe5b2940f79dbbbdcee4019d095c9f6dee59e637d085af3f1f16f1317b3d8b2"
+    },
+    "started_at": "2026-10-24T03:13:20.938Z",
+    "ended_at": "2026-10-24T03:14:11.754Z",
+    "checks_completed": 9,
+    "checks": [
+      "fresh English startup, localized DOM and ready Canvas",
+      "DOM Confirm starts a run; S stores a nonempty v15 browser save",
+      "O load returns through the real keyboard handler without changing stored save bytes",
+      "reload offers Continue and resumed run saves the same canonical bytes",
+      "Chinese language selection, confirmation, Continue and S/O share the original save",
+      "reload remembers Chinese and the same save",
+      "cancelling the language confirmation preserves the selected language and save",
+      "visible 10-second performance control completes while rendering the card collection",
+      "no page errors or external resource requests"
+    ],
+    "page_errors": 0,
+    "external_requests": 0,
+    "save": {
+      "file": "browser-test-save-v15.bin",
+      "bytes": 230088,
+      "sha256": "f6b8a659663d7a57c11fdd6e041dbb0644894abca3d78fcb4eb00a09d3c23bb3",
+      "canonical_bytes_unchanged_after_reload_continue_and_cross_language_save": true
+    },
+    "raw_private_report": {
+      "file": "browser-acceptance.json",
+      "bytes": 12393,
+      "sha256": "e6005edf6be0c9c99eea94182c5a82df21089f8595e699334b605d0d388f6698"
+    },
+    "visual_review": {
+      "captures": [
+        {
+          "file": "browser-title-eng.png",
+          "bytes": 74881,
+          "sha256": "4c00876b278358c65e1245e09c054aa7baac12e9a17507b884f3796a75871b32",
+          "width": 320,
+          "height": 240
+        },
+        {
+          "file": "browser-character-eng.png",
+          "bytes": 85817,
+          "sha256": "e2e8e494f770c473547151d3944fe78eeb4e5c42d6844395ffc8c04834406fd4",
+          "width": 320,
+          "height": 240
+        },
+        {
+          "file": "browser-run-eng.png",
+          "bytes": 80592,
+          "sha256": "46da9296a6df5696c76d72f4e07ee90d57265f505a4c76e893843e7c58bc3064",
+          "width": 320,
+          "height": 240
+        },
+        {
+          "file": "browser-loaded-eng.png",
+          "bytes": 80649,
+          "sha256": "f68600633707bc66bf458d572c3f70644960566a9d0c71d4bb06cdb2897cd1e5",
+          "width": 320,
+          "height": 240
+        },
+        {
+          "file": "browser-continue-eng.png",
+          "bytes": 76226,
+          "sha256": "7b6b9a8740a6f07fe6c151ed10cabaaba3ddadff8dbb16592d330db5ccac760f",
+          "width": 320,
+          "height": 240
+        },
+        {
+          "file": "browser-continue-zhs.png",
+          "bytes": 78529,
+          "sha256": "32cee137dabd899bfb29004123ffcd277f57529b19345e331563798efd2bfc7f",
+          "width": 320,
+          "height": 240
+        },
+        {
+          "file": "browser-run-zhs.png",
+          "bytes": 80657,
+          "sha256": "7af786b0b2335e1b1c2b1b9b3fd56de31a9c36fb0123961bcad5d5545e7a4e3f",
+          "width": 320,
+          "height": 240
+        },
+        {
+          "file": "browser-reloaded-zhs.png",
+          "bytes": 78432,
+          "sha256": "27bdecb5a044a743d2f8afb9774e0c2aea2fc41ce22c6d6ec030ec8d358ec545",
+          "width": 320,
+          "height": 240
+        },
+        {
+          "file": "browser-compendium-eng.png",
+          "bytes": 54039,
+          "sha256": "1270e466d9f62f2e8b9558c9c7cae35a1a4157b578ee4dfbfcec5dba79d19a66",
+          "width": 320,
+          "height": 240
+        },
+        {
+          "file": "browser-character-settled-eng.png",
+          "bytes": 84912,
+          "sha256": "f293be59d0052621feb31b888aecd374ecc8cff5ae09d462bf5ef7d2e3e775b6",
+          "width": 320,
+          "height": 240
+        },
+        {
+          "file": "browser-character-settled-zhs.png",
+          "bytes": 85853,
+          "sha256": "bf917776714d72aacc34d7efd2e619571f3f6aa95e08924c88098b0b19ad8fc6",
+          "width": 320,
+          "height": 240
+        }
+      ],
+      "reviewed_all_captures": true,
+      "observations": [
+        "English and Chinese title/Continue controls and run previews render with the selected locale.",
+        "The same saved Neow event renders in both languages; visible options and the event reader control remain on screen.",
+        "The English card collection displays both card rows and its footer controls.",
+        "The immediate character-entry capture includes the documented 500 ms left-to-right information-panel animation. Separate 700 ms English and Chinese captures show complete titles and descriptions inside the final panel."
+      ],
+      "settled_character_run": {
+        "journal": "ui5-final-character-settled-2e30b88443b8",
+        "status": "passed",
+        "source_changed": false,
+        "log_sha256": "2c985309fe2ce7683da3d7fba746ecfca72a902c93a6ef7f38fe942a44c9ab34"
+      },
+      "settled_character_wait_ms": 700,
+      "private_supplement_driver": {
+        "file": "check_character_settled.js",
+        "bytes": 2500,
+        "sha256": "fcceb4844bf65e0fb135b7cd7781212331e6cc009c1801431f9ed8b30dc06162"
+      }
+    },
+    "performance_smoke": {
+      "scope": "Current browser CPU and Canvas2D submission intervals; excludes compositor/display FPS.",
+      "first_ready_wall_ms": 8909,
+      "first_ready_scope": "Local navigation including parsing the 115769276-byte embedded HTML and awaiting the ready Canvas.",
+      "last_english_initialization_ms": 642.5999999996275,
+      "initialization_scope": "Includes resource decoding, WASM initialization and game startup; excludes the first draw.",
+      "finished_reason": "complete",
+      "collection": {
+        "scene": "collection",
+        "interval": {
+          "count": 300,
+          "total_ms": 9999.600000000559,
+          "max_ms": 40,
+          "over_50ms": 0,
+          "over_100ms": 0,
+          "over_250ms": 0
+        },
+        "update": {
+          "count": 601,
+          "total_ms": 3.9999999990686774,
+          "max_ms": 0.10000000055879354,
+          "over_50ms": 0,
+          "over_100ms": 0,
+          "over_250ms": 0
+        },
+        "render": {
+          "count": 301,
+          "total_ms": 298.80000000912696,
+          "max_ms": 2.599999999627471,
+          "over_50ms": 0,
+          "over_100ms": 0,
+          "over_250ms": 0
+        },
+        "conversion": {
+          "count": 301,
+          "total_ms": 48.100000001490116,
+          "max_ms": 0.6000000005587935,
+          "over_50ms": 0,
+          "over_100ms": 0,
+          "over_250ms": 0
+        },
+        "present": {
+          "count": 301,
+          "total_ms": 14.200000001117587,
+          "max_ms": 0.20000000018626451,
+          "over_50ms": 0,
+          "over_100ms": 0,
+          "over_250ms": 0
+        },
+        "read_calls": 0,
+        "read_bytes": 0,
+        "resource_copy_ms": 0
+      },
+      "resource_total": {
+        "read_calls": 0,
+        "read_bytes": 0,
+        "copy_ms": 0
+      },
+      "comparison": "A 10-second functional profiler acceptance, without a baseline. Not compositor/display FPS or a physical-calculator speed claim."
+    },
+    "actual_split_resources": [
+      {
+        "language": "eng",
+        "virtual_bytes": 76685257,
+        "checks": 5457,
+        "byte_identical_to_selected_complete_pack": true,
+        "native_adapter_bytes": 104,
+        "journal": "ui5-final-split-eng-c39db1dbe984",
+        "status": "passed",
+        "source_changed": false,
+        "log_sha256": "a27ecbfd42e1749dc05d8d98c2d54878853825da3278eed3f7f7430d562f385f"
+      },
+      {
+        "language": "zhs",
+        "virtual_bytes": 79467968,
+        "checks": 5583,
+        "byte_identical_to_selected_complete_pack": true,
+        "native_adapter_bytes": 104,
+        "journal": "ui5-final-split-zhs-a95516919f95",
+        "status": "passed",
+        "source_changed": false,
+        "log_sha256": "d27c39520023de749c62d57aafed7dbc813d0e972986c54bd500eef62d9d5930"
+      }
+    ],
+    "limits": [
+      "This report accepts the actual browser artifact and split-resource adapter, not ordinary Firebird execution or physical-calculator performance.",
+      "The source report contains hashes and observations only. Derived game images, generated save bytes and the embedded-content HTML remain private.",
+      "Passing native/WASM, DOM and Canvas flows does not establish a percentage of visual parity with an unmodified original-game capture."
+    ]
+  }
+}

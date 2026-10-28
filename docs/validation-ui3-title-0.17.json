@@ -1,0 +1,107 @@
+{
+  "schema": 1,
+  "recorded_at_utc": "2026-10-23",
+  "source_checkpoint": "3843e8e626317da0c1508fab02a2ed4a627f9fdd",
+  "reference_release": "v0.111.0 / 41cef1ea",
+  "scope": "Native original-title atlas, light_large animation, bilingual frontend and legacy-atlas compatibility",
+  "platform": "Linux native Release, clang 18, CMake/Ninja, SPIRE_X11=OFF",
+  "portable_followup": "The 3843 GitHub Actions ARM build failed because title_scene.hpp included cstdint, unavailable to the freestanding toolchain. Replacing it with the project's stdint.h convention and rerunning ARM is a separate pending checkpoint; native passes do not close this build failure.",
+  "journal_directory": "build/journal",
+  "journal_receipts": [
+    {
+      "file": "ui3-glow-native-build-2fcea1f7047a.json",
+      "result": "passed",
+      "targets": ["canvas_fast_path_regression", "world_frontend_ui_regression"]
+    },
+    {
+      "file": "ui3-glow-atlas-8f5d0f06d68c.json",
+      "result": "passed",
+      "operation": "Generate original-title atlas from the private reference PCK"
+    },
+    {
+      "file": "ui3-glow-native-targeted-3709973720f3.json",
+      "result": "passed",
+      "tests": 2,
+      "failed": 0,
+      "ctest_seconds": 4.49
+    },
+    {
+      "file": "ui3-glow-legacy-eng-2c282d81c7d3.json",
+      "result": "passed",
+      "checks": 2195,
+      "pack": "ui3-assets/v20-hybrid/retained-eng.nsp",
+      "pack_bytes": 76521355
+    },
+    {
+      "file": "ui3-glow-legacy-zhs-db7bad23768c.json",
+      "result": "passed",
+      "checks": 2195,
+      "pack": "ui3-assets/v20-hybrid/retained-zhs.nsp",
+      "pack_bytes": 79304054
+    },
+    {
+      "file": "ui3-glow-actual-eng-5f41693f8cef.json",
+      "result": "passed",
+      "checks": 19343,
+      "pack": "ui3-assets/v20-hybrid-glow/retained-eng.nsp",
+      "pack_bytes": 76536957
+    },
+    {
+      "file": "ui3-glow-actual-zhs-93c0f3416779.json",
+      "result": "passed",
+      "checks": 19343,
+      "pack": "ui3-assets/v20-hybrid-glow/retained-zhs.nsp",
+      "pack_bytes": 79319656
+    }
+  ],
+  "receipt_checks": {
+    "all_journals_closed": true,
+    "all_returncodes": 0,
+    "all_source_changed": false,
+    "all_checkpoints_match": true
+  },
+  "atlas": {
+    "image_id": 4,
+    "format": 4,
+    "legacy_dimensions": [164, 106],
+    "current_dimensions": [164, 210],
+    "legacy_raw_bytes": 32274,
+    "current_raw_bytes": 47876,
+    "increment_bytes": 15602,
+    "legacy_raw_is_exact_current_prefix": true,
+    "prefix_comparison": "Direct byte equality after conversion; existing 106 rows contain static lettering and ten fire frames",
+    "new_band": {"first_row": 106, "height": 104, "source": "images/vfx/light.png"},
+    "manifest": "title-review/glow-atlas/title-logo.json",
+    "runtime": "A short-lived row view reuses image 4; no additional persistent bitmap, cache or pre-rendered glow frames"
+  },
+  "functional_coverage": [
+    "Row-view rendering matches an independent pixel oracle for raw, palette, alpha and sparse image formats, including clipping, scaling and additive modulation",
+    "Fixed-point light scale and brightness match the original curve/gradient oracle within one output pixel or intensity byte",
+    "Only the bounded title fire/glow region changes during animation",
+    "With the fire at the same phase, glow pixels outside the fire rectangle change",
+    "The complete title framebuffer repeats after the three-second glow period",
+    "New runtime renders legacy 164 by 106 atlases without requiring an asset upgrade",
+    "Frontend input, menu hit areas, Continue/abandon save lifecycle and presentation-only state remain covered"
+  ],
+  "visual_review": {
+    "reviewed_images": 10,
+    "languages": ["eng", "zhs"],
+    "capture_root": "title-review/native-3843-glow",
+    "files_in_each_language_directory": [
+      "frontend-title-new.ppm",
+      "frontend-title-glow-bright.ppm",
+      "frontend-title-continue.ppm",
+      "frontend-pause.ppm",
+      "frontend-abandon-confirm.ppm"
+    ],
+    "result": "Original gold lettering and cyan II, subtle cyan light, focus arrows, Continue facts, pause choices and confirmation text are visible without new clipping or overlap in either language",
+    "legacy_captures": "title-review/native-3843-old/{eng,zhs}",
+    "privacy": "PCK, converted packs, atlases and captured game images are private local artifacts, not committed source files"
+  },
+  "limits": [
+    "The implemented light is the original single CPUParticles2D light_large; the separate background GPU stars and fog are not implemented",
+    "Calculator adaptation uses phase zero, integer positions, fixed-point interpolation and RGB565 output; the original script randomizes the initial pre-process time",
+    "These are native functional and visual checks, not an unmodified-game framebuffer match, physical-calculator performance measurement or final ARM/Firebird acceptance",
+    "The full native suite was not rerun at this glow checkpoint; this receipt records the two affected native suites and four actual-pack frontend runs"
+  ]
+}

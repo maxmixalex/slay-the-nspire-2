@@ -1,0 +1,264 @@
+{
+  "schema": 1,
+  "status": "native_verified",
+  "reference": "v0.111.0 / 41cef1ea",
+  "executed_checkpoint": "06c7fd16e6d4d47dc25b628913ecdeef3a4fe76d",
+  "native_build": {
+    "journal": "next-native-build-57238d9eabab.json",
+    "journal_sha256": "38a57da926fa21914955ba84fd9881f1aa1738e54f6b3fc8f0d8b6e6e2e82d75",
+    "log_sha256": "16e5a54f2bb1f2ece17d78f4510599e8425ed31147d3a93c90f0e56e4e46315f",
+    "status": "passed",
+    "source_changed": false,
+    "binary": "world_ui_regression",
+    "binary_bytes": 6253552,
+    "binary_sha256": "0810cb3714c7291b88d50250566d893c639413ae5a4988e569f08d39bd71e8be"
+  },
+  "runs": [
+    {
+      "journal": "choice-world-ui-eng18-5200df7f9a01.json",
+      "journal_sha256": "199f03baf92ba8d11914b5cb11ac6bde14ef07aac2dcbbc30c035ef2213783d6",
+      "log_sha256": "89b08dabdec3b8fb59a80dee376ae4d4c028d9b2549eb2edd9361f96dc6b1289",
+      "status": "passed",
+      "returncode": 0,
+      "source_changed": false,
+      "checks": 13951,
+      "source_file_count": 513,
+      "source_sha256": "e4672a246cfd342e891bb2e2017520ee223e97dfc62a11453eb3c2936fbaf6b4",
+      "started_at": "2026-10-23T08:41:21.306687+00:00",
+      "ended_at": "2026-10-23T08:41:24.702350+00:00",
+      "resource": {
+        "name": "feedback-eng.nsp",
+        "bytes": 88663968,
+        "sha256": "716860f9a494bb0128148e9958a6e7ac45df02087269834ce27d4d866fbda697"
+      },
+      "profile": "eng",
+      "version": 18
+    },
+    {
+      "journal": "choice-world-ui-eng19-08d286714ddd.json",
+      "journal_sha256": "9e6c14bba4f276206049ad6af93c6ca67ab2843b894b58666eeee655cea2b16b",
+      "log_sha256": "89b08dabdec3b8fb59a80dee376ae4d4c028d9b2549eb2edd9361f96dc6b1289",
+      "status": "passed",
+      "returncode": 0,
+      "source_changed": false,
+      "checks": 13951,
+      "source_file_count": 513,
+      "source_sha256": "e4672a246cfd342e891bb2e2017520ee223e97dfc62a11453eb3c2936fbaf6b4",
+      "started_at": "2026-10-23T08:43:10.953484+00:00",
+      "ended_at": "2026-10-23T08:43:14.292310+00:00",
+      "resource": {
+        "name": "merchant-eng.nsp",
+        "bytes": 89206276,
+        "sha256": "7d5b124d8af605bae9766019bbf6c7a5f14c9ecac464c464244833f08e31f10f"
+      },
+      "profile": "eng",
+      "version": 19
+    },
+    {
+      "journal": "choice-world-ui-synthetic-9e44d38d84fd.json",
+      "journal_sha256": "a69b5adf00a430c280452e2196b3a0d9e34f8bd2911b77e01062fd4cb0032a78",
+      "log_sha256": "e116b117713c9d9a8a64c7d487e74c45b6be761db6fdac99486de41ce21a6edf",
+      "status": "passed",
+      "returncode": 0,
+      "source_changed": false,
+      "checks": 4497,
+      "source_file_count": 513,
+      "source_sha256": "e4672a246cfd342e891bb2e2017520ee223e97dfc62a11453eb3c2936fbaf6b4",
+      "started_at": "2026-10-23T08:41:14.246155+00:00",
+      "ended_at": "2026-10-23T08:41:15.071316+00:00",
+      "profile": "synthetic"
+    },
+    {
+      "journal": "choice-world-ui-zhs18-46b63b8cf346.json",
+      "journal_sha256": "3af7241cd436e4753eabf2bc468eb01eb5d37e81503e770312515bdfe4ebd1ac",
+      "log_sha256": "89b08dabdec3b8fb59a80dee376ae4d4c028d9b2549eb2edd9361f96dc6b1289",
+      "status": "passed",
+      "returncode": 0,
+      "source_changed": false,
+      "checks": 13951,
+      "source_file_count": 513,
+      "source_sha256": "e4672a246cfd342e891bb2e2017520ee223e97dfc62a11453eb3c2936fbaf6b4",
+      "started_at": "2026-10-23T08:41:21.299564+00:00",
+      "ended_at": "2026-10-23T08:41:24.444707+00:00",
+      "resource": {
+        "name": "feedback-zhs.nsp",
+        "bytes": 91439646,
+        "sha256": "74279728406d3362993ef82e92c5ee9196bb3d4a84d3ede7bfc9bb081914997b"
+      },
+      "profile": "zhs",
+      "version": 18
+    },
+    {
+      "journal": "choice-world-ui-zhs19-9f72a8cef7c4.json",
+      "journal_sha256": "6d451bbece3cb80f8c46e30c85b83258b261d7424c5ee22ebcd3275dbf32734f",
+      "log_sha256": "89b08dabdec3b8fb59a80dee376ae4d4c028d9b2549eb2edd9361f96dc6b1289",
+      "status": "passed",
+      "returncode": 0,
+      "source_changed": false,
+      "checks": 13951,
+      "source_file_count": 513,
+      "source_sha256": "e4672a246cfd342e891bb2e2017520ee223e97dfc62a11453eb3c2936fbaf6b4",
+      "started_at": "2026-10-23T08:43:10.994528+00:00",
+      "ended_at": "2026-10-23T08:43:14.285826+00:00",
+      "resource": {
+        "name": "merchant-zhs.nsp",
+        "bytes": 91981954,
+        "sha256": "d5ca11af7fb0a2cf95dd6f2aa534ea58e881eb446d9ba006582a1ee90e6dd850"
+      },
+      "profile": "zhs",
+      "version": 19
+    }
+  ],
+  "choice_screenshot_equivalence": [
+    {
+      "locale": "eng",
+      "file": "choice-consecutive-fast.ppm",
+      "v18_v19_byte_identical": true,
+      "sha256": "3db7cdc9ce8d6fa0811f14d2b09af87ff526b9d480bec5c4f5dbcc7dcf22b9a3"
+    },
+    {
+      "locale": "eng",
+      "file": "choice-consecutive.ppm",
+      "v18_v19_byte_identical": true,
+      "sha256": "bb8be791d25d81498a326bafc0b06b1a9debf3591258cd67b73fe7a6e9518f70"
+    },
+    {
+      "locale": "eng",
+      "file": "choice-knowledge-ready-fast.ppm",
+      "v18_v19_byte_identical": true,
+      "sha256": "20836570af409cafbe2e70a042ef5fd21977799bdc84f02340d88020eaf28d5b"
+    },
+    {
+      "locale": "eng",
+      "file": "choice-knowledge-ready.ppm",
+      "v18_v19_byte_identical": true,
+      "sha256": "e40535d2ad392d957412e30a884434786e1b081556d2595567e2c5f1446895dc"
+    },
+    {
+      "locale": "eng",
+      "file": "choice-toasty-before-fast.ppm",
+      "v18_v19_byte_identical": true,
+      "sha256": "5ec4eae828765273b11df9831b790c07ac6d0a9a7a93a33ef9979de4d3c5b770"
+    },
+    {
+      "locale": "eng",
+      "file": "choice-toasty-before.ppm",
+      "v18_v19_byte_identical": true,
+      "sha256": "9c1d0edbb1496891ff1773c321726c24773b7ab1a4256cf2dd3ab30cfec39cec"
+    },
+    {
+      "locale": "eng",
+      "file": "choice-toasty-ready-fast.ppm",
+      "v18_v19_byte_identical": true,
+      "sha256": "d606f923e2ba9801cc3e9808990aee40077a5b429784153ccf8acaf642af6e85"
+    },
+    {
+      "locale": "eng",
+      "file": "choice-toasty-ready.ppm",
+      "v18_v19_byte_identical": true,
+      "sha256": "4254f85808488fff59d3c68b7e8bfe02183380130090c4e884fa03b8e48eba79"
+    },
+    {
+      "locale": "zhs",
+      "file": "choice-consecutive-fast.ppm",
+      "v18_v19_byte_identical": true,
+      "sha256": "791375458274ba1f23af13bc9f26aec473f265eb6a0a6cdaf749709577f1aafa"
+    },
+    {
+      "locale": "zhs",
+      "file": "choice-consecutive.ppm",
+      "v18_v19_byte_identical": true,
+      "sha256": "970920d9782cd85f76f477c08166732fe7fb0f3eb13c4e65324bdc32e7877562"
+    },
+    {
+      "locale": "zhs",
+      "file": "choice-knowledge-ready-fast.ppm",
+      "v18_v19_byte_identical": true,
+      "sha256": "0746cd0975d0a9a5c181ca9af983a349ed0ddd7c73092f46b0d73b04aade4180"
+    },
+    {
+      "locale": "zhs",
+      "file": "choice-knowledge-ready.ppm",
+      "v18_v19_byte_identical": true,
+      "sha256": "2f20f2b822e2e7affa234bd1e7a78b630e0515272e39d1f561fce8640cb0488d"
+    },
+    {
+      "locale": "zhs",
+      "file": "choice-toasty-before-fast.ppm",
+      "v18_v19_byte_identical": true,
+      "sha256": "b8f07bf9a6a5856f3df9b8cdc3f73373e5b4841ce4e4743931ef246cdccd951f"
+    },
+    {
+      "locale": "zhs",
+      "file": "choice-toasty-before.ppm",
+      "v18_v19_byte_identical": true,
+      "sha256": "64bba325515b0ce940e5c242333cfebbdcde776fd8c8ff5828f0a69760475661"
+    },
+    {
+      "locale": "zhs",
+      "file": "choice-toasty-ready-fast.ppm",
+      "v18_v19_byte_identical": true,
+      "sha256": "09119d38caf3ec542cba37b211df6b27bbe1ae18df1693e3a78ba319cd047dc4"
+    },
+    {
+      "locale": "zhs",
+      "file": "choice-toasty-ready.ppm",
+      "v18_v19_byte_identical": true,
+      "sha256": "2bdb9e99c0018be1ec71b7d4b642b5edc05cb0924640a678feecb178fb97f54a"
+    }
+  ],
+  "visual_review": {
+    "profiles": [
+      "eng-v18",
+      "zhs-v18"
+    ],
+    "modes": [
+      "Normal",
+      "Fast"
+    ],
+    "frames": [
+      "Toasty before barrier",
+      "Toasty at barrier",
+      "Knowledge at barrier",
+      "Toasty after Knowledge continuation"
+    ],
+    "private_contact_sha256": "43c9be8c22c95e140e32a8448369fcea6d85f883e12b72d43ada65a23f3f0344",
+    "v19_basis": "All 16 corresponding choice captures are byte-identical to the inspected v18 captures; v19 was independently executed."
+  },
+  "bounded_memory": {
+    "native_clang_combat_feedback_bytes": 6040,
+    "prior_native_bytes": 6032,
+    "additional_bytes": 8,
+    "full_state_copy": false,
+    "save_data_changes": false,
+    "gameplay_rng_calls_added": false
+  },
+  "tested_barriers": {
+    "toasty_ticks_from_end_turn": {
+      "normal": 49,
+      "fast": 30
+    },
+    "knowledge_ticks_from_end_turn": {
+      "normal": 69,
+      "fast": 32
+    },
+    "tick_ms": 33,
+    "method": "advance() in host batches no greater than 250ms; independent expected tick constants"
+  },
+  "coverage": [
+    "Canonical State/save byte equality against observer-free core for normal and late answers",
+    "Hidden overlay blocks keyboard navigation/confirmation/detail, pointer activation, wheel paging and raw preselected-token actions",
+    "Pre-barrier pointer press cannot select newly visible card upon release",
+    "Visible pending choice remains answerable while generic busy is nonzero",
+    "Insufficient selection, rejected world relic token and rejected raw combat token remain answerable without accumulating wait twice",
+    "Knowledge enemy choice followed by Toasty player-start choice in one end-turn continuation",
+    "Loading pending canonical choice discards presentation-only delay",
+    "Existing lethal-first/second-hit, retaliation, summon/reused-slot, potion guards, overflow, HUD, merchant and real-time clock regressions"
+  ],
+  "limits": [
+    "Native validation does not constitute Firebird execution or physical-calculator performance evidence",
+    "Status/power strips and card/pile state still follow canonical state",
+    "Only Knowledge selection pre-wait is audited here; the remainder of that move and unaudited enemy models retain previous timing fallbacks",
+    "Choice layout is still a calculator UI adaptation, not a full original command/phase/visual replay"
+  ]
+}

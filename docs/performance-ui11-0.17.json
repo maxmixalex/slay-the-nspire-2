@@ -1,0 +1,521 @@
+{
+  "schema": 1,
+  "reference": {
+    "version": "v0.111.0",
+    "commit": "41cef1ea"
+  },
+  "date": "2026-10-25",
+  "scope": "Actual ordinary ARM/Firebird sessions; no UI11 WASM or browser performance measurement.",
+  "instrumentation": {
+    "format": "nspire-runtime-perf-1",
+    "clock": "foreground_SP804",
+    "clock_hz": 32768,
+    "hardware_code": 1,
+    "ndless_revision": 2022,
+    "startup_scope": "selected_resource_validation_and_app_init"
+  },
+  "final_candidate": {
+    "checkpoint": "e95893c9effaa9b5f7fd09158cca546d7b65ce3b",
+    "stage": "N",
+    "arm_build": "passed",
+    "launcher_bytes": 1506285,
+    "linked_allocation_bytes": 19806488,
+    "build_allocation_ceiling_bytes": 25165824,
+    "default_english_zhs_installation_bytes": 68776461,
+    "ui10_installation_bytes": 91604965,
+    "storage_reduction_percent": 24.9206,
+    "source_delta_from_l": "Only src/world_game_over_ui.inc changes: measure initial defeat quote at natural height and position at source quote_y+8. Other production source files are unchanged from L.",
+    "n_title_game_over_smoke": {
+      "status": "passed",
+      "journal": "ui11n-final-layout-release-383291056740.json",
+      "source_changed": false,
+      "report_sha256": "ff538db3bae3056d2c804410f138fb77d359f41a1de95e6340cb0b9581702605",
+      "scenes": {
+        "title": 206,
+        "room": 338,
+        "overlay": 67
+      },
+      "resource_read_failures": 0
+    },
+    "n_combat_performance_measured": false,
+    "remote_sync": "Blocked by two earlier automatic-approval rejections; no new push or remote verification claimed."
+  },
+  "sessions": [
+    {
+      "id": "k_ordinary_eng",
+      "checkpoint": "90d981c4e42e5f67f7a72b52f37fa1ac45410a71",
+      "language": "eng",
+      "private_report": "private-emulator/ui11k-play/performance-k.json",
+      "report_sha256": "c7e1e16c2993fb2ba5b6956d6340974c24d2b89a4a7325c0d1556a3699ac1fbd",
+      "closed_journal": "ui11k-ordinary-playability-8a5389fd74a2.json",
+      "journal_log_sha256": "edb15234bd8810f735fe000466a138f95d107af1ff38f24b9c283d9c79b8b9e6",
+      "normal_exit": true,
+      "source_changed": false,
+      "selected_virtual_pack_bytes": 63254932,
+      "startup_ms": 438.049,
+      "first_render_ms": 534.149,
+      "first_present_ms": 0.275,
+      "resource_total": {
+        "read_calls": 281,
+        "bytes_requested": 2241969,
+        "failures": 0,
+        "seeks": 259
+      },
+      "scenes": [
+        {
+          "scene": "title",
+          "frames": 194,
+          "interval_mean_ms": 38.018,
+          "update_mean_ms": 1.921,
+          "render_mean_ms": 35.684,
+          "present_mean_ms": 0.269,
+          "interval_max_ms": 391.357,
+          "over_50ms": 2,
+          "over_100ms": 2,
+          "over_250ms": 1,
+          "resource_mean_ms": 0.677,
+          "read_calls": 10,
+          "read_bytes_requested": 46248
+        },
+        {
+          "scene": "map",
+          "frames": 46,
+          "interval_mean_ms": 80.05,
+          "update_mean_ms": 0.26,
+          "render_mean_ms": 79.165,
+          "present_mean_ms": 0.271,
+          "interval_max_ms": 452.087,
+          "over_50ms": 46,
+          "over_100ms": 3,
+          "over_250ms": 1,
+          "resource_mean_ms": 8.8,
+          "read_calls": 28,
+          "read_bytes_requested": 171715
+        },
+        {
+          "scene": "combat",
+          "frames": 1324,
+          "interval_mean_ms": 35.8,
+          "update_mean_ms": 0.21,
+          "render_mean_ms": 27.88,
+          "present_mean_ms": 0.27,
+          "interval_max_ms": 382.874,
+          "over_50ms": 49,
+          "over_100ms": 14,
+          "over_250ms": 4,
+          "resource_mean_ms": 1.286,
+          "read_calls": 53,
+          "read_bytes_requested": 620934
+        },
+        {
+          "scene": "room",
+          "frames": 226,
+          "interval_mean_ms": 39.693,
+          "update_mean_ms": 1.262,
+          "render_mean_ms": 29.288,
+          "present_mean_ms": 0.268,
+          "interval_max_ms": 604.248,
+          "over_50ms": 7,
+          "over_100ms": 6,
+          "over_250ms": 2,
+          "resource_mean_ms": 3.533,
+          "read_calls": 38,
+          "read_bytes_requested": 320638
+        },
+        {
+          "scene": "overlay",
+          "frames": 256,
+          "interval_mean_ms": 56.965,
+          "update_mean_ms": 0.075,
+          "render_mean_ms": 56.447,
+          "present_mean_ms": 0.269,
+          "interval_max_ms": 156.891,
+          "over_50ms": 254,
+          "over_100ms": 3,
+          "over_250ms": 0,
+          "resource_mean_ms": 0.854,
+          "read_calls": 22,
+          "read_bytes_requested": 138728
+        },
+        {
+          "scene": "combat_preparation",
+          "frames": 17,
+          "interval_mean_ms": 139.442,
+          "update_mean_ms": 47.87,
+          "render_mean_ms": 69.063,
+          "present_mean_ms": 0.271,
+          "interval_max_ms": 1205.963,
+          "over_50ms": 5,
+          "over_100ms": 4,
+          "over_250ms": 3,
+          "resource_mean_ms": 84.95,
+          "read_calls": 57,
+          "read_bytes_requested": 479731
+        }
+      ],
+      "flow": "Ordinary Continue from the F floor-4 combat save, card inspection/selection and four combat turns, Soul Fysh victory, gold and SETUP_STRIKE reward, retained-room map window, Save & Quit and normal application exit.",
+      "readback": {
+        "private_receipt": "private-emulator/ui11k-play/ordinary-readback-k-receipt.json",
+        "journal": "ui11k-ordinary-save-readback-dfa5befd59c0.json",
+        "checks": "Production NSZ1 decode, L native load/validate and exact canonical resave for the actual F and K files. NSH9 matches the final run and saved revision.",
+        "stored_bytes": [
+          7521,
+          7580
+        ],
+        "canonical_bytes": [
+          230556,
+          230564
+        ],
+        "hp": [
+          73,
+          64
+        ],
+        "gold": [
+          109,
+          125
+        ],
+        "deck_count": [
+          11,
+          12
+        ],
+        "revision": [
+          30,
+          48
+        ],
+        "floor": [
+          4,
+          4
+        ],
+        "recorded_battle_turns": 4,
+        "added_card": "SETUP_STRIKE",
+        "added_card_count": 1,
+        "removed_card_count": 0,
+        "final_canonical_phase": "Reward; the map is an overlay, not travel to a new floor."
+      }
+    },
+    {
+      "id": "l_ordinary_eng",
+      "checkpoint": "7722cad8adb6626081b0100e5017d3de095904c5",
+      "language": "eng",
+      "private_report": "private-emulator/ui11l-play/performance-l.json",
+      "report_sha256": "690fa19dfaba37e33cd6f3450369d5721d128d447fd3bafc20822c93f6959896",
+      "closed_journal": "ui11l-final-ordinary-performance-93bd401af87c.json",
+      "journal_log_sha256": "0bdb4d8ab9980eac8a67c2dddf0e3b9c460a233a2db8e7d885d733d0cc370366",
+      "normal_exit": true,
+      "source_changed": false,
+      "selected_virtual_pack_bytes": 63254932,
+      "startup_ms": 438.11,
+      "first_render_ms": 534.119,
+      "first_present_ms": 0.275,
+      "resource_total": {
+        "read_calls": 345,
+        "bytes_requested": 3816031,
+        "failures": 0,
+        "seeks": 317
+      },
+      "scenes": [
+        {
+          "scene": "title",
+          "frames": 192,
+          "interval_mean_ms": 37.269,
+          "update_mean_ms": 0.07,
+          "render_mean_ms": 36.418,
+          "present_mean_ms": 0.27,
+          "interval_max_ms": 251.831,
+          "over_50ms": 3,
+          "over_100ms": 2,
+          "over_250ms": 1,
+          "resource_mean_ms": 1.767,
+          "read_calls": 20,
+          "read_bytes_requested": 156402
+        },
+        {
+          "scene": "map",
+          "frames": 81,
+          "interval_mean_ms": 72.307,
+          "update_mean_ms": 0.255,
+          "render_mean_ms": 71.338,
+          "present_mean_ms": 0.271,
+          "interval_max_ms": 393.829,
+          "over_50ms": 81,
+          "over_100ms": 2,
+          "over_250ms": 1,
+          "resource_mean_ms": 3.486,
+          "read_calls": 26,
+          "read_bytes_requested": 156983
+        },
+        {
+          "scene": "combat",
+          "frames": 430,
+          "interval_mean_ms": 41.751,
+          "update_mean_ms": 0.338,
+          "render_mean_ms": 34.526,
+          "present_mean_ms": 0.27,
+          "interval_max_ms": 752.655,
+          "over_50ms": 29,
+          "over_100ms": 16,
+          "over_250ms": 5,
+          "resource_mean_ms": 5.107,
+          "read_calls": 55,
+          "read_bytes_requested": 948699
+        },
+        {
+          "scene": "room",
+          "frames": 588,
+          "interval_mean_ms": 40.886,
+          "update_mean_ms": 1.411,
+          "render_mean_ms": 33.137,
+          "present_mean_ms": 0.271,
+          "interval_max_ms": 1214.386,
+          "over_50ms": 9,
+          "over_100ms": 7,
+          "over_250ms": 3,
+          "resource_mean_ms": 3.02,
+          "read_calls": 69,
+          "read_bytes_requested": 613012
+        },
+        {
+          "scene": "overlay",
+          "frames": 69,
+          "interval_mean_ms": 77.874,
+          "update_mean_ms": 0.124,
+          "render_mean_ms": 77.175,
+          "present_mean_ms": 0.271,
+          "interval_max_ms": 360.687,
+          "over_50ms": 69,
+          "over_100ms": 4,
+          "over_250ms": 2,
+          "resource_mean_ms": 7.475,
+          "read_calls": 39,
+          "read_bytes_requested": 390515
+        },
+        {
+          "scene": "combat_preparation",
+          "frames": 45,
+          "interval_mean_ms": 91.601,
+          "update_mean_ms": 48.107,
+          "render_mean_ms": 22.686,
+          "present_mean_ms": 0.271,
+          "interval_max_ms": 987.152,
+          "over_50ms": 14,
+          "over_100ms": 9,
+          "over_250ms": 3,
+          "resource_mean_ms": 42.858,
+          "read_calls": 63,
+          "read_bytes_requested": 1086445
+        }
+      ],
+      "flow": "Ordinary Continue from the completed K save; travel to the floor-5 Tablet of Truth event, open the complete reader and choose healing (HP 64 to 80); travel to floor-6 three-slime combat, select the middle enemy and damage HP 27 to 9, end turn to player HP 73; voluntary Give Up, readable Game Over summary and scroll, Main Menu and normal Quit.",
+      "visual_followup": "The initial defeat quote was visibly centered too low in L. N changes only its natural paragraph height and source quote_y+8 placement. Final N ordinary title/Game Over smoke passes; L combat/map/room samples retain their L label."
+    },
+    {
+      "id": "l_fixture_zhs",
+      "checkpoint": "7722cad8adb6626081b0100e5017d3de095904c5",
+      "language": "zhs",
+      "private_report": "private-emulator-lcd-ui11l-zhs/session.perf.tns",
+      "report_sha256": "3ea89f4ed59af7324267a97e14f4f3a6199e5c98499031baf99a01a915f8ef08",
+      "closed_journal": "ui11l-chinese-room-play-d6f0eebb90d7.json",
+      "journal_log_sha256": "513a2d45e97136027660644935a141301823d75f42aca0af78a57cceb1d4945b",
+      "normal_exit": true,
+      "source_changed": false,
+      "selected_virtual_pack_bytes": 67730978,
+      "startup_ms": 1000.366,
+      "first_render_ms": 791.595,
+      "first_present_ms": 0.275,
+      "resource_total": {
+        "read_calls": 833,
+        "bytes_requested": 7887086,
+        "failures": 0,
+        "seeks": 802
+      },
+      "scenes": [
+        {
+          "scene": "title",
+          "frames": 539,
+          "interval_mean_ms": 42.777,
+          "update_mean_ms": 1.605,
+          "render_mean_ms": 40.357,
+          "present_mean_ms": 0.27,
+          "interval_max_ms": 1443.848,
+          "over_50ms": 9,
+          "over_100ms": 8,
+          "over_250ms": 5,
+          "resource_mean_ms": 3.561,
+          "read_calls": 129,
+          "read_bytes_requested": 1180263
+        },
+        {
+          "scene": "collection",
+          "frames": 784,
+          "interval_mean_ms": 42.713,
+          "update_mean_ms": 0.047,
+          "render_mean_ms": 20.161,
+          "present_mean_ms": 0.269,
+          "interval_max_ms": 1807.068,
+          "over_50ms": 26,
+          "over_100ms": 18,
+          "over_250ms": 5,
+          "resource_mean_ms": 6.919,
+          "read_calls": 445,
+          "read_bytes_requested": 4493395
+        },
+        {
+          "scene": "room",
+          "frames": 102,
+          "interval_mean_ms": 54.17,
+          "update_mean_ms": 2.932,
+          "render_mean_ms": 46.605,
+          "present_mean_ms": 0.272,
+          "interval_max_ms": 1393.28,
+          "over_50ms": 7,
+          "over_100ms": 3,
+          "over_250ms": 2,
+          "resource_mean_ms": 12.941,
+          "read_calls": 105,
+          "read_bytes_requested": 931157
+        },
+        {
+          "scene": "overlay",
+          "frames": 48,
+          "interval_mean_ms": 79.206,
+          "update_mean_ms": 0.183,
+          "render_mean_ms": 78.492,
+          "present_mean_ms": 0.268,
+          "interval_max_ms": 571.625,
+          "over_50ms": 48,
+          "over_100ms": 2,
+          "over_250ms": 2,
+          "resource_mean_ms": 16.927,
+          "read_calls": 45,
+          "read_bytes_requested": 378724
+        }
+      ],
+      "flow": "Ordinary cold OS boot, Ndless installation and standard launcher Open; constructed canonical Neow and compendium-progress fixtures, actual Chinese option selection, Save & Quit, Bestiary five-action paging and sixth-action Death preview, normal Quit.",
+      "fixture_scope": "The room and collection interaction is actual ARM execution. Constructed canonical/progress fixtures do not establish ordinary-playthrough reachability or combat performance.",
+      "validation": {
+        "private_receipt": "private-emulator-lcd-ui11l-zhs/validation-summary.json",
+        "receipt_sha256": "e3bdfb6c248b2637cfa3bb356c67cf3deaf82bf147c0714b8d8a4f512ea5a421",
+        "readback_journal": "ui11l-ancient-save-readback-7012def96add.json",
+        "source_changed": false,
+        "hp": [
+          80,
+          91
+        ],
+        "max_hp": [
+          80,
+          91
+        ],
+        "event_finished": [
+          0,
+          1
+        ],
+        "revision": [
+          4,
+          6
+        ],
+        "unchanged": {
+          "gold": 99,
+          "deck_count": 10,
+          "upgraded": 0,
+          "character": 0
+        },
+        "bestiary_action": {
+          "model": 17,
+          "first_page_rows": 5,
+          "second_page_action_index": 5,
+          "second_page_label": "死亡",
+          "action_played": true
+        },
+        "normal_exit": true
+      }
+    },
+    {
+      "id": "n_final_layout_smoke_eng",
+      "checkpoint": "e95893c9effaa9b5f7fd09158cca546d7b65ce3b",
+      "language": "eng",
+      "private_report": "private-emulator/ui11n-final/performance-n-smoke.json",
+      "report_sha256": "ff538db3bae3056d2c804410f138fb77d359f41a1de95e6340cb0b9581702605",
+      "closed_journal": "ui11n-final-layout-release-383291056740.json",
+      "journal_log_sha256": "469420527d11917c0757054d5f4bd9bad781c174be237a15b076ac8ba2d306a7",
+      "normal_exit": true,
+      "source_changed": false,
+      "selected_virtual_pack_bytes": 63254932,
+      "startup_ms": 438.11,
+      "first_render_ms": 534.149,
+      "first_present_ms": 0.275,
+      "resource_total": {
+        "read_calls": 143,
+        "bytes_requested": 1058477,
+        "failures": 0,
+        "seeks": 123
+      },
+      "scenes": [
+        {
+          "scene": "title",
+          "frames": 206,
+          "interval_mean_ms": 35.644,
+          "update_mean_ms": 0.067,
+          "render_mean_ms": 34.618,
+          "present_mean_ms": 0.269,
+          "interval_max_ms": 175.415,
+          "over_50ms": 1,
+          "over_100ms": 1,
+          "over_250ms": 0,
+          "resource_mean_ms": 0.641,
+          "read_calls": 10,
+          "read_bytes_requested": 46248
+        },
+        {
+          "scene": "room",
+          "frames": 338,
+          "interval_mean_ms": 42.622,
+          "update_mean_ms": 1.314,
+          "render_mean_ms": 36.078,
+          "present_mean_ms": 0.271,
+          "interval_max_ms": 1214.386,
+          "over_50ms": 7,
+          "over_100ms": 5,
+          "over_250ms": 2,
+          "resource_mean_ms": 4.266,
+          "read_calls": 48,
+          "read_bytes_requested": 481051
+        },
+        {
+          "scene": "overlay",
+          "frames": 67,
+          "interval_mean_ms": 62.968,
+          "update_mean_ms": 0.075,
+          "render_mean_ms": 62.33,
+          "present_mean_ms": 0.268,
+          "interval_max_ms": 140.9,
+          "over_50ms": 67,
+          "over_100ms": 1,
+          "over_250ms": 0,
+          "resource_mean_ms": 1.168,
+          "read_calls": 12,
+          "read_bytes_requested": 67203
+        }
+      ],
+      "flow": "Final N ordinary OS/Ndless launcher boot, terminal abandonment/initial defeat quote, summary, Main Menu, normal application Quit, performance export and emulator flush/exit.",
+      "visual_review": "Release owner directly reviewed 03-defeat-quote.ppm: the quote follows its source vertical anchor below the banner without overlapping the corpse. 04-summary.ppm remains readable.",
+      "scope": "Focused final title/Game Over acceptance only. No N combat performance sample exists; room-category frames include the terminal flow and are not a separate ordinary-room benchmark."
+    }
+  ],
+  "interpretation": [
+    "K ordinary combat mean interval is 35.800 ms over 1324 frames; L ordinary multi-enemy combat is 41.751 ms over 430 frames. They are different encounters, timings and cold resource histories, not an A/B benchmark.",
+    "Map and overlay rendering remains materially slower than ordinary combat. All 46 K map frames and 81 L map frames exceed 50 ms. These measured limitations are retained.",
+    "Cold transitions remain visible: K preparation maximum 1205.963 ms and L preparation maximum 987.152 ms. L mixed room maximum 1214.386 ms and Chinese collection maximum 1807.068 ms are retained in their corresponding scene rows.",
+    "All four sessions have zero reported resource-read failures. This confirms the observed reads, not every asset or every possible run.",
+    "The 24.9206% installation reduction is a byte-size result, not a runtime speedup. The cache budget is used by actual 5 MiB decoded images and 6 MiB tile groups under a 24 MiB build ceiling."
+  ],
+  "limits": [
+    "No matched UI10/F performance baseline was captured for these flows; no speedup percentage is established.",
+    "Only aggregate count/total/min/max and threshold counters exist. Median, p95 and p99 cannot be recovered and are not asserted.",
+    "Intervals include frame pacing and foreground work. Resource time is included inside update/render rather than an additional independent CPU stage.",
+    "Startup excludes OS/Ndless document opening and executable decompression; the first render is a separate recorded operation.",
+    "Combat preparation is kept separate from combat and includes cold resource work. The Chinese collection session uses prepared fixtures and must not be mixed into the ordinary combat average.",
+    "Source identity outside the N quote fix associates K/L evidence with unchanged implementation. It does not turn the K/L runs into an executed N combat performance test.",
+    "These are emulated calculator timer measurements, not host wall-clock or physical-calculator measurements. The finite observed flows do not establish every gameplay path or a 95% original-game fidelity score.",
+    "Private source assets, save files and screenshots remain outside public Git; this report contains independent measurements and receipt identifiers only."
+  ]
+}

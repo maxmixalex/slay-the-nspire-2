@@ -1,0 +1,35 @@
+// v15: suspended event choices and continuations have their own append-only
+// payload. Keep the legacy five-event prefix in state_codec.inc untouched.
+{
+ auto&e=s.original_events;
+ B(e.id);B(e.active);B(e.finished);B(e.act_index);B(e.page);
+ B(e.option_count);for(auto&n:e.options)B(n);
+ for(auto&ch:e.page_key)B(ch);
+ for(auto&key:e.option_keys)for(auto&ch:key)B(ch);
+ for(auto&n:e.values)H(n);
+ for(auto&word:e.rng_words)field64(word,c);F(e.rng_calls);
+ B(e.step_count);B(e.step_cursor);
+ for(auto&step:e.steps){B(step.op);H(step.a);H(step.b);H(step.c);H(step.d);H(step.e);}
+ B(e.selection);B(e.filter);B(e.select_min);B(e.select_max);B(e.select_cancelable);
+ H(e.select_enchantment);H(e.select_amount);H(e.select_extra);
+ H(e.offer_count);for(auto&offer:e.offers)H(offer);
+ for(auto&f:e.offer_facts){B(f.enchantment);B(f.science_type);B(f.rider);H(f.enchantment_amount);H(f.energy_offset);H(f.progress);}
+ for(auto&price:e.choice_prices)H(price);
+ H(e.selected_count);for(auto&index:e.selected)H(index);H(e.selected_cursor);B(e.selection_committed);
+ for(auto&flag:e.remembered)B(flag);
+ for(auto&snapshot:e.selected_cards){
+  H(snapshot.card.kind);B(snapshot.card.upgraded);
+  auto&f=snapshot.facts;B(f.enchantment);B(f.science_type);B(f.rider);H(f.enchantment_amount);H(f.energy_offset);H(f.progress);
+  H(snapshot.genetic);H(snapshot.scythe);
+ }
+ B(e.reward_active);H(e.reward_count);H(e.reward_current);H(e.reward_card_count);
+ for(auto&r:e.rewards){B(r.kind);B(r.claimed);H(r.first);B(r.count);H(r.model);H(r.amount);B(r.flags);B(r.original_count);B(r.type_mask);B(r.zero_energy);H(r.rarity_mask);H(r.creation_flags);for(auto&pool:r.pools)B(pool);B(r.pool_count);B(r.odds);B(r.source);}
+ for(auto&card:e.reward_cards)H(card);
+ for(auto&f:e.reward_facts){B(f.enchantment);B(f.science_type);B(f.rider);H(f.enchantment_amount);H(f.energy_offset);H(f.progress);}
+ B(e.combat_pending);B(e.resume_after_combat);H(e.encounter);
+ B(e.crystal_tool);B(e.crystal_charges);B(e.crystal_item_count);
+ for(auto&cell:e.crystal_clear)B(cell);for(auto&cell:e.crystal_owner)B(cell);
+ for(auto&item:e.crystal_items){B(item.kind);B(item.x);B(item.y);B(item.w);B(item.h);B(item.subscriptions);B(item.revealed);H(item.model);H(item.amount);}
+ H(e.crystal_revealed_count);for(auto&index:e.crystal_revealed)B(index);
+ auto&facts=s.event_run;F(facts.wongo_total);F(facts.wongo_earned);F(facts.wins);for(auto&n:facts.character_wins)F(n);B(facts.freed_repy);B(facts.completion_recorded);
+}

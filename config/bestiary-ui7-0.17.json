@@ -1,0 +1,3554 @@
+{
+  "schema": 1,
+  "reference": "v0.111.0 / 41cef1ea",
+  "sources": [
+    "NBestiary.CreateEntries/AddAct/AddEvents",
+    "MonsterModel.GenerateBestiaryMoveList",
+    "NBestiaryEntry._Ready",
+    "NBestiaryLayoutKaiserCrab.Setup",
+    "NBestiaryLayoutDecimillipede.Setup"
+  ],
+  "notes": [
+    "Model ids are EnemyId values, never battle slots.",
+    "Precomputed locale order follows NGame invariant culture and the NBestiary comparer.",
+    "Disabled unknown entries and hidden Epithet remain hidden/disabled.",
+    "Moves expose real animator clips; command-specific VFX are separately scoped."
+  ],
+  "entries": [
+    {
+      "model": 14,
+      "encounter": 8,
+      "region": 0,
+      "room": 2
+    },
+    {
+      "model": 15,
+      "encounter": 9,
+      "region": 0,
+      "room": 2
+    },
+    {
+      "model": 17,
+      "encounter": 10,
+      "region": 0,
+      "room": 3
+    },
+    {
+      "model": 22,
+      "encounter": 15,
+      "region": 0,
+      "room": 1
+    },
+    {
+      "model": 35,
+      "encounter": 25,
+      "region": 0,
+      "room": 1
+    },
+    {
+      "model": 52,
+      "encounter": 25,
+      "region": 0,
+      "room": 1
+    },
+    {
+      "model": 101,
+      "encounter": 25,
+      "region": 0,
+      "room": 1
+    },
+    {
+      "model": 36,
+      "encounter": 26,
+      "region": 0,
+      "room": 1
+    },
+    {
+      "model": 30,
+      "encounter": 26,
+      "region": 0,
+      "room": 1
+    },
+    {
+      "model": 39,
+      "encounter": 29,
+      "region": 0,
+      "room": 1
+    },
+    {
+      "model": 47,
+      "encounter": 35,
+      "region": 0,
+      "room": 1
+    },
+    {
+      "model": 58,
+      "encounter": 42,
+      "region": 0,
+      "room": 1
+    },
+    {
+      "model": 62,
+      "encounter": 46,
+      "region": 0,
+      "room": 1
+    },
+    {
+      "model": 75,
+      "encounter": 48,
+      "region": 0,
+      "room": 1
+    },
+    {
+      "model": 68,
+      "encounter": 52,
+      "region": 0,
+      "room": 2
+    },
+    {
+      "model": 107,
+      "encounter": 52,
+      "region": 0,
+      "room": 2
+    },
+    {
+      "model": 4,
+      "encounter": 56,
+      "region": 0,
+      "room": 1
+    },
+    {
+      "model": 3,
+      "encounter": 56,
+      "region": 0,
+      "room": 1
+    },
+    {
+      "model": 13,
+      "encounter": 56,
+      "region": 0,
+      "room": 1
+    },
+    {
+      "model": 20,
+      "encounter": 56,
+      "region": 0,
+      "room": 1
+    },
+    {
+      "model": 98,
+      "encounter": 56,
+      "region": 0,
+      "room": 1
+    },
+    {
+      "model": 53,
+      "encounter": 65,
+      "region": 0,
+      "room": 1
+    },
+    {
+      "model": 102,
+      "encounter": 65,
+      "region": 0,
+      "room": 1
+    },
+    {
+      "model": 81,
+      "encounter": 67,
+      "region": 0,
+      "room": 1
+    },
+    {
+      "model": 78,
+      "encounter": 67,
+      "region": 0,
+      "room": 1
+    },
+    {
+      "model": 48,
+      "encounter": 78,
+      "region": 0,
+      "room": 3
+    },
+    {
+      "model": 49,
+      "encounter": 78,
+      "region": 0,
+      "room": 3
+    },
+    {
+      "model": 104,
+      "encounter": 86,
+      "region": 0,
+      "room": 3
+    },
+    {
+      "model": 105,
+      "encounter": 87,
+      "region": 0,
+      "room": 1
+    },
+    {
+      "model": 19,
+      "encounter": 13,
+      "region": 1,
+      "room": 1
+    },
+    {
+      "model": 16,
+      "encounter": 16,
+      "region": 1,
+      "room": 1
+    },
+    {
+      "model": 23,
+      "encounter": 16,
+      "region": 1,
+      "room": 1
+    },
+    {
+      "model": 37,
+      "encounter": 27,
+      "region": 1,
+      "room": 1
+    },
+    {
+      "model": 42,
+      "encounter": 31,
+      "region": 1,
+      "room": 1
+    },
+    {
+      "model": 33,
+      "encounter": 31,
+      "region": 1,
+      "room": 1
+    },
+    {
+      "model": 82,
+      "encounter": 31,
+      "region": 1,
+      "room": 1
+    },
+    {
+      "model": 44,
+      "encounter": 32,
+      "region": 1,
+      "room": 1
+    },
+    {
+      "model": 51,
+      "encounter": 39,
+      "region": 1,
+      "room": 3
+    },
+    {
+      "model": 54,
+      "encounter": 40,
+      "region": 1,
+      "room": 1
+    },
+    {
+      "model": 40,
+      "encounter": 40,
+      "region": 1,
+      "room": 1
+    },
+    {
+      "model": 67,
+      "encounter": 51,
+      "region": 1,
+      "room": 2
+    },
+    {
+      "model": 69,
+      "encounter": 53,
+      "region": 1,
+      "room": 1
+    },
+    {
+      "model": 73,
+      "encounter": 59,
+      "region": 1,
+      "room": 1
+    },
+    {
+      "model": 74,
+      "encounter": 61,
+      "region": 1,
+      "room": 1
+    },
+    {
+      "model": 76,
+      "encounter": 63,
+      "region": 1,
+      "room": 2
+    },
+    {
+      "model": 79,
+      "encounter": 68,
+      "region": 1,
+      "room": 1
+    },
+    {
+      "model": 83,
+      "encounter": 71,
+      "region": 1,
+      "room": 3
+    },
+    {
+      "model": 88,
+      "encounter": 74,
+      "region": 1,
+      "room": 2
+    },
+    {
+      "model": 95,
+      "encounter": 82,
+      "region": 1,
+      "room": 1
+    },
+    {
+      "model": 103,
+      "encounter": 85,
+      "region": 1,
+      "room": 1
+    },
+    {
+      "model": 106,
+      "encounter": 88,
+      "region": 1,
+      "room": 3
+    },
+    {
+      "model": 11,
+      "encounter": 6,
+      "region": 2,
+      "room": 1
+    },
+    {
+      "model": 18,
+      "encounter": 11,
+      "region": 2,
+      "room": 1
+    },
+    {
+      "model": 28,
+      "encounter": 20,
+      "region": 2,
+      "room": 2
+    },
+    {
+      "model": 29,
+      "encounter": 21,
+      "region": 2,
+      "room": 1
+    },
+    {
+      "model": 45,
+      "encounter": 33,
+      "region": 2,
+      "room": 1
+    },
+    {
+      "model": 21,
+      "encounter": 36,
+      "region": 2,
+      "room": 3
+    },
+    {
+      "model": 71,
+      "encounter": 36,
+      "region": 2,
+      "room": 3
+    },
+    {
+      "model": 46,
+      "encounter": 34,
+      "region": 2,
+      "room": 2
+    },
+    {
+      "model": 50,
+      "encounter": 38,
+      "region": 2,
+      "room": 3
+    },
+    {
+      "model": 56,
+      "encounter": 41,
+      "region": 2,
+      "room": 1
+    },
+    {
+      "model": 61,
+      "encounter": 45,
+      "region": 2,
+      "room": 1
+    },
+    {
+      "model": 64,
+      "encounter": 49,
+      "region": 2,
+      "room": 1
+    },
+    {
+      "model": 97,
+      "encounter": 49,
+      "region": 2,
+      "room": 1
+    },
+    {
+      "model": 80,
+      "encounter": 69,
+      "region": 2,
+      "room": 1
+    },
+    {
+      "model": 12,
+      "encounter": 69,
+      "region": 2,
+      "room": 1
+    },
+    {
+      "model": 86,
+      "encounter": 73,
+      "region": 2,
+      "room": 1
+    },
+    {
+      "model": 91,
+      "encounter": 77,
+      "region": 2,
+      "room": 3
+    },
+    {
+      "model": 93,
+      "encounter": 80,
+      "region": 2,
+      "room": 1
+    },
+    {
+      "model": 66,
+      "encounter": 80,
+      "region": 2,
+      "room": 1
+    },
+    {
+      "model": 94,
+      "encounter": 81,
+      "region": 2,
+      "room": 1
+    },
+    {
+      "model": 99,
+      "encounter": 83,
+      "region": 2,
+      "room": 1
+    },
+    {
+      "model": 255,
+      "encounter": 17,
+      "region": 2,
+      "room": 2
+    },
+    {
+      "model": 5,
+      "encounter": 2,
+      "region": 3,
+      "room": 1
+    },
+    {
+      "model": 69,
+      "encounter": 12,
+      "region": 3,
+      "room": 1
+    },
+    {
+      "model": 22,
+      "encounter": 12,
+      "region": 3,
+      "room": 1
+    },
+    {
+      "model": 27,
+      "encounter": 19,
+      "region": 3,
+      "room": 1
+    },
+    {
+      "model": 1,
+      "encounter": 1,
+      "region": 3,
+      "room": 3
+    },
+    {
+      "model": 31,
+      "encounter": 23,
+      "region": 3,
+      "room": 1
+    },
+    {
+      "model": 38,
+      "encounter": 28,
+      "region": 3,
+      "room": 1
+    },
+    {
+      "model": 41,
+      "encounter": 30,
+      "region": 3,
+      "room": 1
+    },
+    {
+      "model": 34,
+      "encounter": 37,
+      "region": 3,
+      "room": 2
+    },
+    {
+      "model": 85,
+      "encounter": 37,
+      "region": 3,
+      "room": 2
+    },
+    {
+      "model": 57,
+      "encounter": 37,
+      "region": 3,
+      "room": 2
+    },
+    {
+      "model": 59,
+      "encounter": 43,
+      "region": 3,
+      "room": 2
+    },
+    {
+      "model": 65,
+      "encounter": 50,
+      "region": 3,
+      "room": 1
+    },
+    {
+      "model": 70,
+      "encounter": 55,
+      "region": 3,
+      "room": 3
+    },
+    {
+      "model": 96,
+      "encounter": 55,
+      "region": 3,
+      "room": 3
+    },
+    {
+      "model": 72,
+      "encounter": 57,
+      "region": 3,
+      "room": 1
+    },
+    {
+      "model": 77,
+      "encounter": 64,
+      "region": 3,
+      "room": 1
+    },
+    {
+      "model": 84,
+      "encounter": 72,
+      "region": 3,
+      "room": 2
+    },
+    {
+      "model": 89,
+      "encounter": 75,
+      "region": 3,
+      "room": 3
+    },
+    {
+      "model": 92,
+      "encounter": 79,
+      "region": 3,
+      "room": 1
+    },
+    {
+      "model": 90,
+      "encounter": 79,
+      "region": 3,
+      "room": 1
+    },
+    {
+      "model": 55,
+      "encounter": 84,
+      "region": 3,
+      "room": 1
+    },
+    {
+      "model": 100,
+      "encounter": 84,
+      "region": 3,
+      "room": 1
+    },
+    {
+      "model": 32,
+      "encounter": 24,
+      "region": 4,
+      "room": 1
+    },
+    {
+      "model": 60,
+      "encounter": 44,
+      "region": 4,
+      "room": 1
+    },
+    {
+      "model": 6,
+      "encounter": 3,
+      "region": 4,
+      "room": 1
+    },
+    {
+      "model": 7,
+      "encounter": 4,
+      "region": 4,
+      "room": 1
+    },
+    {
+      "model": 8,
+      "encounter": 5,
+      "region": 4,
+      "room": 1
+    }
+  ],
+  "models": [
+    {
+      "first": 0,
+      "count": 0
+    },
+    {
+      "first": 0,
+      "count": 5
+    },
+    {
+      "first": 5,
+      "count": 2
+    },
+    {
+      "first": 7,
+      "count": 3
+    },
+    {
+      "first": 10,
+      "count": 3
+    },
+    {
+      "first": 13,
+      "count": 5
+    },
+    {
+      "first": 18,
+      "count": 3
+    },
+    {
+      "first": 21,
+      "count": 3
+    },
+    {
+      "first": 24,
+      "count": 3
+    },
+    {
+      "first": 27,
+      "count": 3
+    },
+    {
+      "first": 30,
+      "count": 4
+    },
+    {
+      "first": 34,
+      "count": 5
+    },
+    {
+      "first": 39,
+      "count": 4
+    },
+    {
+      "first": 43,
+      "count": 3
+    },
+    {
+      "first": 46,
+      "count": 5
+    },
+    {
+      "first": 51,
+      "count": 4
+    },
+    {
+      "first": 55,
+      "count": 4
+    },
+    {
+      "first": 59,
+      "count": 6
+    },
+    {
+      "first": 65,
+      "count": 4
+    },
+    {
+      "first": 69,
+      "count": 5
+    },
+    {
+      "first": 74,
+      "count": 4
+    },
+    {
+      "first": 78,
+      "count": 7
+    },
+    {
+      "first": 85,
+      "count": 4
+    },
+    {
+      "first": 89,
+      "count": 4
+    },
+    {
+      "first": 93,
+      "count": 6
+    },
+    {
+      "first": 99,
+      "count": 6
+    },
+    {
+      "first": 105,
+      "count": 6
+    },
+    {
+      "first": 111,
+      "count": 4
+    },
+    {
+      "first": 115,
+      "count": 5
+    },
+    {
+      "first": 120,
+      "count": 5
+    },
+    {
+      "first": 125,
+      "count": 2
+    },
+    {
+      "first": 127,
+      "count": 4
+    },
+    {
+      "first": 131,
+      "count": 6
+    },
+    {
+      "first": 137,
+      "count": 3
+    },
+    {
+      "first": 140,
+      "count": 5
+    },
+    {
+      "first": 145,
+      "count": 5
+    },
+    {
+      "first": 150,
+      "count": 4
+    },
+    {
+      "first": 154,
+      "count": 5
+    },
+    {
+      "first": 159,
+      "count": 6
+    },
+    {
+      "first": 165,
+      "count": 4
+    },
+    {
+      "first": 169,
+      "count": 3
+    },
+    {
+      "first": 172,
+      "count": 4
+    },
+    {
+      "first": 176,
+      "count": 5
+    },
+    {
+      "first": 181,
+      "count": 3
+    },
+    {
+      "first": 184,
+      "count": 5
+    },
+    {
+      "first": 189,
+      "count": 5
+    },
+    {
+      "first": 194,
+      "count": 6
+    },
+    {
+      "first": 200,
+      "count": 4
+    },
+    {
+      "first": 204,
+      "count": 5
+    },
+    {
+      "first": 209,
+      "count": 5
+    },
+    {
+      "first": 214,
+      "count": 6
+    },
+    {
+      "first": 220,
+      "count": 7
+    },
+    {
+      "first": 227,
+      "count": 4
+    },
+    {
+      "first": 231,
+      "count": 4
+    },
+    {
+      "first": 235,
+      "count": 5
+    },
+    {
+      "first": 240,
+      "count": 4
+    },
+    {
+      "first": 244,
+      "count": 5
+    },
+    {
+      "first": 249,
+      "count": 6
+    },
+    {
+      "first": 255,
+      "count": 5
+    },
+    {
+      "first": 260,
+      "count": 6
+    },
+    {
+      "first": 266,
+      "count": 5
+    },
+    {
+      "first": 271,
+      "count": 5
+    },
+    {
+      "first": 276,
+      "count": 4
+    },
+    {
+      "first": 280,
+      "count": 3
+    },
+    {
+      "first": 283,
+      "count": 5
+    },
+    {
+      "first": 288,
+      "count": 6
+    },
+    {
+      "first": 294,
+      "count": 3
+    },
+    {
+      "first": 297,
+      "count": 5
+    },
+    {
+      "first": 302,
+      "count": 4
+    },
+    {
+      "first": 306,
+      "count": 5
+    },
+    {
+      "first": 311,
+      "count": 4
+    },
+    {
+      "first": 315,
+      "count": 7
+    },
+    {
+      "first": 322,
+      "count": 5
+    },
+    {
+      "first": 327,
+      "count": 5
+    },
+    {
+      "first": 332,
+      "count": 4
+    },
+    {
+      "first": 336,
+      "count": 4
+    },
+    {
+      "first": 340,
+      "count": 5
+    },
+    {
+      "first": 345,
+      "count": 5
+    },
+    {
+      "first": 350,
+      "count": 5
+    },
+    {
+      "first": 355,
+      "count": 4
+    },
+    {
+      "first": 359,
+      "count": 4
+    },
+    {
+      "first": 363,
+      "count": 3
+    },
+    {
+      "first": 366,
+      "count": 3
+    },
+    {
+      "first": 369,
+      "count": 7
+    },
+    {
+      "first": 376,
+      "count": 4
+    },
+    {
+      "first": 380,
+      "count": 5
+    },
+    {
+      "first": 385,
+      "count": 5
+    },
+    {
+      "first": 390,
+      "count": 3
+    },
+    {
+      "first": 393,
+      "count": 5
+    },
+    {
+      "first": 398,
+      "count": 5
+    },
+    {
+      "first": 403,
+      "count": 4
+    },
+    {
+      "first": 407,
+      "count": 7
+    },
+    {
+      "first": 414,
+      "count": 4
+    },
+    {
+      "first": 418,
+      "count": 5
+    },
+    {
+      "first": 423,
+      "count": 7
+    },
+    {
+      "first": 430,
+      "count": 5
+    },
+    {
+      "first": 435,
+      "count": 4
+    },
+    {
+      "first": 439,
+      "count": 4
+    },
+    {
+      "first": 443,
+      "count": 3
+    },
+    {
+      "first": 446,
+      "count": 7
+    },
+    {
+      "first": 453,
+      "count": 4
+    },
+    {
+      "first": 457,
+      "count": 4
+    },
+    {
+      "first": 461,
+      "count": 3
+    },
+    {
+      "first": 464,
+      "count": 6
+    },
+    {
+      "first": 470,
+      "count": 6
+    },
+    {
+      "first": 476,
+      "count": 5
+    },
+    {
+      "first": 481,
+      "count": 7
+    },
+    {
+      "first": 488,
+      "count": 3
+    },
+    {
+      "first": 491,
+      "count": 3
+    }
+  ],
+  "decimillipede": {
+    "first": 494,
+    "count": 3
+  },
+  "moves": [
+    {
+      "label": "monsters.AEONGLASS.moves.EBB.title",
+      "node": 0,
+      "clip": null
+    },
+    {
+      "label": "monsters.AEONGLASS.moves.EYE_LASERS.title",
+      "node": 1,
+      "clip": null
+    },
+    {
+      "label": "monsters.AEONGLASS.moves.INCREASING_INTENSITY.title",
+      "node": 2,
+      "clip": null
+    },
+    {
+      "label": "bestiary.ACTION_NAME.hurt",
+      "node": -1,
+      "clip": "hurt"
+    },
+    {
+      "label": "bestiary.ACTION_NAME.die",
+      "node": -1,
+      "clip": "die"
+    },
+    {
+      "label": "monsters.ARCHITECT.moves.NOTHING.title",
+      "node": 0,
+      "clip": null
+    },
+    {
+      "label": "bestiary.ACTION_NAME.hurt",
+      "node": -1,
+      "clip": "hurt"
+    },
+    {
+      "label": "monsters.ASSASSIN_RUBY_RAIDER.moves.KILLSHOT.title",
+      "node": 0,
+      "clip": null
+    },
+    {
+      "label": "bestiary.ACTION_NAME.hurt",
+      "node": -1,
+      "clip": "hurt"
+    },
+    {
+      "label": "bestiary.ACTION_NAME.die",
+      "node": -1,
+      "clip": "die"
+    },
+    {
+      "label": "monsters.AXE_RUBY_RAIDER.moves.BIG_SWING.title",
+      "node": 2,
+      "clip": null
+    },
+    {
+      "label": "bestiary.ACTION_NAME.hurt",
+      "node": -1,
+      "clip": "hurt"
+    },
+    {
+      "label": "bestiary.ACTION_NAME.die",
+      "node": -1,
+      "clip": "die"
+    },
+    {
+      "label": "monsters.AXEBOT.moves.BOOT_UP.title",
+      "node": 0,
+      "clip": null
+    },
+    {
+      "label": "monsters.AXEBOT.moves.ONE_TWO.title",
+      "node": 1,
+      "clip": null
+    },
+    {
+      "label": "monsters.AXEBOT.moves.HAMMER_UPPERCUT.title",
+      "node": 2,
+      "clip": null
+    },
+    {
+      "label": "bestiary.ACTION_NAME.hurt",
+      "node": -1,
+      "clip": "hurt"
+    },
+    {
+      "label": "bestiary.ACTION_NAME.die",
+      "node": -1,
+      "clip": "die"
+    },
+    {
+      "label": "monsters.BATTLE_FRIEND_V1.moves.NOTHING.title",
+      "node": 0,
+      "clip": null
+    },
+    {
+      "label": "bestiary.ACTION_NAME.hurt",
+      "node": -1,
+      "clip": "hurt"
+    },
+    {
+      "label": "bestiary.ACTION_NAME.die",
+      "node": -1,
+      "clip": "die"
+    },
+    {
+      "label": "monsters.BATTLE_FRIEND_V2.moves.NOTHING.title",
+      "node": 0,
+      "clip": null
+    },
+    {
+      "label": "bestiary.ACTION_NAME.hurt",
+      "node": -1,
+      "clip": "hurt"
+    },
+    {
+      "label": "bestiary.ACTION_NAME.die",
+      "node": -1,
+      "clip": "die"
+    },
+    {
+      "label": "monsters.BATTLE_FRIEND_V3.moves.NOTHING.title",
+      "node": 0,
+      "clip": null
+    },
+    {
+      "label": "bestiary.ACTION_NAME.hurt",
+      "node": -1,
+      "clip": "hurt"
+    },
+    {
+      "label": "bestiary.ACTION_NAME.die",
+      "node": -1,
+      "clip": "die"
+    },
+    {
+      "label": "monsters.BOWLBUG_EGG.moves.BITE.title",
+      "node": 0,
+      "clip": null
+    },
+    {
+      "label": "bestiary.ACTION_NAME.hurt",
+      "node": -1,
+      "clip": "hurt"
+    },
+    {
+      "label": "bestiary.ACTION_NAME.die",
+      "node": -1,
+      "clip": "die"
+    },
+    {
+      "label": "monsters.BOWLBUG_NECTAR.moves.THRASH.title",
+      "node": 0,
+      "clip": null
+    },
+    {
+      "label": "monsters.BOWLBUG_NECTAR.moves.BUFF.title",
+      "node": 1,
+      "clip": null
+    },
+    {
+      "label": "bestiary.ACTION_NAME.hurt",
+      "node": -1,
+      "clip": "hurt"
+    },
+    {
+      "label": "bestiary.ACTION_NAME.die",
+      "node": -1,
+      "clip": "die"
+    },
+    {
+      "label": "monsters.BOWLBUG_ROCK.moves.HEADBUTT.title",
+      "node": 0,
+      "clip": null
+    },
+    {
+      "label": "monsters.GENERIC.moves.STUNNED.title",
+      "node": -1,
+      "clip": "stun"
+    },
+    {
+      "label": "monsters.BOWLBUG_ROCK.moves.DIZZY.title",
+      "node": 1,
+      "clip": null
+    },
+    {
+      "label": "bestiary.ACTION_NAME.hurt",
+      "node": -1,
+      "clip": "hurt"
+    },
+    {
+      "label": "bestiary.ACTION_NAME.die",
+      "node": -1,
+      "clip": "die"
+    },
+    {
+      "label": "monsters.BOWLBUG_SILK.moves.THRASH.title",
+      "node": 0,
+      "clip": null
+    },
+    {
+      "label": "monsters.BOWLBUG_SILK.moves.TOXIC_SPIT.title",
+      "node": 1,
+      "clip": null
+    },
+    {
+      "label": "bestiary.ACTION_NAME.hurt",
+      "node": -1,
+      "clip": "hurt"
+    },
+    {
+      "label": "bestiary.ACTION_NAME.die",
+      "node": -1,
+      "clip": "die"
+    },
+    {
+      "label": "monsters.BRUTE_RUBY_RAIDER.moves.BEAT.title",
+      "node": 0,
+      "clip": null
+    },
+    {
+      "label": "bestiary.ACTION_NAME.hurt",
+      "node": -1,
+      "clip": "hurt"
+    },
+    {
+      "label": "bestiary.ACTION_NAME.die",
+      "node": -1,
+      "clip": "die"
+    },
+    {
+      "label": "monsters.BYGONE_EFFIGY.moves.SLEEP.title",
+      "node": 0,
+      "clip": null
+    },
+    {
+      "label": "monsters.BYGONE_EFFIGY.moves.WAKE.title",
+      "node": 1,
+      "clip": null
+    },
+    {
+      "label": "monsters.BYGONE_EFFIGY.moves.SLASHES.title",
+      "node": 3,
+      "clip": null
+    },
+    {
+      "label": "bestiary.ACTION_NAME.hurt",
+      "node": -1,
+      "clip": "hurt"
+    },
+    {
+      "label": "bestiary.ACTION_NAME.die",
+      "node": -1,
+      "clip": "die"
+    },
+    {
+      "label": "monsters.BYRDONIS.moves.PECK.title",
+      "node": 0,
+      "clip": null
+    },
+    {
+      "label": "monsters.BYRDONIS.moves.SWOOP.title",
+      "node": 1,
+      "clip": null
+    },
+    {
+      "label": "bestiary.ACTION_NAME.hurt",
+      "node": -1,
+      "clip": "hurt"
+    },
+    {
+      "label": "bestiary.ACTION_NAME.die",
+      "node": -1,
+      "clip": "die"
+    },
+    {
+      "label": "monsters.CALCIFIED_CULTIST.moves.INCANTATION.title",
+      "node": 0,
+      "clip": null
+    },
+    {
+      "label": "monsters.CALCIFIED_CULTIST.moves.DARK_STRIKE.title",
+      "node": 1,
+      "clip": null
+    },
+    {
+      "label": "bestiary.ACTION_NAME.hurt",
+      "node": -1,
+      "clip": "hurt"
+    },
+    {
+      "label": "bestiary.ACTION_NAME.die",
+      "node": -1,
+      "clip": "die"
+    },
+    {
+      "label": "monsters.CEREMONIAL_BEAST.moves.PLOW.title",
+      "node": 1,
+      "clip": null
+    },
+    {
+      "label": "monsters.CEREMONIAL_BEAST.moves.BEAST_CRY.title",
+      "node": 3,
+      "clip": null
+    },
+    {
+      "label": "monsters.GENERIC.moves.STUNNED.title",
+      "node": -1,
+      "clip": "stun"
+    },
+    {
+      "label": "monsters.CEREMONIAL_BEAST.moves.STOMP.title",
+      "node": 4,
+      "clip": null
+    },
+    {
+      "label": "bestiary.ACTION_NAME.hurt",
+      "node": -1,
+      "clip": "hurt"
+    },
+    {
+      "label": "bestiary.ACTION_NAME.die",
+      "node": -1,
+      "clip": "die"
+    },
+    {
+      "label": "monsters.CHOMPER.moves.CLAMP.title",
+      "node": 0,
+      "clip": null
+    },
+    {
+      "label": "monsters.CHOMPER.moves.SCREECH.title",
+      "node": 1,
+      "clip": null
+    },
+    {
+      "label": "bestiary.ACTION_NAME.hurt",
+      "node": -1,
+      "clip": "hurt"
+    },
+    {
+      "label": "bestiary.ACTION_NAME.die",
+      "node": -1,
+      "clip": "die"
+    },
+    {
+      "label": "monsters.CORPSE_SLUG.moves.WHIP_SLAP.title",
+      "node": 0,
+      "clip": null
+    },
+    {
+      "label": "monsters.CORPSE_SLUG.moves.GLOMP.title",
+      "node": 1,
+      "clip": null
+    },
+    {
+      "label": "monsters.CORPSE_SLUG.moves.GOOP.title",
+      "node": 2,
+      "clip": null
+    },
+    {
+      "label": "bestiary.ACTION_NAME.hurt",
+      "node": -1,
+      "clip": "hurt"
+    },
+    {
+      "label": "bestiary.ACTION_NAME.die",
+      "node": -1,
+      "clip": "die"
+    },
+    {
+      "label": "monsters.CROSSBOW_RUBY_RAIDER.moves.FIRE.title",
+      "node": 0,
+      "clip": null
+    },
+    {
+      "label": "monsters.CROSSBOW_RUBY_RAIDER.moves.RELOAD.title",
+      "node": 1,
+      "clip": null
+    },
+    {
+      "label": "bestiary.ACTION_NAME.hurt",
+      "node": -1,
+      "clip": "hurt"
+    },
+    {
+      "label": "bestiary.ACTION_NAME.die",
+      "node": -1,
+      "clip": "die"
+    },
+    {
+      "label": "monsters.CRUSHER.moves.THRASH.title",
+      "node": 0,
+      "clip": null
+    },
+    {
+      "label": "monsters.CRUSHER.moves.ENLARGING_STRIKE.title",
+      "node": 1,
+      "clip": null
+    },
+    {
+      "label": "monsters.CRUSHER.moves.BUG_STING.title",
+      "node": 2,
+      "clip": null
+    },
+    {
+      "label": "monsters.CRUSHER.moves.ADAPT.title",
+      "node": 3,
+      "clip": null
+    },
+    {
+      "label": "monsters.CRUSHER.moves.GUARDED_STRIKE.title",
+      "node": 4,
+      "clip": null
+    },
+    {
+      "label": "bestiary.ACTION_NAME.hurt",
+      "node": -1,
+      "clip": "left/hurt"
+    },
+    {
+      "label": "bestiary.ACTION_NAME.die",
+      "node": -1,
+      "clip": "left/die"
+    },
+    {
+      "label": "monsters.CUBEX_CONSTRUCT.moves.CHARGE_UP.title",
+      "node": 0,
+      "clip": null
+    },
+    {
+      "label": "monsters.CUBEX_CONSTRUCT.moves.EXPEL.title",
+      "node": 3,
+      "clip": null
+    },
+    {
+      "label": "bestiary.ACTION_NAME.hurt",
+      "node": -1,
+      "clip": "hurt"
+    },
+    {
+      "label": "bestiary.ACTION_NAME.die",
+      "node": -1,
+      "clip": "die"
+    },
+    {
+      "label": "monsters.DAMP_CULTIST.moves.INCANTATION.title",
+      "node": 0,
+      "clip": null
+    },
+    {
+      "label": "monsters.DAMP_CULTIST.moves.DARK_STRIKE.title",
+      "node": 1,
+      "clip": null
+    },
+    {
+      "label": "bestiary.ACTION_NAME.hurt",
+      "node": -1,
+      "clip": "hurt"
+    },
+    {
+      "label": "bestiary.ACTION_NAME.die",
+      "node": -1,
+      "clip": "die"
+    },
+    {
+      "label": "WRITHE_MOVE",
+      "node": 0,
+      "clip": null
+    },
+    {
+      "label": "BULK_MOVE",
+      "node": 1,
+      "clip": null
+    },
+    {
+      "label": "CONSTRICT_MOVE",
+      "node": 2,
+      "clip": null
+    },
+    {
+      "label": "DEAD_MOVE",
+      "node": 3,
+      "clip": null
+    },
+    {
+      "label": "REATTACH_MOVE",
+      "node": 4,
+      "clip": null
+    },
+    {
+      "label": "bestiary.ACTION_NAME.hurt",
+      "node": -1,
+      "clip": "hurt"
+    },
+    {
+      "label": "WRITHE_MOVE",
+      "node": 0,
+      "clip": null
+    },
+    {
+      "label": "BULK_MOVE",
+      "node": 1,
+      "clip": null
+    },
+    {
+      "label": "CONSTRICT_MOVE",
+      "node": 2,
+      "clip": null
+    },
+    {
+      "label": "DEAD_MOVE",
+      "node": 3,
+      "clip": null
+    },
+    {
+      "label": "REATTACH_MOVE",
+      "node": 4,
+      "clip": null
+    },
+    {
+      "label": "bestiary.ACTION_NAME.hurt",
+      "node": -1,
+      "clip": "hurt"
+    },
+    {
+      "label": "WRITHE_MOVE",
+      "node": 0,
+      "clip": null
+    },
+    {
+      "label": "BULK_MOVE",
+      "node": 1,
+      "clip": null
+    },
+    {
+      "label": "CONSTRICT_MOVE",
+      "node": 2,
+      "clip": null
+    },
+    {
+      "label": "DEAD_MOVE",
+      "node": 3,
+      "clip": null
+    },
+    {
+      "label": "REATTACH_MOVE",
+      "node": 4,
+      "clip": null
+    },
+    {
+      "label": "bestiary.ACTION_NAME.hurt",
+      "node": -1,
+      "clip": "hurt"
+    },
+    {
+      "label": "monsters.DEVOTED_SCULPTOR.moves.FORBIDDEN_INCANTATION.title",
+      "node": 0,
+      "clip": null
+    },
+    {
+      "label": "monsters.DEVOTED_SCULPTOR.moves.SAVAGE.title",
+      "node": 1,
+      "clip": null
+    },
+    {
+      "label": "bestiary.ACTION_NAME.hurt",
+      "node": -1,
+      "clip": "hurt"
+    },
+    {
+      "label": "bestiary.ACTION_NAME.die",
+      "node": -1,
+      "clip": "die"
+    },
+    {
+      "label": "monsters.ENTOMANCER.moves.PHEROMONE_SPIT.title",
+      "node": 0,
+      "clip": null
+    },
+    {
+      "label": "monsters.ENTOMANCER.moves.BEES.title",
+      "node": 1,
+      "clip": null
+    },
+    {
+      "label": "monsters.ENTOMANCER.moves.SPEAR.title",
+      "node": 2,
+      "clip": null
+    },
+    {
+      "label": "bestiary.ACTION_NAME.hurt",
+      "node": -1,
+      "clip": "hurt"
+    },
+    {
+      "label": "bestiary.ACTION_NAME.die",
+      "node": -1,
+      "clip": "die"
+    },
+    {
+      "label": "monsters.EXOSKELETON.moves.SKITTER.title",
+      "node": 0,
+      "clip": null
+    },
+    {
+      "label": "monsters.EXOSKELETON.moves.MANDIBLES.title",
+      "node": 1,
+      "clip": null
+    },
+    {
+      "label": "monsters.EXOSKELETON.moves.ENRAGE.title",
+      "node": 2,
+      "clip": null
+    },
+    {
+      "label": "bestiary.ACTION_NAME.hurt",
+      "node": -1,
+      "clip": "hurt"
+    },
+    {
+      "label": "bestiary.ACTION_NAME.die",
+      "node": -1,
+      "clip": "die"
+    },
+    {
+      "label": "monsters.EYE_WITH_TEETH.moves.DISTRACT.title",
+      "node": 0,
+      "clip": null
+    },
+    {
+      "label": "bestiary.ACTION_NAME.die",
+      "node": -1,
+      "clip": "die"
+    },
+    {
+      "label": "monsters.FABRICATOR.moves.FABRICATE.title",
+      "node": 0,
+      "clip": null
+    },
+    {
+      "label": "monsters.FABRICATOR.moves.DISINTEGRATE.title",
+      "node": 2,
+      "clip": null
+    },
+    {
+      "label": "bestiary.ACTION_NAME.hurt",
+      "node": -1,
+      "clip": "hurt"
+    },
+    {
+      "label": "bestiary.ACTION_NAME.die",
+      "node": -1,
+      "clip": "die"
+    },
+    {
+      "label": "monsters.FAKE_MERCHANT_MONSTER.moves.SWIPE.title",
+      "node": 0,
+      "clip": null
+    },
+    {
+      "label": "monsters.FAKE_MERCHANT_MONSTER.moves.SPEW_COINS.title",
+      "node": 1,
+      "clip": null
+    },
+    {
+      "label": "monsters.FAKE_MERCHANT_MONSTER.moves.THROW_RELIC.title",
+      "node": 2,
+      "clip": null
+    },
+    {
+      "label": "monsters.FAKE_MERCHANT_MONSTER.moves.ENRAGE.title",
+      "node": 3,
+      "clip": null
+    },
+    {
+      "label": "bestiary.ACTION_NAME.hurt",
+      "node": -1,
+      "clip": "hurt"
+    },
+    {
+      "label": "bestiary.ACTION_NAME.die",
+      "node": -1,
+      "clip": "die"
+    },
+    {
+      "label": "monsters.FAT_GREMLIN.moves.SPAWNED.title",
+      "node": 0,
+      "clip": null
+    },
+    {
+      "label": "monsters.FAT_GREMLIN.moves.FLEE.title",
+      "node": 1,
+      "clip": null
+    },
+    {
+      "label": "bestiary.ACTION_NAME.die",
+      "node": -1,
+      "clip": "die"
+    },
+    {
+      "label": "monsters.FLAIL_KNIGHT.moves.WAR_CHANT.title",
+      "node": 0,
+      "clip": null
+    },
+    {
+      "label": "monsters.FLAIL_KNIGHT.moves.FLAIL.title",
+      "node": 1,
+      "clip": null
+    },
+    {
+      "label": "monsters.FLAIL_KNIGHT.moves.RAM.title",
+      "node": 2,
+      "clip": null
+    },
+    {
+      "label": "bestiary.ACTION_NAME.hurt",
+      "node": -1,
+      "clip": "hurt"
+    },
+    {
+      "label": "bestiary.ACTION_NAME.die",
+      "node": -1,
+      "clip": "die"
+    },
+    {
+      "label": "monsters.FLYCONID.moves.VULNERABLE_SPORES.title",
+      "node": 0,
+      "clip": null
+    },
+    {
+      "label": "monsters.FLYCONID.moves.FRAIL_SPORES.title",
+      "node": 1,
+      "clip": null
+    },
+    {
+      "label": "monsters.FLYCONID.moves.SMASH.title",
+      "node": 2,
+      "clip": null
+    },
+    {
+      "label": "bestiary.ACTION_NAME.hurt",
+      "node": -1,
+      "clip": "hurt"
+    },
+    {
+      "label": "bestiary.ACTION_NAME.die",
+      "node": -1,
+      "clip": "die"
+    },
+    {
+      "label": "monsters.FOGMOG.moves.ILLUSION.title",
+      "node": 0,
+      "clip": null
+    },
+    {
+      "label": "monsters.FOGMOG.moves.SWIPE.title",
+      "node": 1,
+      "clip": null
+    },
+    {
+      "label": "bestiary.ACTION_NAME.hurt",
+      "node": -1,
+      "clip": "hurt"
+    },
+    {
+      "label": "bestiary.ACTION_NAME.die",
+      "node": -1,
+      "clip": "die"
+    },
+    {
+      "label": "monsters.FOSSIL_STALKER.moves.TACKLE.title",
+      "node": 0,
+      "clip": null
+    },
+    {
+      "label": "monsters.FOSSIL_STALKER.moves.LATCH.title",
+      "node": 1,
+      "clip": null
+    },
+    {
+      "label": "monsters.FOSSIL_STALKER.moves.LASH.title",
+      "node": 2,
+      "clip": null
+    },
+    {
+      "label": "bestiary.ACTION_NAME.hurt",
+      "node": -1,
+      "clip": "hurt"
+    },
+    {
+      "label": "bestiary.ACTION_NAME.die",
+      "node": -1,
+      "clip": "die"
+    },
+    {
+      "label": "monsters.FROG_KNIGHT.moves.FOR_THE_QUEEN.title",
+      "node": 0,
+      "clip": null
+    },
+    {
+      "label": "monsters.FROG_KNIGHT.moves.STRIKE_DOWN_EVIL.title",
+      "node": 1,
+      "clip": null
+    },
+    {
+      "label": "monsters.FROG_KNIGHT.moves.TONGUE_LASH.title",
+      "node": 2,
+      "clip": null
+    },
+    {
+      "label": "monsters.FROG_KNIGHT.moves.BEETLE_CHARGE.title",
+      "node": 3,
+      "clip": null
+    },
+    {
+      "label": "bestiary.ACTION_NAME.hurt",
+      "node": -1,
+      "clip": "hurt"
+    },
+    {
+      "label": "bestiary.ACTION_NAME.die",
+      "node": -1,
+      "clip": "die"
+    },
+    {
+      "label": "monsters.FUZZY_WURM_CRAWLER.moves.ACID_GOOP.title",
+      "node": 1,
+      "clip": null
+    },
+    {
+      "label": "monsters.FUZZY_WURM_CRAWLER.moves.INHALE.title",
+      "node": 2,
+      "clip": null
+    },
+    {
+      "label": "bestiary.ACTION_NAME.hurt",
+      "node": -1,
+      "clip": "hurt"
+    },
+    {
+      "label": "bestiary.ACTION_NAME.die",
+      "node": -1,
+      "clip": "die"
+    },
+    {
+      "label": "monsters.GAS_BOMB.moves.EXPLODE.title",
+      "node": 0,
+      "clip": null
+    },
+    {
+      "label": "bestiary.ACTION_NAME.hurt",
+      "node": -1,
+      "clip": "hurt"
+    },
+    {
+      "label": "bestiary.ACTION_NAME.die",
+      "node": -1,
+      "clip": "die"
+    },
+    {
+      "label": "monsters.GLOBE_HEAD.moves.THUNDER_STRIKE.title",
+      "node": 0,
+      "clip": null
+    },
+    {
+      "label": "monsters.GLOBE_HEAD.moves.SHOCKING_SLAP.title",
+      "node": 1,
+      "clip": null
+    },
+    {
+      "label": "bestiary.ACTION_NAME.hurt",
+      "node": -1,
+      "clip": "hurt"
+    },
+    {
+      "label": "bestiary.ACTION_NAME.die",
+      "node": -1,
+      "clip": "die"
+    },
+    {
+      "label": "monsters.GREMLIN_MERC.moves.GIMME.title",
+      "node": 0,
+      "clip": null
+    },
+    {
+      "label": "monsters.GREMLIN_MERC.moves.DOUBLE_SMASH.title",
+      "node": 1,
+      "clip": null
+    },
+    {
+      "label": "monsters.GREMLIN_MERC.moves.HEHE.title",
+      "node": 2,
+      "clip": null
+    },
+    {
+      "label": "bestiary.ACTION_NAME.hurt",
+      "node": -1,
+      "clip": "hurt"
+    },
+    {
+      "label": "bestiary.ACTION_NAME.die",
+      "node": -1,
+      "clip": "die"
+    },
+    {
+      "label": "monsters.GUARDBOT.moves.GUARD.title",
+      "node": 0,
+      "clip": null
+    },
+    {
+      "label": "bestiary.ACTION_NAME.hurt",
+      "node": -1,
+      "clip": "hurt"
+    },
+    {
+      "label": "bestiary.ACTION_NAME.die",
+      "node": -1,
+      "clip": "die"
+    },
+    {
+      "label": "monsters.HAUNTED_SHIP.moves.SWIPE.title",
+      "node": 0,
+      "clip": null
+    },
+    {
+      "label": "monsters.HAUNTED_SHIP.moves.STOMP.title",
+      "node": 1,
+      "clip": null
+    },
+    {
+      "label": "monsters.HAUNTED_SHIP.moves.HAUNT.title",
+      "node": 2,
+      "clip": null
+    },
+    {
+      "label": "bestiary.ACTION_NAME.hurt",
+      "node": -1,
+      "clip": "hurt"
+    },
+    {
+      "label": "bestiary.ACTION_NAME.die",
+      "node": -1,
+      "clip": "die"
+    },
+    {
+      "label": "monsters.HUNTER_KILLER.moves.TENDERIZING_GOOP.title",
+      "node": 0,
+      "clip": null
+    },
+    {
+      "label": "monsters.HUNTER_KILLER.moves.BITE.title",
+      "node": 1,
+      "clip": null
+    },
+    {
+      "label": "monsters.HUNTER_KILLER.moves.PUNCTURE.title",
+      "node": 2,
+      "clip": null
+    },
+    {
+      "label": "bestiary.ACTION_NAME.hurt",
+      "node": -1,
+      "clip": "hurt"
+    },
+    {
+      "label": "bestiary.ACTION_NAME.die",
+      "node": -1,
+      "clip": "die"
+    },
+    {
+      "label": "monsters.INFESTED_PRISM.moves.JAB.title",
+      "node": 0,
+      "clip": null
+    },
+    {
+      "label": "monsters.INFESTED_PRISM.moves.RADIATE.title",
+      "node": 1,
+      "clip": null
+    },
+    {
+      "label": "monsters.INFESTED_PRISM.moves.WHIRLWIND.title",
+      "node": 2,
+      "clip": null
+    },
+    {
+      "label": "monsters.INFESTED_PRISM.moves.PULSATE.title",
+      "node": 3,
+      "clip": null
+    },
+    {
+      "label": "bestiary.ACTION_NAME.hurt",
+      "node": -1,
+      "clip": "hurt"
+    },
+    {
+      "label": "bestiary.ACTION_NAME.die",
+      "node": -1,
+      "clip": "die"
+    },
+    {
+      "label": "monsters.INKLET.moves.JAB.title",
+      "node": 0,
+      "clip": null
+    },
+    {
+      "label": "monsters.INKLET.moves.WHIRLWIND.title",
+      "node": 1,
+      "clip": null
+    },
+    {
+      "label": "bestiary.ACTION_NAME.hurt",
+      "node": -1,
+      "clip": "hurt"
+    },
+    {
+      "label": "bestiary.ACTION_NAME.die",
+      "node": -1,
+      "clip": "die"
+    },
+    {
+      "label": "monsters.KIN_FOLLOWER.moves.QUICK_SLASH.title",
+      "node": 0,
+      "clip": null
+    },
+    {
+      "label": "monsters.KIN_FOLLOWER.moves.BOOMERANG.title",
+      "node": 1,
+      "clip": null
+    },
+    {
+      "label": "monsters.KIN_FOLLOWER.moves.POWER_DANCE.title",
+      "node": 2,
+      "clip": null
+    },
+    {
+      "label": "bestiary.ACTION_NAME.hurt",
+      "node": -1,
+      "clip": "hurt"
+    },
+    {
+      "label": "bestiary.ACTION_NAME.die",
+      "node": -1,
+      "clip": "die"
+    },
+    {
+      "label": "monsters.KIN_PRIEST.moves.ORB_OF_FRAILTY.title",
+      "node": 0,
+      "clip": null
+    },
+    {
+      "label": "monsters.KIN_PRIEST.moves.BEAM.title",
+      "node": 2,
+      "clip": null
+    },
+    {
+      "label": "monsters.KIN_PRIEST.moves.RITUAL.title",
+      "node": 3,
+      "clip": null
+    },
+    {
+      "label": "bestiary.ACTION_NAME.hurt",
+      "node": -1,
+      "clip": "hurt"
+    },
+    {
+      "label": "bestiary.ACTION_NAME.die",
+      "node": -1,
+      "clip": "die"
+    },
+    {
+      "label": "monsters.KNOWLEDGE_DEMON.moves.CURSE_OF_KNOWLEDGE.title",
+      "node": 0,
+      "clip": null
+    },
+    {
+      "label": "monsters.KNOWLEDGE_DEMON.moves.SLAP.title",
+      "node": 1,
+      "clip": null
+    },
+    {
+      "label": "monsters.KNOWLEDGE_DEMON.moves.KNOWLEDGE_OVERWHELMING.title",
+      "node": 2,
+      "clip": null
+    },
+    {
+      "label": "monsters.KNOWLEDGE_DEMON.moves.PONDER.title",
+      "node": 3,
+      "clip": null
+    },
+    {
+      "label": "bestiary.ACTION_NAME.hurt",
+      "node": -1,
+      "clip": "hurt"
+    },
+    {
+      "label": "bestiary.ACTION_NAME.die",
+      "node": -1,
+      "clip": "die"
+    },
+    {
+      "label": "monsters.LAGAVULIN_MATRIARCH.moves.SLEEP.title",
+      "node": -1,
+      "clip": "sleep_loop"
+    },
+    {
+      "label": "monsters.LAGAVULIN_MATRIARCH.moves.WAKE_UP.title",
+      "node": -1,
+      "clip": "wake_up"
+    },
+    {
+      "label": "monsters.LAGAVULIN_MATRIARCH.moves.SLASH.title",
+      "node": 1,
+      "clip": null
+    },
+    {
+      "label": "monsters.LAGAVULIN_MATRIARCH.moves.DISEMBOWEL.title",
+      "node": 3,
+      "clip": null
+    },
+    {
+      "label": "monsters.LAGAVULIN_MATRIARCH.moves.SOUL_SIPHON.title",
+      "node": 4,
+      "clip": null
+    },
+    {
+      "label": "bestiary.ACTION_NAME.hurt",
+      "node": -1,
+      "clip": "hurt"
+    },
+    {
+      "label": "bestiary.ACTION_NAME.die",
+      "node": -1,
+      "clip": "die"
+    },
+    {
+      "label": "monsters.LEAF_SLIME_M.moves.CLUMP_SHOT.title",
+      "node": 0,
+      "clip": null
+    },
+    {
+      "label": "monsters.LEAF_SLIME_M.moves.STICKY_SHOT.title",
+      "node": 1,
+      "clip": null
+    },
+    {
+      "label": "bestiary.ACTION_NAME.hurt",
+      "node": -1,
+      "clip": "hurt"
+    },
+    {
+      "label": "bestiary.ACTION_NAME.die",
+      "node": -1,
+      "clip": "die"
+    },
+    {
+      "label": "monsters.LEAF_SLIME_S.moves.TACKLE.title",
+      "node": 0,
+      "clip": null
+    },
+    {
+      "label": "monsters.LEAF_SLIME_S.moves.GOOP.title",
+      "node": 1,
+      "clip": null
+    },
+    {
+      "label": "bestiary.ACTION_NAME.hurt",
+      "node": -1,
+      "clip": "hurt"
+    },
+    {
+      "label": "bestiary.ACTION_NAME.die",
+      "node": -1,
+      "clip": "die"
+    },
+    {
+      "label": "monsters.LIVING_FOG.moves.ADVANCED_GAS.title",
+      "node": 0,
+      "clip": null
+    },
+    {
+      "label": "monsters.LIVING_FOG.moves.BLOAT.title",
+      "node": 1,
+      "clip": null
+    },
+    {
+      "label": "monsters.LIVING_FOG.moves.SUPER_GAS_BLAST.title",
+      "node": 2,
+      "clip": null
+    },
+    {
+      "label": "bestiary.ACTION_NAME.hurt",
+      "node": -1,
+      "clip": "hurt"
+    },
+    {
+      "label": "bestiary.ACTION_NAME.die",
+      "node": -1,
+      "clip": "die"
+    },
+    {
+      "label": "monsters.LIVING_SHIELD.moves.SHIELD_SLAM.title",
+      "node": 0,
+      "clip": null
+    },
+    {
+      "label": "monsters.LIVING_SHIELD.moves.SMASH.title",
+      "node": 1,
+      "clip": null
+    },
+    {
+      "label": "bestiary.ACTION_NAME.hurt",
+      "node": -1,
+      "clip": "hurt"
+    },
+    {
+      "label": "bestiary.ACTION_NAME.die",
+      "node": -1,
+      "clip": "die"
+    },
+    {
+      "label": "monsters.LOUSE_PROGENITOR.moves.WEB_CANNON.title",
+      "node": 0,
+      "clip": null
+    },
+    {
+      "label": "monsters.LOUSE_PROGENITOR.moves.POUNCE.title",
+      "node": 1,
+      "clip": null
+    },
+    {
+      "label": "monsters.LOUSE_PROGENITOR.moves.CURL_AND_GROW.title",
+      "node": 2,
+      "clip": null
+    },
+    {
+      "label": "bestiary.ACTION_NAME.hurt",
+      "node": -1,
+      "clip": "hurt"
+    },
+    {
+      "label": "bestiary.ACTION_NAME.die",
+      "node": -1,
+      "clip": "die"
+    },
+    {
+      "label": "monsters.MAGI_KNIGHT.moves.POWER_SHIELD.title",
+      "node": 0,
+      "clip": null
+    },
+    {
+      "label": "monsters.MAGI_KNIGHT.moves.DAMPEN.title",
+      "node": 1,
+      "clip": null
+    },
+    {
+      "label": "monsters.MAGI_KNIGHT.moves.MAGIC_BOMB.title",
+      "node": 3,
+      "clip": null
+    },
+    {
+      "label": "monsters.MAGI_KNIGHT.moves.RAM.title",
+      "node": 4,
+      "clip": null
+    },
+    {
+      "label": "bestiary.ACTION_NAME.hurt",
+      "node": -1,
+      "clip": "hurt"
+    },
+    {
+      "label": "bestiary.ACTION_NAME.die",
+      "node": -1,
+      "clip": "die"
+    },
+    {
+      "label": "monsters.MAWLER.moves.RIP_AND_TEAR.title",
+      "node": 0,
+      "clip": null
+    },
+    {
+      "label": "monsters.MAWLER.moves.ROAR.title",
+      "node": 1,
+      "clip": null
+    },
+    {
+      "label": "monsters.MAWLER.moves.CLAW.title",
+      "node": 2,
+      "clip": null
+    },
+    {
+      "label": "bestiary.ACTION_NAME.hurt",
+      "node": -1,
+      "clip": "hurt"
+    },
+    {
+      "label": "bestiary.ACTION_NAME.die",
+      "node": -1,
+      "clip": "die"
+    },
+    {
+      "label": "monsters.MECHA_KNIGHT.moves.CHARGE.title",
+      "node": 0,
+      "clip": null
+    },
+    {
+      "label": "monsters.MECHA_KNIGHT.moves.FLAMETHROWER.title",
+      "node": 1,
+      "clip": null
+    },
+    {
+      "label": "monsters.MECHA_KNIGHT.moves.WINDUP.title",
+      "node": 2,
+      "clip": null
+    },
+    {
+      "label": "monsters.MECHA_KNIGHT.moves.HEAVY_CLEAVE.title",
+      "node": 3,
+      "clip": null
+    },
+    {
+      "label": "bestiary.ACTION_NAME.hurt",
+      "node": -1,
+      "clip": "hurt"
+    },
+    {
+      "label": "bestiary.ACTION_NAME.die",
+      "node": -1,
+      "clip": "die"
+    },
+    {
+      "label": "monsters.MYSTERIOUS_KNIGHT.moves.WAR_CHANT.title",
+      "node": 0,
+      "clip": null
+    },
+    {
+      "label": "monsters.MYSTERIOUS_KNIGHT.moves.FLAIL.title",
+      "node": 1,
+      "clip": null
+    },
+    {
+      "label": "monsters.MYSTERIOUS_KNIGHT.moves.RAM.title",
+      "node": 2,
+      "clip": null
+    },
+    {
+      "label": "bestiary.ACTION_NAME.hurt",
+      "node": -1,
+      "clip": "hurt"
+    },
+    {
+      "label": "bestiary.ACTION_NAME.die",
+      "node": -1,
+      "clip": "die"
+    },
+    {
+      "label": "monsters.MYTE.moves.TOXIC.title",
+      "node": 0,
+      "clip": null
+    },
+    {
+      "label": "monsters.MYTE.moves.BITE.title",
+      "node": 1,
+      "clip": null
+    },
+    {
+      "label": "monsters.MYTE.moves.SUCK.title",
+      "node": 2,
+      "clip": null
+    },
+    {
+      "label": "bestiary.ACTION_NAME.hurt",
+      "node": -1,
+      "clip": "hurt"
+    },
+    {
+      "label": "bestiary.ACTION_NAME.die",
+      "node": -1,
+      "clip": "die"
+    },
+    {
+      "label": "monsters.NIBBIT.moves.BUTT.title",
+      "node": 0,
+      "clip": null
+    },
+    {
+      "label": "monsters.NIBBIT.moves.HISS.title",
+      "node": 2,
+      "clip": null
+    },
+    {
+      "label": "bestiary.ACTION_NAME.hurt",
+      "node": -1,
+      "clip": "hurt"
+    },
+    {
+      "label": "bestiary.ACTION_NAME.die",
+      "node": -1,
+      "clip": "die"
+    },
+    {
+      "label": "monsters.NOISEBOT.moves.NOISE.title",
+      "node": 0,
+      "clip": null
+    },
+    {
+      "label": "bestiary.ACTION_NAME.hurt",
+      "node": -1,
+      "clip": "hurt"
+    },
+    {
+      "label": "bestiary.ACTION_NAME.die",
+      "node": -1,
+      "clip": "die"
+    },
+    {
+      "label": "monsters.OVICOPTER.moves.LAY_EGGS.title",
+      "node": 0,
+      "clip": null
+    },
+    {
+      "label": "monsters.OVICOPTER.moves.SMASH.title",
+      "node": 1,
+      "clip": null
+    },
+    {
+      "label": "monsters.OVICOPTER.moves.NUTRITIONAL_PASTE.title",
+      "node": 3,
+      "clip": null
+    },
+    {
+      "label": "bestiary.ACTION_NAME.hurt",
+      "node": -1,
+      "clip": "hurt"
+    },
+    {
+      "label": "bestiary.ACTION_NAME.die",
+      "node": -1,
+      "clip": "die"
+    },
+    {
+      "label": "monsters.OWL_MAGISTRATE.moves.MAGISTRATE_SCRUTINY.title",
+      "node": 0,
+      "clip": null
+    },
+    {
+      "label": "monsters.OWL_MAGISTRATE.moves.PECK_ASSAULT.title",
+      "node": 1,
+      "clip": null
+    },
+    {
+      "label": "monsters.OWL_MAGISTRATE.moves.JUDICIAL_FLIGHT.title",
+      "node": 2,
+      "clip": null
+    },
+    {
+      "label": "monsters.OWL_MAGISTRATE.moves.VERDICT.title",
+      "node": 3,
+      "clip": null
+    },
+    {
+      "label": "bestiary.ACTION_NAME.hurt",
+      "node": -1,
+      "clip": "hurt"
+    },
+    {
+      "label": "bestiary.ACTION_NAME.die",
+      "node": -1,
+      "clip": "die"
+    },
+    {
+      "label": "monsters.PARAFRIGHT.moves.SLAM.title",
+      "node": 0,
+      "clip": null
+    },
+    {
+      "label": "bestiary.ACTION_NAME.hurt",
+      "node": -1,
+      "clip": "hurt"
+    },
+    {
+      "label": "bestiary.ACTION_NAME.die",
+      "node": -1,
+      "clip": "die"
+    },
+    {
+      "label": "monsters.PHANTASMAL_GARDENER.moves.BITE.title",
+      "node": 0,
+      "clip": null
+    },
+    {
+      "label": "monsters.PHANTASMAL_GARDENER.moves.FLAIL.title",
+      "node": 2,
+      "clip": null
+    },
+    {
+      "label": "monsters.PHANTASMAL_GARDENER.moves.ENLARGE.title",
+      "node": 3,
+      "clip": null
+    },
+    {
+      "label": "bestiary.ACTION_NAME.hurt",
+      "node": -1,
+      "clip": "hurt"
+    },
+    {
+      "label": "bestiary.ACTION_NAME.die",
+      "node": -1,
+      "clip": "die"
+    },
+    {
+      "label": "monsters.PHROG_PARASITE.moves.INFECT.title",
+      "node": 0,
+      "clip": null
+    },
+    {
+      "label": "monsters.PHROG_PARASITE.moves.LASH.title",
+      "node": 1,
+      "clip": null
+    },
+    {
+      "label": "bestiary.ACTION_NAME.hurt",
+      "node": -1,
+      "clip": "hurt"
+    },
+    {
+      "label": "bestiary.ACTION_NAME.die",
+      "node": -1,
+      "clip": "die"
+    },
+    {
+      "label": "monsters.PUNCH_CONSTRUCT.moves.READY.title",
+      "node": 0,
+      "clip": null
+    },
+    {
+      "label": "monsters.PUNCH_CONSTRUCT.moves.STRONG_PUNCH.title",
+      "node": 1,
+      "clip": null
+    },
+    {
+      "label": "monsters.PUNCH_CONSTRUCT.moves.FAST_PUNCH.title",
+      "node": 2,
+      "clip": null
+    },
+    {
+      "label": "bestiary.ACTION_NAME.hurt",
+      "node": -1,
+      "clip": "hurt"
+    },
+    {
+      "label": "bestiary.ACTION_NAME.die",
+      "node": -1,
+      "clip": "die"
+    },
+    {
+      "label": "monsters.QUEEN.moves.YOU_ARE_MINE.title",
+      "node": 1,
+      "clip": null
+    },
+    {
+      "label": "monsters.QUEEN.moves.OFF_WITH_YOUR_HEAD.title",
+      "node": 3,
+      "clip": null
+    },
+    {
+      "label": "bestiary.ACTION_NAME.hurt",
+      "node": -1,
+      "clip": "hurt"
+    },
+    {
+      "label": "bestiary.ACTION_NAME.die",
+      "node": -1,
+      "clip": "die"
+    },
+    {
+      "label": "monsters.ROCKET.moves.TARGETING_RETICLE.title",
+      "node": 0,
+      "clip": null
+    },
+    {
+      "label": "monsters.ROCKET.moves.PRECISION_BEAM.title",
+      "node": 1,
+      "clip": null
+    },
+    {
+      "label": "monsters.ROCKET.moves.CHARGE_UP.title",
+      "node": 2,
+      "clip": null
+    },
+    {
+      "label": "monsters.ROCKET.moves.LASER.title",
+      "node": 3,
+      "clip": null
+    },
+    {
+      "label": "monsters.ROCKET.moves.RECHARGE.title",
+      "node": 4,
+      "clip": null
+    },
+    {
+      "label": "bestiary.ACTION_NAME.hurt",
+      "node": -1,
+      "clip": "right/hurt"
+    },
+    {
+      "label": "bestiary.ACTION_NAME.die",
+      "node": -1,
+      "clip": "right/die"
+    },
+    {
+      "label": "monsters.SCROLL_OF_BITING.moves.CHOMP.title",
+      "node": 0,
+      "clip": null
+    },
+    {
+      "label": "monsters.SCROLL_OF_BITING.moves.CHEW.title",
+      "node": 1,
+      "clip": null
+    },
+    {
+      "label": "monsters.SCROLL_OF_BITING.moves.MORE_TEETH.title",
+      "node": 2,
+      "clip": null
+    },
+    {
+      "label": "bestiary.ACTION_NAME.hurt",
+      "node": -1,
+      "clip": "hurt"
+    },
+    {
+      "label": "bestiary.ACTION_NAME.die",
+      "node": -1,
+      "clip": "die"
+    },
+    {
+      "label": "monsters.SEAPUNK.moves.SEA_KICK.title",
+      "node": 0,
+      "clip": null
+    },
+    {
+      "label": "monsters.SEAPUNK.moves.SPINNING_KICK.title",
+      "node": 1,
+      "clip": null
+    },
+    {
+      "label": "monsters.SEAPUNK.moves.BUBBLE_BURP.title",
+      "node": 2,
+      "clip": null
+    },
+    {
+      "label": "bestiary.ACTION_NAME.hurt",
+      "node": -1,
+      "clip": "hurt"
+    },
+    {
+      "label": "bestiary.ACTION_NAME.die",
+      "node": -1,
+      "clip": "die"
+    },
+    {
+      "label": "monsters.SEWER_CLAM.moves.PRESSURIZE.title",
+      "node": 0,
+      "clip": null
+    },
+    {
+      "label": "monsters.SEWER_CLAM.moves.JET.title",
+      "node": 1,
+      "clip": null
+    },
+    {
+      "label": "bestiary.ACTION_NAME.hurt",
+      "node": -1,
+      "clip": "hurt"
+    },
+    {
+      "label": "bestiary.ACTION_NAME.die",
+      "node": -1,
+      "clip": "die"
+    },
+    {
+      "label": "monsters.SHRINKER_BEETLE.moves.SHRINKER.title",
+      "node": 0,
+      "clip": null
+    },
+    {
+      "label": "monsters.SHRINKER_BEETLE.moves.CHOMP.title",
+      "node": 1,
+      "clip": null
+    },
+    {
+      "label": "bestiary.ACTION_NAME.hurt",
+      "node": -1,
+      "clip": "hurt"
+    },
+    {
+      "label": "bestiary.ACTION_NAME.die",
+      "node": -1,
+      "clip": "die"
+    },
+    {
+      "label": "monsters.SKULKING_COLONY.moves.ZOOM.title",
+      "node": 0,
+      "clip": null
+    },
+    {
+      "label": "monsters.SKULKING_COLONY.moves.INERTIA.title",
+      "node": 2,
+      "clip": null
+    },
+    {
+      "label": "monsters.SKULKING_COLONY.moves.PIERCING_STABS.title",
+      "node": 3,
+      "clip": null
+    },
+    {
+      "label": "bestiary.ACTION_NAME.hurt",
+      "node": -1,
+      "clip": "hurt"
+    },
+    {
+      "label": "bestiary.ACTION_NAME.die",
+      "node": -1,
+      "clip": "die"
+    },
+    {
+      "label": "monsters.SLIMED_BERSERKER.moves.VOMIT_ICHOR.title",
+      "node": 0,
+      "clip": null
+    },
+    {
+      "label": "monsters.SLIMED_BERSERKER.moves.LEECHING_HUG.title",
+      "node": 1,
+      "clip": null
+    },
+    {
+      "label": "monsters.SLIMED_BERSERKER.moves.FURIOUS_PUMMELING.title",
+      "node": 3,
+      "clip": null
+    },
+    {
+      "label": "bestiary.ACTION_NAME.hurt",
+      "node": -1,
+      "clip": "hurt"
+    },
+    {
+      "label": "bestiary.ACTION_NAME.die",
+      "node": -1,
+      "clip": "die"
+    },
+    {
+      "label": "monsters.SLITHERING_STRANGLER.moves.CONSTRICT.title",
+      "node": 0,
+      "clip": null
+    },
+    {
+      "label": "monsters.SLITHERING_STRANGLER.moves.THWACK.title",
+      "node": 1,
+      "clip": null
+    },
+    {
+      "label": "monsters.SLITHERING_STRANGLER.moves.LASH.title",
+      "node": 2,
+      "clip": null
+    },
+    {
+      "label": "bestiary.ACTION_NAME.hurt",
+      "node": -1,
+      "clip": "hurt"
+    },
+    {
+      "label": "bestiary.ACTION_NAME.die",
+      "node": -1,
+      "clip": "die"
+    },
+    {
+      "label": "monsters.SLUDGE_SPINNER.moves.OIL_SPRAY.title",
+      "node": 0,
+      "clip": null
+    },
+    {
+      "label": "monsters.SLUDGE_SPINNER.moves.SLAM.title",
+      "node": 1,
+      "clip": null
+    },
+    {
+      "label": "bestiary.ACTION_NAME.hurt",
+      "node": -1,
+      "clip": "hurt"
+    },
+    {
+      "label": "bestiary.ACTION_NAME.die",
+      "node": -1,
+      "clip": "die"
+    },
+    {
+      "label": "monsters.SLUMBERING_BEETLE.moves.SNORE.title",
+      "node": 0,
+      "clip": null
+    },
+    {
+      "label": "monsters.SLUMBERING_BEETLE.moves.ROLL_OUT.title",
+      "node": 1,
+      "clip": null
+    },
+    {
+      "label": "bestiary.ACTION_NAME.hurt",
+      "node": -1,
+      "clip": "hurt"
+    },
+    {
+      "label": "bestiary.ACTION_NAME.die",
+      "node": -1,
+      "clip": "die"
+    },
+    {
+      "label": "monsters.SNAPPING_JAXFRUIT.moves.ENERGY_ORB.title",
+      "node": 0,
+      "clip": null
+    },
+    {
+      "label": "bestiary.ACTION_NAME.hurt",
+      "node": -1,
+      "clip": "hurt"
+    },
+    {
+      "label": "bestiary.ACTION_NAME.die",
+      "node": -1,
+      "clip": "die"
+    },
+    {
+      "label": "monsters.SNEAKY_GREMLIN.moves.SPAWNED.title",
+      "node": 0,
+      "clip": null
+    },
+    {
+      "label": "monsters.SNEAKY_GREMLIN.moves.TACKLE.title",
+      "node": 1,
+      "clip": null
+    },
+    {
+      "label": "bestiary.ACTION_NAME.die",
+      "node": -1,
+      "clip": "die"
+    },
+    {
+      "label": "monsters.SOUL_FYSH.moves.BECKON.title",
+      "node": 0,
+      "clip": null
+    },
+    {
+      "label": "monsters.SOUL_FYSH.moves.DE_GAS.title",
+      "node": 1,
+      "clip": null
+    },
+    {
+      "label": "monsters.SOUL_FYSH.moves.GAZE.title",
+      "node": 2,
+      "clip": null
+    },
+    {
+      "label": "monsters.SOUL_FYSH.moves.FADE.title",
+      "node": 3,
+      "clip": null
+    },
+    {
+      "label": "monsters.SOUL_FYSH.moves.SCREAM.title",
+      "node": 4,
+      "clip": null
+    },
+    {
+      "label": "bestiary.ACTION_NAME.hurt",
+      "node": -1,
+      "clip": "hurt"
+    },
+    {
+      "label": "bestiary.ACTION_NAME.die",
+      "node": -1,
+      "clip": "die"
+    },
+    {
+      "label": "monsters.SOUL_NEXUS.moves.SOUL_BURN.title",
+      "node": 0,
+      "clip": null
+    },
+    {
+      "label": "monsters.SOUL_NEXUS.moves.DRAIN_LIFE.title",
+      "node": 2,
+      "clip": null
+    },
+    {
+      "label": "bestiary.ACTION_NAME.hurt",
+      "node": -1,
+      "clip": "hurt"
+    },
+    {
+      "label": "bestiary.ACTION_NAME.die",
+      "node": -1,
+      "clip": "die"
+    },
+    {
+      "label": "monsters.SPECTRAL_KNIGHT.moves.HEX.title",
+      "node": 0,
+      "clip": null
+    },
+    {
+      "label": "monsters.SPECTRAL_KNIGHT.moves.SOUL_SLASH.title",
+      "node": 1,
+      "clip": null
+    },
+    {
+      "label": "monsters.SPECTRAL_KNIGHT.moves.SOUL_FLAME.title",
+      "node": 2,
+      "clip": null
+    },
+    {
+      "label": "bestiary.ACTION_NAME.hurt",
+      "node": -1,
+      "clip": "hurt"
+    },
+    {
+      "label": "bestiary.ACTION_NAME.die",
+      "node": -1,
+      "clip": "die"
+    },
+    {
+      "label": "monsters.SPINY_TOAD.moves.PROTRUDING_SPIKES.title",
+      "node": 0,
+      "clip": null
+    },
+    {
+      "label": "monsters.SPINY_TOAD.moves.SPIKE_EXPLOSION.title",
+      "node": 1,
+      "clip": null
+    },
+    {
+      "label": "monsters.SPINY_TOAD.moves.TONGUE_LASH.title",
+      "node": 2,
+      "clip": null
+    },
+    {
+      "label": "bestiary.ACTION_NAME.hurt",
+      "node": -1,
+      "clip": "hurt"
+    },
+    {
+      "label": "bestiary.ACTION_NAME.die",
+      "node": -1,
+      "clip": "die"
+    },
+    {
+      "label": "monsters.STABBOT.moves.STAB.title",
+      "node": 0,
+      "clip": null
+    },
+    {
+      "label": "bestiary.ACTION_NAME.hurt",
+      "node": -1,
+      "clip": "hurt"
+    },
+    {
+      "label": "bestiary.ACTION_NAME.die",
+      "node": -1,
+      "clip": "die"
+    },
+    {
+      "label": "monsters.TERROR_EEL.moves.CRASH.title",
+      "node": 0,
+      "clip": null
+    },
+    {
+      "label": "monsters.TERROR_EEL.moves.THRASH.title",
+      "node": 1,
+      "clip": null
+    },
+    {
+      "label": "monsters.TERROR_EEL.moves.TERROR.title",
+      "node": 3,
+      "clip": null
+    },
+    {
+      "label": "bestiary.ACTION_NAME.hurt",
+      "node": -1,
+      "clip": "hurt"
+    },
+    {
+      "label": "bestiary.ACTION_NAME.die",
+      "node": -1,
+      "clip": "die"
+    },
+    {
+      "label": "monsters.TEST_SUBJECT.moves.RESPAWN.title",
+      "node": 0,
+      "clip": null
+    },
+    {
+      "label": "monsters.TEST_SUBJECT.moves.MULTI_CLAW.title",
+      "node": 3,
+      "clip": null
+    },
+    {
+      "label": "monsters.TEST_SUBJECT.moves.BIG_POUNCE.title",
+      "node": 5,
+      "clip": null
+    },
+    {
+      "label": "monsters.TEST_SUBJECT.moves.BURNING_GROWL.title",
+      "node": 6,
+      "clip": null
+    },
+    {
+      "label": "bestiary.ACTION_NAME.die",
+      "node": -1,
+      "clip": "die"
+    },
+    {
+      "label": "monsters.THE_FORGOTTEN.moves.MIASMA.title",
+      "node": 0,
+      "clip": null
+    },
+    {
+      "label": "monsters.THE_FORGOTTEN.moves.DREAD.title",
+      "node": 1,
+      "clip": null
+    },
+    {
+      "label": "bestiary.ACTION_NAME.hurt",
+      "node": -1,
+      "clip": "hurt"
+    },
+    {
+      "label": "bestiary.ACTION_NAME.die",
+      "node": -1,
+      "clip": "die"
+    },
+    {
+      "label": "monsters.THE_INSATIABLE.moves.LIQUIFY_GROUND.title",
+      "node": 0,
+      "clip": null
+    },
+    {
+      "label": "monsters.THE_INSATIABLE.moves.THRASH.title",
+      "node": 1,
+      "clip": null
+    },
+    {
+      "label": "monsters.THE_INSATIABLE.moves.LUNGING_BITE.title",
+      "node": 3,
+      "clip": null
+    },
+    {
+      "label": "monsters.THE_INSATIABLE.moves.SALIVATE.title",
+      "node": 4,
+      "clip": null
+    },
+    {
+      "label": "monsters.THE_INSATIABLE.moves.DEVOUR.title",
+      "node": -1,
+      "clip": "eat_player"
+    },
+    {
+      "label": "bestiary.ACTION_NAME.hurt",
+      "node": -1,
+      "clip": "hurt"
+    },
+    {
+      "label": "bestiary.ACTION_NAME.die",
+      "node": -1,
+      "clip": "die"
+    },
+    {
+      "label": "monsters.THE_LOST.moves.DEBILITATING_SMOG.title",
+      "node": 0,
+      "clip": null
+    },
+    {
+      "label": "monsters.THE_LOST.moves.EYE_LASERS.title",
+      "node": 1,
+      "clip": null
+    },
+    {
+      "label": "bestiary.ACTION_NAME.hurt",
+      "node": -1,
+      "clip": "hurt"
+    },
+    {
+      "label": "bestiary.ACTION_NAME.die",
+      "node": -1,
+      "clip": "die"
+    },
+    {
+      "label": "monsters.THE_OBSCURA.moves.ILLUSION.title",
+      "node": 0,
+      "clip": null
+    },
+    {
+      "label": "monsters.THE_OBSCURA.moves.SAIL.title",
+      "node": 2,
+      "clip": null
+    },
+    {
+      "label": "monsters.THE_OBSCURA.moves.HARDENING_STRIKE.title",
+      "node": 3,
+      "clip": null
+    },
+    {
+      "label": "bestiary.ACTION_NAME.hurt",
+      "node": -1,
+      "clip": "hurt"
+    },
+    {
+      "label": "bestiary.ACTION_NAME.die",
+      "node": -1,
+      "clip": "die"
+    },
+    {
+      "label": "monsters.THIEVING_HOPPER.moves.THIEVERY.title",
+      "node": 0,
+      "clip": null
+    },
+    {
+      "label": "monsters.THIEVING_HOPPER.moves.NAB.title",
+      "node": 1,
+      "clip": null
+    },
+    {
+      "label": "monsters.THIEVING_HOPPER.moves.HAT_TRICK.title",
+      "node": 2,
+      "clip": null
+    },
+    {
+      "label": "monsters.THIEVING_HOPPER.moves.FLUTTER.title",
+      "node": 3,
+      "clip": null
+    },
+    {
+      "label": "monsters.THIEVING_HOPPER.moves.ESCAPE.title",
+      "node": 4,
+      "clip": null
+    },
+    {
+      "label": "bestiary.ACTION_NAME.hurt",
+      "node": -1,
+      "clip": "hurt"
+    },
+    {
+      "label": "bestiary.ACTION_NAME.die",
+      "node": -1,
+      "clip": "die"
+    },
+    {
+      "label": "monsters.TOADPOLE.moves.SPIKE_SPIT.title",
+      "node": 0,
+      "clip": null
+    },
+    {
+      "label": "monsters.TOADPOLE.moves.WHIRL.title",
+      "node": 1,
+      "clip": null
+    },
+    {
+      "label": "monsters.TOADPOLE.moves.SPIKEN.title",
+      "node": 2,
+      "clip": null
+    },
+    {
+      "label": "bestiary.ACTION_NAME.hurt",
+      "node": -1,
+      "clip": "hurt"
+    },
+    {
+      "label": "bestiary.ACTION_NAME.die",
+      "node": -1,
+      "clip": "die"
+    },
+    {
+      "label": "monsters.TORCH_HEAD_AMALGAM.moves.STRONG_TACKLE.title",
+      "node": 0,
+      "clip": null
+    },
+    {
+      "label": "monsters.TORCH_HEAD_AMALGAM.moves.BEAM.title",
+      "node": 2,
+      "clip": null
+    },
+    {
+      "label": "bestiary.ACTION_NAME.hurt",
+      "node": -1,
+      "clip": "hurt"
+    },
+    {
+      "label": "bestiary.ACTION_NAME.die",
+      "node": -1,
+      "clip": "die"
+    },
+    {
+      "label": "monsters.TOUGH_EGG.moves.HATCH.title",
+      "node": 0,
+      "clip": null
+    },
+    {
+      "label": "monsters.TOUGH_EGG.moves.NIBBLE.title",
+      "node": 1,
+      "clip": null
+    },
+    {
+      "label": "bestiary.ACTION_NAME.hurt",
+      "node": -1,
+      "clip": "hurt"
+    },
+    {
+      "label": "bestiary.ACTION_NAME.die",
+      "node": -1,
+      "clip": "die"
+    },
+    {
+      "label": "monsters.TRACKER_RUBY_RAIDER.moves.HOUNDS.title",
+      "node": 1,
+      "clip": null
+    },
+    {
+      "label": "bestiary.ACTION_NAME.hurt",
+      "node": -1,
+      "clip": "hurt"
+    },
+    {
+      "label": "bestiary.ACTION_NAME.die",
+      "node": -1,
+      "clip": "die"
+    },
+    {
+      "label": "monsters.TUNNELER.moves.BITE.title",
+      "node": 0,
+      "clip": null
+    },
+    {
+      "label": "monsters.TUNNELER.moves.BURROW.title",
+      "node": 1,
+      "clip": null
+    },
+    {
+      "label": "monsters.TUNNELER.moves.BELOW.title",
+      "node": 2,
+      "clip": null
+    },
+    {
+      "label": "monsters.GENERIC.moves.STUNNED.title",
+      "node": -1,
+      "clip": "stun"
+    },
+    {
+      "label": "monsters.TUNNELER.moves.DIZZY.title",
+      "node": 3,
+      "clip": null
+    },
+    {
+      "label": "bestiary.ACTION_NAME.hurt",
+      "node": -1,
+      "clip": "hurt"
+    },
+    {
+      "label": "bestiary.ACTION_NAME.die",
+      "node": -1,
+      "clip": "die"
+    },
+    {
+      "label": "monsters.TURRET_OPERATOR.moves.UNLOAD.title",
+      "node": 0,
+      "clip": null
+    },
+    {
+      "label": "monsters.TURRET_OPERATOR.moves.RELOAD.title",
+      "node": 2,
+      "clip": null
+    },
+    {
+      "label": "bestiary.ACTION_NAME.hurt",
+      "node": -1,
+      "clip": "hurt"
+    },
+    {
+      "label": "bestiary.ACTION_NAME.die",
+      "node": -1,
+      "clip": "die"
+    },
+    {
+      "label": "monsters.TWIG_SLIME_M.moves.POKEY_POUNCE.title",
+      "node": 0,
+      "clip": null
+    },
+    {
+      "label": "monsters.TWIG_SLIME_M.moves.STICKY_SHOT.title",
+      "node": 1,
+      "clip": null
+    },
+    {
+      "label": "bestiary.ACTION_NAME.hurt",
+      "node": -1,
+      "clip": "hurt"
+    },
+    {
+      "label": "bestiary.ACTION_NAME.die",
+      "node": -1,
+      "clip": "die"
+    },
+    {
+      "label": "monsters.TWIG_SLIME_S.moves.TACKLE.title",
+      "node": 0,
+      "clip": null
+    },
+    {
+      "label": "bestiary.ACTION_NAME.hurt",
+      "node": -1,
+      "clip": "hurt"
+    },
+    {
+      "label": "bestiary.ACTION_NAME.die",
+      "node": -1,
+      "clip": "die"
+    },
+    {
+      "label": "monsters.TWO_TAILED_RAT.moves.SCRATCH.title",
+      "node": 0,
+      "clip": null
+    },
+    {
+      "label": "monsters.TWO_TAILED_RAT.moves.DISEASE_BITE.title",
+      "node": 1,
+      "clip": null
+    },
+    {
+      "label": "monsters.TWO_TAILED_RAT.moves.SCREECH.title",
+      "node": 2,
+      "clip": null
+    },
+    {
+      "label": "monsters.TWO_TAILED_RAT.moves.CALL_FOR_BACKUP.title",
+      "node": 3,
+      "clip": null
+    },
+    {
+      "label": "bestiary.ACTION_NAME.hurt",
+      "node": -1,
+      "clip": "hurt"
+    },
+    {
+      "label": "bestiary.ACTION_NAME.die",
+      "node": -1,
+      "clip": "die"
+    },
+    {
+      "label": "monsters.VANTOM.moves.INK_BLOT.title",
+      "node": 0,
+      "clip": null
+    },
+    {
+      "label": "monsters.VANTOM.moves.INKY_LANCE.title",
+      "node": 1,
+      "clip": null
+    },
+    {
+      "label": "monsters.VANTOM.moves.DISMEMBER.title",
+      "node": 2,
+      "clip": null
+    },
+    {
+      "label": "monsters.VANTOM.moves.PREPARE.title",
+      "node": 3,
+      "clip": null
+    },
+    {
+      "label": "bestiary.ACTION_NAME.hurt",
+      "node": -1,
+      "clip": "hurt"
+    },
+    {
+      "label": "bestiary.ACTION_NAME.die",
+      "node": -1,
+      "clip": "die"
+    },
+    {
+      "label": "monsters.VINE_SHAMBLER.moves.GRASPING_VINES.title",
+      "node": 0,
+      "clip": null
+    },
+    {
+      "label": "monsters.VINE_SHAMBLER.moves.SWIPE.title",
+      "node": 1,
+      "clip": null
+    },
+    {
+      "label": "monsters.VINE_SHAMBLER.moves.CHOMP.title",
+      "node": 2,
+      "clip": null
+    },
+    {
+      "label": "bestiary.ACTION_NAME.hurt",
+      "node": -1,
+      "clip": "hurt"
+    },
+    {
+      "label": "bestiary.ACTION_NAME.die",
+      "node": -1,
+      "clip": "die"
+    },
+    {
+      "label": "monsters.WATERFALL_GIANT.moves.PRESSURIZE.title",
+      "node": 0,
+      "clip": null
+    },
+    {
+      "label": "monsters.WATERFALL_GIANT.moves.STOMP.title",
+      "node": 1,
+      "clip": null
+    },
+    {
+      "label": "monsters.WATERFALL_GIANT.moves.RAM.title",
+      "node": 2,
+      "clip": null
+    },
+    {
+      "label": "monsters.WATERFALL_GIANT.moves.ABOUT_TO_BLOW.title",
+      "node": 6,
+      "clip": null
+    },
+    {
+      "label": "monsters.WATERFALL_GIANT.moves.EXPLODE.title",
+      "node": 7,
+      "clip": null
+    },
+    {
+      "label": "bestiary.ACTION_NAME.hurt",
+      "node": -1,
+      "clip": "hurt"
+    },
+    {
+      "label": "bestiary.ACTION_NAME.die",
+      "node": -1,
+      "clip": "die"
+    },
+    {
+      "label": "monsters.WRIGGLER.moves.WRIGGLE.title",
+      "node": 1,
+      "clip": null
+    },
+    {
+      "label": "bestiary.ACTION_NAME.hurt",
+      "node": -1,
+      "clip": "hurt"
+    },
+    {
+      "label": "bestiary.ACTION_NAME.die",
+      "node": -1,
+      "clip": "die"
+    },
+    {
+      "label": "monsters.ZAPBOT.moves.ZAP.title",
+      "node": 0,
+      "clip": null
+    },
+    {
+      "label": "bestiary.ACTION_NAME.hurt",
+      "node": -1,
+      "clip": "hurt"
+    },
+    {
+      "label": "bestiary.ACTION_NAME.die",
+      "node": -1,
+      "clip": "die"
+    },
+    {
+      "label": "monsters.DECIMILLIPEDE_SEGMENT.moves.WRITHE.title",
+      "node": 0,
+      "clip": "idle_loop"
+    },
+    {
+      "label": "monsters.DECIMILLIPEDE_SEGMENT.moves.REATTACH.title",
+      "node": -1,
+      "clip": "regenerate"
+    },
+    {
+      "label": "monsters.DECIMILLIPEDE_SEGMENT.moves.DEAD.title",
+      "node": -1,
+      "clip": "wither"
+    }
+  ]
+}

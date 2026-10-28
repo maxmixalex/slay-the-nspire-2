@@ -1,0 +1,263 @@
+{
+  "schema": 1,
+  "status": "native_verified",
+  "metadata_only": true,
+  "reference": "v0.111.0 / 41cef1ea",
+  "runtime_checkpoint": "4f50193b212bb5d27e4a7e82deaa7622a5d4757d",
+  "final_test_source_checkpoint": "5c884a2f1108c1c42e2114716f3a5a3192431fdf",
+  "previous_choice_validation": {
+    "checkpoint": "06c7fd16e6d4d47dc25b628913ecdeef3a4fe76d",
+    "report": "validation-choice-barriers-0.17.json",
+    "retains_original_execution_identity": true
+  },
+  "runtime_build": {
+    "checkpoint": "4f50193b212bb5d27e4a7e82deaa7622a5d4757d",
+    "status": "passed",
+    "returncode": 0,
+    "source_changed": false,
+    "source_sha256": "2b696b33a88d3ce9871beaacbd930ef1f1b0643921d77e2d7aa18b05bd6fcd5b",
+    "started_at": "2026-10-23T08:56:24.868710+00:00",
+    "ended_at": "2026-10-23T08:56:47.937400+00:00",
+    "journal": "final-ui2-native-build-41d1bb02d031.json",
+    "journal_sha256": "54661015a3544e7317dd07d49b1e4170b228b830db2c5e8d5e1a8c770540f2e3",
+    "log": "final-ui2-native-build-41d1bb02d031.log",
+    "log_sha256": "dc55be3b756fcd0823c5c02a3ec8aedac630e37a638350304944fcbfb85760cf",
+    "source_file_count": 513,
+    "binary": {
+      "name": "world_ui_regression",
+      "bytes": 6266040,
+      "sha256": "023e3e41a528b2dfac7eaac9b30ba2f7447d42897fb0b5d189324c3eb92ca75c"
+    }
+  },
+  "test_only_build": {
+    "checkpoint": "5c884a2f1108c1c42e2114716f3a5a3192431fdf",
+    "status": "passed",
+    "returncode": 0,
+    "source_changed": false,
+    "source_sha256": "fe16045e33fbc5af8abaf83a266d4372536639cda0628852e1c51784db76068b",
+    "started_at": "2026-10-23T09:01:05.795393+00:00",
+    "ended_at": "2026-10-23T09:01:07.774805+00:00",
+    "journal": "slot-test-only-build-adffc04ffe99.json",
+    "journal_sha256": "982d9563aee0a1e39e7929136b6f60acc89006b95f67a5888a7590deec34811c",
+    "log": "slot-test-only-build-adffc04ffe99.log",
+    "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "source_file_count": 513,
+    "binary": {
+      "name": "world_ui_regression",
+      "bytes": 6266080,
+      "sha256": "8b63c38e8366bef335ca295f839b53e6639711401361a2914848c82ad7a6db81"
+    }
+  },
+  "runtime_input_equivalence": {
+    "runtime_checkpoint": "4f50193b212bb5d27e4a7e82deaa7622a5d4757d",
+    "test_checkpoint": "5c884a2f1108c1c42e2114716f3a5a3192431fdf",
+    "inventory_differences": [
+      "tests/world_ui_regression.cpp"
+    ],
+    "unchanged_inventory_files": 512,
+    "runtime_source_sha256": "2b696b33a88d3ce9871beaacbd930ef1f1b0643921d77e2d7aa18b05bd6fcd5b",
+    "test_source_sha256": "fe16045e33fbc5af8abaf83a266d4372536639cda0628852e1c51784db76068b",
+    "test_source_before_sha256": "7f3772ca0322c1da654a4a3b25d31866db4eb76a6c35ac99c4e2068a712fefd5",
+    "test_source_after_sha256": "7182a67a061153a94ef924a321902fb0603f8dd8055c09f550f70ec4e37d27b6",
+    "shared_core_library_bytes": 4235766,
+    "shared_core_library_sha256": "2f7c89030429a3d0a857c94246543db8dd9e7062fcddf447b6163858bc883830",
+    "build_journal": "final-ui2-native-build-41d1bb02d031.json",
+    "compile_flags": [
+      "-O3",
+      "-DNDEBUG",
+      "-std=gnu++17",
+      "-Iinclude"
+    ],
+    "runtime_recompiled_for_fixture_correction": false,
+    "library_hash_unchanged_after_final_tests": true
+  },
+  "runs": [
+    {
+      "checkpoint": "4f50193b212bb5d27e4a7e82deaa7622a5d4757d",
+      "status": "failed",
+      "returncode": 1,
+      "source_changed": false,
+      "source_sha256": "2b696b33a88d3ce9871beaacbd930ef1f1b0643921d77e2d7aa18b05bd6fcd5b",
+      "started_at": "2026-10-23T08:57:26.938513+00:00",
+      "ended_at": "2026-10-23T08:57:27.462656+00:00",
+      "journal": "slot-world-ui-synthetic-e33659db9592.json",
+      "journal_sha256": "afb4850e4c5347f8d899c51c13719f4eb9987d1e3e8a8dd35c98b250bb5a9054",
+      "log": "slot-world-ui-synthetic-e33659db9592.log",
+      "log_sha256": "a47d6610cc68d1945b150e10a0f95f4dace65ed00136a70d2d8b561b5310526c",
+      "source_file_count": 513,
+      "profile": "synthetic",
+      "stage": "initial",
+      "screenshot_directory_supplied": false,
+      "runtime_checkpoint": "4f50193b212bb5d27e4a7e82deaa7622a5d4757d",
+      "test_source_checkpoint": "4f50193b212bb5d27e4a7e82deaa7622a5d4757d",
+      "binary_sha256": "023e3e41a528b2dfac7eaac9b30ba2f7447d42897fb0b5d189324c3eb92ca75c",
+      "failure": {
+        "assertion": "renamed",
+        "test_line_at_checkpoint": 379,
+        "diagnosis": "The synthetic fixture has zero glyph records; the two tooltip names both produce a blank title. This was a fixture applicability error, not a failed actual-pack title transition.",
+        "correction": "Only actual resource packs must change rendered title pixels. Synthetic runs explicitly assert missing E/N glyphs and still execute every identity, intent, hit, panel and save assertion."
+      }
+    },
+    {
+      "checkpoint": "4f50193b212bb5d27e4a7e82deaa7622a5d4757d",
+      "status": "passed",
+      "returncode": 0,
+      "source_changed": false,
+      "source_sha256": "2b696b33a88d3ce9871beaacbd930ef1f1b0643921d77e2d7aa18b05bd6fcd5b",
+      "started_at": "2026-10-23T08:57:46.605790+00:00",
+      "ended_at": "2026-10-23T08:57:49.332088+00:00",
+      "journal": "slot-world-ui-eng19-21f881bff521.json",
+      "journal_sha256": "f793b0535910d67bd7263f14749ca7a6ceaae6e7f6f5f9a4e80d91a69592d5ad",
+      "log": "slot-world-ui-eng19-21f881bff521.log",
+      "log_sha256": "3531d5bcde9fd448952c7b1dfed85a68899ac42b84afc669111cc243dc3be4e9",
+      "source_file_count": 513,
+      "checks": 4614,
+      "profile": "eng-v19",
+      "stage": "initial",
+      "screenshot_directory_supplied": false,
+      "runtime_checkpoint": "4f50193b212bb5d27e4a7e82deaa7622a5d4757d",
+      "test_source_checkpoint": "4f50193b212bb5d27e4a7e82deaa7622a5d4757d",
+      "binary_sha256": "023e3e41a528b2dfac7eaac9b30ba2f7447d42897fb0b5d189324c3eb92ca75c",
+      "resource": {
+        "name": "merchant-eng.nsp",
+        "version": 19,
+        "bytes": 89206276,
+        "sha256": "7d5b124d8af605bae9766019bbf6c7a5f14c9ecac464c464244833f08e31f10f"
+      }
+    },
+    {
+      "checkpoint": "4f50193b212bb5d27e4a7e82deaa7622a5d4757d",
+      "status": "passed",
+      "returncode": 0,
+      "source_changed": false,
+      "source_sha256": "2b696b33a88d3ce9871beaacbd930ef1f1b0643921d77e2d7aa18b05bd6fcd5b",
+      "started_at": "2026-10-23T08:57:46.593008+00:00",
+      "ended_at": "2026-10-23T08:57:49.323244+00:00",
+      "journal": "slot-world-ui-zhs19-55f9942b2c52.json",
+      "journal_sha256": "128ab4ae6b3f387743d7ed4e6d55773cc8f88241d1a4590b1d29bb06280a431c",
+      "log": "slot-world-ui-zhs19-55f9942b2c52.log",
+      "log_sha256": "3531d5bcde9fd448952c7b1dfed85a68899ac42b84afc669111cc243dc3be4e9",
+      "source_file_count": 513,
+      "checks": 4614,
+      "profile": "zhs-v19",
+      "stage": "initial",
+      "screenshot_directory_supplied": false,
+      "runtime_checkpoint": "4f50193b212bb5d27e4a7e82deaa7622a5d4757d",
+      "test_source_checkpoint": "4f50193b212bb5d27e4a7e82deaa7622a5d4757d",
+      "binary_sha256": "023e3e41a528b2dfac7eaac9b30ba2f7447d42897fb0b5d189324c3eb92ca75c",
+      "resource": {
+        "name": "merchant-zhs.nsp",
+        "version": 19,
+        "bytes": 91981954,
+        "sha256": "d5ca11af7fb0a2cf95dd6f2aa534ea58e881eb446d9ba006582a1ee90e6dd850"
+      }
+    },
+    {
+      "checkpoint": "5c884a2f1108c1c42e2114716f3a5a3192431fdf",
+      "status": "passed",
+      "returncode": 0,
+      "source_changed": false,
+      "source_sha256": "fe16045e33fbc5af8abaf83a266d4372536639cda0628852e1c51784db76068b",
+      "started_at": "2026-10-23T09:01:16.744754+00:00",
+      "ended_at": "2026-10-23T09:01:17.565794+00:00",
+      "journal": "slot-final-ui-synthetic-a61708cbc5d9.json",
+      "journal_sha256": "e7ecf62b4a6e9c7ada0124cd22cfa223af3ddbfcb56a11d3964fd7b2cff2d3cd",
+      "log": "slot-final-ui-synthetic-a61708cbc5d9.log",
+      "log_sha256": "ff1fb9657176881280b65937ed88bed20e0aad50eb0afad10db27930590a5370",
+      "source_file_count": 513,
+      "checks": 4598,
+      "profile": "synthetic",
+      "stage": "final",
+      "screenshot_directory_supplied": false,
+      "runtime_checkpoint": "4f50193b212bb5d27e4a7e82deaa7622a5d4757d",
+      "test_source_checkpoint": "5c884a2f1108c1c42e2114716f3a5a3192431fdf",
+      "binary_sha256": "8b63c38e8366bef335ca295f839b53e6639711401361a2914848c82ad7a6db81"
+    },
+    {
+      "checkpoint": "5c884a2f1108c1c42e2114716f3a5a3192431fdf",
+      "status": "passed",
+      "returncode": 0,
+      "source_changed": false,
+      "source_sha256": "fe16045e33fbc5af8abaf83a266d4372536639cda0628852e1c51784db76068b",
+      "started_at": "2026-10-23T09:01:16.744627+00:00",
+      "ended_at": "2026-10-23T09:01:19.871829+00:00",
+      "journal": "slot-final-ui-eng19-c9ae69729ffd.json",
+      "journal_sha256": "349999cc0d70e1f4afcc4c17e7118f7a86069c56b771e56659b8e4931e154c8e",
+      "log": "slot-final-ui-eng19-c9ae69729ffd.log",
+      "log_sha256": "3531d5bcde9fd448952c7b1dfed85a68899ac42b84afc669111cc243dc3be4e9",
+      "source_file_count": 513,
+      "checks": 4614,
+      "profile": "eng-v19",
+      "stage": "final",
+      "screenshot_directory_supplied": false,
+      "runtime_checkpoint": "4f50193b212bb5d27e4a7e82deaa7622a5d4757d",
+      "test_source_checkpoint": "5c884a2f1108c1c42e2114716f3a5a3192431fdf",
+      "binary_sha256": "8b63c38e8366bef335ca295f839b53e6639711401361a2914848c82ad7a6db81",
+      "resource": {
+        "name": "merchant-eng.nsp",
+        "version": 19,
+        "bytes": 89206276,
+        "sha256": "7d5b124d8af605bae9766019bbf6c7a5f14c9ecac464c464244833f08e31f10f"
+      }
+    },
+    {
+      "checkpoint": "5c884a2f1108c1c42e2114716f3a5a3192431fdf",
+      "status": "passed",
+      "returncode": 0,
+      "source_changed": false,
+      "source_sha256": "fe16045e33fbc5af8abaf83a266d4372536639cda0628852e1c51784db76068b",
+      "started_at": "2026-10-23T09:01:16.751114+00:00",
+      "ended_at": "2026-10-23T09:01:19.885307+00:00",
+      "journal": "slot-final-ui-zhs19-2e6bd517d93f.json",
+      "journal_sha256": "8fcb91675f7b35b03bc06a2e460d36767ce5d9fe96c88f6faa4d8e4a651fdfb4",
+      "log": "slot-final-ui-zhs19-2e6bd517d93f.log",
+      "log_sha256": "3531d5bcde9fd448952c7b1dfed85a68899ac42b84afc669111cc243dc3be4e9",
+      "source_file_count": 513,
+      "checks": 4614,
+      "profile": "zhs-v19",
+      "stage": "final",
+      "screenshot_directory_supplied": false,
+      "runtime_checkpoint": "4f50193b212bb5d27e4a7e82deaa7622a5d4757d",
+      "test_source_checkpoint": "5c884a2f1108c1c42e2114716f3a5a3192431fdf",
+      "binary_sha256": "8b63c38e8366bef335ca295f839b53e6639711401361a2914848c82ad7a6db81",
+      "resource": {
+        "name": "merchant-zhs.nsp",
+        "version": 19,
+        "bytes": 91981954,
+        "sha256": "d5ca11af7fb0a2cf95dd6f2aa534ea58e881eb446d9ba006582a1ee90e6dd850"
+      }
+    }
+  ],
+  "journals": {
+    "all_closed": true,
+    "passed": 7,
+    "failed_attempts_preserved": 1,
+    "all_source_unchanged": true,
+    "all_log_hashes_recomputed": true
+  },
+  "assertion_count_note": "These runs did not supply the optional screenshot-directory argument. capture() therefore did not run its file and per-row I/O CHECKs. Raw check counts cannot be subtracted from or used to infer coverage changes against the capture-enabled 06c7fd16 runs.",
+  "coverage": [
+    "Normal and Fast: Fogmog actually summons EyeWithTeeth before core escape/spawn commands force that slot to be reused by Nibbit",
+    "The Eye has not reached an intent-hide cue; its status-card intent, hit region, tooltip text and retained title remain before the replacement cue",
+    "At replacement and through the remaining trace, the replacement has no inherited icon hit region or tooltip",
+    "At the existing trace endpoint, the replacement shows its canonical intent and an actual-pack title different from the old Eye title",
+    "Displayed HP, animation identity and health-bar identity switch at the same replacement cue",
+    "Canonical SaveData bytes remain unchanged while the UI advances through the tested cue boundaries",
+    "The complete existing World UI suite, including choice barriers, late/rejected choices, fatal and reflected hits, bounded overflow and gameplay input guards, executes in each final profile"
+  ],
+  "memory_and_state": {
+    "new_resident_fields": 0,
+    "additional_resident_structure_bytes": 0,
+    "full_state_copy": false,
+    "save_data_changes": false,
+    "gameplay_rng_calls_added": false
+  },
+  "limits": [
+    "This is native execution and pixel assertions, not new Firebird or physical-device timing evidence",
+    "No new slot-transition screenshots were emitted or manually reviewed in this follow-up; actual-pack tooltip titles are tested through framebuffer pixels",
+    "The fixture uses real core commands to force slot reuse; it does not claim that Fogmog normally summons Nibbits",
+    "The new occupant retains the existing endpoint-based intent reveal; this is not an audited original per-monster summon-intent animation or reveal time",
+    "Status/power strips and card/pile state still follow canonical state",
+    "Existing unaudited enemy action and effect timings retain their prior fallbacks"
+  ]
+}

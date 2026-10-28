@@ -1,0 +1,155 @@
+"""Public locale bindings and generated key/hash indexes; no original payloads."""
+from __future__ import annotations
+import argparse
+import json
+from pathlib import Path
+import re
+
+ROOT=Path(__file__).resolve().parents[1]
+BASE,UI_BASE,LIMIT=6111,7168,8192
+# v22 appends these original strings only into previously empty slots. Never
+# extend the sorted legacy binding table over them or reindex earlier packs.
+FRONTEND_TEXTS=((8103,'settings_ui.TAB_GENERAL'),(8104,'settings_ui.TAB_INPUT'))
+
+
+def source_literals():
+    rows={}
+    token=re.compile(r'//[^\n]*|/\*.*?\*/|"(?:\\.|[^"\\])*"',re.S)
+    for folder in ('src','include'):
+        for path in sorted((ROOT/folder).rglob('*')):
+            if path.suffix not in ('.cpp','.inc','.hpp') or path.name.startswith('locale_'):
+                continue
+            for match in token.finditer(path.read_text()):
+                if not match[0].startswith('"'):continue
+                try:text=json.loads(match[0])
+                except ValueError:continue
+                if any(ord(char)>127 for char in text):
+                    rows.setdefault(text,[]).append(str(path.relative_to(ROOT)))
+    return rows
+
+
+def legacy_literals():
+    return {text:paths for text,paths in source_literals().items() if re.search('[\u3400-\u9fff]',text)}
+
+
+def runtime_symbols():
+    # Standalone arrows, checks and punctuation have no Chinese word to map.
+    # Their glyphs must survive the language subset even when no locale uses
+    # them. Chinese prose continues through the reviewed binding catalog.
+    return {char for text in source_literals() if not re.search('[\u3400-\u9fff]',text)
+            for char in text if ord(char)>127 and not char.isspace()}
+
+
+def bindings_and_keys():
+    config=json.loads((ROOT/'config/locale-ui-bindings.json').read_text())
+    rows=config['bindings']
+    if config['reference']!='v0.111.0 / 41cef1ea' or len({r['source'] for r in rows})!=len(rows):
+        raise ValueError('Invalid locale binding profile')
+    for row in rows:
+        if not row.get('reference') and not isinstance(row.get('eng'),str):
+            raise ValueError('Untranslated port text: '+row['source'])
+        if row.get('eng') and re.search('[\u3400-\u9fff]',row['eng']):
+            raise ValueError('Chinese residue in English port text')
+    rows=sorted(rows,key=lambda r:r['source'])
+    from world_ui_profile import TEXT_KEYS
+    from native_ui_profile import TEXTS
+    existing=set(TEXT_KEYS)|{t+'.'+k for t,k in TEXTS}
+    extra=set(config.get('extra_keys',[]))|{r['reference'] for r in rows if r.get('reference')}
+    extra.update('cards.'+key+'.title' for key in ('SETUP_STRIKE','FOCUSED_STRIKE','HOTFIX','HYPERBEAM','SYNCHRONIZE'))
+    extra=sorted(extra-existing)
+    if len(extra)>UI_BASE-BASE or len(rows)>FRONTEND_TEXTS[0][0]-UI_BASE:
+        raise ValueError('Locale directory capacity exceeded')
+    return rows,extra
+
+
+def fnv(text):
+    value=2166136261
+    for byte in text.encode('utf-8'):value=((value^byte)*16777619)&0xffffffff
+    return value
+
+
+def inline_bindings():
+    # New port-authored labels must not be inserted into the legacy sorted
+    # table: that would change every later string ID in existing private packs.
+    # A small compiled fallback translates these labels without any pack move.
+    config=json.loads((ROOT/'config/locale-ui-inline.json').read_text())
+    rows=config['bindings']
+    if config['reference']!='v0.111.0 / 41cef1ea' or len({r['source'] for r in rows})!=len(rows):
+        raise ValueError('Invalid inline locale binding profile')
+    legacy,_=bindings_and_keys()
+    if {r['source'] for r in rows}&{r['source'] for r in legacy}:
+        raise ValueError('Inline locale binding shadows a stable pack index')
+    for row in rows:
+        if not isinstance(row.get('eng'),str) or re.search('[\u3400-\u9fff]',row['eng']):
+            raise ValueError('Untranslated inline UI text: '+row['source'])
+        if type(row.get('debug_commands_only',False)) is not bool:
+            raise ValueError('Invalid inline debug-only marker')
+    return rows
+
+
+def direct_bindings():
+    # These particular labels already select their language in the caller.
+    # They must not enter the generic English fallback table: doing so would
+    # replace the intentionally Traditional Chinese port credit with English.
+    config=json.loads((ROOT/'config/locale-ui-inline.json').read_text())
+    rows=config.get('direct_bindings',[]);literals=source_literals()
+    translated={r['source'] for r in inline_bindings()}|{r['source'] for r in bindings_and_keys()[0]}
+    seen=set()
+    for row in rows:
+        source=row.get('source');paths=row.get('paths');english=row.get('eng')
+        if (not isinstance(source,str) or source in seen or source in translated or
+            not isinstance(english,str) or re.search('[\u3400-\u9fff]',english) or
+            not isinstance(paths,list) or not paths or
+            set(paths)!=set(literals.get(source,[]))):
+            raise ValueError('Invalid or moved directly localized UI text: '+repr(source))
+        seen.add(source)
+    return rows
+
+
+def generated_files():
+    rows,keys=bindings_and_keys();hashes={}
+    for index,row in enumerate(rows,UI_BASE):
+        digest=fnv(row['source'])
+        if digest in hashes:raise ValueError('Legacy UI hash collision')
+        hashes[digest]=(index,len(row['source'].encode('utf-8')))
+    comment='// Generated by tools/locale_profile.py; keys/hashes only, no original text.\n'
+    inline=[]
+    for row in inline_bindings():
+        digest=fnv(row['source'])
+        if digest in hashes:raise ValueError('Inline UI hash collision')
+        hashes[digest]=None
+        inline.append((digest,len(row['source'].encode('utf-8')),row['eng'],row.get('debug_commands_only',False)))
+    inline_text=''
+    for h,n,eng,debug_only in sorted(inline):
+        # Debug-only labels must not change ordinary runtime bytes or legacy
+        # private-pack slots when a developer-menu hint is corrected.
+        line=f' {{0x{h:08x}u,{n},{json.dumps(eng,ensure_ascii=True)}}},\n'
+        inline_text+=line
+    status=json.loads((ROOT/'config/locale-status-keys.json').read_text())['keys']
+    potion_numbers=[]
+    for key,values in sorted(json.loads((ROOT/'config/locale-potion-values.json').read_text())['potions'].items()):
+        for name,value in sorted(values.items()):
+            if type(value) is not int:raise ValueError('Potion numeric schema requires integer canonical values')
+            potion_numbers.append(f' {{"potions.{key}","{name}",{value},{value},1}},\n')
+    return {
+        'src/locale_ui_index.inc':comment+''.join(f' {{0x{h:08x}u,{value[0]},{value[1]}}},\n' for h,value in sorted(hashes.items()) if value is not None),
+        'src/locale_ui_inline.inc':'// Generated port-authored translations; historical pack indexes stay unchanged.\n'+inline_text,
+        'src/locale_text_index.inc':comment+''.join(' {'+json.dumps(key)+','+str(i)+'},\n' for i,key in enumerate(keys,BASE)),
+        'src/locale_status_index.inc':comment+''.join(' '+(json.dumps(key[7:]) if key and key.startswith('powers.') else 'nullptr')+',\n' for key in status),
+        'src/locale_potion_numbers.inc':comment+''.join(potion_numbers),
+    }
+
+
+def validate_generated():
+    rows,_=bindings_and_keys()
+    missing=set(legacy_literals())-{r['source'] for r in rows}-{r['source'] for r in inline_bindings()}-{r['source'] for r in direct_bindings()}
+    if missing:raise ValueError('New UI literals need reviewed locale bindings: '+repr(sorted(missing)))
+    for name,text in generated_files().items():
+        if (ROOT/name).read_text()!=text:raise ValueError('Locale generated index drift: '+name)
+
+
+if __name__=='__main__':
+    parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('--write',action='store_true');args=parser.parse_args()
+    if args.write:
+        for name,text in generated_files().items():(ROOT/name).write_text(text)
+    validate_generated();rows,keys=bindings_and_keys();print(json.dumps(dict(ui_bindings=len(rows),extra_original_keys=len(keys))))

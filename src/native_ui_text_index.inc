@@ -1,0 +1,11 @@
+// Public localization keys only. Text is read from the owner's pinned PCK.
+ {"orbs.DARK_ORB.description",WorldStringCount+0},
+ {"orbs.DARK_ORB.title",WorldStringCount+1},
+ {"orbs.FROST_ORB.description",WorldStringCount+2},
+ {"orbs.FROST_ORB.title",WorldStringCount+3},
+ {"orbs.GLASS_ORB.description",WorldStringCount+4},
+ {"orbs.GLASS_ORB.title",WorldStringCount+5},
+ {"orbs.LIGHTNING_ORB.description",WorldStringCount+6},
+ {"orbs.LIGHTNING_ORB.title",WorldStringCount+7},
+ {"orbs.PLASMA_ORB.description",WorldStringCount+8},
+ {"orbs.PLASMA_ORB.title",WorldStringCount+9},

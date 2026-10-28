@@ -1,0 +1,120 @@
+// Actual-locale checks for the remaining native NHoverTipSet owners. The
+// readable10px LCD adaptation uses a104px column; its shadow adds1px. Keep
+// these bounds independent of the common painter's runtime constants.
+static void static_hover_columns(){
+    if(app.content.version()<HistoryUi8ContentVersion)return;
+    Canvas c{app};static SaveData before,after;
+    const auto setup=[&](Character character){
+        new_run(app.game,0x98114,true,character);CHECK(encounter_setup(app.game,EncounterId::NibbitsNormal));
+        app.title=app.character_select=app.library=app.paused=app.help=app.settings_open=false;
+        app.frontend_confirm=0;app.panel=0;app.detail_card=app.detail_item=app.status_actor=-1;
+        app.reset_presentation();app.pointer_cancel();app.pointer.visible=true;app.pointer.armed_card=-1;
+    };
+    const auto column=[&](int x){
+        unsigned changed=0;for(int yy=0;yy<240;++yy)for(int xx=0;xx<320;++xx)
+            if(app.pixels[yy*320+xx]!=0x0321){++changed;CHECK(xx>=x&&xx<x+105);}
+        CHECK(changed>25);CHECK(save(app.game,after));
+        CHECK(before.size==after.size&&!std::memcmp(before.bytes,after.bytes,before.size));
+    };
+    for(unsigned resource=0;resource<3;++resource){
+        setup(resource?Character::Regent:Character::Ironclad);
+        // UI13 preserves the source diagonal rail: Energy(16,164,34),
+        // Stars(6,181,27). Sample nonoverlapping interior pixels so the
+        // correct resource owns the pointer. The source-relative offsets
+        // place both tips at the common3px left screen margin.
+        app.pointer.x=resource==2?13:41;app.pointer.y=resource==2?201:174;
+        CHECK(save(app.game,before));clear();combat_resource_tooltip(c,resource!=0);column(3);
+        capture(resource==2?"source-hover-stars":resource?"source-hover-regent-energy":"source-hover-energy");
+    }
+    setup(Character::Defect);app.game.expansion.orb_slots=3;app.game.expansion.orb_count=1;
+    app.game.defect.orb_kind[0]=unsigned(DOrb::Lightning);
+    for(unsigned mode=0;mode<4;++mode){
+        const int x=mode&1?260:42,index=mode<2?0:2;
+        app.pointer.x=x+6;app.pointer.y=76;CHECK(save(app.game,before));clear();
+        c.hit(x,70,14,14,HitKind::Orb,index);orb_hover_tip(c);column(mode&1?156:56);
+        const char*names[]={"source-hover-orb-right","source-hover-orb-left","source-hover-empty-orb-right","source-hover-empty-orb-left"};capture(names[mode]);
+    }
+    // The readable LCD panel displays seven General rows,21px high on
+    // a23px pitch from y42. Input's keyboard toggle begins at y40. These
+    // explicit coordinates and bindings stay independent of the Settings
+    // renderer's row lookup, including a scrolled lower General row.
+    setup(Character::Ironclad);app.title=true;app.settings_open=true;
+    app.settings_language_open=false;app.binding_listening=-1;
+    struct SettingHover {unsigned tab,row,scroll;int y;const char*title;const char*body;const char*capture;};
+    const SettingHover settings[]={
+        {0,1,0,65,"SCREENSHAKE_HEADER","SCREENSHAKE_DESCRIPTION","settings-source-hover-shake"},
+        {0,7,1,180,"TEXT_EFFECTS","TEXT_EFFECTS_DESCRIPTION","settings-source-hover-text-effects"},
+        {0,6,0,180,"LONG_PRESS_CONFIRMATION_HEADER","LONG_PRESS_CONFIRMATION_DESCRIPTION","settings-source-hover-long-press"},
+        {1,0,0,40,"KEYBOARD_ONLY_MODE_HEADER","KEYBOARD_ONLY_MODE_DESCRIPTION","settings-source-hover-keyboard"},
+    };
+    CHECK(save(app.game,before));
+    for(const auto&setting:settings){
+        app.settings_tab=uint8_t(setting.tab);app.settings_top=uint8_t(setting.scroll);app.settings_item=uint8_t(setting.row);
+        app.pointer.x=319;app.pointer.y=239;clear();frontend_settings_screen(c);
+        const std::vector<uint16_t> background(app.pixels,app.pixels+ScreenW*ScreenH);
+        // x80 lies in the label/hover region, outside every tickbox.
+        app.pointer.x=80;app.pointer.y=setting.y+10;
+        clear();frontend_settings_screen(c);capture(setting.capture);
+        const std::vector<uint16_t> actual(app.pixels,app.pixels+ScreenW*ScreenH);
+        const std::string title=app.content.world_string("settings_ui",setting.title);
+        const std::string body=app.content.world_string("settings_ui",setting.body);
+        CHECK(!title.empty()&&!body.empty());
+        std::memcpy(app.pixels,background.data(),background.size()*sizeof(uint16_t));
+        // The right-hand tooltip rail begins at x213 and follows the row.
+        // Reusing the common tooltip painter tests Settings ownership and
+        // binding, not the independent correctness of that common painter.
+        source_hover_box(c,title.c_str(),body.c_str(),213,setting.y);
+        unsigned changed=0;
+        for(unsigned i=0;i<actual.size();++i){
+            if(actual[i]!=app.pixels[i])std::fprintf(stderr,"Settings hover %s mismatch at%u,%u: actual=%04x expected=%04x\n",setting.title,i%ScreenW,i/ScreenW,actual[i],app.pixels[i]);
+            CHECK(actual[i]==app.pixels[i]);changed+=actual[i]!=background[i];
+        }
+        CHECK(changed>25);
+        CHECK(save(app.game,after)&&before.size==after.size&&!std::memcmp(before.bytes,after.bytes,before.size));
+    }
+    app.settings_open=false;app.settings_tab=app.settings_top=app.settings_item=0;app.title=false;
+    // UI13 expands the original paper to(187,63,129,170) and keeps six
+    // centered rows inside12px horizontal padding. Its104px tooltip is to
+    // the LEFT of the paper. Compare two focused rows of the same open
+    // panel, not a collapsed tab against a wholly newly opened panel.
+    app.pointer.visible=false;app.map_legend=true;app.map_legend_item=0;clear();map_legend_screen(c,map_colors(0));
+    const std::vector<uint16_t> legend(app.pixels,app.pixels+320*240);
+    app.map_legend_item=1;clear();map_legend_screen(c,map_colors(0));
+    unsigned changed=0;for(int y=0;y<240;++y)for(int x=0;x<320;++x)if(legend[y*320+x]!=app.pixels[y*320+x]){
+        ++changed;CHECK((x>=79&&x<184)||(x>=199&&x<304&&y>=98&&y<140));
+    }
+    unsigned rows=0;for(int i=0;i<app.hit_count;++i){const auto&hit=app.hits[i];
+        if(hit.kind!=HitKind::UiAction||hit.value<int(UiAction::MapLegendUnknown)||hit.value>=int(UiAction::MapLegendUnknown)+6)continue;
+        CHECK(hit.x==199&&hit.w==105&&hit.h==19&&hit.y>=100&&hit.y+hit.h<=214);++rows;
+    }
+    CHECK(rows==6&&changed>25);
+    const std::vector<uint16_t> actual_legend(app.pixels,app.pixels+320*240);
+    // Independent full-word pixel oracle: repaint only the original paper,
+    // then draw each localized name with the unwrapped text painter. Search
+    // within the existing padded row for those complete pixels. This cannot
+    // pass when the production fitted label replaces its tail by ellipsis,
+    // and does not call the production extent helper or fitting planner.
+    clear();map_picture(c,app.content.world_image("map","LEGEND"),251,148,129,170,MapShader::Original,0,0,255,0,22,235);
+    const std::vector<uint16_t> paper(app.pixels,app.pixels+320*240);
+    for(unsigned row=0;row<6;++row){
+        char key[96]{};const char*name=map_legend_text(app,row,".title",key,sizeof key);CHECK(*name);
+        const int y=100+int(row)*19;bool complete=false;
+        for(int x=221;x<304&&!complete;++x){
+            if(x+c.width(name,10)>304)continue;
+            std::memcpy(app.pixels,paper.data(),paper.size()*sizeof(uint16_t));
+            c.text(name,x,y+3,10,map_colors(0).ink,320);
+            bool equal=true;unsigned ink=0;
+            for(int yy=y;yy<y+19&&equal;++yy)for(int xx=304;xx<320;++xx)
+                if(app.pixels[yy*320+xx]!=paper[yy*320+xx]){equal=false;break;}
+            for(int yy=y;yy<y+19&&equal;++yy)for(int xx=x;xx<304;++xx){
+                const unsigned at=unsigned(yy*320+xx);ink+=app.pixels[at]!=paper[at];
+                if(app.pixels[at]!=actual_legend[at]){equal=false;break;}
+            }
+            complete=equal&&ink>8;
+        }
+        CHECK(complete);
+    }
+    std::memcpy(app.pixels,actual_legend.data(),actual_legend.size()*sizeof(uint16_t));
+    capture("map-legend-source-hover");app.map_legend=false;
+    app.pointer.visible=false;app.reset_presentation();
+}

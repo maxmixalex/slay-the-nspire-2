@@ -1,0 +1,34 @@
+{
+  "reference": "v0.111.0 / 41cef1ea",
+  "mode": "single-player",
+  "excluded_features": [
+    "audio",
+    "multiplayer",
+    "timeline-meta-progression"
+  ],
+  "excluded_features_are_deferred": false,
+  "animations_in_scope": true,
+  "implemented_content_requires_timeline": false,
+  "current_models": {
+    "characters_with_single_player_card_pools": 5,
+    "characters": [
+      "Ironclad",
+      "Silent",
+      "Defect",
+      "Regent",
+      "Necrobinder"
+    ],
+    "card_models": 558,
+    "event_and_curse_dependency_cards": 61,
+    "world_relic_models": 297,
+    "potions": 64,
+    "enemy_registry_models": 108
+  },
+  "source_version": "0.17.0-prototype",
+  "validation_status": "UI14 calculator delivery; completed native/resource/device gates and exact remaining limits are recorded in docs/validation-ui14-0.17.json",
+  "verified_runtime_source": "af154470daa96563f0695d043178285d26dcaee4",
+  "original_three_act_campaign_implemented": true,
+  "model_counts_are_fidelity_percentages": false,
+  "reference_timing_boundary": "196 AttackCommand profiles and sourced full-move waits are implemented; completing the remaining surrounding waits requires the pinned original assembly. No waits are guessed from clip duration.",
+  "reference_animation_boundary": "Vantom has correct full/half body endpoints; its 750ms independent-bone shrink tween still requires the pinned skeleton/atlas. See docs/ui14-retained-differences-0.17.md."
+}

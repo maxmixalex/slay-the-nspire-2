@@ -1,0 +1,540 @@
+{
+  "reference": {
+    "version": "v0.111.0",
+    "revision": "41cef1ea"
+  },
+  "base_auxiliary_count": 1188,
+  "auxiliary_count": 1236,
+  "source_scene": "scenes/cards/card.tscn",
+  "card_layout": {
+    "frame": [
+      0,
+      0,
+      300,
+      422
+    ],
+    "portrait": [
+      25,
+      43,
+      250,
+      190
+    ],
+    "portrait_border": [
+      12.5,
+      47,
+      275,
+      210
+    ],
+    "title_banner": [
+      -13,
+      4,
+      327,
+      83
+    ],
+    "title": [
+      45,
+      7,
+      210,
+      54
+    ],
+    "type_plaque": [
+      119.5,
+      212,
+      61,
+      37
+    ],
+    "description": [
+      28,
+      248,
+      243,
+      136
+    ],
+    "energy": [
+      -16,
+      -16,
+      64,
+      64
+    ],
+    "star": [
+      -36,
+      22,
+      58,
+      58
+    ]
+  },
+  "assets": [
+    {
+      "name": "CARD_BORDER_COMMON_ATTACK",
+      "source": "@card/card_portrait_border_attack_s",
+      "size": [
+        92,
+        70
+      ],
+      "fit": "stretch",
+      "material": "materials/cards/banners/card_banner_common_mat.tres"
+    },
+    {
+      "name": "CARD_BORDER_COMMON_SKILL",
+      "source": "@card/card_portrait_border_skill_s",
+      "size": [
+        92,
+        70
+      ],
+      "fit": "stretch",
+      "material": "materials/cards/banners/card_banner_common_mat.tres"
+    },
+    {
+      "name": "CARD_BORDER_COMMON_POWER",
+      "source": "@card/card_portrait_border_power_s",
+      "size": [
+        92,
+        70
+      ],
+      "fit": "stretch",
+      "material": "materials/cards/banners/card_banner_common_mat.tres"
+    },
+    {
+      "name": "CARD_PLAQUE_COMMON",
+      "source": "images/ui/cards/card_portrait_border_plaque2.png",
+      "size": [
+        32,
+        16
+      ],
+      "fit": "stretch",
+      "material": "materials/cards/banners/card_banner_common_mat.tres"
+    },
+    {
+      "name": "CARD_BANNER_COMMON",
+      "source": "@card/card_banner",
+      "size": [
+        110,
+        28
+      ],
+      "fit": "stretch",
+      "material": "materials/cards/banners/card_banner_common_mat.tres"
+    },
+    {
+      "name": "CARD_BORDER_UNCOMMON_ATTACK",
+      "source": "@card/card_portrait_border_attack_s",
+      "size": [
+        92,
+        70
+      ],
+      "fit": "stretch",
+      "material": "materials/cards/banners/card_banner_uncommon_mat.tres"
+    },
+    {
+      "name": "CARD_BORDER_UNCOMMON_SKILL",
+      "source": "@card/card_portrait_border_skill_s",
+      "size": [
+        92,
+        70
+      ],
+      "fit": "stretch",
+      "material": "materials/cards/banners/card_banner_uncommon_mat.tres"
+    },
+    {
+      "name": "CARD_BORDER_UNCOMMON_POWER",
+      "source": "@card/card_portrait_border_power_s",
+      "size": [
+        92,
+        70
+      ],
+      "fit": "stretch",
+      "material": "materials/cards/banners/card_banner_uncommon_mat.tres"
+    },
+    {
+      "name": "CARD_PLAQUE_UNCOMMON",
+      "source": "images/ui/cards/card_portrait_border_plaque2.png",
+      "size": [
+        32,
+        16
+      ],
+      "fit": "stretch",
+      "material": "materials/cards/banners/card_banner_uncommon_mat.tres"
+    },
+    {
+      "name": "CARD_BANNER_UNCOMMON",
+      "source": "@card/card_banner",
+      "size": [
+        110,
+        28
+      ],
+      "fit": "stretch",
+      "material": "materials/cards/banners/card_banner_uncommon_mat.tres"
+    },
+    {
+      "name": "CARD_BORDER_RARE_ATTACK",
+      "source": "@card/card_portrait_border_attack_s",
+      "size": [
+        92,
+        70
+      ],
+      "fit": "stretch",
+      "material": "materials/cards/banners/card_banner_rare_mat.tres"
+    },
+    {
+      "name": "CARD_BORDER_RARE_SKILL",
+      "source": "@card/card_portrait_border_skill_s",
+      "size": [
+        92,
+        70
+      ],
+      "fit": "stretch",
+      "material": "materials/cards/banners/card_banner_rare_mat.tres"
+    },
+    {
+      "name": "CARD_BORDER_RARE_POWER",
+      "source": "@card/card_portrait_border_power_s",
+      "size": [
+        92,
+        70
+      ],
+      "fit": "stretch",
+      "material": "materials/cards/banners/card_banner_rare_mat.tres"
+    },
+    {
+      "name": "CARD_PLAQUE_RARE",
+      "source": "images/ui/cards/card_portrait_border_plaque2.png",
+      "size": [
+        32,
+        16
+      ],
+      "fit": "stretch",
+      "material": "materials/cards/banners/card_banner_rare_mat.tres"
+    },
+    {
+      "name": "CARD_BANNER_RARE",
+      "source": "@card/card_banner",
+      "size": [
+        110,
+        28
+      ],
+      "fit": "stretch",
+      "material": "materials/cards/banners/card_banner_rare_mat.tres"
+    },
+    {
+      "name": "CARD_BORDER_CURSE_ATTACK",
+      "source": "@card/card_portrait_border_attack_s",
+      "size": [
+        92,
+        70
+      ],
+      "fit": "stretch",
+      "material": "materials/cards/banners/card_banner_curse_mat.tres"
+    },
+    {
+      "name": "CARD_BORDER_CURSE_SKILL",
+      "source": "@card/card_portrait_border_skill_s",
+      "size": [
+        92,
+        70
+      ],
+      "fit": "stretch",
+      "material": "materials/cards/banners/card_banner_curse_mat.tres"
+    },
+    {
+      "name": "CARD_BORDER_CURSE_POWER",
+      "source": "@card/card_portrait_border_power_s",
+      "size": [
+        92,
+        70
+      ],
+      "fit": "stretch",
+      "material": "materials/cards/banners/card_banner_curse_mat.tres"
+    },
+    {
+      "name": "CARD_PLAQUE_CURSE",
+      "source": "images/ui/cards/card_portrait_border_plaque2.png",
+      "size": [
+        32,
+        16
+      ],
+      "fit": "stretch",
+      "material": "materials/cards/banners/card_banner_curse_mat.tres"
+    },
+    {
+      "name": "CARD_BANNER_CURSE",
+      "source": "@card/card_banner",
+      "size": [
+        110,
+        28
+      ],
+      "fit": "stretch",
+      "material": "materials/cards/banners/card_banner_curse_mat.tres"
+    },
+    {
+      "name": "CARD_BORDER_STATUS_ATTACK",
+      "source": "@card/card_portrait_border_attack_s",
+      "size": [
+        92,
+        70
+      ],
+      "fit": "stretch",
+      "material": "materials/cards/banners/card_banner_status_mat.tres"
+    },
+    {
+      "name": "CARD_BORDER_STATUS_SKILL",
+      "source": "@card/card_portrait_border_skill_s",
+      "size": [
+        92,
+        70
+      ],
+      "fit": "stretch",
+      "material": "materials/cards/banners/card_banner_status_mat.tres"
+    },
+    {
+      "name": "CARD_BORDER_STATUS_POWER",
+      "source": "@card/card_portrait_border_power_s",
+      "size": [
+        92,
+        70
+      ],
+      "fit": "stretch",
+      "material": "materials/cards/banners/card_banner_status_mat.tres"
+    },
+    {
+      "name": "CARD_PLAQUE_STATUS",
+      "source": "images/ui/cards/card_portrait_border_plaque2.png",
+      "size": [
+        32,
+        16
+      ],
+      "fit": "stretch",
+      "material": "materials/cards/banners/card_banner_status_mat.tres"
+    },
+    {
+      "name": "CARD_BANNER_STATUS",
+      "source": "@card/card_banner",
+      "size": [
+        110,
+        28
+      ],
+      "fit": "stretch",
+      "material": "materials/cards/banners/card_banner_status_mat.tres"
+    },
+    {
+      "name": "CARD_BORDER_EVENT_ATTACK",
+      "source": "@card/card_portrait_border_attack_s",
+      "size": [
+        92,
+        70
+      ],
+      "fit": "stretch",
+      "material": "materials/cards/banners/card_banner_event_mat.tres"
+    },
+    {
+      "name": "CARD_BORDER_EVENT_SKILL",
+      "source": "@card/card_portrait_border_skill_s",
+      "size": [
+        92,
+        70
+      ],
+      "fit": "stretch",
+      "material": "materials/cards/banners/card_banner_event_mat.tres"
+    },
+    {
+      "name": "CARD_BORDER_EVENT_POWER",
+      "source": "@card/card_portrait_border_power_s",
+      "size": [
+        92,
+        70
+      ],
+      "fit": "stretch",
+      "material": "materials/cards/banners/card_banner_event_mat.tres"
+    },
+    {
+      "name": "CARD_PLAQUE_EVENT",
+      "source": "images/ui/cards/card_portrait_border_plaque2.png",
+      "size": [
+        32,
+        16
+      ],
+      "fit": "stretch",
+      "material": "materials/cards/banners/card_banner_event_mat.tres"
+    },
+    {
+      "name": "CARD_BANNER_EVENT",
+      "source": "@card/card_banner",
+      "size": [
+        110,
+        28
+      ],
+      "fit": "stretch",
+      "material": "materials/cards/banners/card_banner_event_mat.tres"
+    },
+    {
+      "name": "CARD_BORDER_QUEST_ATTACK",
+      "source": "@card/card_portrait_border_attack_s",
+      "size": [
+        92,
+        70
+      ],
+      "fit": "stretch",
+      "material": "materials/cards/banners/card_banner_quest_mat.tres"
+    },
+    {
+      "name": "CARD_BORDER_QUEST_SKILL",
+      "source": "@card/card_portrait_border_skill_s",
+      "size": [
+        92,
+        70
+      ],
+      "fit": "stretch",
+      "material": "materials/cards/banners/card_banner_quest_mat.tres"
+    },
+    {
+      "name": "CARD_BORDER_QUEST_POWER",
+      "source": "@card/card_portrait_border_power_s",
+      "size": [
+        92,
+        70
+      ],
+      "fit": "stretch",
+      "material": "materials/cards/banners/card_banner_quest_mat.tres"
+    },
+    {
+      "name": "CARD_PLAQUE_QUEST",
+      "source": "images/ui/cards/card_portrait_border_plaque2.png",
+      "size": [
+        32,
+        16
+      ],
+      "fit": "stretch",
+      "material": "materials/cards/banners/card_banner_quest_mat.tres"
+    },
+    {
+      "name": "CARD_BANNER_QUEST",
+      "source": "@card/card_banner",
+      "size": [
+        110,
+        28
+      ],
+      "fit": "stretch",
+      "material": "materials/cards/banners/card_banner_quest_mat.tres"
+    },
+    {
+      "name": "CARD_BORDER_ANCIENT_ATTACK",
+      "source": "@card/card_portrait_border_attack_s",
+      "size": [
+        92,
+        70
+      ],
+      "fit": "stretch",
+      "material": "materials/cards/banners/card_banner_ancient_mat.tres"
+    },
+    {
+      "name": "CARD_BORDER_ANCIENT_SKILL",
+      "source": "@card/card_portrait_border_skill_s",
+      "size": [
+        92,
+        70
+      ],
+      "fit": "stretch",
+      "material": "materials/cards/banners/card_banner_ancient_mat.tres"
+    },
+    {
+      "name": "CARD_BORDER_ANCIENT_POWER",
+      "source": "@card/card_portrait_border_power_s",
+      "size": [
+        92,
+        70
+      ],
+      "fit": "stretch",
+      "material": "materials/cards/banners/card_banner_ancient_mat.tres"
+    },
+    {
+      "name": "CARD_PLAQUE_ANCIENT",
+      "source": "images/ui/cards/card_portrait_border_plaque2.png",
+      "size": [
+        32,
+        16
+      ],
+      "fit": "stretch",
+      "material": "materials/cards/banners/card_banner_ancient_mat.tres"
+    },
+    {
+      "name": "CARD_BANNER_ANCIENT",
+      "source": "@card/ancient_banner",
+      "size": [
+        110,
+        28
+      ],
+      "fit": "stretch",
+      "material": null
+    },
+    {
+      "name": "TOP_BAR_BACKDROP",
+      "source": "@top_bar/top_bar_char_backdrop",
+      "size": [
+        30,
+        28
+      ],
+      "fit": "stretch"
+    },
+    {
+      "name": "TOP_BAR_IRONCLAD",
+      "source": "images/ui/top_panel/character_icon_ironclad.png",
+      "size": [
+        24,
+        24
+      ],
+      "fit": "contain"
+    },
+    {
+      "name": "TOP_BAR_SILENT",
+      "source": "images/ui/top_panel/character_icon_silent.png",
+      "size": [
+        24,
+        24
+      ],
+      "fit": "contain"
+    },
+    {
+      "name": "TOP_BAR_DEFECT",
+      "source": "images/ui/top_panel/character_icon_defect.png",
+      "size": [
+        24,
+        24
+      ],
+      "fit": "contain"
+    },
+    {
+      "name": "TOP_BAR_REGENT",
+      "source": "images/ui/top_panel/character_icon_regent.png",
+      "size": [
+        24,
+        24
+      ],
+      "fit": "contain"
+    },
+    {
+      "name": "TOP_BAR_NECROBINDER",
+      "source": "images/ui/top_panel/character_icon_necrobinder.png",
+      "size": [
+        24,
+        24
+      ],
+      "fit": "contain"
+    },
+    {
+      "name": "POTION_PLACEHOLDER",
+      "source": "images/packed/potions/potion_placeholder.png",
+      "size": [
+        20,
+        20
+      ],
+      "fit": "contain"
+    },
+    {
+      "name": "TOP_BAR_ASCENSION",
+      "source": "@top_bar/top_bar_ascension",
+      "size": [
+        11,
+        16
+      ],
+      "fit": "contain"
+    }
+  ]
+}
+

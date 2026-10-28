@@ -1,0 +1,744 @@
+{
+  "schema": 1,
+  "date": "2026-10-25",
+  "reference": "v0.111.0 / 41cef1ea",
+  "runtime_checkpoint": "9398633d8fd715c008560cc038f61d8f85c98466",
+  "runtime_tree": "1b7a17a1e7734d5c9edddbcf5a839abca7236356",
+  "resource_converter_checkpoint": "44ebf0ea6265df4f064d58bb999cb40d0f2ea059",
+  "delivery": "Ordinary Ndless calculator build; default ENG/ZHS plus separate fourteen-language archive. Public repository contains source and validation records, not game-derived packs, fonts, ROM/NAND or original assemblies.",
+  "launcher": {
+    "bytes": 1600738,
+    "sha256": "5b62c0797bb10d49e9d7d36bc478dff808dc1cdf83cc55633433d2bc3d6a7275",
+    "allocation_bytes": 20363472
+  },
+  "resources": {
+    "format": "NSP2/40 with NSC1 shared art and NSL2 locale editions",
+    "common": {
+      "file": "nSpire2.common.tns",
+      "bytes": 61669167,
+      "sha256": "a697a233712ca873ac7b5c626515509b017a2685fd3326adf27da7fbae580987"
+    },
+    "locales": [
+      {
+        "language": "eng",
+        "file": "nSpire2.eng.tns",
+        "bytes": 1130274,
+        "sha256": "e9cde4a93983d7cd9d2b129d0b66bffcfaabc00e9867cd28d9e6725544858ed4",
+        "logical_bytes": 63916606,
+        "logical_sha256": "f8474c986c4125aade00d8e3f32d2c6639de54d5d38229c70a37273bdf34adda"
+      },
+      {
+        "language": "zhs",
+        "file": "nSpire2.zhs.tns",
+        "bytes": 5114322,
+        "sha256": "a5be13b5fbc96e876e26b5cc58eb454f5a5f66c1d1e831bb3daa5d1ea13da50e",
+        "logical_bytes": 68404406,
+        "logical_sha256": "10aa1b50d9e3f68b17d73c9b288343734d58386f127bc449153ab01c71294b95"
+      },
+      {
+        "language": "zht",
+        "file": "nSpire2.zht.tns",
+        "bytes": 5284750,
+        "sha256": "df90b2dcff0bc264b0775a01e51dc71dbb6297f576b24e476a4a67ade64032a2",
+        "logical_bytes": 68610498,
+        "logical_sha256": "d3126dc8d5e94ed5bb56d98b2d8612fe75605ddd637726d845f5ec22dd0178e9"
+      },
+      {
+        "language": "deu",
+        "file": "nSpire2.deu.tns",
+        "bytes": 1157758,
+        "sha256": "3b6cf1950173d4931d30e3326fbaaa4b4ab3370b4183c675a2cfeea09ec106ee",
+        "logical_bytes": 63944519,
+        "logical_sha256": "eece06bded39a86fc571a1f9415f3fdc23dc89966c1db8d6530e6b2cd8350c14"
+      },
+      {
+        "language": "esp",
+        "file": "nSpire2.esp.tns",
+        "bytes": 1162501,
+        "sha256": "afae7c5a9e1992aa3ff46e3bb67612ce5b26dfe2b4529830293f4d8f2f5c4c0c",
+        "logical_bytes": 63952360,
+        "logical_sha256": "d2bcc3e494f9e9660aa322cee5864d18a3752310057f44361f1165d047bdab69"
+      },
+      {
+        "language": "fra",
+        "file": "nSpire2.fra.tns",
+        "bytes": 1175782,
+        "sha256": "f35f027f7919b0bb71241b34f54c6d7d8f0d670ea7731521febde9adc76b6757",
+        "logical_bytes": 63968876,
+        "logical_sha256": "6a1be9f3ceb21b8c6c3af2150175cb0c32bb7c99d46e3854fbd188a3cb8fd00d"
+      },
+      {
+        "language": "ind",
+        "file": "nSpire2.ind.tns",
+        "bytes": 1128466,
+        "sha256": "5e9387b568124b630100a509dc68cdfa4bdc216534d13a65b457cd7afcbcb01b",
+        "logical_bytes": 63914752,
+        "logical_sha256": "68f272e898a2d91eb9a24fa48080f8801895f805188dc250584026530c7ece88"
+      },
+      {
+        "language": "ita",
+        "file": "nSpire2.ita.tns",
+        "bytes": 1152475,
+        "sha256": "3bf357dfd0c1398c861078fed2a4ef863073f18dbcc42f43266c629d59b079e0",
+        "logical_bytes": 63938541,
+        "logical_sha256": "9a6eb3d42a11b88948b09ace7d4158746e64ecff286c7880562852a2fc0d0f6e"
+      },
+      {
+        "language": "jpn",
+        "file": "nSpire2.jpn.tns",
+        "bytes": 3968982,
+        "sha256": "b6a9be42668f53f874d524d07b15c2f5b0d3002da1b51c7060ba4840e377880a",
+        "logical_bytes": 67081228,
+        "logical_sha256": "e925e76115306962920dd904a7cf2e592bf9e8d2334ce8cf229844be1f7073e9"
+      },
+      {
+        "language": "kor",
+        "file": "nSpire2.kor.tns",
+        "bytes": 1979752,
+        "sha256": "83c47a1c714397af9cf6609e338cb587be658d776823a1bfd8d5a5f354297fcc",
+        "logical_bytes": 64940291,
+        "logical_sha256": "9a6885d3e6dd8dfcb3f7d4e7d5ddc46da9280d13ceebd622288e453d37e9d179"
+      },
+      {
+        "language": "pol",
+        "file": "nSpire2.pol.tns",
+        "bytes": 1104430,
+        "sha256": "f5e42841200017462b648d2496e267929cd432a8e502c9c2eddeb25f8602b4a8",
+        "logical_bytes": 63915707,
+        "logical_sha256": "3da58be8c885bf836392eae776c4eb4343a94942110c6e73df284d6f83b8dc73"
+      },
+      {
+        "language": "ptb",
+        "file": "nSpire2.ptb.tns",
+        "bytes": 1171020,
+        "sha256": "0a1709a77473d3b14fb899b92a38cf24af40d4c1cdb92efe87169a52336e2cb2",
+        "logical_bytes": 63960671,
+        "logical_sha256": "f63b6f9a0ede8682f78b9f1774b9b48d5ab4b06bbcd52b315234f70f2ce22e52"
+      },
+      {
+        "language": "rus",
+        "file": "nSpire2.rus.tns",
+        "bytes": 1164879,
+        "sha256": "c14a93068105530c4d72fd0ddd5bdeaa0d44b9ef12ed3d4b2127ef33ecd6308e",
+        "logical_bytes": 63989644,
+        "logical_sha256": "f1c0ff2279b3ee0f35d171bb03e2205022226d44d5589d538a6018dd47ef0e99"
+      },
+      {
+        "language": "spa",
+        "file": "nSpire2.spa.tns",
+        "bytes": 1161603,
+        "sha256": "d495434ed1fdf07b1f17d3ae39e52f9dd5e7b74acd4a31b090f1db685d07c35b",
+        "logical_bytes": 63951483,
+        "logical_sha256": "7fe895f8d21028f71e50b40f9caae6c3cf807add1e30c6165f04303c407df004"
+      },
+      {
+        "language": "tha",
+        "file": "nSpire2.tha.tns",
+        "bytes": 1287663,
+        "sha256": "bb64c4989d2504aaf0ea6cc033c73793fb8b71ca2772fce3f02e830e9518151c",
+        "logical_bytes": 64094437,
+        "logical_sha256": "b5b025730378c6e1f02f1c19a2596f16bc37d625b085fe40647a345fa329a3ed"
+      },
+      {
+        "language": "tur",
+        "file": "nSpire2.tur.tns",
+        "bytes": 1161207,
+        "sha256": "13604aa68718131505561f2f98ddfd83434adc1fef006d97933530319d65c0d4",
+        "logical_bytes": 63950767,
+        "logical_sha256": "c4bd6b3e9cc36833dcc566ce8283e2ca6caf1ea41bae3c0b7b1d711fef145f81"
+      }
+    ],
+    "all_resource_bytes": 91975031,
+    "startup_added_shared_bytes": 165511,
+    "swarm_sleep_added_shared_bytes": 2284,
+    "necrobinder_repair_added_shared_bytes": 98098,
+    "scope": "The full inventory and original payload/clip-preservation receipts are independent of selected UI captures. Optional editions are not all included in the default installed size."
+  },
+  "installed_default_bytes": 69514501,
+  "allocation_ceiling_bytes": 25165824,
+  "storage_comparison": {
+    "ui10_installed_bytes": 91604965,
+    "ui11_n_installed_bytes": 68776461,
+    "ui12_installed_bytes": 69514501,
+    "reduction_from_ui10_percent": 24.114919971859603,
+    "increase_from_ui11_bytes": 738040,
+    "increase_from_169_baseline_bytes": 4796
+  },
+  "artifacts": [
+    {
+      "file": "Slay-the-Nspire-2-0.17-ui12-bilingual-calculator.zip",
+      "bytes": 67844220,
+      "sha256": "838e9cc59bf3a786e831fb509e5b64015286502632e688a27908f1b377bc01ce",
+      "members": 13
+    },
+    {
+      "file": "Slay-the-Nspire-2-0.17-ui12-optional-languages.zip",
+      "bytes": 16657104,
+      "sha256": "00ebdc1541f42bcbc21f6b87525d4eb2ca6c57eaf6905530846dc1ccdc86d400",
+      "members": 15
+    },
+    {
+      "file": "Slay-the-Nspire-2-0.17-ui12-validation-evidence.zip",
+      "bytes": 3007970,
+      "sha256": "9e6c6d5050077ee19ef9f72013a0bc78e387c5cf6e9ffa95334d65649829090b",
+      "members": 82,
+      "png_images": 65,
+      "source_groups": 10,
+      "scope": "Version-labelled original-resource native and ordinary Ndless/Firebird evidence; no ROM/NAND, private game inputs, fonts, resources, settings or saves."
+    }
+  ],
+  "final_validation": {
+    "arm": {
+      "journal": "ui12-architect-corrected-arm-e5ba1eee9fe3",
+      "checkpoint": "9398633d8fd715c008560cc038f61d8f85c98466",
+      "status": "passed",
+      "returncode": 0,
+      "source_changed": false,
+      "source_sha256": "133aad21331c9617d6fcedbe631149584bd1ca1976e1bcd6e1f13583b162638b",
+      "log_sha256": "ee22b92a2747b127d3464ea8191cdcfc4038efb2e3435361a7c8ce93c4b8f8dd",
+      "started_at": "2026-10-25T17:07:16.756796+00:00",
+      "ended_at": "2026-10-25T17:08:38.335414+00:00"
+    },
+    "native_build": {
+      "journal": "ui12-architect-corrected-native-build-59bec35c2e01",
+      "checkpoint": "9398633d8fd715c008560cc038f61d8f85c98466",
+      "status": "passed",
+      "returncode": 0,
+      "source_changed": false,
+      "source_sha256": "133aad21331c9617d6fcedbe631149584bd1ca1976e1bcd6e1f13583b162638b",
+      "log_sha256": "aa14abe29f14a02ce3284bb76ee0e94ec57900d6db322b351088aae161d9dd4f",
+      "started_at": "2026-10-25T17:07:16.888432+00:00",
+      "ended_at": "2026-10-25T17:13:13.332065+00:00",
+      "final_test_target": {
+        "journal": "ui12-architect-terminal-test-build-7d3e37a5ff4c",
+        "checkpoint": "1848338c68d4f10e9fa46d414729087fbd0b1224",
+        "status": "passed",
+        "returncode": 0,
+        "source_changed": false,
+        "source_sha256": "e6c728daa8df51e78781277144d326b470b81159d61c73f47bbfbf7187ed13b3",
+        "log_sha256": "b7454dcc5784b8114b129b609f410bf2b5cdf1de5bca4fc16208561677f13cde",
+        "started_at": "2026-10-25T17:14:48.183631+00:00",
+        "ended_at": "2026-10-25T17:15:23.828744+00:00"
+      }
+    },
+    "native_all_registered": {
+      "journal": "ui12-architect-complete-native-executable-63e3d5723288",
+      "checkpoint": "1848338c68d4f10e9fa46d414729087fbd0b1224",
+      "status": "passed",
+      "returncode": 0,
+      "source_changed": false,
+      "source_sha256": "e6c728daa8df51e78781277144d326b470b81159d61c73f47bbfbf7187ed13b3",
+      "log_sha256": "3088523f16a3dddee60476a6ffd0f92d613c103cd62729a2f8f4ce422c163487",
+      "started_at": "2026-10-25T17:18:08.894519+00:00",
+      "ended_at": "2026-10-25T17:19:13.031132+00:00",
+      "tests": 135,
+      "passed": 135,
+      "failed": 0,
+      "seconds": 64.05
+    },
+    "python": {
+      "journal": "ui12-architect-release-python-ef3c2f1f7333",
+      "checkpoint": "1848338c68d4f10e9fa46d414729087fbd0b1224",
+      "status": "passed",
+      "returncode": 0,
+      "source_changed": false,
+      "source_sha256": "e6c728daa8df51e78781277144d326b470b81159d61c73f47bbfbf7187ed13b3",
+      "log_sha256": "3516e137043d5e888cff9649e2e58a97353fe1928eb4d4d7fef214210a7c0866",
+      "started_at": "2026-10-25T17:16:54.060528+00:00",
+      "ended_at": "2026-10-25T17:17:33.450192+00:00",
+      "tests": 310,
+      "failed": 0,
+      "seconds": 38.736,
+      "compileall": true
+    },
+    "actual_ui12_feedback": {
+      "journal": "ui12-architect-actual-feedback-9d78d053736c",
+      "checkpoint": "1848338c68d4f10e9fa46d414729087fbd0b1224",
+      "status": "passed",
+      "returncode": 0,
+      "source_changed": false,
+      "source_sha256": "e6c728daa8df51e78781277144d326b470b81159d61c73f47bbfbf7187ed13b3",
+      "log_sha256": "1330fd7ddc650fbec642884048650baa529dc92609ef4feb7e14e9ac74e3dc42",
+      "started_at": "2026-10-25T17:14:48.248548+00:00",
+      "ended_at": "2026-10-25T17:14:48.472462+00:00",
+      "checks": 12594
+    },
+    "actual_merchant": {
+      "journal": "ui12-architect-actual-merchant-2781e526c788",
+      "checkpoint": "1848338c68d4f10e9fa46d414729087fbd0b1224",
+      "status": "passed",
+      "returncode": 0,
+      "source_changed": false,
+      "source_sha256": "e6c728daa8df51e78781277144d326b470b81159d61c73f47bbfbf7187ed13b3",
+      "log_sha256": "7c7b8b4f80e830b8c7806e6b4ae9b873fd4b18228743a566569aac31e3926a59",
+      "started_at": "2026-10-25T17:14:48.167737+00:00",
+      "ended_at": "2026-10-25T17:14:48.792341+00:00",
+      "checks": 223
+    },
+    "actual_camera_sleep_lifecycle": {
+      "journal": "ui12-architect-actual-screen-effects-cbb2ef00c2da",
+      "checkpoint": "1848338c68d4f10e9fa46d414729087fbd0b1224",
+      "status": "passed",
+      "returncode": 0,
+      "source_changed": false,
+      "source_sha256": "e6c728daa8df51e78781277144d326b470b81159d61c73f47bbfbf7187ed13b3",
+      "log_sha256": "5817e98c763812248ccc742625280c946d0416f147a30f59d769534330998f07",
+      "started_at": "2026-10-25T17:14:48.167549+00:00",
+      "ended_at": "2026-10-25T17:15:00.289547+00:00",
+      "checks": 2122238
+    },
+    "actual_architect_visual": {
+      "source_checkpoint": "1848338c68d4f10e9fa46d414729087fbd0b1224",
+      "runtime_checkpoint": "9398633d8fd715c008560cc038f61d8f85c98466",
+      "source_comparison": "source-match-939-receipt.json:504 production files identical; subsequent commits only tests",
+      "native_executable_sha256": "7615e73df8d7acffa35dc8789201200cf116f9c76187e2c2ab1f8f5a896593c2",
+      "core_archive_sha256": "9a7b4079a243d64ba08bae89bd8e76987d573fdad81e83b1e0df7df7549165a4",
+      "build_journal": "architect-visual-ui-clock-build-c2e8f30483f3.json",
+      "actual_gates": [
+        {
+          "language": "eng",
+          "journal": "architect-visual-complete-eng-93498ff2c976.json",
+          "journal_sha256": "81b5a94346b5e5517e0d2f760db54549b2ee9474913c602cd3f20a55d625fbd0",
+          "log_sha256": "3292bfcfb8113184ed5fa0e2b1c5ed3d1f08aac62f48e79dc01dab584f220d1d",
+          "status": "passed",
+          "source_changed": false,
+          "source_sha256": "57f82a1c8da229867c05b4832f32c016e8f8254bdaabb28779302e9ff421862a",
+          "checks": 7279
+        },
+        {
+          "language": "zhs",
+          "journal": "architect-visual-complete-zhs-204837870e07.json",
+          "journal_sha256": "9f15e21b8da9b923e474200a20f0b9e59880dcc45459a9acd77e72d4133a87b1",
+          "log_sha256": "3292bfcfb8113184ed5fa0e2b1c5ed3d1f08aac62f48e79dc01dab584f220d1d",
+          "status": "passed",
+          "source_changed": false,
+          "source_sha256": "57f82a1c8da229867c05b4832f32c016e8f8254bdaabb28779302e9ff421862a",
+          "checks": 7279
+        }
+      ],
+      "scenario_combinations": 20,
+      "scope": "Native correctness with original resources; not emulator/physical-device performance. Routing fixture supplies prior room outcomes then uses production world_finish_room and original_event_choose.",
+      "checks_include": "Each aggregate actor-band and sprite comparison is one assertion; total checks also include PPM row writes and fixture routing checks."
+    },
+    "package_readback": {
+      "journal": "ui12-architect-calculator-package-4408a8525698",
+      "checkpoint": "1848338c68d4f10e9fa46d414729087fbd0b1224",
+      "status": "passed",
+      "returncode": 0,
+      "source_changed": false,
+      "source_sha256": "e6c728daa8df51e78781277144d326b470b81159d61c73f47bbfbf7187ed13b3",
+      "log_sha256": "73350f80f8c8a521908a3fbf5d804241e8bc8a8ccebc992bb2dcf5031540e91e",
+      "started_at": "2026-10-25T17:20:04.587989+00:00",
+      "ended_at": "2026-10-25T17:20:11.426910+00:00",
+      "scope": "13 default archive members, all stored payloads reread equal to the launcher/resources; optional-language archive remains byte-identical to baseline."
+    },
+    "ordinary_ndless": {
+      "journal": "ui12-architect-device-final-55becdaab6a4",
+      "checkpoint": "9398633d8fd715c008560cc038f61d8f85c98466",
+      "status": "passed",
+      "returncode": 0,
+      "source_changed": false,
+      "source_sha256": "133aad21331c9617d6fcedbe631149584bd1ca1976e1bcd6e1f13583b162638b",
+      "log_sha256": "962576c52a2e30d085913d28d98389f1848b14cd097770801af3165748a48071",
+      "started_at": "2026-10-25T17:14:28.885245+00:00",
+      "ended_at": "2026-10-25T17:23:33.393975+00:00",
+      "scope": "Cold Ndless startup and939 ARM upload; Continue actual floor6 turn5 rev69, SaveQuit, ordinary titleQuit, verified OS, USB returned save. Canonical stayed exactly equal; no extra cardplay or full battle claimed.",
+      "resource_failures": 0,
+      "canonical_validation": {
+        "loaded": true,
+        "valid": true,
+        "canonical_roundtrip": true,
+        "equal_first": true,
+        "floor": 6,
+        "turn": 5,
+        "hp": 59,
+        "max_hp": 85,
+        "gold": 280,
+        "deck_count": 12,
+        "revision": 69
+      }
+    },
+    "device_visual_fixtures": {
+      "journal": "ui12-architect-device-final-55becdaab6a4",
+      "checkpoint": "9398633d8fd715c008560cc038f61d8f85c98466",
+      "status": "passed",
+      "returncode": 0,
+      "source_changed": false,
+      "source_sha256": "133aad21331c9617d6fcedbe631149584bd1ca1976e1bcd6e1f13583b162638b",
+      "log_sha256": "962576c52a2e30d085913d28d98389f1848b14cd097770801af3165748a48071",
+      "started_at": "2026-10-25T17:14:28.885245+00:00",
+      "ended_at": "2026-10-25T17:23:33.393975+00:00",
+      "scope": "Native-generated production world_finish_room -> TheArchitect entry, Ironclad zero wins, revision130. Prior room outcomes supplied by native routing fixture; not a natural three-act victory. Separate independent NSH7 progress. Same entry bytes as latest accepted native gate.",
+      "observed": [
+        "Original-position Ironclad and Architect with original room backdrop and first dialogue/Threaten",
+        "Normal Confirm advances to player response Enemy... Kill... and Proceed",
+        "Normal Proceed begins ending; actor layer remains and Architect changes to visible attack pose",
+        "Ironclad appears fallen at original left position while Architect remains right, under Victory...? banner; no centered replacement actor",
+        "Continue opens summary/discoveries; Main Menu becomes available and returns to title",
+        "Ordinary titleQuit returns to calculator file browser before USB transfers"
+      ],
+      "timing_limits": "Control-command waits label snapshots only; cold resource frames shift animation-clock progress. These samples do not prove exact authored timestamps, all five attacks, or the200ms terminal fade duration; native source/pixel gate covers those. Continue does not replay the non-persisted2250ms fresh-entry cue.",
+      "resource_failures": 0,
+      "console_used": false,
+      "new_benchmark": false,
+      "ordinary_restore": {
+        "sav": {
+          "byte_equal": true,
+          "bytes": 7708,
+          "sha256": "ee289fc4fc1a393e176a2a3b2fb8ac9add76665b44cba24e7cc44f7266a90a69"
+        },
+        "progress": {
+          "byte_equal": true,
+          "bytes": 1191,
+          "sha256": "f3af6005bd932b36fcd9e1f62190b2295293a55f48a9c2dcf43d2c43c770024f"
+        }
+      },
+      "restored_load_validate_roundtrip": true
+    }
+  },
+  "earlier_actual_resource_scopes": {
+    "checkpoint": "44ebf0ea6265df4f064d58bb999cb40d0f2ea059",
+    "locales": 16,
+    "descriptions": 53072,
+    "missing_visible_or_unexpanded_failures": 0,
+    "startup_checks": 11079,
+    "combat_eng_checks": 1275,
+    "combat_zhs_checks": 1275,
+    "merchant_occlusion_checks": 41569,
+    "merchant_whole_frame_comparisons": 2376,
+    "component_receipt": "final44-actual-components.json",
+    "batch_note": "Six named components exited0; the optional final exhaustive memory/range traversal was interrupted and the whole batch is not a pass. The dedicated UI12 gate was separately closed, and it was rerun on final169."
+  },
+  "ordinary_predecessor_scopes": [
+    {
+      "checkpoint": "f4a7cd59e7c86477fd820549c394ec44f4d72139",
+      "journal": "ui12-final-ordinary-run-f5e26f1376b4",
+      "scope": "Natural Ancient choices, battle win, early Loot, gold/card pickup, map, save/title and Continue; exact valid floor5 readback.",
+      "combat_frames": 815,
+      "mean_interval_ms": 37.687,
+      "max_interval_ms": 300.262
+    },
+    {
+      "checkpoint": "44ebf0ea6265df4f064d58bb999cb40d0f2ea059",
+      "journal": "ui12-release-gameplay-5010dfad8d55",
+      "scope": "Natural floor6 continuation, one Battle Start then Player Turn, naturally drawn Rage readable tail, SaveQuit and normal OS exit; canonical valid revision68. This battle was not claimed completed.",
+      "combat_frames": 1438,
+      "mean_interval_ms": 38.522,
+      "max_interval_ms": 487.305
+    },
+    {
+      "checkpoint": "125adc82e613322e4868ff71379653e17c6b1588",
+      "scope": "Original startup logo and actual 108-byte NSPF6 USB preference readback; flags644 to2692, skip on restart and normal exit. Earlier resource set is not relabelled as final169."
+    },
+    {
+      "checkpoint": "169cea998135a47e5f8580b15df798244e0e7e6a",
+      "journal": "ui12-final-runtime-controlled-78793058034c",
+      "scope": "The169 baseline naturally continued revision68, used digit1/Enter to play Rage, saved revision69 and returned to OS; its separate typed-console phobia/sleep fixtures and exact save restoration retain their own historical identity."
+    }
+  ],
+  "merchant_matched": {
+    "checkpoint": "1826969ce506bcc3f7f4e9803a0ff212917cdc92",
+    "baseline_checkpoint": "e95893c9effaa9b5f7fd09158cca546d7b65ce3b",
+    "journal": "ui12-effects-merchant-matched-3d37d54e0d1d.json",
+    "baseline_journal": "ui11n-shop-complete-adc756ecb8c1",
+    "scope": "same canonical Shop fixture, ordinary cold OS/Ndless startup and application entry; identical relative room/open/idle/3 card/removal/close phases",
+    "fixture_origin": "historical K real console then ordinary Save and Quit; not a naturally reached Shop",
+    "ui11": {
+      "frames": 521,
+      "mean_interval_ms": 106.88005619451775,
+      "mean_render_ms": 105.91649734584934,
+      "max_interval_ms": 2387.054443359375,
+      "over_100ms": 113,
+      "read_calls": 471,
+      "read_bytes_requested": 6554265
+    },
+    "ui12": {
+      "frames": 674,
+      "mean_interval_ms": 82.05339109154767,
+      "mean_render_ms": 79.79346029128801,
+      "max_interval_ms": 2703.094482421875,
+      "over_100ms": 98,
+      "read_calls": 449,
+      "read_bytes_requested": 6010812
+    },
+    "mean_interval_reduction_percent": 23.228529238220524,
+    "mean_render_reduction_percent": 24.66380375973133,
+    "max_interval_increase_percent": 13.239749932880752,
+    "resource_failures": 0,
+    "timing_units": "Firebird emulated SP804; not physical calculator measurement",
+    "opening_samples": {
+      "500_ms": "closed room",
+      "1000_ms": "preparing",
+      "2000_ms": "preparing",
+      "4000_ms": "opening not yet full stock",
+      "6000_ms": "first sampled full inventory",
+      "6500_ms": "full inventory"
+    },
+    "save_validation": {
+      "decoded": true,
+      "loaded": true,
+      "valid": true,
+      "canonical_roundtrip": true,
+      "equal_first": true,
+      "canonical_bytes": 230380,
+      "phase": 8,
+      "floor": 2,
+      "hp": 80,
+      "max_hp": 80,
+      "gold": 268,
+      "deck_count": 11,
+      "revision": 34
+    }
+  },
+  "input_latency_scope": "Two125 and one44 screenshot-confirmed active cold-preparation Esc180ms trials cancelled. Ordered bounded input sampling around8KiB reads preserves sampled edges; cold stalls and delayed display remain.",
+  "excluded_attempts": [
+    "Earlier merchant short-tap/preflight runs are not matched performance or canonical-preservation passes.",
+    "A black-frame/blocked-USB exit attempt remains unknown; later ordinary exits have independent passing receipts.",
+    "The optional full resource memory/range traversal was interrupted after shared-cache thrashing. Its batch is not reported as passed.",
+    "The superseded af512a native build was intentionally interrupted after the real Doom death-target defect was found; the frozen169 rebuild and full134 suites subsequently pass.",
+    "Ready-only final device attempt889cda80a83e ended failed/-15 before OS/game execution after its tool terminal identity was lost. Controlled78793058034c is the actual passing final game session.",
+    "Architect actual a5b7a0fe7872 failed on609 extra fallback-text pixels, and its inspected idle screenshot exposed the wrong dialogue table. Both runtime defects are fixed and the original assertions pass on939.",
+    "Architect actual a7ffd44e5ff7/4ac0b69cb130 and2070b2473eed/77f35607dbea failed on incorrect new test expectations about terminal Continue and the Silent death/UI clocks; corrected complete ENG/ZHS gates pass without further runtime changes.",
+    "Complete native1156f85bb138 executed133 tests successfully but could not start two byte-identical ELF files lacking execute bits. It remains failed; same-session permission repair and complete135 rerun63e3d5723288 pass.",
+    "Build-only7dd/defe candidates and intermediate partial actor runs are not final release acceptance. No earlier screenshot or merchant timing is relabelled as939."
+  ],
+  "limits": [
+    "Firebird/SP804 measurements are not physical-calculator FPS, whole-game speed or desktop-GPU pixel identity.",
+    "Cold merchant maximum frame remains2703.094ms in the matched fixture; the first complete inventory sample is at6seconds.",
+    "Full Ancient actor animation retains the user-authorized storage exception. Audio, multiplayer and Timeline remain excluded.",
+    "Integer LCD text/noise, bounded particle density, HDR/material approximations and resetting trauma when its target changes remain documented adaptations. Architect now includes original body clips, real dialogue and terminal death; this is not a blanket desktop rasterization claim.",
+    "Named visual effects still absent: Doom special sinking/destruction particles; Architect head-reading overlays, independent pen trail, hit numbers/character particles and Lightning/FireBurst. The exact scope is listed in screen-effects-ui12-0.17.md; camera hooks/body animations are not presented as those effects.",
+    "Original missing translations retain English fallback; calculator-only non-ZHS text follows the documented fallback policy.",
+    "Source/GitHub Actions status is reported separately; local passing journals do not claim a queued remote workflow passed."
+  ],
+  "remote_ci_observed": {
+    "checkpoint": "9398633d8fd715c008560cc038f61d8f85c98466",
+    "workflow_run": 40214826706,
+    "status": "queued",
+    "conclusion": null,
+    "note": "Observed GitHub push workflow remains queued. Local complete135/310 gates and normal Ndless/Firebird are closed passes; no remote CI pass is inferred."
+  },
+  "previous_release_baseline": {
+    "runtime_checkpoint": "169cea998135a47e5f8580b15df798244e0e7e6a",
+    "runtime_tree": "0b35a811ff2d29a882464a238eda4097d2dc5fc9",
+    "launcher": {
+      "bytes": 1595942,
+      "sha256": "9e9f0dab919fb71f798b43f00239530d526f70ba0102e09d7e07b7df32e06666",
+      "allocation_bytes": 20356556
+    },
+    "installed_default_bytes": 69509705,
+    "artifacts": [
+      {
+        "file": "Slay-the-Nspire-2-0.17-ui12-bilingual-calculator.zip",
+        "bytes": 67839412,
+        "sha256": "04cf37572d6242d3041452bd316905796e2fe26a87386e20957790630fea5f74"
+      },
+      {
+        "file": "Slay-the-Nspire-2-0.17-ui12-optional-languages.zip",
+        "bytes": 16657104,
+        "sha256": "00ebdc1541f42bcbc21f6b87525d4eb2ca6c57eaf6905530846dc1ccdc86d400"
+      },
+      {
+        "file": "Slay-the-Nspire-2-0.17-ui12-validation-evidence.zip",
+        "bytes": 2264628,
+        "sha256": "9674d9affb0ee9d7d3133331b14c7b30d7e0536fa59fbc1f391a34f37cd5103a",
+        "members": 62,
+        "png_images": 48,
+        "scope": "Version-labelled native/emulator evidence and summaries; no ROM/NAND, private game inputs, fonts, resources, settings or saves."
+      }
+    ],
+    "final_validation": {
+      "arm": {
+        "journal": "ui12-doom-boundary-arm-3de424906bc7",
+        "checkpoint": "169cea998135a47e5f8580b15df798244e0e7e6a",
+        "status": "passed",
+        "source_changed": false,
+        "returncode": 0,
+        "source_sha256": "e84c51d2a652082ed0c39d4f0749eada220cac30079ed68413458b1efbb5ae95",
+        "log_sha256": "3d3143818296907c189de26ce2c9011863cfe6244be2361235c22fa5f589c859",
+        "started_at": "2026-10-25T16:10:54.347692+00:00",
+        "ended_at": "2026-10-25T16:11:59.210726+00:00"
+      },
+      "native_build": {
+        "journal": "ui12-accepted-native-build-66bd37c98e92",
+        "checkpoint": "169cea998135a47e5f8580b15df798244e0e7e6a",
+        "status": "passed",
+        "source_changed": false,
+        "returncode": 0,
+        "source_sha256": "e84c51d2a652082ed0c39d4f0749eada220cac30079ed68413458b1efbb5ae95",
+        "log_sha256": "450c16627aa032943d81ec6e07297b1751b42277f3d2f7162b16e3c1e298afc3",
+        "started_at": "2026-10-25T16:11:57.317862+00:00",
+        "ended_at": "2026-10-25T16:17:08.881157+00:00"
+      },
+      "native_all_registered": {
+        "journal": "ui12-complete-native-release-0d467d0f76fd",
+        "checkpoint": "169cea998135a47e5f8580b15df798244e0e7e6a",
+        "status": "passed",
+        "source_changed": false,
+        "returncode": 0,
+        "source_sha256": "e84c51d2a652082ed0c39d4f0749eada220cac30079ed68413458b1efbb5ae95",
+        "log_sha256": "bc39d852501a4534f92fd266781bdf8a59cc22b1141ddbbe90ba6caf24ee10d8",
+        "started_at": "2026-10-25T16:17:54.780555+00:00",
+        "ended_at": "2026-10-25T16:18:48.192812+00:00",
+        "suites": 134,
+        "failed": 0,
+        "seconds": 53.34
+      },
+      "python": {
+        "journal": "ui12-complete-python-release-7e3f2b2164f6",
+        "checkpoint": "169cea998135a47e5f8580b15df798244e0e7e6a",
+        "status": "passed",
+        "source_changed": false,
+        "returncode": 0,
+        "source_sha256": "e84c51d2a652082ed0c39d4f0749eada220cac30079ed68413458b1efbb5ae95",
+        "log_sha256": "08082deca15b54abdf4ce5c57dd3ac5b827adb80706605517b34c0da678be29c",
+        "started_at": "2026-10-25T16:10:54.347521+00:00",
+        "ended_at": "2026-10-25T16:11:37.530955+00:00",
+        "tests": 310,
+        "failed": 0,
+        "includes_tools_compileall": true
+      },
+      "actual_ui12_feedback": {
+        "journal": "ui12-release-actual-feedback-6d4b74e8163c",
+        "checkpoint": "169cea998135a47e5f8580b15df798244e0e7e6a",
+        "status": "passed",
+        "source_changed": false,
+        "returncode": 0,
+        "source_sha256": "e84c51d2a652082ed0c39d4f0749eada220cac30079ed68413458b1efbb5ae95",
+        "log_sha256": "1330fd7ddc650fbec642884048650baa529dc92609ef4feb7e14e9ac74e3dc42",
+        "started_at": "2026-10-25T16:17:54.778427+00:00",
+        "ended_at": "2026-10-25T16:17:54.997951+00:00",
+        "checks": 12594,
+        "scope": "Actual original cards: single battle banner, long selected Rage tail, target-only previews, real winning-card early Loot, seven merchant cache positions and label metrics."
+      },
+      "actual_merchant": {
+        "journal": "ui12-release-actual-merchant-e4c742a71ec5",
+        "checkpoint": "169cea998135a47e5f8580b15df798244e0e7e6a",
+        "status": "passed",
+        "source_changed": false,
+        "returncode": 0,
+        "source_sha256": "e84c51d2a652082ed0c39d4f0749eada220cac30079ed68413458b1efbb5ae95",
+        "log_sha256": "7c7b8b4f80e830b8c7806e6b4ae9b873fd4b18228743a566569aac31e3926a59",
+        "started_at": "2026-10-25T16:17:54.781850+00:00",
+        "ended_at": "2026-10-25T16:17:55.454195+00:00",
+        "checks": 223,
+        "image_decodes": 24,
+        "yielded_updates": 32,
+        "visible_stock_slots": 7
+      },
+      "actual_camera_sleep_lifecycle": {
+        "journal": "screen-effects-complete-actual-75aed13c3f47",
+        "checkpoint": "169cea998135a47e5f8580b15df798244e0e7e6a",
+        "status": "passed",
+        "source_changed": false,
+        "returncode": 0,
+        "source_sha256": "661ae3923494dccbec7c4c384040b643e8a0cc9d864fc3728b770b3acfbe7a6d",
+        "log_sha256": "456ca30991e1c5afb5740d302ceb6cf9e9241742ffbbc92a56bf9e6b52e38ce7",
+        "started_at": "2026-10-25T16:10:54.131425+00:00",
+        "ended_at": "2026-10-25T16:11:17.757619+00:00",
+        "checks": 2122118,
+        "scope": "Actual ENG/JPN sprites, canonical-state equality, real world Doom execution/death boundary and complete normal/Fast/Off Architect dialogue/terminal/reload paths. Most checks are pixel comparisons, not independent scenarios.",
+        "production_source_match": "All 503 src/include files match final runtime. Incremental library identities are independently recorded; separate unrelated documentation/config/test differences are not mislabelled as whole-tree equality."
+      },
+      "package_readback": {
+        "journal": "ui12-calculator-package-07d2bafb0e7a",
+        "checkpoint": "169cea998135a47e5f8580b15df798244e0e7e6a",
+        "status": "passed",
+        "source_changed": false,
+        "returncode": 0,
+        "source_sha256": "e84c51d2a652082ed0c39d4f0749eada220cac30079ed68413458b1efbb5ae95",
+        "log_sha256": "ea83b65e8df4f4c3fe736608ad619bde221850f7d05596dd9216f54414a9c3a5",
+        "started_at": "2026-10-25T16:12:58.204953+00:00",
+        "ended_at": "2026-10-25T16:13:04.740353+00:00"
+      },
+      "ordinary_ndless": {
+        "journal": "ui12-final-runtime-controlled-78793058034c",
+        "checkpoint": "169cea998135a47e5f8580b15df798244e0e7e6a",
+        "status": "passed",
+        "source_changed": false,
+        "returncode": 0,
+        "source_sha256": "e84c51d2a652082ed0c39d4f0749eada220cac30079ed68413458b1efbb5ae95",
+        "log_sha256": "b4b4fc81f63be5166af25789a51b05a591f56d069d00d3c61c84ea4cb0ad3c72",
+        "started_at": "2026-10-25T16:16:18.688658+00:00",
+        "ended_at": "2026-10-25T16:18:34.542552+00:00",
+        "console_used": false,
+        "scope": [
+          "Final169 ARM USB installed after normal Ndless boot",
+          "Continue genuine rev68 floor6 turn5 save",
+          "Numeric1 selects naturally drawn Rage; Enter plays it",
+          "Observed Rage3 power and hand5 to4, energy3 unchanged",
+          "Save and Quit, title Quit confirmation, normal calculator OS file browser",
+          "USB returned save/progress/performance, flash flush, controller quit"
+        ],
+        "input": {
+          "floor": 6,
+          "turn": 5,
+          "hp": 59,
+          "max_hp": 85,
+          "gold": 280,
+          "deck_count": 12,
+          "revision": 68
+        },
+        "returned": {
+          "decoded": true,
+          "loaded": true,
+          "valid": true,
+          "canonical_roundtrip": true,
+          "floor": 6,
+          "turn": 5,
+          "hp": 59,
+          "max_hp": 85,
+          "gold": 280,
+          "deck_count": 12,
+          "revision": 69
+        },
+        "resource_failures": 0,
+        "returned_save_sha256": "ee289fc4fc1a393e176a2a3b2fb8ac9add76665b44cba24e7cc44f7266a90a69",
+        "limitation": "Focused final lifecycle check; not another battle win and not a matched speed benchmark. Earlier f4 natural win/loot/map,44 natural next battle/Rage scroll,182 same-shop performance retain their own checkpoints."
+      },
+      "device_visual_fixtures": {
+        "checkpoint": "169cea998135a47e5f8580b15df798244e0e7e6a",
+        "status": "passed",
+        "source_changed": false,
+        "returncode": 0,
+        "source_sha256": "e84c51d2a652082ed0c39d4f0749eada220cac30079ed68413458b1efbb5ae95",
+        "log_sha256": "a7b77f1bc6f6b50d81a79590f510f4225ee7f0205d10f064093861cf5ffcdae5",
+        "started_at": "2026-10-25T16:19:24.832186+00:00",
+        "ended_at": "2026-10-25T16:23:06.144038+00:00",
+        "journal": "ui12-final-effects-console-ea63bb4cdfce",
+        "scope": [
+          "Actual physical Flag console, typed fight command and Tab completion",
+          "Entomancer original phobia swarm visibly changes over600ms",
+          "Slumbering Beetle original sleeping Z appears at the actor anchor",
+          "Normal Quit returns to OS; restore ordinary revision69 save/progress by USB and read back identical bytes"
+        ],
+        "ordinary_gameplay": false,
+        "source_console_fixture": true,
+        "resource_failures": 0,
+        "limits": "These are explicitly constructed visual contexts. No additional benchmark or device-specific camera-trigger test is claimed."
+      }
+    },
+    "remote_ci_observed": {
+      "checkpoint": "169cea998135a47e5f8580b15df798244e0e7e6a",
+      "workflow_run": 40210394127,
+      "run_number": 138,
+      "status": "pending",
+      "conclusion": null,
+      "note": "Observed during release finalization. This is not a remote-CI pass; the complete local build/tests and ordinary Firebird receipts above are closed passes."
+    },
+    "scope": "Previously delivered 169 baseline; its executed scopes and artifacts remain historical."
+  },
+  "validation_source_checkpoint": "1848338c68d4f10e9fa46d414729087fbd0b1224",
+  "validation_tree": "c0369a29dfdbd525a2791b0af86b41cd110a688c",
+  "validation_runtime_difference": [
+    "tests/architect_visual_ui12_regression.cpp"
+  ],
+  "merchant_empty_clip_followup": {
+    "introduced_checkpoint": "3d6a53e087e6a4235310f2802008f79ffb1cab0e",
+    "delivered_runtime": "9398633d8fd715c008560cc038f61d8f85c98466",
+    "behavior": "Glyph acquisition/cache warming is preserved; Canvas::glyph returns before traversing raster spans on an empty clip. No new persistent memory, image payload, saved state or gameplay RNG.",
+    "acceptance": "Existing exact canvas gate is included in full135; actual seven-slot preparation passes223 checks on the final runtime.",
+    "new_performance_measurement": false,
+    "performance_scope": "The matched Shop timings below remain measured on1826969, not on939."
+  }
+}

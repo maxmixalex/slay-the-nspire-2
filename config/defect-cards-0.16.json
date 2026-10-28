@@ -1,0 +1,3004 @@
+{
+  "reference": {
+    "tag": "v0.111.0",
+    "commit": "41cef1ea",
+    "assembly_sha256": "0861bfa1df347538d932f22d580e75420f08082792eb914e53b4882764acdbe9"
+  },
+  "scope": {
+    "declared_pool": 91,
+    "multiplayer_excluded": [
+      "EnergySurge",
+      "Hibernate",
+      "Ignition",
+      "ImitationLearning",
+      "OneForAll"
+    ],
+    "single_player_pool": 86,
+    "existing_models": 0,
+    "new_models": 86,
+    "existing_tokens": [],
+    "shared_tokens": [
+      "Dazed",
+      "Wound",
+      "Slimed",
+      "Burn",
+      "Void",
+      "Fuel"
+    ]
+  },
+  "status": "source_implemented_validation_pending",
+  "cards": [
+    {
+      "model": "AdaptiveStrike",
+      "key": "ADAPTIVE_STRIKE",
+      "type": "Attack",
+      "rarity": 4,
+      "target": "AnyEnemy",
+      "cost": {
+        "base": 2,
+        "upgraded": 2
+      },
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "variables": {
+        "Damage": {
+          "base": 18,
+          "upgraded": 23
+        }
+      },
+      "generation_allowed": true,
+      "evidence": {
+        ".ctor": "0x06003afe",
+        "get_CanonicalVars": "0x06003b00",
+        "OnPlay": "0x06003b01",
+        "OnUpgrade": "0x06003b02"
+      },
+      "id": 228,
+      "implementation_status": "implemented",
+      "validation_status": "pending_checkpoint_validation"
+    },
+    {
+      "model": "AllForOne",
+      "key": "ALL_FOR_ONE",
+      "type": "Attack",
+      "rarity": 4,
+      "target": "AnyEnemy",
+      "cost": {
+        "base": 2,
+        "upgraded": 2
+      },
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "variables": {
+        "Damage": {
+          "base": 10,
+          "upgraded": 14
+        }
+      },
+      "generation_allowed": true,
+      "evidence": {
+        ".ctor": "0x06003b22",
+        "get_CanonicalVars": "0x06003b23",
+        "OnPlay": "0x06003b24",
+        "OnUpgrade": "0x06003b26"
+      },
+      "id": 229,
+      "implementation_status": "implemented",
+      "validation_status": "pending_checkpoint_validation"
+    },
+    {
+      "model": "BallLightning",
+      "key": "BALL_LIGHTNING",
+      "type": "Attack",
+      "rarity": 2,
+      "target": "AnyEnemy",
+      "cost": {
+        "base": 1,
+        "upgraded": 1
+      },
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "variables": {
+        "Damage": {
+          "base": 7,
+          "upgraded": 10
+        }
+      },
+      "generation_allowed": true,
+      "evidence": {
+        ".ctor": "0x06003b73",
+        "get_CanonicalVars": "0x06003b75",
+        "OnPlay": "0x06003b76",
+        "OnUpgrade": "0x06003b77"
+      },
+      "id": 230,
+      "implementation_status": "implemented",
+      "validation_status": "pending_checkpoint_validation"
+    },
+    {
+      "model": "Barrage",
+      "key": "BARRAGE",
+      "type": "Attack",
+      "rarity": 2,
+      "target": "AnyEnemy",
+      "cost": {
+        "base": 1,
+        "upgraded": 1
+      },
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "variables": {
+        "Damage": {
+          "base": 5,
+          "upgraded": 7
+        },
+        "CalculationBase": {
+          "base": 0,
+          "upgraded": 0
+        },
+        "CalculationExtra": {
+          "base": 1,
+          "upgraded": 1
+        }
+      },
+      "generation_allowed": true,
+      "evidence": {
+        ".ctor": "0x06003b80",
+        "get_CanonicalVars": "0x06003b82",
+        "OnPlay": "0x06003b83",
+        "OnUpgrade": "0x06003b84"
+      },
+      "dynamic_variables": {
+        "CalculatedHits": {
+          "kind": "calculated"
+        }
+      },
+      "id": 231,
+      "implementation_status": "implemented",
+      "validation_status": "pending_checkpoint_validation"
+    },
+    {
+      "model": "BeamCell",
+      "key": "BEAM_CELL",
+      "type": "Attack",
+      "rarity": 2,
+      "target": "AnyEnemy",
+      "cost": {
+        "base": 0,
+        "upgraded": 0
+      },
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "variables": {
+        "Damage": {
+          "base": 3,
+          "upgraded": 4
+        },
+        "VulnerablePower": {
+          "base": 1,
+          "upgraded": 2
+        }
+      },
+      "generation_allowed": true,
+      "evidence": {
+        ".ctor": "0x06003b97",
+        "get_CanonicalVars": "0x06003b99",
+        "OnPlay": "0x06003b9a",
+        "OnUpgrade": "0x06003b9b"
+      },
+      "id": 232,
+      "implementation_status": "implemented",
+      "validation_status": "pending_checkpoint_validation"
+    },
+    {
+      "model": "BiasedCognition",
+      "key": "BIASED_COGNITION",
+      "type": "Power",
+      "rarity": 5,
+      "target": "Self",
+      "cost": {
+        "base": 1,
+        "upgraded": 1
+      },
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "variables": {
+        "FocusPower": {
+          "base": 5,
+          "upgraded": 6
+        },
+        "BiasedCognitionPower": {
+          "base": 1,
+          "upgraded": 1
+        }
+      },
+      "generation_allowed": false,
+      "evidence": {
+        ".ctor": "0x06003bb3",
+        "get_CanonicalVars": "0x06003bb5",
+        "OnPlay": "0x06003bb6",
+        "OnUpgrade": "0x06003bb7"
+      },
+      "id": 233,
+      "implementation_status": "implemented",
+      "validation_status": "pending_checkpoint_validation"
+    },
+    {
+      "model": "BoostAway",
+      "key": "BOOST_AWAY",
+      "type": "Skill",
+      "rarity": 2,
+      "target": "Self",
+      "cost": {
+        "base": 0,
+        "upgraded": 0
+      },
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "variables": {
+        "Block": {
+          "base": 6,
+          "upgraded": 9
+        }
+      },
+      "generation_allowed": true,
+      "evidence": {
+        ".ctor": "0x06003c11",
+        "get_CanonicalVars": "0x06003c14",
+        "OnPlay": "0x06003c15",
+        "OnUpgrade": "0x06003c16"
+      },
+      "id": 234,
+      "implementation_status": "implemented",
+      "validation_status": "pending_checkpoint_validation"
+    },
+    {
+      "model": "BootSequence",
+      "key": "BOOT_SEQUENCE",
+      "type": "Skill",
+      "rarity": 3,
+      "target": "Self",
+      "cost": {
+        "base": 0,
+        "upgraded": 0
+      },
+      "keywords": {
+        "base": [
+          "Innate",
+          "Exhaust"
+        ],
+        "upgraded": [
+          "Innate",
+          "Exhaust"
+        ]
+      },
+      "variables": {
+        "Block": {
+          "base": 10,
+          "upgraded": 13
+        }
+      },
+      "generation_allowed": true,
+      "evidence": {
+        ".ctor": "0x06003c17",
+        "get_CanonicalVars": "0x06003c19",
+        "get_CanonicalKeywords": "0x06003c1a",
+        "OnPlay": "0x06003c1b",
+        "OnUpgrade": "0x06003c1c"
+      },
+      "id": 235,
+      "implementation_status": "implemented",
+      "validation_status": "pending_checkpoint_validation"
+    },
+    {
+      "model": "Buffer",
+      "key": "BUFFER",
+      "type": "Power",
+      "rarity": 4,
+      "target": "Self",
+      "cost": {
+        "base": 2,
+        "upgraded": 2
+      },
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "variables": {
+        "BufferPower": {
+          "base": 1,
+          "upgraded": 2
+        }
+      },
+      "generation_allowed": true,
+      "evidence": {
+        ".ctor": "0x06003c41",
+        "get_CanonicalVars": "0x06003c42",
+        "OnPlay": "0x06003c43",
+        "OnUpgrade": "0x06003c44"
+      },
+      "id": 236,
+      "implementation_status": "implemented",
+      "validation_status": "pending_checkpoint_validation"
+    },
+    {
+      "model": "BulkUp",
+      "key": "BULK_UP",
+      "type": "Power",
+      "rarity": 3,
+      "target": "Self",
+      "cost": {
+        "base": 2,
+        "upgraded": 2
+      },
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "variables": {
+        "OrbSlots": {
+          "base": 1,
+          "upgraded": 1
+        },
+        "StrengthPower": {
+          "base": 2,
+          "upgraded": 3
+        },
+        "DexterityPower": {
+          "base": 2,
+          "upgraded": 3
+        }
+      },
+      "generation_allowed": true,
+      "evidence": {
+        ".ctor": "0x06003c45",
+        "get_CanonicalVars": "0x06003c47",
+        "OnPlay": "0x06003c48",
+        "OnUpgrade": "0x06003c49"
+      },
+      "id": 237,
+      "implementation_status": "implemented",
+      "validation_status": "pending_checkpoint_validation"
+    },
+    {
+      "model": "Capacitor",
+      "key": "CAPACITOR",
+      "type": "Power",
+      "rarity": 3,
+      "target": "Self",
+      "cost": {
+        "base": 1,
+        "upgraded": 1
+      },
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "variables": {
+        "Repeat": {
+          "base": 2,
+          "upgraded": 3
+        }
+      },
+      "generation_allowed": true,
+      "evidence": {
+        ".ctor": "0x06003c94",
+        "get_CanonicalVars": "0x06003c95",
+        "OnPlay": "0x06003c96",
+        "OnUpgrade": "0x06003c97"
+      },
+      "id": 238,
+      "implementation_status": "implemented",
+      "validation_status": "pending_checkpoint_validation"
+    },
+    {
+      "model": "Chaos",
+      "key": "CHAOS",
+      "type": "Skill",
+      "rarity": 3,
+      "target": "Self",
+      "cost": {
+        "base": 1,
+        "upgraded": 1
+      },
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "variables": {
+        "Repeat": {
+          "base": 1,
+          "upgraded": 2
+        }
+      },
+      "generation_allowed": true,
+      "evidence": {
+        ".ctor": "0x06003ca8",
+        "get_CanonicalVars": "0x06003ca9",
+        "OnPlay": "0x06003cab",
+        "OnUpgrade": "0x06003cac"
+      },
+      "id": 239,
+      "implementation_status": "implemented",
+      "validation_status": "pending_checkpoint_validation"
+    },
+    {
+      "model": "ChargeBattery",
+      "key": "CHARGE_BATTERY",
+      "type": "Skill",
+      "rarity": 2,
+      "target": "Self",
+      "cost": {
+        "base": 1,
+        "upgraded": 1
+      },
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "variables": {
+        "Block": {
+          "base": 7,
+          "upgraded": 10
+        },
+        "Energy": {
+          "base": 1,
+          "upgraded": 1
+        }
+      },
+      "generation_allowed": true,
+      "evidence": {
+        ".ctor": "0x06003cb1",
+        "get_CanonicalVars": "0x06003cb3",
+        "OnPlay": "0x06003cb5",
+        "OnUpgrade": "0x06003cb6"
+      },
+      "id": 240,
+      "implementation_status": "implemented",
+      "validation_status": "pending_checkpoint_validation"
+    },
+    {
+      "model": "Chill",
+      "key": "CHILL",
+      "type": "Skill",
+      "rarity": 3,
+      "target": "Self",
+      "cost": {
+        "base": 0,
+        "upgraded": 0
+      },
+      "keywords": {
+        "base": [
+          "Exhaust"
+        ],
+        "upgraded": []
+      },
+      "variables": {},
+      "generation_allowed": true,
+      "evidence": {
+        ".ctor": "0x06003cbc",
+        "get_CanonicalKeywords": "0x06003cbd",
+        "OnPlay": "0x06003cbf",
+        "OnUpgrade": "0x06003cc0"
+      },
+      "id": 241,
+      "implementation_status": "implemented",
+      "validation_status": "pending_checkpoint_validation"
+    },
+    {
+      "model": "Claw",
+      "key": "CLAW",
+      "type": "Attack",
+      "rarity": 2,
+      "target": "AnyEnemy",
+      "cost": {
+        "base": 0,
+        "upgraded": 0
+      },
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "variables": {
+        "Damage": {
+          "base": 3,
+          "upgraded": 4
+        },
+        "Increase": {
+          "base": 2,
+          "upgraded": 3
+        }
+      },
+      "generation_allowed": true,
+      "evidence": {
+        ".ctor": "0x06003ccd",
+        "get_CanonicalVars": "0x06003cd0",
+        "OnPlay": "0x06003cd1",
+        "OnUpgrade": "0x06003cd2"
+      },
+      "id": 242,
+      "implementation_status": "implemented",
+      "validation_status": "pending_checkpoint_validation"
+    },
+    {
+      "model": "ColdSnap",
+      "key": "COLD_SNAP",
+      "type": "Attack",
+      "rarity": 2,
+      "target": "AnyEnemy",
+      "cost": {
+        "base": 1,
+        "upgraded": 1
+      },
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "variables": {
+        "Damage": {
+          "base": 6,
+          "upgraded": 9
+        }
+      },
+      "generation_allowed": true,
+      "evidence": {
+        ".ctor": "0x06003ce9",
+        "get_CanonicalVars": "0x06003cea",
+        "OnPlay": "0x06003cec",
+        "OnUpgrade": "0x06003ced"
+      },
+      "id": 243,
+      "implementation_status": "implemented",
+      "validation_status": "pending_checkpoint_validation"
+    },
+    {
+      "model": "Compact",
+      "key": "COMPACT",
+      "type": "Skill",
+      "rarity": 3,
+      "target": "Self",
+      "cost": {
+        "base": 1,
+        "upgraded": 1
+      },
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "variables": {
+        "Block": {
+          "base": 6,
+          "upgraded": 7
+        }
+      },
+      "generation_allowed": true,
+      "evidence": {
+        ".ctor": "0x06003cff",
+        "get_CanonicalVars": "0x06003d02",
+        "OnPlay": "0x06003d03",
+        "OnUpgrade": "0x06003d04"
+      },
+      "id": 244,
+      "implementation_status": "implemented",
+      "validation_status": "pending_checkpoint_validation"
+    },
+    {
+      "model": "CompileDriver",
+      "key": "COMPILE_DRIVER",
+      "type": "Attack",
+      "rarity": 2,
+      "target": "AnyEnemy",
+      "cost": {
+        "base": 1,
+        "upgraded": 1
+      },
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "variables": {
+        "Damage": {
+          "base": 7,
+          "upgraded": 10
+        },
+        "CalculationBase": {
+          "base": 0,
+          "upgraded": 0
+        },
+        "CalculationExtra": {
+          "base": 1,
+          "upgraded": 1
+        }
+      },
+      "generation_allowed": true,
+      "evidence": {
+        ".ctor": "0x06003d05",
+        "get_CanonicalVars": "0x06003d06",
+        "OnPlay": "0x06003d07",
+        "OnUpgrade": "0x06003d08"
+      },
+      "dynamic_variables": {
+        "CalculatedCards": {
+          "kind": "calculated"
+        }
+      },
+      "id": 245,
+      "implementation_status": "implemented",
+      "validation_status": "pending_checkpoint_validation"
+    },
+    {
+      "model": "ConsumingShadow",
+      "key": "CONSUMING_SHADOW",
+      "type": "Power",
+      "rarity": 4,
+      "target": "Self",
+      "cost": {
+        "base": 2,
+        "upgraded": 2
+      },
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "variables": {
+        "Repeat": {
+          "base": 2,
+          "upgraded": 3
+        },
+        "ConsumingShadowPower": {
+          "base": 1,
+          "upgraded": 1
+        }
+      },
+      "generation_allowed": true,
+      "evidence": {
+        ".ctor": "0x06003d21",
+        "get_CanonicalVars": "0x06003d23",
+        "OnPlay": "0x06003d24",
+        "OnUpgrade": "0x06003d25"
+      },
+      "id": 246,
+      "implementation_status": "implemented",
+      "validation_status": "pending_checkpoint_validation"
+    },
+    {
+      "model": "Coolant",
+      "key": "COOLANT",
+      "type": "Power",
+      "rarity": 4,
+      "target": "Self",
+      "cost": {
+        "base": 1,
+        "upgraded": 1
+      },
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "variables": {
+        "CoolantPower": {
+          "base": 2,
+          "upgraded": 3
+        }
+      },
+      "generation_allowed": true,
+      "evidence": {
+        ".ctor": "0x06003d2b",
+        "get_CanonicalVars": "0x06003d2d",
+        "OnPlay": "0x06003d2e",
+        "OnUpgrade": "0x06003d2f"
+      },
+      "id": 247,
+      "implementation_status": "implemented",
+      "validation_status": "pending_checkpoint_validation"
+    },
+    {
+      "model": "Coolheaded",
+      "key": "COOLHEADED",
+      "type": "Skill",
+      "rarity": 2,
+      "target": "Self",
+      "cost": {
+        "base": 1,
+        "upgraded": 1
+      },
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "variables": {
+        "Cards": {
+          "base": 1,
+          "upgraded": 2
+        }
+      },
+      "generation_allowed": true,
+      "evidence": {
+        ".ctor": "0x06003d30",
+        "get_CanonicalVars": "0x06003d31",
+        "OnPlay": "0x06003d33",
+        "OnUpgrade": "0x06003d34"
+      },
+      "id": 248,
+      "implementation_status": "implemented",
+      "validation_status": "pending_checkpoint_validation"
+    },
+    {
+      "model": "CreativeAi",
+      "key": "CREATIVE_AI",
+      "type": "Power",
+      "rarity": 4,
+      "target": "Self",
+      "cost": {
+        "base": 3,
+        "upgraded": 2
+      },
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "variables": {
+        "CreativeAi": {
+          "base": 1,
+          "upgraded": 1
+        }
+      },
+      "generation_allowed": true,
+      "evidence": {
+        ".ctor": "0x06003d54",
+        "get_CanonicalVars": "0x06003d55",
+        "OnPlay": "0x06003d56",
+        "OnUpgrade": "0x06003d57"
+      },
+      "id": 249,
+      "implementation_status": "implemented",
+      "validation_status": "pending_checkpoint_validation"
+    },
+    {
+      "model": "Darkness",
+      "key": "DARKNESS",
+      "type": "Skill",
+      "rarity": 3,
+      "target": "Self",
+      "cost": {
+        "base": 1,
+        "upgraded": 1
+      },
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "variables": {},
+      "generation_allowed": true,
+      "evidence": {
+        ".ctor": "0x06003d84",
+        "OnPlay": "0x06003d86"
+      },
+      "id": 250,
+      "implementation_status": "implemented",
+      "validation_status": "pending_checkpoint_validation"
+    },
+    {
+      "model": "DefendDefect",
+      "key": "DEFEND_DEFECT",
+      "type": "Skill",
+      "rarity": 1,
+      "target": "Self",
+      "cost": {
+        "base": 1,
+        "upgraded": 1
+      },
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "variables": {
+        "Block": {
+          "base": 5,
+          "upgraded": 8
+        }
+      },
+      "generation_allowed": false,
+      "evidence": {
+        ".ctor": "0x06003dc8",
+        "get_CanonicalVars": "0x06003dcb",
+        "OnPlay": "0x06003dcc",
+        "OnUpgrade": "0x06003dcd"
+      },
+      "id": 251,
+      "implementation_status": "implemented",
+      "validation_status": "pending_checkpoint_validation"
+    },
+    {
+      "model": "Defragment",
+      "key": "DEFRAGMENT",
+      "type": "Power",
+      "rarity": 4,
+      "target": "Self",
+      "cost": {
+        "base": 1,
+        "upgraded": 1
+      },
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "variables": {
+        "FocusPower": {
+          "base": 1,
+          "upgraded": 2
+        }
+      },
+      "generation_allowed": true,
+      "evidence": {
+        ".ctor": "0x06003df0",
+        "get_CanonicalVars": "0x06003df2",
+        "OnPlay": "0x06003df3",
+        "OnUpgrade": "0x06003df4"
+      },
+      "id": 252,
+      "implementation_status": "implemented",
+      "validation_status": "pending_checkpoint_validation"
+    },
+    {
+      "model": "DoubleEnergy",
+      "key": "DOUBLE_ENERGY",
+      "type": "Skill",
+      "rarity": 3,
+      "target": "Self",
+      "cost": {
+        "base": 1,
+        "upgraded": 0
+      },
+      "keywords": {
+        "base": [
+          "Exhaust"
+        ],
+        "upgraded": [
+          "Exhaust"
+        ]
+      },
+      "variables": {},
+      "generation_allowed": true,
+      "evidence": {
+        ".ctor": "0x06003e49",
+        "get_CanonicalKeywords": "0x06003e4a",
+        "OnPlay": "0x06003e4c",
+        "OnUpgrade": "0x06003e4d"
+      },
+      "id": 253,
+      "implementation_status": "implemented",
+      "validation_status": "pending_checkpoint_validation"
+    },
+    {
+      "model": "Dualcast",
+      "key": "DUALCAST",
+      "type": "Skill",
+      "rarity": 1,
+      "target": "Self",
+      "cost": {
+        "base": 1,
+        "upgraded": 0
+      },
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "variables": {},
+      "generation_allowed": false,
+      "evidence": {
+        ".ctor": "0x06003e72",
+        "OnPlay": "0x06003e75",
+        "OnUpgrade": "0x06003e76"
+      },
+      "id": 254,
+      "implementation_status": "implemented",
+      "validation_status": "pending_checkpoint_validation"
+    },
+    {
+      "model": "EchoForm",
+      "key": "ECHO_FORM",
+      "type": "Power",
+      "rarity": 4,
+      "target": "Self",
+      "cost": {
+        "base": 3,
+        "upgraded": 3
+      },
+      "keywords": {
+        "base": [
+          "Ethereal"
+        ],
+        "upgraded": []
+      },
+      "variables": {
+        "EchoForm": {
+          "base": 1,
+          "upgraded": 1
+        }
+      },
+      "generation_allowed": true,
+      "evidence": {
+        ".ctor": "0x06003e83",
+        "get_CanonicalVars": "0x06003e84",
+        "get_CanonicalKeywords": "0x06003e85",
+        "OnPlay": "0x06003e86",
+        "OnUpgrade": "0x06003e87"
+      },
+      "id": 255,
+      "implementation_status": "implemented",
+      "validation_status": "pending_checkpoint_validation"
+    },
+    {
+      "model": "Feral",
+      "key": "FERAL",
+      "type": "Power",
+      "rarity": 3,
+      "target": "Self",
+      "cost": {
+        "base": 2,
+        "upgraded": 1
+      },
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "variables": {
+        "FeralPower": {
+          "base": 1,
+          "upgraded": 1
+        }
+      },
+      "generation_allowed": true,
+      "evidence": {
+        ".ctor": "0x06003f1f",
+        "get_CanonicalVars": "0x06003f20",
+        "OnPlay": "0x06003f21",
+        "OnUpgrade": "0x06003f22"
+      },
+      "id": 256,
+      "implementation_status": "implemented",
+      "validation_status": "pending_checkpoint_validation"
+    },
+    {
+      "model": "FightThrough",
+      "key": "FIGHT_THROUGH",
+      "type": "Skill",
+      "rarity": 3,
+      "target": "Self",
+      "cost": {
+        "base": 1,
+        "upgraded": 1
+      },
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "variables": {
+        "Block": {
+          "base": 13,
+          "upgraded": 17
+        }
+      },
+      "generation_allowed": true,
+      "evidence": {
+        ".ctor": "0x06003f37",
+        "get_CanonicalVars": "0x06003f3a",
+        "OnPlay": "0x06003f3b",
+        "OnUpgrade": "0x06003f3c"
+      },
+      "id": 257,
+      "implementation_status": "implemented",
+      "validation_status": "pending_checkpoint_validation"
+    },
+    {
+      "model": "FlakCannon",
+      "key": "FLAK_CANNON",
+      "type": "Attack",
+      "rarity": 4,
+      "target": "RandomEnemy",
+      "cost": {
+        "base": 2,
+        "upgraded": 2
+      },
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "variables": {
+        "Damage": {
+          "base": 8,
+          "upgraded": 11
+        },
+        "CalculationBase": {
+          "base": 0,
+          "upgraded": 0
+        },
+        "CalculationExtra": {
+          "base": 1,
+          "upgraded": 1
+        }
+      },
+      "generation_allowed": true,
+      "evidence": {
+        ".ctor": "0x06003f4b",
+        "get_CanonicalVars": "0x06003f4c",
+        "OnPlay": "0x06003f4e",
+        "OnUpgrade": "0x06003f50"
+      },
+      "dynamic_variables": {
+        "CalculatedHits": {
+          "kind": "calculated"
+        }
+      },
+      "id": 258,
+      "implementation_status": "implemented",
+      "validation_status": "pending_checkpoint_validation"
+    },
+    {
+      "model": "FocusedStrike",
+      "key": "FOCUSED_STRIKE",
+      "type": "Attack",
+      "rarity": 2,
+      "target": "AnyEnemy",
+      "cost": {
+        "base": 1,
+        "upgraded": 1
+      },
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "variables": {
+        "Damage": {
+          "base": 9,
+          "upgraded": 11
+        },
+        "FocusPower": {
+          "base": 1,
+          "upgraded": 2
+        }
+      },
+      "generation_allowed": true,
+      "evidence": {
+        ".ctor": "0x06003f73",
+        "get_CanonicalVars": "0x06003f76",
+        "OnPlay": "0x06003f77",
+        "OnUpgrade": "0x06003f78"
+      },
+      "id": 259,
+      "implementation_status": "implemented",
+      "validation_status": "pending_checkpoint_validation"
+    },
+    {
+      "model": "Ftl",
+      "key": "FTL",
+      "type": "Attack",
+      "rarity": 3,
+      "target": "AnyEnemy",
+      "cost": {
+        "base": 0,
+        "upgraded": 0
+      },
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "variables": {
+        "Damage": {
+          "base": 5,
+          "upgraded": 6
+        },
+        "PlayMax": {
+          "base": 3,
+          "upgraded": 4
+        },
+        "Cards": {
+          "base": 1,
+          "upgraded": 1
+        }
+      },
+      "generation_allowed": true,
+      "evidence": {
+        ".ctor": "0x06003f9d",
+        "get_CanonicalVars": "0x06003f9f",
+        "OnPlay": "0x06003fa1",
+        "OnUpgrade": "0x06003fa2"
+      },
+      "id": 260,
+      "implementation_status": "implemented",
+      "validation_status": "pending_checkpoint_validation"
+    },
+    {
+      "model": "Fusion",
+      "key": "FUSION",
+      "type": "Skill",
+      "rarity": 3,
+      "target": "Self",
+      "cost": {
+        "base": 1,
+        "upgraded": 1
+      },
+      "keywords": {
+        "base": [
+          "Exhaust"
+        ],
+        "upgraded": []
+      },
+      "variables": {},
+      "generation_allowed": true,
+      "evidence": {
+        ".ctor": "0x06003faf",
+        "get_CanonicalKeywords": "0x06003fb1",
+        "OnPlay": "0x06003fb2",
+        "OnUpgrade": "0x06003fb3"
+      },
+      "id": 261,
+      "implementation_status": "implemented",
+      "validation_status": "pending_checkpoint_validation"
+    },
+    {
+      "model": "GeneticAlgorithm",
+      "key": "GENETIC_ALGORITHM",
+      "type": "Skill",
+      "rarity": 4,
+      "target": "Self",
+      "cost": {
+        "base": 1,
+        "upgraded": 1
+      },
+      "keywords": {
+        "base": [
+          "Exhaust"
+        ],
+        "upgraded": [
+          "Exhaust"
+        ]
+      },
+      "variables": {
+        "Block": {
+          "base": 1,
+          "upgraded": 1
+        },
+        "Increase": {
+          "base": 3,
+          "upgraded": 4
+        }
+      },
+      "generation_allowed": true,
+      "evidence": {
+        ".ctor": "0x06003fc8",
+        "get_CanonicalVars": "0x06003fcc",
+        "get_CanonicalKeywords": "0x06003fcd",
+        "OnPlay": "0x06003fd0",
+        "OnUpgrade": "0x06003fd1"
+      },
+      "id": 262,
+      "implementation_status": "implemented",
+      "validation_status": "pending_checkpoint_validation"
+    },
+    {
+      "model": "Glacier",
+      "key": "GLACIER",
+      "type": "Skill",
+      "rarity": 3,
+      "target": "Self",
+      "cost": {
+        "base": 2,
+        "upgraded": 2
+      },
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "variables": {
+        "Block": {
+          "base": 6,
+          "upgraded": 9
+        }
+      },
+      "generation_allowed": true,
+      "evidence": {
+        ".ctor": "0x06003fd9",
+        "get_CanonicalVars": "0x06003fdb",
+        "OnPlay": "0x06003fdd",
+        "OnUpgrade": "0x06003fde"
+      },
+      "id": 263,
+      "implementation_status": "implemented",
+      "validation_status": "pending_checkpoint_validation"
+    },
+    {
+      "model": "Glasswork",
+      "key": "GLASSWORK",
+      "type": "Skill",
+      "rarity": 3,
+      "target": "Self",
+      "cost": {
+        "base": 1,
+        "upgraded": 1
+      },
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "variables": {
+        "Block": {
+          "base": 5,
+          "upgraded": 8
+        }
+      },
+      "generation_allowed": true,
+      "evidence": {
+        ".ctor": "0x06003fdf",
+        "get_CanonicalVars": "0x06003fe2",
+        "OnPlay": "0x06003fe3",
+        "OnUpgrade": "0x06003fe4"
+      },
+      "id": 264,
+      "implementation_status": "implemented",
+      "validation_status": "pending_checkpoint_validation"
+    },
+    {
+      "model": "GoForTheEyes",
+      "key": "GO_FOR_THE_EYES",
+      "type": "Attack",
+      "rarity": 2,
+      "target": "AnyEnemy",
+      "cost": {
+        "base": 0,
+        "upgraded": 0
+      },
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "variables": {
+        "Damage": {
+          "base": 3,
+          "upgraded": 4
+        },
+        "WeakPower": {
+          "base": 1,
+          "upgraded": 2
+        }
+      },
+      "generation_allowed": true,
+      "evidence": {
+        ".ctor": "0x06003ff9",
+        "get_CanonicalVars": "0x06003ffc",
+        "OnPlay": "0x06003ffd",
+        "OnUpgrade": "0x06003ffe"
+      },
+      "id": 265,
+      "implementation_status": "implemented",
+      "validation_status": "pending_checkpoint_validation"
+    },
+    {
+      "model": "GunkUp",
+      "key": "GUNK_UP",
+      "type": "Attack",
+      "rarity": 2,
+      "target": "AnyEnemy",
+      "cost": {
+        "base": 1,
+        "upgraded": 1
+      },
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "variables": {
+        "Damage": {
+          "base": 4,
+          "upgraded": 5
+        },
+        "Repeat": {
+          "base": 3,
+          "upgraded": 3
+        }
+      },
+      "generation_allowed": true,
+      "evidence": {
+        ".ctor": "0x06004028",
+        "get_CanonicalVars": "0x0600402a",
+        "OnPlay": "0x0600402b",
+        "OnUpgrade": "0x0600402c"
+      },
+      "id": 266,
+      "implementation_status": "implemented",
+      "validation_status": "pending_checkpoint_validation"
+    },
+    {
+      "model": "Hailstorm",
+      "key": "HAILSTORM",
+      "type": "Power",
+      "rarity": 3,
+      "target": "Self",
+      "cost": {
+        "base": 1,
+        "upgraded": 1
+      },
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "variables": {
+        "HailstormPower": {
+          "base": 6,
+          "upgraded": 8
+        }
+      },
+      "generation_allowed": true,
+      "evidence": {
+        ".ctor": "0x0600402d",
+        "get_CanonicalVars": "0x0600402f",
+        "OnPlay": "0x06004030",
+        "OnUpgrade": "0x06004031"
+      },
+      "id": 267,
+      "implementation_status": "implemented",
+      "validation_status": "pending_checkpoint_validation"
+    },
+    {
+      "model": "HelixDrill",
+      "key": "HELIX_DRILL",
+      "type": "Attack",
+      "rarity": 4,
+      "target": "AnyEnemy",
+      "cost": {
+        "base": 0,
+        "upgraded": 0
+      },
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "variables": {
+        "Damage": {
+          "base": 3,
+          "upgraded": 5
+        },
+        "CalculationBase": {
+          "base": 0,
+          "upgraded": 0
+        },
+        "CalculationExtra": {
+          "base": 1,
+          "upgraded": 1
+        }
+      },
+      "generation_allowed": true,
+      "evidence": {
+        ".ctor": "0x06004069",
+        "get_CanonicalVars": "0x0600406a",
+        "OnPlay": "0x0600406c",
+        "OnUpgrade": "0x0600406d"
+      },
+      "dynamic_variables": {
+        "CalculatedHits": {
+          "kind": "calculated"
+        }
+      },
+      "id": 268,
+      "implementation_status": "implemented",
+      "validation_status": "pending_checkpoint_validation"
+    },
+    {
+      "model": "Hologram",
+      "key": "HOLOGRAM",
+      "type": "Skill",
+      "rarity": 2,
+      "target": "Self",
+      "cost": {
+        "base": 1,
+        "upgraded": 1
+      },
+      "keywords": {
+        "base": [
+          "Exhaust"
+        ],
+        "upgraded": []
+      },
+      "variables": {
+        "Block": {
+          "base": 3,
+          "upgraded": 5
+        }
+      },
+      "generation_allowed": true,
+      "evidence": {
+        ".ctor": "0x06004097",
+        "get_CanonicalVars": "0x06004099",
+        "get_CanonicalKeywords": "0x0600409a",
+        "OnPlay": "0x0600409b",
+        "OnUpgrade": "0x0600409c"
+      },
+      "id": 269,
+      "implementation_status": "implemented",
+      "validation_status": "pending_checkpoint_validation"
+    },
+    {
+      "model": "Hotfix",
+      "key": "HOTFIX",
+      "type": "Skill",
+      "rarity": 2,
+      "target": "Self",
+      "cost": {
+        "base": 0,
+        "upgraded": 0
+      },
+      "keywords": {
+        "base": [
+          "Exhaust"
+        ],
+        "upgraded": []
+      },
+      "variables": {
+        "FocusPower": {
+          "base": 2,
+          "upgraded": 2
+        }
+      },
+      "generation_allowed": true,
+      "evidence": {
+        ".ctor": "0x0600409d",
+        "get_CanonicalKeywords": "0x0600409f",
+        "get_CanonicalVars": "0x060040a0",
+        "OnPlay": "0x060040a1",
+        "OnUpgrade": "0x060040a2"
+      },
+      "id": 270,
+      "implementation_status": "implemented",
+      "validation_status": "pending_checkpoint_validation"
+    },
+    {
+      "model": "Hyperbeam",
+      "key": "HYPERBEAM",
+      "type": "Attack",
+      "rarity": 4,
+      "target": "AllEnemies",
+      "cost": {
+        "base": 2,
+        "upgraded": 2
+      },
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "variables": {
+        "Damage": {
+          "base": 24,
+          "upgraded": 30
+        },
+        "FocusPower": {
+          "base": 3,
+          "upgraded": 3
+        }
+      },
+      "generation_allowed": true,
+      "evidence": {
+        ".ctor": "0x060040af",
+        "get_CanonicalVars": "0x060040b0",
+        "OnPlay": "0x060040b2",
+        "OnUpgrade": "0x060040b3"
+      },
+      "id": 271,
+      "implementation_status": "implemented",
+      "validation_status": "pending_checkpoint_validation"
+    },
+    {
+      "model": "IceLance",
+      "key": "ICE_LANCE",
+      "type": "Attack",
+      "rarity": 4,
+      "target": "AnyEnemy",
+      "cost": {
+        "base": 3,
+        "upgraded": 3
+      },
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "variables": {
+        "Damage": {
+          "base": 19,
+          "upgraded": 24
+        },
+        "Repeat": {
+          "base": 3,
+          "upgraded": 3
+        }
+      },
+      "generation_allowed": true,
+      "evidence": {
+        ".ctor": "0x060040bb",
+        "get_CanonicalVars": "0x060040bd",
+        "OnPlay": "0x060040be",
+        "OnUpgrade": "0x060040bf"
+      },
+      "id": 272,
+      "implementation_status": "implemented",
+      "validation_status": "pending_checkpoint_validation"
+    },
+    {
+      "model": "Iteration",
+      "key": "ITERATION",
+      "type": "Power",
+      "rarity": 3,
+      "target": "Self",
+      "cost": {
+        "base": 1,
+        "upgraded": 1
+      },
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "variables": {
+        "IterationPower": {
+          "base": 2,
+          "upgraded": 3
+        }
+      },
+      "generation_allowed": true,
+      "evidence": {
+        ".ctor": "0x06004104",
+        "get_CanonicalVars": "0x06004105",
+        "OnPlay": "0x06004106",
+        "OnUpgrade": "0x06004107"
+      },
+      "id": 273,
+      "implementation_status": "implemented",
+      "validation_status": "pending_checkpoint_validation"
+    },
+    {
+      "model": "Leap",
+      "key": "LEAP",
+      "type": "Skill",
+      "rarity": 2,
+      "target": "Self",
+      "cost": {
+        "base": 1,
+        "upgraded": 1
+      },
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "variables": {
+        "Block": {
+          "base": 9,
+          "upgraded": 12
+        }
+      },
+      "generation_allowed": true,
+      "evidence": {
+        ".ctor": "0x06004147",
+        "get_CanonicalVars": "0x06004149",
+        "OnPlay": "0x0600414a",
+        "OnUpgrade": "0x0600414b"
+      },
+      "id": 274,
+      "implementation_status": "implemented",
+      "validation_status": "pending_checkpoint_validation"
+    },
+    {
+      "model": "LightningRod",
+      "key": "LIGHTNING_ROD",
+      "type": "Skill",
+      "rarity": 2,
+      "target": "Self",
+      "cost": {
+        "base": 1,
+        "upgraded": 1
+      },
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "variables": {
+        "Block": {
+          "base": 4,
+          "upgraded": 7
+        },
+        "LightningRodPower": {
+          "base": 2,
+          "upgraded": 2
+        }
+      },
+      "generation_allowed": true,
+      "evidence": {
+        ".ctor": "0x06004163",
+        "get_CanonicalVars": "0x06004166",
+        "OnPlay": "0x06004167",
+        "OnUpgrade": "0x06004168"
+      },
+      "id": 275,
+      "implementation_status": "implemented",
+      "validation_status": "pending_checkpoint_validation"
+    },
+    {
+      "model": "Loop",
+      "key": "LOOP",
+      "type": "Power",
+      "rarity": 3,
+      "target": "Self",
+      "cost": {
+        "base": 1,
+        "upgraded": 1
+      },
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "variables": {
+        "Loop": {
+          "base": 1,
+          "upgraded": 2
+        }
+      },
+      "generation_allowed": true,
+      "evidence": {
+        ".ctor": "0x06004169",
+        "get_CanonicalVars": "0x0600416a",
+        "OnPlay": "0x0600416b",
+        "OnUpgrade": "0x0600416c"
+      },
+      "id": 276,
+      "implementation_status": "implemented",
+      "validation_status": "pending_checkpoint_validation"
+    },
+    {
+      "model": "MachineLearning",
+      "key": "MACHINE_LEARNING",
+      "type": "Power",
+      "rarity": 4,
+      "target": "Self",
+      "cost": {
+        "base": 1,
+        "upgraded": 1
+      },
+      "keywords": {
+        "base": [],
+        "upgraded": [
+          "Innate"
+        ]
+      },
+      "variables": {
+        "Cards": {
+          "base": 1,
+          "upgraded": 1
+        }
+      },
+      "generation_allowed": true,
+      "evidence": {
+        ".ctor": "0x06004177",
+        "get_CanonicalVars": "0x06004178",
+        "OnPlay": "0x06004179",
+        "OnUpgrade": "0x0600417a"
+      },
+      "id": 277,
+      "implementation_status": "implemented",
+      "validation_status": "pending_checkpoint_validation"
+    },
+    {
+      "model": "MeteorStrike",
+      "key": "METEOR_STRIKE",
+      "type": "Attack",
+      "rarity": 4,
+      "target": "AnyEnemy",
+      "cost": {
+        "base": 5,
+        "upgraded": 5
+      },
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "variables": {
+        "Damage": {
+          "base": 24,
+          "upgraded": 30
+        }
+      },
+      "generation_allowed": true,
+      "evidence": {
+        ".ctor": "0x060041d5",
+        "get_CanonicalVars": "0x060041d7",
+        "OnPlay": "0x060041d9",
+        "OnUpgrade": "0x060041da"
+      },
+      "id": 278,
+      "implementation_status": "implemented",
+      "validation_status": "pending_checkpoint_validation"
+    },
+    {
+      "model": "Modded",
+      "key": "MODDED",
+      "type": "Skill",
+      "rarity": 4,
+      "target": "Self",
+      "cost": {
+        "base": 0,
+        "upgraded": 0
+      },
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "variables": {
+        "Repeat": {
+          "base": 1,
+          "upgraded": 1
+        },
+        "Cards": {
+          "base": 1,
+          "upgraded": 2
+        }
+      },
+      "generation_allowed": true,
+      "evidence": {
+        ".ctor": "0x06004212",
+        "get_CanonicalVars": "0x06004213",
+        "OnPlay": "0x06004214",
+        "OnUpgrade": "0x06004215"
+      },
+      "id": 279,
+      "implementation_status": "implemented",
+      "validation_status": "pending_checkpoint_validation"
+    },
+    {
+      "model": "MomentumStrike",
+      "key": "MOMENTUM_STRIKE",
+      "type": "Attack",
+      "rarity": 2,
+      "target": "AnyEnemy",
+      "cost": {
+        "base": 1,
+        "upgraded": 1
+      },
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "variables": {
+        "Damage": {
+          "base": 11,
+          "upgraded": 15
+        }
+      },
+      "generation_allowed": true,
+      "evidence": {
+        ".ctor": "0x0600421d",
+        "get_CanonicalVars": "0x0600421f",
+        "OnPlay": "0x06004220",
+        "OnUpgrade": "0x06004221"
+      },
+      "id": 280,
+      "implementation_status": "implemented",
+      "validation_status": "pending_checkpoint_validation"
+    },
+    {
+      "model": "MultiCast",
+      "key": "MULTI_CAST",
+      "type": "Skill",
+      "rarity": 4,
+      "target": "Self",
+      "cost": {
+        "base": -1,
+        "upgraded": -1
+      },
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "variables": {},
+      "generation_allowed": true,
+      "evidence": {
+        ".ctor": "0x0600422c",
+        "OnPlay": "0x0600422f"
+      },
+      "id": 281,
+      "implementation_status": "implemented",
+      "validation_status": "pending_checkpoint_validation"
+    },
+    {
+      "model": "Null",
+      "key": "NULL",
+      "type": "Attack",
+      "rarity": 3,
+      "target": "AnyEnemy",
+      "cost": {
+        "base": 2,
+        "upgraded": 2
+      },
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "variables": {
+        "Damage": {
+          "base": 10,
+          "upgraded": 13
+        },
+        "WeakPower": {
+          "base": 1,
+          "upgraded": 2
+        }
+      },
+      "generation_allowed": true,
+      "evidence": {
+        ".ctor": "0x06004277",
+        "get_CanonicalVars": "0x06004279",
+        "OnPlay": "0x0600427a",
+        "OnUpgrade": "0x0600427b"
+      },
+      "id": 282,
+      "implementation_status": "implemented",
+      "validation_status": "pending_checkpoint_validation"
+    },
+    {
+      "model": "Overclock",
+      "key": "OVERCLOCK",
+      "type": "Skill",
+      "rarity": 3,
+      "target": "Self",
+      "cost": {
+        "base": 0,
+        "upgraded": 0
+      },
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "variables": {
+        "Cards": {
+          "base": 2,
+          "upgraded": 3
+        }
+      },
+      "generation_allowed": true,
+      "evidence": {
+        ".ctor": "0x060042a9",
+        "get_CanonicalVars": "0x060042aa",
+        "OnPlay": "0x060042ac",
+        "OnUpgrade": "0x060042ad"
+      },
+      "id": 283,
+      "implementation_status": "implemented",
+      "validation_status": "pending_checkpoint_validation"
+    },
+    {
+      "model": "Quadcast",
+      "key": "QUADCAST",
+      "type": "Skill",
+      "rarity": 5,
+      "target": "Self",
+      "cost": {
+        "base": 1,
+        "upgraded": 0
+      },
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "variables": {
+        "Repeat": {
+          "base": 4,
+          "upgraded": 4
+        }
+      },
+      "generation_allowed": false,
+      "evidence": {
+        ".ctor": "0x0600436f",
+        "get_CanonicalVars": "0x06004371",
+        "OnPlay": "0x06004372",
+        "OnUpgrade": "0x06004373"
+      },
+      "id": 284,
+      "implementation_status": "implemented",
+      "validation_status": "pending_checkpoint_validation"
+    },
+    {
+      "model": "Rainbow",
+      "key": "RAINBOW",
+      "type": "Skill",
+      "rarity": 4,
+      "target": "Self",
+      "cost": {
+        "base": 2,
+        "upgraded": 2
+      },
+      "keywords": {
+        "base": [
+          "Exhaust"
+        ],
+        "upgraded": []
+      },
+      "variables": {},
+      "generation_allowed": true,
+      "evidence": {
+        ".ctor": "0x06004380",
+        "get_CanonicalKeywords": "0x06004381",
+        "OnPlay": "0x06004383",
+        "OnUpgrade": "0x06004384"
+      },
+      "id": 285,
+      "implementation_status": "implemented",
+      "validation_status": "pending_checkpoint_validation"
+    },
+    {
+      "model": "Reboot",
+      "key": "REBOOT",
+      "type": "Skill",
+      "rarity": 4,
+      "target": "Self",
+      "cost": {
+        "base": 0,
+        "upgraded": 0
+      },
+      "keywords": {
+        "base": [
+          "Exhaust"
+        ],
+        "upgraded": [
+          "Exhaust"
+        ]
+      },
+      "variables": {
+        "Cards": {
+          "base": 4,
+          "upgraded": 6
+        }
+      },
+      "generation_allowed": true,
+      "evidence": {
+        ".ctor": "0x060043ac",
+        "get_CanonicalVars": "0x060043ad",
+        "get_CanonicalKeywords": "0x060043ae",
+        "OnPlay": "0x060043af",
+        "OnUpgrade": "0x060043b0"
+      },
+      "id": 286,
+      "implementation_status": "implemented",
+      "validation_status": "pending_checkpoint_validation"
+    },
+    {
+      "model": "Refract",
+      "key": "REFRACT",
+      "type": "Attack",
+      "rarity": 3,
+      "target": "AnyEnemy",
+      "cost": {
+        "base": 3,
+        "upgraded": 3
+      },
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "variables": {
+        "Repeat": {
+          "base": 2,
+          "upgraded": 2
+        },
+        "Damage": {
+          "base": 10,
+          "upgraded": 13
+        }
+      },
+      "generation_allowed": true,
+      "evidence": {
+        ".ctor": "0x060043c6",
+        "get_CanonicalVars": "0x060043c8",
+        "OnPlay": "0x060043c9",
+        "OnUpgrade": "0x060043ca"
+      },
+      "id": 287,
+      "implementation_status": "implemented",
+      "validation_status": "pending_checkpoint_validation"
+    },
+    {
+      "model": "RocketPunch",
+      "key": "ROCKET_PUNCH",
+      "type": "Attack",
+      "rarity": 3,
+      "target": "AnyEnemy",
+      "cost": {
+        "base": 2,
+        "upgraded": 2
+      },
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "variables": {
+        "Damage": {
+          "base": 13,
+          "upgraded": 14
+        },
+        "Cards": {
+          "base": 1,
+          "upgraded": 2
+        }
+      },
+      "generation_allowed": true,
+      "evidence": {
+        ".ctor": "0x060043ff",
+        "get_CanonicalVars": "0x06004400",
+        "OnPlay": "0x06004401",
+        "OnUpgrade": "0x06004403"
+      },
+      "id": 288,
+      "implementation_status": "implemented",
+      "validation_status": "pending_checkpoint_validation"
+    },
+    {
+      "model": "Scavenge",
+      "key": "SCAVENGE",
+      "type": "Skill",
+      "rarity": 3,
+      "target": "Self",
+      "cost": {
+        "base": 1,
+        "upgraded": 1
+      },
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "variables": {
+        "Energy": {
+          "base": 2,
+          "upgraded": 3
+        }
+      },
+      "generation_allowed": true,
+      "evidence": {
+        ".ctor": "0x06004424",
+        "get_CanonicalVars": "0x06004426",
+        "OnPlay": "0x06004427",
+        "OnUpgrade": "0x06004428"
+      },
+      "id": 289,
+      "implementation_status": "implemented",
+      "validation_status": "pending_checkpoint_validation"
+    },
+    {
+      "model": "Scrape",
+      "key": "SCRAPE",
+      "type": "Attack",
+      "rarity": 3,
+      "target": "AnyEnemy",
+      "cost": {
+        "base": 1,
+        "upgraded": 1
+      },
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "variables": {
+        "Damage": {
+          "base": 7,
+          "upgraded": 10
+        },
+        "Cards": {
+          "base": 4,
+          "upgraded": 5
+        }
+      },
+      "generation_allowed": true,
+      "evidence": {
+        ".ctor": "0x0600442e",
+        "get_CanonicalVars": "0x0600442f",
+        "OnPlay": "0x06004430",
+        "OnUpgrade": "0x06004431"
+      },
+      "id": 290,
+      "implementation_status": "implemented",
+      "validation_status": "pending_checkpoint_validation"
+    },
+    {
+      "model": "ShadowShield",
+      "key": "SHADOW_SHIELD",
+      "type": "Skill",
+      "rarity": 3,
+      "target": "Self",
+      "cost": {
+        "base": 2,
+        "upgraded": 2
+      },
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "variables": {
+        "Block": {
+          "base": 11,
+          "upgraded": 15
+        }
+      },
+      "generation_allowed": true,
+      "evidence": {
+        ".ctor": "0x06004479",
+        "get_CanonicalVars": "0x0600447b",
+        "OnPlay": "0x0600447d",
+        "OnUpgrade": "0x0600447e"
+      },
+      "id": 291,
+      "implementation_status": "implemented",
+      "validation_status": "pending_checkpoint_validation"
+    },
+    {
+      "model": "Shatter",
+      "key": "SHATTER",
+      "type": "Attack",
+      "rarity": 4,
+      "target": "AllEnemies",
+      "cost": {
+        "base": 1,
+        "upgraded": 1
+      },
+      "keywords": {
+        "base": [
+          "Exhaust"
+        ],
+        "upgraded": [
+          "Exhaust"
+        ]
+      },
+      "variables": {
+        "Damage": {
+          "base": 7,
+          "upgraded": 11
+        }
+      },
+      "generation_allowed": true,
+      "evidence": {
+        ".ctor": "0x06004490",
+        "get_CanonicalKeywords": "0x06004492",
+        "get_CanonicalVars": "0x06004494",
+        "OnPlay": "0x06004495",
+        "OnUpgrade": "0x06004496"
+      },
+      "id": 292,
+      "implementation_status": "implemented",
+      "validation_status": "pending_checkpoint_validation"
+    },
+    {
+      "model": "SignalBoost",
+      "key": "SIGNAL_BOOST",
+      "type": "Skill",
+      "rarity": 4,
+      "target": "Self",
+      "cost": {
+        "base": 1,
+        "upgraded": 0
+      },
+      "keywords": {
+        "base": [
+          "Exhaust"
+        ],
+        "upgraded": [
+          "Exhaust"
+        ]
+      },
+      "variables": {
+        "SignalBoostPower": {
+          "base": 1,
+          "upgraded": 1
+        }
+      },
+      "generation_allowed": true,
+      "evidence": {
+        ".ctor": "0x060044c4",
+        "get_CanonicalKeywords": "0x060044c5",
+        "get_CanonicalVars": "0x060044c6",
+        "OnPlay": "0x060044c7",
+        "OnUpgrade": "0x060044c8"
+      },
+      "id": 293,
+      "implementation_status": "implemented",
+      "validation_status": "pending_checkpoint_validation"
+    },
+    {
+      "model": "Skim",
+      "key": "SKIM",
+      "type": "Skill",
+      "rarity": 3,
+      "target": "Self",
+      "cost": {
+        "base": 1,
+        "upgraded": 1
+      },
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "variables": {
+        "Cards": {
+          "base": 3,
+          "upgraded": 4
+        }
+      },
+      "generation_allowed": true,
+      "evidence": {
+        ".ctor": "0x060044ce",
+        "get_CanonicalVars": "0x060044cf",
+        "OnPlay": "0x060044d0",
+        "OnUpgrade": "0x060044d1"
+      },
+      "id": 294,
+      "implementation_status": "implemented",
+      "validation_status": "pending_checkpoint_validation"
+    },
+    {
+      "model": "Smokestack",
+      "key": "SMOKESTACK",
+      "type": "Power",
+      "rarity": 3,
+      "target": "Self",
+      "cost": {
+        "base": 1,
+        "upgraded": 1
+      },
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "variables": {
+        "SmokestackPower": {
+          "base": 5,
+          "upgraded": 7
+        }
+      },
+      "generation_allowed": true,
+      "evidence": {
+        ".ctor": "0x060044e4",
+        "get_CanonicalVars": "0x060044e5",
+        "OnPlay": "0x060044e6",
+        "OnUpgrade": "0x060044e7"
+      },
+      "id": 295,
+      "implementation_status": "implemented",
+      "validation_status": "pending_checkpoint_validation"
+    },
+    {
+      "model": "Spinner",
+      "key": "SPINNER",
+      "type": "Power",
+      "rarity": 4,
+      "target": "Self",
+      "cost": {
+        "base": 1,
+        "upgraded": 1
+      },
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "variables": {
+        "SpinnerPower": {
+          "base": 1,
+          "upgraded": 1
+        }
+      },
+      "generation_allowed": true,
+      "evidence": {
+        ".ctor": "0x0600453b",
+        "get_CanonicalVars": "0x0600453c",
+        "OnPlay": "0x0600453e"
+      },
+      "id": 296,
+      "implementation_status": "implemented",
+      "validation_status": "pending_checkpoint_validation"
+    },
+    {
+      "model": "Storm",
+      "key": "STORM",
+      "type": "Power",
+      "rarity": 3,
+      "target": "Self",
+      "cost": {
+        "base": 1,
+        "upgraded": 1
+      },
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "variables": {
+        "StormPower": {
+          "base": 1,
+          "upgraded": 2
+        }
+      },
+      "generation_allowed": true,
+      "evidence": {
+        ".ctor": "0x06004594",
+        "get_CanonicalVars": "0x06004595",
+        "OnPlay": "0x06004597",
+        "OnUpgrade": "0x06004598"
+      },
+      "id": 297,
+      "implementation_status": "implemented",
+      "validation_status": "pending_checkpoint_validation"
+    },
+    {
+      "model": "StrikeDefect",
+      "key": "STRIKE_DEFECT",
+      "type": "Attack",
+      "rarity": 1,
+      "target": "AnyEnemy",
+      "cost": {
+        "base": 1,
+        "upgraded": 1
+      },
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "variables": {
+        "Damage": {
+          "base": 6,
+          "upgraded": 9
+        }
+      },
+      "generation_allowed": false,
+      "evidence": {
+        ".ctor": "0x060045a3",
+        "get_CanonicalVars": "0x060045a5",
+        "OnPlay": "0x060045a6",
+        "OnUpgrade": "0x060045a7"
+      },
+      "id": 298,
+      "implementation_status": "implemented",
+      "validation_status": "pending_checkpoint_validation"
+    },
+    {
+      "model": "Subroutine",
+      "key": "SUBROUTINE",
+      "type": "Power",
+      "rarity": 3,
+      "target": "Self",
+      "cost": {
+        "base": 1,
+        "upgraded": 0
+      },
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "variables": {},
+      "generation_allowed": true,
+      "evidence": {
+        ".ctor": "0x060045bc",
+        "OnPlay": "0x060045bd",
+        "OnUpgrade": "0x060045be"
+      },
+      "id": 299,
+      "implementation_status": "implemented",
+      "validation_status": "pending_checkpoint_validation"
+    },
+    {
+      "model": "Sunder",
+      "key": "SUNDER",
+      "type": "Attack",
+      "rarity": 3,
+      "target": "AnyEnemy",
+      "cost": {
+        "base": 3,
+        "upgraded": 3
+      },
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "variables": {
+        "Damage": {
+          "base": 26,
+          "upgraded": 34
+        },
+        "Energy": {
+          "base": 3,
+          "upgraded": 3
+        }
+      },
+      "generation_allowed": true,
+      "evidence": {
+        ".ctor": "0x060045c9",
+        "get_CanonicalVars": "0x060045ca",
+        "OnPlay": "0x060045cc",
+        "OnUpgrade": "0x060045cd"
+      },
+      "id": 300,
+      "implementation_status": "implemented",
+      "validation_status": "pending_checkpoint_validation"
+    },
+    {
+      "model": "Supercritical",
+      "key": "SUPERCRITICAL",
+      "type": "Skill",
+      "rarity": 4,
+      "target": "Self",
+      "cost": {
+        "base": 0,
+        "upgraded": 0
+      },
+      "keywords": {
+        "base": [
+          "Exhaust"
+        ],
+        "upgraded": [
+          "Exhaust"
+        ]
+      },
+      "variables": {
+        "Energy": {
+          "base": 4,
+          "upgraded": 6
+        }
+      },
+      "generation_allowed": true,
+      "evidence": {
+        ".ctor": "0x060045ce",
+        "get_CanonicalKeywords": "0x060045cf",
+        "get_CanonicalVars": "0x060045d1",
+        "OnPlay": "0x060045d2",
+        "OnUpgrade": "0x060045d3"
+      },
+      "id": 301,
+      "implementation_status": "implemented",
+      "validation_status": "pending_checkpoint_validation"
+    },
+    {
+      "model": "SweepingBeam",
+      "key": "SWEEPING_BEAM",
+      "type": "Attack",
+      "rarity": 2,
+      "target": "AllEnemies",
+      "cost": {
+        "base": 1,
+        "upgraded": 1
+      },
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "variables": {
+        "Damage": {
+          "base": 6,
+          "upgraded": 9
+        },
+        "Cards": {
+          "base": 1,
+          "upgraded": 1
+        }
+      },
+      "generation_allowed": true,
+      "evidence": {
+        ".ctor": "0x060045e3",
+        "get_CanonicalVars": "0x060045e4",
+        "OnPlay": "0x060045e5",
+        "OnUpgrade": "0x060045e6"
+      },
+      "id": 302,
+      "implementation_status": "implemented",
+      "validation_status": "pending_checkpoint_validation"
+    },
+    {
+      "model": "Synchronize",
+      "key": "SYNCHRONIZE",
+      "type": "Skill",
+      "rarity": 3,
+      "target": "Self",
+      "cost": {
+        "base": 1,
+        "upgraded": 1
+      },
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "variables": {
+        "CalculationBase": {
+          "base": 0,
+          "upgraded": 0
+        },
+        "CalculationExtra": {
+          "base": 1,
+          "upgraded": 2
+        }
+      },
+      "generation_allowed": true,
+      "evidence": {
+        ".ctor": "0x060045f8",
+        "get_CanonicalVars": "0x060045fa",
+        "OnPlay": "0x060045fb",
+        "OnUpgrade": "0x060045fc"
+      },
+      "dynamic_variables": {
+        "CalculatedFocus": {
+          "kind": "calculated"
+        }
+      },
+      "id": 303,
+      "implementation_status": "implemented",
+      "validation_status": "pending_checkpoint_validation"
+    },
+    {
+      "model": "Synthesis",
+      "key": "SYNTHESIS",
+      "type": "Attack",
+      "rarity": 3,
+      "target": "AnyEnemy",
+      "cost": {
+        "base": 2,
+        "upgraded": 2
+      },
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "variables": {
+        "Damage": {
+          "base": 14,
+          "upgraded": 20
+        }
+      },
+      "generation_allowed": true,
+      "evidence": {
+        ".ctor": "0x060045fd",
+        "get_CanonicalVars": "0x060045fe",
+        "OnPlay": "0x060045ff",
+        "OnUpgrade": "0x06004600"
+      },
+      "id": 304,
+      "implementation_status": "implemented",
+      "validation_status": "pending_checkpoint_validation"
+    },
+    {
+      "model": "Tempest",
+      "key": "TEMPEST",
+      "type": "Skill",
+      "rarity": 3,
+      "target": "Self",
+      "cost": {
+        "base": -1,
+        "upgraded": -1
+      },
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "variables": {},
+      "generation_allowed": true,
+      "evidence": {
+        ".ctor": "0x0600461b",
+        "OnPlay": "0x0600461e"
+      },
+      "id": 305,
+      "implementation_status": "implemented",
+      "validation_status": "pending_checkpoint_validation"
+    },
+    {
+      "model": "TeslaCoil",
+      "key": "TESLA_COIL",
+      "type": "Attack",
+      "rarity": 3,
+      "target": "AnyEnemy",
+      "cost": {
+        "base": 0,
+        "upgraded": 0
+      },
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "variables": {
+        "Damage": {
+          "base": 3,
+          "upgraded": 4
+        }
+      },
+      "generation_allowed": true,
+      "evidence": {
+        ".ctor": "0x06004624",
+        "get_CanonicalVars": "0x06004626",
+        "OnPlay": "0x06004627",
+        "OnUpgrade": "0x06004628"
+      },
+      "id": 306,
+      "implementation_status": "implemented",
+      "validation_status": "pending_checkpoint_validation"
+    },
+    {
+      "model": "Thunder",
+      "key": "THUNDER",
+      "type": "Power",
+      "rarity": 3,
+      "target": "Self",
+      "cost": {
+        "base": 1,
+        "upgraded": 1
+      },
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "variables": {
+        "ThunderPower": {
+          "base": 8,
+          "upgraded": 11
+        }
+      },
+      "generation_allowed": true,
+      "evidence": {
+        ".ctor": "0x0600466c",
+        "get_CanonicalVars": "0x0600466e",
+        "OnPlay": "0x0600466f",
+        "OnUpgrade": "0x06004670"
+      },
+      "id": 307,
+      "implementation_status": "implemented",
+      "validation_status": "pending_checkpoint_validation"
+    },
+    {
+      "model": "TrashToTreasure",
+      "key": "TRASH_TO_TREASURE",
+      "type": "Power",
+      "rarity": 4,
+      "target": "Self",
+      "cost": {
+        "base": 1,
+        "upgraded": 0
+      },
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "variables": {},
+      "generation_allowed": true,
+      "evidence": {
+        ".ctor": "0x06004695",
+        "OnPlay": "0x06004697",
+        "OnUpgrade": "0x06004698"
+      },
+      "id": 308,
+      "implementation_status": "implemented",
+      "validation_status": "pending_checkpoint_validation"
+    },
+    {
+      "model": "Turbo",
+      "key": "TURBO",
+      "type": "Skill",
+      "rarity": 2,
+      "target": "Self",
+      "cost": {
+        "base": 0,
+        "upgraded": 0
+      },
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "variables": {
+        "Energy": {
+          "base": 2,
+          "upgraded": 3
+        }
+      },
+      "generation_allowed": true,
+      "evidence": {
+        ".ctor": "0x060046a5",
+        "get_CanonicalVars": "0x060046a6",
+        "OnPlay": "0x060046a8",
+        "OnUpgrade": "0x060046a9"
+      },
+      "id": 309,
+      "implementation_status": "implemented",
+      "validation_status": "pending_checkpoint_validation"
+    },
+    {
+      "model": "Uproar",
+      "key": "UPROAR",
+      "type": "Attack",
+      "rarity": 2,
+      "target": "AnyEnemy",
+      "cost": {
+        "base": 2,
+        "upgraded": 2
+      },
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "variables": {
+        "Damage": {
+          "base": 6,
+          "upgraded": 8
+        }
+      },
+      "generation_allowed": true,
+      "evidence": {
+        ".ctor": "0x060046ed",
+        "get_CanonicalVars": "0x060046ee",
+        "OnPlay": "0x060046ef",
+        "OnUpgrade": "0x060046f0"
+      },
+      "id": 310,
+      "implementation_status": "implemented",
+      "validation_status": "pending_checkpoint_validation"
+    },
+    {
+      "model": "Voltaic",
+      "key": "VOLTAIC",
+      "type": "Skill",
+      "rarity": 4,
+      "target": "Self",
+      "cost": {
+        "base": 3,
+        "upgraded": 3
+      },
+      "keywords": {
+        "base": [
+          "Exhaust"
+        ],
+        "upgraded": []
+      },
+      "variables": {
+        "CalculationBase": {
+          "base": 0,
+          "upgraded": 0
+        },
+        "CalculationExtra": {
+          "base": 1,
+          "upgraded": 1
+        }
+      },
+      "generation_allowed": true,
+      "evidence": {
+        ".ctor": "0x0600470e",
+        "get_CanonicalVars": "0x06004710",
+        "get_CanonicalKeywords": "0x06004711",
+        "OnPlay": "0x06004712",
+        "OnUpgrade": "0x06004713"
+      },
+      "dynamic_variables": {
+        "CalculatedChannels": {
+          "kind": "calculated"
+        }
+      },
+      "id": 311,
+      "implementation_status": "implemented",
+      "validation_status": "pending_checkpoint_validation"
+    },
+    {
+      "model": "WhiteNoise",
+      "key": "WHITE_NOISE",
+      "type": "Skill",
+      "rarity": 3,
+      "target": "Self",
+      "cost": {
+        "base": 1,
+        "upgraded": 0
+      },
+      "keywords": {
+        "base": [
+          "Exhaust"
+        ],
+        "upgraded": [
+          "Exhaust"
+        ]
+      },
+      "variables": {},
+      "generation_allowed": true,
+      "evidence": {
+        ".ctor": "0x06004728",
+        "get_CanonicalKeywords": "0x06004729",
+        "OnPlay": "0x0600472a",
+        "OnUpgrade": "0x0600472b"
+      },
+      "id": 312,
+      "implementation_status": "implemented",
+      "validation_status": "pending_checkpoint_validation"
+    },
+    {
+      "model": "Zap",
+      "key": "ZAP",
+      "type": "Skill",
+      "rarity": 1,
+      "target": "Self",
+      "cost": {
+        "base": 1,
+        "upgraded": 0
+      },
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "variables": {},
+      "generation_allowed": false,
+      "evidence": {
+        ".ctor": "0x06004757",
+        "OnPlay": "0x06004759",
+        "OnUpgrade": "0x0600475a"
+      },
+      "id": 313,
+      "implementation_status": "implemented",
+      "validation_status": "pending_checkpoint_validation"
+    }
+  ],
+  "character": {
+    "model": "Defect",
+    "starting_hp": 75,
+    "starting_gold": 99,
+    "starting_orb_slots": 3,
+    "starting_relic": "CrackedCore",
+    "starting_deck": {
+      "StrikeDefect": 4,
+      "DefendDefect": 4,
+      "Zap": 1,
+      "Dualcast": 1
+    }
+  },
+  "mechanics": {
+    "orb_types": [
+      "Lightning",
+      "Frost",
+      "Dark",
+      "Plasma",
+      "Glass"
+    ]
+  },
+  "state_powers": [
+    {
+      "enum": "BiasedCognition",
+      "key": "BIASED_COGNITION_POWER"
+    },
+    {
+      "enum": "Coolant",
+      "key": "COOLANT_POWER"
+    },
+    {
+      "enum": "CreativeAi",
+      "key": "CREATIVE_AI_POWER"
+    },
+    {
+      "enum": "EchoForm",
+      "key": "ECHO_FORM_POWER"
+    },
+    {
+      "enum": "Feral",
+      "key": "FERAL_POWER"
+    },
+    {
+      "enum": "Hailstorm",
+      "key": "HAILSTORM_POWER"
+    },
+    {
+      "enum": "Iteration",
+      "key": "ITERATION_POWER"
+    },
+    {
+      "enum": "LightningRod",
+      "key": "LIGHTNING_ROD_POWER"
+    },
+    {
+      "enum": "Loop",
+      "key": "LOOP_POWER"
+    },
+    {
+      "enum": "MachineLearning",
+      "key": "MACHINE_LEARNING_POWER"
+    },
+    {
+      "enum": "SignalBoost",
+      "key": "SIGNAL_BOOST_POWER"
+    },
+    {
+      "enum": "Smokestack",
+      "key": "SMOKESTACK_POWER"
+    },
+    {
+      "enum": "Spinner",
+      "key": "SPINNER_POWER"
+    },
+    {
+      "enum": "Storm",
+      "key": "STORM_POWER"
+    },
+    {
+      "enum": "Subroutine",
+      "key": "SUBROUTINE_POWER"
+    },
+    {
+      "enum": "Thunder",
+      "key": "THUNDER_POWER"
+    },
+    {
+      "enum": "TrashToTreasure",
+      "key": "TRASH_TO_TREASURE_POWER"
+    },
+    {
+      "enum": "ConsumingShadow",
+      "key": "CONSUMING_SHADOW_POWER"
+    },
+    {
+      "enum": "FreePower",
+      "key": "FREE_POWER_POWER"
+    },
+    {
+      "enum": "EnergyNextTurn",
+      "key": "ENERGY_NEXT_TURN_POWER"
+    },
+    {
+      "enum": "FocusedStrikeFocus",
+      "key": "TEMPORARY_FOCUS_POWER",
+      "icon_key": "FOCUSED_STRIKE_POWER",
+      "title_card": "FOCUSED_STRIKE"
+    },
+    {
+      "enum": "HotfixFocus",
+      "key": "TEMPORARY_FOCUS_POWER",
+      "icon_key": "HOTFIX_POWER",
+      "title_card": "HOTFIX"
+    },
+    {
+      "enum": "HyperbeamFocus",
+      "key": "TEMPORARY_FOCUS_DOWN",
+      "icon_key": "HYPERBEAM_FOCUS_DOWN_POWER",
+      "title_card": "HYPERBEAM"
+    },
+    {
+      "enum": "SynchronizeFocus",
+      "key": "TEMPORARY_FOCUS_POWER",
+      "icon_key": "SYNCHRONIZE_POWER",
+      "title_card": "SYNCHRONIZE"
+    }
+  ],
+  "orb_types": [
+    {
+      "enum": "Dark",
+      "ordinal": 0,
+      "key": "DARK_ORB"
+    },
+    {
+      "enum": "Lightning",
+      "ordinal": 1,
+      "key": "LIGHTNING_ORB"
+    },
+    {
+      "enum": "Frost",
+      "ordinal": 2,
+      "key": "FROST_ORB"
+    },
+    {
+      "enum": "Plasma",
+      "ordinal": 3,
+      "key": "PLASMA_ORB"
+    },
+    {
+      "enum": "Glass",
+      "ordinal": 4,
+      "key": "GLASS_ORB"
+    }
+  ]
+}

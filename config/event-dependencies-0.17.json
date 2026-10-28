@@ -1,0 +1,640 @@
+{
+  "schema": 1,
+  "reference_version": "v0.111.0",
+  "reference_commit": "41cef1ea",
+  "cards": [
+    {
+      "id": 497,
+      "model": "BadLuck",
+      "key": "BAD_LUCK",
+      "pool": "Curse",
+      "visual_pool": "Curse",
+      "combat": true,
+      "modifier": false,
+      "gains_block": false
+    },
+    {
+      "id": 498,
+      "model": "ByrdonisEgg",
+      "key": "BYRDONIS_EGG",
+      "pool": "Quest",
+      "visual_pool": "Quest",
+      "combat": true,
+      "modifier": true,
+      "gains_block": false
+    },
+    {
+      "id": 499,
+      "model": "Caltrops",
+      "key": "CALTROPS",
+      "pool": "Event",
+      "visual_pool": "Silent",
+      "combat": true,
+      "modifier": true,
+      "gains_block": false
+    },
+    {
+      "id": 500,
+      "model": "Clash",
+      "key": "CLASH",
+      "pool": "Event",
+      "visual_pool": "Ironclad",
+      "combat": true,
+      "modifier": true,
+      "gains_block": false
+    },
+    {
+      "id": 501,
+      "model": "Clumsy",
+      "key": "CLUMSY",
+      "pool": "Curse",
+      "visual_pool": "Curse",
+      "combat": true,
+      "modifier": true,
+      "gains_block": false
+    },
+    {
+      "id": 502,
+      "model": "Debt",
+      "key": "DEBT",
+      "pool": "Curse",
+      "visual_pool": "Curse",
+      "combat": true,
+      "modifier": true,
+      "gains_block": false
+    },
+    {
+      "id": 503,
+      "model": "Decay",
+      "key": "DECAY",
+      "pool": "Curse",
+      "visual_pool": "Curse",
+      "combat": true,
+      "modifier": true,
+      "gains_block": false
+    },
+    {
+      "id": 504,
+      "model": "Distraction",
+      "key": "DISTRACTION",
+      "pool": "Event",
+      "visual_pool": "Silent",
+      "combat": true,
+      "modifier": true,
+      "gains_block": false
+    },
+    {
+      "id": 505,
+      "model": "Doubt",
+      "key": "DOUBT",
+      "pool": "Curse",
+      "visual_pool": "Curse",
+      "combat": true,
+      "modifier": true,
+      "gains_block": false
+    },
+    {
+      "id": 506,
+      "model": "DualWield",
+      "key": "DUAL_WIELD",
+      "pool": "Event",
+      "visual_pool": "Ironclad",
+      "combat": true,
+      "modifier": true,
+      "gains_block": false
+    },
+    {
+      "id": 507,
+      "model": "Enlightenment",
+      "key": "ENLIGHTENMENT",
+      "pool": "Event",
+      "visual_pool": "Event",
+      "combat": true,
+      "modifier": true,
+      "gains_block": false
+    },
+    {
+      "id": 508,
+      "model": "Entrench",
+      "key": "ENTRENCH",
+      "pool": "Event",
+      "visual_pool": "Ironclad",
+      "combat": true,
+      "modifier": true,
+      "gains_block": true
+    },
+    {
+      "id": 509,
+      "model": "Exterminate",
+      "key": "EXTERMINATE",
+      "pool": "Event",
+      "visual_pool": "Event",
+      "combat": true,
+      "modifier": true,
+      "gains_block": false
+    },
+    {
+      "id": 510,
+      "model": "FeedingFrenzy",
+      "key": "FEEDING_FRENZY",
+      "pool": "Event",
+      "visual_pool": "Event",
+      "combat": true,
+      "modifier": true,
+      "gains_block": false
+    },
+    {
+      "id": 511,
+      "model": "Greed",
+      "key": "GREED",
+      "pool": "Curse",
+      "visual_pool": "Curse",
+      "combat": true,
+      "modifier": false,
+      "gains_block": false
+    },
+    {
+      "id": 512,
+      "model": "Guilty",
+      "key": "GUILTY",
+      "pool": "Curse",
+      "visual_pool": "Curse",
+      "combat": true,
+      "modifier": true,
+      "gains_block": false
+    },
+    {
+      "id": 513,
+      "model": "HelloWorld",
+      "key": "HELLO_WORLD",
+      "pool": "Event",
+      "visual_pool": "Defect",
+      "combat": true,
+      "modifier": true,
+      "gains_block": false
+    },
+    {
+      "id": 514,
+      "model": "Injury",
+      "key": "INJURY",
+      "pool": "Curse",
+      "visual_pool": "Curse",
+      "combat": true,
+      "modifier": true,
+      "gains_block": false
+    },
+    {
+      "id": 515,
+      "model": "LanternKey",
+      "key": "LANTERN_KEY",
+      "pool": "Quest",
+      "visual_pool": "Quest",
+      "combat": true,
+      "modifier": true,
+      "gains_block": false
+    },
+    {
+      "id": 516,
+      "model": "MadScience",
+      "key": "MAD_SCIENCE",
+      "pool": "Event",
+      "visual_pool": "Event",
+      "combat": true,
+      "modifier": true,
+      "gains_block": false
+    },
+    {
+      "id": 517,
+      "model": "Metamorphosis",
+      "key": "METAMORPHOSIS",
+      "pool": "Event",
+      "visual_pool": "Event",
+      "combat": true,
+      "modifier": true,
+      "gains_block": false
+    },
+    {
+      "id": 518,
+      "model": "Normality",
+      "key": "NORMALITY",
+      "pool": "Curse",
+      "visual_pool": "Curse",
+      "combat": true,
+      "modifier": true,
+      "gains_block": false
+    },
+    {
+      "id": 519,
+      "model": "Outmaneuver",
+      "key": "OUTMANEUVER",
+      "pool": "Event",
+      "visual_pool": "Silent",
+      "combat": true,
+      "modifier": true,
+      "gains_block": false
+    },
+    {
+      "id": 520,
+      "model": "Peck",
+      "key": "PECK",
+      "pool": "Event",
+      "visual_pool": "Event",
+      "combat": true,
+      "modifier": true,
+      "gains_block": false
+    },
+    {
+      "id": 521,
+      "model": "PoorSleep",
+      "key": "POOR_SLEEP",
+      "pool": "Curse",
+      "visual_pool": "Curse",
+      "combat": true,
+      "modifier": false,
+      "gains_block": false
+    },
+    {
+      "id": 522,
+      "model": "Rebound",
+      "key": "REBOUND",
+      "pool": "Event",
+      "visual_pool": "Defect",
+      "combat": true,
+      "modifier": true,
+      "gains_block": false
+    },
+    {
+      "id": 523,
+      "model": "Regret",
+      "key": "REGRET",
+      "pool": "Curse",
+      "visual_pool": "Curse",
+      "combat": true,
+      "modifier": true,
+      "gains_block": false
+    },
+    {
+      "id": 524,
+      "model": "RipAndTear",
+      "key": "RIP_AND_TEAR",
+      "pool": "Event",
+      "visual_pool": "Defect",
+      "combat": true,
+      "modifier": true,
+      "gains_block": false
+    },
+    {
+      "id": 525,
+      "model": "Shame",
+      "key": "SHAME",
+      "pool": "Curse",
+      "visual_pool": "Curse",
+      "combat": true,
+      "modifier": true,
+      "gains_block": false
+    },
+    {
+      "id": 526,
+      "model": "SpoilsMap",
+      "key": "SPOILS_MAP",
+      "pool": "Quest",
+      "visual_pool": "Quest",
+      "combat": true,
+      "modifier": true,
+      "gains_block": false
+    },
+    {
+      "id": 527,
+      "model": "SporeMind",
+      "key": "SPORE_MIND",
+      "pool": "Curse",
+      "visual_pool": "Curse",
+      "combat": true,
+      "modifier": false,
+      "gains_block": false
+    },
+    {
+      "id": 528,
+      "model": "Squash",
+      "key": "SQUASH",
+      "pool": "Event",
+      "visual_pool": "Event",
+      "combat": true,
+      "modifier": true,
+      "gains_block": false
+    },
+    {
+      "id": 529,
+      "model": "Stack",
+      "key": "STACK",
+      "pool": "Event",
+      "visual_pool": "Defect",
+      "combat": true,
+      "modifier": true,
+      "gains_block": true
+    },
+    {
+      "id": 530,
+      "model": "ToricToughness",
+      "key": "TORIC_TOUGHNESS",
+      "pool": "Event",
+      "visual_pool": "Event",
+      "combat": true,
+      "modifier": true,
+      "gains_block": true
+    },
+    {
+      "id": 531,
+      "model": "Beckon",
+      "key": "BECKON",
+      "pool": "Status",
+      "visual_pool": "Status",
+      "combat": true,
+      "modifier": true,
+      "gains_block": false
+    },
+    {
+      "id": 532,
+      "model": "Disintegration",
+      "key": "DISINTEGRATION",
+      "pool": "Token",
+      "visual_pool": "Token",
+      "combat": false,
+      "modifier": true,
+      "gains_block": false
+    },
+    {
+      "id": 533,
+      "model": "FranticEscape",
+      "key": "FRANTIC_ESCAPE",
+      "pool": "Status",
+      "visual_pool": "Status",
+      "combat": false,
+      "modifier": true,
+      "gains_block": false
+    },
+    {
+      "id": 534,
+      "model": "Infection",
+      "key": "INFECTION",
+      "pool": "Status",
+      "visual_pool": "Status",
+      "combat": true,
+      "modifier": true,
+      "gains_block": false
+    },
+    {
+      "id": 535,
+      "model": "MindRot",
+      "key": "MIND_ROT",
+      "pool": "Token",
+      "visual_pool": "Token",
+      "combat": false,
+      "modifier": true,
+      "gains_block": false
+    },
+    {
+      "id": 536,
+      "model": "Sloth",
+      "key": "SLOTH",
+      "pool": "Token",
+      "visual_pool": "Token",
+      "combat": false,
+      "modifier": true,
+      "gains_block": false
+    },
+    {
+      "id": 537,
+      "model": "Toxic",
+      "key": "TOXIC",
+      "pool": "Status",
+      "visual_pool": "Status",
+      "combat": true,
+      "modifier": true,
+      "gains_block": false
+    },
+    {
+      "id": 538,
+      "model": "WasteAway",
+      "key": "WASTE_AWAY",
+      "pool": "Token",
+      "visual_pool": "Token",
+      "combat": false,
+      "modifier": true,
+      "gains_block": false
+    },
+    {
+      "id": 539,
+      "model": "Wither",
+      "key": "WITHER",
+      "pool": "Status",
+      "visual_pool": "Status",
+      "combat": true,
+      "modifier": true,
+      "gains_block": false
+    },
+    {
+      "id": 540,
+      "model": "Apotheosis",
+      "key": "APOTHEOSIS",
+      "pool": "Event",
+      "visual_pool": "Event",
+      "combat": true,
+      "modifier": true,
+      "gains_block": false
+    },
+    {
+      "id": 541,
+      "model": "Apparition",
+      "key": "APPARITION",
+      "pool": "Event",
+      "visual_pool": "Event",
+      "combat": true,
+      "modifier": true,
+      "gains_block": false
+    },
+    {
+      "id": 542,
+      "model": "BrightestFlame",
+      "key": "BRIGHTEST_FLAME",
+      "pool": "Event",
+      "visual_pool": "Event",
+      "combat": true,
+      "modifier": true,
+      "gains_block": false
+    },
+    {
+      "id": 543,
+      "model": "Dowsing",
+      "key": "DOWSING",
+      "pool": "Quest",
+      "visual_pool": "Quest",
+      "combat": true,
+      "modifier": true,
+      "gains_block": false
+    },
+    {
+      "id": 544,
+      "model": "Luminesce",
+      "key": "LUMINESCE",
+      "pool": "Token",
+      "visual_pool": "Token",
+      "combat": true,
+      "modifier": true,
+      "gains_block": false
+    },
+    {
+      "id": 545,
+      "model": "Maul",
+      "key": "MAUL",
+      "pool": "Event",
+      "visual_pool": "Event",
+      "combat": true,
+      "modifier": true,
+      "gains_block": false
+    },
+    {
+      "id": 546,
+      "model": "NeowsFury",
+      "key": "NEOWS_FURY",
+      "pool": "Event",
+      "visual_pool": "Event",
+      "combat": false,
+      "modifier": true,
+      "gains_block": false
+    },
+    {
+      "id": 547,
+      "model": "Relax",
+      "key": "RELAX",
+      "pool": "Event",
+      "visual_pool": "Event",
+      "combat": true,
+      "modifier": true,
+      "gains_block": true
+    },
+    {
+      "id": 548,
+      "model": "Soot",
+      "key": "SOOT",
+      "pool": "Status",
+      "visual_pool": "Status",
+      "combat": false,
+      "modifier": true,
+      "gains_block": false
+    },
+    {
+      "id": 549,
+      "model": "Whistle",
+      "key": "WHISTLE",
+      "pool": "Event",
+      "visual_pool": "Event",
+      "combat": true,
+      "modifier": true,
+      "gains_block": false
+    },
+    {
+      "id": 550,
+      "model": "Wish",
+      "key": "WISH",
+      "pool": "Event",
+      "visual_pool": "Event",
+      "combat": true,
+      "modifier": true,
+      "gains_block": false
+    },
+    {
+      "id": 551,
+      "model": "Abundance",
+      "key": "ABUNDANCE",
+      "pool": "Event",
+      "visual_pool": "Event",
+      "combat": false,
+      "modifier": true,
+      "gains_block": false
+    },
+    {
+      "id": 552,
+      "model": "ByrdSwoop",
+      "key": "BYRD_SWOOP",
+      "pool": "Event",
+      "visual_pool": "Event",
+      "combat": true,
+      "modifier": true,
+      "gains_block": false
+    },
+    {
+      "id": 553,
+      "model": "CurseOfTheBell",
+      "key": "CURSE_OF_THE_BELL",
+      "pool": "Curse",
+      "visual_pool": "Curse",
+      "combat": true,
+      "modifier": false,
+      "gains_block": false
+    },
+    {
+      "id": 554,
+      "model": "Enthralled",
+      "key": "ENTHRALLED",
+      "pool": "Curse",
+      "visual_pool": "Curse",
+      "combat": true,
+      "modifier": false,
+      "gains_block": false
+    },
+    {
+      "id": 555,
+      "model": "Folly",
+      "key": "FOLLY",
+      "pool": "Curse",
+      "visual_pool": "Curse",
+      "combat": true,
+      "modifier": false,
+      "gains_block": false
+    },
+    {
+      "id": 556,
+      "model": "AscendersBane",
+      "key": "ASCENDERS_BANE",
+      "pool": "Curse",
+      "visual_pool": "Curse",
+      "combat": false,
+      "modifier": false,
+      "gains_block": false
+    },
+    {
+      "id": 557,
+      "model": "Writhe",
+      "key": "WRITHE",
+      "pool": "Curse",
+      "visual_pool": "Curse",
+      "combat": true,
+      "modifier": true,
+      "gains_block": false
+    }
+  ],
+  "enchantments": [
+    "Corrupted",
+    "Goopy",
+    "Instinct",
+    "Nimble",
+    "PerfectFit",
+    "Sharp",
+    "Slither",
+    "SoulsPower",
+    "Sown",
+    "Spiral",
+    "Steady",
+    "Swift",
+    "Vigorous",
+    "Adroit",
+    "Clone",
+    "Glam",
+    "Imbued",
+    "Momentum",
+    "RoyallyApproved",
+    "TezcatarasEmber"
+  ],
+  "validation": "Source implementation in progress; no 0.17 execution yet."
+}

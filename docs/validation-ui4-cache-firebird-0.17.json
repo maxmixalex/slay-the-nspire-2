@@ -1,0 +1,1103 @@
+{
+  "schema": 1,
+  "stage": "UI4 isolated bounded-text-cache and cold-range Firebird acceptance",
+  "date_utc": "2026-10-23",
+  "status": "passed_with_remaining_cold_entry_cost",
+  "sources": {
+    "baseline": "2385ff81d1c08f2fcec9213fb3101996f6f36de8",
+    "baseline_runtime": "ead747dcdffded08d641445a811af48a4fafd1de",
+    "isolated_candidate": "ebf1212e71eb39f85e7fe282851b5ac05fc510f8",
+    "candidate_branch": "checkpoint/ui4-cache-isolated",
+    "resource_profile": "unchanged UI3 NSP2/20 hybrid with original title glow",
+    "locale": "zhs",
+    "virtual_pack_bytes": 79319656
+  },
+  "scope": {
+    "platform": "Firebird emulated TI-Nspire CX II; ordinary OS, USB and Ndless r2022",
+    "clock": "foreground SP804 at 32768 Hz",
+    "physical_device": false,
+    "game_state_injection": false,
+    "os_or_ram_patch": false,
+    "private_assets_committed": false,
+    "broad_gameplay_claim": false
+  },
+  "binary": {
+    "baseline_bytes": 983682,
+    "candidate_bytes": 984515,
+    "candidate_allocation_bytes": 16302240,
+    "baseline_allocation_bytes": 16305200,
+    "candidate_usb_readback_bytes": 984515,
+    "candidate_usb_readback_exact": true,
+    "candidate_readback_artifact": "emulator-working/ui4-cache-candidate/controlled-launcher-ebf.tns"
+  },
+  "route": {
+    "ordinary_gameplay_inputs": [
+      "press 2 80 700",
+      "press down 80 200",
+      "press enter 80 500",
+      "press enter 80 7000",
+      "press enter 80 2500",
+      "press c 80 3000",
+      "run 10000",
+      "press 6 80 600",
+      "press enter 80 1000",
+      "press esc 80 300",
+      "press esc 80 300",
+      "press esc 80 200",
+      "press 8 80 150",
+      "press enter 80 1000",
+      "press 8 80 200",
+      "press enter 80 200",
+      "press 6 80 100",
+      "press enter 80 7000"
+    ],
+    "same_18_inputs_and_simulated_durations": true,
+    "baseline_bootstrap": "Previously prepared ordinary OS/Ndless pre-app snapshot resumed before these inputs.",
+    "candidate_bootstrap": "Cold boot; ordinary USB upload, each OS notification dismissed, launcher downloaded and compared; old performance file deleted; ordinary Ndless installer launched and completed; no snapshot restored in accepted process.",
+    "trials_per_variant": 1,
+    "qualification": "The gameplay schedule and pack/save inputs match, but OS bootstrap and memory/cache history are not claimed identical. Scene aggregates include cold entry and focus/detail transitions, so they are not warm FPS estimates."
+  },
+  "journal": {
+    "checkpoint": "ebf1212e71eb39f85e7fe282851b5ac05fc510f8",
+    "started_at": "2026-10-23T17:22:20.595074+00:00",
+    "ended_at": "2026-10-23T17:28:11.162947+00:00",
+    "status": "passed",
+    "returncode": 0,
+    "source_changed": false,
+    "source_sha256": "b1daac6fb5b3b0f483e019c3624725cdcd8de94593da84192c4af6742b098c1b"
+  },
+  "evidence": {
+    "candidate_journal": "ui4-perf-arm/build/journal/ui4-cache-candidate-controlled-flow-e9cab12feec4.json",
+    "candidate_events": "emulator-working/ui4-cache-candidate/controlled-events.jsonl",
+    "candidate_perf": "emulator-working/ui4-cache-candidate/controlled-perf.json",
+    "baseline_perf": "emulator-working/ui4-cache-baseline/perf.json",
+    "final_simulated_ms": 97510,
+    "event_errors": 0,
+    "fresh_report_after_successful_old_report_delete": true,
+    "all_resource_failures": 0,
+    "all_four_card_captures_exact": true,
+    "screens": {
+      "collection-cold": {
+        "bytes": 230415,
+        "candidate_bytes": 230415,
+        "exact_equal": true,
+        "different_bytes": 0
+      },
+      "collection-warm": {
+        "bytes": 230415,
+        "candidate_bytes": 230415,
+        "exact_equal": true,
+        "different_bytes": 0
+      },
+      "collection-focus": {
+        "bytes": 230415,
+        "candidate_bytes": 230415,
+        "exact_equal": true,
+        "different_bytes": 0
+      },
+      "detail": {
+        "bytes": 230415,
+        "candidate_bytes": 230415,
+        "exact_equal": true,
+        "different_bytes": 0
+      },
+      "continue": {
+        "bytes": 230415,
+        "candidate_bytes": 230415,
+        "exact_equal": false,
+        "different_bytes": 246
+      }
+    },
+    "save_bytes": 230520,
+    "save_exact_equal": true
+  },
+  "measurements": {
+    "title": {
+      "baseline": {
+        "render_samples": 132,
+        "render_mean_ms": 33.105,
+        "render_min_ms": 22.125,
+        "render_max_ms": 244.293,
+        "resource_max_ms": 212.128,
+        "scene_read_calls": 24,
+        "scene_bytes_requested": 94208,
+        "scene_seeks": 22
+      },
+      "isolated_candidate": {
+        "render_samples": 142,
+        "render_mean_ms": 31.337,
+        "render_min_ms": 21.973,
+        "render_max_ms": 32.623,
+        "resource_max_ms": 0.0,
+        "scene_read_calls": 0,
+        "scene_bytes_requested": 0,
+        "scene_seeks": 0
+      }
+    },
+    "collection": {
+      "baseline": {
+        "render_samples": 368,
+        "render_mean_ms": 28.379,
+        "render_min_ms": 22.888,
+        "render_max_ms": 1646.82,
+        "resource_max_ms": 1600.342,
+        "scene_read_calls": 151,
+        "scene_bytes_requested": 620673,
+        "scene_seeks": 135
+      },
+      "isolated_candidate": {
+        "render_samples": 376,
+        "render_mean_ms": 27.382,
+        "render_min_ms": 22.705,
+        "render_max_ms": 1508.392,
+        "resource_max_ms": 1462.28,
+        "scene_read_calls": 76,
+        "scene_bytes_requested": 353817,
+        "scene_seeks": 68
+      }
+    },
+    "room": {
+      "baseline": {
+        "render_samples": 69,
+        "render_mean_ms": 37.774,
+        "render_min_ms": 30.273,
+        "render_max_ms": 516.937,
+        "resource_max_ms": 462.86,
+        "scene_read_calls": 30,
+        "scene_bytes_requested": 208451,
+        "scene_seeks": 29
+      },
+      "isolated_candidate": {
+        "render_samples": 68,
+        "render_mean_ms": 38.527,
+        "render_min_ms": 30.212,
+        "render_max_ms": 511.841,
+        "resource_max_ms": 457.855,
+        "scene_read_calls": 21,
+        "scene_bytes_requested": 171587,
+        "scene_seeks": 20
+      }
+    },
+    "overlay": {
+      "baseline": {
+        "render_samples": 27,
+        "render_mean_ms": 77.665,
+        "render_min_ms": 46.814,
+        "render_max_ms": 387.604,
+        "resource_max_ms": 339.935,
+        "scene_read_calls": 68,
+        "scene_bytes_requested": 271670,
+        "scene_seeks": 61
+      },
+      "isolated_candidate": {
+        "render_samples": 29,
+        "render_mean_ms": 70.77,
+        "render_min_ms": 46.509,
+        "render_max_ms": 327.423,
+        "resource_max_ms": 279.663,
+        "scene_read_calls": 56,
+        "scene_bytes_requested": 238902,
+        "scene_seeks": 55
+      }
+    }
+  },
+  "raw_runtime_reports": {
+    "baseline": {
+      "format": "nspire-runtime-perf-1",
+      "units": "timer_ticks",
+      "clock": "foreground_SP804",
+      "startup_scope": "selected_resource_validation_and_app_init",
+      "clock_hz": 32768,
+      "hardware": 1,
+      "ndless_revision": 2022,
+      "pack_bytes": 79319656,
+      "startup": {
+        "count": 1,
+        "total": 27421,
+        "min": 27421,
+        "max": 27421
+      },
+      "first_render": {
+        "count": 1,
+        "total": 28991,
+        "min": 28991,
+        "max": 28991
+      },
+      "first_present": {
+        "count": 1,
+        "total": 7,
+        "min": 7,
+        "max": 7
+      },
+      "startup_phases": {
+        "header": {
+          "count": 1,
+          "total": 2151,
+          "min": 2151,
+          "max": 2151
+        },
+        "integrity": {
+          "count": 0,
+          "total": 0,
+          "min": 0,
+          "max": 0
+        },
+        "directory": {
+          "count": 1,
+          "total": 11502,
+          "min": 11502,
+          "max": 11502
+        },
+        "images": {
+          "count": 0,
+          "total": 0,
+          "min": 0,
+          "max": 0
+        },
+        "tile_index": {
+          "count": 0,
+          "total": 0,
+          "min": 0,
+          "max": 0
+        },
+        "glyphs": {
+          "count": 0,
+          "total": 0,
+          "min": 0,
+          "max": 0
+        },
+        "strings": {
+          "count": 0,
+          "total": 0,
+          "min": 0,
+          "max": 0
+        },
+        "ready": {
+          "count": 1,
+          "total": 5824,
+          "min": 5824,
+          "max": 5824
+        }
+      },
+      "resource_total": {
+        "ticks": 155508,
+        "calls": 320,
+        "bytes_requested": 2553011,
+        "failures": 0,
+        "seeks": 290
+      },
+      "scenes": [
+        {
+          "scene": "title",
+          "interval": {
+            "count": 132,
+            "total": 163308,
+            "min": 742,
+            "max": 20421
+          },
+          "update": {
+            "count": 132,
+            "total": 12694,
+            "min": 2,
+            "max": 12409
+          },
+          "render": {
+            "count": 132,
+            "total": 143192,
+            "min": 725,
+            "max": 8005
+          },
+          "present": {
+            "count": 132,
+            "total": 950,
+            "min": 7,
+            "max": 8
+          },
+          "resource": {
+            "count": 132,
+            "total": 6951,
+            "min": 0,
+            "max": 6951
+          },
+          "over_50ms": 1,
+          "over_100ms": 1,
+          "over_250ms": 1,
+          "read_calls": 24,
+          "read_bytes_requested": 94208,
+          "read_seeks": 22
+        },
+        {
+          "scene": "character",
+          "interval": {
+            "count": 0,
+            "total": 0,
+            "min": 0,
+            "max": 0
+          },
+          "update": {
+            "count": 0,
+            "total": 0,
+            "min": 0,
+            "max": 0
+          },
+          "render": {
+            "count": 0,
+            "total": 0,
+            "min": 0,
+            "max": 0
+          },
+          "present": {
+            "count": 0,
+            "total": 0,
+            "min": 0,
+            "max": 0
+          },
+          "resource": {
+            "count": 0,
+            "total": 0,
+            "min": 0,
+            "max": 0
+          },
+          "over_50ms": 0,
+          "over_100ms": 0,
+          "over_250ms": 0,
+          "read_calls": 0,
+          "read_bytes_requested": 0,
+          "read_seeks": 0
+        },
+        {
+          "scene": "collection",
+          "interval": {
+            "count": 368,
+            "total": 462626,
+            "min": 761,
+            "max": 54060
+          },
+          "update": {
+            "count": 368,
+            "total": 1111,
+            "min": 3,
+            "max": 5
+          },
+          "render": {
+            "count": 368,
+            "total": 342214,
+            "min": 750,
+            "max": 53963
+          },
+          "present": {
+            "count": 368,
+            "total": 2576,
+            "min": 7,
+            "max": 7
+          },
+          "resource": {
+            "count": 368,
+            "total": 61266,
+            "min": 0,
+            "max": 52440
+          },
+          "over_50ms": 3,
+          "over_100ms": 3,
+          "over_250ms": 1,
+          "read_calls": 151,
+          "read_bytes_requested": 620673,
+          "read_seeks": 135
+        },
+        {
+          "scene": "map",
+          "interval": {
+            "count": 0,
+            "total": 0,
+            "min": 0,
+            "max": 0
+          },
+          "update": {
+            "count": 0,
+            "total": 0,
+            "min": 0,
+            "max": 0
+          },
+          "render": {
+            "count": 0,
+            "total": 0,
+            "min": 0,
+            "max": 0
+          },
+          "present": {
+            "count": 0,
+            "total": 0,
+            "min": 0,
+            "max": 0
+          },
+          "resource": {
+            "count": 0,
+            "total": 0,
+            "min": 0,
+            "max": 0
+          },
+          "over_50ms": 0,
+          "over_100ms": 0,
+          "over_250ms": 0,
+          "read_calls": 0,
+          "read_bytes_requested": 0,
+          "read_seeks": 0
+        },
+        {
+          "scene": "combat",
+          "interval": {
+            "count": 0,
+            "total": 0,
+            "min": 0,
+            "max": 0
+          },
+          "update": {
+            "count": 0,
+            "total": 0,
+            "min": 0,
+            "max": 0
+          },
+          "render": {
+            "count": 0,
+            "total": 0,
+            "min": 0,
+            "max": 0
+          },
+          "present": {
+            "count": 0,
+            "total": 0,
+            "min": 0,
+            "max": 0
+          },
+          "resource": {
+            "count": 0,
+            "total": 0,
+            "min": 0,
+            "max": 0
+          },
+          "over_50ms": 0,
+          "over_100ms": 0,
+          "over_250ms": 0,
+          "read_calls": 0,
+          "read_bytes_requested": 0,
+          "read_seeks": 0
+        },
+        {
+          "scene": "room",
+          "interval": {
+            "count": 69,
+            "total": 97807,
+            "min": 1002,
+            "max": 22838
+          },
+          "update": {
+            "count": 69,
+            "total": 6079,
+            "min": 3,
+            "max": 5872
+          },
+          "render": {
+            "count": 69,
+            "total": 85406,
+            "min": 992,
+            "max": 16939
+          },
+          "present": {
+            "count": 69,
+            "total": 490,
+            "min": 7,
+            "max": 8
+          },
+          "resource": {
+            "count": 69,
+            "total": 15628,
+            "min": 0,
+            "max": 15167
+          },
+          "over_50ms": 1,
+          "over_100ms": 1,
+          "over_250ms": 1,
+          "read_calls": 30,
+          "read_bytes_requested": 208451,
+          "read_seeks": 29
+        },
+        {
+          "scene": "overlay",
+          "interval": {
+            "count": 27,
+            "total": 69419,
+            "min": 1544,
+            "max": 12897
+          },
+          "update": {
+            "count": 27,
+            "total": 96,
+            "min": 3,
+            "max": 10
+          },
+          "render": {
+            "count": 27,
+            "total": 68713,
+            "min": 1534,
+            "max": 12701
+          },
+          "present": {
+            "count": 27,
+            "total": 192,
+            "min": 7,
+            "max": 8
+          },
+          "resource": {
+            "count": 27,
+            "total": 22478,
+            "min": 0,
+            "max": 11139
+          },
+          "over_50ms": 15,
+          "over_100ms": 4,
+          "over_250ms": 2,
+          "read_calls": 68,
+          "read_bytes_requested": 271670,
+          "read_seeks": 61
+        },
+        {
+          "scene": "other",
+          "interval": {
+            "count": 0,
+            "total": 0,
+            "min": 0,
+            "max": 0
+          },
+          "update": {
+            "count": 0,
+            "total": 0,
+            "min": 0,
+            "max": 0
+          },
+          "render": {
+            "count": 0,
+            "total": 0,
+            "min": 0,
+            "max": 0
+          },
+          "present": {
+            "count": 0,
+            "total": 0,
+            "min": 0,
+            "max": 0
+          },
+          "resource": {
+            "count": 0,
+            "total": 0,
+            "min": 0,
+            "max": 0
+          },
+          "over_50ms": 0,
+          "over_100ms": 0,
+          "over_250ms": 0,
+          "read_calls": 0,
+          "read_bytes_requested": 0,
+          "read_seeks": 0
+        },
+        {
+          "scene": "combat_preparation",
+          "interval": {
+            "count": 0,
+            "total": 0,
+            "min": 0,
+            "max": 0
+          },
+          "update": {
+            "count": 0,
+            "total": 0,
+            "min": 0,
+            "max": 0
+          },
+          "render": {
+            "count": 0,
+            "total": 0,
+            "min": 0,
+            "max": 0
+          },
+          "present": {
+            "count": 0,
+            "total": 0,
+            "min": 0,
+            "max": 0
+          },
+          "resource": {
+            "count": 0,
+            "total": 0,
+            "min": 0,
+            "max": 0
+          },
+          "over_50ms": 0,
+          "over_100ms": 0,
+          "over_250ms": 0,
+          "read_calls": 0,
+          "read_bytes_requested": 0,
+          "read_seeks": 0
+        }
+      ]
+    },
+    "isolated_candidate": {
+      "format": "nspire-runtime-perf-1",
+      "units": "timer_ticks",
+      "clock": "foreground_SP804",
+      "startup_scope": "selected_resource_validation_and_app_init",
+      "clock_hz": 32768,
+      "hardware": 1,
+      "ndless_revision": 2022,
+      "pack_bytes": 79319656,
+      "startup": {
+        "count": 1,
+        "total": 27407,
+        "min": 27407,
+        "max": 27407
+      },
+      "first_render": {
+        "count": 1,
+        "total": 28896,
+        "min": 28896,
+        "max": 28896
+      },
+      "first_present": {
+        "count": 1,
+        "total": 8,
+        "min": 8,
+        "max": 8
+      },
+      "startup_phases": {
+        "header": {
+          "count": 1,
+          "total": 2147,
+          "min": 2147,
+          "max": 2147
+        },
+        "integrity": {
+          "count": 0,
+          "total": 0,
+          "min": 0,
+          "max": 0
+        },
+        "directory": {
+          "count": 1,
+          "total": 11490,
+          "min": 11490,
+          "max": 11490
+        },
+        "images": {
+          "count": 0,
+          "total": 0,
+          "min": 0,
+          "max": 0
+        },
+        "tile_index": {
+          "count": 0,
+          "total": 0,
+          "min": 0,
+          "max": 0
+        },
+        "glyphs": {
+          "count": 0,
+          "total": 0,
+          "min": 0,
+          "max": 0
+        },
+        "strings": {
+          "count": 0,
+          "total": 0,
+          "min": 0,
+          "max": 0
+        },
+        "ready": {
+          "count": 1,
+          "total": 5836,
+          "min": 5836,
+          "max": 5836
+        }
+      },
+      "resource_total": {
+        "ticks": 136824,
+        "calls": 198,
+        "bytes_requested": 2118219,
+        "failures": 0,
+        "seeks": 185
+      },
+      "scenes": [
+        {
+          "scene": "title",
+          "interval": {
+            "count": 142,
+            "total": 167257,
+            "min": 743,
+            "max": 13453
+          },
+          "update": {
+            "count": 142,
+            "total": 12730,
+            "min": 2,
+            "max": 12419
+          },
+          "render": {
+            "count": 142,
+            "total": 145814,
+            "min": 720,
+            "max": 1069
+          },
+          "present": {
+            "count": 142,
+            "total": 1034,
+            "min": 7,
+            "max": 8
+          },
+          "resource": {
+            "count": 142,
+            "total": 0,
+            "min": 0,
+            "max": 0
+          },
+          "over_50ms": 1,
+          "over_100ms": 1,
+          "over_250ms": 1,
+          "read_calls": 0,
+          "read_bytes_requested": 0,
+          "read_seeks": 0
+        },
+        {
+          "scene": "character",
+          "interval": {
+            "count": 0,
+            "total": 0,
+            "min": 0,
+            "max": 0
+          },
+          "update": {
+            "count": 0,
+            "total": 0,
+            "min": 0,
+            "max": 0
+          },
+          "render": {
+            "count": 0,
+            "total": 0,
+            "min": 0,
+            "max": 0
+          },
+          "present": {
+            "count": 0,
+            "total": 0,
+            "min": 0,
+            "max": 0
+          },
+          "resource": {
+            "count": 0,
+            "total": 0,
+            "min": 0,
+            "max": 0
+          },
+          "over_50ms": 0,
+          "over_100ms": 0,
+          "over_250ms": 0,
+          "read_calls": 0,
+          "read_bytes_requested": 0,
+          "read_seeks": 0
+        },
+        {
+          "scene": "collection",
+          "interval": {
+            "count": 376,
+            "total": 463255,
+            "min": 756,
+            "max": 49528
+          },
+          "update": {
+            "count": 376,
+            "total": 1131,
+            "min": 3,
+            "max": 5
+          },
+          "render": {
+            "count": 376,
+            "total": 337362,
+            "min": 744,
+            "max": 49427
+          },
+          "present": {
+            "count": 376,
+            "total": 2957,
+            "min": 7,
+            "max": 8
+          },
+          "resource": {
+            "count": 376,
+            "total": 52376,
+            "min": 0,
+            "max": 47916
+          },
+          "over_50ms": 2,
+          "over_100ms": 2,
+          "over_250ms": 1,
+          "read_calls": 76,
+          "read_bytes_requested": 353817,
+          "read_seeks": 68
+        },
+        {
+          "scene": "map",
+          "interval": {
+            "count": 0,
+            "total": 0,
+            "min": 0,
+            "max": 0
+          },
+          "update": {
+            "count": 0,
+            "total": 0,
+            "min": 0,
+            "max": 0
+          },
+          "render": {
+            "count": 0,
+            "total": 0,
+            "min": 0,
+            "max": 0
+          },
+          "present": {
+            "count": 0,
+            "total": 0,
+            "min": 0,
+            "max": 0
+          },
+          "resource": {
+            "count": 0,
+            "total": 0,
+            "min": 0,
+            "max": 0
+          },
+          "over_50ms": 0,
+          "over_100ms": 0,
+          "over_250ms": 0,
+          "read_calls": 0,
+          "read_bytes_requested": 0,
+          "read_seeks": 0
+        },
+        {
+          "scene": "combat",
+          "interval": {
+            "count": 0,
+            "total": 0,
+            "min": 0,
+            "max": 0
+          },
+          "update": {
+            "count": 0,
+            "total": 0,
+            "min": 0,
+            "max": 0
+          },
+          "render": {
+            "count": 0,
+            "total": 0,
+            "min": 0,
+            "max": 0
+          },
+          "present": {
+            "count": 0,
+            "total": 0,
+            "min": 0,
+            "max": 0
+          },
+          "resource": {
+            "count": 0,
+            "total": 0,
+            "min": 0,
+            "max": 0
+          },
+          "over_50ms": 0,
+          "over_100ms": 0,
+          "over_250ms": 0,
+          "read_calls": 0,
+          "read_bytes_requested": 0,
+          "read_seeks": 0
+        },
+        {
+          "scene": "room",
+          "interval": {
+            "count": 68,
+            "total": 98376,
+            "min": 1004,
+            "max": 22689
+          },
+          "update": {
+            "count": 68,
+            "total": 6090,
+            "min": 3,
+            "max": 5886
+          },
+          "render": {
+            "count": 68,
+            "total": 85847,
+            "min": 990,
+            "max": 16772
+          },
+          "present": {
+            "count": 68,
+            "total": 493,
+            "min": 7,
+            "max": 8
+          },
+          "resource": {
+            "count": 68,
+            "total": 17190,
+            "min": 0,
+            "max": 15003
+          },
+          "over_50ms": 2,
+          "over_100ms": 1,
+          "over_250ms": 1,
+          "read_calls": 21,
+          "read_bytes_requested": 171587,
+          "read_seeks": 20
+        },
+        {
+          "scene": "overlay",
+          "interval": {
+            "count": 29,
+            "total": 67897,
+            "min": 1534,
+            "max": 10931
+          },
+          "update": {
+            "count": 29,
+            "total": 104,
+            "min": 3,
+            "max": 10
+          },
+          "render": {
+            "count": 29,
+            "total": 67251,
+            "min": 1524,
+            "max": 10729
+          },
+          "present": {
+            "count": 29,
+            "total": 209,
+            "min": 7,
+            "max": 8
+          },
+          "resource": {
+            "count": 29,
+            "total": 18195,
+            "min": 0,
+            "max": 9164
+          },
+          "over_50ms": 13,
+          "over_100ms": 3,
+          "over_250ms": 1,
+          "read_calls": 56,
+          "read_bytes_requested": 238902,
+          "read_seeks": 55
+        },
+        {
+          "scene": "other",
+          "interval": {
+            "count": 0,
+            "total": 0,
+            "min": 0,
+            "max": 0
+          },
+          "update": {
+            "count": 0,
+            "total": 0,
+            "min": 0,
+            "max": 0
+          },
+          "render": {
+            "count": 0,
+            "total": 0,
+            "min": 0,
+            "max": 0
+          },
+          "present": {
+            "count": 0,
+            "total": 0,
+            "min": 0,
+            "max": 0
+          },
+          "resource": {
+            "count": 0,
+            "total": 0,
+            "min": 0,
+            "max": 0
+          },
+          "over_50ms": 0,
+          "over_100ms": 0,
+          "over_250ms": 0,
+          "read_calls": 0,
+          "read_bytes_requested": 0,
+          "read_seeks": 0
+        },
+        {
+          "scene": "combat_preparation",
+          "interval": {
+            "count": 0,
+            "total": 0,
+            "min": 0,
+            "max": 0
+          },
+          "update": {
+            "count": 0,
+            "total": 0,
+            "min": 0,
+            "max": 0
+          },
+          "render": {
+            "count": 0,
+            "total": 0,
+            "min": 0,
+            "max": 0
+          },
+          "present": {
+            "count": 0,
+            "total": 0,
+            "min": 0,
+            "max": 0
+          },
+          "resource": {
+            "count": 0,
+            "total": 0,
+            "min": 0,
+            "max": 0
+          },
+          "over_50ms": 0,
+          "over_100ms": 0,
+          "over_250ms": 0,
+          "read_calls": 0,
+          "read_bytes_requested": 0,
+          "read_seeks": 0
+        }
+      ]
+    }
+  },
+  "excluded_attempts": [
+    {
+      "journal": "ui4-cache-candidate-install-6d307302d2ce / ui4-cache-candidate-zhs-e0415beab625",
+      "result": "OS unsupported-document dialog, no verified new game launch; downloaded 67-sample report was stale and excluded. Subsequent USB readback was the old 983682-byte launcher. No claim about which snapshot/USB layer caused this."
+    },
+    {
+      "journal": "ui4-cache-candidate-cold-flow-59df6328a1dc",
+      "result": "Controller startup and quit only; no game measurement. Closed passed is not functional acceptance."
+    },
+    {
+      "journal": "ui4-cache-candidate-accepted-flow-6cac039cf012",
+      "result": "Failed exit 1. First USB download succeeded, but its OS notification was not dismissed. Subsequent upload returned -32768; queued readback timed out and produced an empty file. No new runtime metric accepted."
+    }
+  ],
+  "remaining_limits": [
+    "Collection cold maximum remains 1508.392 ms; this is an improvement, not a completed elimination of the first-entry pause.",
+    "151 to 76 calls and 620673 to 353817 bytes are whole collection-scene aggregates, not individual cold-frame counters.",
+    "Host controlled stable windows establish zero repeated I/O; this ARM aggregate report does not isolate warm-window counters.",
+    "This isolated run intentionally excludes UI4 title layers/particles and combat motion. Final integrated acceptance is separate.",
+    "No physical-handheld speed or complete original-game visual fidelity claim."
+  ]
+}

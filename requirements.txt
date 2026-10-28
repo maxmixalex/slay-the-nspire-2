@@ -1,0 +1,7 @@
+# Tested conversion environment. Native ARM and WASM builds do not import these.
+Pillow==12.3.0
+numpy==2.3.5
+lz4==4.4.5
+fonttools==4.61.1
+zstandard==0.25.0
+regex==2026.9.29

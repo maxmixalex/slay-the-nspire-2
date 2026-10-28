@@ -1,0 +1,352 @@
+{
+  "schema": 1,
+  "date": "2026-10-24",
+  "scope": "UI6 runtime, resources and delivery acceptance. Functional regression, source-backed original UI adaptation, native/WASM agreement, browser persistence, emulator execution and host performance retain separate evidence scopes.",
+  "reference": {
+    "game": "Slay the Spire 2",
+    "version": "v0.111.0",
+    "revision": "41cef1ea",
+    "excluded_product_scope": [
+      "audio",
+      "multiplayer",
+      "Timeline"
+    ]
+  },
+  "accepted_runtime": {
+    "checkpoint": "96f7b5c6914762fad998f03ab5da1b4c283ecaa0",
+    "tree": "579718ea9f6c5c6aaf21dcffbedf802686760da1",
+    "repository": "https://github.com/maxmixalex/slay-the-nspire-2",
+    "private_assets_in_public_repository": false,
+    "note": "Later documentation and the shared performance-driver checkpoint do not change this runtime identity."
+  },
+  "resources": {
+    "content_version": 23,
+    "converter_compaction_checkpoint": "20262f09eb1edab0035e632ca9ee4f065fb51fc4",
+    "merchant_sampling_checkpoint": "6b46a74eddf37381cff9a89cdbcf30572849cf73",
+    "packs": {
+      "eng": {
+        "version": 23,
+        "bytes": 76978571,
+        "sha256": "5080df3876fd483b9502b1a3fc971b95561595b60e3e0650837297a2f4d39974",
+        "compaction_removed_bytes": 2555380,
+        "decoded_images_compared": 47686,
+        "all_images_decoded_equal": true,
+        "current_encoded_payloads_equal": true,
+        "glyph_order_text_tile_ids_unchanged": true
+      },
+      "zhs": {
+        "version": 23,
+        "bytes": 79761285,
+        "sha256": "b9bc0a838ebe84de014ac95c732e5855e380a0cf4b42155fd0d088297f1ace06",
+        "compaction_removed_bytes": 2555380,
+        "decoded_images_compared": 47686,
+        "all_images_decoded_equal": true,
+        "current_encoded_payloads_equal": true,
+        "glyph_order_text_tile_ids_unchanged": true
+      }
+    },
+    "split": {
+      "format": "NSC1/NSL1",
+      "stored_bytes": 81543574,
+      "byte_identical_roundtrip": true,
+      "runtime_integrity_checks": false,
+      "files": [
+        {
+          "filename": "nSpire2.common.tns",
+          "bytes": 75196602,
+          "sha256": "a2d3c270a16a9d0f2670547b1569c50c11453b5c21c8e498b61d2a9377975063"
+        },
+        {
+          "filename": "nSpire2.eng.tns",
+          "bytes": 1782129,
+          "sha256": "579b4b87d76a0071811986ea693a25c40375f29c69f9fe3db6e6c89394277174"
+        },
+        {
+          "filename": "nSpire2.zhs.tns",
+          "bytes": 4564843,
+          "sha256": "c79247964c630cf374a2732c85e73d5aa601e80de545bada17ef7de4dba64ba8"
+        }
+      ]
+    },
+    "legacy_locale_indexes": 935,
+    "new_debug_hint_requires_resource_reconversion": false,
+    "decoded_comparison_scope": "Each corrected v23 complete pack was compared with its losslessly compacted counterpart. Equality is not an original-PC or UI5 visual-parity assertion."
+  },
+  "verification": {
+    "github_actions": {
+      "run_id": 40073427331,
+      "url": "https://github.com/maxmixalex/slay-the-nspire-2/actions/runs/40073427331",
+      "verified_commit": "96f7b5c6914762fad998f03ab5da1b4c283ecaa0",
+      "conclusion": "success",
+      "jobs_passed": 3,
+      "jobs_total": 3,
+      "status_evidence": "Root read back all three successful check runs from the accepted runtime commit check-runs endpoint.",
+      "jobs": [
+        {
+          "name": "native",
+          "conclusion": "success",
+          "coverage": [
+            "Complete 77-suite ASan/UBSan run without private assets",
+            "Debug commands, debug UI and preferences with text capability 1 (separate Release debug build)",
+            "Debug menu interaction with text capability 0 (separate Release debug build)"
+          ]
+        },
+        {
+          "name": "conversion",
+          "conclusion": "success",
+          "coverage": [
+            "Public converter and packaging regressions",
+            "Additional animation, command-journal and content-pack regressions",
+            "Python tool compilation"
+          ]
+        },
+        {
+          "name": "portable",
+          "conclusion": "success",
+          "coverage": [
+            "Ordinary ARM calculator launcher",
+            "Ordinary WebAssembly runtime without private resources"
+          ]
+        }
+      ]
+    },
+    "local_release": {
+      "checkpoint": "96f7b5c6914762fad998f03ab5da1b4c283ecaa0",
+      "configuration": "Clang 18 Release, debug commands disabled",
+      "status": "passed",
+      "registered_suites": 77,
+      "passed_suites": 77,
+      "journal": "ui6-native8-ctest-f36d8c3c05a5.json",
+      "source_changed": false
+    },
+    "local_sanitizer": {
+      "earlier_full_run": {
+        "checkpoint": "a59cdc2bc139fcf6be7a99f0655fa8ee4bd1e8ea",
+        "status": "failed",
+        "registered_suites": 77,
+        "passed_suites": 76,
+        "failed_suite": "card_hud_ui_regression",
+        "journal": "ui6-asan6-ctest-98668b331037.json",
+        "failure": "Signed overflow in the late-cycle top-bar gear angle multiplication. The original failed journal is retained."
+      },
+      "stage8_targeted_recheck": {
+        "checkpoint": "96f7b5c6914762fad998f03ab5da1b4c283ecaa0",
+        "configuration": "Clang 18 ASan/UBSan",
+        "status": "passed",
+        "test": "card_hud_ui_regression",
+        "profiles": [
+          {
+            "profile": "synthetic",
+            "checks": 385274,
+            "journal": "ui6-asan8-cards-synthetic-f926492e7833.json"
+          },
+          {
+            "profile": "actual ENG",
+            "checks": 318593,
+            "journal": "ui6-asan8-cards-eng-74b85f054443.json"
+          },
+          {
+            "profile": "actual ZHS",
+            "checks": 329923,
+            "journal": "ui6-asan8-cards-zhs-c082ff03921d.json"
+          }
+        ],
+        "source_changed": false
+      },
+      "scope_limit": "The local stage-8 sanitizer receipt is three targeted HUD profiles, not a complete local 77-suite rerun. The separate GitHub Actions native job supplies complete final-runtime sanitizer coverage. Check counts include pixel assertions and are not counts of distinct gameplay scenarios."
+    },
+    "local_debug_capabilities": {
+      "executed_checkpoint": "16507a5aaf12ccb344be0347408707f9e1c6dd92",
+      "report": "docs/debug-commands-0.17.md",
+      "status": "passed",
+      "text_capability_1": {
+        "ctest_passed": 3,
+        "ctest_total": 3,
+        "ctest_journal": "ui6-debug-stage7-text-tests-7aee44eabf70.json",
+        "actual_languages": [
+          "eng",
+          "zhs"
+        ],
+        "actual_journals": [
+          "ui6-debug-stage7-text-eng-f8d113758d42.json",
+          "ui6-debug-stage7-text-zhs-1b7ebea8a88a.json"
+        ]
+      },
+      "text_capability_0": {
+        "ctest_passed": 1,
+        "ctest_total": 1,
+        "ctest_journal": "ui6-debug-stage7-menu-test-4ac1efcdabf6.json",
+        "actual_languages": [
+          "eng",
+          "zhs"
+        ],
+        "actual_journals": [
+          "ui6-debug-stage7-menu-eng-30b589b72541.json",
+          "ui6-debug-stage7-menu-zhs-462f7aec4e41.json"
+        ],
+        "verified_behavior": "I, command-line clicks and character input cannot enter a false editor; left/right enumeration, up/down selection and Enter room execution work."
+      },
+      "inheritance_boundary": "Stage 8 changes HUD arithmetic only. Debug core, command parsing and capability-gated editor/menu code are unchanged; the final CI native job also reruns both debug capability configurations.",
+      "configuration": "Separate Clang Release builds, text capability 1 and 0; these local debug checks are not sanitizer builds."
+    },
+    "local_portable_builds": {
+      "checkpoint": "96f7b5c6914762fad998f03ab5da1b4c283ecaa0",
+      "status": "passed",
+      "source_changed": false,
+      "journals": {
+        "ordinary_arm": "ui6-arm8-build-bbb646400815.json",
+        "debug_arm": "ui6-arm8-debug-32d14eca1c24.json",
+        "ordinary_wasm": "ui6-wasm8-build-0852ccf0f69e.json",
+        "debug_wasm": "ui6-wasm8-debug-20de2ef6d806.json"
+      },
+      "arm_header_check": {
+        "method": "Independent read-only comparison of Zehn header, ELF allocation sections, decompressed image length and actual file length. Both entry points are zero.",
+        "ordinary": {
+          "file_bytes": 1045914,
+          "allocation_bytes": 16445872,
+          "headroom_to_16MiB_bytes": 331344
+        },
+        "debug": {
+          "file_bytes": 1057244,
+          "allocation_bytes": 16662860,
+          "headroom_to_16MiB_bytes": 114356
+        },
+        "execution_claim": false
+      }
+    },
+    "browser": {
+      "checkpoint": "96f7b5c6914762fad998f03ab5da1b4c283ecaa0",
+      "journal": "ui6-browser8-16ff711d7d64.json",
+      "status": "passed",
+      "browser": "156.0.8078.47",
+      "scope": "Isolated desktop Chromium DOM and Canvas; not physical-calculator performance",
+      "checks": [
+        "fresh English startup, localized DOM and ready Canvas",
+        "ordinary HTML does not expose the developer command API",
+        "Fast Mode survives reload; the real settings toggle reads the restored value",
+        "DOM Confirm starts a run; S stores a nonempty v15 browser save",
+        "O load returns through the real keyboard handler without changing stored save bytes",
+        "reload offers Continue and resumed run saves the same canonical bytes",
+        "Chinese language selection, confirmation, Continue and S/O share the original save",
+        "reload remembers Chinese and the same save",
+        "cancelling the language confirmation preserves the selected language and save",
+        "visible 10-second performance control completes while rendering the card collection",
+        "separate debug HTML exposes catalogs, accepts real F1 text entry, room/act commands and rejects invalid events without autosaving",
+        "no page errors or external resource requests"
+      ],
+      "page_errors": 0,
+      "external_resource_requests": 0,
+      "source_changed": false,
+      "private_report": "ui6-browser-release/browser-acceptance.json",
+      "published_screenshots": false,
+      "note": "The browser performance-control completion is a functional check. Its sample is not substituted for the separate quiet serial performance comparison."
+    },
+    "native_wasm_backends": {
+      "checkpoint": "96f7b5c6914762fad998f03ab5da1b4c283ecaa0",
+      "status": "passed",
+      "report": "docs/validation-ui6-backends-0.17.json",
+      "totals": {
+        "language_scenarios": 64,
+        "exact_rgb565_frames": 2376,
+        "exact_serialized_saves": 106
+      },
+      "scope": "Exact RGB565 frame and serialized-save agreement between this project's native and WASM implementations. This is not original-PC pixel equivalence or a browser-storage test."
+    },
+    "host_performance": {
+      "status": "passed",
+      "runtime_baseline_checkpoint": "03a3ad36a3607899fabc1d92fa986bdbb16c51c9",
+      "runtime_candidate_checkpoint": "96f7b5c6914762fad998f03ab5da1b4c283ecaa0",
+      "shared_driver_checkpoint": "e9d4017629219a28f072fb54bcb0327fb538f121",
+      "reports": [
+        "docs/ui6-card-performance-0.17.md",
+        "docs/validation-ui6-card-performance-0.17.json"
+      ],
+      "accepted_aggregate_journal_suffix": "2419e164180a",
+      "summary": "In the clean serial whole-version comparison, warm merchant inventory is 18.8–19.6% lower per frame and card hover is 23.8–27.8% lower. Room open/setup/first render rises about 12% in the idle fixture, warm merchant ranged reads rise from about 4.0 KB to 5.1 KB per frame, and warmed details remain zero-I/O with modest timing changes in either direction.",
+      "scope": "Whole UI5 versus UI6 card/shop scene cost measured as unpaced host steady-clock intervals through production ranged FILE resource callbacks. These intervals are not process CPU time, displayed FPS, emulator speed, or physical-calculator timing.",
+      "performance_changes_are_not_attributed_to_one_cache": true
+    },
+    "firebird": {
+      "report": "docs/validation-ui6-firebird-0.17.json",
+      "status": "ordinary_passed_debug_interactions_observed",
+      "final_ordinary_journal": "ui6-firebird-fresh-release-6c82cb0fe2d5.json",
+      "final_ordinary_status": "passed",
+      "final_debug_wrapper_status": "timed_out",
+      "note": "Final ordinary runtime booted through OS/Documents on a fresh disposable NAND copy, continued the imported canonical save, restored Fast Mode, saved and exited to the OS, and read back identical save/preference files. The optional final debug runtime separately demonstrated keyboard aim/play, kill-to-loot, shop and reload without autosaving, but its interactive wrapper hit its wall deadline before clean exit. The dedicated report preserves that partial scope and an additional failed Ndless-installer attempt. No physical-device performance claim."
+    }
+  },
+  "retained_failures_and_limits": [
+    {
+      "stage": "2–4",
+      "scope": "Early source and integration gates",
+      "record": "docs/combat-ui6-0.17.md",
+      "detail": "The initial GCC debug build rejection, old reward-oracle assumptions, delayed enemy-replacement geometry, and one-pixel authored-marker rounding failures remain historical failures. Subsequent frozen code and corrected behavior assertions passed their stated gates."
+    },
+    {
+      "stage": "5",
+      "scope": "Full debug native run",
+      "record": "docs/combat-ui6-0.17.md",
+      "detail": "The full run passed 78 cases and left one NotRun because its built file lacked executable permission. Only that file mode was repaired; the logged retry passed. This is not presented as an uninterrupted 79/79 first run."
+    },
+    {
+      "stage": "5 to 6",
+      "scope": "Native/WASM world replay",
+      "record": "docs/validation-ui6-backends-0.17.json",
+      "detail": "Ten deck-icon frames differed after native App reconstruction because static HUD motion survived address/generation reuse. Both App::init overloads now reset the motion; the final stage-8 matrices reran all frames and saves without tolerances."
+    },
+    {
+      "stage": "6 to 8",
+      "scope": "Sanitizer arithmetic",
+      "record": "docs/cards-ui6-0.17.md",
+      "detail": "The full local sanitizer run remains recorded as 76 passed and 1 failed (77 total). Stage 8 uses unsigned bounded gear multiplication, saturates the held-button interpolation before multiplication and reduces full turns before phase conversion. Targeted local actual-pack checks and the independent complete CI sanitizer gate passed."
+    },
+    {
+      "stage": "Initial performance matrix",
+      "scope": "Measurement fixture",
+      "record": "docs/validation-ui6-card-performance-0.17.json",
+      "detail": "The first completed 12-run matrix (acfa5b72dcbd) placed the idle pointer over Burning Blood, obscuring inventory with a tooltip. Its data are excluded. A driver-only checkpoint moved the pointer to a verified empty target and repeated the complete serial matrix for both versions."
+    },
+    {
+      "stage": "7",
+      "scope": "Intermediate ordinary-binary inheritance",
+      "record": "docs/validation-ui6-backends-0.17.json",
+      "detail": "Ordinary stage-7 artifacts matched stage 6 exactly. Stage 8 changes HUD arithmetic, so final stage-8 builds, browser acceptance and complete backend replays supply their own evidence instead of inheriting the older binary hashes."
+    }
+  ],
+  "remaining_ui_work": [
+    "Continuous deck/grid scrolling and a draggable scrollbar thumb; the current 320x240 adapter uses readable ten-card pages.",
+    "Original all-target/ally reticle animations and the deck-count increase pulse.",
+    "Event typewriter and option entry/press timing, and special Ancient/fake-merchant layouts.",
+    "Merchant opening tween, dialogue bubbles and focused-slot hand tracking; direct/forced multi-card removal paths outside the selection presentation bridge.",
+    "Map legend item unfocus scale recovery still switches immediately rather than following the original 500 ms tween.",
+    "Damage-result observation for original overkill values and separately blocked-hit VFX; current numbers follow released HP loss.",
+    "Secondary GPU/power flash and block-break particles, original pickup trails, and exact shader/Spine identity rather than bounded raster adaptations.",
+    "Original random visual scale/hue and unusual viewport-overflow container rescaling.",
+    "Additional original settings and full input remapping beyond the implemented persistent Fast Mode preference.",
+    "Merchant warm resource-read growth and room-initialization cost require further per-layer profiling; host timings do not establish physical-calculator performance."
+  ],
+  "delivered_artifacts": {
+    "metadata_source": "ui6-final-delivery-hashes.json",
+    "count": 3,
+    "files": [
+      {
+        "filename": "Slay-the-Nspire-2-0.17-ui6-bilingual-calculator.zip",
+        "bytes": 78130842,
+        "sha256": "3e8233b307aeba99441a2df0e8cc828dedc3da51753dabf0f5064b690289d439"
+      },
+      {
+        "filename": "Slay-the-Nspire-2-0.17-ui6-bilingual-offline.html",
+        "bytes": 116266208,
+        "sha256": "71868ee1a17ac1ab984bc813bf758205babc688717ff8784f904202d40dcf460"
+      },
+      {
+        "filename": "Slay-the-Nspire-2-0.17-ui6-bilingual-debug-offline.html",
+        "bytes": 116560704,
+        "sha256": "50baaf7828b3c04e8f522de085c9936139560e1a850a058b46b5c7040721ada4"
+      }
+    ],
+    "saved_for_user": true,
+    "public_report_contains_private_storage_ids": false
+  },
+  "publication_boundary": "This public report contains implementation/measurement metadata only. Original PCK/DLL data, decompiled source, artwork/fonts, resource packs, embedded-content HTML, private screenshots and save bytes remain outside the public repository."
+}

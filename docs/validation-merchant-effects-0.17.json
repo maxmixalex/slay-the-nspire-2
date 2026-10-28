@@ -1,0 +1,529 @@
+{
+  "all_journals_closed": true,
+  "budget": {
+    "directory_growth_bytes": 7168,
+    "max_decoded_image_bytes": 4732,
+    "resident_directory_capacity_unchanged": 2097152,
+    "resident_image_pages_unchanged": 748,
+    "stored_art_budget_bytes": 2097152,
+    "stored_art_bytes": 535140
+  },
+  "checkpoint": "06c7fd16e6d4d47dc25b628913ecdeef3a4fe76d",
+  "clips": [
+    {
+      "attachment_resolution": "Selected outline attachment, otherwise default attachment, each with its owning skin deform timeline",
+      "count": 145,
+      "focus_method": "NMerchantButton.RefreshFocus 0x06007d3d; OnUnfocus 0x06007d3a; ready callback 0x0600c31d",
+      "frame_ms": 41,
+      "key": "merchant-focused",
+      "pivot": [
+        -206,
+        -93
+      ],
+      "size": [
+        58,
+        71
+      ],
+      "source_duration_ms": 6000
+    },
+    {
+      "count": 150,
+      "frame_ms": 40,
+      "key": "flames-behind",
+      "pivot": [
+        -7,
+        -25
+      ],
+      "size": [
+        11,
+        9
+      ]
+    },
+    {
+      "count": 150,
+      "frame_ms": 40,
+      "key": "flames-front",
+      "pivot": [
+        -223,
+        -60
+      ],
+      "size": [
+        58,
+        130
+      ]
+    }
+  ],
+  "conversion": {
+    "eng": {
+      "added_art_budget": 2097152,
+      "added_common_art_bytes": 535140,
+      "appended_clips": 3,
+      "appended_images": 445,
+      "auxiliary_count": 1262,
+      "common_art_insertion": 88212912,
+      "common_art_sha256": "d32dbe6fef57c7061031bcc81cf12232c1eff1d8445a3035cbb5ac2f68843abb",
+      "directory_growth_bytes": 7168,
+      "input_bytes": 88663968,
+      "input_sha256": "716860f9a494bb0128148e9958a6e7ac45df02087269834ce27d4d866fbda697",
+      "input_version": 18,
+      "max_decoded_image_bytes": 4732,
+      "output_bytes": 89206276,
+      "output_sha256": "7d5b124d8af605bae9766019bbf6c7a5f14c9ecac464c464244833f08e31f10f",
+      "output_version": 19,
+      "reference": "v0.111.0 / 41cef1ea",
+      "reference_art": {
+        "bone": "left_candle_flame",
+        "frame_ms": 40,
+        "frames": 150,
+        "intentionally_hidden": [
+          "SteppedFireAdd"
+        ],
+        "loop_boundary": "Samples TIME in [0, 6) seconds, then repeats. Bone pose repeats at 6 seconds; shader noise TIME is not intrinsically 6-second-periodic.",
+        "omitted": [
+          "GPU cinder particles",
+          "additive light particles",
+          "Necrobinder flame shaders"
+        ],
+        "sample_window_ms": 6000,
+        "scene_sha256": "391e18cf2544b876c66eb69892a4243cac709280c613a809d346d7407bc9c073",
+        "shader": "shaders/vfx/vfx_stepped_shader_fire_flat.tres",
+        "shader_sha256": "cf5367c03470b4bf9a30401073542b2a2d3d4cec24b7a7f1fb37a5f987ed92a8",
+        "supersample": 4,
+        "texture_sources": {
+          "Distortion1Texture": "images/vfx/fire/triangle_noise_tile.png",
+          "Distortion2Texture": "images/vfx/fire/zigzag_fire_distortion.png",
+          "DistortionMask": "images/vfx/fire/fire_bottom_mask.png",
+          "Noise1Texture": "images/vfx/fire/triangle_noise_tile.png",
+          "Noise2Texture": "images/vfx/fire/basic_fire_noise.png",
+          "NoiseMask": "images/vfx/fire/fire_bottom_mask.png",
+          "TEXTURE": "images/vfx/fire/fire_base_slim.png"
+        }
+      },
+      "resident_cache_growth_bytes": 0,
+      "schema": 1,
+      "unchanged_old_directory_indices": true,
+      "unchanged_old_payload": true,
+      "verified_all_offset_relocations": true,
+      "verified_new_images": 445
+    },
+    "zhs": {
+      "added_art_budget": 2097152,
+      "added_common_art_bytes": 535140,
+      "appended_clips": 3,
+      "appended_images": 445,
+      "auxiliary_count": 1262,
+      "common_art_insertion": 88394192,
+      "common_art_sha256": "d32dbe6fef57c7061031bcc81cf12232c1eff1d8445a3035cbb5ac2f68843abb",
+      "directory_growth_bytes": 7168,
+      "input_bytes": 91439646,
+      "input_sha256": "74279728406d3362993ef82e92c5ee9196bb3d4a84d3ede7bfc9bb081914997b",
+      "input_version": 18,
+      "max_decoded_image_bytes": 4732,
+      "output_bytes": 91981954,
+      "output_sha256": "d5ca11af7fb0a2cf95dd6f2aa534ea58e881eb446d9ba006582a1ee90e6dd850",
+      "output_version": 19,
+      "reference": "v0.111.0 / 41cef1ea",
+      "reference_art": {
+        "bone": "left_candle_flame",
+        "frame_ms": 40,
+        "frames": 150,
+        "intentionally_hidden": [
+          "SteppedFireAdd"
+        ],
+        "loop_boundary": "Samples TIME in [0, 6) seconds, then repeats. Bone pose repeats at 6 seconds; shader noise TIME is not intrinsically 6-second-periodic.",
+        "omitted": [
+          "GPU cinder particles",
+          "additive light particles",
+          "Necrobinder flame shaders"
+        ],
+        "sample_window_ms": 6000,
+        "scene_sha256": "391e18cf2544b876c66eb69892a4243cac709280c613a809d346d7407bc9c073",
+        "shader": "shaders/vfx/vfx_stepped_shader_fire_flat.tres",
+        "shader_sha256": "cf5367c03470b4bf9a30401073542b2a2d3d4cec24b7a7f1fb37a5f987ed92a8",
+        "supersample": 4,
+        "texture_sources": {
+          "Distortion1Texture": "images/vfx/fire/triangle_noise_tile.png",
+          "Distortion2Texture": "images/vfx/fire/zigzag_fire_distortion.png",
+          "DistortionMask": "images/vfx/fire/fire_bottom_mask.png",
+          "Noise1Texture": "images/vfx/fire/triangle_noise_tile.png",
+          "Noise2Texture": "images/vfx/fire/basic_fire_noise.png",
+          "NoiseMask": "images/vfx/fire/fire_bottom_mask.png",
+          "TEXTURE": "images/vfx/fire/fire_base_slim.png"
+        }
+      },
+      "resident_cache_growth_bytes": 0,
+      "schema": 1,
+      "unchanged_old_directory_indices": true,
+      "unchanged_old_payload": true,
+      "verified_all_offset_relocations": true,
+      "verified_new_images": 445
+    }
+  },
+  "evidence_files": {
+    "cache_manifest_sha256": "920c6ec349f226db74ee180b7a1def5d149a396e198bd5ed4472a939ea2bbd25",
+    "split_receipt_sha256": "53d75f9bc4a3c449e4a9355b13f674086e1659a7e5a5962536e262b1e7cf802d"
+  },
+  "failed_attempts_preserved": 1,
+  "journals": [
+    {
+      "checkpoint": "06c7fd16e6d4d47dc25b628913ecdeef3a4fe76d",
+      "ended_at": "2026-10-23T08:41:37.597185+00:00",
+      "journal": "merchant-v19-conversion-97c1d883f7af.json",
+      "journal_sha256": "acf30caa710a87f83946ca9c05392c46cd1236cfbec615ddc5fb79ed0746da0f",
+      "log": "merchant-v19-conversion-97c1d883f7af.log",
+      "log_sha256": "dc34131e7b3997d9136add7000bf41665af5a3838d37d479d55ee7af58eebb56",
+      "returncode": 0,
+      "source_changed": false,
+      "source_sha256": "e4672a246cfd342e891bb2e2017520ee223e97dfc62a11453eb3c2936fbaf6b4",
+      "started_at": "2026-10-23T08:39:59.369920+00:00",
+      "status": "passed"
+    },
+    {
+      "checkpoint": "06c7fd16e6d4d47dc25b628913ecdeef3a4fe76d",
+      "ended_at": "2026-10-23T08:40:00.927344+00:00",
+      "journal": "merchant-v19-converter-unit-b7f978e4e364.json",
+      "journal_sha256": "155a9f489ab95aa75dd7c7702331c9bb3510ea454b574e0859e186275729b7c0",
+      "log": "merchant-v19-converter-unit-b7f978e4e364.log",
+      "log_sha256": "fa97c80fc3eb7334a7712f41052656d9ec705f0053004a58704211e91a7526ad",
+      "returncode": 0,
+      "source_changed": false,
+      "source_sha256": "e4672a246cfd342e891bb2e2017520ee223e97dfc62a11453eb3c2936fbaf6b4",
+      "started_at": "2026-10-23T08:40:00.606664+00:00",
+      "status": "passed"
+    },
+    {
+      "checkpoint": "06c7fd16e6d4d47dc25b628913ecdeef3a4fe76d",
+      "ended_at": "2026-10-23T08:40:27.328248+00:00",
+      "journal": "merchant-v19-split-unit-0819f0bf9758.json",
+      "journal_sha256": "ecdb61a76ccd6bf294ecef4f23b50fca5282c1f18447c0a674a7957fc131e014",
+      "log": "merchant-v19-split-unit-0819f0bf9758.log",
+      "log_sha256": "9020df1a436c4b896b3212de2936b429e25a26b99b416289d69f03d52168180c",
+      "returncode": 0,
+      "source_changed": false,
+      "source_sha256": "e4672a246cfd342e891bb2e2017520ee223e97dfc62a11453eb3c2936fbaf6b4",
+      "started_at": "2026-10-23T08:40:27.003932+00:00",
+      "status": "passed"
+    },
+    {
+      "checkpoint": "06c7fd16e6d4d47dc25b628913ecdeef3a4fe76d",
+      "ended_at": "2026-10-23T08:41:16.016266+00:00",
+      "journal": "merchant-v19-animation-unit-8cb77d8cd0c0.json",
+      "journal_sha256": "309b5a7337f18f72f71f5ce15c75c103bb41e7719f34a1ee08697a0c1d9220e2",
+      "log": "merchant-v19-animation-unit-8cb77d8cd0c0.log",
+      "log_sha256": "5afdb5ffa23680af10d9a19847d803e219f211da4d70e8c474652a9e99771f06",
+      "returncode": 0,
+      "source_changed": false,
+      "source_sha256": "e4672a246cfd342e891bb2e2017520ee223e97dfc62a11453eb3c2936fbaf6b4",
+      "started_at": "2026-10-23T08:41:15.792844+00:00",
+      "status": "passed"
+    },
+    {
+      "checkpoint": "06c7fd16e6d4d47dc25b628913ecdeef3a4fe76d",
+      "ended_at": "2026-10-23T08:41:17.878993+00:00",
+      "journal": "merchant-v19-tiles-python-3ae5048a19e3.json",
+      "journal_sha256": "0aacc0f56e88e75089df99a99fcbc9f71ff3dc42e694aee5ba1b83a57a36760a",
+      "log": "merchant-v19-tiles-python-3ae5048a19e3.log",
+      "log_sha256": "60b5287c06c679bb29f3fec867bdfcc636a366d48eaa2cb48a403821f828a076",
+      "returncode": 0,
+      "source_changed": false,
+      "source_sha256": "e4672a246cfd342e891bb2e2017520ee223e97dfc62a11453eb3c2936fbaf6b4",
+      "started_at": "2026-10-23T08:41:15.799243+00:00",
+      "status": "passed"
+    },
+    {
+      "checkpoint": "06c7fd16e6d4d47dc25b628913ecdeef3a4fe76d",
+      "ended_at": "2026-10-23T08:41:34.562708+00:00",
+      "journal": "merchant-v19-actual-zhs-665b2065ed8b.json",
+      "journal_sha256": "f01f288cc15adf7e1db4b515c7bd59b8aecc529da4164cfd29137247397cd91a",
+      "log": "merchant-v19-actual-zhs-665b2065ed8b.log",
+      "log_sha256": "81397f0b82a129d5de99ee2c311bc01ef7d690e3044fef9f440d2eba19487049",
+      "returncode": 0,
+      "source_changed": false,
+      "source_sha256": "e4672a246cfd342e891bb2e2017520ee223e97dfc62a11453eb3c2936fbaf6b4",
+      "started_at": "2026-10-23T08:41:32.125631+00:00",
+      "status": "passed"
+    },
+    {
+      "checkpoint": "06c7fd16e6d4d47dc25b628913ecdeef3a4fe76d",
+      "ended_at": "2026-10-23T08:41:47.758987+00:00",
+      "journal": "merchant-v19-actual-eng-833026a9bec1.json",
+      "journal_sha256": "bbe114b810eb4d06f2cbe4611c080db71d854d897fe004da8e029496ccbdeb66",
+      "log": "merchant-v19-actual-eng-833026a9bec1.log",
+      "log_sha256": "81397f0b82a129d5de99ee2c311bc01ef7d690e3044fef9f440d2eba19487049",
+      "returncode": 0,
+      "source_changed": false,
+      "source_sha256": "e4672a246cfd342e891bb2e2017520ee223e97dfc62a11453eb3c2936fbaf6b4",
+      "started_at": "2026-10-23T08:41:45.062692+00:00",
+      "status": "passed"
+    },
+    {
+      "checkpoint": "06c7fd16e6d4d47dc25b628913ecdeef3a4fe76d",
+      "ended_at": "2026-10-23T08:42:45.090356+00:00",
+      "journal": "merchant-v19-split-actual-8cf78d0de801.json",
+      "journal_sha256": "4ef304d124475cb805a2500121b68d8f1d0a0fce8f55d63c94835ee05d2d5c58",
+      "log": "merchant-v19-split-actual-8cf78d0de801.log",
+      "log_sha256": "8fc995ea93db3f1f59002773f6ae1c27184b5e6c7389b3a25c04e977a36f0b63",
+      "returncode": 0,
+      "source_changed": false,
+      "source_sha256": "e4672a246cfd342e891bb2e2017520ee223e97dfc62a11453eb3c2936fbaf6b4",
+      "started_at": "2026-10-23T08:42:01.466698+00:00",
+      "status": "passed"
+    },
+    {
+      "checkpoint": "06c7fd16e6d4d47dc25b628913ecdeef3a4fe76d",
+      "ended_at": "2026-10-23T08:46:01.903263+00:00",
+      "journal": "merchant-split-readback-zhs-343596f28de4.json",
+      "journal_sha256": "ba6d51dbcabf4c3bc766613300b8e137c7097dfd8779420cff625af0628fb741",
+      "log": "merchant-split-readback-zhs-343596f28de4.log",
+      "log_sha256": "116d3e60aeb0dcdb5529b8b51d921b5fb18a6f642c7050cb5429b3250b1d70bc",
+      "returncode": 0,
+      "source_changed": false,
+      "source_sha256": "e4672a246cfd342e891bb2e2017520ee223e97dfc62a11453eb3c2936fbaf6b4",
+      "started_at": "2026-10-23T08:46:01.734526+00:00",
+      "status": "passed"
+    },
+    {
+      "checkpoint": "06c7fd16e6d4d47dc25b628913ecdeef3a4fe76d",
+      "ended_at": "2026-10-23T08:46:02.313544+00:00",
+      "journal": "merchant-split-readback-eng-63f1cc2d5a50.json",
+      "journal_sha256": "196a8290fbc055851ca058905afa8ae492fa00c9db6b357de5fa1c4a9ba2f3b8",
+      "log": "merchant-split-readback-eng-63f1cc2d5a50.log",
+      "log_sha256": "a3f8461912cc59bcdfe5dd3a1097cbaad3a78950a6ee109bbf0eec24aaa53f7a",
+      "returncode": 0,
+      "source_changed": false,
+      "source_sha256": "e4672a246cfd342e891bb2e2017520ee223e97dfc62a11453eb3c2936fbaf6b4",
+      "started_at": "2026-10-23T08:46:02.142810+00:00",
+      "status": "passed"
+    },
+    {
+      "checkpoint": "06c7fd16e6d4d47dc25b628913ecdeef3a4fe76d",
+      "ended_at": "2026-10-23T08:44:39.914273+00:00",
+      "journal": "merchant-v19-loop-seams-5ff7b6fb438b.json",
+      "journal_sha256": "d4a01f5277df926ace1b1bc04bfc0cfdb04b31bfc85234fd00b99f9085c0d4e1",
+      "log": "merchant-v19-loop-seams-5ff7b6fb438b.log",
+      "log_sha256": "8bb65ddeb5c51951d815f2d51b222f16b6f0b7600036df839ad5e0d89cebb573",
+      "returncode": 0,
+      "source_changed": false,
+      "source_sha256": "e4672a246cfd342e891bb2e2017520ee223e97dfc62a11453eb3c2936fbaf6b4",
+      "started_at": "2026-10-23T08:44:37.556508+00:00",
+      "status": "passed"
+    },
+    {
+      "checkpoint": "06c7fd16e6d4d47dc25b628913ecdeef3a4fe76d",
+      "ended_at": "2026-10-23T08:47:05.522981+00:00",
+      "journal": "merchant-shader-webgl-b2ef74fd0c6d.json",
+      "journal_sha256": "c5086545d1ff712703579b8ae7dfbde26053391b4e9256010895878d5ee82973",
+      "log": "merchant-shader-webgl-b2ef74fd0c6d.log",
+      "log_sha256": "32b528fdf4505478e6eb286847ffc3254dcaff56360c0f38809644a5bcb26f26",
+      "returncode": 1,
+      "source_changed": false,
+      "source_sha256": "e4672a246cfd342e891bb2e2017520ee223e97dfc62a11453eb3c2936fbaf6b4",
+      "started_at": "2026-10-23T08:47:04.803736+00:00",
+      "status": "failed"
+    },
+    {
+      "checkpoint": "06c7fd16e6d4d47dc25b628913ecdeef3a4fe76d",
+      "ended_at": "2026-10-23T08:47:33.773600+00:00",
+      "journal": "merchant-shader-webgl-local-28cec0d4318c.json",
+      "journal_sha256": "b23e77ebba258cd62bb1d7d60bc9f44072e534a20ee2beb8be6c987fb20bef39",
+      "log": "merchant-shader-webgl-local-28cec0d4318c.log",
+      "log_sha256": "8a8fde4ebe50316e44207ab99264687cbd051cbd66d9285b4654d8d5e80f472f",
+      "returncode": 0,
+      "source_changed": false,
+      "source_sha256": "e4672a246cfd342e891bb2e2017520ee223e97dfc62a11453eb3c2936fbaf6b4",
+      "started_at": "2026-10-23T08:47:30.644468+00:00",
+      "status": "passed"
+    }
+  ],
+  "limitations": [
+    "Finite six-second candle sampling repeats shader TIME; it is not an indefinitely advancing original noise sequence.",
+    "GPU cinders, additive light particles and Necrobinder-specific flame shaders remain unimplemented.",
+    "WebGL2 shader check does not validate Godot framebuffer composition, HDR/color conversion or full scene transforms.",
+    "Failed first shader check was blocked before browser startup by local IPC sandbox permissions; approved local retry ran the same helper successfully.",
+    "This record contains native/converter evidence only; ARM/WASM builds and actual Firebird execution have separate receipts."
+  ],
+  "loop_metrics": {
+    "checkpoint": "06c7fd16e6d4d47dc25b628913ecdeef3a4fe76d",
+    "clips": [
+      {
+        "consecutive_max_pixel_equivalents": 74.56275614188327,
+        "consecutive_mean_pixel_equivalents": 46.47908485576628,
+        "crop": [
+          58,
+          71
+        ],
+        "frames": 145,
+        "max_alpha_changed_pixels_at_seam": 80,
+        "name": "merchant-focused",
+        "seam_over_consecutive_max": 0.5625893216104727,
+        "seam_over_consecutive_mean": 0.9025179933176986,
+        "seam_pixel_equivalents": 41.948210395269214,
+        "stored_aligned_bytes": 470994
+      },
+      {
+        "consecutive_max_pixel_equivalents": 2.2879873096191883,
+        "consecutive_mean_pixel_equivalents": 1.2339524556785741,
+        "crop": [
+          11,
+          9
+        ],
+        "frames": 150,
+        "max_alpha_changed_pixels_at_seam": 5,
+        "name": "flames-behind",
+        "seam_over_consecutive_max": 0.4670209890368352,
+        "seam_over_consecutive_mean": 0.8659475422450303,
+        "seam_pixel_equivalents": 1.068538096242081,
+        "stored_aligned_bytes": 9048
+      },
+      {
+        "consecutive_max_pixel_equivalents": 19.052014497555295,
+        "consecutive_mean_pixel_equivalents": 12.28392740656918,
+        "crop": [
+          58,
+          130
+        ],
+        "frames": 150,
+        "max_alpha_changed_pixels_at_seam": 61,
+        "name": "flames-front",
+        "seam_over_consecutive_max": 0.997736448968291,
+        "seam_over_consecutive_mean": 1.5474602430748388,
+        "seam_pixel_equivalents": 19.008889290483218,
+        "stored_aligned_bytes": 55098
+      }
+    ],
+    "complete": true,
+    "helper_sha256": "3d6966078ecdf4698b2a28664abbf30e5aba16d13fa722d5e13334b6f616d662",
+    "manifest_sha256": "920c6ec349f226db74ee180b7a1def5d149a396e198bd5ed4472a939ea2bbd25",
+    "metric": "sum absolute RGBA premultiplied channel difference / 255; seam versus each consecutive 40/41ms frame",
+    "scope": "Native encoded frames, not an original Godot framebuffer comparison"
+  },
+  "native": {
+    "eng_checks": 1402,
+    "languages": [
+      "eng",
+      "zhs"
+    ],
+    "passed": [
+      "exact version/count profile",
+      "five character shop body targets",
+      "selected skin and pointer departure",
+      "keyboard/pointer agreement at the same phase",
+      "6000ms wrap rather than rounded 5945ms wrap",
+      "real-time clock with Fast enabled",
+      "old v18 fallback",
+      "unchanged canonical save bytes during presentation and shop open/close",
+      "cache capacity",
+      "malformed profile and unknown version rejection"
+    ],
+    "screenshots_visually_inspected": true,
+    "target": "merchant_visual_regression",
+    "zhs_checks": 1402
+  },
+  "passed_journals": 12,
+  "python_tests": {
+    "historical_animation_geometry": 5,
+    "merchant_skin_and_shader": 3,
+    "split_known_versions_and_rejections": 3,
+    "tile_codec_and_converter": 24
+  },
+  "reference": "v0.111.0 / 41cef1ea",
+  "schema": 1,
+  "scope": "Merchant v19 conversion, native UI, direct generated-shader numeric comparison and shared-resource reconstruction. Target Firebird execution is recorded separately; this is not a full original-game framebuffer parity claim.",
+  "shader_graph_comparison": {
+    "browser": "151.0.7922.34",
+    "checkpoint": "06c7fd16e6d4d47dc25b628913ecdeef3a4fe76d",
+    "complete": true,
+    "helper_sha256": {
+      "check-shader-webgl.js": "5b6a62c32cafc449f2620d60b27e584f357fa199578398716048d25eb1140fa2",
+      "check-shader-webgl.py": "585fc9c14a614008ecf5c8f183201ab5a23ced9a0a7d5828290a9af33e12f5f4"
+    },
+    "input_sha256": "a2dccd04411c85ec9025d2be14e180f300a21919eae2d2306facbac9ea9358a6",
+    "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+    "samples": [
+      {
+        "channel_errors_over_4": 0,
+        "max_channel_error_255": 0.4997949485633342,
+        "mean_channel_error_255": 0.02334503091021198,
+        "sample_pixels": 16384,
+        "time_seconds": 0.0
+      },
+      {
+        "channel_errors_over_4": 0,
+        "max_channel_error_255": 0.4992084651970856,
+        "mean_channel_error_255": 0.023392155431685574,
+        "sample_pixels": 16384,
+        "time_seconds": 1.24
+      },
+      {
+        "channel_errors_over_4": 0,
+        "max_channel_error_255": 0.5000924521454806,
+        "mean_channel_error_255": 0.02273862937328458,
+        "sample_pixels": 16384,
+        "time_seconds": 5.96
+      },
+      {
+        "channel_errors_over_4": 0,
+        "max_channel_error_255": 0.5000848045914097,
+        "mean_channel_error_255": 0.02304861388279293,
+        "sample_pixels": 16384,
+        "time_seconds": 6.0
+      }
+    ],
+    "scope": "Original generated fragment graph compiled as WebGL2 with authored uniforms/textures, compared to offline evaluation. Does not validate Godot scene transforms, HDR/color pipeline, particles or its framebuffer.",
+    "source_shader_sha256": "cf5367c03470b4bf9a30401073542b2a2d3d4cec24b7a7f1fb37a5f987ed92a8"
+  },
+  "split": {
+    "byte_identical_roundtrip": true,
+    "common": {
+      "artwork_bytes": 87405123,
+      "artwork_sha256": "93489fb75067ec21566ccf8cc8e69c25d651e0af931cb3a429454222d4d4bdc4",
+      "bytes": 87405187,
+      "file": "nSpire2.common.tns",
+      "sha256": "d40d86f2ebb22d388ca5220603e6335d1aa4b6129b3accca866091e8396ac0d1"
+    },
+    "complete": true,
+    "format": "NSC1/NSL1",
+    "full_runtime_integrity_preserved": true,
+    "languages": {
+      "eng": {
+        "artwork": 87405123,
+        "auxiliary": 1262,
+        "bytes": 1801249,
+        "clips": 1705,
+        "file": "nSpire2.eng.tns",
+        "glyphs": 570,
+        "images": 47628,
+        "original_bytes": 89206276,
+        "original_fnv": 1431973552,
+        "original_sha256": "7d5b124d8af605bae9766019bbf6c7a5f14c9ecac464c464244833f08e31f10f",
+        "prefix": 1350096,
+        "sha256": "e9340ca333a52a0db62df712742facc12985313328e57e84935dfd4cb147a522",
+        "strings": 8192,
+        "suffix": 451057,
+        "version": 19
+      },
+      "zhs": {
+        "artwork": 87405123,
+        "auxiliary": 1262,
+        "bytes": 4576927,
+        "clips": 1705,
+        "file": "nSpire2.zhs.tns",
+        "glyphs": 11900,
+        "images": 47628,
+        "original_bytes": 91981954,
+        "original_fnv": 933601725,
+        "original_sha256": "d5ca11af7fb0a2cf95dd6f2aa534ea58e881eb446d9ba006582a1ee90e6dd850",
+        "prefix": 1531376,
+        "sha256": "494f06dd62a9e862804c3a0425d42d5ba251580bce9cf6eba99a4454b1bd1cfa",
+        "strings": 8192,
+        "suffix": 3045455,
+        "version": 19
+      }
+    },
+    "original_bytes": 181188230,
+    "reference": "v0.111.0 / 41cef1ea",
+    "saved_bytes": 87404867,
+    "schema": 1,
+    "stored_bytes": 93783363
+  }
+}

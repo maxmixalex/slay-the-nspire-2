@@ -1,0 +1,677 @@
+{
+  "schema": 1,
+  "scope": "935 reviewed UI bindings, actual model routes, six exact numeric model fixes and targeted observer/save checks; no private prose",
+  "checkpoint": "9d8cb1fd58d2ea73900449415c925592776a5584",
+  "compiler": "Ubuntu Clang 18.1.3, x86_64, CMake Release",
+  "source_sha256": "fb894dc3249168f39d51a99870c4496ebca9dd875af20784dd5ccf5095c7852c",
+  "runner_sha256": "cadf6c5088708712dec17818eb62ccdb1c0a63cd28d7b6248d9ccc425a10d02e",
+  "raw_metadata_report": {
+    "bytes": 471492,
+    "sha256": "bff83a6efafc6c81edeb261b269b347cf6fe4c6288b57c406098900c43a36ed6",
+    "private_artifact": "ui-template-audit.json"
+  },
+  "source_inputs": {
+    "tests/ui_text_regression.cpp": "1bc191ea17155af63893c43263e06fd07fc7e8d14ed3056c83c899ee21e1a610",
+    "tools/audit_ui_templates.py": "fdaba938c50328cce26aa079036b3dd3e88948b80a4c2ff293d3629e51c217d4",
+    "src/ui_text.inc": "fe01c4383144be0f3b599130dfb0de2ae5044299db9318b533437b2bb2bffe45",
+    "src/world_text.inc": "5d5d3cb02b3fcf6663860260f1a366c6e67898b26ebc01db3a04f52f222608c3",
+    "src/world_status_ui.inc": "9b1b553a9fc50ec8fde5dab2a1627b1c5fbd36f1ccd5abda7147a2be3a295aba",
+    "include/localized_template.hpp": "16b1a076d1be52b21277a6f7ba5aaad7e035cb50a252d3b2c233fe246e10c2fd",
+    "src/canvas.inc": "205f8217420ba0426b5aae877dc7941478677526af8d5c61e5222ecb95d53f13",
+    "CMakeLists.txt": "8e1c2396d819b0bfadfa3f508abd40b5348c95a89a2bbb1bdb8246cc7e075c07",
+    "tests/state_codec_regression.cpp": "28cc74eb26d40df28a47e9d61adc090d13640907306d8336303c8769ed8cab3f",
+    "tests/world_map_travel_ui_regression.cpp": "a56b961b4ca7d06eb27f9b51acc289f788e0735df02890c0ecb0e85420aa2233",
+    "include/core.hpp": "393b430ae95dce7576c80f4fe30a2c8e0a57e64ab621ae0ffcd62ae4f6e9c6f1",
+    "include/ui_core_observer.hpp": "501744d0a44564ba97b314351b9c52857be88653eee5cc31d05baba37be8b827",
+    "include/combat_feedback.hpp": "5588c04990b2878e6851665d45961fba9ef5064aca40d70804c55e637f1cb41b",
+    "src/core_actions.inc": "af102a821972cbc99e5a4da7d56b84663178d157573e26a6adb49f1160ef3e9b",
+    "src/combat_feedback_ui.inc": "751309e250917760e5c3909c222451f03b6a4884d60b991792130e3dc39a11f0",
+    "src/state_codec.inc": "a85455ea9c6d420e00b81630cae8e4d7effbbc0143d7a70f994044b82a46d9f2",
+    "src/world_map_travel.inc": "5e08ef09ffc810c5f004a31cc663e43cf1e2c86899224188d0101151a1716349"
+  },
+  "packs": {
+    "zhs17": {
+      "file": "nSpire2.nsp.tns",
+      "bytes": 81124916,
+      "sha256": "470a8e2a79338a3bd92d7cf9904b5aa1818f5b6a1ce23b849499e951cbab8f43",
+      "version": 17,
+      "language": "zhs",
+      "bindings": 935,
+      "dynamic_bindings": 200,
+      "ui_table_sha256": "04eed5d95d80cc116a91249fbded928d9f35775976623d961af7c424b94a10ad",
+      "field_binding_counts": {
+        "Amount": 31,
+        "ApplierName.StringValue": 2,
+        "BaseCards": 1,
+        "Block": 5,
+        "Card": 1,
+        "CardPlay": 1,
+        "Cards": 8,
+        "CardsLeft": 1,
+        "Damage": 4,
+        "DamageDecrease": 2,
+        "DamageIncrease": 1,
+        "Decrement": 1,
+        "DexterityPower": 2,
+        "Energy": 7,
+        "Gold": 1,
+        "Heal": 4,
+        "Hotkey": 2,
+        "Lightning": 1,
+        "MaxHp": 3,
+        "OnPlayer": 4,
+        "OwnerName": 6,
+        "SelfDamage": 2,
+        "Stars": 1,
+        "StrengthApplied": 1,
+        "StrengthPower": 3,
+        "Summon": 1,
+        "ThornsPower": 1,
+        "Turns": 1,
+        "VigorPower": 1,
+        "VulnerablePower": 1,
+        "actNumber": 1,
+        "ascension": 1,
+        "energyPrefix": 6,
+        "n": 132,
+        "singleStarIcon": 4
+      },
+      "route_binding_counts": {
+        "act": 1,
+        "ascension": 1,
+        "hotkey": 2,
+        "relic": 32,
+        "selection": 13,
+        "status": 151
+      },
+      "unclassified_slots": [],
+      "unsupported_ui_fields": [],
+      "runtime_summary": [
+        {
+          "operation": "live_power_values",
+          "power_models": 6,
+          "independent_instance_pairs": 4,
+          "canonical_fallback_checked": true,
+          "state_bytes_unchanged": true
+        },
+        {
+          "operation": "catalog",
+          "bindings": 935,
+          "dynamic_bindings": 200,
+          "route_calls": 230,
+          "unresolved_bindings": 0
+        },
+        {
+          "operation": "regression",
+          "checks": 34723,
+          "actual_pack": true,
+          "unresolved_bindings": 0,
+          "passed": true
+        }
+      ],
+      "remaining_bindings": []
+    },
+    "eng17": {
+      "file": "nSpire2.nsp.tns",
+      "bytes": 78349238,
+      "sha256": "7cdf55f9a909a6070b968aa8fbaafaebdad12f46e241a5db8451b4aef934ca7b",
+      "version": 17,
+      "language": "eng",
+      "bindings": 935,
+      "dynamic_bindings": 200,
+      "ui_table_sha256": "696ce507fe511265f05345937d65228d61232bbc77b06dad63df6d4dbbc53ab8",
+      "field_binding_counts": {
+        "Amount": 88,
+        "ApplierName.StringValue": 2,
+        "BaseCards": 1,
+        "Block": 5,
+        "Card": 1,
+        "CardPlay": 1,
+        "Cards": 8,
+        "CardsLeft": 1,
+        "Damage": 4,
+        "DamageDecrease": 2,
+        "DamageIncrease": 1,
+        "Decrement": 1,
+        "DexterityPower": 2,
+        "Energy": 7,
+        "Gold": 1,
+        "Heal": 4,
+        "Hotkey": 2,
+        "Lightning": 1,
+        "MaxHp": 3,
+        "OnPlayer": 4,
+        "OwnerName": 6,
+        "SelfDamage": 2,
+        "Stars": 1,
+        "StrengthApplied": 1,
+        "StrengthPower": 3,
+        "Summon": 1,
+        "ThornsPower": 1,
+        "Turns": 1,
+        "VigorPower": 1,
+        "VulnerablePower": 1,
+        "actNumber": 1,
+        "ascension": 1,
+        "energyPrefix": 6,
+        "n": 100,
+        "singleStarIcon": 4
+      },
+      "route_binding_counts": {
+        "act": 1,
+        "ascension": 1,
+        "hotkey": 2,
+        "relic": 32,
+        "selection": 13,
+        "status": 151
+      },
+      "unclassified_slots": [],
+      "unsupported_ui_fields": [],
+      "runtime_summary": [
+        {
+          "operation": "live_power_values",
+          "power_models": 6,
+          "independent_instance_pairs": 4,
+          "canonical_fallback_checked": true,
+          "state_bytes_unchanged": true
+        },
+        {
+          "operation": "catalog",
+          "bindings": 935,
+          "dynamic_bindings": 200,
+          "route_calls": 230,
+          "unresolved_bindings": 0
+        },
+        {
+          "operation": "regression",
+          "checks": 34723,
+          "actual_pack": true,
+          "unresolved_bindings": 0,
+          "passed": true
+        }
+      ],
+      "remaining_bindings": []
+    },
+    "zhs18": {
+      "file": "feedback-zhs.nsp",
+      "bytes": 91439646,
+      "sha256": "74279728406d3362993ef82e92c5ee9196bb3d4a84d3ede7bfc9bb081914997b",
+      "version": 18,
+      "language": "zhs",
+      "bindings": 935,
+      "dynamic_bindings": 200,
+      "ui_table_sha256": "04eed5d95d80cc116a91249fbded928d9f35775976623d961af7c424b94a10ad",
+      "field_binding_counts": {
+        "Amount": 31,
+        "ApplierName.StringValue": 2,
+        "BaseCards": 1,
+        "Block": 5,
+        "Card": 1,
+        "CardPlay": 1,
+        "Cards": 8,
+        "CardsLeft": 1,
+        "Damage": 4,
+        "DamageDecrease": 2,
+        "DamageIncrease": 1,
+        "Decrement": 1,
+        "DexterityPower": 2,
+        "Energy": 7,
+        "Gold": 1,
+        "Heal": 4,
+        "Hotkey": 2,
+        "Lightning": 1,
+        "MaxHp": 3,
+        "OnPlayer": 4,
+        "OwnerName": 6,
+        "SelfDamage": 2,
+        "Stars": 1,
+        "StrengthApplied": 1,
+        "StrengthPower": 3,
+        "Summon": 1,
+        "ThornsPower": 1,
+        "Turns": 1,
+        "VigorPower": 1,
+        "VulnerablePower": 1,
+        "actNumber": 1,
+        "ascension": 1,
+        "energyPrefix": 6,
+        "n": 132,
+        "singleStarIcon": 4
+      },
+      "route_binding_counts": {
+        "act": 1,
+        "ascension": 1,
+        "hotkey": 2,
+        "relic": 32,
+        "selection": 13,
+        "status": 151
+      },
+      "unclassified_slots": [],
+      "unsupported_ui_fields": [],
+      "runtime_summary": [
+        {
+          "operation": "live_power_values",
+          "power_models": 6,
+          "independent_instance_pairs": 4,
+          "canonical_fallback_checked": true,
+          "state_bytes_unchanged": true
+        },
+        {
+          "operation": "catalog",
+          "bindings": 935,
+          "dynamic_bindings": 200,
+          "route_calls": 230,
+          "unresolved_bindings": 0
+        },
+        {
+          "operation": "regression",
+          "checks": 34723,
+          "actual_pack": true,
+          "unresolved_bindings": 0,
+          "passed": true
+        }
+      ],
+      "remaining_bindings": []
+    },
+    "eng18": {
+      "file": "feedback-eng.nsp",
+      "bytes": 88663968,
+      "sha256": "716860f9a494bb0128148e9958a6e7ac45df02087269834ce27d4d866fbda697",
+      "version": 18,
+      "language": "eng",
+      "bindings": 935,
+      "dynamic_bindings": 200,
+      "ui_table_sha256": "696ce507fe511265f05345937d65228d61232bbc77b06dad63df6d4dbbc53ab8",
+      "field_binding_counts": {
+        "Amount": 88,
+        "ApplierName.StringValue": 2,
+        "BaseCards": 1,
+        "Block": 5,
+        "Card": 1,
+        "CardPlay": 1,
+        "Cards": 8,
+        "CardsLeft": 1,
+        "Damage": 4,
+        "DamageDecrease": 2,
+        "DamageIncrease": 1,
+        "Decrement": 1,
+        "DexterityPower": 2,
+        "Energy": 7,
+        "Gold": 1,
+        "Heal": 4,
+        "Hotkey": 2,
+        "Lightning": 1,
+        "MaxHp": 3,
+        "OnPlayer": 4,
+        "OwnerName": 6,
+        "SelfDamage": 2,
+        "Stars": 1,
+        "StrengthApplied": 1,
+        "StrengthPower": 3,
+        "Summon": 1,
+        "ThornsPower": 1,
+        "Turns": 1,
+        "VigorPower": 1,
+        "VulnerablePower": 1,
+        "actNumber": 1,
+        "ascension": 1,
+        "energyPrefix": 6,
+        "n": 100,
+        "singleStarIcon": 4
+      },
+      "route_binding_counts": {
+        "act": 1,
+        "ascension": 1,
+        "hotkey": 2,
+        "relic": 32,
+        "selection": 13,
+        "status": 151
+      },
+      "unclassified_slots": [],
+      "unsupported_ui_fields": [],
+      "runtime_summary": [
+        {
+          "operation": "live_power_values",
+          "power_models": 6,
+          "independent_instance_pairs": 4,
+          "canonical_fallback_checked": true,
+          "state_bytes_unchanged": true
+        },
+        {
+          "operation": "catalog",
+          "bindings": 935,
+          "dynamic_bindings": 200,
+          "route_calls": 230,
+          "unresolved_bindings": 0
+        },
+        {
+          "operation": "regression",
+          "checks": 34723,
+          "actual_pack": true,
+          "unresolved_bindings": 0,
+          "passed": true
+        }
+      ],
+      "remaining_bindings": []
+    }
+  },
+  "journals": [
+    {
+      "journal": "template-stage5-configure-a694c6aa6476.json",
+      "journal_sha256": "ad3c93e4e9ed787ccff95d45ce4a83b666f2076d5b988cae532410d086d6c09b",
+      "checkpoint": "9d8cb1fd58d2ea73900449415c925592776a5584",
+      "status": "passed",
+      "returncode": 0,
+      "source_changed": false,
+      "source_sha256": "fb894dc3249168f39d51a99870c4496ebca9dd875af20784dd5ccf5095c7852c",
+      "log": "template-stage5-configure-a694c6aa6476.log",
+      "log_sha256": "088e3db71fdd635aa9265ef86cf2eb12bee1b96aa3501e5caf5127f49cab4d85",
+      "started_at": "2026-10-23T06:44:36.933244+00:00",
+      "ended_at": "2026-10-23T06:44:38.068988+00:00"
+    },
+    {
+      "journal": "template-stage5-build-d19417f9e4fb.json",
+      "journal_sha256": "5f709ce3b96bbeda01bc1541735520ae20d20bccfd4b5533d9f310b6cf0fae31",
+      "checkpoint": "9d8cb1fd58d2ea73900449415c925592776a5584",
+      "status": "passed",
+      "returncode": 0,
+      "source_changed": false,
+      "source_sha256": "fb894dc3249168f39d51a99870c4496ebca9dd875af20784dd5ccf5095c7852c",
+      "log": "template-stage5-build-d19417f9e4fb.log",
+      "log_sha256": "224f0a0994c2551c8a287c5a1786cedc9f35abddb83a009e2d17caa13abd12b4",
+      "started_at": "2026-10-23T06:44:48.170228+00:00",
+      "ended_at": "2026-10-23T06:45:19.240814+00:00"
+    },
+    {
+      "journal": "template-stage5-four-packs-e362b76d8606.json",
+      "journal_sha256": "62977aa57a4b778334e9557799b7452232757d6c86384d715ea5afcdf985ef4c",
+      "checkpoint": "9d8cb1fd58d2ea73900449415c925592776a5584",
+      "status": "passed",
+      "returncode": 0,
+      "source_changed": false,
+      "source_sha256": "fb894dc3249168f39d51a99870c4496ebca9dd875af20784dd5ccf5095c7852c",
+      "log": "template-stage5-four-packs-e362b76d8606.log",
+      "log_sha256": "615835ffb6d9fe2e2e358a2def416ae486b8c821f5a3368147f62b3b0e815714",
+      "started_at": "2026-10-23T06:45:33.069632+00:00",
+      "ended_at": "2026-10-23T06:45:38.304460+00:00"
+    },
+    {
+      "journal": "template-stage5-readonly-ctest-e834e1e9ee39.json",
+      "journal_sha256": "936265ee61048cc442f365e90de8691fd11e6d4249dbd44290e91cdd4589558d",
+      "checkpoint": "9d8cb1fd58d2ea73900449415c925592776a5584",
+      "status": "failed",
+      "returncode": 8,
+      "source_changed": false,
+      "source_sha256": "fb894dc3249168f39d51a99870c4496ebca9dd875af20784dd5ccf5095c7852c",
+      "log": "template-stage5-readonly-ctest-e834e1e9ee39.log",
+      "log_sha256": "6f4293699fb3aaeee9ad02f185b765b617d4361051eddd4df498f4e5896c5e51",
+      "started_at": "2026-10-23T06:45:33.073794+00:00",
+      "ended_at": "2026-10-23T06:45:33.793001+00:00"
+    },
+    {
+      "journal": "template-stage5-codec-retry-27becc1ad444.json",
+      "journal_sha256": "ddeff5b705d94e2c445a01d97eb633b65881ed052e0679413a90320b1e285aa3",
+      "checkpoint": "9d8cb1fd58d2ea73900449415c925592776a5584",
+      "status": "passed",
+      "returncode": 0,
+      "source_changed": false,
+      "source_sha256": "fb894dc3249168f39d51a99870c4496ebca9dd875af20784dd5ccf5095c7852c",
+      "log": "template-stage5-codec-retry-27becc1ad444.log",
+      "log_sha256": "f020df3b26ba179f866db10d2aea8dbcffff80cf39d5ab3a9172909dfb0d807c",
+      "started_at": "2026-10-23T06:46:01.438850+00:00",
+      "ended_at": "2026-10-23T06:46:01.560316+00:00"
+    }
+  ],
+  "exact_numeric_models_verified": [
+    "CRIMSON_MANTLE_POWER",
+    "INFERNO_POWER",
+    "PANACHE_POWER",
+    "MONOLOGUE_POWER",
+    "THE_BOMB_POWER",
+    "ROLLING_BOULDER_POWER"
+  ],
+  "targeted_readonly_checks": [
+    {
+      "test": "ui_text_regression",
+      "checks": 167,
+      "status": "passed",
+      "journal": "template-stage5-readonly-ctest-e834e1e9ee39.json",
+      "scope": "Six live model values, four independent instance pairs and unchanged canonical save/RNG bytes."
+    },
+    {
+      "test": "world_map_travel_ui_regression",
+      "checks": 1221,
+      "status": "passed",
+      "journal": "template-stage5-readonly-ctest-e834e1e9ee39.json",
+      "scope": "Canonical save/RNG oracle, room entry observer survives reset, and new enemy entry damage feedback."
+    },
+    {
+      "test": "state_codec_regression",
+      "checks": 1261,
+      "status": "passed",
+      "journal": "template-stage5-codec-retry-27becc1ad444.json",
+      "scope": "State is 198112 bytes; immutable save input, reusable workspace, historical save fixtures and atomic failures."
+    }
+  ],
+  "recovered_launch_failure": {
+    "journal": "template-stage5-readonly-ctest-e834e1e9ee39.json",
+    "journal_status": "failed",
+    "returncode": 8,
+    "test": "state_codec_regression",
+    "test_status": "Not Run / permission denied",
+    "cause_observed": "The freshly linked build product had mode 0644; the other two selected tests executed and passed.",
+    "recovery": "Added only the owner execute bit (0644 to 0744), then reran only state_codec_regression.",
+    "build_product_sha256_before_and_after": "84c7752aa6952cc1147e1e8244d932179d6531829178bb69e8ca81038c1776c7",
+    "recovery_journal": "template-stage5-codec-retry-27becc1ad444.json",
+    "recovery_status": "passed",
+    "source_modified": false,
+    "original_failed_journal_preserved": true
+  },
+  "all_requested_test_cases_passed": true,
+  "unresolved_dynamic_bindings": [],
+  "unclassified_dynamic_bindings": [],
+  "pending_next_checkpoint": [],
+  "historical_executions": [
+    {
+      "checkpoint": "6d2b78ac0984b8d814b9761c8d44c8dc408614e7",
+      "scope": "935 reviewed UI bindings, actual model routes and five exact numeric model fixes; no private prose",
+      "compiler": "Ubuntu Clang 18.1.3, x86_64, CMake Release",
+      "source_sha256": "c21a11c21b1f623ceca8443f5130a68978fd3c10668dbe0cc9be70fb395630cf",
+      "runner_sha256": "50ada731f50520eb348648eb0dd3eb8f78c18608da372f7c4641856745ff1c93",
+      "raw_metadata_report": {
+        "bytes": 471492,
+        "sha256": "7ef69e1fa69129e86b44390127a394144608d94a554a8dc8e6786baa52f4bc26",
+        "private_artifact": "ui-template-audit.json"
+      },
+      "source_inputs": {
+        "tests/ui_text_regression.cpp": "09bfe54384b95f1473b29c4d9aa54035fde714916e685d149d014a293e2e0d6f",
+        "tools/audit_ui_templates.py": "fdaba938c50328cce26aa079036b3dd3e88948b80a4c2ff293d3629e51c217d4",
+        "src/ui_text.inc": "fe01c4383144be0f3b599130dfb0de2ae5044299db9318b533437b2bb2bffe45",
+        "src/world_text.inc": "5d5d3cb02b3fcf6663860260f1a366c6e67898b26ebc01db3a04f52f222608c3",
+        "src/world_status_ui.inc": "13960d0e0dc4864351b444e262f0a0ddb86d50f1625cc11edf00ff6da50d831a",
+        "include/localized_template.hpp": "16b1a076d1be52b21277a6f7ba5aaad7e035cb50a252d3b2c233fe246e10c2fd",
+        "src/canvas.inc": "205f8217420ba0426b5aae877dc7941478677526af8d5c61e5222ecb95d53f13"
+      },
+      "journals": [
+        {
+          "journal": "template-configure-2854a2457cec.json",
+          "journal_sha256": "38a6f193603c8e3c1cedcdbb8269b42806e4c0c0bc83507d2439abc0b4332cb9",
+          "checkpoint": "6d2b78ac0984b8d814b9761c8d44c8dc408614e7",
+          "status": "passed",
+          "returncode": 0,
+          "source_changed": false,
+          "source_sha256": "c21a11c21b1f623ceca8443f5130a68978fd3c10668dbe0cc9be70fb395630cf",
+          "log": "template-configure-2854a2457cec.log",
+          "log_sha256": "4b022176d96084f840bd35e69a21f534dd15fe1ccfc6f68d2939eed1e637abdf",
+          "started_at": "2026-10-23T06:35:58.205969+00:00",
+          "ended_at": "2026-10-23T06:35:59.034749+00:00"
+        },
+        {
+          "journal": "template-build-4f4d9c170cb6.json",
+          "journal_sha256": "a363183639973056cc2a943bbe3d0c2c5cd6d6e931d64a33b25117b7caf53ba8",
+          "checkpoint": "6d2b78ac0984b8d814b9761c8d44c8dc408614e7",
+          "status": "passed",
+          "returncode": 0,
+          "source_changed": false,
+          "source_sha256": "c21a11c21b1f623ceca8443f5130a68978fd3c10668dbe0cc9be70fb395630cf",
+          "log": "template-build-4f4d9c170cb6.log",
+          "log_sha256": "66cecc34512200793878ef7a161674ce86ef29d55dd5c8653181ebaa36145123",
+          "started_at": "2026-10-23T06:35:59.254641+00:00",
+          "ended_at": "2026-10-23T06:36:24.616896+00:00"
+        },
+        {
+          "journal": "template-standalone-fee4d9e4a018.json",
+          "journal_sha256": "d2ee928043066a9befd13ea7dd5d64b1bf6ea5691e1dcb2864e319082ca027f0",
+          "checkpoint": "6d2b78ac0984b8d814b9761c8d44c8dc408614e7",
+          "status": "passed",
+          "returncode": 0,
+          "source_changed": false,
+          "source_sha256": "c21a11c21b1f623ceca8443f5130a68978fd3c10668dbe0cc9be70fb395630cf",
+          "log": "template-standalone-fee4d9e4a018.log",
+          "log_sha256": "f0d25b8435a98e8342d84bc90fbfb2b8595205c90f5f03095b473cd31945ba57",
+          "started_at": "2026-10-23T06:36:31.661365+00:00",
+          "ended_at": "2026-10-23T06:36:31.932034+00:00"
+        },
+        {
+          "journal": "template-four-packs-02f3d1e3a596.json",
+          "journal_sha256": "a9c722753b2c4c5910f4750aa335d150c65d8b9c134b8b1b3cbb5f396999e6eb",
+          "checkpoint": "6d2b78ac0984b8d814b9761c8d44c8dc408614e7",
+          "status": "passed",
+          "returncode": 0,
+          "source_changed": false,
+          "source_sha256": "c21a11c21b1f623ceca8443f5130a68978fd3c10668dbe0cc9be70fb395630cf",
+          "log": "template-four-packs-02f3d1e3a596.log",
+          "log_sha256": "615835ffb6d9fe2e2e358a2def416ae486b8c821f5a3368147f62b3b0e815714",
+          "started_at": "2026-10-23T06:36:32.172956+00:00",
+          "ended_at": "2026-10-23T06:36:37.461373+00:00"
+        }
+      ],
+      "exact_numeric_models_verified": [
+        "CRIMSON_MANTLE_POWER",
+        "INFERNO_POWER",
+        "PANACHE_POWER",
+        "MONOLOGUE_POWER",
+        "THE_BOMB_POWER"
+      ],
+      "packs": {
+        "zhs17": {
+          "bytes": 81124916,
+          "sha256": "470a8e2a79338a3bd92d7cf9904b5aa1818f5b6a1ce23b849499e951cbab8f43",
+          "ui_table_sha256": "04eed5d95d80cc116a91249fbded928d9f35775976623d961af7c424b94a10ad",
+          "runtime_summary": [
+            {
+              "operation": "live_power_values",
+              "power_models": 5,
+              "independent_instance_pairs": 3,
+              "canonical_fallback_checked": true,
+              "state_bytes_unchanged": true
+            },
+            {
+              "operation": "catalog",
+              "bindings": 935,
+              "dynamic_bindings": 200,
+              "route_calls": 230,
+              "unresolved_bindings": 0
+            },
+            {
+              "operation": "regression",
+              "checks": 34708,
+              "actual_pack": true,
+              "unresolved_bindings": 0,
+              "passed": true
+            }
+          ],
+          "remaining_bindings": []
+        },
+        "eng17": {
+          "bytes": 78349238,
+          "sha256": "7cdf55f9a909a6070b968aa8fbaafaebdad12f46e241a5db8451b4aef934ca7b",
+          "ui_table_sha256": "696ce507fe511265f05345937d65228d61232bbc77b06dad63df6d4dbbc53ab8",
+          "runtime_summary": [
+            {
+              "operation": "live_power_values",
+              "power_models": 5,
+              "independent_instance_pairs": 3,
+              "canonical_fallback_checked": true,
+              "state_bytes_unchanged": true
+            },
+            {
+              "operation": "catalog",
+              "bindings": 935,
+              "dynamic_bindings": 200,
+              "route_calls": 230,
+              "unresolved_bindings": 0
+            },
+            {
+              "operation": "regression",
+              "checks": 34708,
+              "actual_pack": true,
+              "unresolved_bindings": 0,
+              "passed": true
+            }
+          ],
+          "remaining_bindings": []
+        },
+        "zhs18": {
+          "bytes": 91439646,
+          "sha256": "74279728406d3362993ef82e92c5ee9196bb3d4a84d3ede7bfc9bb081914997b",
+          "ui_table_sha256": "04eed5d95d80cc116a91249fbded928d9f35775976623d961af7c424b94a10ad",
+          "runtime_summary": [
+            {
+              "operation": "live_power_values",
+              "power_models": 5,
+              "independent_instance_pairs": 3,
+              "canonical_fallback_checked": true,
+              "state_bytes_unchanged": true
+            },
+            {
+              "operation": "catalog",
+              "bindings": 935,
+              "dynamic_bindings": 200,
+              "route_calls": 230,
+              "unresolved_bindings": 0
+            },
+            {
+              "operation": "regression",
+              "checks": 34708,
+              "actual_pack": true,
+              "unresolved_bindings": 0,
+              "passed": true
+            }
+          ],
+          "remaining_bindings": []
+        },
+        "eng18": {
+          "bytes": 88663968,
+          "sha256": "716860f9a494bb0128148e9958a6e7ac45df02087269834ce27d4d866fbda697",
+          "ui_table_sha256": "696ce507fe511265f05345937d65228d61232bbc77b06dad63df6d4dbbc53ab8",
+          "runtime_summary": [
+            {
+              "operation": "live_power_values",
+              "power_models": 5,
+              "independent_instance_pairs": 3,
+              "canonical_fallback_checked": true,
+              "state_bytes_unchanged": true
+            },
+            {
+              "operation": "catalog",
+              "bindings": 935,
+              "dynamic_bindings": 200,
+              "route_calls": 230,
+              "unresolved_bindings": 0
+            },
+            {
+              "operation": "regression",
+              "checks": 34708,
+              "actual_pack": true,
+              "unresolved_bindings": 0,
+              "passed": true
+            }
+          ],
+          "remaining_bindings": []
+        }
+      },
+      "superseded_by": "9d8cb1fd58d2ea73900449415c925592776a5584"
+    }
+  ]
+}

@@ -1,0 +1,127 @@
+{
+  "schema": 1,
+  "date": "2026-10-24",
+  "scope": "Ordinary Firebird execution evidence. Final ordinary and optional debug interactions have separate receipts; wrapper completion and observed gameplay are reported separately.",
+  "runtime_checkpoint": "96f7b5c6914762fad998f03ab5da1b4c283ecaa0",
+  "runtime_tree": "579718ea9f6c5c6aaf21dcffbedf802686760da1",
+  "reference": {
+    "version": "v0.111.0",
+    "revision": "41cef1ea"
+  },
+  "launcher_identity": {
+    "ordinary": {
+      "file": "nSpire2.tns",
+      "bytes": 1045914,
+      "sha256": "57da28c5b0f401d2d00dc34f97f5f9191491c972c2992f7643670b34c062cb0c",
+      "ordinary_usb_readback_exact": true
+    },
+    "debug": {
+      "file": "nSpire2-debug.tns",
+      "bytes": 1057244,
+      "sha256": "5969d4cb474d8a71f75be82ff543b6a80e4fd697c9aeaacae854954abfa9e121",
+      "ordinary_usb_readback_exact": true
+    },
+    "matching_resource_record": "docs/validation-ui6-runtime-0.17.json"
+  },
+  "method": {
+    "emulator": "Firebird",
+    "upstream_revision": "b10f3b51a9ab8e27d2703444b5e6bd278d4c5e6e",
+    "controller": "tools/firebird_control.cpp",
+    "ordinary_os_boot": true,
+    "ordinary_documents_launch": true,
+    "ordinary_ndless_installation": true,
+    "ram_injection": false,
+    "snapshot_restore": false,
+    "patched_boot_rom": false,
+    "serial_output": "/dev/null",
+    "nand": "Disposable copies of the owner-provided original NAND. The original NAND is unchanged. Only known old application files were removed from the disposable copy to make room for the test package.",
+    "transfer": "Regular emulator USB put/get operations. A previously verified canonical run save and eight-byte preference file were imported as files for the final compatibility route; no process memory or emulator snapshot was imported.",
+    "screenshots_saves_rom_nand_published": false,
+    "physical_device_execution": false,
+    "physical_device_performance_measurement": false
+  },
+  "final_ordinary_fresh_copy": {
+    "journal": "ui6-firebird-fresh-release-6c82cb0fe2d5.json",
+    "event_log": "fresh-release.jsonl",
+    "status": "passed",
+    "checkpoint": "96f7b5c6914762fad998f03ab5da1b4c283ecaa0",
+    "observed": [
+      "Fresh ordinary OS boot and successful ordinary Ndless installer.",
+      "Final resources and ordinary launcher transferred over USB; launcher read back exactly.",
+      "Documents launch reaches Chinese language chooser and then the title.",
+      "Continue opens the imported Ironclad Neow save with HP 80/80, gold 99 and deck count 10.",
+      "G does not open a developer menu in the ordinary build; Esc opens the actual pause overlay.",
+      "The actual Settings overlay displays restored Fast Mode as checked after a full gear-animation interval.",
+      "Save and Exit returns to the title with Continue available; Exit confirmation returns to the ordinary OS Documents browser.",
+      "Ordinary USB readback after exit matches the original 230112-byte canonical save exactly and preserves the eight-byte Fast Mode preference.",
+      "The controller saves the disposable flash and quits cleanly; the command journal returns 0 with unchanged frozen source."
+    ],
+    "returncode": 0,
+    "source_changed": false,
+    "started_at": "2026-10-24T07:34:15.615401+00:00",
+    "ended_at": "2026-10-24T07:43:38.793177+00:00",
+    "controller_flushed_and_quit": true,
+    "readback": {
+      "canonical_save": {
+        "bytes": 230112,
+        "sha256": "4b69a66fe9276c5f040888100df72d22c78e220970e04ecf303d9099c525b492",
+        "identical_to_imported_stage6_save": true
+      },
+      "preferences": {
+        "bytes": 8,
+        "sha256": "5a9f1dcc439b18f57b02f1268453aced3e3d6a787313036cea49b0a25bb00f79",
+        "format": "NSPF v1",
+        "fast_mode": true,
+        "identical_to_imported_preferences": true
+      }
+    }
+  },
+  "final_debug_observations": {
+    "journal": "ui6-ordinary-debug-final-19839e2b6448.json",
+    "event_log": "ordinary-debug-final.jsonl",
+    "runtime_checkpoint": "96f7b5c6914762fad998f03ab5da1b4c283ecaa0",
+    "wrapper_status": "timed_out",
+    "wrapper_returncode": 124,
+    "wrapper_wall_limit_seconds": 1200,
+    "completed_interactive_session": false,
+    "observed": [
+      "The final optional debug launcher is USB-read back exactly and launched through OS/Documents.",
+      "G opens the fourteen-preset menu with menu-only calculator instructions and no unavailable I text editor.",
+      "The ordinary monster-room preset opens an actual battle with enemy HP 45 and player energy 3/3.",
+      "Keyboard select/aim uses the original curved red targeting textures; the second Confirm plays Strike, reducing enemy HP 45 to 39 and player energy 3 to 2.",
+      "The kill-all preset executes death/reward hooks and reaches the original-styled loot screen with gold 14 and a card reward.",
+      "The shop preset reaches the merchant with corrected atlas orientation; the actual inventory displays items within the rug.",
+      "An ordinary card purchase changes gold 99 to 13 and deck count 10 to 11.",
+      "O reloads the unchanged original Neow save, restoring gold 99 and deck count 10. The debug commands and purchase had not autosaved that original run."
+    ],
+    "capture_label_corrections": [
+      "merchant-inventory-stage8 captured the still-closed shop before its cold frame completed; it is not evidence of the open inventory.",
+      "debug-rest-stage8 actually captured the open merchant inventory after a card purchase. It is not evidence that the rest-room command succeeded."
+    ],
+    "limit": "The wrapper reached its wall deadline after these observations, before ordinary exit and final readback. These observed features do not turn the entire timed-out wrapper into a passed run.",
+    "wrapper_checkpoint": "16507a5aaf12ccb344be0347408707f9e1c6dd92",
+    "uploaded_runtime_checkpoint": "96f7b5c6914762fad998f03ab5da1b4c283ecaa0",
+    "runtime_identity_note": "The interactive wrapper started from the stage-7 source archive. Its unchanged ordinary controller then uploaded the stage-8 debug launcher at simulated 37360 ms and USB-read it back at 38800 ms before the recorded final gameplay. The wrapper source identity and the subsequently executed launcher identity are intentionally reported separately."
+  },
+  "retained_prior_runs": [
+    {
+      "journal": "ui6-ordinary-prepare-77d13a28d139.json",
+      "status": "passed",
+      "runtime_scope": "Earlier stage-4/5/6 progression; final ordinary execution in this session was stage 6, not stage 8.",
+      "observed": "Ordinary boot/install/launch, settings toggle and persistence, actual Save and Exit, relaunch/Continue, normal G exclusion and byte-identical canonical save after Continue. The controller flushed and quit cleanly."
+    },
+    {
+      "journal": "ui6-firebird-release-closeout-257cbd479ddf.json",
+      "status": "failed",
+      "returncode": 1,
+      "failure": "On a reused disposable flash, the ordinary Ndless installer entered the emulator debugger with PC invalid 1178ae80 at simulated 20810 ms. The final game did not execute in that attempt.",
+      "cause": "Undetermined. The earlier wrapper timeout and this later installer failure are retained as distinct outcomes; no causal relationship is asserted."
+    }
+  ],
+  "interpretation": [
+    "Original-game UI sources guide implementation, but these emulator observations are not complete original-PC pixel or timing parity.",
+    "ARM build/allocation checks, native/WASM agreement, browser storage acceptance and host benchmarks retain their separate evidence scopes.",
+    "No emulator elapsed interval is reported as physical-calculator FPS.",
+    "No rest-room success is claimed from the mislabeled debug capture; that room is covered separately by native/WASM/browser regression evidence."
+  ]
+}

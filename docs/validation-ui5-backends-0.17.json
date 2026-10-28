@@ -1,0 +1,325 @@
+{
+  "schema": 1,
+  "date": "2026-10-24",
+  "scope": "Native/WASM backend equivalence using the accepted private language packs; this is not original-PC parity or browser DOM/storage validation",
+  "stage4_runtime_checkpoint": "1ad378862fae54fc8c8b346c2680b5f448e26883",
+  "instrumentation": {
+    "native": [
+      "AddressSanitizer",
+      "UndefinedBehaviorSanitizer"
+    ],
+    "ASAN_OPTIONS": "detect_leaks=0",
+    "host_stack_KiB": 32768,
+    "leak_sanitizer_limitation": "Host LSan cannot run under ptrace; ASan and UBSan remain active."
+  },
+  "packs": {
+    "converter_checkpoint": "1ad378862fae54fc8c8b346c2680b5f448e26883",
+    "eng": {
+      "method": "Keep the original v22 glyph layout",
+      "bytes": 76685257,
+      "sha256": "bb23c56f807db301fcb6c1014cd6a39f92a8cf69d66ffd3d84a9c0d0695a30ea"
+    },
+    "zhs": {
+      "method": "Size-frequency ordering of existing glyph payloads",
+      "bytes": 79467968,
+      "sha256": "cb7ae529b4d61766ccd8cd5a88630ab44657130a442937bf9a36624d879205ac"
+    },
+    "pixel_equality": {
+      "report": "docs/validation-ui5-card-performance-0.17.json",
+      "private_evidence": "stage4-frequency-preliminary.json",
+      "pairs": 18,
+      "all_exact": true,
+      "glyph_pixels_geometry_and_aliases_exact": true,
+      "non_glyph_bytes_exact": true,
+      "driver_checkpoint": "1ad378862fae54fc8c8b346c2680b5f448e26883",
+      "runtime_checkpoint": "55fdd6e703cd921220740f41e1537f864a02b300",
+      "timing_scope": "These pixel/I-O comparisons used the stage 3 runtime; they are not relabeled as stage 4 runtime timing or physical-calculator measurements."
+    },
+    "split": {
+      "journal": "ui5-release-frequency-split-18ad0c739819.json",
+      "byte_identical_roundtrip": true,
+      "stored_bytes": 81249303,
+      "common_sha256": "94cf29f154b834e851c596433e5817d681902704afa800519fa0e0c97867562e",
+      "eng_sha256": "a39f30f94578a39531ebc47276fd2b6736613c109af8f26bad2f0b02b7268cb0",
+      "zhs_sha256": "fbbcf5504f2437895ad6fe0036698b2003897296a58cd2e7a989ec007a3c55bf"
+    }
+  },
+  "world": {
+    "status": "passed",
+    "scenarios_per_language": 23,
+    "frames_per_language": 649,
+    "saves_per_language": 30,
+    "scenarios": [
+      {
+        "name": "world-neow",
+        "frames": 5,
+        "saves": 1
+      },
+      {
+        "name": "world-map",
+        "frames": 96,
+        "saves": 3
+      },
+      {
+        "name": "world-map-pointer",
+        "frames": 79,
+        "saves": 2
+      },
+      {
+        "name": "world-map-fast",
+        "frames": 88,
+        "saves": 2
+      },
+      {
+        "name": "world-native-combat",
+        "frames": 63,
+        "saves": 1
+      },
+      {
+        "name": "world-kaiser",
+        "frames": 57,
+        "saves": 1
+      },
+      {
+        "name": "world-fake-merchant",
+        "frames": 8,
+        "saves": 2
+      },
+      {
+        "name": "world-crystal",
+        "frames": 7,
+        "saves": 1
+      },
+      {
+        "name": "world-colossal",
+        "frames": 15,
+        "saves": 1
+      },
+      {
+        "name": "world-intro-normal",
+        "frames": 28,
+        "saves": 1
+      },
+      {
+        "name": "world-intro-interrupted",
+        "frames": 24,
+        "saves": 1
+      },
+      {
+        "name": "world-intro-top-bar",
+        "frames": 34,
+        "saves": 1
+      },
+      {
+        "name": "world-intro-fast",
+        "frames": 22,
+        "saves": 1
+      },
+      {
+        "name": "world-rest-ironclad",
+        "frames": 12,
+        "saves": 1
+      },
+      {
+        "name": "world-rest-silent",
+        "frames": 12,
+        "saves": 1
+      },
+      {
+        "name": "world-rest-defect",
+        "frames": 12,
+        "saves": 1
+      },
+      {
+        "name": "world-rest-regent",
+        "frames": 12,
+        "saves": 1
+      },
+      {
+        "name": "world-rest-necrobinder",
+        "frames": 12,
+        "saves": 1
+      },
+      {
+        "name": "world-treasure-keyboard",
+        "frames": 9,
+        "saves": 1
+      },
+      {
+        "name": "world-treasure-pointer",
+        "frames": 15,
+        "saves": 1
+      },
+      {
+        "name": "world-treasure-reload",
+        "frames": 11,
+        "saves": 2
+      },
+      {
+        "name": "world-treasure-dolly",
+        "frames": 18,
+        "saves": 2
+      },
+      {
+        "name": "world-treasure-empty",
+        "frames": 10,
+        "saves": 1
+      }
+    ],
+    "runs": [
+      {
+        "language": "eng",
+        "native_journal": "ui5-backend-world-eng-cd59abddaf08.json",
+        "native_phase": "passed before erroneous WASM path in compound command",
+        "wasm_journal": "ui5-backend-world-wasm-eng-1dd40913ec4b.json",
+        "wasm_status": "passed",
+        "manifest_sha256": "6cd32b4f0444f986488ec421f939e8c8ea4963e3e6f44a8bcc3ca1d626be867b"
+      },
+      {
+        "language": "zhs",
+        "native_journal": "ui5-backend-world-zhs-c7f5926184a3.json",
+        "native_phase": "passed before erroneous WASM path in compound command",
+        "wasm_journal": "ui5-backend-world-wasm-zhs-f96228f6b953.json",
+        "wasm_status": "passed",
+        "manifest_sha256": "6cd32b4f0444f986488ec421f939e8c8ea4963e3e6f44a8bcc3ca1d626be867b"
+      }
+    ],
+    "path_correction": "The initial compound commands requested dist/nSpire2.wasm after completing native captures. Correct reruns use build/web/nSpire2.wasm and reuse all successful native frames/saves."
+  },
+  "rooms": {
+    "status": "passed",
+    "planned_scenarios": [
+      "aroma-transform",
+      "aroma-upgrade-silent",
+      "doors-remove",
+      "shop",
+      "ironclad-combat",
+      "silent-combat",
+      "defect-orbs",
+      "regent-stars-forge",
+      "necro-osty-doom"
+    ],
+    "initial_failure_journals": [
+      "ui5-backend-rooms-native-eng-9ce7c23898be.json",
+      "ui5-backend-rooms-native-zhs-6ae9fa647f7a.json"
+    ],
+    "diagnostic_journal": "ui5-backend-rooms-diagnostic-1e666a10c7a9.json",
+    "diagnostic_driver_sha256": "b0b7a88c289b513266783d58077a1e1d564d49336ec783880bde13a9ae8ac21b",
+    "observed": {
+      "scenario": "ironclad-combat",
+      "script_index": 3,
+      "key": 4,
+      "phase": "Combat",
+      "revision_before": 6,
+      "revision_after": 6,
+      "preparation_active": true,
+      "preparation_shown": true,
+      "prepared_images": 0,
+      "pending_images": 90,
+      "busy": 0,
+      "feedback_active": false,
+      "hand_cards": 4,
+      "detail_card": -1
+    },
+    "cause": "The script sent detail/back/play before advancing the existing real-asset preparation screen. This failed the required successful-play revision assertion; it was not accepted as a runtime failure or a completed validation.",
+    "fixture_change": "Retain every original scripted action, successful-play revision check, final turn check and three-save assertion. Record bounded readiness updates in the scenario manifest before inputs. Keep script indices separate from added capture-frame indices so all five characters remain checked.",
+    "runtime_changed_for_fixture": false,
+    "runtime_checkpoint": "1c774c0847ef8e47b2bd23fd3bc6a11635d8e219",
+    "driver_checkpoint": "1c774c0847ef8e47b2bd23fd3bc6a11635d8e219",
+    "source_tree": "9b75a36ccfbea8bf9b0e233a7de4e4c8556041cd",
+    "scenarios_per_language": 9,
+    "frames_per_language": 514,
+    "saves_per_language": 23,
+    "readiness_frames_per_language": 139,
+    "preserved_semantic_assertions": [
+      "Every scripted controlled card advances game revision and remains in Combat",
+      "Each of the five character sequences ends on turn 2 with exactly 3 save callbacks",
+      "Event transform/upgrade/remove sequences reach their post-choice event page",
+      "Shop removal is sold and the shop remains active"
+    ],
+    "scenarios": [
+      {
+        "name": "aroma-transform",
+        "frames": 19,
+        "recorded_readiness_updates": 0,
+        "saves": 2
+      },
+      {
+        "name": "aroma-upgrade-silent",
+        "frames": 16,
+        "recorded_readiness_updates": 0,
+        "saves": 2
+      },
+      {
+        "name": "doors-remove",
+        "frames": 15,
+        "recorded_readiness_updates": 0,
+        "saves": 2
+      },
+      {
+        "name": "shop",
+        "frames": 30,
+        "recorded_readiness_updates": 0,
+        "saves": 2
+      },
+      {
+        "name": "ironclad-combat",
+        "frames": 75,
+        "recorded_readiness_updates": 23,
+        "saves": 3
+      },
+      {
+        "name": "silent-combat",
+        "frames": 69,
+        "recorded_readiness_updates": 17,
+        "saves": 3
+      },
+      {
+        "name": "defect-orbs",
+        "frames": 94,
+        "recorded_readiness_updates": 35,
+        "saves": 3
+      },
+      {
+        "name": "regent-stars-forge",
+        "frames": 114,
+        "recorded_readiness_updates": 48,
+        "saves": 3
+      },
+      {
+        "name": "necro-osty-doom",
+        "frames": 82,
+        "recorded_readiness_updates": 16,
+        "saves": 3
+      }
+    ],
+    "runs": [
+      {
+        "language": "eng",
+        "status": "passed",
+        "native_journal": "ui5-release-eng-rooms-native-232181c9e606.json",
+        "wasm_journal": "ui5-release-eng-rooms-wasm-bbdd3842ff39.json",
+        "source_changed": false,
+        "exact_RGB565_frames": 514,
+        "exact_serialized_saves": 23,
+        "manifest_sha256": "b1f6895e0f0046a2de28599b150857cd74b0997d96f064677bc7d438ce09b2ce"
+      },
+      {
+        "language": "zhs",
+        "status": "passed",
+        "native_journal": "ui5-release-zhs-rooms-native-adca9a569e6a.json",
+        "wasm_journal": "ui5-release-zhs-rooms-wasm-64e1f60580e4.json",
+        "source_changed": false,
+        "exact_RGB565_frames": 514,
+        "exact_serialized_saves": 23,
+        "manifest_sha256": "b1f6895e0f0046a2de28599b150857cd74b0997d96f064677bc7d438ce09b2ce"
+      }
+    ]
+  },
+  "limitations": [
+    "Exact RGB565 and serialized-save agreement compares this project native and WASM implementations; it does not compare the original PC game.",
+    "Full-pack WASM resource callbacks do not test split-resource startup or the HTML browser loader. The independent browser report covers that boundary.",
+    "No physical-calculator frame pacing, cold I/O, touchpad latency or Firebird execution is claimed."
+  ],
+  "identity_note": "The world matrix is the executed stage 4 runtime evidence. The rooms matrix uses final checkpoint binaries and WASM. They are reported separately and are not combined into a claim that every scenario ran at the final checkpoint."
+}

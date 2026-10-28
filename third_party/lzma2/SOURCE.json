@@ -1,0 +1,52 @@
+{
+  "repository": "ip7z/7zip",
+  "commit": "9128b80e3a471108678e2b3ec3c985861c8d7b0f",
+  "files": [
+    {
+      "path": "C/Lzma2Dec.h",
+      "bytes": 3781,
+      "git_blob_sha": "1f5233a728a96d323cb527e09be2548285e09a43",
+      "expected": "1f5233a728a96d323cb527e09be2548285e09a43"
+    },
+    {
+      "path": "C/Lzma2Dec.c",
+      "bytes": 12879,
+      "git_blob_sha": "8bf54e499edf73a88df3a89ac04377201e5127f3",
+      "expected": "8bf54e499edf73a88df3a89ac04377201e5127f3"
+    },
+    {
+      "path": "C/LzmaDec.c",
+      "bytes": 38207,
+      "git_blob_sha": "5bc5094cd57dd0c087f31bf4bfdb24562120dcfc",
+      "expected": "5bc5094cd57dd0c087f31bf4bfdb24562120dcfc"
+    },
+    {
+      "path": "C/LzmaDec.h",
+      "bytes": 7166,
+      "git_blob_sha": "b0ce28fa02a1adc422b7269c4e6d2c2d26fc60b9",
+      "expected": "b0ce28fa02a1adc422b7269c4e6d2c2d26fc60b9"
+    },
+    {
+      "path": "C/7zTypes.h",
+      "bytes": 15876,
+      "git_blob_sha": "af47668055f4aa318d94005a33d199198b7ab775",
+      "expected": "af47668055f4aa318d94005a33d199198b7ab775"
+    },
+    {
+      "path": "C/Precomp.h",
+      "bytes": 3266,
+      "git_blob_sha": "83b720e1150b6c2a93c79719feee2da86325c317",
+      "expected": "83b720e1150b6c2a93c79719feee2da86325c317"
+    },
+    {
+      "path": "C/Compiler.h",
+      "bytes": 10762,
+      "git_blob_sha": "707e46de05c175e6a2ed10c5a1689f975564be15",
+      "expected": "707e46de05c175e6a2ed10c5a1689f975564be15"
+    }
+  ],
+  "tag": "26.04",
+  "license": "Public domain",
+  "license_url": "https://www.7-zip.org/sdk.html",
+  "source_unchanged": true
+}

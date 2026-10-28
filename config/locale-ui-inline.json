@@ -1,0 +1,719 @@
+{
+  "schema": 1,
+  "reference": "v0.111.0 / 41cef1ea",
+  "note": "New port-authored bilingual labels compiled as fallbacks. Never reindex the historical pack binding table.",
+  "bindings": [
+    {
+      "source": "上下选择  左右切换  Enter 执行",
+      "eng": "Up/Down: choose  Left/Right: variant  Enter: run",
+      "debug_commands_only": true
+    },
+    {
+      "source": "  已达成",
+      "eng": "  Complete"
+    },
+    {
+      "source": "  被动/激发",
+      "eng": "  Passive/Evoke"
+    },
+    {
+      "source": " 张",
+      "eng": " cards"
+    },
+    {
+      "source": " 次",
+      "eng": ""
+    },
+    {
+      "source": "Tab / Q：牌组   A / D / F：牌堆",
+      "eng": "Tab / Q: deck   A / D / F: piles"
+    },
+    {
+      "source": "事件房间",
+      "eng": "Event room"
+    },
+    {
+      "source": "全文",
+      "eng": "Read"
+    },
+    {
+      "source": "击杀全部敌人",
+      "eng": "Defeat all enemies"
+    },
+    {
+      "source": "商人房间",
+      "eng": "Merchant room"
+    },
+    {
+      "source": "回复生命",
+      "eng": "Heal"
+    },
+    {
+      "source": "地图",
+      "eng": "Map"
+    },
+    {
+      "source": "增加 1000 金币",
+      "eng": "Gain 1000 gold"
+    },
+    {
+      "source": "宝箱房间",
+      "eng": "Treasure room"
+    },
+    {
+      "source": "幕数",
+      "eng": "Act"
+    },
+    {
+      "source": "开始新局",
+      "eng": "New run"
+    },
+    {
+      "source": "效果结束",
+      "eng": "Wears Off"
+    },
+    {
+      "source": "方向键选择  Enter 执行  I 编辑",
+      "eng": "Arrows: choose  Enter: run  I: type"
+    },
+    {
+      "source": "普通敌人房间",
+      "eng": "Monster room"
+    },
+    {
+      "source": "精英房间",
+      "eng": "Elite room"
+    },
+    {
+      "source": "设为 99 能量",
+      "eng": "Set energy to 99"
+    },
+    {
+      "source": "设置保存失败，请重试",
+      "eng": "Could not save settings."
+    },
+    {
+      "source": "调试指令",
+      "eng": "Developer commands"
+    },
+    {
+      "source": "选牌后 Enter，左右选择目标，Enter 出牌",
+      "eng": "Enter to aim, Left/Right target, Enter to play"
+    },
+    {
+      "source": "首领房间",
+      "eng": "Boss room"
+    },
+    {
+      "source": "{Amount}金币",
+      "eng": "{Amount} Gold"
+    },
+    {
+      "source": "{HP}/{MaxHP}生命    {Gold}金币",
+      "eng": "{HP}/{MaxHP} HP    {Gold} Gold"
+    },
+    {
+      "source": "{Turns}回合",
+      "eng": "{Turns} turns"
+    },
+    {
+      "source": "中文",
+      "eng": "Chinese"
+    },
+    {
+      "source": "剧烈",
+      "eng": "Intense"
+    },
+    {
+      "source": "动作",
+      "eng": "Actions"
+    },
+    {
+      "source": "受伤",
+      "eng": "Hurt"
+    },
+    {
+      "source": "咔咔！",
+      "eng": "Caw caw!"
+    },
+    {
+      "source": "复生",
+      "eng": "Revive"
+    },
+    {
+      "source": "屏幕抖动",
+      "eng": "Screen Shake"
+    },
+    {
+      "source": "恐惧症模式",
+      "eng": "Phobia Mode"
+    },
+    {
+      "source": "恢复默认设置？",
+      "eng": "Restore default settings?"
+    },
+    {
+      "source": "文字特效",
+      "eng": "Text Effects"
+    },
+    {
+      "source": "无",
+      "eng": "Off"
+    },
+    {
+      "source": "无法切换语言。",
+      "eng": "Unable to change language."
+    },
+    {
+      "source": "无法读取语言资源。",
+      "eng": "Unable to read language resources."
+    },
+    {
+      "source": "显示手牌计数",
+      "eng": "Show Hand Card Numbers"
+    },
+    {
+      "source": "查看动作",
+      "eng": "View Actions"
+    },
+    {
+      "source": "查看升级",
+      "eng": "View Upgrades"
+    },
+    {
+      "source": "查看统计",
+      "eng": "View Statistics"
+    },
+    {
+      "source": "格挡",
+      "eng": "Blocked"
+    },
+    {
+      "source": "正常",
+      "eng": "Normal"
+    },
+    {
+      "source": "死亡",
+      "eng": "Death"
+    },
+    {
+      "source": "第{FloorNum}层",
+      "eng": "Floor {FloorNum}"
+    },
+    {
+      "source": "纯键盘模式",
+      "eng": "Keyboard Mode"
+    },
+    {
+      "source": "语言选项",
+      "eng": "Language Options"
+    },
+    {
+      "source": "语言选项（仅可在主菜单调整）",
+      "eng": "Language Options (main menu only)"
+    },
+    {
+      "source": "轻微",
+      "eng": "Subtle"
+    },
+    {
+      "source": "遭遇：{total}\n击杀：{kills}\n死亡：{deaths}\n胜率：{winrate}%",
+      "eng": "Encounters: {total}\nKills: {kills}\nDeaths: {deaths}\nWin rate: {winrate}%"
+    },
+    {
+      "source": "重置",
+      "eng": "Reset"
+    },
+    {
+      "source": "重置设置",
+      "eng": "Reset Settings"
+    },
+    {
+      "source": "Enter 应用  Esc 取消",
+      "eng": "Enter: apply  Esc: cancel"
+    },
+    {
+      "source": "{Id}号存档",
+      "eng": "Profile {Id}"
+    },
+    {
+      "source": "{Id}号存档内的所有数据将被删除。这一操作无法逆转。",
+      "eng": "All data in profile {Id} will be deleted. This cannot be undone."
+    },
+    {
+      "source": "你的感受：",
+      "eng": "How do you feel?"
+    },
+    {
+      "source": "删除存档",
+      "eng": "Delete Profile"
+    },
+    {
+      "source": "制作名单",
+      "eng": "Credits"
+    },
+    {
+      "source": "历史记录保存失败，请重试",
+      "eng": "History could not be saved. Please try again."
+    },
+    {
+      "source": "反馈",
+      "eng": "Feedback"
+    },
+    {
+      "source": "反馈分类：",
+      "eng": "Feedback category:"
+    },
+    {
+      "source": "发送反馈",
+      "eng": "Send Feedback"
+    },
+    {
+      "source": "取消 / 退出",
+      "eng": "Cancel / Back"
+    },
+    {
+      "source": "向上",
+      "eng": "Up"
+    },
+    {
+      "source": "向下",
+      "eng": "Down"
+    },
+    {
+      "source": "向右",
+      "eng": "Right"
+    },
+    {
+      "source": "向左",
+      "eng": "Left"
+    },
+    {
+      "source": "在设置 > 输入中更改按键",
+      "eng": "Change keys in Settings > Input"
+    },
+    {
+      "source": "地图标记已满，请先清空后继续绘制。",
+      "eng": "The map drawing is full. Clear it to continue drawing."
+    },
+    {
+      "source": "存档{Id}",
+      "eng": "Profile {Id}"
+    },
+    {
+      "source": "导出",
+      "eng": "Export"
+    },
+    {
+      "source": "导出失败，草稿已保留。",
+      "eng": "Export failed. Your draft has been kept."
+    },
+    {
+      "source": "将文本报告保存到此设备。",
+      "eng": "Save the text report to this device."
+    },
+    {
+      "source": "恢复默认",
+      "eng": "Reset to Default"
+    },
+    {
+      "source": "打开",
+      "eng": "Open"
+    },
+    {
+      "source": "报告已导出到本地。",
+      "eng": "The report has been exported to this device."
+    },
+    {
+      "source": "指令",
+      "eng": "Command"
+    },
+    {
+      "source": "挑战使用本机 UTC 日期。",
+      "eng": "The challenge uses this device's UTC date."
+    },
+    {
+      "source": "无法开始游戏",
+      "eng": "Unable to start the run"
+    },
+    {
+      "source": "无法更换存档档案，请重试",
+      "eng": "Unable to switch profiles. Please try again."
+    },
+    {
+      "source": "无法更新存档档案，请重试",
+      "eng": "Unable to update the profile. Please try again."
+    },
+    {
+      "source": "是否删除{Id}号存档？",
+      "eng": "Delete profile {Id}?"
+    },
+    {
+      "source": "本地反馈报告",
+      "eng": "Local Feedback Report"
+    },
+    {
+      "source": "查看",
+      "eng": "View"
+    },
+    {
+      "source": "查看地图",
+      "eng": "View Map"
+    },
+    {
+      "source": "查看弃牌堆",
+      "eng": "View Discard Pile"
+    },
+    {
+      "source": "查看战斗",
+      "eng": "View Combat"
+    },
+    {
+      "source": "查看抽牌堆",
+      "eng": "View Draw Pile"
+    },
+    {
+      "source": "查看本局",
+      "eng": "View Run"
+    },
+    {
+      "source": "查看消耗堆 / 下一页",
+      "eng": "View Exhaust Pile / Next Page"
+    },
+    {
+      "source": "查看牌组 / 上一页",
+      "eng": "View Deck / Previous Page"
+    },
+    {
+      "source": "查看详情",
+      "eng": "Inspect"
+    },
+    {
+      "source": "点击编辑",
+      "eng": "Click to edit"
+    },
+    {
+      "source": "献祭",
+      "eng": "Sacrifice"
+    },
+    {
+      "source": "离线时无法连接排行榜。",
+      "eng": "Leaderboards are unavailable offline."
+    },
+    {
+      "source": "空存档",
+      "eng": "Empty Profile"
+    },
+    {
+      "source": "等待输入……",
+      "eng": "Waiting for input..."
+    },
+    {
+      "source": "纯键盘",
+      "eng": "Keyboard-Only"
+    },
+    {
+      "source": "输入不超过8000字的反馈。",
+      "eng": "Enter feedback of up to 8,000 characters."
+    },
+    {
+      "source": "选择",
+      "eng": "Select"
+    },
+    {
+      "source": "选择一个存档进行游玩！",
+      "eng": "Choose a profile to play!"
+    },
+    {
+      "source": "顶部面板",
+      "eng": "Top Bar"
+    },
+    {
+      "source": "鼠标与键盘",
+      "eng": "Mouse + Keyboard"
+    },
+    {
+      "source": "选择卡牌 1",
+      "eng": "Select Card 1"
+    },
+    {
+      "source": "选择卡牌 2",
+      "eng": "Select Card 2"
+    },
+    {
+      "source": "选择卡牌 3",
+      "eng": "Select Card 3"
+    },
+    {
+      "source": "选择卡牌 4",
+      "eng": "Select Card 4"
+    },
+    {
+      "source": "选择卡牌 5",
+      "eng": "Select Card 5"
+    },
+    {
+      "source": "选择卡牌 6",
+      "eng": "Select Card 6"
+    },
+    {
+      "source": "选择卡牌 7",
+      "eng": "Select Card 7"
+    },
+    {
+      "source": "选择卡牌 8",
+      "eng": "Select Card 8"
+    },
+    {
+      "source": "选择卡牌 9",
+      "eng": "Select Card 9"
+    },
+    {
+      "source": "选择卡牌 10",
+      "eng": "Select Card 10"
+    },
+    {
+      "source": "显示计时器",
+      "eng": "Show Run Timer"
+    },
+    {
+      "source": "行动",
+      "eng": "Actions"
+    },
+    {
+      "source": "查看行动",
+      "eng": "View Actions"
+    },
+    {
+      "source": " 上午",
+      "eng": " AM",
+      "note": "Reviewed zh-CN calendar symbol; selected only by the Chinese date formatter."
+    },
+    {
+      "source": " 下午",
+      "eng": " PM",
+      "note": "Reviewed zh-CN calendar symbol; selected only by the Chinese date formatter."
+    },
+    {
+      "source": "， 上午 ",
+      "eng": ", AM ",
+      "note": "Reviewed zh-CN calendar symbol; selected only by the Chinese date formatter."
+    },
+    {
+      "source": "， 下午 ",
+      "eng": ", PM ",
+      "note": "Reviewed zh-CN calendar symbol; selected only by the Chinese date formatter."
+    },
+    {
+      "source": "一月",
+      "eng": "January",
+      "note": "Reviewed zh-CN calendar symbol; selected only by the Chinese date formatter."
+    },
+    {
+      "source": "二月",
+      "eng": "February",
+      "note": "Reviewed zh-CN calendar symbol; selected only by the Chinese date formatter."
+    },
+    {
+      "source": "三月",
+      "eng": "March",
+      "note": "Reviewed zh-CN calendar symbol; selected only by the Chinese date formatter."
+    },
+    {
+      "source": "四月",
+      "eng": "April",
+      "note": "Reviewed zh-CN calendar symbol; selected only by the Chinese date formatter."
+    },
+    {
+      "source": "五月",
+      "eng": "May",
+      "note": "Reviewed zh-CN calendar symbol; selected only by the Chinese date formatter."
+    },
+    {
+      "source": "六月",
+      "eng": "June",
+      "note": "Reviewed zh-CN calendar symbol; selected only by the Chinese date formatter."
+    },
+    {
+      "source": "七月",
+      "eng": "July",
+      "note": "Reviewed zh-CN calendar symbol; selected only by the Chinese date formatter."
+    },
+    {
+      "source": "八月",
+      "eng": "August",
+      "note": "Reviewed zh-CN calendar symbol; selected only by the Chinese date formatter."
+    },
+    {
+      "source": "九月",
+      "eng": "September",
+      "note": "Reviewed zh-CN calendar symbol; selected only by the Chinese date formatter."
+    },
+    {
+      "source": "十月",
+      "eng": "October",
+      "note": "Reviewed zh-CN calendar symbol; selected only by the Chinese date formatter."
+    },
+    {
+      "source": "十一月",
+      "eng": "November",
+      "note": "Reviewed zh-CN calendar symbol; selected only by the Chinese date formatter."
+    },
+    {
+      "source": "十二月",
+      "eng": "December",
+      "note": "Reviewed zh-CN calendar symbol; selected only by the Chinese date formatter."
+    },
+    {
+      "source": "常规",
+      "eng": "General",
+      "note": "Reviewed Settings fallback; original catalog string is preferred when loaded."
+    },
+    {
+      "source": "输入",
+      "eng": "Input",
+      "note": "Reviewed Settings fallback; original catalog string is preferred when loaded."
+    },
+    {
+      "source": "恢复默认设置",
+      "eng": "Reset to Default",
+      "note": "Reviewed Settings fallback; original catalog string is preferred when loaded."
+    },
+    {
+      "source": "星期日",
+      "eng": "Sunday",
+      "note": "Reviewed locale-specific Continue calendar symbol; English dates use their independent pinned format."
+    },
+    {
+      "source": "星期一",
+      "eng": "Monday",
+      "note": "Reviewed locale-specific Continue calendar symbol; English dates use their independent pinned format."
+    },
+    {
+      "source": "星期二",
+      "eng": "Tuesday",
+      "note": "Reviewed locale-specific Continue calendar symbol; English dates use their independent pinned format."
+    },
+    {
+      "source": "星期三",
+      "eng": "Wednesday",
+      "note": "Reviewed locale-specific Continue calendar symbol; English dates use their independent pinned format."
+    },
+    {
+      "source": "星期四",
+      "eng": "Thursday",
+      "note": "Reviewed locale-specific Continue calendar symbol; English dates use their independent pinned format."
+    },
+    {
+      "source": "星期五",
+      "eng": "Friday",
+      "note": "Reviewed locale-specific Continue calendar symbol; English dates use their independent pinned format."
+    },
+    {
+      "source": "星期六",
+      "eng": "Saturday",
+      "note": "Reviewed locale-specific Continue calendar symbol; English dates use their independent pinned format."
+    },
+    {
+      "source": "上午",
+      "eng": "AM",
+      "note": "Reviewed locale-specific Continue calendar symbol; English dates use their independent pinned format."
+    },
+    {
+      "source": "下午",
+      "eng": "PM",
+      "note": "Reviewed locale-specific Continue calendar symbol; English dates use their independent pinned format."
+    },
+    {
+      "source": "月 ",
+      "eng": "month ",
+      "note": "Reviewed locale-specific Continue calendar symbol; English dates use their independent pinned format."
+    },
+    {
+      "source": "长按确认",
+      "eng": "Long Press Confirmations"
+    }
+  ],
+  "direct_bindings": [
+    {
+      "source": "Nspire 移植",
+      "eng": "Nspire port",
+      "paths": [
+        "src/auxiliary_ui.inc"
+      ],
+      "note": "The credits explicitly choose ENG/ZHS/ZHT in the caller."
+    },
+    {
+      "source": "zyf722（基于 Codex）",
+      "eng": "zyf722 (with Codex)",
+      "paths": [
+        "src/auxiliary_ui.inc"
+      ],
+      "note": "Simplified Chinese port credit; other languages are explicit caller branches."
+    },
+    {
+      "source": "zyf722（基於 Codex）",
+      "eng": "zyf722 (with Codex)",
+      "paths": [
+        "src/auxiliary_ui.inc"
+      ],
+      "note": "Traditional Chinese port credit must remain Traditional Chinese."
+    },
+    {
+      "source": "以随机角色开始爬塔之旅。",
+      "eng": "Embark as a randomly chosen character.",
+      "paths": [
+        "src/character_select_ui7.inc"
+      ],
+      "note": "Only used when the original localized Random description is missing."
+    },
+    {
+      "source": "随机",
+      "eng": "Random",
+      "paths": [
+        "src/character_select_ui7.inc"
+      ],
+      "note": "Only used when the original localized Random title is missing."
+    },
+    {
+      "source": "进阶",
+      "eng": "Ascension",
+      "paths": [
+        "src/ui_frontend.inc"
+      ],
+      "note": "Only used when the original localized Continue ascension key is missing."
+    },
+    {
+      "source": "跳过开场Logo动画",
+      "eng": "Skip Intro Logo",
+      "paths": [
+        "src/settings_ui10.inc"
+      ],
+      "note": "Original localized startup setting is preferred; caller supplies explicit English/Chinese fallback."
+    },
+    {
+      "source": "在游戏启动后直接进入主菜单。",
+      "eng": "Go directly to the main menu when the game starts.",
+      "paths": [
+        "src/settings_ui10.inc"
+      ],
+      "note": "Original localized startup setting is preferred; caller supplies explicit English/Chinese fallback."
+    },
+    {
+      "source": "下次启动时跳过开场Logo动画。",
+      "eng": "Intro logo will be skipped.",
+      "paths": [
+        "src/ui_preferences.inc"
+      ],
+      "note": "Original localized startup setting is preferred; caller supplies explicit English/Chinese fallback."
+    },
+    {
+      "source": "下次启动时显示开场Logo动画。",
+      "eng": "Intro logo will be shown.",
+      "paths": [
+        "src/ui_preferences.inc"
+      ],
+      "note": "Original localized startup setting is preferred; caller supplies explicit English/Chinese fallback."
+    }
+  ]
+}

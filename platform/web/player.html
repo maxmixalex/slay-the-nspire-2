@@ -1,0 +1,308 @@
+<!doctype html>
+<html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>nSpire II 0.17</title>
+<style>
+:root{color-scheme:dark}*{box-sizing:border-box}body{margin:0;background:#151a19;color:#ece6d6;font:14px/1.7 system-ui,sans-serif;min-height:100vh;display:grid;place-content:center;padding:20px}main{width:min(960px,calc(100vw - 40px))}h1{font-size:18px;font-weight:500;margin:0 0 12px}small{color:#b5b8ac}canvas{display:block;width:100%;aspect-ratio:4/3;background:#111;image-rendering:pixelated;touch-action:none;cursor:none;box-shadow:0 12px 55px #0008;border:1px solid #5b5542;outline:none}p{margin:12px 0 0;color:#b5b8ac}kbd{font:inherit;color:#e2c992}select,button{background:#343c35;border:1px solid #6c725f;color:#eee9d9;border-radius:4px;padding:5px 10px;cursor:pointer}#error{white-space:pre-wrap;color:#ffb7a6}#actions{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}a{color:inherit}
+</style>
+<main>
+<h1>nSpire II 0.17 <span data-i18n="development">Development build</span> <small data-i18n="campaign">Original three-act expeditions</small></h1>
+<p id="loading" role="status" hidden>正在载入 / Loading…</p>
+<canvas id="screen" width="320" height="240" tabindex="0" data-i18n-aria="screen" aria-label="nSpire II"></canvas>
+<textarea id="text-entry" tabindex="-1" aria-label="Search / 搜索" autocomplete="off" autocapitalize="off" spellcheck="false" style="position:fixed;width:1px;height:1px;padding:0;border:0;opacity:0;pointer-events:none"></textarea>
+<div id="actions">
+<button data-key="2" data-i18n="up">↑</button><button data-key="0" data-i18n="left">←</button><button data-key="1" data-i18n="right">→</button><button data-key="3" data-i18n="down">↓</button><button data-key="4" data-i18n="confirm">Confirm</button><button data-key="6" data-i18n="end_turn">End turn</button><button data-key="7" data-i18n="piles">Card piles</button><button data-key="10" data-i18n="log">L</button><button data-key="12" data-i18n="map">M</button><button data-key="17" data-i18n="compendium">C</button><button data-key="13" data-i18n="potions">P</button><button data-key="14" data-i18n="relics">R</button><button data-key="18" data-i18n="statuses">V</button><button data-key="5" data-i18n="menu">Esc</button>
+</div>
+<p data-i18n="help"></p><p data-i18n="about"></p>
+<details id="diagnostics"><summary data-i18n="performance"></summary><p data-i18n="performance_help"></p><button id="measure" data-i18n="measure" disabled></button><pre id="performance-report" style="white-space:pre-wrap;max-height:280px;overflow:auto"></pre></details><div id="error" role="alert"></div>
+</main>
+<script>
+'use strict';
+__PROFILE_STORAGE__
+__COMMAND_BUTTONS__
+const translations=__LOCALES__;
+let language=null;
+const t=key=>language?translations[language][key]:translations.zhs[key]+' / '+translations.eng[key];
+(async()=>{
+ const canvas=document.getElementById('screen'),ctx=canvas.getContext('2d',{alpha:false});
+ const keyMap={ArrowLeft:0,'4':0,ArrowRight:1,'6':1,ArrowUp:2,'8':2,ArrowDown:3,'2':3,Enter:4,'5':4,Escape:5,' ':6,e:6,E:6,Tab:7,q:7,Q:7,s:8,S:8,o:9,O:9,l:10,L:10,m:12,M:12,p:13,P:13,r:14,R:14,i:15,I:15,c:17,C:17,v:18,V:18,a:19,A:19,d:20,D:20,f:21,F:21};
+ let memory,game,ram,changingLanguage=false;
+ const profileStorage=createProfileStorage(()=>localStorage);let saveProfile=1;
+ try{profileStorage.recover();}catch(error){}
+ const loading=document.getElementById('loading'),measureButton=document.getElementById('measure'),reportView=document.getElementById('performance-report');
+ // The shared artwork occurs once in this object and once in decoded memory.
+ // Only the selected small locale is decoded. Language changes reuse this one
+ // HTML installation and preserve the same save format/key.
+ const packages=__RESOURCE_PACKAGE__;
+ const isSplit=packages.mode==='split',available=isSplit?Object.keys(packages.languages):[packages.language];
+ let preferred=null;try{preferred=localStorage.getItem('nSpire2-language')}catch(e){}
+ const requested=new URLSearchParams(location.hash.slice(1)).get('language');if(available.includes(requested))preferred=requested;
+ const browserLanguage=(navigator.language||'').toLowerCase().startsWith('zh')?'zhs':'eng';
+ language=available.includes(preferred)?preferred:available.includes(browserLanguage)?browserLanguage:available[0];
+ if(!language)throw Error(t('missing_resources'));
+ function applyLocale(){
+  document.documentElement.lang=language==='eng'?'en':'zh-CN';document.title='nSpire II 0.17 '+t('development');
+  document.querySelectorAll('[data-i18n]').forEach(node=>node.innerHTML=t(node.dataset.i18n));
+  document.querySelectorAll('[data-i18n-aria]').forEach(node=>node.setAttribute('aria-label',t(node.dataset.i18nAria)));
+  loading.textContent=t('loading_offline');
+ }
+ applyLocale();
+ const clock=()=>performance.now(),boot=clock();
+ const decode=(s)=>{const binary=atob(s),bytes=new Uint8Array(binary.length);for(let i=0;i<bytes.length;i++)bytes[i]=binary.charCodeAt(i);return bytes;};
+ async function decodeContent(s){
+  if(typeof Uint8Array.fromBase64==='function')return Uint8Array.fromBase64(s);
+  const padding=s.endsWith('==')?2:s.endsWith('=')?1:0,bytes=new Uint8Array(s.length/4*3-padding),chunk=1024*1024;
+  for(let at=0;at<s.length;at+=chunk){const binary=atob(s.slice(at,at+chunk)),offset=at/4*3;for(let i=0;i<binary.length;i++)bytes[offset+i]=binary.charCodeAt(i);
+   if(at%(4*chunk)===0){await new Promise(resolve=>setTimeout(resolve,0));}}
+  return bytes;
+ }
+ const encode=(b)=>{let result='';for(let i=0;i<b.length;i+=4096)result+=String.fromCharCode(...b.subarray(i,i+4096));return btoa(result)};
+ let profiling=false,profileUntil=0,lastPresented=0,lastScene=-1,profile=null;
+ const blank=()=>({count:0,total_ms:0,max_ms:0,over_50ms:0,over_100ms:0,over_250ms:0});
+ function add(stat,ms){stat.count++;stat.total_ms+=ms;stat.max_ms=Math.max(stat.max_ms,ms);if(ms>50)stat.over_50ms++;if(ms>100)stat.over_100ms++;if(ms>250)stat.over_250ms++;}
+ function freshProfile(){return {scope:t('profile_scope'),startup_ms:startupMs,startup_scope:t('profile_startup_scope'),pack_bytes:virtualBytes,resource_storage_bytes:storedBytes,language,started_at:new Date().toISOString(),input:blank(),transition_interval:blank(),scenes:Array.from(['title','character','collection','map','combat','room','overlay','other','combat_preparation'],scene=>({scene,interval:blank(),update:blank(),render:blank(),conversion:blank(),present:blank(),read_calls:0,read_bytes:0,resource_copy_ms:0}))};}
+ const content=isSplit?null:await decodeContent(packages.content);
+ const common=isSplit?await decodeContent(packages.common):null;
+ let localized=isSplit?await decodeContent(packages.languages[language]):null;
+ let storedBytes=isSplit?common.length+localized.length:content.length;
+ let virtualBytes=isSplit&&localized.length>=24?new DataView(localized.buffer,localized.byteOffset,localized.byteLength).getUint32(20,true):storedBytes;
+ loading.textContent=t('loading_resources');await new Promise(resolve=>setTimeout(resolve,0));
+ let ioCalls=0,ioBytes=0,ioTime=0;
+ function memoryBytes(){if(!ram||ram.buffer!==memory.buffer)ram=new Uint8Array(memory.buffer);return ram;}
+ const supportedSaveVersion=()=>game&&game.save_version?game.save_version():15;
+ const result=await WebAssembly.instantiate(decode('__WASM__'),{env:{
+  resource_read:(offset,p,n)=>{const start=profiling?clock():0;try{
+   let bytes=content;
+   if(isSplit){if(offset>=0x20000000&&offset<0x30000000){bytes=localized;offset-=0x20000000;}
+    else if(offset>=0x10000000&&offset<0x20000000){bytes=common;offset-=0x10000000;}else return 0;}
+   const target=memoryBytes();if(!bytes||offset<0||n<0||offset>bytes.length||n>bytes.length-offset||p<0||p>target.length||n>target.length-p)return 0;
+   target.set(bytes.subarray(offset,offset+n),p);if(profiling){ioCalls++;ioBytes+=n;ioTime+=clock()-start;}return 1
+  }catch(e){return 0}},
+  save:(p,n)=>{try{
+   if(n===0)return profileStorage.clearRun(saveProfile,supportedSaveVersion())?1:0;
+   const bytes=memoryBytes().subarray(p,p+n);if(bytes.length<16)return 0;
+   const version=new DataView(bytes.buffer,bytes.byteOffset,bytes.byteLength).getUint32(4,true);
+   return profileStorage.writeRun(saveProfile,encode(bytes),version,supportedSaveVersion())?1:0;
+  }catch(e){return 0}},
+  load:(p,max)=>{try{const s=profileStorage.readRun(saveProfile,supportedSaveVersion());if(!s)return 0;const b=decode(s);if(b.length>max)return 0;memoryBytes().set(b,p);return b.length}catch(e){return 0}}
+ }});
+ game=result.instance.exports;memory=game.memory;
+ // An older WASM has no profile callback. It continues to use the historical
+ // first slot even if this browser has a selector from a newer installation.
+ if(game.set_current_profile){try{saveProfile=profileStorage.selected();}catch(error){}game.set_current_profile(saveProfile);}
+ const entropyWord=new Uint32Array(1);
+ function refreshEntropy(){
+  if(game.set_wall_clock)game.set_wall_clock(Math.floor(Date.now()/1000));
+  if(!game.set_seed_entropy)return;
+  if(globalThis.crypto&&typeof globalThis.crypto.getRandomValues==='function')globalThis.crypto.getRandomValues(entropyWord);
+  else entropyWord[0]=(Date.now()^Math.floor(clock()*1000)^Math.floor(Math.random()*4294967296))>>>0;
+  game.set_seed_entropy(entropyWord[0]);
+ }
+ refreshEntropy();
+ if(game.set_progress){
+  try{const bytes=readProfileProgress(saveProfile);copyProgress(bytes);game.set_progress(bytes.length);}catch(e){game.set_progress(0);}
+ }
+ let initialPreferences=4|(2<<8),initialBindings=null;
+ try{initialPreferences=profileStorage.readPreferences(saveProfile);initialBindings=profileStorage.readPreferencesRecord(saveProfile);}catch(error){}
+ installPreferences(initialPreferences,initialBindings);
+ if(game.set_available_languages)game.set_available_languages(available.reduce((mask,key)=>mask|(key==='eng'?1:2),0));
+ if(!(isSplit?game.start_split(common.length,localized.length,language==='eng'?1:2):game.start(content.length)))throw Error(t('invalid_content'));
+ if(game.resource_language&&game.resource_language()!==(language==='eng'?1:2))throw Error(t('invalid_content'));
+ try{localStorage.setItem('nSpire2-language',language)}catch(e){}
+ const startupMs=clock()-boot;
+ const image=ctx.createImageData(320,240),rgba=new Uint32Array(image.data.buffer),colors=new Uint32Array(65536);
+ const little=new Uint8Array(new Uint32Array([0x01020304]).buffer)[0]===4;
+ for(let p=0;p<65536;p++){const r=Math.round((p>>11)*255/31),g=Math.round(((p>>5)&63)*255/63),b=Math.round((p&31)*255/31);colors[p]=little?(255<<24)|(b<<16)|(g<<8)|r:(r<<24)|(g<<16)|(b<<8)|255;}
+ let pixels=new Uint16Array(memory.buffer,game.framebuffer(),320*240),dirty=true;
+ function scene(){const index=game.performance_scene?game.performance_scene():7;return index>=0&&index<9?index:7;}
+ function recordIo(stats,calls,bytes,time){stats.read_calls+=ioCalls-calls;stats.read_bytes+=ioBytes-bytes;stats.resource_copy_ms+=ioTime-time;}
+ function draw(){
+  const active=profiling,beforeIndex=active?scene():-1,begin=active?clock():0,calls=ioCalls,bytes=ioBytes,io=ioTime;
+  game.draw_frame();const rendered=active?clock():0;
+  const index=active&&(beforeIndex===8||scene()===8)?8:beforeIndex,stats=active?profile.scenes[index]:null;
+  if(pixels.buffer!==memory.buffer)pixels=new Uint16Array(memory.buffer,game.framebuffer(),320*240);
+  for(let i=0;i<pixels.length;i++)rgba[i]=colors[pixels[i]];
+  const converted=active?clock():0;ctx.putImageData(image,0,0);dirty=false;
+  if(active){const end=clock();add(stats.render,rendered-begin);add(stats.conversion,converted-rendered);add(stats.present,end-converted);if(lastPresented)add(lastScene===index?stats.interval:profile.transition_interval,end-lastPresented);lastPresented=end;lastScene=index;recordIo(stats,calls,bytes,io);}
+ }
+ function flushPreferences(){
+  if(!game.preferences_pending||!game.preferences_pending())return true;
+  let ok=1;try{
+   const flags=game.preferences_v2_flags?game.preferences_v2_flags():4|(2<<8)|game.preferences_flags();
+   let record=null;if(game.preferences_buffer){const pointer=game.preferences_buffer();record=memoryBytes().slice(pointer,pointer+game.preferences_length());}
+   ok=profileStorage.writePreferences(saveProfile,flags,record)?1:0;
+  }catch(e){ok=0;}
+  game.preferences_ack(ok);return ok!==0;
+ }
+ function installPreferences(flags,record=null){
+  if(game.set_preferences_v2)game.set_preferences_v2(flags);else if(game.set_preferences)game.set_preferences(flags&1);
+  if(game.set_preferences_v3&&record&&record.length===game.preferences_length()){
+   memoryBytes().set(record,game.preferences_buffer());game.set_preferences_v3(record.length);
+  }
+ }
+ function flushProgress(){
+  if(!game.progress_pending||!game.progress_pending())return true;
+  let ok=1;try{const p=game.progress_buffer(),n=game.progress_length();ok=profileStorage.writeProgress(saveProfile,encode(memoryBytes().subarray(p,p+n)))?1:0;}catch(e){ok=0;}
+  game.progress_ack(ok);return ok!==0;
+ }
+ function readProfileProgress(slot){
+  const stored=profileStorage.readProgress(slot);if(!stored)return new Uint8Array(0);
+  // Malformed optional metadata is discarded by the same rule as the native
+  // decoder. A valid historical run in that profile remains available.
+  try{const bytes=decode(stored);return bytes.length<=game.progress_capacity()?bytes:new Uint8Array(0);}catch(error){return new Uint8Array(0);}
+ }
+ function copyProgress(bytes){if(bytes.length)memoryBytes().set(bytes,game.progress_buffer());}
+ function serviceProfiles(){
+  if(!game.profile_request||!game.profile_info_pending)return;
+  const request=game.profile_request();
+  if(request){
+   const target=request&255,erase=(request&256)!==0;let ok=false;
+   try{
+    if(!flushPreferences())throw Error('Preferences storage is unavailable');
+    if(game.flush_progress()===0||!flushProgress())throw Error('History storage is unavailable');
+    if(erase){
+     ok=profileStorage.deleteProfile(target);
+     if(ok&&target===saveProfile){game.set_progress(0);installPreferences(4|(2<<8));}
+    }else{
+     // Read first. A denied selector write leaves both the live slot and all
+     // stored data untouched; target metadata is copied only after commit.
+     const bytes=readProfileProgress(target),flags=profileStorage.readPreferences(target),record=profileStorage.readPreferencesRecord(target);
+     if(profileStorage.select(target)){saveProfile=target;copyProgress(bytes);game.set_progress(bytes.length);installPreferences(flags,record);ok=true;}
+    }
+   }catch(error){ok=false;}
+   game.profile_ack(ok?1:0,saveProfile);dirty=true;
+  }
+  if(game.profile_info_pending()){
+   // Called only after opening/refreshing Profiles, never a startup scan of
+   // all histories. Reuse one transfer buffer; C++ restores live metadata.
+   if(game.flush_progress()===0||!flushProgress()){game.profile_summaries_done();return;}
+   try{for(let slot=1;slot<=3;slot++){
+    try{const bytes=readProfileProgress(slot);copyProgress(bytes);
+     game.profile_summary_set(slot,bytes.length,profileStorage.readRun(slot,supportedSaveVersion())?1:0);
+    }catch(error){game.profile_summary_set(slot,0,0);}
+   }}
+   finally{game.profile_summaries_done();dirty=true;}
+  }
+ }
+ window.addEventListener('pagehide',()=>{flushPreferences();if(game.flush_progress){game.flush_progress();flushProgress();}});
+ async function serviceLanguage(){
+  if(changingLanguage||!isSplit||!game.language_request)return;
+  const code=game.language_request();if(!code)return;
+  const next=code===1?'eng':'zhs',oldBytes=localized,oldLanguage=language;
+  changingLanguage=true;if(profiling)finishProfile('language_changed');
+  try{
+   if(!available.includes(next))throw Error(t('missing_resources'));
+   // Reuse the decoded common pack and this WebAssembly instance. Only the
+   // locale changes; the application restores the settings screen itself.
+   localized=await decodeContent(packages.languages[next]);
+   if(!game.switch_language_split(common.length,localized.length,code))throw Error(t('invalid_content'));
+   language=next;applyLocale();
+   storedBytes=common.length+localized.length;
+   virtualBytes=new DataView(localized.buffer,localized.byteOffset,localized.byteLength).getUint32(20,true);
+   try{localStorage.setItem('nSpire2-language',language)}catch(e){}
+   if(location.hash.includes('language='))history.replaceState(null,'',location.pathname+location.search);
+   document.getElementById('error').textContent='';
+  }catch(error){
+   localized=oldBytes;language=oldLanguage;
+   const restored=game.switch_language_split(common.length,localized.length,language==='eng'?1:2);
+   document.getElementById('error').textContent=t('invalid_content')+'\n'+error.message;
+   if(!restored)throw error;
+  }finally{changingLanguage=false;dirty=true;previous=clock();nextPaint=previous;canvas.focus();}
+ }
+ const textEntry=document.getElementById('text-entry');let composing=false;
+ function syncTextEntry(){
+  const active=game.text_entry_active()&&!game.closed()&&!changingLanguage;
+  if(active&&document.hasFocus()){
+   const rect=canvas.getBoundingClientRect();textEntry.style.left=(rect.left+rect.width*5/320)+'px';textEntry.style.top=(rect.top+rect.height*16/240)+'px';
+   if(document.activeElement!==textEntry)textEntry.focus({preventScroll:true});
+  }else if(document.activeElement===textEntry){textEntry.value='';composing=false;canvas.focus({preventScroll:true});}
+ }
+ function flushFeedback(){
+  if(!game.feedback_length||!game.feedback_length())return;
+  let ok=false,url=null;
+  try{
+   const bytes=memoryBytes().slice(game.feedback_buffer(),game.feedback_buffer()+game.feedback_length());
+   url=URL.createObjectURL(new Blob([bytes],{type:'text/plain;charset=utf-8'}));
+   const link=document.createElement('a');link.href=url;link.download='nSpire2-feedback.txt';document.body.append(link);link.click();link.remove();ok=true;
+  }catch(error){console.error(error);}
+  finally{if(url)setTimeout(()=>URL.revokeObjectURL(url),1000);game.feedback_ack(ok?1:0);}
+ }
+ function input(action,repaint=true){if(game.closed()||changingLanguage)return;refreshEntropy();const active=profiling,begin=active?clock():0,index=active?scene():0,calls=ioCalls,bytes=ioBytes,time=ioTime;action();flushFeedback();flushPreferences();flushProgress();serviceProfiles();if(active){add(profile.input,clock()-begin);recordIo(profile.scenes[index],calls,bytes,time);}if(repaint)dirty=true;if(game.closed())document.getElementById('error').textContent=t('closed');syncTextEntry();void serviceLanguage().catch(error=>console.error(error));}
+ function key(k){input(()=>game.input(k));}
+ if(game.debug_execute){
+  keyMap.F1=22;keyMap.g=22;keyMap.G=22;
+  const utf8=new TextEncoder(),decoder=new TextDecoder();
+  function readString(pointer){const bytes=memoryBytes();let end=pointer;while(end<bytes.length&&bytes[end])++end;return decoder.decode(bytes.subarray(pointer,end));}
+  globalThis.nSpire2Debug=command=>{
+   const bytes=utf8.encode(String(command)),limit=game.debug_capacity();if(bytes.length>=limit)throw Error('Debug command is too long');
+   const pointer=game.debug_buffer();memoryBytes().set(bytes,pointer);memoryBytes()[pointer+bytes.length]=0;
+   let ok;input(()=>{ok=game.debug_execute()===1;});return {ok,message:readString(game.debug_result())};
+  };
+  globalThis.nSpire2DebugList=kind=>{const type=kind==='encounters'?1:kind==='events'?2:0,rows=[];
+   for(let i=1;i<game.debug_catalog_count(type);++i)rows.push(readString(game.debug_catalog(type,i)));return rows;};
+  const button=document.createElement('button');button.textContent=language==='eng'?'Debug F1':'调试 F1';button.addEventListener('click',()=>{key(22);canvas.focus();});document.getElementById('actions').append(button);
+ }
+ function commitText(text){if(text&&game.text_entry_active())input(()=>{for(const character of text){const code=character.codePointAt(0);if(code>=32||(code===10&&game.feedback_text_active&&game.feedback_text_active()))game.text_input(code);}});}
+ function flushTextEntry(){if(composing)return;const value=textEntry.value;textEntry.value='';commitText(value);}
+ textEntry.addEventListener('compositionstart',()=>{composing=true;});
+ textEntry.addEventListener('compositionend',()=>{composing=false;queueMicrotask(flushTextEntry);});
+ textEntry.addEventListener('input',e=>{if(!e.isComposing)flushTextEntry();});
+ textEntry.addEventListener('paste',e=>{e.preventDefault();commitText(e.clipboardData.getData('text'));});
+ const physicalDown=new Map();
+ function physicalCode(e){
+  const special={ArrowLeft:256,ArrowRight:257,ArrowUp:258,ArrowDown:259,Insert:260,Delete:261,Home:262,End:263,PageUp:264,PageDown:265,
+   Shift:288,Control:289,Alt:290,Meta:291,Enter:13,Escape:27,Tab:9,Backspace:8,' ':32};
+  if(e.key in special)return special[e.key];if(/^F([1-9]|1[0-2])$/.test(e.key))return 271+Number(e.key.slice(1));
+  if(/^Key[A-Z]$/.test(e.code))return e.code.charCodeAt(3);if(/^Digit[0-9]$/.test(e.code))return e.code.charCodeAt(5);
+  if(/^Numpad[0-9]$/.test(e.code))return e.code.charCodeAt(6);
+  const punct={Backquote:96,Minus:45,Equal:61,BracketLeft:91,BracketRight:93,Backslash:92,Semicolon:59,Quote:39,Comma:44,Period:46,Slash:47};
+  if(e.code in punct)return punct[e.code];return e.key.length===1&&e.key.charCodeAt(0)>=32&&e.key.charCodeAt(0)<=126?e.key.toUpperCase().charCodeAt(0):0;
+ }
+ document.addEventListener('keydown',e=>{
+  if(game.text_entry_active()&&!(game.key_binding_listening&&game.key_binding_listening())){
+   if(e.isComposing||composing||e.keyCode===229)return;
+   if(e.ctrlKey||e.altKey||e.metaKey)return;
+   const feedback=game.feedback_text_active&&game.feedback_text_active(),editing={ArrowLeft:-1,ArrowRight:-2,ArrowUp:-3,ArrowDown:-4,Home:-5,End:-6,Delete:127,Tab:9};
+   const code=feedback&&e.key in editing?editing[e.key]:e.key==='Backspace'?8:e.key==='Enter'?13:e.key==='Escape'?27:[...e.key].length===1?e.key.codePointAt(0):0;
+   if(code){e.preventDefault();input(()=>game.text_input(code));}
+   else if(e.key==='Tab'){e.preventDefault();key(3);}
+   else if(e.key.startsWith('Arrow'))e.preventDefault();
+   return;
+  }
+  if(game.physical_key){
+   const code=physicalDown.get(e.code)||physicalCode(e),listening=game.key_binding_listening&&game.key_binding_listening();
+   if(!code||(!listening&&(e.ctrlKey||e.altKey||e.metaKey)&&code<288))return;
+   let handled=false;input(()=>{handled=game.physical_key(code,1)!==0;});
+   if(handled){physicalDown.set(e.code,code);e.preventDefault();}
+  }else if(e.key in keyMap){e.preventDefault();if(!e.repeat)key(keyMap[e.key]);}
+ });
+ document.addEventListener('keyup',e=>{
+  if(game.physical_key){const code=physicalDown.get(e.code);if(code){physicalDown.delete(e.code);input(()=>game.physical_key(code,0));e.preventDefault();}}
+  else if(e.key in keyMap&&game.key_release)input(()=>game.key_release(keyMap[e.key]));
+ });
+ const commandButtons=game.command_key?bindCommandButtons(document.querySelectorAll('[data-key]'),{
+  press:code=>input(()=>game.command_key(code,1)),release:code=>input(()=>game.command_key(code,0)),
+  cancel:()=>input(()=>game.command_keys_cancel()),focus:()=>canvas.focus()
+ }):null;
+ if(!commandButtons)document.querySelectorAll('[data-key]').forEach(b=>b.addEventListener('click',()=>{const code=Number(b.dataset.key);key(code);input(()=>game.key_release(code));canvas.focus();}));
+ function position(e){const r=canvas.getBoundingClientRect();return {x:Math.floor((e.clientX-r.left)*320/r.width),y:Math.floor((e.clientY-r.top)*240/r.height),inside:e.clientX>=r.left&&e.clientX<r.right&&e.clientY>=r.top&&e.clientY<r.bottom};}
+ canvas.addEventListener('pointermove',e=>{const p=position(e);input(()=>game.pointer_move(p.x,p.y),false);});
+ canvas.addEventListener('pointerdown',e=>{e.preventDefault();canvas.focus();if(e.button<0||e.button>2)return;const p=position(e);canvas.setPointerCapture(e.pointerId);input(()=>{game.pointer_move(p.x,p.y);if(e.button===0)game.pointer_button(1);else game.pointer_aux_button(e.button===2?2:3,1);});});
+ canvas.addEventListener('pointerup',e=>{if(e.button<0||e.button>2)return;const p=position(e);input(()=>{if(p.inside){game.pointer_move(p.x,p.y);if(e.button===0)game.pointer_button(0);else game.pointer_aux_button(e.button===2?2:3,0);}else game.pointer_cancel();});if(canvas.hasPointerCapture(e.pointerId))canvas.releasePointerCapture(e.pointerId);});
+ canvas.addEventListener('pointercancel',()=>input(()=>game.pointer_cancel()));
+ canvas.addEventListener('contextmenu',e=>e.preventDefault());
+ canvas.addEventListener('wheel',e=>{e.preventDefault();input(()=>game.pointer_scroll(Math.sign(e.deltaY)));},{passive:false});
+ window.addEventListener('blur',()=>{if(commandButtons)commandButtons.cancel();physicalDown.clear();if(game.physical_keys_cancel)game.physical_keys_cancel();game.pointer_cancel();});
+ function finishProfile(reason){profiling=false;measureButton.disabled=false;profile.resource_total={read_calls:ioCalls,read_bytes:ioBytes,copy_ms:ioTime};profile.finished_reason=reason;profile.finished_at=new Date().toISOString();reportView.textContent=JSON.stringify(profile,null,2);}
+ measureButton.addEventListener('click',()=>{profile=freshProfile();ioCalls=ioBytes=ioTime=0;profiling=true;profileUntil=clock()+10000;lastPresented=0;lastScene=-1;measureButton.disabled=true;reportView.textContent=t('measuring');canvas.focus();});
+ let previous=clock(),nextPaint=previous+1000/30;
+ function loop(now){const elapsed=now-previous;previous=now;if(!document.hidden&&!game.closed()&&!changingLanguage){
+  const active=profiling,t=active?clock():0,index=active?scene():0,calls=ioCalls,bytes=ioBytes,time=ioTime;game.advance(Math.max(0,Math.min(250,Math.round(elapsed))));flushProgress();serviceProfiles();if(active){add(profile.scenes[index].update,clock()-t);recordIo(profile.scenes[index],calls,bytes,time);}
+  // Inputs mark the next presentation dirty. Never render again synchronously
+  // in every pointer/key callback and then duplicate it in the same RAF.
+  if(dirty||now>=nextPaint){draw();if(now>=nextPaint){nextPaint+=1000/30;if(nextPaint<now-1000/30)nextPaint=now+1000/30;}}
+ }if(profiling&&(clock()>=profileUntil||game.closed()))finishProfile(game.closed()?'game_closed':'complete');requestAnimationFrame(loop);}
+ document.addEventListener('visibilitychange',()=>{previous=clock();nextPaint=previous;if(commandButtons)commandButtons.cancel();physicalDown.clear();if(game.physical_keys_cancel)game.physical_keys_cancel();game.pointer_cancel();if(profiling&&document.hidden)finishProfile('tab_hidden');});
+ draw();loading.hidden=true;measureButton.disabled=false;requestAnimationFrame(loop);canvas.focus();
+
+})().catch(e=>{document.getElementById('error').textContent=t('startup_failed')+'\n'+e.message;console.error(e);});
+</script></html>

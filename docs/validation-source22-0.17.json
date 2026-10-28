@@ -1,0 +1,723 @@
+{
+  "schema": 1,
+  "reference": "v0.111.0 / 41cef1ea",
+  "source_checkpoint": "5d177be78c507c9cd4b3c9d38a4600e84a44c02e",
+  "source_tree": "969b01ad83f7fde92e678db4e690236ef0c2e698",
+  "remote_verification": {
+    "files": 509,
+    "changed_files": 12,
+    "verified_ref": true,
+    "all_tree_paths_modes_types_and_blob_hashes_match": true,
+    "all_changed_contents_read_back_and_equal": true,
+    "read_back_utc": "2026-10-21 09:35:26 UTC",
+    "receipt": "source22-remote-receipt.json",
+    "receipt_sha256": "a535cb1dd7c7bd2446f12d89a31d799c8e2eeee72794f64fb6c61e662bd556ed",
+    "archive_bytes": 9625600,
+    "archive_sha256": "9e4039d3788ccf4a2a4bea798934d43202bab2cef79562976d7793994565301a",
+    "archive_hash_independently_rechecked": true
+  },
+  "source_sha256": "1742987f36dc2f9cb37ddf7209922de4d8d692ad2aa315f2205c8f2c65ec893c",
+  "native_build_steps": 147,
+  "formal_runtime_journal_count": 14,
+  "all_formal_runtime_journals_passed": true,
+  "all_formal_runtime_source_fingerprints_equal": true,
+  "source_changed_in_formal_runtime_journals": false,
+  "affected_suites": {
+    "passed": [
+      "compression_regression",
+      "content_regression",
+      "content_tiles_regression",
+      "lzma2_block_regression",
+      "resource_source_regression",
+      "world_map_act_intro_ui_regression",
+      "world_map_travel_ui_regression",
+      "world_map_ui_regression",
+      "world_map_window_ui_regression",
+      "world_text_regression"
+    ],
+    "passed_count": 10,
+    "registered_total": 56,
+    "full_registered_rerun": false,
+    "ctest_total_test_seconds": 37.53,
+    "journal_seconds": 37.820949,
+    "full_baseline": "26a9097521a971b69a4b58494985c6062a24017e",
+    "baseline_registered_suites": 52,
+    "full_baseline_record": "validation-source17-0.17.json",
+    "sanitizers": [
+      "AddressSanitizer",
+      "UndefinedBehaviorSanitizer"
+    ],
+    "asan_options": "detect_leaks=0",
+    "counts_by_suite": {
+      "content_regression": 1553,
+      "resource_source_regression": 4288,
+      "compression_regression": 320058,
+      "lzma2_block_regression": 6400,
+      "world_text_regression": 5592,
+      "content_tiles_regression": 10426953,
+      "world_map_ui_regression": 98402,
+      "world_map_travel_ui_regression": 1221,
+      "world_map_window_ui_regression": 82479,
+      "world_map_act_intro_ui_regression": 47174
+    },
+    "count_scope": "Assertions including fixture construction and boundary loops, not independent game scenes.",
+    "last_test_log": {
+      "name": "LastTest.log",
+      "sha256": "93afd9934cf9ff3032dff29bfb259b2fc3a843dc436427d35cd9199eaee0a7d3",
+      "bytes": 6971
+    }
+  },
+  "release_targets": {
+    "toolchain": "Clang 18.1.3, Release -O2 -DNDEBUG, no sanitizers",
+    "build_steps": 33,
+    "targets": [
+      "resource_content_regression",
+      "resource_open_benchmark",
+      "world_backend_driver",
+      "world_map_act_intro_ui_regression"
+    ],
+    "additional_actual_act_intro_capture_run": false
+  },
+  "build_artifacts": [
+    {
+      "kind": "ARM launcher",
+      "filename": "nSpire2.tns",
+      "bytes": 885386,
+      "sha256": "dc66ed51d08dd22ec3311c4bc9b89d11085c522dcf133f4f23527c45c0253ea9"
+    },
+    {
+      "kind": "WASM runtime",
+      "filename": "nSpire2.wasm",
+      "bytes": 4881267,
+      "sha256": "f34ff415fb999b017ab63b13c30816ebdaea3fca88dab36f69ac109d4f0b4f7b"
+    }
+  ],
+  "arm_allocation_bytes": 14714112,
+  "arm_relocations": 28595,
+  "linked_arm_division_vectors": 5249,
+  "linked_arm_decoder_vectors": 28,
+  "arm_elf_sha256": "be91ca941847cb05d04da39a8134e9530bd7a280259c1e7169beed0ebcaaa376",
+  "linked_arm_scope": "ARM926 instruction-level helper/decoder outputs, callee-saved registers, stack and output guards; no calculator or Firebird execution.",
+  "private_pack": {
+    "bytes": 80846058,
+    "sha256": "407589a297a6e1bf935b6f2a5024ad532efd84423b0374db13c080e6671ba7dd",
+    "format": "NSP2/15",
+    "production_encoder_checkpoint": "3f66da839e056fe291c27ca5e93260b3833bd7de",
+    "unchanged_and_not_reencoded_in_source22": true,
+    "images": 45724,
+    "clips": 1695,
+    "glyphs": 11915,
+    "strings": 6100,
+    "cards": 558,
+    "auxiliary_entries": 1175,
+    "source22_installed_launcher_and_pack_bytes": 81731444,
+    "installed_pair_scope": "Launcher plus unchanged resource pack, before saves, filesystem overhead and other installed software.",
+    "target_installed_bytes": [
+      30000000,
+      40000000
+    ],
+    "target_achieved": false,
+    "physical_device_performance_established": false
+  },
+  "image_cache_change": {
+    "page_bytes": 4096,
+    "pages": 748,
+    "maximum_entries": 90,
+    "pixel_buffer_bytes": 3063808,
+    "previous_pixel_buffer_bytes": 3064768,
+    "pixel_buffer_budget_increased": false,
+    "allocation": "Contiguous first-fit pages with LRU eviction; surviving entries are not moved.",
+    "heap_or_compaction_added": false,
+    "validation_scope": [
+      "Two actual 23-frame loops and two selected original-byte oracles.",
+      "Synthetic exact-key aliases, owner separation, reopen invalidation, failed unpublished reservations, fragmentation and stable surviving views.",
+      "Existing malformed-container, first-touch tile validation and insufficient-directory-workspace fallbacks remain covered."
+    ]
+  },
+  "historical_full_catalog_prerequisite": {
+    "source_checkpoint": "d5738010f2d7ebc6139a2fa181ff87820d344bbb",
+    "record": "validation-source21-0.17.json",
+    "status": "passed",
+    "journal": "source21-resource-content-three-way-68489e2584eb.json",
+    "journal_sha256": "dc9169610ffc9bf3095049f0396a2b646695aa5bf671754d7b8fd45d9ffa0227",
+    "log": "source21-resource-content-three-way-68489e2584eb.log",
+    "log_sha256": "05ef0a5813a740056b4859524c2a33352fd6b2ba7ac576982ecead6ff3c5662d",
+    "seconds": 1551.050913,
+    "checks": 182923958,
+    "image_passes": [
+      {
+        "backend": "new memory / original",
+        "images": 45724,
+        "decoded_bytes": 994105847
+      },
+      {
+        "backend": "new range / original",
+        "images": 45724,
+        "decoded_bytes": 994105847
+      }
+    ],
+    "identical_three_way_ui_frames": 40,
+    "complete_metadata_compared": true,
+    "rerun_in_source22": false,
+    "scope": "Historical source21 complete new-memory and new-range image-byte comparison against the original v14 pack. Codec and pack are unchanged; source22 changes image-cache allocation and is verified by the selected ranges and cache/lifetime suites below."
+  },
+  "actual_selected_resource_equivalence": {
+    "status": "passed",
+    "toolchain": "Clang 18.1.3, Release -O2 -DNDEBUG, no sanitizers",
+    "full_catalog_rerun": false,
+    "selections": [
+      {
+        "first_image": 0,
+        "image_count_per_backend": 3535,
+        "decoded_bytes_per_backend": 44195808,
+        "checks_including_fixture_assertions": 4470173,
+        "journal": "source22-resource-static-selected-5b365d811926.json",
+        "seconds": 27.673091,
+        "backends": [
+          "new NSP2/15 memory",
+          "new NSP2/15 bounded range callbacks"
+        ],
+        "reference_backend": "independent NSP2/14 memory",
+        "complete_metadata_compared": true,
+        "glyphs": 11915,
+        "strings": 6100,
+        "clips": 1695,
+        "cards": 558,
+        "all_compiled_ui_mappings_compared": true,
+        "identical_three_way_ui_frames": 40,
+        "fault_reopen_checks_passed": true
+      },
+      {
+        "first_image": 22954,
+        "image_count_per_backend": 23,
+        "decoded_bytes_per_backend": 1557577,
+        "checks_including_fixture_assertions": 253981,
+        "journal": "source22-resource-clip967-selected-3689b583ef8b.json",
+        "seconds": 59.422078,
+        "backends": [
+          "new NSP2/15 memory",
+          "new NSP2/15 bounded range callbacks"
+        ],
+        "reference_backend": "independent NSP2/14 memory",
+        "complete_metadata_compared": true,
+        "glyphs": 11915,
+        "strings": 6100,
+        "clips": 1695,
+        "cards": 558,
+        "all_compiled_ui_mappings_compared": true,
+        "identical_three_way_ui_frames": 40,
+        "fault_reopen_checks_passed": true
+      }
+    ],
+    "ui_frame_scope": "Both selections replay the same 40 UI frames. This is 40 distinct frames, not 80 different frames.",
+    "distinct_ui_frames": 40,
+    "comparison": "Complete decoded byte vectors, dimensions and format; complete glyph/string/clip/card/UI metadata and RGB565 buffers. Equality is not replaced by hashes.",
+    "owner_eviction_scope": "Synthetic pressure/lifetime suites and three alternating Content owners during the same 40 UI frames.",
+    "reference_pack": {
+      "format": "NSP2/14",
+      "bytes": 231312495,
+      "sha256": "d9adddc61c4f4f61b2ce50ee90960b112d752a694595ffa5f0feb2a6d9b204fb"
+    }
+  },
+  "actual_native_wasm_backend": {
+    "status": "passed",
+    "scenarios": 23,
+    "rgb565_frames": 480,
+    "save_matches": 30,
+    "frame_width": 320,
+    "frame_height": 240,
+    "frame_format": "RGB565",
+    "capture_manifest_sha256": "8dffa05f891f185300a3ef457d2f46405f5580c6a61ddd55a25290d89f26f012",
+    "scenario_counts": [
+      {
+        "name": "world-neow",
+        "rgb565_frames": 5,
+        "save_matches": 1
+      },
+      {
+        "name": "world-map",
+        "rgb565_frames": 46,
+        "save_matches": 3
+      },
+      {
+        "name": "world-map-pointer",
+        "rgb565_frames": 29,
+        "save_matches": 2
+      },
+      {
+        "name": "world-map-fast",
+        "rgb565_frames": 45,
+        "save_matches": 2
+      },
+      {
+        "name": "world-native-combat",
+        "rgb565_frames": 47,
+        "save_matches": 1
+      },
+      {
+        "name": "world-kaiser",
+        "rgb565_frames": 47,
+        "save_matches": 1
+      },
+      {
+        "name": "world-fake-merchant",
+        "rgb565_frames": 8,
+        "save_matches": 2
+      },
+      {
+        "name": "world-crystal",
+        "rgb565_frames": 7,
+        "save_matches": 1
+      },
+      {
+        "name": "world-colossal",
+        "rgb565_frames": 15,
+        "save_matches": 1
+      },
+      {
+        "name": "world-intro-normal",
+        "rgb565_frames": 28,
+        "save_matches": 1
+      },
+      {
+        "name": "world-intro-interrupted",
+        "rgb565_frames": 24,
+        "save_matches": 1
+      },
+      {
+        "name": "world-intro-top-bar",
+        "rgb565_frames": 34,
+        "save_matches": 1
+      },
+      {
+        "name": "world-intro-fast",
+        "rgb565_frames": 22,
+        "save_matches": 1
+      },
+      {
+        "name": "world-rest-ironclad",
+        "rgb565_frames": 12,
+        "save_matches": 1
+      },
+      {
+        "name": "world-rest-silent",
+        "rgb565_frames": 12,
+        "save_matches": 1
+      },
+      {
+        "name": "world-rest-defect",
+        "rgb565_frames": 12,
+        "save_matches": 1
+      },
+      {
+        "name": "world-rest-regent",
+        "rgb565_frames": 12,
+        "save_matches": 1
+      },
+      {
+        "name": "world-rest-necrobinder",
+        "rgb565_frames": 12,
+        "save_matches": 1
+      },
+      {
+        "name": "world-treasure-keyboard",
+        "rgb565_frames": 9,
+        "save_matches": 1
+      },
+      {
+        "name": "world-treasure-pointer",
+        "rgb565_frames": 15,
+        "save_matches": 1
+      },
+      {
+        "name": "world-treasure-reload",
+        "rgb565_frames": 11,
+        "save_matches": 2
+      },
+      {
+        "name": "world-treasure-dolly",
+        "rgb565_frames": 18,
+        "save_matches": 2
+      },
+      {
+        "name": "world-treasure-empty",
+        "rgb565_frames": 10,
+        "save_matches": 1
+      }
+    ],
+    "adapter_scope": "native direct-content App vs compiled WASM bounded resource callbacks; browser DOM/localStorage not exercised",
+    "fresh_source22_native_captures": true,
+    "browser_dom_exercised": false,
+    "persistent_localstorage_exercised": false,
+    "all_catalog_images_separately_executed_in_wasm": false,
+    "original_pc_differential": false
+  },
+  "actual_clip967_host_benchmark": {
+    "status": "passed",
+    "journal": "source22-clip967-two-cycles-fb9ba1eb2ac0.json",
+    "seconds": 3.969748,
+    "toolchain": "Clang 18.1.3, Release -O2 -DNDEBUG, no sanitizers",
+    "clip_id": 967,
+    "first_image": 22954,
+    "frames_per_cycle": 23,
+    "cycles_in_one_process": 2,
+    "image_width": 320,
+    "image_height": 218,
+    "decoded_format": 4,
+    "decoded_cycle_bytes": 1557577,
+    "nominal_frame_ms": 80,
+    "nominal_cycle_ms": 1840,
+    "paced": false,
+    "open": {
+      "operation": "open",
+      "pack_bytes": 80846058,
+      "success": true,
+      "milliseconds": 1586.94,
+      "callbacks": 25985,
+      "callback_bytes": 117853703,
+      "reader_page_hits": 72827,
+      "reader_page_misses": 4457,
+      "range_bypasses": 21528
+    },
+    "cycles": [
+      {
+        "cycle": 1,
+        "frames": 23,
+        "sum_image_ms": 2361.925,
+        "mean_image_ms": 102.69239130434782,
+        "median_image_ms": 97.975,
+        "p95_nearest_rank_image_ms": 129.528,
+        "max_image_ms": 184.827,
+        "callbacks": 265,
+        "callback_bytes": 15471204,
+        "zero_read_images": 0,
+        "zero_reader_activity_images": 0
+      },
+      {
+        "cycle": 2,
+        "frames": 23,
+        "sum_image_ms": 0.002,
+        "mean_image_ms": 8.695652173913044e-05,
+        "median_image_ms": 0.0,
+        "p95_nearest_rank_image_ms": 0.0,
+        "max_image_ms": 0.002,
+        "callbacks": 0,
+        "callback_bytes": 0,
+        "zero_read_images": 23,
+        "zero_reader_activity_images": 23
+      }
+    ],
+    "historical_source21_comparison": {
+      "source_checkpoint": "d5738010f2d7ebc6139a2fa181ff87820d344bbb",
+      "record": "validation-source21-0.17.json",
+      "journal": "source21-clip967-two-cycles-7177ba7983d9.json",
+      "cycles": [
+        {
+          "cycle": 1,
+          "frames": 23,
+          "sum_image_ms": 4747.611,
+          "mean_image_ms": 206.4178695652174,
+          "median_image_ms": 196.145,
+          "p95_nearest_rank_image_ms": 323.411,
+          "max_image_ms": 557.218,
+          "callback_bytes": 15471204,
+          "callbacks": 265,
+          "zero_read_images": 0,
+          "images_exceeding_nominal_frame_ms": 23
+        },
+        {
+          "cycle": 2,
+          "frames": 23,
+          "sum_image_ms": 5113.978,
+          "mean_image_ms": 222.3468695652174,
+          "median_image_ms": 141.175,
+          "p95_nearest_rank_image_ms": 428.502,
+          "max_image_ms": 1173.266,
+          "callback_bytes": 11671220,
+          "callbacks": 216,
+          "zero_read_images": 0,
+          "images_exceeding_nominal_frame_ms": 22
+        }
+      ],
+      "remeasured_in_source22": false
+    },
+    "first_cycle_callback_traffic_unchanged": true,
+    "second_cycle_all_23_images_zero_callbacks_and_zero_reader_activity": true,
+    "timing_precision_ms": 0.001,
+    "timing_scope": "Content open and image calls; file opening, Content construction, App initialization, rendering and pacing excluded.",
+    "operating_system_page_cache": "uncontrolled",
+    "host_concurrent_load": "uncontrolled and different between source21 and source22; no controlled timing speedup ratio claimed",
+    "callback_bytes_are_logical_provider_traffic_not_physical_disk_bytes": true,
+    "cold_first_cycle_remains_15471204_callback_bytes": true,
+    "physical_device_frame_rate_established": false
+  },
+  "related_research_record": "validation-resource-research-source22.json",
+  "journals": [
+    {
+      "status": "passed",
+      "checkpoint": "5d177be78c507c9cd4b3c9d38a4600e84a44c02e",
+      "source_sha256": "1742987f36dc2f9cb37ddf7209922de4d8d692ad2aa315f2205c8f2c65ec893c",
+      "started_at": "2026-10-21T09:36:35.733574+00:00",
+      "ended_at": "2026-10-21T09:38:12.083940+00:00",
+      "returncode": 0,
+      "source_changed": false,
+      "journal": "source22-arm-1af83f9bb00a.json",
+      "journal_sha256": "0dffab1ab4a5b4c4b2bb70ed2b1134385f8fc52db1223705f51e220a332fbe57",
+      "log": "source22-arm-1af83f9bb00a.log",
+      "log_sha256": "e64a7a48cdaab659e4551fd5d9a85b579e4c690de64bf929d7396d558d4031e7",
+      "seconds": 96.350366,
+      "command_summary": "python3 tools/build_ndless.py with the configured ARM toolchain."
+    },
+    {
+      "status": "passed",
+      "checkpoint": "5d177be78c507c9cd4b3c9d38a4600e84a44c02e",
+      "source_sha256": "1742987f36dc2f9cb37ddf7209922de4d8d692ad2aa315f2205c8f2c65ec893c",
+      "started_at": "2026-10-21T09:43:46.338517+00:00",
+      "ended_at": "2026-10-21T09:43:50.308265+00:00",
+      "returncode": 0,
+      "source_changed": false,
+      "journal": "source22-clip967-two-cycles-fb9ba1eb2ac0.json",
+      "journal_sha256": "0ae95de1ba83d9956b15397f32ac0272b66e5a7cdb592c2acfbf950a0968f73c",
+      "log": "source22-clip967-two-cycles-fb9ba1eb2ac0.log",
+      "log_sha256": "1b03f59261128f07a8131cc14c6f696668340d6353d60f744aa8fa59be58805a",
+      "seconds": 3.969748,
+      "command_summary": "resource_open_benchmark <private-v15-pack> with image IDs 22954 through 22976 repeated twice in one process, without pacing."
+    },
+    {
+      "status": "passed",
+      "checkpoint": "5d177be78c507c9cd4b3c9d38a4600e84a44c02e",
+      "source_sha256": "1742987f36dc2f9cb37ddf7209922de4d8d692ad2aa315f2205c8f2c65ec893c",
+      "started_at": "2026-10-21T09:43:36.575097+00:00",
+      "ended_at": "2026-10-21T09:44:14.396046+00:00",
+      "returncode": 0,
+      "source_changed": false,
+      "journal": "source22-codecs-map-asan-fe541347707b.json",
+      "journal_sha256": "f631be44f01b25798df1d2e2728302939db29cf50169552f1cfeec49c9fea496",
+      "log": "source22-codecs-map-asan-fe541347707b.log",
+      "log_sha256": "6253ddbd80d579289730d7bbac5a37ee7670afd1cbf478e5acffc5bcfe9431a0",
+      "seconds": 37.820949,
+      "command_summary": "Run the ten named affected native suites with ASAN_OPTIONS=detect_leaks=0, parallelism 2."
+    },
+    {
+      "status": "passed",
+      "checkpoint": "5d177be78c507c9cd4b3c9d38a4600e84a44c02e",
+      "source_sha256": "1742987f36dc2f9cb37ddf7209922de4d8d692ad2aa315f2205c8f2c65ec893c",
+      "started_at": "2026-10-21T09:39:43.544012+00:00",
+      "ended_at": "2026-10-21T09:39:44.317880+00:00",
+      "returncode": 0,
+      "source_changed": false,
+      "journal": "source22-linked-arm-division-da2f0a14ebe4.json",
+      "journal_sha256": "e2be15be17e1fc3bb20412ac5b3972372156ec1a92b0ec65df9ffe9c8005e762",
+      "log": "source22-linked-arm-division-da2f0a14ebe4.log",
+      "log_sha256": "5ea9c6e5f1ec76842e25bffdacebaaaa78f91fa3d3f571b4464d60af43a9c180",
+      "seconds": 0.773868,
+      "command_summary": "Execute the 5,249 instruction-level division/ABI vectors against the linked production ARM ELF."
+    },
+    {
+      "status": "passed",
+      "checkpoint": "5d177be78c507c9cd4b3c9d38a4600e84a44c02e",
+      "source_sha256": "1742987f36dc2f9cb37ddf7209922de4d8d692ad2aa315f2205c8f2c65ec893c",
+      "started_at": "2026-10-21T09:39:43.753633+00:00",
+      "ended_at": "2026-10-21T09:39:45.196649+00:00",
+      "returncode": 0,
+      "source_changed": false,
+      "journal": "source22-linked-arm-lzma2-56f299f7c26d.json",
+      "journal_sha256": "39dc6811254600def7147c019aaf7979108b58a19ffb494afd02913ed7a5754b",
+      "log": "source22-linked-arm-lzma2-56f299f7c26d.log",
+      "log_sha256": "66ba35a975226b7850212e808fe47962e3c05d7cc7317e580b0a2c9453ffa892",
+      "seconds": 1.443016,
+      "command_summary": "Execute the 28 instruction-level decoder vectors against the linked production ARM ELF."
+    },
+    {
+      "status": "passed",
+      "checkpoint": "5d177be78c507c9cd4b3c9d38a4600e84a44c02e",
+      "source_sha256": "1742987f36dc2f9cb37ddf7209922de4d8d692ad2aa315f2205c8f2c65ec893c",
+      "started_at": "2026-10-21T09:36:50.378647+00:00",
+      "ended_at": "2026-10-21T09:41:24.466067+00:00",
+      "returncode": 0,
+      "source_changed": false,
+      "journal": "source22-native-all-build-34aa7ecb1910.json",
+      "journal_sha256": "7f74588af9cfcb661ee5fb0f756729478060a6023be2eb870aed37f4b48b46bd",
+      "log": "source22-native-all-build-34aa7ecb1910.log",
+      "log_sha256": "f30fe1edceffcdd23aeb209cf664d98b5659e22629e67ebc6f1c8082070c1340",
+      "seconds": 274.08742,
+      "command_summary": "Build all native targets, 147 steps."
+    },
+    {
+      "status": "passed",
+      "checkpoint": "5d177be78c507c9cd4b3c9d38a4600e84a44c02e",
+      "source_sha256": "1742987f36dc2f9cb37ddf7209922de4d8d692ad2aa315f2205c8f2c65ec893c",
+      "started_at": "2026-10-21T09:36:35.684899+00:00",
+      "ended_at": "2026-10-21T09:36:39.697852+00:00",
+      "returncode": 0,
+      "source_changed": false,
+      "journal": "source22-native-configure-92539d54968e.json",
+      "journal_sha256": "e31b7fb55672f27a8223d2b84dacd1645140f697917bb43feaf400a15fcd1d1d",
+      "log": "source22-native-configure-92539d54968e.log",
+      "log_sha256": "295ec6b444ca3209c46e8fdfac1f18410651c84ca120e3dd8d93738d3224dacc",
+      "seconds": 4.012953,
+      "command_summary": "Configure the native Debug build with GCC, -O1, AddressSanitizer and UndefinedBehaviorSanitizer."
+    },
+    {
+      "status": "passed",
+      "checkpoint": "5d177be78c507c9cd4b3c9d38a4600e84a44c02e",
+      "source_sha256": "1742987f36dc2f9cb37ddf7209922de4d8d692ad2aa315f2205c8f2c65ec893c",
+      "started_at": "2026-10-21T09:37:04.708656+00:00",
+      "ended_at": "2026-10-21T09:37:07.654874+00:00",
+      "returncode": 0,
+      "source_changed": false,
+      "journal": "source22-release-clang-configure-d0a34d32ab02.json",
+      "journal_sha256": "92b9c13b73c4d42ad1cfa9a7df32a9de63f76ac0c822028401603f235f7bf6a2",
+      "log": "source22-release-clang-configure-d0a34d32ab02.log",
+      "log_sha256": "9311dd3e3a507d153e31791b719197540e015472c5bd7c9cca4fecf4f8c5b3e6",
+      "seconds": 2.946218,
+      "command_summary": "Configure a fresh Clang 18.1.3 Release build, -O2 -DNDEBUG, without sanitizers."
+    },
+    {
+      "status": "passed",
+      "checkpoint": "5d177be78c507c9cd4b3c9d38a4600e84a44c02e",
+      "source_sha256": "1742987f36dc2f9cb37ddf7209922de4d8d692ad2aa315f2205c8f2c65ec893c",
+      "started_at": "2026-10-21T09:37:18.811924+00:00",
+      "ended_at": "2026-10-21T09:38:02.243244+00:00",
+      "returncode": 0,
+      "source_changed": false,
+      "journal": "source22-release-clang-targets-adec44925f4e.json",
+      "journal_sha256": "dc6b72e10936f6e8df79f65f5d6a48b6cd30bcd517593a1b15247cb806a23c37",
+      "log": "source22-release-clang-targets-adec44925f4e.log",
+      "log_sha256": "0bdb139ddc0d3482b01dd93fc55a50c7416bef9a0282c878e68d0b88ee8efcc9",
+      "seconds": 43.43132,
+      "command_summary": "Build resource_content_regression, resource_open_benchmark, world_backend_driver and world_map_act_intro_ui_regression, 33 steps."
+    },
+    {
+      "status": "passed",
+      "checkpoint": "5d177be78c507c9cd4b3c9d38a4600e84a44c02e",
+      "source_sha256": "1742987f36dc2f9cb37ddf7209922de4d8d692ad2aa315f2205c8f2c65ec893c",
+      "started_at": "2026-10-21T09:42:46.720436+00:00",
+      "ended_at": "2026-10-21T09:43:46.142514+00:00",
+      "returncode": 0,
+      "source_changed": false,
+      "journal": "source22-resource-clip967-selected-3689b583ef8b.json",
+      "journal_sha256": "874d2be688a5f561dc1f83e9c6d802a2db9010bcc1eec133c0714c130c80dfee",
+      "log": "source22-resource-clip967-selected-3689b583ef8b.log",
+      "log_sha256": "0f3b2588e8535c9b499cc334b6835d5faeabaaee6566b39212cefb446983fa73",
+      "seconds": 59.422078,
+      "command_summary": "resource_content_regression <private-v15-pack> <private-v14-reference-pack> --images 22954 23"
+    },
+    {
+      "status": "passed",
+      "checkpoint": "5d177be78c507c9cd4b3c9d38a4600e84a44c02e",
+      "source_sha256": "1742987f36dc2f9cb37ddf7209922de4d8d692ad2aa315f2205c8f2c65ec893c",
+      "started_at": "2026-10-21T09:42:18.811053+00:00",
+      "ended_at": "2026-10-21T09:42:46.484144+00:00",
+      "returncode": 0,
+      "source_changed": false,
+      "journal": "source22-resource-static-selected-5b365d811926.json",
+      "journal_sha256": "f87509e0228291efed77a216db91f694e8821e0ec3afaf33f42df27daaebe4dd",
+      "log": "source22-resource-static-selected-5b365d811926.log",
+      "log_sha256": "0dcfc7c179806909030ae06fe14b52d8b9eb0f2abcf4cc81a432fc5d20eb00d9",
+      "seconds": 27.673091,
+      "command_summary": "resource_content_regression <private-v15-pack> <private-v14-reference-pack> --images 0 3535"
+    },
+    {
+      "status": "passed",
+      "checkpoint": "5d177be78c507c9cd4b3c9d38a4600e84a44c02e",
+      "source_sha256": "1742987f36dc2f9cb37ddf7209922de4d8d692ad2aa315f2205c8f2c65ec893c",
+      "started_at": "2026-10-21T09:36:35.743083+00:00",
+      "ended_at": "2026-10-21T09:38:00.174984+00:00",
+      "returncode": 0,
+      "source_changed": false,
+      "journal": "source22-wasm-eb751000d542.json",
+      "journal_sha256": "35b69e5e1ee847f753af3a2024ca88deaf94a9b419215e4ceb83d73ceecdfaef",
+      "log": "source22-wasm-eb751000d542.log",
+      "log_sha256": "bf7f62e93448d6e359f33c1c5a9cdc3247f3d2014a1c9ea063bd3ea4e2b6b84e",
+      "seconds": 84.431901,
+      "command_summary": "python3 tools/build_web.py --compile-only with the configured WASM toolchain."
+    },
+    {
+      "status": "passed",
+      "checkpoint": "5d177be78c507c9cd4b3c9d38a4600e84a44c02e",
+      "source_sha256": "1742987f36dc2f9cb37ddf7209922de4d8d692ad2aa315f2205c8f2c65ec893c",
+      "started_at": "2026-10-21T09:38:22.726932+00:00",
+      "ended_at": "2026-10-21T09:39:30.171066+00:00",
+      "returncode": 0,
+      "source_changed": false,
+      "journal": "source22-world-23-native-a2d453e066e7.json",
+      "journal_sha256": "229c48c285ee61c0df386ff157871554862e517058f7849797d6f069caf388f9",
+      "log": "source22-world-23-native-a2d453e066e7.log",
+      "log_sha256": "6acce8240a7c35a6325aa03b2933afc86baf02312a423f022951fb5295a39954",
+      "seconds": 67.444134,
+      "command_summary": "world_backend_driver <private-v15-pack> <private-fixture-output>; generate all 23 fresh native scenarios."
+    },
+    {
+      "status": "passed",
+      "checkpoint": "5d177be78c507c9cd4b3c9d38a4600e84a44c02e",
+      "source_sha256": "1742987f36dc2f9cb37ddf7209922de4d8d692ad2aa315f2205c8f2c65ec893c",
+      "started_at": "2026-10-21T09:41:17.267113+00:00",
+      "ended_at": "2026-10-21T09:42:09.553477+00:00",
+      "returncode": 0,
+      "source_changed": false,
+      "journal": "source22-world-23-wasm-9ce700cbc5a0.json",
+      "journal_sha256": "d13026bc7cdba2d9ed4f3a1f922c0738ac3e4b905715089e69a0cc346458ad57",
+      "log": "source22-world-23-wasm-9ce700cbc5a0.log",
+      "log_sha256": "3882477cb6d8dd984d6570bfb4497dab0793817fb92b0bccf50d3f84eb5761a2",
+      "seconds": 52.286364,
+      "command_summary": "node tools/check_room_backends.js build/web/nSpire2.wasm <private-v15-pack> <private-fixture-output>; compare all captured frames and saves."
+    }
+  ],
+  "limits": [
+    "Only ten named affected suites were rerun on source22. There are 56 registered suites; the last complete 52-suite run remains source17.",
+    "The complete 45,724-image new-memory and new-range oracle is a source21 prerequisite, not a source22 rerun. Source22 separately checks the 3,535 retained images and 23 clip967 images, complete metadata and the same 40 UI frames in each selected command.",
+    "Native/WASM agreement covers 23 scenarios, 480 frame buffers and 30 save payloads through the storage adapter. It is not an original-PC differential or every catalog image separately tested in WASM.",
+    "The repeated clip has zero second-cycle provider and reader activity, but its first cycle still reads 15,471,204 logical callback bytes. Host call times have uncontrolled cache/concurrency and do not establish calculator FPS or solve every multi-actor working set.",
+    "Compiled ARM size/allocation and linked ARM926 instruction tests do not establish Firebird execution, physical-device performance or peak RAM.",
+    "Original UI 95% fidelity remains unaccepted. Remaining dynamic layers, label-clock phases and temporal-sampling differences require separate acceptance.",
+    "The actual launcher and resource pair is 81,731,444 bytes before saves; the requested 30–40 MB installation target is not achieved. Compression research is separately recorded and is not a new production pack.",
+    "No original PCK, assembly, font, derived resource pack, capture or embedded-content HTML is included in this public record. Logs are identified only by basename and digest; private absolute paths and source inventories are omitted."
+  ],
+  "private_delivery": {
+    "status": "packaged_and_independently_verified",
+    "classification": "0.17 development artifacts; no hardware or original-PC visual acceptance",
+    "runtime_checkpoint": "5d177be78c507c9cd4b3c9d38a4600e84a44c02e",
+    "resource_production_checkpoint": "3f66da839e056fe291c27ca5e93260b3833bd7de",
+    "calculator_installed_pair_bytes_before_saves": 81731444,
+    "artifacts": {
+      "Slay-the-Nspire-2-0.17-calculator.zip": {
+        "bytes": 81791483,
+        "sha256": "2a45aa402572ceadca862fdd54dd9c6fe4f419c16433d3e93e11e484fc00aacb"
+      },
+      "Slay-the-Nspire-2-0.17-offline.html": {
+        "bytes": 114320767,
+        "sha256": "b3fc4c56cf038f9a80ebc643387372080c76990e64b1dbc5b5452dcf497c8a2f"
+      },
+      "delivery-manifest-0.17.json": {
+        "bytes": 20062,
+        "sha256": "a62a7ce97dae498be0e12f36ffbc0166f2bfb34b071c5cfa7b3e3de7d94ae5fe"
+      },
+      "SHA256SUMS": {
+        "bytes": 2959,
+        "sha256": "97be1f53137b767819bd5ce18f8b46d8583a18181f71664eb403e927239ca08f"
+      }
+    },
+    "calculator_zip_members": 12,
+    "all_zip_members_safe_regular_files": true,
+    "zip_member_bytes_and_sha256_independently_verified": true,
+    "html_embedded_pack_and_wasm_bytes_and_sha256_independently_verified": true,
+    "manifest_and_checksum_coverage_independently_verified": true,
+    "gate_journals_in_delivery": 15,
+    "packaging_journal": {
+      "name": "source22-private-web-package-ec86ca345637.json",
+      "sha256": "bf1b75db40fa0d66f34e018619de8f648e9f73cf84e9c41cf02722f5a6cdf23f",
+      "log": "source22-private-web-package-ec86ca345637.log",
+      "log_sha256": "c178fc3b9806c0d5de0ac452c9318fe23e1bd74c6cfca763a23ccd5e1edcdf52",
+      "checkpoint": "5d177be78c507c9cd4b3c9d38a4600e84a44c02e",
+      "source_sha256": "1742987f36dc2f9cb37ddf7209922de4d8d692ad2aa315f2205c8f2c65ec893c",
+      "source_changed": false,
+      "started_at": "2026-10-21T09:48:28.305830+00:00",
+      "ended_at": "2026-10-21T09:48:35.105426+00:00",
+      "status": "passed",
+      "returncode": 0
+    },
+    "contents_published_in_public_repository": false,
+    "later_documentation_checkpoint_does_not_rebuild_or_relabel_runtime": true
+  }
+}

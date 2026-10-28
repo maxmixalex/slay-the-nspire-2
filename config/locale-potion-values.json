@@ -1,0 +1,172 @@
+{
+  "schema": 1,
+  "reference": "v0.111.0 / 41cef1ea",
+  "evidence": "CanonicalVars numeric facts from owner supplied pinned decompilation; no original strings or source body included.",
+  "potions": {
+    "FIRE_POTION": {
+      "Damage": 20
+    },
+    "BLOCK_POTION": {
+      "Block": 12
+    },
+    "BLOOD_POTION": {
+      "HealPercent": 20
+    },
+    "ENERGY_POTION": {
+      "Energy": 2
+    },
+    "STRENGTH_POTION": {
+      "StrengthPower": 2
+    },
+    "DEXTERITY_POTION": {
+      "DexterityPower": 2
+    },
+    "SWIFT_POTION": {
+      "Cards": 3
+    },
+    "EXPLOSIVE_AMPOULE": {
+      "Damage": 10
+    },
+    "VULNERABLE_POTION": {
+      "VulnerablePower": 3
+    },
+    "WEAK_POTION": {
+      "WeakPower": 3
+    },
+    "FRUIT_JUICE": {
+      "MaxHp": 5
+    },
+    "BLESSING_OF_THE_FORGE": {},
+    "FLEX_POTION": {
+      "StrengthPower": 5
+    },
+    "SPEED_POTION": {
+      "DexterityPower": 5
+    },
+    "LIQUID_BRONZE": {
+      "ThornsPower": 3
+    },
+    "FORTIFIER": {},
+    "ATTACK_POTION": {},
+    "BEETLE_JUICE": {
+      "DamageDecrease": 30,
+      "Repeat": 4
+    },
+    "BOTTLED_POTENTIAL": {
+      "Cards": 5
+    },
+    "CLARITY": {
+      "Cards": 1,
+      "ClarityPower": 3
+    },
+    "COLORLESS_POTION": {},
+    "CURE_ALL": {
+      "Energy": 1,
+      "Cards": 2
+    },
+    "DISTILLED_CHAOS": {
+      "Repeat": 3
+    },
+    "DROPLET_OF_PRECOGNITION": {},
+    "DUPLICATOR": {},
+    "ENTROPIC_BREW": {},
+    "FAIRY_IN_A_BOTTLE": {},
+    "FYSH_OIL": {
+      "StrengthPower": 1,
+      "DexterityPower": 1
+    },
+    "GAMBLERS_BREW": {},
+    "GIGANTIFICATION_POTION": {
+      "GigantificationPower": 1
+    },
+    "HEART_OF_IRON": {
+      "PlatingPower": 7
+    },
+    "LIQUID_MEMORIES": {},
+    "LUCKY_TONIC": {
+      "BufferPower": 1
+    },
+    "MAZALETHS_GIFT": {
+      "RitualPower": 1
+    },
+    "OROBIC_ACID": {},
+    "POTION_OF_BINDING": {
+      "VulnerablePower": 1,
+      "WeakPower": 1
+    },
+    "POWDERED_DEMISE": {
+      "Demise": 9
+    },
+    "POWER_POTION": {},
+    "RADIANT_TINCTURE": {
+      "Energy": 1,
+      "RadiancePower": 3
+    },
+    "REGEN_POTION": {
+      "RegenPower": 5
+    },
+    "SHACKLING_POTION": {
+      "StrengthPower": 7
+    },
+    "SHIP_IN_A_BOTTLE": {
+      "Block": 10
+    },
+    "SKILL_POTION": {},
+    "SNECKO_OIL": {
+      "Cards": 7
+    },
+    "STABLE_SERUM": {
+      "Repeat": 2
+    },
+    "TOUCH_OF_INSANITY": {},
+    "SOLDIERS_STEW": {},
+    "ASHWATER": {},
+    "POISON_POTION": {
+      "PoisonPower": 6
+    },
+    "GHOST_IN_A_JAR": {
+      "IntangiblePower": 1
+    },
+    "CUNNING_POTION": {
+      "Cards": 3
+    },
+    "AMBERGRIS": {
+      "HealPercent": 50
+    },
+    "FOUL_POTION": {
+      "Damage": 12,
+      "Gold": 100
+    },
+    "GLOWWATER_POTION": {
+      "Cards": 10
+    },
+    "POTION_SHAPED_ROCK": {
+      "Damage": 15
+    },
+    "BONE_BREW": {
+      "Summon": 15
+    },
+    "POT_OF_GHOULS": {
+      "Cards": 2
+    },
+    "POTION_OF_DOOM": {
+      "DoomPower": 33
+    },
+    "FOCUS_POTION": {
+      "FocusPower": 2
+    },
+    "ESSENCE_OF_DARKNESS": {},
+    "POTION_OF_CAPACITY": {
+      "Repeat": 2
+    },
+    "STAR_POTION": {
+      "Stars": 3
+    },
+    "COSMIC_CONCOCTION": {
+      "Cards": 3
+    },
+    "KINGS_COURAGE": {
+      "Forge": 15
+    }
+  }
+}

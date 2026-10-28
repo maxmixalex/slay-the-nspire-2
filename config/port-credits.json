@@ -1,0 +1,18 @@
+{
+  "eng": ["Nspire port", "zyf722 (with Codex)"],
+  "zhs": ["Nspire 移植", "zyf722（基于 Codex）"],
+  "zht": ["Nspire 移植", "zyf722（基於 Codex）"],
+  "deu": ["Nspire-Portierung", "zyf722 (mit Codex)"],
+  "esp": ["Adaptación para Nspire", "zyf722 (con Codex)"],
+  "fra": ["Portage Nspire", "zyf722 (avec Codex)"],
+  "ind": ["Port Nspire", "zyf722 (dengan Codex)"],
+  "ita": ["Porting per Nspire", "zyf722 (con Codex)"],
+  "jpn": ["Nspire 移植", "zyf722（Codex を使用）"],
+  "kor": ["Nspire 이식", "zyf722 (Codex 사용)"],
+  "pol": ["Port na Nspire", "zyf722 (z pomocą Codex)"],
+  "ptb": ["Adaptação para Nspire", "zyf722 (com Codex)"],
+  "rus": ["Порт для Nspire", "zyf722 (с помощью Codex)"],
+  "spa": ["Adaptación para Nspire", "zyf722 (con Codex)"],
+  "tha": ["พอร์ตสำหรับ Nspire", "zyf722 (ใช้ Codex)"],
+  "tur": ["Nspire uyarlaması", "zyf722 (Codex ile)"]
+}

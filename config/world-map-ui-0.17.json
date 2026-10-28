@@ -1,0 +1,730 @@
+{
+  "schema": 1,
+  "reference": "v0.111.0 / 41cef1ea",
+  "source_scenes": [
+    "scenes/screens/map/map_screen.tscn",
+    "scenes/ui/normal_map_point.tscn",
+    "scenes/ui/ancient_map_point.tscn",
+    "scenes/ui/boss_map_point.tscn",
+    "scenes/ui/map_dot.tscn",
+    "scenes/vfx/map_circle_vfx.tscn"
+  ],
+  "images": [
+    {
+      "key": "map.BG_OVERGROWTH_TOP",
+      "kind": "texture",
+      "path": "images/packed/map/map_bgs/overgrowth/map_top_overgrowth.png",
+      "size": [
+        320,
+        238
+      ],
+      "fit": "cover"
+    },
+    {
+      "key": "map.BG_OVERGROWTH_MIDDLE",
+      "kind": "texture",
+      "path": "images/packed/map/map_bgs/overgrowth/map_middle_overgrowth.png",
+      "size": [
+        320,
+        238
+      ],
+      "fit": "cover"
+    },
+    {
+      "key": "map.BG_OVERGROWTH_BOTTOM",
+      "kind": "texture",
+      "path": "images/packed/map/map_bgs/overgrowth/map_bottom_overgrowth.png",
+      "size": [
+        320,
+        238
+      ],
+      "fit": "cover"
+    },
+    {
+      "key": "map.BG_UNDERDOCKS_TOP",
+      "kind": "texture",
+      "path": "images/packed/map/map_bgs/underdocks/map_top_underdocks.png",
+      "size": [
+        320,
+        238
+      ],
+      "fit": "cover"
+    },
+    {
+      "key": "map.BG_UNDERDOCKS_MIDDLE",
+      "kind": "texture",
+      "path": "images/packed/map/map_bgs/underdocks/map_middle_underdocks.png",
+      "size": [
+        320,
+        238
+      ],
+      "fit": "cover"
+    },
+    {
+      "key": "map.BG_UNDERDOCKS_BOTTOM",
+      "kind": "texture",
+      "path": "images/packed/map/map_bgs/underdocks/map_bottom_underdocks.png",
+      "size": [
+        320,
+        238
+      ],
+      "fit": "cover"
+    },
+    {
+      "key": "map.BG_HIVE_TOP",
+      "kind": "texture",
+      "path": "images/packed/map/map_bgs/hive/map_top_hive.png",
+      "size": [
+        320,
+        238
+      ],
+      "fit": "cover"
+    },
+    {
+      "key": "map.BG_HIVE_MIDDLE",
+      "kind": "texture",
+      "path": "images/packed/map/map_bgs/hive/map_middle_hive.png",
+      "size": [
+        320,
+        238
+      ],
+      "fit": "cover"
+    },
+    {
+      "key": "map.BG_HIVE_BOTTOM",
+      "kind": "texture",
+      "path": "images/packed/map/map_bgs/hive/map_bottom_hive.png",
+      "size": [
+        320,
+        238
+      ],
+      "fit": "cover"
+    },
+    {
+      "key": "map.BG_GLORY_TOP",
+      "kind": "texture",
+      "path": "images/packed/map/map_bgs/glory/map_top_glory.png",
+      "size": [
+        320,
+        238
+      ],
+      "fit": "cover"
+    },
+    {
+      "key": "map.BG_GLORY_MIDDLE",
+      "kind": "texture",
+      "path": "images/packed/map/map_bgs/glory/map_middle_glory.png",
+      "size": [
+        320,
+        238
+      ],
+      "fit": "cover"
+    },
+    {
+      "key": "map.BG_GLORY_BOTTOM",
+      "kind": "texture",
+      "path": "images/packed/map/map_bgs/glory/map_bottom_glory.png",
+      "size": [
+        320,
+        238
+      ],
+      "fit": "cover"
+    },
+    {
+      "key": "map.OUTLINE_UNKNOWN",
+      "kind": "atlas",
+      "path": "images/atlases/compressed.sprites/map/map_unknown_outline.tres",
+      "size": [
+        32,
+        32
+      ],
+      "fit": "contain"
+    },
+    {
+      "key": "map.OUTLINE_SHOP",
+      "kind": "atlas",
+      "path": "images/atlases/compressed.sprites/map/map_shop_outline.tres",
+      "size": [
+        32,
+        32
+      ],
+      "fit": "contain"
+    },
+    {
+      "key": "map.OUTLINE_CHEST",
+      "kind": "atlas",
+      "path": "images/atlases/compressed.sprites/map/map_chest_outline.tres",
+      "size": [
+        32,
+        32
+      ],
+      "fit": "contain"
+    },
+    {
+      "key": "map.OUTLINE_REST",
+      "kind": "atlas",
+      "path": "images/atlases/compressed.sprites/map/map_rest_outline.tres",
+      "size": [
+        32,
+        32
+      ],
+      "fit": "contain"
+    },
+    {
+      "key": "map.OUTLINE_MONSTER",
+      "kind": "atlas",
+      "path": "images/atlases/compressed.sprites/map/map_monster_outline.tres",
+      "size": [
+        32,
+        32
+      ],
+      "fit": "contain"
+    },
+    {
+      "key": "map.OUTLINE_ELITE",
+      "kind": "atlas",
+      "path": "images/atlases/compressed.sprites/map/map_elite_outline.tres",
+      "size": [
+        32,
+        32
+      ],
+      "fit": "contain"
+    },
+    {
+      "key": "map.UNKNOWN_CHEST",
+      "kind": "atlas",
+      "path": "images/atlases/ui_atlas.sprites/map/icons/map_unknown_chest.tres",
+      "size": [
+        26,
+        26
+      ],
+      "fit": "contain"
+    },
+    {
+      "key": "map.UNKNOWN_MONSTER",
+      "kind": "atlas",
+      "path": "images/atlases/ui_atlas.sprites/map/icons/map_unknown_monster.tres",
+      "size": [
+        26,
+        26
+      ],
+      "fit": "contain"
+    },
+    {
+      "key": "map.UNKNOWN_SHOP",
+      "kind": "atlas",
+      "path": "images/atlases/ui_atlas.sprites/map/icons/map_unknown_shop.tres",
+      "size": [
+        26,
+        26
+      ],
+      "fit": "contain"
+    },
+    {
+      "key": "map.UNKNOWN_ELITE",
+      "kind": "atlas",
+      "path": "images/atlases/ui_atlas.sprites/map/icons/map_unknown_elite.tres",
+      "size": [
+        26,
+        26
+      ],
+      "fit": "contain"
+    },
+    {
+      "key": "map.ANCIENT_NEOW",
+      "kind": "texture",
+      "path": "images/packed/map/ancients/ancient_node_neow.png",
+      "size": [
+        52,
+        52
+      ],
+      "fit": "contain"
+    },
+    {
+      "key": "map.ANCIENT_NEOW_OUTLINE",
+      "kind": "texture",
+      "path": "images/packed/map/ancients/ancient_node_neow_outline.png",
+      "size": [
+        52,
+        52
+      ],
+      "fit": "contain"
+    },
+    {
+      "key": "map.ANCIENT_DARV",
+      "kind": "texture",
+      "path": "images/packed/map/ancients/ancient_node_darv.png",
+      "size": [
+        52,
+        52
+      ],
+      "fit": "contain"
+    },
+    {
+      "key": "map.ANCIENT_DARV_OUTLINE",
+      "kind": "texture",
+      "path": "images/packed/map/ancients/ancient_node_darv_outline.png",
+      "size": [
+        52,
+        52
+      ],
+      "fit": "contain"
+    },
+    {
+      "key": "map.ANCIENT_NONUPEIPE",
+      "kind": "texture",
+      "path": "images/packed/map/ancients/ancient_node_nonupeipe.png",
+      "size": [
+        52,
+        52
+      ],
+      "fit": "contain"
+    },
+    {
+      "key": "map.ANCIENT_NONUPEIPE_OUTLINE",
+      "kind": "texture",
+      "path": "images/packed/map/ancients/ancient_node_nonupeipe_outline.png",
+      "size": [
+        52,
+        52
+      ],
+      "fit": "contain"
+    },
+    {
+      "key": "map.ANCIENT_OROBAS",
+      "kind": "texture",
+      "path": "images/packed/map/ancients/ancient_node_orobas.png",
+      "size": [
+        52,
+        52
+      ],
+      "fit": "contain"
+    },
+    {
+      "key": "map.ANCIENT_OROBAS_OUTLINE",
+      "kind": "texture",
+      "path": "images/packed/map/ancients/ancient_node_orobas_outline.png",
+      "size": [
+        52,
+        52
+      ],
+      "fit": "contain"
+    },
+    {
+      "key": "map.ANCIENT_PAEL",
+      "kind": "texture",
+      "path": "images/packed/map/ancients/ancient_node_pael.png",
+      "size": [
+        52,
+        52
+      ],
+      "fit": "contain"
+    },
+    {
+      "key": "map.ANCIENT_PAEL_OUTLINE",
+      "kind": "texture",
+      "path": "images/packed/map/ancients/ancient_node_pael_outline.png",
+      "size": [
+        52,
+        52
+      ],
+      "fit": "contain"
+    },
+    {
+      "key": "map.ANCIENT_TANX",
+      "kind": "texture",
+      "path": "images/packed/map/ancients/ancient_node_tanx.png",
+      "size": [
+        52,
+        52
+      ],
+      "fit": "contain"
+    },
+    {
+      "key": "map.ANCIENT_TANX_OUTLINE",
+      "kind": "texture",
+      "path": "images/packed/map/ancients/ancient_node_tanx_outline.png",
+      "size": [
+        52,
+        52
+      ],
+      "fit": "contain"
+    },
+    {
+      "key": "map.ANCIENT_TEZCATARA",
+      "kind": "texture",
+      "path": "images/packed/map/ancients/ancient_node_tezcatara.png",
+      "size": [
+        52,
+        52
+      ],
+      "fit": "contain"
+    },
+    {
+      "key": "map.ANCIENT_TEZCATARA_OUTLINE",
+      "kind": "texture",
+      "path": "images/packed/map/ancients/ancient_node_tezcatara_outline.png",
+      "size": [
+        52,
+        52
+      ],
+      "fit": "contain"
+    },
+    {
+      "key": "map.ANCIENT_VAKUU",
+      "kind": "texture",
+      "path": "images/packed/map/ancients/ancient_node_vakuu.png",
+      "size": [
+        52,
+        52
+      ],
+      "fit": "contain"
+    },
+    {
+      "key": "map.ANCIENT_VAKUU_OUTLINE",
+      "kind": "texture",
+      "path": "images/packed/map/ancients/ancient_node_vakuu_outline.png",
+      "size": [
+        52,
+        52
+      ],
+      "fit": "contain"
+    },
+    {
+      "key": "map.BOSS_VANTOM_BOSS",
+      "kind": "texture",
+      "path": "images/map/placeholder/vantom_boss_icon.png",
+      "size": [
+        96,
+        96
+      ],
+      "fit": "contain"
+    },
+    {
+      "key": "map.BOSS_VANTOM_BOSS_OUTLINE",
+      "kind": "texture",
+      "path": "images/map/placeholder/vantom_boss_icon_outline.png",
+      "size": [
+        96,
+        96
+      ],
+      "fit": "contain"
+    },
+    {
+      "key": "map.BOSS_THE_KIN_BOSS",
+      "kind": "texture",
+      "path": "images/map/placeholder/the_kin_boss_icon.png",
+      "size": [
+        96,
+        96
+      ],
+      "fit": "contain"
+    },
+    {
+      "key": "map.BOSS_THE_KIN_BOSS_OUTLINE",
+      "kind": "texture",
+      "path": "images/map/placeholder/the_kin_boss_icon_outline.png",
+      "size": [
+        96,
+        96
+      ],
+      "fit": "contain"
+    },
+    {
+      "key": "map.BOSS_WATERFALL_GIANT_BOSS",
+      "kind": "texture",
+      "path": "images/map/placeholder/waterfall_giant_boss_icon.png",
+      "size": [
+        96,
+        96
+      ],
+      "fit": "contain"
+    },
+    {
+      "key": "map.BOSS_WATERFALL_GIANT_BOSS_OUTLINE",
+      "kind": "texture",
+      "path": "images/map/placeholder/waterfall_giant_boss_icon_outline.png",
+      "size": [
+        96,
+        96
+      ],
+      "fit": "contain"
+    },
+    {
+      "key": "map.BOSS_SOUL_FYSH_BOSS",
+      "kind": "texture",
+      "path": "images/map/placeholder/soul_fysh_boss_icon.png",
+      "size": [
+        96,
+        96
+      ],
+      "fit": "contain"
+    },
+    {
+      "key": "map.BOSS_SOUL_FYSH_BOSS_OUTLINE",
+      "kind": "texture",
+      "path": "images/map/placeholder/soul_fysh_boss_icon_outline.png",
+      "size": [
+        96,
+        96
+      ],
+      "fit": "contain"
+    },
+    {
+      "key": "map.BOSS_LAGAVULIN_MATRIARCH_BOSS",
+      "kind": "texture",
+      "path": "images/map/placeholder/lagavulin_matriarch_boss_icon.png",
+      "size": [
+        96,
+        96
+      ],
+      "fit": "contain"
+    },
+    {
+      "key": "map.BOSS_LAGAVULIN_MATRIARCH_BOSS_OUTLINE",
+      "kind": "texture",
+      "path": "images/map/placeholder/lagavulin_matriarch_boss_icon_outline.png",
+      "size": [
+        96,
+        96
+      ],
+      "fit": "contain"
+    },
+    {
+      "key": "map.BOSS_KNOWLEDGE_DEMON_BOSS",
+      "kind": "texture",
+      "path": "images/map/placeholder/knowledge_demon_boss_icon.png",
+      "size": [
+        96,
+        96
+      ],
+      "fit": "contain"
+    },
+    {
+      "key": "map.BOSS_KNOWLEDGE_DEMON_BOSS_OUTLINE",
+      "kind": "texture",
+      "path": "images/map/placeholder/knowledge_demon_boss_icon_outline.png",
+      "size": [
+        96,
+        96
+      ],
+      "fit": "contain"
+    },
+    {
+      "key": "map.BOSS_KAISER_CRAB_BOSS",
+      "kind": "texture",
+      "path": "images/map/placeholder/kaiser_crab_boss_icon.png",
+      "size": [
+        96,
+        96
+      ],
+      "fit": "contain"
+    },
+    {
+      "key": "map.BOSS_KAISER_CRAB_BOSS_OUTLINE",
+      "kind": "texture",
+      "path": "images/map/placeholder/kaiser_crab_boss_icon_outline.png",
+      "size": [
+        96,
+        96
+      ],
+      "fit": "contain"
+    },
+    {
+      "key": "map.BOSS_TEST_SUBJECT_BOSS",
+      "kind": "texture",
+      "path": "images/map/placeholder/test_subject_boss_icon.png",
+      "size": [
+        96,
+        96
+      ],
+      "fit": "contain"
+    },
+    {
+      "key": "map.BOSS_TEST_SUBJECT_BOSS_OUTLINE",
+      "kind": "texture",
+      "path": "images/map/placeholder/test_subject_boss_icon_outline.png",
+      "size": [
+        96,
+        96
+      ],
+      "fit": "contain"
+    },
+    {
+      "key": "map.BOSS_AEONGLASS_BOSS",
+      "kind": "texture",
+      "path": "images/map/placeholder/aeonglass_boss_icon.png",
+      "size": [
+        96,
+        96
+      ],
+      "fit": "contain"
+    },
+    {
+      "key": "map.BOSS_AEONGLASS_BOSS_OUTLINE",
+      "kind": "texture",
+      "path": "images/map/placeholder/aeonglass_boss_icon_outline.png",
+      "size": [
+        96,
+        96
+      ],
+      "fit": "contain"
+    },
+    {
+      "key": "map.CIRCLE",
+      "kind": "atlas",
+      "path": "images/atlases/compressed.sprites/map/map_circle_4.tres",
+      "size": [
+        48,
+        48
+      ],
+      "fit": "contain"
+    },
+    {
+      "key": "map.DOT",
+      "kind": "atlas",
+      "path": "images/atlases/compressed.sprites/map/map_dot.tres",
+      "size": [
+        6,
+        6
+      ],
+      "fit": "contain"
+    },
+    {
+      "key": "map.LEGEND",
+      "kind": "atlas",
+      "path": "images/atlases/ui_atlas.sprites/map/map_legend.tres",
+      "size": [
+        132,
+        184
+      ],
+      "fit": "contain"
+    },
+    {
+      "key": "map.QUEST",
+      "kind": "atlas",
+      "path": "images/atlases/ui_atlas.sprites/map/icons/map_spoils_map_marker.tres",
+      "size": [
+        18,
+        18
+      ],
+      "fit": "contain"
+    }
+  ],
+  "clips": [
+    {
+      "key": "map.CEREMONIAL_BEAST_BOSS",
+      "resource": "animations/map/ceremonial_beast_boss/ceremonial_beast_boss_node_skel_data.tres",
+      "clip": "animation",
+      "duration": 6.0000005,
+      "duration_ms": 6000,
+      "loop": true,
+      "fps": 20,
+      "frames": 120,
+      "skins": [
+        "default"
+      ],
+      "size": [
+        100,
+        100
+      ],
+      "pivot": [
+        50,
+        50
+      ],
+      "transform": [
+        0.0418,
+        0,
+        8.86,
+        0,
+        -0.0418,
+        16.34
+      ],
+      "shader": "boss_map_channels",
+      "scene_path": "scenes/ui/boss_map_point.tscn",
+      "viewport": [
+        1920,
+        1080
+      ],
+      "source_scale": 0.19,
+      "map_scale": 0.22,
+      "frame_ms": 50
+    },
+    {
+      "key": "map.QUEEN_BOSS",
+      "resource": "animations/map/queen_boss/queen_boss_node_skel_data.tres",
+      "clip": "animation",
+      "duration": 10.3,
+      "duration_ms": 10300,
+      "loop": true,
+      "fps": 20,
+      "frames": 206,
+      "skins": [
+        "default"
+      ],
+      "size": [
+        100,
+        100
+      ],
+      "pivot": [
+        50,
+        50
+      ],
+      "transform": [
+        0.0418,
+        0,
+        8.86,
+        0,
+        -0.0418,
+        16.34
+      ],
+      "shader": "boss_map_channels",
+      "scene_path": "scenes/ui/boss_map_point.tscn",
+      "viewport": [
+        1920,
+        1080
+      ],
+      "source_scale": 0.19,
+      "map_scale": 0.22,
+      "frame_ms": 50
+    },
+    {
+      "key": "map.THE_INSATIABLE_BOSS",
+      "resource": "animations/map/the_insatiable_boss/the_insatiable_boss_node_skel_data.tres",
+      "clip": "animation",
+      "duration": 10.666667,
+      "duration_ms": 10667,
+      "loop": true,
+      "fps": 20,
+      "frames": 214,
+      "skins": [
+        "default"
+      ],
+      "size": [
+        100,
+        100
+      ],
+      "pivot": [
+        50,
+        50
+      ],
+      "transform": [
+        0.0418,
+        0,
+        8.86,
+        0,
+        -0.0418,
+        16.34
+      ],
+      "shader": "boss_map_channels",
+      "scene_path": "scenes/ui/boss_map_point.tscn",
+      "viewport": [
+        1920,
+        1080
+      ],
+      "source_scale": 0.19,
+      "map_scale": 0.22,
+      "frame_ms": 50
+    }
+  ]
+}

@@ -1,0 +1,409 @@
+{
+  "schema": 1,
+  "reference": "v0.111.0 / 41cef1ea",
+  "checkpoint": "b400ab88186ddb618167a8b7c2a8c141d41629e0",
+  "compiler": "Ubuntu Clang 18.1.3, x86_64, CMake Release",
+  "scope": "Actual bilingual NSP2/20 hybrid UI binding routes, event and card tooltip presentation, and world text; metadata only, no original prose or artwork",
+  "atlas_scope": "Original static text and ten flame frames in image 4, 164x106; later additive glow changes are outside this execution",
+  "source_sha256": "51e58806a65853d559d02e0313426d1764e7c5af4ea092368095c9fe0bb0b3e2",
+  "raw_metadata_report": {
+    "file": "ui-template-audit.json",
+    "bytes": 235818,
+    "sha256": "5008cfc9a8508eb3238d9b8a91d9001c68c24f9f6bffccc890b9307c91845c73"
+  },
+  "binaries": {
+    "ui_text_regression": {
+      "bytes": 6267864,
+      "sha256": "0869bc4fea9ad3c17349b8a44c951cef5eeb1f6bc6595308d6b9e6533a978c14"
+    },
+    "keyword_tooltip_regression": {
+      "bytes": 6448288,
+      "sha256": "1d7741eb55b18c4c275eca7843a732321043b818b391ebee31f5c80e7bb08793"
+    },
+    "world_text_regression": {
+      "bytes": 6444040,
+      "sha256": "68510c0814cb97bb89ba6415492d370fd218239d84269539d39945c644def712"
+    }
+  },
+  "packs": {
+    "eng": {
+      "file": "retained-eng.nsp",
+      "bytes": 76521355,
+      "sha256": "71952b592ed4057687e4976a91d1cba567cda9985091ed43207ff2913d1a4836",
+      "version": 20,
+      "language": "eng",
+      "bindings": 935,
+      "dynamic_bindings": 200,
+      "ui_table_sha256": "696ce507fe511265f05345937d65228d61232bbc77b06dad63df6d4dbbc53ab8",
+      "field_binding_counts": {
+        "Amount": 88,
+        "ApplierName.StringValue": 2,
+        "BaseCards": 1,
+        "Block": 5,
+        "Card": 1,
+        "CardPlay": 1,
+        "Cards": 8,
+        "CardsLeft": 1,
+        "Damage": 4,
+        "DamageDecrease": 2,
+        "DamageIncrease": 1,
+        "Decrement": 1,
+        "DexterityPower": 2,
+        "Energy": 7,
+        "Gold": 1,
+        "Heal": 4,
+        "Hotkey": 2,
+        "Lightning": 1,
+        "MaxHp": 3,
+        "OnPlayer": 4,
+        "OwnerName": 6,
+        "SelfDamage": 2,
+        "Stars": 1,
+        "StrengthApplied": 1,
+        "StrengthPower": 3,
+        "Summon": 1,
+        "ThornsPower": 1,
+        "Turns": 1,
+        "VigorPower": 1,
+        "VulnerablePower": 1,
+        "actNumber": 1,
+        "ascension": 1,
+        "energyPrefix": 6,
+        "n": 100,
+        "singleStarIcon": 4
+      },
+      "route_binding_counts": {
+        "act": 1,
+        "ascension": 1,
+        "hotkey": 2,
+        "relic": 32,
+        "selection": 13,
+        "status": 151
+      },
+      "unclassified_slots": [],
+      "unsupported_ui_fields": [],
+      "runtime_summary": [
+        {
+          "operation": "live_power_values",
+          "power_models": 6,
+          "independent_instance_pairs": 4,
+          "canonical_fallback_checked": true,
+          "state_bytes_unchanged": true
+        },
+        {
+          "operation": "catalog",
+          "bindings": 935,
+          "dynamic_bindings": 200,
+          "route_calls": 230,
+          "unresolved_bindings": 0
+        },
+        {
+          "operation": "regression",
+          "checks": 34723,
+          "actual_pack": true,
+          "unresolved_bindings": 0,
+          "passed": true
+        }
+      ],
+      "keyword_tooltip_checks": 402632,
+      "world_text_checks": 6963,
+      "ui_markup_tag_occurrences": {
+        "blue": 552,
+        "gold": 469,
+        "green": 12,
+        "purple": 2
+      },
+      "frontend_static_labels": {
+        "count": 22,
+        "all_match_original": true,
+        "all_fields_resolved_without_parameters": true,
+        "keys": [
+          "main_menu_ui.SINGLE_PLAYER",
+          "main_menu_ui.CONTINUE",
+          "main_menu_ui.ABANDON_RUN",
+          "main_menu_ui.COMPENDIUM",
+          "main_menu_ui.SETTINGS",
+          "main_menu_ui.QUIT",
+          "main_menu_ui.CONTINUE_RUN_INFO.floor",
+          "main_menu_ui.CONTINUE_RUN_INFO.ascension",
+          "main_menu_ui.QUIT_CONFIRM_POPUP.header",
+          "main_menu_ui.ABANDON_RUN_CONFIRMATION.header",
+          "main_menu_ui.QUIT_CONFIRM_POPUP.body",
+          "main_menu_ui.ABANDON_RUN_CONFIRMATION.body",
+          "main_menu_ui.GENERIC_POPUP.cancel",
+          "main_menu_ui.GENERIC_POPUP.confirm",
+          "gameplay_ui.PAUSE_MENU.PAUSED",
+          "gameplay_ui.PAUSE_MENU.RESUME",
+          "gameplay_ui.PAUSE_MENU.SETTINGS",
+          "gameplay_ui.PAUSE_MENU.COMPENDIUM",
+          "gameplay_ui.PAUSE_MENU.GIVE_UP",
+          "gameplay_ui.PAUSE_MENU.SAVE_AND_QUIT",
+          "settings_ui.FASTMODE",
+          "settings_ui.FASTMODE_DESCRIPTION"
+        ]
+      },
+      "screenshots": [
+        {
+          "file": "event-option-tooltip-details.png",
+          "bytes": 22372,
+          "sha256": "740372bd14961d04be1fb40f2745cad71ab20c93e0077d366f49d381d90df298",
+          "width": 320,
+          "height": 240
+        },
+        {
+          "file": "event-option-tooltip.png",
+          "bytes": 35738,
+          "sha256": "a95c2748df3972a947f11631dfd7476b983fa5af753e6d39a5cb83cc61932195",
+          "width": 320,
+          "height": 240
+        },
+        {
+          "file": "keyword-detail-orbs.png",
+          "bytes": 22499,
+          "sha256": "9f6d0aca30c35c665070a996984e48d7c58e2c1306bb6ca2b5c5c3481d3c198b",
+          "width": 320,
+          "height": 240
+        },
+        {
+          "file": "keyword-hand-bash.png",
+          "bytes": 61956,
+          "sha256": "465a8d3f70ba12ca904895ffb015d4af55103e2e8618eaed3a0411aa1bbaf77d",
+          "width": 320,
+          "height": 240
+        },
+        {
+          "file": "keyword-library.png",
+          "bytes": 42886,
+          "sha256": "d4e07f13c4f1dab3b00303e267ffe2249dbfa3b7f892f95e3c6784d8144d38a0",
+          "width": 320,
+          "height": 240
+        }
+      ]
+    },
+    "zhs": {
+      "file": "retained-zhs.nsp",
+      "bytes": 79304054,
+      "sha256": "28e57f9255faa0e0da82b9a908e0fcc06b1c1ba4f862922c9fa5b19355be3bc3",
+      "version": 20,
+      "language": "zhs",
+      "bindings": 935,
+      "dynamic_bindings": 200,
+      "ui_table_sha256": "04eed5d95d80cc116a91249fbded928d9f35775976623d961af7c424b94a10ad",
+      "field_binding_counts": {
+        "Amount": 31,
+        "ApplierName.StringValue": 2,
+        "BaseCards": 1,
+        "Block": 5,
+        "Card": 1,
+        "CardPlay": 1,
+        "Cards": 8,
+        "CardsLeft": 1,
+        "Damage": 4,
+        "DamageDecrease": 2,
+        "DamageIncrease": 1,
+        "Decrement": 1,
+        "DexterityPower": 2,
+        "Energy": 7,
+        "Gold": 1,
+        "Heal": 4,
+        "Hotkey": 2,
+        "Lightning": 1,
+        "MaxHp": 3,
+        "OnPlayer": 4,
+        "OwnerName": 6,
+        "SelfDamage": 2,
+        "Stars": 1,
+        "StrengthApplied": 1,
+        "StrengthPower": 3,
+        "Summon": 1,
+        "ThornsPower": 1,
+        "Turns": 1,
+        "VigorPower": 1,
+        "VulnerablePower": 1,
+        "actNumber": 1,
+        "ascension": 1,
+        "energyPrefix": 6,
+        "n": 132,
+        "singleStarIcon": 4
+      },
+      "route_binding_counts": {
+        "act": 1,
+        "ascension": 1,
+        "hotkey": 2,
+        "relic": 32,
+        "selection": 13,
+        "status": 151
+      },
+      "unclassified_slots": [],
+      "unsupported_ui_fields": [],
+      "runtime_summary": [
+        {
+          "operation": "live_power_values",
+          "power_models": 6,
+          "independent_instance_pairs": 4,
+          "canonical_fallback_checked": true,
+          "state_bytes_unchanged": true
+        },
+        {
+          "operation": "catalog",
+          "bindings": 935,
+          "dynamic_bindings": 200,
+          "route_calls": 230,
+          "unresolved_bindings": 0
+        },
+        {
+          "operation": "regression",
+          "checks": 34723,
+          "actual_pack": true,
+          "unresolved_bindings": 0,
+          "passed": true
+        }
+      ],
+      "keyword_tooltip_checks": 402524,
+      "world_text_checks": 6746,
+      "ui_markup_tag_occurrences": {
+        "blue": 540,
+        "gold": 471,
+        "green": 12,
+        "purple": 2
+      },
+      "frontend_static_labels": {
+        "count": 22,
+        "all_match_original": true,
+        "all_fields_resolved_without_parameters": true,
+        "keys": [
+          "main_menu_ui.SINGLE_PLAYER",
+          "main_menu_ui.CONTINUE",
+          "main_menu_ui.ABANDON_RUN",
+          "main_menu_ui.COMPENDIUM",
+          "main_menu_ui.SETTINGS",
+          "main_menu_ui.QUIT",
+          "main_menu_ui.CONTINUE_RUN_INFO.floor",
+          "main_menu_ui.CONTINUE_RUN_INFO.ascension",
+          "main_menu_ui.QUIT_CONFIRM_POPUP.header",
+          "main_menu_ui.ABANDON_RUN_CONFIRMATION.header",
+          "main_menu_ui.QUIT_CONFIRM_POPUP.body",
+          "main_menu_ui.ABANDON_RUN_CONFIRMATION.body",
+          "main_menu_ui.GENERIC_POPUP.cancel",
+          "main_menu_ui.GENERIC_POPUP.confirm",
+          "gameplay_ui.PAUSE_MENU.PAUSED",
+          "gameplay_ui.PAUSE_MENU.RESUME",
+          "gameplay_ui.PAUSE_MENU.SETTINGS",
+          "gameplay_ui.PAUSE_MENU.COMPENDIUM",
+          "gameplay_ui.PAUSE_MENU.GIVE_UP",
+          "gameplay_ui.PAUSE_MENU.SAVE_AND_QUIT",
+          "settings_ui.FASTMODE",
+          "settings_ui.FASTMODE_DESCRIPTION"
+        ]
+      },
+      "screenshots": [
+        {
+          "file": "event-option-tooltip-details.png",
+          "bytes": 23871,
+          "sha256": "2653e01f4f95028166fe8cee2c1ce9b21a9c021bd573cc5e81d467e4dfcaeb75",
+          "width": 320,
+          "height": 240
+        },
+        {
+          "file": "event-option-tooltip.png",
+          "bytes": 41072,
+          "sha256": "8996bbfa298851d0b85f5d11c5d2e22abf0b41112e613932b4f26f58489c0515",
+          "width": 320,
+          "height": 240
+        },
+        {
+          "file": "keyword-detail-orbs.png",
+          "bytes": 27242,
+          "sha256": "3d5fbc9bca815dc28bd87dfa6572e932ef64262723a1a478cefdcea3dc7d203d",
+          "width": 320,
+          "height": 240
+        },
+        {
+          "file": "keyword-hand-bash.png",
+          "bytes": 65718,
+          "sha256": "1abc91d4298f860cdb260796a6decb4553860e75c9ba1c373741dfb1481d0651",
+          "width": 320,
+          "height": 240
+        },
+        {
+          "file": "keyword-library.png",
+          "bytes": 46222,
+          "sha256": "4275412ccda8f3c015172d09865aba79a2ad701c71036c696e5d63a31ca5fc34",
+          "width": 320,
+          "height": 240
+        }
+      ]
+    }
+  },
+  "journals": [
+    {
+      "journal": "ui3-hybrid-tooltips-eng-fd04fe6da05d.json",
+      "checkpoint": "b400ab88186ddb618167a8b7c2a8c141d41629e0",
+      "status": "passed",
+      "returncode": 0,
+      "source_changed": false,
+      "source_sha256": "51e58806a65853d559d02e0313426d1764e7c5af4ea092368095c9fe0bb0b3e2",
+      "log": "ui3-hybrid-tooltips-eng-fd04fe6da05d.log",
+      "log_sha256": "8495cea2df2e60eee85c84d19379fb86f388c9b83f2791f973df96b410a02a83",
+      "started_at": "2026-10-23T14:47:51.540439+00:00",
+      "ended_at": "2026-10-23T14:47:54.070416+00:00"
+    },
+    {
+      "journal": "ui3-hybrid-tooltips-zhs-5b779f926fc3.json",
+      "checkpoint": "b400ab88186ddb618167a8b7c2a8c141d41629e0",
+      "status": "passed",
+      "returncode": 0,
+      "source_changed": false,
+      "source_sha256": "51e58806a65853d559d02e0313426d1764e7c5af4ea092368095c9fe0bb0b3e2",
+      "log": "ui3-hybrid-tooltips-zhs-5b779f926fc3.log",
+      "log_sha256": "ed50965ce88882c3fcefd27f5203ad86c6a6e3251af3878ebf25ed9b81ef3b4b",
+      "started_at": "2026-10-23T14:47:51.567575+00:00",
+      "ended_at": "2026-10-23T14:47:53.995759+00:00"
+    },
+    {
+      "journal": "ui3-hybrid-ui-templates-f344e84d3fa8.json",
+      "checkpoint": "b400ab88186ddb618167a8b7c2a8c141d41629e0",
+      "status": "passed",
+      "returncode": 0,
+      "source_changed": false,
+      "source_sha256": "51e58806a65853d559d02e0313426d1764e7c5af4ea092368095c9fe0bb0b3e2",
+      "log": "ui3-hybrid-ui-templates-f344e84d3fa8.log",
+      "log_sha256": "5a42e2803db0616d07295cf8a45b488690c9fea30007066dbcdcdcdb6a1b0c27",
+      "started_at": "2026-10-23T14:47:51.549015+00:00",
+      "ended_at": "2026-10-23T14:47:52.820072+00:00"
+    },
+    {
+      "journal": "ui3-hybrid-world-text-eng-8a4a6486a7f2.json",
+      "checkpoint": "b400ab88186ddb618167a8b7c2a8c141d41629e0",
+      "status": "passed",
+      "returncode": 0,
+      "source_changed": false,
+      "source_sha256": "51e58806a65853d559d02e0313426d1764e7c5af4ea092368095c9fe0bb0b3e2",
+      "log": "ui3-hybrid-world-text-eng-8a4a6486a7f2.log",
+      "log_sha256": "8a73558fcff7dcebd4d6bfa9b2e8bf0141cb956d291d2e41fc32068fb2a75d91",
+      "started_at": "2026-10-23T14:47:51.577844+00:00",
+      "ended_at": "2026-10-23T14:47:51.854386+00:00"
+    },
+    {
+      "journal": "ui3-hybrid-world-text-zhs-28c2891eb441.json",
+      "checkpoint": "b400ab88186ddb618167a8b7c2a8c141d41629e0",
+      "status": "passed",
+      "returncode": 0,
+      "source_changed": false,
+      "source_sha256": "51e58806a65853d559d02e0313426d1764e7c5af4ea092368095c9fe0bb0b3e2",
+      "log": "ui3-hybrid-world-text-zhs-28c2891eb441.log",
+      "log_sha256": "f59cf258b93c73410da7f2d57126c8f2d1632a9249c7715518cfa023f7a80063",
+      "started_at": "2026-10-23T14:47:51.566895+00:00",
+      "ended_at": "2026-10-23T14:47:51.785576+00:00"
+    }
+  ],
+  "visual_review": {
+    "reviewed": [
+      "eng/event-option-tooltip.png",
+      "eng/event-option-tooltip-details.png",
+      "zhs/event-option-tooltip.png",
+      "zhs/event-option-tooltip-details.png"
+    ],
+    "observed": "Associated card name and full mechanic prose are available in both languages; keyboard details retain the current event and expose paging/return controls. These captures verify the implemented 320x240 surfaces, not whole-game original-UI parity."
+  }
+}

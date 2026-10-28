@@ -1,0 +1,44 @@
+{
+  "reference": "v0.111.0 / 41cef1ea",
+  "evidence": "Read-only inspection of the user-provided hash-verified installation. Scene anchoring is verified; pixel-identical PC layout and hand-curve timing are not claimed.",
+  "scenes": [
+    {
+      "path": "scenes/combat/combat_ui.tscn",
+      "sha256": "a5c0e40a5c290c8d057e435e8408cc5f91a44066091ce219aa23ff1e8984d417"
+    },
+    {
+      "path": "scenes/combat/player_hand.tscn",
+      "sha256": "a656fc74e795597c697b6152e2154efba8285541c6af012cf1ebecb9bb8aef1a"
+    },
+    {
+      "path": "scenes/combat/combat_piles_container.tscn",
+      "sha256": "9bd982a6820e3b8faa4a2d2472697c774d95d8182737a79739263cbfc3aa666e"
+    },
+    {
+      "path": "scenes/combat/end_turn_button.tscn",
+      "sha256": "06366310faf0409175f4eb919fd9270c8184cff987ad2f2e40f09c3329f8c301"
+    },
+    {
+      "path": "scenes/cards/card.tscn",
+      "sha256": "ca8f1cf93536b0d0d03daa7e9bd00073013316abcd158a82f6bfe4dc832b9cba"
+    }
+  ],
+  "observed_structure": [
+    "Hand/CardHolderContainer is anchored bottom-center.",
+    "EndTurnButton is anchored to the right/bottom; energy container is lower-left.",
+    "Draw and discard piles occupy opposite bottom corners; exhaust is above discard.",
+    "Card title banner and energy icon are above the portrait; type plaque and description follow the portrait."
+  ],
+  "adaptations": [
+    "Authored integer-only fan and 80x112 focused card, not a transcription of the original NPlayerHand motion.",
+    "Stable bottom hit rail prevents raised previews stealing adjacent targets.",
+    "Focus position is clamped away from energy/end-turn controls.",
+    "Long text keeps its full I detail overlay; card faces mark truncation with an ellipsis."
+  ],
+  "gameplay_changes": false,
+  "excluded_features": [
+    "audio",
+    "multiplayer",
+    "timeline"
+  ]
+}

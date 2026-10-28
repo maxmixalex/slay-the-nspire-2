@@ -1,0 +1,251 @@
+{
+  "schema": 1,
+  "state": "packaged_and_verified_persistence_blocked",
+  "packaging_source_checkpoint": "46f7ab9ed5292e07212a5b423c43e951f7d97a23",
+  "integrated_runtime_source_checkpoint": "4f50193b212bb5d27e4a7e82deaa7622a5d4757d",
+  "executed_runtime_checkpoints": {
+    "arm": "4f50193b212bb5d27e4a7e82deaa7622a5d4757d",
+    "wasm": "4f50193b212bb5d27e4a7e82deaa7622a5d4757d",
+    "html": "4f50193b212bb5d27e4a7e82deaa7622a5d4757d"
+  },
+  "runtime_input_equivalence": {
+    "arm": {
+      "execution_checkpoint": "4f50193b212bb5d27e4a7e82deaa7622a5d4757d",
+      "packaging_checkpoint": "46f7ab9ed5292e07212a5b423c43e951f7d97a23",
+      "scope": [
+        "src",
+        "include",
+        "third_party",
+        "platform/decoder_headers",
+        "tools",
+        "config",
+        "CMakeLists.txt",
+        "VERSION",
+        "platform/ndless"
+      ],
+      "file_count": 396,
+      "git_blob_and_mode_inventory_sha256": "74664d85e036b8c6f9edfd928957bed68846dc02e811c5e065631c556987fd22",
+      "all_inputs_byte_and_mode_identical": true,
+      "packaging_checkout_files_verified": true
+    },
+    "web": {
+      "execution_checkpoint": "4f50193b212bb5d27e4a7e82deaa7622a5d4757d",
+      "packaging_checkpoint": "46f7ab9ed5292e07212a5b423c43e951f7d97a23",
+      "scope": [
+        "src",
+        "include",
+        "third_party",
+        "platform/decoder_headers",
+        "tools",
+        "config",
+        "CMakeLists.txt",
+        "VERSION",
+        "platform/web"
+      ],
+      "file_count": 395,
+      "git_blob_and_mode_inventory_sha256": "1a24fe4695972c76d4b279f7168cc24f15dd720d34f2612ff43c1d4f5466fad8",
+      "all_inputs_byte_and_mode_identical": true,
+      "packaging_checkout_files_verified": true
+    }
+  },
+  "html_repackaging": {
+    "packaging_checkpoint": "46f7ab9ed5292e07212a5b423c43e951f7d97a23",
+    "executed_runtime_checkpoint": "4f50193b212bb5d27e4a7e82deaa7622a5d4757d",
+    "tested_html": {
+      "file": "nSpire2-bilingual-4f50193b.html",
+      "bytes": 132264503,
+      "sha256": "5d396163118689c312cfc05a40ac7da185aecafe5aebf9e023b53caefc0ab30f"
+    },
+    "repackaged_html": {
+      "file": "Slay-the-Nspire-2-0.17-ui2-bilingual-offline.html",
+      "bytes": 132299895,
+      "sha256": "d9c325a77b53ac6546f2fa40e532d7c4a679f2d581ba733f3634be37421123c9"
+    },
+    "exactly_one_notice_footer_replaced": true,
+    "all_bytes_outside_notice_footer_identical": true,
+    "inline_script_sha256": [
+      "f388acfc10a5044ccc8937cbd454a86241f59a63978745a1a298d4984ee843ef"
+    ],
+    "copying_included_verbatim": true,
+    "all_third_party_licenses_included_verbatim": true,
+    "pinned_corresponding_source_links_included": true,
+    "no_new_browser_execution_claim": true
+  },
+  "validation_reports": {
+    "validation-feedback-native-0.17.json": {
+      "file": "validation-feedback-native-0.17.json",
+      "bytes": 50752,
+      "sha256": "4cb4d12e5ed077aac37f77af0cb7aa80c45cdc087e20fe61181581e19c56c995",
+      "source_url": "https://github.com/zyf722/slay-the-nspire-2/blob/46f7ab9ed5292e07212a5b423c43e951f7d97a23/docs/validation-feedback-native-0.17.json"
+    },
+    "validation-platform-ui2-0.17.json": {
+      "file": "validation-platform-ui2-0.17.json",
+      "bytes": 85803,
+      "sha256": "17af1a6a52edc1c7930db43d1d76862044cfb6e7c6a87af83f7bf7ffb5708c29",
+      "source_url": "https://github.com/zyf722/slay-the-nspire-2/blob/46f7ab9ed5292e07212a5b423c43e951f7d97a23/docs/validation-platform-ui2-0.17.json"
+    },
+    "validation-choice-barriers-0.17.json": {
+      "file": "validation-choice-barriers-0.17.json",
+      "bytes": 10146,
+      "sha256": "529496ac48332b0b3581fd6bb007b30fc4bc60b05d4269118812c32a9f29dd9b",
+      "source_url": "https://github.com/zyf722/slay-the-nspire-2/blob/46f7ab9ed5292e07212a5b423c43e951f7d97a23/docs/validation-choice-barriers-0.17.json"
+    },
+    "validation-intent-slot-0.17.json": {
+      "file": "validation-intent-slot-0.17.json",
+      "bytes": 13156,
+      "sha256": "3153d48b37448bc48d683ddbb0858ef532d625371d17bf0ffe418c3e01b94272",
+      "source_url": "https://github.com/zyf722/slay-the-nspire-2/blob/46f7ab9ed5292e07212a5b423c43e951f7d97a23/docs/validation-intent-slot-0.17.json"
+    },
+    "validation-merchant-effects-0.17.json": {
+      "file": "validation-merchant-effects-0.17.json",
+      "bytes": 22100,
+      "sha256": "eea8bc5c367482ffdbfccf9d7dc23a7e4432e931e41869eb51f55627b832742d",
+      "source_url": "https://github.com/zyf722/slay-the-nspire-2/blob/46f7ab9ed5292e07212a5b423c43e951f7d97a23/docs/validation-merchant-effects-0.17.json"
+    },
+    "validation-startup-reuse-0.17.json": {
+      "file": "validation-startup-reuse-0.17.json",
+      "bytes": 162879,
+      "sha256": "94f6516b72a5371e08bd566eedecb97311ddce6c494f6b8b6867ca2c84212b05",
+      "source_url": "https://github.com/zyf722/slay-the-nspire-2/blob/46f7ab9ed5292e07212a5b423c43e951f7d97a23/docs/validation-startup-reuse-0.17.json"
+    },
+    "validation-ui-templates-0.17.json": {
+      "file": "validation-ui-templates-0.17.json",
+      "bytes": 24679,
+      "sha256": "e60c8d100a17e91dfd418acd35063cfe467a1d3d1fa383f1c7a60ab4738decf1",
+      "source_url": "https://github.com/zyf722/slay-the-nspire-2/blob/46f7ab9ed5292e07212a5b423c43e951f7d97a23/docs/validation-ui-templates-0.17.json"
+    },
+    "validation-rendering-0.17.json": {
+      "file": "validation-rendering-0.17.json",
+      "bytes": 35779,
+      "sha256": "e7c69cc868facf818ac73980ab72a0de1c6a0810a96a5069a691af997d6ecba3",
+      "source_url": "https://github.com/zyf722/slay-the-nspire-2/blob/46f7ab9ed5292e07212a5b423c43e951f7d97a23/docs/validation-rendering-0.17.json"
+    }
+  },
+  "packaging_script_sha256": "3c399ca5f4b70d5b5e7a2acf374278abaa2880bc375ea79b7099ddb9c2d44c62",
+  "platform_receipt_sha256": "4e8c83841591b69c9d9398ac2a67c84ef8f8d6bf4f57ad871452f4af1e0e2c37",
+  "artifacts": [
+    {
+      "file": "Slay-the-Nspire-2-0.17-ui2-bilingual-calculator.zip",
+      "bytes": 81484351,
+      "sha256": "a322d31e641794be211839981eb4eeec20d0413f3aa6e3f6a687a7579c03e7a1"
+    },
+    {
+      "file": "Slay-the-Nspire-2-0.17-ui2-bilingual-offline.html",
+      "bytes": 132299895,
+      "sha256": "d9c325a77b53ac6546f2fa40e532d7c4a679f2d581ba733f3634be37421123c9"
+    }
+  ],
+  "zip_members": {
+    "BUILD-INFO.json": {
+      "bytes": 7100,
+      "sha256": "c36869e77637ae3b76c5fe8c1dadc64e137a6d9885f7e3ffd884990926a9c572"
+    },
+    "COPYING": {
+      "bytes": 35149,
+      "sha256": "3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986"
+    },
+    "NOTICE.md": {
+      "bytes": 8099,
+      "sha256": "c16211d024e3bd2202393bd623ddd070c43834f92bc7ab668bb413746b50e0b6"
+    },
+    "README.txt": {
+      "bytes": 6022,
+      "sha256": "726000b7486d8d8f9b276aec905c5c9f1089c34ecab3d6391721a93f20b88922"
+    },
+    "SHA256SUMS": {
+      "bytes": 919,
+      "sha256": "26f5b1ad7b7110c71d734e8954c55e1bd5f530c0d15e934bced937f9c2e5e1c2"
+    },
+    "licenses/Go-BSD-3-Clause.txt": {
+      "bytes": 1479,
+      "sha256": "2d36597f7117c38b006835ae7f537487207d8ec407aa9d9980794b2030cbc067"
+    },
+    "licenses/Noto-Boot-OFL.txt": {
+      "bytes": 4330,
+      "sha256": "d6e6af5cab593ecdd4a88c03e53d9139439f7d8ab7cd13115b632a549b926134"
+    },
+    "licenses/OkHSV-Godot-MIT.txt": {
+      "bytes": 1406,
+      "sha256": "66dda2b472dc2c0cf5e7a4eb9b4a3d0462cb777fdbcaf22197df8699e00f669b"
+    },
+    "nSpire2.common.tns": {
+      "bytes": 87405187,
+      "sha256": "d40d86f2ebb22d388ca5220603e6335d1aa4b6129b3accca866091e8396ac0d1"
+    },
+    "nSpire2.eng.tns": {
+      "bytes": 1801249,
+      "sha256": "e9340ca333a52a0db62df712742facc12985313328e57e84935dfd4cb147a522"
+    },
+    "nSpire2.tns": {
+      "bytes": 978599,
+      "sha256": "878fee0120b0c6e2edb4c652021911403f58bf476055370a9e1552d5b0bd3a74"
+    },
+    "nSpire2.zhs.tns": {
+      "bytes": 4576927,
+      "sha256": "494f06dd62a9e862804c3a0425d42d5ba251580bce9cf6eba99a4454b1bd1cfa"
+    }
+  },
+  "embedded_inputs": {
+    "nSpire2.common.tns": {
+      "file": "nSpire2.common.tns",
+      "bytes": 87405187,
+      "sha256": "d40d86f2ebb22d388ca5220603e6335d1aa4b6129b3accca866091e8396ac0d1"
+    },
+    "nSpire2.eng.tns": {
+      "file": "nSpire2.eng.tns",
+      "bytes": 1801249,
+      "sha256": "e9340ca333a52a0db62df712742facc12985313328e57e84935dfd4cb147a522"
+    },
+    "nSpire2.zhs.tns": {
+      "file": "nSpire2.zhs.tns",
+      "bytes": 4576927,
+      "sha256": "494f06dd62a9e862804c3a0425d42d5ba251580bce9cf6eba99a4454b1bd1cfa"
+    },
+    "wasm": {
+      "file": "nSpire2.wasm",
+      "bytes": 5388416,
+      "sha256": "2e025eddd673e2b2d28f72bd567cecb4285e4969e1e12e774eea76cb76da0072"
+    }
+  },
+  "checks": {
+    "complete_zip_member_readback": true,
+    "complete_html_embedded_input_readback": true,
+    "both_locales_and_single_common": true,
+    "licenses_included": true,
+    "save_and_profiling_files_excluded": true
+  },
+  "resource_conversion_checkpoint": "06c7fd16e6d4d47dc25b628913ecdeef3a4fe76d",
+  "resource_version": 19,
+  "save_version": 15,
+  "packaging_execution": {
+    "journal": "ui2-delivery-package-d6a9e9dfa878.json",
+    "checkpoint": "46f7ab9ed5292e07212a5b423c43e951f7d97a23",
+    "status": "passed",
+    "returncode": 0,
+    "started_at": "2026-10-23T09:20:07.225564+00:00",
+    "ended_at": "2026-10-23T09:20:15.423591+00:00",
+    "source_changed": false,
+    "source_sha256": "fe16045e33fbc5af8abaf83a266d4372536639cda0628852e1c51784db76068b",
+    "log_sha256": "d3d69cf56fe3f70820a70ad0f2616a0115cb0592abeb6c74f2533e616ba7ce16",
+    "log_hash_independently_verified": true
+  },
+  "private_manifest": {
+    "file": "delivery-manifest.json",
+    "bytes": 8825,
+    "sha256": "fb0bf1ca9018980e8f164e360b3822b1b926f9cc4c30aac2824a1da5a5e715d0"
+  },
+  "artifact_storage": {
+    "state": "blocked_before_process_creation",
+    "automatic_approval_review": "rejected",
+    "reason": "The artifacts include private original game assets; the automatic review requires explicit end-user authorization to upload these two artifacts to this destination.",
+    "upload_process_started": false,
+    "explicit_user_authorization_pending": true
+  },
+  "interpretation": [
+    "The actual ARM, WASM, browser and final bilingual Firebird executions retain runtime 4f50193b, not the later packaging checkpoint.",
+    "The final HTML differs from the browser-tested HTML only in its verified EOF license comment; embedded code and resources remain byte-identical.",
+    "ZIP member readback and HTML embedded-input verification passed. These are packaging gates, not new application or original-game visual acceptance.",
+    "The two artifacts exist locally and are verified. Persistent user delivery has not completed because upload was blocked before execution.",
+    "No original assets or generated binaries are included in this public metadata report."
+  ]
+}

@@ -1,0 +1,1428 @@
+{
+  "schema": 1,
+  "document": "UI14 calculator delivery and explicitly bounded acceptance",
+  "status": "playable_with_disclosed_performance_and_source_limits",
+  "repository": "maxmixalex/slay-the-nspire-2",
+  "reference": "v0.111.0 / 41cef1ea",
+  "recorded_at_utc": "2026-10-27T00:57:56.204178+00:00",
+  "identities": {
+    "runtime_checkpoint": "af154470daa96563f0695d043178285d26dcaee4",
+    "resource_checkpoint": "67e2822ef369dc62428dcc0698c0bda62586756f",
+    "feedback_map": "docs/ui14-lcd-followup-0.17.md",
+    "original_assets_published_in_source_repository": false
+  },
+  "native": {
+    "status": "passed",
+    "tests": 138,
+    "passed": 138,
+    "failed": 0,
+    "elapsed_seconds": 37.64,
+    "environment": "local Linux native host",
+    "compiler": "Clang 18.1.3",
+    "build_type": "Release",
+    "optimization": "-O3 -DNDEBUG",
+    "sanitizers": false,
+    "build": {
+      "journal": "ui14-stage16-full-native-build-28fb58932d9f.json",
+      "sha256": "25a270d47b3ea20f39973f76e77f7ef337593c0fe6912455f4d33b35861e8132",
+      "checkpoint": "af154470daa96563f0695d043178285d26dcaee4",
+      "status": "passed",
+      "source_changed": false,
+      "log_sha256": "9bd41708a09609bd4ce047160475451ac7dc0a1ca85476de92691f41ffb6a08d"
+    },
+    "execution": {
+      "journal": "ui14-stage16-full-native-suite-567ebb15de14.json",
+      "sha256": "6e1239e8c0a8f5277931ecc423b72b94985f737f9976d059ae2d2c52c5bac7d1",
+      "checkpoint": "af154470daa96563f0695d043178285d26dcaee4",
+      "status": "passed",
+      "source_changed": false,
+      "log_sha256": "c4f18b706f9f4c409448c15a666a1fbbe175ac97036145c964091138c97d79df"
+    }
+  },
+  "github_ci": {
+    "runtime_checkpoint": "af154470daa96563f0695d043178285d26dcaee4",
+    "run_id": 40427358640,
+    "url": "https://github.com/maxmixalex/slay-the-nspire-2/actions/runs/40427358640",
+    "status": "completed",
+    "conclusion": "success",
+    "configuration": "Clang 18.1.3 Debug -O1 with ASan and UBSan; all 138 suites",
+    "jobs": [
+      {
+        "id": 121936734239,
+        "name": "native",
+        "status": "completed",
+        "conclusion": "success",
+        "started_at": "2026-10-27T00:36:29Z",
+        "completed_at": "2026-10-27T00:56:46Z",
+        "active_step": null
+      },
+      {
+        "id": 121936734462,
+        "name": "portable",
+        "status": "completed",
+        "conclusion": "success",
+        "started_at": "2026-10-27T00:36:29Z",
+        "completed_at": "2026-10-27T00:38:30Z",
+        "active_step": null
+      },
+      {
+        "id": 121936734534,
+        "name": "conversion",
+        "status": "completed",
+        "conclusion": "success",
+        "started_at": "2026-10-27T00:36:29Z",
+        "completed_at": "2026-10-27T00:36:58Z",
+        "active_step": null
+      }
+    ],
+    "native_result": {
+      "tests": 138,
+      "passed": 138,
+      "failed": 0,
+      "elapsed_seconds": 253.87,
+      "log": "ci-stage16-native-121936734239.log",
+      "sha256": "1bbea89ea05eaa8f73e1f3dc8015511a8264f3a9eed649c6a01f5c572b630eed",
+      "address_or_undefined_sanitizer_diagnostics": false
+    }
+  },
+  "historical_ci_failure": {
+    "run": {
+      "run_id": 40381165109,
+      "job_id": 121777676744,
+      "head_sha": "a2b9ff73294fbc31d7a142fd044b8bb89e0373f0",
+      "url": "https://github.com/maxmixalex/slay-the-nspire-2/actions/runs/40381165109/job/121777676744",
+      "plaintext_log": "ci-stage11-native-121777676744.log",
+      "plaintext_log_sha256": "ce34e47c584af2b4d36c06694c872f01f67980967c539a6ed21e2b2b530a76f3",
+      "log_normalization": "ANSI colour escapes removed; timestamped job text retained",
+      "compiler": "Clang 18.1.3",
+      "native_config": "Debug; -O1; address,undefined sanitizers; -fno-omit-frame-pointer; parallel2; stack32768KiB",
+      "build_started_at": "2026-10-26T19:24:04.2420527Z",
+      "build_last_link_at": "2026-10-26T19:44:53.6407102Z",
+      "build_seconds": 1249.3986575,
+      "ctest_seconds": 321.53,
+      "registered_tests": 138,
+      "passed_tests": 137,
+      "failed_tests": 1,
+      "sole_failure": {
+        "number": 111,
+        "test": "combat_ui12_regression",
+        "case": "source Normal/Fast ordinary/boss reward clock retains the command barrier",
+        "line": 167,
+        "assertion": "a.combat_status.reward_scheduled&&a.combat_status.reward_at==expected"
+      },
+      "ctest_exit": 8,
+      "sanitizer_diagnostics_found": false
+    },
+    "fixture_fix": {
+      "checkpoint": "d8510f202454270cb49b79fc4094429885d6ddea",
+      "file": "tests/combat_ui12_regression.cpp",
+      "change": "Synchronize enemy feedback and assert had_live_scene after begin_combat_feedback binds the first status projection, before the fixture kills every enemy. The expected deadline calculation and strict assertion remain unchanged.",
+      "production_reward_file_11_to_12_identical": true,
+      "production_reward_file_sha256": "f565cf9edd2d444feec977a8be12606d29d80520ae0cce5b1cca1533078affc7",
+      "native_validation": [
+        {
+          "journal": "rooms-stage12-combat-ui12-synthetic-bdd875fd9005.json",
+          "checkpoint": "d8510f202454270cb49b79fc4094429885d6ddea",
+          "status": "passed",
+          "source_changed": false,
+          "output": "combat UI12: 1149 checks passed"
+        },
+        {
+          "journal": "rooms-stage12-combat-ui12-eng-f69d3a343535.json",
+          "checkpoint": "d8510f202454270cb49b79fc4094429885d6ddea",
+          "status": "passed",
+          "source_changed": false,
+          "output": "combat UI12: 58696 checks passed; actual source cards rendered"
+        }
+      ]
+    },
+    "sanitizer_coverage_removed": false,
+    "workflow_changed_for_this_delivery": false,
+    "local_release_and_ci_sanitizer_wall_times_are_not_comparable": true
+  },
+  "python": {
+    "status": "passed",
+    "discovered": 280,
+    "supplemental": 56,
+    "duplicate_tests": 2,
+    "unique": 334,
+    "scope": "Converter and packaging Python source is unchanged since these completed gates.",
+    "discovery": {
+      "journal": "ui14-stage6-python-854053a9a7b2.json",
+      "sha256": "ebe9e289a7f8f3bcc451deb33f66ddf40175ea0448deb6f5904c19bf3411b495",
+      "checkpoint": "67e2822ef369dc62428dcc0698c0bda62586756f",
+      "status": "passed",
+      "source_changed": false,
+      "log_sha256": "8b80ecb1aa79acecf01ebaecea6c53582edd3f727ccdfcf9cd5428852986f3cf"
+    },
+    "supplemental_gate": {
+      "journal": "ui14-stage4-python-supplemental-1fdd1ed610d3.json",
+      "sha256": "99ac3ef729284d8d42f67525e1b5939d5ea07f6a226e87a9eedae4c3945c26f6",
+      "checkpoint": "97a63d78979daba7d12fa8475b305e836fc9503c",
+      "status": "passed",
+      "source_changed": false,
+      "log_sha256": "703ac5529a74aefbf91a9e2f3b828897323f763eb9c8b9c1493f68647c284d0a"
+    }
+  },
+  "arm": {
+    "status": "passed",
+    "name": "ui14-stage16.tns",
+    "bytes": 1689486,
+    "sha256": "98d1408183e3bff8d99b6fd0cac7143ad7a25783074a3a2297cf69a04adcc375",
+    "linked_allocation_bytes": 22676740,
+    "ordinary_os_allocation_verified": true,
+    "evidence": {
+      "journal": "ui14-stage16-arm-c89af1b54236.json",
+      "sha256": "7b9d897b38b5d3f5ed0c08eaf42abef5c7ea5eee4516037779c4139fb76019c6",
+      "checkpoint": "af154470daa96563f0695d043178285d26dcaee4",
+      "status": "passed",
+      "source_changed": false,
+      "log_sha256": "3ced79e433c47c0263b53f1fd736be4c843ec2fa8079696a0bddc7b6aed8a2ec"
+    }
+  },
+  "resources": {
+    "status": "passed",
+    "languages": 16,
+    "checks": 38686,
+    "descriptions": 53072,
+    "unexpanded_templates": 0,
+    "auxiliary_count": 5275,
+    "common_art_shared_across_locales": true,
+    "languages_identity": {
+      "eng": {
+        "glyphs": 13299,
+        "strings": 8704,
+        "locale_tail_bytes": 476798,
+        "compressed_locale_tail_unchanged": true,
+        "unchanged_all_text_and_glyph_pixels": true,
+        "bytes": 1111330,
+        "sha256": "0b9d7e8cd7e2c06719144cf586fa59755fd9cb30fe0cd9bca422b33ed9456346",
+        "logical_bytes": 74415410
+      },
+      "zhs": {
+        "glyphs": 53631,
+        "strings": 8704,
+        "locale_tail_bytes": 4320428,
+        "compressed_locale_tail_unchanged": true,
+        "unchanged_all_text_and_glyph_pixels": true,
+        "bytes": 5089995,
+        "sha256": "be7ce417337cbd45b1dbbbff5e5f8bb7b6f15bdf92dccfdf934255c8e65feb5f",
+        "logical_bytes": 78904352
+      },
+      "zht": {
+        "glyphs": 56117,
+        "strings": 8704,
+        "locale_tail_bytes": 4485602,
+        "compressed_locale_tail_unchanged": true,
+        "unchanged_all_text_and_glyph_pixels": true,
+        "bytes": 5257010,
+        "sha256": "9ed915b4f59257e99b2bfe73bd3adad5a046b6adab98e48536b5d7a30f9666f9",
+        "logical_bytes": 79109302
+      },
+      "deu": {
+        "glyphs": 13494,
+        "strings": 8704,
+        "locale_tail_bytes": 501574,
+        "compressed_locale_tail_unchanged": true,
+        "unchanged_all_text_and_glyph_pixels": true,
+        "bytes": 1140445,
+        "sha256": "fd88230f10f666feecc1739a085bf4212495f8f9b0448f4051c0def0b12b40cc",
+        "logical_bytes": 74443306
+      },
+      "esp": {
+        "glyphs": 13665,
+        "strings": 8704,
+        "locale_tail_bytes": 506638,
+        "compressed_locale_tail_unchanged": true,
+        "unchanged_all_text_and_glyph_pixels": true,
+        "bytes": 1144001,
+        "sha256": "e961e89f55683f4f7d4f6e5202669d7af9719e3838812a0229afb1e2a20b2d7d",
+        "logical_bytes": 74451106
+      },
+      "fra": {
+        "glyphs": 13811,
+        "strings": 8704,
+        "locale_tail_bytes": 520858,
+        "compressed_locale_tail_unchanged": true,
+        "unchanged_all_text_and_glyph_pixels": true,
+        "bytes": 1158266,
+        "sha256": "95f5073f53c9856511c706067480ab5df8f029318d23f13196b82e05d099b215",
+        "logical_bytes": 74467662
+      },
+      "ind": {
+        "glyphs": 13299,
+        "strings": 8704,
+        "locale_tail_bytes": 474956,
+        "compressed_locale_tail_unchanged": true,
+        "unchanged_all_text_and_glyph_pixels": true,
+        "bytes": 1109646,
+        "sha256": "638f8566ed0093dd6785440d0d5789a3bc410b8aaf000e3d18e0453fd232ab4b",
+        "logical_bytes": 74413568
+      },
+      "ita": {
+        "glyphs": 13434,
+        "strings": 8704,
+        "locale_tail_bytes": 496536,
+        "compressed_locale_tail_unchanged": true,
+        "unchanged_all_text_and_glyph_pixels": true,
+        "bytes": 1134093,
+        "sha256": "5c2f8c0cd8b4b1b8e3b8e4ab0d7ee50e8159870570722153b6f6214eb11616ee",
+        "logical_bytes": 74437308
+      },
+      "jpn": {
+        "glyphs": 39087,
+        "strings": 8704,
+        "locale_tail_bytes": 3229140,
+        "compressed_locale_tail_unchanged": true,
+        "unchanged_all_text_and_glyph_pixels": true,
+        "bytes": 3951600,
+        "sha256": "3323ddc0b48d53f89132d38e2732bc1f7cffcea696d33c26090f0206e2582128",
+        "logical_bytes": 77580360
+      },
+      "kor": {
+        "glyphs": 26960,
+        "strings": 8704,
+        "locale_tail_bytes": 1281578,
+        "compressed_locale_tail_unchanged": true,
+        "unchanged_all_text_and_glyph_pixels": true,
+        "bytes": 1960030,
+        "sha256": "05633e79d2bf1a728e2b4bfe52f29ea19e8b89d414043c57afce4567000f12c0",
+        "logical_bytes": 75438766
+      },
+      "pol": {
+        "glyphs": 14908,
+        "strings": 8704,
+        "locale_tail_bytes": 450242,
+        "compressed_locale_tail_unchanged": true,
+        "unchanged_all_text_and_glyph_pixels": true,
+        "bytes": 1084736,
+        "sha256": "f3b427fed9d2d398c0e2def23378fda195aee75db549fb50afc7ec9b229e138c",
+        "logical_bytes": 74414598
+      },
+      "ptb": {
+        "glyphs": 13766,
+        "strings": 8704,
+        "locale_tail_bytes": 513382,
+        "compressed_locale_tail_unchanged": true,
+        "unchanged_all_text_and_glyph_pixels": true,
+        "bytes": 1153502,
+        "sha256": "d96f16fbc682322dbfd32a54c98fd7ad1088599485506ad51f757076414070ad",
+        "logical_bytes": 74459466
+      },
+      "rus": {
+        "glyphs": 16460,
+        "strings": 8704,
+        "locale_tail_bytes": 499142,
+        "compressed_locale_tail_unchanged": true,
+        "unchanged_all_text_and_glyph_pixels": true,
+        "bytes": 1142856,
+        "sha256": "0105f38b6e355dea55813275fe99feda4b03bc19354aa894696b551bb9f8f743",
+        "logical_bytes": 74488330
+      },
+      "spa": {
+        "glyphs": 13657,
+        "strings": 8704,
+        "locale_tail_bytes": 505918,
+        "compressed_locale_tail_unchanged": true,
+        "unchanged_all_text_and_glyph_pixels": true,
+        "bytes": 1142883,
+        "sha256": "fabd974881046e047022f9cb5297794de2faec1284853d8063876cf1826f206c",
+        "logical_bytes": 74450258
+      },
+      "tha": {
+        "glyphs": 15348,
+        "strings": 8704,
+        "locale_tail_bytes": 622158,
+        "compressed_locale_tail_unchanged": true,
+        "unchanged_all_text_and_glyph_pixels": true,
+        "bytes": 1264806,
+        "sha256": "bc69a4aee4485f82426cefd718f16b4cdcb9b65918952679cf08f7cba1eb3f4c",
+        "logical_bytes": 74593554
+      },
+      "tur": {
+        "glyphs": 13637,
+        "strings": 8704,
+        "locale_tail_bytes": 505598,
+        "compressed_locale_tail_unchanged": true,
+        "unchanged_all_text_and_glyph_pixels": true,
+        "bytes": 1143693,
+        "sha256": "3f20c34e12ccb9dff8818e687a0cf159757a1aaedf675fd38f0c43ac1cc1e742",
+        "logical_bytes": 74449618
+      }
+    },
+    "gate": {
+      "journal": "ui14-stage6-final-all-locales-9ab3f59d725f.json",
+      "sha256": "301f99911cc08ece4da0efed92e26043358b69d35082bec9dd6444ac2e41e75e",
+      "checkpoint": "67e2822ef369dc62428dcc0698c0bda62586756f",
+      "status": "passed",
+      "source_changed": false,
+      "log_sha256": "6e9314f7ede12252e75fb506b2edbaae8f00c7ff46ed8c150828a47f0dc76327"
+    }
+  },
+  "random_pixel_equivalence": {
+    "checkpoint": "af154470daa96563f0695d043178285d26dcaee4",
+    "background_comparisons": [
+      {
+        "language": "eng",
+        "clock": 0,
+        "same": true,
+        "sha256": "5cc602c8df6c38bb473d77d00cf48ac13ce6f847d2aaec7c09be5371e4e963b8"
+      },
+      {
+        "language": "eng",
+        "clock": 1250,
+        "same": true,
+        "sha256": "41ebba3c3a1682d0ece25e549528b1a54e8d6cfe72ad22838158223deec9f119"
+      },
+      {
+        "language": "eng",
+        "clock": 7500,
+        "same": true,
+        "sha256": "18f6bda5c282ea5ce74b8697595093d598e9533fb6d13c628fd3f06b2ada3c0e"
+      },
+      {
+        "language": "eng",
+        "clock": 16000,
+        "same": true,
+        "sha256": "ee771c40f76a35b90fec6b8974fcaf77d08a79811beb736158a14c29e8e4aa97"
+      },
+      {
+        "language": "zhs",
+        "clock": 0,
+        "same": true,
+        "sha256": "5cc602c8df6c38bb473d77d00cf48ac13ce6f847d2aaec7c09be5371e4e963b8"
+      },
+      {
+        "language": "zhs",
+        "clock": 1250,
+        "same": true,
+        "sha256": "41ebba3c3a1682d0ece25e549528b1a54e8d6cfe72ad22838158223deec9f119"
+      },
+      {
+        "language": "zhs",
+        "clock": 7500,
+        "same": true,
+        "sha256": "18f6bda5c282ea5ce74b8697595093d598e9533fb6d13c628fd3f06b2ada3c0e"
+      },
+      {
+        "language": "zhs",
+        "clock": 16000,
+        "same": true,
+        "sha256": "ee771c40f76a35b90fec6b8974fcaf77d08a79811beb736158a14c29e8e4aa97"
+      }
+    ],
+    "screen_comparisons": [
+      {
+        "language": "eng",
+        "name": "random-screen-24000.ppm",
+        "same": true,
+        "sha256": "7a9b7c201e8926c77da9bbb01347ff4b9c24b68ddc84799e77573c2dd526f53b"
+      },
+      {
+        "language": "eng",
+        "name": "random-screen-settled-24600.ppm",
+        "same": true,
+        "sha256": "dd6232d0b303f3caed4b5ab72017ff3fd2c2396ded616ba021045d3af102e253"
+      },
+      {
+        "language": "zhs",
+        "name": "random-screen-24000.ppm",
+        "same": true,
+        "sha256": "beca22c4302ddeeaa5fb3d77872e536b2a9e31255357bcb193cd67ed8d365855"
+      },
+      {
+        "language": "zhs",
+        "name": "random-screen-settled-24600.ppm",
+        "same": true,
+        "sha256": "4f7b9ba3f6bf9e325f820d9db644e0bf181d472e33dbd5a30f2565e8a4ba1000"
+      }
+    ],
+    "journals": [
+      {
+        "path": "frontend-stage16-random-eng-c9f2c84f880a.json",
+        "status": "passed",
+        "source_changed": false,
+        "result": "Random source water, complete particle emitters and unchanged canonical state: 610601 checks passed (actual source textures)"
+      },
+      {
+        "path": "frontend-stage16-random-synthetic-550bcd4f5687.json",
+        "status": "passed",
+        "source_changed": false,
+        "result": "Random source water, complete particle emitters and unchanged canonical state: 297749 checks passed (independent synthetic)"
+      },
+      {
+        "path": "frontend-stage16-random-zhs-94d956dbf0ae.json",
+        "status": "passed",
+        "source_changed": false,
+        "result": "Random source water, complete particle emitters and unchanged canonical state: 610601 checks passed (actual source textures)"
+      }
+    ]
+  },
+  "embark_transition": {
+    "checkpoint": "af154470daa96563f0695d043178285d26dcaee4",
+    "ordinary": {
+      "checkpoint": "af154470daa96563f0695d043178285d26dcaee4",
+      "scope": "Includes input/new-run setup plus visible departure; mixed interval is not isolated animation FPS",
+      "frames": 13,
+      "seconds": 2.647308349609375,
+      "fps_mixed": 4.9106482068544155,
+      "render_ms": 58.18763146033653,
+      "update_ms": 138.092041015625,
+      "read_calls": 7,
+      "read_bytes_requested": 302111,
+      "resource_failures": 0,
+      "save_bytes": 7025,
+      "captures": 151,
+      "distinct_capture_frames": 29
+    },
+    "random": {
+      "checkpoint": "af154470daa96563f0695d043178285d26dcaee4",
+      "scope": "Includes input/new-run setup, original random reveal and visible departure; mixed interval is not isolated animation FPS",
+      "frames": 38,
+      "seconds": 3.012969970703125,
+      "fps_mixed": 12.612140303254362,
+      "render_ms": 62.75377775493421,
+      "update_ms": 6.769280684621711,
+      "read_calls": 58,
+      "read_bytes_requested": 889994,
+      "resource_failures": 0,
+      "save_bytes": 7094,
+      "captures": 201,
+      "distinct_capture_frames": 83
+    },
+    "event_proof": {
+      "ordinary-embark/events.jsonl": {
+        "events": 807,
+        "started_flash": "sample.flash",
+        "failed_operations": [],
+        "stopped": true,
+        "sha256": "abc073909a863d9a7934cb6f2befe8df77ac589db775f5db29f4baa254b6393e"
+      },
+      "random-embark/events.jsonl": {
+        "events": 1057,
+        "started_flash": "sample.flash",
+        "failed_operations": [],
+        "stopped": true,
+        "sha256": "3dd4adb1dbd71ba9f69987d9f804e7cb2cebc2670d41248e9611fdb9078e735c"
+      }
+    },
+    "scope": "Includes cold new-run preparation. Mixed scene FPS is not isolated transition-animation FPS. Both ordinary and Random Embark reach Neow, save, and exit normally.",
+    "independent_complete_install_proof": "Final root installation and resume below; frontend install trace alone is incomplete."
+  },
+  "combat_actual_resource_gate": {
+    "checks": 11902,
+    "original_art_decoded_and_rendered": true,
+    "evidence": {
+      "journal": "combat-ui14-stage16-original-dda29ea5e71a.json",
+      "sha256": "61d214642045533e286e90a9d9091f5fc984164a98ebed23b15255faf0d5e21d",
+      "checkpoint": "af154470daa96563f0695d043178285d26dcaee4",
+      "status": "passed",
+      "source_changed": false,
+      "log_sha256": "c535182d60726ac2a9994309e618d6a962a346cd59bff5753b090779c11de116"
+    }
+  },
+  "emulated_device_performance": {
+    "measurement_scope": "Foreground SP804 timer in ordinary Firebird CX OS; not physical-device or native-host FPS.",
+    "random_final": {
+      "checkpoint": "af154470daa96563f0695d043178285d26dcaee4",
+      "measurement": "Ordinary OS, matched selector snapshot; foreground SP804; natural application exit; cumulative count/total differences only",
+      "cold10": {
+        "frames": 196,
+        "seconds": 10.296844482421875,
+        "fps": 19.0349577809589,
+        "render_ms": 52.11701685068559,
+        "update_ms": 0.06804174306441327,
+        "render_parts": {
+          "random_water": {
+            "count": 196,
+            "ticks": 87896,
+            "mean_call_ms": 13.685576769770408,
+            "per_frame_ms": 13.685576769770408
+          },
+          "random_light": {
+            "count": 196,
+            "ticks": 109725,
+            "mean_call_ms": 17.084394182477677,
+            "per_frame_ms": 17.084394182477677
+          },
+          "random_dots": {
+            "count": 196,
+            "ticks": 31242,
+            "mean_call_ms": 4.864439672353316,
+            "per_frame_ms": 4.864439672353316
+          },
+          "character_info": {
+            "count": 196,
+            "ticks": 42154,
+            "mean_call_ms": 6.563459123883929,
+            "per_frame_ms": 6.563459123883929
+          },
+          "character_portraits": {
+            "count": 196,
+            "ticks": 32085,
+            "mean_call_ms": 4.9956963986766585,
+            "per_frame_ms": 4.9956963986766585
+          },
+          "character_controls": {
+            "count": 392,
+            "ticks": 8454,
+            "mean_call_ms": 0.6581520547672194,
+            "per_frame_ms": 1.3163041095344388
+          },
+          "character_ascension": {
+            "count": 196,
+            "ticks": 8412,
+            "mean_call_ms": 1.309764628507653,
+            "per_frame_ms": 1.309764628507653
+          }
+        },
+        "other_render_ms": 2.297381965481505,
+        "read_calls": 22,
+        "read_bytes_requested": 274989,
+        "read_seeks": 22,
+        "over_50ms": 80,
+        "over_100ms": 1,
+        "over_250ms": 1
+      },
+      "warm30": {
+        "frames": 611,
+        "seconds": 29.963653564453125,
+        "fps": 20.391371789348465,
+        "render_ms": 48.70530548345438,
+        "update_ms": 0.060885315440875616,
+        "render_parts": {
+          "random_water": {
+            "count": 611,
+            "ticks": 266049,
+            "mean_call_ms": 13.288332475577947,
+            "per_frame_ms": 13.288332475577947
+          },
+          "random_light": {
+            "count": 611,
+            "ticks": 330996,
+            "mean_call_ms": 16.532236152311782,
+            "per_frame_ms": 16.532236152311782
+          },
+          "random_dots": {
+            "count": 611,
+            "ticks": 105455,
+            "mean_call_ms": 5.267154175404051,
+            "per_frame_ms": 5.267154175404051
+          },
+          "character_info": {
+            "count": 611,
+            "ticks": 93501,
+            "mean_call_ms": 4.670088497979746,
+            "per_frame_ms": 4.670088497979746
+          },
+          "character_portraits": {
+            "count": 611,
+            "ticks": 99846,
+            "mean_call_ms": 4.987001809277823,
+            "per_frame_ms": 4.987001809277823
+          },
+          "character_controls": {
+            "count": 1222,
+            "ticks": 26241,
+            "mean_call_ms": 0.6553287787055032,
+            "per_frame_ms": 1.3106575574110064
+          },
+          "character_ascension": {
+            "count": 611,
+            "ticks": 26243,
+            "mean_call_ms": 1.310757451283756,
+            "per_frame_ms": 1.310757451283756
+          }
+        },
+        "other_render_ms": 1.339077364208265,
+        "read_calls": 0,
+        "read_bytes_requested": 0,
+        "read_seeks": 0,
+        "over_50ms": 250,
+        "over_100ms": 0,
+        "over_250ms": 0
+      },
+      "resource_failures": {
+        "baseline": 0,
+        "cold10": 0,
+        "long40": 0
+      }
+    },
+    "enemy_generated_cards": {
+      "checkpoint": "f1ad95b33bd46f3b7d14f8fff31f06e1109e52b7",
+      "scope": "Controlled real HAUNTED_SHIP_NORMAL opening move in Firebird; not a natural run or physical-device measurement.",
+      "all_normal_os_exit": true,
+      "windows": {
+        "haunt-first-4s-perf": {
+          "scope": "matched cumulative B-minus-A",
+          "scene": "combat",
+          "clock_hz": 32768,
+          "hardware": 1,
+          "pack_bytes": 78904352,
+          "inputs": [
+            {
+              "file": "haunt-a.perf.tns",
+              "bytes": 4555,
+              "sha256": "51dfbfe209f0ca20e04b5fe059b975a98a40f567d01df002f532537ad4f3e13c"
+            },
+            {
+              "file": "haunt-b.perf.tns",
+              "bytes": 4567,
+              "sha256": "24dcfb69a721c764c09cb45613e422beefc7e725f4747c8293adad4b70401eb0"
+            }
+          ],
+          "minima_and_maxima_not_subtracted": true,
+          "interval": {
+            "count": 95,
+            "ticks": 131785,
+            "mean_ms": 42.33430561266447
+          },
+          "update": {
+            "count": 95,
+            "ticks": 1524,
+            "mean_ms": 0.48956620065789475
+          },
+          "render": {
+            "count": 95,
+            "ticks": 97227,
+            "mean_ms": 31.232974403782894
+          },
+          "present": {
+            "count": 95,
+            "ticks": 845,
+            "mean_ms": 0.27144582648026316
+          },
+          "resource": {
+            "count": 95,
+            "ticks": 20948,
+            "mean_ms": 6.729286595394737
+          },
+          "over_50ms": 3,
+          "over_100ms": 2,
+          "over_250ms": 1,
+          "read_calls": 41,
+          "read_bytes_requested": 355727,
+          "read_seeks": 41,
+          "fps": 23.62150472360284,
+          "resource_failures": 0,
+          "startup_integrity_passes": 0
+        },
+        "haunt-generated-window-perf": {
+          "scope": "matched cumulative B-minus-A",
+          "scene": "combat",
+          "clock_hz": 32768,
+          "hardware": 1,
+          "pack_bytes": 78904352,
+          "inputs": [
+            {
+              "file": "haunt-prefix.perf.tns",
+              "bytes": 4567,
+              "sha256": "a994cfe3135a407b30a0d701a702285a91bcdca8c250efe60a774b5672aa603c"
+            },
+            {
+              "file": "haunt-b.perf.tns",
+              "bytes": 4567,
+              "sha256": "24dcfb69a721c764c09cb45613e422beefc7e725f4747c8293adad4b70401eb0"
+            }
+          ],
+          "minima_and_maxima_not_subtracted": true,
+          "interval": {
+            "count": 59,
+            "ticks": 65443,
+            "mean_ms": 33.850201105667374
+          },
+          "update": {
+            "count": 59,
+            "ticks": 119,
+            "mean_ms": 0.06155240333686441
+          },
+          "render": {
+            "count": 59,
+            "ticks": 45429,
+            "mean_ms": 23.498017909163135
+          },
+          "present": {
+            "count": 59,
+            "ticks": 525,
+            "mean_ms": 0.2715547206038136
+          },
+          "resource": {
+            "count": 59,
+            "ticks": 549,
+            "mean_ms": 0.2839686506885593
+          },
+          "over_50ms": 1,
+          "over_100ms": 0,
+          "over_250ms": 0,
+          "read_calls": 6,
+          "read_bytes_requested": 62496,
+          "read_seeks": 6,
+          "fps": 29.541921977904437,
+          "resource_failures": 0,
+          "startup_integrity_passes": 0
+        },
+        "haunt-hold-3-to-4s-perf": {
+          "scope": "matched cumulative B-minus-A",
+          "scene": "combat",
+          "clock_hz": 32768,
+          "hardware": 1,
+          "pack_bytes": 78904352,
+          "inputs": [
+            {
+              "file": "haunt-prefix3.perf.tns",
+              "bytes": 4567,
+              "sha256": "4ae4ad29de828df07fc1e829a6e9a31183214a89d6464b9d9dbaba357e775bcb"
+            },
+            {
+              "file": "haunt-b.perf.tns",
+              "bytes": 4567,
+              "sha256": "24dcfb69a721c764c09cb45613e422beefc7e725f4747c8293adad4b70401eb0"
+            }
+          ],
+          "minima_and_maxima_not_subtracted": true,
+          "interval": {
+            "count": 29,
+            "ticks": 32879,
+            "mean_ms": 34.599567281788794
+          },
+          "update": {
+            "count": 29,
+            "ticks": 59,
+            "mean_ms": 0.06208748653017242
+          },
+          "render": {
+            "count": 29,
+            "ticks": 23347,
+            "mean_ms": 24.568755051185345
+          },
+          "present": {
+            "count": 29,
+            "ticks": 256,
+            "mean_ms": 0.26939655172413796
+          },
+          "resource": {
+            "count": 29,
+            "ticks": 549,
+            "mean_ms": 0.5777293238146551
+          },
+          "over_50ms": 1,
+          "over_100ms": 0,
+          "over_250ms": 0,
+          "read_calls": 6,
+          "read_bytes_requested": 62496,
+          "read_seeks": 6,
+          "fps": 28.902095562517108,
+          "resource_failures": 0,
+          "startup_integrity_passes": 0
+        },
+        "haunt-flight-draw-4-to-6s-perf": {
+          "scope": "matched cumulative B-minus-A",
+          "scene": "combat",
+          "clock_hz": 32768,
+          "hardware": 1,
+          "pack_bytes": 78904352,
+          "inputs": [
+            {
+              "file": "haunt-b.perf.tns",
+              "bytes": 4567,
+              "sha256": "24dcfb69a721c764c09cb45613e422beefc7e725f4747c8293adad4b70401eb0"
+            },
+            {
+              "file": "haunt-prefix6.perf.tns",
+              "bytes": 4566,
+              "sha256": "1d8284466d179870f5785a3b57c8602da25768bf6f8cb42c78e9821db93c3c1b"
+            }
+          ],
+          "minima_and_maxima_not_subtracted": true,
+          "interval": {
+            "count": 58,
+            "ticks": 65632,
+            "mean_ms": 34.53327047413793
+          },
+          "update": {
+            "count": 58,
+            "ticks": 117,
+            "mean_ms": 0.06156132139008621
+          },
+          "render": {
+            "count": 58,
+            "ticks": 56915,
+            "mean_ms": 29.946688948006464
+          },
+          "present": {
+            "count": 58,
+            "ticks": 511,
+            "mean_ms": 0.2688703865840517
+          },
+          "resource": {
+            "count": 58,
+            "ticks": 2054,
+            "mean_ms": 1.080743197737069
+          },
+          "over_50ms": 1,
+          "over_100ms": 1,
+          "over_250ms": 0,
+          "read_calls": 2,
+          "read_bytes_requested": 8192,
+          "read_seeks": 2,
+          "fps": 28.95758166747928,
+          "resource_failures": 0,
+          "startup_integrity_passes": 0
+        },
+        "haunt-complete-6s-perf": {
+          "scope": "matched cumulative B-minus-A",
+          "scene": "combat",
+          "clock_hz": 32768,
+          "hardware": 1,
+          "pack_bytes": 78904352,
+          "inputs": [
+            {
+              "file": "haunt-a.perf.tns",
+              "bytes": 4555,
+              "sha256": "51dfbfe209f0ca20e04b5fe059b975a98a40f567d01df002f532537ad4f3e13c"
+            },
+            {
+              "file": "haunt-prefix6.perf.tns",
+              "bytes": 4566,
+              "sha256": "1d8284466d179870f5785a3b57c8602da25768bf6f8cb42c78e9821db93c3c1b"
+            }
+          ],
+          "minima_and_maxima_not_subtracted": true,
+          "interval": {
+            "count": 153,
+            "ticks": 197417,
+            "mean_ms": 39.37705046211193
+          },
+          "update": {
+            "count": 153,
+            "ticks": 1641,
+            "mean_ms": 0.3273159849877451
+          },
+          "render": {
+            "count": 153,
+            "ticks": 154142,
+            "mean_ms": 30.74536292381536
+          },
+          "present": {
+            "count": 153,
+            "ticks": 1356,
+            "mean_ms": 0.27046951593137253
+          },
+          "resource": {
+            "count": 153,
+            "ticks": 23002,
+            "mean_ms": 4.588008706086601
+          },
+          "over_50ms": 4,
+          "over_100ms": 3,
+          "over_250ms": 1,
+          "read_calls": 43,
+          "read_bytes_requested": 363919,
+          "read_seeks": 43,
+          "fps": 25.39550292021457,
+          "resource_failures": 0,
+          "startup_integrity_passes": 0
+        },
+        "haunt-complete-12s-perf": {
+          "scope": "matched cumulative B-minus-A",
+          "scene": "combat",
+          "clock_hz": 32768,
+          "hardware": 1,
+          "pack_bytes": 78904352,
+          "inputs": [
+            {
+              "file": "haunt-a.perf.tns",
+              "bytes": 4555,
+              "sha256": "51dfbfe209f0ca20e04b5fe059b975a98a40f567d01df002f532537ad4f3e13c"
+            },
+            {
+              "file": "haunt-long.perf.tns",
+              "bytes": 4566,
+              "sha256": "aa6364d50e9d20b79a9b12097033339d402b2060e670c55969ca7829bfba5aa6"
+            }
+          ],
+          "minima_and_maxima_not_subtracted": true,
+          "interval": {
+            "count": 333,
+            "ticks": 393978,
+            "mean_ms": 36.1058690526464
+          },
+          "update": {
+            "count": 333,
+            "ticks": 2001,
+            "mean_ms": 0.18338040188626126
+          },
+          "render": {
+            "count": 333,
+            "ticks": 294572,
+            "mean_ms": 26.99586793825075
+          },
+          "present": {
+            "count": 333,
+            "ticks": 2946,
+            "mean_ms": 0.26998433980855857
+          },
+          "resource": {
+            "count": 333,
+            "ticks": 23002,
+            "mean_ms": 2.108004000093844
+          },
+          "over_50ms": 4,
+          "over_100ms": 3,
+          "over_250ms": 1,
+          "read_calls": 43,
+          "read_bytes_requested": 363919,
+          "read_seeks": 43,
+          "fps": 27.696328221372767,
+          "resource_failures": 0,
+          "startup_integrity_passes": 0,
+          "includes_settled_idle": true,
+          "animation_only": false,
+          "acceptance_use": "Supplementary cumulative record only; the 2-4s preview and 4-6s flight/draw windows establish the real generated-card action."
+        }
+      },
+      "remaining_limit": "The initial0-2s end-turn path still contains one frame over250ms; first0-4s23.62FPS and complete0-6s25.40FPS remain explicitly separate from29.54FPS generated previews and28.96FPS flight/draw.",
+      "save_equivalence_to_stage12": [
+        {
+          "prefix": "a",
+          "stage12_bytes": 7144,
+          "stage13_bytes": 7144,
+          "identical": true,
+          "stage12_sha256": "104a71b411f93fd8d4c40fdbae9bf31df6264cb8a2f123f41e5f9caa7928cff4",
+          "stage13_sha256": "104a71b411f93fd8d4c40fdbae9bf31df6264cb8a2f123f41e5f9caa7928cff4"
+        },
+        {
+          "prefix": "prefix",
+          "stage12_bytes": 7322,
+          "stage13_bytes": 7322,
+          "identical": true,
+          "stage12_sha256": "353920197be44b2f107a4c31cf8091968173a37d043e01cae398cbb963bb8e9c",
+          "stage13_sha256": "353920197be44b2f107a4c31cf8091968173a37d043e01cae398cbb963bb8e9c"
+        },
+        {
+          "prefix": "b",
+          "stage12_bytes": 7322,
+          "stage13_bytes": 7322,
+          "identical": true,
+          "stage12_sha256": "353920197be44b2f107a4c31cf8091968173a37d043e01cae398cbb963bb8e9c",
+          "stage13_sha256": "353920197be44b2f107a4c31cf8091968173a37d043e01cae398cbb963bb8e9c"
+        }
+      ]
+    },
+    "merchant": {
+      "checkpoint": "d8510f202454270cb49b79fc4094429885d6ddea",
+      "scope": "Controlled merchant fixture in ordinary Firebird CX OS. The warm 60s window is sampled after 120s; it is separate from the first cold rug opening and is not a physical-device measurement.",
+      "warm_closed_60s": {
+        "scope": "matched cumulative B-minus-A",
+        "scene": "room",
+        "clock_hz": 32768,
+        "hardware": 1,
+        "pack_bytes": 78904352,
+        "inputs": [
+          {
+            "file": "warm-a-perf.json",
+            "bytes": 4353,
+            "sha256": "36cca8f510f19d830e424bacd8ae5e5304ba50aa24f6ddddb0c178743c6519b4"
+          },
+          {
+            "file": "warm-b-perf.json",
+            "bytes": 4354,
+            "sha256": "4191582dff8ffad98b067eaa211dee708f4deae1ed56a7b5e01452b1112b648a"
+          }
+        ],
+        "minima_and_maxima_not_subtracted": true,
+        "interval": {
+          "count": 1801,
+          "ticks": 1966692,
+          "mean_ms": 33.3251953125
+        },
+        "update": {
+          "count": 1801,
+          "ticks": 3602,
+          "mean_ms": 0.06103515625
+        },
+        "render": {
+          "count": 1801,
+          "ticks": 917761,
+          "mean_ms": 15.551273191325999
+        },
+        "present": {
+          "count": 1801,
+          "ticks": 15796,
+          "mean_ms": 0.2676600022556913
+        },
+        "resource": {
+          "count": 1801,
+          "ticks": 0,
+          "mean_ms": 0.0
+        },
+        "over_50ms": 0,
+        "over_100ms": 0,
+        "over_250ms": 0,
+        "read_calls": 0,
+        "read_bytes_requested": 0,
+        "read_seeks": 0,
+        "fps": 30.007326007326007,
+        "resource_failures": 0,
+        "startup_integrity_passes": 0
+      },
+      "first_open": {
+        "room_cumulative_maxima_ms": {
+          "render": 3771.575927734375,
+          "resource": 2975.372314453125,
+          "interval": 3898.712158203125
+        },
+        "matched_rug_minus_A": {
+          "scope": "matched cumulative B-minus-A",
+          "scene": "room",
+          "clock_hz": 32768,
+          "hardware": 1,
+          "pack_bytes": 78904352,
+          "inputs": [
+            {
+              "file": "warm-a-perf.json",
+              "bytes": 4353,
+              "sha256": "36cca8f510f19d830e424bacd8ae5e5304ba50aa24f6ddddb0c178743c6519b4"
+            },
+            {
+              "file": "rug-visible-perf.json",
+              "bytes": 4356,
+              "sha256": "28e25afc0398b830ac75edb1990e8c80c395d1e632556ed950ddbf0238d7c504"
+            }
+          ],
+          "minima_and_maxima_not_subtracted": true,
+          "interval": {
+            "count": 251,
+            "ticks": 437566,
+            "mean_ms": 53.201014302166335
+          },
+          "update": {
+            "count": 251,
+            "ticks": 5017,
+            "mean_ms": 0.6099868105702191
+          },
+          "render": {
+            "count": 251,
+            "ticks": 421178,
+            "mean_ms": 51.20849609375
+          },
+          "present": {
+            "count": 251,
+            "ticks": 2205,
+            "mean_ms": 0.26809266838894424
+          },
+          "resource": {
+            "count": 251,
+            "ticks": 112748,
+            "mean_ms": 13.708350192978088
+          },
+          "over_50ms": 16,
+          "over_100ms": 6,
+          "over_250ms": 2,
+          "read_calls": 212,
+          "read_bytes_requested": 2182126,
+          "read_seeks": 212,
+          "fps": 18.796634107768885,
+          "resource_failures": 0,
+          "startup_integrity_passes": 0
+        },
+        "limitations": [
+          "Separate maxima are not subtracted as a per-frame decomposition.",
+          "The delta includes the initial12seconds open and closing input;18.7966FPS is a mixed cold-opening window, not steady rug FPS.",
+          "The first-render device peak only changes3827.820ms to3771.576ms; no substantial cold-stall removal is claimed.",
+          "No loading dots, speculative prewarming, frame deletion, resolution reduction, or new resident cache were added."
+        ]
+      },
+      "native_pixel_equivalence": {
+        "comparison": {
+          "path": "rug-pixel-and-read-comparison.json",
+          "bytes": 5476,
+          "sha256": "d90dc8a0c2d659e035400afcf97ca9738cd88c98636c58d4c2d16de11aaced1f"
+        },
+        "frames": 120,
+        "pixels": 9216000,
+        "differing_pixels": 0,
+        "clock_and_rug_offset_identical": true,
+        "first_render_bytes_before": 665032,
+        "first_render_bytes_after": 532756,
+        "all_120_render_bytes_before": 2026361,
+        "all_120_render_bytes_after": 2070379,
+        "note": "The fixed 33ms native first-render saving did not yield a substantial ordinary-OS Firebird cold-open reduction."
+      }
+    }
+  },
+  "natural_gameplay": {
+    "checkpoint": "0418cf3e63dabb456e4a9aaa49062d32f7ac747c",
+    "scope": "ordinary Firebird CX OS natural first encounter; no debug commands or edited save; earlier run started under UI14 stage2 and first turn under stage4",
+    "completed": [
+      "new data/state installation and automatic state directory",
+      "fresh Ironclad run with Neow reward",
+      "legal first-room map travel",
+      "first Nibbit defeated with ordinary hand/target/end-turn keys",
+      "15 gold and Colorless Potion claimed",
+      "Headbutt added to deck",
+      "empty reward window faded; room still waited for Proceed after 8 seconds",
+      "Proceed opened original map",
+      "Save and Quit returned to title",
+      "Continue showed textured wipe then fade in",
+      "resumed HP56/80 gold114 one potion deck11 floor2",
+      "normal game exit to OS and USB save/progress/performance readback"
+    ],
+    "limitations": [
+      "This is a first-encounter loop, not a natural three-act win.",
+      "Mixed cold/interaction combat timing is not a matched warm idle sample.",
+      "Final UI14 runtime follows with exact Random optimization, memory reallocation and reward/choice timing fixes."
+    ],
+    "combat": {
+      "frames": 2525,
+      "ticks": 2906382,
+      "clock_hz": 32768,
+      "fps": 28.46810914738668,
+      "mean_render_ms": 26.866503422803216,
+      "over_50ms": 48,
+      "over_100ms": 21,
+      "over_250ms": 6,
+      "resource_failures": 0
+    },
+    "files": {
+      "natural-completed-stage7.sav.tns": {
+        "bytes": 7377,
+        "sha256": "370c726ba3e4535b44107fd6471c91802a0561700b65b1d9a2b090a4eee92537"
+      },
+      "natural-completed-stage7.progress.tns": {
+        "bytes": 498,
+        "sha256": "ea5b3705aa6f226d5b91594145e888b02558e93d414721b5487dc26a8d3ae46c"
+      },
+      "natural-stage7.perf.json": {
+        "bytes": 4506,
+        "sha256": "4f4a59196be40e2c9b4997a313b6f5aa61caf1950f7becdfacd9c93dbd4f0c0f"
+      }
+    },
+    "receipts": [
+      {
+        "journal": "ui14-stage7-natural-turn2-fa0bba8bbf4c.json",
+        "status": "passed",
+        "source_changed": false,
+        "sha256": "ddb2354fda9ba77500c75325f457762c78efb245eb0d635b1a303e1c68d3f55b"
+      },
+      {
+        "journal": "ui14-stage7-natural-turn4-7801da70f85f.json",
+        "status": "passed",
+        "source_changed": false,
+        "sha256": "d7f29ca93d753a0f73714b4ae1963f2a1b04ac23a58a5063c60c0f24daf12228"
+      },
+      {
+        "journal": "ui14-stage7-natural-save-resume-92d2fdeea40a.json",
+        "status": "passed",
+        "source_changed": false,
+        "sha256": "60cad4a6eb321cc67b3a16b05790980791f4f5ba74b51152f7a294838932da88"
+      },
+      {
+        "journal": "ui14-stage7-natural-turn3-8d740ba310c7.json",
+        "status": "passed",
+        "source_changed": false,
+        "sha256": "7129a439c9c131326ab20cac6b67e87d0d9316756f4a22224a90d4fe806dffdc"
+      },
+      {
+        "journal": "ui14-stage7-natural-continue-91ba88e0aa8c.json",
+        "status": "passed",
+        "source_changed": false,
+        "sha256": "898e9e670bf1d9c51e22049e31fde19f207c7be0ba1f023eb183263799c719a0"
+      },
+      {
+        "journal": "ui14-stage7-natural-claim-7c3efb9bcc79.json",
+        "status": "passed",
+        "source_changed": false,
+        "sha256": "ccc43e5be05b93dd45742c3e0277fe501d27b0dcf04bbe77e4e904b2f4a273e8"
+      },
+      {
+        "journal": "ui14-stage7-natural-map-299473cb2024.json",
+        "status": "passed",
+        "source_changed": false,
+        "sha256": "f496836465f220c8383051882c4377b19c1a0f9e990695de967ed6b16b582780"
+      },
+      {
+        "journal": "ui14-stage7-natural-exit-readback-0e13ee0bc701.json",
+        "status": "passed",
+        "source_changed": false,
+        "sha256": "684ae7d547a8877706418c6227bdb0930ad82a1a82d97aefe0c8f114b4919812"
+      },
+      {
+        "journal": "ui14-stage7-natural-turn7-824a51c85462.json",
+        "status": "passed",
+        "source_changed": false,
+        "sha256": "bf0c9aba686300ac18a66eb75f7d25cee5955f5b0a365a27dccf9b648b261666"
+      },
+      {
+        "journal": "ui14-stage7-natural-turn6-0c6cafba8636.json",
+        "status": "passed",
+        "source_changed": false,
+        "sha256": "359f6ce8b999e34f69d8222b38f62a37f3de332f1d7549c30ff8903ca68ed7ec"
+      },
+      {
+        "journal": "ui14-stage7-natural-rewards-8f6f536f00f6.json",
+        "status": "passed",
+        "source_changed": false,
+        "sha256": "7c7bb34ca6e617df7fc612b1502c33c1ca1422c90932a56809639cb04ec54bf5"
+      },
+      {
+        "journal": "ui14-stage7-natural-turn5-16eb1f7b02b9.json",
+        "status": "passed",
+        "source_changed": false,
+        "sha256": "324e0fd6ede4057dab46803b02fcc8383e19917d45255208d976263c9d451bff"
+      }
+    ]
+  },
+  "final_installation_and_resume": {
+    "checkpoint": "af154470daa96563f0695d043178285d26dcaee4",
+    "scope": "Final ordinary Firebird CX OS installation and resumption of the genuine natural first-encounter run; no console or edited State; not a full campaign or physical-device FPS claim",
+    "installed_files": [
+      {
+        "name": "nSpire2.tns",
+        "bytes": 1689486,
+        "sha256": "98d1408183e3bff8d99b6fd0cac7143ad7a25783074a3a2297cf69a04adcc375",
+        "usb_readback_exact": true
+      },
+      {
+        "name": "nSpire2.dat.tns",
+        "bytes": 72131134,
+        "sha256": "cdfae8053411a669184129cf312b0085b7f4f87e4024a33e317b7ca08331dbb4",
+        "usb_readback_exact": true
+      },
+      {
+        "name": "nSpire2.eng.dat.tns",
+        "bytes": 1111330,
+        "sha256": "0b9d7e8cd7e2c06719144cf586fa59755fd9cb30fe0cd9bca422b33ed9456346",
+        "usb_readback_exact": true
+      },
+      {
+        "name": "nSpire2.zhs.dat.tns",
+        "bytes": 5089995,
+        "sha256": "be7ce417337cbd45b1dbbbff5e5f8bb7b6f15bdf92dccfdf934255c8e65feb5f",
+        "usb_readback_exact": true
+      }
+    ],
+    "ordinary_os_startup": true,
+    "continue_texture_wipe_and_black_fade_visually_verified": true,
+    "resumed_state": {
+      "hp": 56,
+      "max_hp": 80,
+      "gold": 114,
+      "potions": 1,
+      "deck_count": 11,
+      "floor": 2
+    },
+    "map_opened": true,
+    "save_and_quit": true,
+    "normal_os_exit_visually_verified": true,
+    "canonical_save_byte_identical": {
+      "bytes": 7377,
+      "sha256": "370c726ba3e4535b44107fd6471c91802a0561700b65b1d9a2b090a4eee92537"
+    },
+    "progress": {
+      "progress_decodes": true,
+      "added_active_seconds": 7,
+      "last_saved_before": 1793060325,
+      "last_saved_after": 1793061620,
+      "current_saved_before": 1793060325,
+      "current_saved_after": 1793061620,
+      "all_other_encoded_metadata_equal": true
+    },
+    "journals": [
+      {
+        "journal": "ui14-stage16-natural-install-e3e7808d4921.json",
+        "sha256": "dcec042173cf1ab0995c43938f38f6e09cb1f033c2fe6836ebc6e2daab156dfe",
+        "status": "passed",
+        "source_changed": false
+      },
+      {
+        "journal": "ui14-stage16-natural-resume-exit-7efd44ba816e.json",
+        "sha256": "2663067751a25eb0275b7635649e27d015725df0fa6d7b5537b881b49298b974",
+        "status": "passed",
+        "source_changed": false
+      }
+    ],
+    "event_traces_complete_without_failed_operations": true,
+    "visual_inspection": "resume-inspection.png; title, texture wipe, black frame, restored room/map, saved title and ordinary OS all inspected"
+  },
+  "storage": {
+    "default_four_files": [
+      {
+        "name": "nSpire2.tns",
+        "bytes": 1689486,
+        "sha256": "98d1408183e3bff8d99b6fd0cac7143ad7a25783074a3a2297cf69a04adcc375"
+      },
+      {
+        "name": "nSpire2.dat.tns",
+        "bytes": 72131134,
+        "sha256": "cdfae8053411a669184129cf312b0085b7f4f87e4024a33e317b7ca08331dbb4"
+      },
+      {
+        "name": "nSpire2.eng.dat.tns",
+        "bytes": 1111330,
+        "sha256": "0b9d7e8cd7e2c06719144cf586fa59755fd9cb30fe0cd9bca422b33ed9456346"
+      },
+      {
+        "name": "nSpire2.zhs.dat.tns",
+        "bytes": 5089995,
+        "sha256": "be7ce417337cbd45b1dbbbff5e5f8bb7b6f15bdf92dccfdf934255c8e65feb5f"
+      }
+    ],
+    "total_bytes": 80021945,
+    "decimal_MB": 80.021945,
+    "MiB": 76.31487369537354,
+    "previous_UI13_total_bytes": 78569446,
+    "net_delta_bytes": 1452499,
+    "within_prior_rough_65_to_70_MB_goal": false,
+    "merchant_frames_preserved": 1817,
+    "merchant_moving_payload_saved_bytes": 6215294,
+    "savings_comparison": "Against UI14 independent-frame moving payload, not a net reduction of the whole UI13 install.",
+    "new_frames_or_resolution_removed_for_these_optimizations": false,
+    "empty_state_directory_in_delivery": true
+  },
+  "packages": [
+    {
+      "name": "Slay-the-Nspire-2-0.17-ui14-bilingual-calculator.zip",
+      "bytes": 78350636,
+      "sha256": "f76f063b3f523d2442461eb24da7cab93fa523e470a2bac4bb2033818ff010fc",
+      "members": 14
+    },
+    {
+      "name": "Slay-the-Nspire-2-0.17-ui14-optional-languages.zip",
+      "bytes": 16712283,
+      "sha256": "85daef141bad46a1abda5c3627c43593a36dae688b4d37cc7c78b6dd9238b400",
+      "members": 15
+    }
+  ],
+  "source_required_to_close": [
+    {
+      "item": "Every monster move surrounding awaited commands",
+      "implemented_boundary": "196 AttackCommand profiles plus the already sourced full-move waits; the remaining surrounding waits must not be inferred from clip duration.",
+      "required": "Pinned sts2.dll",
+      "sha256": "0861bfa1df347538d932f22d580e75420f08082792eb914e53b4882764acdbe9"
+    },
+    {
+      "item": "Vantom 750ms bone shrink interpolation",
+      "implemented_boundary": "Correct full/half body endpoints for ShrinkPower and Beetle Juice. Independent tail control is preserved; whole-sprite shrinking is not a substitute.",
+      "required": "Pinned PCK, or Vantom skeleton/atlas/scene and imported texture dependencies",
+      "source_paths": [
+        "res://scenes/creature_visuals/vantom.tscn",
+        "res://animations/monsters/vantom/vantom.skel",
+        "res://animations/monsters/vantom/vantom.atlas"
+      ]
+    }
+  ],
+  "accepted_scope": {
+    "offline_single_player": true,
+    "full_ancient_actor_animation_storage_exception": true,
+    "excluded": [
+      "audio",
+      "multiplayer",
+      "timeline-meta-progression"
+    ],
+    "special_card_shader_cpu_phase_sampling": "Eight bounded material phases; see retained-differences ledger.",
+    "physical_device_FPS_claimed": false,
+    "natural_three_act_win_claimed": false,
+    "all_historical_reference_differences_closed": false
+  }
+}

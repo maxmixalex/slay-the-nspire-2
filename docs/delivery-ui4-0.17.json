@@ -1,0 +1,167 @@
+{
+  "schema": 1,
+  "recorded_at_utc": "2026-10-23",
+  "reference": "v0.111.0 / 41cef1ea",
+  "runtime_checkpoint": "76f0a01cb506fde7ac8b427e857462a35933ade3",
+  "resource_checkpoint": "65baee5b44c11e1fa1aad4f603024aa8189a7e1a",
+  "packaging_checkpoint": "76f0a01cb506fde7ac8b427e857462a35933ade3",
+  "delivery": {
+    "calculator_zip": {
+      "name": "Slay-the-Nspire-2-0.17-ui4-bilingual-calculator.zip",
+      "bytes": 76817608,
+      "members": [
+        {
+          "path": "nSpire2.tns",
+          "bytes": 997748
+        },
+        {
+          "path": "nSpire2.common.tns",
+          "bytes": 74894324
+        },
+        {
+          "path": "nSpire2.eng.tns",
+          "bytes": 1780951
+        },
+        {
+          "path": "nSpire2.zhs.tns",
+          "bytes": 4563650
+        },
+        {
+          "path": "COPYING",
+          "bytes": 35149
+        },
+        {
+          "path": "NOTICE.md",
+          "bytes": 8099
+        },
+        {
+          "path": "licenses/Go-BSD-3-Clause.txt",
+          "bytes": 1479
+        },
+        {
+          "path": "licenses/OkHSV-Godot-MIT.txt",
+          "bytes": 1406
+        },
+        {
+          "path": "licenses/Noto-Boot-OFL.txt",
+          "bytes": 4330
+        },
+        {
+          "path": "README.txt",
+          "bytes": 3240
+        },
+        {
+          "path": "BUILD-INFO.json",
+          "bytes": 387
+        }
+      ]
+    },
+    "offline_html": {
+      "name": "Slay-the-Nspire-2-0.17-ui4-bilingual-offline.html",
+      "bytes": 115708680,
+      "self_contained": true,
+      "shared_artwork_copies": 1,
+      "locales": [
+        "eng",
+        "zhs"
+      ]
+    },
+    "both_user_files_saved": true,
+    "delivery_status": "Final 76f calculator ZIP and offline HTML saved successfully to the user-authorized destination after final 6b CI, bilingual ordinary emulator execution, cross-backend checks and input/license preservation passed."
+  },
+  "installed_bytes": {
+    "launcher": 997748,
+    "common": 74894324,
+    "eng": 1780951,
+    "zhs": 4563650,
+    "both_locales_before_saves": 82236673,
+    "english_only_before_saves": 77673023,
+    "chinese_only_before_saves": 80455722,
+    "resource_reduction_from_v19": 12544438,
+    "increase_over_ui3_resources": 138222,
+    "increase_over_ui3_install": 152288
+  },
+  "verification": {
+    "packaging_journal": {
+      "file": "ui4-sparse-package-8412248471aa.json",
+      "checkpoint": "76f0a01cb506fde7ac8b427e857462a35933ade3",
+      "status": "passed",
+      "returncode": 0,
+      "source_changed": false,
+      "started_at": "2026-10-23T17:49:42.199422+00:00",
+      "ended_at": "2026-10-23T17:49:46.229678+00:00"
+    },
+    "zip_members_match_selected_inputs": true,
+    "embedded_input_checks": {
+      "status": "passed",
+      "mode": "split",
+      "shared_artwork_copies": 1,
+      "wasm_copies": 1,
+      "two_locales": [
+        "eng",
+        "zhs"
+      ],
+      "inputs": [
+        {
+          "name": "WebAssembly",
+          "decoded_bytes": 5489541,
+          "byte_equal": true
+        },
+        {
+          "name": "common",
+          "decoded_bytes": 74894324,
+          "byte_equal": true
+        },
+        {
+          "name": "eng",
+          "decoded_bytes": 1780951,
+          "byte_equal": true
+        },
+        {
+          "name": "zhs",
+          "decoded_bytes": 4563650,
+          "byte_equal": true
+        }
+      ],
+      "complete_notice_and_license_block": true,
+      "notice_and_license_bytes": 50597,
+      "complete_files": [
+        "NOTICE.md",
+        "COPYING",
+        "licenses/Go-BSD-3-Clause.txt",
+        "licenses/OkHSV-Godot-MIT.txt",
+        "licenses/Noto-Boot-OFL.txt"
+      ],
+      "browser_locale_bindings_equal_to_config": true,
+      "unresolved_placeholders": 0,
+      "checked_at_utc": "2026-10-23T18:01:48.578949+00:00"
+    },
+    "browser_report": "validation-ui4-browser-0.17.json",
+    "firebird_report": "validation-ui4-firebird-0.17.json",
+    "ci_report": "validation-ui4-runtime-0.17.json",
+    "file_save": {
+      "both_results": "succeeded",
+      "ordered_batch": true,
+      "local_metadata_applied_to_both": true,
+      "destination": "User-authorized private file destination",
+      "private_receipt_retained": true
+    }
+  },
+  "installation": [
+    "Keep the launcher, common pack and installed locale packs from this release together.",
+    "Either or both locale files use the same gameplay save.",
+    "Keep nSpire2.sav.tns and language preferences when updating. Old launchers may reject new saves.",
+    "If TI OS needs replacement space, remove only the old common pack before installing the new matching set.",
+    "The previous complete nSpire2.nsp.tns is unnecessary alongside the split resources."
+  ],
+  "limits": [
+    "No overall original-PC framebuffer differential or 95 percent UI acceptance.",
+    "Physical-calculator frame rate is unmeasured.",
+    "Opening deal, exhaust/shuffle/generated-card entrance, autoplay choreography, full title Spine motion and other enemy command offsets remain separate fidelity work.",
+    "Energy hover, original intent fade/bob and execution particles, banner font/outline and energy gain/entry effects remain explicit HUD work.",
+    "The final Chinese collection maximum render sample is 1,273.224 ms; cold entry remains visibly slow. This is not a matched causal comparison with the earlier isolated 1,508.392 ms result.",
+    "The 30 to 40 MB installation target is not reached."
+  ],
+  "public_repository_scope": "Source and reviewed metadata only; original assets, embedded HTML, screenshots and saves are excluded.",
+  "acceptance_test_checkpoint": "6b7ca242f5938b5008cd3fc47b92c2ab90f98a79"
+}

@@ -1,0 +1,65 @@
+#pragma once
+#include <stdint.h>
+namespace spire {
+// NScrollableContainer's bounded UI-only target/current positions.
+struct UiHistoryScroll {
+    int position=0,target=0,maximum=0,viewport=174;
+    bool dragging=false,thumb=false;
+    int last_y=0;
+    static int clamp(int v,int low,int high){return v<low?low:v>high?high:v;}
+    void reset(){position=target=maximum=0;dragging=thumb=false;}
+    void configure(int height,int view_height=174){const int limit=height>view_height?(height-view_height)*256:0;
+        if(viewport!=view_height||maximum!=limit){viewport=view_height;maximum=limit;target=clamp(target,0,maximum);position=clamp(position,0,maximum);}}
+    int offset()const{return position/256;}
+    void wheel(int rows){target=clamp(target+rows*80*256/9,-viewport*256,maximum+viewport*256);}
+    void set_thumb(int y,int top=61,int length=128){target=maximum*clamp(y-top,0,length)/length;position=target;}
+    int thumb_y(int top=61,int length=128)const{return top+(maximum?length*clamp(position,0,maximum)/maximum:0);}
+    void step(unsigned ms){
+        if(!ms)return;const int dt=ms>66?66:int(ms);
+        if(!dragging){const int legal=clamp(target,0,maximum);target+=(legal-target)*dt*12/1000;if(target<0&&target>-128)target=0;if(target>maximum&&target<maximum+128)target=maximum;}
+        const int delta=target-position;
+        if(delta>-128&&delta<128)position=target;
+        else{
+            // A full 770-row event reward list can span over five million
+            // fixed-point units. Split before multiplication, preserving the
+            // same signed truncation without overflowing delta*dt*15.
+            const int rate=dt*15;
+            const int change=(delta/1000)*rate+(delta%1000)*rate/1000;
+            position+=change?change:(delta>0?1:-1);
+        }
+    }
+};
+struct UiMenuTransition {
+    uint32_t start=0;uint8_t state=0,previous=0;bool bound=false;
+    unsigned from_scale=1000;
+    uint16_t from_shade=4096,from_focus=0;
+    unsigned observe(unsigned next,uint32_t now,bool bottom,unsigned pressed_scale=950){
+        if(!bound){bound=true;state=previous=0;start=now;}
+        const unsigned duration=state==1?50:state==2?200:300;
+        unsigned age=now-start,t=age>=duration?1000:age*1000/duration;
+        if(state!=1){const unsigned q=1000-t;t=1000-q*q/1000*q/1000;}
+        const unsigned goal=state==1?(bottom?1050:1020):state==2?pressed_scale:1000;
+        const unsigned scale=unsigned(int(from_scale)+(int(goal)-int(from_scale))*int(t)/1000);
+        if(next!=state){previous=state;state=uint8_t(next);start=now;from_scale=scale;}
+        return scale;
+    }
+    unsigned alpha(uint32_t now)const{const unsigned duration=state==1?50:state==2?200:300;const unsigned age=now-start;return age>=duration?255:age*255/duration;}
+    struct Compendium {unsigned scale,shade,focus;};
+    Compendium observe_compendium(unsigned next,uint32_t now,bool bottom){
+        // Both compendium button classes kill the preceding tween. Press
+        // changes parent modulation and scale, retaining the panel's HSV V;
+        // refocus retains modulation until the next unfocus restores white.
+        const unsigned duration=state==1?50:state==2?200:300;
+        const unsigned age=now-start,q=!bound?0:age>=duration?4096:age*4096/duration;
+        const unsigned shade_goal=state==2?3072:state==0?4096:from_shade;
+        const unsigned focus_goal=state==1?4096:state==0?0:from_focus;
+        const unsigned shade=unsigned(int(from_shade)+(int(shade_goal)-int(from_shade))*int(q)/4096);
+        const unsigned focus=unsigned(int(from_focus)+(int(focus_goal)-int(from_focus))*int(q)/4096);
+        const bool changed=next!=state;
+        const unsigned scale=observe(next,now,bottom,bottom?950:980);
+        if(changed){from_shade=uint16_t(shade);from_focus=uint16_t(focus);}
+        return {scale,(shade*255+2048)/4096,(focus*255+2048)/4096};
+    }
+};
+static_assert(sizeof(UiMenuTransition)<=16,"Compendium modulation remains bounded");
+}

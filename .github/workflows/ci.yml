@@ -1,0 +1,78 @@
+name: Native tests and portable builds
+
+on:
+  push:
+    branches: [main, 'work/**']
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  native:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - name: Ensure native toolchain
+        run: |
+          if ! command -v clang++-18 >/dev/null || ! command -v ld.lld-18 >/dev/null || ! command -v cmake >/dev/null || ! command -v ninja >/dev/null; then
+            sudo apt-get update
+            sudo apt-get install -y clang-18 lld-18 cmake ninja-build
+          fi
+      - name: Configure ASan and UBSan
+        run: >-
+          cmake -S . -B build/ci -G Ninja -DSPIRE_X11=OFF
+          -DCMAKE_CXX_COMPILER=clang++-18 -DCMAKE_C_COMPILER=clang-18
+          -DCMAKE_BUILD_TYPE=Debug
+          -DCMAKE_CXX_FLAGS="-O1 -fsanitize=address,undefined -fno-omit-frame-pointer"
+          -DCMAKE_C_FLAGS="-O1 -fsanitize=address,undefined -fno-omit-frame-pointer"
+          -DCMAKE_EXE_LINKER_FLAGS="-fsanitize=address,undefined"
+      - name: Build synthetic regressions
+        run: cmake --build build/ci --parallel 2
+      - name: Run all registered native suites
+        # Instrumented fixtures keep multiple complete States/save snapshots.
+        # This host-only allowance does not change the Ndless runtime budget.
+        run: |
+          ulimit -s 32768
+          ctest --test-dir build/ci --output-on-failure --parallel 2
+
+  conversion:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - name: Install conversion dependencies
+        run: python3 -m pip install -r requirements.txt
+      - name: Run converter and packaging regressions without private assets
+        env:
+          PYTHONPATH: tools:tests
+        run: |
+          python3 -m unittest discover -s tests -p 'test_*.py'
+          python3 -m unittest animation_regression logged_command_regression character_pack_regression all_character_pack_regression event_pack_regression world_pack_regression
+          python3 -m compileall -q tools
+
+  portable:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - name: Install portable toolchain
+        run: |
+          sudo apt-get update && sudo apt-get install -y clang-18 lld-18
+          echo /usr/lib/llvm-18/bin >> "$GITHUB_PATH"
+      - name: Build calculator launcher
+        run: python3 tools/build_ndless.py
+      - name: Build WebAssembly runtime without private resources
+        run: python3 tools/build_web.py --compile-only

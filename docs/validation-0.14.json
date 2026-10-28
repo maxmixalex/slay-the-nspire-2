@@ -1,0 +1,360 @@
+{
+  "schema": 1,
+  "version": "0.14.0-prototype",
+  "verified_build_commit": "b4b67e714ca76e7afb72f3a170789ad90047e6f4",
+  "verified_source_tree": "5c97f84b8357176ddae5deec5b1911c7b0ff7aa8",
+  "source_fingerprint": "fae3ed722eb6b53ed116e198ea93694b6dac74950248c381a78cf6934cd62912",
+  "reference": "v0.111.0 / 41cef1ea",
+  "native": {
+    "passed": 21,
+    "total": 21,
+    "executed_suites": 21,
+    "checks_reported_by_passing_suites": 651275,
+    "suites": [
+      {
+        "name": "core_regression",
+        "passed": true,
+        "checks_reported": 103307,
+        "output": "core: 103307 checks, 9885 generated transitions passed"
+      },
+      {
+        "name": "input_regression",
+        "passed": true,
+        "checks_reported": 76,
+        "output": "input: 76 checks passed"
+      },
+      {
+        "name": "content_regression",
+        "passed": true,
+        "checks_reported": 287,
+        "output": "content: 287 checks passed"
+      },
+      {
+        "name": "expansion_regression",
+        "passed": true,
+        "checks_reported": 867,
+        "output": "expansion: 867 checks passed"
+      },
+      {
+        "name": "ui_flow_regression",
+        "passed": true,
+        "checks_reported": 1160,
+        "output": "ui flow: 1160 checks passed"
+      },
+      {
+        "name": "compression_regression",
+        "passed": true,
+        "checks_reported": 320058,
+        "output": "compression: 320058 boundary checks passed"
+      },
+      {
+        "name": "silent_regression",
+        "passed": true,
+        "checks_reported": 59402,
+        "output": "Silent: 59402 assertions, 7345 generated transitions passed"
+      },
+      {
+        "name": "silent_ui_regression",
+        "passed": true,
+        "checks_reported": 1440,
+        "output": "Silent UI: 1440 checks passed"
+      },
+      {
+        "name": "shared_regression",
+        "passed": true,
+        "checks_reported": 26974,
+        "output": "shared: 26974 checks, 4150 controlled transitions passed"
+      },
+      {
+        "name": "shared_ui_regression",
+        "passed": true,
+        "checks_reported": 84,
+        "output": "shared UI: 84 checks passed"
+      },
+      {
+        "name": "tactics_regression",
+        "passed": true,
+        "checks_reported": 29811,
+        "output": "tactics: 29811 checks, 5449 controlled transitions passed"
+      },
+      {
+        "name": "tactics_ui_regression",
+        "passed": true,
+        "checks_reported": 305,
+        "output": "tactics UI: 305 checks passed"
+      },
+      {
+        "name": "relic_combo_regression",
+        "passed": true,
+        "checks_reported": 23223,
+        "output": "relic combos: 23223 checks, 2748 transitions passed"
+      },
+      {
+        "name": "relic_ui_regression",
+        "passed": true,
+        "checks_reported": 221,
+        "output": "relic UI: 221 checks passed"
+      },
+      {
+        "name": "combat_ui_regression",
+        "passed": true,
+        "checks_reported": 1203,
+        "output": "combat UI: 1203 checks passed"
+      },
+      {
+        "name": "events_regression",
+        "passed": true,
+        "checks_reported": 26519,
+        "output": "events: 26519 checks passed"
+      },
+      {
+        "name": "events_ui_regression",
+        "passed": true,
+        "checks_reported": 373,
+        "output": "event/shop UI: 373 checks passed"
+      },
+      {
+        "name": "colorless_potions_regression",
+        "passed": true,
+        "checks_reported": 7897,
+        "output": "colorless/potions: 7897 checks; 106 card variants; 64 potions"
+      },
+      {
+        "name": "colorless_completion_regression",
+        "passed": true,
+        "checks_reported": 8961,
+        "output": "colorless completion: 8961 checks, 106 explicit card-effect variants, token and continuation contracts"
+      },
+      {
+        "name": "potions_completion_regression",
+        "passed": true,
+        "checks_reported": 34202,
+        "output": "potion completion: 34202 checks; 64 model policies"
+      },
+      {
+        "name": "expansion_ui_regression",
+        "passed": true,
+        "checks_reported": 4905,
+        "output": "expansion UI: 4905 checks; 106 colorless variants acquired; 64 potions acquired; synthetic NSP2/11 profile"
+      }
+    ],
+    "asan": true,
+    "ubsan": true,
+    "leak_sanitizer": false,
+    "leak_sanitizer_reason": "Sandbox /proc thread inspection is unavailable."
+  },
+  "python_tests": {
+    "passed": 10
+  },
+  "real_content_runtime": {
+    "parser_checks": 863,
+    "ui_checks": 7374,
+    "colorless_variants_acquired": 106,
+    "potions_acquired": 64,
+    "visual_review": "Nine final real-content scenes reviewed. Outlined energy labels are readable on silver and orange orbs; X remains X; Blade instance damage25/47 and catalog10, Chinese descriptions, potions and status art are correct in the checked views."
+  },
+  "arm": {
+    "allocation_bytes": 10564912,
+    "absolute_relocations": 2124,
+    "physical_device_or_firebird_execution": false
+  },
+  "save": {
+    "writer_version": 12,
+    "reader_versions": [
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12
+    ],
+    "historical_v11_fixture_binary_sha256": "39469ff1e754da978689eab2e849f85f32fbab61138b2bdfc10bee5664c68a4f",
+    "ordinary_x11_bytes": 14344,
+    "large_x11_bytes": 19428,
+    "large_card_instances": 384,
+    "large_fresh_process_roundtrip_exact": true
+  },
+  "native_wasm_rooms": {
+    "frames": 84,
+    "saves": 8,
+    "output": "aroma-transform: 20 exact frames; 2 exact saves\naroma-upgrade-silent: 17 exact frames; 2 exact saves\ndoors-remove: 16 exact frames; 2 exact saves\nshop: 31 exact frames; 2 exact saves\nTotal: 84 native/WASM RGB565 frame matches; 8 save matches. Storage adapter, not browser DOM or persistent localStorage.",
+    "scope": "Same-project native/WASM frames and save bytes only; not original PC game, browser DOM, or persistent localStorage parity."
+  },
+  "pack": {
+    "format": "NSP2/11",
+    "reference": "v0.111.0 / 41cef1ea",
+    "bytes": 6584524,
+    "sha256": "7add6827c5a8a271f0f411f1797a2a75cb6b9db36f450a7402f667ff789a12b4",
+    "cards": 114,
+    "single_player_colorless": 53,
+    "potions": 64,
+    "relics": 30,
+    "strings": 407,
+    "auxiliary_images": 185,
+    "images": 1460,
+    "glyphs": 5770,
+    "clips": 17,
+    "retained_image_payloads": 1334,
+    "remaining_resident_bytes": 1804084,
+    "excluded": [
+      "audio",
+      "multiplayer",
+      "timeline"
+    ],
+    "limitations": "Other-character potions are available in practice; this does not add full characters or original generation pools."
+  },
+  "artifacts": [
+    {
+      "filename": "nSpire2.tns",
+      "bytes": 152721,
+      "sha256": "ea622006c3f766a883e904ac124c3114b793ddd49f519e067f60d290e9b8fe70",
+      "contains_private_game_content": false
+    },
+    {
+      "filename": "nSpire2.wasm",
+      "bytes": 493402,
+      "sha256": "009757d63855be6b49df5f44883593ea0d216b6c692451ba398772bee000e731",
+      "contains_private_game_content": false
+    },
+    {
+      "filename": "nSpire2-x11",
+      "bytes": 498800,
+      "sha256": "77af4b6d9aa93290ca923f1937872567308e4077610de3526f415537de8bdc69",
+      "contains_private_game_content": false
+    },
+    {
+      "filename": "nSpire2.nsp.tns",
+      "bytes": 6584524,
+      "sha256": "7add6827c5a8a271f0f411f1797a2a75cb6b9db36f450a7402f667ff789a12b4",
+      "contains_private_game_content": true
+    },
+    {
+      "filename": "nSpire2-desktop.html",
+      "bytes": 9452257,
+      "sha256": "d3d0854a9334db4676380f3c6cd54f047e1341bf086577dbdc78b6af386ba124",
+      "contains_private_game_content": true
+    }
+  ],
+  "journals": [
+    {
+      "name": "arm-final-2900833a19a9",
+      "status": "passed",
+      "source_changed": false,
+      "returncode": 0,
+      "log_sha256": "0bf8c9f0900bf4b706ecdc6fac89d6663a893cb9794f80bb6339427f2943b698",
+      "started_at": "2026-10-18T14:35:24.260281+00:00",
+      "ended_at": "2026-10-18T14:35:32.437394+00:00"
+    },
+    {
+      "name": "content-final-d4f6efe573b2",
+      "status": "passed",
+      "source_changed": false,
+      "returncode": 0,
+      "log_sha256": "dc0d8646f8d6a6f1e90ec9cd07820bdb76afba1826b64a7becb3a68c079dca9e",
+      "started_at": "2026-10-18T14:35:24.181539+00:00",
+      "ended_at": "2026-10-18T14:35:31.281058+00:00"
+    },
+    {
+      "name": "native-final-6173a9899340",
+      "status": "passed",
+      "source_changed": false,
+      "returncode": 0,
+      "log_sha256": "c1b5321a74e1753d6804fcac5b3a2490771262f847fde5043bc39bb0b15fb1e5",
+      "started_at": "2026-10-18T14:35:24.234998+00:00",
+      "ended_at": "2026-10-18T14:36:20.854941+00:00"
+    },
+    {
+      "name": "python-regressions-a0c2550624d1",
+      "status": "passed",
+      "source_changed": false,
+      "returncode": 0,
+      "log_sha256": "9f7cd683efe2740fc4d9c96c311df2536a77ad35eee714c725abb4f557ad7bee",
+      "started_at": "2026-10-18T14:35:24.183301+00:00",
+      "ended_at": "2026-10-18T14:35:25.171570+00:00"
+    },
+    {
+      "name": "real-parser-final-748fee005024",
+      "status": "passed",
+      "source_changed": false,
+      "returncode": 0,
+      "log_sha256": "7c444af2c80b957d4605d7ee0165bb6290ab2b0ddfacf0af83d0856ba98daf7f",
+      "started_at": "2026-10-18T14:36:47.695224+00:00",
+      "ended_at": "2026-10-18T14:36:48.016603+00:00"
+    },
+    {
+      "name": "real-ui-final-2a54eac49d42",
+      "status": "passed",
+      "source_changed": false,
+      "returncode": 0,
+      "log_sha256": "4721c867aa6a5865a90b469d3c6d7cc3f4e68b8200f20a159f427397e772fed3",
+      "started_at": "2026-10-18T14:36:47.679487+00:00",
+      "ended_at": "2026-10-18T14:37:08.640322+00:00"
+    },
+    {
+      "name": "room-native-5ef718e06282",
+      "status": "passed",
+      "source_changed": false,
+      "returncode": 0,
+      "log_sha256": "44108d3bbe95dff9decd92341bdd1e7418c39963db334041daa3e1147efd90ee",
+      "started_at": "2026-10-18T14:36:47.635401+00:00",
+      "ended_at": "2026-10-18T14:36:49.672024+00:00"
+    },
+    {
+      "name": "room-wasm-b169bc0db47a",
+      "status": "passed",
+      "source_changed": false,
+      "returncode": 0,
+      "log_sha256": "633a6d231fcbdda5209f111a98a21c68d2ef9a4bda39638c8e4fee7436d3d71d",
+      "started_at": "2026-10-18T14:37:59.401562+00:00",
+      "ended_at": "2026-10-18T14:38:00.071503+00:00"
+    },
+    {
+      "name": "wasm-final-5c96a1eb732f",
+      "status": "passed",
+      "source_changed": false,
+      "returncode": 0,
+      "log_sha256": "5b843f48f4a9d0a505b20a44d9335366ac7ced8c6f9e6a4970ab5ae184d345cd",
+      "started_at": "2026-10-18T14:36:47.739918+00:00",
+      "ended_at": "2026-10-18T14:36:54.292157+00:00"
+    },
+    {
+      "name": "x11-final-421240b3049f",
+      "status": "passed",
+      "source_changed": false,
+      "returncode": 0,
+      "log_sha256": "c005be563719ab72e5df07532f1c7f69dde6e3c77ee46aa0d04ac6e767c8ced9",
+      "started_at": "2026-10-18T14:35:24.127932+00:00",
+      "ended_at": "2026-10-18T14:35:28.924772+00:00"
+    },
+    {
+      "name": "x11-large-save-b842c092f577",
+      "status": "passed",
+      "source_changed": false,
+      "returncode": 0,
+      "log_sha256": "c5b83eaf6d1df63348f3e094e32278457a535892f23d036de845bc7d821e1c0a",
+      "started_at": "2026-10-18T14:36:47.769915+00:00",
+      "ended_at": "2026-10-18T14:36:48.089444+00:00"
+    },
+    {
+      "name": "x11-save-reopen-0499e026636f",
+      "status": "passed",
+      "source_changed": false,
+      "returncode": 0,
+      "log_sha256": "1dd8d306292302cecd6b9da81ef12dcf042f5b1234afc375e41fa02d781cf1f8",
+      "started_at": "2026-10-18T14:36:47.720020+00:00",
+      "ended_at": "2026-10-18T14:36:47.909850+00:00"
+    }
+  ],
+  "checks_are_assertions_not_unique_scenarios": true,
+  "limitations": [
+    "Original reference rules were inspected statically; the original game was not executed as a differential oracle.",
+    "Only Ironclad and Silent are playable, with incomplete card pools; the other three full character systems and four special potion acquisition routes remain incomplete.",
+    "ARM compilation is not a Firebird or physical-calculator execution result.",
+    "Native/WASM room comparison uses the shared storage adapter; browser DOM and persistent localStorage were not tested.",
+    "Audio, multiplayer and Timeline are excluded."
+  ]
+}

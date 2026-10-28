@@ -1,0 +1,985 @@
+{
+  "schema": 1,
+  "version": "0.16.0-prototype",
+  "verified_build_commit": "8c6977d3cc1dc9f17926a480127bc1067abd0286",
+  "verified_source_tree": "db96da21a4f39ae8612857fab5c2ea1b4e1295a3",
+  "source_fingerprint": "9fadd7740d7abde1d3144e293f22a6846476d84b6cefe74927f3065182a5ea2e",
+  "reference": "v0.111.0 / 41cef1ea",
+  "complete": true,
+  "completed_scope": "All five pinned single-player character card pools, 53 colorless models and 64 potion policies within this adaptation.",
+  "native": {
+    "passed": 31,
+    "total": 31,
+    "checks_reported_by_passing_suites": 929474,
+    "suites": [
+      {
+        "name": "core_regression",
+        "passed": true,
+        "executed": true,
+        "checks_reported": 103307,
+        "output": "core: 103307 checks, 9885 generated transitions passed"
+      },
+      {
+        "name": "input_regression",
+        "passed": true,
+        "executed": true,
+        "checks_reported": 81,
+        "output": "input: 81 checks passed"
+      },
+      {
+        "name": "content_regression",
+        "passed": true,
+        "executed": true,
+        "checks_reported": 1066,
+        "output": "content: 1066 checks passed"
+      },
+      {
+        "name": "expansion_regression",
+        "passed": true,
+        "executed": true,
+        "checks_reported": 867,
+        "output": "expansion: 867 checks passed"
+      },
+      {
+        "name": "ui_flow_regression",
+        "passed": true,
+        "executed": true,
+        "checks_reported": 3470,
+        "output": "ui flow: 3470 checks passed"
+      },
+      {
+        "name": "compression_regression",
+        "passed": true,
+        "executed": true,
+        "checks_reported": 320058,
+        "output": "compression: 320058 boundary checks passed"
+      },
+      {
+        "name": "silent_regression",
+        "passed": true,
+        "executed": true,
+        "checks_reported": 60484,
+        "output": "Silent: 60484 assertions, 7456 generated transitions passed"
+      },
+      {
+        "name": "silent_ui_regression",
+        "passed": true,
+        "executed": true,
+        "checks_reported": 4416,
+        "output": "Silent UI: 4416 checks passed"
+      },
+      {
+        "name": "shared_regression",
+        "passed": true,
+        "executed": true,
+        "checks_reported": 23109,
+        "output": "shared: 23109 checks, 3539 controlled transitions passed"
+      },
+      {
+        "name": "shared_ui_regression",
+        "passed": true,
+        "executed": true,
+        "checks_reported": 90,
+        "output": "shared UI: 90 checks passed"
+      },
+      {
+        "name": "tactics_regression",
+        "passed": true,
+        "executed": true,
+        "checks_reported": 29933,
+        "output": "tactics: 29933 checks, 5458 controlled transitions passed"
+      },
+      {
+        "name": "tactics_ui_regression",
+        "passed": true,
+        "executed": true,
+        "checks_reported": 305,
+        "output": "tactics UI: 305 checks passed"
+      },
+      {
+        "name": "relic_combo_regression",
+        "passed": true,
+        "executed": true,
+        "checks_reported": 80442,
+        "output": "relic combos: 80442 checks, 2776 transitions passed"
+      },
+      {
+        "name": "relic_ui_regression",
+        "passed": true,
+        "executed": true,
+        "checks_reported": 221,
+        "output": "relic UI: 221 checks passed"
+      },
+      {
+        "name": "combat_ui_regression",
+        "passed": true,
+        "executed": true,
+        "checks_reported": 1203,
+        "output": "combat UI: 1203 checks passed"
+      },
+      {
+        "name": "events_regression",
+        "passed": true,
+        "executed": true,
+        "checks_reported": 102607,
+        "output": "events: 102607 checks passed"
+      },
+      {
+        "name": "events_ui_regression",
+        "passed": true,
+        "executed": true,
+        "checks_reported": 373,
+        "output": "event/shop UI: 373 checks passed"
+      },
+      {
+        "name": "colorless_potions_regression",
+        "passed": true,
+        "executed": true,
+        "checks_reported": 7903,
+        "output": "colorless/potions: 7903 checks; 106 card variants; 64 potions"
+      },
+      {
+        "name": "colorless_completion_regression",
+        "passed": true,
+        "executed": true,
+        "checks_reported": 17795,
+        "output": "colorless completion: 17795 checks, 106 explicit card-effect variants, token and continuation contracts"
+      },
+      {
+        "name": "potions_completion_regression",
+        "passed": true,
+        "executed": true,
+        "checks_reported": 34202,
+        "output": "potion completion: 34202 checks; 64 model policies"
+      },
+      {
+        "name": "expansion_ui_regression",
+        "passed": true,
+        "executed": true,
+        "checks_reported": 4905,
+        "output": "expansion UI: 4905 checks; 106 colorless variants acquired; 64 potions acquired; synthetic NSP2/11 profile"
+      },
+      {
+        "name": "ironclad_completion_regression",
+        "passed": true,
+        "executed": true,
+        "checks_reported": 4390,
+        "output": "ironclad completion: 4390 checks passed across 170 base/upgrade variants plus Giant Rock and interaction contracts"
+      },
+      {
+        "name": "silent_completion_regression",
+        "passed": true,
+        "executed": true,
+        "checks_reported": 18022,
+        "output": "Silent completion regression: 18022 checks; 174 base/upgraded variants; 86 single-player models + Shiv"
+      },
+      {
+        "name": "defect_completion_regression",
+        "passed": true,
+        "executed": true,
+        "checks_reported": 16190,
+        "output": "Defect completion: 172 canonical variants, 16190 checks passed"
+      },
+      {
+        "name": "regent_completion_regression",
+        "passed": true,
+        "executed": true,
+        "checks_reported": 9892,
+        "output": "Regent completion regression: 9892 checks, 181 base/upgraded/token variants passed"
+      },
+      {
+        "name": "necro_completion_regression",
+        "passed": true,
+        "executed": true,
+        "checks_reported": 19494,
+        "output": "Necrobinder completion: 174 canonical variants, 19494 checks passed"
+      },
+      {
+        "name": "character_ui_regression",
+        "passed": true,
+        "executed": true,
+        "checks_reported": 62572,
+        "output": "character UI: 62572 checks passed, 860 acquired variants, synthetic content"
+      },
+      {
+        "name": "characters_integration_regression",
+        "passed": true,
+        "executed": true,
+        "checks_reported": 72,
+        "output": "current bounded save: 109012 bytes; conservative ceiling 109064 / 131072\ncharacter integration: 72 checks"
+      },
+      {
+        "name": "five_character_integration_regression",
+        "passed": true,
+        "executed": true,
+        "checks_reported": 230,
+        "output": "genuine v13 migration: 41820 -> 88876 bytes, paused and resumed payload preserved\nv14 bounded save: 109012 bytes, conservative ceiling 109064 / 131072\nfive-character integration: 230 checks passed"
+      },
+      {
+        "name": "five_character_ui_regression",
+        "passed": true,
+        "executed": true,
+        "checks_reported": 1687,
+        "output": "five-character UI: 1687 checks passed; synthetic profile"
+      },
+      {
+        "name": "autoplay_status_regression",
+        "passed": true,
+        "executed": true,
+        "checks_reported": 88,
+        "output": "automatic status result piles: 88 checks passed"
+      }
+    ],
+    "asan": true,
+    "ubsan": true,
+    "leak_sanitizer": false,
+    "leak_sanitizer_reason": "Sandbox process/thread inspection is unavailable.",
+    "native_receipt_sha256": "245bc93d8c1e872be2a7dd3a8b95b25f27d0758ee08c79ec3264006982956dd7",
+    "junit_sha256": "150b28c34fe0e29efee251f2df4f71b09396a68bde0d2f2b09ba68161a4a46b2"
+  },
+  "python_tests": {
+    "passed": 30,
+    "total": 30
+  },
+  "real_content_runtime": {
+    "parser_checks": 3736,
+    "suites": {
+      "five_character_ui_regression": {
+        "suite_passed": true,
+        "checks": 7173,
+        "content_format": "NSP2/13",
+        "journal": "actual-five_character_ui_regression-954ab779863c",
+        "output": "five-character UI: 7173 checks passed; actual profile"
+      },
+      "expansion_ui_regression": {
+        "suite_passed": true,
+        "checks": 7375,
+        "content_format": "NSP2/13",
+        "journal": "actual-expansion_ui_regression-83001031cb13",
+        "output": "expansion UI: 7375 checks; 106 colorless variants acquired; 64 potions acquired; supplied private NSP2/11 profile",
+        "acquired_variants": 106,
+        "potions_acquired": 64,
+        "legacy_log_label": "The historical success-line label says NSP2/11; the actual supplied and required pack is NSP2/13."
+      },
+      "character_ui_regression": {
+        "suite_passed": true,
+        "checks": 66478,
+        "content_format": "NSP2/13",
+        "journal": "actual-character_ui_regression-cfdc7891ecf9",
+        "output": "character UI: 66478 checks passed, 860 acquired variants, actual content",
+        "acquired_variants": 860
+      }
+    },
+    "visual_review": {
+      "passed": true,
+      "reviewed_screens": 42,
+      "formal_capture_screens": 40,
+      "supplemental_clip_end_screens": 2,
+      "reviewers": [
+        "root",
+        "regent"
+      ],
+      "blocking_findings": [],
+      "scope": "The forty final captured UI scenes and two additional Osty animation-end scenes were visually reviewed. This is not an individual visual inspection of every card portrait or original-PC pixel parity.",
+      "reviewed_features": [
+        "Five-character selection and compendium",
+        "Five orb types, empty slots and live orb values",
+        "Independent energy/star amounts, X and free-choice previews",
+        "Permanent Genetic Algorithm and Scythe growth",
+        "Grimoire permanent-removal confirmation and reward",
+        "Osty damage, death and revival",
+        "Retained original card and colorless/potion scenes"
+      ],
+      "osty_animation_note": "Main UI snapshots capture the first animation frame. Supplemental frozen-engine checks and the two final frames confirm death hides the sprite and revival returns to idle without changing save bytes.",
+      "supplemental_diagnostic_checks": 540
+    }
+  },
+  "arm": {
+    "built": true,
+    "allocation_bytes": 16174284,
+    "allocation_limit_bytes": 16777216,
+    "remaining_allocation_bytes": 602932,
+    "absolute_relocations": 5597,
+    "entry": "0x0",
+    "device_or_firebird_tested": false
+  },
+  "wasm": {
+    "built": true,
+    "fixed_memory_bytes": 16777216,
+    "offline_embedded_inputs_exact": true
+  },
+  "save": {
+    "writer_version": 14,
+    "reader_versions": [
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14
+    ],
+    "historical_v13_fixture_binary_sha256": "6d20885d2d6536fe10d9c8389bbeac80b7d24beed99476eb0700fda24ed92b00",
+    "genuine_v13_migration_passed": true,
+    "genuine_v13_bytes": 41820,
+    "migrated_v14_bytes": 88876,
+    "capacity": {
+      "measured_bytes": 109012,
+      "conservative_ceiling": 109064,
+      "limit": 131072,
+      "instances": 512,
+      "deck": 192,
+      "queue_entries": 512,
+      "frames": 12,
+      "nightmares": 16
+    },
+    "fresh_process_x11": {
+      "mode": "X11 host --headless CLI with production save/load callbacks",
+      "passed": true,
+      "cases": [
+        {
+          "name": "ordinary",
+          "status": "passed",
+          "details": {
+            "version": 14,
+            "bytes": 88764,
+            "phase": 0,
+            "character": 4,
+            "instances": 10,
+            "deck": 10,
+            "frames": 0,
+            "effects": 0,
+            "nightmares": 0,
+            "hp": 66,
+            "energy": 3,
+            "hand": 5,
+            "draw": 5,
+            "discard": 0,
+            "exhaust": 0,
+            "valid": true
+          },
+          "bytes": 88764,
+          "sha256": "551863da6b29e9c2de292eaa8abf10000646718735f43c7a45f70b6ab05aef8d",
+          "fresh_process_state_equal": true,
+          "resaved_bytes_equal": true,
+          "atomic_replace_observed": true,
+          "host_summary": {
+            "title": false,
+            "phase": 0,
+            "hp": 66,
+            "energy": 3,
+            "block": 0,
+            "pain": 0,
+            "embrace": 0,
+            "hand": 5,
+            "discard": 0,
+            "exhaust": 0,
+            "pending": 0,
+            "valid": true
+          }
+        },
+        {
+          "name": "bounded512",
+          "status": "passed",
+          "details": {
+            "version": 14,
+            "bytes": 109012,
+            "phase": 17,
+            "character": 4,
+            "instances": 512,
+            "deck": 192,
+            "frames": 12,
+            "effects": 512,
+            "nightmares": 16,
+            "hp": 97,
+            "energy": 0,
+            "hand": 0,
+            "draw": 499,
+            "discard": 0,
+            "exhaust": 0,
+            "valid": true
+          },
+          "bytes": 109012,
+          "sha256": "7acf2b6eadccc4b3881ab911a4df0a284b58142d7a6e83ee5872f2fb0d556df7",
+          "fresh_process_state_equal": true,
+          "resaved_bytes_equal": true,
+          "atomic_replace_observed": true,
+          "host_summary": {
+            "title": false,
+            "phase": 17,
+            "hp": 97,
+            "energy": 0,
+            "block": 0,
+            "pain": 0,
+            "embrace": 0,
+            "hand": 0,
+            "discard": 0,
+            "exhaust": 0,
+            "pending": 512,
+            "valid": true
+          }
+        }
+      ],
+      "result_sha256": "cb57d8a5ab6155b352a005bf511ce241cc431ec04f596dadc58f6ee57f3a7de0"
+    },
+    "migration_policy": "Preserve encoded old facts; missing new histories default to zero except observable pending baselines. Historical acquisition orders retain documented legacy policies."
+  },
+  "native_wasm": {
+    "suite_passed": true,
+    "frames": 384,
+    "saves": 23,
+    "scenarios": [
+      {
+        "name": "aroma-transform",
+        "frames": 20,
+        "saves": 2
+      },
+      {
+        "name": "aroma-upgrade-silent",
+        "frames": 17,
+        "saves": 2
+      },
+      {
+        "name": "doors-remove",
+        "frames": 16,
+        "saves": 2
+      },
+      {
+        "name": "shop",
+        "frames": 31,
+        "saves": 2
+      },
+      {
+        "name": "ironclad-combat",
+        "frames": 53,
+        "saves": 3
+      },
+      {
+        "name": "silent-combat",
+        "frames": 53,
+        "saves": 3
+      },
+      {
+        "name": "defect-orbs",
+        "frames": 60,
+        "saves": 3
+      },
+      {
+        "name": "regent-stars-forge",
+        "frames": 67,
+        "saves": 3
+      },
+      {
+        "name": "necro-osty-doom",
+        "frames": 67,
+        "saves": 3
+      }
+    ],
+    "scope": "Actual same-project RGB565 frames and complete save bytes via storage adapter; no original PC-game parity or browser DOM/localStorage claim."
+  },
+  "pack": {
+    "format": "NSP2/13",
+    "reference": "v0.111.0 / 41cef1ea",
+    "bytes": 12910778,
+    "sha256": "4b83320460798a5dd57d4faeee3cdf9613bef7413259ac57b61fb74d109a5917",
+    "cards": 497,
+    "single_player_pools": {
+      "ironclad": 85,
+      "silent": 86,
+      "defect": 86,
+      "regent": 86,
+      "necrobinder": 86,
+      "colorless": 53
+    },
+    "generated_and_status_models": 15,
+    "potions": 64,
+    "relics": 33,
+    "strings": 1556,
+    "auxiliary_images": 339,
+    "images": 2638,
+    "glyphs": 7215,
+    "clips": 38,
+    "resident_limit_bytes": 13631488,
+    "remaining_resident_bytes": 720710,
+    "retained_image_payloads": 1622,
+    "retained_card_records": 228,
+    "retained_strings": 749,
+    "retained_auxiliary_records": 233,
+    "retained_animation_clips": 17,
+    "retained_glyph_payloads": 6265,
+    "portrait_fallbacks": [],
+    "icon_adaptations": [
+      {
+        "status": "HyperbeamFocus",
+        "used": "images/powers/focus_power.png",
+        "reason": "Pinned PCK has no separate HyperbeamFocusDown power icon"
+      }
+    ],
+    "animation_sampling": "Full original cycles; new idle 8 fps, actions 12 fps, camp 4 fps; historical clips unchanged",
+    "excluded": [
+      "audio",
+      "multiplayer",
+      "timeline"
+    ],
+    "limitations": "Offline Spine rasterization and material adaptation are not pixel parity with Godot. Content counts do not establish executable effect parity.",
+    "historical_sidesteps": "The retained Sidestep portrait uses its original beta texture, as documented in 0.15."
+  },
+  "resource_readback": {
+    "checkpoint": "8c6977d3cc1dc9f17926a480127bc1067abd0286",
+    "format": "NSP2/13",
+    "sha256": "4b83320460798a5dd57d4faeee3cdf9613bef7413259ac57b61fb74d109a5917",
+    "bytes": 12910778,
+    "limit_bytes": 13631488,
+    "remaining_bytes": 720710,
+    "cards": 497,
+    "strings": 1556,
+    "auxiliary": 339,
+    "clips": 38,
+    "images": 2638,
+    "glyphs": 7215,
+    "retained_images": 1622,
+    "retained_glyphs": 6265,
+    "retained_cards": 228,
+    "retained_strings": 749,
+    "retained_auxiliary": 233,
+    "retained_clips": 17,
+    "canonical_reencode_identical": true,
+    "historical_payloads_identical": true,
+    "new_frames": 641,
+    "maximum_clip_frames": 161,
+    "maximum_image_width": 320,
+    "maximum_image_height": 240,
+    "image_formats": {
+      "5": 2638
+    },
+    "added_glyph_records": 950,
+    "new_font_codepoints": 190,
+    "font_missing_codepoints": [],
+    "all_text_covered_at_five_sizes": true,
+    "maximum_glyph_width": 20,
+    "maximum_glyph_height": 25
+  },
+  "artifacts": [
+    {
+      "filename": "nSpire2.tns",
+      "bytes": 284458,
+      "sha256": "98216e02d493e5986affec0dbe1922d4ef556823a58883fe1de33690e49575e4",
+      "contains_private_game_content": false
+    },
+    {
+      "filename": "nSpire2-x11-asan",
+      "bytes": 9735736,
+      "sha256": "42410dc5c9e37387d782a058a8a60c543755d942e1a67cfb711f3b9dd16f5449",
+      "contains_private_game_content": false
+    },
+    {
+      "filename": "nSpire2.wasm",
+      "bytes": 817288,
+      "sha256": "6fad543b38b114a04c5cb61bd407557ee11849e0b2886675e9a894540611288b",
+      "contains_private_game_content": false
+    },
+    {
+      "filename": "nSpire2.nsp.tns",
+      "bytes": 12910778,
+      "sha256": "4b83320460798a5dd57d4faeee3cdf9613bef7413259ac57b61fb74d109a5917",
+      "contains_private_game_content": true
+    },
+    {
+      "filename": "nSpire2-desktop.html",
+      "bytes": 18319349,
+      "sha256": "a782637900c9f9985ed847ffdd0f9f9509f7a1d34dcbeb12aa156f21dbddf8de",
+      "contains_private_game_content": true
+    }
+  ],
+  "journals": [
+    {
+      "name": "actual-character_ui_regression-cfdc7891ecf9",
+      "status": "passed",
+      "source_changed": false,
+      "returncode": 0,
+      "log_sha256": "a8f3313a21a027307adbfefba5377f9cccabe98262ef1edc83e9f908a52c03fe",
+      "started_at": "2026-10-19T05:39:30.393776+00:00",
+      "ended_at": "2026-10-19T05:45:14.813986+00:00"
+    },
+    {
+      "name": "actual-expansion_ui_regression-83001031cb13",
+      "status": "passed",
+      "source_changed": false,
+      "returncode": 0,
+      "log_sha256": "3c5e140913778945ef66cbf8522dfd1a15574c286c66bed1b264e77652d1dc38",
+      "started_at": "2026-10-19T05:39:10.434889+00:00",
+      "ended_at": "2026-10-19T05:39:30.324492+00:00"
+    },
+    {
+      "name": "actual-five_character_ui_regression-954ab779863c",
+      "status": "passed",
+      "source_changed": false,
+      "returncode": 0,
+      "log_sha256": "a77df148cc270f2bdce5acf741ca4a9ef1f8681f99909365fa1e69516295cfde",
+      "started_at": "2026-10-19T05:39:08.534039+00:00",
+      "ended_at": "2026-10-19T05:39:10.356483+00:00"
+    },
+    {
+      "name": "arm16-build-cee2ad63354a",
+      "status": "passed",
+      "source_changed": false,
+      "returncode": 0,
+      "log_sha256": "619ab76fc717b059c88fadec9d65cddbc9b78880d0242c82a8d25f6be923bbbe",
+      "started_at": "2026-10-19T05:36:32.777193+00:00",
+      "ended_at": "2026-10-19T05:36:42.214882+00:00"
+    },
+    {
+      "name": "backend16-driver-2d00827566c9",
+      "status": "passed",
+      "source_changed": false,
+      "returncode": 0,
+      "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "started_at": "2026-10-19T05:38:22.429728+00:00",
+      "ended_at": "2026-10-19T05:38:24.150814+00:00"
+    },
+    {
+      "name": "backend16-native-ec6a7e3836ce",
+      "status": "passed",
+      "source_changed": false,
+      "returncode": 0,
+      "log_sha256": "d477f43a6529a40e1c99361a8063c24710a6846c8060383f4c10bf5e8c0ea9c8",
+      "started_at": "2026-10-19T05:38:43.747555+00:00",
+      "ended_at": "2026-10-19T05:38:45.972402+00:00"
+    },
+    {
+      "name": "backend16-wasm-df5891e0339e",
+      "status": "passed",
+      "source_changed": false,
+      "returncode": 0,
+      "log_sha256": "83dd05bae8731e3d4c7afe7971e5465755b4d44a56d4c87f94dcecdac97d605f",
+      "started_at": "2026-10-19T05:40:22.457213+00:00",
+      "ended_at": "2026-10-19T05:40:23.627244+00:00"
+    },
+    {
+      "name": "content16-actual-d0b8e6389395",
+      "status": "passed",
+      "source_changed": false,
+      "returncode": 0,
+      "log_sha256": "b720952aaeee36e90a95b4382df66eed68397a7304f1a5b82a85f4229dd32495",
+      "started_at": "2026-10-19T05:40:20.901564+00:00",
+      "ended_at": "2026-10-19T05:40:21.570890+00:00"
+    },
+    {
+      "name": "native016-build-82bafeb67df3",
+      "status": "passed",
+      "source_changed": false,
+      "returncode": 0,
+      "log_sha256": "b2ba45fe0f9000212c45cfad967f61c9e32bb5a1b604815b70c5c0c250e7a63d",
+      "started_at": "2026-10-19T05:36:25.977375+00:00",
+      "ended_at": "2026-10-19T05:36:50.778148+00:00"
+    },
+    {
+      "name": "native016-configure-9d480da2b8e7",
+      "status": "passed",
+      "source_changed": false,
+      "returncode": 0,
+      "log_sha256": "72cf1ba78dd9574890009bd79610d3a673ae2a8c155c511b87d4532d80441469",
+      "started_at": "2026-10-19T05:36:25.127161+00:00",
+      "ended_at": "2026-10-19T05:36:25.906666+00:00"
+    },
+    {
+      "name": "native016-ctest-54a1d9ac8e6f",
+      "status": "passed",
+      "source_changed": false,
+      "returncode": 0,
+      "log_sha256": "edd6c06add6696ba140bc3c6af64849db990deaeba8d58d4a4bd3f6a0edfd38a",
+      "started_at": "2026-10-19T05:36:50.852469+00:00",
+      "ended_at": "2026-10-19T05:42:40.850078+00:00"
+    },
+    {
+      "name": "native016-x11-fixture-build-29fc1b1da629",
+      "status": "passed",
+      "source_changed": false,
+      "returncode": 0,
+      "log_sha256": "c11871fa2473ca4825405006b4f7b6de8506b3eaac55b742ca5576e3ea63ba2d",
+      "started_at": "2026-10-19T05:40:10.232299+00:00",
+      "ended_at": "2026-10-19T05:40:11.301605+00:00"
+    },
+    {
+      "name": "native016-x11-fresh-v14-e48e27c0a726",
+      "status": "passed",
+      "source_changed": false,
+      "returncode": 0,
+      "log_sha256": "dd8c76e59bfe4392ef949f5e653e1120b42ea3aeae8bdf03e77ab54447577031",
+      "started_at": "2026-10-19T05:40:11.360028+00:00",
+      "ended_at": "2026-10-19T05:40:12.077509+00:00"
+    },
+    {
+      "name": "osty-clip-end-build-b12c5b4e299c",
+      "status": "passed",
+      "source_changed": false,
+      "returncode": 0,
+      "log_sha256": "15696c81d6cffe4b650f63d56c58d09cf7211f0c1b3202a7aa9641f1bf5bf2b6",
+      "started_at": "2026-10-19T05:45:17.901058+00:00",
+      "ended_at": "2026-10-19T05:45:19.270937+00:00"
+    },
+    {
+      "name": "osty-clip-end-diagnostic-89d393fb2fb5",
+      "status": "passed",
+      "source_changed": false,
+      "returncode": 0,
+      "log_sha256": "cc63c40cbc993484c09baa02db495f11d892c65d4baa08c340a60ad7e943adbe",
+      "started_at": "2026-10-19T05:45:52.892068+00:00",
+      "ended_at": "2026-10-19T05:45:53.110446+00:00"
+    },
+    {
+      "name": "pack16-preservation-f67bf8c7225a",
+      "status": "passed",
+      "source_changed": false,
+      "returncode": 0,
+      "log_sha256": "5081436f06c7ec4b0c52e5408679c4aba039c7cd21d9cb52983fae6ce01ef28d",
+      "started_at": "2026-10-19T05:36:29.403418+00:00",
+      "ended_at": "2026-10-19T05:38:04.308994+00:00"
+    },
+    {
+      "name": "pack16-readback-4bc9ac39bda7",
+      "status": "passed",
+      "source_changed": false,
+      "returncode": 0,
+      "log_sha256": "1c2191f3a069afb18a2a6ec269afd35932ccc73a810b37df0e048561ef8bd534",
+      "started_at": "2026-10-19T05:40:20.904363+00:00",
+      "ended_at": "2026-10-19T05:40:24.536561+00:00"
+    },
+    {
+      "name": "python16-all-c3aa036bdc09",
+      "status": "passed",
+      "source_changed": false,
+      "returncode": 0,
+      "log_sha256": "7d0de73b3e33cc7ef2d3c4d32678aafd8cc5761646a5a2214f84c38c15754089",
+      "started_at": "2026-10-19T05:36:22.018739+00:00",
+      "ended_at": "2026-10-19T05:36:22.890050+00:00"
+    },
+    {
+      "name": "web16-build-e9ed11ae7869",
+      "status": "passed",
+      "source_changed": false,
+      "returncode": 0,
+      "log_sha256": "2335716a821c4fc05f7b9eb7dad70e6486ff26ee10c06cd57f3a1e9e37d6da57",
+      "started_at": "2026-10-19T05:38:34.321960+00:00",
+      "ended_at": "2026-10-19T05:38:42.664213+00:00"
+    }
+  ],
+  "screenshot_hashes": [
+    {
+      "filename": "five_character_ui_regression/defect-character.ppm",
+      "bytes": 230415,
+      "sha256": "d53cf11f19d2ddee5c2a55c2f06fa4c14d82270b9fb0ed3ccfe52fbe63e13d12"
+    },
+    {
+      "filename": "five_character_ui_regression/defect-empty-orb-slots.ppm",
+      "bytes": 230415,
+      "sha256": "9ea0ec1e4ccc538294dbca8b70e80ea4b1a7f1efa2a0d269da55416b3d5e0c25"
+    },
+    {
+      "filename": "five_character_ui_regression/defect-five-orbs.ppm",
+      "bytes": 230415,
+      "sha256": "dd1458cb26ac0d178fd0973654a03cf62826863850e46b6a87c73bad3508f67c"
+    },
+    {
+      "filename": "five_character_ui_regression/defect-library.ppm",
+      "bytes": 230415,
+      "sha256": "8ae48d10a6f4a520819d15d04db4ba8cc65933d98dbfa3e9963b239e49f4dbe8"
+    },
+    {
+      "filename": "five_character_ui_regression/defect-orb-detail.ppm",
+      "bytes": 230415,
+      "sha256": "45205efe208d4d475f16b065006cf53ae950a761784e28f904f895a629340128"
+    },
+    {
+      "filename": "five_character_ui_regression/five-character-statuses.ppm",
+      "bytes": 230415,
+      "sha256": "35ab2bb49b6b1be2fc8a91fc4c300a9b5b0d6c70655d6ee0d5f6c76d33829d0a"
+    },
+    {
+      "filename": "five_character_ui_regression/genetic-deck-preview.ppm",
+      "bytes": 230415,
+      "sha256": "4e5c3b4ff66b6330795e625dfa50962510a699b4dc0435f31a8a5a5d6dd821f3"
+    },
+    {
+      "filename": "five_character_ui_regression/necro-character.ppm",
+      "bytes": 230415,
+      "sha256": "44f44055d96cf1ab519dda861e382bfe184fb0a7e69f88eee3b8b6a36c2a4522"
+    },
+    {
+      "filename": "five_character_ui_regression/necro-grimoire-confirm.ppm",
+      "bytes": 230415,
+      "sha256": "d150dd5fb8392ba8651141a2f00a1ed4958c21f010a0f3f94de38d7861dbc322"
+    },
+    {
+      "filename": "five_character_ui_regression/necro-grimoire-reward.ppm",
+      "bytes": 230415,
+      "sha256": "1467b31cc31d3b22a85feeb44fd130c4a03cb087b0b30b3e0a7f0b43ca90cb28"
+    },
+    {
+      "filename": "five_character_ui_regression/necro-library.ppm",
+      "bytes": 230415,
+      "sha256": "063957791765359b9e94d996eb1dfb5e72dbc08158d293cbe59e44d4b9a8d795"
+    },
+    {
+      "filename": "five_character_ui_regression/necro-osty-detail.ppm",
+      "bytes": 230415,
+      "sha256": "346255ec6a7d574fd8eeddd607a0babbe1f40a0f8602aefabde36735ec7f5721"
+    },
+    {
+      "filename": "five_character_ui_regression/necro-osty-down.ppm",
+      "bytes": 230415,
+      "sha256": "530c02c71d07abd780d133e8fe1e9e8b973a55ef2493cd63d8e32d9f06f3fe90"
+    },
+    {
+      "filename": "five_character_ui_regression/necro-osty-revived.ppm",
+      "bytes": 230415,
+      "sha256": "82100b42637a5b6403d9ae077b6140b38ace4f96c1883ace1b323d682335c41c"
+    },
+    {
+      "filename": "five_character_ui_regression/regent-character.ppm",
+      "bytes": 230415,
+      "sha256": "610d252eff92204aa430105ed1d655c64cac067f06fd2512e2fd190d5ee1b5a1"
+    },
+    {
+      "filename": "five_character_ui_regression/regent-free-resource-choice.ppm",
+      "bytes": 230415,
+      "sha256": "ab7634c0b73efc8656e58682ee6944e5467a79de12413fd3db75fe397c8c1956"
+    },
+    {
+      "filename": "five_character_ui_regression/regent-library.ppm",
+      "bytes": 230415,
+      "sha256": "4bb7d64c54e00cb95007f0fa52fe6994a6e10540b5472765c232e9602018cd4c"
+    },
+    {
+      "filename": "five_character_ui_regression/regent-minion-choice.ppm",
+      "bytes": 230415,
+      "sha256": "ab21199040fd5fff5e75e811a79262f00299c092ab7dba65691f2413837a6426"
+    },
+    {
+      "filename": "five_character_ui_regression/regent-star-cost.ppm",
+      "bytes": 230415,
+      "sha256": "3b08777dfa33b2f2c99c4795641fc0ec171b1cc89839f93240c114a218bcd95c"
+    },
+    {
+      "filename": "five_character_ui_regression/regent-star-x.ppm",
+      "bytes": 230415,
+      "sha256": "775b06c4689d070ecda233d64f9fb5be7991c22239c2f35283d8556e5463f64c"
+    },
+    {
+      "filename": "five_character_ui_regression/regent-void-form.ppm",
+      "bytes": 230415,
+      "sha256": "487cd3b2431df539858491a5e14ff324e6c298ccbd4a48740f78e9e753eddaf0"
+    },
+    {
+      "filename": "five_character_ui_regression/scythe-deck-preview.ppm",
+      "bytes": 230415,
+      "sha256": "4a35ff68f5eec0752223b1a09598bef36f1d2fa1e206cea40da54a5cf4ea6455"
+    },
+    {
+      "filename": "expansion_ui_regression/blade-catalog.ppm",
+      "bytes": 230415,
+      "sha256": "f8e9f26f3b817ef25b5f2cc9d28b0e80e432a7d926bc37c373b58192b03a656f"
+    },
+    {
+      "filename": "expansion_ui_regression/blade-instance-25.ppm",
+      "bytes": 230415,
+      "sha256": "78be79f4b95a67dc2bf66b54c981fec3a7b596f3eed2ccf51bc7f49b0f07e347"
+    },
+    {
+      "filename": "expansion_ui_regression/blade-instance-47.ppm",
+      "bytes": 230415,
+      "sha256": "f891e183dba1095253cb6410f53d6d15a1cc9ef3229879513336b5bd6da88f72"
+    },
+    {
+      "filename": "expansion_ui_regression/clarity-status.ppm",
+      "bytes": 230415,
+      "sha256": "780a6e89afd003f7122f1cbe3d9f3d163dd598b0c54ae08d8ed2fab2944015bb"
+    },
+    {
+      "filename": "expansion_ui_regression/colorless-potion-detail.ppm",
+      "bytes": 230415,
+      "sha256": "677345ebbc00b03e96421133c350966dec5bb2e668ed33cc158144df41b1d602"
+    },
+    {
+      "filename": "expansion_ui_regression/colorless-potion-offer.ppm",
+      "bytes": 230415,
+      "sha256": "81e2cd267716f786044a4d0b8ac57ad8bddaa3d239c7bd87fc16fe0c7b650442"
+    },
+    {
+      "filename": "expansion_ui_regression/discovery-base.ppm",
+      "bytes": 230415,
+      "sha256": "393b54fef21cf27ca922bd5e5a8775e99d31538dece6f271c1f8c3f093855b40"
+    },
+    {
+      "filename": "expansion_ui_regression/discovery-upgrade.ppm",
+      "bytes": 230415,
+      "sha256": "eb57f89bdc51bb09c7adb24c15e8e4ab5cd0080c8e599bf556841c05cd3510c2"
+    },
+    {
+      "filename": "expansion_ui_regression/x-cost-offer.ppm",
+      "bytes": 230415,
+      "sha256": "9f36388b5bf814f2f2a9b8b86f838082604f92880032058447fe25bebb7e34c6"
+    },
+    {
+      "filename": "character_ui_regression/giant-rock-catalog.ppm",
+      "bytes": 230415,
+      "sha256": "0d8a965c05fd2b375352d4d83a7a0166066b49f67fc101e1475d0fe85dc8f1a6"
+    },
+    {
+      "filename": "character_ui_regression/giant-rock-live-damage.ppm",
+      "bytes": 230415,
+      "sha256": "caf5b733f1cdf108beddfbd6856d21d6926f7b34dd1131d5d3b647674eda377e"
+    },
+    {
+      "filename": "character_ui_regression/ironclad-expect-a-fight.ppm",
+      "bytes": 230415,
+      "sha256": "5ef56efc4e6dfc8ad190c84ea4245bd857ab81ce76e2adb0ac559a5c588b776f"
+    },
+    {
+      "filename": "character_ui_regression/silent-inky-all-enemies.ppm",
+      "bytes": 230415,
+      "sha256": "30ede359d8798e5983939df9b28abcc35d878ac9a71a0d6fccca9a306c6a5d15"
+    },
+    {
+      "filename": "character_ui_regression/silent-inky-target.ppm",
+      "bytes": 230415,
+      "sha256": "4e9e3b72426c515e1f18fb8b2bb0f9ddd72664aed1d017a6d01c1023c39b789a"
+    },
+    {
+      "filename": "character_ui_regression/silent-reflex-sly.ppm",
+      "bytes": 230415,
+      "sha256": "8f81c2950a2b7a8db18d6b58af1a9b0cadbc1c92c36f2133e7b7f588a0a04386"
+    },
+    {
+      "filename": "character_ui_regression/silent-sidestep-beta.ppm",
+      "bytes": 230415,
+      "sha256": "380e71fdf88fb38db2ab3bf6536893fa4f2d45fbfe85de48e083f8b7e86fab1f"
+    },
+    {
+      "filename": "character_ui_regression/silent-skewer-x.ppm",
+      "bytes": 230415,
+      "sha256": "87538ea2d2979c517a6160870585da924b9407d1e1cfbb30661e23007d1cd176"
+    },
+    {
+      "filename": "character_ui_regression/stomp-instance-discount.ppm",
+      "bytes": 230415,
+      "sha256": "6328eca244df46ada9f823c75ac3e52fef83c6e03df0e73492a32dc84b6fe79f"
+    }
+  ],
+  "checks_are_assertions_not_unique_scenarios": true,
+  "limitations": [
+    "Reference rules were inspected statically from the supplied pinned installation; the original game was not run as a differential oracle.",
+    "All five single-player pools are implemented; complete original encounters/runs and special potion acquisition routes remain separate unfinished work.",
+    "The playable twelve-floor route, Nibbit encounters and five events remain adaptations.",
+    "ARM compilation does not establish Firebird or physical-device execution or performance.",
+    "Native/WASM agreement uses the storage adapter; browser DOM and persistent localStorage were not tested.",
+    "X11 persistence uses production --headless actions and file callbacks, not display-server interaction.",
+    "The visual review covers the recorded final scenes, not every card portrait or exact original-PC UI fidelity.",
+    "Audio, multiplayer and Timeline remain excluded."
+  ]
+}

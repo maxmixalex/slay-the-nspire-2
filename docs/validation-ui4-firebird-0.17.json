@@ -1,0 +1,1673 @@
+{
+  "schema": 1,
+  "stage": "UI4 accepted ordinary Firebird bilingual flow after sparse-scale CPU correction",
+  "date_utc": "2026-10-23",
+  "status": "passed_exercised_routes_with_remaining_limits",
+  "production_source": "76f0a01cb506fde7ac8b427e857462a35933ade3",
+  "prior_blocker": "validation-ui4-title-arm-blocker-0.17.json",
+  "isolated_cache_comparison": "validation-ui4-cache-firebird-0.17.json",
+  "scope": {
+    "platform": "Firebird emulated TI-Nspire CX II, normal OS and Ndless r2022",
+    "physical_handheld": false,
+    "snapshot_restore": false,
+    "game_state_injection": false,
+    "RAM_or_OS_patch": false,
+    "working_NAND": "Independent ui4-accepted copy. UI3 baseline, isolated candidate and failed 9a ui4-final evidence remain unchanged.",
+    "private_assets_in_git": false
+  },
+  "installed": {
+    "launcher_bytes": 997748,
+    "launcher_allocation_bytes": 16328960,
+    "common_bytes": 74894324,
+    "eng_bytes": 1780951,
+    "zhs_bytes": 4563650,
+    "resource_format": 21,
+    "resources_changed_for_CPU_fix": false,
+    "launcher_USB_readback_exact": true,
+    "source_build_journal": "ui4-sparse-arm-77dad504effd"
+  },
+  "title_blocker_resolution": {
+    "previous_source": "9a554fe04e63b35546be708a81c85f41864a307f",
+    "old_zhs_render": {
+      "count": 146,
+      "mean_ms": 226.867,
+      "min_ms": 205.444,
+      "max_ms": 243.652
+    },
+    "new_zhs_render": {
+      "count": 350,
+      "mean_ms": 42.236,
+      "min_ms": 38.605,
+      "max_ms": 42.999
+    },
+    "observed_mean_reduction_percent": 81.38,
+    "new_zhs_title_read_calls": 0,
+    "new_zhs_title_read_bytes": 0,
+    "new_zhs_title_read_seeks": 0,
+    "80ms_Continue_after_10s_title_dwell": "passed in both languages",
+    "all_recorded_keys_hold_80ms": true,
+    "long_hold_workaround_used_in_accepted_routes": false,
+    "pixel_policy": "Same v21 resources and particle counts/math/clock; the sparse image scaling loop changed. No additional resident image/cache pool.",
+    "interpretation": "These are foreground emulator render intervals across observed title phases, not a physical-device FPS guarantee. English title aggregates also include cold return from combat and therefore contain a 279.449 ms resource-backed frame; they are not an all-warm window."
+  },
+  "functional_observations": {
+    "zhs": [
+      "Ordinary USB replacement and exact launcher readback; old report deleted.",
+      "Ordinary Ndless install and automatic stored Chinese language selection.",
+      "Original title layers shown; ten-second dwell and 80 ms Continue accepted.",
+      "Existing floor 2 run continued with HP 61/80 and gold 118.",
+      "C opens eight-card compendium; ten-second settled window, right focus with Block tooltip, and Defend detail.",
+      "Normal Save and Quit returns to title; normal Quit returns to OS; fresh report downloaded; flash flushed and controller exited."
+    ],
+    "eng": [
+      "Independent cold start and ordinary Ndless install.",
+      "Built-in language selector observed and changed with 6 then Enter, both held 80 ms; preference file was not edited.",
+      "English title ten-second dwell and 80 ms Continue accepted into the saved floor 2 run.",
+      "Proceed opens map; the first selected reachable Fight starts the actual floor 3 encounter.",
+      "Strike and Bash are played by normal hand navigation and Enter. Central Play card, shrinking/rotating discard travel and settled discard count are visible.",
+      "Space ends the turn; old hand leaves, Enemy Turn appears over an empty hand, enemy action changes HP 61 to 58.",
+      "Player Turn / Turn 2 then appears with energy 3/3; successive captures show card entries and draw-count changes, ending in five cards.",
+      "Normal pause menu Save and Quit returns to title with Floor 3 / HP 58 / gold 118; normal Quit returns to OS; fresh report downloaded; flash flushed and controller exited."
+    ],
+    "english_encounter_finished_to_victory": false,
+    "post_combat_saved_file_reloaded_in_another_game_launch": false,
+    "final_English_save_USB_downloaded": false,
+    "save_claim_boundary": "The accepted English route uses the real Save and Quit UI and shows the updated Continue panel. No exact byte-equality claim is made for the changed combat save, and no additional post-save reload scenario was run."
+  },
+  "screens": {
+    "directory": "emulator-working/ui4-accepted/screens",
+    "zhs_exact_card_frames": {
+      "collection-cold": {
+        "bytes": 230415,
+        "exact_to_UI3_baseline": true
+      },
+      "collection-warm": {
+        "bytes": 230415,
+        "exact_to_UI3_baseline": true
+      },
+      "collection-focus": {
+        "bytes": 230415,
+        "exact_to_UI3_baseline": true
+      },
+      "detail": {
+        "bytes": 230415,
+        "exact_to_UI3_baseline": true
+      }
+    },
+    "bilingual_title_and_continue": [
+      "zhs/title-0.ppm",
+      "zhs/title-10000.ppm",
+      "zhs/continue.ppm",
+      "eng/language-selected.ppm",
+      "eng/title-0.ppm",
+      "eng/title-10000.ppm",
+      "eng/continue.ppm"
+    ],
+    "combat_review": {
+      "play": [
+        "eng/play-280.ppm",
+        "eng/play-440.ppm",
+        "eng/play-840.ppm"
+      ],
+      "discard_flight": [
+        "eng/bash-530.ppm",
+        "eng/bash-630.ppm",
+        "eng/bash-730.ppm",
+        "eng/bash-1130.ppm"
+      ],
+      "enemy_hand_boundary": [
+        "eng/turn-180.ppm",
+        "eng/turn-580.ppm",
+        "eng/turn-980.ppm",
+        "eng/turn-1780.ppm",
+        "eng/turn-3380.ppm",
+        "eng/turn-4180.ppm"
+      ],
+      "draw_boundary": [
+        "eng/turn-4580.ppm",
+        "eng/turn-4830.ppm",
+        "eng/turn-5080.ppm",
+        "eng/turn-5330.ppm",
+        "eng/turn-5580.ppm",
+        "eng/turn-6080.ppm",
+        "eng/turn-6580.ppm"
+      ],
+      "independent_read_only_review": "startup_runtime inspected existing Play/Discard and enemy/player boundary frames without running or changing the emulator.",
+      "corrected_observation": "Bash is still a small rotated flying card in the 730 capture; it is absent by 1130 with the discard count updated. The 730 capture is not described as completion.",
+      "timestamp_scope": "Numeric suffixes are simulated command offsets, not exact core Tween ages or animation duration measurements."
+    },
+    "exit": [
+      "zhs/saved-title.ppm",
+      "zhs/os-exit.ppm",
+      "eng/pause.ppm",
+      "eng/saved-title.ppm",
+      "eng/os-exit.ppm"
+    ]
+  },
+  "measurements": {
+    "zhs": {
+      "clock": "foreground_SP804",
+      "clock_hz": 32768,
+      "hardware": 1,
+      "ndless_revision": 2022,
+      "virtual_pack_bytes": 79457814,
+      "startup": {
+        "count": 1,
+        "mean_ms": 537.384,
+        "min_ms": 537.384,
+        "max_ms": 537.384
+      },
+      "first_render": {
+        "count": 1,
+        "mean_ms": 1036.224,
+        "min_ms": 1036.224,
+        "max_ms": 1036.224
+      },
+      "resource_total": {
+        "ticks": 131423,
+        "calls": 196,
+        "bytes_requested": 2241874,
+        "failures": 0,
+        "seeks": 187
+      },
+      "scenes": {
+        "title": {
+          "interval": {
+            "count": 350,
+            "mean_ms": 43.626,
+            "min_ms": 38.91,
+            "max_ms": 420.166
+          },
+          "update": {
+            "count": 350,
+            "mean_ms": 1.164,
+            "min_ms": 0.061,
+            "max_ms": 378.265
+          },
+          "render": {
+            "count": 350,
+            "mean_ms": 42.236,
+            "min_ms": 38.605,
+            "max_ms": 42.999
+          },
+          "present": {
+            "count": 350,
+            "mean_ms": 0.221,
+            "min_ms": 0.214,
+            "max_ms": 0.244
+          },
+          "resource": {
+            "count": 350,
+            "mean_ms": 0.0,
+            "min_ms": 0.0,
+            "max_ms": 0.0
+          },
+          "read_calls": 0,
+          "read_bytes_requested": 0,
+          "read_seeks": 0
+        },
+        "collection": {
+          "interval": {
+            "count": 382,
+            "mean_ms": 36.914,
+            "min_ms": 23.071,
+            "max_ms": 1276.489
+          },
+          "update": {
+            "count": 382,
+            "mean_ms": 0.092,
+            "min_ms": 0.092,
+            "max_ms": 0.153
+          },
+          "render": {
+            "count": 382,
+            "mean_ms": 26.716,
+            "min_ms": 22.705,
+            "max_ms": 1273.224
+          },
+          "present": {
+            "count": 382,
+            "mean_ms": 0.214,
+            "min_ms": 0.214,
+            "max_ms": 0.244
+          },
+          "resource": {
+            "count": 382,
+            "mean_ms": 3.559,
+            "min_ms": 0.0,
+            "max_ms": 1224.335
+          },
+          "read_calls": 70,
+          "read_bytes_requested": 365964,
+          "read_seeks": 65
+        },
+        "room": {
+          "interval": {
+            "count": 63,
+            "mean_ms": 46.882,
+            "min_ms": 30.396,
+            "max_ms": 813.416
+          },
+          "update": {
+            "count": 63,
+            "mean_ms": 2.019,
+            "min_ms": 0.092,
+            "max_ms": 121.399
+          },
+          "render": {
+            "count": 63,
+            "mean_ms": 41.855,
+            "min_ms": 29.999,
+            "max_ms": 691.803
+          },
+          "present": {
+            "count": 63,
+            "mean_ms": 0.22,
+            "min_ms": 0.214,
+            "max_ms": 0.244
+          },
+          "resource": {
+            "count": 63,
+            "mean_ms": 11.214,
+            "min_ms": 0.0,
+            "max_ms": 637.878
+          },
+          "read_calls": 22,
+          "read_bytes_requested": 179779,
+          "read_seeks": 22
+        },
+        "overlay": {
+          "interval": {
+            "count": 30,
+            "mean_ms": 71.646,
+            "min_ms": 46.783,
+            "max_ms": 329.01
+          },
+          "update": {
+            "count": 30,
+            "mean_ms": 0.104,
+            "min_ms": 0.092,
+            "max_ms": 0.305
+          },
+          "render": {
+            "count": 30,
+            "mean_ms": 71.029,
+            "min_ms": 46.478,
+            "max_ms": 322.845
+          },
+          "present": {
+            "count": 30,
+            "mean_ms": 0.224,
+            "min_ms": 0.214,
+            "max_ms": 0.244
+          },
+          "resource": {
+            "count": 30,
+            "mean_ms": 18.305,
+            "min_ms": 0.0,
+            "max_ms": 275.177
+          },
+          "read_calls": 57,
+          "read_bytes_requested": 233700,
+          "read_seeks": 55
+        }
+      }
+    },
+    "eng": {
+      "clock": "foreground_SP804",
+      "clock_hz": 32768,
+      "hardware": 1,
+      "ndless_revision": 2022,
+      "virtual_pack_bytes": 76675115,
+      "startup": {
+        "count": 1,
+        "mean_ms": 622.345,
+        "min_ms": 622.345,
+        "max_ms": 622.345
+      },
+      "first_render": {
+        "count": 1,
+        "mean_ms": 657.471,
+        "min_ms": 657.471,
+        "max_ms": 657.471
+      },
+      "resource_total": {
+        "ticks": 194196,
+        "calls": 168,
+        "bytes_requested": 4059818,
+        "failures": 0,
+        "seeks": 151
+      },
+      "scenes": {
+        "title": {
+          "interval": {
+            "count": 355,
+            "mean_ms": 49.749,
+            "min_ms": 43.64,
+            "max_ms": 657.166
+          },
+          "update": {
+            "count": 355,
+            "mean_ms": 1.147,
+            "min_ms": 0.061,
+            "max_ms": 377.502
+          },
+          "render": {
+            "count": 355,
+            "mean_ms": 48.376,
+            "min_ms": 43.304,
+            "max_ms": 279.449
+          },
+          "present": {
+            "count": 355,
+            "mean_ms": 0.22,
+            "min_ms": 0.214,
+            "max_ms": 0.244
+          },
+          "resource": {
+            "count": 355,
+            "mean_ms": 0.621,
+            "min_ms": 0.0,
+            "max_ms": 220.52
+          },
+          "read_calls": 6,
+          "read_bytes_requested": 194159,
+          "read_seeks": 5
+        },
+        "map": {
+          "interval": {
+            "count": 26,
+            "mean_ms": 106.174,
+            "min_ms": 93.872,
+            "max_ms": 254.791
+          },
+          "update": {
+            "count": 26,
+            "mean_ms": 0.222,
+            "min_ms": 0.092,
+            "max_ms": 1.678
+          },
+          "render": {
+            "count": 26,
+            "mean_ms": 105.637,
+            "min_ms": 92.224,
+            "max_ms": 250.58
+          },
+          "present": {
+            "count": 26,
+            "mean_ms": 0.221,
+            "min_ms": 0.214,
+            "max_ms": 0.244
+          },
+          "resource": {
+            "count": 26,
+            "mean_ms": 7.945,
+            "min_ms": 0.0,
+            "max_ms": 144.531
+          },
+          "read_calls": 14,
+          "read_bytes_requested": 107686,
+          "read_seeks": 12
+        },
+        "combat": {
+          "interval": {
+            "count": 233,
+            "mean_ms": 43.568,
+            "min_ms": 15.717,
+            "max_ms": 335.358
+          },
+          "update": {
+            "count": 233,
+            "mean_ms": 0.676,
+            "min_ms": 0.092,
+            "max_ms": 96.039
+          },
+          "render": {
+            "count": 233,
+            "mean_ms": 29.568,
+            "min_ms": 14.313,
+            "max_ms": 322.327
+          },
+          "present": {
+            "count": 233,
+            "mean_ms": 0.22,
+            "min_ms": 0.214,
+            "max_ms": 0.244
+          },
+          "resource": {
+            "count": 233,
+            "mean_ms": 8.167,
+            "min_ms": 0.0,
+            "max_ms": 210.266
+          },
+          "read_calls": 33,
+          "read_bytes_requested": 1053457,
+          "read_seeks": 33
+        },
+        "room": {
+          "interval": {
+            "count": 61,
+            "mean_ms": 42.357,
+            "min_ms": 31.006,
+            "max_ms": 569.977
+          },
+          "update": {
+            "count": 61,
+            "mean_ms": 2.083,
+            "min_ms": 0.092,
+            "max_ms": 121.582
+          },
+          "render": {
+            "count": 61,
+            "mean_ms": 37.817,
+            "min_ms": 30.609,
+            "max_ms": 448.181
+          },
+          "present": {
+            "count": 61,
+            "mean_ms": 0.227,
+            "min_ms": 0.214,
+            "max_ms": 0.244
+          },
+          "resource": {
+            "count": 61,
+            "mean_ms": 6.555,
+            "min_ms": 0.0,
+            "max_ms": 393.768
+          },
+          "read_calls": 17,
+          "read_bytes_requested": 159299,
+          "read_seeks": 16
+        },
+        "overlay": {
+          "interval": {
+            "count": 29,
+            "mean_ms": 57.861,
+            "min_ms": 43.823,
+            "max_ms": 121.826
+          },
+          "update": {
+            "count": 29,
+            "mean_ms": 0.116,
+            "min_ms": 0.092,
+            "max_ms": 0.214
+          },
+          "render": {
+            "count": 29,
+            "mean_ms": 56.619,
+            "min_ms": 43.518,
+            "max_ms": 108.063
+          },
+          "present": {
+            "count": 29,
+            "mean_ms": 0.219,
+            "min_ms": 0.214,
+            "max_ms": 0.244
+          },
+          "resource": {
+            "count": 29,
+            "mean_ms": 4.709,
+            "min_ms": 0.0,
+            "max_ms": 63.263
+          },
+          "read_calls": 13,
+          "read_bytes_requested": 60628,
+          "read_seeks": 10
+        },
+        "combat_preparation": {
+          "interval": {
+            "count": 48,
+            "mean_ms": 86.017,
+            "min_ms": 2.594,
+            "max_ms": 837.83
+          },
+          "update": {
+            "count": 48,
+            "mean_ms": 44.256,
+            "min_ms": 0.824,
+            "max_ms": 453.644
+          },
+          "render": {
+            "count": 48,
+            "mean_ms": 23.719,
+            "min_ms": 1.495,
+            "max_ms": 806.702
+          },
+          "present": {
+            "count": 48,
+            "mean_ms": 0.219,
+            "min_ms": 0.214,
+            "max_ms": 0.244
+          },
+          "resource": {
+            "count": 48,
+            "mean_ms": 43.425,
+            "min_ms": 0.0,
+            "max_ms": 711.761
+          },
+          "read_calls": 53,
+          "read_bytes_requested": 1277166,
+          "read_seeks": 47
+        }
+      }
+    }
+  },
+  "raw_runtime_reports": {
+    "zhs": {
+      "format": "nspire-runtime-perf-1",
+      "units": "timer_ticks",
+      "clock": "foreground_SP804",
+      "startup_scope": "selected_resource_validation_and_app_init",
+      "clock_hz": 32768,
+      "hardware": 1,
+      "ndless_revision": 2022,
+      "pack_bytes": 79457814,
+      "startup": {
+        "count": 1,
+        "total": 17609,
+        "min": 17609,
+        "max": 17609
+      },
+      "first_render": {
+        "count": 1,
+        "total": 33955,
+        "min": 33955,
+        "max": 33955
+      },
+      "first_present": {
+        "count": 1,
+        "total": 8,
+        "min": 8,
+        "max": 8
+      },
+      "startup_phases": {
+        "header": {
+          "count": 1,
+          "total": 180,
+          "min": 180,
+          "max": 180
+        },
+        "integrity": {
+          "count": 0,
+          "total": 0,
+          "min": 0,
+          "max": 0
+        },
+        "directory": {
+          "count": 1,
+          "total": 7538,
+          "min": 7538,
+          "max": 7538
+        },
+        "images": {
+          "count": 0,
+          "total": 0,
+          "min": 0,
+          "max": 0
+        },
+        "tile_index": {
+          "count": 0,
+          "total": 0,
+          "min": 0,
+          "max": 0
+        },
+        "glyphs": {
+          "count": 0,
+          "total": 0,
+          "min": 0,
+          "max": 0
+        },
+        "strings": {
+          "count": 0,
+          "total": 0,
+          "min": 0,
+          "max": 0
+        },
+        "ready": {
+          "count": 1,
+          "total": 3928,
+          "min": 3928,
+          "max": 3928
+        }
+      },
+      "resource_total": {
+        "ticks": 131423,
+        "calls": 196,
+        "bytes_requested": 2241874,
+        "failures": 0,
+        "seeks": 187
+      },
+      "scenes": [
+        {
+          "scene": "title",
+          "interval": {
+            "count": 350,
+            "total": 500343,
+            "min": 1275,
+            "max": 13768
+          },
+          "update": {
+            "count": 350,
+            "total": 13346,
+            "min": 2,
+            "max": 12395
+          },
+          "render": {
+            "count": 350,
+            "total": 484396,
+            "min": 1265,
+            "max": 1409
+          },
+          "present": {
+            "count": 350,
+            "total": 2529,
+            "min": 7,
+            "max": 8
+          },
+          "resource": {
+            "count": 350,
+            "total": 0,
+            "min": 0,
+            "max": 0
+          },
+          "over_50ms": 1,
+          "over_100ms": 1,
+          "over_250ms": 1,
+          "read_calls": 0,
+          "read_bytes_requested": 0,
+          "read_seeks": 0
+        },
+        {
+          "scene": "character",
+          "interval": {
+            "count": 0,
+            "total": 0,
+            "min": 0,
+            "max": 0
+          },
+          "update": {
+            "count": 0,
+            "total": 0,
+            "min": 0,
+            "max": 0
+          },
+          "render": {
+            "count": 0,
+            "total": 0,
+            "min": 0,
+            "max": 0
+          },
+          "present": {
+            "count": 0,
+            "total": 0,
+            "min": 0,
+            "max": 0
+          },
+          "resource": {
+            "count": 0,
+            "total": 0,
+            "min": 0,
+            "max": 0
+          },
+          "over_50ms": 0,
+          "over_100ms": 0,
+          "over_250ms": 0,
+          "read_calls": 0,
+          "read_bytes_requested": 0,
+          "read_seeks": 0
+        },
+        {
+          "scene": "collection",
+          "interval": {
+            "count": 382,
+            "total": 462068,
+            "min": 756,
+            "max": 41828
+          },
+          "update": {
+            "count": 382,
+            "total": 1150,
+            "min": 3,
+            "max": 5
+          },
+          "render": {
+            "count": 382,
+            "total": 334409,
+            "min": 744,
+            "max": 41721
+          },
+          "present": {
+            "count": 382,
+            "total": 2677,
+            "min": 7,
+            "max": 8
+          },
+          "resource": {
+            "count": 382,
+            "total": 44544,
+            "min": 0,
+            "max": 40119
+          },
+          "over_50ms": 2,
+          "over_100ms": 2,
+          "over_250ms": 1,
+          "read_calls": 70,
+          "read_bytes_requested": 365964,
+          "read_seeks": 65
+        },
+        {
+          "scene": "map",
+          "interval": {
+            "count": 0,
+            "total": 0,
+            "min": 0,
+            "max": 0
+          },
+          "update": {
+            "count": 0,
+            "total": 0,
+            "min": 0,
+            "max": 0
+          },
+          "render": {
+            "count": 0,
+            "total": 0,
+            "min": 0,
+            "max": 0
+          },
+          "present": {
+            "count": 0,
+            "total": 0,
+            "min": 0,
+            "max": 0
+          },
+          "resource": {
+            "count": 0,
+            "total": 0,
+            "min": 0,
+            "max": 0
+          },
+          "over_50ms": 0,
+          "over_100ms": 0,
+          "over_250ms": 0,
+          "read_calls": 0,
+          "read_bytes_requested": 0,
+          "read_seeks": 0
+        },
+        {
+          "scene": "combat",
+          "interval": {
+            "count": 0,
+            "total": 0,
+            "min": 0,
+            "max": 0
+          },
+          "update": {
+            "count": 0,
+            "total": 0,
+            "min": 0,
+            "max": 0
+          },
+          "render": {
+            "count": 0,
+            "total": 0,
+            "min": 0,
+            "max": 0
+          },
+          "present": {
+            "count": 0,
+            "total": 0,
+            "min": 0,
+            "max": 0
+          },
+          "resource": {
+            "count": 0,
+            "total": 0,
+            "min": 0,
+            "max": 0
+          },
+          "over_50ms": 0,
+          "over_100ms": 0,
+          "over_250ms": 0,
+          "read_calls": 0,
+          "read_bytes_requested": 0,
+          "read_seeks": 0
+        },
+        {
+          "scene": "room",
+          "interval": {
+            "count": 63,
+            "total": 96783,
+            "min": 996,
+            "max": 26654
+          },
+          "update": {
+            "count": 63,
+            "total": 4167,
+            "min": 3,
+            "max": 3978
+          },
+          "render": {
+            "count": 63,
+            "total": 86404,
+            "min": 983,
+            "max": 22669
+          },
+          "present": {
+            "count": 63,
+            "total": 455,
+            "min": 7,
+            "max": 8
+          },
+          "resource": {
+            "count": 63,
+            "total": 23150,
+            "min": 0,
+            "max": 20902
+          },
+          "over_50ms": 2,
+          "over_100ms": 1,
+          "over_250ms": 1,
+          "read_calls": 22,
+          "read_bytes_requested": 179779,
+          "read_seeks": 22
+        },
+        {
+          "scene": "overlay",
+          "interval": {
+            "count": 30,
+            "total": 70431,
+            "min": 1533,
+            "max": 10781
+          },
+          "update": {
+            "count": 30,
+            "total": 102,
+            "min": 3,
+            "max": 10
+          },
+          "render": {
+            "count": 30,
+            "total": 69824,
+            "min": 1523,
+            "max": 10579
+          },
+          "present": {
+            "count": 30,
+            "total": 220,
+            "min": 7,
+            "max": 8
+          },
+          "resource": {
+            "count": 30,
+            "total": 17995,
+            "min": 0,
+            "max": 9017
+          },
+          "over_50ms": 13,
+          "over_100ms": 3,
+          "over_250ms": 1,
+          "read_calls": 57,
+          "read_bytes_requested": 233700,
+          "read_seeks": 55
+        },
+        {
+          "scene": "other",
+          "interval": {
+            "count": 0,
+            "total": 0,
+            "min": 0,
+            "max": 0
+          },
+          "update": {
+            "count": 0,
+            "total": 0,
+            "min": 0,
+            "max": 0
+          },
+          "render": {
+            "count": 0,
+            "total": 0,
+            "min": 0,
+            "max": 0
+          },
+          "present": {
+            "count": 0,
+            "total": 0,
+            "min": 0,
+            "max": 0
+          },
+          "resource": {
+            "count": 0,
+            "total": 0,
+            "min": 0,
+            "max": 0
+          },
+          "over_50ms": 0,
+          "over_100ms": 0,
+          "over_250ms": 0,
+          "read_calls": 0,
+          "read_bytes_requested": 0,
+          "read_seeks": 0
+        },
+        {
+          "scene": "combat_preparation",
+          "interval": {
+            "count": 0,
+            "total": 0,
+            "min": 0,
+            "max": 0
+          },
+          "update": {
+            "count": 0,
+            "total": 0,
+            "min": 0,
+            "max": 0
+          },
+          "render": {
+            "count": 0,
+            "total": 0,
+            "min": 0,
+            "max": 0
+          },
+          "present": {
+            "count": 0,
+            "total": 0,
+            "min": 0,
+            "max": 0
+          },
+          "resource": {
+            "count": 0,
+            "total": 0,
+            "min": 0,
+            "max": 0
+          },
+          "over_50ms": 0,
+          "over_100ms": 0,
+          "over_250ms": 0,
+          "read_calls": 0,
+          "read_bytes_requested": 0,
+          "read_seeks": 0
+        }
+      ]
+    },
+    "eng": {
+      "format": "nspire-runtime-perf-1",
+      "units": "timer_ticks",
+      "clock": "foreground_SP804",
+      "startup_scope": "selected_resource_validation_and_app_init",
+      "clock_hz": 32768,
+      "hardware": 1,
+      "ndless_revision": 2022,
+      "pack_bytes": 76675115,
+      "startup": {
+        "count": 1,
+        "total": 20393,
+        "min": 20393,
+        "max": 20393
+      },
+      "first_render": {
+        "count": 1,
+        "total": 21544,
+        "min": 21544,
+        "max": 21544
+      },
+      "first_present": {
+        "count": 1,
+        "total": 7,
+        "min": 7,
+        "max": 7
+      },
+      "startup_phases": {
+        "header": {
+          "count": 1,
+          "total": 164,
+          "min": 164,
+          "max": 164
+        },
+        "integrity": {
+          "count": 0,
+          "total": 0,
+          "min": 0,
+          "max": 0
+        },
+        "directory": {
+          "count": 1,
+          "total": 6345,
+          "min": 6345,
+          "max": 6345
+        },
+        "images": {
+          "count": 0,
+          "total": 0,
+          "min": 0,
+          "max": 0
+        },
+        "tile_index": {
+          "count": 0,
+          "total": 0,
+          "min": 0,
+          "max": 0
+        },
+        "glyphs": {
+          "count": 0,
+          "total": 0,
+          "min": 0,
+          "max": 0
+        },
+        "strings": {
+          "count": 0,
+          "total": 0,
+          "min": 0,
+          "max": 0
+        },
+        "ready": {
+          "count": 1,
+          "total": 7890,
+          "min": 7890,
+          "max": 7890
+        }
+      },
+      "resource_total": {
+        "ticks": 194196,
+        "calls": 168,
+        "bytes_requested": 4059818,
+        "failures": 0,
+        "seeks": 151
+      },
+      "scenes": [
+        {
+          "scene": "title",
+          "interval": {
+            "count": 355,
+            "total": 578713,
+            "min": 1430,
+            "max": 21534
+          },
+          "update": {
+            "count": 355,
+            "total": 13346,
+            "min": 2,
+            "max": 12370
+          },
+          "render": {
+            "count": 355,
+            "total": 562735,
+            "min": 1419,
+            "max": 9157
+          },
+          "present": {
+            "count": 355,
+            "total": 2555,
+            "min": 7,
+            "max": 8
+          },
+          "resource": {
+            "count": 355,
+            "total": 7226,
+            "min": 0,
+            "max": 7226
+          },
+          "over_50ms": 1,
+          "over_100ms": 1,
+          "over_250ms": 1,
+          "read_calls": 6,
+          "read_bytes_requested": 194159,
+          "read_seeks": 5
+        },
+        {
+          "scene": "character",
+          "interval": {
+            "count": 0,
+            "total": 0,
+            "min": 0,
+            "max": 0
+          },
+          "update": {
+            "count": 0,
+            "total": 0,
+            "min": 0,
+            "max": 0
+          },
+          "render": {
+            "count": 0,
+            "total": 0,
+            "min": 0,
+            "max": 0
+          },
+          "present": {
+            "count": 0,
+            "total": 0,
+            "min": 0,
+            "max": 0
+          },
+          "resource": {
+            "count": 0,
+            "total": 0,
+            "min": 0,
+            "max": 0
+          },
+          "over_50ms": 0,
+          "over_100ms": 0,
+          "over_250ms": 0,
+          "read_calls": 0,
+          "read_bytes_requested": 0,
+          "read_seeks": 0
+        },
+        {
+          "scene": "collection",
+          "interval": {
+            "count": 0,
+            "total": 0,
+            "min": 0,
+            "max": 0
+          },
+          "update": {
+            "count": 0,
+            "total": 0,
+            "min": 0,
+            "max": 0
+          },
+          "render": {
+            "count": 0,
+            "total": 0,
+            "min": 0,
+            "max": 0
+          },
+          "present": {
+            "count": 0,
+            "total": 0,
+            "min": 0,
+            "max": 0
+          },
+          "resource": {
+            "count": 0,
+            "total": 0,
+            "min": 0,
+            "max": 0
+          },
+          "over_50ms": 0,
+          "over_100ms": 0,
+          "over_250ms": 0,
+          "read_calls": 0,
+          "read_bytes_requested": 0,
+          "read_seeks": 0
+        },
+        {
+          "scene": "map",
+          "interval": {
+            "count": 26,
+            "total": 90457,
+            "min": 3076,
+            "max": 8349
+          },
+          "update": {
+            "count": 26,
+            "total": 189,
+            "min": 3,
+            "max": 55
+          },
+          "render": {
+            "count": 26,
+            "total": 89999,
+            "min": 3022,
+            "max": 8211
+          },
+          "present": {
+            "count": 26,
+            "total": 188,
+            "min": 7,
+            "max": 8
+          },
+          "resource": {
+            "count": 26,
+            "total": 6769,
+            "min": 0,
+            "max": 4736
+          },
+          "over_50ms": 26,
+          "over_100ms": 6,
+          "over_250ms": 1,
+          "read_calls": 14,
+          "read_bytes_requested": 107686,
+          "read_seeks": 12
+        },
+        {
+          "scene": "combat",
+          "interval": {
+            "count": 233,
+            "total": 332638,
+            "min": 515,
+            "max": 10989
+          },
+          "update": {
+            "count": 233,
+            "total": 5158,
+            "min": 3,
+            "max": 3147
+          },
+          "render": {
+            "count": 233,
+            "total": 225748,
+            "min": 469,
+            "max": 10562
+          },
+          "present": {
+            "count": 233,
+            "total": 1682,
+            "min": 7,
+            "max": 8
+          },
+          "resource": {
+            "count": 233,
+            "total": 62351,
+            "min": 0,
+            "max": 6890
+          },
+          "over_50ms": 19,
+          "over_100ms": 16,
+          "over_250ms": 3,
+          "read_calls": 33,
+          "read_bytes_requested": 1053457,
+          "read_seeks": 33
+        },
+        {
+          "scene": "room",
+          "interval": {
+            "count": 61,
+            "total": 84666,
+            "min": 1016,
+            "max": 18677
+          },
+          "update": {
+            "count": 61,
+            "total": 4164,
+            "min": 3,
+            "max": 3984
+          },
+          "render": {
+            "count": 61,
+            "total": 75591,
+            "min": 1003,
+            "max": 14686
+          },
+          "present": {
+            "count": 61,
+            "total": 453,
+            "min": 7,
+            "max": 8
+          },
+          "resource": {
+            "count": 61,
+            "total": 13103,
+            "min": 0,
+            "max": 12903
+          },
+          "over_50ms": 1,
+          "over_100ms": 1,
+          "over_250ms": 1,
+          "read_calls": 17,
+          "read_bytes_requested": 159299,
+          "read_seeks": 16
+        },
+        {
+          "scene": "overlay",
+          "interval": {
+            "count": 29,
+            "total": 54984,
+            "min": 1436,
+            "max": 3992
+          },
+          "update": {
+            "count": 29,
+            "total": 110,
+            "min": 3,
+            "max": 7
+          },
+          "render": {
+            "count": 29,
+            "total": 53803,
+            "min": 1426,
+            "max": 3541
+          },
+          "present": {
+            "count": 29,
+            "total": 208,
+            "min": 7,
+            "max": 8
+          },
+          "resource": {
+            "count": 29,
+            "total": 4475,
+            "min": 0,
+            "max": 2073
+          },
+          "over_50ms": 9,
+          "over_100ms": 2,
+          "over_250ms": 0,
+          "read_calls": 13,
+          "read_bytes_requested": 60628,
+          "read_seeks": 10
+        },
+        {
+          "scene": "other",
+          "interval": {
+            "count": 0,
+            "total": 0,
+            "min": 0,
+            "max": 0
+          },
+          "update": {
+            "count": 0,
+            "total": 0,
+            "min": 0,
+            "max": 0
+          },
+          "render": {
+            "count": 0,
+            "total": 0,
+            "min": 0,
+            "max": 0
+          },
+          "present": {
+            "count": 0,
+            "total": 0,
+            "min": 0,
+            "max": 0
+          },
+          "resource": {
+            "count": 0,
+            "total": 0,
+            "min": 0,
+            "max": 0
+          },
+          "over_50ms": 0,
+          "over_100ms": 0,
+          "over_250ms": 0,
+          "read_calls": 0,
+          "read_bytes_requested": 0,
+          "read_seeks": 0
+        },
+        {
+          "scene": "combat_preparation",
+          "interval": {
+            "count": 48,
+            "total": 135293,
+            "min": 85,
+            "max": 27454
+          },
+          "update": {
+            "count": 48,
+            "total": 69608,
+            "min": 27,
+            "max": 14865
+          },
+          "render": {
+            "count": 48,
+            "total": 37307,
+            "min": 49,
+            "max": 26434
+          },
+          "present": {
+            "count": 48,
+            "total": 344,
+            "min": 7,
+            "max": 8
+          },
+          "resource": {
+            "count": 48,
+            "total": 68302,
+            "min": 0,
+            "max": 23323
+          },
+          "over_50ms": 11,
+          "over_100ms": 10,
+          "over_250ms": 4,
+          "read_calls": 53,
+          "read_bytes_requested": 1277166,
+          "read_seeks": 47
+        }
+      ]
+    }
+  },
+  "journals": {
+    "zhs": {
+      "label": "ui4-sparse-arm-zhs-flow-7e818f478900",
+      "checkpoint": "76f0a01cb506fde7ac8b427e857462a35933ade3",
+      "status": "passed",
+      "returncode": 0,
+      "source_changed": false,
+      "source_sha256": "8c309620e0a19efe1fa81409dcbf447f40482e934dbd618f5b2c80b4f65de510",
+      "started_at": "2026-10-23T17:49:34.890222+00:00",
+      "ended_at": "2026-10-23T17:52:32.007870+00:00"
+    },
+    "eng": {
+      "label": "ui4-sparse-arm-eng-flow-888add42c480",
+      "checkpoint": "76f0a01cb506fde7ac8b427e857462a35933ade3",
+      "status": "passed",
+      "returncode": 0,
+      "source_changed": false,
+      "source_sha256": "8c309620e0a19efe1fa81409dcbf447f40482e934dbd618f5b2c80b4f65de510",
+      "started_at": "2026-10-23T17:53:06.746865+00:00",
+      "ended_at": "2026-10-23T18:03:17.231482+00:00"
+    }
+  },
+  "event_receipts": {
+    "zhs": {
+      "event_errors": 0,
+      "stopped_success": true,
+      "final_simulated_ms": 106400,
+      "all_press_hold_ms": 80,
+      "press_count": 27,
+      "old_report_deleted": true,
+      "fresh_report_downloaded": true,
+      "ordinary_commands": [
+        "run 40000",
+        "put /workspace/scratch/47a2ee0e8d03/ui4-final-f1/dist/nSpire2.tns /nSpire2/nSpire2.tns",
+        "run 1500",
+        "screen /workspace/scratch/47a2ee0e8d03/emulator-working/ui4-accepted/screens/zhs/launcher-received.ppm",
+        "press right 80 200",
+        "press right 80 200",
+        "press enter 80 700",
+        "get /nSpire2/nSpire2.tns /workspace/scratch/47a2ee0e8d03/emulator-working/ui4-accepted/launcher-readback.tns",
+        "run 1000",
+        "screen /workspace/scratch/47a2ee0e8d03/emulator-working/ui4-accepted/screens/zhs/launcher-sent.ppm",
+        "press enter 80 700",
+        "rm /nSpire2/nSpire2.perf.tns",
+        "run 1000",
+        "screen /workspace/scratch/47a2ee0e8d03/emulator-working/ui4-accepted/screens/zhs/perf-cleared.ppm",
+        "press enter 80 700",
+        "press 2 80 1500",
+        "screen /workspace/scratch/47a2ee0e8d03/emulator-working/ui4-accepted/screens/zhs/documents.ppm",
+        "press enter 80 500",
+        "press enter 80 5000",
+        "screen /workspace/scratch/47a2ee0e8d03/emulator-working/ui4-accepted/screens/zhs/ndless-installer.ppm",
+        "press enter 80 2500",
+        "screen /workspace/scratch/47a2ee0e8d03/emulator-working/ui4-accepted/screens/zhs/ndless-ready.ppm",
+        "press 2 80 700",
+        "press down 80 200",
+        "press enter 80 500",
+        "screen /workspace/scratch/47a2ee0e8d03/emulator-working/ui4-accepted/screens/zhs/launcher-selected.ppm",
+        "press enter 80 7000",
+        "screen /workspace/scratch/47a2ee0e8d03/emulator-working/ui4-accepted/screens/zhs/title-0.ppm",
+        "run 10000",
+        "screen /workspace/scratch/47a2ee0e8d03/emulator-working/ui4-accepted/screens/zhs/title-10000.ppm",
+        "press enter 80 2500",
+        "screen /workspace/scratch/47a2ee0e8d03/emulator-working/ui4-accepted/screens/zhs/continue.ppm",
+        "press c 80 3000",
+        "screen /workspace/scratch/47a2ee0e8d03/emulator-working/ui4-accepted/screens/zhs/collection-cold.ppm",
+        "run 10000",
+        "screen /workspace/scratch/47a2ee0e8d03/emulator-working/ui4-accepted/screens/zhs/collection-warm.ppm",
+        "press 6 80 600",
+        "screen /workspace/scratch/47a2ee0e8d03/emulator-working/ui4-accepted/screens/zhs/collection-focus.ppm",
+        "press enter 80 1000",
+        "screen /workspace/scratch/47a2ee0e8d03/emulator-working/ui4-accepted/screens/zhs/detail.ppm",
+        "press esc 80 300",
+        "press esc 80 300",
+        "press esc 80 200",
+        "press 8 80 150",
+        "press enter 80 1000",
+        "screen /workspace/scratch/47a2ee0e8d03/emulator-working/ui4-accepted/screens/zhs/saved-title.ppm",
+        "press 8 80 200",
+        "press enter 80 200",
+        "screen /workspace/scratch/47a2ee0e8d03/emulator-working/ui4-accepted/screens/zhs/quit-dialog.ppm",
+        "press 6 80 100",
+        "press enter 80 7000",
+        "screen /workspace/scratch/47a2ee0e8d03/emulator-working/ui4-accepted/screens/zhs/os-exit.ppm",
+        "get /nSpire2/nSpire2.perf.tns /workspace/scratch/47a2ee0e8d03/emulator-working/ui4-accepted/zhs-perf.json",
+        "run 1000",
+        "screen /workspace/scratch/47a2ee0e8d03/emulator-working/ui4-accepted/screens/zhs/perf-sent.ppm",
+        "press enter 80 1000",
+        "flush",
+        "quit"
+      ]
+    },
+    "eng": {
+      "event_errors": 0,
+      "stopped_success": true,
+      "final_simulated_ms": 104280,
+      "all_press_hold_ms": 80,
+      "press_count": 31,
+      "old_report_deleted": true,
+      "fresh_report_downloaded": true,
+      "ordinary_commands": [
+        "run 40000",
+        "rm /nSpire2/nSpire2.perf.tns",
+        "run 1000",
+        "screen /workspace/scratch/47a2ee0e8d03/emulator-working/ui4-accepted/screens/eng/perf-cleared.ppm",
+        "press enter 80 700",
+        "press 2 80 1500",
+        "screen /workspace/scratch/47a2ee0e8d03/emulator-working/ui4-accepted/screens/eng/documents.ppm",
+        "press enter 80 500",
+        "press enter 80 5000",
+        "screen /workspace/scratch/47a2ee0e8d03/emulator-working/ui4-accepted/screens/eng/ndless-installer.ppm",
+        "press enter 80 2500",
+        "screen /workspace/scratch/47a2ee0e8d03/emulator-working/ui4-accepted/screens/eng/ndless-ready.ppm",
+        "press 2 80 700",
+        "press down 80 200",
+        "press enter 80 500",
+        "press enter 80 200",
+        "screen /workspace/scratch/47a2ee0e8d03/emulator-working/ui4-accepted/screens/eng/launch-280.ppm",
+        "run 200",
+        "screen /workspace/scratch/47a2ee0e8d03/emulator-working/ui4-accepted/screens/eng/launch-480.ppm",
+        "run 200",
+        "screen /workspace/scratch/47a2ee0e8d03/emulator-working/ui4-accepted/screens/eng/launch-680.ppm",
+        "run 200",
+        "screen /workspace/scratch/47a2ee0e8d03/emulator-working/ui4-accepted/screens/eng/launch-880.ppm",
+        "run 200",
+        "screen /workspace/scratch/47a2ee0e8d03/emulator-working/ui4-accepted/screens/eng/launch-1080.ppm",
+        "press 6 80 100",
+        "screen /workspace/scratch/47a2ee0e8d03/emulator-working/ui4-accepted/screens/eng/language-selected.ppm",
+        "press enter 80 7000",
+        "screen /workspace/scratch/47a2ee0e8d03/emulator-working/ui4-accepted/screens/eng/title-0.ppm",
+        "run 10000",
+        "screen /workspace/scratch/47a2ee0e8d03/emulator-working/ui4-accepted/screens/eng/title-10000.ppm",
+        "press enter 80 2500",
+        "screen /workspace/scratch/47a2ee0e8d03/emulator-working/ui4-accepted/screens/eng/continue.ppm",
+        "press enter 80 1500",
+        "screen /workspace/scratch/47a2ee0e8d03/emulator-working/ui4-accepted/screens/eng/map.ppm",
+        "press enter 80 1000",
+        "screen /workspace/scratch/47a2ee0e8d03/emulator-working/ui4-accepted/screens/eng/battle-entry.ppm",
+        "run 3000",
+        "screen /workspace/scratch/47a2ee0e8d03/emulator-working/ui4-accepted/screens/eng/battle-ready.ppm",
+        "run 500",
+        "screen /workspace/scratch/47a2ee0e8d03/emulator-working/ui4-accepted/screens/eng/battle-4580.ppm",
+        "run 500",
+        "screen /workspace/scratch/47a2ee0e8d03/emulator-working/ui4-accepted/screens/eng/battle-5080.ppm",
+        "run 500",
+        "screen /workspace/scratch/47a2ee0e8d03/emulator-working/ui4-accepted/screens/eng/battle-5580.ppm",
+        "press 6 80 150",
+        "press 6 80 150",
+        "press 6 80 150",
+        "press i 80 500",
+        "screen /workspace/scratch/47a2ee0e8d03/emulator-working/ui4-accepted/screens/eng/strike-detail.ppm",
+        "press esc 80 300",
+        "press enter 80 0",
+        "screen /workspace/scratch/47a2ee0e8d03/emulator-working/ui4-accepted/screens/eng/play-80.ppm",
+        "run 200",
+        "screen /workspace/scratch/47a2ee0e8d03/emulator-working/ui4-accepted/screens/eng/play-280.ppm",
+        "run 160",
+        "screen /workspace/scratch/47a2ee0e8d03/emulator-working/ui4-accepted/screens/eng/play-440.ppm",
+        "run 400",
+        "screen /workspace/scratch/47a2ee0e8d03/emulator-working/ui4-accepted/screens/eng/play-840.ppm",
+        "press 4 80 200",
+        "press enter 80 0",
+        "screen /workspace/scratch/47a2ee0e8d03/emulator-working/ui4-accepted/screens/eng/bash-80.ppm",
+        "run 300",
+        "screen /workspace/scratch/47a2ee0e8d03/emulator-working/ui4-accepted/screens/eng/bash-380.ppm",
+        "run 150",
+        "screen /workspace/scratch/47a2ee0e8d03/emulator-working/ui4-accepted/screens/eng/bash-530.ppm",
+        "run 100",
+        "screen /workspace/scratch/47a2ee0e8d03/emulator-working/ui4-accepted/screens/eng/bash-630.ppm",
+        "run 100",
+        "screen /workspace/scratch/47a2ee0e8d03/emulator-working/ui4-accepted/screens/eng/bash-730.ppm",
+        "run 400",
+        "screen /workspace/scratch/47a2ee0e8d03/emulator-working/ui4-accepted/screens/eng/bash-1130.ppm",
+        "press space 80 100",
+        "screen /workspace/scratch/47a2ee0e8d03/emulator-working/ui4-accepted/screens/eng/turn-180.ppm",
+        "run 400",
+        "screen /workspace/scratch/47a2ee0e8d03/emulator-working/ui4-accepted/screens/eng/turn-580.ppm",
+        "run 400",
+        "screen /workspace/scratch/47a2ee0e8d03/emulator-working/ui4-accepted/screens/eng/turn-980.ppm",
+        "run 400",
+        "screen /workspace/scratch/47a2ee0e8d03/emulator-working/ui4-accepted/screens/eng/turn-1380.ppm",
+        "run 400",
+        "screen /workspace/scratch/47a2ee0e8d03/emulator-working/ui4-accepted/screens/eng/turn-1780.ppm",
+        "run 400",
+        "screen /workspace/scratch/47a2ee0e8d03/emulator-working/ui4-accepted/screens/eng/turn-2180.ppm",
+        "run 400",
+        "screen /workspace/scratch/47a2ee0e8d03/emulator-working/ui4-accepted/screens/eng/turn-2580.ppm",
+        "run 400",
+        "screen /workspace/scratch/47a2ee0e8d03/emulator-working/ui4-accepted/screens/eng/turn-2980.ppm",
+        "run 400",
+        "screen /workspace/scratch/47a2ee0e8d03/emulator-working/ui4-accepted/screens/eng/turn-3380.ppm",
+        "run 400",
+        "screen /workspace/scratch/47a2ee0e8d03/emulator-working/ui4-accepted/screens/eng/turn-3780.ppm",
+        "run 400",
+        "screen /workspace/scratch/47a2ee0e8d03/emulator-working/ui4-accepted/screens/eng/turn-4180.ppm",
+        "run 400",
+        "screen /workspace/scratch/47a2ee0e8d03/emulator-working/ui4-accepted/screens/eng/turn-4580.ppm",
+        "run 250",
+        "screen /workspace/scratch/47a2ee0e8d03/emulator-working/ui4-accepted/screens/eng/turn-4830.ppm",
+        "run 250",
+        "screen /workspace/scratch/47a2ee0e8d03/emulator-working/ui4-accepted/screens/eng/turn-5080.ppm",
+        "run 250",
+        "screen /workspace/scratch/47a2ee0e8d03/emulator-working/ui4-accepted/screens/eng/turn-5330.ppm",
+        "run 250",
+        "screen /workspace/scratch/47a2ee0e8d03/emulator-working/ui4-accepted/screens/eng/turn-5580.ppm",
+        "run 250",
+        "screen /workspace/scratch/47a2ee0e8d03/emulator-working/ui4-accepted/screens/eng/turn-5830.ppm",
+        "run 250",
+        "screen /workspace/scratch/47a2ee0e8d03/emulator-working/ui4-accepted/screens/eng/turn-6080.ppm",
+        "run 500",
+        "screen /workspace/scratch/47a2ee0e8d03/emulator-working/ui4-accepted/screens/eng/turn-6580.ppm",
+        "press esc 80 300",
+        "screen /workspace/scratch/47a2ee0e8d03/emulator-working/ui4-accepted/screens/eng/pause.ppm",
+        "press 8 80 150",
+        "press enter 80 1500",
+        "screen /workspace/scratch/47a2ee0e8d03/emulator-working/ui4-accepted/screens/eng/saved-title.ppm",
+        "press 8 80 200",
+        "press enter 80 200",
+        "screen /workspace/scratch/47a2ee0e8d03/emulator-working/ui4-accepted/screens/eng/quit-dialog.ppm",
+        "press 6 80 100",
+        "press enter 80 7000",
+        "screen /workspace/scratch/47a2ee0e8d03/emulator-working/ui4-accepted/screens/eng/os-exit.ppm",
+        "get /nSpire2/nSpire2.perf.tns /workspace/scratch/47a2ee0e8d03/emulator-working/ui4-accepted/eng-perf.json",
+        "run 1000",
+        "screen /workspace/scratch/47a2ee0e8d03/emulator-working/ui4-accepted/screens/eng/perf-sent.ppm",
+        "press enter 80 1000",
+        "flush",
+        "quit"
+      ]
+    }
+  },
+  "remaining_limits": [
+    "Chinese compendium first-entry render maximum remains 1273.224 ms in this integrated route, with resource maximum 1224.335 ms. The cold pause is not solved.",
+    "The isolated cache report, failed 9a route and integrated routes differ in bootstrap/presentation history; their card cold times are not presented as a controlled causal comparison.",
+    "The English route exercised one actual encounter through played cards, enemy actions and the next player draw, then saved and quit. It did not finish the encounter, add victory/reward coverage, or test all characters/enemy commands.",
+    "The captured empty-hand/player-draw boundary is confirmed. The captures do not establish exact original-PC Tween durations or universal enemy action/banner parity.",
+    "Input polling during a cold resource frame can still have a longer interval. The steady title CPU regression and the recorded 80 ms path are resolved; no guarantee is made for arbitrarily short keys during loading.",
+    "No physical calculator, audio, multiplayer or Timeline acceptance is claimed."
+  ],
+  "no_new_failures_in_accepted_routes": true
+}

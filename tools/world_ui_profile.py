@@ -1,0 +1,139 @@
+"""Public directory metadata for the private original-world resource pack.
+
+This module contains no reference text or bitmap data. Generated C++ tables
+store only resource keys and append-only directory indexes.
+"""
+from __future__ import annotations
+import argparse
+import json
+import math
+from pathlib import Path
+from world_enemy_profile import plan as enemy_plan, generated_cpp as enemy_cpp
+from world_room_profile import room_plan, generated_room_header
+from world_rest_actors import rest_actor_plan, generated_rest_actor_header
+
+ROOT = Path(__file__).resolve().parents[1]
+BASE_CARDS, BASE_STRINGS, BASE_AUXILIARY, BASE_CLIPS = 497, 1556, 339, 38
+CARDS = 558
+TEXT_BASE = BASE_STRINGS + (CARDS - BASE_CARDS) * 3
+PROFILE = json.loads((ROOT / 'config/world-ui-0.17.json').read_text())
+TEXT_KEYS = list(PROFILE['text_keys'])
+AUXILIARY_ROWS = [dict(row) for row in PROFILE['images']]
+# Keep the shared crab behind the authored foreground. Appending preserves all
+# 731 prior world image ids; the original background id becomes its back plane.
+_crab = next(row for row in AUXILIARY_ROWS if row['key'] == 'backgrounds.KAISER_CRAB_BOSS')
+_crab['plane'] = 'back'
+AUXILIARY_ROWS.append(dict(_crab, key='background_front.KAISER_CRAB_BOSS', plane='front'))
+AUXILIARY_ROWS.append(dict(key='rewards.CARD_REMOVAL', kind='texture',
+    path='images/ui/reward_screen/reward_icon_card_removal.png', size=[24,24], fit='contain'))
+for _level in range(2, 6):
+    AUXILIARY_ROWS.append(dict(key=f'intents.ATTACK_{_level}', kind='texture',
+        path=f'images/packed/intents/attack/intent_attack_{_level}.png', size=[24,24], fit='contain'))
+for _suffix in ('', '_OUTLINE'):
+    _outline = bool(_suffix)
+    # ancient_event_option_button.tscn: retain authored NinePatch corners.
+    # The calculator row enlarges its height independently for readable type;
+    # runtime applies each ancient's ButtonColor and the additive focus tint.
+    AUXILIARY_ROWS.append(dict(key='events.ANCIENT_OPTION' + _suffix, kind='component',
+        path='images/packed/common_ui/ancient_event_option_button' + _suffix.lower() + '.png',
+        source_size=[120,120] if _outline else [100,100],
+        size=[301,52] if _outline else [292,40],
+        nine_patch=dict(margins=[44]*4 if _outline else [34]*4,
+            scale=[.292*1.005,.4*1.05] if _outline else [.292,.4])))
+MAP_PROFILE = json.loads((ROOT / 'config/world-map-ui-0.17.json').read_text())
+if MAP_PROFILE.get('schema') != 1 or MAP_PROFILE.get('reference') != 'v0.111.0 / 41cef1ea':
+    raise ValueError('Original map resource reference/schema drift')
+for _row in MAP_PROFILE['images']:
+    if not _row['key'].startswith('map.'):
+        raise ValueError('Map resource must use its stable map.* key')
+    AUXILIARY_ROWS.append(dict(_row))
+COMMON_PROFILE = json.loads((ROOT / 'config/world-common-ui-0.17.json').read_text())
+if COMMON_PROFILE.get('schema') != 1 or COMMON_PROFILE.get('reference') != 'v0.111.0 / 41cef1ea':
+    raise ValueError('Original common UI reference/schema drift')
+AUXILIARY_ROWS.extend(dict(row) for row in COMMON_PROFILE['images'])
+TEXT_KEYS.extend(COMMON_PROFILE.get('text_keys', []))
+ROOM_PROFILE = room_plan()
+AUXILIARY_ROWS.extend(dict(row) for row in ROOM_PROFILE['images'])
+# Later UI additions must follow the complete established map/common/room
+# directory. Inserting into MAP_PROFILE would remap every later old image.
+# Keep the original corner at native resolution: mirror, scale and shadow
+# belong to the runtime reticle instances, not to a pre-tinted bitmap.
+LATE_AUXILIARY_ROWS = [dict(key='map.SELECTION_RETICLE', kind='component',
+    path='images/ui/combat/combat_reticle.png', source_size=[48,48],
+    size=[48,48], fit='stretch', source_scene='scenes/ui/selection_reticle.tscn')]
+# Map-circle entry reuses the established terminal frame and appends only
+# its four earlier AtlasTextures. Their authored margins retain a 192x192
+# logical canvas before the shared 48x48 fitting step.
+LATE_AUXILIARY_ROWS.extend(dict(key=f'map.CIRCLE_{frame}', kind='atlas',
+    path=f'images/atlases/compressed.sprites/map/map_circle_{frame}.tres',
+    size=[48,48], fit='contain') for frame in range(4))
+AUXILIARY_ROWS.extend(dict(row) for row in LATE_AUXILIARY_ROWS)
+ENEMY_CLIP_ROWS = enemy_plan()['jobs']
+MAP_CLIP_ROWS = []
+for _row in MAP_PROFILE['clips']:
+    if (not _row['key'].startswith('map.') or _row['shader'] != 'boss_map_channels' or
+        not 0 < _row['duration'] <= 120 or not 1 <= _row['frames'] <= 256 or
+        not 0 < _row['frame_ms'] <= 1000 or
+        abs(round(_row['duration'] * 1000) - _row['duration_ms']) > 1 or
+        len(_row['transform']) != 6 or not all(math.isfinite(v) for v in _row['transform']) or
+        not 0 < _row['size'][0] <= 320 or not 0 < _row['size'][1] <= 240):
+        raise ValueError('Invalid original map clip specification: ' + _row['key'])
+    MAP_CLIP_ROWS.append(dict(_row, id=BASE_CLIPS + len(ENEMY_CLIP_ROWS) + len(MAP_CLIP_ROWS)))
+ROOM_CLIP_ROWS = [dict(row, id=BASE_CLIPS + len(ENEMY_CLIP_ROWS) + len(MAP_CLIP_ROWS) + index)
+                  for index, row in enumerate(ROOM_PROFILE['clips'])]
+REST_ACTOR_CLIP_ROWS = [dict(row, id=BASE_CLIPS + len(ENEMY_CLIP_ROWS) + len(MAP_CLIP_ROWS) +
+                           len(ROOM_CLIP_ROWS) + index)
+                       for index, row in enumerate(rest_actor_plan()['clips'])]
+CLIP_ROWS = ENEMY_CLIP_ROWS + MAP_CLIP_ROWS + ROOM_CLIP_ROWS + REST_ACTOR_CLIP_ROWS
+STRINGS = TEXT_BASE + len(TEXT_KEYS)
+AUXILIARY = BASE_AUXILIARY + len(AUXILIARY_ROWS)
+CLIPS = BASE_CLIPS + len(CLIP_ROWS)
+FILE_LIMIT = 256 * 1024 * 1024
+DIRECTORY_LIMIT = 2 * 1024 * 1024
+
+
+def generated_files() -> dict[str, str]:
+    # Appended catalogs retain every prior text id, including additions to an
+    # existing catalog. Sort only the final lookup table, not its stable ids.
+    if (PROFILE['text_keys'] != sorted(set(PROFILE['text_keys'])) or
+            len(TEXT_KEYS) != len(set(TEXT_KEYS))):
+        raise ValueError('Localization keys must be unique and the original catalog sorted')
+    if len({r['key'] for r in AUXILIARY_ROWS}) != len(AUXILIARY_ROWS):
+        raise ValueError('Duplicate image key')
+    if len({r['key'] for r in CLIP_ROWS}) != len(CLIP_ROWS):
+        raise ValueError('Duplicate animation key')
+    header = ('#pragma once\n// Generated by tools/world_ui_profile.py; keys and counts only.\n'
+        'namespace spire {\n'
+        f'constexpr unsigned WorldTextBase={TEXT_BASE},WorldStringCount={STRINGS};\n'
+        f'constexpr unsigned WorldAuxiliaryCount={AUXILIARY},WorldAnimationKinds={CLIPS};\n'
+        '}\n')
+    def table(rows):
+        return '// Public keys only; payloads remain in the private resource pack.\n' + ''.join(
+            f' {{{json.dumps(key, ensure_ascii=True)},{index}}},\n' for key, index in sorted(rows))
+    return {
+        'include/world_assets.hpp': header,
+        'include/world_room_assets.hpp': generated_room_header(),
+        'include/world_rest_actors.hpp': generated_rest_actor_header(),
+        'src/world_text_index.inc': table((key, TEXT_BASE + i) for i, key in enumerate(TEXT_KEYS)),
+        'src/world_image_index.inc': table((row['key'], BASE_AUXILIARY + i) for i, row in enumerate(AUXILIARY_ROWS)),
+        'src/world_clip_index.inc': table((row['key'], BASE_CLIPS + i) for i, row in enumerate(CLIP_ROWS)),
+        'src/world_enemy_assets.inc': enemy_cpp(),
+    }
+
+
+def validate_headers(root: Path = ROOT) -> None:
+    for relative, expected in generated_files().items():
+        if (root / relative).read_text() != expected:
+            raise ValueError('World resource directory drift: ' + relative)
+
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--write', action='store_true')
+    args = parser.parse_args()
+    if args.write:
+        for relative, text in generated_files().items():
+            (ROOT / relative).write_text(text)
+    else:
+        validate_headers()
+    print(json.dumps(dict(cards=CARDS, strings=STRINGS, images=AUXILIARY, clips=CLIPS)))

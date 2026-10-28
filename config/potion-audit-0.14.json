@@ -1,0 +1,1165 @@
+{
+  "reference_version": "v0.111.0",
+  "reference_commit": "41cef1ea",
+  "assembly_sha256": "0861bfa1df347538d932f22d580e75420f08082792eb914e53b4882764acdbe9",
+  "audit_date": "2026-10-18",
+  "evidence": "Fresh static inspection of the exact recovered assembly. Behavioral summaries and method identifiers only; no original assembly or disassembly is published. These findings are not an original-game execution oracle.",
+  "rules": [
+    {
+      "rule": "potion rarity selection",
+      "methods": {
+        "PotionFactory.CreateRandomPotions": "0x06004f1b"
+      },
+      "finding": "Select rarity first: rare 10%, uncommon 25%, common 65%, then select a model in that rarity.",
+      "implementation": "random_potion uses the same probability weights with the expedition's independent integer RNG. Original floating-point draws and PC seeds are not reproduced."
+    },
+    {
+      "rule": "combat generation restrictions",
+      "methods": {
+        "PotionFactory.CreateRandomPotionInCombat": "0x06004f1a",
+        "FairyInABottle.get_CanBeGeneratedInCombat": "0x06002b2c",
+        "FruitJuice.get_CanBeGeneratedInCombat": "0x06002b57",
+        "RegenPotion.get_CanBeGeneratedInCombat": "0x06002be5"
+      },
+      "finding": "The combat factory filters CanBeGeneratedInCombat; these three active models return false.",
+      "implementation": "Explicit combat context filters Alchemize generation without accidentally filtering victory drops while their state is still Combat."
+    },
+    {
+      "rule": "Entropic Brew exception",
+      "methods": {
+        "EntropicBrew.<OnUse>d__6.MoveNext": "0x0600a11c",
+        "PotionFactory.CreateRandomPotionOutOfCombat": "0x06004f18"
+      },
+      "finding": "Always calls the out-of-combat factory separately for each open potion slot, with null exclusions. Recovery bottles, repeated models and Entropic Brew itself are allowed even when used during combat.",
+      "implementation": "Preserves occupied slots and uses random_potion(state,false) for each empty slot after consuming the bottle."
+    },
+    {
+      "rule": "temporary cost lifetime and X cost",
+      "methods": {
+        "CardModel.SetToFreeThisTurn": "0x060018c5",
+        "CardModel.SetToFreeThisCombat": "0x060018c6",
+        "CardEnergyCost.SetThisTurnOrUntilPlayed": "0x06005223",
+        "CardEnergyCost.GetWithModifiers": "0x0600521d",
+        "CardEnergyCost.<AfterCardPlayedCleanup>b__32_0": "0x0600b0cc",
+        "CardModel.<OnPlayWrapper>d__339.MoveNext": "0x06009b06",
+        "SneckoOil.<OnUse>b__12_0": "0x0600a174",
+        "SneckoOil.<OnUse>d__12.MoveNext": "0x0600a175"
+      },
+      "finding": "Temporary free effects and Snecko costs expire after the first completed physical play/replay group or at turn end. X/negative canonical costs bypass local modifiers; Snecko skips X and negative effective costs before sampling.",
+      "implementation": "The existing turn_cost array is cleared after the completed play. Its serialized representation is retained. The cost getter preserves negative/X values; Touch of Insanity clears earlier temporary overrides."
+    },
+    {
+      "rule": "Clarity and Radiance stacking",
+      "methods": {
+        "ClarityPower.ModifyHandDraw": "0x06002487",
+        "ClarityPower.<AfterSideTurnStart>d__5.MoveNext": "0x06009e8c",
+        "RadiancePower.get_CanonicalVars": "0x060027b9",
+        "RadiancePower.<AfterEnergyReset>d__8.MoveNext": "0x06009fc6"
+      },
+      "finding": "Each applicable turn grants a fixed one extra card or energy and decrements one layer; layers extend duration.",
+      "implementation": "Existing duration representation retained; two-bottle regressions verify six turns of one extra benefit."
+    },
+    {
+      "rule": "Duplicator stacking",
+      "methods": {
+        "DuplicationPower.ModifyCardPlayCount": "0x06002557",
+        "DuplicationPower.<AfterModifyingCardPlayCount>d__5.MoveNext": "0x06009ee2",
+        "DuplicationPower.AfterSideTurnEnd": "0x06002559"
+      },
+      "finding": "Adds one replay, decrements one layer per modified card play, and expires unused layers after the side turn.",
+      "implementation": "Existing next-N-cards behavior retained and covered by a two-bottle, three-card numerical regression."
+    },
+    {
+      "rule": "Soldier's Stew instance scope",
+      "methods": {
+        "SoldiersStew.OnUse": "0x06002c0a",
+        "SoldiersStew.<OnUse>b__8_0": "0x0600a179"
+      },
+      "finding": "Enumerates the current combat cards, filters the Strike tag, and increments each existing instance's BaseReplayCount. No generation listener is installed.",
+      "implementation": "Existing instance replay fields retained; a Strike created after use receives no retroactive replay."
+    },
+    {
+      "rule": "Bottled Potential pile scope",
+      "methods": {
+        "BottledPotential.<OnUse>d__8.MoveNext": "0x0600a106",
+        "CardPileCmd.<Shuffle>d__22.MoveNext": "0x0600b27e"
+      },
+      "finding": "Moves the hand into draw, shuffles draw and discard together, then draws five. Does not recover exhausted cards or installed powers.",
+      "implementation": "Equivalent pile membership is retained without discard triggers. Added an exhaust/power preservation and nested Stratagem-selection regression."
+    },
+    {
+      "rule": "generated card pools and distinct batches",
+      "methods": {
+        "AttackPotion.<OnUse>d__6.MoveNext": "0x0600a0fc",
+        "OrobicAcid.<OnUse>d__6.MoveNext": "0x0600a150",
+        "CosmicConcoction.<OnUse>d__8.MoveNext": "0x0600a10c",
+        "CardFactory.GetDistinctForCombat": "0x06004f0c"
+      },
+      "finding": "Attack/skill/power generation uses the owner's character pool and combat eligibility. Cosmic Concoction requests three distinct colorless models before upgrading and adding them.",
+      "implementation": "Shared generation filters apply the supported owner's pool. Generate flags retain free/upgraded low bits and encode an optional distinct batch count above them; Cosmic Concoction requests count 3, upgraded."
+    },
+    {
+      "rule": "Plating timing",
+      "methods": {
+        "PlatingPower.BeforeSideTurnStart": "0x0600278a",
+        "PlatingPower.BeforeSideTurnEndEarly state machine": "0x06009fb2",
+        "PlatingPower.AfterSideTurnStart state machine": "0x06009fb0"
+      },
+      "finding": "For players, grants current-amount block at side-turn end, then decrements at the next applicable side-turn start; the start-turn block branch excludes players.",
+      "implementation": "Removes the duplicate player-start block payment. Heart of Iron is tested against an actual enemy attack before the next player turn."
+    },
+    {
+      "rule": "Fairy outside combat and fractional healing",
+      "methods": {
+        "FairyInABottle.ShouldDie": "0x06002b2e",
+        "FairyInABottle.<AfterPreventingDeath>d__10.MoveNext": "0x0600a122",
+        "RunState.<IterateHookListeners>d__118.MoveNext": "0x060097bc",
+        "Hook.ShouldDie": "0x06004cee",
+        "CreatureCmd.<KillWithoutCheckingWinCondition>d__15.MoveNext": "0x0600b30d",
+        "Creature.SetCurrentHpInternal": "0x060051da"
+      },
+      "finding": "Run-level death prevention includes carried potions without a combat state. Positive fractional resulting HP is truncated when stored, with Fairy ensuring at least 1 HP.",
+      "implementation": "The common revival path supports lethal event HP loss. Actual Baths/Vegetation event tests cover one-bottle consumption, continuation, nonlethal preservation and death without a bottle."
+    },
+    {
+      "rule": "full-hand pile selection",
+      "methods": {
+        "DropletOfPrecognition.<OnUse>d__6.MoveNext": "0x0600a116",
+        "LiquidMemories.<OnUse>d__6.MoveNext": "0x0600a145",
+        "CardSelectCmd.<FromCombatPile>d__20.MoveNext": "0x0600b2b8",
+        "CardPileCmd.<Add>d__10.MoveNext": "0x0600b258"
+      },
+      "finding": "Selection from draw/discard does not check hand capacity. Adding the selected card to a full hand redirects it to discard after removing it from its old pile. Liquid Memories applies its temporary free cost before that move.",
+      "implementation": "Full hands still allow mandatory selection. Droplet moves the chosen draw instance to discard; Liquid Memories retains the chosen discard instance with its free cost. The original hand stays intact and No Draw does not suppress the explicit move."
+    },
+    {
+      "rule": "Touch of Insanity eligibility",
+      "methods": {
+        "TouchOfInsanity.<OnUse>b__6_0": "0x0600a186",
+        "CardModel.CostsEnergyOrStars": "0x060018db"
+      },
+      "finding": "Selects only cards with a positive payable local or fully modified energy/star cost. X, zero-cost and currently free cards are excluded.",
+      "implementation": "The supported card set has no star costs or additional global cost hooks, so the hand predicate uses the current cost > 0. An empty eligible pool completes the potion without a choice."
+    },
+    {
+      "rule": "Distilled Chaos reserves a batch",
+      "methods": {
+        "DistilledChaos.<OnUse>d__8.MoveNext": "0x0600a114",
+        "CardPileCmd.<AutoPlayFromDrawPile>d__23.MoveNext": "0x0600b26e"
+      },
+      "finding": "The draw-pile auto-play command moves the available batch into Limbo before playing its first card. Earlier plays cannot draw or shuffle the cards already reserved for later plays.",
+      "implementation": "One AutoTop count-3 operation reserves serialized AutoInstance continuations. Tests cover a first card that draws, reservation interrupted by a shuffle choice, and cleanup on early victory."
+    },
+    {
+      "rule": "Doom precedes Demise on the enemy side",
+      "methods": {
+        "DoomPower.<BeforeSideTurnEnd>d__8.MoveNext": "0x06009ed6",
+        "DoomPower.<AfterSideTurnEnd>d__9.MoveNext": "0x06009ed4",
+        "DemisePower.<AfterSideTurnEnd>d__4.MoveNext": "0x06009ec8"
+      },
+      "finding": "CombatSide.Player=1 and Enemy=2. Doom uses BeforeSideTurnEnd for enemies and skips their AfterSideTurnEnd. Demise applies afterward. A creature at 40 HP with 33 Doom and 9 Demise survives the first enemy-turn end at 31 HP.",
+      "implementation": "The enemy resolution checks Doom before applying Demise, and skips the HP-loss step if Doom already killed the creature."
+    },
+    {
+      "rule": "temporary cost cleanup precedes the enemy phase",
+      "methods": {
+        "CombatManager.<EndPlayerTurnPhaseTwoInternal>d__139.MoveNext": "0x0600b3c0",
+        "CombatManager.<FlushPlayerHand>d__140.MoveNext": "0x0600b3c4",
+        "PlayerCombatState.EndOfTurnCleanup": "0x060050d4",
+        "CardModel.EndOfTurnCleanup": "0x060018de",
+        "CardEnergyCost.EndOfTurnCleanup": "0x0600522a",
+        "CombatManager.<EndEnemyTurnInternal>d__136.MoveNext": "0x0600b3b8"
+      },
+      "finding": "The player phase waits for FlushPlayerHand and its AfterFlush hooks before AfterSideTurnEnd. Flush then cleans all card instances, including retained, draw, discard and exhaust cards, removing turn-expiring costs. Enemy-turn end also performs cleanup.",
+      "implementation": "The existing turn_cost storage is cleared at the player-flush boundary before enemies act. A regression suspends Centennial Puzzle at a Stratagem shuffle choice during enemy damage on turn 1 and checks that temporary costs have expired while permanent free costs remain."
+    }
+  ],
+  "validation": {
+    "passed_checkpoint": "b4b67e714ca76e7afb72f3a170789ad90047e6f4",
+    "potion_completion_checks": 34202,
+    "potion_model_policies": 64,
+    "sanitizers": [
+      "AddressSanitizer",
+      "UndefinedBehaviorSanitizer"
+    ],
+    "leak_sanitizer": "Disabled: sandbox process/thread inspection unavailable.",
+    "status": "passed",
+    "native_suites": {
+      "passed": 21,
+      "total": 21,
+      "reported_checks": 651275
+    },
+    "journal": "native-final-6173a9899340",
+    "source_changed": false,
+    "log_sha256": "c1b5321a74e1753d6804fcac5b3a2490771262f847fde5043bc39bb0b15fb1e5",
+    "scope": "The complete frozen native run passed, including every current potion completion assertion. This is engine regression evidence; platform validation and original-game parity are separate.",
+    "historical_failed_attempt": {
+      "checkpoint": "afe33815cfc9f9ab24bbf457cdaeed0cd0e3f2df",
+      "potion_completion": "Failed at the first Distilled Chaos batch damage assertion. The test used 3 instead of the pinned 5 for Flash of Steel; no complete passing count is claimed.",
+      "diagnosis": "A short diagnostic linked the unchanged frozen engine library and confirmed three completed cards, 5 block, total enemy HP 77, the original fourth card drawn and no potion marker. The shuffle case confirmed two completed cards, 5 block and total enemy HP 87.",
+      "resolution": "Corrected Flash of Steel damage expectations (77/87 remaining total enemy HP) passed in the full b4b67e714ca76e7afb72f3a170789ad90047e6f4 native run."
+    },
+    "historical_potion_passes": [
+      {
+        "checkpoint": "b0945483e4f50ca065c0b7c3a0d9f917a2b375e6",
+        "checks": 7573
+      },
+      {
+        "checkpoint": "8adeaeebe4a0380b92ceceff154e30ab5069696c",
+        "checks": 33831
+      }
+    ]
+  },
+  "remaining_scope": [
+    "Original full character card pools and unlock progression are incomplete in this two-character expedition.",
+    "Special potion acquisition events are not implemented; explicit practice acquisition is available.",
+    "Only dark orbs and a limited summon/Regent resource surface are modeled.",
+    "No original-game differential execution, Firebird run or physical-device performance proof is supplied by this audit."
+  ],
+  "metadata_scope": "All 64 active models were freshly checked for rarity, usage and single-player enemy-target scope against the local descriptors. This table does not claim that metadata or dispatch existence proves full effect parity.",
+  "models_metadata": [
+    {
+      "model": "FirePotion",
+      "key": "FIRE_POTION",
+      "rarity": 1,
+      "usage": 1,
+      "target_type": 2,
+      "descriptor_scope_matches": true,
+      "methods": {
+        "get_Rarity": "0x06002b31",
+        "get_Usage": "0x06002b32",
+        "get_TargetType": "0x06002b33",
+        "get_CanonicalVars": "0x06002b34",
+        "OnUse": "0x06002b35"
+      }
+    },
+    {
+      "model": "BlockPotion",
+      "key": "BLOCK_POTION",
+      "rarity": 1,
+      "usage": 1,
+      "target_type": 5,
+      "descriptor_scope_matches": true,
+      "methods": {
+        "get_Rarity": "0x06002abd",
+        "get_Usage": "0x06002abe",
+        "get_TargetType": "0x06002abf",
+        "get_CanonicalVars": "0x06002ac0",
+        "OnUse": "0x06002ac2"
+      }
+    },
+    {
+      "model": "BloodPotion",
+      "key": "BLOOD_POTION",
+      "rarity": 1,
+      "usage": 2,
+      "target_type": 5,
+      "descriptor_scope_matches": true,
+      "methods": {
+        "get_Rarity": "0x06002ac4",
+        "get_Usage": "0x06002ac5",
+        "get_TargetType": "0x06002ac6",
+        "get_CanonicalVars": "0x06002ac7",
+        "OnUse": "0x06002ac8"
+      }
+    },
+    {
+      "model": "EnergyPotion",
+      "key": "ENERGY_POTION",
+      "rarity": 1,
+      "usage": 1,
+      "target_type": 5,
+      "descriptor_scope_matches": true,
+      "methods": {
+        "get_Rarity": "0x06002b11",
+        "get_Usage": "0x06002b12",
+        "get_TargetType": "0x06002b13",
+        "get_CanonicalVars": "0x06002b14",
+        "OnUse": "0x06002b16"
+      }
+    },
+    {
+      "model": "StrengthPotion",
+      "key": "STRENGTH_POTION",
+      "rarity": 1,
+      "usage": 1,
+      "target_type": 5,
+      "descriptor_scope_matches": true,
+      "methods": {
+        "get_Rarity": "0x06002c20",
+        "get_Usage": "0x06002c21",
+        "get_TargetType": "0x06002c22",
+        "get_CanonicalVars": "0x06002c23",
+        "OnUse": "0x06002c25"
+      }
+    },
+    {
+      "model": "DexterityPotion",
+      "key": "DEXTERITY_POTION",
+      "rarity": 1,
+      "usage": 1,
+      "target_type": 5,
+      "descriptor_scope_matches": true,
+      "methods": {
+        "get_Rarity": "0x06002afa",
+        "get_Usage": "0x06002afb",
+        "get_TargetType": "0x06002afc",
+        "get_CanonicalVars": "0x06002afd",
+        "OnUse": "0x06002aff"
+      }
+    },
+    {
+      "model": "SwiftPotion",
+      "key": "SWIFT_POTION",
+      "rarity": 1,
+      "usage": 1,
+      "target_type": 5,
+      "descriptor_scope_matches": true,
+      "methods": {
+        "get_Rarity": "0x06002c27",
+        "get_Usage": "0x06002c28",
+        "get_TargetType": "0x06002c29",
+        "get_CanonicalVars": "0x06002c2a",
+        "OnUse": "0x06002c2b"
+      }
+    },
+    {
+      "model": "ExplosiveAmpoule",
+      "key": "EXPLOSIVE_AMPOULE",
+      "rarity": 1,
+      "usage": 1,
+      "target_type": 3,
+      "descriptor_scope_matches": true,
+      "methods": {
+        "get_Rarity": "0x06002b23",
+        "get_Usage": "0x06002b24",
+        "get_TargetType": "0x06002b25",
+        "get_CanonicalVars": "0x06002b26",
+        "OnUse": "0x06002b27"
+      }
+    },
+    {
+      "model": "VulnerablePotion",
+      "key": "VULNERABLE_POTION",
+      "rarity": 1,
+      "usage": 1,
+      "target_type": 2,
+      "descriptor_scope_matches": true,
+      "methods": {
+        "get_Rarity": "0x06002c32",
+        "get_Usage": "0x06002c33",
+        "get_TargetType": "0x06002c34",
+        "get_CanonicalVars": "0x06002c35",
+        "OnUse": "0x06002c37"
+      }
+    },
+    {
+      "model": "WeakPotion",
+      "key": "WEAK_POTION",
+      "rarity": 1,
+      "usage": 1,
+      "target_type": 2,
+      "descriptor_scope_matches": true,
+      "methods": {
+        "get_Rarity": "0x06002c39",
+        "get_Usage": "0x06002c3a",
+        "get_TargetType": "0x06002c3b",
+        "get_CanonicalVars": "0x06002c3c",
+        "OnUse": "0x06002c3e"
+      }
+    },
+    {
+      "model": "FruitJuice",
+      "key": "FRUIT_JUICE",
+      "rarity": 3,
+      "usage": 2,
+      "target_type": 5,
+      "descriptor_scope_matches": true,
+      "methods": {
+        "get_Rarity": "0x06002b54",
+        "get_Usage": "0x06002b55",
+        "get_TargetType": "0x06002b56",
+        "get_CanonicalVars": "0x06002b58",
+        "OnUse": "0x06002b59"
+      }
+    },
+    {
+      "model": "BlessingOfTheForge",
+      "key": "BLESSING_OF_THE_FORGE",
+      "rarity": 2,
+      "usage": 1,
+      "target_type": 5,
+      "descriptor_scope_matches": true,
+      "methods": {
+        "get_Rarity": "0x06002ab8",
+        "get_Usage": "0x06002ab9",
+        "get_TargetType": "0x06002aba",
+        "OnUse": "0x06002abb"
+      }
+    },
+    {
+      "model": "FlexPotion",
+      "key": "FLEX_POTION",
+      "rarity": 1,
+      "usage": 1,
+      "target_type": 5,
+      "descriptor_scope_matches": true,
+      "methods": {
+        "get_Rarity": "0x06002b37",
+        "get_Usage": "0x06002b38",
+        "get_TargetType": "0x06002b39",
+        "get_CanonicalVars": "0x06002b3a",
+        "OnUse": "0x06002b3c"
+      }
+    },
+    {
+      "model": "SpeedPotion",
+      "key": "SPEED_POTION",
+      "rarity": 1,
+      "usage": 1,
+      "target_type": 5,
+      "descriptor_scope_matches": true,
+      "methods": {
+        "get_Rarity": "0x06002c0c",
+        "get_Usage": "0x06002c0d",
+        "get_TargetType": "0x06002c0e",
+        "get_CanonicalVars": "0x06002c0f",
+        "OnUse": "0x06002c11"
+      }
+    },
+    {
+      "model": "LiquidBronze",
+      "key": "LIQUID_BRONZE",
+      "rarity": 2,
+      "usage": 1,
+      "target_type": 5,
+      "descriptor_scope_matches": true,
+      "methods": {
+        "get_Rarity": "0x06002b89",
+        "get_Usage": "0x06002b8a",
+        "get_TargetType": "0x06002b8b",
+        "get_CanonicalVars": "0x06002b8c",
+        "OnUse": "0x06002b8e"
+      }
+    },
+    {
+      "model": "Fortifier",
+      "key": "FORTIFIER",
+      "rarity": 2,
+      "usage": 1,
+      "target_type": 5,
+      "descriptor_scope_matches": true,
+      "methods": {
+        "get_Rarity": "0x06002b45",
+        "get_Usage": "0x06002b46",
+        "get_TargetType": "0x06002b47",
+        "OnUse": "0x06002b49"
+      }
+    },
+    {
+      "model": "AttackPotion",
+      "key": "ATTACK_POTION",
+      "rarity": 1,
+      "usage": 1,
+      "target_type": 5,
+      "descriptor_scope_matches": true,
+      "methods": {
+        "get_Rarity": "0x06002aad",
+        "get_Usage": "0x06002aae",
+        "get_TargetType": "0x06002aaf",
+        "OnUse": "0x06002ab0"
+      }
+    },
+    {
+      "model": "BeetleJuice",
+      "key": "BEETLE_JUICE",
+      "rarity": 3,
+      "usage": 1,
+      "target_type": 2,
+      "descriptor_scope_matches": true,
+      "methods": {
+        "get_Rarity": "0x06002ab2",
+        "get_Usage": "0x06002ab3",
+        "get_TargetType": "0x06002ab4",
+        "get_CanonicalVars": "0x06002ab5",
+        "OnUse": "0x06002ab6"
+      }
+    },
+    {
+      "model": "BottledPotential",
+      "key": "BOTTLED_POTENTIAL",
+      "rarity": 3,
+      "usage": 1,
+      "target_type": 5,
+      "descriptor_scope_matches": true,
+      "methods": {
+        "get_Rarity": "0x06002ad1",
+        "get_Usage": "0x06002ad2",
+        "get_TargetType": "0x06002ad3",
+        "get_CanonicalVars": "0x06002ad4",
+        "OnUse": "0x06002ad5"
+      }
+    },
+    {
+      "model": "Clarity",
+      "key": "CLARITY",
+      "rarity": 2,
+      "usage": 1,
+      "target_type": 5,
+      "descriptor_scope_matches": true,
+      "methods": {
+        "get_Rarity": "0x06002ad7",
+        "get_Usage": "0x06002ad8",
+        "get_TargetType": "0x06002ad9",
+        "get_CanonicalVars": "0x06002ada",
+        "OnUse": "0x06002adb"
+      }
+    },
+    {
+      "model": "ColorlessPotion",
+      "key": "COLORLESS_POTION",
+      "rarity": 1,
+      "usage": 1,
+      "target_type": 5,
+      "descriptor_scope_matches": true,
+      "methods": {
+        "get_Rarity": "0x06002add",
+        "get_Usage": "0x06002ade",
+        "get_TargetType": "0x06002adf",
+        "OnUse": "0x06002ae0"
+      }
+    },
+    {
+      "model": "CureAll",
+      "key": "CURE_ALL",
+      "rarity": 2,
+      "usage": 1,
+      "target_type": 5,
+      "descriptor_scope_matches": true,
+      "methods": {
+        "get_Rarity": "0x06002aef",
+        "get_Usage": "0x06002af0",
+        "get_TargetType": "0x06002af1",
+        "get_CanonicalVars": "0x06002af2",
+        "OnUse": "0x06002af4"
+      }
+    },
+    {
+      "model": "DistilledChaos",
+      "key": "DISTILLED_CHAOS",
+      "rarity": 3,
+      "usage": 1,
+      "target_type": 5,
+      "descriptor_scope_matches": true,
+      "methods": {
+        "get_Rarity": "0x06002b01",
+        "get_Usage": "0x06002b02",
+        "get_TargetType": "0x06002b03",
+        "get_CanonicalVars": "0x06002b04",
+        "OnUse": "0x06002b05"
+      }
+    },
+    {
+      "model": "DropletOfPrecognition",
+      "key": "DROPLET_OF_PRECOGNITION",
+      "rarity": 3,
+      "usage": 1,
+      "target_type": 5,
+      "descriptor_scope_matches": true,
+      "methods": {
+        "get_Rarity": "0x06002b07",
+        "get_Usage": "0x06002b08",
+        "get_TargetType": "0x06002b09",
+        "OnUse": "0x06002b0a"
+      }
+    },
+    {
+      "model": "Duplicator",
+      "key": "DUPLICATOR",
+      "rarity": 2,
+      "usage": 1,
+      "target_type": 5,
+      "descriptor_scope_matches": true,
+      "methods": {
+        "get_Rarity": "0x06002b0c",
+        "get_Usage": "0x06002b0d",
+        "get_TargetType": "0x06002b0e",
+        "OnUse": "0x06002b0f"
+      }
+    },
+    {
+      "model": "EntropicBrew",
+      "key": "ENTROPIC_BREW",
+      "rarity": 3,
+      "usage": 2,
+      "target_type": 5,
+      "descriptor_scope_matches": true,
+      "methods": {
+        "get_Rarity": "0x06002b18",
+        "get_Usage": "0x06002b19",
+        "get_TargetType": "0x06002b1a",
+        "OnUse": "0x06002b1b"
+      }
+    },
+    {
+      "model": "FairyInABottle",
+      "key": "FAIRY_IN_A_BOTTLE",
+      "rarity": 3,
+      "usage": 3,
+      "target_type": 1,
+      "descriptor_scope_matches": true,
+      "methods": {
+        "get_Rarity": "0x06002b29",
+        "get_Usage": "0x06002b2a",
+        "get_TargetType": "0x06002b2b",
+        "OnUse": "0x06002b2d"
+      }
+    },
+    {
+      "model": "FyshOil",
+      "key": "FYSH_OIL",
+      "rarity": 2,
+      "usage": 1,
+      "target_type": 5,
+      "descriptor_scope_matches": true,
+      "methods": {
+        "get_Rarity": "0x06002b5b",
+        "get_Usage": "0x06002b5c",
+        "get_TargetType": "0x06002b5d",
+        "get_CanonicalVars": "0x06002b5e",
+        "OnUse": "0x06002b60"
+      }
+    },
+    {
+      "model": "GamblersBrew",
+      "key": "GAMBLERS_BREW",
+      "rarity": 2,
+      "usage": 1,
+      "target_type": 5,
+      "descriptor_scope_matches": true,
+      "methods": {
+        "get_Rarity": "0x06002b62",
+        "get_Usage": "0x06002b63",
+        "get_TargetType": "0x06002b64",
+        "OnUse": "0x06002b65"
+      }
+    },
+    {
+      "model": "GigantificationPotion",
+      "key": "GIGANTIFICATION_POTION",
+      "rarity": 3,
+      "usage": 1,
+      "target_type": 5,
+      "descriptor_scope_matches": true,
+      "methods": {
+        "get_Rarity": "0x06002b6e",
+        "get_Usage": "0x06002b6f",
+        "get_TargetType": "0x06002b70",
+        "get_CanonicalVars": "0x06002b71",
+        "OnUse": "0x06002b72"
+      }
+    },
+    {
+      "model": "HeartOfIron",
+      "key": "HEART_OF_IRON",
+      "rarity": 2,
+      "usage": 1,
+      "target_type": 5,
+      "descriptor_scope_matches": true,
+      "methods": {
+        "get_Rarity": "0x06002b7b",
+        "get_Usage": "0x06002b7c",
+        "get_TargetType": "0x06002b7d",
+        "get_CanonicalVars": "0x06002b7e",
+        "OnUse": "0x06002b80"
+      }
+    },
+    {
+      "model": "LiquidMemories",
+      "key": "LIQUID_MEMORIES",
+      "rarity": 3,
+      "usage": 1,
+      "target_type": 5,
+      "descriptor_scope_matches": true,
+      "methods": {
+        "get_Rarity": "0x06002b90",
+        "get_Usage": "0x06002b91",
+        "get_TargetType": "0x06002b92",
+        "OnUse": "0x06002b93"
+      }
+    },
+    {
+      "model": "LuckyTonic",
+      "key": "LUCKY_TONIC",
+      "rarity": 3,
+      "usage": 1,
+      "target_type": 5,
+      "descriptor_scope_matches": true,
+      "methods": {
+        "get_Rarity": "0x06002b95",
+        "get_Usage": "0x06002b96",
+        "get_TargetType": "0x06002b97",
+        "get_CanonicalVars": "0x06002b98",
+        "OnUse": "0x06002b9a"
+      }
+    },
+    {
+      "model": "MazalethsGift",
+      "key": "MAZALETHS_GIFT",
+      "rarity": 3,
+      "usage": 1,
+      "target_type": 5,
+      "descriptor_scope_matches": true,
+      "methods": {
+        "get_Rarity": "0x06002b9c",
+        "get_Usage": "0x06002b9d",
+        "get_TargetType": "0x06002b9e",
+        "get_CanonicalVars": "0x06002b9f",
+        "OnUse": "0x06002ba1"
+      }
+    },
+    {
+      "model": "OrobicAcid",
+      "key": "OROBIC_ACID",
+      "rarity": 3,
+      "usage": 1,
+      "target_type": 5,
+      "descriptor_scope_matches": true,
+      "methods": {
+        "get_Rarity": "0x06002ba3",
+        "get_Usage": "0x06002ba4",
+        "get_TargetType": "0x06002ba5",
+        "OnUse": "0x06002ba6"
+      }
+    },
+    {
+      "model": "PotionOfBinding",
+      "key": "POTION_OF_BINDING",
+      "rarity": 2,
+      "usage": 1,
+      "target_type": 3,
+      "descriptor_scope_matches": true,
+      "methods": {
+        "get_Rarity": "0x06002baf",
+        "get_Usage": "0x06002bb0",
+        "get_TargetType": "0x06002bb1",
+        "get_CanonicalVars": "0x06002bb2",
+        "OnUse": "0x06002bb4"
+      }
+    },
+    {
+      "model": "PowderedDemise",
+      "key": "POWDERED_DEMISE",
+      "rarity": 2,
+      "usage": 1,
+      "target_type": 2,
+      "descriptor_scope_matches": true,
+      "methods": {
+        "get_Rarity": "0x06002bd0",
+        "get_Usage": "0x06002bd1",
+        "get_TargetType": "0x06002bd2",
+        "get_CanonicalVars": "0x06002bd3",
+        "OnUse": "0x06002bd4"
+      }
+    },
+    {
+      "model": "PowerPotion",
+      "key": "POWER_POTION",
+      "rarity": 1,
+      "usage": 1,
+      "target_type": 5,
+      "descriptor_scope_matches": true,
+      "methods": {
+        "get_Rarity": "0x06002bd6",
+        "get_Usage": "0x06002bd7",
+        "get_TargetType": "0x06002bd8",
+        "OnUse": "0x06002bd9"
+      }
+    },
+    {
+      "model": "RadiantTincture",
+      "key": "RADIANT_TINCTURE",
+      "rarity": 2,
+      "usage": 1,
+      "target_type": 5,
+      "descriptor_scope_matches": true,
+      "methods": {
+        "get_Rarity": "0x06002bdb",
+        "get_Usage": "0x06002bdc",
+        "get_TargetType": "0x06002bdd",
+        "get_CanonicalVars": "0x06002bdf",
+        "OnUse": "0x06002be0"
+      }
+    },
+    {
+      "model": "RegenPotion",
+      "key": "REGEN_POTION",
+      "rarity": 2,
+      "usage": 1,
+      "target_type": 5,
+      "descriptor_scope_matches": true,
+      "methods": {
+        "get_Rarity": "0x06002be2",
+        "get_Usage": "0x06002be3",
+        "get_TargetType": "0x06002be4",
+        "get_CanonicalVars": "0x06002be6",
+        "OnUse": "0x06002be8"
+      }
+    },
+    {
+      "model": "ShacklingPotion",
+      "key": "SHACKLING_POTION",
+      "rarity": 3,
+      "usage": 1,
+      "target_type": 3,
+      "descriptor_scope_matches": true,
+      "methods": {
+        "get_Rarity": "0x06002bea",
+        "get_Usage": "0x06002beb",
+        "get_TargetType": "0x06002bec",
+        "get_CanonicalVars": "0x06002bee",
+        "OnUse": "0x06002bef"
+      }
+    },
+    {
+      "model": "ShipInABottle",
+      "key": "SHIP_IN_A_BOTTLE",
+      "rarity": 3,
+      "usage": 1,
+      "target_type": 5,
+      "descriptor_scope_matches": true,
+      "methods": {
+        "get_Rarity": "0x06002bf1",
+        "get_Usage": "0x06002bf2",
+        "get_TargetType": "0x06002bf3",
+        "get_CanonicalVars": "0x06002bf4",
+        "OnUse": "0x06002bf6"
+      }
+    },
+    {
+      "model": "SkillPotion",
+      "key": "SKILL_POTION",
+      "rarity": 1,
+      "usage": 1,
+      "target_type": 5,
+      "descriptor_scope_matches": true,
+      "methods": {
+        "get_Rarity": "0x06002bf8",
+        "get_Usage": "0x06002bf9",
+        "get_TargetType": "0x06002bfa",
+        "OnUse": "0x06002bfb"
+      }
+    },
+    {
+      "model": "SneckoOil",
+      "key": "SNECKO_OIL",
+      "rarity": 3,
+      "usage": 1,
+      "target_type": 5,
+      "descriptor_scope_matches": true,
+      "methods": {
+        "get_Rarity": "0x06002bfd",
+        "get_Usage": "0x06002bfe",
+        "get_TargetType": "0x06002bff",
+        "get_CanonicalVars": "0x06002c00",
+        "OnUse": "0x06002c03"
+      }
+    },
+    {
+      "model": "StableSerum",
+      "key": "STABLE_SERUM",
+      "rarity": 2,
+      "usage": 1,
+      "target_type": 5,
+      "descriptor_scope_matches": true,
+      "methods": {
+        "get_Rarity": "0x06002c13",
+        "get_Usage": "0x06002c14",
+        "get_TargetType": "0x06002c15",
+        "get_CanonicalVars": "0x06002c17",
+        "OnUse": "0x06002c18"
+      }
+    },
+    {
+      "model": "TouchOfInsanity",
+      "key": "TOUCH_OF_INSANITY",
+      "rarity": 2,
+      "usage": 1,
+      "target_type": 5,
+      "descriptor_scope_matches": true,
+      "methods": {
+        "get_Rarity": "0x06002c2d",
+        "get_Usage": "0x06002c2e",
+        "get_TargetType": "0x06002c2f",
+        "OnUse": "0x06002c30"
+      }
+    },
+    {
+      "model": "SoldiersStew",
+      "key": "SOLDIERS_STEW",
+      "rarity": 3,
+      "usage": 1,
+      "target_type": 5,
+      "descriptor_scope_matches": true,
+      "methods": {
+        "get_Rarity": "0x06002c06",
+        "get_Usage": "0x06002c07",
+        "get_TargetType": "0x06002c08",
+        "OnUse": "0x06002c0a"
+      }
+    },
+    {
+      "model": "Ashwater",
+      "key": "ASHWATER",
+      "rarity": 2,
+      "usage": 1,
+      "target_type": 5,
+      "descriptor_scope_matches": true,
+      "methods": {
+        "get_Rarity": "0x06002aa7",
+        "get_Usage": "0x06002aa8",
+        "get_TargetType": "0x06002aa9",
+        "OnUse": "0x06002aab"
+      }
+    },
+    {
+      "model": "PoisonPotion",
+      "key": "POISON_POTION",
+      "rarity": 1,
+      "usage": 1,
+      "target_type": 2,
+      "descriptor_scope_matches": true,
+      "methods": {
+        "get_Rarity": "0x06002ba8",
+        "get_Usage": "0x06002ba9",
+        "get_TargetType": "0x06002baa",
+        "get_CanonicalVars": "0x06002bab",
+        "OnUse": "0x06002bad"
+      }
+    },
+    {
+      "model": "GhostInAJar",
+      "key": "GHOST_IN_A_JAR",
+      "rarity": 3,
+      "usage": 1,
+      "target_type": 5,
+      "descriptor_scope_matches": true,
+      "methods": {
+        "get_Rarity": "0x06002b67",
+        "get_Usage": "0x06002b68",
+        "get_TargetType": "0x06002b69",
+        "get_CanonicalVars": "0x06002b6a",
+        "OnUse": "0x06002b6c"
+      }
+    },
+    {
+      "model": "CunningPotion",
+      "key": "CUNNING_POTION",
+      "rarity": 2,
+      "usage": 1,
+      "target_type": 5,
+      "descriptor_scope_matches": true,
+      "methods": {
+        "get_Rarity": "0x06002ae8",
+        "get_Usage": "0x06002ae9",
+        "get_TargetType": "0x06002aea",
+        "get_CanonicalVars": "0x06002aeb",
+        "OnUse": "0x06002aed"
+      }
+    },
+    {
+      "model": "Ambergris",
+      "key": "AMBERGRIS",
+      "rarity": 4,
+      "usage": 2,
+      "target_type": 5,
+      "descriptor_scope_matches": true,
+      "methods": {
+        "get_Rarity": "0x06002aa1",
+        "get_Usage": "0x06002aa2",
+        "get_TargetType": "0x06002aa3",
+        "get_CanonicalVars": "0x06002aa4",
+        "OnUse": "0x06002aa5"
+      }
+    },
+    {
+      "model": "FoulPotion",
+      "key": "FOUL_POTION",
+      "rarity": 4,
+      "usage": 2,
+      "target_type": "dynamic",
+      "descriptor_scope_matches": true,
+      "methods": {
+        "get_Rarity": "0x06002b4b",
+        "get_Usage": "0x06002b4c",
+        "get_TargetType": "0x06002b4d",
+        "get_CanonicalVars": "0x06002b4e",
+        "OnUse": "0x06002b50"
+      }
+    },
+    {
+      "model": "GlowwaterPotion",
+      "key": "GLOWWATER_POTION",
+      "rarity": 4,
+      "usage": 1,
+      "target_type": 5,
+      "descriptor_scope_matches": true,
+      "methods": {
+        "get_Rarity": "0x06002b74",
+        "get_Usage": "0x06002b75",
+        "get_TargetType": "0x06002b76",
+        "get_CanonicalVars": "0x06002b78",
+        "OnUse": "0x06002b79"
+      }
+    },
+    {
+      "model": "PotionShapedRock",
+      "key": "POTION_SHAPED_ROCK",
+      "rarity": 5,
+      "usage": 1,
+      "target_type": 2,
+      "descriptor_scope_matches": true,
+      "methods": {
+        "get_Rarity": "0x06002bc3",
+        "get_Usage": "0x06002bc4",
+        "get_TargetType": "0x06002bc5",
+        "get_CanonicalVars": "0x06002bc6",
+        "OnUse": "0x06002bc7"
+      }
+    },
+    {
+      "model": "BoneBrew",
+      "key": "BONE_BREW",
+      "rarity": 2,
+      "usage": 1,
+      "target_type": 5,
+      "descriptor_scope_matches": true,
+      "methods": {
+        "get_Rarity": "0x06002aca",
+        "get_Usage": "0x06002acb",
+        "get_TargetType": "0x06002acc",
+        "get_CanonicalVars": "0x06002acd",
+        "OnUse": "0x06002acf"
+      }
+    },
+    {
+      "model": "PotOfGhouls",
+      "key": "POT_OF_GHOULS",
+      "rarity": 3,
+      "usage": 1,
+      "target_type": 5,
+      "descriptor_scope_matches": true,
+      "methods": {
+        "get_Rarity": "0x06002bc9",
+        "get_Usage": "0x06002bca",
+        "get_TargetType": "0x06002bcb",
+        "get_CanonicalVars": "0x06002bcc",
+        "OnUse": "0x06002bce"
+      }
+    },
+    {
+      "model": "PotionOfDoom",
+      "key": "POTION_OF_DOOM",
+      "rarity": 1,
+      "usage": 1,
+      "target_type": 2,
+      "descriptor_scope_matches": true,
+      "methods": {
+        "get_Rarity": "0x06002bbc",
+        "get_Usage": "0x06002bbd",
+        "get_TargetType": "0x06002bbe",
+        "get_CanonicalVars": "0x06002bbf",
+        "OnUse": "0x06002bc1"
+      }
+    },
+    {
+      "model": "FocusPotion",
+      "key": "FOCUS_POTION",
+      "rarity": 1,
+      "usage": 1,
+      "target_type": 5,
+      "descriptor_scope_matches": true,
+      "methods": {
+        "get_Rarity": "0x06002b3e",
+        "get_Usage": "0x06002b3f",
+        "get_TargetType": "0x06002b40",
+        "get_CanonicalVars": "0x06002b41",
+        "OnUse": "0x06002b43"
+      }
+    },
+    {
+      "model": "EssenceOfDarkness",
+      "key": "ESSENCE_OF_DARKNESS",
+      "rarity": 3,
+      "usage": 1,
+      "target_type": 5,
+      "descriptor_scope_matches": true,
+      "methods": {
+        "get_Rarity": "0x06002b1d",
+        "get_Usage": "0x06002b1e",
+        "get_TargetType": "0x06002b1f",
+        "OnUse": "0x06002b21"
+      }
+    },
+    {
+      "model": "PotionOfCapacity",
+      "key": "POTION_OF_CAPACITY",
+      "rarity": 2,
+      "usage": 1,
+      "target_type": 5,
+      "descriptor_scope_matches": true,
+      "methods": {
+        "get_Rarity": "0x06002bb6",
+        "get_Usage": "0x06002bb7",
+        "get_TargetType": "0x06002bb8",
+        "get_CanonicalVars": "0x06002bb9",
+        "OnUse": "0x06002bba"
+      }
+    },
+    {
+      "model": "StarPotion",
+      "key": "STAR_POTION",
+      "rarity": 1,
+      "usage": 1,
+      "target_type": 5,
+      "descriptor_scope_matches": true,
+      "methods": {
+        "get_Rarity": "0x06002c1a",
+        "get_Usage": "0x06002c1b",
+        "get_TargetType": "0x06002c1c",
+        "get_CanonicalVars": "0x06002c1d",
+        "OnUse": "0x06002c1e"
+      }
+    },
+    {
+      "model": "CosmicConcoction",
+      "key": "COSMIC_CONCOCTION",
+      "rarity": 3,
+      "usage": 1,
+      "target_type": 5,
+      "descriptor_scope_matches": true,
+      "methods": {
+        "get_Rarity": "0x06002ae2",
+        "get_Usage": "0x06002ae3",
+        "get_TargetType": "0x06002ae4",
+        "get_CanonicalVars": "0x06002ae5",
+        "OnUse": "0x06002ae6"
+      }
+    },
+    {
+      "model": "KingsCourage",
+      "key": "KINGS_COURAGE",
+      "rarity": 2,
+      "usage": 1,
+      "target_type": 5,
+      "descriptor_scope_matches": true,
+      "methods": {
+        "get_Rarity": "0x06002b82",
+        "get_Usage": "0x06002b83",
+        "get_TargetType": "0x06002b84",
+        "get_CanonicalVars": "0x06002b85",
+        "OnUse": "0x06002b87"
+      }
+    }
+  ]
+}

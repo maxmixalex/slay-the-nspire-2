@@ -1,0 +1,308 @@
+// The room's gold and relic are owned by the run controller. These helpers
+// only select original visual states and route real player actions to it.
+static bool native_room_input_available(const App&a,Phase phase){
+ return a.game.world.active&&a.game.world.room_open&&a.game.phase==phase&&
+  a.game.world.room_type==unsigned(phase==Phase::Camp?WorldRoom::Rest:WorldRoom::Treasure)&&!a.title&&!a.paused&&!a.help&&!a.panel&&!a.library&&!a.character_select&&
+  !a.map_preview.open&&!a.event_reader&&!a.frontend_confirm&&!a.settings_open&&!a.ftue.active()&&a.detail_card<0&&a.detail_item<0&&a.status_actor<0&&a.deck_candidate<0;
+}
+static const char* treasure_text(const App&a,const char*key,const char*fallback){const char*t=a.content.world_string("gameplay_ui",key);return *t?t:fallback;}
+static void treasure_key(const State&s,const char*action,char*out,size_t size){TextBuffer key{out,size,0};key.text("ACT");key.number(s.world.act_index+1);if(action){key.ch('.');key.text(action);}}
+// App advances at 33ms. Clamp before multiplication so a long-open room or
+// an unsigned tick wrap cannot restart a completed visual transition.
+static uint32_t treasure_elapsed(uint32_t ticks,uint32_t duration){return ticks>=(duration+32)/33?duration:ticks*33;}
+static uint16_t treasure_linear(uint16_t from,uint16_t to,uint32_t ticks,uint32_t duration){
+ const uint32_t elapsed=treasure_elapsed(ticks,duration);
+ return uint16_t((uint32_t(from)*(duration-elapsed)+uint32_t(to)*elapsed+duration/2)/duration);
+}
+static unsigned treasure_alpha8(uint16_t alpha){return (unsigned(alpha)+128)/257;}
+static uint32_t treasure_holder_delay(App&a){
+ // Rng.Chaotic is independent of the seeded run. This platform adapts it to
+ // a session-local xorshift32 stream seeded from the presentation clock on
+ // its first nonempty collection, not the original wall-clock/MegaRandom
+ // sequence. One draw per new holder, none for rendering or restored offers.
+ uint32_t x=a.treasure_random;
+ if(!x){x=a.animation^0xa511e9b3u;if(!x)x=0x6d2b79f5u;}
+ x^=x<<13;x^=x>>17;x^=x<<5;a.treasure_random=x;
+ return 200000u+uint32_t((uint64_t(x)*200000u)>>32);
+}
+static uint32_t treasure_holder_elapsed(const App&a){
+ // Every holder tween has finished by 1s. Clamp before converting the
+ // wrapping 33ms tick delta to microseconds, including a long-open room.
+ return treasure_elapsed(a.animation-a.treasure_open_tick,1000)*1000;
+}
+static unsigned treasure_fade_us(uint32_t elapsed,uint32_t duration){
+ return elapsed>=duration?255u:(elapsed*255u+duration/2)/duration;
+}
+static uint16_t treasure_expo_out(uint32_t ticks){
+ // Godot EXPO_OUT: 1.001 * (1 - 2^(-10*t/d)), with an exact endpoint.
+ // Samples of the original 400ms tween at this renderer's 33ms clock, in
+ // 0..65535 alpha. Constant data needs neither ARM libm nor initialization.
+ static const uint16_t values[]={0,28570,44698,53801,58940,61841,63478,64403,64924,65219,65385,65479,65532};
+ return ticks<sizeof values/sizeof values[0]?values[ticks]:65535;
+}
+static uint16_t treasure_chest_alpha(const App&a,uint32_t now){
+ if(a.treasure_presentation>=3)return treasure_linear(a.treasure_chest_from,65535,now-a.treasure_close_tick,300);
+ if(a.treasure_presentation==2){
+  const uint32_t elapsed=treasure_elapsed(now-a.treasure_open_tick,400);
+  // The target is exactly 0.5, before quantizing to the RGB565 canvas alpha.
+  return uint16_t((65535u*(800-elapsed)+400)/800);
+ }
+ if(a.treasure_presentation==1)return 65535;
+ return a.game.treasure_state==1&&a.game.world.treasure_relic!=NoWorldRelic?32768:65535;
+}
+static uint16_t treasure_banner_alpha(const App&a,uint32_t now){
+ if(a.treasure_presentation>=3)return uint16_t((uint32_t(a.treasure_banner_from)*(65535-treasure_expo_out(now-a.treasure_close_tick))+32767)/65535);
+ if(a.treasure_presentation)return treasure_expo_out(now-a.treasure_banner_tick);
+ return a.game.treasure_state==1&&a.game.world.treasure_relic!=NoWorldRelic?65535:0;
+}
+static int treasure_banner_position(const App&a,uint32_t now){
+ if(a.treasure_presentation>=3)return a.treasure_banner_y;
+ if(!a.treasure_presentation)return 0;
+ // NCommonBanner's 50px hide offset, projected from 1080px to the 218px
+ // room, with BACK_OUT (s=1.70158). AnimateOut kills this position tween.
+ static const int8_t offsets[]={10,7,4,2,0,0,-1,-1,-1,-1,0,0,0};
+ const uint32_t ticks=now-a.treasure_banner_tick;return ticks<sizeof offsets?offsets[ticks]:0;
+}
+static void treasure_remember_room(App&a){a.treasure_room_seed=world_run_seed(a.game);a.treasure_room_act=a.game.world.act_index;a.treasure_room_point=a.game.world.current_point;}
+static void treasure_begin_close(App&a,uint32_t when,uint16_t chest,uint16_t banner,int y){
+ const bool opening=a.treasure_presentation==2;
+ a.treasure_chest_from=chest;a.treasure_banner_from=banner;a.treasure_banner_y=int8_t(y);a.treasure_close_tick=when;
+ a.treasure_presentation=opening?3:4;treasure_remember_room(a);
+ // Keep open_tick: AnimIn restores opacity without restarting Spine.
+}
+void App::reset_treasure_presentation(){
+ treasure_presentation=0;treasure_open_tick=treasure_banner_tick=treasure_close_tick=0;
+ treasure_chest_from=65535;treasure_banner_from=0;treasure_banner_y=0;
+ treasure_holder_delay_us=0;
+ treasure_collection_start_ms=0;treasure_collection_started=treasure_skip_ready=false;
+ treasure_room_seed=0;treasure_room_act=255;treasure_room_point=0xffff;
+}
+unsigned App::treasure_chest_opacity()const{return treasure_alpha8(treasure_chest_alpha(*this,animation));}
+unsigned App::treasure_banner_opacity()const{return treasure_alpha8(treasure_banner_alpha(*this,animation));}
+int App::treasure_banner_offset()const{return treasure_banner_position(*this,animation);}
+unsigned App::treasure_holder_opacity()const{
+ if(treasure_presentation!=2)return treasure_presentation==1?0:255;
+ // NRelic itself fades from transparent black to white over 250ms.
+ return treasure_fade_us(treasure_holder_elapsed(*this),250000);
+}
+unsigned App::treasure_holder_brightness()const{
+ if(treasure_presentation!=2)return treasure_presentation==1?0:255;
+ const uint32_t elapsed=treasure_holder_elapsed(*this);
+ const unsigned holder=elapsed<=treasure_holder_delay_us?0:treasure_fade_us(elapsed-treasure_holder_delay_us,200000);
+ // The holder's black -> white tween has alpha 1. Its delayed RGB and the
+ // child relic's initial RGB fade multiply; neither can erase alpha holes.
+ return div255(holder*treasure_holder_opacity());
+}
+int App::treasure_holder_offset()const{
+ if(treasure_presentation!=2)return treasure_presentation==1?30:0;
+ const uint32_t elapsed=treasure_holder_elapsed(*this);
+ const uint32_t moving=elapsed<=treasure_holder_delay_us?0:elapsed-treasure_holder_delay_us;
+ if(moving>=600000)return 0;
+ // 150px single-player entry offset, projected 1080 -> 218. Evaluate Godot
+ // BACK_OUT (s=1.70158) in Q12; keep its negative overshoot before the
+ // final nearest-pixel projection. Unsigned time conversion and signed
+ // curve products both stay within their respective 32-bit bounds.
+ const int v=int(((600000-moving)*4096u+300000u)/600000u);
+ const int square=(v*v+2048)/4096;
+ const int coefficient=(11066*v+2048)/4096-6970;
+ const int curve=square*coefficient/4096;
+ const int numerator=curve*32700,denominator=4096*1080;
+ return numerator<0?-((-numerator+denominator/2)/denominator):(numerator+denominator/2)/denominator;
+}
+bool App::treasure_pointer_can_take()const{
+ if(!native_room_input_available(*this,Phase::Treasure)||game.treasure_state!=1||game.world.treasure_relic==NoWorldRelic)return false;
+ // RelicFtueCheck disables the collection until its one-second wait and
+ // tutorial. A queued explanation must not be bypassed before the renderer
+ // has opened it; migrated/disabled profiles retain the ordinary timing.
+ if(content.has_ftue_assets()&&!seen_ftue(FtueId::RelicReward))return false;
+ if(!treasure_presentation)return true;
+ // Original MouseFilter=IGNORE lasts through delay + the 600ms movement.
+ // Focused keyboard/controller select does not use this pointer-only gate.
+ return treasure_presentation==2&&treasure_holder_elapsed(*this)>=treasure_holder_delay_us+600000u;
+}
+unsigned App::treasure_collection_opacity()const{
+ // AnimOut explicitly sets the collection to white. In single player the
+ // awarded holder is already invisible, so its artwork must not fade out.
+ if(treasure_presentation>=3)return treasure_alpha8(treasure_linear(65535,0,animation-treasure_close_tick,300));
+ if(treasure_presentation==2)return treasure_alpha8(treasure_linear(0,65535,animation-treasure_open_tick,400));
+ if(treasure_presentation==1)return 0;
+ return game.treasure_state==1&&game.world.treasure_relic!=NoWorldRelic?255:0;
+}
+bool App::treasure_empty_waiting()const{
+ if(!game.world.active||!game.world.room_open||game.world.room_type!=unsigned(WorldRoom::Treasure)||
+    game.treasure_state!=1||game.world.treasure_relic!=NoWorldRelic||
+    treasure_room_seed!=world_run_seed(game)||treasure_room_act!=game.world.act_index||treasure_room_point!=game.world.current_point)return false;
+ // Extra rewards must return before the fresh empty collection starts its
+ // own timer. Restored saves have presentation=0 and intentionally settle.
+ if(treasure_presentation==1)return true;
+ return treasure_presentation==2&&treasure_collection_started&&uint32_t(map_clock_ms-treasure_collection_start_ms)<1000;
+}
+void App::sync_treasure_presentation(){
+ if(treasure_presentation&&(!game.world.active||!game.world.room_open||game.world.room_type!=unsigned(WorldRoom::Treasure)||
+    treasure_room_seed!=world_run_seed(game)||treasure_room_act!=game.world.act_index||treasure_room_point!=game.world.current_point)){
+  reset_treasure_presentation();
+ }
+ // Extra room rewards may temporarily open a selection before the chest's
+ // own relic collection. Start its animation only after that selection ends.
+ if(treasure_presentation==1&&game.world.active&&game.phase==Phase::Treasure&&game.treasure_state){
+  treasure_presentation=2;treasure_open_tick=animation;
+  treasure_collection_started=true;treasure_collection_start_ms=map_clock_ms;
+  if(game.treasure_state==1&&game.world.treasure_relic!=NoWorldRelic)treasure_holder_delay_us=treasure_holder_delay(*this);
+ }
+ if(treasure_presentation==2){
+  uint32_t close=animation;bool completed=game.treasure_state==2;
+  // EnableSkipAfterDelay uses Cmd.Wait(2.5), whose Normal and Fast paths
+  // share the same ordinary SceneTreeTimer. Latch completion across wraps.
+  if(treasure_collection_started&&uint32_t(map_clock_ms-treasure_collection_start_ms)>=2500)treasure_skip_ready=true;
+  // NTreasureRoomRelicCollection's Godot callback completes after 1s of real
+  // time, then NTreasureRoom enables both Proceed and map travel. Fast does
+  // not shorten that wait. Only presentation changes; the controller's empty
+  // chest, saved rewards and RNG remain untouched.
+  if(!completed&&game.world.treasure_relic==NoWorldRelic&&treasure_collection_started&&
+     uint32_t(map_clock_ms-treasure_collection_start_ms)>=1000)completed=true;
+  if(completed)treasure_begin_close(*this,close,treasure_chest_alpha(*this,close),treasure_banner_alpha(*this,close),treasure_banner_position(*this,close));
+ }
+}
+bool App::treasure_can_proceed()const{
+ if(!native_room_input_available(*this,Phase::Treasure))return false;
+ if(!game.treasure_state||treasure_empty_waiting())return false;
+ if(game.treasure_state==2||!treasure_presentation)return true;
+ if(game.world.treasure_relic==NoWorldRelic)return true;
+ // The 2.5s permission uses unscaled real milliseconds; chest/banner/holder
+ // visuals retain their existing animation clock. Restores settle above.
+ return treasure_presentation==2&&(treasure_skip_ready||
+  (treasure_collection_started&&uint32_t(map_clock_ms-treasure_collection_start_ms)>=2500));
+}
+void App::treasure_action(UiAction action){
+ if(!native_room_input_available(*this,Phase::Treasure))return;sync_treasure_presentation();
+ if(action==UiAction::TreasureOpen){
+  if(!game.treasure_state&&open_treasure(game)){reset_treasure_presentation();treasure_presentation=1;treasure_banner_tick=animation;treasure_remember_room(*this);sync_treasure_presentation();cursor=game.world.treasure_relic==NoWorldRelic?1:0;choice_selected_count=0;choice_revision=game.revision;pointer_cancel();}
+ }else if(action==UiAction::TreasureTake){
+  if(content.has_ftue_assets()&&!seen_ftue(FtueId::RelicReward))return;
+  // Capture before acquisition changes treasure_state, including a restored
+  // offer. Original RelicPickingFinished need not await its acquired relic's
+  // subsequent deck choice (for example Dolly's Mirror).
+  const uint16_t chest=treasure_chest_alpha(*this,animation),banner=treasure_banner_alpha(*this,animation);const int y=treasure_banner_position(*this,animation);
+  if(game.treasure_state==1&&game.world.treasure_relic!=NoWorldRelic&&take_treasure(game)){treasure_begin_close(*this,animation,chest,banner,y);cursor=1;choice_selected_count=0;choice_revision=game.revision;pointer_cancel();}
+ }else if(action==UiAction::TreasureLeave&&treasure_can_proceed()&&leave_treasure(game))proceed_map_window();
+}
+bool App::treasure_input(Key key){
+ if(!native_room_input_available(*this,Phase::Treasure))return false;sync_treasure_presentation();
+ const bool take=game.treasure_state==1&&game.world.treasure_relic!=NoWorldRelic;
+ if(game.treasure_state&&!take)cursor=1;
+ if(key==Key::Left||key==Key::Up){cursor=!game.treasure_state||take?0:1;return true;}
+ if(key==Key::Right||key==Key::Down){cursor=1;return true;}
+ if(key==Key::Confirm){treasure_action(cursor==1?UiAction::TreasureLeave:!game.treasure_state?UiAction::TreasureOpen:UiAction::TreasureTake);return true;}
+ if(key==Key::EndTurn){treasure_action(UiAction::TreasureLeave);return true;}
+ if(key==Key::Detail){if(game.treasure_state&&game.world.treasure_relic!=NoWorldRelic){detail_item=game.world.treasure_relic;detail_owned=-1;detail_scroll=0;pointer_cancel();}return true;}
+ return false;
+}
+static bool treasure_clip(Canvas&c,const char*action,uint32_t elapsed,uint32_t duration,unsigned opacity){
+ char model[24]{};TextBuffer name{model,sizeof model,0};name.text("treasure.ACT");name.number(c.a.game.world.act_index+1);const int id=c.a.content.world_clip(model,action);if(id<0)return false;
+ const auto clip=c.a.content.clip(id);if(!clip.count||!duration)return false;
+ // The directory stores integer frame_ms; source-duration normalization keeps
+ // a 23-frame opening from cutting its 1133ms source cycle short at 1127ms.
+ const unsigned frame=mn(int(clip.count)-1,int(uint64_t(elapsed)*clip.count/duration));
+ c.picture(int(clip.first)+int(frame),WorldRoomOriginX,WorldRoomOriginY,WorldRoomWidth,WorldRoomHeight,opacity);return true;
+}
+static void treasure_scene(Canvas&c){
+ auto&a=c.a;const auto&s=a.game;char key[48]{};
+ const unsigned opacity=a.treasure_chest_opacity();
+ c.rect(0,22,320,218,rgb(0,0,0));
+ if(!s.treasure_state){
+  // A retained keyboard cursor does not imply pointer focus. Use the same
+  // source Chest rectangle as its click target, and suppress it under modal UI.
+  const bool focused=native_room_input_available(a,Phase::Treasure)&&(a.pointer.visible?
+   a.pointer.x>=87&&a.pointer.x<249&&a.pointer.y>=96&&a.pointer.y<197:a.cursor==0);
+  treasure_key(s,focused?"CLOSED_OUTLINE":"CLOSED",key,sizeof key);int image=a.content.world_image("treasure",key);
+  if(image>=0){c.picture(image,WorldRoomOriginX,WorldRoomOriginY,WorldRoomWidth,WorldRoomHeight);return;}
+ }else{
+  const uint32_t elapsed=treasure_elapsed(a.animation-a.treasure_open_tick,WorldTreasureOpeningDurationMs+WorldTreasureShineDurationMs);
+  if(a.treasure_presentation==2||a.treasure_presentation==3){
+   if(elapsed<WorldTreasureOpeningDurationMs&&treasure_clip(c,"OPENING",elapsed,WorldTreasureOpeningDurationMs,opacity))return;
+   if(elapsed>=WorldTreasureOpeningDurationMs&&elapsed<WorldTreasureOpeningDurationMs+WorldTreasureShineDurationMs&&
+      treasure_clip(c,"SHINE",elapsed-WorldTreasureOpeningDurationMs,WorldTreasureShineDurationMs,opacity))return;
+  }
+  treasure_key(s,"OPEN",key,sizeof key);int image=a.content.world_image("treasure",key);
+  if(image>=0){c.picture(image,WorldRoomOriginX,WorldRoomOriginY,WorldRoomWidth,WorldRoomHeight,opacity);return;}
+ }
+ // Historical fixtures lack the appended source scene assets. Keep their
+ // existing composition without manufacturing an opening animation.
+ c.picture(A_ChestBackground,0,22,320,218,opacity);c.picture(A_Chest,128,91,0,0,opacity);
+}
+static void treasure_secondary_coins(Canvas&c){
+ const auto&a=c.a;
+ if(!a.treasure_presentation||a.game.world.treasure_gold<=0)return;
+ // NTreasureRoom emits the actual OpenChest gold count. Restoring a room
+ // has no opening clock and must not manufacture another award/burst.
+ const uint32_t elapsed=treasure_elapsed(a.animation-a.treasure_banner_tick,2300)*9/5;
+ if(elapsed>=3750)return;
+ const unsigned count=unsigned(mn(24,a.game.world.treasure_gold));
+ for(unsigned i=0;i<count;++i){const uint32_t hash=room_vfx_hash(0x434f494eu+i*0x9e3779b9u),delay=hash%1251;
+  if(elapsed<delay)continue;const uint32_t t=elapsed-delay,life=2000+(hash>>8)%501;if(t>=life)continue;
+  const int vx=int((hash>>16)%101)-50,vy=30+int((hash>>24)%91);
+  const int x=155+int(hash%81)-40+vx*int(t)/1000;
+  int y=125+int((hash>>7)%25)-12-vy*int(t)/1000+int(uint64_t(t)*t*81/1000000);
+  // The source gold collider has a .75 bounce. A single reflected arc is
+  // sufficient for these sub-three-pixel coins before their2.5s expiry.
+  if(y>192)y=192-(y-192)*3/4;
+  if(y<22||y>237||x<0||x>=320)continue;
+  const unsigned alpha=t>life-500?(life-t)*255/500:255;
+  const int width=1+int((t/75+i)%3);
+  c.picture(A_Coin,x-width/2,y-2,width,3,alpha);
+ }
+}
+static void treasure_relic_glow(Canvas&c,RelicId relic,int x,int y,int side){
+ if(relic>=WorldRelicKinds)return;const unsigned rarity=world_relic_definitions[relic].rarity;
+ if(rarity!=3&&rarity!=4)return;
+ // Original holder uses four cyan uncommon lights or three gold rare ones.
+ const unsigned count=rarity==3?4:3,period=rarity==3?3000:1800;
+ for(unsigned i=0;i<count;++i){const unsigned age=(c.a.map_clock_ms+i*period/count)%period;
+  const unsigned q=room_curve::sine_in_out(age<period/2?age:period-age,period/2);
+  const unsigned alpha=(rarity==3?30:52)*q/4096;
+  const int size=side+9+int(age*side/(period*2));
+  room_vfx_stamp(c,I7_Glow,x-size/2,y-size/2,size,size,alpha,rarity==3?0xadfcff:0xffe014);
+ }
+}
+static void native_treasure_screen(Canvas&c){
+ auto&a=c.a;const auto&s=a.game;a.sync_treasure_presentation();
+ const bool offering=s.treasure_state==1&&s.world.treasure_relic!=NoWorldRelic;
+ if(s.treasure_state&&!offering)a.cursor=1;treasure_scene(c);treasure_secondary_coins(c);
+ const unsigned banner_alpha=a.treasure_banner_opacity();
+ if(banner_alpha){Canvas banner=c;banner.opacity=uint8_t(div255(c.opacity*banner_alpha));const int y=a.treasure_banner_offset();
+  banner.ui(a.content.version()>=Ui6ContentVersion?I6_CommonBanner:U_RewardBanner,98,56+y,125,31);
+  banner.font_face=source_label_face(c.a.content.original_label_fonts(),5);banner.fitted(treasure_text(a,"TREASURE_BANNER","宝藏"),108,61+y,104,20,10,10,rgb(255,246,226),true,false,true,false,rgb(74,60,42));}
+ if(!s.treasure_state){
+  // Projection of the original centered 800x500 Chest control at 1920x1080.
+  c.action(87,96,162,101,UiAction::TreasureOpen);
+ }else if(offering){
+  Canvas collection=c;collection.opacity=uint8_t(div255(c.opacity*a.treasure_collection_opacity()));
+  Canvas holder=collection;holder.opacity=uint8_t(div255(collection.opacity*a.treasure_holder_opacity()));
+  holder.brightness=uint8_t(div255(collection.brightness*a.treasure_holder_brightness()));
+  // The centered single-player holder is 204x204; its child relic is 68px
+  // at 2x scale with a 60px icon. Keep those separate source rectangles.
+  const int holder_y=a.treasure_holder_offset();
+  const auto visual=c.control_visual("TREASURE_RELIC",141,85+holder_y,39,39,ButtonFamily::TreasureRelic,!a.pointer.visible&&a.cursor==0,a.treasure_pointer_can_take());
+  const int size=mx(1,23*visual.scale/4096),left=149-(size-23+1)/2,top=93+holder_y-(size-23+1)/2;
+  treasure_relic_glow(holder,s.world.treasure_relic,left+size/2,top+size/2,size);
+  int outline=collection_assets::RelicOutline[s.world.treasure_relic];
+  if(s.world.treasure_relic==WorldRelicYummyCookie)outline=collection_assets::CookieOutline[a.canonical_cookie_variant()];
+  if(outline>=0){Canvas shadow=holder;shadow.tint_red=shadow.tint_green=shadow.tint_blue=0;shadow.ui(outline,left,top,size,size,128);}
+  holder.picture(a.relic_face_image(s.world.treasure_relic),left,top,size,size);
+  // Omitting the hit while ignored also rejects a press begun before the
+  // gate that is released after it. No disabled capture can become enabled.
+  if(a.treasure_pointer_can_take())c.action(141,85+holder_y,39,39,UiAction::TreasureTake);
+  // NTreasureRoomRelicHolder owns a hover-tip set. The legacy always-visible
+  // title, description and extra Details button are not in this scene.
+ }else{
+  if(s.treasure_state==1&&a.treasure_collection_opacity()){
+   Canvas empty=c;const unsigned self_alpha=treasure_alpha8(treasure_linear(0,65535,a.animation-a.treasure_open_tick,250));
+   empty.opacity=uint8_t(div255(div255(c.opacity*a.treasure_collection_opacity())*self_alpha));
+   if(a.treasure_collection_started)room_vfx_smoke(empty,160,120,84,a.map_clock_ms-a.treasure_collection_start_ms,6,0x454d5054u);
+   empty.fitted(treasure_text(a,"TREASURE_EMPTY","空的……"),112,101,96,38,9,8,rgb(135,206,235),true,false,true);
+  }
+  owned_relic_strip(c);
+ }
+ const bool enabled=a.treasure_can_proceed();native_proceed(c,treasure_text(a,offering?"SKIP_REWARDS_BUTTON":"PROCEED_BUTTON",offering?"跳过":"前进"),enabled,a.cursor==1);
+ native_proceed_action(c,UiAction::TreasureLeave,enabled);
+}

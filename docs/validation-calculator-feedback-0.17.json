@@ -1,0 +1,913 @@
+{
+  "schema": "nspire-calculator-feedback-public-validation-1",
+  "updated_utc": "2026-10-21T16:27:23.193350+00:00",
+  "reference": {
+    "version": "v0.111.0",
+    "revision": "41cef1ea",
+    "scope": "single_player",
+    "excluded": [
+      "audio",
+      "multiplayer",
+      "Timeline"
+    ]
+  },
+  "status": "scoped_final_gates_passed",
+  "checkpoints": {
+    "resources_and_source33_firebird": "2d5c6384cd6a5cab14877c1f0371a335760b00e0",
+    "host_and_wasm_actual_execution": "486fd83f6c7838cbab7590ac8619208d7aa86d09",
+    "ndless_exit_guard_and_arm_build": "127605b7621c424e7990fc7bdde6bfb2a2fa7f5e",
+    "final_chinese_firebird_execution": "127605b7621c424e7990fc7bdde6bfb2a2fa7f5e"
+  },
+  "feedback": [
+    {
+      "id": "ui_and_localization",
+      "status": "implemented_with_limits",
+      "detail": "双语资源与原版键绑定；界面自有文案和剩余 UI 差异明确保留。"
+    },
+    {
+      "id": "character_selection_motion",
+      "status": "implemented_sampled",
+      "detail": "恢复焦点缩放和信息面板进入；五职业开始/500ms 图已审阅，未证明原版逐帧等价。"
+    },
+    {
+      "id": "enemy_death_removal",
+      "status": "implemented_sampled",
+      "detail": "永久移除与保留/复活状态分开；实际设备模拟器观察到一个敌人退场。"
+    },
+    {
+      "id": "cards_turn_banners_topbar",
+      "status": "implemented_sampled",
+      "detail": "统一卡面、文字拟合、省略号、顶部栏及回合提示；敌方回合设备截图未捕获，不计通过。"
+    },
+    {
+      "id": "combat_entry_performance",
+      "status": "io_reduction_verified",
+      "detail": "按遭遇规划和最多四张冷图分批准备；I/O 降低已验证，真实设备提速未证明。"
+    },
+    {
+      "id": "fresh_auto_seed",
+      "status": "firebird_source33_passed",
+      "detail": "A→进程重新启动→Continue→B 的显示/32位/64位种子关系符合预期。"
+    },
+    {
+      "id": "cold_start_progress",
+      "status": "visible_progress_verified",
+      "detail": "八个真实加载阶段，保留完整检查；没有冷启动提速声明。"
+    },
+    {
+      "id": "visible_status_stacks",
+      "status": "source35_actual_packs_passed",
+      "detail": "15项我方/4项敌方，负数和123层，实际中心hit_at及Detail避让通过。"
+    },
+    {
+      "id": "animations_and_keyword_tooltips",
+      "status": "expanded_with_remaining_gaps",
+      "detail": "双语关键词分页/悬停和英文整词换行已审阅；未覆盖全部关键词、引用卡小窗或原版VFX。"
+    }
+  ],
+  "localization": {
+    "resource_checkpoint": "2d5c6384cd6a5cab14877c1f0371a335760b00e0",
+    "ui_literal_bindings": {
+      "total": 935,
+      "original_key_references": 620,
+      "authored_port_or_fallback_english": 315,
+      "count_scope": "UI literal 绑定目录，非全部游戏字符串总数"
+    },
+    "original_reference_locked": true,
+    "same_runtime_selects_pack_marker": true,
+    "packs": [
+      {
+        "language": "zhs",
+        "artifact": "nSpire2-0.17-zhs.nsp.tns",
+        "bytes": 81124916,
+        "sha256": "470a8e2a79338a3bd92d7cf9904b5aa1818f5b6a1ce23b849499e951cbab8f43",
+        "format": 17,
+        "images": 45785,
+        "clips": 1695,
+        "cards": 558,
+        "string_slots": 8192,
+        "auxiliary": 1236,
+        "glyphs": 11900,
+        "codepoints_per_size": 2380,
+        "glyph_sizes": [
+          8,
+          10,
+          12,
+          16,
+          20
+        ],
+        "missing_text_codepoints": [],
+        "missing_runtime_symbols": [],
+        "missing_codepoint_size_pairs": [],
+        "english_cjk_string_count": null,
+        "original_graphics_sha256": "74e0f65635a575d0a83f00547fcd207c8e3e2ab83de8bc777c2db3b4d8a4d56a",
+        "new_static_graphics_sha256": "5f103d544eb5e0b868a29b4b5b39efdf1b42b8090840da6882ef8401c4326386"
+      },
+      {
+        "language": "eng",
+        "artifact": "nSpire2-0.17-eng.nsp.tns",
+        "bytes": 78349238,
+        "sha256": "7cdf55f9a909a6070b968aa8fbaafaebdad12f46e241a5db8451b4aef934ca7b",
+        "format": 17,
+        "images": 45785,
+        "clips": 1695,
+        "cards": 558,
+        "string_slots": 8192,
+        "auxiliary": 1236,
+        "glyphs": 570,
+        "codepoints_per_size": 114,
+        "glyph_sizes": [
+          8,
+          10,
+          12,
+          16,
+          20
+        ],
+        "missing_text_codepoints": [],
+        "missing_runtime_symbols": [],
+        "missing_codepoint_size_pairs": [],
+        "english_cjk_string_count": 0,
+        "original_graphics_sha256": "74e0f65635a575d0a83f00547fcd207c8e3e2ab83de8bc777c2db3b4d8a4d56a",
+        "new_static_graphics_sha256": "5f103d544eb5e0b868a29b4b5b39efdf1b42b8090840da6882ef8401c4326386"
+      }
+    ],
+    "original_graphics_identical": true,
+    "new_static_graphics_identical": true,
+    "appended_static_images": 48,
+    "target_30_to_40_mb_achieved": false,
+    "english_no_cjk_scope": "资源字符串静态审计，非每个动态运行路径的完整翻译证明",
+    "machine_translation_substitutes_for_original_strings": false
+  },
+  "source35_validation": {
+    "checkpoint": "486fd83f6c7838cbab7590ac8619208d7aa86d09",
+    "related_executions": 18,
+    "fallback_executions": 10,
+    "actual_pack_executions": {
+      "zhs": 4,
+      "eng": 4
+    },
+    "status": "passed",
+    "asan": true,
+    "ubsan": true,
+    "leak_sanitizer": false,
+    "leak_sanitizer_limit": "执行环境不能枚举任务；首次失败保留，后续不声称泄漏检查。",
+    "cases": [
+      {
+        "name": "device_feedback_regression",
+        "locale": "fallback",
+        "status": "passed",
+        "returncode": 0,
+        "binary_sha256": "14dc6d37f29bf1b50ebdab66a04a31c9af09d7f63f0961e351fd42af363b8053",
+        "log_sha256": "93cb3c001b9b67f7865453175f0752f08fa9594c18ac9cfe2c69b77d0b8443a9"
+      },
+      {
+        "name": "keyword_tooltip_regression",
+        "locale": "fallback",
+        "status": "passed",
+        "returncode": 0,
+        "binary_sha256": "5783047cf1f90ab6411d98a5bab349dc9a3193ad47b257462243757b1d4b8675",
+        "log_sha256": "ca4c64697d5fc9862d7149ae750e674693458abc2b79e153c173730580b86b94"
+      },
+      {
+        "name": "card_hud_ui_regression",
+        "locale": "fallback",
+        "status": "passed",
+        "returncode": 0,
+        "binary_sha256": "a5b28ea6dfecb696c38176b97d990b4631cea5ac81c35ea1cab349c88cf47d85",
+        "log_sha256": "1523c16b53709bd29ddca2ee2de6e81690ba62bb198aa8798ebe24383c550e5e"
+      },
+      {
+        "name": "card_presentation_regression",
+        "locale": "fallback",
+        "status": "passed",
+        "returncode": 0,
+        "binary_sha256": "9eac80b94201030cb8dae7b126874493b9cad6abd14f5f1f7c6a4254687f70d3",
+        "log_sha256": "9521f8c11d526fd815fae46f24acd20895b0138cac9c63e6ed89369107bebff1"
+      },
+      {
+        "name": "turn_banner_regression",
+        "locale": "fallback",
+        "status": "passed",
+        "returncode": 0,
+        "binary_sha256": "f245a3fb1e5cc41025c083b6692f9b1ec14a64a4ef640c01ea615042a43f3c50",
+        "log_sha256": "f8c8f51bd47ec6f8135eeb15e008b2a0b470884ec29ca77bb31bd8582d2951ee"
+      },
+      {
+        "name": "combat_ui_regression",
+        "locale": "fallback",
+        "status": "passed",
+        "returncode": 0,
+        "binary_sha256": "98f15bfe373e2d0d35430b46caa78906a811a93f135fbdaea099fc52ad46912d",
+        "log_sha256": "7c929f8e7127247e396d05353ecb300708ff3a086559f77aee1c4ec138070447"
+      },
+      {
+        "name": "localized_template_regression",
+        "locale": "fallback",
+        "status": "passed",
+        "returncode": 0,
+        "binary_sha256": "a61644862bc4a05c83e3298939ec2ca8325294f7f28fefa67608e83df65bcb19",
+        "log_sha256": "ab2eb4012a4f1f8756cca70313f1d3ecf513d136e450484e11afb1b1887cd486"
+      },
+      {
+        "name": "world_text_regression",
+        "locale": "fallback",
+        "status": "passed",
+        "returncode": 0,
+        "binary_sha256": "09202052f5bdf6f39b98e527bcfb9c5304448f54c9dc68face25bf2a3a7dd231",
+        "log_sha256": "93eb0b9464315a706ef8cfa34ce9cca89e138ac17865c5af4a32aba55bb09bcb"
+      },
+      {
+        "name": "world_ui_regression",
+        "locale": "fallback",
+        "status": "passed",
+        "returncode": 0,
+        "binary_sha256": "3602fe63933d5c7a661be6adf4ba0eebd2dcfc54bb8c6f4a61de68697c1a421d",
+        "log_sha256": "df0cf5edbcb64d52fec30133e002fb5c054fdba6a36abc0ceafa0efc89e3d3c1"
+      },
+      {
+        "name": "world_frontend_ui_regression",
+        "locale": "fallback",
+        "status": "passed",
+        "returncode": 0,
+        "binary_sha256": "6623100b005fe92098886bc0708ab47f62cc3345e387bc9abc20f2dde003827f",
+        "log_sha256": "569510ab2e2e1f15bf1daec27310dbcbc395dd97ce52a321849d37f577643998"
+      },
+      {
+        "name": "world_text_regression",
+        "locale": "zhs",
+        "status": "passed",
+        "returncode": 0,
+        "binary_sha256": "09202052f5bdf6f39b98e527bcfb9c5304448f54c9dc68face25bf2a3a7dd231",
+        "log_sha256": "b6d4793139acbac9ca54ef48e0a030ef5ff2a0054002d9a4e7640b2fd4fb6890"
+      },
+      {
+        "name": "world_ui_regression",
+        "locale": "zhs",
+        "status": "passed",
+        "returncode": 0,
+        "binary_sha256": "3602fe63933d5c7a661be6adf4ba0eebd2dcfc54bb8c6f4a61de68697c1a421d",
+        "log_sha256": "73f4f58fe8feb339b0d80633b313d3054748c21c159d67a47dda231fdc96ef54"
+      },
+      {
+        "name": "keyword_tooltip_regression",
+        "locale": "zhs",
+        "status": "passed",
+        "returncode": 0,
+        "binary_sha256": "5783047cf1f90ab6411d98a5bab349dc9a3193ad47b257462243757b1d4b8675",
+        "log_sha256": "a36ff34b540d76db7dec292c9b2196150ac62eda3de8e9fad5c0b79ed1da1dbf"
+      },
+      {
+        "name": "device_feedback_regression",
+        "locale": "zhs",
+        "status": "passed",
+        "returncode": 0,
+        "binary_sha256": "14dc6d37f29bf1b50ebdab66a04a31c9af09d7f63f0961e351fd42af363b8053",
+        "log_sha256": "7e8b0540887524280e09499d29bf180749aafedb77da07c39baaccfe7852177b"
+      },
+      {
+        "name": "world_text_regression",
+        "locale": "eng",
+        "status": "passed",
+        "returncode": 0,
+        "binary_sha256": "09202052f5bdf6f39b98e527bcfb9c5304448f54c9dc68face25bf2a3a7dd231",
+        "log_sha256": "d6fcfa564c9a424642d95e1ef5dcca863c92c9013aaa6f486e8654cc0e13fb94"
+      },
+      {
+        "name": "world_ui_regression",
+        "locale": "eng",
+        "status": "passed",
+        "returncode": 0,
+        "binary_sha256": "3602fe63933d5c7a661be6adf4ba0eebd2dcfc54bb8c6f4a61de68697c1a421d",
+        "log_sha256": "73f4f58fe8feb339b0d80633b313d3054748c21c159d67a47dda231fdc96ef54"
+      },
+      {
+        "name": "keyword_tooltip_regression",
+        "locale": "eng",
+        "status": "passed",
+        "returncode": 0,
+        "binary_sha256": "5783047cf1f90ab6411d98a5bab349dc9a3193ad47b257462243757b1d4b8675",
+        "log_sha256": "860c29f12e377fb22c29505d0d40ae2c2f1d8594cf5156af19b982a07d18f197"
+      },
+      {
+        "name": "device_feedback_regression",
+        "locale": "eng",
+        "status": "passed",
+        "returncode": 0,
+        "binary_sha256": "14dc6d37f29bf1b50ebdab66a04a31c9af09d7f63f0961e351fd42af363b8053",
+        "log_sha256": "7e8b0540887524280e09499d29bf180749aafedb77da07c39baaccfe7852177b"
+      }
+    ],
+    "assertion_counts_aggregated": false,
+    "full_suite_claim": false,
+    "evidence": [
+      "source35_related_tests",
+      "source35_test_journal"
+    ]
+  },
+  "source35_visual_review": {
+    "checkpoint": "486fd83f6c7838cbab7590ac8619208d7aa86d09",
+    "status": "reviewed_with_known_limits",
+    "card_hud_selector_frames_per_locale": 18,
+    "keyword_status_banner_frames_total": 12,
+    "frames_total": 48,
+    "dense_fixture": {
+      "player_statuses": 15,
+      "enemy_statuses": 4,
+      "amount_examples": [
+        -3,
+        -2,
+        123
+      ],
+      "effective_hit_at_each_status_center_passed": true
+    },
+    "normal_english_words_wrap_whole": true,
+    "evidence": [
+      "source35_visual_review",
+      "source35_independent_review",
+      "source35_zhs_captures",
+      "source35_eng_captures"
+    ],
+    "limits": [
+      "320x240小字实际舒适度需使用者判断。",
+      "未视觉覆盖每个关键词或所有引用卡小窗。",
+      "静态采样不证明原版动画逐帧一致。"
+    ]
+  },
+  "source35_native_wasm": {
+    "executed_checkpoint": "486fd83f6c7838cbab7590ac8619208d7aa86d09",
+    "status": "passed",
+    "wasm": {
+      "artifact": "source35/nSpire2.wasm",
+      "bytes": 5200648,
+      "sha256": "b4e6ccd0a9c9c4b8db49c90bb59a60e28198a3f1d50192067eb8eb7a35cafd4a"
+    },
+    "fixed_memory_bytes": 16777216,
+    "rgb565_checkpoints_per_locale": 5,
+    "sampled_frames": [
+      -1,
+      179,
+      359,
+      539,
+      719
+    ],
+    "framebuffer_hashes_equal": true,
+    "stage_read_calls_and_bytes_equal": true,
+    "observations": {
+      "zhs": {
+        "frames_after_preparation": 720,
+        "preparation_updates": 59,
+        "maximum_cold_images_per_update": 4,
+        "declared_update_ms": 33,
+        "modeled_preparation_pacing_floor_ms": 1947,
+        "complete_observation_read_bytes": 2224072,
+        "canonical_state_unchanged": true,
+        "save_callback_attempts": 0
+      },
+      "eng": {
+        "frames_after_preparation": 720,
+        "preparation_updates": 59,
+        "maximum_cold_images_per_update": 4,
+        "declared_update_ms": 33,
+        "modeled_preparation_pacing_floor_ms": 1947,
+        "complete_observation_read_bytes": 2113480,
+        "canonical_state_unchanged": true,
+        "save_callback_attempts": 0
+      }
+    },
+    "canonical_state_unchanged": true,
+    "evidence": [
+      "source35_native_wasm",
+      "source35_zhs_equivalence",
+      "source35_eng_equivalence"
+    ],
+    "measurement_scope": "固定输入的主机与WASM执行，无浏览器RAF/合成器或物理计算器FPS。"
+  },
+  "io_control_comparison": {
+    "historical_abba_checkpoints": [
+      "9d1e2a90ef5e942bd93fe304cd47eda0d88d3f69",
+      "2d5c6384cd6a5cab14877c1f0371a335760b00e0"
+    ],
+    "successor_single_replay_checkpoint": "486fd83f6c7838cbab7590ac8619208d7aa86d09",
+    "pack_sha256": "89367cefcf3103d9bd834c47f1eb33e90119d3ab7cbb13b56e952501d2afc342",
+    "save_sha256": "c60baca9345faec5f106dad220c9249d5c414c427c697af789dc0d1af131c5ca",
+    "frames_after_preparation": 720,
+    "includes_preparation_and_first_visible": true,
+    "source27_read_bytes": 24097642,
+    "source35_read_bytes": 2162452,
+    "read_byte_reduction_percent": 91.02629211605019,
+    "source33_to_source35_all_io_deltas_zero": true,
+    "speedup_percent_claim": false,
+    "evidence": [
+      "source33_abba",
+      "source35_v16_control"
+    ]
+  },
+  "source33_firebird": {
+    "executed_checkpoint": "2d5c6384cd6a5cab14877c1f0371a335760b00e0",
+    "language": "zhs",
+    "runtime": {
+      "artifact": "source33/nSpire2.tns",
+      "bytes": 939160,
+      "sha256": "e0c4778626f5838b769343597d0267f7c81625feb38d325ab0517f6e1410b46b"
+    },
+    "pack_sha256": "470a8e2a79338a3bd92d7cf9904b5aa1818f5b6a1ce23b849499e951cbab8f43",
+    "ndless_revision": 2022,
+    "environment": "Firebird CX II CAS, reported 396 MHz",
+    "physical_device": false,
+    "cycle_accurate_performance_claim": false,
+    "startup": {
+      "clock_hz": 32768,
+      "ticks": 1715502,
+      "seconds": 52.35296630859375,
+      "scope": "file_open_and_app_init; excludes Ndless/Zehn loader",
+      "first_render_ticks": 14969,
+      "first_render_seconds": 0.456817626953125,
+      "phase_seconds": {
+        "header": 0.12347412109375,
+        "integrity": 20.257659912109375,
+        "directory": 0.334808349609375,
+        "images": 7.7872314453125,
+        "tile_index": 22.74993896484375,
+        "glyphs": 0.81134033203125,
+        "strings": 0.106689453125,
+        "ready": 0.181182861328125
+      },
+      "speedup_claim": false
+    },
+    "combat_preparation": {
+      "prep_count": 209,
+      "prep_cursor": 209,
+      "prep_pages": 638,
+      "prep_updates": 53,
+      "prep_cold_images": 209,
+      "prep_read_calls": 77,
+      "prep_read_bytes": 1884084,
+      "prep_active": 0,
+      "prep_bounded": 1,
+      "completed_scene_frames": 54,
+      "scene_interval_seconds": 6.52484130859375,
+      "scope": "Scene attribution includes the transition and final preparation/first-visible frame; not decoder time alone."
+    },
+    "visible_combat_window": {
+      "tick_start": 17065,
+      "tick_end": 17365,
+      "simulated_seconds": 3,
+      "completed_frames": 81,
+      "added_read_bytes": 0,
+      "added_read_calls": 0,
+      "scope": "Completed emulator frames only; not physical calculator FPS and not a browser RAF measurement."
+    },
+    "seed_validation": {
+      "new_run_a": {
+        "seed_u32": 3896457568,
+        "run_seed_u64_decimal": "2855106481599043927",
+        "seed_text": "E80C6A8B"
+      },
+      "continued_after_process_relaunch": {
+        "seed_u32": 3896457568,
+        "run_seed_u64_decimal": "2855106481599043927",
+        "seed_text": "E80C6A8B"
+      },
+      "new_run_b": {
+        "seed_u32": 875206578,
+        "run_seed_u64_decimal": "17063211158550750102",
+        "seed_text": "0651E28D"
+      },
+      "continue_preserves_all_three_fields": true,
+      "new_auto_seed_differs_in_all_three_fields": true,
+      "method": "普通UI；无手动种子、fixture注入、存档编辑或guest RAM写入。"
+    },
+    "profile_provenance": "不可变snapshot只读恢复，暂停计数和序列化NAND对应；非首轮USB导出。",
+    "recovered_profile": {
+      "artifact": "source33-zhs-core/recovery/first-invocation-perf.recovered.tns",
+      "bytes": 4624,
+      "sha256": "7487feaf1da4bae41efca0693eb948f760b93119bfa5755656235f7b58ff00bc"
+    },
+    "limits": [
+      "One actual enemy death/removal and one visible power stack were exercised; this does not verify every enemy, power or animation.",
+      "Player-turn banners were captured; the attempted enemy-turn screenshot did not contain that banner and does not prove it rendered.",
+      "Character switching and entrance movement were observed; the entire original zoom tween was not separately measured.",
+      "Chinese pack was executed; English pack glyph/layout gates belong to separate host/WASM evidence.",
+      "本段仍仅记录Source33；Source35主机/WASM和Source36最终退出补测使用各自独立的执行证据。"
+    ],
+    "evidence": [
+      "source33_firebird",
+      "source33_profile_recovery",
+      "source33_firebird_journal"
+    ]
+  },
+  "source36_arm": {
+    "build_checkpoint": "127605b7621c424e7990fc7bdde6bfb2a2fa7f5e",
+    "status": "passed",
+    "source_changed_during_build": false,
+    "launcher": {
+      "artifact": "source36/nSpire2.tns",
+      "bytes": 939953,
+      "sha256": "0662043c138649a790e7e6047cc2dc9dd0cbcd3dd7a1648edc14741612c1f2fd"
+    },
+    "elf": {
+      "artifact": "source36/nSpire2.elf",
+      "bytes": 5603136,
+      "sha256": "b66dbd08e9819b211d099b0676d24c834d4f0c0692470d3f691bd4cfd94d64ca"
+    },
+    "zehn_allocation_bytes": 16311912,
+    "limit_bytes": 16777216,
+    "headroom_bytes": 465304,
+    "recompiled_objects": 1,
+    "reused_objects": 26,
+    "changed_production_paths": [
+      "platform/ndless/main.cpp"
+    ],
+    "evidence": [
+      "source36_arm_build",
+      "source36_object_reuse"
+    ]
+  },
+  "source35_to_source36_inputs": {
+    "status": "passed",
+    "from_checkpoint": "486fd83f6c7838cbab7590ac8619208d7aa86d09",
+    "to_checkpoint": "127605b7621c424e7990fc7bdde6bfb2a2fa7f5e",
+    "declared_source_files": 488,
+    "changed_paths": [
+      "platform/ndless/main.cpp"
+    ],
+    "include_headers_identical": true,
+    "include_file_count": 91,
+    "native_input_count": 278,
+    "web_input_count": 287,
+    "native_inputs_identical": true,
+    "web_inputs_identical": true,
+    "native_and_wasm_actual_executed_checkpoint": "486fd83f6c7838cbab7590ac8619208d7aa86d09",
+    "resources_unchanged": true,
+    "resource_checkpoint": "2d5c6384cd6a5cab14877c1f0371a335760b00e0",
+    "execution_relabelled": false,
+    "evidence": [
+      "source36_target_identity",
+      "source36_target_identity_journal"
+    ]
+  },
+  "source36_device_exit": {
+    "checkpoint": "127605b7621c424e7990fc7bdde6bfb2a2fa7f5e",
+    "status": "passed",
+    "release_gate": {
+      "continuous_release_ticks": 3277,
+      "minimum_sample_interval_ticks": 328,
+      "total_bound_ticks": 65536,
+      "clock_hz": 32768,
+      "input_scope": "八行按键矩阵和touchpad contact/pressed",
+      "os_queue_or_irq_writes": false
+    },
+    "causal_claim": "r2022 loader已有释放检查；Source36稳定释放加固通过相同80ms ENTER复现，但底层Ndless/OS事件机制未被证明，也未覆盖全部按键时序。",
+    "actual_reproduction": {
+      "confirmation_key": "ENTER",
+      "key_down_tick": 7687,
+      "key_up_tick": 7695,
+      "held_simulated_ms": 80,
+      "read_only_app_quit_at_held_end": true,
+      "raw_watch_word": 257,
+      "after_release_observation_tick": 8195,
+      "after_release_simulated_seconds": 5,
+      "os_file_browser_visible": true,
+      "automatic_reopen_observed": false,
+      "shorter_press_or_alternate_key_used": false,
+      "forced_emulator_exit_to_stop_game": false,
+      "comparison": "Source33 failed the same 80ms ENTER confirmation; final source36 passed. Exact underlying Ndless/OS event mechanism is not proven by this comparison."
+    },
+    "evidence": [
+      "source36_firebird",
+      "source36_firebird_journal",
+      "source36_exit_held_capture",
+      "source36_exit_os_capture"
+    ]
+  },
+  "retained_failed_journals": [
+    {
+      "checkpoint": "62d310779e796a60d3b247589218a7a9cd76f9ca",
+      "status": "failed",
+      "returncode": 8,
+      "evidence": {
+        "artifact": "journal/feedback-sanitize-tests-1af97acea24c.json",
+        "bytes": 50984,
+        "sha256": "15ef2d837a8cd39e7d0ea00162cf9374ebd743322a76a4a455a8abde232f3dd9"
+      },
+      "explanation": "LeakSanitizer 环境限制；该次失败保留，后续关闭泄漏扫描，ASan/UBSan 保留。"
+    },
+    {
+      "checkpoint": "62d310779e796a60d3b247589218a7a9cd76f9ca",
+      "status": "failed",
+      "returncode": 1,
+      "evidence": {
+        "artifact": "journal/feedback-sanitize-config-retry-b39440aa6466.json",
+        "bytes": 51231,
+        "sha256": "cf42d0f01458393a2e207a9d25f8e6456c8e7d0384812722eae99791a6623df2"
+      },
+      "explanation": "配置重试失败记录保留；不计作通过。"
+    },
+    {
+      "checkpoint": "2d5c6384cd6a5cab14877c1f0371a335760b00e0",
+      "status": "failed",
+      "returncode": 1,
+      "evidence": {
+        "artifact": "journal/final-zhs-actual-validation-117a61687603.json",
+        "bytes": 50775,
+        "sha256": "d10c26b0c55390d0fca73f04efbf4a5b84b7d0349eb58488926d3f03aaf9c345"
+      },
+      "explanation": "实际中文资源 world_text fixture 的直接战斗初始化不满足状态约束；后续经运行时入口初始化。"
+    },
+    {
+      "checkpoint": "2d5c6384cd6a5cab14877c1f0371a335760b00e0",
+      "status": "failed",
+      "returncode": 1,
+      "evidence": {
+        "artifact": "journal/final-zhs-remaining-validation-5437d29f9399.json",
+        "bytes": 50837,
+        "sha256": "cab803d3e65610c023abaff012625afbd032ff84f1df60507b7cd810b422becf"
+      },
+      "explanation": "实际资源关键词 fixture 未等待新的战斗准备阶段完成；后续修正等待。"
+    },
+    {
+      "checkpoint": "2d5c6384cd6a5cab14877c1f0371a335760b00e0",
+      "status": "failed",
+      "returncode": 1,
+      "evidence": {
+        "artifact": "journal/final-eng-actual-validation-278395f2341f.json",
+        "bytes": 50775,
+        "sha256": "cf78b626673e14d128390dbeffc122f387c1f67c93ad43eb8a3be9560b4056fa"
+      },
+      "explanation": "实际英文 Dusty Tome 模板不附带中文写法的加号；后续移除跨语言错误假设，保留卡名及存档检查。"
+    },
+    {
+      "checkpoint": "486fd83f6c7838cbab7590ac8619208d7aa86d09",
+      "status": "failed",
+      "returncode": 1,
+      "evidence": {
+        "artifact": "journal/source35-wasm-verified-reuse-0c7b7c219592.json",
+        "bytes": 50916,
+        "sha256": "4cf56d5336fc509a4fa0fde08799905088003039853dbb02d6b936a797efca65"
+      },
+      "explanation": "临时输出 basename 改变 WASM name 段；改用相同 basename 后重新执行完整 SHA 证明，没有忽略该段。"
+    }
+  ],
+  "other_retained_findings": [
+    {
+      "checkpoint": "2d5c6384cd6a5cab14877c1f0371a335760b00e0",
+      "kind": "exit_relaunch",
+      "status": "observed_failure",
+      "enter_hold_simulated_ms": 80,
+      "subsequent_screen": "second startup; excluded from normal-OS-exit evidence",
+      "premature_usb_requests": "退出判断前误排队的get/list不计成功导出。"
+    },
+    {
+      "checkpoint": "c466cbb46b65cf3805997c6bc05c67991c3ee45d",
+      "kind": "dense_status_detail_overlap",
+      "status": "found_by_actual_visual_review",
+      "resolved_by": "486fd83f6c7838cbab7590ac8619208d7aa86d09"
+    },
+    {
+      "checkpoint": "2d5c6384cd6a5cab14877c1f0371a335760b00e0",
+      "kind": "starlight_screenshot_misread",
+      "status": "withdrawn_after_actual_text_buffer_check",
+      "original_key": "static_hover_tips.STAR_COUNT.title",
+      "production_text_changed_for_misread": false
+    }
+  ],
+  "non_claims": {
+    "ui_fidelity_percentage": null,
+    "physical_calculator_fps": null,
+    "browser_raf_fps": null,
+    "startup_speedup": false,
+    "all_enemy_animation_verification": false,
+    "all_keyword_visual_verification": false,
+    "all_original_text_without_port_wording": false,
+    "target_30_to_40_mb": false,
+    "english_firebird_execution": false,
+    "exact_ndless_os_event_cause_proven": false
+  },
+  "evidence_catalog": {
+    "locale_conversion": {
+      "artifact": "source33-locales/bilingual-receipt.json",
+      "bytes": 757,
+      "sha256": "ad32d7c145bf90c48a8e2c37177112f36af2632f7958a62508c8be8995be0d88"
+    },
+    "locale_independent_audit": {
+      "artifact": "source33-locales/actual-locale-audit.json",
+      "bytes": 3986,
+      "sha256": "ef166fa98682b6a0721a3d1d431de07838405aab3396690e442cf9d805fef710"
+    },
+    "source35_related_tests": {
+      "artifact": "source35-final-validation/receipt.json",
+      "bytes": 11574,
+      "sha256": "ea9e3283fe1c1d41229aa2f179a60927d94e1f534f70d2d50eb47f2b6aae1a23"
+    },
+    "source35_test_journal": {
+      "artifact": "journal/final-ui-fallback-locales-d5f4dc7c9fed.json",
+      "bytes": 50760,
+      "sha256": "e9a39b94705fefb3314ca63fa4abb76dc593f1d55d0f176b364f22f32d6eaaf0"
+    },
+    "source35_visual_review": {
+      "artifact": "native-ui-review/source35-visual-review.json",
+      "bytes": 2724,
+      "sha256": "fc12e2055e784d839fc33f54a75594e7641c394ddfa3b885320c956d5122b004"
+    },
+    "source35_independent_review": {
+      "artifact": "native-ui-review/source35-independent-review.json",
+      "bytes": 4460,
+      "sha256": "ed50bdb5ac4d679861d655da4cf187f384c3aa1f0ee0b5d697e5a8a8e5bc4095"
+    },
+    "source35_zhs_captures": {
+      "artifact": "native-ui-review/source35-zhs/capture-receipt.json",
+      "bytes": 6261,
+      "sha256": "137be07de2bc9e5a5fac97938806019564b0235bf0391554dc123aeb33b37c15"
+    },
+    "source35_eng_captures": {
+      "artifact": "native-ui-review/source35-eng/capture-receipt.json",
+      "bytes": 6261,
+      "sha256": "18361db046292349b8e1a5ee0ae2c9c77e8d73b51bf8282f53207a41fc3cb6b4"
+    },
+    "source35_native_wasm": {
+      "artifact": "source35-cold-performance/native-wasm-equivalence.json",
+      "bytes": 1146,
+      "sha256": "e575e55a5f6ba2b24adab1e72a34006c6938963e903cdf6d304df5181e1bbcbf"
+    },
+    "source35_v16_control": {
+      "artifact": "source35-cold-performance/v16-control-comparison.json",
+      "bytes": 7124,
+      "sha256": "0e93ec5c511059fcf0502e1fecd8b9e1db6487906d49566f005d81027aaa28df"
+    },
+    "source33_abba": {
+      "artifact": "source33-cold-performance/comparison.json",
+      "bytes": 30975,
+      "sha256": "a35c5cf4d8952c0bfcc792695677335e067a2937b674f69c1bf3ceb30c4eb8a6"
+    },
+    "source33_firebird": {
+      "artifact": "source33-zhs-core/validation-summary.json",
+      "bytes": 17271,
+      "sha256": "1dcf987ad6dd40e6dd8e54e36c0b969d6f77d4a5f7aeabe2c36310986b409f83"
+    },
+    "source33_profile_recovery": {
+      "artifact": "source33-zhs-core/recovery/recovery-receipt.json",
+      "bytes": 2897,
+      "sha256": "61ba618ec97710b5815183fffd0f6b7fe34038f272e2cf097255108592d8fde8"
+    },
+    "source36_arm_build": {
+      "artifact": "journal/source36-arm-platform-reuse-c534615f4fce.json",
+      "bytes": 50886,
+      "sha256": "9f7aecaa0dd07053af508bc4b05d3541bfd24e2862f5a5b0e305e9fa9ad4f084"
+    },
+    "source36_object_reuse": {
+      "artifact": "source36/ndless/object-reuse-receipt.json",
+      "bytes": 346091,
+      "sha256": "59524f4ccee286ec23882352e027154d21e8c7a1869ffc08d1612bd0639849c1"
+    },
+    "source36_target_identity": {
+      "artifact": "source36-target-input-identity.json",
+      "bytes": 74019,
+      "sha256": "89db7ddcb856dd6cb38302b5e25b0ea2fb5c0c09fffb9b295cbd40cde897a8f0"
+    },
+    "source36_target_identity_journal": {
+      "artifact": "journal/source36-target-input-identity-ee508095a7bc.json",
+      "bytes": 50774,
+      "sha256": "7b76f7934299f254419c0e12cd904823183b723d7cf8894c0fe39dad3f2ca6bd"
+    },
+    "source35_zhs_performance": {
+      "artifact": "source35-cold-performance/zhs-observation.json",
+      "bytes": 9047,
+      "sha256": "25d060082a16841dd330775a8d9a9b8ef78b1856ed159a21f2f939c0360b2439"
+    },
+    "source35_zhs_equivalence": {
+      "artifact": "source35-cold-performance/zhs-native-wasm-equivalence.json",
+      "bytes": 5461,
+      "sha256": "7c024c1e203164d6f92ec347b075b9e193d8067be5053b528654878ed57a4bfe"
+    },
+    "source35_eng_performance": {
+      "artifact": "source35-cold-performance/eng-observation.json",
+      "bytes": 9030,
+      "sha256": "5c0848d737650fec98c473c8a298b59064f701aeb04917cb391799fa75c5d38a"
+    },
+    "source35_eng_equivalence": {
+      "artifact": "source35-cold-performance/eng-native-wasm-equivalence.json",
+      "bytes": 5460,
+      "sha256": "2e7473121cce4f5f4632750e6d0386455dffc20b99a0460962960005b2ea8efb"
+    },
+    "source33_firebird_journal": {
+      "artifact": "source33-zhs-core/journal/source33-zhs-core-03ba3feb75f6.json",
+      "bytes": 51074,
+      "sha256": "b8e5db5bf60af21426528477c1b0d9d2b33adb99b2bab63fe7f717b5253906c2"
+    },
+    "source36_firebird": {
+      "artifact": "source36-zhs-final/validation-summary.json",
+      "bytes": 8984,
+      "sha256": "18af0a4854b8964fdebe60db7501dcac79e09fb675bc17efb327a5a32ebe312e"
+    },
+    "source36_firebird_journal": {
+      "artifact": "source36-zhs-final/journal/source36-zhs-final-2ec67681858d.json",
+      "bytes": 51076,
+      "sha256": "26f94e60332bf8725da7063722d19a2e8d85ba48e60927115b8144270bf5712b"
+    },
+    "source36_installed_runtime": {
+      "artifact": "source36-zhs-final/installed-nSpire2.tns",
+      "bytes": 939953,
+      "sha256": "0662043c138649a790e7e6047cc2dc9dd0cbcd3dd7a1648edc14741612c1f2fd"
+    },
+    "source36_inputs": {
+      "artifact": "source36-zhs-final/inputs.json",
+      "bytes": 2889,
+      "sha256": "0e281b6c8cf09ca0dc20dc9370cbea1e101f822d7e63304e5f63ec64111913f3"
+    },
+    "source36_code_signature": {
+      "artifact": "source36-observer/source36-code-signature.json",
+      "bytes": 1109,
+      "sha256": "e171dc2bc99e5ec23af05583a4eb7d5b66cc82b7b0182ca6bd5462ec5cd2ee87"
+    },
+    "source36_usb_profile": {
+      "artifact": "source36-zhs-final/final.perf.json",
+      "bytes": 4393,
+      "sha256": "353a989753b1b9b3b85f8cc72df1a4f6f6e05b132a92ab230f691810d5b013ef"
+    },
+    "source36_usb_save": {
+      "artifact": "source36-zhs-final/continued-b.sav.tns",
+      "bytes": 230088,
+      "sha256": "50e53a34107fd1cae8a2ea9c78584ebf0ae0431b3954a31a787b58ef66d2600c"
+    },
+    "source36_save_codec_inspection": {
+      "artifact": "source36-zhs-final/continued-b-inspection.json",
+      "bytes": 260,
+      "sha256": "4a7c08494b932f6071ce36cf4f8733eaf1fdee3c85cd42d0e20a0d5b6c81a397"
+    },
+    "source36_exit_held_capture": {
+      "artifact": "source36-zhs-final/quit-held-80ms.png",
+      "bytes": 49180,
+      "sha256": "b44cd0b41b9ef8c30ffbf886d4ed280bd3d76b6a3eb3c888ce251aae9fa4309b"
+    },
+    "source36_exit_os_capture": {
+      "artifact": "source36-zhs-final/exit-after-80ms-check.png",
+      "bytes": 6951,
+      "sha256": "ee255db61cd7ef25fe97fc71fee02654787a14c2a25fcd55565e014c2f5745fa"
+    }
+  },
+  "publication_scope": "仅公开源码/生成逻辑/键名映射/验证元数据。相对artifact是证据标识；不包含原版PCK、DLL、字体、提取文本、资源包、设备镜像或截图内容。",
+  "source36_firebird": {
+    "executed_checkpoint": "127605b7621c424e7990fc7bdde6bfb2a2fa7f5e",
+    "status": "passed",
+    "language": "zhs",
+    "physical_device": false,
+    "scope": "启动、标题、Continue到已保存的涅奥房间、保存、同一80ms ENTER退出复现及正常USB导出。",
+    "runtime_sha256": "0662043c138649a790e7e6047cc2dc9dd0cbcd3dd7a1648edc14741612c1f2fd",
+    "pack_sha256": "470a8e2a79338a3bd92d7cf9904b5aa1818f5b6a1ce23b849499e951cbab8f43",
+    "installed_runtime_usb_readback_exact": true,
+    "live_code_signature_matches": 1,
+    "signature_absent_from_source33_launcher": true,
+    "startup": {
+      "profile_scope": "file_open_and_app_init",
+      "ticks": 1367775,
+      "seconds": 41.741180419921875,
+      "all_eight_phases_completed": true,
+      "limitation": "This supplemental start inherits the prior OS/filesystem cache snapshot. Do not calculate a source33-to-source36 cold-start speedup from it.",
+      "counter_and_normal_exit_profile_exact": true
+    },
+    "continue": {
+      "seed_u32": 875206578,
+      "run_seed_u64_decimal": "17063211158550750102",
+      "seed_text": "0651E28D",
+      "same_as_source33_run_b": true,
+      "phase": 10,
+      "saved_room": "Neow",
+      "save_byte_identical_after_continue_and_resave": true,
+      "exported_save_bytes": 230088,
+      "exported_save_sha256": "50e53a34107fd1cae8a2ea9c78584ebf0ae0431b3954a31a787b58ef66d2600c",
+      "production_save_codec_inspection": "passed"
+    },
+    "normal_usb_profile": {
+      "artifact": "source36-zhs-final/final.perf.json",
+      "bytes": 4393,
+      "sha256": "353a989753b1b9b3b85f8cc72df1a4f6f6e05b132a92ab230f691810d5b013ef",
+      "startup_first_render_first_present_match_paused_counters": true
+    },
+    "resource_total": {
+      "ticks": 1084040,
+      "calls": 8248,
+      "bytes_requested": 121120065,
+      "failures": 0,
+      "seeks": 4782
+    },
+    "journal_status": "passed",
+    "source_changed_during_execution": false,
+    "limitations": [
+      "Source33较广游戏流程与启动/战斗观察仍分别归属于Source33，不改为Source36执行。",
+      "本次启动继承此前OS/文件系统缓存状态；不据此宣称Source33到Source36冷启动提速。",
+      "没有英文Firebird运行；英文实际资源画面、密集状态及换行属于Source35主机/WASM证据。",
+      "没有物理计算器FPS、浏览器流畅度、95%原版UI还原或全游戏等价声明。"
+    ],
+    "evidence": [
+      "source36_firebird",
+      "source36_firebird_journal",
+      "source36_installed_runtime",
+      "source36_inputs",
+      "source36_code_signature",
+      "source36_usb_profile",
+      "source36_usb_save",
+      "source36_save_codec_inspection",
+      "source36_exit_os_capture"
+    ]
+  }
+}

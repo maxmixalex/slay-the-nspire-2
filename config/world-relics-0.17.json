@@ -1,0 +1,4095 @@
+{
+  "reference": {
+    "version": "v0.111.0",
+    "build": "41cef1ea"
+  },
+  "model_count": 297,
+  "instance_capacity": 320,
+  "excluded": [
+    {
+      "model": "DeprecatedRelic",
+      "reason": "deprecated placeholder"
+    },
+    {
+      "model": "MassiveScroll",
+      "reason": "IsAllowed requires multiplayer"
+    },
+    {
+      "model": "VakuuCardSelector",
+      "reason": "helper, not a RelicModel"
+    }
+  ],
+  "pools": {
+    "FallbackRelicPool": [
+      "Circlet"
+    ],
+    "SharedRelicPool": [
+      "Akabeko",
+      "AmethystAubergine",
+      "Anchor",
+      "ArtOfWar",
+      "BagOfMarbles",
+      "BagOfPreparation",
+      "BeatingRemnant",
+      "Bellows",
+      "BeltBuckle",
+      "BloodVial",
+      "BookOfFiveRings",
+      "BowlerHat",
+      "Bread",
+      "BronzeScales",
+      "BurningSticks",
+      "Candelabra",
+      "CaptainsWheel",
+      "Cauldron",
+      "CentennialPuzzle",
+      "Chandelier",
+      "ChemicalX",
+      "CloakClasp",
+      "DingyRug",
+      "DollysMirror",
+      "DragonFruit",
+      "EternalFeather",
+      "FestivePopper",
+      "FresnelLens",
+      "FrozenEgg",
+      "GamblingChip",
+      "GamePiece",
+      "GhostSeed",
+      "Girya",
+      "GnarledHammer",
+      "Gorget",
+      "GremlinHorn",
+      "HappyFlower",
+      "HornCleat",
+      "IceCream",
+      "IntimidatingHelmet",
+      "JossPaper",
+      "JuzuBracelet",
+      "Kifuda",
+      "Kunai",
+      "Kusarigama",
+      "Lantern",
+      "LastingCandy",
+      "LavaLamp",
+      "LeesWaffle",
+      "LetterOpener",
+      "LizardTail",
+      "LoomingFruit",
+      "LuckyFysh",
+      "Mango",
+      "MealTicket",
+      "MeatOnTheBone",
+      "MembershipCard",
+      "MercuryHourglass",
+      "MiniatureCannon",
+      "MiniatureTent",
+      "MoltenEgg",
+      "MummifiedHand",
+      "MysticLighter",
+      "Nunchaku",
+      "OddlySmoothStone",
+      "OldCoin",
+      "Orichalcum",
+      "OrnamentalFan",
+      "Orrery",
+      "Pantograph",
+      "ParryingShield",
+      "Pear",
+      "PenNib",
+      "Pendulum",
+      "Permafrost",
+      "PetrifiedToad",
+      "Planisphere",
+      "Pocketwatch",
+      "PotionBelt",
+      "PrayerWheel",
+      "PunchDagger",
+      "RainbowRing",
+      "RazorTooth",
+      "RedMask",
+      "RegalPillow",
+      "ReptileTrinket",
+      "RingingTriangle",
+      "RippleBasin",
+      "RoyalStamp",
+      "ScreamingFlagon",
+      "Shovel",
+      "Shuriken",
+      "SlingOfCourage",
+      "SparklingRouge",
+      "StoneCalendar",
+      "StoneCracker",
+      "Strawberry",
+      "StrikeDummy",
+      "SturdyClamp",
+      "TheAbacus",
+      "TheCourier",
+      "TinyMailbox",
+      "Toolbox",
+      "ToxicEgg",
+      "TungstenRod",
+      "TuningFork",
+      "UnceasingTop",
+      "UnsettlingLamp",
+      "Vajra",
+      "Vambrace",
+      "VenerableTeaSet",
+      "VeryHotCocoa",
+      "VexingPuzzlebox",
+      "WarPaint",
+      "Whetstone",
+      "WhiteBeastStatue",
+      "WhiteStar",
+      "WingCharm"
+    ],
+    "DefectRelicPool": [
+      "CrackedCore",
+      "DataDisk",
+      "EmotionChip",
+      "GoldPlatedCables",
+      "PowerCell",
+      "Metronome",
+      "RunicCapacitor",
+      "SymbioticVirus"
+    ],
+    "DeprecatedRelicPool": [
+      "DeprecatedRelic"
+    ],
+    "IroncladRelicPool": [
+      "Brimstone",
+      "BurningBlood",
+      "CharonsAshes",
+      "DemonTongue",
+      "PaperPhrog",
+      "RedSkull",
+      "RuinedHelmet",
+      "SelfFormingClay"
+    ],
+    "SilentRelicPool": [
+      "HelicalDart",
+      "NinjaScroll",
+      "PaperKrane",
+      "RingOfTheSnake",
+      "SneckoSkull",
+      "Tingsha",
+      "ToughBandages",
+      "TwistedFunnel"
+    ],
+    "NecrobinderRelicPool": [
+      "BigHat",
+      "BoneFlute",
+      "BookRepairKnife",
+      "Bookmark",
+      "BoundPhylactery",
+      "FuneraryMask",
+      "IvoryTile",
+      "UndyingSigil"
+    ],
+    "RegentRelicPool": [
+      "DivineRight",
+      "FencingManual",
+      "GalacticDust",
+      "LunarPastry",
+      "MiniRegent",
+      "OrangeDough",
+      "Regalite",
+      "VitruvianMinion"
+    ],
+    "EventRelicPool": [
+      "AlchemicalCoffer",
+      "ArcaneScroll",
+      "ArchaicTooth",
+      "Astrolabe",
+      "BeautifulBracelet",
+      "BigMushroom",
+      "BiiigHug",
+      "BingBong",
+      "BlackBlood",
+      "BlackStar",
+      "BlessedAntler",
+      "BloodSoakedRose",
+      "BoneTea",
+      "BoomingConch",
+      "BrilliantScarf",
+      "Byrdpip",
+      "CallingBell",
+      "ChoicesParadox",
+      "ChosenCheese",
+      "Claws",
+      "Crossbow",
+      "CursedPearl",
+      "DarkstonePeriapt",
+      "DaughterOfTheWind",
+      "DelicateFrond",
+      "DiamondDiadem",
+      "DistinguishedCape",
+      "DivineDestiny",
+      "DowsingRod",
+      "DreamCatcher",
+      "Driftwood",
+      "DustyTome",
+      "Ectoplasm",
+      "ElectricShrymp",
+      "EmberTea",
+      "EmptyCage",
+      "FakeAnchor",
+      "FakeBloodVial",
+      "FakeHappyFlower",
+      "FakeLeesWaffle",
+      "FakeMango",
+      "FakeMerchantsRug",
+      "FakeOrichalcum",
+      "FakeSneckoEye",
+      "FakeStrikeDummy",
+      "FakeVenerableTeaSet",
+      "Fiddle",
+      "FishingRod",
+      "ForgottenSoul",
+      "FragrantMushroom",
+      "FurCoat",
+      "GlassEye",
+      "Glitter",
+      "GoldenCompass",
+      "GoldenPearl",
+      "HandDrill",
+      "HeftyTablet",
+      "HistoryCourse",
+      "InfusedCore",
+      "IronClub",
+      "JeweledMask",
+      "JewelryBox",
+      "Kaleidoscope",
+      "LargeCapsule",
+      "LastingCandy",
+      "LavaRock",
+      "LeadPaperweight",
+      "LeafyPoultice",
+      "LordsParasol",
+      "LostCoffer",
+      "LostWisp",
+      "MassiveScroll",
+      "MawBank",
+      "MeatCleaver",
+      "MrStruggles",
+      "MusicBox",
+      "NeowsBones",
+      "NeowsSacrifice",
+      "NeowsTalisman",
+      "NeowsTorment",
+      "NewLeaf",
+      "NutritiousOyster",
+      "NutritiousSoup",
+      "PaelsBlood",
+      "PaelsClaw",
+      "PaelsEye",
+      "PaelsFlesh",
+      "PaelsGrowth",
+      "PaelsHorn",
+      "PaelsLegion",
+      "PaelsTears",
+      "PaelsTooth",
+      "PaelsWing",
+      "PandorasBox",
+      "PhialHolster",
+      "PhilosophersStone",
+      "PhylacteryUnbound",
+      "PollinousCore",
+      "Pomander",
+      "PrecariousShears",
+      "PreciseScissors",
+      "PreservedFog",
+      "PrismaticGem",
+      "PumpkinCandle",
+      "RadiantPearl",
+      "RazorTooth",
+      "RingOfTheDrake",
+      "RoyalPoison",
+      "RunicPyramid",
+      "Sai",
+      "SandCastle",
+      "ScrollBoxes",
+      "SeaGlass",
+      "SealOfGold",
+      "SereTalon",
+      "SignetRing",
+      "SilkenTress",
+      "SilverCrucible",
+      "SmallCapsule",
+      "SneckoEye",
+      "Sozu",
+      "SparklingRouge",
+      "SpikedGauntlets",
+      "StoneHumidifier",
+      "Storybook",
+      "SwordOfJade",
+      "SwordOfStone",
+      "TanxsWhistle",
+      "TeaOfDiscourtesy",
+      "TheBoot",
+      "ThrowingAxe",
+      "ToastyMittens",
+      "TouchOfOrobas",
+      "ToyBox",
+      "TriBoomerang",
+      "VelvetChoker",
+      "WarHammer",
+      "WhisperingEarring",
+      "WingedBoots",
+      "WongoCustomerAppreciationBadge",
+      "WongosMysteryTicket",
+      "YummyCookie"
+    ]
+  },
+  "relics": [
+    {
+      "id": 0,
+      "enum": "WorldRelicVajra",
+      "model": "Vajra",
+      "key": "VAJRA",
+      "rarity": 2,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {
+        "Strength": 1
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 1,
+      "enum": "WorldRelicAnchor",
+      "model": "Anchor",
+      "key": "ANCHOR",
+      "rarity": 2,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {
+        "Block": 10
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 2,
+      "enum": "WorldRelicBagOfPreparation",
+      "model": "BagOfPreparation",
+      "key": "BAG_OF_PREPARATION",
+      "rarity": 2,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {
+        "Cards": 2
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 3,
+      "enum": "WorldRelicBurningBlood",
+      "model": "BurningBlood",
+      "key": "BURNING_BLOOD",
+      "rarity": 1,
+      "character_mask": 1,
+      "flags": 0,
+      "vars": {
+        "Heal": 6
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 4,
+      "enum": "WorldRelicLantern",
+      "model": "Lantern",
+      "key": "LANTERN",
+      "rarity": 2,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {
+        "Energy": 1
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 5,
+      "enum": "WorldRelicOddlySmoothStone",
+      "model": "OddlySmoothStone",
+      "key": "ODDLY_SMOOTH_STONE",
+      "rarity": 2,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {
+        "Dexterity": 1
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 6,
+      "enum": "WorldRelicBloodVial",
+      "model": "BloodVial",
+      "key": "BLOOD_VIAL",
+      "rarity": 2,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {
+        "Heal": 2
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 7,
+      "enum": "WorldRelicHappyFlower",
+      "model": "HappyFlower",
+      "key": "HAPPY_FLOWER",
+      "rarity": 2,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {
+        "Energy": 1,
+        "Turns": 3
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 8,
+      "enum": "WorldRelicOrichalcum",
+      "model": "Orichalcum",
+      "key": "ORICHALCUM",
+      "rarity": 3,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {
+        "Block": 6
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 9,
+      "enum": "WorldRelicPenNib",
+      "model": "PenNib",
+      "key": "PEN_NIB",
+      "rarity": 3,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {},
+      "implementation": "pending"
+    },
+    {
+      "id": 10,
+      "enum": "WorldRelicStrawberry",
+      "model": "Strawberry",
+      "key": "STRAWBERRY",
+      "rarity": 2,
+      "character_mask": 0,
+      "flags": 1,
+      "vars": {
+        "MaxHp": 7
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 11,
+      "enum": "WorldRelicPear",
+      "model": "Pear",
+      "key": "PEAR",
+      "rarity": 3,
+      "character_mask": 0,
+      "flags": 1,
+      "vars": {
+        "MaxHp": 10
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 12,
+      "enum": "WorldRelicMango",
+      "model": "Mango",
+      "key": "MANGO",
+      "rarity": 4,
+      "character_mask": 0,
+      "flags": 1,
+      "vars": {
+        "MaxHp": 14
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 13,
+      "enum": "WorldRelicBagOfMarbles",
+      "model": "BagOfMarbles",
+      "key": "BAG_OF_MARBLES",
+      "rarity": 2,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {
+        "Vulnerable": 1
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 14,
+      "enum": "WorldRelicAkabeko",
+      "model": "Akabeko",
+      "key": "AKABEKO",
+      "rarity": 3,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {
+        "Vigor": 8
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 15,
+      "enum": "WorldRelicBronzeScales",
+      "model": "BronzeScales",
+      "key": "BRONZE_SCALES",
+      "rarity": 2,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {
+        "Thorns": 3
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 16,
+      "enum": "WorldRelicRingOfTheSnake",
+      "model": "RingOfTheSnake",
+      "key": "RING_OF_THE_SNAKE",
+      "rarity": 1,
+      "character_mask": 2,
+      "flags": 0,
+      "vars": {
+        "Cards": 2
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 17,
+      "enum": "WorldRelicHornCleat",
+      "model": "HornCleat",
+      "key": "HORN_CLEAT",
+      "rarity": 3,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {
+        "Block": 14
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 18,
+      "enum": "WorldRelicCaptainsWheel",
+      "model": "CaptainsWheel",
+      "key": "CAPTAINS_WHEEL",
+      "rarity": 4,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {
+        "Block": 18
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 19,
+      "enum": "WorldRelicMercuryHourglass",
+      "model": "MercuryHourglass",
+      "key": "MERCURY_HOURGLASS",
+      "rarity": 3,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {
+        "Damage": 3
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 20,
+      "enum": "WorldRelicArtOfWar",
+      "model": "ArtOfWar",
+      "key": "ART_OF_WAR",
+      "rarity": 4,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {
+        "Energy": 1
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 21,
+      "enum": "WorldRelicRegalPillow",
+      "model": "RegalPillow",
+      "key": "REGAL_PILLOW",
+      "rarity": 2,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {
+        "Heal": 15
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 22,
+      "enum": "WorldRelicMealTicket",
+      "model": "MealTicket",
+      "key": "MEAL_TICKET",
+      "rarity": 2,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {
+        "Heal": 15
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 23,
+      "enum": "WorldRelicOldCoin",
+      "model": "OldCoin",
+      "key": "OLD_COIN",
+      "rarity": 4,
+      "character_mask": 0,
+      "flags": 3,
+      "vars": {
+        "Gold": 300
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 24,
+      "enum": "WorldRelicCentennialPuzzle",
+      "model": "CentennialPuzzle",
+      "key": "CENTENNIAL_PUZZLE",
+      "rarity": 2,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {
+        "Cards": 3
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 25,
+      "enum": "WorldRelicKunai",
+      "model": "Kunai",
+      "key": "KUNAI",
+      "rarity": 4,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {
+        "Cards": 3,
+        "Dexterity": 1
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 26,
+      "enum": "WorldRelicShuriken",
+      "model": "Shuriken",
+      "key": "SHURIKEN",
+      "rarity": 4,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {
+        "Cards": 3,
+        "Strength": 1
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 27,
+      "enum": "WorldRelicOrnamentalFan",
+      "model": "OrnamentalFan",
+      "key": "ORNAMENTAL_FAN",
+      "rarity": 3,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {
+        "Cards": 3,
+        "Block": 4
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 28,
+      "enum": "WorldRelicLetterOpener",
+      "model": "LetterOpener",
+      "key": "LETTER_OPENER",
+      "rarity": 3,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {
+        "Cards": 3,
+        "Damage": 5
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 29,
+      "enum": "WorldRelicNunchaku",
+      "model": "Nunchaku",
+      "key": "NUNCHAKU",
+      "rarity": 3,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {
+        "Cards": 10,
+        "Energy": 1
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 30,
+      "enum": "WorldRelicCrackedCore",
+      "model": "CrackedCore",
+      "key": "CRACKED_CORE",
+      "rarity": 1,
+      "character_mask": 4,
+      "flags": 0,
+      "vars": {
+        "Lightning": 1
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 31,
+      "enum": "WorldRelicDivineRight",
+      "model": "DivineRight",
+      "key": "DIVINE_RIGHT",
+      "rarity": 1,
+      "character_mask": 8,
+      "flags": 0,
+      "vars": {
+        "Stars": 3
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 32,
+      "enum": "WorldRelicBoundPhylactery",
+      "model": "BoundPhylactery",
+      "key": "BOUND_PHYLACTERY",
+      "rarity": 1,
+      "character_mask": 16,
+      "flags": 4,
+      "vars": {
+        "Summon": 1
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 33,
+      "enum": "WorldRelicAlchemicalCoffer",
+      "model": "AlchemicalCoffer",
+      "key": "ALCHEMICAL_COFFER",
+      "rarity": 7,
+      "character_mask": 0,
+      "flags": 1,
+      "vars": {
+        "PotionSlots": 4
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 34,
+      "enum": "WorldRelicAmethystAubergine",
+      "model": "AmethystAubergine",
+      "key": "AMETHYST_AUBERGINE",
+      "rarity": 2,
+      "character_mask": 0,
+      "flags": 2,
+      "vars": {
+        "Gold": 15
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 35,
+      "enum": "WorldRelicArcaneScroll",
+      "model": "ArcaneScroll",
+      "key": "ARCANE_SCROLL",
+      "rarity": 7,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {
+        "Cards": 1
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 36,
+      "enum": "WorldRelicArchaicTooth",
+      "model": "ArchaicTooth",
+      "key": "ARCHAIC_TOOTH",
+      "rarity": 7,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {},
+      "implementation": "pending"
+    },
+    {
+      "id": 37,
+      "enum": "WorldRelicAstrolabe",
+      "model": "Astrolabe",
+      "key": "ASTROLABE",
+      "rarity": 7,
+      "character_mask": 0,
+      "flags": 1,
+      "vars": {
+        "Cards": 3
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 38,
+      "enum": "WorldRelicBeatingRemnant",
+      "model": "BeatingRemnant",
+      "key": "BEATING_REMNANT",
+      "rarity": 4,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {
+        "MaxHpLoss": 20
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 39,
+      "enum": "WorldRelicBeautifulBracelet",
+      "model": "BeautifulBracelet",
+      "key": "BEAUTIFUL_BRACELET",
+      "rarity": 7,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {
+        "Cards": 4,
+        "Swift": 2
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 40,
+      "enum": "WorldRelicBellows",
+      "model": "Bellows",
+      "key": "BELLOWS",
+      "rarity": 4,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {},
+      "implementation": "pending"
+    },
+    {
+      "id": 41,
+      "enum": "WorldRelicBeltBuckle",
+      "model": "BeltBuckle",
+      "key": "BELT_BUCKLE",
+      "rarity": 5,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {
+        "Dexterity": 2
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 42,
+      "enum": "WorldRelicBigHat",
+      "model": "BigHat",
+      "key": "BIG_HAT",
+      "rarity": 4,
+      "character_mask": 16,
+      "flags": 0,
+      "vars": {
+        "Cards": 2
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 43,
+      "enum": "WorldRelicBigMushroom",
+      "model": "BigMushroom",
+      "key": "BIG_MUSHROOM",
+      "rarity": 6,
+      "character_mask": 0,
+      "flags": 1,
+      "vars": {
+        "MaxHp": 20,
+        "Cards": 2
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 44,
+      "enum": "WorldRelicBiiigHug",
+      "model": "BiiigHug",
+      "key": "BIIIG_HUG",
+      "rarity": 7,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {
+        "Cards": 4
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 45,
+      "enum": "WorldRelicBingBong",
+      "model": "BingBong",
+      "key": "BING_BONG",
+      "rarity": 6,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {},
+      "implementation": "pending"
+    },
+    {
+      "id": 46,
+      "enum": "WorldRelicBlackBlood",
+      "model": "BlackBlood",
+      "key": "BLACK_BLOOD",
+      "rarity": 1,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {
+        "Heal": 12
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 47,
+      "enum": "WorldRelicBlackStar",
+      "model": "BlackStar",
+      "key": "BLACK_STAR",
+      "rarity": 7,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {},
+      "implementation": "pending"
+    },
+    {
+      "id": 48,
+      "enum": "WorldRelicBlessedAntler",
+      "model": "BlessedAntler",
+      "key": "BLESSED_ANTLER",
+      "rarity": 7,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {
+        "Energy": 1,
+        "Cards": 3
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 49,
+      "enum": "WorldRelicBloodSoakedRose",
+      "model": "BloodSoakedRose",
+      "key": "BLOOD_SOAKED_ROSE",
+      "rarity": 7,
+      "character_mask": 0,
+      "flags": 1,
+      "vars": {
+        "Energy": 1
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 50,
+      "enum": "WorldRelicBoneFlute",
+      "model": "BoneFlute",
+      "key": "BONE_FLUTE",
+      "rarity": 2,
+      "character_mask": 16,
+      "flags": 0,
+      "vars": {
+        "Block": 2
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 51,
+      "enum": "WorldRelicBoneTea",
+      "model": "BoneTea",
+      "key": "BONE_TEA",
+      "rarity": 6,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {},
+      "implementation": "pending"
+    },
+    {
+      "id": 52,
+      "enum": "WorldRelicBookOfFiveRings",
+      "model": "BookOfFiveRings",
+      "key": "BOOK_OF_FIVE_RINGS",
+      "rarity": 2,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {
+        "Cards": 5,
+        "Heal": 20
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 53,
+      "enum": "WorldRelicBookRepairKnife",
+      "model": "BookRepairKnife",
+      "key": "BOOK_REPAIR_KNIFE",
+      "rarity": 3,
+      "character_mask": 16,
+      "flags": 0,
+      "vars": {
+        "Heal": 3
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 54,
+      "enum": "WorldRelicBookmark",
+      "model": "Bookmark",
+      "key": "BOOKMARK",
+      "rarity": 4,
+      "character_mask": 16,
+      "flags": 0,
+      "vars": {},
+      "implementation": "pending"
+    },
+    {
+      "id": 55,
+      "enum": "WorldRelicBoomingConch",
+      "model": "BoomingConch",
+      "key": "BOOMING_CONCH",
+      "rarity": 7,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {
+        "Cards": 2,
+        "Energy": 1
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 56,
+      "enum": "WorldRelicBowlerHat",
+      "model": "BowlerHat",
+      "key": "BOWLER_HAT",
+      "rarity": 3,
+      "character_mask": 0,
+      "flags": 2,
+      "vars": {
+        "GoldIncrease": 1.25
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 57,
+      "enum": "WorldRelicBread",
+      "model": "Bread",
+      "key": "BREAD",
+      "rarity": 5,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {
+        "GainEnergy": 1,
+        "LoseEnergy": 2
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 58,
+      "enum": "WorldRelicBrilliantScarf",
+      "model": "BrilliantScarf",
+      "key": "BRILLIANT_SCARF",
+      "rarity": 7,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {
+        "Cards": 5
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 59,
+      "enum": "WorldRelicBrimstone",
+      "model": "Brimstone",
+      "key": "BRIMSTONE",
+      "rarity": 5,
+      "character_mask": 1,
+      "flags": 0,
+      "vars": {
+        "SelfStrength": 2,
+        "EnemyStrength": 1
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 60,
+      "enum": "WorldRelicBurningSticks",
+      "model": "BurningSticks",
+      "key": "BURNING_STICKS",
+      "rarity": 5,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {},
+      "implementation": "pending"
+    },
+    {
+      "id": 61,
+      "enum": "WorldRelicByrdpip",
+      "model": "Byrdpip",
+      "key": "BYRDPIP",
+      "rarity": 6,
+      "character_mask": 0,
+      "flags": 5,
+      "vars": {},
+      "implementation": "pending"
+    },
+    {
+      "id": 62,
+      "enum": "WorldRelicCallingBell",
+      "model": "CallingBell",
+      "key": "CALLING_BELL",
+      "rarity": 7,
+      "character_mask": 0,
+      "flags": 1,
+      "vars": {
+        "Relics": 3
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 63,
+      "enum": "WorldRelicCandelabra",
+      "model": "Candelabra",
+      "key": "CANDELABRA",
+      "rarity": 3,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {
+        "Energy": 2
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 64,
+      "enum": "WorldRelicCauldron",
+      "model": "Cauldron",
+      "key": "CAULDRON",
+      "rarity": 5,
+      "character_mask": 0,
+      "flags": 1,
+      "vars": {
+        "Potions": 5
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 65,
+      "enum": "WorldRelicChandelier",
+      "model": "Chandelier",
+      "key": "CHANDELIER",
+      "rarity": 4,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {
+        "Energy": 3
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 66,
+      "enum": "WorldRelicCharonsAshes",
+      "model": "CharonsAshes",
+      "key": "CHARONS_ASHES",
+      "rarity": 4,
+      "character_mask": 1,
+      "flags": 0,
+      "vars": {
+        "Damage": 3
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 67,
+      "enum": "WorldRelicChemicalX",
+      "model": "ChemicalX",
+      "key": "CHEMICAL_X",
+      "rarity": 5,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {
+        "Increase": 2
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 68,
+      "enum": "WorldRelicChoicesParadox",
+      "model": "ChoicesParadox",
+      "key": "CHOICES_PARADOX",
+      "rarity": 7,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {
+        "Cards": 5
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 69,
+      "enum": "WorldRelicChosenCheese",
+      "model": "ChosenCheese",
+      "key": "CHOSEN_CHEESE",
+      "rarity": 6,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {
+        "MaxHp": 1
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 70,
+      "enum": "WorldRelicCirclet",
+      "model": "Circlet",
+      "key": "CIRCLET",
+      "rarity": 0,
+      "character_mask": 0,
+      "flags": 8,
+      "vars": {},
+      "implementation": "pending"
+    },
+    {
+      "id": 71,
+      "enum": "WorldRelicClaws",
+      "model": "Claws",
+      "key": "CLAWS",
+      "rarity": 7,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {
+        "Cards": 6
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 72,
+      "enum": "WorldRelicCloakClasp",
+      "model": "CloakClasp",
+      "key": "CLOAK_CLASP",
+      "rarity": 4,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {
+        "Block": 1
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 73,
+      "enum": "WorldRelicCrossbow",
+      "model": "Crossbow",
+      "key": "CROSSBOW",
+      "rarity": 7,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {},
+      "implementation": "pending"
+    },
+    {
+      "id": 74,
+      "enum": "WorldRelicCursedPearl",
+      "model": "CursedPearl",
+      "key": "CURSED_PEARL",
+      "rarity": 7,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {
+        "Gold": 333
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 75,
+      "enum": "WorldRelicDarkstonePeriapt",
+      "model": "DarkstonePeriapt",
+      "key": "DARKSTONE_PERIAPT",
+      "rarity": 6,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {
+        "MaxHp": 6
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 76,
+      "enum": "WorldRelicDataDisk",
+      "model": "DataDisk",
+      "key": "DATA_DISK",
+      "rarity": 2,
+      "character_mask": 4,
+      "flags": 0,
+      "vars": {
+        "Focus": 1
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 77,
+      "enum": "WorldRelicDaughterOfTheWind",
+      "model": "DaughterOfTheWind",
+      "key": "DAUGHTER_OF_THE_WIND",
+      "rarity": 6,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {
+        "Block": 1
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 78,
+      "enum": "WorldRelicDelicateFrond",
+      "model": "DelicateFrond",
+      "key": "DELICATE_FROND",
+      "rarity": 7,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {},
+      "implementation": "pending"
+    },
+    {
+      "id": 79,
+      "enum": "WorldRelicDemonTongue",
+      "model": "DemonTongue",
+      "key": "DEMON_TONGUE",
+      "rarity": 4,
+      "character_mask": 1,
+      "flags": 0,
+      "vars": {},
+      "implementation": "pending"
+    },
+    {
+      "id": 80,
+      "enum": "WorldRelicDiamondDiadem",
+      "model": "DiamondDiadem",
+      "key": "DIAMOND_DIADEM",
+      "rarity": 7,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {
+        "Block": 20
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 81,
+      "enum": "WorldRelicDingyRug",
+      "model": "DingyRug",
+      "key": "DINGY_RUG",
+      "rarity": 5,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {},
+      "implementation": "pending"
+    },
+    {
+      "id": 82,
+      "enum": "WorldRelicDistinguishedCape",
+      "model": "DistinguishedCape",
+      "key": "DISTINGUISHED_CAPE",
+      "rarity": 7,
+      "character_mask": 0,
+      "flags": 1,
+      "vars": {
+        "Curses": 2,
+        "Cards": 3
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 83,
+      "enum": "WorldRelicDivineDestiny",
+      "model": "DivineDestiny",
+      "key": "DIVINE_DESTINY",
+      "rarity": 1,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {
+        "Stars": 7
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 84,
+      "enum": "WorldRelicDollysMirror",
+      "model": "DollysMirror",
+      "key": "DOLLYS_MIRROR",
+      "rarity": 5,
+      "character_mask": 0,
+      "flags": 1,
+      "vars": {},
+      "implementation": "pending"
+    },
+    {
+      "id": 85,
+      "enum": "WorldRelicDowsingRod",
+      "model": "DowsingRod",
+      "key": "DOWSING_ROD",
+      "rarity": 7,
+      "character_mask": 0,
+      "flags": 1,
+      "vars": {},
+      "implementation": "pending"
+    },
+    {
+      "id": 86,
+      "enum": "WorldRelicDragonFruit",
+      "model": "DragonFruit",
+      "key": "DRAGON_FRUIT",
+      "rarity": 5,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {
+        "MaxHp": 1
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 87,
+      "enum": "WorldRelicDreamCatcher",
+      "model": "DreamCatcher",
+      "key": "DREAM_CATCHER",
+      "rarity": 6,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {},
+      "implementation": "pending"
+    },
+    {
+      "id": 88,
+      "enum": "WorldRelicDriftwood",
+      "model": "Driftwood",
+      "key": "DRIFTWOOD",
+      "rarity": 7,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {},
+      "implementation": "pending"
+    },
+    {
+      "id": 89,
+      "enum": "WorldRelicDustyTome",
+      "model": "DustyTome",
+      "key": "DUSTY_TOME",
+      "rarity": 7,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {},
+      "implementation": "pending"
+    },
+    {
+      "id": 90,
+      "enum": "WorldRelicEctoplasm",
+      "model": "Ectoplasm",
+      "key": "ECTOPLASM",
+      "rarity": 7,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {
+        "Energy": 1
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 91,
+      "enum": "WorldRelicElectricShrymp",
+      "model": "ElectricShrymp",
+      "key": "ELECTRIC_SHRYMP",
+      "rarity": 7,
+      "character_mask": 0,
+      "flags": 1,
+      "vars": {},
+      "implementation": "pending"
+    },
+    {
+      "id": 92,
+      "enum": "WorldRelicEmberTea",
+      "model": "EmberTea",
+      "key": "EMBER_TEA",
+      "rarity": 6,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {
+        "Strength": 2
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 93,
+      "enum": "WorldRelicEmotionChip",
+      "model": "EmotionChip",
+      "key": "EMOTION_CHIP",
+      "rarity": 4,
+      "character_mask": 4,
+      "flags": 0,
+      "vars": {},
+      "implementation": "pending"
+    },
+    {
+      "id": 94,
+      "enum": "WorldRelicEmptyCage",
+      "model": "EmptyCage",
+      "key": "EMPTY_CAGE",
+      "rarity": 7,
+      "character_mask": 0,
+      "flags": 1,
+      "vars": {
+        "Cards": 2
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 95,
+      "enum": "WorldRelicEternalFeather",
+      "model": "EternalFeather",
+      "key": "ETERNAL_FEATHER",
+      "rarity": 3,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {
+        "Cards": 5,
+        "Heal": 3
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 96,
+      "enum": "WorldRelicFakeAnchor",
+      "model": "FakeAnchor",
+      "key": "FAKE_ANCHOR",
+      "rarity": 6,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {
+        "Block": 4
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 97,
+      "enum": "WorldRelicFakeBloodVial",
+      "model": "FakeBloodVial",
+      "key": "FAKE_BLOOD_VIAL",
+      "rarity": 6,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {
+        "Heal": 1
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 98,
+      "enum": "WorldRelicFakeHappyFlower",
+      "model": "FakeHappyFlower",
+      "key": "FAKE_HAPPY_FLOWER",
+      "rarity": 6,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {
+        "Energy": 1,
+        "Turns": 5
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 99,
+      "enum": "WorldRelicFakeLeesWaffle",
+      "model": "FakeLeesWaffle",
+      "key": "FAKE_LEES_WAFFLE",
+      "rarity": 6,
+      "character_mask": 0,
+      "flags": 1,
+      "vars": {
+        "Heal": 10
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 100,
+      "enum": "WorldRelicFakeMango",
+      "model": "FakeMango",
+      "key": "FAKE_MANGO",
+      "rarity": 6,
+      "character_mask": 0,
+      "flags": 1,
+      "vars": {
+        "MaxHp": 3
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 101,
+      "enum": "WorldRelicFakeMerchantsRug",
+      "model": "FakeMerchantsRug",
+      "key": "FAKE_MERCHANTS_RUG",
+      "rarity": 6,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {},
+      "implementation": "pending"
+    },
+    {
+      "id": 102,
+      "enum": "WorldRelicFakeOrichalcum",
+      "model": "FakeOrichalcum",
+      "key": "FAKE_ORICHALCUM",
+      "rarity": 6,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {
+        "Block": 3
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 103,
+      "enum": "WorldRelicFakeSneckoEye",
+      "model": "FakeSneckoEye",
+      "key": "FAKE_SNECKO_EYE",
+      "rarity": 6,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {},
+      "implementation": "pending"
+    },
+    {
+      "id": 104,
+      "enum": "WorldRelicFakeStrikeDummy",
+      "model": "FakeStrikeDummy",
+      "key": "FAKE_STRIKE_DUMMY",
+      "rarity": 6,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {
+        "ExtraDamage": 1
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 105,
+      "enum": "WorldRelicFakeVenerableTeaSet",
+      "model": "FakeVenerableTeaSet",
+      "key": "FAKE_VENERABLE_TEA_SET",
+      "rarity": 6,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {
+        "Energy": 1
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 106,
+      "enum": "WorldRelicFencingManual",
+      "model": "FencingManual",
+      "key": "FENCING_MANUAL",
+      "rarity": 2,
+      "character_mask": 8,
+      "flags": 0,
+      "vars": {
+        "Forge": 10
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 107,
+      "enum": "WorldRelicFestivePopper",
+      "model": "FestivePopper",
+      "key": "FESTIVE_POPPER",
+      "rarity": 2,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {
+        "Damage": 9
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 108,
+      "enum": "WorldRelicFiddle",
+      "model": "Fiddle",
+      "key": "FIDDLE",
+      "rarity": 7,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {
+        "Cards": 2
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 109,
+      "enum": "WorldRelicFishingRod",
+      "model": "FishingRod",
+      "key": "FISHING_ROD",
+      "rarity": 7,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {
+        "Combats": 3
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 110,
+      "enum": "WorldRelicForgottenSoul",
+      "model": "ForgottenSoul",
+      "key": "FORGOTTEN_SOUL",
+      "rarity": 6,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {
+        "Damage": 1
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 111,
+      "enum": "WorldRelicFragrantMushroom",
+      "model": "FragrantMushroom",
+      "key": "FRAGRANT_MUSHROOM",
+      "rarity": 6,
+      "character_mask": 0,
+      "flags": 1,
+      "vars": {
+        "HpLoss": 15,
+        "Cards": 2
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 112,
+      "enum": "WorldRelicFresnelLens",
+      "model": "FresnelLens",
+      "key": "FRESNEL_LENS",
+      "rarity": 6,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {
+        "NimbleAmount": 2
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 113,
+      "enum": "WorldRelicFrozenEgg",
+      "model": "FrozenEgg",
+      "key": "FROZEN_EGG",
+      "rarity": 4,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {},
+      "implementation": "pending"
+    },
+    {
+      "id": 114,
+      "enum": "WorldRelicFuneraryMask",
+      "model": "FuneraryMask",
+      "key": "FUNERARY_MASK",
+      "rarity": 3,
+      "character_mask": 16,
+      "flags": 0,
+      "vars": {
+        "Cards": 3
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 115,
+      "enum": "WorldRelicFurCoat",
+      "model": "FurCoat",
+      "key": "FUR_COAT",
+      "rarity": 7,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {
+        "Combats": 8
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 116,
+      "enum": "WorldRelicGalacticDust",
+      "model": "GalacticDust",
+      "key": "GALACTIC_DUST",
+      "rarity": 3,
+      "character_mask": 8,
+      "flags": 0,
+      "vars": {
+        "Stars": 10,
+        "Block": 10
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 117,
+      "enum": "WorldRelicGamblingChip",
+      "model": "GamblingChip",
+      "key": "GAMBLING_CHIP",
+      "rarity": 4,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {},
+      "implementation": "pending"
+    },
+    {
+      "id": 118,
+      "enum": "WorldRelicGamePiece",
+      "model": "GamePiece",
+      "key": "GAME_PIECE",
+      "rarity": 4,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {
+        "Cards": 1
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 119,
+      "enum": "WorldRelicGhostSeed",
+      "model": "GhostSeed",
+      "key": "GHOST_SEED",
+      "rarity": 5,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {},
+      "implementation": "pending"
+    },
+    {
+      "id": 120,
+      "enum": "WorldRelicGirya",
+      "model": "Girya",
+      "key": "GIRYA",
+      "rarity": 4,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {},
+      "implementation": "pending"
+    },
+    {
+      "id": 121,
+      "enum": "WorldRelicGlassEye",
+      "model": "GlassEye",
+      "key": "GLASS_EYE",
+      "rarity": 7,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {},
+      "implementation": "pending"
+    },
+    {
+      "id": 122,
+      "enum": "WorldRelicGlitter",
+      "model": "Glitter",
+      "key": "GLITTER",
+      "rarity": 7,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {},
+      "implementation": "pending"
+    },
+    {
+      "id": 123,
+      "enum": "WorldRelicGnarledHammer",
+      "model": "GnarledHammer",
+      "key": "GNARLED_HAMMER",
+      "rarity": 5,
+      "character_mask": 0,
+      "flags": 1,
+      "vars": {
+        "Cards": 3,
+        "SharpAmount": 3
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 124,
+      "enum": "WorldRelicGoldPlatedCables",
+      "model": "GoldPlatedCables",
+      "key": "GOLD_PLATED_CABLES",
+      "rarity": 3,
+      "character_mask": 4,
+      "flags": 0,
+      "vars": {},
+      "implementation": "pending"
+    },
+    {
+      "id": 125,
+      "enum": "WorldRelicGoldenCompass",
+      "model": "GoldenCompass",
+      "key": "GOLDEN_COMPASS",
+      "rarity": 7,
+      "character_mask": 0,
+      "flags": 1,
+      "vars": {},
+      "implementation": "pending"
+    },
+    {
+      "id": 126,
+      "enum": "WorldRelicGoldenPearl",
+      "model": "GoldenPearl",
+      "key": "GOLDEN_PEARL",
+      "rarity": 7,
+      "character_mask": 0,
+      "flags": 1,
+      "vars": {
+        "Gold": 150
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 127,
+      "enum": "WorldRelicGorget",
+      "model": "Gorget",
+      "key": "GORGET",
+      "rarity": 2,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {
+        "Plating": 4
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 128,
+      "enum": "WorldRelicGremlinHorn",
+      "model": "GremlinHorn",
+      "key": "GREMLIN_HORN",
+      "rarity": 3,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {
+        "Energy": 1,
+        "Cards": 1
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 129,
+      "enum": "WorldRelicHandDrill",
+      "model": "HandDrill",
+      "key": "HAND_DRILL",
+      "rarity": 6,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {
+        "Vulnerable": 2
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 130,
+      "enum": "WorldRelicHeftyTablet",
+      "model": "HeftyTablet",
+      "key": "HEFTY_TABLET",
+      "rarity": 7,
+      "character_mask": 0,
+      "flags": 1,
+      "vars": {
+        "Cards": 3
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 131,
+      "enum": "WorldRelicHelicalDart",
+      "model": "HelicalDart",
+      "key": "HELICAL_DART",
+      "rarity": 4,
+      "character_mask": 2,
+      "flags": 0,
+      "vars": {
+        "Dexterity": 1
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 132,
+      "enum": "WorldRelicHistoryCourse",
+      "model": "HistoryCourse",
+      "key": "HISTORY_COURSE",
+      "rarity": 6,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {},
+      "implementation": "pending"
+    },
+    {
+      "id": 133,
+      "enum": "WorldRelicIceCream",
+      "model": "IceCream",
+      "key": "ICE_CREAM",
+      "rarity": 4,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {},
+      "implementation": "pending"
+    },
+    {
+      "id": 134,
+      "enum": "WorldRelicInfusedCore",
+      "model": "InfusedCore",
+      "key": "INFUSED_CORE",
+      "rarity": 1,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {
+        "Lightning": 3,
+        "ExtraDamage": 1
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 135,
+      "enum": "WorldRelicIntimidatingHelmet",
+      "model": "IntimidatingHelmet",
+      "key": "INTIMIDATING_HELMET",
+      "rarity": 4,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {
+        "Block": 4,
+        "Energy": 2
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 136,
+      "enum": "WorldRelicIronClub",
+      "model": "IronClub",
+      "key": "IRON_CLUB",
+      "rarity": 7,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {
+        "Cards": 4
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 137,
+      "enum": "WorldRelicIvoryTile",
+      "model": "IvoryTile",
+      "key": "IVORY_TILE",
+      "rarity": 4,
+      "character_mask": 16,
+      "flags": 0,
+      "vars": {
+        "Energy": 1,
+        "EnergyThreshold": 3
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 138,
+      "enum": "WorldRelicJeweledMask",
+      "model": "JeweledMask",
+      "key": "JEWELED_MASK",
+      "rarity": 7,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {},
+      "implementation": "pending"
+    },
+    {
+      "id": 139,
+      "enum": "WorldRelicJewelryBox",
+      "model": "JewelryBox",
+      "key": "JEWELRY_BOX",
+      "rarity": 7,
+      "character_mask": 0,
+      "flags": 1,
+      "vars": {},
+      "implementation": "pending"
+    },
+    {
+      "id": 140,
+      "enum": "WorldRelicJossPaper",
+      "model": "JossPaper",
+      "key": "JOSS_PAPER",
+      "rarity": 3,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {
+        "ExhaustAmount": 5,
+        "Cards": 1
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 141,
+      "enum": "WorldRelicJuzuBracelet",
+      "model": "JuzuBracelet",
+      "key": "JUZU_BRACELET",
+      "rarity": 2,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {},
+      "implementation": "pending"
+    },
+    {
+      "id": 142,
+      "enum": "WorldRelicKaleidoscope",
+      "model": "Kaleidoscope",
+      "key": "KALEIDOSCOPE",
+      "rarity": 7,
+      "character_mask": 0,
+      "flags": 1,
+      "vars": {
+        "Cards": 2
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 143,
+      "enum": "WorldRelicKifuda",
+      "model": "Kifuda",
+      "key": "KIFUDA",
+      "rarity": 5,
+      "character_mask": 0,
+      "flags": 1,
+      "vars": {
+        "Cards": 3
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 144,
+      "enum": "WorldRelicKusarigama",
+      "model": "Kusarigama",
+      "key": "KUSARIGAMA",
+      "rarity": 3,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {
+        "Cards": 3,
+        "Damage": 6
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 145,
+      "enum": "WorldRelicLargeCapsule",
+      "model": "LargeCapsule",
+      "key": "LARGE_CAPSULE",
+      "rarity": 7,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {
+        "Relics": 2
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 146,
+      "enum": "WorldRelicLastingCandy",
+      "model": "LastingCandy",
+      "key": "LASTING_CANDY",
+      "rarity": 3,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {},
+      "implementation": "pending"
+    },
+    {
+      "id": 147,
+      "enum": "WorldRelicLavaLamp",
+      "model": "LavaLamp",
+      "key": "LAVA_LAMP",
+      "rarity": 5,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {},
+      "implementation": "pending"
+    },
+    {
+      "id": 148,
+      "enum": "WorldRelicLavaRock",
+      "model": "LavaRock",
+      "key": "LAVA_ROCK",
+      "rarity": 7,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {
+        "Relics": 2
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 149,
+      "enum": "WorldRelicLeadPaperweight",
+      "model": "LeadPaperweight",
+      "key": "LEAD_PAPERWEIGHT",
+      "rarity": 7,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {},
+      "implementation": "pending"
+    },
+    {
+      "id": 150,
+      "enum": "WorldRelicLeafyPoultice",
+      "model": "LeafyPoultice",
+      "key": "LEAFY_POULTICE",
+      "rarity": 7,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {
+        "MaxHp": 12
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 151,
+      "enum": "WorldRelicLeesWaffle",
+      "model": "LeesWaffle",
+      "key": "LEES_WAFFLE",
+      "rarity": 5,
+      "character_mask": 0,
+      "flags": 1,
+      "vars": {
+        "MaxHp": 7
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 152,
+      "enum": "WorldRelicLizardTail",
+      "model": "LizardTail",
+      "key": "LIZARD_TAIL",
+      "rarity": 4,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {
+        "Heal": 50
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 153,
+      "enum": "WorldRelicLoomingFruit",
+      "model": "LoomingFruit",
+      "key": "LOOMING_FRUIT",
+      "rarity": 7,
+      "character_mask": 0,
+      "flags": 1,
+      "vars": {
+        "MaxHp": 31
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 154,
+      "enum": "WorldRelicLordsParasol",
+      "model": "LordsParasol",
+      "key": "LORDS_PARASOL",
+      "rarity": 7,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {},
+      "implementation": "pending"
+    },
+    {
+      "id": 155,
+      "enum": "WorldRelicLostCoffer",
+      "model": "LostCoffer",
+      "key": "LOST_COFFER",
+      "rarity": 7,
+      "character_mask": 0,
+      "flags": 1,
+      "vars": {},
+      "implementation": "pending"
+    },
+    {
+      "id": 156,
+      "enum": "WorldRelicLostWisp",
+      "model": "LostWisp",
+      "key": "LOST_WISP",
+      "rarity": 6,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {
+        "Damage": 8
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 157,
+      "enum": "WorldRelicLuckyFysh",
+      "model": "LuckyFysh",
+      "key": "LUCKY_FYSH",
+      "rarity": 3,
+      "character_mask": 0,
+      "flags": 2,
+      "vars": {
+        "Gold": 15
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 158,
+      "enum": "WorldRelicLunarPastry",
+      "model": "LunarPastry",
+      "key": "LUNAR_PASTRY",
+      "rarity": 4,
+      "character_mask": 8,
+      "flags": 0,
+      "vars": {
+        "Stars": 1
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 159,
+      "enum": "WorldRelicMawBank",
+      "model": "MawBank",
+      "key": "MAW_BANK",
+      "rarity": 6,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {
+        "Gold": 12
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 160,
+      "enum": "WorldRelicMeatCleaver",
+      "model": "MeatCleaver",
+      "key": "MEAT_CLEAVER",
+      "rarity": 7,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {},
+      "implementation": "pending"
+    },
+    {
+      "id": 161,
+      "enum": "WorldRelicMeatOnTheBone",
+      "model": "MeatOnTheBone",
+      "key": "MEAT_ON_THE_BONE",
+      "rarity": 4,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {
+        "HpThreshold": 50,
+        "Heal": 12
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 162,
+      "enum": "WorldRelicMembershipCard",
+      "model": "MembershipCard",
+      "key": "MEMBERSHIP_CARD",
+      "rarity": 5,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {
+        "Discount": 50
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 163,
+      "enum": "WorldRelicMetronome",
+      "model": "Metronome",
+      "key": "METRONOME",
+      "rarity": 4,
+      "character_mask": 4,
+      "flags": 0,
+      "vars": {
+        "Damage": 30,
+        "OrbCount": 7
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 164,
+      "enum": "WorldRelicMiniRegent",
+      "model": "MiniRegent",
+      "key": "MINI_REGENT",
+      "rarity": 4,
+      "character_mask": 8,
+      "flags": 0,
+      "vars": {
+        "Strength": 1
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 165,
+      "enum": "WorldRelicMiniatureCannon",
+      "model": "MiniatureCannon",
+      "key": "MINIATURE_CANNON",
+      "rarity": 3,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {
+        "ExtraDamage": 3
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 166,
+      "enum": "WorldRelicMiniatureTent",
+      "model": "MiniatureTent",
+      "key": "MINIATURE_TENT",
+      "rarity": 5,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {},
+      "implementation": "pending"
+    },
+    {
+      "id": 167,
+      "enum": "WorldRelicMoltenEgg",
+      "model": "MoltenEgg",
+      "key": "MOLTEN_EGG",
+      "rarity": 4,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {},
+      "implementation": "pending"
+    },
+    {
+      "id": 168,
+      "enum": "WorldRelicMrStruggles",
+      "model": "MrStruggles",
+      "key": "MR_STRUGGLES",
+      "rarity": 6,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {},
+      "implementation": "pending"
+    },
+    {
+      "id": 169,
+      "enum": "WorldRelicMummifiedHand",
+      "model": "MummifiedHand",
+      "key": "MUMMIFIED_HAND",
+      "rarity": 4,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {},
+      "implementation": "pending"
+    },
+    {
+      "id": 170,
+      "enum": "WorldRelicMusicBox",
+      "model": "MusicBox",
+      "key": "MUSIC_BOX",
+      "rarity": 7,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {},
+      "implementation": "pending"
+    },
+    {
+      "id": 171,
+      "enum": "WorldRelicMysticLighter",
+      "model": "MysticLighter",
+      "key": "MYSTIC_LIGHTER",
+      "rarity": 5,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {
+        "Damage": 9
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 172,
+      "enum": "WorldRelicNeowsBones",
+      "model": "NeowsBones",
+      "key": "NEOWS_BONES",
+      "rarity": 7,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {
+        "Relics": 2,
+        "Curses": 1
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 173,
+      "enum": "WorldRelicNeowsSacrifice",
+      "model": "NeowsSacrifice",
+      "key": "NEOWS_SACRIFICE",
+      "rarity": 7,
+      "character_mask": 0,
+      "flags": 1,
+      "vars": {},
+      "implementation": "pending"
+    },
+    {
+      "id": 174,
+      "enum": "WorldRelicNeowsTalisman",
+      "model": "NeowsTalisman",
+      "key": "NEOWS_TALISMAN",
+      "rarity": 7,
+      "character_mask": 0,
+      "flags": 1,
+      "vars": {},
+      "implementation": "pending"
+    },
+    {
+      "id": 175,
+      "enum": "WorldRelicNeowsTorment",
+      "model": "NeowsTorment",
+      "key": "NEOWS_TORMENT",
+      "rarity": 7,
+      "character_mask": 0,
+      "flags": 1,
+      "vars": {},
+      "implementation": "pending"
+    },
+    {
+      "id": 176,
+      "enum": "WorldRelicNewLeaf",
+      "model": "NewLeaf",
+      "key": "NEW_LEAF",
+      "rarity": 7,
+      "character_mask": 0,
+      "flags": 1,
+      "vars": {
+        "Cards": 1
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 177,
+      "enum": "WorldRelicNinjaScroll",
+      "model": "NinjaScroll",
+      "key": "NINJA_SCROLL",
+      "rarity": 5,
+      "character_mask": 2,
+      "flags": 0,
+      "vars": {
+        "Shivs": 3
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 178,
+      "enum": "WorldRelicNutritiousOyster",
+      "model": "NutritiousOyster",
+      "key": "NUTRITIOUS_OYSTER",
+      "rarity": 7,
+      "character_mask": 0,
+      "flags": 1,
+      "vars": {
+        "MaxHp": 11
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 179,
+      "enum": "WorldRelicNutritiousSoup",
+      "model": "NutritiousSoup",
+      "key": "NUTRITIOUS_SOUP",
+      "rarity": 7,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {},
+      "implementation": "pending"
+    },
+    {
+      "id": 180,
+      "enum": "WorldRelicOrangeDough",
+      "model": "OrangeDough",
+      "key": "ORANGE_DOUGH",
+      "rarity": 4,
+      "character_mask": 8,
+      "flags": 0,
+      "vars": {
+        "Cards": 2
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 181,
+      "enum": "WorldRelicOrrery",
+      "model": "Orrery",
+      "key": "ORRERY",
+      "rarity": 5,
+      "character_mask": 0,
+      "flags": 1,
+      "vars": {
+        "Cards": 5
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 182,
+      "enum": "WorldRelicPaelsBlood",
+      "model": "PaelsBlood",
+      "key": "PAELS_BLOOD",
+      "rarity": 7,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {
+        "Cards": 1
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 183,
+      "enum": "WorldRelicPaelsClaw",
+      "model": "PaelsClaw",
+      "key": "PAELS_CLAW",
+      "rarity": 7,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {
+        "Cards": 3
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 184,
+      "enum": "WorldRelicPaelsEye",
+      "model": "PaelsEye",
+      "key": "PAELS_EYE",
+      "rarity": 7,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {},
+      "implementation": "pending"
+    },
+    {
+      "id": 185,
+      "enum": "WorldRelicPaelsFlesh",
+      "model": "PaelsFlesh",
+      "key": "PAELS_FLESH",
+      "rarity": 7,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {
+        "Energy": 1
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 186,
+      "enum": "WorldRelicPaelsGrowth",
+      "model": "PaelsGrowth",
+      "key": "PAELS_GROWTH",
+      "rarity": 7,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {},
+      "implementation": "pending"
+    },
+    {
+      "id": 187,
+      "enum": "WorldRelicPaelsHorn",
+      "model": "PaelsHorn",
+      "key": "PAELS_HORN",
+      "rarity": 7,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {},
+      "implementation": "pending"
+    },
+    {
+      "id": 188,
+      "enum": "WorldRelicPaelsLegion",
+      "model": "PaelsLegion",
+      "key": "PAELS_LEGION",
+      "rarity": 7,
+      "character_mask": 0,
+      "flags": 4,
+      "vars": {
+        "Turns": 2
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 189,
+      "enum": "WorldRelicPaelsTears",
+      "model": "PaelsTears",
+      "key": "PAELS_TEARS",
+      "rarity": 7,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {
+        "Energy": 2
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 190,
+      "enum": "WorldRelicPaelsTooth",
+      "model": "PaelsTooth",
+      "key": "PAELS_TOOTH",
+      "rarity": 7,
+      "character_mask": 0,
+      "flags": 1,
+      "vars": {
+        "Cards": 5
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 191,
+      "enum": "WorldRelicPaelsWing",
+      "model": "PaelsWing",
+      "key": "PAELS_WING",
+      "rarity": 7,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {
+        "Sacrifices": 2
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 192,
+      "enum": "WorldRelicPandorasBox",
+      "model": "PandorasBox",
+      "key": "PANDORAS_BOX",
+      "rarity": 7,
+      "character_mask": 0,
+      "flags": 1,
+      "vars": {},
+      "implementation": "pending"
+    },
+    {
+      "id": 193,
+      "enum": "WorldRelicPantograph",
+      "model": "Pantograph",
+      "key": "PANTOGRAPH",
+      "rarity": 3,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {
+        "Heal": 25
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 194,
+      "enum": "WorldRelicPaperKrane",
+      "model": "PaperKrane",
+      "key": "PAPER_KRANE",
+      "rarity": 4,
+      "character_mask": 2,
+      "flags": 0,
+      "vars": {},
+      "implementation": "pending"
+    },
+    {
+      "id": 195,
+      "enum": "WorldRelicPaperPhrog",
+      "model": "PaperPhrog",
+      "key": "PAPER_PHROG",
+      "rarity": 3,
+      "character_mask": 1,
+      "flags": 0,
+      "vars": {},
+      "implementation": "pending"
+    },
+    {
+      "id": 196,
+      "enum": "WorldRelicParryingShield",
+      "model": "ParryingShield",
+      "key": "PARRYING_SHIELD",
+      "rarity": 3,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {
+        "Block": 10,
+        "Damage": 6
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 197,
+      "enum": "WorldRelicPendulum",
+      "model": "Pendulum",
+      "key": "PENDULUM",
+      "rarity": 2,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {
+        "Cards": 1,
+        "Turns": 3
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 198,
+      "enum": "WorldRelicPermafrost",
+      "model": "Permafrost",
+      "key": "PERMAFROST",
+      "rarity": 3,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {
+        "Block": 7
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 199,
+      "enum": "WorldRelicPetrifiedToad",
+      "model": "PetrifiedToad",
+      "key": "PETRIFIED_TOAD",
+      "rarity": 3,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {},
+      "implementation": "pending"
+    },
+    {
+      "id": 200,
+      "enum": "WorldRelicPhialHolster",
+      "model": "PhialHolster",
+      "key": "PHIAL_HOLSTER",
+      "rarity": 7,
+      "character_mask": 0,
+      "flags": 1,
+      "vars": {
+        "PotionSlots": 1,
+        "Potions": 2
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 201,
+      "enum": "WorldRelicPhilosophersStone",
+      "model": "PhilosophersStone",
+      "key": "PHILOSOPHERS_STONE",
+      "rarity": 7,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {
+        "Strength": 1,
+        "Energy": 1
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 202,
+      "enum": "WorldRelicPhylacteryUnbound",
+      "model": "PhylacteryUnbound",
+      "key": "PHYLACTERY_UNBOUND",
+      "rarity": 1,
+      "character_mask": 0,
+      "flags": 4,
+      "vars": {
+        "StartOfCombat": 5,
+        "StartOfTurn": 2
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 203,
+      "enum": "WorldRelicPlanisphere",
+      "model": "Planisphere",
+      "key": "PLANISPHERE",
+      "rarity": 3,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {
+        "Heal": 5
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 204,
+      "enum": "WorldRelicPocketwatch",
+      "model": "Pocketwatch",
+      "key": "POCKETWATCH",
+      "rarity": 4,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {
+        "CardThreshold": 3,
+        "Cards": 3
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 205,
+      "enum": "WorldRelicPollinousCore",
+      "model": "PollinousCore",
+      "key": "POLLINOUS_CORE",
+      "rarity": 6,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {
+        "Cards": 2,
+        "Turns": 4
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 206,
+      "enum": "WorldRelicPomander",
+      "model": "Pomander",
+      "key": "POMANDER",
+      "rarity": 7,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {
+        "Cards": 1
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 207,
+      "enum": "WorldRelicPotionBelt",
+      "model": "PotionBelt",
+      "key": "POTION_BELT",
+      "rarity": 2,
+      "character_mask": 0,
+      "flags": 1,
+      "vars": {
+        "PotionSlots": 2
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 208,
+      "enum": "WorldRelicPowerCell",
+      "model": "PowerCell",
+      "key": "POWER_CELL",
+      "rarity": 4,
+      "character_mask": 4,
+      "flags": 0,
+      "vars": {
+        "Cards": 2
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 209,
+      "enum": "WorldRelicPrayerWheel",
+      "model": "PrayerWheel",
+      "key": "PRAYER_WHEEL",
+      "rarity": 4,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {},
+      "implementation": "pending"
+    },
+    {
+      "id": 210,
+      "enum": "WorldRelicPrecariousShears",
+      "model": "PrecariousShears",
+      "key": "PRECARIOUS_SHEARS",
+      "rarity": 7,
+      "character_mask": 0,
+      "flags": 1,
+      "vars": {
+        "Cards": 2,
+        "Damage": 16
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 211,
+      "enum": "WorldRelicPreciseScissors",
+      "model": "PreciseScissors",
+      "key": "PRECISE_SCISSORS",
+      "rarity": 7,
+      "character_mask": 0,
+      "flags": 1,
+      "vars": {
+        "Cards": 1
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 212,
+      "enum": "WorldRelicPreservedFog",
+      "model": "PreservedFog",
+      "key": "PRESERVED_FOG",
+      "rarity": 7,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {
+        "Cards": 3
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 213,
+      "enum": "WorldRelicPrismaticGem",
+      "model": "PrismaticGem",
+      "key": "PRISMATIC_GEM",
+      "rarity": 7,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {
+        "Energy": 1
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 214,
+      "enum": "WorldRelicPumpkinCandle",
+      "model": "PumpkinCandle",
+      "key": "PUMPKIN_CANDLE",
+      "rarity": 7,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {
+        "CombatCount": 5,
+        "Energy": 1
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 215,
+      "enum": "WorldRelicPunchDagger",
+      "model": "PunchDagger",
+      "key": "PUNCH_DAGGER",
+      "rarity": 5,
+      "character_mask": 0,
+      "flags": 1,
+      "vars": {
+        "Momentum": 5
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 216,
+      "enum": "WorldRelicRadiantPearl",
+      "model": "RadiantPearl",
+      "key": "RADIANT_PEARL",
+      "rarity": 7,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {
+        "Cards": 1
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 217,
+      "enum": "WorldRelicRainbowRing",
+      "model": "RainbowRing",
+      "key": "RAINBOW_RING",
+      "rarity": 4,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {
+        "Strength": 1,
+        "Dexterity": 1
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 218,
+      "enum": "WorldRelicRazorTooth",
+      "model": "RazorTooth",
+      "key": "RAZOR_TOOTH",
+      "rarity": 4,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {},
+      "implementation": "pending"
+    },
+    {
+      "id": 219,
+      "enum": "WorldRelicRedMask",
+      "model": "RedMask",
+      "key": "RED_MASK",
+      "rarity": 2,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {
+        "Weak": 1
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 220,
+      "enum": "WorldRelicRedSkull",
+      "model": "RedSkull",
+      "key": "RED_SKULL",
+      "rarity": 2,
+      "character_mask": 1,
+      "flags": 0,
+      "vars": {
+        "HpThreshold": 50,
+        "Strength": 3
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 221,
+      "enum": "WorldRelicRegalite",
+      "model": "Regalite",
+      "key": "REGALITE",
+      "rarity": 3,
+      "character_mask": 8,
+      "flags": 0,
+      "vars": {
+        "Block": 4
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 222,
+      "enum": "WorldRelicReptileTrinket",
+      "model": "ReptileTrinket",
+      "key": "REPTILE_TRINKET",
+      "rarity": 3,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {
+        "Strength": 3
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 223,
+      "enum": "WorldRelicRingOfTheDrake",
+      "model": "RingOfTheDrake",
+      "key": "RING_OF_THE_DRAKE",
+      "rarity": 1,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {
+        "Cards": 2,
+        "Turns": 3
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 224,
+      "enum": "WorldRelicRingingTriangle",
+      "model": "RingingTriangle",
+      "key": "RINGING_TRIANGLE",
+      "rarity": 5,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {},
+      "implementation": "pending"
+    },
+    {
+      "id": 225,
+      "enum": "WorldRelicRippleBasin",
+      "model": "RippleBasin",
+      "key": "RIPPLE_BASIN",
+      "rarity": 3,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {
+        "Block": 4
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 226,
+      "enum": "WorldRelicRoyalPoison",
+      "model": "RoyalPoison",
+      "key": "ROYAL_POISON",
+      "rarity": 6,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {
+        "Damage": 4
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 227,
+      "enum": "WorldRelicRoyalStamp",
+      "model": "RoyalStamp",
+      "key": "ROYAL_STAMP",
+      "rarity": 5,
+      "character_mask": 0,
+      "flags": 1,
+      "vars": {
+        "Cards": 1
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 228,
+      "enum": "WorldRelicRuinedHelmet",
+      "model": "RuinedHelmet",
+      "key": "RUINED_HELMET",
+      "rarity": 4,
+      "character_mask": 1,
+      "flags": 0,
+      "vars": {},
+      "implementation": "pending"
+    },
+    {
+      "id": 229,
+      "enum": "WorldRelicRunicCapacitor",
+      "model": "RunicCapacitor",
+      "key": "RUNIC_CAPACITOR",
+      "rarity": 5,
+      "character_mask": 4,
+      "flags": 0,
+      "vars": {
+        "Repeat": 3
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 230,
+      "enum": "WorldRelicRunicPyramid",
+      "model": "RunicPyramid",
+      "key": "RUNIC_PYRAMID",
+      "rarity": 7,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {},
+      "implementation": "pending"
+    },
+    {
+      "id": 231,
+      "enum": "WorldRelicSai",
+      "model": "Sai",
+      "key": "SAI",
+      "rarity": 7,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {
+        "Block": 7
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 232,
+      "enum": "WorldRelicSandCastle",
+      "model": "SandCastle",
+      "key": "SAND_CASTLE",
+      "rarity": 7,
+      "character_mask": 0,
+      "flags": 1,
+      "vars": {
+        "Cards": 6
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 233,
+      "enum": "WorldRelicScreamingFlagon",
+      "model": "ScreamingFlagon",
+      "key": "SCREAMING_FLAGON",
+      "rarity": 5,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {
+        "Damage": 20
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 234,
+      "enum": "WorldRelicScrollBoxes",
+      "model": "ScrollBoxes",
+      "key": "SCROLL_BOXES",
+      "rarity": 7,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {},
+      "implementation": "pending"
+    },
+    {
+      "id": 235,
+      "enum": "WorldRelicSeaGlass",
+      "model": "SeaGlass",
+      "key": "SEA_GLASS",
+      "rarity": 7,
+      "character_mask": 0,
+      "flags": 1,
+      "vars": {
+        "Cards": 15
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 236,
+      "enum": "WorldRelicSealOfGold",
+      "model": "SealOfGold",
+      "key": "SEAL_OF_GOLD",
+      "rarity": 7,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {
+        "Energy": 1,
+        "Gold": 3
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 237,
+      "enum": "WorldRelicSelfFormingClay",
+      "model": "SelfFormingClay",
+      "key": "SELF_FORMING_CLAY",
+      "rarity": 3,
+      "character_mask": 1,
+      "flags": 0,
+      "vars": {
+        "BlockNextTurn": 3
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 238,
+      "enum": "WorldRelicSereTalon",
+      "model": "SereTalon",
+      "key": "SERE_TALON",
+      "rarity": 7,
+      "character_mask": 0,
+      "flags": 1,
+      "vars": {
+        "HpLoss": 9,
+        "Wishes": 3
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 239,
+      "enum": "WorldRelicShovel",
+      "model": "Shovel",
+      "key": "SHOVEL",
+      "rarity": 4,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {},
+      "implementation": "pending"
+    },
+    {
+      "id": 240,
+      "enum": "WorldRelicSignetRing",
+      "model": "SignetRing",
+      "key": "SIGNET_RING",
+      "rarity": 7,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {
+        "Gold": 888
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 241,
+      "enum": "WorldRelicSilkenTress",
+      "model": "SilkenTress",
+      "key": "SILKEN_TRESS",
+      "rarity": 7,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {},
+      "implementation": "pending"
+    },
+    {
+      "id": 242,
+      "enum": "WorldRelicSilverCrucible",
+      "model": "SilverCrucible",
+      "key": "SILVER_CRUCIBLE",
+      "rarity": 7,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {
+        "Cards": 3
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 243,
+      "enum": "WorldRelicSlingOfCourage",
+      "model": "SlingOfCourage",
+      "key": "SLING_OF_COURAGE",
+      "rarity": 5,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {
+        "Strength": 2
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 244,
+      "enum": "WorldRelicSmallCapsule",
+      "model": "SmallCapsule",
+      "key": "SMALL_CAPSULE",
+      "rarity": 7,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {},
+      "implementation": "pending"
+    },
+    {
+      "id": 245,
+      "enum": "WorldRelicSneckoEye",
+      "model": "SneckoEye",
+      "key": "SNECKO_EYE",
+      "rarity": 7,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {
+        "Cards": 2
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 246,
+      "enum": "WorldRelicSneckoSkull",
+      "model": "SneckoSkull",
+      "key": "SNECKO_SKULL",
+      "rarity": 2,
+      "character_mask": 2,
+      "flags": 0,
+      "vars": {
+        "Poison": 1
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 247,
+      "enum": "WorldRelicSozu",
+      "model": "Sozu",
+      "key": "SOZU",
+      "rarity": 7,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {
+        "Energy": 1
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 248,
+      "enum": "WorldRelicSparklingRouge",
+      "model": "SparklingRouge",
+      "key": "SPARKLING_ROUGE",
+      "rarity": 3,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {
+        "Strength": 1,
+        "Dexterity": 1
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 249,
+      "enum": "WorldRelicSpikedGauntlets",
+      "model": "SpikedGauntlets",
+      "key": "SPIKED_GAUNTLETS",
+      "rarity": 7,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {
+        "Energy": 1
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 250,
+      "enum": "WorldRelicStoneCalendar",
+      "model": "StoneCalendar",
+      "key": "STONE_CALENDAR",
+      "rarity": 4,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {
+        "Damage": 52,
+        "DamageTurn": 7
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 251,
+      "enum": "WorldRelicStoneCracker",
+      "model": "StoneCracker",
+      "key": "STONE_CRACKER",
+      "rarity": 3,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {
+        "Cards": 2
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 252,
+      "enum": "WorldRelicStoneHumidifier",
+      "model": "StoneHumidifier",
+      "key": "STONE_HUMIDIFIER",
+      "rarity": 7,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {
+        "MaxHp": 5
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 253,
+      "enum": "WorldRelicStorybook",
+      "model": "Storybook",
+      "key": "STORYBOOK",
+      "rarity": 7,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {},
+      "implementation": "pending"
+    },
+    {
+      "id": 254,
+      "enum": "WorldRelicStrikeDummy",
+      "model": "StrikeDummy",
+      "key": "STRIKE_DUMMY",
+      "rarity": 2,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {
+        "ExtraDamage": 3
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 255,
+      "enum": "WorldRelicSturdyClamp",
+      "model": "SturdyClamp",
+      "key": "STURDY_CLAMP",
+      "rarity": 4,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {
+        "Block": 10
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 256,
+      "enum": "WorldRelicSwordOfJade",
+      "model": "SwordOfJade",
+      "key": "SWORD_OF_JADE",
+      "rarity": 6,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {
+        "Strength": 3
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 257,
+      "enum": "WorldRelicSwordOfStone",
+      "model": "SwordOfStone",
+      "key": "SWORD_OF_STONE",
+      "rarity": 6,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {
+        "Elites": 5
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 258,
+      "enum": "WorldRelicSymbioticVirus",
+      "model": "SymbioticVirus",
+      "key": "SYMBIOTIC_VIRUS",
+      "rarity": 3,
+      "character_mask": 4,
+      "flags": 0,
+      "vars": {
+        "Dark": 1
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 259,
+      "enum": "WorldRelicTanxsWhistle",
+      "model": "TanxsWhistle",
+      "key": "TANXS_WHISTLE",
+      "rarity": 7,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {},
+      "implementation": "pending"
+    },
+    {
+      "id": 260,
+      "enum": "WorldRelicTeaOfDiscourtesy",
+      "model": "TeaOfDiscourtesy",
+      "key": "TEA_OF_DISCOURTESY",
+      "rarity": 6,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {
+        "Heal": 1,
+        "DazedCount": 2
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 261,
+      "enum": "WorldRelicTheAbacus",
+      "model": "TheAbacus",
+      "key": "THE_ABACUS",
+      "rarity": 5,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {
+        "Block": 6
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 262,
+      "enum": "WorldRelicTheBoot",
+      "model": "TheBoot",
+      "key": "THE_BOOT",
+      "rarity": 6,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {
+        "DamageMinimum": 5,
+        "DamageThreshold": 4
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 263,
+      "enum": "WorldRelicTheCourier",
+      "model": "TheCourier",
+      "key": "THE_COURIER",
+      "rarity": 4,
+      "character_mask": 0,
+      "flags": 2,
+      "vars": {
+        "Discount": 20
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 264,
+      "enum": "WorldRelicThrowingAxe",
+      "model": "ThrowingAxe",
+      "key": "THROWING_AXE",
+      "rarity": 7,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {},
+      "implementation": "pending"
+    },
+    {
+      "id": 265,
+      "enum": "WorldRelicTingsha",
+      "model": "Tingsha",
+      "key": "TINGSHA",
+      "rarity": 3,
+      "character_mask": 2,
+      "flags": 0,
+      "vars": {
+        "Damage": 3
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 266,
+      "enum": "WorldRelicTinyMailbox",
+      "model": "TinyMailbox",
+      "key": "TINY_MAILBOX",
+      "rarity": 3,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {},
+      "implementation": "pending"
+    },
+    {
+      "id": 267,
+      "enum": "WorldRelicToastyMittens",
+      "model": "ToastyMittens",
+      "key": "TOASTY_MITTENS",
+      "rarity": 7,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {
+        "Strength": 1
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 268,
+      "enum": "WorldRelicToolbox",
+      "model": "Toolbox",
+      "key": "TOOLBOX",
+      "rarity": 5,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {
+        "Cards": 3
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 269,
+      "enum": "WorldRelicTouchOfOrobas",
+      "model": "TouchOfOrobas",
+      "key": "TOUCH_OF_OROBAS",
+      "rarity": 7,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {},
+      "implementation": "pending"
+    },
+    {
+      "id": 270,
+      "enum": "WorldRelicToughBandages",
+      "model": "ToughBandages",
+      "key": "TOUGH_BANDAGES",
+      "rarity": 4,
+      "character_mask": 2,
+      "flags": 0,
+      "vars": {
+        "Block": 3
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 271,
+      "enum": "WorldRelicToxicEgg",
+      "model": "ToxicEgg",
+      "key": "TOXIC_EGG",
+      "rarity": 4,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {},
+      "implementation": "pending"
+    },
+    {
+      "id": 272,
+      "enum": "WorldRelicToyBox",
+      "model": "ToyBox",
+      "key": "TOY_BOX",
+      "rarity": 7,
+      "character_mask": 0,
+      "flags": 1,
+      "vars": {
+        "Relics": 5,
+        "Combats": 3
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 273,
+      "enum": "WorldRelicTriBoomerang",
+      "model": "TriBoomerang",
+      "key": "TRI_BOOMERANG",
+      "rarity": 7,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {
+        "Cards": 3
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 274,
+      "enum": "WorldRelicTungstenRod",
+      "model": "TungstenRod",
+      "key": "TUNGSTEN_ROD",
+      "rarity": 4,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {
+        "HpLossReduction": 1
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 275,
+      "enum": "WorldRelicTuningFork",
+      "model": "TuningFork",
+      "key": "TUNING_FORK",
+      "rarity": 3,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {
+        "Cards": 10,
+        "Block": 7
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 276,
+      "enum": "WorldRelicTwistedFunnel",
+      "model": "TwistedFunnel",
+      "key": "TWISTED_FUNNEL",
+      "rarity": 3,
+      "character_mask": 2,
+      "flags": 0,
+      "vars": {
+        "Poison": 4
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 277,
+      "enum": "WorldRelicUnceasingTop",
+      "model": "UnceasingTop",
+      "key": "UNCEASING_TOP",
+      "rarity": 4,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {},
+      "implementation": "pending"
+    },
+    {
+      "id": 278,
+      "enum": "WorldRelicUndyingSigil",
+      "model": "UndyingSigil",
+      "key": "UNDYING_SIGIL",
+      "rarity": 5,
+      "character_mask": 16,
+      "flags": 0,
+      "vars": {
+        "DamageDecrease": 0.5
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 279,
+      "enum": "WorldRelicUnsettlingLamp",
+      "model": "UnsettlingLamp",
+      "key": "UNSETTLING_LAMP",
+      "rarity": 4,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {},
+      "implementation": "pending"
+    },
+    {
+      "id": 280,
+      "enum": "WorldRelicVambrace",
+      "model": "Vambrace",
+      "key": "VAMBRACE",
+      "rarity": 3,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {},
+      "implementation": "pending"
+    },
+    {
+      "id": 281,
+      "enum": "WorldRelicVelvetChoker",
+      "model": "VelvetChoker",
+      "key": "VELVET_CHOKER",
+      "rarity": 7,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {
+        "Cards": 6,
+        "Energy": 1
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 282,
+      "enum": "WorldRelicVenerableTeaSet",
+      "model": "VenerableTeaSet",
+      "key": "VENERABLE_TEA_SET",
+      "rarity": 2,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {
+        "Energy": 2
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 283,
+      "enum": "WorldRelicVeryHotCocoa",
+      "model": "VeryHotCocoa",
+      "key": "VERY_HOT_COCOA",
+      "rarity": 7,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {
+        "Energy": 4
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 284,
+      "enum": "WorldRelicVexingPuzzlebox",
+      "model": "VexingPuzzlebox",
+      "key": "VEXING_PUZZLEBOX",
+      "rarity": 4,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {},
+      "implementation": "pending"
+    },
+    {
+      "id": 285,
+      "enum": "WorldRelicVitruvianMinion",
+      "model": "VitruvianMinion",
+      "key": "VITRUVIAN_MINION",
+      "rarity": 5,
+      "character_mask": 8,
+      "flags": 0,
+      "vars": {},
+      "implementation": "pending"
+    },
+    {
+      "id": 286,
+      "enum": "WorldRelicWarHammer",
+      "model": "WarHammer",
+      "key": "WAR_HAMMER",
+      "rarity": 7,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {
+        "Cards": 4
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 287,
+      "enum": "WorldRelicWarPaint",
+      "model": "WarPaint",
+      "key": "WAR_PAINT",
+      "rarity": 2,
+      "character_mask": 0,
+      "flags": 1,
+      "vars": {
+        "Cards": 2
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 288,
+      "enum": "WorldRelicWhetstone",
+      "model": "Whetstone",
+      "key": "WHETSTONE",
+      "rarity": 2,
+      "character_mask": 0,
+      "flags": 1,
+      "vars": {
+        "Cards": 2
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 289,
+      "enum": "WorldRelicWhisperingEarring",
+      "model": "WhisperingEarring",
+      "key": "WHISPERING_EARRING",
+      "rarity": 7,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {
+        "Energy": 1
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 290,
+      "enum": "WorldRelicWhiteBeastStatue",
+      "model": "WhiteBeastStatue",
+      "key": "WHITE_BEAST_STATUE",
+      "rarity": 4,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {},
+      "implementation": "pending"
+    },
+    {
+      "id": 291,
+      "enum": "WorldRelicWhiteStar",
+      "model": "WhiteStar",
+      "key": "WHITE_STAR",
+      "rarity": 4,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {},
+      "implementation": "pending"
+    },
+    {
+      "id": 292,
+      "enum": "WorldRelicWingCharm",
+      "model": "WingCharm",
+      "key": "WING_CHARM",
+      "rarity": 5,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {
+        "SwiftAmount": 1
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 293,
+      "enum": "WorldRelicWingedBoots",
+      "model": "WingedBoots",
+      "key": "WINGED_BOOTS",
+      "rarity": 7,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {
+        "Rooms": 3
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 294,
+      "enum": "WorldRelicWongoCustomerAppreciationBadge",
+      "model": "WongoCustomerAppreciationBadge",
+      "key": "WONGO_CUSTOMER_APPRECIATION_BADGE",
+      "rarity": 6,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {},
+      "implementation": "pending"
+    },
+    {
+      "id": 295,
+      "enum": "WorldRelicWongosMysteryTicket",
+      "model": "WongosMysteryTicket",
+      "key": "WONGOS_MYSTERY_TICKET",
+      "rarity": 6,
+      "character_mask": 0,
+      "flags": 0,
+      "vars": {
+        "Repeat": 3,
+        "RemainingCombats": 5
+      },
+      "implementation": "pending"
+    },
+    {
+      "id": 296,
+      "enum": "WorldRelicYummyCookie",
+      "model": "YummyCookie",
+      "key": "YUMMY_COOKIE",
+      "rarity": 7,
+      "character_mask": 0,
+      "flags": 1,
+      "vars": {
+        "Cards": 4
+      },
+      "implementation": "pending"
+    }
+  ]
+}

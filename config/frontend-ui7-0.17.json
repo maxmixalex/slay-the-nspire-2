@@ -1,0 +1,648 @@
+{
+  "reference": "v0.111.0 / 41cef1ea",
+  "first_auxiliary": 1444,
+  "images": [
+    {
+      "enum": "I7_MenuCardPanel",
+      "key": "menu-card-panel",
+      "path": "images/packed/common_ui/submenu_panel_short.png",
+      "size": [
+        74,
+        98
+      ],
+      "hsv": [
+        1.0,
+        0.6,
+        0.8
+      ]
+    },
+    {
+      "enum": "I7_MenuCardPanelFocus",
+      "key": "menu-card-panelfocus",
+      "path": "images/packed/common_ui/submenu_panel_short.png",
+      "size": [
+        74,
+        98
+      ],
+      "hsv": [
+        1.0,
+        0.6,
+        1.0
+      ]
+    },
+    {
+      "enum": "I7_MenuCardPanelPress",
+      "key": "menu-card-panelpress",
+      "path": "images/packed/common_ui/submenu_panel_short.png",
+      "size": [
+        74,
+        98
+      ],
+      "hsv": [
+        1.0,
+        0.6,
+        0.6000000000000001
+      ]
+    },
+    {
+      "enum": "I7_MenuRelicPanel",
+      "key": "menu-relic-panel",
+      "path": "images/packed/common_ui/submenu_panel_short.png",
+      "size": [
+        74,
+        98
+      ],
+      "hsv": [
+        0.4800000228,
+        0.800000038,
+        0.7
+      ]
+    },
+    {
+      "enum": "I7_MenuRelicPanelFocus",
+      "key": "menu-relic-panelfocus",
+      "path": "images/packed/common_ui/submenu_panel_short.png",
+      "size": [
+        74,
+        98
+      ],
+      "hsv": [
+        0.4800000228,
+        0.800000038,
+        0.8999999999999999
+      ]
+    },
+    {
+      "enum": "I7_MenuRelicPanelPress",
+      "key": "menu-relic-panelpress",
+      "path": "images/packed/common_ui/submenu_panel_short.png",
+      "size": [
+        74,
+        98
+      ],
+      "hsv": [
+        0.4800000228,
+        0.800000038,
+        0.49999999999999994
+      ]
+    },
+    {
+      "enum": "I7_MenuPotionPanel",
+      "key": "menu-potion-panel",
+      "path": "images/packed/common_ui/submenu_panel_short.png",
+      "size": [
+        74,
+        98
+      ],
+      "hsv": [
+        0.2400000114,
+        1.0000000475,
+        0.7
+      ]
+    },
+    {
+      "enum": "I7_MenuPotionPanelFocus",
+      "key": "menu-potion-panelfocus",
+      "path": "images/packed/common_ui/submenu_panel_short.png",
+      "size": [
+        74,
+        98
+      ],
+      "hsv": [
+        0.2400000114,
+        1.0000000475,
+        0.8999999999999999
+      ]
+    },
+    {
+      "enum": "I7_MenuPotionPanelPress",
+      "key": "menu-potion-panelpress",
+      "path": "images/packed/common_ui/submenu_panel_short.png",
+      "size": [
+        74,
+        98
+      ],
+      "hsv": [
+        0.2400000114,
+        1.0000000475,
+        0.49999999999999994
+      ]
+    },
+    {
+      "enum": "I7_MenuBestiaryPanel",
+      "key": "menu-bestiary-panel",
+      "path": "images/packed/common_ui/submenu_panel_short.png",
+      "size": [
+        74,
+        98
+      ],
+      "hsv": [
+        0.930000044175,
+        1.200000057,
+        0.65
+      ]
+    },
+    {
+      "enum": "I7_MenuBestiaryPanelFocus",
+      "key": "menu-bestiary-panelfocus",
+      "path": "images/packed/common_ui/submenu_panel_short.png",
+      "size": [
+        74,
+        98
+      ],
+      "hsv": [
+        0.930000044175,
+        1.200000057,
+        0.8500000000000001
+      ]
+    },
+    {
+      "enum": "I7_MenuBestiaryPanelPress",
+      "key": "menu-bestiary-panelpress",
+      "path": "images/packed/common_ui/submenu_panel_short.png",
+      "size": [
+        74,
+        98
+      ],
+      "hsv": [
+        0.930000044175,
+        1.200000057,
+        0.45
+      ]
+    },
+    {
+      "enum": "I7_MenuCardIcon",
+      "key": "menu-card-icon",
+      "path": "images/ui/main_menu/submenu_card_library.png",
+      "size": [
+        53,
+        40
+      ]
+    },
+    {
+      "enum": "I7_MenuRelicIcon",
+      "key": "menu-relic-icon",
+      "path": "images/ui/main_menu/submenu_relic_collection.png",
+      "size": [
+        53,
+        40
+      ]
+    },
+    {
+      "enum": "I7_MenuPotionIcon",
+      "key": "menu-potion-icon",
+      "path": "images/ui/main_menu/submenu_potion_lab.png",
+      "size": [
+        53,
+        40
+      ]
+    },
+    {
+      "enum": "I7_MenuBestiaryIcon",
+      "key": "menu-bestiary-icon",
+      "path": "images/ui/main_menu/submenu_bestiary.png",
+      "size": [
+        53,
+        40
+      ]
+    },
+    {
+      "enum": "I7_MenuStatsPanel",
+      "key": "menu-stats-panel",
+      "path": "images/packed/common_ui/submenu_compendium_button.png",
+      "size": [
+        56,
+        40
+      ],
+      "hsv": [
+        0.8400000399,
+        1.4000000665,
+        1.1
+      ]
+    },
+    {
+      "enum": "I7_MenuStatsPanelFocus",
+      "key": "menu-stats-panelfocus",
+      "path": "images/packed/common_ui/submenu_compendium_button.png",
+      "size": [
+        56,
+        40
+      ],
+      "hsv": [
+        0.8400000399,
+        1.4000000665,
+        1.3
+      ]
+    },
+    {
+      "enum": "I7_MenuStatsPanelPress",
+      "key": "menu-stats-panelpress",
+      "path": "images/packed/common_ui/submenu_compendium_button.png",
+      "size": [
+        56,
+        40
+      ],
+      "hsv": [
+        0.8400000399,
+        1.4000000665,
+        0.9000000000000001
+      ]
+    },
+    {
+      "enum": "I7_MenuStatsIcon",
+      "key": "menu-stats-icon",
+      "path": "images/packed/main_menu/submenu_stats_icon.png",
+      "size": [
+        34,
+        22
+      ]
+    },
+    {
+      "enum": "I7_MenuHistoryPanel",
+      "key": "menu-history-panel",
+      "path": "images/packed/common_ui/submenu_compendium_button.png",
+      "size": [
+        56,
+        40
+      ],
+      "hsv": [
+        0.7250000344375,
+        2.50000011875,
+        1.0
+      ]
+    },
+    {
+      "enum": "I7_MenuHistoryPanelFocus",
+      "key": "menu-history-panelfocus",
+      "path": "images/packed/common_ui/submenu_compendium_button.png",
+      "size": [
+        56,
+        40
+      ],
+      "hsv": [
+        0.7250000344375,
+        2.50000011875,
+        1.2
+      ]
+    },
+    {
+      "enum": "I7_MenuHistoryPanelPress",
+      "key": "menu-history-panelpress",
+      "path": "images/packed/common_ui/submenu_compendium_button.png",
+      "size": [
+        56,
+        40
+      ],
+      "hsv": [
+        0.7250000344375,
+        2.50000011875,
+        0.8
+      ]
+    },
+    {
+      "enum": "I7_MenuHistoryIcon",
+      "key": "menu-history-icon",
+      "path": "images/packed/main_menu/submenu_history_icon.png",
+      "size": [
+        34,
+        22
+      ]
+    },
+    {
+      "enum": "I7_StatsAchievements",
+      "key": "stats-achievements",
+      "path": "images/packed/statistics_screen/stats_achievements.png",
+      "size": [
+        18,
+        16
+      ]
+    },
+    {
+      "enum": "I7_StatsClock",
+      "key": "stats-clock",
+      "path": "images/packed/statistics_screen/stats_clock.png",
+      "size": [
+        18,
+        16
+      ]
+    },
+    {
+      "enum": "I7_StatsCards",
+      "key": "stats-cards",
+      "path": "images/packed/statistics_screen/stats_cards.png",
+      "size": [
+        18,
+        16
+      ]
+    },
+    {
+      "enum": "I7_StatsSwords",
+      "key": "stats-swords",
+      "path": "images/packed/statistics_screen/stats_swords.png",
+      "size": [
+        18,
+        16
+      ]
+    },
+    {
+      "enum": "I7_StatsMonsters",
+      "key": "stats-monsters",
+      "path": "images/packed/statistics_screen/stats_monsters.png",
+      "size": [
+        18,
+        16
+      ]
+    },
+    {
+      "enum": "I7_StatsRelics",
+      "key": "stats-chest",
+      "path": "images/packed/statistics_screen/stats_chest.png",
+      "size": [
+        18,
+        16
+      ]
+    },
+    {
+      "enum": "I7_StatsPotions",
+      "key": "stats-potions_seen",
+      "path": "images/packed/statistics_screen/stats_potions_seen.png",
+      "size": [
+        18,
+        16
+      ]
+    },
+    {
+      "enum": "I7_StatsEvents",
+      "key": "stats-questionmark",
+      "path": "images/packed/statistics_screen/stats_questionmark.png",
+      "size": [
+        18,
+        16
+      ]
+    },
+    {
+      "enum": "I7_StatsStreak",
+      "key": "stats-chain",
+      "path": "images/packed/statistics_screen/stats_chain.png",
+      "size": [
+        18,
+        16
+      ]
+    },
+    {
+      "enum": "I7_MenuLock",
+      "key": "menu-lock",
+      "path": "images/packed/main_menu/submenu_lock.png",
+      "size": [
+        24,
+        24
+      ]
+    },
+    {
+      "enum": "I7_MenuStandardPanel",
+      "key": "menu-standard-panel",
+      "path": "images/packed/common_ui/submenu_panel.png",
+      "size": [
+        73,
+        142
+      ],
+      "hsv": [
+        0,
+        0.8,
+        0.8
+      ]
+    },
+    {
+      "enum": "I7_MenuStandardPanelFocus",
+      "key": "menu-standard-panelfocus",
+      "path": "images/packed/common_ui/submenu_panel.png",
+      "size": [
+        73,
+        142
+      ],
+      "hsv": [
+        0,
+        0.8,
+        1.0
+      ]
+    },
+    {
+      "enum": "I7_MenuStandardPanelPress",
+      "key": "menu-standard-panelpress",
+      "path": "images/packed/common_ui/submenu_panel.png",
+      "size": [
+        73,
+        142
+      ],
+      "hsv": [
+        0,
+        0.8,
+        0.6000000000000001
+      ]
+    },
+    {
+      "enum": "I7_MenuStandardIcon",
+      "key": "menu-standard-icon",
+      "path": "images/ui/main_menu/submenu_standard.png",
+      "size": [
+        55,
+        55
+      ]
+    },
+    {
+      "enum": "I7_MenuDailyPanel",
+      "key": "menu-daily-panel",
+      "path": "images/packed/common_ui/submenu_panel.png",
+      "size": [
+        73,
+        142
+      ],
+      "hsv": [
+        0.4800000228,
+        0.8,
+        0.7
+      ]
+    },
+    {
+      "enum": "I7_MenuDailyPanelFocus",
+      "key": "menu-daily-panelfocus",
+      "path": "images/packed/common_ui/submenu_panel.png",
+      "size": [
+        73,
+        142
+      ],
+      "hsv": [
+        0.4800000228,
+        0.8,
+        0.8999999999999999
+      ]
+    },
+    {
+      "enum": "I7_MenuDailyPanelPress",
+      "key": "menu-daily-panelpress",
+      "path": "images/packed/common_ui/submenu_panel.png",
+      "size": [
+        73,
+        142
+      ],
+      "hsv": [
+        0.4800000228,
+        0.8,
+        0.49999999999999994
+      ]
+    },
+    {
+      "enum": "I7_MenuDailyIcon",
+      "key": "menu-daily-icon",
+      "path": "images/ui/main_menu/submenu_daily.png",
+      "size": [
+        55,
+        55
+      ]
+    },
+    {
+      "enum": "I7_MenuCustomPanel",
+      "key": "menu-custom-panel",
+      "path": "images/packed/common_ui/submenu_panel.png",
+      "size": [
+        73,
+        142
+      ],
+      "hsv": [
+        0.930000044175,
+        1.200000057,
+        0.65
+      ]
+    },
+    {
+      "enum": "I7_MenuCustomPanelFocus",
+      "key": "menu-custom-panelfocus",
+      "path": "images/packed/common_ui/submenu_panel.png",
+      "size": [
+        73,
+        142
+      ],
+      "hsv": [
+        0.930000044175,
+        1.200000057,
+        0.8500000000000001
+      ]
+    },
+    {
+      "enum": "I7_MenuCustomPanelPress",
+      "key": "menu-custom-panelpress",
+      "path": "images/packed/common_ui/submenu_panel.png",
+      "size": [
+        73,
+        142
+      ],
+      "hsv": [
+        0.930000044175,
+        1.200000057,
+        0.45
+      ]
+    },
+    {
+      "enum": "I7_MenuCustomIcon",
+      "key": "menu-custom-icon",
+      "path": "images/ui/main_menu/submenu_custom.png",
+      "size": [
+        55,
+        55
+      ]
+    },
+    {
+      "enum": "I7_LibraryMisc",
+      "key": "library-misc",
+      "path": "images/packed/card_library/pool_filter_other.png",
+      "size": [
+        16,
+        16
+      ]
+    },
+    {
+      "enum": "I7_LibraryAncient",
+      "key": "library-ancient",
+      "path": "images/ui/run_history/neow.png",
+      "size": [
+        16,
+        16
+      ]
+    },
+    {
+      "enum": "I7_LibraryTypeAttack",
+      "key": "library-type-attack",
+      "path": "images/packed/card_library/type_sort_attack.png",
+      "size": [
+        13,
+        14
+      ]
+    },
+    {
+      "enum": "I7_LibraryTypeSkill",
+      "key": "library-type-skill",
+      "path": "images/packed/card_library/type_sort_skill.png",
+      "size": [
+        13,
+        14
+      ]
+    },
+    {
+      "enum": "I7_LibraryTypePower",
+      "key": "library-type-power",
+      "path": "images/packed/card_library/type_sort_power.png",
+      "size": [
+        13,
+        14
+      ]
+    },
+    {
+      "enum": "I7_LibraryTypeOther",
+      "key": "library-type-other",
+      "path": "images/packed/card_library/type_sort_other.png",
+      "size": [
+        13,
+        14
+      ]
+    },
+    {
+      "enum": "I7_LibraryTypeOutline",
+      "key": "library-type-outline",
+      "path": "images/packed/card_library/type_sort_outline2.png",
+      "size": [
+        13,
+        14
+      ]
+    },
+    {
+      "enum": "I7_LibraryCost",
+      "key": "library-cost",
+      "path": "images/packed/card_library/cost_tickbox.png",
+      "size": [
+        12,
+        12
+      ],
+      "modulate": [
+        0.333,
+        0.58,
+        0.647,
+        1.0
+      ]
+    },
+    {
+      "enum": "I7_LibraryCostOutline",
+      "key": "library-cost-outline",
+      "path": "images/packed/card_library/cost_tickbox_outline.png",
+      "size": [
+        12,
+        12
+      ],
+      "modulate": [
+        0.937255,
+        0.784314,
+        0.317647,
+        1.0
+      ]
+    }
+  ]
+}

@@ -1,0 +1,689 @@
+{
+  "schema": 1,
+  "reference": "v0.111.0 / 41cef1ea",
+  "source_viewport": [
+    1680,
+    1260
+  ],
+  "source_scenes": [
+    "scenes/ui/top_bar.tscn",
+    "scenes/ui/top_bar/second_boss_icon.tscn"
+  ],
+  "input_version": 26,
+  "output_version": 27,
+  "first_auxiliary": 1889,
+  "auxiliary_count": 1945,
+  "images": [
+    {
+      "key": "AEONGLASS_BOSS",
+      "source": "images/ui/run_history/aeonglass_boss.png",
+      "auxiliary": 1889,
+      "max_size": [
+        18,
+        34
+      ]
+    },
+    {
+      "key": "AEONGLASS_BOSS_OUTLINE",
+      "source": "images/ui/run_history/aeonglass_boss_outline.png",
+      "auxiliary": 1890,
+      "max_size": [
+        18,
+        34
+      ]
+    },
+    {
+      "key": "ANCIENT",
+      "source": "images/ui/run_history/ancient.png",
+      "auxiliary": 1891,
+      "max_size": [
+        18,
+        34
+      ]
+    },
+    {
+      "key": "ANCIENT_OUTLINE",
+      "source": "images/ui/run_history/ancient_outline.png",
+      "auxiliary": 1892,
+      "max_size": [
+        18,
+        34
+      ]
+    },
+    {
+      "key": "CEREMONIAL_BEAST_BOSS",
+      "source": "images/ui/run_history/ceremonial_beast_boss.png",
+      "auxiliary": 1893,
+      "max_size": [
+        18,
+        34
+      ]
+    },
+    {
+      "key": "CEREMONIAL_BEAST_BOSS_OUTLINE",
+      "source": "images/ui/run_history/ceremonial_beast_boss_outline.png",
+      "auxiliary": 1894,
+      "max_size": [
+        18,
+        34
+      ]
+    },
+    {
+      "key": "DARV_OUTLINE",
+      "source": "images/ui/run_history/darv_outline.png",
+      "auxiliary": 1895,
+      "max_size": [
+        18,
+        34
+      ]
+    },
+    {
+      "key": "DOORMAKER_BOSS",
+      "source": "images/ui/run_history/doormaker_boss.png",
+      "auxiliary": 1896,
+      "max_size": [
+        18,
+        34
+      ]
+    },
+    {
+      "key": "DOORMAKER_BOSS_OUTLINE",
+      "source": "images/ui/run_history/doormaker_boss_outline.png",
+      "auxiliary": 1897,
+      "max_size": [
+        18,
+        34
+      ]
+    },
+    {
+      "key": "ELITE",
+      "source": "images/ui/run_history/elite.png",
+      "auxiliary": 1898,
+      "max_size": [
+        18,
+        34
+      ]
+    },
+    {
+      "key": "ELITE_OUTLINE",
+      "source": "images/ui/run_history/elite_outline.png",
+      "auxiliary": 1899,
+      "max_size": [
+        18,
+        34
+      ]
+    },
+    {
+      "key": "EVENT",
+      "source": "images/ui/run_history/event.png",
+      "auxiliary": 1900,
+      "max_size": [
+        18,
+        34
+      ]
+    },
+    {
+      "key": "EVENT_OUTLINE",
+      "source": "images/ui/run_history/event_outline.png",
+      "auxiliary": 1901,
+      "max_size": [
+        18,
+        34
+      ]
+    },
+    {
+      "key": "KAISER_CRAB_BOSS",
+      "source": "images/ui/run_history/kaiser_crab_boss.png",
+      "auxiliary": 1902,
+      "max_size": [
+        18,
+        34
+      ]
+    },
+    {
+      "key": "KAISER_CRAB_BOSS_OUTLINE",
+      "source": "images/ui/run_history/kaiser_crab_boss_outline.png",
+      "auxiliary": 1903,
+      "max_size": [
+        18,
+        34
+      ]
+    },
+    {
+      "key": "KNOWLEDGE_DEMON_BOSS",
+      "source": "images/ui/run_history/knowledge_demon_boss.png",
+      "auxiliary": 1904,
+      "max_size": [
+        18,
+        34
+      ]
+    },
+    {
+      "key": "KNOWLEDGE_DEMON_BOSS_OUTLINE",
+      "source": "images/ui/run_history/knowledge_demon_boss_outline.png",
+      "auxiliary": 1905,
+      "max_size": [
+        18,
+        34
+      ]
+    },
+    {
+      "key": "LAGAVULIN_MATRIARCH_BOSS",
+      "source": "images/ui/run_history/lagavulin_matriarch_boss.png",
+      "auxiliary": 1906,
+      "max_size": [
+        18,
+        34
+      ]
+    },
+    {
+      "key": "LAGAVULIN_MATRIARCH_BOSS_OUTLINE",
+      "source": "images/ui/run_history/lagavulin_matriarch_boss_outline.png",
+      "auxiliary": 1907,
+      "max_size": [
+        18,
+        34
+      ]
+    },
+    {
+      "key": "MONSTER",
+      "source": "images/ui/run_history/monster.png",
+      "auxiliary": 1908,
+      "max_size": [
+        18,
+        34
+      ]
+    },
+    {
+      "key": "MONSTER_OUTLINE",
+      "source": "images/ui/run_history/monster_outline.png",
+      "auxiliary": 1909,
+      "max_size": [
+        18,
+        34
+      ]
+    },
+    {
+      "key": "NEOW_OUTLINE",
+      "source": "images/ui/run_history/neow_outline.png",
+      "auxiliary": 1910,
+      "max_size": [
+        18,
+        34
+      ]
+    },
+    {
+      "key": "NONUPEIPE_OUTLINE",
+      "source": "images/ui/run_history/nonupeipe_outline.png",
+      "auxiliary": 1911,
+      "max_size": [
+        18,
+        34
+      ]
+    },
+    {
+      "key": "OROBAS_OUTLINE",
+      "source": "images/ui/run_history/orobas_outline.png",
+      "auxiliary": 1912,
+      "max_size": [
+        18,
+        34
+      ]
+    },
+    {
+      "key": "PAEL_OUTLINE",
+      "source": "images/ui/run_history/pael_outline.png",
+      "auxiliary": 1913,
+      "max_size": [
+        18,
+        34
+      ]
+    },
+    {
+      "key": "QUEEN_BOSS",
+      "source": "images/ui/run_history/queen_boss.png",
+      "auxiliary": 1914,
+      "max_size": [
+        18,
+        34
+      ]
+    },
+    {
+      "key": "QUEEN_BOSS_OUTLINE",
+      "source": "images/ui/run_history/queen_boss_outline.png",
+      "auxiliary": 1915,
+      "max_size": [
+        18,
+        34
+      ]
+    },
+    {
+      "key": "REST_SITE",
+      "source": "images/ui/run_history/rest_site.png",
+      "auxiliary": 1916,
+      "max_size": [
+        18,
+        34
+      ]
+    },
+    {
+      "key": "REST_SITE_OUTLINE",
+      "source": "images/ui/run_history/rest_site_outline.png",
+      "auxiliary": 1917,
+      "max_size": [
+        18,
+        34
+      ]
+    },
+    {
+      "key": "SHOP",
+      "source": "images/ui/run_history/shop.png",
+      "auxiliary": 1918,
+      "max_size": [
+        18,
+        34
+      ]
+    },
+    {
+      "key": "SHOP_OUTLINE",
+      "source": "images/ui/run_history/shop_outline.png",
+      "auxiliary": 1919,
+      "max_size": [
+        18,
+        34
+      ]
+    },
+    {
+      "key": "SOUL_FYSH_BOSS",
+      "source": "images/ui/run_history/soul_fysh_boss.png",
+      "auxiliary": 1920,
+      "max_size": [
+        18,
+        34
+      ]
+    },
+    {
+      "key": "SOUL_FYSH_BOSS_OUTLINE",
+      "source": "images/ui/run_history/soul_fysh_boss_outline.png",
+      "auxiliary": 1921,
+      "max_size": [
+        18,
+        34
+      ]
+    },
+    {
+      "key": "TANX_OUTLINE",
+      "source": "images/ui/run_history/tanx_outline.png",
+      "auxiliary": 1922,
+      "max_size": [
+        18,
+        34
+      ]
+    },
+    {
+      "key": "TEST_SUBJECT_BOSS",
+      "source": "images/ui/run_history/test_subject_boss.png",
+      "auxiliary": 1923,
+      "max_size": [
+        18,
+        34
+      ]
+    },
+    {
+      "key": "TEST_SUBJECT_BOSS_OUTLINE",
+      "source": "images/ui/run_history/test_subject_boss_outline.png",
+      "auxiliary": 1924,
+      "max_size": [
+        18,
+        34
+      ]
+    },
+    {
+      "key": "TEZCATARA_OUTLINE",
+      "source": "images/ui/run_history/tezcatara_outline.png",
+      "auxiliary": 1925,
+      "max_size": [
+        18,
+        34
+      ]
+    },
+    {
+      "key": "THE_INSATIABLE_BOSS",
+      "source": "images/ui/run_history/the_insatiable_boss.png",
+      "auxiliary": 1926,
+      "max_size": [
+        18,
+        34
+      ]
+    },
+    {
+      "key": "THE_INSATIABLE_BOSS_OUTLINE",
+      "source": "images/ui/run_history/the_insatiable_boss_outline.png",
+      "auxiliary": 1927,
+      "max_size": [
+        18,
+        34
+      ]
+    },
+    {
+      "key": "THE_KIN_BOSS",
+      "source": "images/ui/run_history/the_kin_boss.png",
+      "auxiliary": 1928,
+      "max_size": [
+        18,
+        34
+      ]
+    },
+    {
+      "key": "THE_KIN_BOSS_OUTLINE",
+      "source": "images/ui/run_history/the_kin_boss_outline.png",
+      "auxiliary": 1929,
+      "max_size": [
+        18,
+        34
+      ]
+    },
+    {
+      "key": "TREASURE",
+      "source": "images/ui/run_history/treasure.png",
+      "auxiliary": 1930,
+      "max_size": [
+        18,
+        34
+      ]
+    },
+    {
+      "key": "TREASURE_OUTLINE",
+      "source": "images/ui/run_history/treasure_outline.png",
+      "auxiliary": 1931,
+      "max_size": [
+        18,
+        34
+      ]
+    },
+    {
+      "key": "UNKNOWN_ELITE",
+      "source": "images/ui/run_history/unknown_elite.png",
+      "auxiliary": 1932,
+      "max_size": [
+        18,
+        34
+      ]
+    },
+    {
+      "key": "UNKNOWN_ELITE_OUTLINE",
+      "source": "images/ui/run_history/unknown_elite_outline.png",
+      "auxiliary": 1933,
+      "max_size": [
+        18,
+        34
+      ]
+    },
+    {
+      "key": "UNKNOWN_MONSTER",
+      "source": "images/ui/run_history/unknown_monster.png",
+      "auxiliary": 1934,
+      "max_size": [
+        18,
+        34
+      ]
+    },
+    {
+      "key": "UNKNOWN_MONSTER_OUTLINE",
+      "source": "images/ui/run_history/unknown_monster_outline.png",
+      "auxiliary": 1935,
+      "max_size": [
+        18,
+        34
+      ]
+    },
+    {
+      "key": "UNKNOWN_SHOP",
+      "source": "images/ui/run_history/unknown_shop.png",
+      "auxiliary": 1936,
+      "max_size": [
+        18,
+        34
+      ]
+    },
+    {
+      "key": "UNKNOWN_SHOP_OUTLINE",
+      "source": "images/ui/run_history/unknown_shop_outline.png",
+      "auxiliary": 1937,
+      "max_size": [
+        18,
+        34
+      ]
+    },
+    {
+      "key": "UNKNOWN_TREASURE",
+      "source": "images/ui/run_history/unknown_treasure.png",
+      "auxiliary": 1938,
+      "max_size": [
+        18,
+        34
+      ]
+    },
+    {
+      "key": "UNKNOWN_TREASURE_OUTLINE",
+      "source": "images/ui/run_history/unknown_treasure_outline.png",
+      "auxiliary": 1939,
+      "max_size": [
+        18,
+        34
+      ]
+    },
+    {
+      "key": "VAKUU_OUTLINE",
+      "source": "images/ui/run_history/vakuu_outline.png",
+      "auxiliary": 1940,
+      "max_size": [
+        18,
+        34
+      ]
+    },
+    {
+      "key": "VANTOM_BOSS",
+      "source": "images/ui/run_history/vantom_boss.png",
+      "auxiliary": 1941,
+      "max_size": [
+        18,
+        34
+      ]
+    },
+    {
+      "key": "VANTOM_BOSS_OUTLINE",
+      "source": "images/ui/run_history/vantom_boss_outline.png",
+      "auxiliary": 1942,
+      "max_size": [
+        18,
+        34
+      ]
+    },
+    {
+      "key": "WATERFALL_GIANT_BOSS",
+      "source": "images/ui/run_history/waterfall_giant_boss.png",
+      "auxiliary": 1943,
+      "max_size": [
+        18,
+        34
+      ]
+    },
+    {
+      "key": "WATERFALL_GIANT_BOSS_OUTLINE",
+      "source": "images/ui/run_history/waterfall_giant_boss_outline.png",
+      "auxiliary": 1944,
+      "max_size": [
+        18,
+        34
+      ]
+    }
+  ],
+  "icon_pairs": [
+    {
+      "key": "AEONGLASS_BOSS",
+      "icon": 1889,
+      "outline": 1890
+    },
+    {
+      "key": "ANCIENT",
+      "icon": 1891,
+      "outline": 1892
+    },
+    {
+      "key": "CEREMONIAL_BEAST_BOSS",
+      "icon": 1893,
+      "outline": 1894
+    },
+    {
+      "key": "DARV",
+      "icon": 1876,
+      "outline": 1895
+    },
+    {
+      "key": "DOORMAKER_BOSS",
+      "icon": 1896,
+      "outline": 1897
+    },
+    {
+      "key": "ELITE",
+      "icon": 1898,
+      "outline": 1899
+    },
+    {
+      "key": "EVENT",
+      "icon": 1900,
+      "outline": 1901
+    },
+    {
+      "key": "KAISER_CRAB_BOSS",
+      "icon": 1902,
+      "outline": 1903
+    },
+    {
+      "key": "KNOWLEDGE_DEMON_BOSS",
+      "icon": 1904,
+      "outline": 1905
+    },
+    {
+      "key": "LAGAVULIN_MATRIARCH_BOSS",
+      "icon": 1906,
+      "outline": 1907
+    },
+    {
+      "key": "MONSTER",
+      "icon": 1908,
+      "outline": 1909
+    },
+    {
+      "key": "NEOW",
+      "icon": 1869,
+      "outline": 1910
+    },
+    {
+      "key": "NONUPEIPE",
+      "icon": 1873,
+      "outline": 1911
+    },
+    {
+      "key": "OROBAS",
+      "icon": 1870,
+      "outline": 1912
+    },
+    {
+      "key": "PAEL",
+      "icon": 1871,
+      "outline": 1913
+    },
+    {
+      "key": "QUEEN_BOSS",
+      "icon": 1914,
+      "outline": 1915
+    },
+    {
+      "key": "REST_SITE",
+      "icon": 1916,
+      "outline": 1917
+    },
+    {
+      "key": "SHOP",
+      "icon": 1918,
+      "outline": 1919
+    },
+    {
+      "key": "SOUL_FYSH_BOSS",
+      "icon": 1920,
+      "outline": 1921
+    },
+    {
+      "key": "TANX",
+      "icon": 1874,
+      "outline": 1922
+    },
+    {
+      "key": "TEST_SUBJECT_BOSS",
+      "icon": 1923,
+      "outline": 1924
+    },
+    {
+      "key": "TEZCATARA",
+      "icon": 1872,
+      "outline": 1925
+    },
+    {
+      "key": "THE_INSATIABLE_BOSS",
+      "icon": 1926,
+      "outline": 1927
+    },
+    {
+      "key": "THE_KIN_BOSS",
+      "icon": 1928,
+      "outline": 1929
+    },
+    {
+      "key": "TREASURE",
+      "icon": 1930,
+      "outline": 1931
+    },
+    {
+      "key": "UNKNOWN_ELITE",
+      "icon": 1932,
+      "outline": 1933
+    },
+    {
+      "key": "UNKNOWN_MONSTER",
+      "icon": 1934,
+      "outline": 1935
+    },
+    {
+      "key": "UNKNOWN_SHOP",
+      "icon": 1936,
+      "outline": 1937
+    },
+    {
+      "key": "UNKNOWN_TREASURE",
+      "icon": 1938,
+      "outline": 1939
+    },
+    {
+      "key": "VAKUU",
+      "icon": 1875,
+      "outline": 1940
+    },
+    {
+      "key": "VANTOM_BOSS",
+      "icon": 1941,
+      "outline": 1942
+    },
+    {
+      "key": "WATERFALL_GIANT_BOSS",
+      "icon": 1943,
+      "outline": 1944
+    }
+  ],
+  "reused_images": {
+    "source": "config/collection-ui7-0.17.json",
+    "count": 8
+  },
+  "text_slots": []
+}

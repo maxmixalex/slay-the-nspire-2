@@ -1,0 +1,13 @@
+static void notify_card_generated(State&,int,bool player_created=true);
+static void all_characters_attack_damage(State&,int target,int total,int unblocked,bool pet);
+void notify_deck_card_created(State&,int,int);
+void notify_deck_removed(State&,int);
+void notify_deck_replaced(State&,int);
+void notify_deck_copied(State&,int,int);
+static void queue_card_body(State&);
+static void queue_current(State&);
+static void before_current(State&);
+static void all_characters_late(State&);
+static bool queue_common_token(State&,Card,int);
+static void burn_hand(State&);
+static void exhaust_ethereal_hand(State&);

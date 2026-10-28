@@ -1,0 +1,137 @@
+#!/usr/bin/env python3
+"""Prefill private original rest-actor caches without assembling a world pack.
+
+The serial converter's complete jobs, renderer, dependency scopes, encoding and
+checked reference-cache migration are shared. Only one or two worker processes are allowed.
+Run from a frozen, verified source checkpoint; final pack validation still
+belongs to build_world. No original inputs or generated art belong in Git.
+"""
+from __future__ import annotations
+
+import argparse
+import atexit
+from concurrent.futures import ProcessPoolExecutor
+from contextlib import contextmanager
+import fcntl
+import multiprocessing
+import os
+from pathlib import Path
+import sys
+
+import lz4
+import numpy as np
+from PIL import Image
+
+from build_content import texture
+from build_world import (CACHE_SCHEMA, canonical, encode_image,
+    encoded_frames, private_path, render_scope, source_fingerprint,
+    sample_rest_actor_batched as sample_rest_actor,
+    REST_ACTOR_PROFILE_FIELDS as PROFILE_FIELDS,
+    validate_rest_actor_record as validate_record, cached_rest_actor_clip)
+from pck import Pack
+from prefetch_world_clips import open_cache
+from reference_inventory import sha256, verify_release
+from world_enemy_assets import RUNTIME_SHA256, SpineSampler
+from world_ui_profile import REST_ACTOR_CLIP_ROWS, validate_headers
+
+
+def cached_rest_clip(cache, job, scope):
+    # A reference-only caller remains a strict reader of that scope. Only
+    # the current batched pipeline can import the exact reference renderer.
+    reference = (render_scope('rest-actor-clip-reference', cache.source_files)
+                 if scope.get('pipeline') == 'rest-actor-plane-batched-rgba-1' else None)
+    return cached_rest_actor_clip(cache, job, scope, reference_scope=reference)
+
+
+@contextmanager
+def job_lock(cache, job, scope):
+    """Let workers share one completed record for the same cache key."""
+    directory = cache.directory / 'prefetch-rest-locks'
+    directory.mkdir(parents=True, exist_ok=True)
+    with (directory / (cache.key('clip', job, scope) + '.lock')).open('a') as guard:
+        fcntl.flock(guard.fileno(), fcntl.LOCK_EX)
+        try:
+            yield
+        finally:
+            fcntl.flock(guard.fileno(), fcntl.LOCK_UN)
+
+
+_worker = None
+
+
+def initialize_worker(game, directory, dependencies, sources, runtime, dotnet, fastnoise):
+    global _worker
+    cache = open_cache(directory, dependencies, sources)
+    pck = Pack(Path(game) / 'SlayTheSpire2.pck')
+    try:
+        sampler = SpineSampler(pck, runtime=runtime, dotnet=dotnet, texture=texture,
+            fastnoise_header=fastnoise,
+            work_dir=cache.directory / ('prefetch-rest-runtime-' + str(os.getpid())))
+    except BaseException:
+        pck.close()
+        raise
+    atexit.register(pck.close)
+    atexit.register(sampler.close)
+    scope = render_scope('rest-actor-clip', sources)
+    _worker = cache, pck, sampler, sources, scope
+
+
+def prefetch_job(item):
+    number, job = item
+    cache, pck, sampler, _sources, scope = _worker
+    with job_lock(cache, job, scope):
+        cached = cached_rest_clip(cache, job, scope)
+        if cached is not None:
+            return number, job['key'], 'reused', len(cached[1])
+        images, metadata = sample_rest_actor(pck, job, sampler)
+        payload = encoded_frames([encode_image(image, animation=True) for image in images])
+        validate_record(job, (metadata, payload))
+        cache.put('clip', job, metadata, payload, scope=scope)
+        return number, job['key'], 'baked', len(payload)
+
+
+def main(argv=None):
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('game', type=Path)
+    parser.add_argument('--cache', type=Path, required=True)
+    parser.add_argument('--runtime', type=Path, required=True)
+    parser.add_argument('--dotnet', required=True)
+    parser.add_argument('--fastnoise-header', type=Path, required=True)
+    parser.add_argument('--workers', type=int, choices=(1, 2), default=1)
+    args = parser.parse_args(argv)
+    game = private_path(args.game, 'Original game')
+    runtime = private_path(args.runtime, 'Spine runtime')
+    fastnoise = args.fastnoise_header.resolve(strict=True)
+    validate_headers()
+    _lock, _dll, hashes = verify_release(game, cache_identity=True)
+    sources = source_fingerprint()
+    dependencies = dict(schema=CACHE_SCHEMA, pck=hashes['pck'],
+        spine_runtime=sha256(runtime), fastnoise_header=sha256(fastnoise),
+        python=sys.version, numpy=np.__version__, pillow=Image.__version__, lz4=lz4.__version__)
+    cache = open_cache(args.cache, dependencies, sources)
+    scope = render_scope('rest-actor-clip', sources)
+    pending = []
+    # Reverse the serial converter's order so the two producers usually work
+    # on different jobs. A future profile cannot silently add another kind.
+    for number in range(len(REST_ACTOR_CLIP_ROWS) - 1, -1, -1):
+        job = REST_ACTOR_CLIP_ROWS[number]
+        if job['kind'] != 'rest-actor-clip':
+            raise ValueError('Rest prefetch received a non-rest job')
+        cached = cached_rest_clip(cache, job, scope)
+        if cached is None:
+            pending.append((number, job))
+    print(f'Rest prefetch: {len(pending)} missing of {len(REST_ACTOR_CLIP_ROWS)} clips; '
+          f'{args.workers} workers; cache {cache.identity}', flush=True)
+    if pending:
+        with ProcessPoolExecutor(max_workers=args.workers,
+                mp_context=multiprocessing.get_context('spawn'), initializer=initialize_worker,
+                initargs=(str(game), str(args.cache), dependencies, sources,
+                          str(runtime), args.dotnet, str(fastnoise))) as pool:
+            for completed, (number, key, status, size) in enumerate(pool.map(prefetch_job, pending), 1):
+                print(f'Rest prefetch {completed}/{len(pending)} clip {number + 1}: '
+                      f'{key}: {status}, {size} bytes', flush=True)
+    print('Complete: rest cache population only; final pack validation still belongs to build_world.', flush=True)
+
+
+if __name__ == '__main__':
+    main()

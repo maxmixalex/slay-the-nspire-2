@@ -1,0 +1,121 @@
+{
+  "schema": 1,
+  "recorded_at_utc": "2026-10-23",
+  "reference": "v0.111.0 / 41cef1ea",
+  "runtime_checkpoint": "ead747dcdffded08d641445a811af48a4fafd1de",
+  "resource_checkpoint": "3843e8e626317da0c1508fab02a2ed4a627f9fdd",
+  "packaging_checkpoint": "d6b3d31b9f00ecd144ab1b4a1748fa1c2e731c5a",
+  "delivery": {
+    "calculator_zip": {
+      "name": "Slay-the-Nspire-2-0.17-ui3-bilingual-calculator.zip",
+      "bytes": 76697282,
+      "members": [
+        {
+          "path": "nSpire2.tns",
+          "bytes": 983682
+        },
+        {
+          "path": "nSpire2.common.tns",
+          "bytes": 74756230
+        },
+        {
+          "path": "nSpire2.eng.tns",
+          "bytes": 1780887
+        },
+        {
+          "path": "nSpire2.zhs.tns",
+          "bytes": 4563586
+        },
+        {
+          "path": "COPYING",
+          "bytes": 35149
+        },
+        {
+          "path": "NOTICE.md",
+          "bytes": 8099
+        },
+        {
+          "path": "licenses/Go-BSD-3-Clause.txt",
+          "bytes": 1479
+        },
+        {
+          "path": "licenses/OkHSV-Godot-MIT.txt",
+          "bytes": 1406
+        },
+        {
+          "path": "licenses/Noto-Boot-OFL.txt",
+          "bytes": 4330
+        },
+        {
+          "path": "README.txt",
+          "bytes": 3240
+        },
+        {
+          "path": "BUILD-INFO.json",
+          "bytes": 369
+        }
+      ]
+    },
+    "offline_html": {
+      "name": "Slay-the-Nspire-2-0.17-ui3-bilingual-offline.html",
+      "bytes": 115479696,
+      "self_contained": true,
+      "shared_artwork_copies": 1,
+      "locales": [
+        "eng",
+        "zhs"
+      ]
+    },
+    "both_user_files_saved": true,
+    "saved_files_match_reviewed_artifacts": true,
+    "private_save_receipts": "Both ordered upload results succeeded and their local file identity metadata was applied. Account IDs and original content are omitted from this public record."
+  },
+  "installed_bytes": {
+    "launcher": 983682,
+    "common": 74756230,
+    "eng": 1780887,
+    "zhs": 4563586,
+    "both_locales_before_saves": 82084385,
+    "english_only_before_saves": 77520799,
+    "chinese_only_before_saves": 80303498,
+    "resource_reduction_from_v19": 12682660
+  },
+  "verification": {
+    "packaging_journal": "ui3-final-delivery-package-11790097ac82",
+    "journal_file": "ui3-final-delivery-package-11790097ac82.json",
+    "status": "passed",
+    "returncode": 0,
+    "source_changed": false,
+    "zip_members_match_selected_inputs": true,
+    "embedded_input_checks": {
+      "mode": true,
+      "wasm_bytes_match": true,
+      "common_bytes_match": true,
+      "two_locales": true,
+      "eng_bytes_match": true,
+      "zhs_bytes_match": true,
+      "NOTICE.md_complete": true,
+      "COPYING_complete": true,
+      "licenses/Go-BSD-3-Clause.txt_complete": true,
+      "licenses/OkHSV-Godot-MIT.txt_complete": true,
+      "licenses/Noto-Boot-OFL.txt_complete": true
+    },
+    "browser_report": "validation-ui3-browser-0.17.json",
+    "firebird_report": "validation-ui3-firebird-0.17.json",
+    "ci_report": "validation-ui3-runtime-0.17.json"
+  },
+  "installation": [
+    "Keep the launcher, common pack and installed locale packs from the same release in one calculator folder.",
+    "Either locale or both locales may be installed; both use the same gameplay save.",
+    "Keep nSpire2.sav.tns and the language preference when updating. New writes may be rejected by old launchers.",
+    "If TI OS cannot replace the large common pack with available temporary space, remove only the old common pack before transferring the matching set.",
+    "The old complete nSpire2.nsp.tns is unnecessary alongside the split resources."
+  ],
+  "limits": [
+    "Physical-calculator frame rate is unmeasured.",
+    "The 30 to 40 MB installation target is not reached.",
+    "Title background GPU stars and fog, full card-pile transit animation and unaudited enemy command delays remain fidelity work.",
+    "Emulator cold multi-card entry can still pause; see the final Firebird report."
+  ],
+  "public_repository_scope": "Source and reviewed metadata only. Original assets, embedded HTML, screenshots and gameplay saves are excluded."
+}

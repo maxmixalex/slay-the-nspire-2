@@ -1,0 +1,7 @@
+# Colorless and potion integration — 2026-10-16
+
+Continue from work/0.14-colorless-potions, not the earlier incomplete bulk relic branch. The registry and potion dispatcher are now connected. A new regression target enumerates all 53 single-player colorless cards in both upgrade states and all 64 active potions, and exercises suspended choices and nested autoplay. These tests have not yet been run at this source checkpoint.
+
+Reference inspection used the owner's v0.111.0 / 41cef1ea assembly and PCK. ColorlessCardPool contains 65 models; 12 require multiplayer and remain excluded. All 53 single-player models have definitions. The 64 active potions exclude DeprecatedPotion. Soul and SovereignBlade are generated tokens, not extra colorless pool cards. Other character-specific potions are implemented for practice access; this does not add three playable characters.
+
+Remaining before release: publish the locally authored original-rule corrections (GoldAxe uses finished card plays, damage-copy excludes overkill, Plating also grants next-turn block), acquisition/build-list changes, expanded choice/lab UI and the matching asset converter/profile. Run per-model regressions, old-save migrations, actual-pack UI tests, ARM and WASM builds. Keep main unchanged and CI disabled until the complete inputs are verified. Source-only backups remain local as a second recovery channel; private game data must never be pushed.

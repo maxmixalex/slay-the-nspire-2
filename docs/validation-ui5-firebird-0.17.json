@@ -1,0 +1,628 @@
+{
+  "schema": 1,
+  "recorded_at_utc": "2026-10-24T03:28:53.881985+00:00",
+  "status": "passed_with_explicit_scope",
+  "reference": "v0.111.0 / 41cef1ea",
+  "runtime_checkpoint": "1c774c0847ef8e47b2bd23fd3bc6a11635d8e219",
+  "resource_converter_checkpoint": "1ad378862fae54fc8c8b346c2680b5f448e26883",
+  "journal": {
+    "checkpoint": "1c774c0847ef8e47b2bd23fd3bc6a11635d8e219",
+    "started_at": "2026-10-24T03:10:28.509997+00:00",
+    "ended_at": "2026-10-24T03:28:53.881985+00:00",
+    "status": "passed",
+    "returncode": 0,
+    "source_changed": false,
+    "source_sha256": "3857ad222e97f0ad4f91910cb307fbb81d38c34f84c6e8d75cb30edf63ac6b38",
+    "log": "ui5-calculator-acceptance-b8d3dc7d4494.log",
+    "log_sha256": "e6a3420eeac32e64b612da9771e2a764c75b57b82b0226938bd35f6add4da78a"
+  },
+  "environment": {
+    "emulator": "Firebird upstream core with source-published ordinary keypad/USB controller",
+    "screen": [
+      320,
+      240
+    ],
+    "boot": "owner-provided compatible Boot1; normal OS boot",
+    "flash": "independent disposable copy of owner-provided CXII NAND",
+    "original_nand_changed": false,
+    "ndless_install": "ordinary document installer, revision 2022",
+    "language_executed": "Chinese",
+    "physical_device_executed": false,
+    "ram_or_game_state_injection": false,
+    "snapshot_restore_used": false,
+    "input_press_duration_ms": 80,
+    "profile_first_session": false,
+    "profile_second_session": "explicit opt-in marker transferred by ordinary USB"
+  },
+  "normal_operation_acceptance": [
+    "Booted the ordinary OS, installed Ndless, opened the final launcher from Documents and selected Chinese.",
+    "Inspected title, General/Input settings, Ironclad character selection and original icon-only confirmation.",
+    "Opened the card collection and Strike secondary detail; inspected both first open and reopen.",
+    "Started an Ironclad run, selected Neow Kaleidoscope, opened and claimed both real card rewards, and inspected the original map window.",
+    "Saved and returned to title, confirmed exit and returned to ordinary OS.",
+    "Relaunched through ordinary Documents with profiling enabled, repeated collection/detail operations, used Continue to restore the saved Neow state and acquired relic, saved and exited to OS again.",
+    "Downloaded the generated performance report and 230152-byte save through ordinary USB, acknowledged the OS dialogs, flushed only the working NAND, and stopped normally."
+  ],
+  "asset_identity": {
+    "launcher_usb_readback_bytes": 1018044,
+    "launcher_usb_readback_sha256": "052764aa4755cc15d3cf9206883ae7f95978812b840e8fc1f313197176f841b8",
+    "launcher_matches_final_build": true,
+    "final_os_directory": [
+      {
+        "name": "nSpire2.tns",
+        "bytes": 1018044
+      },
+      {
+        "name": "nSpire2.common.tns",
+        "bytes": 74904242
+      },
+      {
+        "name": "nSpire2.eng.tns",
+        "bytes": 1781175
+      },
+      {
+        "name": "nSpire2.zhs.tns",
+        "bytes": 4563886
+      },
+      {
+        "name": "nSpire2.lang.tns",
+        "bytes": 8
+      },
+      {
+        "name": "nSpire2.profile.tns",
+        "bytes": 28
+      },
+      {
+        "name": "nSpire2.sav.tns",
+        "bytes": 230152
+      },
+      {
+        "name": "nSpire2.perf.tns",
+        "bytes": 4371
+      },
+      {
+        "name": "nSpire2.bak.tns",
+        "bytes": 230152
+      }
+    ],
+    "scope": "Exact final launcher readback and ordinary directory lengths; actual Chinese startup/rendering exercised split data. Do not claim a complete USB readback of both large resource files."
+  },
+  "observed_detail_latency": {
+    "method": "First unprofiled session, screenshots at declared emulated time after the start of an 80ms Enter press; visual observations are coarse sampling brackets, not an exact input-to-present benchmark.",
+    "first_open": {
+      "at_100_ms": "collection still displayed",
+      "at_300_ms": "collection still displayed",
+      "at_1000_ms": "secondary Strike detail displayed",
+      "at_3000_ms": "detail remains displayed"
+    },
+    "reopen_same_card": {
+      "at_100_ms": "secondary Strike detail displayed",
+      "at_300_ms": "detail displayed",
+      "at_1000_ms": "detail displayed"
+    },
+    "conclusion": "Cold detail latency is not resolved. This is a single Chinese card in the emulator; no before/after calculator speedup is inferred."
+  },
+  "performance_report": {
+    "file_bytes": 4371,
+    "sha256": "f9c9ccc02659bb98e437b23bc3c8c82800779dcfe99faa0be81a761d8de6e9a3",
+    "raw": {
+      "format": "nspire-runtime-perf-1",
+      "units": "timer_ticks",
+      "clock": "foreground_SP804",
+      "startup_scope": "selected_resource_validation_and_app_init",
+      "clock_hz": 32768,
+      "hardware": 1,
+      "ndless_revision": 2022,
+      "pack_bytes": 79467968,
+      "startup": {
+        "count": 1,
+        "total": 17497,
+        "min": 17497,
+        "max": 17497
+      },
+      "first_render": {
+        "count": 1,
+        "total": 35423,
+        "min": 35423,
+        "max": 35423
+      },
+      "first_present": {
+        "count": 1,
+        "total": 7,
+        "min": 7,
+        "max": 7
+      },
+      "startup_phases": {
+        "header": {
+          "count": 1,
+          "total": 166,
+          "min": 166,
+          "max": 166
+        },
+        "integrity": {
+          "count": 0,
+          "total": 0,
+          "min": 0,
+          "max": 0
+        },
+        "directory": {
+          "count": 1,
+          "total": 7526,
+          "min": 7526,
+          "max": 7526
+        },
+        "images": {
+          "count": 0,
+          "total": 0,
+          "min": 0,
+          "max": 0
+        },
+        "tile_index": {
+          "count": 0,
+          "total": 0,
+          "min": 0,
+          "max": 0
+        },
+        "glyphs": {
+          "count": 0,
+          "total": 0,
+          "min": 0,
+          "max": 0
+        },
+        "strings": {
+          "count": 0,
+          "total": 0,
+          "min": 0,
+          "max": 0
+        },
+        "ready": {
+          "count": 1,
+          "total": 3878,
+          "min": 3878,
+          "max": 3878
+        }
+      },
+      "resource_total": {
+        "ticks": 148658,
+        "calls": 154,
+        "bytes_requested": 2043034,
+        "failures": 0,
+        "seeks": 146
+      },
+      "scenes": [
+        {
+          "scene": "title",
+          "interval": {
+            "count": 377,
+            "total": 475608,
+            "min": 1154,
+            "max": 7571
+          },
+          "update": {
+            "count": 377,
+            "total": 7485,
+            "min": 2,
+            "max": 6324
+          },
+          "render": {
+            "count": 377,
+            "total": 465009,
+            "min": 1143,
+            "max": 1258
+          },
+          "present": {
+            "count": 377,
+            "total": 2716,
+            "min": 7,
+            "max": 8
+          },
+          "resource": {
+            "count": 377,
+            "total": 0,
+            "min": 0,
+            "max": 0
+          },
+          "over_50ms": 1,
+          "over_100ms": 1,
+          "over_250ms": 0,
+          "read_calls": 0,
+          "read_bytes_requested": 0,
+          "read_seeks": 0
+        },
+        {
+          "scene": "character",
+          "interval": {
+            "count": 0,
+            "total": 0,
+            "min": 0,
+            "max": 0
+          },
+          "update": {
+            "count": 0,
+            "total": 0,
+            "min": 0,
+            "max": 0
+          },
+          "render": {
+            "count": 0,
+            "total": 0,
+            "min": 0,
+            "max": 0
+          },
+          "present": {
+            "count": 0,
+            "total": 0,
+            "min": 0,
+            "max": 0
+          },
+          "resource": {
+            "count": 0,
+            "total": 0,
+            "min": 0,
+            "max": 0
+          },
+          "over_50ms": 0,
+          "over_100ms": 0,
+          "over_250ms": 0,
+          "read_calls": 0,
+          "read_bytes_requested": 0,
+          "read_seeks": 0
+        },
+        {
+          "scene": "collection",
+          "interval": {
+            "count": 177,
+            "total": 236524,
+            "min": 756,
+            "max": 45340
+          },
+          "update": {
+            "count": 177,
+            "total": 476,
+            "min": 2,
+            "max": 43
+          },
+          "render": {
+            "count": 177,
+            "total": 176586,
+            "min": 746,
+            "max": 45290
+          },
+          "present": {
+            "count": 177,
+            "total": 1414,
+            "min": 7,
+            "max": 8
+          },
+          "resource": {
+            "count": 177,
+            "total": 43752,
+            "min": 0,
+            "max": 43752
+          },
+          "over_50ms": 1,
+          "over_100ms": 1,
+          "over_250ms": 1,
+          "read_calls": 48,
+          "read_bytes_requested": 298072,
+          "read_seeks": 45
+        },
+        {
+          "scene": "map",
+          "interval": {
+            "count": 0,
+            "total": 0,
+            "min": 0,
+            "max": 0
+          },
+          "update": {
+            "count": 0,
+            "total": 0,
+            "min": 0,
+            "max": 0
+          },
+          "render": {
+            "count": 0,
+            "total": 0,
+            "min": 0,
+            "max": 0
+          },
+          "present": {
+            "count": 0,
+            "total": 0,
+            "min": 0,
+            "max": 0
+          },
+          "resource": {
+            "count": 0,
+            "total": 0,
+            "min": 0,
+            "max": 0
+          },
+          "over_50ms": 0,
+          "over_100ms": 0,
+          "over_250ms": 0,
+          "read_calls": 0,
+          "read_bytes_requested": 0,
+          "read_seeks": 0
+        },
+        {
+          "scene": "combat",
+          "interval": {
+            "count": 0,
+            "total": 0,
+            "min": 0,
+            "max": 0
+          },
+          "update": {
+            "count": 0,
+            "total": 0,
+            "min": 0,
+            "max": 0
+          },
+          "render": {
+            "count": 0,
+            "total": 0,
+            "min": 0,
+            "max": 0
+          },
+          "present": {
+            "count": 0,
+            "total": 0,
+            "min": 0,
+            "max": 0
+          },
+          "resource": {
+            "count": 0,
+            "total": 0,
+            "min": 0,
+            "max": 0
+          },
+          "over_50ms": 0,
+          "over_100ms": 0,
+          "over_250ms": 0,
+          "read_calls": 0,
+          "read_bytes_requested": 0,
+          "read_seeks": 0
+        },
+        {
+          "scene": "room",
+          "interval": {
+            "count": 54,
+            "total": 100986,
+            "min": 754,
+            "max": 43449
+          },
+          "update": {
+            "count": 54,
+            "total": 10012,
+            "min": 3,
+            "max": 9853
+          },
+          "render": {
+            "count": 54,
+            "total": 72916,
+            "min": 742,
+            "max": 33589
+          },
+          "present": {
+            "count": 54,
+            "total": 378,
+            "min": 7,
+            "max": 7
+          },
+          "resource": {
+            "count": 54,
+            "total": 32644,
+            "min": 0,
+            "max": 32644
+          },
+          "over_50ms": 1,
+          "over_100ms": 1,
+          "over_250ms": 1,
+          "read_calls": 22,
+          "read_bytes_requested": 133672,
+          "read_seeks": 21
+        },
+        {
+          "scene": "overlay",
+          "interval": {
+            "count": 275,
+            "total": 453835,
+            "min": 1513,
+            "max": 16277
+          },
+          "update": {
+            "count": 275,
+            "total": 1029,
+            "min": 2,
+            "max": 49
+          },
+          "render": {
+            "count": 275,
+            "total": 449764,
+            "min": 1503,
+            "max": 15885
+          },
+          "present": {
+            "count": 275,
+            "total": 1983,
+            "min": 7,
+            "max": 8
+          },
+          "resource": {
+            "count": 275,
+            "total": 24978,
+            "min": 0,
+            "max": 14346
+          },
+          "over_50ms": 18,
+          "over_100ms": 3,
+          "over_250ms": 2,
+          "read_calls": 33,
+          "read_bytes_requested": 144553,
+          "read_seeks": 31
+        },
+        {
+          "scene": "other",
+          "interval": {
+            "count": 0,
+            "total": 0,
+            "min": 0,
+            "max": 0
+          },
+          "update": {
+            "count": 0,
+            "total": 0,
+            "min": 0,
+            "max": 0
+          },
+          "render": {
+            "count": 0,
+            "total": 0,
+            "min": 0,
+            "max": 0
+          },
+          "present": {
+            "count": 0,
+            "total": 0,
+            "min": 0,
+            "max": 0
+          },
+          "resource": {
+            "count": 0,
+            "total": 0,
+            "min": 0,
+            "max": 0
+          },
+          "over_50ms": 0,
+          "over_100ms": 0,
+          "over_250ms": 0,
+          "read_calls": 0,
+          "read_bytes_requested": 0,
+          "read_seeks": 0
+        },
+        {
+          "scene": "combat_preparation",
+          "interval": {
+            "count": 0,
+            "total": 0,
+            "min": 0,
+            "max": 0
+          },
+          "update": {
+            "count": 0,
+            "total": 0,
+            "min": 0,
+            "max": 0
+          },
+          "render": {
+            "count": 0,
+            "total": 0,
+            "min": 0,
+            "max": 0
+          },
+          "present": {
+            "count": 0,
+            "total": 0,
+            "min": 0,
+            "max": 0
+          },
+          "resource": {
+            "count": 0,
+            "total": 0,
+            "min": 0,
+            "max": 0
+          },
+          "over_50ms": 0,
+          "over_100ms": 0,
+          "over_250ms": 0,
+          "read_calls": 0,
+          "read_bytes_requested": 0,
+          "read_seeks": 0
+        }
+      ]
+    },
+    "milliseconds": {
+      "startup_selected_resource_validation_and_app_init": 533.966,
+      "first_render": 1081.024,
+      "first_present": 0.214,
+      "scenes": [
+        {
+          "scene": "title",
+          "frames": 377,
+          "mean_render": 37.642,
+          "max_render": 38.391,
+          "read_calls": 0,
+          "read_bytes_requested": 0
+        },
+        {
+          "scene": "collection",
+          "frames": 177,
+          "mean_render": 30.446,
+          "max_render": 1382.141,
+          "read_calls": 48,
+          "read_bytes_requested": 298072
+        },
+        {
+          "scene": "room",
+          "frames": 54,
+          "mean_render": 41.208,
+          "max_render": 1025.055,
+          "read_calls": 22,
+          "read_bytes_requested": 133672
+        },
+        {
+          "scene": "overlay",
+          "frames": 275,
+          "mean_render": 49.912,
+          "max_render": 484.772,
+          "read_calls": 33,
+          "read_bytes_requested": 144553
+        }
+      ]
+    },
+    "interpretation": [
+      "Actual foreground SP804 samples at 32768 Hz in this emulator, not host wall time or physical hardware measurements.",
+      "Title had zero in-loop resource reads across 377 measured frames.",
+      "Collection includes a 1382.141ms cold rendering outlier. Overlay combines detail and pause/confirmation; its 484.772ms maximum cannot be assigned solely to a particular detail entrance.",
+      "No combat, combat preparation, map or character frames were sampled in the second profiled session; those zero-count rows are not performance results.",
+      "The unprofiled first session covers additional pages, including settings, character, rewards and map.",
+      "No UI4 comparison or universal FPS/speedup conclusion is made."
+    ]
+  },
+  "evidence": {
+    "complete_record_source": "journal stdout log mirrors the controller JSON event stream; extracted verbatim as JSON values into private accepted-route.from-stdout.jsonl",
+    "complete_event_count": 389,
+    "command_count": 140,
+    "screen_count": 50,
+    "error_events": [],
+    "normal_stop": {
+      "operation": "stopped",
+      "simulated_ms": 182000,
+      "success": true
+    },
+    "flash_saved": [
+      {
+        "operation": "flash_saved",
+        "simulated_ms": 182000,
+        "success": true
+      }
+    ],
+    "event_sidecar_limitation": "The separate events sidecar ends after 243 events at simulated 124590ms. Its preserved prefix is not presented as a complete trace. The retained journal stdout contains all 389 events through successful flush/stop at 182000ms.",
+    "save_bytes": 230152,
+    "save_sha256": "878c43dba49a864d6dd133d13d4d85a24edfd43d502e69a9966ba35f8176956d",
+    "private_only": "NAND/ROM, save, raw frames, original resources and generated binaries remain outside public Git."
+  },
+  "retained_prior_failures": [
+    "The incomplete Boot1 attempt generated a runaway serial trace and ended without acceptance; its compressed archive and unknown/unfinished journal are retained.",
+    "Earlier preparation encountered finite NAND space and USB pending/timeout failures. Only the disposable copy was cleared of two unrelated large resource files; original NAND remains untouched.",
+    "The rejected stage4 package had a version-22 split-reader startup error; final runtime repairs it and is the binary executed here."
+  ],
+  "limits": [
+    "Chinese-only ordinary emulator route, not a bilingual device acceptance.",
+    "No combat or full three-act playthrough is claimed for this route.",
+    "No original-PC pixel-equality or overall UI fidelity percentage is implied.",
+    "Cold collection/detail rendering still has long frames and remains a concrete optimization target."
+  ]
+}
