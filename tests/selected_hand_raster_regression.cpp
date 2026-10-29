@@ -48,7 +48,11 @@ static void render(Input&input,unsigned now){a.map_clock_ms=now;CHECK(save(a.gam
 static void selected_setup(){
  new_run(a.game,0x41cef1ea,false,Character::Ironclad);a.game.phase=Phase::Combat;
  a.game.current_node=a.game.floor=a.game.turn=1;enter_combat(a.game);CHECK(encounter_setup(a.game,EncounterId::HauntedShipNormal));
- a.game.cards[0]={Rage,0};a.game.deck[0]={Rage,0};a.game.energy=20;
+ a.game.card_count=a.game.hand.count=3;a.game.draw.count=a.game.discard.count=a.game.exhaust.count=0;
+ const CardKind cards[]={Rage,Strike,Defend};
+ for(unsigned i=0;i<3;++i){a.game.cards[i]={cards[i],0};a.game.zones[i]=Zone::Hand;a.game.hand.ids[i]=uint16_t(i);}
+ a.game.expansion.last_drawn=-1;for(auto&origin:a.game.event_cards.deck_origin)origin=0;
+ a.game.deck[0]={Rage,0};a.game.energy=20;++a.game.revision;
  a.title=a.paused=a.help=a.library=a.character_select=a.settings_open=a.profiles_open=a.compendium_open=false;
  a.statistics_open=a.history_open=a.map_preview.open=false;a.run_mode={};a.frontend_confirm=0;a.progress.tutorial_flags=0;
  a.map_clock_ms=10000;a.animation=300;a.reset_presentation();a.pointer.visible=false;
