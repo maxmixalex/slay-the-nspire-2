@@ -95,7 +95,7 @@ static void run(Input&input){
  // Init/reopen must invalidate the former raster even with the same App and
  // Content addresses. The native callback uses the real serialized save.
  CHECK(save(a.game,disk));stage="native-reopen";CHECK(a.init(input.source(),{nullptr,read_saved}));
- CHECK(selected_hand_reader.instance<0&&load(a.game,disk.bytes,disk.size()));
+ CHECK(selected_hand_reader.instance<0&&load(a.game,disk.bytes,disk.size));
  a.title=false;a.reset_presentation();a.hand_focus=true;a.cursor=0;a.map_clock_ms=50000;a.animation=1500;
  a.combat_preparation.shown=true;for(unsigned i=0;i<1024&&a.combat_preparation.active;++i)a.step_combat_preparation();
  scroll(input,"reopened-scroll");
