@@ -84,6 +84,27 @@ FPS; the combined NSL3 and multipart correction still needs the ordinary
 Firebird device pair. The earlier def1db3 multipart device regression remains
 an observed failure until that new pair completes.
 
+The separate locale alignment production change is
+`e95f804d2922a3b51567cec6626439ca519fce03`. Its full 16-locale output was then
+combined with this 89-span artwork layout and replayed with the same frozen
+diagnostic binary:
+
+| Same 182-frame action window | Reads | Bytes | Seeks | Cold opens |
+| --- | ---: | ---: | ---: | ---: |
+| Original NSC1 + NSL2 | 17 | 103,971 | 17 | 0 |
+| Initial NSM1 + NSL3 | 26 | 116,124 | 19 | 1 |
+| Folded NSM1 + aligned NSL3 | **19** | **102,505** | **17** | **0** |
+
+All three complete frame transcripts have the same SHA-256 recorded above.
+The remaining two additional reads arise in the independent-page locale
+wrapper; the combined layout reads 1,466 fewer bytes than the original
+container on this native route. This combined check is recorded by the
+locale investigation's `locale-io-aligned-combined-full-b05638423c7a` journal,
+which completed with return code zero and unchanged diagnostic source
+checkpoint `afbde329214e2a188c084fd5d17f979bf8b9ee05`. The source checkpoint is
+for a diagnostic driver, not a different production runtime. Device timing
+acceptance remains separate.
+
 Seven public synthetic tests cover the exact 4 KiB boundary, larger groups,
 end spans, unequal neighbors, all eight concern owners, adjacent same-owner
 groups, invalid gaps/overlaps, and deterministic randomized partitions. The
