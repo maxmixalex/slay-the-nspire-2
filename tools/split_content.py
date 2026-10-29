@@ -240,8 +240,16 @@ def _language_header(localized):
                 "Invalid compressed directory block")
         entries.append((off, size, raw_size, literal))
         cursor += size
-    require(cursor == tail, "Compressed directory contains a gap or trailing bytes")
-    return header, dict(raw=raw, tail=tail, entries=entries)
+    # NSL3 stores independent 4 KiB pages around this container. A bounded
+    # zero gap may align the raw glyph/string suffix to its virtual NSP2
+    # page boundary, so a normal cache miss still decodes just one page.
+    # Older NSL2 files have no gap and keep their original addressing.
+    padding = tail - cursor
+    require(0 <= padding < DIRECTORY_ALIGNMENT and
+            (not padding or (tail - art) % DIRECTORY_ALIGNMENT == 0) and
+            not any(localized[cursor:tail]), "Invalid compressed directory alignment padding")
+    return header, dict(raw=raw, tail=tail, entries=entries,
+                        directory_end=cursor, alignment_padding=padding)
 
 
 def _decode_directory_block(localized, entry):
@@ -365,6 +373,40 @@ def compress_language_directory(localized, *, details=None):
                        saved_bytes=len(localized) - len(output), dictionary_bytes=512 * 1024,
                        lc=3, lp=0, pb=2, byte_identical_directory=True,
                        frame_descriptors_stay_raw=True, runtime_pixel_pools_added=0)
+    return result
+
+
+def align_language_suffix(localized, *, details=None):
+    """Align NSL2's raw suffix for an outer independent-page container.
+
+    The NSP2 suffix maps to physical ``tail + virtual - directory - artwork``.
+    The directory is already page aligned, so matching tail and artwork
+    phases avoids fetching/decompressing two pages for one ordinary cache
+    miss. Only zero padding between directory streams and raw tail changes;
+    the complete logical locale payload remains byte identical.
+    """
+    header, compressed = _language_header(localized)
+    if compressed is None:
+        if details is not None:
+            details.update(suffix_page_aligned=False, alignment_padding_bytes=0)
+        return bytes(localized)
+    end = compressed["directory_end"]
+    padding = (header[7] - end) % DIRECTORY_ALIGNMENT
+    tail = end + padding
+    output = bytearray(localized[:end])
+    output.extend(bytes(padding))
+    output.extend(localized[compressed["tail"]:])
+    struct.pack_into("<I", output, 16, len(output))
+    struct.pack_into("<I", output, 116, tail)
+    result = bytes(output)
+    checked, aligned = _language_header(result)
+    require(_language_payload(result, checked, aligned) ==
+            _language_payload(localized, header, compressed),
+            "Suffix alignment changed the logical locale payload")
+    if details is not None:
+        details.update(suffix_page_aligned=True, suffix_page_bytes=DIRECTORY_ALIGNMENT,
+                       alignment_padding_bytes=padding,
+                       alignment_added_bytes=len(result)-len(localized))
     return result
 
 

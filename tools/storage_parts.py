@@ -2,8 +2,9 @@
 """Split immutable artwork by concern and compress locale addressing pages.
 
 NSM1 maps the existing NSC1 bytes onto eight concern files. NSL3 is a random
-access LZ4 wrapper around an unchanged NSL1/NSL2 file. These storage adapters
-change no image, animation, glyph, string, directory ID, or game-save format.
+access LZ4 wrapper around an NSL1/NSL2 file; bounded NSL2 padding aligns suffix
+pages without changing its logical payload. These storage adapters change no
+image, animation, glyph, string, directory ID, or game-save format.
 All original data and output packs must remain outside the public repository.
 """
 from __future__ import annotations
@@ -50,6 +51,10 @@ def compression_function():
         return compress
 
 def compress_blocks(data):
+    original=bytes(data);alignment={}
+    if data[:4]==b'NSL2':
+        data=split.align_language_suffix(data,details=alignment)
+    else:data=original
     tiles.require(0<len(data)<=BLOCK*MAX_BLOCKS,'Locale exceeds independent-page bound')
     encode=compression_function();rows=[];payload=bytearray();blocks=(len(data)+BLOCK-1)//BLOCK
     begin=32+4*(blocks+1);compressed=0
@@ -64,9 +69,11 @@ def compress_blocks(data):
     output=struct.pack('<4s7I',b'NSL3',3,tiles.REFERENCE,begin+len(payload),len(data),BLOCK,blocks,begin)
     output+=struct.pack('<'+'I'*len(rows),*rows)+payload
     tiles.require(expand_blocks(output)==data,'Independent locale storage roundtrip differs')
-    return bytes(output),dict(input_bytes=len(data),output_bytes=len(output),saved_bytes=len(data)-len(output),
+    return bytes(output),dict(input_bytes=len(original),aligned_input_bytes=len(data),
+        output_bytes=len(output),saved_bytes=len(original)-len(output),
         blocks=blocks,compressed_blocks=compressed,literal_blocks=blocks-compressed,
-        block_bytes=BLOCK,logical_sha256=tiles.sha256(data),physical_sha256=tiles.sha256(output))
+        block_bytes=BLOCK,logical_sha256=tiles.sha256(data),original_inner_sha256=tiles.sha256(original),
+        physical_sha256=tiles.sha256(output),**alignment)
 
 def expand_blocks(data):
     tiles.require(len(data)>=32,'Truncated NSL3 header')

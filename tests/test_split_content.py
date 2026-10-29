@@ -38,6 +38,63 @@ def fixture(language, version=17, images=2):
 
 
 class SplitContentTest(unittest.TestCase):
+    def test_outer_pages_align_suffix_without_changing_logical_resources(self):
+        import storage_parts as storage
+        for version, images in ((17, 2), (38, 4000), (40, 2)):
+            original = {lang: fixture(lang, version, images) for lang in ('eng', 'zhs')}
+            common, locales, _ = split.split(original, compress_directory=True)
+            for lang, localized in locales.items():
+                with self.subTest(version=version, language=lang):
+                    aligned = split.align_language_suffix(localized)
+                    header, info = split._language_header(aligned)
+                    self.assertLess(info['alignment_padding'], 4096)
+                    self.assertEqual(aligned[info['directory_end']:info['tail']],
+                                     bytes(info['alignment_padding']))
+                    # The virtual/physical phase is constant across the whole
+                    # raw suffix, including requests crossing its boundaries.
+                    self.assertEqual((info['tail'] - info['raw'] - header[7]) % 4096, 0)
+                    self.assertEqual(split.align_language_suffix(aligned), aligned)
+                    self.assertEqual(split.reconstruct(common, aligned, lang), original[lang])
+                    packed, receipt = storage.compress_blocks(localized)
+                    self.assertEqual(storage.expand_blocks(packed), aligned)
+                    self.assertEqual(split.reconstruct(common, packed, lang), original[lang])
+                    self.assertEqual(receipt['input_bytes'], len(localized))
+                    self.assertEqual(receipt['saved_bytes'], len(localized)-len(packed))
+                    self.assertEqual(receipt['aligned_input_bytes'], len(aligned))
+                    self.assertTrue(receipt['suffix_page_aligned'])
+                    self.assertEqual(storage.compress_blocks(aligned)[0], packed)
+
+    def test_outer_pages_preserve_uncompressed_legacy_container(self):
+        import storage_parts as storage
+        original = {lang: fixture(lang) for lang in ('eng', 'zhs')}
+        common, locales, _ = split.split(original)
+        for lang, localized in locales.items():
+            self.assertEqual(split.align_language_suffix(localized), localized)
+            packed, _ = storage.compress_blocks(localized)
+            self.assertEqual(storage.expand_blocks(packed), localized)
+            self.assertEqual(split.reconstruct(common, packed, lang), original[lang])
+
+    def test_alignment_padding_rejects_nonzero_oversized_and_wrong_phase(self):
+        original = {lang: fixture(lang, 38, images=4000) for lang in ('eng', 'zhs')}
+        common, locales, _ = split.split(original, compress_directory=True)
+        localized = locales['eng']
+        # Unpadded editions are still accepted, independently of their phase.
+        self.assertEqual(split.reconstruct(common, localized, 'eng'), original['eng'])
+        aligned = split.align_language_suffix(localized)
+        _, info = split._language_header(aligned)
+        self.assertGreater(info['alignment_padding'], 0)
+        damaged = bytearray(aligned);damaged[info['directory_end']] = 1
+        with self.assertRaises(ValueError):split.reconstruct(common, damaged, 'eng')
+        for extra in (1, 4096):
+            damaged = bytearray(aligned[:info['tail']]) + bytes(extra) + aligned[info['tail']:]
+            struct.pack_into('<I', damaged, 16, len(damaged))
+            struct.pack_into('<I', damaged, 116, info['tail'] + extra)
+            with self.assertRaises(ValueError):split.reconstruct(common, damaged, 'eng')
+        damaged = bytearray(aligned[:info['tail']-1]) + aligned[info['tail']:]
+        struct.pack_into('<I', damaged, 16, len(damaged))
+        struct.pack_into('<I', damaged, 116, info['tail'] - 1)
+        with self.assertRaises(ValueError):split.reconstruct(common, damaged, 'eng')
+
     def test_compressed_directory_exact_versions_and_unchanged_common(self):
         for version in (17, 32, 36, 38, 39):
             original = {lang: fixture(lang, version) for lang in ('eng', 'zhs')}
