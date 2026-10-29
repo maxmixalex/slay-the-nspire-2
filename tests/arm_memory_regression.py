@@ -28,7 +28,14 @@ class Runtime:
         self.data = path.read_bytes()
         segments, _ = linked_helper(self.data, b'memcpy')
         self.symbols = {name: linked_helper(self.data, name.encode())[1]
-                        for name in ('memcpy', 'memset', 'memcmp', 'memmove')}
+                        for name in ('memcpy', 'memset', 'memmove')}
+        # The final launcher can garbage-collect an unused libc primitive.
+        # Report that fact; the same production object may also be linked as
+        # a standalone component ELF to exercise its otherwise unused memcmp.
+        try:
+            self.symbols['memcmp'] = linked_helper(self.data, b'memcmp')[1]
+        except ValueError:
+            pass
         self.emulator = emulator = Uc(UC_ARCH_ARM, UC_MODE_ARM | UC_MODE_LITTLE_ENDIAN)
         emulator.ctl_set_cpu_model(UC_CPU_ARM_926)
         low = min(a for a, _, _ in segments) & ~4095
@@ -147,8 +154,9 @@ def validate(path):
         for destination in range(4):
             for source in range(4):
                 runtime.memory_case('memcpy', length, destination, source)
-                runtime.memory_case('memcmp', length, destination, source)
-                if length:
+                if 'memcmp' in runtime.symbols:
+                    runtime.memory_case('memcmp', length, destination, source)
+                if length and 'memcmp' in runtime.symbols:
                     for mismatch in sorted({0, length // 2, length - 1}):
                         runtime.memory_case('memcmp', length, destination, source, mismatch=mismatch)
             for value in (-257, -1, 0, 1, 255, 256, 0x1234):
@@ -156,7 +164,8 @@ def validate(path):
     for length in (16384, 65536, 153600):
         for destination, source in ((0, 0), (1, 1), (3, 3), (0, 1)):
             runtime.memory_case('memcpy', length, destination, source)
-            runtime.memory_case('memcmp', length, destination, source)
+            if 'memcmp' in runtime.symbols:
+                runtime.memory_case('memcmp', length, destination, source)
             runtime.memory_case('memset', length, destination, value=0xa5)
     for length in (0, 1, 2, 3, 4, 5, 7, 8, 15, 16, 17, 31, 32, 33, 63, 64, 65, 127, 128, 129, 256, 257, 1024):
         for offset in (-31, -17, -4, -3, -2, -1, 0, 1, 2, 3, 4, 17, 31):
@@ -164,6 +173,8 @@ def validate(path):
                 runtime.move_case(length, offset, alignment)
     instructions = {}
     for name in ('memcpy', 'memset', 'memcmp'):
+        if name not in runtime.symbols:
+            continue
         for length in (8, 64, 4096):
             for destination, source in ((0, 0), (1, 1), (0, 1)):
                 if name == 'memset' and (destination, source) == (0, 1):
@@ -172,7 +183,8 @@ def validate(path):
                 instructions[key] = runtime.memory_case(name, length, destination, source, value=0xa5, count=True)
     return dict(elf=str(path), elf_sha256=hashlib.sha256(runtime.data).hexdigest(), vectors=runtime.vectors,
                 functions={name: dict(address=address, bytes=size) for name, (address, size) in runtime.symbols.items()},
-                instructions=instructions, bounds='every data access within the supplied byte ranges',
+                instructions=instructions, omitted_symbols=[name for name in ('memcmp',) if name not in runtime.symbols],
+                bounds='every data access within the supplied byte ranges',
                 alignment='no unaligned multi-byte accesses', guards='unchanged',
                 abi='return values, r4-r11 and stack preserved')
 
