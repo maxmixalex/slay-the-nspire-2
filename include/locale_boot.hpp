@@ -12,7 +12,8 @@
 
 namespace spire {
 // Built-in load-error text remains independent of resource packs.
-// Unknown is deliberately bilingual, including missing/invalid-pack errors.
+// These recovery messages deliberately use English for every locale, including
+// an unavailable or malformed language pack; they never depend on game fonts.
 enum class BootLanguage : uint8_t { Unknown=0,English=1,Chinese=2,TraditionalChinese=3,German=4,LatinAmericanSpanish=5,French=6,Indonesian=7,Italian=8,Japanese=9,Korean=10,Polish=11,Portuguese=12,Russian=13,Spanish=14,Thai=15,Turkish=16 };
 enum class BootText : uint8_t {
     Opening,Integrity,Directory,Images,AnimationIndex,Glyphs,Strings,Ready,
@@ -26,24 +27,11 @@ inline const char* boot_text(BootText id,BootLanguage language){
         "PREPARING BATTLE","RESOURCES NOT FOUND","RESOURCE LOADING FAILED","CHOOSE LANGUAGE",
         "ENTER CONFIRM","ESC BACK","4 CHINESE / 6 ENGLISH","LANGUAGE PACK NOT FOUND","STARTING","ENGLISH"
     };
-    static const char*const chinese[]={
-        "打开资源","校验资源数据","读取目录","读取图像","读取动画索引","读取字形","读取文本","准备就绪",
-        "准备战斗","未找到资源包","资源读取失败","选择语言",
-        "ENTER 确认","ESC 返回","4 中文 / 6 ENGLISH","未找到语言包","正在启动","中文"
-    };
-    static const char*const bilingual[]={
-        "打开资源 / OPENING","校验资源 / VERIFYING DATA","读取目录 / DIRECTORY","读取图像 / IMAGES",
-        "动画索引 / ANIMATION INDEX","读取字形 / FONTS","读取文本 / TEXT","准备就绪 / READY",
-        "准备战斗 / PREPARING BATTLE","未找到资源 / RESOURCES NOT FOUND",
-        "资源读取失败 / LOAD FAILED","选择语言 / LANGUAGE",
-        "ENTER 确认 / CONFIRM","ESC 返回 / BACK","4 中文 / 6 ENGLISH",
-        "未找到语言包 / MISSING LANGUAGE","正在启动 / STARTING","中文 / ENGLISH"
-    };
-    static_assert(sizeof(english)/sizeof(*english)==unsigned(BootText::Count)&&
-        sizeof(chinese)/sizeof(*chinese)==unsigned(BootText::Count)&&
-        sizeof(bilingual)/sizeof(*bilingual)==unsigned(BootText::Count),"Every boot message needs all display languages");
+    static_assert(sizeof(english)/sizeof(*english)==unsigned(BootText::Count),
+        "Every boot message needs a built-in English fallback");
+    (void)language;
     unsigned n=unsigned(id);if(n>=unsigned(BootText::Count))n=0;
-    return language==BootLanguage::Chinese?chinese[n]:language==BootLanguage::Unknown?bilingual[n]:english[n];
+    return english[n];
 }
 
 // A bounded metadata hint selects boot text before Content opens the directory.

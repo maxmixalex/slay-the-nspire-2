@@ -48,7 +48,7 @@ static void potion_popup_screen(Canvas&c){
     if(original){highlight(use,UseY,F_PotionPopupTop,3,38,"POTION_USE",!a.potion_menu_item);highlight(discard,DiscardY,F_PotionPopupBottom,41,27,"POTION_DISCARD",a.potion_menu_item);}
     const char*verb=a.content.world_string("gameplay_ui",a.potion_is_thrown()?"POTION_POPUP.throw":"POTION_POPUP.drink");
     const char*discard_text=a.content.world_string("gameplay_ui","POTION_POPUP.discard");
-    layer.font_face=5;
+    layer.font_face=uint8_t(source_label_face(c.a.content.original_label_fonts(),5));
     layer.text_fitted(*verb?verb:a.potion_is_thrown()?"Throw":"Drink",x+ControlX,y+UseY+(ControlH-Font)/2,ControlW,Font,rgb(255,246,226),8,true,true,0);
     layer.text_fitted(*discard_text?discard_text:"丢弃",x+ControlX,y+DiscardY+(ControlH-Font)/2,ControlW,Font,rgb(255,85,85),8,true,true,0);
     c.hit(x+ControlX,y+UseY,ControlW,ControlH,HitKind::Potion,a.scroll,use);
@@ -72,7 +72,7 @@ static void potion_popup_exit_screen(Canvas&c){
     Canvas disabled=layer;disabled.tint_red=disabled.tint_green=disabled.tint_blue=26;
     disabled.ui(F_PotionPopupTop,x+3,y+3,68,38,191);disabled.ui(F_PotionPopupBottom,x+3,y+41,68,27,191);
     const char*verb=c.a.content.world_string("gameplay_ui",v.thrown?"POTION_POPUP.throw":"POTION_POPUP.drink");
-    const char*discard=c.a.content.world_string("gameplay_ui","POTION_POPUP.discard");layer.font_face=5;
+    const char*discard=c.a.content.world_string("gameplay_ui","POTION_POPUP.discard");layer.font_face=uint8_t(source_label_face(c.a.content.original_label_fonts(),5));
     layer.text_fitted(verb,x+ControlX,y+UseY+(ControlH-Font)/2,ControlW,Font,rgb(255,246,226),8,true,true,0);
     layer.text_fitted(discard,x+ControlX,y+DiscardY+(ControlH-Font)/2,ControlW,Font,rgb(255,85,85),8,true,true,0);
     // Remove disconnects the original controls immediately. This retiring

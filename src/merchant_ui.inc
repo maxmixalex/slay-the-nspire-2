@@ -177,7 +177,7 @@ void App::step_merchant_preparation(){
    if(result==PreparationResult::Ready){++p.cursor;++p.cold_images;}
    else if(result==PreparationResult::Failed){
     if(content.healthy()){content.cancel_preload();++p.cursor;}
-    else {p.reset();shop_open=false;message("资源读取失败");return;}
+    else {p.reset();shop_open=false;message("Could not load resources.");return;}
    }
   }
   return;
@@ -187,7 +187,7 @@ void App::step_merchant_preparation(){
  // stock too, not a new cold workload to postpone until that first hover.
  if(saved_stock&&p.tip_slot<ShopRemove-ShopRelicStart){
   prepare_merchant_hover(*this,*saved_stock,budget);
-  if(!content.healthy()){p.reset();shop_open=false;message("资源读取失败");}
+  if(!content.healthy()){p.reset();shop_open=false;message("Could not load resources.");}
   return;
  }
  // The active game's cost/description state must never be substituted with
@@ -212,14 +212,14 @@ void App::step_merchant_preparation(){
   hidden.glyph_preparation=&budget;
   const unsigned scale=MerchantInventoryLayout::card_scale(650);
   render_card_face(hidden,card,0,0,MerchantInventoryLayout::size(300,scale),MerchantInventoryLayout::size(422,scale),-2,-2,-1,-1,facts);
-  if(!content.healthy()){p.reset();shop_open=false;message("资源读取失败");return;}
+  if(!content.healthy()){p.reset();shop_open=false;message("Could not load resources.");return;}
   if(!budget.pending){++p.card;p.text_ready=false;}
   return;
  }
  if(!p.prices_ready){
   Canvas hidden{*this};hidden.clip_w=hidden.clip_h=0;hidden.glyph_preparation=&budget;
   for(unsigned i=0;i<ShopLeave;++i)merchant_price(hidden,int(i),0,0,650);
-  if(!content.healthy()){p.reset();shop_open=false;message("资源读取失败");return;}
+  if(!content.healthy()){p.reset();shop_open=false;message("Could not load resources.");return;}
   if(budget.pending)return;
   p.prices_ready=true;return;
  }
@@ -228,7 +228,7 @@ void App::step_merchant_preparation(){
  // those detached sets and the alternate idle skin in ordinary idle frames.
  if(p.tip_slot<ShopRemove-ShopRelicStart){
   prepare_merchant_hover(*this,game,budget);
-  if(!content.healthy()){p.reset();shop_open=false;message("资源读取失败");}
+  if(!content.healthy()){p.reset();shop_open=false;message("Could not load resources.");}
   return;
  }
  // The original rug tween already started on OpenShop. Preparation must

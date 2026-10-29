@@ -287,40 +287,47 @@ extern "C" int main(int argc,char**argv){
     auto blit=nd_blitter(0);if(!blit)return 7;
     for(auto&pixel:app.pixels)pixel=0;blit(app.pixels);
     ResourceFile common{},source{};static spire::SplitResourceSource split;
-    const auto preferred=language_preference();bool selected_language=false;
+    const auto preferred=language_preference();
     common.file=open_data_file(launcher,spire::SharedDataFilename);
-    if(!common.file){boot_error(blit,spire::BootText::MissingResources,spire::BootLanguage::Unknown);return 4;}
-    if(common.file){
-        // Probe installed optional language files; retain only the chosen handle.
-        // A language change reloads metadata/fonts while artwork stays shared.
-        for(unsigned id=1;id<=spire::LocaleLanguageCount;++id){
-            void*f=open_data_file(launcher,spire::locale_language_info(id).file);
-            if(f){installed_languages|=spire::locale_language_mask(id);nd_close(f);}
-        }
-        if(!installed_languages){boot_error(blit,spire::BootText::MissingLanguage,spire::BootLanguage::Unknown);return 4;}
-        const unsigned saved=unsigned(preferred);
-        const unsigned system=(installed_languages&spire::locale_language_mask(saved))?0:system_language();
-        const unsigned selected=spire::locale_default_language(installed_languages,saved,system);
-        source.language=static_cast<spire::BootLanguage>(selected);
-        source.file=open_data_file(launcher,spire::locale_language_info(selected).file);
-        selected_language=true;
+    if(!common.file){boot_error(blit,spire::BootText::MissingResources,spire::BootLanguage::English);return 4;}
+    // Probe names only; a successful selected locale does not decode or
+    // inspect any other optional language. Failed candidates retry below.
+    for(unsigned id=1;id<=spire::LocaleLanguageCount;++id){
+        void*f=open_data_file(launcher,spire::locale_language_info(id).file);
+        if(f){installed_languages|=spire::locale_language_mask(id);nd_close(f);}
     }
-    if(!source.file){boot_error(blit,spire::BootText::MissingResources,spire::BootLanguage::Unknown);return 4;}
+    if(!installed_languages){boot_error(blit,spire::BootText::MissingLanguage,spire::BootLanguage::English);return 4;}
     const uint32_t startup_start=performance.enabled?timer_ticks():0;
-    source.blit=blit;auto resource=file_source(source);bool valid=resource.length!=0;
-    if(common.file){
-        valid=valid&&split.open(file_source(common),resource,static_cast<spire::ResourceLanguage>(source.language));
-        if(valid)resource=split.source();
+    const auto common_source=file_source(common);
+    if(!common_source.length){boot_error(blit,spire::BootText::InvalidResources,spire::BootLanguage::English);return 5;}
+    const unsigned saved=unsigned(preferred);
+    // Querying the OS is unnecessary when the saved locale opens normally.
+    // If that saved pack fails, resolve the current OS preference then.
+    unsigned system=(installed_languages&spire::locale_language_mask(saved))?0:system_language();
+    bool system_resolved=!(installed_languages&spire::locale_language_mask(saved));
+    spire::ResourceSource resource{};app.calculator_keyboard=true;source.blit=blit;
+    const auto load=[&](unsigned id){
+        source.close();source.language=static_cast<spire::BootLanguage>(id);
+        source.file=open_data_file(launcher,spire::locale_language_info(id).file);
+        const auto localized=file_source(source);
+        if(localized.length&&split.open(common_source,localized,static_cast<spire::ResourceLanguage>(id))){
+            resource=split.source();
+            if(app.init(resource,{save_game,load_game,clear_save,seed_entropy,load_preferences,save_preferences,available_languages,request_language,load_progress,save_progress,wall_clock,current_profile,profile_info,request_profile,write_feedback}))return true;
+        }
+        source.close();split.close();resource={};return false;
+    };
+    unsigned selected=0;
+    if(!system_resolved){
+        if(load(saved))selected=saved;
+        else {installed_languages&=~spire::locale_language_mask(saved);system=system_language();}
     }
-    app.calculator_keyboard=true;
-    if(!valid||!app.init(resource,{save_game,load_game,clear_save,seed_entropy,load_preferences,save_preferences,available_languages,request_language,load_progress,save_progress,wall_clock,current_profile,profile_info,request_profile,write_feedback})){
-        boot_error(blit,spire::BootText::InvalidResources,source.language);return 5;
-    }
+    if(!selected)selected=spire::locale_load_initial(installed_languages,0,system,load);
+    if(!selected){boot_error(blit,spire::BootText::InvalidResources,spire::BootLanguage::English);return 5;}
     if(performance.enabled)app.callbacks.profile_render=performance_render_part;
     app.callbacks.foreground_clock_ticks=foreground_clock_ticks;
     app.callbacks.foreground_poll=capture_key_matrix;
     spire::set_lzma2_foreground_poll(capture_key_matrix);
-    if(selected_language&&source.language!=preferred)store_language(source.language);
+    if(source.language!=preferred)store_language(source.language);
     performance.pack_bytes=resource.length;
     if(performance.enabled){const uint32_t now=timer_ticks();performance.startup.add(startup_start-now);
         if(source.phase!=spire::ResourceStage::Count)performance.startup_phases[(unsigned)source.phase].add(source.phase_start-now);}
@@ -329,7 +336,7 @@ extern "C" int main(int argc,char**argv){
         const unsigned requested=pending_language;pending_language=0;
         if(!requested||!common.file||!app.title)return;
         void*next=open_data_file(launcher,spire::locale_language_info(requested).file);
-        if(!next){app.message(app.content.language()!=2?"Language resources are unavailable.":"无法读取语言资源。");return;}
+        if(!next){app.message("Language resources are unavailable.");return;}
         void*previous=source.file;const auto old_language=source.language;
         source.file=next;source.language=static_cast<spire::BootLanguage>(requested);
         const bool opened=split.open(file_source(common),file_source(source),static_cast<spire::ResourceLanguage>(requested));
@@ -339,7 +346,7 @@ extern "C" int main(int argc,char**argv){
             if(!split.open(file_source(common),file_source(source),static_cast<spire::ResourceLanguage>(old_language))||!app.reload_language(split.source())){
                 boot_error(blit,spire::BootText::InvalidResources,old_language);app.quit=true;return;
             }
-            app.message(app.content.language()!=2?"Could not change language.":"无法切换语言。");
+            app.message("Could not change language.");
         }
     };
     while(pressed(0x10,2)){} // Release ENTER used to open the document.

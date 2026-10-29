@@ -24,13 +24,12 @@ static void card_selection_upgrades_control(Canvas&c){
     auto&a=c.a;
     using namespace deck_selection_layout;
     const char*label=a.content.world_string("card_selection","VIEW_UPGRADES");
-    Canvas text=c;text.font_face=5;
+    Canvas text=c;text.font_face=uint8_t(source_label_face(c.a.content.original_label_fonts(),5));
     const int width=ToggleIcon+mn(140,text.width(label,ToggleSize));
     c.ui(a.deck_selection.show_upgrades?F_SettingsTicked:F_SettingsUnticked,ToggleX+1,ToggleY,ToggleIcon,ToggleIcon);
-    // The original Label is fixed 27px inside a .75 parent: native 4px.
-    // Card fitting has a 5px floor, so this authored label must bypass it.
-    // Its 12px black outline at .5 alpha projects to a two-pixel radius.
-    const int x=ToggleX+ToggleIcon+1,y=ToggleY+2,radius=0;
+    // Keep the established readable 8px label and one-pixel shadow; only its
+    // normal font follows the source MegaLabel locale substitution.
+    const int x=ToggleX+ToggleIcon+1,y=ToggleY+2;
     Canvas outline=text;outline.opacity=uint8_t(div255(unsigned(text.opacity)*128));
     outline.text(label,x+1,y+1,ToggleSize,0,140,1);
     text.text(label,x,y,ToggleSize,rgb(239,200,81),140,1);

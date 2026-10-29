@@ -62,9 +62,9 @@ static void native_proceed(Canvas&c,const char*label,bool enabled=true,bool sele
  if(outline>=0&&visual.hover&&entry.outline)layer.picture(outline,left,top,width,height,unsigned(visual.hover)*unsigned(entry.outline)/4096,presentation::Add);
  Canvas face=layer;face.brightness=uint8_t(div255(unsigned(face.brightness)*unsigned(entry.shade)));
  small_material_icon(face,normal,left,top,width,height,visual.saturation,visual.value,true);
- // KreonBold/SourceHanSerifSCBold, source 34px at 4/21. Preserve the
- // original red outline instead of an oversized regular 12px label.
- layer.font_face=5;
+ // MegaLabel retains authored Kreon Bold in Latin locales and substitutes
+ // locale Regular elsewhere. Preserve its original red outline.
+ layer.font_face=uint8_t(source_label_face(c.a.content.original_label_fonts(),5));
  const int label_x=px(LabelX),text_y=py(LabelY),label_w=mx(1,LabelW*visual.scale/4096);
  Canvas text_shadow=layer;text_shadow.opacity=uint8_t(div255(layer.opacity*32));
  text_shadow.text_fitted(label,label_x+1,text_y+1,label_w,FontSize,0,5,true);
@@ -149,6 +149,7 @@ static void native_end_turn(Canvas&c,bool enabled){
  draw_glow(glow.base_alpha,glow.base_scale,0,212);
  const uint16_t cream=rgb(255,246,226),focus=playable?rgb(255,79,67):rgb(0,255,255);
  uint16_t color=enabled?blend(cream,focus,unsigned(visual.hover)*255/4096):Muted;
+ layer.font_face=uint8_t(source_label_face(a.content.original_label_fonts(),5));
  layer.centered("结束回合",combat_controls::EndX+2,combat_controls::EndY+8+shift,combat_controls::EndW-2,10,rgb(19,31,46));
  layer.centered("结束回合",combat_controls::EndX+1,combat_controls::EndY+7+shift,combat_controls::EndW-2,10,color);
  // Bar is a sibling of Visuals: its authored (8,-11) offset does not

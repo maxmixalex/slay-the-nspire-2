@@ -231,7 +231,7 @@ int main(int argc,char**argv){
         if(!requested||!common.file||!app.title)return;
         const std::string next_path=directory(commonpath)+"/"+spire::locale_language_info(requested).file;
         FILE*next=fopen(next_path.c_str(),"rb");
-        if(!next){app.message(app.content.language()!=2?"Language resources are unavailable.":"无法读取语言资源。");return;}
+        if(!next){app.message("Language resources are unavailable.");return;}
         FILE*previous=resource.file;const auto old_language=language;resource.file=next;
         if(split.open(file_source(common.file),file_source(resource.file),static_cast<spire::ResourceLanguage>(requested))&&app.reload_language(split.source())){
             language=static_cast<spire::BootLanguage>(requested);fclose(previous);persist_language();
@@ -240,7 +240,7 @@ int main(int argc,char**argv){
             if(!split.open(file_source(common.file),file_source(resource.file),static_cast<spire::ResourceLanguage>(old_language))||!app.reload_language(split.source())){
                 error(spire::BootText::InvalidResources);app.quit=true;return;
             }
-            app.message(app.content.language()!=2?"Could not change language.":"无法切换语言。");
+            app.message("Could not change language.");
         }
     };
     for(const auto&command:debug_commands){if(!app.debug_command(command.c_str())){fprintf(stderr,"Debug: %s\n",app.debug_reply);return 2;}}

@@ -128,10 +128,10 @@ static void ancient_next_button(Canvas&c){
  key[last_dot]=0;TextBuffer b{key,sizeof key,last_dot};b.text(".next");a.localized_text("ancients",key,label,sizeof label,int(a.game.original_events.id));
  Canvas next=c;const unsigned age=a.map_clock_ms-d.entered;
  next.opacity=uint8_t(div255(next.opacity*(age<=500?0:255*room_curve::linear(age-500,1000)/room_curve::Q)));
- next.font_face=6;
+ next.font_face=uint8_t(source_label_face(a.content.original_label_fonts(),6));
  const int width=mn(190,next.width(label,10)+2),x=284-width;next.text_fitted(label,x,222,width,10,rgb(239,200,81),10,false,true);
  char hotkey[16]{};input_key_label(a.input_bindings.keys[a.keyboard_only?1:0][unsigned(InputCommand::Confirm)],hotkey,sizeof hotkey);
- Canvas keycap=next;keycap.font_face=5;const int key_width=mx(14,mn(36,keycap.width(hotkey,8)+6));
+ Canvas keycap=next;keycap.font_face=uint8_t(source_label_face(a.content.original_label_fonts(),5));const int key_width=mx(14,mn(36,keycap.width(hotkey,8)+6));
  keycap.nine_ui(I8_KeyboardKeycap,x-key_width-5,220,key_width,14,5,0,5,0);
  keycap.text_fitted(hotkey,x-key_width-3,222,key_width-4,8,rgb(255,246,226),8,true);
  const unsigned phase=age%1000;const int displacement=phase<400?int(room_curve::sine_in_out(phase,400)):4096-2*int(room_curve::sine_in_out(phase-400,600));

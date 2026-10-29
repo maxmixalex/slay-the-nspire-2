@@ -73,7 +73,7 @@ static void card_enchantment_tab(Canvas&c,int x,int y,int w,int h,bool star_visi
     default:break;}
     if(show){
         const auto label=card_face::region(x,y,w,h,10,top+27,40,26);
-        const int size=c.a.content.font_size(w>=80?10:8,5);char text[16]{};TextBuffer value{text,sizeof text,0};value.number(int16_t(key>>8));
+        const int size=c.a.content.font_size(w>=80?10:8,source_label_face(c.a.content.original_label_fonts(),5));char text[16]{};TextBuffer value{text,sizeof text,0};value.number(int16_t(key>>8));
         Canvas words=c;words.font_face=uint8_t(source_label_face(c.a.content.original_label_fonts(),5));
         words.text_fitted(text,label.x,label.y+(label.h-size-2)/2,mx(label.w,8),size,disabled?Muted:rgb(255,246,226),8,true,true,rgb(9,15,28));
     }
@@ -150,9 +150,10 @@ static CardFaceFonts card_face_fonts(const Canvas&c,int width){
     // readable LCD bands; the short 16px source type label retains its own
     // smaller scale instead of inheriting the body-text floor.
     const int readable=width>=80?10:8;
-    return {content.font_size(mx(readable,card_face::font_pixels(26,width))),content.font_size(card_face::font_pixels(16,width),source_label_face(content.original_label_fonts(),5)),
+    const unsigned label_face=source_label_face(content.original_label_fonts(),5);
+    return {content.font_size(mx(readable,card_face::font_pixels(26,width)),label_face),content.font_size(card_face::font_pixels(16,width),label_face),
         content.font_size(mx(readable,card_face::font_pixels(21,width))),content.font_size(readable),
-        content.font_size(mx(width>=80?12:10,card_face::font_pixels(32,width)),5),content.font_size(mx(8,card_face::font_pixels(22,width)),5),8,true};
+        content.font_size(mx(width>=80?12:10,card_face::font_pixels(32,width)),label_face),content.font_size(mx(8,card_face::font_pixels(22,width)),label_face),8,true};
 }
 // Scroll by pixels inside the authored description rectangle; the first and
 // last rows are clipped, so text never jumps by a whole line.
@@ -222,7 +223,7 @@ static void render_card_details(Canvas&c,Card card,int x,int y,int w,int h,int f
     const int energy=fee==-2?a.card_offer_cost(card,facts):fee;
     const int base_stars=card_star_cost(a.game,card),star_value=stars==-2?base_stars:stars;
     const unsigned resource_styles=known?card_face_resource_styles(a,card,energy,star_value,instance,facts,upgrade_preview):0;
-    const int cost_size=fonts.energy;Canvas cost_label=c;if(fonts.compact)cost_label.font_face=5;
+    const int cost_size=fonts.energy;Canvas cost_label=c;if(fonts.compact)cost_label.font_face=uint8_t(source_label_face(a.content.original_label_fonts(),5));
     char cost_text[16]{};TextBuffer cost_value{cost_text,sizeof cost_text,0,&a.content};if(!known)cost_value.ch('?');else if(energy==-1)cost_value.ch('X');else cost_value.number(energy);
     if(!known||energy!=-2)card_resource_label(cost_label,cost_text,l.energy.x+(l.energy.w-cost_label.width(cost_text,cost_size))/2,l.energy.y+(l.energy.h-cost_size-2)/2,cost_size,resource_styles&3,card_energy_outline(card),false);
     if(known&&(base_stars||(stars!=-2&&stars))){
@@ -369,8 +370,8 @@ static void draw_card_face(Canvas&c,Card card,int x,int y,int w,int h,int fee=-2
     const auto geometry=card_face::layout(x,y,w,h);const auto fonts=card_face_fonts(c,w);
     // Large dynamic costs can extend beyond the fixed cache, just as their
     // uncached labels do. Keep those exact without increasing the ARM pool.
-    if(!a.content.healthy()||!card_cache_label_fits(c,geometry.energy,energy,false,left,top,fonts.energy,fonts.compact?5u:c.font_face)||
-       (star_visible&&!card_cache_label_fits(c,geometry.star,star_count,true,left,top,fonts.star,fonts.compact?5u:c.font_face))){
+    if(!a.content.healthy()||!card_cache_label_fits(c,geometry.energy,energy,false,left,top,fonts.energy,fonts.compact?source_label_face(a.content.original_label_fonts(),5):c.font_face)||
+       (star_visible&&!card_cache_label_fits(c,geometry.star,star_count,true,left,top,fonts.star,fonts.compact?source_label_face(a.content.original_label_fonts(),5):c.font_face))){
         render_card_face(c,card,x,y,w,h,fee,stars,instance,deck,facts,description,nullptr,known,upgrade_preview);return;}
     SmallCardFaceCache* entry=nullptr;
     for(auto&slot:small_card_faces)if(slot.valid&&slot.owner==&a.content&&slot.generation==a.content.generation()&&slot.width==w&&slot.height==h&&

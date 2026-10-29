@@ -57,7 +57,7 @@ static Card combat_selection_card(const App&a,int id,const EventCardFacts**facts
 static HitKind combat_selection_hit_kind(const App&a){return a.game.phase==Phase::WorldRelicChoice?HitKind::WorldChoice:HitKind::CombatChoice;}
 static void combat_choose_offer_screen(Canvas&c,const uint16_t*ids,unsigned count){
     auto&a=c.a;auto&motion=a.combat_selection.row;const uint32_t now=a.map_clock_ms;
-    Canvas banner=c;banner.opacity=uint8_t(div255(banner.opacity*motion.banner_alpha(now)));banner.font_face=5;
+    Canvas banner=c;banner.opacity=uint8_t(div255(banner.opacity*motion.banner_alpha(now)));banner.font_face=uint8_t(source_label_face(c.a.content.original_label_fonts(),5));
     const int by=motion.banner_y(now);
     banner.ui(a.content.version()>=Ui6ContentVersion?I6_CommonBanner:U_RewardBanner,80,by-5,160,40);
     banner.fitted(card_reward_label(a,"gameplay_ui","CHOOSE_CARD_HEADER","选择一张牌"),100,by,120,22,10,8,rgb(255,246,226),true,true,true,false);
@@ -81,11 +81,11 @@ static void combat_choose_offer_screen(Canvas&c,const uint16_t*ids,unsigned coun
         const auto visual=c.control_visual(label,x,y,53,20,ButtonFamily::RewardAlternative,false,true);
         const int width=53*visual.scale/4096,height=20*visual.scale/4096;
         card_reward_alt_picture(c,x+(53-width)/2,y+(20-height)/2,width,height,unsigned(visual.shade));
-        Canvas text=c;text.font_face=5;text.fitted(label,x+2,y+1,49,18,8,8,rgb(253,244,227),true,true,true,false);
+        Canvas text=c;text.font_face=uint8_t(source_label_face(c.a.content.original_label_fonts(),5));text.fitted(label,x+2,y+1,49,18,8,8,rgb(253,244,227),true,true,true,false);
         c.action(x,y,53,20,UiAction::SkipCombatChoice);
         if(!a.pointer.visible)card_reward_keycap(c,InputCommand::Cancel,x+48,y+8);
     }
-    if(!a.pointer.visible){card_reward_keycap(c,InputCommand::Confirm,0,227,10);Canvas prompt=c;prompt.font_face=5;
+    if(!a.pointer.visible){card_reward_keycap(c,InputCommand::Confirm,0,227,10);Canvas prompt=c;prompt.font_face=uint8_t(source_label_face(c.a.content.original_label_fonts(),5));
         prompt.text(card_reward_label(a,"gameplay_ui","TO_INSPECT_PROMPT","查看详情"),15,226,8,Gold,104);}
 }
 static void combat_choose_hand_screen(Canvas&c,const uint16_t*ids,unsigned count){
@@ -137,7 +137,7 @@ static void combat_choose_hand_screen(Canvas&c,const uint16_t*ids,unsigned count
             const auto r=hand_bounds(pose);c.hit(r.x,r.y,r.w,r.h,combat_selection_hit_kind(a),id);
         }
     }
-    char prompt[512]{};combat_selection_text(a,prompt,sizeof prompt);Canvas label=c;label.font_face=5;label.bold_face=5;
+    char prompt[512]{};combat_selection_text(a,prompt,sizeof prompt);Canvas label=c;label.font_face=uint8_t(source_label_face(c.a.content.original_label_fonts(),5));label.bold_face=5;
     label.fitted(prompt,9,43,302,22,8,8,rgb(255,246,226),true,true,true,false);
     native_original_confirm(c,UiAction::ConfirmChoice,motion.row.opened,a.combat_selection_confirmable());
 }

@@ -18,9 +18,60 @@ static std::vector<uint8_t> file(const std::string&path){
     CHECK(!std::fseek(f,0,SEEK_END));const long length=std::ftell(f);CHECK(length>0);CHECK(!std::fseek(f,0,SEEK_SET));
     std::vector<uint8_t>data(size_t(length),0);CHECK(std::fread(data.data(),1,data.size(),f)==data.size());CHECK(!std::fclose(f));return data;
 }
+static void startup_fallback(const std::vector<uint8_t>&common,const std::vector<uint8_t>&english,
+                             const std::vector<uint8_t>&language,unsigned id){
+    if(id==1)return;
+    // Exercise real container parsing and App::init after a failed selected
+    // locale. The last case injects a provider read failure after open(),
+    // when the UI directory is first requested; it cannot be caught by the
+    // calculator's cheap installed-filename probe.
+    for(unsigned damage=0;damage<4;++damage){
+        std::vector<uint8_t> broken;
+        if(damage==1)broken.assign(language.begin(),language.begin()+32);
+        if(damage==2){broken=language;broken[0]^=0xff;}
+        const auto damaged=damage==3?ResourceSource::memory(language.data(),language.size()):ResourceSource::memory(broken.data(),broken.size());
+        SplitResourceSource split;uint32_t available=locale_language_mask(1)|locale_language_mask(id);unsigned calls=0;
+        const auto load=[&](unsigned candidate){
+            CHECK(candidate==(calls?1u:id));++calls;
+            const auto bytes=candidate==1?ResourceSource::memory(english.data(),english.size()):damaged;
+            if(!split.open(ResourceSource::memory(common.data(),common.size()),bytes,ResourceLanguage(candidate)))return false;
+            auto source=split.source();
+            if(candidate==id&&damage==3){
+                source.direct=nullptr;source.read_at=[](void*,uint32_t,void*,uint32_t){return false;};
+            }
+            return app.init(source,{});
+        };
+        // Saved or OS-selected pack failures follow the same production path.
+        CHECK(locale_load_initial(available,damage&1?id:0,id,load)==1);
+        CHECK(calls==2&&available==locale_language_mask(1));
+        CHECK(app.content.language()==1&&app.content.healthy()&&app.title);
+        app.render();CHECK(app.content.healthy());
+    }
+}
 static void reset(unsigned character=0){
     new_run(app.game,0x4c434431,false,Character(character));init_world_relics(app.game);app.game.phase=Phase::Map;
     app.title=app.character_select=app.run_settings=false;app.library=true;CHECK(validate(app.game));
+}
+static void normal_label_pixels(){
+    // FontManager's pinned substitution list, independently of the production
+    // selector: these seven locales use Regular for MegaLabel.normal_font.
+    const unsigned id=app.content.language();
+    const bool substitute=id==2||id==3||id==9||id==10||id==11||id==13||id==15;
+    const unsigned face=substitute?0:5;Canvas canvas{app};
+    const char*label=app.content.world_string("card_selection","VIEW_UPGRADES");CHECK(*label);
+    std::fill(std::begin(app.pixels),std::end(app.pixels),0);
+    Canvas expected=canvas;expected.font_face=uint8_t(face);Canvas shadow=expected;shadow.opacity=128;
+    shadow.text(label,19,198,8,0,140,1);expected.text(label,18,197,8,rgb(239,200,81),140,1);
+    std::vector<uint16_t> pixels(std::begin(app.pixels),std::end(app.pixels));
+    std::fill(std::begin(app.pixels),std::end(app.pixels),0);app.hit_count=0;
+    card_selection_upgrades_control(canvas);
+    for(unsigned y=197;y<213;++y)for(unsigned x=18;x<159;++x)CHECK(app.pixels[y*ScreenW+x]==pixels[y*ScreenW+x]);
+    // The title and energy labels share the same locale role. Rich emphasis
+    // remains a separate Bold/Italic role in body text.
+    CHECK(app.content.original_label_fonts()==!substitute);
+    CHECK(source_label_face(!substitute,5)==face&&source_label_face(!substitute,6)==(substitute?0u:6u));
+    Canvas rich=canvas;rich.bold_face=5;rich.italic_face=6;RichReader reader("A[b]A[/b][i]A[/i]");RichChar ch{};
+    const unsigned faces[]={0,5,6};for(unsigned i=0;i<3;++i){CHECK(reader.next(ch));CHECK(rich.font_style(ch)==faces[i]);}
 }
 static void resolved(const char*context,const char*key,const char*text){
     ++descriptions;
@@ -105,11 +156,13 @@ int main(int argc,char**argv){
     CHECK(!locale_language_id("")&&!locale_language_id("e")&&!locale_language_id("en")&&!locale_language_id("english"));
     if(argc==1){std::printf("locale registry: %u checks passed\n",checks);return 0;}
     CHECK(argc==2||argc==3);const std::string directory=argv[1],selected=argc==3?std::string(",")+argv[2]+",":"";const auto common=file(directory+"/nSpire2.dat.tns");CHECK(!common.empty());
+    const auto english=file(directory+"/nSpire2.eng.dat.tns");CHECK(!english.empty());
     for(unsigned id=1;id<=LocaleLanguageCount;++id){const auto&info=locale_language_info(id);if(!selected.empty()&&selected.find(std::string(",")+info.code+",")==std::string::npos)continue;
         const auto language=file(directory+"/"+info.file);CHECK(!language.empty());
+        startup_fallback(common,english,language,id);
         SplitResourceSource split;CHECK(split.open(ResourceSource::memory(common.data(),common.size()),ResourceSource::memory(language.data(),language.size()),ResourceLanguage(id)));
         CHECK(app.init(split.source(),{}));CHECK(app.content.language()==id);const unsigned begin=descriptions,failed=failures;
-        model_text();const auto codepoints=glyphs();energy_sprites();CHECK(app.content.healthy());
+        model_text();const auto codepoints=glyphs();normal_label_pixels();energy_sprites();CHECK(app.content.healthy());
         std::printf("{\"language\":\"%s\",\"descriptions\":%u,\"visible_codepoints\":%u,\"unexpanded\":%u,\"energy_sprite_sizes\":3}\n",info.code,descriptions-begin,codepoints,failures-failed);std::fflush(stdout);
     }
     std::printf("locale editions: %u checks, %u descriptions, %u failures\n",checks,descriptions,failures);return failures?1:0;

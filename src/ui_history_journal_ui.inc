@@ -146,7 +146,7 @@ static void journal_floor_tooltip(Canvas&c,const UiRunHistory&run,unsigned floor
  // A hover remains beside its map point. The journal's existing scrolling
  // carries long entries without covering nearly the whole320px map.
  constexpr int width=174,body_width=width-18,max_height=202;
- Canvas text=c;text.font_face=0;text.bold_face=5;Canvas bold=text;bold.font_face=5;
+ Canvas text=c;text.font_face=0;text.bold_face=5;Canvas bold=text;bold.font_face=uint8_t(source_label_face(c.a.content.original_label_fonts(),5));
  JournalTextValues values;values.floor=point.floor;values.hp=point.hp;values.max_hp=point.max_hp;values.gold=point.gold;
  char title[192]{},player[192]{},room_line[512]{};
  journal_text(a,"MAP_POINT_HISTORY.header","Floor {FloorNum}",values,title,sizeof title);

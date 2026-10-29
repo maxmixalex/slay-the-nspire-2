@@ -35,7 +35,7 @@ static void world_bundle_banner(Canvas&c){
     const uint32_t start=returned.chosen?returned.selection_start:a.deck_selection.opened;
     const unsigned age=a.map_clock_ms-start;
     const unsigned alpha=a.deck_selection.preview?4096-room_curve::cubic_out(a.map_clock_ms-a.deck_selection.preview_opened,400):room_curve::cubic_out(age,400);
-    Canvas banner=c;banner.opacity=uint8_t(div255(unsigned(banner.opacity)*alpha*255/4096));banner.font_face=5;
+    Canvas banner=c;banner.opacity=uint8_t(div255(unsigned(banner.opacity)*alpha*255/4096));banner.font_face=uint8_t(source_label_face(c.a.content.original_label_fonts(),5));
     const int y=a.deck_selection.preview?32:32+CardRewardPresentation::rounded(10*(4096-CardRewardPresentation::back(age,400)),4096);
     banner.ui(a.content.version()>=Ui6ContentVersion?I6_CommonBanner:U_RewardBanner,80,y-5,160,40);
     banner.fitted(a.content.world_string("gameplay_ui","CHOOSE_A_PACK"),100,y,120,22,10,8,rgb(255,246,226),true,true,true,false);

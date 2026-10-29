@@ -1,6 +1,5 @@
 #pragma once
 #include "locale_boot.hpp"
-#include "locale_boot_glyphs.hpp"
 
 namespace spire {
 struct BootPaint {
@@ -43,11 +42,9 @@ struct BootPaint {
                     if(glyphs[id][col]&(1u<<row))box(x+col*scale,y+row*scale,scale,scale,color);
                 x+=6*scale;
             }else{
-                unsigned lo=0,hi=sizeof(BootGlyphs)/sizeof(BootGlyphs[0]);
-                while(lo<hi){const unsigned mid=(lo+hi)/2;if(BootGlyphs[mid].codepoint<ch)lo=mid+1;else hi=mid;}
-                if(lo<sizeof(BootGlyphs)/sizeof(BootGlyphs[0])&&BootGlyphs[lo].codepoint==ch)
-                    for(int row=0;row<14;++row)for(int col=0;col<14;++col)
-                        if(BootGlyphs[lo].rows[row]&(1u<<col))box(x+col*scale,y+row*scale,scale,scale,color);
+                // Built-in recovery labels are ASCII. Keep the parser bounded
+                // for an unsupported optional custom label without embedding a
+                // second CJK font solely for error messages.
                 x+=15*scale;
             }
         }

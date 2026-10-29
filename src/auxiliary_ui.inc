@@ -33,8 +33,8 @@ static void auxiliary_port_credit(Canvas&layer,int&y){
  if(*payload){const char*next=auxiliary_credit_line(payload,localized_heading,sizeof localized_heading);
   auxiliary_credit_line(next,localized_author,sizeof localized_author);if(*localized_heading&&*localized_author){heading=localized_heading;author=localized_author;}}
  // Match the source LOC/TRAILER major-section label, including its green
- // Kreon/locale bold face and the authored spacing before the author line.
- Canvas section=layer;section.font_face=5;
+ // MegaLabel font substitution and authored spacing before the author line.
+ Canvas section=layer;section.font_face=uint8_t(source_label_face(layer.a.content.original_label_fonts(),5));
  section.text_fitted(heading,12,y+26,296,12,rgb(127,255,0),12,true);
  auxiliary_credit_text(layer,author,12,y+44,296,22,rgb(255,246,226),true);y+=82;
 }
@@ -43,7 +43,7 @@ static void auxiliary_credits_screen(Canvas&c){
  int y=114-v.credits_position/256;const char*text=a.content.string(AuxiliaryCreditsString);char line[1024]{};
  const uint16_t cream=rgb(255,246,226),roles=rgb(135,206,235);
  for(const char*p=text;*p;){const char*begin=p;p=auxiliary_credit_line(p,line,sizeof line);const char kind=line[0];const char*body=line+1;
-  if(kind=='H'||kind=='h'||kind=='B'||kind=='s'||kind=='t'){const int height=kind=='H'?60:kind=='s'?32:kind=='t'?22:42;if(y+height>=0&&y<240){Canvas header=layer;if(kind=='B')header.font_face=5;header.text_fitted(body,12,y+height-16,296,12,kind=='B'?rgb(127,255,0):Gold,12,true);}y+=height;}
+  if(kind=='H'||kind=='h'||kind=='B'||kind=='s'||kind=='t'){const int height=kind=='H'?60:kind=='s'?32:kind=='t'?22:42;if(y+height>=0&&y<240){Canvas header=layer;if(kind=='B')header.font_face=uint8_t(source_label_face(layer.a.content.original_label_fonts(),5));header.text_fitted(body,12,y+height-16,296,12,kind=='B'?rgb(127,255,0):Gold,12,true);}y+=height;}
   else if(kind=='S'){int amount=0;for(const char*q=body;*q>='0'&&*q<='9';++q)amount=amount*10+(*q-'0');y+=amount;}
   else if(kind=='I'){
    const int id=*body-'0';if(id==1)auxiliary_port_credit(layer,y);static constexpr int widths[]={124,100,95,45,57},heights[]={69,27,29,42,57};

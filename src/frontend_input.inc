@@ -125,7 +125,7 @@ void App::accept_frontend_confirm(){
  if(action==3){cancel_map_travel();persist_progress();quit=true;return;}
  if(action==1){
   if(!title)return;
-  if(!read_saved(*this)){message("无法读取存档，请重试");return;}
+  if(!read_saved(*this)){message("Could not load the saved run. Please try again.");return;}
   if(!has_save||!same_run_identity(confirmed,saved_run_identity(frontend_saved_probe))){menu=0;message("存档已变更，请重新确认");return;}
   if(callbacks.clear_save){if(!callbacks.clear_save()){message("无法删除存档，请重试");return;}}
   else if(!callbacks.save||!terminal_probe(frontend_saved_probe)||!callbacks.save(frontend_saved_probe)){message("无法保存终局，请重试");return;}
@@ -164,7 +164,7 @@ bool App::frontend_input(Key key){
    case FrontContinue:if(!frontend_continue_saved_run(*this)){refresh_save();menu=0;message("没有有效的存档");}break;
    case FrontAbandon:
     if(refresh_save()){confirmed_run=saved_run_identity(frontend_saved_probe);frontend_confirm=1;frontend_choice=0;}
-    else{menu=0;message("无法读取存档，请重试");}break;
+    else{menu=0;message("Could not load the saved run. Please try again.");}break;
    case FrontCompendium:open_compendium();break;
    case FrontSettings:settings_open=true;settings_language_open=false;settings_top=settings_tab=settings_item=0;break;
    case FrontQuit:frontend_confirm=3;frontend_choice=0;break;
@@ -182,7 +182,7 @@ bool App::frontend_input(Key key){
   case 3:if(resumable_run(game)){frontend_confirm=2;frontend_choice=0;}break;
   case 4:
    if(!resumable_run(game)){if(finish_saved_run())return_to_title();else message("无法删除存档，请重试");}
-   else if(save_current_run())return_to_title();else message("保存失败，请重试");break;
+   else if(save_current_run())return_to_title();else message("Could not save the run. Please try again.");break;
  }}else if(key==Key::Quit){frontend_confirm=3;frontend_choice=0;}
  else if(key==Key::Collection)return false;
  return true;

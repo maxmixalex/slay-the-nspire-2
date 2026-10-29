@@ -95,4 +95,17 @@ inline unsigned locale_default_language(uint32_t installed,unsigned saved,unsign
     if(installed&locale_language_mask(1))return 1;
     return locale_language_at(installed,0);
 }
+// Try only the selected language on a healthy installation. A failed open is
+// removed before the next preference is considered, so missing/truncated packs
+// cannot trap startup or hide an installed English fallback. The loader owns
+// its file handles and functional parsing; this adds no integrity scan.
+template<class Load>
+inline unsigned locale_load_initial(uint32_t&available,unsigned saved,unsigned system,Load load){
+    while(const unsigned candidate=locale_default_language(available,saved,system)){
+        if(load(candidate))return candidate;
+        available&=~locale_language_mask(candidate);
+    }
+    return 0;
+}
+
 }

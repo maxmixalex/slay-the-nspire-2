@@ -13,7 +13,7 @@ void App::refresh_profiles(){
 }
 void App::open_profiles(){
     if(!title||!callbacks.request_profile||!callbacks.profile_info||profile_pending)return;
-    if(!persist_progress()){message(content.language()!=2?"Could not save history.":"历史记录保存失败，请重试");return;}
+    if(!persist_progress()){message("Could not save history.");return;}
     profiles_open=true;profile_selection=uint8_t(current_profile()-1);profiles_started=map_clock_ms;
     compendium_open=statistics_open=history_open=library=character_select=settings_open=false;bestiary.open=false;
     detail_card=detail_item=-1;pointer_cancel();refresh_profiles();
@@ -25,14 +25,14 @@ bool App::request_profile_change(unsigned target,bool erase){
     if(!erase&&target==current_profile()){profiles_open=false;pointer_cancel();return true;}
     if(!persist_progress())return false;
     if(!callbacks.request_profile||!callbacks.request_profile(target,erase)){
-        message(content.language()!=2?"Could not change save profile.":"无法更换存档档案，请重试");return false;
+        message("Could not change save profile.");return false;
     }
     profile_target=uint8_t(target);profile_delete=erase;profile_pending=true;pointer_cancel();return true;
 }
 void App::finish_profile_change(bool success){
     if(!profile_pending)return;
     const bool erased=profile_delete,active=profile_target==current_profile();profile_pending=false;
-    if(!success){message(content.language()!=2?"Could not update save profile.":"无法更新存档档案，请重试");refresh_profiles();return;}
+    if(!success){message("Could not update save profile.");refresh_profiles();return;}
     if(!erased||active){
         // All old live-model references belong to the previous profile.
         // A profile switch returns to the menu; Continue is a separate action.

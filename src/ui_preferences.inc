@@ -23,7 +23,7 @@ void App::persist_preferences(){
     UiPreferences value{fast_mode,show_card_indices,text_effects,keyboard_only,phobia_mode,screen_shake,bestiary_actions_preferred};
     value.bindings=input_bindings;value.bindings_saved=true;value.show_run_timer=show_run_timer;value.long_press=long_press;value.skip_intro_logo=skip_intro_logo;
     if(callbacks.save_preferences&&!callbacks.save_preferences(value))
-        message(content.language()!=2?"Could not save settings.":"设置保存失败，请重试");
+        message("Could not save settings.");
 }
 void App::set_fast_mode(bool value){
     if(fast_mode==value)return;
@@ -43,7 +43,7 @@ bool App::request_language(unsigned language){
     if(language==content.language())return true;
     settings_language_open=false;
     if(callbacks.request_language&&callbacks.request_language(language))return true;
-    message(content.language()!=2?"Could not change language.":"无法切换语言。");return false;
+    message("Could not change language.");return false;
 }
 bool App::reload_language(ResourceSource source){
     if(!title)return false;

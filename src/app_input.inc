@@ -197,8 +197,8 @@ void App::input(Key k){
         else if(game.phase==Phase::Upgrade){if(game.world.active)world_rest_cancel(game);else game.phase=Phase::Camp;cursor=1;}
         else{paused=true;menu=0;}return;
     }
-    if(k==Key::Save){message(save_current_run()?"已保存远征":"保存失败");return;}
-    if(k==Key::Load){if(load_saved_run())message("已载入");else message("没有有效的存档");return;}
+    if(k==Key::Save){message(save_current_run()?"已保存远征":"Could not save the run.");return;}
+    if(k==Key::Load){if(load_saved_run())message("已载入");else message("No valid saved run was found.");return;}
     if(k==Key::Log){panel=panel==2?0:2;scroll=0;return;}
     if(k==Key::Inspect){panel=panel==1&&!pile_tab?0:1;pile_tab=0;scroll=inspect_cursor=0;pile_control_focus=-1;card_grids[unsigned(CardGridSurface::Pile)].reset();return;}
     if(k==Key::DrawPile||k==Key::DiscardPile||k==Key::ExhaustPile){
