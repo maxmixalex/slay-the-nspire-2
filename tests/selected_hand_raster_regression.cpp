@@ -87,7 +87,7 @@ static void dragging(Input&input){
  a.pointer_button(true);a.pointer_move(160,105);CHECK(a.pointer.held&&a.pointer.dragging&&a.selected_hand_card()==0);
  for(unsigned i=0;i<8;++i){a.pointer_move(160+int(i)*3,105-int(i));render(input,a.map_clock_ms+125);}
  // Cancel the gesture without playing a card or changing the canonical run.
- a.pointer_cancel();a.input(Key::Back);a.pointer.visible=false;a.hand_focus=false;
+ a.pointer_cancel();a.pointer.visible=false;a.hand_focus=false;
  stage="no-focused-hand";render(input,a.map_clock_ms+33);CHECK(selected_hand_reader.instance<0);
  a.hand_focus=true;a.cursor=0;stage="refocused-hand";render(input,a.map_clock_ms+33);CHECK(selected_hand_reader.instance==0);
 }
