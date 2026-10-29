@@ -109,7 +109,7 @@ static void cursor_lru_failures(){
     unsigned victim=0;for(unsigned id:{1u,3u,7u}){read(cache,host,id,70,2,true);}
     for(unsigned id=0;id<8;++id)if(host.held(id)&&id!=1&&id!=3&&id!=7)victim=id;
     host.fail_close=int(victim);CHECK(!cache.read(6,12,out,12,sought));CHECK(!host.held(victim));read(cache,host,6,12,12,true);
-    const auto live=host.live,opens=host.opens,old_seeks=host.seeks;
+    const auto live=host.live;const auto opens=host.opens,old_seeks=host.seeks;
     CHECK(cache.read(6,uint32_t(host.bytes[6].size()),nullptr,0,sought));CHECK(!sought);
     CHECK(!cache.read(6,uint32_t(host.bytes[6].size())+1,nullptr,0,sought));
     CHECK(!cache.read(6,0,nullptr,1,sought));CHECK(!cache.read(8,0,out,1,sought));
