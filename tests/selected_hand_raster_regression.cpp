@@ -101,7 +101,8 @@ static void run(Input&input){
  CHECK(save(a.game,disk));stage="native-reopen";CHECK(a.init(input.source(),{nullptr,read_saved}));
  CHECK(selected_hand_reader.instance<0&&load(a.game,disk.bytes,disk.size));
  a.title=false;a.reset_presentation();a.hand_focus=true;a.cursor=0;a.map_clock_ms=50000;a.animation=1500;
- a.combat_preparation.shown=true;for(unsigned i=0;i<1024&&a.combat_preparation.active;++i)a.step_combat_preparation();
+ a.sync_combat_preparation();a.combat_preparation.shown=true;
+ for(unsigned i=0;i<1024&&a.combat_preparation.active;++i)a.step_combat_preparation();CHECK(!a.combat_preparation.active);
  scroll(input,"reopened-scroll");
 }
 int main(int argc,char**argv){
