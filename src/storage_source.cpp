@@ -13,11 +13,20 @@ bool get(const ResourceSource&s,uint32_t at,void*out,uint32_t n){
     return s.read_at&&s.read_at(s.context,at,out,n);
 }
 constexpr uint32_t Mask=0x7fffffffu,Literal=0x80000000u,Limit=256u*1024u*1024u;
+struct StorageReadGuard {
+    bool&busy;
+    explicit StorageReadGuard(bool&value):busy(value){busy=true;}
+    ~StorageReadGuard(){busy=false;}
+};
 }
 
-void BlockedResourceSource::close(){input_={};length_=blocks_=data_=0;cached_=UINT32_MAX;}
+void BlockedResourceSource::close(){
+    if(busy_)return;
+    input_={};length_=blocks_=data_=0;cached_=UINT32_MAX;
+}
 bool BlockedResourceSource::open(ResourceSource input){
-    close();uint8_t h[32];
+    if(busy_)return false;
+    close();StorageReadGuard guard(busy_);uint8_t h[32];
     if(input.context==this||!get(input,0,h,sizeof h)||word(h)!=0x334c534eu||
        word(h+4)!=3||word(h+8)!=0x41cef1eau||word(h+12)!=input.length||
        word(h+20)!=BlockBytes)return false;
@@ -39,16 +48,22 @@ bool BlockedResourceSource::open(ResourceSource input){
     input_=input;length_=length;blocks_=blocks;data_=data;return true;
 }
 bool BlockedResourceSource::read(uint32_t at,void*destination,uint32_t count)const{
-    if(!length_||at>length_||count>length_-at||(count&&!destination))return false;
+    if(busy_||!length_||at>length_||count>length_-at||(count&&!destination))return false;
+    if(!count)return true;
+    StorageReadGuard guard(busy_);
     auto*out=static_cast<uint8_t*>(destination);
     while(count){
         const uint32_t block=at/BlockBytes,inside=at%BlockBytes;
         const uint32_t raw=length_-block*BlockBytes<BlockBytes?length_-block*BlockBytes:BlockBytes;
         uint32_t n=raw-inside;if(n>count)n=count;
         const uint32_t physical=offsets_[block]&Mask;
+        if(!(offsets_[block]&Literal)&&cached_==block){
+            copy(out,decoded_+inside,n);at+=n;out+=n;count-=n;continue;
+        }
         if(offsets_[block]&Literal){
-            // Coalesce neighboring literal pages: existing 64 KiB directory
-            // and glyph-stream reads retain their single sequential file read.
+            // Keep large literal-only directory/glyph streams as one direct
+            // read. A short literal prefix may join the next compressed page,
+            // unless that page is already resident in the decoded cache.
             while(n<count&&inside+n>=raw){
                 const uint32_t next=(at+n)/BlockBytes;
                 if(next>=blocks_||!(offsets_[next]&Literal)||
@@ -58,16 +73,48 @@ bool BlockedResourceSource::read(uint32_t at,void*destination,uint32_t count)con
                 if(take>count-n)take=count-n;n+=take;
                 if(take<BlockBytes)break;
             }
-            if(!get(input_,physical+inside,out,n))return false;
-        }else{
-            if(cached_!=block){
-                cached_=UINT32_MAX;const uint32_t bytes=(offsets_[block+1]&Mask)-physical;
-                if(!get(input_,physical,encoded_,bytes)||!decode_lz4(encoded_,bytes,decoded_,raw))return false;
-                cached_=block;
+            if(n==count||n>=EncodedBytes||cached_==(at+n)/BlockBytes){
+                if(!get(input_,physical+inside,out,n))return false;
+                at+=n;out+=n;count-=n;continue;
             }
-            copy(out,decoded_+inside,n);
         }
-        at+=n;out+=n;count-=n;
+        // Every intervening physical byte belongs to a page touched by this
+        // request. Compressed edge pages need their complete stream; literal
+        // edges retain the exact requested byte range. No adjacent-page
+        // prefetch is performed, and batches never use the image workspace.
+        const uint32_t first=physical+((offsets_[block]&Literal)?inside:0);
+        uint32_t covered=0,bytes=0;
+        while(covered<count){
+            const uint32_t next_at=at+covered,next=next_at/BlockBytes,in=next_at%BlockBytes;
+            const uint32_t remain=length_-next*BlockBytes,size=remain<BlockBytes?remain:BlockBytes;
+            uint32_t take=size-in;if(take>count-covered)take=count-covered;
+            const uint32_t end=(offsets_[next]&Literal)?(offsets_[next]&Mask)+in+take:
+                (offsets_[next+1]&Mask);
+            if(end-first>EncodedBytes)break;
+            bytes=end-first;covered+=take;
+        }
+        // A short literal prefix can itself nearly fill the buffer, leaving
+        // no room for its compressed neighbor. Copy that prefix directly.
+        if((offsets_[block]&Literal)&&covered<=n){
+            if(!get(input_,first,out,n))return false;
+            at+=n;out+=n;count-=n;continue;
+        }
+        cached_=UINT32_MAX;
+        if(!covered||!get(input_,first,encoded_,bytes))return false;
+        uint32_t pending=covered;
+        while(pending){
+            const uint32_t next=at/BlockBytes,in=at%BlockBytes;
+            const uint32_t remain=length_-next*BlockBytes,size=remain<BlockBytes?remain:BlockBytes;
+            uint32_t take=size-in;if(take>pending)take=pending;
+            const uint32_t start=offsets_[next]&Mask;
+            if(offsets_[next]&Literal)copy(out,encoded_+(start+in-first),take);
+            else{
+                cached_=UINT32_MAX;
+                if(!decode_lz4(encoded_+(start-first),(offsets_[next+1]&Mask)-start,decoded_,size))return false;
+                cached_=next;copy(out,decoded_+in,take);
+            }
+            at+=take;out+=take;count-=take;pending-=take;
+        }
     }
     return true;
 }

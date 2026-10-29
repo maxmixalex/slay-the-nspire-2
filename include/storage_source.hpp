@@ -5,12 +5,13 @@ namespace spire {
 
 // Small independent LZ4 pages around locale containers. They may be read while
 // an image owns ResourceTransferLease: this adapter never borrows that scratch.
-// Literal pages are read directly and compressed pages use one 4 KiB cache.
+// Literal-only ranges read directly. Mixed ranges use at most 32 KiB of
+// encoded bytes from the current request, with one 4 KiB decoded-page cache.
 class BlockedResourceSource {
 public:
     // The largest pinned edition uses 1,264 pages. Keep 8 MiB of logical capacity
     // without reserving a 16 MiB table in the calculator's contiguous BSS.
-    static constexpr uint32_t BlockBytes=4096,MaxBlocks=2048;
+    static constexpr uint32_t BlockBytes=4096,MaxBlocks=2048,EncodedBytes=8*BlockBytes;
     bool open(ResourceSource);
     void close();
     ResourceSource source();
@@ -20,7 +21,10 @@ private:
     uint32_t length_{},blocks_{},data_{};
     uint32_t offsets_[MaxBlocks+1]{};
     mutable uint32_t cached_=UINT32_MAX;
-    mutable uint8_t decoded_[BlockBytes]{},encoded_[BlockBytes]{};
+    mutable uint8_t decoded_[BlockBytes]{},encoded_[EncodedBytes]{};
+    // Providers may read a different adapter, but cannot recursively alter
+    // this adapter's source, in-flight encoded bytes or decoded cache.
+    mutable bool busy_{};
     static bool read_at(void*,uint32_t,void*,uint32_t);
     static void progress_at(void*,ResourceStage,uint32_t,uint32_t);
 };

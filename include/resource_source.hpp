@@ -38,7 +38,7 @@ private:
     static void progress_at(void*,ResourceStage,uint32_t,uint32_t);
     bool read_directory(uint32_t,void*,uint32_t)const;
 };
-static_assert(sizeof(SplitResourceSource)<=25*1024,"Locale storage keeps a bounded 4 KiB decode cache and addressing table");
+static_assert(sizeof(SplitResourceSource)<=45*1024,"Locale storage keeps bounded 32 KiB encoded and 4 KiB decoded buffers");
 
 struct ResourceReadStats {
     uint32_t callbacks{},cache_hits{},cache_misses{},bypasses{},direct_reads{};
