@@ -343,6 +343,46 @@ static void light_rg_contract(){
     CHECK(random_light_quads.bind(app.content,generation_input));CHECK(random_light_quads.maximum[0]==63);
     CHECK(random_light_quads.maximum[2]==0);
 }
+static void dot_bounds_contract(){
+    Image physical{320,205,std::vector<uint16_t>(320*205,0xffff),std::vector<uint8_t>(320*205)};
+    for(unsigned y=0;y<256;++y)for(unsigned x=0;x<256;++x){
+        const int distance=std::abs(int(x)-128)+std::abs(int(y)-128);
+        physical.alpha[y*256+x]=uint8_t(distance<96?255-distance*2:0);
+    }
+    const water_reflection::Texture texture(picture(physical),256,256);
+    static RandomDotBounds bounds;CHECK(bounds.bind(app.content,texture));
+    for(unsigned ty=0;ty<64;++ty)for(unsigned tx=0;tx<64;++tx){
+        unsigned low=255,high=0;
+        for(unsigned y=ty*4;y<=ty*4+4;++y)for(unsigned x=tx*4;x<=tx*4+4;++x){
+            const unsigned value=physical.alpha[std::min(y,255u)*256+std::min(x,255u)];
+            low=std::min(low,value);high=std::max(high,value);
+        }
+        CHECK(bounds.minimum[ty*64+tx]==low&&bounds.maximum[ty*64+tx]==high);
+    }
+    // The full RGBA path is independent of the extrema/span shortcut. It
+    // retains both bilinear rounding steps, clipping and exact source-over.
+    for(unsigned alpha:{1u,35u,110u,255u})for(int angle:{-735,0,2023})for(int size:{31,84,500}){
+        Canvas canvas{app};canvas.clip_w=197;canvas.clip_h=111;
+        const auto render=[&](RandomTextureSource source){
+            for(unsigned i=0;i<320*240;++i)app.pixels[i]=uint16_t(i*37);
+            random_character_particle(canvas,texture,20*65536,-25*65536,size*65536,angle,
+                alpha,128,179,69,presentation::Normal,source);
+        };
+        render(RandomTextureSource::Color);const std::vector<uint16_t> expected(app.pixels,app.pixels+320*240);
+        render(RandomTextureSource::WhiteAlpha);
+        CHECK(!std::memcmp(expected.data(),app.pixels,expected.size()*sizeof(uint16_t)));
+    }
+    // The quad halo belongs to both neighboring summaries. Content reopen,
+    // owner changes and logical geometry changes must not reuse stale bounds.
+    CHECK(bounds.maximum[0]==0);physical.alpha[4*256+4]=255;
+    CHECK(!app.content.open(nullptr,0));CHECK(bounds.bind(app.content,texture));
+    CHECK(bounds.maximum[0]==255&&bounds.maximum[1]==255&&bounds.maximum[64]==255&&bounds.maximum[65]==255);
+    const water_reflection::Texture wrong_shape(picture(physical));
+    CHECK(!bounds.bind(app.content,wrong_shape));CHECK(bounds.bind(app.content,texture));
+    static Content other;CHECK(bounds.bind(other,texture));
+    Picture no_alpha=picture(physical);no_alpha.alpha=nullptr;
+    CHECK(!bounds.bind(other,water_reflection::Texture(no_alpha,256,256)));
+}
 static std::vector<uint8_t> read(const char*path){FILE*f=std::fopen(path,"rb");CHECK(f);std::vector<uint8_t> data(spire_test::pack_size(f));CHECK(std::fread(data.data(),1,data.size(),f)==data.size());CHECK(!std::fclose(f));return data;}
 static Image decode(Picture p){
     Image out{p.w,p.h,std::vector<uint16_t>(unsigned(p.w)*p.h),std::vector<uint8_t>(unsigned(p.w)*p.h)};
@@ -395,7 +435,7 @@ static void actual(const char*captures){
     CHECK(save(app.game,after)&&before.size==after.size&&!std::memcmp(before.bytes,after.bytes,before.size));
 }
 int main(int argc,char**argv){
-    shader_contract();exact_row_quotient_contract();exact_interpolation_contract();exact_gradient_cache_contract();particle_contract();linear_texture_contract();particle_fast_paths();interior_raster_contract();light_rg_contract();
+    shader_contract();exact_row_quotient_contract();exact_interpolation_contract();exact_gradient_cache_contract();particle_contract();linear_texture_contract();particle_fast_paths();interior_raster_contract();light_rg_contract();dot_bounds_contract();
     if(argc>1){auto data=read(argv[1]);std::vector<uint8_t> locale;SplitResourceSource split;
         if(argc>2){locale=read(argv[2]);CHECK(split.open(ResourceSource::memory(data.data(),data.size()),ResourceSource::memory(locale.data(),locale.size()),ResourceLanguage(argc>3?std::atoi(argv[3]):1)));CHECK(app.init(split.source(),{}));}
         else CHECK(app.init(data.data(),data.size(),{}));
