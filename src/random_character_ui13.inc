@@ -401,57 +401,17 @@ static void random_character_light(Canvas&c,const RandomLightSampler&light,
         }
     }
 }
-[[gnu::always_inline]] static inline unsigned random_dot_alpha(const uint8_t*alpha,int u,int v,const uint8_t*safe=nullptr){
+[[gnu::always_inline]] static inline unsigned random_dot_alpha(const uint8_t*alpha,int u,int v){
     const unsigned x=unsigned(u)-128,y=unsigned(v)-128,fx=x&255,fy=y&255;
     const unsigned at=(y&0xff00u)|(x>>8);
-    if(safe&&(u&255)&&(v&255)&&(safe[at>>3]&(1u<<(at&7))))
-        return alpha[(unsigned(v)&0xff00u)|(unsigned(u)>>8)];
     const unsigned top=(unsigned(alpha[at])*(256-fx)+unsigned(alpha[at+1])*fx+128)>>8;
     const unsigned bottom=(unsigned(alpha[at+256])*(256-fx)+unsigned(alpha[at+257])*fx+128)>>8;
     return (top*(256-fy)+bottom*fy+128)>>8;
 }
-// Adjacent alpha samples that differ by at most one retain their exact
-// nearest endpoint through each rounded interpolation, except at half ties.
-// The source dots are smooth, so this proof avoids four reads and six
-// interpolation multiplies for most pixels without changing their filtering.
-struct RandomDotQuads {
-    uint8_t safe[256*256/8]{};
-    const Content*owner=nullptr;
-    Picture picture{};
-    uint32_t generation=0;
-    unsigned logical_width=0,logical_height=0;
-    bool observed=false,valid=false;
-    static bool adjacent(unsigned a,unsigned b){return unsigned(int(a)-int(b)+1)<=2;}
-    bool bind(const Content&content,const water_reflection::Texture&texture,void(*poll)()=nullptr){
-        const auto p=texture.storage();
-        if(observed&&owner==&content&&generation==content.generation()&&
-           logical_width==texture.width()&&logical_height==texture.height()&&
-           picture.pixels==p.pixels&&picture.alpha==p.alpha&&picture.palette==p.palette&&
-           picture.w==p.w&&picture.h==p.h&&picture.format==p.format)return valid;
-        owner=&content;generation=content.generation();picture=p;
-        logical_width=texture.width();logical_height=texture.height();observed=true;valid=false;
-        if(!texture.valid()||texture.width()!=256||texture.height()!=256||p.format>3||!p.alpha)return false;
-        for(auto&byte:safe)byte=0;
-        for(unsigned y=0;y<256;++y){
-            if(!(y&15u)&&poll)poll();
-            const auto*top=p.alpha+y*256,*bottom=p.alpha+mn(255u,y+1)*256;
-            for(unsigned x=0;x<256;++x){const unsigned right=mn(255u,x+1);
-                const unsigned a=top[x],b=top[right],c=bottom[x],d=bottom[right];
-                if(adjacent(a,b)&&adjacent(c,d)&&adjacent(a,c)&&adjacent(b,d)){
-                    const unsigned at=y*256+x;safe[at>>3]|=uint8_t(1u<<(at&7));
-                }
-            }
-        }
-        valid=true;return true;
-    }
-};
-static RandomDotQuads random_dot_quads;
-static_assert(sizeof(RandomDotQuads)<=9u*1024u,"Source dot quad proofs fit8 KiB, without a new image pool");
 static void random_character_white_dot(Canvas&c,const water_reflection::Texture&texture,
         int left,int top,int right,int bottom,int du,int dv,RandomRowQuotient row_u,RandomRowQuotient row_v,
         unsigned alpha,uint16_t color){
     const auto*source=texture.storage().alpha;
-    const uint8_t*safe=random_dot_quads.bind(c.a.content,texture,c.a.callbacks.foreground_poll)?random_dot_quads.safe:nullptr;
     for(int y=top;y<bottom;++y,row_u.advance(),row_v.advance()){
         c.poll_row(unsigned(y-top));
         int u=32768+row_u.value(),v=32768+row_v.value();auto*out=c.pixels+y*c.pitch;
@@ -463,7 +423,7 @@ static void random_character_white_dot(Canvas&c,const water_reflection::Texture&
             if(amount)out[x]=blend(out[x],color,amount);
         }
         for(;x<last;++x,u+=du,v-=dv){
-            const unsigned amount=div255(random_dot_alpha(source,u,v,safe)*alpha);
+            const unsigned amount=div255(random_dot_alpha(source,u,v)*alpha);
             if(amount)out[x]=blend(out[x],color,amount);
         }
         for(;x<right;++x,u+=du,v-=dv){
