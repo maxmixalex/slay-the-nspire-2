@@ -47,12 +47,20 @@ state/                      局面、历史、设置、语言和档位 / saves a
 只安装需要的语言文件。设置中可切换已安装语言；语言选择全局保存。
 公共资源索引和全部用途包必须来自同一版本并一起安装，不能按用途删减。
 升级时替换程序与 data 中的资源，保留已有 state 文件夹中的档案。
+从旧单文件版升级时，先用新索引替换旧的 data/nSpire2.dat.tns，释放旧公共包占用的空间，
+然后再传其余用途包、语言和程序。不要让旧大文件与整套新分包同时占用计算器存储；
+等全部文件传输完成后再启动。可选语言只传需要的几种，不必安装全部十六种。
 首次启动按系统语言选择；对应语言缺失或无法加载时尝试英语，再选择首个可用语言。
 主菜单左上角可切换三个档案，各自保存局面、历史与游戏设置。
 程序会创建缺失的 state 文件夹。所有保存、临时文件、备份和诊断文件均写入 state。
 Install only the desired language files in data. Settings lists installed languages.
 Install the matching artwork index and every concern file together. They are all required.
 When updating, replace the launcher and data resources; keep existing files in state.
+For an older monolithic installation, replace data/nSpire2.dat.tns with the new small
+index first to free the old common file's space. Then transfer the concern files,
+desired locales and launcher. Start only after the complete matching set is present.
+Do not retain the old large common file alongside the full new parts on the calculator.
+Install only the additional languages you need; all sixteen are not required.
 First launch follows the system language, then English, then the first usable language.
 Missing or unusable language resources fall back through the same sequence. Startup errors are English.
 The top-left profile button selects one of three independent run/history/settings profiles.

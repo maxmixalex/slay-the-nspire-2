@@ -5,29 +5,34 @@ NSP2/40 resources. Source, conversion and runtime evidence are separate.
 
 ## Installed files
 
-The former 74,024,394-byte `nSpire2.dat.tns` is now a 1,616-byte NSM1 index
+The former 74,024,394-byte `nSpire2.dat.tns` is now a 1,520-byte NSM1 index
 plus eight required concern files. Every part belongs to the same resource
 edition; these are not optional art packs. A missing or invalid required part
 produces the built-in English resource error before the game starts.
 
 | File | Bytes | Concern |
 | --- | ---: | --- |
-| nSpire2.dat.tns | 1,616 | Virtual artwork addressing and original NSC1 header |
-| nSpire2.interface.dat.tns | 10,927,062 | UI and common visual controls |
-| nSpire2.cards.dat.tns | 2,903,300 | Card illustrations |
+| nSpire2.dat.tns | 1,520 | Virtual artwork addressing and original NSC1 header |
+| nSpire2.interface.dat.tns | 10,930,164 | UI and common visual controls |
+| nSpire2.cards.dat.tns | 2,904,812 | Card illustrations |
 | nSpire2.characters.dat.tns | 1,238,530 | Player character animations |
 | nSpire2.enemies.dat.tns | 34,618,504 | Regular and elite creature animations |
 | nSpire2.bosses.dat.tns | 8,834,136 | Boss animations |
-| nSpire2.rooms.dat.tns | 4,742,228 | Room, event and merchant visuals |
+| nSpire2.rooms.dat.tns | 4,737,614 | Room, event and merchant visuals |
 | nSpire2.effects.dat.tns | 10,628,084 | Later effect and layered animation families |
 | nSpire2.shared.dat.tns | 132,742 | Mixed groups and preserved padding |
 
 Compressed decoder groups stay intact and are assigned using their actual
 image references. Mixed groups follow their majority concern; tied groups
 remain shared. This avoids splitting an indivisible decoder request between
-files. The 95 virtual ranges preserve every old artwork byte and logical
+files. Page-sized complete islands between two spans of the same concern then
+join that neighboring file. The general A/B/A rule moves three small islands,
+6,126 bytes in total, and removes six unnecessary file boundaries without
+splitting or duplicating a decoder group. The final 89 virtual ranges preserve
+every old artwork byte and logical
 address. Independent Python readback reconstructs the exact old common file.
-The extra index/part headers cost 1,808 bytes in total.
+The extra index/part headers cost 1,712 bytes in total. See
+`ui16-artwork-locality-0.17.md` for the actual reads and cold open this removes.
 
 The calculator exposes eight logical artwork sources through a four-stream
 LRU cache and keeps an in-memory addressing table. The part lengths are probed
@@ -37,19 +42,26 @@ then reads the original requested bytes from the appropriate file. A miss
 closes the evicted stream before opening its replacement. Each stream owns an
 independent seek cursor, and failed operations invalidate that cursor. Images
 are not preloaded at startup. The table capacity is 128 spans, rather than
-reserving an unnecessarily large map for the current 95 spans. Native loading
+reserving an unnecessarily large map for the current 89 spans. Native loading
 uses the same storage adapters. Legacy NSC1 + NSL1/NSL2 installations remain
 readable. See `ui16-artwork-file-handles-0.17.md` for the actual-device open
 failure that motivated the bounded cache, lifecycle handling, and tests.
 
 ## Independent locale pages
 
-NSL3 wraps an unchanged NSL1/NSL2 language container in independent 4,096-byte
-LZ4 pages. It is distinct from the existing NSZ1 save/history envelope. The
+NSL3 wraps an NSL1/NSL2 language container in independent 4,096-byte LZ4 pages.
+Before compression, NSL2 receives at most 4,095 zero bytes between its directory
+streams and raw tail, aligning glyph/string physical pages with the original
+virtual pages. The complete logical NSP2 resource remains byte-identical;
+physical NSL2 header offsets and padding change. Legacy NSL1 stays unchanged,
+and old NSL2/NSL3 editions remain readable. This is distinct from the existing
+NSZ1 save/history envelope. The
 converter chooses HC level 12 when available; encoding time is offline. Pages
 saving at most 16 bytes remain literal. Contiguous literal pages coalesce into
 a single provider read, and compressed pages share one 4 KB decoded cache.
-The entire inner NSL2 stream is byte-identical after decompression.
+Decompression exactly reproduces this aligned NSL2 container. See
+`ui16-locale-page-alignment-0.17.md` for the source/oracle distinction and the
+extra cross-page reads eliminated without adding runtime memory.
 
 This layer can safely compress the old raw frame/glyph descriptors. It owns
 small addressing and encoded/decoded page buffers and never acquires
@@ -59,28 +71,28 @@ large directory blocks retain their original resident-prefix rule.
 
 | Edition | UI15 bytes | UI16 bytes | Reduction |
 | --- | ---: | ---: | ---: |
-| English | 1,130,938 | 779,181 | 351,757 |
-| Simplified Chinese | 5,000,436 | 4,456,976 | 543,460 |
-| Traditional Chinese | 5,174,475 | 4,622,935 | 551,540 |
-| Japanese | 3,925,710 | 3,427,690 | 498,020 |
-| Korean | 1,949,066 | 1,560,644 | 388,422 |
+| English | 1,130,938 | 779,312 | 351,626 |
+| Simplified Chinese | 5,000,436 | 4,456,679 | 543,757 |
+| Traditional Chinese | 5,174,475 | 4,623,096 | 551,379 |
+| Japanese | 3,925,710 | 3,428,064 | 497,646 |
+| Korean | 1,949,066 | 1,560,820 | 388,246 |
 
 The default English/Chinese resource set decreases from 80,155,768 to
-79,262,359 bytes, including all concern-file overhead: **893,409 bytes less**.
-All 16 locales together save 6,211,620 bytes relative to the repaired locale
+79,262,097 bytes, including all concern-file overhead: **893,671 bytes less**.
+All 16 locales together save 6,210,223 bytes relative to the repaired locale
 inputs. The optional Portuguese/Turkish exact-font repair costs 468 bytes
 against the original UI15 inputs, so the complete 16-language reduction from
-UI15 is **6,211,152 bytes**. Default English and Chinese incur no glyph repair
+UI15 is **6,209,755 bytes**. Default English and Chinese incur no glyph repair
 increase.
 
 With the final integrated launcher, the default program/resource installation
-is 81,021,659 bytes (77.2683 MiB), before saves, notices and explanatory text.
-The UI15 equivalent was 81,910,800 bytes: **889,141 bytes less**. These are
+is 81,021,379 bytes (77.2680 MiB), before saves, notices and explanatory text.
+The UI15 equivalent was 81,910,800 bytes: **889,421 bytes less**. These are
 installed-file counts, not ZIP download sizes. A smaller download alone is
 not reported as a calculator storage improvement.
 
-The final launcher is 4,268 bytes larger than UI15. Including it, installing all
-16 languages saves **6,206,884 bytes** against the original UI15 installation.
+The final launcher is 4,250 bytes larger than UI15. Including it, installing all
+16 languages saves **6,205,505 bytes** against the original UI15 installation.
 This pass does not achieve a 30–40 MB or 65–70 MB default installation. It keeps
 the existing artwork, animation frames, strings, and glyphs; the remaining
 large artwork payload is still the existing compressed representation.
@@ -88,8 +100,8 @@ large artwork payload is still the existing compressed representation.
 ## Bounds and behavior
 
 NSL3 permits at most 2,048 pages (8 MiB logical locale containers). The largest
-of the 16 pinned editions is Traditional Chinese, 5,174,475 bytes / 1,264
-pages. The complete artwork uses 95 of the 128 span entries. Tightening these
+of the 16 aligned editions is Traditional Chinese, 5,174,924 bytes / 1,264
+pages. The complete artwork uses 89 of the 128 span entries. Tightening these
 two previously oversized fixed tables removes another 22,528 bytes of BSS,
 without changing any current container byte, decoded cache, or image pool.
 Runtime and converter enforce the same explicit bounds. Open reads
@@ -104,16 +116,18 @@ converter and release packager perform full byte-identical roundtrips; these
 checks are not runtime overhead. No animation frame, source texture pixel,
 card, string or valid old glyph is removed.
 
-Final runtime checkpoint `def1db3c68d3730edfddb4985feb403cc86b256b` builds a
-1,759,300-byte launcher with SHA-256
-`6698dc8e4fb02589ce810a9b1c5bf565601bcdc88b71982457648a07be0f5a3a`.
-Its Zehn allocation is 22,568,868 bytes, including 157,048 bytes of metadata;
-the contiguous executable/BSS request is 22,411,820 bytes. This is a net
-311,028-byte allocation reduction from UI15 after all new code and adapters.
+Final runtime checkpoint `57cd512e56d3a10f6cb8b424cbae969c8216b2d3` builds a
+1,759,282-byte launcher with SHA-256
+`a52f71c94095a771f0af98d761c0949ba8ea7449ec6167a9fa073014fe0fa012`.
+Its Zehn allocation is 22,493,064 bytes, including 157,076 bytes of metadata;
+the contiguous executable/BSS request is 22,335,988 bytes. This is a net
+386,832-byte allocation reduction from UI15 after all new code and adapters.
 The build enforces a 22,450,000-byte executable/BSS budget in addition to the
 existing 24 MiB total limit. Both small storage adapters live in static storage
-rather than on the calculator stack. Two mutually exclusive state/raster
-workspaces share memory without shrinking the 13,369,344-byte image pool.
+rather than on the calculator stack. Saved preview/console rollback share a
+State; Random, merchant rug and selected-hand raster share one scene workspace.
+The selected card's small identity and scroll clock remain independent.
+These changes do not shrink the 13,369,344-byte image pool.
 Storage copying uses the independently checked ARM926 memory primitives.
 Calculator execution, OS heap limits, and final native regression results are
 recorded in the UI16 acceptance ledger.
