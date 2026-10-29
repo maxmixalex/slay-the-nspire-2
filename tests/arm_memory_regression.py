@@ -83,6 +83,10 @@ class Runtime:
         emulator.reg_write(UC_ARM_REG_LR, self.stop)
         self.instructions = 0
         hook = emulator.hook_add(UC_HOOK_CODE, self.count) if count else None
+        if count:
+            # Unicorn 2.0 can reuse blocks translated before a code hook was
+            # installed. Retranslate so a zero count cannot look like a gain.
+            emulator.ctl_flush_tb()
         try:
             emulator.emu_start(self.symbols[name][0], self.stop, timeout=30000000, count=8000000)
         finally:
@@ -92,6 +96,8 @@ class Runtime:
             raise AssertionError(f'{name} did not return with its original stack')
         if any(emulator.reg_read(register) != value for register, value in self.saved.items()):
             raise AssertionError(f'{name} clobbered a callee-saved register')
+        if count and not self.instructions:
+            raise AssertionError('Instruction callback did not run')
         self.vectors += 1
         return emulator.reg_read(UC_ARM_REG_R0)
 
