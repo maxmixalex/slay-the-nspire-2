@@ -36,7 +36,7 @@ are resident. A request uses one cached range or a bounded binary search and
 then reads the original requested bytes from the appropriate file. A miss
 closes the evicted stream before opening its replacement. Each stream owns an
 independent seek cursor, and failed operations invalidate that cursor. Images
-are not preloaded at startup. The table capacity is 1,024 spans, rather than
+are not preloaded at startup. The table capacity is 128 spans, rather than
 reserving an unnecessarily large map for the current 95 spans. Native loading
 uses the same storage adapters. Legacy NSC1 + NSL1/NSL2 installations remain
 readable. See `ui16-artwork-file-handles-0.17.md` for the actual-device open
@@ -87,7 +87,12 @@ large artwork payload is still the existing compressed representation.
 
 ## Bounds and behavior
 
-NSL3 permits at most 4,096 pages (16 MiB logical locale containers). Open reads
+NSL3 permits at most 2,048 pages (8 MiB logical locale containers). The largest
+of the 16 pinned editions is Traditional Chinese, 5,174,475 bytes / 1,264
+pages. The complete artwork uses 95 of the 128 span entries. Tightening these
+two previously oversized fixed tables removes another 22,528 bytes of BSS,
+without changing any current container byte, decoded cache, or image pool.
+Runtime and converter enforce the same explicit bounds. Open reads
 only functional headers and the bounded offset table. Compressed page reads
 validate exact output lengths; missing/truncated data or invalid references
 fail the current read. A failed selected language follows the normal English

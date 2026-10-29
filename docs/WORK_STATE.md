@@ -1,4 +1,53 @@
-# UI15 calculator delivery — 2026-10-28
+# UI16 calculator integration — 2026-10-29
+
+## Current UI16 checkpoint
+
+The recovered selected UI15 source and complete resource history are retained.
+The latest integrated runtime with full target acceptance is
+`def1db3c68d3730edfddb4985feb403cc86b256b`. It passes 146/146 native suites and
+the ARM build. Actual NSM1/NSL3 resources pass complete byte reconstruction,
+all 16 language/default/failure gates and the named UI/font regressions.
+Ordinary Firebird CX II CAS / 396 MHz / OS 6.4.0.74 / Ndless r2022 passes
+Chinese default startup, normal exit/immediate no-USB reopening, the actual
+196-input UI feedback route, French cold default, Dutch cold English fallback
+and English recovery from a missing required artwork part. Final multipart
+performance measurement is still being recorded.
+
+`efe69d1003825fbf8a6fbd933a3f2727316d3d1a` subsequently lowers the measured
+fixed addressing-table bounds to 128 spans and 2,048 locale pages (8 MiB).
+The actual data needs 95 spans and at most 1,264 pages. This removes 22,528
+bytes of BSS without changing any resource bytes. Native boundary and full
+English/Chinese logical readback checks pass; all 16 offline roundtrips pass.
+The final combined ARM/native/device acceptance awaits the isolated selected
+hand-card raster reuse candidate in the performance worktree. That candidate
+has not been merged and must not be claimed as completed.
+
+The storage and user-feedback details are in
+[ui16-delivery-0.17.md](ui16-delivery-0.17.md). At def1db3 the default installed
+program/resources are 81,021,659 bytes, 889,141 below UI15; all 16 languages
+with the launcher save 6,206,884 bytes. The program's Zehn allocation is
+22,568,868 bytes, with executable/BSS 22,411,820. These values will be updated
+only after the final combined build. The 65–70 MB installation target remains
+unmet. No texture/frame removal or hot image-pool shrink is used.
+
+The warm OS language-change plus USB startup can still fail contiguous Zehn
+allocation before main. French cold startup succeeds. Keep that boundary and
+the failed attempts visible; do not confuse an allocation failure with a
+locale pack load that never began. The device worktree retains precise
+snapshots for the final combined candidate's comparison.
+
+Source is committed locally. The source-only Library archive is presently an
+intermediate recovery version and must be replaced with the completed source
+and Git bundle before delivery. The calculator and optional-language ZIPs
+exist and were read back, but will be rebuilt if the final runtime changes.
+GitHub publication is still blocked: automatic approval review rejected the
+attempted source push for insufficient outbound authorization evidence.
+Personal Context is unavailable in this conversation, and the recovered
+project documents contain only a transcribed permission claim, not a new
+verifiable user authorization. Do not bypass or retry that rejection without
+new evidence; no remote ref or main synchronization is claimed.
+
+## Historical UI15 delivery — 2026-10-28
 
 ## Current source and delivery state
 
