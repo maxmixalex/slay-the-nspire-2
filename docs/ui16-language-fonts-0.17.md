@@ -83,3 +83,41 @@ runtime work or resident memory.
 
 Execution results are recorded after the source checkpoint, in the integration
 report and private command journals. A declared gate is not a passed run.
+
+## Executed results — 2026-10-29
+
+Production checkpoint `81bc7126b13fbfe7b8211878837872b9f05e95c3` and the
+actual-font oracle correction `0d66c202eb0e8bac4de1f75360aec5a4c3a2675a`:
+
+| Gate | Executed result |
+| --- | --- |
+| Boot language/default/error display | 137,139 checks; 43 system tag cases through direct, XML and quoted UTF-16 paths; all 65,536 installation masks |
+| Actual 16-language editions | 75,340 checks, 53,072 formatted descriptions, zero unresolved templates; includes 60 failed-selected-pack recoveries to a healthy English title screen and 16 normal-label pixel oracles |
+| Exact source-sized label inventory | 3,166 font/size/codepoint requirements across 16 editions; zero missing after the three-glyph repair |
+| Original family sample rasters | 48/48 actual Regular/Bold/Italic samples exactly match the pinned original font masks and metrics |
+| Actual font renderer, English | 100,923 checks; 41 cold provider reads and zero added reads across 64 warm frames |
+| Actual font renderer, Simplified Chinese | 100,157 checks; 111 cold provider reads and zero added reads across 64 warm frames |
+| Selected native suites | 5/5: preferences, combat selection, deck selection, font styles and boot locale |
+| Font-directory conversion tests | 4/4 Python checks |
+| Ndless startup translation unit | ARM926/soft-float compilation passed; this is compile evidence, not calculator execution |
+
+The strict glyph audit found three pre-existing missing italic10px characters:
+Portuguese `U+00EA` and Turkish `U+00C7/U+015E`. They now use exact Bitter Medium
+Italic glyphs instead of silently falling back to Regular. The logical pack
+increments are106B/226B. Repacked split editions change by−696B/+1164B, a net
+468B across the optional set. English and Simplified Chinese require no extra
+resource bytes. Every old glyph, string, animation/image address and old
+payload byte survives unchanged.
+
+An initial optional `font_styles_ui7_regression` actual-resource invocation
+failed because its old oracle still assumed UI8's6px ancient text,5px character
+body and retired panel geometry. The corrected oracle asserts the already
+delivered UI15 readable10px layout and fractional metrics. Both actual-language
+runs above pass with those assertions; production rendering was not changed to
+fit an outdated expectation. The first native build also caught a nonexistent
+test-only Canvas field; the corrected full build and tests passed.
+
+Private proof files include `private-ui16-locale-fonts-repaired.json`,
+`private-ui16-font-family-pixels.json` and command journals under the locale
+worktree's `build/journal`. This matrix does not claim all calculator OS
+languages were individually selected in Firebird or on physical hardware.
