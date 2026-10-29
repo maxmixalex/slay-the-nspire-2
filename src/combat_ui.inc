@@ -1,20 +1,6 @@
 // Anchoring follows the owner's pinned combat_ui/player_hand/pile scenes.
 // The integer fan, tile dimensions and preview are small-screen adaptations.
 namespace {
-struct HandTile {
-    bool valid=false,playable=false,resource_cross=false,description_truncated=false;
-    uint8_t resource_styles=0;
-    uint8_t glow=0,overlay=0;
-    const Content* owner=nullptr;
-    Card card{};
-    uint32_t used=0,enchantment=0;
-    uint32_t built=0;
-    int sampled_instance=-1;
-    int energy=0,stars=0,portrait=-1,frame=-1;
-    char description[512]{};
-    uint16_t pixels[HandTileW*HandTileH]{};
-    uint8_t alpha[HandTileW*HandTileH]{};
-};
 static HandTile hand_tiles[MaxHand];
 // Identical cards share a raster, but every live instance needs its own
 // resolved sample. A single sample on the shared raster made five generated
@@ -31,15 +17,14 @@ struct HandSampleEpoch {
 static HandSampleEpoch hand_sample_epoch;
 static_assert(sizeof hand_samples+sizeof hand_sample_epoch<=1320,"Instance samples never allocate more card rasters");
 struct SelectedHandReader {
-    HandTile tile{};
     const HandTile*source=nullptr;
     uint32_t built=0,started=0;
     int instance=-1,skip=-1,maximum=0;
-    uint16_t background[72*48]{};
-    uint8_t coverage[72*48]{};
 };
 static SelectedHandReader selected_hand_reader;
-static_assert(sizeof(SelectedHandReader)<56u*1024u,"Only one selected description may animate");
+// Metadata survives a scene-raster eviction. In particular, claiming the
+// raster again must not restart the existing 1,400 ms text-scroll pause.
+static_assert(sizeof(SelectedHandReader)<=32,"Selected-hand identity and clock remain independent of scene pixels");
 struct HandGlowSlot {HandCardHighlight motion{};const Content*owner=nullptr;int instance=-1;uint32_t used=0;};
 static HandGlowSlot hand_glows[MaxHand];
 static uint32_t hand_tile_clock=0,hand_build_clock=0,hand_resolve_clock=0;
@@ -144,18 +129,26 @@ static const HandTile& selected_hand_tile(Canvas&c,int instance){
     const auto layout=card_face::layout(HandFaceX,HandFaceY,HandFaceW,HandFaceH);auto rect=layout.description;
     const auto fonts=card_face_fonts(c,HandFaceW);const int size=c.a.content.font_size(fonts.body);
     if(!fonts.compact){const int bottom=rect.y+rect.h;rect.y=mx(rect.y,layout.type.y+mx(11,layout.type.h));rect.h=mx(0,bottom-rect.y);}
-    if(r.instance!=instance||r.source!=&source||r.built!=source.built){
+    const bool changed=r.instance!=instance||r.source!=&source||r.built!=source.built;
+    if(changed){
         r.instance=instance;r.source=&source;r.built=source.built;r.started=c.a.map_clock_ms;r.skip=-1;
         const auto metric=[&](const RichChar&ch,int px){return c.text_metric(ch,px);};
         r.maximum=mx(0,fitted_text::line_count(source.description,rect.w,size,metric)*(size+1)-rect.h);
         if(rect.w>72||rect.h>48){r.maximum=0;return source;}
-        r.tile=source;auto&t=r.tile;
+    }
+    if(!changed&&!r.maximum)return source;
+    const bool replaced=scene_raster_owner!=SceneRasterOwner::SelectedHand;
+    auto& raster=selected_hand_raster();
+    if(changed||replaced){
+        // Another scene may have reused only the pixels. Keep the original
+        // started/maximum identity and redraw the window at its current age.
+        r.skip=-1;raster.tile=source;auto&t=raster.tile;
         for(int i=0;i<HandTileW*HandTileH;++i){t.pixels[i]=0;t.alpha[i]=0;}
         Canvas tile{c.a,t.pixels,HandTileW,HandTileW,HandTileH,t.alpha};
         const auto*facts=event_card_facts(c.a.game,source.card,instance,-1);
         render_card_face(tile,source.card,HandFaceX,HandFaceY,HandFaceW,HandFaceH,source.energy,source.stars,instance,-1,facts,"");
         for(int y=0;y<rect.h;++y)for(int x=0;x<rect.w;++x){const int at=(rect.y+y)*HandTileW+rect.x+x;
-            r.background[y*rect.w+x]=t.pixels[at];r.coverage[y*rect.w+x]=t.alpha[at];}
+            raster.background[y*rect.w+x]=t.pixels[at];raster.coverage[y*rect.w+x]=t.alpha[at];}
     }
     if(!r.maximum)return source;
     // Eight pixels per second with a pause at each end. Restore only the
@@ -163,10 +156,10 @@ static const HandTile& selected_hand_tile(Canvas&c,int instance){
     // to turn readable overflow into another combat rendering stall.
     const unsigned travel=unsigned(r.maximum)*125u,cycle=2800u+travel*2u,age=(c.a.map_clock_ms-r.started)%cycle;
     const int skip=age<1400?0:age<1400+travel?int((age-1400)/125u):age<2800+travel?r.maximum:mx(0,r.maximum-int((age-2800-travel)/125u));
-    if(r.skip==skip)return r.tile;
-    r.skip=skip;auto&t=r.tile;
+    if(r.skip==skip)return raster.tile;
+    r.skip=skip;auto&t=raster.tile;
     for(int y=0;y<rect.h;++y)for(int x=0;x<rect.w;++x){const int at=(rect.y+y)*HandTileW+rect.x+x;
-        t.pixels[at]=r.background[y*rect.w+x];t.alpha[at]=r.coverage[y*rect.w+x];}
+        t.pixels[at]=raster.background[y*rect.w+x];t.alpha[at]=raster.coverage[y*rect.w+x];}
     Canvas tile{c.a,t.pixels,HandTileW,HandTileW,HandTileH,t.alpha};
     card_description_window(tile,source.description,rect,size,skip);
     return t;

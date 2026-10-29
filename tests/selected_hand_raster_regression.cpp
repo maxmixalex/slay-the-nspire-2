@@ -105,6 +105,19 @@ static void run(Input&input){
  for(unsigned i=0;i<1024&&a.combat_preparation.active;++i)a.step_combat_preparation();CHECK(!a.combat_preparation.active);
  scroll(input,"reopened-scroll");
 }
+static void independent_metadata(){
+ stage="shared-owner invalidation";Canvas c{a};a.hand_focus=true;a.cursor=0;
+ CHECK(selected_hand_tile(c,0).description_truncated&&scene_raster_owner==SceneRasterOwner::SelectedHand);
+ const auto started=selected_hand_reader.started;
+ const auto*rug=merchant_cached_rug(c);CHECK(rug&&scene_raster_owner==SceneRasterOwner::Merchant);
+ const auto pixels=hash(rug->pixels,sizeof rug->pixels),alpha=hash(rug->alpha,sizeof rug->alpha);
+ invalidate_hand_tiles();CHECK(selected_hand_reader.instance<0&&selected_hand_reader.started==started);
+ CHECK(scene_raster_owner==SceneRasterOwner::Merchant&&pixels==hash(rug->pixels,sizeof rug->pixels)&&alpha==hash(rug->alpha,sizeof rug->alpha));
+ a.hand_focus=false;a.pointer_cancel();combat_screen(c);
+ CHECK(selected_hand_reader.instance<0&&scene_raster_owner==SceneRasterOwner::Merchant);
+ CHECK(pixels==hash(rug->pixels,sizeof rug->pixels)&&alpha==hash(rug->alpha,sizeof rug->alpha));
+ a.hand_focus=true;CHECK(selected_hand_tile(c,0).description_truncated&&scene_raster_owner==SceneRasterOwner::SelectedHand);
+}
 int main(int argc,char**argv){
  CHECK(argc==1||argc==3||argc==4);invalidate_hand_tiles();CHECK(selected_hand_reader.instance<0);
  if(argc==1){std::printf("selected raster: %u reset checks; actual packs required for frame gate\n",checks);return 0;}
@@ -115,6 +128,7 @@ int main(int argc,char**argv){
  CHECK(selected_hand_reader.instance<0);selected_setup();scroll(zhs,"chinese-reloaded-scroll");scenes(zhs);dragging(zhs);
  run(zhs);stage="language-reload-english";a.title=true;CHECK(a.reload_language(eng.source()));
  CHECK(selected_hand_reader.instance<0);selected_setup();scroll(eng,"english-reloaded-scroll");
+ independent_metadata();
  if(capture)CHECK(!std::fclose(capture));
  std::fprintf(stderr,"selected raster: %u checks, %u complete frames\n",checks,frames);
 }

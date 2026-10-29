@@ -1,3 +1,28 @@
+namespace {
+// Both normal hand entries and the selected-description raster use the same
+// face representation. Builders fill pixels/alpha before publishing a face;
+// leave those arrays uninitialized when a shared scene slot changes owner.
+struct HandTile {
+    bool valid=false,playable=false,resource_cross=false,description_truncated=false;
+    uint8_t resource_styles=0;
+    uint8_t glow=0,overlay=0;
+    const Content* owner=nullptr;
+    Card card{};
+    uint32_t used=0,enchantment=0;
+    uint32_t built=0;
+    int sampled_instance=-1;
+    int energy=0,stars=0,portrait=-1,frame=-1;
+    char description[512]{};
+    uint16_t pixels[HandTileW*HandTileH];
+    uint8_t alpha[HandTileW*HandTileH];
+};
+struct SelectedHandRaster {
+    HandTile tile;
+    uint16_t background[72*48];
+    uint8_t coverage[72*48];
+};
+}
+
 // Retain the complete first bilinear rounding for each distinct horizontal
 // color pair. The source64x64 gradient has266 pairs, but its actual input is
 // checked against a fixed capacity before publication. Every frame still
@@ -135,7 +160,9 @@ struct MerchantRugRaster {
  uint16_t pixels[ScreenW*ScreenH];uint8_t alpha[ScreenW*ScreenH];
 };
 
-// Character selection and the shop never retain each other's sampled raster.
+// Character selection, the shop and the selected combat description never
+// draw each other's sampled raster in one frame. The selected description's
+// small identity and scroll clock live outside this slot and survive eviction.
 // Keep one lifetime-aware slot. Switching only resets metadata: each bind fully
 // writes its live entries before publishing valid=true, so a scene change must
 // not clear another 230 KiB on the calculator. Do not add array initializers to
@@ -145,12 +172,15 @@ union SceneRasterStorage {
     uint8_t inactive;
     RandomSceneRasters random;
     MerchantRugRaster merchant;
+    SelectedHandRaster selected;
 };
-enum class SceneRasterOwner:uint8_t { None,Random,Merchant };
+enum class SceneRasterOwner:uint8_t { None,Random,Merchant,SelectedHand };
 static SceneRasterStorage scene_raster_storage{0};
 static SceneRasterOwner scene_raster_owner=SceneRasterOwner::None;
 static_assert(sizeof(SceneRasterStorage)==sizeof(MerchantRugRaster),
-    "Random and merchant rasters share one fixed scene allocation");
+    "Random, merchant and selected-hand rasters share one fixed scene allocation");
+static_assert(sizeof(SelectedHandRaster)<56u*1024u,
+    "Only one selected description may animate");
 static_assert(sizeof(RandomSceneRasters)>=160u*1024u,
     "Scene sharing removes at least 160 KiB of permanently separate tables");
 static RandomSceneRasters& random_scene_rasters(){
@@ -168,4 +198,11 @@ static MerchantRugRaster& merchant_rug_raster(){
         scene_raster_owner=SceneRasterOwner::Merchant;
     }
     return scene_raster_storage.merchant;
+}
+static SelectedHandRaster& selected_hand_raster(){
+    if(scene_raster_owner!=SceneRasterOwner::SelectedHand){
+        ::new(detail::InPlaceAddress{&scene_raster_storage.selected}) SelectedHandRaster;
+        scene_raster_owner=SceneRasterOwner::SelectedHand;
+    }
+    return scene_raster_storage.selected;
 }
