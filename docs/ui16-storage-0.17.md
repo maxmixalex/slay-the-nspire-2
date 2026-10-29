@@ -29,15 +29,18 @@ files. Page-sized complete islands between two spans of the same concern then
 join that neighboring file. The general A/B/A rule moves three small islands,
 6,126 bytes in total, and removes six unnecessary file boundaries without
 splitting or duplicating a decoder group. The final 89 virtual ranges preserve
-every old artwork byte and logical
-address. Independent Python readback reconstructs the exact old common file.
+every old artwork byte and logical address. Independent Python readback
+reconstructs the exact old common file.
 The extra index/part headers cost 1,712 bytes in total. See
 `ui16-artwork-locality-0.17.md` for the actual reads and cold open this removes.
 
 The calculator exposes eight logical artwork sources through a four-stream
-LRU cache and keeps an in-memory addressing table. The part lengths are probed
-one at a time; the small index file closes after its validated header and spans
-are resident. A request uses one cached range or a bounded binary search and
+LRU cache and keeps an in-memory addressing table. Each part's length and
+32-byte header are obtained during one open, then that probe closes. Multipart
+validation uses those eight headers from a temporary 256-byte startup array,
+retains none of its pointers, and avoids eight redundant reopens. The small
+index file closes after its validated header and spans are resident.
+A request uses one cached range or a bounded binary search and
 then reads the original requested bytes from the appropriate file. A miss
 closes the evicted stream before opening its replacement. Each stream owns an
 independent seek cursor, and failed operations invalidate that cursor. Images
@@ -46,6 +49,11 @@ reserving an unnecessarily large map for the current 89 spans. Native loading
 uses the same storage adapters. Legacy NSC1 + NSL1/NSL2 installations remain
 readable. See `ui16-artwork-file-handles-0.17.md` for the actual-device open
 failure that motivated the bounded cache, lifecycle handling, and tests.
+The single-probe path and its 2,645 native/sanitizer checks are recorded in
+`ui16-artwork-startup-0.17.md`. The startup timer's start/end positions remain
+unchanged. Resource totals now also account for the length probes' opens,
+closes and seek-to-end operations; validating saved headers adds no physical
+reads. Runtime frame-read accounting is unchanged.
 
 ## Independent locale pages
 
@@ -55,16 +63,28 @@ streams and raw tail, aligning glyph/string physical pages with the original
 virtual pages. The complete logical NSP2 resource remains byte-identical;
 physical NSL2 header offsets and padding change. Legacy NSL1 stays unchanged,
 and old NSL2/NSL3 editions remain readable. This is distinct from the existing
-NSZ1 save/history envelope. The
-converter chooses HC level 12 when available; encoding time is offline. Pages
-saving at most 16 bytes remain literal. Contiguous literal pages coalesce into
-a single provider read, and compressed pages share one 4 KB decoded cache.
+NSZ1 save/history envelope. The converter chooses HC level 12 when available;
+encoding time is offline. Pages saving at most 16 bytes remain literal.
+Contiguous literal-only ranges use one direct provider read. Mixed compressed
+and literal pages covered by the current request use one provider read per
+batch of at most 32 KiB of encoded bytes. No unrelated page is prefetched;
+compressed edge pages need their complete encoded streams, while literal
+edges retain the exact requested byte range. Compressed pages continue to
+share one 4 KiB decoded cache.
 Decompression exactly reproduces this aligned NSL2 container. See
 `ui16-locale-page-alignment-0.17.md` for the source/oracle distinction and the
 extra cross-page reads eliminated without adding runtime memory.
+The subsequent runtime batching change is separate: it replaces the 4 KiB
+encoded member buffer with 32 KiB and adds a reentry guard, increasing the
+single static adapter by 28,676 bytes on ARM. The complete increase, including
+code, is counted in the final launcher/allocation values below. A provider
+may read another adapter with independent storage; recursive read/open on the
+active adapter fails, and close leaves its active source intact. Failed reads
+or decoding never mark a partial page as cached. See
+`ui16-locale-read-coalescing-0.17.md` for the exact-frame/state/request oracle.
 
 This layer can safely compress the old raw frame/glyph descriptors. It owns
-small addressing and encoded/decoded page buffers and never acquires
+bounded addressing and encoded/decoded page buffers and never acquires
 ResourceTransferLease. Image and glyph decoders can therefore read a locale
 page while they own the shared foreground decoder workspace. Existing NSL2
 large directory blocks retain their original resident-prefix rule.
@@ -79,20 +99,24 @@ large directory blocks retain their original resident-prefix rule.
 
 The default English/Chinese resource set decreases from 80,155,768 to
 79,262,097 bytes, including all concern-file overhead: **893,671 bytes less**.
-All 16 locales together save 6,210,223 bytes relative to the repaired locale
-inputs. The optional Portuguese/Turkish exact-font repair costs 468 bytes
-against the original UI15 inputs, so the complete 16-language reduction from
-UI15 is **6,209,755 bytes**. Default English and Chinese incur no glyph repair
-increase.
+The 16 language files alone save **6,211,935 bytes** relative to their repaired
+inputs, or **6,211,467 bytes** relative to original UI15. The optional
+Portuguese/Turkish exact-font repair accounts for that 468-byte difference.
+After the 1,712-byte multipart overhead, the complete resource set saves
+6,210,223 bytes against repaired inputs and **6,209,755 bytes** against original
+UI15: 104,025,419 becomes 97,815,664 bytes. Default English and Chinese incur
+no glyph repair increase.
 
 With the final integrated launcher, the default program/resource installation
-is 81,021,379 bytes (77.2680 MiB), before saves, notices and explanatory text.
-The UI15 equivalent was 81,910,800 bytes: **889,421 bytes less**. These are
+is **81,022,714 bytes (81.022714 MB / 77.269281 MiB)**, before saves, notices
+and explanatory text. The UI15 equivalent was 81,910,800 bytes:
+**888,086 bytes less (1.084211%)**. These are
 installed-file counts, not ZIP download sizes. A smaller download alone is
 not reported as a calculator storage improvement.
 
-The final launcher is 4,250 bytes larger than UI15. Including it, installing all
-16 languages saves **6,205,505 bytes** against the original UI15 installation.
+The final launcher is 5,585 bytes larger than UI15. Including it, installing all
+16 languages occupies **99,576,281 bytes**, compared with 105,780,451 for UI15:
+**6,204,170 bytes less (5.865139%)**.
 This pass does not achieve a 30–40 MB or 65–70 MB default installation. It keeps
 the existing artwork, animation frames, strings, and glyphs; the remaining
 large artwork payload is still the existing compressed representation.
@@ -116,21 +140,31 @@ converter and release packager perform full byte-identical roundtrips; these
 checks are not runtime overhead. No animation frame, source texture pixel,
 card, string or valid old glyph is removed.
 
-Final runtime checkpoint `57cd512e56d3a10f6cb8b424cbae969c8216b2d3` builds a
-1,759,282-byte launcher with SHA-256
-`a52f71c94095a771f0af98d761c0949ba8ea7449ec6167a9fa073014fe0fa012`.
-Its Zehn allocation is 22,493,064 bytes, including 157,076 bytes of metadata;
-the contiguous executable/BSS request is 22,335,988 bytes. This is a net
-386,832-byte allocation reduction from UI15 after all new code and adapters.
+Final runtime checkpoint `4f3c7abfb1c580d37f63a158385ff79a47e87874` builds a
+**1,760,617-byte** launcher with SHA-256
+`cf83955453bc6046e57895a94efdf68ecf00a6c6e4ba2eec5e3a172c94f36158`.
+Its Zehn allocation is **22,523,484 bytes**, including **157,096 bytes** of
+metadata; the contiguous executable/static-memory request is **22,366,388
+bytes**. This is a net **356,412-byte allocation reduction** from UI15 after
+all new code and adapters, including the 32 KiB encoded buffer.
 The build enforces a 22,450,000-byte executable/BSS budget in addition to the
-existing 24 MiB total limit. Both small storage adapters live in static storage
-rather than on the calculator stack. Saved preview/console rollback share a
+existing 24 MiB total limit, leaving **83,612 bytes** below the execution
+budget. This does not guarantee an arbitrarily fragmented OS heap: the
+previously measured warm-French prelaunch block of 22,145,408 bytes is already
+220,980 bytes short before metadata allocation. The complete final ARM journal
+is `ui16-combined-final-arm-59335313de91`; actual device acceptance is separate.
+Both storage adapters live in static storage rather than on the calculator
+stack. The startup header array changes main's static ARM stack frame from
+1,224 to 1,400 bytes. Saved preview/console rollback share a
 State; Random, merchant rug and selected-hand raster share one scene workspace.
 The selected card's small identity and scroll clock remain independent.
 These changes do not shrink the 13,369,344-byte image pool.
 Storage copying uses the independently checked ARM926 memory primitives.
 Calculator execution, OS heap limits, and final native regression results are
 recorded in the UI16 acceptance ledger.
+`ui16-storage-validation-0.17.md` distinguishes the current 10,075 synthetic
+and 12,485/12,619 actual-language checks from the historical tests with larger
+table limits.
 
 ## Investigated alternatives
 
