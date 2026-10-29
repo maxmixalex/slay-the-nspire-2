@@ -198,6 +198,25 @@ struct MultipartFixture {
         host.bytes[11]=index;
     }
 };
+static void supplied_header_bounds(){
+    MultipartFixture fixture;Cache cache;static MultipartResourceSource common;uint8_t headers[8][32];
+    CHECK(cache.open(fixture.host.host(),2048,headers[0],32));
+    ResourceSource parts[8];for(unsigned i=0;i<8;++i)parts[i]=cache.source(i);
+    // Only the first span remains: other parts are valid but unused. Their
+    // cached headers must not bypass the stream bounds required by open().
+    fixture.index.resize(112);word(fixture.index,16,112);word(fixture.index,20,177);word(fixture.index,24,1);
+    word(fixture.index,48,177);word(fixture.index,52,113);
+    const ResourceSource index{nullptr,uint32_t(fixture.index.size()),nullptr,fixture.index.data()};
+    CHECK(common.open(index,parts,8,headers));
+    const auto original=parts[7];
+    for(unsigned length:{0u,1u,31u}){
+        parts[7].length=length;headers[7][16]=uint8_t(length);headers[7][17]=headers[7][18]=headers[7][19]=0;
+        CHECK(!common.open(index,parts,8,headers));CHECK(!common.source().length);
+    }
+    parts[7]=original;std::memcpy(headers[7],fixture.host.bytes[7].data(),32);
+    parts[7].read_at=nullptr;CHECK(!common.open(index,parts,8,headers));CHECK(!common.source().length);
+    parts[7]=original;CHECK(common.open(index,parts,8,headers));cache.close();common.close();CHECK(!fixture.host.live);
+}
 static void multipart_and_languages(){
     MultipartFixture fixture;auto&host=fixture.host;Cache cache;static MultipartResourceSource common;
     void*manifest=FakeHost::open(&host,11);CHECK(manifest);
@@ -252,5 +271,5 @@ static void capture_and_scope_shutdown(){
     {Cache cache;CHECK(cache.open(host.host(),1024));read(cache,host,3,1,1,true);CHECK(host.live==1);}
     CHECK(!host.live);host.polling_edges();
 }
-int main(){sequential_probes();combined_header_probes();cursor_lru_failures();multipart_and_languages();capture_and_scope_shutdown();
+int main(){sequential_probes();combined_header_probes();cursor_lru_failures();supplied_header_bounds();multipart_and_languages();capture_and_scope_shutdown();
     std::printf("resource file cache: %u checks passed; 8 parts, 4 slots, 7-stream host ceiling\n",checks);}

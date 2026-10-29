@@ -137,7 +137,8 @@ bool MultipartResourceSource::open(ResourceSource index,const ResourceSource*par
        word(h+44)!=64||word(h+48)!=length||word(h+52)!=length-64)return false;
     for(unsigned i=0;i<count;++i){
         uint8_t buffer[32];const uint8_t*p=part_headers?part_headers[i]:buffer;
-        if(parts[i].context==this||(!part_headers&&!get(parts[i],0,buffer,sizeof buffer))||word(p)!=0x3153534eu||
+        if(parts[i].context==this||parts[i].length<sizeof buffer||(!parts[i].direct&&!parts[i].read_at)||
+           (!part_headers&&!get(parts[i],0,buffer,sizeof buffer))||word(p)!=0x3153534eu||
            word(p+4)!=1||word(p+8)!=0x41cef1eau||word(p+12)!=32||
            word(p+16)!=parts[i].length||word(p+20)!=i||word(p+24)||word(p+28))return false;
     }
