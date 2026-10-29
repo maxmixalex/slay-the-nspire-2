@@ -1,61 +1,98 @@
 # UI16 calculator integration — 2026-10-29
 
-## Current UI16 checkpoint
+## Current checkpoint and remaining gates
 
-The recovered selected UI15 source and complete resource history are retained.
-The integrated runtime with completed named correctness checks is
-`def1db3c68d3730edfddb4985feb403cc86b256b`. It passes 146/146 native suites and
-the ARM build. Actual NSM1/NSL3 resources pass complete byte reconstruction,
-all 16 language/default/failure gates and the named UI/font regressions.
-Ordinary Firebird CX II CAS / 396 MHz / OS 6.4.0.74 / Ndless r2022 passes
-Chinese default startup, normal exit/immediate no-USB reopening, the actual
-196-input UI feedback route, French cold default, Dutch cold English fallback
-and English recovery from a missing required artwork part. Its completed
-multipart performance pair **regresses**, so this package is not yet accepted
-for final performance delivery: 159 frames in the matched six-second window
-versus UI15's 166, with 31 physical reads / 133,382 bytes / 21 seeks versus
-19 / 116,259 / 19. Resource ticks rise from 10,886 to 20,919 and one interval
-exceeds 250 ms (288.42 ms in the action run). The English NSL3 compressed-page
-read path and multipart opens are being traced independently. Do not substitute
-the earlier 4cf0019/legacy-file improvement for this final-package result.
+Runtime/resource checkpoint `57cd512e56d3a10f6cb8b424cbae969c8216b2d3` includes
+all nine feedback decisions, the eight artwork concerns, aligned NSL3 locale
+pages, four artwork handles, exact renderer/ARM memory paths, State sharing,
+three-owner raster sharing and smaller addressing tables. Original UI15 source,
+selected resources and history were recovered; the work does not restart from
+the older public checkout. All current resource data is under the private
+`ui16-final` directory and consists of independent regular files.
 
-`efe69d1003825fbf8a6fbd933a3f2727316d3d1a` subsequently lowers the measured
-fixed addressing-table bounds to 128 spans and 2,048 locale pages (8 MiB).
-The actual data needs 95 spans and at most 1,264 pages. This removes 22,528
-bytes of BSS without changing any resource bytes. Native boundary and full
-English/Chinese logical readback checks pass; all 16 offline roundtrips pass.
-The selected hand-card raster reuse has now been integrated through
-`9063ca2`. Its isolated complete-frame/state/I/O comparison, sanitizers and ARM
-build pass; its 53,196-byte allocation saving is separate from the 22,528-byte
-address-table reduction. Combined acceptance still awaits the I/O correction.
+The ARM build and complete 16-language conversion pass. Launcher:
+1,759,282 bytes, SHA256
+`a52f71c94095a771f0af98d761c0949ba8ea7449ec6167a9fa073014fe0fa012`.
+Zehn allocation is 22,493,064 bytes, metadata 157,076, executable/BSS 22,335,988:
+a net 386,832-byte allocation reduction from UI15. The full 13,369,344-byte
+picture pool remains. The 147-suite native batch has 146 passes and one
+`BAD_COMMAND` caused by a generated ELF losing its execute bit; that exact
+`expansion_ui_regression` passes after mode restoration. No assertion failed,
+and the failed batch remains recorded. An explicit declared-ELF-interpreter
+launcher is being checked to remove the executor's mode race from the final
+full sweep without changing tests or production binaries.
 
-The storage and user-feedback details are in
-[ui16-delivery-0.17.md](ui16-delivery-0.17.md). At def1db3 the default installed
-program/resources are 81,021,659 bytes, 889,141 below UI15; all 16 languages
-with the launcher save 6,206,884 bytes. The program's Zehn allocation is
-22,568,868 bytes, with executable/BSS 22,411,820. These values will be updated
-only after the final combined build. The 65–70 MB installation target remains
-unmet. No texture/frame removal or hot image-pool shrink is used.
+Installed default program/resources are 81,021,379 bytes (77.2680 MiB),
+889,421 below UI15. All sixteen with the launcher are 99,574,946 bytes,
+6,205,505 below UI15. Index is 1,520 bytes / 89 spans; all eight artwork files
+and index total 74,026,106 bytes. All logical resources reconstruct exactly.
+The earlier 65–70 MB target remains unmet. No additional original texture pixel,
+animation frame, existing string or glyph is removed.
 
-The warm OS language-change plus USB startup can still fail contiguous Zehn
-allocation before main. Its frozen prelaunch largest free block is 22,145,408
-bytes, already 266,412 bytes below def1db3's executable request before metadata
-allocations. The small cache/table savings cannot repair that exact heap
-state. French cold startup succeeds. Keep that boundary and
-the failed attempts visible; do not confuse an allocation failure with a
-locale pack load that never began. The device worktree retains precise
-snapshots for the final combined candidate's comparison.
+## Actual device result and active performance correction
 
-Source is committed locally. The source-only Library archive is presently an
-intermediate recovery version and must be replaced with the completed source
-and Git bundle before delivery. The calculator and optional-language ZIPs
-exist and were read back, but will be rebuilt if the final runtime changes.
-GitHub publication is still blocked: automatic approval review rejected the
-attempted source push for insufficient outbound authorization evidence.
-Personal Context is unavailable in this conversation, and the recovered
-project documents contain only a transcribed permission claim, not a new
-verifiable user authorization. Do not bypass or retry that rejection without
-new evidence; no remote ref or main synchronization is claimed.
+Ordinary Firebird uses CX II CAS / 396 MHz / OS 6.4.0.74 / Ndless r2022, not a
+physical-device timing claim. With 57cd512 and the complete matching data,
+Chinese cold startup, normal exit, immediate reopening without USB, and the
+second normal exit all pass. Earlier def1db3 additionally passed the complete
+196-input UI route, French cold default, Dutch cold English fallback and
+English recovery from a missing required artwork part. Those captures retain
+their actual checkpoint; they are not relabeled as new screenshots.
+
+The initial def1db3 multipart performance regression (31 reads, a 288 ms frame)
+is fixed substantially by page alignment and complete short-span A/B/A folding.
+The revised six-second five-Dazed pair has 164 frames, 196,287 interval ticks,
+139,387 render ticks, 14,842 resource ticks, 22 reads / 113,070 bytes / 19 seeks,
+and no interval above 250 ms. Mean render is 25.9375 ms versus UI15's 26.5110
+ms. Whole-window FPS is 27.3780 versus 27.5597; it is **not an FPS improvement**.
+Startup (selected validation and App init) is 43,698 ticks / 1.333 s, versus
+UI15's 21,790 / 0.665 s. Keep these actual limits and all raw pairs.
+
+Two remaining structural costs are now assigned to independent worktrees:
+
+- Locale agent: bounded per-request NSL3 compressed/literal page coalescing for
+  the known large glyph stream, without reading unrelated pages or borrowing
+  an active image transfer workspace. Its added RAM must be counted.
+- Performance agent: obtain each part's length and 32-byte header during one
+  open, then validate the retained headers; remove eight redundant startup
+  reopens while keeping four live artwork streams and accurate timing/input
+  hooks. No payload scan or new image pool is allowed.
+
+Neither new candidate is yet integrated or claimed successful. Root is at
+`73da819` (packaging/readme successor only); source changes remain isolated
+until their correctness, sanitizer and ARM checks pass. The device agent waits
+for one combined next candidate, then repeats cold startup/reopen and the same
+six-second pair. No repeated run is selected merely for a better number.
+
+The warm French OS after changing its language plus USB still cannot allocate
+the execution block. Its frozen largest free block is 22,145,408 bytes, below
+both def1db3 and 57cd512 before metadata allocations. Both fail before main;
+cold French succeeds. This measured OS-fragmentation boundary remains explicit,
+and does not represent a French locale/font load failure.
+
+## Delivery and persistence
+
+The complete detail and retained scope are in
+[ui16-delivery-0.17.md](ui16-delivery-0.17.md). Full Ancient actor animation
+remains the previously accepted static storage exception. The inherited seed
+editor remains an ASCII subset; the original Unicode and obsolete lowercase
+`old` paths are not implemented. Audio, multiplayer, Timeline and desktop/network
+services remain outside the agreed single-player scope.
+
+The staged player/optional ZIPs and the Library source archive are intermediate;
+regenerate/replace them at the completed checkpoint before final delivery.
+Keep existing state on installation. When upgrading an old monolithic data
+file, replace it with the small new index first to release its storage, then
+transfer the remaining complete data set before launching. Do not require all
+sixteen optional languages to fit simultaneously.
+
+Source commits and bundles are retained locally. GitHub publication is blocked:
+automatic approval review rejected the attempted source push for insufficient
+outbound authorization evidence. Personal Context is unavailable here and the
+recovered project documents contain only a transcribed permission claim. Do
+not bypass or retry that rejection without new evidence; no remote ref or main
+synchronization is claimed. The final source-only archive must replace its
+existing Library identity and include complete recoverable Git history.
 
 ## Historical UI15 delivery — 2026-10-28
 
