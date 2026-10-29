@@ -548,7 +548,7 @@ static void merchant_motion_and_pickups(){
  CHECK(exists(HitKind::Choice,ShopLeave)||exists(HitKind::UiAction,int(UiAction::CloseShop)));unchanged();
  // The alternate idle clip is optional background work. This gate
  // concerns visible inventory; hover sets have a separate bounded gate.
- const auto stock_ready=[&](){const auto&p=a.merchant_preparation;return p.cursor>=p.stock_count&&p.card==ShopCardCount&&p.prices_ready;};
+ const auto stock_ready=[&](){const auto&p=a.merchant_preparation;return !p.active||(p.cursor>=p.stock_count&&p.card==ShopCardCount&&p.prices_ready);};
  for(unsigned steps=0;!stock_ready()&&steps<8192;++steps){a.advance(33);a.render();unchanged();}
  CHECK(stock_ready()&&a.content.healthy());
  CHECK(a.room_presentation.merchant.start==began);
@@ -605,7 +605,7 @@ static void merchant_model_hover_sets(){
  // Offline rendering yields after four decoder units, without the device
  // timer's larger per-frame work allowance. Bound the complete hover warmup
  // by the same execution limit as merchant_preparation_regression.
- const auto hover_ready=[&](){const auto&p=a.merchant_preparation;return p.cursor>=p.stock_count&&p.card==ShopCardCount&&p.prices_ready&&p.tip_slot==ShopRemove-ShopRelicStart;};
+ const auto hover_ready=[&](){const auto&p=a.merchant_preparation;return !p.active||(p.cursor>=p.stock_count&&p.card==ShopCardCount&&p.prices_ready&&p.tip_slot==ShopRemove-ShopRelicStart);};
  for(unsigned steps=0;!hover_ready()&&steps<8192;++steps){a.advance(33);a.render();}
  CHECK(hover_ready()&&a.content.healthy());room_clock(1000);snapshot();
  for(int slot=ShopRelicStart;slot<ShopRemove;++slot){

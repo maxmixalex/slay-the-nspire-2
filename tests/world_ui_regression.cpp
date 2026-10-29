@@ -1476,7 +1476,7 @@ static void feedback_hud_and_merchant(){
   // completion cannot insert a loading screen or restart that animation.
   // The alternate idle clip is optional background work. This gate
   // concerns visible inventory; hover sets have a separate bounded gate.
-  const auto stock_ready=[&](){const auto&p=a.merchant_preparation;return p.cursor>=p.stock_count&&p.card==ShopCardCount&&p.prices_ready;};
+  const auto stock_ready=[&](){const auto&p=a.merchant_preparation;return !p.active||(p.cursor>=p.stock_count&&p.card==ShopCardCount&&p.prices_ready);};
   for(unsigned steps=0;!stock_ready()&&steps<8192;++steps){a.advance(33);a.render();unchanged();}
   CHECK(stock_ready()&&a.content.healthy());
   CHECK(a.room_presentation.merchant.start==opened);
