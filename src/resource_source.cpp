@@ -46,7 +46,7 @@ bool SplitResourceSource::open(ResourceSource common,ResourceSource localized,Re
     uint8_t c[CommonHeader],l[PackedLanguageHeader];
     const uint32_t probe=localized.length<LanguageHeader?localized.length:LanguageHeader;
     if(probe<4||!split_read(localized,0,l,probe))return false;
-    if(split_u32(l)==0x315a534eu){
+    if(split_u32(l)==0x334c534eu){
         if(!blocked_locale_.open(localized))return false;
         localized=blocked_locale_.source();
         if(!split_read(localized,0,l,LanguageHeader))return false;

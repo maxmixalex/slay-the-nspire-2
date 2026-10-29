@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Split immutable artwork by concern and compress locale addressing pages.
 
-NSM1 maps the existing NSC1 bytes onto eight concern files. NSZ1 is a random
+NSM1 maps the existing NSC1 bytes onto eight concern files. NSL3 is a random
 access LZ4 wrapper around an unchanged NSL1/NSL2 file. These storage adapters
 change no image, animation, glyph, string, directory ID, or game-save format.
 All original data and output packs must remain outside the public repository.
@@ -61,7 +61,7 @@ def compress_blocks(data):
         rows.append(begin+len(payload)|(0 if smaller else LITERAL))
         payload.extend(candidate if smaller else raw);compressed+=smaller
     rows.append(begin+len(payload))
-    output=struct.pack('<4s7I',b'NSZ1',1,tiles.REFERENCE,begin+len(payload),len(data),BLOCK,blocks,begin)
+    output=struct.pack('<4s7I',b'NSL3',3,tiles.REFERENCE,begin+len(payload),len(data),BLOCK,blocks,begin)
     output+=struct.pack('<'+'I'*len(rows),*rows)+payload
     tiles.require(expand_blocks(output)==data,'Independent locale storage roundtrip differs')
     return bytes(output),dict(input_bytes=len(data),output_bytes=len(output),saved_bytes=len(data)-len(output),
@@ -69,21 +69,21 @@ def compress_blocks(data):
         block_bytes=BLOCK,logical_sha256=tiles.sha256(data),physical_sha256=tiles.sha256(output))
 
 def expand_blocks(data):
-    tiles.require(len(data)>=32,'Truncated NSZ1 header')
+    tiles.require(len(data)>=32,'Truncated NSL3 header')
     tag,version,reference,physical,total,block,blocks,begin=struct.unpack_from('<4s7I',data)
-    tiles.require((tag,version,reference,physical,block)==(b'NSZ1',1,tiles.REFERENCE,len(data),BLOCK) and
+    tiles.require((tag,version,reference,physical,block)==(b'NSL3',3,tiles.REFERENCE,len(data),BLOCK) and
         0<total<=BLOCK*MAX_BLOCKS and blocks==(total+BLOCK-1)//BLOCK and
-        begin==32+4*(blocks+1)<len(data),'Invalid NSZ1 header')
+        begin==32+4*(blocks+1)<len(data),'Invalid NSL3 header')
     offsets=struct.unpack_from('<'+'I'*(blocks+1),data,32)
-    tiles.require(offsets[0]&MASK==begin and offsets[-1]==len(data),'Invalid NSZ1 addressing')
+    tiles.require(offsets[0]&MASK==begin and offsets[-1]==len(data),'Invalid NSL3 addressing')
     output=bytearray()
     for i in range(blocks):
         first,last=offsets[i]&MASK,offsets[i+1]&MASK;raw=min(BLOCK,total-i*BLOCK)
         literal=bool(offsets[i]&LITERAL)
         tiles.require(begin<=first<last<=len(data) and
-                      (last-first==raw if literal else last-first<raw),'Invalid NSZ1 page bounds')
+                      (last-first==raw if literal else last-first<raw),'Invalid NSL3 page bounds')
         output.extend(data[first:last] if literal else decode_lz4(data[first:last],raw))
-    tiles.require(len(output)==total,'NSZ1 output length differs')
+    tiles.require(len(output)==total,'NSL3 output length differs')
     return bytes(output)
 
 def image_categories(source):
@@ -213,7 +213,8 @@ def main():
     p=argparse.ArgumentParser(description=__doc__)
     p.add_argument('--input',type=Path,required=True,help='Directory containing NSC1 common and locale files')
     p.add_argument('--output',type=Path,required=True)
-    p.add_argument('--extra-locales',type=Path)
+    p.add_argument('--extra-locales',type=Path,action='append',default=[],
+                   help='Additional verified locale directory; later entries override earlier ones')
     a=p.parse_args();source=tiles.private_path(a.input,'Private input');target=tiles.private_path(a.output,'Private output')
     tiles.require(source!=target,'Never overwrite the input edition');target.mkdir(parents=True,exist_ok=True)
     common=(source/'nSpire2.dat.tns').read_bytes();eng=(source/'nSpire2.eng.dat.tns').read_bytes()
@@ -221,13 +222,13 @@ def main():
     tiles.atomic_bytes(target/'nSpire2.dat.tns',index)
     for name,data in parts.items():tiles.atomic_bytes(target/name,data)
     report['locales']={};inputs={}
-    for directory in (source,a.extra_locales):
+    for directory in (source,*a.extra_locales):
         if directory:
             for code in split.LANGUAGES:
                 path=directory/f'nSpire2.{code}.dat.tns'
                 if path.is_file():inputs[code]=path
     for code,path in inputs.items():
-        raw=path.read_bytes();raw=expand_blocks(raw) if raw[:4]==b'NSZ1' else raw
+        raw=path.read_bytes();raw=expand_blocks(raw) if raw[:4]==b'NSL3' else raw
         packed,details=compress_blocks(raw);tiles.atomic_bytes(target/path.name,packed)
         report['locales'][code]=details
         print(json.dumps(dict(stage='locale_storage',language=code,**details)),flush=True)

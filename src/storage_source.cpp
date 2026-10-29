@@ -17,8 +17,8 @@ constexpr uint32_t Mask=0x7fffffffu,Literal=0x80000000u,Limit=256u*1024u*1024u;
 void BlockedResourceSource::close(){input_={};length_=blocks_=data_=0;cached_=UINT32_MAX;}
 bool BlockedResourceSource::open(ResourceSource input){
     close();uint8_t h[32];
-    if(input.context==this||!get(input,0,h,sizeof h)||word(h)!=0x315a534eu||
-       word(h+4)!=1||word(h+8)!=0x41cef1eau||word(h+12)!=input.length||
+    if(input.context==this||!get(input,0,h,sizeof h)||word(h)!=0x334c534eu||
+       word(h+4)!=3||word(h+8)!=0x41cef1eau||word(h+12)!=input.length||
        word(h+20)!=BlockBytes)return false;
     const uint32_t length=word(h+16),blocks=word(h+24),data=word(h+28);
     if(!length||length>BlockBytes*MaxBlocks||blocks!=(length+BlockBytes-1)/BlockBytes||

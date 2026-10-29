@@ -303,6 +303,9 @@ def _language_payload(localized, header, compressed):
 
 def language_resource_version(localized):
     """Read the logical NSP2 header, decoding only the first NSL2 block."""
+    if localized[:4] == b'NSL3':
+        from storage_parts import expand_blocks
+        localized = expand_blocks(localized)
     header, compressed = _language_header(localized)
     prefix = _decode_directory_block(localized, compressed["entries"][0]) if compressed else \
              localized[LANGUAGE_HEADER:LANGUAGE_HEADER + 40]
@@ -367,7 +370,7 @@ def compress_language_directory(localized, *, details=None):
 
 def reconstruct(common, localized, language):
     """Independent container readback used by packaging and conversion tests."""
-    if localized[:4] == b'NSZ1':
+    if localized[:4] == b'NSL3':
         from storage_parts import expand_blocks
         localized = expand_blocks(localized)
     require(language in LANGUAGES and len(common) >= COMMON_HEADER and
