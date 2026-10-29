@@ -55,6 +55,7 @@ namespace spire {
 #include "character_ui.inc"
 #include "combat_feedback_ui.inc"
 #include "canvas.inc"
+#include "scene_raster_cache.inc"
 static void architect_scene_begin(App&,bool);
 #include "screen_shake_ui.inc"
 #include "architect_scene_ui.inc"

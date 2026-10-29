@@ -301,16 +301,11 @@ static void merchant_secondary_lights(Canvas&c,bool covered){
 // Fractional rug edges still draw the complete live room and retain the two
 // original RGB565 roundings: dim, then source-over rug. No animation clock,
 // decoded frame, input or game state is omitted.
-struct MerchantRugRaster {
- const Content*owner=nullptr;uint32_t generation=0;bool valid=false;
- uint16_t pixels[ScreenW*ScreenH]{};uint8_t alpha[ScreenW*ScreenH]{};
-};
-static MerchantRugRaster merchant_rug_raster;
 static const MerchantRugRaster* merchant_cached_rug(Canvas&c){
  if(c.pixels!=c.a.pixels||c.pitch!=ScreenW||c.clip_w!=ScreenW||c.clip_h!=ScreenH||
     c.coverage||c.opacity!=255||c.brightness!=255||c.tint_red!=255||c.tint_green!=255||
     c.tint_blue!=255||c.color_matrix||c.occlusion)return nullptr;
- auto&r=merchant_rug_raster;
+ auto&r=merchant_rug_raster();
  if(r.owner!=&c.a.content||r.generation!=c.a.content.generation()){
   r.owner=&c.a.content;r.generation=c.a.content.generation();r.valid=false;
   for(unsigned i=0;i<ScreenW*ScreenH;++i){r.pixels[i]=0;r.alpha[i]=0;}

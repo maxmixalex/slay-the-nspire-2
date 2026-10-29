@@ -303,12 +303,12 @@ static void light_rg_contract(){
     for(unsigned layout=0;layout<3;++layout){
         const Picture storage=layout==1?Picture{indices.data(),nullptr,palette.data(),320,205,3}:picture(layout==2?smooth:physical);
         const water_reflection::Texture texture(storage,256,256);
-        CHECK(random_light_quads.bind(app.content,texture));
+        CHECK(random_light_quads().bind(app.content,texture));
         for(unsigned alpha:{1u,102u,255u})for(unsigned tint:{0u,90u,171u,255u}){
             uint8_t red[32],green[64];for(unsigned i=0;i<64;++i){green[i]=uint8_t(div255(div255(i*tint)*alpha));if(i<32)red[i]=uint8_t(div255(div255(i*tint)*alpha));}
             std::vector<uint16_t> table(4096);
-            const RandomLightSampler fallback(texture,red,green,true,random_light_quads.safe,random_light_quads.maximum,random_light_quads.minimum);
-            const RandomLightSampler light(texture,red,green,true,random_light_quads.safe,random_light_quads.maximum,random_light_quads.minimum,table.data());CHECK(bool(light));
+            const RandomLightSampler fallback(texture,red,green,true,random_light_quads().safe,random_light_quads().maximum,random_light_quads().minimum);
+            const RandomLightSampler light(texture,red,green,true,random_light_quads().safe,random_light_quads().maximum,random_light_quads().minimum,table.data());CHECK(bool(light));
             const auto sample=[&](int u,int v){const uint16_t color=texture.opaque_bilinear(u,v);
                 const uint16_t expected=uint16_t((unsigned(red[color>>11])<<11)|(unsigned(green[(color>>5)&63])<<5));
                 CHECK(light.contribution(u,v)==expected);
@@ -332,16 +332,16 @@ static void light_rg_contract(){
     // A changed generation at the same resource/pixel addresses must replace
     // a formerly safe quad when its contents acquire a larger channel jump.
     const water_reflection::Texture generation_input(picture(physical),256,256);
-    CHECK(random_light_quads.bind(app.content,generation_input));CHECK(random_light_quads.safe[0]&1);
-    CHECK(random_light_quads.maximum[0]==0);
+    CHECK(random_light_quads().bind(app.content,generation_input));CHECK(random_light_quads().safe[0]&1);
+    CHECK(random_light_quads().maximum[0]==0);
     physical.colors[0]=0xffe0;CHECK(!app.content.open(nullptr,0));
-    CHECK(random_light_quads.bind(app.content,generation_input));CHECK(!(random_light_quads.safe[0]&1));
-    CHECK(random_light_quads.maximum[0]==63);
+    CHECK(random_light_quads().bind(app.content,generation_input));CHECK(!(random_light_quads().safe[0]&1));
+    CHECK(random_light_quads().maximum[0]==63);
     // The first 4x4 tile bounds its quads, including source texel (4,4)
     // beyond that tile's origin cells. Omitting this halo can skip real light.
     physical.colors[0]=0;physical.colors[4*256+4]=0xffe0;CHECK(!app.content.open(nullptr,0));
-    CHECK(random_light_quads.bind(app.content,generation_input));CHECK(random_light_quads.maximum[0]==63);
-    CHECK(random_light_quads.maximum[2]==0);
+    CHECK(random_light_quads().bind(app.content,generation_input));CHECK(random_light_quads().maximum[0]==63);
+    CHECK(random_light_quads().maximum[2]==0);
 }
 static std::vector<uint8_t> read(const char*path){FILE*f=std::fopen(path,"rb");CHECK(f);std::vector<uint8_t> data(spire_test::pack_size(f));CHECK(std::fread(data.data(),1,data.size(),f)==data.size());CHECK(!std::fclose(f));return data;}
 static Image decode(Picture p){
@@ -374,8 +374,8 @@ static void actual(const char*captures){
             CHECK(near({app.pixels[y*320+x],255},filtered(gradient,u+shift,v+shift),1.6));
         }
         const auto water=std::vector<uint16_t>(app.pixels,app.pixels+320*240);
-        random_character_water(canvas,g,n,clock,&random_gradient_cache);
-        CHECK(random_gradient_cache.valid&&random_gradient_cache.count<=RandomGradientCache::Capacity);
+        random_character_water(canvas,g,n,clock,&random_gradient_cache());
+        CHECK(random_gradient_cache().valid&&random_gradient_cache().count<=RandomGradientCache::Capacity);
         CHECK(!std::memcmp(water.data(),app.pixels,water.size()*sizeof(uint16_t)));
         profile_count=0;app.callbacks.profile_render=render_part_probe;
         CHECK(random_character_background(canvas,clock,clock,91));
