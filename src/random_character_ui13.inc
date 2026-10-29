@@ -401,25 +401,27 @@ static void random_character_light(Canvas&c,const RandomLightSampler&light,
         }
     }
 }
-[[gnu::always_inline]] static inline unsigned random_dot_alpha(const uint8_t*alpha,int u,int v){
+[[gnu::always_inline]] static inline unsigned random_dot_alpha(const uint8_t*alpha,int u,int v,const uint8_t*safe=nullptr){
     const unsigned x=unsigned(u)-128,y=unsigned(v)-128,fx=x&255,fy=y&255;
     const unsigned at=(y&0xff00u)|(x>>8);
+    if(safe&&(u&255)&&(v&255)&&(safe[at>>3]&(1u<<(at&7))))
+        return alpha[(unsigned(v)&0xff00u)|(unsigned(u)>>8)];
     const unsigned top=(unsigned(alpha[at])*(256-fx)+unsigned(alpha[at+1])*fx+128)>>8;
     const unsigned bottom=(unsigned(alpha[at+256])*(256-fx)+unsigned(alpha[at+257])*fx+128)>>8;
     return (top*(256-fy)+bottom*fy+128)>>8;
 }
-// All forty source dots use the same immutable alpha texture. Two rounded
-// bilinear mixes stay between the four input samples, and final modulation
-// is monotone. A 4x4-quad tile whose extrema quantize to one alpha therefore
-// needs no interpolation at all, including its large fully invisible area.
-// Include the extra source row/column touched by the tile's last quad.
-struct RandomDotBounds {
-    uint8_t minimum[64*64]{},maximum[64*64]{};
+// Adjacent alpha samples that differ by at most one retain their exact
+// nearest endpoint through each rounded interpolation, except at half ties.
+// The source dots are smooth, so this proof avoids four reads and six
+// interpolation multiplies for most pixels without changing their filtering.
+struct RandomDotQuads {
+    uint8_t safe[256*256/8]{};
     const Content*owner=nullptr;
     Picture picture{};
     uint32_t generation=0;
     unsigned logical_width=0,logical_height=0;
     bool observed=false,valid=false;
+    static bool adjacent(unsigned a,unsigned b){return unsigned(int(a)-int(b)+1)<=2;}
     bool bind(const Content&content,const water_reflection::Texture&texture,void(*poll)()=nullptr){
         const auto p=texture.storage();
         if(observed&&owner==&content&&generation==content.generation()&&
@@ -429,28 +431,27 @@ struct RandomDotBounds {
         owner=&content;generation=content.generation();picture=p;
         logical_width=texture.width();logical_height=texture.height();observed=true;valid=false;
         if(!texture.valid()||texture.width()!=256||texture.height()!=256||p.format>3||!p.alpha)return false;
-        for(unsigned y=0;y<64;++y){
-            if(!(y&3u)&&poll)poll();
-            for(unsigned x=0;x<64;++x){
-                unsigned low=255,high=0;
-                for(unsigned dy=0;dy<=4;++dy){const auto*row=p.alpha+mn(255u,y*4+dy)*256;
-                    for(unsigned dx=0;dx<=4;++dx){const unsigned value=row[mn(255u,x*4+dx)];
-                        low=mn(low,value);high=mx(high,value);}}
-                minimum[y*64+x]=uint8_t(low);maximum[y*64+x]=uint8_t(high);
+        for(auto&byte:safe)byte=0;
+        for(unsigned y=0;y<256;++y){
+            if(!(y&15u)&&poll)poll();
+            const auto*top=p.alpha+y*256,*bottom=p.alpha+mn(255u,y+1)*256;
+            for(unsigned x=0;x<256;++x){const unsigned right=mn(255u,x+1);
+                const unsigned a=top[x],b=top[right],c=bottom[x],d=bottom[right];
+                if(adjacent(a,b)&&adjacent(c,d)&&adjacent(a,c)&&adjacent(b,d)){
+                    const unsigned at=y*256+x;safe[at>>3]|=uint8_t(1u<<(at&7));
+                }
             }
         }
         valid=true;return true;
     }
 };
-static RandomDotBounds random_dot_bounds;
-static_assert(sizeof(RandomDotBounds)<=9u*1024u,"Source dot bounds are an8 KiB summary, not a new image pool");
+static RandomDotQuads random_dot_quads;
+static_assert(sizeof(RandomDotQuads)<=9u*1024u,"Source dot quad proofs fit8 KiB, without a new image pool");
 static void random_character_white_dot(Canvas&c,const water_reflection::Texture&texture,
         int left,int top,int right,int bottom,int du,int dv,RandomRowQuotient row_u,RandomRowQuotient row_v,
         unsigned alpha,uint16_t color){
     const auto*source=texture.storage().alpha;
-    const bool bounded=random_dot_bounds.bind(c.a.content,texture,c.a.callbacks.foreground_poll);
-    uint8_t amounts[256];for(unsigned i=0;i<256;++i)amounts[i]=uint8_t(div255(i*alpha));
-    const RandomLightTileStep u_tiles(du),v_tiles(-dv);
+    const uint8_t*safe=random_dot_quads.bind(c.a.content,texture,c.a.callbacks.foreground_poll)?random_dot_quads.safe:nullptr;
     for(int y=top;y<bottom;++y,row_u.advance(),row_v.advance()){
         c.poll_row(unsigned(y-top));
         int u=32768+row_u.value(),v=32768+row_v.value();auto*out=c.pixels+y*c.pitch;
@@ -461,22 +462,9 @@ static void random_character_white_dot(Canvas&c,const water_reflection::Texture&
             const unsigned amount=div255(texture.alpha_bilinear(u,v)*alpha);
             if(amount)out[x]=blend(out[x],color,amount);
         }
-        while(x<last){
-            const unsigned u_count=u_tiles.count(u),v_count=v_tiles.count(v);
-            const unsigned tile_count=u_count<v_count?u_count:v_count;
-            const unsigned remaining=unsigned(last-x),count=remaining<tile_count?remaining:tile_count;
-            const unsigned tile=(((unsigned(v)-128)>>10)<<6)|((unsigned(u)-128)>>10);
-            const unsigned low=bounded?amounts[random_dot_bounds.minimum[tile]]:256;
-            if(bounded&&low==amounts[random_dot_bounds.maximum[tile]]){
-                if(low)for(unsigned i=0;i<count;++i)out[x+int(i)]=blend(out[x+int(i)],color,low);
-                x+=int(count);u+=du*int(count);v-=dv*int(count);
-            }else{
-                const int end=x+int(count);
-                for(;x<end;++x,u+=du,v-=dv){
-                    const unsigned amount=amounts[random_dot_alpha(source,u,v)];
-                    if(amount)out[x]=blend(out[x],color,amount);
-                }
-            }
+        for(;x<last;++x,u+=du,v-=dv){
+            const unsigned amount=div255(random_dot_alpha(source,u,v,safe)*alpha);
+            if(amount)out[x]=blend(out[x],color,amount);
         }
         for(;x<right;++x,u+=du,v-=dv){
             if(unsigned(u)>=65536||unsigned(v)>=65536)continue;
