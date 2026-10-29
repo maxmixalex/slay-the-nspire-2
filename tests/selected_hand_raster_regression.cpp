@@ -130,5 +130,6 @@ int main(int argc,char**argv){
  CHECK(selected_hand_reader.instance<0);selected_setup();scroll(eng,"english-reloaded-scroll");
  independent_metadata();
  if(capture)CHECK(!std::fclose(capture));
+ CHECK(!std::fflush(stdout));
  std::fprintf(stderr,"selected raster: %u checks, %u complete frames\n",checks,frames);
 }

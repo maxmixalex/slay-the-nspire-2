@@ -142,7 +142,7 @@ static const HandTile& selected_hand_tile(Canvas&c,int instance){
     if(changed||replaced){
         // Another scene may have reused only the pixels. Keep the original
         // started/maximum identity and redraw the window at its current age.
-        r.skip=-1;raster.tile=source;auto&t=raster.tile;
+        r.skip=-1;::new(detail::InPlaceAddress{&raster.tile}) HandTile(source);auto&t=raster.tile;
         for(int i=0;i<HandTileW*HandTileH;++i){t.pixels[i]=0;t.alpha[i]=0;}
         Canvas tile{c.a,t.pixels,HandTileW,HandTileW,HandTileH,t.alpha};
         const auto*facts=event_card_facts(c.a.game,source.card,instance,-1);

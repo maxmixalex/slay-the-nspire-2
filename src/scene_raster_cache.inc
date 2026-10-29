@@ -1,7 +1,7 @@
 namespace {
 // Both normal hand entries and the selected-description raster use the same
-// face representation. Builders fill pixels/alpha before publishing a face;
-// leave those arrays uninitialized when a shared scene slot changes owner.
+// face representation. Its explicit array defaults also keep the permanent
+// hand array constant-initialized on the freestanding calculator target.
 struct HandTile {
     bool valid=false,playable=false,resource_cross=false,description_truncated=false;
     uint8_t resource_styles=0;
@@ -13,13 +13,17 @@ struct HandTile {
     int sampled_instance=-1;
     int energy=0,stars=0,portrait=-1,frame=-1;
     char description[512]{};
-    uint16_t pixels[HandTileW*HandTileH];
-    uint8_t alpha[HandTileW*HandTileH];
+    uint16_t pixels[HandTileW*HandTileH]{};
+    uint8_t alpha[HandTileW*HandTileH]{};
 };
 struct SelectedHandRaster {
-    HandTile tile;
+    // Claiming the shared slot starts only the inactive byte. The builder
+    // copy-constructs tile from its complete source before using it, avoiding
+    // an extra 42 KiB default clear that would immediately be overwritten.
+    union {uint8_t inactive;HandTile tile;};
     uint16_t background[72*48];
     uint8_t coverage[72*48];
+    SelectedHandRaster():inactive(0){}
 };
 }
 
