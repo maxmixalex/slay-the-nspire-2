@@ -38,7 +38,7 @@ int memcmp(const void*a,const void*b,size_t n){
         while(n>=4&&*first==*second){++first;++second;n-=4;}
         x=(const unsigned char*)first;y=(const unsigned char*)second;
     }
-    while(n--){if(*x!=*y)return int(*x)-*y;++x;++y;}return 0;
+    for(size_t i=0;i<n;++i)if(x[i]!=y[i])return int(x[i])-y[i];return 0;
 }
 size_t strlen(const char*p){size_t n=0;while(p[n])n++;return n;}
 }
