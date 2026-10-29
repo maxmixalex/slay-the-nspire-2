@@ -1181,7 +1181,7 @@ static void hidden_choice_input(int token){
      UiAction::PreviousChoicePage,UiAction::NextChoicePage,UiAction::PreviousWorldPage,UiAction::NextWorldPage})a.ui_action(action);
  CHECK(a.cursor==cursor&&a.choice_selected_count==1&&a.game.effect_count==effects);unchanged();a.choice_selected_count=0;
 }
-static void peek_selected_choice(int token,bool world,bool selected=true){
+static void peek_selected_choice(int token,bool world,bool selected=true,const char*capture_name=nullptr){
  const int cursor=a.cursor;const unsigned count=a.choice_selected_count,revision=a.game.revision;
  CHECK(count==(selected?1u:0u)&&(!count||a.choice_selected[0]==token)&&a.combat_peek_available());snapshot();
  const auto key=a.input_bindings.keys[a.keyboard_only?1:0][unsigned(InputCommand::Peek)];
@@ -1194,7 +1194,7 @@ static void peek_selected_choice(int token,bool world,bool selected=true){
  for(auto action:{UiAction::ClearChoice,UiAction::ClearWorldChoice,UiAction::NextChoicePage,UiAction::NextWorldPage})a.ui_action(action);
  CHECK(a.cursor==cursor&&a.choice_selected_count==count&&(!count||a.choice_selected[0]==token)&&a.game.revision==revision);unchanged();
  advance_combat_ms(264);a.render();CHECK(a.combat_peek_amount()==1024);
- capture(world?"choice-world-peek":"choice-combat-peek");
+ capture(capture_name?capture_name:world?"choice-world-peek":"choice-combat-peek");
  a.input(Key::Detail);CHECK(a.status_actor>=0&&a.choice_peeking);a.input(Key::Back);CHECK(a.status_actor<0&&a.choice_peeking);
  a.input(Key::DrawPile);a.render();CHECK(a.panel==1&&a.pile_tab==1&&a.choice_peeking);a.input(Key::Back);CHECK(!a.panel&&a.choice_peeking);
  CHECK(a.physical_key(key,true)&&a.choice_peeking);CHECK(a.physical_key(key,false)&&!a.choice_peeking);a.render();
@@ -1415,12 +1415,21 @@ static void original_card_movement(){
   // Prepared's real card-choice continuation must wait for both awaited
   // draws. Its future canonical selection cannot appear at the first draw.
   setup(Character::Silent);a.fast_mode=fast!=0;a.tick_remainder=0;
-  add(Prepared,1);a.cursor=a.game.hand.count-1;const uint32_t selection_start=a.animation;a.input(Key::Confirm);a.input(Key::Confirm);a.render();
+  const int prepared=add(Prepared,1);a.cursor=a.game.hand.count-1;const uint32_t selection_start=a.animation;a.input(Key::Confirm);a.input(Key::Confirm);a.render();
   CHECK(a.game.phase==Phase::DiscardChoice&&a.combat_feedback.choice_pending);
   const uint32_t ready=selection_start+TurnBannerPresentation::wait_ticks(500,200,fast!=0);CHECK(a.combat_feedback.choice_at==ready);
   hidden_choice_input(a.game.hand.ids[0]);advance_combat_ms((ready-a.animation-1)*33);a.render();CHECK(!a.combat_choice_ready());
   for(int i=0;i<a.hit_count;++i)CHECK(a.hits[i].kind!=HitKind::CombatChoice);
   advance_combat_ms(33);a.render();CHECK(a.combat_choice_ready()&&has(HitKind::CombatChoice,a.game.hand.ids[0]));
+  // A card-owned choice leaves its real play-pile sprite present. Hiding
+  // the overlay must bring that half-card above the relocated eye without
+  // changing the pending choices or canonical continuation.
+  const auto*prepared_sprite=a.combat_cards.find(unsigned(prepared));
+  CHECK(prepared_sprite&&prepared_sprite->mode==CombatCardMotion::Play);
+  const auto tucked=combat_peek_pose(CombatCardMotion::pose(*prepared_sprite),1024);
+  CHECK(tucked.cx==combat_controls::PeekCardX&&tucked.cy==combat_controls::PeekCardY);
+  CHECK(hand_bounds(tucked).x>=0&&hand_bounds(tucked).y+hand_bounds(tucked).h<combat_controls::PeekY);
+  peek_selected_choice(a.game.hand.ids[0],false,false,fast?"choice-played-card-peek-fast":"choice-played-card-peek");
  }
  a.fast_mode=false;
 }
