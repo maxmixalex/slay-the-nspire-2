@@ -159,6 +159,28 @@ def concern_ranges(source):
             result[key]=choose([votes[j] for j in range(len(NAMES))])
     return sorted((at,size,cat) for (at,size),cat in result.items())
 
+def fold_small_concern_spans(spans):
+    """Keep page-sized islands in the file already used on both sides.
+
+    Input spans consist of complete decoder groups and their alignment bytes.
+    Folding a whole A/B/A island removes two file boundaries without splitting
+    a compressed stream, copying payload twice, or depending on a locale's
+    virtual-page alignment. Large groups retain their assigned concern.
+    """
+    output=[]
+    for first,last,cat in spans:
+        tiles.require(first<last and 0<=cat<len(NAMES),'Invalid concern span')
+        if output:
+            tiles.require(output[-1][1]==first,'Non-contiguous concern spans')
+        if output and output[-1][2]==cat:
+            output[-1]=(output[-1][0],last,cat)
+        else:output.append((first,last,cat))
+        while len(output)>=3:
+            left,middle,right=output[-3:]
+            if left[2]!=right[2] or middle[1]-middle[0]>BLOCK:break
+            output[-3:]=[(left[0],right[1],left[2])]
+    return output
+
 def partition(common,logical):
     source=view(logical);language=source.string_payload(split.MARKER)[:-1].decode('ascii');bounds=split.layout(logical,language)
     prefix,end=bounds['prefix'],bounds['prefix']+bounds['artwork']
@@ -179,6 +201,7 @@ def partition(common,logical):
         if merged and merged[-1][1]==first and merged[-1][2]==cat:
             merged[-1]=(merged[-1][0],last,cat)
         else:merged.append((first,last,cat))
+    merged=fold_small_concern_spans(merged)
     tiles.require(0<len(merged)<=MAX_SPANS,'Too many concern mappings')
     files=[bytearray(32) for _ in NAMES];rows=[]
     for first,last,cat in merged:
