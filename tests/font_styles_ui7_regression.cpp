@@ -168,17 +168,19 @@ static void provider(){
 }
 static void ancient_actual_oracle(Canvas&c){
  // The source dialogue's families are an independent oracle: ordinary Kreon,
- // explicit Kreon Bold and Bitter Medium Italic, with the declared 6px floor
- // for source font_size=22. Draw the same glyphs directly, bypassing both the
- // ancient selector and its layout callback, including a real wrapped case.
+ // explicit Kreon Bold and Bitter Medium Italic. UI15's accepted LCD layout
+ // raises this body to10px; use its real26.6 advance/bearing records rather
+ // than the obsolete UI8 integer6px oracle. Draw directly, bypassing both
+ // the ancient selector and its layout callback, including wrapped cases.
  const char*sample="A[b]A[/b][i][font_size=22]A[/font_size][/i]B";
  const unsigned cps[]={'A','A','A','B'},faces[]={0,5,6,0};
  for(int width:{121,11,7}){
-  clear();int at=0,row=0;
-  for(unsigned i=0;i<4;++i){const auto g=app.content.glyph(cps[i],6,faces[i]);CHECK(g.pixels&&g.advance);
-   if(at&&at+std::max(int(g.advance),int(g.w))>width){at=0;++row;}
-   Canvas shadow=c;shadow.opacity=64;shadow.character(cps[i],g,20+at+1,40+row*7,Ink,true);
-   c.character(cps[i],g,20+at,40+row*7,rgb(255,246,226));at+=g.advance;
+  clear();int pen64=0,row=0;
+  for(unsigned i=0;i<4;++i){const auto g=app.content.glyph(cps[i],10,faces[i]);CHECK(g.pixels&&g.advance);
+   if(pen64&&(pen64+32)/64+std::max(int(g.advance),int(g.w)+g.bearing_x)>width){pen64=0;++row;}
+   const int at=(pen64+32)/64;
+   Canvas shadow=c;shadow.opacity=64;shadow.character(cps[i],g,20+at+1,40+row*11,Ink,true);
+   c.character(cps[i],g,20+at,40+row*11,rgb(255,246,226));pen64+=g.advance64?g.advance64:g.advance*64;
   }
   const std::vector<uint16_t> expected(app.pixels,app.pixels+ScreenW*ScreenH);
   CHECK(ancient_text_rows(c,sample,width)==row+1);
@@ -188,36 +190,37 @@ static void ancient_actual_oracle(Canvas&c){
 }
 static void character_information_actual(Canvas&c){
  using namespace character_select_layout;
- // Independently projected source VBox / NinePatch geometry. Text may change
- // its natural height, but may not move or stretch the background panel.
- CHECK(InfoX==31&&InfoY==79&&InfoWidth==110&&InfoHeight==72);
- CHECK(InfoPanelX==17&&InfoPanelY==78&&InfoPanelWidth==133&&InfoPanelHeight==77);
- CHECK(NameHeight==27&&StatsHeight==4&&RelicHeight==19);
- Canvas body=c;body.bold_face=5;Canvas name=c;name.font_face=4;Canvas bold=c;bold.font_face=5;
+ // UI15's readable calculator panel has a fixed padded viewport. Full10px
+ // prose can scroll inside it; the old5px all-at-once geometry is retired.
+ CHECK(InfoX==16&&InfoY==22&&InfoWidth==177&&InfoHeight==141);
+ CHECK(InfoPanelX==3&&InfoPanelY==13&&InfoPanelWidth==203&&InfoPanelHeight==160);
+ CHECK(NameHeight==25&&StatsHeight==17&&RelicHeight==42);
+ Canvas body=c;body.bold_face=5;Canvas name=c;name.font_face=app.content.original_label_fonts()?4:0;
+ Canvas bold=c;bold.font_face=app.content.original_label_fonts()?5:0;
  for(unsigned character=0;character<CharacterKinds;++character){
   const auto&definition=character_definitions[character];char key[96]{},description[1024]{},relic_text[1024]{};
   TextBuffer b{key,sizeof key,0};b.text(definition.key);b.text(".description");app.localized_text("characters",key,description,sizeof description);
   const auto*relic=relic_definition(definition.starting_relic);CHECK(relic&&*description);
   const auto relic_id=RelicId(relic-relic_definitions);app.relic_description(relic_id,relic_text,sizeof relic_text);CHECK(*relic_text);
   const char*title=app.content.world_title("characters",definition.key);CHECK(*title);
-  const int title_size=character_name_size(name,title);CHECK(title_size>=10&&title_size<=14&&app.content.font_size(title_size,4)==title_size);
+  const int title_size=character_name_size(name,title);CHECK(title_size>=12&&title_size<=18&&app.content.font_size(title_size,name.font_face)==title_size);
   CHECK(character_name_width(name,title,title_size)<=InfoWidth);
   const auto body_plan=character_info_plan(body,description,InfoWidth),relic_plan=character_info_plan(body,relic_text,RelicTextWidth);
-  CHECK(body_plan.size==5&&relic_plan.size==5&&!body_plan.truncated&&!relic_plan.truncated);
+  CHECK(body_plan.size==10&&relic_plan.size==10&&!body_plan.truncated&&!relic_plan.truncated);
   const int body_height=body_plan.rows*body_plan.step+2,top=info_top(body_height),body_y=top+NameHeight+StatsHeight;
-  CHECK(top>=InfoY&&body_y+body_height+RelicDescriptionY+relic_plan.rows*relic_plan.step+2<AscensionY);
+  CHECK(top==InfoY&&body_y>=InfoPanelY&&body_y+10<InfoPanelY+InfoPanelHeight);
   // Walk the actual render plans and require every non-whitespace codepoint,
   // including rich colored values, to be emitted rather than ellipsized.
   for(unsigned which=0;which<2;++which){const char*text=which?relic_text:description;const auto&plan=which?relic_plan:body_plan;const int width=which?RelicTextWidth:InfoWidth;
    unsigned expected=0,emitted=0;RichReader reader(text);RichChar ch{};while(reader.next(ch))if(ch.codepoint>32)++expected;
-   auto metric=[&](const RichChar&value,int px){const auto g=app.content.glyph_metrics(value.codepoint,px,body.font_style(value));return fitted_text::Metric{g.advance,std::max(int(g.w),int(g.advance))};};
+   auto metric=[&](const RichChar&value,int px){return body.text_metric(value,px);};
    fitted_text::visit(text,width,plan,metric,[&](const RichChar&value,int x,int row,int px){
-    CHECK(value.codepoint!=0x2026&&row<plan.rows&&px==5);if(value.codepoint>32)++emitted;
+    CHECK(value.codepoint!=0x2026&&row<plan.rows&&px==10);if(value.codepoint>32)++emitted;
     CHECK(x+metric(value,px).width<=width);
    });CHECK(expected==emitted);
   }
   const auto relic_title=character_info_plan(bold,app.relic_title(relic_id),RelicTextWidth);
-  CHECK(relic_title.size==5&&relic_title.rows==1&&!relic_title.truncated);
+  CHECK(relic_title.size==10&&relic_title.rows>=1&&!relic_title.truncated);
   clear();character_info_name(name,title,InfoX,top+(NameHeight-title_size-3)/2,title_size);
   character_info_text(body,description,InfoX,body_y,InfoWidth,body_plan,rgb(255,246,226));
   character_info_text(body,relic_text,InfoX+RelicTextX,body_y+body_height+RelicDescriptionY,RelicTextWidth,relic_plan,rgb(255,246,226));
