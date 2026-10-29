@@ -184,10 +184,24 @@ int main(int argc,char**argv){
     const bool explicit_split=!commonpath.empty()||!localepath.empty();
     if(commonpath.empty())commonpath=dir+"/data/nSpire2.dat.tns";
     ResourceFile common{packpath.empty()?fopen(commonpath.c_str(),"rb"):nullptr},resource{nullptr};
-    spire::SplitResourceSource split;spire::ResourceSource source{};
+    ResourceFile parts[spire::MultipartResourceSource::MaxParts]{};
+    static spire::MultipartResourceSource artwork;
+    static spire::SplitResourceSource split;spire::ResourceSource source{},common_source{};
     auto error=[&](spire::BootText message){fprintf(stderr,"%s\n",spire::boot_text(message,language));return 2;};
     const std::string preference=dir+"/state/nSpire2.lang.tns";
     if(common.file){
+        common_source=file_source(common.file);uint8_t tag[4];
+        if(!common_source.length||!read_resource(common.file,0,tag,sizeof tag))return error(spire::BootText::InvalidResources);
+        if(!std::memcmp(tag,"NSM1",4)){
+            spire::ResourceSource inputs[spire::MultipartResourceSource::MaxParts];
+            for(unsigned i=0;i<spire::MultipartResourceSource::MaxParts;++i){
+                parts[i].file=fopen((directory(commonpath)+"/"+spire::ArtworkPartNames[i]).c_str(),"rb");
+                if(!parts[i].file)return error(spire::BootText::MissingResources);
+                inputs[i]=file_source(parts[i].file);
+            }
+            if(!artwork.open(common_source,inputs,spire::MultipartResourceSource::MaxParts))return error(spire::BootText::InvalidResources);
+            common_source=artwork.source();
+        }
         if(localepath.empty()){
             const std::string root=directory(commonpath);
             for(unsigned id=1;id<=spire::LocaleLanguageCount;++id){FILE*f=fopen((root+"/"+spire::locale_language_info(id).file).c_str(),"rb");
@@ -201,11 +215,14 @@ int main(int argc,char**argv){
             if(language!=spire::BootLanguage::Unknown)resource.file=fopen((root+"/"+spire::locale_language_info(unsigned(language)).file).c_str(),"rb");
         }else{
             resource.file=fopen(localepath.c_str(),"rb");
-            if(resource.file&&language==spire::BootLanguage::Unknown){uint8_t value[4]{};
-                if(read_resource(resource.file,36,value,4)&&!value[1]&&!value[2]&&!value[3]&&spire::locale_language_valid(value[0]))language=static_cast<spire::BootLanguage>(value[0]);}
+            if(resource.file&&language==spire::BootLanguage::Unknown){uint8_t value[4]{},tag[4]{};
+                auto localized=file_source(resource.file);spire::BlockedResourceSource blocked;
+                bool good=read_resource(resource.file,0,tag,4);
+                if(good&&!std::memcmp(tag,"NSL3",4)){good=blocked.open(localized);localized=blocked.source();}
+                if(good&&localized.read_at(localized.context,36,value,4)&&!value[1]&&!value[2]&&!value[3]&&spire::locale_language_valid(value[0]))language=static_cast<spire::BootLanguage>(value[0]);}
         }
         if(!resource.file)return error(spire::BootText::MissingLanguage);
-        if(language==spire::BootLanguage::Unknown||!split.open(file_source(common.file),file_source(resource.file),
+        if(language==spire::BootLanguage::Unknown||!split.open(common_source,file_source(resource.file),
             static_cast<spire::ResourceLanguage>(language)))return error(spire::BootText::InvalidResources);
         source=split.source();
     }else{
@@ -233,11 +250,11 @@ int main(int argc,char**argv){
         FILE*next=fopen(next_path.c_str(),"rb");
         if(!next){app.message("Language resources are unavailable.");return;}
         FILE*previous=resource.file;const auto old_language=language;resource.file=next;
-        if(split.open(file_source(common.file),file_source(resource.file),static_cast<spire::ResourceLanguage>(requested))&&app.reload_language(split.source())){
+        if(split.open(common_source,file_source(resource.file),static_cast<spire::ResourceLanguage>(requested))&&app.reload_language(split.source())){
             language=static_cast<spire::BootLanguage>(requested);fclose(previous);persist_language();
         }else{
             fclose(next);resource.file=previous;
-            if(!split.open(file_source(common.file),file_source(resource.file),static_cast<spire::ResourceLanguage>(old_language))||!app.reload_language(split.source())){
+            if(!split.open(common_source,file_source(resource.file),static_cast<spire::ResourceLanguage>(old_language))||!app.reload_language(split.source())){
                 error(spire::BootText::InvalidResources);app.quit=true;return;
             }
             app.message("Could not change language.");

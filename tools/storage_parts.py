@@ -25,7 +25,7 @@ import split_content as split
 
 BLOCK=4096
 MAX_BLOCKS=4096
-MAX_SPANS=8192
+MAX_SPANS=1024
 NAMES=('interface','cards','characters','enemies','bosses','rooms','effects','shared')
 PART_FILES=tuple('nSpire2.'+name+'.dat.tns' for name in NAMES)
 U32=struct.Struct('<I')

@@ -24,11 +24,11 @@ private:
 };
 
 // An NSM1 table maps the original immutable NSC1 artwork address space onto
-// independently replaceable concern files. Rendering performs only a memory
+// separately stored concern files from the same edition. Rendering performs only a memory
 // lookup and the original requested file read; no image is copied at startup.
 class MultipartResourceSource {
 public:
-    static constexpr unsigned MaxParts=8,MaxSpans=8192;
+    static constexpr unsigned MaxParts=8,MaxSpans=1024;
     bool open(ResourceSource index,const ResourceSource* parts,unsigned count);
     void close();
     ResourceSource source();

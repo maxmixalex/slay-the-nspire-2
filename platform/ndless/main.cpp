@@ -286,10 +286,29 @@ extern "C" int main(int argc,char**argv){
     Display display;if(!nd_lcd_init(0))return 6;display.active=true;
     auto blit=nd_blitter(0);if(!blit)return 7;
     for(auto&pixel:app.pixels)pixel=0;blit(app.pixels);
-    ResourceFile common{},source{};static spire::SplitResourceSource split;
+    ResourceFile common{},source{},parts[spire::MultipartResourceSource::MaxParts]{};
+    static spire::SplitResourceSource split;
+    static spire::MultipartResourceSource artwork;
     const auto preferred=language_preference();
     common.file=open_data_file(launcher,spire::SharedDataFilename);
     if(!common.file){boot_error(blit,spire::BootText::MissingResources,spire::BootLanguage::English);return 4;}
+    const uint32_t startup_start=performance.enabled?timer_ticks():0;
+    auto common_source=file_source(common);uint8_t common_tag[4];
+    if(!common_source.length||!read_resource(&common,0,common_tag,sizeof common_tag)){
+        boot_error(blit,spire::BootText::InvalidResources,spire::BootLanguage::English);return 5;
+    }
+    if(common_tag[0]=='N'&&common_tag[1]=='S'&&common_tag[2]=='M'&&common_tag[3]=='1'){
+        spire::ResourceSource inputs[spire::MultipartResourceSource::MaxParts];
+        for(unsigned i=0;i<spire::MultipartResourceSource::MaxParts;++i){
+            parts[i].file=open_data_file(launcher,spire::ArtworkPartNames[i]);
+            if(!parts[i].file){boot_error(blit,spire::BootText::MissingResources,spire::BootLanguage::English);return 4;}
+            inputs[i]=file_source(parts[i]);
+        }
+        if(!artwork.open(common_source,inputs,spire::MultipartResourceSource::MaxParts)){
+            boot_error(blit,spire::BootText::InvalidResources,spire::BootLanguage::English);return 5;
+        }
+        common_source=artwork.source();
+    }
     // Probe names only; a successful selected locale does not decode or
     // inspect any other optional language. Failed candidates retry below.
     for(unsigned id=1;id<=spire::LocaleLanguageCount;++id){
@@ -297,9 +316,6 @@ extern "C" int main(int argc,char**argv){
         if(f){installed_languages|=spire::locale_language_mask(id);nd_close(f);}
     }
     if(!installed_languages){boot_error(blit,spire::BootText::MissingLanguage,spire::BootLanguage::English);return 4;}
-    const uint32_t startup_start=performance.enabled?timer_ticks():0;
-    const auto common_source=file_source(common);
-    if(!common_source.length){boot_error(blit,spire::BootText::InvalidResources,spire::BootLanguage::English);return 5;}
     const unsigned saved=unsigned(preferred);
     // Querying the OS is unnecessary when the saved locale opens normally.
     // If that saved pack fails, resolve the current OS preference then.
@@ -339,11 +355,11 @@ extern "C" int main(int argc,char**argv){
         if(!next){app.message("Language resources are unavailable.");return;}
         void*previous=source.file;const auto old_language=source.language;
         source.file=next;source.language=static_cast<spire::BootLanguage>(requested);
-        const bool opened=split.open(file_source(common),file_source(source),static_cast<spire::ResourceLanguage>(requested));
+        const bool opened=split.open(common_source,file_source(source),static_cast<spire::ResourceLanguage>(requested));
         if(opened&&app.reload_language(split.source())){nd_close(previous);store_language(source.language);}
         else{
             nd_close(next);source.file=previous;source.language=old_language;
-            if(!split.open(file_source(common),file_source(source),static_cast<spire::ResourceLanguage>(old_language))||!app.reload_language(split.source())){
+            if(!split.open(common_source,file_source(source),static_cast<spire::ResourceLanguage>(old_language))||!app.reload_language(split.source())){
                 boot_error(blit,spire::BootText::InvalidResources,old_language);app.quit=true;return;
             }
             app.message("Could not change language.");
@@ -437,8 +453,8 @@ extern "C" int main(int argc,char**argv){
     };
     exit_input_release(timer_ticks,held);
     // Finish filesystem work before the final release gate. In particular,
-    // two split-resource destructors must not issue OS calls after it.
-    source.close();common.close();performance_report();
+    // Resource destructors must not issue OS calls after it.
+    source.close();common.close();for(auto&part:parts)part.close();performance_report();
     exit_input_release(timer_ticks,held);
     display.restore();return 0;
 }
