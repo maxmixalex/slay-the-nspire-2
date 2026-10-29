@@ -1,6 +1,6 @@
 static void combat_peek_button(Canvas&c){
  auto&a=c.a;if(!a.combat_peek_available())return;
- constexpr int x=5,y=108,size=24;
+ constexpr int x=combat_controls::PeekX,y=combat_controls::PeekY,size=combat_controls::PeekSize;
  const bool hover=a.pointer.visible&&a.pointer.x>=x&&a.pointer.x<x+size&&a.pointer.y>=y&&a.pointer.y<y+size;
  if(a.choice_peeking){Canvas glow=c;const unsigned pulse=unsigned(160+CombatCardMotion::sine(int(a.map_clock_ms%1800u)*4096/1800)*80/1024);
   glow.picture(a.content.ui_image(I8_PeekFlash),x-4,y-4,31,31,pulse,presentation::Add);}

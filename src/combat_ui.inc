@@ -572,9 +572,7 @@ static void combat_screen(Canvas&c){
         if(v.mode==CombatCardMotion::Empty||v.mode==CombatCardMotion::Hand||v.mode==CombatCardMotion::Preview||v.mode==CombatCardMotion::Tail||v.id>=s.card_count)continue;
         const unsigned exhaust_age=(a.animation-v.at)*33u;if(v.mode==CombatCardMotion::Exhaust&&exhaust_age>=400u)continue;
         auto pose=CombatCardMotion::pose(v);
-        if(v.mode==CombatCardMotion::Play){const unsigned peek=a.combat_peek_amount();
-            pose.cx=(pose.cx*int(1024-peek)+31*int(peek))/1024;pose.cy=(pose.cy*int(1024-peek)+88*int(peek))/1024;
-            pose.scale=pose.scale*int(2048-peek)/2048;}
+        if(v.mode==CombatCardMotion::Play)pose=combat_peek_pose(pose,a.combat_peek_amount());
         draw_hand_tile(c,hand_tile(c,v.id,&v),pose,false,a.combat_cards.brightness(v),v.mode==CombatCardMotion::Exhaust?combat_exhaust_progress(exhaust_age):0u);
     }
     if(a.card_fly>0&&a.fly_card>=0){int age=12-a.card_fly;c.picture(a.content.card_image(a.fly_card),150+age*4,163-age*5,26,19,(unsigned)(a.card_fly*18));}

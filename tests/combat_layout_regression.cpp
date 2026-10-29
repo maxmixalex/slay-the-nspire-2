@@ -118,6 +118,18 @@ static void original_hand_fan(){
  CHECK(hand_pose(5,0,false,2).cx==101&&hand_pose(5,1,false,2).cx==123&&hand_pose(5,3,false,2).cx==197&&hand_pose(5,4,false,2).cx==219);
  const auto selected=hand_selected_pose();const auto selected_bounds=hand_bounds(selected);
  CHECK(selected.cx==160&&selected.scale==1024&&selected_bounds.y>=22&&selected_bounds.y+selected_bounds.h<=240);
+ // NCombatUi shrinks the actual played card by half toward the eye's
+ // CurrentCardMarker. The LCD marker must move with that button and leave
+ // the complete readable half-card above its independent click target.
+ const HandPose played{160,101,819,0,1024};
+ const auto visible=combat_peek_pose(played,0),peek=combat_peek_pose(played,1024);
+ CHECK(visible.cx==played.cx&&visible.cy==played.cy&&visible.scale==played.scale);
+ CHECK(peek.cx<31&&peek.cy<88&&peek.scale==played.scale/2);
+ CHECK(peek.cx>=combat_controls::PeekX&&peek.cx<combat_controls::PeekX+combat_controls::PeekSize);
+ const auto peek_bounds=hand_bounds(peek);
+ CHECK(peek_bounds.x>=0&&peek_bounds.y>=22&&peek_bounds.y+peek_bounds.h<combat_controls::PeekY);
+ const auto half=combat_peek_pose(played,512);
+ CHECK(half.cx>peek.cx&&half.cx<played.cx&&half.cy>peek.cy&&half.cy<played.cy&&half.scale>peek.scale&&half.scale<played.scale);
  for(int count=1;count<=10;++count)for(int i=0;i<count;++i){const auto p=hand_pose(count,i,false);const auto bounds=hand_bounds(p);
   CHECK(hand_contains(p,p.cx,p.cy));CHECK(!hand_contains(p,bounds.x-1,p.cy));CHECK(!hand_contains(p,p.cx,bounds.y-1));
   if(p.sine)CHECK(!hand_contains(p,bounds.x,bounds.y));

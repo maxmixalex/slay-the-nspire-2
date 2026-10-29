@@ -16,6 +16,20 @@ namespace combat_controls {
 constexpr int EnergyX=16,EnergyY=164,EnergySize=34,StarX=6,StarY=181,StarSize=27;
 constexpr int DrawX=4,DrawY=213,DiscardX=290,DiscardY=213,ExhaustX=291,ExhaustY=189,PileSize=24;
 constexpr int EndX=246,EndY=156,EndW=70,EndH=28,SceneLift=14;
+// NCombatUi targets NPeekButton.CurrentCardMarker, a child of the eye.
+// Keep the readable LCD preview above that same control when it moves.
+constexpr int PeekX=5,PeekY=108,PeekSize=24;
+// One pixel right of the source centre keeps the larger LCD half-card's
+// left edge visible. Its lower edge clears the eye instead of covering it.
+constexpr int PeekCardX=PeekX+PeekSize/2+1,PeekCardY=PeekY-30;
+}
+
+inline HandPose combat_peek_pose(HandPose pose,unsigned amount){
+    if(amount>1024)amount=1024;
+    pose.cx=(pose.cx*int(1024-amount)+combat_controls::PeekCardX*int(amount))/1024;
+    pose.cy=(pose.cy*int(1024-amount)+combat_controls::PeekCardY*int(amount))/1024;
+    pose.scale=pose.scale*int(2048-amount)/2048;
+    return pose;
 }
 
 inline int hand_project(int source){return (source*4+10)/21;}

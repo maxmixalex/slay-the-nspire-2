@@ -15,19 +15,20 @@ static void pile_screen(Canvas&c){
     Canvas rows=card_grid_canvas(c,grid);
     if(deck){
         static const char*keys[]={"SORT_OBTAINED","SORT_TYPE","SORT_COST","SORT_ALPHABET"};
-        const int character=mn(4,int(s.character)),bar=I6_PileSortBar+character,bar_y=33-grid.offset();rows.ui(bar,44,bar_y-grid.top,236,12);
+        const int character=mn(4,int(s.character)),bar=I6_PileSortBar+character,bar_y=33-grid.offset();rows.ui(bar,44,bar_y-grid.top,236,18);
         // SortingOptions has a 60px strip around a centred HBox of four
-        // 250x42 controls, separated by 50px. Its label is left-aligned;
-        // only ButtonImage receives the source HSV/modulate treatment.
+        // 250x42 controls, separated by 50px. Keep their horizontal spacing,
+        // with a taller LCD strip for readable8px labels. Text stays left-
+        // aligned; only ButtonImage receives the source HSV treatment.
         const int first=44+(236-reference_viewport::project(1150))/2;
         for(int sort=0;sort<4;++sort){const int x=first+reference_viewport::project(sort*300);
-            const bool hover=a.pointer.visible&&a.pointer.x>=x&&a.pointer.x<x+48&&a.pointer.y>=bar_y+2&&a.pointer.y<bar_y+11&&a.pointer.y>=grid.top;
+            const bool hover=a.pointer.visible&&a.pointer.x>=x&&a.pointer.x<x+48&&a.pointer.y>=bar_y+2&&a.pointer.y<bar_y+16&&a.pointer.y>=grid.top;
             const bool focused=hover||(!a.pointer.visible&&a.pile_control_focus==sort);
             const bool pressed=hover&&a.pointer.held&&a.pointer.captured.kind==HitKind::PileSort&&a.pointer.captured.value==sort;
             Canvas button=rows;button.brightness=uint8_t(div255(unsigned(button.brightness)*186));
             static const unsigned source_s[]={850,450,900,1500,550},source_v[]={1000,1200,1000,1200,1200};
             const unsigned target=focused&&!pressed?1000:800;
-            small_material_icon(button,a.content.ui_image(bar),x+1,bar_y+2-grid.top,pressed?46:48,focused&&!pressed?9:8,
+            small_material_icon(button,a.content.ui_image(bar),x+1,bar_y+2-grid.top,pressed?46:48,focused&&!pressed?15:14,
                 target*1000/source_s[character],target*1000/source_v[character],true);
             const auto*label=a.content.world_string("gameplay_ui",keys[sort]);
             Canvas layer=rows;layer.font_face=source_label_face(a.content.original_label_fonts(),5);layer.sparse_scene_sizes=true;
@@ -38,10 +39,10 @@ static void pile_screen(Canvas&c){
             const bool descending=(a.pile_sort_descending&(1u<<sort))!=0;
             Canvas arrow=rows;arrow.tint_red=239;arrow.tint_green=200;arrow.tint_blue=81;
             int characters=0;RichReader reader(label);RichChar glyph{};while(reader.next(glyph))++characters;
-            const int text_width=layer.width(label,6)+reference_viewport::project(mx(0,characters-1)*tracking);
+            const int text_width=layer.width(label,8)+reference_viewport::project(mx(0,characters-1)*tracking);
             const int arrow_x=x+2+mn(37,text_width)+2+3;
-            ui_picture_transform(arrow,a.content.ui_image(I6_SortDescending),arrow_x,bar_y+6-grid.top,7,7,0,descending?1024:-1024);
-            card_grid_hit(c,grid,x,bar_y+1,48,10,HitKind::PileSort,sort);
+            ui_picture_transform(arrow,a.content.ui_image(I6_SortDescending),arrow_x,bar_y+9-grid.top,7,7,0,descending?1024:-1024);
+            card_grid_hit(c,grid,x,bar_y+1,48,16,HitKind::PileSort,sort);
         }
     }
     // Batch the exact visible faces (portrait/frame/border/banner/energy),

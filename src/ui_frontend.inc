@@ -74,7 +74,7 @@ static void title_logo(Canvas&c){
 }
 #include "profiles_ui.inc"
 static void pile_sort_label(Canvas c,const char*text,int x,int y,int tracking,uint32_t started){
- profile_text_box(c,text,x,y,37,10,{6,c.font_face,rgb(239,200,81),0,1,0,0,112,1,1,tracking},
+ profile_text_box(c,text,x,y,37,16,{8,c.font_face,rgb(239,200,81),0,1,0,0,112,1,1,tracking},
   false,false,{},true,false,0,true,started);
 }
 static int title_label_width(Canvas&c,const char*text){
