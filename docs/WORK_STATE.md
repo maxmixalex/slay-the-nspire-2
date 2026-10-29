@@ -2,6 +2,16 @@
 
 ## Current checkpoint and remaining gates
 
+Final runtime `4f3c7abfb1c580d37f63a158385ff79a47e87874` has passed its full
+ARM build and package readback. Launcher is 1,760,617 bytes, allocation
+22,523,484 bytes; installed default is 81,022,714 bytes. The complete native
+build completed, but the first CTest launch helper rejected 147 registrations
+sharing 146 executables before running tests. The helper now checks both the
+unique executable set and all 147 commands, preserving both registrations of
+world_event_ui_regression. The next gate runs every suite on these completed
+outputs, followed by actual final ENG/ZHS and all-sixteen locale readbacks.
+No production source changed in this test-launcher correction.
+
 The final combined runtime now includes the bounded 32 KiB mixed-page locale
 reader and one-open artwork length/header probes. Independent native, actual
 pack, sanitizer, state/frame identity and ARM gates passed for both changes.

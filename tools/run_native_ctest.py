@@ -68,17 +68,23 @@ def main() -> int:
     original = test_file.read_bytes()
     changed = []
     wrapped = 0
+    seen = set()
+    expected_wrapped = sum(
+        bool(test.get("command")) and quoted(test["command"][0]) in replacements
+        for test in listing["tests"])
     for line in original.decode().splitlines(keepends=True):
         if line.startswith("add_test("):
             for old, new in replacements.items():
                 if old in line:
                     line = line.replace(old, new, 1)
                     wrapped += 1
+                    seen.add(old)
                     break
         changed.append(line)
-    if wrapped != len(replacements):
+    if seen != set(replacements) or wrapped != expected_wrapped:
         raise ValueError("CTest commands were not all found in the generated test file")
-    print(f"Running {len(listing['tests'])} CTest tests; {wrapped} declared ELF launchers", flush=True)
+    print(f"Running {len(listing['tests'])} CTest tests; {wrapped} wrapped commands; "
+          f"{len(replacements)} distinct declared ELF launchers", flush=True)
     try:
         test_file.write_text("".join(changed))
         return subprocess.run(["ctest", "--test-dir", str(build), "--parallel",
