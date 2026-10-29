@@ -5,6 +5,7 @@
 #include "host_input_latch.hpp"
 #include "departure_frame_clock.hpp"
 #include "resource_file_cursor.hpp"
+#include "resource_file_cache.hpp"
 #include "runtime_performance.hpp"
 #include "runtime_scene.hpp"
 #include "touchpad.hpp"
@@ -123,6 +124,17 @@ static bool ensure_state_directory(const char*launcher){
 }
 #include "profile_storage.inc"
 static void* open_data_file(const char*launcher,const char*name){return spire::installation_path(pack_path,sizeof pack_path,launcher,spire::InstallationDirectory::Data,name)?nd_open(pack_path,"rb"):nullptr;}
+using ArtworkFiles=spire::ResourceFileCache<spire::MultipartResourceSource::MaxParts,4>;
+static void* open_artwork_file(void*launcher,unsigned part){
+    return open_data_file(static_cast<const char*>(launcher),spire::ArtworkPartNames[part]);
+}
+static void artwork_poll(void*){capture_key_matrix();}
+static bool read_artwork(void*context,uint32_t offset,void*output,uint32_t count){
+    bool seek=false;const uint32_t started=performance.enabled?timer_ticks():0;
+    const bool good=ArtworkFiles::read_source(context,offset,output,count,seek);
+    if(performance.enabled)performance.read(started-timer_ticks(),count,good,seek);
+    return good;
+}
 static spire::ResourceSource file_source(ResourceFile&file){
     file.cursor={}; // This length probe moves the underlying stream as well.
     if(!file.file||nd_seek(file.file,0,2)!=0)return {};
@@ -286,27 +298,34 @@ extern "C" int main(int argc,char**argv){
     Display display;if(!nd_lcd_init(0))return 6;display.active=true;
     auto blit=nd_blitter(0);if(!blit)return 7;
     for(auto&pixel:app.pixels)pixel=0;blit(app.pixels);
-    ResourceFile common{},source{},parts[spire::MultipartResourceSource::MaxParts]{};
+    ResourceFile common{},source{};ArtworkFiles artwork_files;
     static spire::SplitResourceSource split;
     static spire::MultipartResourceSource artwork;
+    auto close_resources=[&](){source.close();common.close();artwork_files.close();split.close();artwork.close();};
+    auto resource_error=[&](spire::BootText message,int code){
+        // Resource destructors must not perform OS calls after boot's release gate.
+        close_resources();boot_error(blit,message,spire::BootLanguage::English);return code;
+    };
     const auto preferred=language_preference();
     common.file=open_data_file(launcher,spire::SharedDataFilename);
-    if(!common.file){boot_error(blit,spire::BootText::MissingResources,spire::BootLanguage::English);return 4;}
+    if(!common.file)return resource_error(spire::BootText::MissingResources,4);
     const uint32_t startup_start=performance.enabled?timer_ticks():0;
     auto common_source=file_source(common);uint8_t common_tag[4];
     if(!common_source.length||!read_resource(&common,0,common_tag,sizeof common_tag)){
-        boot_error(blit,spire::BootText::InvalidResources,spire::BootLanguage::English);return 5;
+        return resource_error(spire::BootText::InvalidResources,5);
     }
     if(common_tag[0]=='N'&&common_tag[1]=='S'&&common_tag[2]=='M'&&common_tag[3]=='1'){
+        // The OS rejects an eighth simultaneous stream on the validated CX.
+        // Probe eight lengths sequentially, then keep only four art streams.
+        if(!artwork_files.open({const_cast<char*>(launcher),open_artwork_file,nd_close,
+                sampled_seek,nd_tell,sampled_read,artwork_poll},spire::MaxContentFile))
+            return resource_error(spire::BootText::MissingResources,4);
         spire::ResourceSource inputs[spire::MultipartResourceSource::MaxParts];
-        for(unsigned i=0;i<spire::MultipartResourceSource::MaxParts;++i){
-            parts[i].file=open_data_file(launcher,spire::ArtworkPartNames[i]);
-            if(!parts[i].file){boot_error(blit,spire::BootText::MissingResources,spire::BootLanguage::English);return 4;}
-            inputs[i]=file_source(parts[i]);
-        }
+        for(unsigned i=0;i<spire::MultipartResourceSource::MaxParts;++i)inputs[i]=artwork_files.source(i,read_artwork);
         if(!artwork.open(common_source,inputs,spire::MultipartResourceSource::MaxParts)){
-            boot_error(blit,spire::BootText::InvalidResources,spire::BootLanguage::English);return 5;
+            return resource_error(spire::BootText::InvalidResources,5);
         }
+        common.close(); // The validated index header/spans now live in artwork.
         common_source=artwork.source();
     }
     // Probe names only; a successful selected locale does not decode or
@@ -315,7 +334,7 @@ extern "C" int main(int argc,char**argv){
         void*f=open_data_file(launcher,spire::locale_language_info(id).file);
         if(f){installed_languages|=spire::locale_language_mask(id);nd_close(f);}
     }
-    if(!installed_languages){boot_error(blit,spire::BootText::MissingLanguage,spire::BootLanguage::English);return 4;}
+    if(!installed_languages)return resource_error(spire::BootText::MissingLanguage,4);
     const unsigned saved=unsigned(preferred);
     // Querying the OS is unnecessary when the saved locale opens normally.
     // If that saved pack fails, resolve the current OS preference then.
@@ -338,7 +357,7 @@ extern "C" int main(int argc,char**argv){
         else {installed_languages&=~spire::locale_language_mask(saved);system=system_language();}
     }
     if(!selected)selected=spire::locale_load_initial(installed_languages,0,system,load);
-    if(!selected){boot_error(blit,spire::BootText::InvalidResources,spire::BootLanguage::English);return 5;}
+    if(!selected)return resource_error(spire::BootText::InvalidResources,5);
     if(performance.enabled)app.callbacks.profile_render=performance_render_part;
     app.callbacks.foreground_clock_ticks=foreground_clock_ticks;
     app.callbacks.foreground_poll=capture_key_matrix;
@@ -350,7 +369,7 @@ extern "C" int main(int argc,char**argv){
     source.blit=nullptr; // Startup progress cannot repaint over the live game.
     auto change_language=[&](){
         const unsigned requested=pending_language;pending_language=0;
-        if(!requested||!common.file||!app.title)return;
+        if(!requested||!common_source.length||!app.title)return;
         void*next=open_data_file(launcher,spire::locale_language_info(requested).file);
         if(!next){app.message("Language resources are unavailable.");return;}
         void*previous=source.file;const auto old_language=source.language;
@@ -360,7 +379,7 @@ extern "C" int main(int argc,char**argv){
         else{
             nd_close(next);source.file=previous;source.language=old_language;
             if(!split.open(common_source,file_source(source),static_cast<spire::ResourceLanguage>(old_language))||!app.reload_language(split.source())){
-                boot_error(blit,spire::BootText::InvalidResources,old_language);app.quit=true;return;
+                resource_error(spire::BootText::InvalidResources,5);app.quit=true;return;
             }
             app.message("Could not change language.");
         }
@@ -454,7 +473,7 @@ extern "C" int main(int argc,char**argv){
     exit_input_release(timer_ticks,held);
     // Finish filesystem work before the final release gate. In particular,
     // Resource destructors must not issue OS calls after it.
-    source.close();common.close();for(auto&part:parts)part.close();performance_report();
+    close_resources();performance_report();
     exit_input_release(timer_ticks,held);
     display.restore();return 0;
 }
