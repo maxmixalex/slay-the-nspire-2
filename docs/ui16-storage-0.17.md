@@ -29,12 +29,18 @@ files. The 95 virtual ranges preserve every old artwork byte and logical
 address. Independent Python readback reconstructs the exact old common file.
 The extra index/part headers cost 1,808 bytes in total.
 
-The calculator keeps an eight-file handle set and an in-memory addressing
-table. A request uses one cached range or a bounded binary search and then
-reads the original requested bytes from the appropriate file. Images are not
-preloaded at startup. The table capacity is 1,024 spans, rather than reserving
-an unnecessarily large map for the current 95 spans. Native loading uses the
-same adapters. Legacy NSC1 + NSL1/NSL2 installations remain readable.
+The calculator exposes eight logical artwork sources through a four-stream
+LRU cache and keeps an in-memory addressing table. The part lengths are probed
+one at a time; the small index file closes after its validated header and spans
+are resident. A request uses one cached range or a bounded binary search and
+then reads the original requested bytes from the appropriate file. A miss
+closes the evicted stream before opening its replacement. Each stream owns an
+independent seek cursor, and failed operations invalidate that cursor. Images
+are not preloaded at startup. The table capacity is 1,024 spans, rather than
+reserving an unnecessarily large map for the current 95 spans. Native loading
+uses the same storage adapters. Legacy NSC1 + NSL1/NSL2 installations remain
+readable. See `ui16-artwork-file-handles-0.17.md` for the actual-device open
+failure that motivated the bounded cache, lifecycle handling, and tests.
 
 ## Independent locale pages
 
@@ -67,11 +73,17 @@ against the original UI15 inputs, so the complete 16-language reduction from
 UI15 is **6,211,152 bytes**. Default English and Chinese incur no glyph repair
 increase.
 
-With the integrated launcher, the default program/resource installation is
-81,018,791 bytes (77.2655 MiB), before saves, notices and explanatory text.
-The UI15 equivalent was 81,910,800 bytes: **892,009 bytes less**. These are
+With the final integrated launcher, the default program/resource installation
+is 81,021,659 bytes (77.2683 MiB), before saves, notices and explanatory text.
+The UI15 equivalent was 81,910,800 bytes: **889,141 bytes less**. These are
 installed-file counts, not ZIP download sizes. A smaller download alone is
 not reported as a calculator storage improvement.
+
+The final launcher is 4,268 bytes larger than UI15. Including it, installing all
+16 languages saves **6,206,884 bytes** against the original UI15 installation.
+This pass does not achieve a 30–40 MB or 65–70 MB default installation. It keeps
+the existing artwork, animation frames, strings, and glyphs; the remaining
+large artwork payload is still the existing compressed representation.
 
 ## Bounds and behavior
 
@@ -87,12 +99,19 @@ converter and release packager perform full byte-identical roundtrips; these
 checks are not runtime overhead. No animation frame, source texture pixel,
 card, string or valid old glyph is removed.
 
-Integrated ARM checkpoint `e8e00e36b03b3a11bf8043a3bdafa56bda04fa47` builds a
-1,756,432-byte launcher and allocates 22,927,848 bytes under the unchanged
-24 MiB Zehn limit. Both small storage adapters live in static storage rather
-than on the calculator stack. Storage copying uses the independently checked
-ARM926 memory primitives. Calculator execution and final native regression
-results are recorded in the UI16 acceptance ledger.
+Final runtime checkpoint `def1db3c68d3730edfddb4985feb403cc86b256b` builds a
+1,759,300-byte launcher with SHA-256
+`6698dc8e4fb02589ce810a9b1c5bf565601bcdc88b71982457648a07be0f5a3a`.
+Its Zehn allocation is 22,568,868 bytes, including 157,048 bytes of metadata;
+the contiguous executable/BSS request is 22,411,820 bytes. This is a net
+311,028-byte allocation reduction from UI15 after all new code and adapters.
+The build enforces a 22,450,000-byte executable/BSS budget in addition to the
+existing 24 MiB total limit. Both small storage adapters live in static storage
+rather than on the calculator stack. Two mutually exclusive state/raster
+workspaces share memory without shrinking the 13,369,344-byte image pool.
+Storage copying uses the independently checked ARM926 memory primitives.
+Calculator execution, OS heap limits, and final native regression results are
+recorded in the UI16 acceptance ledger.
 
 ## Investigated alternatives
 
