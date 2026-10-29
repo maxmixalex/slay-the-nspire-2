@@ -7,11 +7,11 @@ Reflow, larger targets, scrolling, detail overlays and keyboard/touchpad adaptat
 ## Current coverage and evidence
 
 The latest local delivery is **UI16**, runtime
-`def1db3c68d3730edfddb4985feb403cc86b256b`. See
+`4f3c7abfb1c580d37f63a158385ff79a47e87874`. See
 [the UI16 delivery ledger](ui16-delivery-0.17.md),
 [UI15 retained-difference reconciliation](ui15-retained-differences-0.17.md),
 and [UI14 retained-difference reconciliation](ui14-retained-differences-0.17.md).
-The complete final native run passes 146/146 suites. The latest source has not
+The complete final native run passes 147/147 suites. The latest source has not
 been published to GitHub: automatic approval review rejected the attempted
 source push, so the private source archive and Git bundle are the recovery
 path. Earlier statements about synchronization with `main` apply only to
@@ -32,7 +32,7 @@ runs are not combined into a claimed complete pass.
 | Five characters, colorless and potions | Five single-player pools, their generated/status cards, 53 colorless models and 64 potions; event/curse additions bring the card registry to 558 | The source17 full suite retains character, colorless, potion, migration and UI tests; 860 character/Giant Rock variants execute acquisitions. Registry counts are not an original-reference interaction proof. |
 | Original world | Seven-column maps, four regional templates across three act positions, original room queues, unknown-room odds, ancients, events and the final Architect continuation | World/map/lifecycle regressions exercise real routing and canonical save continuation. The old adapted expedition remains a separate compatibility path. |
 | Enemies | Bounded eight-slot runtime with moves, intents, powers, summons, identities, revivals and exit/reward continuations | 109 IDs include compatibility/display models. The test driver executes all 87 non-display encounter definitions at A0 and A9, producing 174 variants, plus targeted boundary scenarios. Further audits can still identify rule bugs. |
-| Original resources | Current NSP2/40 resources use an NSM1 index, eight required artwork concerns, and independent NSL3 locale pages; retained image compression preserves pixels and timing | UI16 bilingual resources total 79,262,359 bytes, or 81,021,659 bytes with the launcher before saves. Both complete logical packs reconstruct exactly. Image/glyph/string decoding is on demand; runtime integrity hashes and eager payload scans remain absent. Older container counts and sizes are historical. |
+| Original resources | Current NSP2/40 resources use an NSM1 index, eight required artwork concerns, and independent NSL3 locale pages; retained image compression preserves pixels and timing | UI16 bilingual resources total 79,262,097 bytes, or 81,022,714 bytes with the launcher before saves. Both complete logical packs reconstruct exactly. Image/glyph/string decoding is on demand; runtime integrity hashes and eager payload scans remain absent. Older container counts and sizes are historical. |
 | UI and presentation | Original assets and scene relationships for title/run setup, combat, events/ancients, regional rooms, rewards, map windows and travel | Actual resource renders and cross-backend tests validate the port. They do not substitute for original-application captures and visual acceptance. |
 
 ## Adaptations versus remaining fidelity work

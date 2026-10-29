@@ -1,116 +1,164 @@
-# UI16 calculator integration — 2026-10-29
+# UI16 completed local calculator delivery — 2026-10-29
 
-## Current checkpoint and remaining gates
+## Frozen runtime, resources and current outcome
 
-Final runtime `4f3c7abfb1c580d37f63a158385ff79a47e87874` has passed its full
-ARM build and package readback. Launcher is 1,760,617 bytes, allocation
-22,523,484 bytes; installed default is 81,022,714 bytes. The complete native
-build completed, but the first CTest launch helper rejected 147 registrations
-sharing 146 executables before running tests. The helper now checks both the
-unique executable set and all 147 commands, preserving both registrations of
-world_event_ui_regression. The next gate runs every suite on these completed
-outputs, followed by actual final ENG/ZHS and all-sixteen locale readbacks.
-No production source changed in this test-launcher correction.
+The tested runtime is **`4f3c7abfb1c580d37f63a158385ff79a47e87874`**.
+Matching complete data is converter checkpoint
+**`57cd512e56d3a10f6cb8b424cbae969c8216b2d3`**. Later commits change only
+verification launching/documentation and do not alter the shipped production.
+The final source/documentation checkpoint is in the source ZIP's
+`SOURCE-IDENTITY.json`. Original UI15 source, private selected resources and
+complete history were recovered before this work; do not restart from the
+older public checkout or repeat rejected experimental branches as production.
 
-The final combined runtime now includes the bounded 32 KiB mixed-page locale
-reader and one-open artwork length/header probes. Independent native, actual
-pack, sanitizer, state/frame identity and ARM gates passed for both changes.
-They are integrated after `00cf0b0`; the next recorded gate is a full combined
-ARM build and all native suites through the declared ELF interpreter. No
-combined device speedup or completion is claimed before that run. The 57cd512
-data files are unchanged; only the launcher and runtime allocation will change.
+Launcher: **1,760,617 bytes**, SHA256
+`cf83955453bc6046e57895a94efdf68ecf00a6c6e4ba2eec5e3a172c94f36158`.
+Zehn allocation: **22,523,484 bytes**, including 157,096 bytes of metadata;
+contiguous execution/static memory: **22,366,388 bytes**. Allocation is
+**356,412 bytes below UI15**, with the entire 13,369,344-byte picture pool.
+The 22,450,000 execution and 24 MiB total budgets pass. These requests are not
+a physical peak-RAM measurement or an arbitrary-fragmentation guarantee.
 
-Runtime/resource checkpoint `57cd512e56d3a10f6cb8b424cbae969c8216b2d3` includes
-all nine feedback decisions, the eight artwork concerns, aligned NSL3 locale
-pages, four artwork handles, exact renderer/ARM memory paths, State sharing,
-three-owner raster sharing and smaller addressing tables. Original UI15 source,
-selected resources and history were recovered; the work does not restart from
-the older public checkout. All current resource data is under the private
-`ui16-final` directory and consists of independent regular files.
+Default English/Chinese installed program/resources total **81,022,714 bytes**
+(77.269281 MiB), saving **888,086 bytes** against UI15. All sixteen with launcher
+are **99,576,281 bytes**, saving **6,204,170**. Saves/notices are excluded from
+these counts. The index is 1,520 bytes / 89 spans; common index/eight concerns
+sum to 74,026,106 bytes. Default resources alone save 893,671 bytes. The prior
+65–70 MB installation target remains unmet; no additional texture pixel,
+animation frame, string or valid glyph was removed for these savings.
 
-The ARM build and complete 16-language conversion pass. Launcher:
-1,759,282 bytes, SHA256
-`a52f71c94095a771f0af98d761c0949ba8ea7449ec6167a9fa073014fe0fa012`.
-Zehn allocation is 22,493,064 bytes, metadata 157,076, executable/BSS 22,335,988:
-a net 386,832-byte allocation reduction from UI15. The full 13,369,344-byte
-picture pool remains. The 147-suite native batch has 146 passes and one
-`BAD_COMMAND` caused by a generated ELF losing its execute bit; that exact
-`expansion_ui_regression` passes after mode restoration. No assertion failed,
-and the failed batch remains recorded. An explicit declared-ELF-interpreter
-launcher is being checked to remove the executor's mode race from the final
-full sweep without changing tests or production binaries.
+## Implemented changes and feedback decisions
 
-Installed default program/resources are 81,021,379 bytes (77.2680 MiB),
-889,421 below UI15. All sixteen with the launcher are 99,574,946 bytes,
-6,205,505 below UI15. Index is 1,520 bytes / 89 spans; all eight artwork files
-and index total 74,026,106 bytes. All logical resources reconstruct exactly.
-The earlier 65–70 MB target remains unmet. No additional original texture pixel,
-animation frame, existing string or glyph is removed.
+- The large common file is now an index plus interface, cards, characters,
+  enemies, bosses, rooms, effects and shared parts. Four live artwork streams
+  serve eight logical sources. A matching complete set is required.
+- Independent 4 KiB NSL3 locale pages compress all sixteen editions. Inner
+  NSL2 tail alignment and complete short A/B/A span folding reduce unnecessary
+  reads without changing any logical NSP2 byte. Mixed-page requests coalesce
+  through a bounded 32 KiB encoded batch; the added 28,676-byte adapter storage
+  is counted in final allocation. Single-probe startup obtains each part's
+  length/header together, halving actual initialization opens from 16 to 8.
+- Exact opaque/flying-card rendering and ARM memory words reduce rendering
+  work. State ownership, Random/merchant/selected-hand raster sharing and
+  tighter addressing tables lower static allocation. No image-pool cut.
+- Deck sort text is 8 px instead of 6; the tucked played-card center is (18,78)
+  instead of (31,88), shared with the moved eye's layout; treasure's single-line
+  10 px title uses the projected banner interior.
+- Original pointer-only View Upgrades checkbox, distinct Tablet/Smith effects,
+  and ordinary map node 20/29 px controls with full atlas margins are retained
+  after reference verification. They are not newly introduced bugs or new
+  features merely because their tests pass.
+- Normal label / explicit rich bold / explicit rich italic roles match the
+  original language substitutions at the audited controls. Chinese Sans and
+  Serif roles intentionally coexist. All relevant sixteen-language glyphs and
+  original-family samples pass. Three pre-existing optional PTB/TUR italic
+  glyphs were repaired from their exact source fonts.
+- Healthy saved language wins; then system language, English and other usable
+  editions are tried. Unsupported calculator languages use English when
+  available. Failed startup candidates are removed for the session; manual
+  switch failure restores the previous language. Technical errors are built-in
+  English and do not depend on a working game font pack.
 
-## Actual device result and active performance correction
+## Completed gates
 
-Ordinary Firebird uses CX II CAS / 396 MHz / OS 6.4.0.74 / Ndless r2022, not a
-physical-device timing claim. With 57cd512 and the complete matching data,
-Chinese cold startup, normal exit, immediate reopening without USB, and the
-second normal exit all pass. Earlier def1db3 additionally passed the complete
-196-input UI route, French cold default, Dutch cold English fallback and
-English recovery from a missing required artwork part. Those captures retain
-their actual checkpoint; they are not relabeled as new screenshots.
+All final journals have `status:passed` and `source_changed:false`:
 
-The initial def1db3 multipart performance regression (31 reads, a 288 ms frame)
-is fixed substantially by page alignment and complete short-span A/B/A folding.
-The revised six-second five-Dazed pair has 164 frames, 196,287 interval ticks,
-139,387 render ticks, 14,842 resource ticks, 22 reads / 113,070 bytes / 19 seeks,
-and no interval above 250 ms. Mean render is 25.9375 ms versus UI15's 26.5110
-ms. Whole-window FPS is 27.3780 versus 27.5597; it is **not an FPS improvement**.
-Startup (selected validation and App init) is 43,698 ticks / 1.333 s, versus
-UI15's 21,790 / 0.665 s. Keep these actual limits and all raw pairs.
+| Gate | Journal / result |
+| --- | --- |
+| Full ARM build | `ui16-combined-final-arm-59335313de91` |
+| Full native | `ui16-final-full-native-9a366dc71d23`: **147/147** at verification checkpoint `99063e30349500b6e845f8a46a2e831fd5d86163` |
+| Actual all sixteen editions | `ui16-final-all16-b6743ae37fd5`: **89,816 checks**, 53,072 descriptions, zero failures, 90 English recoveries |
+| Full actual English stream | `ui16-final-actual-eng-cbb52fdc06c1`: **12,485 checks**, 76,368,876 logical bytes identical |
+| Full actual Chinese stream | `ui16-final-actual-zhs-f0c0169450ed`: **12,619 checks**, 80,793,488 logical bytes identical |
+| Final package | `ui16-combined-final-package-f162c3321418`: every archive member read back, matching logical defaults and fourteen optional languages |
 
-Two remaining structural costs are now assigned to independent worktrees:
+Independent changed-path ASan/UBSan checks, exact 182-frame/canonical-state/
+logical-request oracles, 2,645 file-cache/header cases, 137,139 boot-language
+cases, 3,166 required glyph records, 48 font samples and ARM vector checks are
+recorded at their actual checkpoints in [the delivery ledger](ui16-delivery-0.17.md).
+Do not combine them into an unexecuted full-game sanitizer claim.
 
-- Locale agent: bounded per-request NSL3 compressed/literal page coalescing for
-  the known large glyph stream, without reading unrelated pages or borrowing
-  an active image transfer workspace. Its added RAM must be counted.
-- Performance agent: obtain each part's length and 32-byte header during one
-  open, then validate the retained headers; remove eight redundant startup
-  reopens while keeping four live artwork streams and accurate timing/input
-  hooks. No payload scan or new image pool is allowed.
+The environment can drop generated ELF execute bits. Final CTest runs the
+unchanged programs through their declared ELF interpreter, preserving all
+147 registrations, arguments and properties. Earlier BAD_COMMAND failures
+remain recorded. The first combined native build completed all 257 build steps
+but its helper rejected 147 registrations sharing 146 executables before tests;
+that accounting error was fixed and the full 147-suite run passed. No test or
+production behavior was removed to obtain a pass.
 
-Both isolated candidates passed their correctness, sanitizer, actual-resource
-and ARM checks and have now been integrated. Root begins the combined gate
-from the checkpoint recorded above. The device agent waits for one combined
-launcher, then repeats cold startup/reopen and the same six-second pair. No
-repeated run is selected merely for a better number.
+## Actual Firebird result and material limits
 
-The warm French OS after changing its language plus USB still cannot allocate
-the execution block. Its frozen largest free block is 22,145,408 bytes, below
-both def1db3 and 57cd512 before metadata allocations. Both fail before main;
-cold French succeeds. This measured OS-fragmentation boundary remains explicit,
-and does not represent a French locale/font load failure.
+Configuration: **CX II CAS / 396 MHz / OS 6.4.0.74 / Ndless r2022**, with
+user-owned NAND/Boot1 and unchanged upstream Firebird core. No physical-handheld
+timing claim. Both final lifecycle checks pass: cold Chinese title → Quit →
+immediate no-USB reopen, and the original warm Haunted Ship combat → Save &
+Quit → title Quit → OS → immediate no-USB reopen → normal Quit.
 
-## Delivery and persistence
+The unique final six-second five-Dazed control/action pair yields 164 frames,
+196,282 interval ticks, 139,380 render ticks and 14,837 resource ticks;
+19 reads / 113,070 requested bytes / 19 seeks. Intervals over 50/100/250 ms are
+6/4/0. Mean elapsed render stage is **25.93622 ms**, about **2.17% below UI15's
+26.51095**. Whole-window FPS is **27.37873 versus 27.55971**, about **0.66%
+lower**, not an improvement. Finite exit-boundary frames can differ. Render
+elapsed time may include synchronous resource work and is not a CPU-cycle
+profiler. Native CPU results do not establish calculator FPS.
 
-The complete detail and retained scope are in
-[ui16-delivery-0.17.md](ui16-delivery-0.17.md). Full Ancient actor animation
-remains the previously accepted static storage exception. The inherited seed
-editor remains an ASCII subset; the original Unicode and obsolete lowercase
-`old` paths are not implemented. Audio, multiplayer, Timeline and desktop/network
-services remain outside the agreed single-player scope.
+The initial split candidate's 31 reads and roughly 288 ms action interval were
+corrected; the final window has no interval above 250 ms. Resource time still
+exceeds UI15 by about 120.57 ms, despite restored read count and fewer bytes;
+that remaining difference is not assigned an unsupported cause. Startup
+selected-resource validation + App init is **43,538 ticks / 1,328.674 ms**, versus
+UI15 **21,790 / 664.978 ms**. This scope remains slower and excludes complete
+Zehn launch. Do not substitute the better old-container renderer experiment.
 
-The staged player/optional ZIPs and the Library source archive are intermediate;
-regenerate/replace them at the completed checkpoint before final delivery.
-Keep existing state on installation. When upgrading an old monolithic data
-file, replace it with the small new index first to release its storage, then
-transfer the remaining complete data set before launching. Do not require all
-sixteen optional languages to fit simultaneously.
+Earlier def1db3 captures retain their actual identity: the 196-input UI route,
+cold French auto-selection, cold Dutch English fallback and missing-required-
+part English recovery. These are not relabeled as final-runtime screenshots.
+The final source changes do not repeat that whole route; scoped lifecycles and
+the controlled action pair cover the final memory/storage changes.
 
-Source commits and bundles are retained locally. GitHub publication is blocked:
-automatic approval review rejected the attempted source push for insufficient
-outbound authorization evidence. Personal Context is unavailable here and the
-recovered project documents contain only a transcribed permission claim. Do
-not bypass or retry that rejection without new evidence; no remote ref or main
-synchronization is claimed. The final source-only archive must replace its
-existing Library identity and include complete recoverable Git history.
+Warm French OS immediately after language change plus USB has an observed
+largest free block of 22,145,408 bytes, below the final execution request before
+metadata. Cold French passes. Arbitrarily fragmented OS heaps remain unsupported
+without restart; failure happens before main, not during French font loading.
+The failed old/new candidates remain in [Firebird evidence](ui16-firebird-0.17.md).
+
+## Deliverables, installation and publication
+
+The completed player archive is
+`Slay-the-Nspire-2-0.17-ui16-bilingual-calculator.zip`, 80,240,252 bytes, SHA256
+`062e30629c14deb4a6a067f55a454e55f1b8d95d482a541be9dec9eae2bf75f5`.
+The fourteen-language archive is 17,076,337 bytes, SHA256
+`9a959f20709c448e20851974454d861310e0faaa49a6e7ae050b127a7963a840`.
+The complete source recovery ZIP includes the committed source/docs, all local
+Git history and final verification journals/logs; its own exact identity is
+in `SOURCE-IDENTITY.json` and the companion archive receipt. The separate final
+Firebird evidence includes prior failed candidates and final lifecycles/raw
+pairs, without NAND, ROM, DLL or PCK. Source-only archives contain no derived
+resource pack. Player archives contain no test save or profiling marker.
+
+Preserve `state`. For an old monolithic installation, **replace the old
+`data/nSpire2.dat.tns` with the small new index first**, releasing its roughly
+74 MB, then transfer the complete matching concerns, desired languages and
+launcher before launching. Keep English for fallback. Only desired additional
+locales need installation; do not require all sixteen to fit together.
+
+Retained fidelity boundaries remain explicit: accepted static Ancient actor/
+background animation, ASCII seed editor (Unicode normalization and deprecated
+lowercase `old` path unimplemented), LCD/particle/material mappings, independent
+cosmetic RNG, UTC and finite history. UI15's actual monster command programs,
+Vantom and earlier effect implementations are recovered and retained, not newly
+completed by a probe. Audio, multiplayer, Timeline and desktop/network services
+are outside scope. No 95% score, universal 30 FPS, zero cold stalls or natural
+three-act victory is claimed.
+
+GitHub publication remains **blocked**. Automatic approval review rejected the
+source push because sufficient outbound payload/destination authorization
+evidence was unavailable. Personal Context is unavailable here; recovered
+project instructions only transcribe earlier permission. Do not bypass or
+retry without new authorization evidence. No remote ref/main synchronization
+or new CI run is claimed. Recover from this completed source archive and its
+all-ref bundle, preserving failed experiments as history.
 
 ## Historical UI15 delivery — 2026-10-28
 
