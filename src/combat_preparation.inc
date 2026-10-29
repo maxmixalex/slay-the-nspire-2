@@ -105,7 +105,7 @@ void App::step_combat_preparation(){
         ++p.cursor;
         const auto before=content.read_stats();const auto decoded=content.image(image);const auto after=content.read_stats();
         p.read_calls+=after.callbacks-before.callbacks;p.read_bytes+=after.callback_bytes-before.callback_bytes;++p.cold_images;++decoded_count;
-        if(!decoded.pixels){p.active=false;message("资源读取失败");return;}
+        if(!decoded.pixels){p.active=false;message("Could not load resources.");return;}
         // Consecutive images commonly share a resident tile group. Process
         // a small bounded batch before yielding, instead of imposing one
         // complete 33 ms host interval on every cheap cache assembly.

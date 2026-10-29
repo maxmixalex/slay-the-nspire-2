@@ -87,7 +87,7 @@ void progress_ack(int success){
     progress_dirty=false;
     if(success)progress_committed_at=app.progress.last_saved_at;
     else{app.progress.last_saved_at=progress_committed_at;app.progress_dirty=true;
-        app.message(app.content.english()?"Could not save history.":"历史记录保存失败，请重试");}
+        app.message("Could not save history.");}
 }
 int flush_progress(){return app.persist_progress()?1:0;}
 // Profile operations are serviced after input returns. Keep the established
@@ -131,7 +131,7 @@ int set_preferences_v3(unsigned size){
 int preferences_pending(){return preferences_dirty?1:0;}
 void preferences_ack(int success){
     preferences_dirty=!success;
-    if(!success)app.message(app.content.english()?"Could not save settings.":"设置保存失败，请重试");
+    if(!success)app.message("Could not save settings.");
 }
 int start(unsigned n){
     split.close();const spire::ResourceSource resource{nullptr,n,read_resource,nullptr};

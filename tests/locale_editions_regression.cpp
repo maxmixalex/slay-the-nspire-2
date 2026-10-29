@@ -2,6 +2,7 @@
 // and sprite-font routes. The public no-asset mode checks only the registry.
 #include "../src/app.cpp"
 #include "locale_boot.hpp"
+#include <algorithm>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -26,6 +27,7 @@ static void startup_fallback(const std::vector<uint8_t>&common,const std::vector
     // when the UI directory is first requested; it cannot be caught by the
     // calculator's cheap installed-filename probe.
     for(unsigned damage=0;damage<4;++damage){
+        app.title=true;app.library=app.character_select=app.run_settings=false;
         std::vector<uint8_t> broken;
         if(damage==1)broken.assign(language.begin(),language.begin()+32);
         if(damage==2){broken=language;broken[0]^=0xff;}
@@ -70,8 +72,9 @@ static void normal_label_pixels(){
     // remains a separate Bold/Italic role in body text.
     CHECK(app.content.original_label_fonts()==!substitute);
     CHECK(source_label_face(!substitute,5)==face&&source_label_face(!substitute,6)==(substitute?0u:6u));
-    Canvas rich=canvas;rich.bold_face=5;rich.italic_face=6;RichReader reader("A[b]A[/b][i]A[/i]");RichChar ch{};
-    const unsigned faces[]={0,5,6};for(unsigned i=0;i<3;++i){CHECK(reader.next(ch));CHECK(rich.font_style(ch)==faces[i]);}
+    Canvas rich=canvas;rich.bold_face=5;RichReader reader("A[b]A[/b][i]A[/i]");RichChar ch{};
+    const unsigned faces[]={0,5,2},ancient_faces[]={0,5,6};
+    for(unsigned i=0;i<3;++i){CHECK(reader.next(ch));CHECK(rich.font_style(ch)==faces[i]);CHECK(ancient_font_face(ch)==ancient_faces[i]);}
 }
 static void resolved(const char*context,const char*key,const char*text){
     ++descriptions;

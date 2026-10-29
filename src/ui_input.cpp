@@ -128,7 +128,7 @@ void App::ui_action(UiAction action){
     case UiAction::GameOverSummary:
         show_game_over_summary();break;
     case UiAction::GameOverMainMenu:
-        if(game_over_available()&&game_over_summary&&game_over_button_ready()){if(finish_saved_run())return_to_title();else message("无法删除存档，请重试");}break;
+        if(game_over_available()&&game_over_summary&&game_over_button_ready()){if(finish_saved_run())return_to_title();else message("Could not delete the saved run. Please try again.");}break;
     case UiAction::GameOverViewRun:open_game_over_history();break;
     case UiAction::LeaveCamp:
         camp_input(Key::EndTurn);break;

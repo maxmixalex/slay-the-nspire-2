@@ -77,7 +77,9 @@ checking that explicit rich bold/italic remain distinct roles.
 `tools/audit_locale_fonts_ui16.py` reads the actual private editions and requires
 the exact font/size/codepoint records for changed controls and all four deck
 sort labels at **8 px**. It rejects hidden `?` and neighbouring-size fallback.
-It adds no runtime work or resource bytes.
+The optional repair pass adds only missing exact source glyphs and preserves
+the complete old payload, compression cohorts, artwork and strings. It adds no
+runtime work or resident memory.
 
 Execution results are recorded after the source checkpoint, in the integration
 report and private command journals. A declared gate is not a passed run.

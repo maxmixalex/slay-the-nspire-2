@@ -127,14 +127,14 @@ void App::accept_frontend_confirm(){
   if(!title)return;
   if(!read_saved(*this)){message("Could not load the saved run. Please try again.");return;}
   if(!has_save||!same_run_identity(confirmed,saved_run_identity(frontend_saved_probe))){menu=0;message("存档已变更，请重新确认");return;}
-  if(callbacks.clear_save){if(!callbacks.clear_save()){message("无法删除存档，请重试");return;}}
-  else if(!callbacks.save||!terminal_probe(frontend_saved_probe)||!callbacks.save(frontend_saved_probe)){message("无法保存终局，请重试");return;}
+  if(callbacks.clear_save){if(!callbacks.clear_save()){message("Could not delete the saved run. Please try again.");return;}}
+  else if(!callbacks.save||!terminal_probe(frontend_saved_probe)||!callbacks.save(frontend_saved_probe)){message("Could not save the completed run. Please try again.");return;}
   finish_progress(true,&frontend_saved_probe);forget_run_checkpoint();forget_saved(*this);menu=0;return;
  }
  if(action==2&&paused&&resumable_run(game)){
   // RunManager.Abandon guarantees a forced player death; death prevention
   // must not turn the requested abandon into a surviving run.
-  if(!finish_saved_run()){message("无法删除存档，请重试");return;}
+  if(!finish_saved_run()){message("Could not delete the saved run. Please try again.");return;}
   if(resumable_run(game)){player_kill(game,true);resolve_pending(game);}finish_progress(true);paused=false;reset_presentation();
  }
 }
@@ -181,7 +181,7 @@ bool App::frontend_input(Key key){
   case 2:open_compendium();break;
   case 3:if(resumable_run(game)){frontend_confirm=2;frontend_choice=0;}break;
   case 4:
-   if(!resumable_run(game)){if(finish_saved_run())return_to_title();else message("无法删除存档，请重试");}
+   if(!resumable_run(game)){if(finish_saved_run())return_to_title();else message("Could not delete the saved run. Please try again.");}
    else if(save_current_run())return_to_title();else message("Could not save the run. Please try again.");break;
  }}else if(key==Key::Quit){frontend_confirm=3;frontend_choice=0;}
  else if(key==Key::Collection)return false;
