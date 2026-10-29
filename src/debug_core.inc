@@ -1,14 +1,37 @@
-// The always-available console keeps the large rollback state in
-// static storage: the calculator stack cannot hold a second State.
+// Both cold operations need a complete State, but a console transaction is
+// synchronous and invalidates the title's read-only preview before writing.
+// Keep one aggregate-initialized record: no global constructor or large
+// stack temporary is supported by the freestanding calculator host.
+namespace state_workspace {
+enum class Use:uint8_t {Empty,SavedRead,SavedReady,DebugRollback};
+static State buffer{};
+static Use use=Use::Empty;
+static const void* saved_owner=nullptr;
+State* begin_saved_read(const void* owner){
+    if(!owner||use==Use::SavedRead||use==Use::DebugRollback)return nullptr;
+    use=Use::SavedRead;saved_owner=owner;return &buffer;
+}
+bool finish_saved_read(const void* owner,bool valid){
+    if(use!=Use::SavedRead||saved_owner!=owner)return false;
+    use=valid?Use::SavedReady:Use::Empty;if(!valid)saved_owner=nullptr;return valid;
+}
+const State* saved_probe(const void* owner){
+    return use==Use::SavedReady&&saved_owner==owner?&buffer:nullptr;
+}
+void invalidate_saved_probe(const void* owner){
+    if(use==Use::SavedReady&&saved_owner==owner){use=Use::Empty;saved_owner=nullptr;}
+}
+}
 namespace debug_detail {
-static State rollback{};
 static bool active=false;
 static CoreObserver previous_observer{};
 bool transaction_active(){return active;}
 
 bool begin(State&s){
-    if(active||resolving||!validate(s))return false;
-    rollback=s;active=true;
+    if(active||resolving||state_workspace::use==state_workspace::Use::SavedRead||
+       &s==&state_workspace::buffer||!validate(s))return false;
+    state_workspace::use=state_workspace::Use::DebugRollback;
+    state_workspace::saved_owner=nullptr;state_workspace::buffer=s;active=true;
     // No presentation callback may retain a failed transaction's intermediate
     // identities. The App resets its presentation after a successful command.
     previous_observer=set_core_observer({});return true;
@@ -16,8 +39,9 @@ bool begin(State&s){
 bool finish(State&s,bool success){
     if(!active)return false;
     success=success&&s.phase!=Phase::Error&&validate(s);
-    if(!success)s=rollback;
-    set_core_observer(previous_observer);active=false;return success;
+    if(!success)s=state_workspace::buffer;
+    set_core_observer(previous_observer);active=false;
+    state_workspace::use=state_workspace::Use::Empty;return success;
 }
 static void abandon_relic_actions(State&s){
     auto&w=s.world_relics;
@@ -39,7 +63,7 @@ void abandon_room(State&s){
     reset_in_place(s.expansion);reset_in_place(s.ironclad);silent_combat_start(s);
     defect_combat_start(s);reset_in_place(s.regent);necro_combat_start(s);
     reset_in_place(s.event_cards);
-    for(unsigned i=0;i<MaxDeck;++i)s.event_cards.deck[i]=rollback.event_cards.deck[i];
+    for(unsigned i=0;i<MaxDeck;++i)s.event_cards.deck[i]=state_workspace::buffer.event_cards.deck[i];
     enemy_reset_combat(s);s.enemy_count=0;
     s.phase=Phase::Map;s.turn=0;s.energy=0;s.playing=-1;s.effect_count=s.card_count=0;
     s.draw.count=s.hand.count=s.discard.count=s.exhaust.count=s.powers.count=0;

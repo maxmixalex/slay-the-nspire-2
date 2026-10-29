@@ -106,7 +106,7 @@ static void actual(const char*folder,bool chinese=false){
  // Reading a title summary already exposes immutable saved stock. Prepare
  // its picture bytes during ordinary title frames without installing that
  // run into the active game, starting a tween, or invoking a save callback.
- saved_shop=a.game;frontend_saved_probe=saved_shop;
+ saved_shop=a.game;a.callbacks.load=[](State&s){s=saved_shop;return true;};CHECK(a.refresh_save());
  new_run(a.game,74,false);CHECK(a.game.phase!=Phase::Shop);CHECK(save(a.game,before));
  a.title=true;a.has_save=true;const int saved_picture=a.content.card_image(saved_shop.shop_cards[0]);
  a.advance(33);CHECK(a.merchant_preparation.planned&&a.merchant_preparation.active);

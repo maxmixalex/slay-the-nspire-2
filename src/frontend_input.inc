@@ -5,19 +5,17 @@ static FrontMenu front_item(const App&a,int row){
  return row>=0&&row<a.title_menu_count()?(a.has_save?saved[row]:fresh[row]):FrontQuit;
 }
 static bool resumable_run(const State&s){return s.phase!=Phase::Dead&&s.phase!=Phase::Complete&&s.phase!=Phase::Error;}
-// Aggregate initialization keeps this freestanding storage in static data;
-// a global default-constructor entry is unsupported by the Ndless loader.
-static State frontend_saved_probe{};
 // The title already holds a validated, read-only saved run for its Continue
 // summary. Its ordinary idle frames may prepare that shop's image bytes;
 // the active simulation is still restored only by the real Continue action.
 static const State* title_merchant_stock(const App&a){
- return a.title&&a.has_save&&!a.character_departure.active()&&
-  !a.character_select&&!a.profiles_open&&!a.library&&!a.compendium_open&&
-  !a.statistics_open&&!a.history_open&&!a.settings_open&&!a.help&&
-  !a.frontend_confirm&&a.run_mode.screen==RunMenu::Closed&&
-  a.auxiliary.screen==AuxiliaryScreen::None&&frontend_saved_probe.phase==Phase::Shop?
-  &frontend_saved_probe:nullptr;
+ if(!a.title||!a.has_save||a.debug_open||a.character_departure.active()||
+  a.character_select||a.profiles_open||a.library||a.compendium_open||
+  a.statistics_open||a.history_open||a.settings_open||a.help||
+  a.frontend_confirm||a.run_mode.screen!=RunMenu::Closed||
+  a.auxiliary.screen!=AuxiliaryScreen::None)return nullptr;
+ const State*probe=state_workspace::saved_probe(&a);
+ return probe&&probe->phase==Phase::Shop?probe:nullptr;
 }
 static SavedRunIdentity saved_run_identity(const State&s){
  SavedRunIdentity out{};out.seed=s.seed;out.character=s.character;
@@ -40,17 +38,19 @@ static void remember_saved(App&a,const State&s){
  a.saved_at=progress_matches(a.progress.current,s)&&a.progress.current_saved_revision==s.revision?a.progress.current_saved_at:0;
 }
 static void forget_saved(App&a){
+ state_workspace::invalidate_saved_probe(&a);
  a.has_save=false;a.saved_character=Character::Ironclad;a.saved_seed=a.saved_at=0;
  a.saved_floor=a.saved_hp=a.saved_max_hp=a.saved_gold=0;a.saved_run_seed=0;a.saved_ascension=a.saved_region=a.saved_current_region=0;
  a.saved_world=a.saved_practice=false;
 }
-static bool read_saved(App&a){
+static State* read_saved(App&a){
  // The host decodes once into scratch storage. Failed reads cannot touch the
  // visible simulation or sever its association with a previously saved run.
- if(!a.callbacks.load||!a.callbacks.load(frontend_saved_probe)){
-  a.has_save=false;return false;
- }
- remember_saved(a,frontend_saved_probe);return true;
+ State*probe=state_workspace::begin_saved_read(&a);
+ if(!probe)return nullptr;
+ const bool valid=a.callbacks.load&&a.callbacks.load(*probe);
+ if(!state_workspace::finish_saved_read(&a,valid)){a.has_save=false;return nullptr;}
+ remember_saved(a,*probe);return probe;
 }
 static bool terminal_probe(State&s){
  if(resumable_run(s)){player_kill(s,true);resolve_pending(s);}
@@ -58,7 +58,7 @@ static bool terminal_probe(State&s){
 }
 void App::forget_run_checkpoint(){run_save_linked=false;confirmed_run={};}
 bool App::refresh_save(){
- const bool existing=read_saved(*this);
+ const bool existing=read_saved(*this)!=nullptr;
  if(ftue_profile_pending){
   ftue_profile_pending=false;
   // A valid old run is an existing profile even without UI history. Only
@@ -68,8 +68,8 @@ bool App::refresh_save(){
  return existing&&has_save;
 }
 bool App::load_saved_run(){
- if(!read_saved(*this)||!has_save)return false;
- game=frontend_saved_probe;run_save_linked=true;reset_presentation();reset_map_act_intro(true);begin_progress(true);return true;
+ const State*probe=read_saved(*this);if(!probe||!has_save)return false;
+ game=*probe;run_save_linked=true;reset_presentation();reset_map_act_intro(true);begin_progress(true);return true;
 }
 static bool frontend_continue_saved_run(App&a){
  if(!a.load_saved_run())return false;
@@ -93,15 +93,15 @@ bool App::finish_saved_run(){
  // Starting a run does not associate it with another run already on disk.
  // Only Continue or a successful save establishes that ordinary lifecycle.
  if(!run_save_linked)return true;
- if(!read_saved(*this))return false;
- if(!has_save||!same_run_identity(saved_run_identity(game),saved_run_identity(frontend_saved_probe))){forget_run_checkpoint();return true;}
+ State*probe=read_saved(*this);if(!probe)return false;
+ if(!has_save||!same_run_identity(saved_run_identity(game),saved_run_identity(*probe))){forget_run_checkpoint();return true;}
  if(callbacks.clear_save){if(!callbacks.clear_save())return false;}
  else{
   // Older hosts can persist a terminal checkpoint instead of removing it.
   // Execute forced death on the probe, and adopt it only after a real save.
-  frontend_saved_probe=game;
-  if(!callbacks.save||!terminal_probe(frontend_saved_probe)||!callbacks.save(frontend_saved_probe))return false;
-  game=frontend_saved_probe;
+  *probe=game;
+  if(!callbacks.save||!terminal_probe(*probe)||!callbacks.save(*probe))return false;
+  game=*probe;
  }
  forget_saved(*this);forget_run_checkpoint();return true;
 }
@@ -125,11 +125,11 @@ void App::accept_frontend_confirm(){
  if(action==3){cancel_map_travel();persist_progress();quit=true;return;}
  if(action==1){
   if(!title)return;
-  if(!read_saved(*this)){message("Could not load the saved run. Please try again.");return;}
-  if(!has_save||!same_run_identity(confirmed,saved_run_identity(frontend_saved_probe))){menu=0;message("存档已变更，请重新确认");return;}
+  State*probe=read_saved(*this);if(!probe){message("Could not load the saved run. Please try again.");return;}
+  if(!has_save||!same_run_identity(confirmed,saved_run_identity(*probe))){menu=0;message("存档已变更，请重新确认");return;}
   if(callbacks.clear_save){if(!callbacks.clear_save()){message("Could not delete the saved run. Please try again.");return;}}
-  else if(!callbacks.save||!terminal_probe(frontend_saved_probe)||!callbacks.save(frontend_saved_probe)){message("Could not save the completed run. Please try again.");return;}
-  finish_progress(true,&frontend_saved_probe);forget_run_checkpoint();forget_saved(*this);menu=0;return;
+  else if(!callbacks.save||!terminal_probe(*probe)||!callbacks.save(*probe)){message("Could not save the completed run. Please try again.");return;}
+  finish_progress(true,probe);forget_run_checkpoint();forget_saved(*this);menu=0;return;
  }
  if(action==2&&paused&&resumable_run(game)){
   // RunManager.Abandon guarantees a forced player death; death prevention
@@ -163,7 +163,7 @@ bool App::frontend_input(Key key){
    case FrontStart:open_run_menu(RunMenu::Singleplayer);break;
    case FrontContinue:if(!frontend_continue_saved_run(*this)){refresh_save();menu=0;message("没有有效的存档");}break;
    case FrontAbandon:
-    if(refresh_save()){confirmed_run=saved_run_identity(frontend_saved_probe);frontend_confirm=1;frontend_choice=0;}
+    if(refresh_save()){confirmed_run=saved_run_identity(*state_workspace::saved_probe(this));frontend_confirm=1;frontend_choice=0;}
     else{menu=0;message("Could not load the saved run. Please try again.");}break;
    case FrontCompendium:open_compendium();break;
    case FrontSettings:settings_open=true;settings_language_open=false;settings_top=settings_tab=settings_item=0;break;

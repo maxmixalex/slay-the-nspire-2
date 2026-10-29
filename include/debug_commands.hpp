@@ -2,6 +2,7 @@
 
 #include "world_run.hpp"
 #include "original_events.hpp"
+#include "state_workspace.hpp"
 
 namespace spire {
 // The original developer console is included in every build. A failed command preserves the

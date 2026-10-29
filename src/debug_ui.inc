@@ -54,6 +54,7 @@ static void debug_print(App&a,const char*text,unsigned kind=0){
 static void set_debug_reply(App&a,const char*text,unsigned kind=0){debug_copy(a.debug_reply,sizeof a.debug_reply,text);debug_print(a,text,kind);}
 static bool debug_failure(App&a,const char*text){set_debug_reply(a,text,2);return false;}
 static void debug_begin(App&a,Character character=Character::Ironclad,uint32_t seed=1){
+    state_workspace::invalidate_saved_probe(&a);
     new_run(a.game,seed,false,character);world_begin_run(a.game);
     a.title=a.character_select=a.library=a.paused=a.help=a.settings_open=false;
     a.compendium_open=a.statistics_open=a.history_open=a.bestiary.open=a.profiles_open=a.profile_pending=false;
@@ -295,9 +296,12 @@ static void debug_submit(App&a){
 }
 bool App::debug_input(Key key){
     if(key==Key::Debug){debug_open=!debug_open;debug_editing=debug_open;debug_completing=false;pointer_cancel();physical_keys_cancel();pointer.visible=false;hit_count=0;
+        if(debug_open)state_workspace::invalidate_saved_probe(this);
+        else if(title&&has_save&&!state_workspace::saved_probe(this))refresh_save();
         if(debug_open&&!debug_output_count){debug_print(*this,"Slay the Spire 2 - Developer Console",1);debug_print(*this,"Type help. Tab completes commands and model IDs.");}return true;}
     if(!debug_open)return false;
-    if(key==Key::Back){if(debug_completing)debug_completing=false;else{debug_open=debug_editing=false;pointer_cancel();}return true;}
+    if(key==Key::Back){if(debug_completing)debug_completing=false;else{debug_open=debug_editing=false;pointer_cancel();
+        if(title&&has_save&&!state_workspace::saved_probe(this))refresh_save();}return true;}
     if(key==Key::Up||key==Key::Down){
         if(debug_completing){const unsigned count=debug_completion_total;if(count)debug_selection=(debug_selection+(key==Key::Up?-1:1)+int(count))%int(count);}
         else debug_history_move(*this,key==Key::Up?1:-1);
