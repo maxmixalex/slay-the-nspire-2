@@ -2,6 +2,14 @@
 
 ## Current checkpoint and remaining gates
 
+The final combined runtime now includes the bounded 32 KiB mixed-page locale
+reader and one-open artwork length/header probes. Independent native, actual
+pack, sanitizer, state/frame identity and ARM gates passed for both changes.
+They are integrated after `00cf0b0`; the next recorded gate is a full combined
+ARM build and all native suites through the declared ELF interpreter. No
+combined device speedup or completion is claimed before that run. The 57cd512
+data files are unchanged; only the launcher and runtime allocation will change.
+
 Runtime/resource checkpoint `57cd512e56d3a10f6cb8b424cbae969c8216b2d3` includes
 all nine feedback decisions, the eight artwork concerns, aligned NSL3 locale
 pages, four artwork handles, exact renderer/ARM memory paths, State sharing,
@@ -58,11 +66,11 @@ Two remaining structural costs are now assigned to independent worktrees:
   reopens while keeping four live artwork streams and accurate timing/input
   hooks. No payload scan or new image pool is allowed.
 
-Neither new candidate is yet integrated or claimed successful. Root is at
-`73da819` (packaging/readme successor only); source changes remain isolated
-until their correctness, sanitizer and ARM checks pass. The device agent waits
-for one combined next candidate, then repeats cold startup/reopen and the same
-six-second pair. No repeated run is selected merely for a better number.
+Both isolated candidates passed their correctness, sanitizer, actual-resource
+and ARM checks and have now been integrated. Root begins the combined gate
+from the checkpoint recorded above. The device agent waits for one combined
+launcher, then repeats cold startup/reopen and the same six-second pair. No
+repeated run is selected merely for a better number.
 
 The warm French OS after changing its language plus USB still cannot allocate
 the execution block. Its frozen largest free block is 22,145,408 bytes, below
