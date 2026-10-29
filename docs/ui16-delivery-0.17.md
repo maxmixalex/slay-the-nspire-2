@@ -154,8 +154,20 @@ At def1db3 with the final NSM1/NSL3 package:
   a natural three-act victory.
 - French OS cold startup after Ndless installation, with no game-language
   preference, reaches the French title automatically.
-- Dutch default/fallback, missing-part recovery and the final multipart
-  six-second performance pair are still being recorded before release.
+- Dutch OS cold startup without a game-language preference reaches the
+  English title and resumes the English combat fixture; the persisted language
+  bytes are `NSL1eng\n`. French similarly persists `NSL1fra\n`.
+- Removing the required shared artwork part produces the built-in English
+  `RESOURCES NOT FOUND` screen; Esc returns normally to the OS.
+
+The def1db3 multipart six-second pair is a **performance regression requiring
+correction before final delivery**: 159 frames, 197,375 interval ticks, 140,266
+render ticks, 20,919 resource ticks, 31 reads / 133,382 bytes / 21 seeks. One
+interval exceeds 250 ms. Its mean interval/render are 37.88/26.92 ms; UI15 is
+36.28/26.51 ms. The action-run maximum interval is 288.42 ms (not a subtracted
+maximum). Source/resource traces are being used to identify the extra physical
+reads and opens. This failed comparison is retained and is not replaced by the
+earlier old-container result below.
 
 The earlier matched six-second UI15 versus rendering-candidate comparison is
 27.560 to 27.874 FPS and mean render 26.511 to 25.395 ms, with identical
@@ -169,7 +181,10 @@ fail Zehn's contiguous allocation, and keeping all multipart files open failed
 the seventh part's open. The shared workspaces and bounded file cache fix the
 executed Chinese cold-start/normal-reopen path. A warm OS after changing its
 language and USB transfer can still fail allocation before main; French cold
-startup succeeds. That boundary is retained, not attributed to a French font
+startup succeeds. The frozen prelaunch heap's largest free block is 22,145,408
+bytes, already 266,412 bytes below def1db3's executable request before metadata
+allocation. The approximately 75 KB table/reader changes cannot fix this exact
+heap. That boundary is retained, not attributed to a French font
 load that never ran. Arbitrary heap-fragmentation immunity is not claimed.
 
 ## Reconciliation and remaining boundaries

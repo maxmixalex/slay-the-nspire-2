@@ -3,24 +3,31 @@
 ## Current UI16 checkpoint
 
 The recovered selected UI15 source and complete resource history are retained.
-The latest integrated runtime with full target acceptance is
+The integrated runtime with completed named correctness checks is
 `def1db3c68d3730edfddb4985feb403cc86b256b`. It passes 146/146 native suites and
 the ARM build. Actual NSM1/NSL3 resources pass complete byte reconstruction,
 all 16 language/default/failure gates and the named UI/font regressions.
 Ordinary Firebird CX II CAS / 396 MHz / OS 6.4.0.74 / Ndless r2022 passes
 Chinese default startup, normal exit/immediate no-USB reopening, the actual
 196-input UI feedback route, French cold default, Dutch cold English fallback
-and English recovery from a missing required artwork part. Final multipart
-performance measurement is still being recorded.
+and English recovery from a missing required artwork part. Its completed
+multipart performance pair **regresses**, so this package is not yet accepted
+for final performance delivery: 159 frames in the matched six-second window
+versus UI15's 166, with 31 physical reads / 133,382 bytes / 21 seeks versus
+19 / 116,259 / 19. Resource ticks rise from 10,886 to 20,919 and one interval
+exceeds 250 ms (288.42 ms in the action run). The English NSL3 compressed-page
+read path and multipart opens are being traced independently. Do not substitute
+the earlier 4cf0019/legacy-file improvement for this final-package result.
 
 `efe69d1003825fbf8a6fbd933a3f2727316d3d1a` subsequently lowers the measured
 fixed addressing-table bounds to 128 spans and 2,048 locale pages (8 MiB).
 The actual data needs 95 spans and at most 1,264 pages. This removes 22,528
 bytes of BSS without changing any resource bytes. Native boundary and full
 English/Chinese logical readback checks pass; all 16 offline roundtrips pass.
-The final combined ARM/native/device acceptance awaits the isolated selected
-hand-card raster reuse candidate in the performance worktree. That candidate
-has not been merged and must not be claimed as completed.
+The selected hand-card raster reuse has now been integrated through
+`9063ca2`. Its isolated complete-frame/state/I/O comparison, sanitizers and ARM
+build pass; its 53,196-byte allocation saving is separate from the 22,528-byte
+address-table reduction. Combined acceptance still awaits the I/O correction.
 
 The storage and user-feedback details are in
 [ui16-delivery-0.17.md](ui16-delivery-0.17.md). At def1db3 the default installed
@@ -31,7 +38,10 @@ only after the final combined build. The 65–70 MB installation target remains
 unmet. No texture/frame removal or hot image-pool shrink is used.
 
 The warm OS language-change plus USB startup can still fail contiguous Zehn
-allocation before main. French cold startup succeeds. Keep that boundary and
+allocation before main. Its frozen prelaunch largest free block is 22,145,408
+bytes, already 266,412 bytes below def1db3's executable request before metadata
+allocations. The small cache/table savings cannot repair that exact heap
+state. French cold startup succeeds. Keep that boundary and
 the failed attempts visible; do not confuse an allocation failure with a
 locale pack load that never began. The device worktree retains precise
 snapshots for the final combined candidate's comparison.
