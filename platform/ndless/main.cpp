@@ -286,7 +286,7 @@ extern "C" int main(int argc,char**argv){
     Display display;if(!nd_lcd_init(0))return 6;display.active=true;
     auto blit=nd_blitter(0);if(!blit)return 7;
     for(auto&pixel:app.pixels)pixel=0;blit(app.pixels);
-    ResourceFile common{},source{};spire::SplitResourceSource split;
+    ResourceFile common{},source{};static spire::SplitResourceSource split;
     const auto preferred=language_preference();bool selected_language=false;
     common.file=open_data_file(launcher,spire::SharedDataFilename);
     if(!common.file){boot_error(blit,spire::BootText::MissingResources,spire::BootLanguage::Unknown);return 4;}

@@ -2,29 +2,11 @@
 #include <stddef.h>
 #include <stdint.h>
 #include "locale_languages.hpp"
+#include "resource_source_base.hpp"
+#include "storage_source.hpp"
 
 namespace spire {
 
-// Progress reports completed work within one named phase, not an estimated
-// fraction of total elapsed time. A sink must not re-enter the resource reader.
-enum class ResourceStage : uint8_t { Header,Integrity,Directory,Images,TileIndex,Glyphs,Strings,Ready,Count };
-using ResourceProgress=void(*)(void*,ResourceStage,uint32_t completed,uint32_t total);
-
-// A single immutable resource file. read_at must fill the entire requested
-// range and return true, or return false. It must not retain dst. The provider
-// and context must outlive every reader using them. direct is optional and
-// must address length immutable bytes when supplied.
-struct ResourceSource {
-    void* context{};
-    uint32_t length{};
-    bool (*read_at)(void*,uint32_t offset,void* dst,uint32_t count){};
-    const uint8_t* direct{};
-    ResourceProgress progress{};
-    // A compressed directory adapter may require this prefix to be retained
-    // by Content before image reads can acquire the shared decode workspace.
-    uint32_t required_cached_prefix{};
-    static ResourceSource memory(const uint8_t*,size_t);
-};
 
 enum class ResourceLanguage : uint32_t { English=1,Chinese=2,TraditionalChinese=3,German=4,LatinAmericanSpanish=5,French=6,Indonesian=7,Italian=8,Japanese=9,Korean=10,Polish=11,Portuguese=12,Russian=13,Spanish=14,Thai=15,Turkish=16 };
 
@@ -47,6 +29,7 @@ public:
     bool read(uint32_t offset,void* dst,uint32_t count)const;
 private:
     ResourceSource common_{},localized_{};
+    BlockedResourceSource blocked_locale_;
     uint32_t prefix_{},artwork_{},length_{};
     uint32_t packed_directory_{},packed_data_{},packed_tail_{};
     ResourceLanguage language_id_{ResourceLanguage::English};
@@ -55,7 +38,7 @@ private:
     static void progress_at(void*,ResourceStage,uint32_t,uint32_t);
     bool read_directory(uint32_t,void*,uint32_t)const;
 };
-static_assert(sizeof(SplitResourceSource)<=256,"Split resources must not require a resident pack or mapping table");
+static_assert(sizeof(SplitResourceSource)<=25*1024,"Locale storage keeps a bounded 4 KiB decode cache and addressing table");
 
 struct ResourceReadStats {
     uint32_t callbacks{},cache_hits{},cache_misses{},bypasses{},direct_reads{};

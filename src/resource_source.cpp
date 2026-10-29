@@ -35,7 +35,7 @@ static bool split_read(const ResourceSource& source,uint32_t offset,void* dst,ui
 }
 }
 void SplitResourceSource::close(){
-    common_={};localized_={};prefix_=artwork_=length_=0;valid_=false;
+    common_={};localized_={};blocked_locale_.close();prefix_=artwork_=length_=0;valid_=false;
     packed_directory_=packed_data_=packed_tail_=0;
     language_id_=ResourceLanguage::English;
 }
@@ -44,7 +44,14 @@ bool SplitResourceSource::open(ResourceSource common,ResourceSource localized,Re
     if(!locale_language_valid(unsigned(expected))||
        common.context==this||localized.context==this)return false;
     uint8_t c[CommonHeader],l[PackedLanguageHeader];
-    if(!split_read(common,0,c,sizeof c)||!split_read(localized,0,l,LanguageHeader))return false;
+    const uint32_t probe=localized.length<LanguageHeader?localized.length:LanguageHeader;
+    if(probe<4||!split_read(localized,0,l,probe))return false;
+    if(split_u32(l)==0x315a534eu){
+        if(!blocked_locale_.open(localized))return false;
+        localized=blocked_locale_.source();
+        if(!split_read(localized,0,l,LanguageHeader))return false;
+    }else if(probe!=LanguageHeader)return false;
+    if(!split_read(common,0,c,sizeof c))return false;
     const bool packed=split_u32(l)==0x324C534Eu;
     if(split_u32(c)!=0x3143534Eu||(!packed&&split_u32(l)!=0x314C534Eu)||
        split_u32(c+4)!=1||split_u32(l+4)!=(packed?2u:1u)||

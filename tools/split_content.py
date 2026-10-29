@@ -367,6 +367,9 @@ def compress_language_directory(localized, *, details=None):
 
 def reconstruct(common, localized, language):
     """Independent container readback used by packaging and conversion tests."""
+    if localized[:4] == b'NSZ1':
+        from storage_parts import expand_blocks
+        localized = expand_blocks(localized)
     require(language in LANGUAGES and len(common) >= COMMON_HEADER and
             len(localized) >= LANGUAGE_HEADER, "Invalid split container size/language")
     c = struct.unpack_from("<4s7I32s", common)
