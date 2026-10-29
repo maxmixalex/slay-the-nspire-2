@@ -9,17 +9,21 @@ import re
 import zipfile
 
 from build_web import ROOT, package_runtime
-from split_content import language_resource_version
+from split_content import language_resource_version, reconstruct, LANGUAGES
+from storage_parts import PART_FILES, join_parts
 
 
 def resource_version(path):
     try:
         return language_resource_version(path.read_bytes())
     except ValueError as error:
-        raise ValueError('Expected a valid NSL1/NSL2 language resource: ' + str(path)) from error
+        raise ValueError('Expected a valid NSL1/NSL2/NSL3 language resource: ' + str(path)) from error
 
 
 def readme(info):
+    shared = ('data/nSpire2.dat.tns         公共资源索引 / artwork index\n' +
+              ''.join('data/'+name+'\n' for name in PART_FILES)) if info.get('multipart_artwork') else \
+             'data/nSpire2.dat.tns         公共图片与动画 / shared artwork and animation\n'
     if info.get('local_checkpoints'):
         sources = (f"Runtime source checkpoint (local): {info['runtime_checkpoint']}\n"
                    f"Resource converter checkpoint (local): {info['resource_checkpoint']}\n"
@@ -35,17 +39,22 @@ Copy nSpire2.tns and the data/state folders into the game's calculator directory
 Open nSpire2.tns. A color TI-Nspire with Ndless is required.
 
 nSpire2.tns                  程序 / launcher
-data/nSpire2.dat.tns         公共图片与动画 / shared artwork and animation
+{shared.rstrip()}
 data/nSpire2.eng.dat.tns     English
 data/nSpire2.zhs.dat.tns     简体中文
 state/                      局面、历史、设置、语言和档位 / saves and settings
 
 只安装需要的语言文件。设置中可切换已安装语言；语言选择全局保存。
-首次启动按系统语言选择；未安装对应语言时尝试英语，再选择首个已安装语言。
+公共资源索引和全部用途包必须来自同一版本并一起安装，不能按用途删减。
+升级时替换程序与 data 中的资源，保留已有 state 文件夹中的档案。
+首次启动按系统语言选择；对应语言缺失或无法加载时尝试英语，再选择首个可用语言。
 主菜单左上角可切换三个档案，各自保存局面、历史与游戏设置。
 程序会创建缺失的 state 文件夹。所有保存、临时文件、备份和诊断文件均写入 state。
 Install only the desired language files in data. Settings lists installed languages.
-First launch follows the system language, then English, then the first installed language.
+Install the matching artwork index and every concern file together. They are all required.
+When updating, replace the launcher and data resources; keep existing files in state.
+First launch follows the system language, then English, then the first usable language.
+Missing or unusable language resources fall back through the same sequence. Startup errors are English.
 The top-left profile button selects one of three independent run/history/settings profiles.
 Language is shared. The launcher creates state if necessary; all mutable files stay there.
 
@@ -104,6 +113,16 @@ def main():
             p.error('Checkpoints must be full Git commit IDs')
     paths = {'nSpire2.tns': args.launcher, 'data/nSpire2.dat.tns': args.common,
              'data/nSpire2.eng.dat.tns': args.eng, 'data/nSpire2.zhs.dat.tns': args.zhs}
+    common_bytes=args.common.read_bytes()
+    multipart=common_bytes[:4]==b'NSM1'
+    if multipart:
+        if not args.calculator_only:
+            p.error('Multipart artwork currently requires --calculator-only')
+        parts={name:args.common.parent/name for name in PART_FILES}
+        for name,path in parts.items():
+            if not path.is_file():p.error('Artwork concern file is missing: '+str(path))
+            paths['data/'+name]=path
+        common_bytes=join_parts(common_bytes,{name:path.read_bytes() for name,path in parts.items()})
     if not args.calculator_only and not args.wasm:
         p.error('Provide --wasm or choose --calculator-only')
     for path in (*paths.values(), *([args.wasm] if args.wasm else [])):
@@ -113,13 +132,16 @@ def main():
     version = resource_version(args.eng)
     if resource_version(args.zhs) != version:
         p.error('English and Chinese resources must use the same format version')
+    for code,path in (('eng',args.eng),('zhs',args.zhs)):
+        reconstruct(common_bytes,path.read_bytes(),code)
     info = dict(reference='v0.111.0 / 41cef1ea', resource_format=version, save_version=17,
                 progress_version=9, settings_version=6, calculator_run_storage='NSZ1 or raw NSV1',
                 calculator_history_storage='NSZ1 or raw NSH1-9',
                 stage=args.stage,
                 runtime_checkpoint=args.runtime_checkpoint,
                 resource_checkpoint=args.resource_checkpoint,
-                developer_console=True, installation_layout="data/state",
+                developer_console=True, installation_layout="data/state",multipart_artwork=multipart,
+                locale_storage='NSL3' if args.eng.read_bytes()[:4]==b'NSL3' else 'NSL1/NSL2',
                 calculator_only=args.calculator_only,local_checkpoints=args.local_checkpoints,
                 files={name: path.stat().st_size for name, path in paths.items()})
     stem = f'Slay-the-Nspire-2-0.17-{args.stage}-bilingual'
@@ -152,8 +174,8 @@ def main():
                         source_checkpoint=args.runtime_checkpoint)
     optional=None
     if args.optional_locales:
-        extra={'data/'+path.name:path for path in sorted(args.optional_locales.glob('nSpire2.*.dat.tns'))
-               if path.name not in ('nSpire2.eng.dat.tns','nSpire2.zhs.dat.tns')}
+        extra={'data/nSpire2.'+code+'.dat.tns':args.optional_locales/('nSpire2.'+code+'.dat.tns')
+               for code in LANGUAGES if code not in ('eng','zhs')}
         if len(extra)!=14 or any(resource_version(path)!=version for path in extra.values()):
             raise ValueError('Expected the fourteen additional matching original locales')
         optional=args.output/f'Slay-the-Nspire-2-0.17-{args.stage}-optional-languages.zip'

@@ -219,7 +219,7 @@ int main(int argc,char**argv){
                 auto localized=file_source(resource.file);spire::BlockedResourceSource blocked;
                 bool good=read_resource(resource.file,0,tag,4);
                 if(good&&!std::memcmp(tag,"NSL3",4)){good=blocked.open(localized);localized=blocked.source();}
-                if(good&&localized.read_at(localized.context,36,value,4)&&!value[1]&&!value[2]&&!value[3]&&spire::locale_language_valid(value[0]))language=static_cast<spire::BootLanguage>(value[0]);}
+                if(good&&localized.read_at&&localized.read_at(localized.context,36,value,4)&&!value[1]&&!value[2]&&!value[3]&&spire::locale_language_valid(value[0]))language=static_cast<spire::BootLanguage>(value[0]);}
         }
         if(!resource.file)return error(spire::BootText::MissingLanguage);
         if(language==spire::BootLanguage::Unknown||!split.open(common_source,file_source(resource.file),
