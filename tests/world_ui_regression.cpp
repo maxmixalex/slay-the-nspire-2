@@ -1465,8 +1465,11 @@ static void feedback_hud_and_merchant(){
   CHECK(a.room_presentation.merchant.y(opened)==-222);
   // Cold inventory preparation runs alongside the original opening tween;
   // completion cannot insert a loading screen or restart that animation.
-  for(unsigned steps=0;a.merchant_preparation.active&&steps<128;++steps){a.advance(33);a.render();unchanged();}
-  CHECK(!a.merchant_preparation.active&&a.content.healthy());
+  // The alternate idle clip is optional background work. This gate
+  // concerns visible inventory; hover sets have a separate bounded gate.
+  const auto stock_ready=[&](){const auto&p=a.merchant_preparation;return p.cursor>=p.stock_count&&p.card==ShopCardCount&&p.prices_ready;};
+  for(unsigned steps=0;!stock_ready()&&steps<128;++steps){a.advance(33);a.render();unchanged();}
+  CHECK(stock_ready()&&a.content.healthy());
   CHECK(a.room_presentation.merchant.start==opened);
   a.advance(250);a.advance(250);a.advance(200);a.render();unchanged();
   // UI12 keeps the source rug and fits readable cards into two LCD rows.

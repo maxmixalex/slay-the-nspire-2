@@ -546,8 +546,11 @@ static void merchant_motion_and_pickups(){
  // The fixed Back control is immediately available while the original
  // rug starts, including a cold inventory still preparing its stock.
  CHECK(exists(HitKind::Choice,ShopLeave)||exists(HitKind::UiAction,int(UiAction::CloseShop)));unchanged();
- for(unsigned steps=0;a.merchant_preparation.active&&steps<128;++steps){a.advance(33);a.render();unchanged();}
- CHECK(!a.merchant_preparation.active&&a.content.healthy());
+ // The alternate idle clip is optional background work. This gate
+ // concerns visible inventory; hover sets have a separate bounded gate.
+ const auto stock_ready=[&](){const auto&p=a.merchant_preparation;return p.cursor>=p.stock_count&&p.card==ShopCardCount&&p.prices_ready;};
+ for(unsigned steps=0;!stock_ready()&&steps<128;++steps){a.advance(33);a.render();unchanged();}
+ CHECK(stock_ready()&&a.content.healthy());
  CHECK(a.room_presentation.merchant.start==began);
  if(a.map_clock_ms-began<350)room_clock(350-(a.map_clock_ms-began));
  CHECK(a.room_presentation.merchant.y(began+350)>0&&a.room_presentation.merchant.y(began+350)<18);capture("merchant-rug-opening");unchanged();
