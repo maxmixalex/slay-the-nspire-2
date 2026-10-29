@@ -104,6 +104,10 @@ struct Canvas{
         if(!coverage){pixels[at]=alpha==255?color:blend(pixels[at],color,alpha);return;}
         unsigned previous=coverage[at];
         if(alpha==255||!previous){pixels[at]=color;coverage[at]=(uint8_t)alpha;return;}
+        // Once a cached card pixel is opaque, source-over keeps it opaque.
+        // Its straight-alpha normalization is exactly the ordinary rounded
+        // RGB565 blend; do not divide all three channels by255 dynamically.
+        if(previous==255){pixels[at]=blend(pixels[at],color,alpha);return;}
         unsigned back=div255(previous*(255-alpha)),total=alpha+back;
         unsigned r=((color>>11)*alpha+(pixels[at]>>11)*back+total/2)/total;
         unsigned g=(((color>>5)&63)*alpha+((pixels[at]>>5)&63)*back+total/2)/total;

@@ -233,6 +233,24 @@ static void draw_hand_tile(Canvas&c,const HandTile&t,HandPose p,bool focused,uns
             p.cx-HandPivotX/1024,p.cy-HandPivotY/1024,HandTileW,HandTileH);
         hand_card_animated_layers(c,t,p,brightness,erosion);return;
     }
+    // Flying/generated cards often have an affine pose but no shader or
+    // Canvas modulation. Resolve that state once, preserving the original
+    // truncated per-row origins and per-column steps exactly. The general
+    // painter remains responsible for every shaded/covered/eroded variant.
+    if(!glow&&!erosion&&brightness==255&&c.opacity==255&&c.brightness==255&&
+       c.tint_red==255&&c.tint_green==255&&c.tint_blue==255&&!c.color_matrix&&!c.coverage&&!c.occlusion){
+        for(int y=top;y<bottom;++y){
+            int u=HandPivotX+((left-p.cx)*p.cosine+(y-p.cy)*p.sine)*1024/p.scale;
+            int v=HandPivotY+(-(left-p.cx)*p.sine+(y-p.cy)*p.cosine)*1024/p.scale;
+            auto*out=c.pixels+y*c.pitch+left;
+            for(int x=left;x<right;++x,++out,u+=du,v+=dv){
+                if(unsigned(u)>=HandTileW*1024u||unsigned(v)>=HandTileH*1024u)continue;
+                const unsigned at=unsigned(v>>10)*HandTileW+unsigned(u>>10),alpha=t.alpha[at];
+                if(alpha)*out=alpha==255?t.pixels[at]:blend(*out,t.pixels[at],alpha);
+            }
+        }
+        hand_card_animated_layers(c,t,p,brightness,erosion);return;
+    }
     for(int y=top;y<bottom;y++){
         int u=HandPivotX+((left-p.cx)*p.cosine+(y-p.cy)*p.sine)*1024/p.scale;
         int v=HandPivotY+(-(left-p.cx)*p.sine+(y-p.cy)*p.cosine)*1024/p.scale;

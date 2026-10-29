@@ -3,6 +3,7 @@
 #include "../src/app.cpp"
 #include "content_fixture.hpp"
 #include "inplace_reset.hpp"
+#include <algorithm>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -235,6 +236,32 @@ static void focused_card_scale(){
         CHECK(count==unsigned(2*(right-left+bottom-top)));
         clear();draw_hand_tile(c,transparent,example.pose,false);for(auto pixel:app.pixels)CHECK(pixel==0x0321);
     }
+}
+static void affine_card_pixels(){
+ static HandTile tile;tile.card={Strike,0};tile.overlay=0;
+ for(unsigned i=0;i<HandTileW*HandTileH;++i){tile.pixels[i]=uint16_t((i*7193u)^(i>>3));
+  const unsigned value=i%7;tile.alpha[i]=value==0?0:value<=3?255:uint8_t(i*19);}
+ std::vector<uint16_t> expected(320*240);
+ for(int scale:{97,511,853,1023,1024,1025,1277})for(int angle:{-759,0,291,1024})
+ for(int center:{-11,37,160,319}){
+  Canvas canvas{app};const HandPose pose{center,127,scale,CombatCardMotion::sine(angle),CombatCardMotion::sine(angle+1024)};
+  for(unsigned i=0;i<expected.size();++i)app.pixels[i]=expected[i]=uint16_t(i*37);
+  Canvas oracle{app,expected.data()};
+  const int sn=std::abs(pose.sine),cs=std::abs(pose.cosine);
+  const int half_w=((cs*((HandPivotX+1023)/1024)+sn*((HandTileH*1024-HandPivotY+1023)/1024))*scale)/(1024*1024)+2;
+  const int half_h=((sn*((HandPivotX+1023)/1024)+cs*((HandTileH*1024-HandPivotY+1023)/1024))*scale)/(1024*1024)+2;
+  const int left=std::max(0,center-half_w),right=std::min(320,center+half_w),top=std::max(0,127-half_h),bottom=std::min(240,127+half_h);
+  const int du=pose.cosine*1024/scale,dv=-pose.sine*1024/scale;
+  for(int y=top;y<bottom;++y)for(int x=left;x<right;++x){
+   const int u=HandPivotX+((left-center)*pose.cosine+(y-127)*pose.sine)*1024/scale+(x-left)*du;
+   const int v=HandPivotY+(-(left-center)*pose.sine+(y-127)*pose.cosine)*1024/scale+(x-left)*dv;
+   if(u<0||v<0||u>=HandTileW*1024||v>=HandTileH*1024)continue;
+   const unsigned at=unsigned(v/1024)*HandTileW+unsigned(u/1024);
+   oracle.paint(y*320+x,tile.pixels[at],tile.alpha[at]);
+  }
+  draw_hand_tile(canvas,tile,pose,false);
+  CHECK(!std::memcmp(expected.data(),app.pixels,expected.size()*sizeof(uint16_t)));
+ }
 }
 static void synthetic_pixels(){
     Canvas c{app};clear();draw_card_face(c,{Strike,0},30,50,80,112,1,0,-1,-1,nullptr,"Simple description.");
@@ -600,5 +627,5 @@ static void ui6_screens(){
 int main(int argc,char**argv){
     Bytes data;if(argc>1){FILE*f=std::fopen(argv[1],"rb");CHECK(f);data.resize(spire_test::pack_size(f));CHECK(std::fread(data.data(),1,data.size(),f)==data.size());CHECK(!std::fclose(f));}else data=fixture();
     if(argc>2)captures=argv[2];CHECK(app.init(data.data(),data.size(),{}));CHECK(app.content.current_profile());new_run(app.game,781,true);
-    glyph_measurement(data);bounded_canvas();label_local_rainbow_pixels();title_layout();card_cache_pixels();original_resource_colors();original_resource_crosses();focused_card_scale();if(argc==1)synthetic_pixels();character_hover();top_bar_large_rotation();original_proceed_translation();if(argc>1)character_confirm_art();long_hand_description();ui7_cards();ui7_hud_nodes();ui6_screens();samples();top_bar_session_lifecycle(data);if(argc>1)static_hover_columns();std::printf("card/HUD UI: %u checks passed; %s profile, zero-I/O metrics, exact grid cache, original resource colors/crosses, automatic overflow tooltip, transformed focus, bounded draw and selector samples\n",checks,argc>1?"actual":"synthetic");
+    glyph_measurement(data);bounded_canvas();label_local_rainbow_pixels();title_layout();card_cache_pixels();original_resource_colors();original_resource_crosses();focused_card_scale();affine_card_pixels();if(argc==1)synthetic_pixels();character_hover();top_bar_large_rotation();original_proceed_translation();if(argc>1)character_confirm_art();long_hand_description();ui7_cards();ui7_hud_nodes();ui6_screens();samples();top_bar_session_lifecycle(data);if(argc>1)static_hover_columns();std::printf("card/HUD UI: %u checks passed; %s profile, zero-I/O metrics, exact grid cache, original resource colors/crosses, automatic overflow tooltip, transformed focus, bounded draw and selector samples\n",checks,argc>1?"actual":"synthetic");
 }

@@ -684,8 +684,33 @@ static void character_name_outlines(){
  for(Glyph glyph:{Glyph{},Glyph{&unused,0,5,8},Glyph{&unused,7,0,8},Glyph{&unused,47,5,8},Glyph{&unused,7,39,8}})
   verify(glyph);
 }
+static void covered_paint_contract(){
+ uint16_t target=0;uint8_t coverage=0;Canvas canvas{app,&target,1,1,1,&coverage};
+ // Every RGB565 channel pair and every source alpha cross an opaque cache
+ // pixel. This oracle uses the former independent integer normalization.
+ for(unsigned source=0;source<64;++source)for(unsigned destination=0;destination<64;++destination)
+ for(unsigned alpha=0;alpha<256;++alpha){
+  const uint16_t foreground=uint16_t(((source&31)<<11)|(source<<5)|((source*17)&31));
+  const uint16_t background=uint16_t(((destination&31)<<11)|(destination<<5)|((destination*19)&31));
+  const auto channel=[&](unsigned shift,unsigned mask){return ((((foreground>>shift)&mask)*alpha+((background>>shift)&mask)*(255-alpha)+127)/255)<<shift;};
+  const uint16_t expected=uint16_t(channel(11,31)|channel(5,63)|channel(0,31));
+  target=background;coverage=255;canvas.paint(0,foreground,alpha);
+  CHECK(target==expected&&coverage==255);
+ }
+ // Partial coverage still normalizes by its accumulated alpha, including
+ // zero-alpha no-op and an opaque source replacing translucent storage.
+ for(unsigned previous=0;previous<255;++previous)for(unsigned alpha=0;alpha<256;++alpha){
+  const uint16_t foreground=color(previous*73+alpha),background=color(previous+alpha*41);
+  target=background;coverage=uint8_t(previous);canvas.paint(0,foreground,alpha);
+  if(!alpha){CHECK(target==background&&coverage==previous);continue;}
+  if(!previous||alpha==255){CHECK(target==foreground&&coverage==alpha);continue;}
+  const unsigned back=(previous*(255-alpha)+127)/255,total=alpha+back;
+  const auto channel=[&](unsigned shift,unsigned mask){return ((((foreground>>shift)&mask)*alpha+((background>>shift)&mask)*back+total/2)/total)<<shift;};
+  CHECK(target==uint16_t(channel(11,31)|channel(5,63)|channel(0,31))&&coverage==total);
+ }
+}
 int main(){
- blend_reference();
+ blend_reference();covered_paint_contract();
  const auto data=fixture();CHECK(app.content.open(data.data(),data.size()));
  CHECK((uintptr_t(app.content.image(0).pixels)&1u)==0u);
  rectangles();material_icons();pictures();masked_pictures();nine_panels();opaque_covers();picture_regions();picture_row_views();fake_merchant_atlas();title_particles();scaled_sparse_clipping();CHECK(app.content.healthy());
