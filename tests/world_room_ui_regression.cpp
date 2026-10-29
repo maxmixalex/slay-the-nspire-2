@@ -549,7 +549,7 @@ static void merchant_motion_and_pickups(){
  // The alternate idle clip is optional background work. This gate
  // concerns visible inventory; hover sets have a separate bounded gate.
  const auto stock_ready=[&](){const auto&p=a.merchant_preparation;return p.cursor>=p.stock_count&&p.card==ShopCardCount&&p.prices_ready;};
- for(unsigned steps=0;!stock_ready()&&steps<128;++steps){a.advance(33);a.render();unchanged();}
+ for(unsigned steps=0;!stock_ready()&&steps<8192;++steps){a.advance(33);a.render();unchanged();}
  CHECK(stock_ready()&&a.content.healthy());
  CHECK(a.room_presentation.merchant.start==began);
  if(a.map_clock_ms-began<350)room_clock(350-(a.map_clock_ms-began));
@@ -602,8 +602,12 @@ static void merchant_model_hover_sets(){
  begin_room(WorldRoom::Shop);a.game.gold=9999;
  a.game.world.shop_relics[0]=WorldRelicFencingManual;a.game.shop_potions[0]=uint8_t(Potion::CunningPotion);
  a.game.shop_sold=0;a.render();click(UiAction::OpenShop);
- for(unsigned steps=0;a.merchant_preparation.active&&steps<128;++steps){a.advance(33);a.render();}
- CHECK(!a.merchant_preparation.active&&a.content.healthy());room_clock(1000);snapshot();
+ // Offline rendering yields after four decoder units, without the device
+ // timer's larger per-frame work allowance. Bound the complete hover warmup
+ // by the same execution limit as merchant_preparation_regression.
+ const auto hover_ready=[&](){const auto&p=a.merchant_preparation;return p.cursor>=p.stock_count&&p.card==ShopCardCount&&p.prices_ready&&p.tip_slot==ShopRemove-ShopRelicStart;};
+ for(unsigned steps=0;!hover_ready()&&steps<8192;++steps){a.advance(33);a.render();}
+ CHECK(hover_ready()&&a.content.healthy());room_clock(1000);snapshot();
  for(int slot=ShopRelicStart;slot<ShopRemove;++slot){
   a.cursor=slot;a.pointer.visible=false;a.render();CardHoverTarget owner{};CHECK(merchant_hover_target(a,owner));
   CHECK(owner.merchant&&owner.merchant_left&&owner.owner.w==22&&owner.owner.h==22);
