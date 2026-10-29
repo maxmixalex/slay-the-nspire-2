@@ -1,6 +1,7 @@
 # UI16 runtime performance and allocation follow-up
 
-This records the runtime work through `d4e41a8` on 2026-10-29. The restored
+This records the runtime work through `d4e41a8` and read-only startup
+diagnosis through integrated `402fc15` on 2026-10-29. The restored
 UI15 baseline is `49040d5`; its ARM launcher is byte-identical to the recovered
 UI15 calculator launcher. The rendering/memory candidate used in the device
 comparison is `4cf0019`. The later shared-State change is verified separately
@@ -227,6 +228,68 @@ diagnosis does not substitute for those device checks. A future build budget
 must also guard the actual executable/BSS request, with headroom based on
 that executed configuration, while retaining the existing total header
 ceiling. No such budget can guarantee every arbitrarily fragmented OS heap.
+
+The integration owner subsequently combined both workspace changes in
+`402fc15`. On the same ordinary CX II CAS OS, the device agent executed that
+launcher with the original NSC1/NSL2 containers: cold launch to the Chinese
+title, normal Quit to the OS, and immediate launch to the Chinese title again
+without USB between them. All three visible outcomes succeeded. The private
+captures are `ui16-legacy-first-title.ppm`, `ui16-legacy-normal-exit.ppm` and
+`ui16-legacy-reopen-no-usb.ppm`, with the `ui16-fixed-legacy` serial/input log
+and exit snapshot. This closes the observed allocation failure for that
+executed configuration. It does not establish startup with the new multipart
+files; the independent failure below was still present there.
+
+## Multipart startup stream diagnosis
+
+The same integrated `402fc15` launcher gets past Zehn allocation with the
+new NSM1 installation, then shows the English `RESOURCES NOT FOUND` screen.
+The device agent verified the twelve installed data filenames and sizes.
+Read-only extraction of `ui16-fixed-resource-error.snap`, matched to the
+actual ARM ELF, locates the live `pack_path` at
+`/documents/nSpire2/data/nSpire2.effects.dat.tns`. An independent scan by the
+device agent finds the same path. No emulator or OS state was patched.
+
+That file is the seventh artwork part. The straight-line startup loop has
+already opened the common index and six earlier parts, keeping all seven
+resource streams open; the eighth resource open fails. Locale probing has
+not begun. This identifies where the eager-open design fails in the
+observed OS configuration. It does not establish a universal seven-file
+limit, or prove that an arbitrary missing-resource screen has this cause.
+
+The exact r2022
+[`stubs.cpp`](https://github.com/ndless-nspire/Ndless/blob/b88e4af2f74f10f3b28c9f7290a79de8fd9108b8/ndless-sdk/libsyscalls/stubs.cpp)
+and
+[`syscall-list.h`](https://github.com/ndless-nspire/Ndless/blob/b88e4af2f74f10f3b28c9f7290a79de8fd9108b8/ndless-sdk/include/syscall-list.h)
+confirm that `nuc_fopen` directly calls OS syscall zero, as does this
+launcher's `nd_open`. The `MAX_OPEN_FILES = 20` array in
+[`stdlib.cpp`](https://github.com/ndless-nspire/Ndless/blob/b88e4af2f74f10f3b28c9f7290a79de8fd9108b8/ndless-sdk/libsyscalls/stdlib.cpp)
+maps newlib descriptors to Nucleus streams. This launcher does not use that
+array, so its constant cannot explain or size this limit. The official
+[`ploaderhook.c`](https://github.com/ndless-nspire/Ndless/blob/b88e4af2f74f10f3b28c9f7290a79de8fd9108b8/ndless/src/resources/ploaderhook.c)
+also closes the executable stream before calling the program entry; it is
+not a permanently held game-time stream.
+
+The integration fix is a bounded artwork-handle cache, with **four slots**
+selected to retain the typical room/interface/card/effect working set.
+Each slot must own its independent `ResourceFileCursor`; eviction, reopen
+and a failed read invalidate the cursor. The common NSM1 stream can close
+after `MultipartResourceSource::open` copies its complete header and span
+table. Subsequent multipart reads use only that resident mapping and the
+part sources. The older NSC1 path still needs its common stream. The title's
+language-change guard must consequently test the usable resource source,
+not whether the already-consumed index stream remains open.
+
+With that ownership, ordinary reads hold at most four artwork streams and
+one locale stream; audited state/progress/profile/feedback operations add
+one stream at a time. A language switch temporarily retains both the old
+and new locale streams for rollback, giving a conservative peak of seven
+including a state operation. These are application-owned stream counts,
+not an assertion about the OS's global capacity. Bounded host tests must
+exercise eviction, sequential cursor reuse, reopen failure, language
+rollback and cleanup, and actual NSM1 device startup and repeated exit/reopen
+remain the acceptance gate. The read-only diagnosis itself is not the
+implemented fix or a performance result for the new cache.
 
 ## Storage reachability and retained implementation audit
 
