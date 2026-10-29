@@ -6,6 +6,11 @@ Unknown relocation kinds, TLS, constructors and undefined symbols fail closed.
 Format follows the Ndless r2022 zehn.h and genzehn.cpp allocation convention.
 """
 ALLOCATION_LIMIT = 24 * 1024 * 1024
+# Normal CX II CAS OS 6.4/r2022 also needs a sufficiently large *contiguous*
+# block after loader metadata has been allocated. Keep headroom below the
+# observed limit; the total 24 MiB guard alone did not prevent UI15 reopens
+# from failing. This build budget is not a guarantee for arbitrary OS heaps.
+EXECUTION_MEMORY_LIMIT = 22_450_000
 RELOCATION_ADDRESS_LIMIT = 1 << 24
 
 from pathlib import Path
@@ -28,6 +33,8 @@ def build(source:Path,target:Path)->None:
     end=max(s[3]+s[5] for s in alloc if s[1]!=8)
     memory_end=max(s[3]+s[5] for s in alloc)
     if memory_end>ALLOCATION_LIMIT or entry>=end:raise ValueError('Invalid image size or entry')
+    if memory_end>EXECUTION_MEMORY_LIMIT:
+        raise ValueError(f'Zehn executable/BSS exceeds contiguous-memory budget: {memory_end} > {EXECUTION_MEMORY_LIMIT}')
     image=bytearray(end);covered=bytearray(end)
     for s in alloc:
         if s[1]==8:

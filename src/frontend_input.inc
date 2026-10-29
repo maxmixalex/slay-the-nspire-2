@@ -126,7 +126,7 @@ void App::accept_frontend_confirm(){
  if(action==1){
   if(!title)return;
   State*probe=read_saved(*this);if(!probe){message("Could not load the saved run. Please try again.");return;}
-  if(!has_save||!same_run_identity(confirmed,saved_run_identity(*probe))){menu=0;message("存档已变更，请重新确认");return;}
+  if(!has_save||!same_run_identity(confirmed,saved_run_identity(*probe))){menu=0;message("The saved run has changed. Please confirm again.");return;}
   if(callbacks.clear_save){if(!callbacks.clear_save()){message("Could not delete the saved run. Please try again.");return;}}
   else if(!callbacks.save||!terminal_probe(*probe)||!callbacks.save(*probe)){message("Could not save the completed run. Please try again.");return;}
   finish_progress(true,probe);forget_run_checkpoint();forget_saved(*this);menu=0;return;
@@ -158,10 +158,10 @@ bool App::frontend_input(Key key){
   else if(key==Key::Back){open_profiles();}
   else if(key==Key::Quit){frontend_confirm=3;frontend_choice=0;}
   else if(key==Key::Load){
-   if(!frontend_continue_saved_run(*this)){refresh_save();message("没有有效的存档");}
+   if(!frontend_continue_saved_run(*this)){refresh_save();message("No valid saved run was found.");}
   }else if(key==Key::Confirm){switch(front_item(*this,menu)){
    case FrontStart:open_run_menu(RunMenu::Singleplayer);break;
-   case FrontContinue:if(!frontend_continue_saved_run(*this)){refresh_save();menu=0;message("没有有效的存档");}break;
+   case FrontContinue:if(!frontend_continue_saved_run(*this)){refresh_save();menu=0;message("No valid saved run was found.");}break;
    case FrontAbandon:
     if(refresh_save()){confirmed_run=saved_run_identity(*state_workspace::saved_probe(this));frontend_confirm=1;frontend_choice=0;}
     else{menu=0;message("Could not load the saved run. Please try again.");}break;

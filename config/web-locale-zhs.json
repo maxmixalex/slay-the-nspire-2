@@ -1,8 +1,8 @@
 {
   "development": "开发版",
   "campaign": "原版三幕远征",
-  "loading_offline": "正在载入离线资源…",
-  "loading_resources": "正在加载资源并启动…",
+  "loading_offline": "Loading offline resources…",
+  "loading_resources": "Loading resources and starting…",
   "screen": "nSpire II 游戏画面",
   "up": "↑ 目标 / 上",
   "left": "← 选牌",
@@ -23,11 +23,11 @@
   "performance": "本机性能测量",
   "performance_help": "采样 10 秒，期间可照常切换界面和战斗。结果仅代表当前浏览器。",
   "measure": "开始测量",
-  "invalid_content": "内容包校验失败。",
+  "invalid_content": "The content pack failed validation.",
   "closed": "程序已退出。刷新页面可重新启动。",
   "measuring": "采样中，请照常操作游戏…",
-  "startup_failed": "启动失败。请检查资源文件。",
-  "missing_resources": "未找到所选语言的资源。",
+  "startup_failed": "Startup failed. Please check the resource files.",
+  "missing_resources": "Resources for the selected language were not found.",
   "profile_scope": "当前浏览器 CPU 与 Canvas2D 提交间隔，不包含合成器或屏幕刷新率。",
   "profile_startup_scope": "包含资源解码、WASM 初始化和游戏启动，不含首次绘制。"
 }

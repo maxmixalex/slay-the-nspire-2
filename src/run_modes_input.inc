@@ -45,7 +45,7 @@ bool App::start_selected_run(const RunOptions&options,bool animated){
     if(!practice_entry){
         game.run_options=options;
         if(*canonical&&!world_set_seed(game,canonical)){message("种子无效");return false;}
-        if(!world_begin_run(game,selected_region,selected_ascension)){message("无法开始游戏");return false;}
+        if(!world_begin_run(game,selected_region,selected_ascension)){message("Could not start the run.");return false;}
     }
     if(animated){
         character_departure.phase=1;character_departure.character=uint8_t(selected_character);
