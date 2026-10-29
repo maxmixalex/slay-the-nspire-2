@@ -8,7 +8,9 @@ namespace spire {
 // Literal pages are read directly and compressed pages use one 4 KiB cache.
 class BlockedResourceSource {
 public:
-    static constexpr uint32_t BlockBytes=4096,MaxBlocks=4096;
+    // The largest pinned edition uses 1,264 pages. Keep 8 MiB of logical capacity
+    // without reserving a 16 MiB table in the calculator's contiguous BSS.
+    static constexpr uint32_t BlockBytes=4096,MaxBlocks=2048;
     bool open(ResourceSource);
     void close();
     ResourceSource source();
@@ -28,7 +30,8 @@ private:
 // lookup and the original requested file read; no image is copied at startup.
 class MultipartResourceSource {
 public:
-    static constexpr unsigned MaxParts=8,MaxSpans=1024;
+    // The complete pinned artwork maps 95 spans; 128 retains explicit headroom.
+    static constexpr unsigned MaxParts=8,MaxSpans=128;
     bool open(ResourceSource index,const ResourceSource* parts,unsigned count);
     void close();
     ResourceSource source();

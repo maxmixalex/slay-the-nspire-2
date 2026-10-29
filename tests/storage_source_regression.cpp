@@ -177,7 +177,7 @@ static void actual(const char*directory,const char*baseline,const char*code){
     CHECK(lease.bytes()[0]==0x9b);
     std::printf("actual storage %s: %zu logical bytes compared, active transfer preserved\n",code,expected.size());
 }
-static_assert(sizeof(BlockedResourceSource)<=25*1024,"Independent locale adapter stays within its bounded cache/table");
-static_assert(sizeof(MultipartResourceSource)<=18*1024,"Concern mapping must retain the1024-span bound");
+static_assert(sizeof(BlockedResourceSource)<=17*1024,"Independent locale adapter retains the 8 MiB logical bound");
+static_assert(sizeof(MultipartResourceSource)<=3*1024,"Concern mapping retains the 128-span bound");
 }
 int main(int argc,char**argv){blocked_reads();blocked_failures();part_reads();part_failures();active_transfer();CHECK(!resource_transfer_uses);CHECK(argc==1||argc==4);if(argc==4)actual(argv[1],argv[2],argv[3]);std::printf("storage source: %u checks passed\n",checks);}

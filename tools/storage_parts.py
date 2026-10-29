@@ -24,8 +24,8 @@ import content_tiles as tiles
 import split_content as split
 
 BLOCK=4096
-MAX_BLOCKS=4096
-MAX_SPANS=1024
+MAX_BLOCKS=2048
+MAX_SPANS=128
 NAMES=('interface','cards','characters','enemies','bosses','rooms','effects','shared')
 PART_FILES=tuple('nSpire2.'+name+'.dat.tns' for name in NAMES)
 U32=struct.Struct('<I')
