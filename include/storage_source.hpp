@@ -36,7 +36,10 @@ class MultipartResourceSource {
 public:
     // The complete pinned artwork maps 95 spans; 128 retains explicit headroom.
     static constexpr unsigned MaxParts=8,MaxSpans=128;
-    bool open(ResourceSource index,const ResourceSource* parts,unsigned count);
+    // A file owner may provide headers obtained with its length probes. They
+    // are validated here exactly like stream reads and are never retained.
+    bool open(ResourceSource index,const ResourceSource* parts,unsigned count,
+              const uint8_t (*part_headers)[32]=nullptr);
     void close();
     ResourceSource source();
     bool read(uint32_t,void*,uint32_t)const;

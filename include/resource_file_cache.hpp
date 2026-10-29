@@ -5,7 +5,7 @@
 namespace spire {
 
 // Immutable resource files can outnumber the OS's simultaneously open streams.
-// Length probes close immediately; source reads share only Capacity handles.
+// Length/header probes close immediately; source reads share only Capacity handles.
 // The selected locale and every mutable save stream remain outside this cache.
 template<unsigned Files,unsigned Capacity>
 class ResourceFileCache {
@@ -21,20 +21,42 @@ public:
         // Sampling may collect input; it must never dispatch/re-enter App.
         void(*poll)(void*){};
     };
+    // Optional observation of the complete probe, including open/close. Reads
+    // and seeks describe actual host calls, not the later use of saved headers.
+    struct Probe {
+        void*context{};
+        void(*begin)(void*){};
+        void(*end)(void*,uint32_t bytes,unsigned reads,unsigned seeks,bool good){};
+    };
     ResourceFileCache()=default;
     ResourceFileCache(const ResourceFileCache&)=delete;
     ResourceFileCache&operator=(const ResourceFileCache&)=delete;
     ~ResourceFileCache(){close();}
-    bool open(Host host,uint32_t maximum){
+    bool open(Host host,uint32_t maximum,uint8_t*headers=nullptr,unsigned header_bytes=0,Probe probe={}){
         close();
-        if(!host.open||!host.close||!host.seek||!host.tell||!host.get||!maximum)return false;
+        if(!host.open||!host.close||!host.seek||!host.tell||!host.get||!maximum||
+           bool(headers)!=bool(header_bytes)||header_bytes>maximum||header_bytes>UINT32_MAX/Files||
+           bool(probe.begin)!=bool(probe.end))return false;
         host_=host;
         for(unsigned i=0;i<Files;++i){
-            void*file=open_file(i);if(!file){close();return false;}
-            const bool sought=host_.seek(file,0,2)==0;
-            const long size=sought?host_.tell(file):-1;
-            const bool closed=close_file(file);
-            if(!closed||size<=0||static_cast<unsigned long>(size)>maximum){close();return false;}
+            if(probe.begin)probe.begin(probe.context);
+            unsigned reads=0,seeks=0;uint32_t bytes=0;long size=-1;bool good=false;
+            void*file=open_file(i);
+            if(file){
+                ++seeks;const bool sought=host_.seek(file,0,2)==0;
+                size=sought?host_.tell(file):-1;
+                good=size>0&&static_cast<unsigned long>(size)<=maximum&&header_bytes<=static_cast<unsigned long>(size);
+                if(good&&header_bytes){
+                    ++seeks;good=host_.seek(file,0,0)==0;
+                    if(good){
+                        bytes=header_bytes;++reads;
+                        good=host_.get(headers+i*header_bytes,1,header_bytes,file)==header_bytes;
+                    }
+                }
+                if(!close_file(file))good=false;
+            }
+            if(probe.end)probe.end(probe.context,bytes,reads,seeks,good);
+            if(!good){close();return false;}
             parts_[i]={this,uint32_t(size),i};
         }
         ready_=true;return true;

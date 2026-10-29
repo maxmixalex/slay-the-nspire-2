@@ -125,7 +125,8 @@ void BlockedResourceSource::progress_at(void*p,ResourceStage s,uint32_t n,uint32
 ResourceSource BlockedResourceSource::source(){return length_?ResourceSource{this,length_,read_at,nullptr,progress_at}:ResourceSource{};}
 
 void MultipartResourceSource::close(){length_=span_count_=part_count_=last_=0;for(auto&p:parts_)p={};}
-bool MultipartResourceSource::open(ResourceSource index,const ResourceSource*parts,unsigned count){
+bool MultipartResourceSource::open(ResourceSource index,const ResourceSource*parts,unsigned count,
+                                   const uint8_t(*part_headers)[32]){
     close();uint8_t h[96];
     if(!parts||count!=MaxParts||index.context==this||!get(index,0,h,sizeof h)||
        word(h)!=0x314d534eu||word(h+4)!=1||word(h+8)!=0x41cef1eau||word(h+12)!=96||
@@ -135,8 +136,8 @@ bool MultipartResourceSource::open(ResourceSource index,const ResourceSource*par
        word(h+32)!=0x3143534eu||word(h+36)!=1||word(h+40)!=0x41cef1eau||
        word(h+44)!=64||word(h+48)!=length||word(h+52)!=length-64)return false;
     for(unsigned i=0;i<count;++i){
-        uint8_t p[32];
-        if(parts[i].context==this||!get(parts[i],0,p,sizeof p)||word(p)!=0x3153534eu||
+        uint8_t buffer[32];const uint8_t*p=part_headers?part_headers[i]:buffer;
+        if(parts[i].context==this||(!part_headers&&!get(parts[i],0,buffer,sizeof buffer))||word(p)!=0x3153534eu||
            word(p+4)!=1||word(p+8)!=0x41cef1eau||word(p+12)!=32||
            word(p+16)!=parts[i].length||word(p+20)!=i||word(p+24)||word(p+28))return false;
     }

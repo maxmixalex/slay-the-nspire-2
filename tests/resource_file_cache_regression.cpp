@@ -20,7 +20,7 @@ struct FakeHost {
     std::vector<Event> events;
     std::vector<bool> captured;
     unsigned limit=7,live=0,peak=0,refused=0,closed=0,polls=0;
-    int fail_open=-1,fail_seek=-1,fail_tell=-1,short_read=-1,fail_close=-1;
+    int fail_open=-1,fail_seek=-1,fail_rewind=-1,fail_tell=-1,short_read=-1,fail_close=-1;
     bool input=false,edge_on_open=false,edge_on_close=false;
     FakeHost(){
         present.fill(true);
@@ -46,6 +46,7 @@ struct FakeHost {
     static int seek(void*file,long offset,int origin){
         auto&f=*static_cast<File*>(file);CHECK(f.open);auto&h=*f.host;h.events.push_back({'s',f.id});++h.seeks[f.id];
         if(h.fail_seek==int(f.id)){h.fail_seek=-1;return -1;}
+        if(origin==0&&h.fail_rewind==int(f.id)){h.fail_rewind=-1;return -1;}
         const long position=(origin==2?long(h.bytes[f.id].size()):origin==1?long(f.position):0)+offset;
         if(position<0||static_cast<unsigned long>(position)>h.bytes[f.id].size())return -1;
         f.position=unsigned(position);return 0;
@@ -68,6 +69,22 @@ struct FakeHost {
         for(unsigned i=0;i<events.size();++i)if((events[i].kind=='o'||events[i].kind=='c')&&events[i].id<8)
             CHECK(i&&i+1<events.size()&&events[i-1].kind=='p'&&events[i+1].kind=='p');
     }
+};
+struct ProbeLog {
+    struct Row {uint32_t bytes;unsigned reads,seeks;bool good;};
+    FakeHost&host;std::vector<Row> rows;size_t first=0;bool active=false;
+    static void begin(void*context){auto&self=*static_cast<ProbeLog*>(context);CHECK(!self.active);
+        self.active=true;self.first=self.host.events.size();}
+    static void end(void*context,uint32_t bytes,unsigned reads,unsigned seeks,bool good){
+        auto&self=*static_cast<ProbeLog*>(context);CHECK(self.active);self.active=false;
+        unsigned actual_reads=0,actual_seeks=0,opens=0,closes=0;
+        for(size_t i=self.first;i<self.host.events.size();++i){const char kind=self.host.events[i].kind;
+            actual_reads+=kind=='r';actual_seeks+=kind=='s';opens+=kind=='o';closes+=kind=='c';}
+        CHECK(actual_reads==reads&&actual_seeks==seeks&&opens==1&&closes<=1);
+        CHECK(reads<=1&&bytes==reads*32);CHECK(!good||closes==1);
+        self.rows.push_back({bytes,reads,seeks,good});
+    }
+    Cache::Probe probe(){return {this,begin,end};}
 };
 static bool get(ResourceSource s,uint32_t at,void*out,uint32_t count){
     if(at>s.length||count>s.length-at||(count&&!out))return false;
@@ -92,6 +109,48 @@ static void sequential_probes(){
     const auto old=host.bytes[1];host.bytes[1].clear();CHECK(!cache.open(host.host(),1024));CHECK(!host.live);
     host.bytes[1]=old;CHECK(!cache.open(host.host(),100));CHECK(!host.live);
     CHECK(cache.open(host.host(),1024));CHECK(!cache.open({},1024));CHECK(!host.live);
+}
+static void combined_header_probes(){
+    FakeHost host;host.limit=1;Cache cache;uint8_t headers[8][32];ProbeLog log{host};
+    CHECK(cache.open(host.host(),1024,headers[0],32,log.probe()));
+    CHECK(log.rows.size()==8&&!log.active&&!host.live&&host.peak==1&&host.closed==8);
+    for(unsigned i=0;i<8;++i){
+        CHECK(host.opens[i]==1&&host.reads[i]==1&&host.seeks[i]==2);
+        CHECK(log.rows[i].good&&log.rows[i].bytes==32&&log.rows[i].reads==1&&log.rows[i].seeks==2);
+        CHECK(std::equal(headers[i],headers[i]+32,host.bytes[i].begin()));
+    }
+    // Probed FILE addresses and their end-of-file positions are not retained.
+    read(cache,host,3,32,12,true);read(cache,host,3,44,12,false);
+    const unsigned reads=host.reads[3];read(cache,host,3,0,16,true);
+    CHECK(host.reads[3]==reads+1); // Ordinary source reads never pretend saved headers are I/O.
+    cache.close();CHECK(!host.live);host.polling_edges();
+    for(unsigned failure=0;failure<9;++failure){
+        FakeHost broken;Cache candidate;ProbeLog observed{broken};
+        switch(failure){
+        case 0:broken.fail_open=4;break;
+        case 1:broken.fail_seek=4;break;
+        case 2:broken.fail_tell=4;break;
+        case 3:broken.fail_rewind=4;break;
+        case 4:broken.short_read=4;break;
+        case 5:broken.fail_close=4;break;
+        case 6:broken.bytes[4].resize(31);break;
+        case 7:broken.bytes[4].clear();break;
+        case 8:broken.bytes[4].resize(2048);break;
+        }
+        CHECK(!candidate.open(broken.host(),1024,headers[0],32,observed.probe()));
+        CHECK(!broken.live&&!candidate.source(0).length&&observed.rows.size()==5&&!observed.rows.back().good&&!observed.active);
+        CHECK(observed.rows.back().reads==unsigned(failure==4||failure==5));
+        broken.bytes[4].resize(512);observed.rows.clear();
+        CHECK(candidate.open(broken.host(),1024,headers[0],32,observed.probe()));
+        CHECK(observed.rows.size()==8&&!broken.live);candidate.close();broken.polling_edges();
+    }
+    FakeHost invalid;Cache candidate;ProbeLog observed{invalid};
+    CHECK(!candidate.open(invalid.host(),1024,nullptr,32,observed.probe()));
+    CHECK(!candidate.open(invalid.host(),1024,headers[0],0,observed.probe()));
+    CHECK(!candidate.open(invalid.host(),16,headers[0],32,observed.probe()));
+    CHECK(!candidate.open(invalid.host(),UINT32_MAX,headers[0],UINT32_MAX,observed.probe()));
+    CHECK(!candidate.open(invalid.host(),1024,headers[0],32,{&observed,ProbeLog::begin,nullptr}));
+    CHECK(invalid.events.empty()&&observed.rows.empty());
 }
 static void cursor_lru_failures(){
     FakeHost host;Cache cache;CHECK(cache.open(host.host(),1024));
@@ -142,13 +201,21 @@ struct MultipartFixture {
 static void multipart_and_languages(){
     MultipartFixture fixture;auto&host=fixture.host;Cache cache;static MultipartResourceSource common;
     void*manifest=FakeHost::open(&host,11);CHECK(manifest);
-    CHECK(cache.open(host.host(),2048));CHECK(host.live==1&&host.peak==2); // Sequential probes plus the index.
+    uint8_t headers[8][32];ProbeLog observed{host};
+    CHECK(cache.open(host.host(),2048,headers[0],32,observed.probe()));CHECK(host.live==1&&host.peak==2);
     ResourceSource parts[8];for(unsigned i=0;i<8;++i)parts[i]=cache.source(i);
-    CHECK(common.open({nullptr,uint32_t(fixture.index.size()),nullptr,fixture.index.data()},parts,8));
-    CHECK(host.live==5);CHECK(FakeHost::close(manifest)==0);CHECK(host.live==4);
+    const auto opens=host.opens,reads=host.reads,seeks=host.seeks;
+    for(unsigned field=0;field<32;field+=4){
+        headers[3][field]^=1;
+        CHECK(!common.open({nullptr,uint32_t(fixture.index.size()),nullptr,fixture.index.data()},parts,8,headers));
+        CHECK(!common.source().length&&host.live==1);headers[3][field]^=1;
+    }
+    CHECK(common.open({nullptr,uint32_t(fixture.index.size()),nullptr,fixture.index.data()},parts,8,headers));
+    CHECK(host.opens==opens&&host.reads==reads&&host.seeks==seeks&&observed.rows.size()==8);
+    CHECK(host.live==1);CHECK(FakeHost::close(manifest)==0);CHECK(!host.live);
     // No input/index object is retained by MultipartResourceSource after open.
-    std::fill(fixture.index.begin(),fixture.index.end(),0);
-    std::vector<uint8_t> out(fixture.canonical.size());CHECK(get(common.source(),0,out.data(),unsigned(out.size())));CHECK(out==fixture.canonical);
+    std::fill(fixture.index.begin(),fixture.index.end(),0);std::memset(headers,0,sizeof headers);
+    std::vector<uint8_t> out(fixture.canonical.size());CHECK(get(common.source(),0,out.data(),unsigned(out.size())));CHECK(out==fixture.canonical&&host.live==4);
     void*english=FakeHost::open(&host,8);CHECK(english);ResourceFileCursor english_cursor;bool sought=false;uint8_t text[16];
     CHECK(english_cursor.read(english,37,text,8,FakeHost::seek,FakeHost::get,sought)&&sought);
     host.fail_open=9;CHECK(!FakeHost::open(&host,9));CHECK(host.held(8)); // Failed language opens preserve the selected stream.
@@ -185,5 +252,5 @@ static void capture_and_scope_shutdown(){
     {Cache cache;CHECK(cache.open(host.host(),1024));read(cache,host,3,1,1,true);CHECK(host.live==1);}
     CHECK(!host.live);host.polling_edges();
 }
-int main(){sequential_probes();cursor_lru_failures();multipart_and_languages();capture_and_scope_shutdown();
+int main(){sequential_probes();combined_header_probes();cursor_lru_failures();multipart_and_languages();capture_and_scope_shutdown();
     std::printf("resource file cache: %u checks passed; 8 parts, 4 slots, 7-stream host ceiling\n",checks);}

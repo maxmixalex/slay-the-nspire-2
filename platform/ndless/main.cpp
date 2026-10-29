@@ -129,6 +129,14 @@ static void* open_artwork_file(void*launcher,unsigned part){
     return open_data_file(static_cast<const char*>(launcher),spire::ArtworkPartNames[part]);
 }
 static void artwork_poll(void*){capture_key_matrix();}
+static void artwork_probe_begin(void*context){
+    *static_cast<uint32_t*>(context)=performance.enabled?timer_ticks():0;
+}
+static void artwork_probe_end(void*context,uint32_t bytes,unsigned reads,unsigned seeks,bool good){
+    if(!performance.enabled)return;
+    auto&r=performance.resources;r.ticks+=*static_cast<uint32_t*>(context)-timer_ticks();
+    r.calls+=reads;r.bytes+=bytes;r.seeks+=seeks;if(!good)++r.failures;
+}
 static bool read_artwork(void*context,uint32_t offset,void*output,uint32_t count){
     bool seek=false;const uint32_t started=performance.enabled?timer_ticks():0;
     const bool good=ArtworkFiles::read_source(context,offset,output,count,seek);
@@ -316,13 +324,16 @@ extern "C" int main(int argc,char**argv){
     }
     if(common_tag[0]=='N'&&common_tag[1]=='S'&&common_tag[2]=='M'&&common_tag[3]=='1'){
         // The OS rejects an eighth simultaneous stream on the validated CX.
-        // Probe eight lengths sequentially, then keep only four art streams.
+        // Read each header during its length probe. Multipart validation uses
+        // these exact bytes without opening all eight files a second time.
+        uint8_t part_headers[spire::MultipartResourceSource::MaxParts][32];uint32_t probe_started=0;
         if(!artwork_files.open({const_cast<char*>(launcher),open_artwork_file,nd_close,
-                sampled_seek,nd_tell,sampled_read,artwork_poll},spire::MaxContentFile))
+                sampled_seek,nd_tell,sampled_read,artwork_poll},spire::MaxContentFile,
+                part_headers[0],sizeof part_headers[0],{&probe_started,artwork_probe_begin,artwork_probe_end}))
             return resource_error(spire::BootText::MissingResources,4);
         spire::ResourceSource inputs[spire::MultipartResourceSource::MaxParts];
         for(unsigned i=0;i<spire::MultipartResourceSource::MaxParts;++i)inputs[i]=artwork_files.source(i,read_artwork);
-        if(!artwork.open(common_source,inputs,spire::MultipartResourceSource::MaxParts)){
+        if(!artwork.open(common_source,inputs,spire::MultipartResourceSource::MaxParts,part_headers)){
             return resource_error(spire::BootText::InvalidResources,5);
         }
         common.close(); // The validated index header/spans now live in artwork.
