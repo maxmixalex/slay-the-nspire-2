@@ -59,7 +59,7 @@ The largest aligned locale is Traditional Chinese: its inner NSL2 is
 
 ## Cold read isolation
 
-All four runs use the same current native renderer, canonical Haunted Ship
+All five runs use the same current native renderer, canonical Haunted Ship
 save/progress fixture, ordinary Continue/End Turn inputs, fixed title/combat
 warm sequence and 182 subsequent frames. The first three modes differ only
 in their resource adapters. These counts are the action window; they are not
@@ -71,13 +71,23 @@ calculator frame-rate measurements.
 | NSM1 + old NSL2 | 20 | 103,971 | 19 | 1 |
 | NSM1 + initial NSL3 | 26 | 116,124 | 19 | 1 |
 | NSM1 + aligned NSL3 | 22 | 102,505 | 19 | 1 |
+| Locality-corrected NSM1 + aligned NSL3 | 19 | 102,505 | 17 | 0 |
 
-All 182 RGB565 frame hashes agree across the four modes. Alignment removes
+All 182 RGB565 frame hashes agree across the five modes. Alignment removes
 four extra reads and 13,619 requested bytes in this replay, with zero added
 runtime memory. The remaining two locale reads split one 28,129-byte request
 across compressed / literal / compressed pages. The separate three multipart
 reads and rooms-file cold open arise from short interleaved artwork spans;
 those belong to the separate concern-layout fix.
+
+The combined fifth row uses artwork commit
+`373e5abfc157e77410ffda95cd1934dbc1399c0a` with the aligned language files.
+Its private journal is
+`ui16-locale-io/build/journal/locale-io-aligned-combined-full-b05638423c7a.json`,
+with `build/mode-aligned-combined-pixels.txt` matching the old-storage hashes.
+The subsequent runtime mixed-page batching fix is recorded separately in
+`ui16-locale-read-coalescing-0.17.md`; it removes the remaining two native
+locale calls without changing the requested bytes.
 
 The physical trace also ruled out a simple 128- or 256-byte minimum compression
 saving as a remedy: the four extra paired pages save between 631 and 1,584
