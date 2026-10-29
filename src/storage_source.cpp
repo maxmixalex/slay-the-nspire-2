@@ -1,10 +1,11 @@
 #include "storage_source.hpp"
 #include "lz4_block.hpp"
+extern "C" void* memcpy(void*,const void*,size_t);
 
 namespace spire {
 namespace {
 uint32_t word(const uint8_t*p){return uint32_t(p[0])|(uint32_t(p[1])<<8)|(uint32_t(p[2])<<16)|(uint32_t(p[3])<<24);}
-void copy(void*d,const uint8_t*s,uint32_t n){auto*out=static_cast<uint8_t*>(d);for(uint32_t i=0;i<n;++i)out[i]=s[i];}
+void copy(void*d,const uint8_t*s,uint32_t n){if(n)memcpy(d,s,n);}
 bool get(const ResourceSource&s,uint32_t at,void*out,uint32_t n){
     if(at>s.length||n>s.length-at||(n&&!out))return false;
     if(!n)return true;

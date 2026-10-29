@@ -10,11 +10,11 @@
 #include "ui12_assets.hpp"
 #include "resource_transfer.hpp"
 #include "lzma2_block.hpp"
+extern "C" void* memcpy(void*,const void*,size_t);
 
 namespace spire {
 static void resource_copy(void* destination,const uint8_t* source,uint32_t count){
-    auto* out=static_cast<uint8_t*>(destination);
-    for(uint32_t i=0;i<count;++i)out[i]=source[i];
+    if(count)memcpy(destination,source,count);
 }
 ResourceSource ResourceSource::memory(const uint8_t* bytes,size_t size){
     if(!bytes||size>UINT32_MAX)return {};
