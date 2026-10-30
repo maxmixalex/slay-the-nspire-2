@@ -472,7 +472,7 @@ void App::pointer_button(bool down){
     case HitKind::CombatPeek:toggle_combat_peek();break;
     case HitKind::AuxiliaryControl:auxiliary_control(hit.value);break;
     case HitKind::GameOverDetail:if(game_over_available()&&game_over_summary)game_over_focus=int8_t(hit.value);break;
-    case HitKind::Orb:break; // Original orb focus retains its anchored hover tip.
+    case HitKind::Orb:case HitKind::SovereignBlade:break; // Source hover owners do not play or select cards.
     case HitKind::StatusItem:status_selected=hit.value;status_scroll=0;break;
     default:break;
     }

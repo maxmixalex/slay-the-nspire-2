@@ -220,6 +220,14 @@ static void actual_forge(){
  a.pointer_button(true);CHECK(!card_hover_target(a,owner));a.pointer_button(false);CHECK(a.selected_hand_card()<0);unchanged();
  auto*blade=a.combat_cards.blades.find(1);CHECK(blade);blade->attacking=true;CHECK(!card_hover_target(a,owner));blade->attacking=false;
  a.pointer_cancel();unchanged();
+ scenario="Sovereign tooltip carries the current instance enchantment by value";
+ a.game.event_cards.cards[1].enchantment=EventEnchantment::Sharp;a.game.event_cards.cards[1].enchantment_amount=3;before=a.game;
+ a.hit_count=0;combat_sovereign_blades(c,true);combat_sovereign_blades(c,false);
+ for(int i=0;i<a.hit_count;++i)if(a.hits[i].kind==HitKind::SovereignBlade&&a.hits[i].value==1){const auto&h=a.hits[i];a.pointer_move(h.x+h.w/2,h.y+h.h/2);break;}
+ CHECK(card_hover_target(a,owner)&&owner.sovereign_blade&&owner.card_facts()==&a.game.event_cards.cards[1]);
+ collect_keyword_hover_tips(a,owner,tips);CHECK(tips.items[0].has_facts&&tips.items[0].facts.enchantment==EventEnchantment::Sharp&&tips.items[0].facts.enchantment_amount==3);
+ unchanged();a.game.event_cards.cards[1].enchantment_amount=7;CHECK(tips.items[0].facts.enchantment_amount==3);
+ CHECK(card_hover_target(a,owner));collect_keyword_hover_tips(a,owner,tips);CHECK(tips.items[0].facts.enchantment_amount==7);a.pointer_cancel();
 }
 static void actual_enchant(){
  scenario="a real pending enchantment selection survives save/load and commits once";fresh(Character::Regent);hand({RegentTheSmith,SovereignBlade,RegentDefend});

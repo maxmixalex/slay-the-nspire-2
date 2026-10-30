@@ -1,11 +1,11 @@
 <!doctype html>
 <html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>nSpire II 0.17</title>
+<title>nSpire 0.1.0 (StS II v0.111.0)</title>
 <style>
 :root{color-scheme:dark}*{box-sizing:border-box}body{margin:0;background:#151a19;color:#ece6d6;font:14px/1.7 system-ui,sans-serif;min-height:100vh;display:grid;place-content:center;padding:20px}main{width:min(960px,calc(100vw - 40px))}h1{font-size:18px;font-weight:500;margin:0 0 12px}small{color:#b5b8ac}canvas{display:block;width:100%;aspect-ratio:4/3;background:#111;image-rendering:pixelated;touch-action:none;cursor:none;box-shadow:0 12px 55px #0008;border:1px solid #5b5542;outline:none}p{margin:12px 0 0;color:#b5b8ac}kbd{font:inherit;color:#e2c992}select,button{background:#343c35;border:1px solid #6c725f;color:#eee9d9;border-radius:4px;padding:5px 10px;cursor:pointer}#error{white-space:pre-wrap;color:#ffb7a6}#actions{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}a{color:inherit}
 </style>
 <main>
-<h1>nSpire II 0.17 <span data-i18n="development">Development build</span> <small data-i18n="campaign">Original three-act expeditions</small></h1>
+<h1>nSpire 0.1.0 (StS II v0.111.0) <span data-i18n="development">Development build</span> <small data-i18n="campaign">Original three-act expeditions</small></h1>
 <p id="loading" role="status" hidden>Loading…</p>
 <canvas id="screen" width="320" height="240" tabindex="0" data-i18n-aria="screen" aria-label="nSpire II"></canvas>
 <textarea id="text-entry" tabindex="-1" aria-label="Search / 搜索" autocomplete="off" autocapitalize="off" spellcheck="false" style="position:fixed;width:1px;height:1px;padding:0;border:0;opacity:0;pointer-events:none"></textarea>
@@ -40,7 +40,7 @@ const t=key=>language?translations[language][key]:translations.zhs[key]+' / '+tr
  language=available.includes(preferred)?preferred:available.includes(browserLanguage)?browserLanguage:available[0];
  if(!language)throw Error(t('missing_resources'));
  function applyLocale(){
-  document.documentElement.lang=language==='eng'?'en':'zh-CN';document.title='nSpire II 0.17 '+t('development');
+  document.documentElement.lang=language==='eng'?'en':'zh-CN';document.title='nSpire 0.1.0 (StS II v0.111.0) '+t('development');
   document.querySelectorAll('[data-i18n]').forEach(node=>node.innerHTML=t(node.dataset.i18n));
   document.querySelectorAll('[data-i18n-aria]').forEach(node=>node.setAttribute('aria-label',t(node.dataset.i18nAria)));
   loading.textContent=t('loading_offline');
