@@ -11,6 +11,7 @@ def main()->None:
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--output',type=Path,help='Launcher output path')
     parser.add_argument('--trace-io',action='store_true',help='Developer-only bounded OS I/O trace; not a release/timing acceptance build')
+    parser.add_argument('--compression',choices=('zlib','zopfli'),default='zlib',help='Use zopfli for compact release packaging; requires requirements-release.txt')
     args=parser.parse_args()
     clang=shutil.which('clang++') or shutil.which('clang++-18');link=shutil.which('ld.lld') or shutil.which('ld.lld-18')
     if not clang or not link:raise SystemExit('Install LLVM with clang++ and ld.lld, and put both on PATH.')
@@ -34,6 +35,6 @@ def main()->None:
     elf=directory/'nSpire2.elf'
     subprocess.run([link,'-T',str(ROOT/'platform/ndless/link.ld'),'--gc-sections','--emit-relocs','-Map='+str(directory/'nSpire2.map'),*objects,'-o',str(elf)],check=True)
     output=args.output or ROOT/'dist'/'nSpire2.tns'
-    output.parent.mkdir(parents=True,exist_ok=True);build(elf,output)
+    output.parent.mkdir(parents=True,exist_ok=True);build(elf,output,args.compression)
 
 if __name__=='__main__':main()

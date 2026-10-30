@@ -52,7 +52,7 @@ jobs:
         with:
           persist-credentials: false
       - name: Install conversion dependencies
-        run: python3 -m pip install -r requirements.txt
+        run: python3 -m pip install -r requirements.txt -r requirements-release.txt
       - name: Run converter and packaging regressions without private assets
         env:
           PYTHONPATH: tools:tests
@@ -72,7 +72,8 @@ jobs:
         run: |
           sudo apt-get update && sudo apt-get install -y clang-18 lld-18
           echo /usr/lib/llvm-18/bin >> "$GITHUB_PATH"
+          python3 -m pip install -r requirements-release.txt
       - name: Build calculator launcher
-        run: python3 tools/build_ndless.py
+        run: python3 tools/build_ndless.py --compression zopfli
       - name: Build WebAssembly runtime without private resources
         run: python3 tools/build_web.py --compile-only

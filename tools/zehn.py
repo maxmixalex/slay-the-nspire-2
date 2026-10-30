@@ -18,7 +18,25 @@ import struct
 import zlib
 import argparse
 
-def build(source:Path,target:Path)->None:
+def compress_image(image:bytes,compression:str='zlib')->bytes:
+    """Keep the loader's zlib stream; spend release-build time on encoding.
+
+    Zopfli changes neither executable bytes nor the calculator decoder. Use
+    one fixed, bounded profile and retain zlib's result if it is smaller.
+    """
+    if compression not in ('zlib','zopfli'):
+        raise ValueError('Unknown Zehn compression: '+compression)
+    encoded=zlib.compress(image,9)
+    if compression=='zopfli':
+        try:
+            from zopfli.zlib import compress
+        except ImportError as error:
+            raise RuntimeError('Release compression needs: python3 -m pip install -r requirements-release.txt') from error
+        candidate=compress(bytes(image),numiterations=5,blocksplitting=True,blocksplittingmax=15)
+        if len(candidate)<len(encoded):encoded=candidate
+    return encoded
+
+def build(source:Path,target:Path,compression:str='zlib')->None:
     b=source.read_bytes()
     if b[:7]!=b'\x7fELF\x01\x01\x01':raise ValueError('Expected ELF32 little-endian')
     et,machine,ver,entry,phoff,shoff,flags,ehsize,phsize,phnum,shsize,shnum,shstr=struct.unpack_from('<HH5I6H',b,16)
@@ -76,9 +94,8 @@ def build(source:Path,target:Path)->None:
     # flags are included. Relocation *locations* remain separately limited
     # to 24 bits by Zehn; values may point into the larger zeroed BSS.
     if allocation>ALLOCATION_LIMIT:raise ValueError(f'Zehn allocation exceeds 24 MiB: {allocation}')
-    compressed=zlib.compress(image,9)
+    compressed=compress_image(image,compression)
     result=struct.pack('<8I',0x6e68655A,1,prefix+len(compressed),len(relocs)+1,len(flag_pairs),len(extra),allocation,entry)+reloc_data+flag_data+extra+compressed
-    target.write_bytes(result)
     # Independent round trip validates bytes, allocation and every rebase word.
     decoded=zlib.decompress(result[prefix:]);assert decoded==image
     for base in (0x10100000,0x11000000):
@@ -86,7 +103,10 @@ def build(source:Path,target:Path)->None:
         for r in relocs:
             v=struct.unpack_from('<I',relocated,r)[0];struct.pack_into('<I',relocated,r,v+base)
         for r in relocs:assert struct.unpack_from('<I',relocated,r)[0]-base==struct.unpack_from('<I',image,r)[0]
-    print(f'{target}: {len(result):,} bytes; allocation {allocation:,}; {len(relocs)} absolute relocations; entry 0x{entry:x}')
+    target.write_bytes(result)
+    print(f'{target}: {len(result):,} bytes; allocation {allocation:,}; {len(relocs)} absolute relocations; entry 0x{entry:x}; compression {compression}')
 
 if __name__=='__main__':
-    p=argparse.ArgumentParser(description=__doc__);p.add_argument('input',type=Path);p.add_argument('output',type=Path);a=p.parse_args();build(a.input,a.output)
+    p=argparse.ArgumentParser(description=__doc__);p.add_argument('input',type=Path);p.add_argument('output',type=Path)
+    p.add_argument('--compression',choices=('zlib','zopfli'),default='zlib',help='zopfli spends offline build time on a smaller compatible zlib stream')
+    a=p.parse_args();build(a.input,a.output,a.compression)

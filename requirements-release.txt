@@ -1,0 +1,2 @@
+# Optional release packaging only; no new calculator decoder or runtime library.
+zopfli==0.4.3
