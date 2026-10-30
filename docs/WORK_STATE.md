@@ -1,40 +1,98 @@
-# UI19 / nSpire 0.1.0 integration — 2026-10-30 (Asia/Shanghai)
+# UI19 / nSpire 0.1.0 final local integration — 2026-10-30 (UTC)
 
-Continue from the current UI19 integration, not the older public checkout. The
-complete UI18 source baseline is `fc50e39`. The first integrated UI19 production
-runtime is `8411656`; subsequent changes through `6174141` update test oracles,
-offline conversion tools and evidence without changing C++/platform sources.
-All thirteen current feedback corrections are implemented. See
-`ui19-ui-feedback.md` and `combat-ui19-0.17.md` for source and executed evidence.
+Continue from the complete local UI19 branch, not the older public checkout.
+The UI18 source baseline is `fc50e39f8aae3bb72219e416b9cc2de4f28458c9`.
+The frozen, tested production runtime is
+**`090023d45ec6211da3b2e5a887cfcc2d1dd68004`**. Later integration changes are
+conversion tools, tests, scope metadata and documentation; the production trees
+remain identical. The displayed version is exactly
+**nSpire 0.1.0 (StS II v0.111.0)**. All thirteen current feedback corrections
+are implemented; see `ui19-ui-feedback.md` and `combat-ui19-0.17.md`.
+The complete release record is `ui19-delivery-0.17.md`; ordinary timing details
+are in `ui19-device-storage.md` and resource policy in `ui19-cache-recovery.md`.
 
-At `6174141`, the full native suite passes **157/157** (72.90 s) and the full
-Python suite passes **351/351** (50.92 s), with the pinned lz4/zopfli dependency
-directory. The earlier native failure was the old Continue popover coordinate
-oracle; the earlier Python run lacked lz4. Both failed attempts remain in the
-journals. The ordinary integrated ARM program requests **22,297,680 bytes** and
-passes Firebird save/quit fade, no-USB restart/Continue and natural combat death.
-Natural death removes current-run sav/bak/tmp after progress/history handling;
-console-created debug encounters are not used as deletion evidence.
+## Accepted storage and runtime policy
 
-RGR3 / NSP2 v43 is implemented with the existing memory pools. Its actual
-bilingual data occupy **77,227,911 bytes**, down **734,540 bytes** from UI18;
-all sixteen language data save **726,205 bytes** after relocated-directory
-costs. Locale acceptance passes 89,818 checks / 53,072 descriptions. Complete
-image decoding and current-runtime v42/v43 device timing are still in progress.
-Two additional lossless storage candidates are being implemented separately:
-larger tile groups with bounded in-place reconstruction, and same-purpose
-retained-group merging. Neither candidate is an accepted release yet. Final
-installed size must include the final compressed launcher, not just resource
-groups or ZIP bytes.
+The final resource policy is **`171f30b97e03b0a18e2977bdd0459f31689d1ec6`**:
+NSP2/44 uses cache-aware mixed tile groups (59 protected pairs, 637 groups),
+retained-group merging and bounded merchant groups, including 97 medium RGR2
+groups. The more compact all-paired candidate was rejected after ordinary
+Firebird exposed serious Bowlbugs and merchant regressions. Its earlier exact
+pixel proof is historical evidence, not the final candidate's acceptance.
+The final 25-file resource manifest SHA-256 is
+`463582860bf9a354771cbfd2f9ac5044433b943bcdcc019f55d8a7c1efd569ab`.
+All common and ENG files match the ordinary-device readbacks byte for byte.
 
-Source publication is **blocked by this turn's automatic approval review**:
-the public push of the accumulated 178 commits was rejected as potentially
-sensitive game-derived source/history disclosure. The actual remote main and
-development refs were read at `b84801b3`; no alternate transport bypassed the
-rejection. Local commits and source/history bundles preserve the reviewable
-work. Complete the artifacts and then request specific authorization for that
-public source/history payload if the approval block remains. Original game
-assets, assemblies, ROM/NAND and derived resource packs remain private.
+Final data occupy **72,814,490 bytes** for ENG + ZHS and **91,312,346 bytes** for
+all sixteen languages. The ordinary launcher is **1,724,027 bytes**, SHA-256
+`fd40e3badd58366a1b48f9525daa4ef92709510b0c7d89756b0b87349dfd1d52`.
+Installed program plus bilingual data total **74,538,517 bytes (71.085469 MiB)**,
+saving **5,143,157 bytes (6.454630%)** against the complete UI18 release.
+Single-ZHS installation is **73,761,595 bytes (70.344539 MiB)**; single-ENG is
+**70,085,971 bytes (66.839190 MiB)**. All sixteen languages plus the program
+occupy **93,036,373 bytes (88.726399 MiB)**. These are actual installed file
+bytes, not ZIP sizes or a resource-only subtotal. The earlier 65–70 MB default
+goal is still not met by the bilingual installation; do not relabel MiB as MB.
+The ARM allocation is **22,298,288 bytes (21.265305 MiB)**, within the existing
+allocation gate; this is not a measured physical-device process-memory peak.
+
+## Verification and measured limits
+
+The frozen runtime passes the complete **157/157 native** suite. The final
+conversion/tool suite passes **369/369 Python** tests at `ec76d3b` (48.898 s).
+The mixed tile test separately passes **2,607,962 checks**. Final all-sixteen
+locale acceptance passes **89,790 checks / 53,072 descriptions**. The final
+**58,060-image** proof passes all memory/range/incremental comparisons against
+UI18/NSP2/42: **1,167,930,140 decoded bytes**, 20 segments, 547.541 s, with no
+source changes and a maximum 67,108,736-byte temporary reference spool.
+The generated calculator, optional-language and offline ZIP members are read
+back and matched; the actual offline HTML's WASM, common, ENG and ZHS contents
+and local-source notice pass separate byte-level acceptance. The release and
+validation manifests record artifact hashes and source-history restore checks.
+
+Ordinary Firebird uses the unchanged production program and genuine normal
+Ndless installation. Final same-input warm combat measures **29.981872 FPS**
+with no stable-phase resource reads. Final Bowlbugs measures **27.23011 FPS**
+versus the same-runtime old-resource control's **27.44914 FPS**; the rejected
+all-paired candidate measured only **17.36801 FPS**. Decimillipede stays at
+**29.426475 FPS** versus **29.426069 FPS**. Construct's final ordinary result is
+**28.87939 FPS** with correct action and HP state; no old-resource device FPS
+was measured for that fixture. Merchant's two final runs are **27.332083** and
+**27.434687 FPS**, pooled **27.383427 FPS**, versus one control at **28.045782**:
+a residual **2.36%** reduction, with observed longest frames of **1.322/1.345 s**
+versus **1.213 s**. Preserve this tradeoff and both samples. Do not claim zero
+regression, universal 30 FPS, or physical-calculator measurements.
+
+Natural combat death removes the owned current-run sav/bak/tmp at terminal
+entry after progress/history processing; it preserves other profiles and run
+history. An in-process console `die` or an unlinked debug encounter does not
+establish run-save deletion; the validated fixture was loaded through ordinary
+Continue before normal enemy damage.
+Save-and-quit fades out, then the title fades in; ordinary no-USB restart and
+Continue are verified. Earlier UI14 omissions closed in UI15/17 are not newly
+completed UI19 work. The accepted static full Ancient scene and excluded
+sound/multiplayer/Timeline remain; CPU/RGB565 materials, cosmetic RNG history,
+finite capacities, RTC/input and offline-service differences are still disclosed
+boundaries, not blanket user-approved exceptions or a proven parity percentage.
+
+For subsequent original-game releases, follow `content-regeneration.md` with
+one matched private input generation, including same-generation retained-group
+references. Rebuild indices, offsets and packages; rerun correctness and actual
+runtime gates. New original mechanics still require code changes. The historic
+`build_content.py` entry point is not a complete one-command UI19 pipeline.
+
+## Publication status
+
+Public source publication is **blocked by this turn's automatic approval
+review**. The earlier push of 178 accumulated commits was rejected as potentially
+sensitive game-derived source/history disclosure. Read-only GitHub checks at
+2026-10-30 12:49 UTC still show both main and the development branch at
+`b84801b300507da2149bc5aec591ee915c57b4b6`. No alternate transport bypassed the
+rejection. The final archive manifest records the actual pending main-branch
+range separately from all experimental bundle refs. Complete the reviewable
+private delivery, then request specific authorization for public disclosure of
+that source/history payload. Original assets, assemblies, ROM/NAND and generated
+resource packs must stay out of the public source repository.
 
 ---
 
