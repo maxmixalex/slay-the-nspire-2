@@ -83,7 +83,7 @@ struct Package {
         if(large){const Bytes first=records;records.resize(LargeTileItems*770);for(unsigned i=0;i<LargeTileItems;++i)std::memcpy(records.data()+i*770,first.data()+(i%4)*770,770);}
         const unsigned ids[]={0,681,1022,1359};
         Bytes index;add(index,unsigned(expected.size()));add(index,16);add(index,unsigned(geometry.size()));for(unsigned i=0;i<4;++i)add(index,large?ids[i]:i);index.insert(index.end(),geometry.begin(),geometry.end());
-        for(unsigned i=0;i<2;++i){Bytes encoded=stored(i?index:mode?filtered(records,mode):records),block(32);
+        for(unsigned i=0;i<2;++i){if(large)bytes.resize(((bytes.size()+32767u)&~size_t(32767u))+32768u);Bytes encoded=stored(i?index:mode?filtered(records,mode):records),block(32);
             if(large&&!i){if(mode==1)encoded.assign(large_tiles_mode1,large_tiles_mode1+sizeof large_tiles_mode1);
                 else if(mode==2)encoded.assign(large_tiles_mode2,large_tiles_mode2+sizeof large_tiles_mode2);
                 else encoded.assign(large_tiles_mode0,large_tiles_mode0+sizeof large_tiles_mode0);}
@@ -93,8 +93,8 @@ struct Package {
         put(bytes,frame,base);put(bytes,frame+12,unsigned(index.size()));put(bytes,12,unsigned(bytes.size()));
     }
 };
-struct Provider {const Bytes&bytes;unsigned reads=0;bool fail=false;
-    static bool read(void*ctx,uint32_t off,void*out,uint32_t count){auto&p=*static_cast<Provider*>(ctx);++p.reads;if(p.fail||off>p.bytes.size()||count>p.bytes.size()-off)return false;std::memcpy(out,p.bytes.data()+off,count);return true;}
+struct Provider {const Bytes&bytes;unsigned reads=0;bool fail=false;uint32_t bad_byte=0xffffffffu;
+    static bool read(void*ctx,uint32_t off,void*out,uint32_t count){auto&p=*static_cast<Provider*>(ctx);++p.reads;if(p.fail||off>p.bytes.size()||count>p.bytes.size()-off)return false;std::memcpy(out,p.bytes.data()+off,count);if(p.bad_byte>=off&&p.bad_byte-off<count)static_cast<uint8_t*>(out)[p.bad_byte-off]=3;return true;}
     ResourceSource source(){return {this,uint32_t(bytes.size()),read,nullptr};}
 };
 static void reader(){
@@ -113,17 +113,30 @@ static void large_reader(){
         auto verify=[&](){const auto image=c->image(0);CHECK(image.pixels&&image.format==4&&image.w==17&&image.h==17);
             CHECK(!std::memcmp(image.pixels,p.expected.data(),p.expected.size()));CHECK(c->healthy()&&!resource_transfer_uses);};
         verify();CHECK(c->open(provider.source()));c->set_image_cache_profile(room);
-        auto finish=[&](){PreparationResult result=PreparationResult::Pending;unsigned steps=0;
+        std::vector<unsigned> io_steps;auto finish=[&](bool trace=false){PreparationResult result=PreparationResult::Pending;unsigned steps=0;
             while(result==PreparationResult::Pending){const auto before=provider.reads;result=c->preload_image_step(0);
-                CHECK(++steps<3000&&provider.reads-before<=2&&!resource_transfer_uses&&c->healthy());
+                CHECK(++steps<3000&&provider.reads-before<=2&&!resource_transfer_uses&&c->healthy());if(trace&&provider.reads>before)io_steps.push_back(steps);
                 if(result==PreparationResult::Pending)CHECK(!c->image_cached(0));}
             CHECK(result==PreparationResult::Ready);verify();return steps;};
-        const unsigned total=finish();CHECK(total>250);
-        for(unsigned cutoff:{1u,8u,250u,300u,400u,900u,1600u}){if(cutoff>=total)continue;
+        const unsigned total=finish(true);CHECK(total>250&&!io_steps.empty());
+        for(unsigned cutoff:{1u,8u,250u,300u,400u,900u,1600u,total-32u,total-8u,total-1u}){if(cutoff>=total)continue;
             CHECK(c->open(provider.source()));c->set_image_cache_profile(room);
             for(unsigned step=0;step<cutoff;++step)CHECK(c->preload_image_step(0)==PreparationResult::Pending);
             c->cancel_preload();CHECK(c->healthy()&&!resource_transfer_uses);finish();
         }
+        // A real provider failure after geometry/IDs are retained releases every pin.
+        CHECK(c->open(provider.source()));c->set_image_cache_profile(room);
+        for(unsigned step=1;step<io_steps.back();++step)CHECK(c->preload_image_step(0)==PreparationResult::Pending);
+        provider.fail=true;CHECK(c->preload_image_step(0)==PreparationResult::Failed&&!c->healthy()&&!resource_transfer_uses);
+        provider.fail=false;c->cancel_preload();CHECK(c->open(provider.source()));c->set_image_cache_profile(room);finish();
+        // Corrupt only the end marker in the provider's copied input, after
+        // an otherwise complete1MiB decode. Source bytes remain unchanged.
+        unsigned encoded=0;for(unsigned i=0;i<4;++i)encoded|=unsigned(p.bytes[p.tile_group+16+i])<<(i*8);
+        CHECK(c->open(provider.source()));c->set_image_cache_profile(room);provider.bad_byte=p.tile_group+32+encoded-1;
+        PreparationResult result=PreparationResult::Pending;unsigned late=0;
+        while(result==PreparationResult::Pending){result=c->preload_image_step(0);CHECK(++late<3000&&!resource_transfer_uses);}
+        CHECK(late>200&&result==PreparationResult::Failed&&!c->healthy()&&!c->image_cached(0));
+        provider.bad_byte=0xffffffffu;c->cancel_preload();CHECK(c->open(provider.source()));c->set_image_cache_profile(room);finish();
         Bytes old=p.bytes;put(old,4,43);CHECK(!c->open(old.data(),old.size()));
         old=p.bytes;put(old,p.base+44,1361);CHECK(!c->open(old.data(),old.size()));
         old=p.bytes;put(old,4,45);CHECK(!c->open(old.data(),old.size()));
