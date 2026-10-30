@@ -2,6 +2,7 @@
 #include "content_tiles_regression.cpp"
 #undef main
 #include "resource_transfer.hpp"
+#include "ui7_assets.hpp"
 
 namespace {
 App app;
@@ -11,8 +12,8 @@ uint32_t clock_value=0,clock_step=0;
 uint32_t preparation_clock(){const auto now=clock_value;clock_value+=clock_step;return now;}
 void poll_input(){++polls;}
 bool save_run(const State&){++saves;return true;}
-Package native_pack(){
-    Package p=basic(2);p.encode(false,InspectionAuxiliaryCount,PredictiveIndexContentVersion,Ui7StringCount,BestiaryKaiserAnimationKinds);
+Package native_pack(unsigned images=160){
+    Package p=basic(2);p.images=images;p.encode(false,InspectionAuxiliaryCount,PredictiveIndexContentVersion,Ui7StringCount,BestiaryKaiserAnimationKinds);
     const unsigned strings=40+p.images*16+p.glyphs*16,clips=strings+Ui7StringCount*8;
     put(p.bytes,strings+LocaleMarkerString*8,unsigned(p.bytes.size()));put(p.bytes,strings+LocaleMarkerString*8+4,3);
     p.bytes.insert(p.bytes.end(),{'e','n','g',0});seal(p.bytes);
@@ -64,5 +65,38 @@ void run_preparation(){
     provider.fail_first=provider.fail_last=0;battle(provider,false);steps=0;
     while(app.combat_preparation.active){app.advance(33);CHECK(++steps<2000);}CHECK(app.content.healthy());same_game();CHECK(!provider.bad_range);
 }
+void run_transition_art(){
+    // Distinct literal pictures make cache residency observable instead of
+    // aliasing every synthetic auxiliary slot to image zero.
+    Package p=native_pack(162);constexpr unsigned speck=160,status_frame=161;
+    const unsigned auxiliary=p.base-InspectionAuxiliaryCount*4;
+    for(unsigned image:{speck,status_frame}){
+        const unsigned at=unsigned(p.bytes.size());
+        for(unsigned pixel=0;pixel<16;++pixel)append(p.bytes,uint16_t(image*257+pixel),2);
+        const size_t record=p.image_entry(image);
+        put(p.bytes,record,at);put(p.bytes,record+4,4,2);put(p.bytes,record+6,4,2);
+        put(p.bytes,record+8,0);put(p.bytes,record+12,32);
+    }
+    put(p.bytes,auxiliary+I7_GlowSpeck*4,speck);put(p.bytes,auxiliary+U_ColorlessSkill*4,status_frame);seal(p.bytes);
+    Provider provider{&p.bytes};
+    struct Case{EncounterId encounter;unsigned move;bool status;};
+    const Case cases[]={{EncounterId::HauntedShipNormal,0,false},{EncounterId::HauntedShipNormal,2,true},
+        {EncounterId::MechaKnightElite,1,true},{EncounterId::HauntedShipNormal,31,false}};
+    for(const auto&test:cases){
+        label="current card transitions and announced status-card frames";
+        battle(provider,false);CHECK(encounter_setup(app.game,test.encounter));
+        app.game.enemy_world.models[0].node=uint8_t(test.move);
+        CHECK(bool(enemy_intent(app.game,0).flags&EnemyIntentStatus)==test.status);
+        app.reset_presentation();CHECK(save(app.game,initial));app.render();
+        unsigned steps=0;while(app.combat_preparation.active){app.advance(33);CHECK(++steps<2000);same_game();}
+        CHECK(app.content.healthy()&&app.content.image_cached(speck));
+        CHECK(app.content.image_cached(status_frame)==test.status);
+        const auto before=app.content.read_stats();
+        CHECK(app.content.image(speck).pixels);if(test.status)CHECK(app.content.image(status_frame).pixels);
+        const auto after=app.content.read_stats();
+        CHECK(before.callbacks==after.callbacks&&before.callback_bytes==after.callback_bytes);
+        CHECK(!resource_transfer_uses&&!provider.bad_range&&!saves);same_game();
+    }
 }
-int main(){run_preparation();std::printf("combat preparation: %u checks; time/work budgets, unchanged game/labels, cancellation and resource faults\n",checks);}
+}
+int main(){run_preparation();run_transition_art();std::printf("combat preparation: %u checks; time/work budgets, unchanged game/labels, cancellation, announced transition art and resource faults\n",checks);}

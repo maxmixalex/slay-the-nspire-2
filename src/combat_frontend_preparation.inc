@@ -42,7 +42,11 @@ static void plan_combat_frontend(App&a){
         uint16_t tokens[MaxPlayerPowerEntries];const unsigned count=a.combat_power_entries(actor,tokens,MaxPlayerPowerEntries);
         for(unsigned i=0;i<count;++i)if(CombatStatus::PowerFlags[power_id(tokens[i])]&1)add(ui_status_image(a,int(power_id(tokens[i]))));
         if(actor&&s.enemy_world.active){const auto intent=a.combat_intent(actor-1);
-            for(const auto&part:ui_intent_parts)if(intent.flags&part.flag)add(ui_intent_image(a,part,intent));}
+            for(const auto&part:ui_intent_parts)if(intent.flags&part.flag)add(ui_intent_image(a,part,intent));
+            // A displayed status-card intent already promises this common
+            // frame. Prepare its picture without choosing a future card or
+            // advancing the enemy move/RNG. Other intents add no extra frame.
+            if(intent.flags&EnemyIntentStatus)ui(U_ColorlessSkill);}
     }
     if(!s.enemy_world.active){add(A_AttackIntent);add(A_BuffIntent);}
     const int energy=U_EnergyLayers+int(s.character)*5;
@@ -56,6 +60,10 @@ static void plan_combat_frontend(App&a){
     const int end=a.content.ui_image(U_EndTurnNative);add(end>=0?end:A_EndTurn);ui(U_EndTurnHover);ui(U_EndTurnGlow);
     const auto piles=a.combat_pile_counts();add(A_DrawPile);add(A_DiscardPile);if(piles.exhaust)add(A_ExhaustPile);ui(I12_PileCount);
     const auto hand=a.combat_hand();
+    // Draw, discard and exhaust all use the same tiny card-trail texture.
+    // Its first use otherwise blocks the first card movement on a cold OS
+    // file-cache page, even when every current hand face is already ready.
+    if(s.card_count)ui(I7_GlowSpeck);
     for(unsigned i=0;i<hand.count;++i){
         const int instance=hand.ids[i];const Card card=s.cards[instance];const auto*facts=event_card_facts(s,card,instance,-1);
         const auto type=a.card_face_type(card,instance,-1,facts);const unsigned group=card_face::material_group(unsigned(card_rarity(card.kind)));
