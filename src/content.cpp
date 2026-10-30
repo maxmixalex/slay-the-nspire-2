@@ -680,7 +680,7 @@ const uint8_t* Content::glyph_record(uint32_t cp,int size,unsigned style)const{
     return io_good_?glyph_records.remember(key,base,fallback):nullptr;
 }
 bool Content::has_exact_glyph(uint32_t cp,int size,unsigned style)const{
-    if(style>7||size<=0||size>31)return false;
+    if(style>7||size<=0||size>31||text_format_control(cp)||kerning_codepoint(cp)||inline_icon(cp))return false;
     const uint8_t* row=glyph_record(cp,size,style);
     const unsigned band=unsigned(size)|((style&3u)<<6)|((style&4u)<<3);
     return row&&u32(row)==cp&&u16(row+8)==band;

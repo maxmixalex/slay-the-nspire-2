@@ -172,6 +172,8 @@ def main():
         if report['added_glyphs']:
             bounds = split.layout(changed, code)
             leaf = split.compress_language_directory(split.language_file(changed, bounds, code, common[32:64]))
+            leaf, storage = storage_parts.compress_blocks(leaf)
+            report['storage'] = storage
             tiles.require(split.reconstruct(common, leaf, code) == changed, 'Patched locale reconstruction differs')
         else:
             leaf = old

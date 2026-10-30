@@ -57,6 +57,17 @@ static void grammar(){
     CHECK(!ui_calendar_format(value,1,nullptr,out,sizeof out));CHECK(!out[0]);
     CHECK(!ui_calendar_format(value,1,"yyyy",nullptr,0));
     auto invalid=value;invalid.month=13;CHECK(!ui_calendar_format(invalid,1,"yyyy",out,sizeof out));CHECK(!out[0]);
+    ui_calendar_shape_thai(nullptr);
+    for(const auto& cluster:calendar_detail::ThaiMonthClusters){
+        const uint32_t cp=cluster.codepoint;CHECK(cp>=0x10f000&&cp<=0x10f00a);
+        std::string encoded;encoded+=char(0xf0|(cp>>18));encoded+=char(0x80|((cp>>12)&63));encoded+=char(0x80|((cp>>6)&63));encoded+=char(0x80|(cp&63));
+        const std::string text=std::string("prefix ")+cluster.text+cluster.text+" suffix";
+        std::vector<char> exact(text.begin(),text.end());exact.push_back(0);ui_calendar_shape_thai(exact.data());
+        CHECK(std::string(exact.data())=="prefix "+encoded+encoded+" suffix");
+        // A prefix which ends before a combining mark must remain intact.
+        std::vector<char> prefix(cluster.text,cluster.text+3);prefix.push_back(0);ui_calendar_shape_thai(prefix.data());
+        CHECK(std::string(prefix.data())==std::string(cluster.text,3));
+    }
 }
 int main(int argc,char** argv){
     CHECK(argc==2);std::ifstream source(argv[1]);CHECK(source.good());std::string line;unsigned rows=0;

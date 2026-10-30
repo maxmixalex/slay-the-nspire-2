@@ -74,7 +74,9 @@ static void scenes(const std::vector<uint8_t>& pack,const std::string& date,cons
     same_band(actual,expected,75,91);
     a.progress.count=1;a.progress.next_history=1;a.progress_loaded=true;a.progress.tutorial_flags=0;a.title=true;
     a.open_history();for(unsigned i=0;i<50;++i)a.advance(33);a.render();CHECK(a.history_open&&a.content.healthy());capture(captures,"history");
-    a.input(Key::Back);a.ui_action(UiAction::OpenDailyRun);CHECK(a.run_mode.screen==RunMenu::Daily);
+    a.input(Key::Back);CHECK(!a.history_open&&a.compendium_open);
+    a.input(Key::Back);CHECK(!a.compendium_open);a.input(Key::Confirm);CHECK(a.run_mode.screen==RunMenu::Singleplayer);
+    a.ui_action(UiAction::OpenDailyRun);CHECK(a.run_mode.screen==RunMenu::Daily);
     const RunOptions before=a.run_mode.pending;const auto character=a.selected_character;const auto ascension=a.selected_ascension;
     char seed[65];std::strcpy(seed,a.selected_seed);
     const auto paint_daily=[&](bool visible){Canvas canvas{a};if(!visible)canvas.text_visible_characters=0;daily_run_screen(canvas);};
@@ -96,24 +98,36 @@ int main(int argc,char** argv){
     progress_date_text(a,now,date,sizeof date,time,sizeof time);CHECK(!std::strcmp(date,"October 24, 2026")&&!std::strcmp(time,"1:07 PM"));
     CHECK(!a.content.has_exact_glyph('?',8)&&!a.content.has_exact_glyph(0x10f000,8));
     if(argc==1){std::printf("calendar UI: %u source-only fallback checks; private packs enable actual glyph/raster integration\n",checks);return 0;}
-    CHECK(argc==3||argc==4);std::vector<uint8_t> pack;FILE* file=std::fopen(argv[1],"rb");CHECK(file);pack.resize(spire_test::pack_size(file));CHECK(std::fread(pack.data(),1,pack.size(),file)==pack.size());CHECK(!std::fclose(file));
+    CHECK(argc==3||argc==4);const bool legacy=argc==4&&!std::strcmp(argv[3],"--legacy");std::vector<uint8_t> pack;FILE* file=std::fopen(argv[1],"rb");CHECK(file);pack.resize(spire_test::pack_size(file));CHECK(std::fread(pack.data(),1,pack.size(),file)==pack.size());CHECK(!std::fclose(file));
     Callbacks callbacks{};callbacks.wall_clock=wall;CHECK(a.init({&pack,uint32_t(pack.size()),read_at},callbacks));
     const unsigned language=a.content.language();std::ifstream vectors(argv[2]);CHECK(vectors.good());std::string line,scene_date,scene_time,scene_daily;unsigned rows=0;
+    if(legacy)CHECK(!a.content.has_exact_glyph(language==15?0x10f008:0x5348,8));
     while(std::getline(vectors,line)){
         if(line.empty()||line[0]=='#')continue;std::istringstream input(line);std::vector<std::string> fields;std::string value;
         while(std::getline(input,value,'\t'))fields.push_back(value);CHECK(fields.size()==8);
         if(std::stoul(fields[0])!=language)continue;
         const uint32_t stamp=uint32_t(std::stoull(fields[1]));if(!stamp)continue;
-        const std::string expected_date=shaped(unhex(fields[5]),language),expected_time=shaped(unhex(fields[6]),language),expected_daily=unhex(fields[7]);
+        std::string expected_date=shaped(unhex(fields[5]),language),expected_time=shaped(unhex(fields[6]),language);const std::string expected_daily=unhex(fields[7]);
+        if(legacy){
+            CHECK(language==2||language==9||language==15);
+            const auto value=ui_calendar(stamp);char english_date[64],english_time[32];
+            CHECK(ui_calendar_format(value,0,"MMMM d, yyyy",english_date,sizeof english_date)&&ui_calendar_format(value,0,"h:mm tt",english_time,sizeof english_time));
+            // Chinese/Japanese always need missing U+5348; an old Thai pack
+            // can render a few months that have no missing cluster/consonant.
+            if(!calendar_glyphs_available(a,expected_date.c_str(),8,0)||!calendar_glyphs_available(a,expected_time.c_str(),8,0)){
+                expected_date=english_date;expected_time=english_time;
+            }
+        }
         exact_glyphs(expected_date,8,0);exact_glyphs(expected_time,8,0);exact_glyphs(expected_daily,10,source_label_face(a.content.original_label_fonts(),5));
         progress_date_text(a,stamp,date,sizeof date,time,sizeof time);daily_date_text(a,stamp,daily,sizeof daily);
         CHECK(expected_date==date&&expected_time==time&&expected_daily==daily);++rows;
         if(stamp==now){scene_date=expected_date;scene_time=expected_time;scene_daily=expected_daily;}
     }
     CHECK(rows>400&&!scene_date.empty());const unsigned before=reads;
-    CHECK(!a.content.has_exact_glyph(0x10f100,8)&&!a.content.has_exact_glyph('A',31)&&!a.content.has_exact_glyph('A',8,8));CHECK(reads==before);
+    CHECK(!a.content.has_exact_glyph(0x10f100,8)&&!a.content.has_exact_glyph('A',31)&&!a.content.has_exact_glyph('A',8,8));
+    CHECK(!a.content.has_exact_glyph(0x100000,20)&&!a.content.has_exact_glyph(0x200b,8));CHECK(reads==before);
     if(language==14){CHECK(a.content.has_exact_glyph(0xa0,8));CHECK(a.content.glyph_metrics(0xa0,8).advance>0);}
-    if(language==15){CHECK(scene_date.find("2569")!=std::string::npos&&scene_daily.find("2026")!=std::string::npos&&scene_daily.find("October")!=std::string::npos);}
-    scenes(pack,scene_date,scene_time,scene_daily,argc==4?argv[3]:nullptr);
-    std::printf("calendar history: %u checks, locale %u, %u real resource/provider rows, history and daily LCD rasters passed\n",checks,language,rows);
+    if(language==15){CHECK(scene_date.find(legacy?"2026":"2569")!=std::string::npos&&scene_daily.find("2026")!=std::string::npos&&scene_daily.find("October")!=std::string::npos);}
+    scenes(pack,scene_date,scene_time,scene_daily,argc==4&&!legacy?argv[3]:nullptr);
+    std::printf("calendar history: %u checks, locale %u, %u real resource/provider rows, history and daily LCD rasters passed (%s)\n",checks,language,rows,legacy?"legacy glyph fallback":"exact original glyphs");
 }
