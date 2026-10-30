@@ -114,7 +114,7 @@ static void settled_layer_pixels(){
  };
  // The quote can rise across the banner's bottom rows during its own tween.
  // Limit this oracle to the stable top/wings above that independently drawn text.
- // The corrected title occupies y+5..25, centered on the ribbon. Include
+ // The corrected title occupies y+2..22, within the ribbon. Include
  // its one-pixel outline while still checking the top and both source wings.
  verify(I6_CommonBanner,BannerX,a.game_over_presentation.banner_y(a.map_clock_ms),BannerWidth,BannerHeight,9,1,BannerWidth-18,22,255,100);
  // The centered button label owns (16,2,width-32,22), including its four

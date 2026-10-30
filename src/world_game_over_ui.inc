@@ -180,12 +180,38 @@ static void game_over_button(Canvas&c,int x,UiAction action,const char*label,Inp
  if(!c.a.pointer.visible&&code){char key[16]{};input_key_label(code,key,sizeof key);
   button.text_fitted(key,x+ButtonWidth+4,y+8,38,8,Muted,8);}
 }
-static void game_over_score_line(Canvas&c,const char*key,unsigned icon,int y,const char*points,unsigned row){
- using namespace game_over_ui;char label[256]{};game_over_format(c.a,game_over_text(c.a,key),label,sizeof label);
+struct GameOverScoreRow {char label[256]{},points[32]{};unsigned icon=0;};
+static void game_over_score_line(Canvas&c,const GameOverScoreRow&line,int y,unsigned row,int width,int points_width){
+ using namespace game_over_ui;
  const auto motion=c.a.game_over_presentation.score(row,c.a.map_clock_ms);if(!motion.visible||!motion.alpha)return;
- Canvas text=c;text.opacity=uint8_t(div255(text.opacity*motion.alpha));const int x=ScoreX+motion.offset;text.ui(int(icon),x,y+4,14,16);text.font_face=source_label_face(c.a.content.original_label_fonts(),5);
- text.fitted(label,x+20,y+1,ScoreWidth-60,20,10,10,White);
- text.fitted(points,x+ScoreWidth-36,y+1,36,20,10,10,Gold,false,true);
+ Canvas text=c;text.opacity=uint8_t(div255(text.opacity*motion.alpha));const int x=(ScreenW-width)/2+motion.offset;
+ text.ui(int(line.icon),x,y+4,14,16);text.font_face=source_label_face(c.a.content.original_label_fonts(),5);
+ const uint16_t ink=rgb(255,246,226); // Original ScoreLine label/score use the same ivory.
+ text.fitted(line.label,x+20,y+1,width-32-points_width,20,10,10,ink,false,true);
+ const int amount_width=mn(points_width,text.width(line.points,10));
+ text.fitted(line.points,x+width-amount_width,y+1,amount_width,20,10,10,ink,false,true);
+}
+static void game_over_score_lines(Canvas&c,const UiRunHistory&r,int y){
+ using namespace game_over_ui;const auto score=ui_run_score(r);GameOverScoreRow lines[5]{};unsigned count=0;
+ const auto add=[&](const char*key,unsigned icon,unsigned amount,bool multiplier=false){
+  auto&line=lines[count++];line.icon=icon;game_over_format(c.a,game_over_text(c.a,key),line.label,sizeof line.label);
+  TextBuffer b{line.points,sizeof line.points,0};b.ch(multiplier?'x':'+');
+  b.number(multiplier?1+amount/10:amount);if(multiplier&&amount%10){b.ch('.');b.number(amount%10);}
+ };
+ add("SCORE_LINE.floorsClimbed",I8_GameOverScoreFloor,score.floor_points);
+ add("SCORE_LINE.goldGained",I8_GameOverScoreGold,score.gold_points);
+ if(score.elites)add("SCORE_LINE.elitesKilled",I8_GameOverScoreElite,score.elites*50);
+ if(score.bosses)add("SCORE_LINE.bossesSlain",I8_GameOverScoreBoss,score.bosses*100);
+ if(r.ascension)add("SCORE_LINE.ascension",I8_GameOverScoreAscension,r.ascension,true);
+ Canvas measure=c;measure.font_face=source_label_face(c.a.content.original_label_fonts(),5);
+ int label_width=0,points_width=0;
+ for(unsigned i=0;i<count;++i){label_width=mx(label_width,measure.width(lines[i].label,10));points_width=mx(points_width,measure.width(lines[i].points,10));}
+ points_width=mn(40,points_width);
+ // Keep the original HBox's icon, text and end-aligned amount relationship.
+ // Its calculator column follows the actual localized labels instead of
+ // retaining a blank fixed-width amount cell or shifting the group left.
+ const int width=mx(ScoreMinWidth,mn(ScoreMaxWidth,32+label_width+points_width));
+ for(unsigned i=0;i<count;++i,y+=ScoreStep)game_over_score_line(c,lines[i],y,i,width,points_width);
 }
 static void game_over_hover(Canvas&c,int focus,int anchor_x,int anchor_y){
  char title[192]{},body[2048]{};c.a.game_over_detail(focus,title,sizeof title,body,sizeof body);if(!*title)return;
@@ -207,7 +233,7 @@ static void native_game_over_screen(Canvas&c){
  char banner_key[48]{};TextBuffer bk{banner_key,sizeof banner_key,0};
  if(s.phase==Phase::Complete)bk.text("BANNER.falseWin");else{bk.text("BANNER.lose");bk.number(unsigned(s.world.run_seed>>32)%8);}
  Canvas label=c;label.font_face=source_label_face(c.a.content.original_label_fonts(),5);banner.font_face=source_label_face(c.a.content.original_label_fonts(),5);
- banner.fitted(game_over_text(a,banner_key,s.phase==Phase::Complete?"Victory?":"Defeat"),BannerX+11,banner_y+2,BannerWidth-22,20,12,10,Gold,true,true,true);
+ banner.fitted(game_over_text(a,banner_key,s.phase==Phase::Complete?"Victory?":"Defeat"),BannerX+11,banner_y+2,BannerWidth-22,20,12,10,rgb(255,246,226),true,true,true);
  char quote[2048]{};
  if(!a.game_over_summary){
   if(s.phase==Phase::Complete&&known){game_over_format(a,game_over_text(a,"VICTORY_DAMAGE_LOCAL"),quote,sizeof quote);
@@ -260,14 +286,8 @@ static void native_game_over_screen(Canvas&c){
  if(*quote&&(!motion.quote_from||motion.summary_age(now)>=250)){Canvas italic=body;italic.font_face=source_label_face(a.content.original_label_fonts(),6);italic.opacity=uint8_t(div255(italic.opacity*motion.quote_alpha(now)));
   italic.paragraph_fitted(quote,QuoteX,-scroll,QuoteWidth,quote_height,10,rgb(255,100,100),10,true);}
  int y=score_top-scroll;
- if(known){const auto score=ui_run_score(*r);char amount[32]{};unsigned row=0;
-  const auto points=[&](unsigned n){amount[0]=0;TextBuffer b{amount,sizeof amount,0};b.ch('+');b.number(n);};
-  points(score.floor_points);game_over_score_line(body,"SCORE_LINE.floorsClimbed",I8_GameOverScoreFloor,y,amount,row++);y+=ScoreStep;
-  points(score.gold_points);game_over_score_line(body,"SCORE_LINE.goldGained",I8_GameOverScoreGold,y,amount,row++);y+=ScoreStep;
-  if(score.elites){points(score.elites*50);game_over_score_line(body,"SCORE_LINE.elitesKilled",I8_GameOverScoreElite,y,amount,row++);y+=ScoreStep;}
-  if(score.bosses){points(score.bosses*100);game_over_score_line(body,"SCORE_LINE.bossesSlain",I8_GameOverScoreBoss,y,amount,row++);y+=ScoreStep;}
-  if(r->ascension){amount[0]=0;TextBuffer b{amount,sizeof amount,0};b.ch('x');b.number(1+r->ascension/10);if(r->ascension%10){b.ch('.');b.number(r->ascension%10);}game_over_score_line(body,"SCORE_LINE.ascension",I8_GameOverScoreAscension,y,amount,row++);}
- }else body.paragraph_fitted(a.content.string(PartialHistoryText),28,y,264,52,10,Muted,10,true);
+ if(known)game_over_score_lines(body,*r,y);
+ else body.paragraph_fitted(a.content.string(PartialHistoryText),28,y,264,52,10,Muted,10,true);
  int focus=a.pointer.visible?-1:a.game_over_focus,anchor_x=150,anchor_y=BodyTop;bool focus_visible=false;
  const auto detail_hit=[&](int x,int py,int w,int h,int id){
   const int top=mx(0,py),bottom=mn(BodyHeight,py+h);if(bottom<=top)return;

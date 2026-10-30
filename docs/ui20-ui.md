@@ -19,9 +19,12 @@ resource acceptance before it is treated as delivered.
 - Standalone map rooms have a true-black backing. The original map layers keep
   their authored transparency instead of receiving a synthetic paper-colored
   rectangle during second/third-act entry and camera movement.
-- The game-over ribbon label moves three pixels up. The summary uses a
-  152-pixel centered score column and 184-pixel quote column; amounts share the
-  label's baseline. Summary/terminal return uses the existing 800 ms fade out,
+- The game-over ribbon label moves three pixels up. The summary measures its
+  localized score labels into a centered 112..152-pixel column and uses a
+  184-pixel quote column. Amounts share the label baseline and explicitly align
+  to the column's right edge; the former single-line flag was not a right-align
+  operation and left unused space after every short amount. Banner/score text
+  now uses the original common ivory color. Summary/terminal return uses the existing 800 ms fade out,
   enters the menu at black, and completes its normal 800 ms fade in.
 - Successful console commands no longer detach an already resumed/saved run
   from its checkpoint. A separately remembered association identifies the

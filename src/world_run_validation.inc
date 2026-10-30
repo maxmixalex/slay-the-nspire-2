@@ -59,7 +59,7 @@ bool world_valid_run(const State&s){
     // Between acts the standalone map has no visited current node. Give Up
     // can end the run here before its first room: retain that exact route
     // instead of requiring a fabricated visit merely to validate death.
-    if(w.current_point==NoPoint){if(w.room_open||(s.phase!=Phase::Map&&s.phase!=Phase::Dead)||w.map_row||w.map_column!=3)return false;}
+    if(w.current_point==NoPoint){if(w.room_open||w.final_event||(s.phase!=Phase::Map&&s.phase!=Phase::Dead)||w.map_row||w.map_column!=3)return false;}
     else{
         if(w.current_point>=m.count||!m.points[w.current_point].active||!w.visited[w.act_index][w.current_point])return false;
         if(w.map_column!=m.points[w.current_point].col||w.map_row!=m.points[w.current_point].row)return false;
