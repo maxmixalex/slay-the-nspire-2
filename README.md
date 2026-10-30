@@ -1,6 +1,6 @@
 # Slay the Nspire 2
 
-Native TI-Nspire Ndless adaptation of Slay the Spire 2. Reference: the owner's **v0.111.0 / 41cef1ea** installation. Current development is **0.17**; verified progress is synchronized to [`main`](https://github.com/maxmixalex/slay-the-nspire-2/tree/main) from the integration branch. Current work integrates the original title and bilingual UI, on-demand loading, shared-resource installation and measured card-rendering improvements. Exact executed checkpoints and delivery status are in [WORK_STATE.md](docs/WORK_STATE.md); earlier results below retain their historical identities.
+Native TI-Nspire Ndless adaptation of Slay the Spire 2. Reference: the owner's **v0.111.0 / 41cef1ea** installation. The current calculator delivery is **0.17 UI17**, with independently packaged resource groups, lossless storage improvements, a smaller resident directory and original Unicode/legacy seed handling. Exact tested checkpoints, installation sizes, measured results and remaining limits are in the [UI17 delivery record](docs/ui17-delivery-0.17.md) and [WORK_STATE.md](docs/WORK_STATE.md). UI17 was built and validated locally; this delivery does not claim a new remote `main` update or a GitHub Actions pass. Earlier results below retain their historical identities.
 
 **Audio, multiplayer and Timeline are excluded.** Original UI fidelity, animation and single-player content breadth remain in scope. Original game data, fonts and calculator images are not included in public source.
 
@@ -10,24 +10,47 @@ The original three-act route now drives the playable world: Overgrowth or Underd
 
 ### Current calculator installation
 
-The UI14 working source uses the following layout. Only the launcher stays at
+The UI17 calculator release uses the following layout. Only the launcher stays at
 installation root; resources are read from `data` and every mutable file is
 written under `state`. The launcher creates `state` when it is absent.
 
 | Path | Purpose |
 | --- | --- |
 | `nSpire2.tns` | Ndless launcher; developer console is always included |
-| `data/nSpire2.dat.tns` | Shared artwork and animation |
+| `data/nSpire2.dat.tns` | Small index locating the eight required artwork parts |
+| `data/nSpire2.interface.dat.tns` | Interface artwork |
+| `data/nSpire2.cards.dat.tns` | Card artwork |
+| `data/nSpire2.characters.dat.tns` | Character artwork and animation |
+| `data/nSpire2.enemies.dat.tns` | Enemy artwork and animation |
+| `data/nSpire2.bosses.dat.tns` | Boss artwork and animation |
+| `data/nSpire2.rooms.dat.tns` | Room artwork and effects |
+| `data/nSpire2.effects.dat.tns` | Shared visual effects |
+| `data/nSpire2.shared.dat.tns` | Remaining shared artwork |
 | `data/nSpire2.eng.dat.tns` | English text, fonts and directories |
 | `data/nSpire2.zhs.dat.tns` | Simplified Chinese text, fonts and directories |
 | `data/nSpire2.<locale>.dat.tns` | Optional original language editions |
 | `state/nSpire2.sav.tns` | Current run in the first profile |
 | `state/` | Other profiles, progress, preferences, backups and temporary files |
 
-Install the launcher and desired language files from the same build. Select an
-installed language in Settings, and select one of three independent profiles
-using the top-left profile control. There is no old-filename search, resource
-fallback or automatic import from an earlier unpublished directory layout.
+Install the launcher, index, **all eight artwork parts**, and language files
+from the same UI17 release. The default calculator ZIP contains English and
+Simplified Chinese; the optional-language ZIP provides the other fourteen
+original editions. Add their language files to the same `data` directory.
+All eight artwork parts are required for every language, and English should
+remain installed for fallback. A missing or invalid required part produces a
+built-in English resource error.
+
+When updating an existing installation, replace the launcher and matching
+resource files while **preserving the complete `state` directory**. It contains
+the three profiles, current runs, progress, preferences and backups. The
+release archive does not replace those files. Earlier unpublished directory
+layouts are not automatically imported.
+
+Choose an installed language in Settings and select one of three independent
+profiles using the top-left profile control. A usable saved language takes
+priority; otherwise the launcher tries the supported system language, English,
+then another usable installed edition. Calculator languages unsupported by
+the game fall back to English when it is available.
 
 Touchpad edges navigate and the centre clicks. Digits 1–9 and 0 select all ten
 hand slots. Enter aims/confirms, Esc returns/pauses, Menu ends the turn, Tab
@@ -44,13 +67,18 @@ Resources are read and decoded on demand. Startup does not scan full files for
 integrity hashes or CRCs. The runtime retains the bounds and format checks
 needed to load and render the requested content. Original assets remain private.
 
-UI14 validation and exact checkpoints are recorded in
-[WORK_STATE.md](docs/WORK_STATE.md). The current user feedback supersedes earlier
-UI13 layout and performance acceptance. Completed UI12/UI13 results remain
-historical records in [UI12](docs/validation-ui12-0.17.json) and
+Current verification and exact checkpoints are recorded in the
+[UI17 delivery record](docs/ui17-delivery-0.17.md) and
+[WORK_STATE.md](docs/WORK_STATE.md). The [UI17 feedback ledger](docs/ui17-feedback-acceptance-0.17.md)
+distinguishes new implementation, retained UI16 fixes, original behavior and
+accepted calculator adaptations. Earlier UI12/UI13 results remain historical
+records in [UI12](docs/validation-ui12-0.17.json) and
 [UI13](docs/validation-ui13-0.17.json), with their original source identities.
 
 ### Historical UI3 measurements and delivery
+
+This section records UI3 as delivered. Statements about work remaining at that
+checkpoint are historical; use the UI17 reports above for the current status.
 
 The historical UI3 title-glow hybrid resources total **81,100,703 bytes**, compared with
 93,783,363 bytes for the previous bilingual NSP2/19 split. Common card/UI images
@@ -117,7 +145,7 @@ Source22 [`5d177be7`](https://github.com/maxmixalex/slay-the-nspire-2/commit/5d1
 
 The historical source22 launcher is **885,386 bytes**; the two calculator files total **81,731,444 bytes before saves**. The **30–40 MB target is not achieved**. None of the seven alternative reversible tile representations improved the existing encoding in the declared eight-group sample. Grouped retained images/glyphs show about **8.43 MB** of potential component savings, but require an unimplemented format/reader and still model roughly **69 MiB** before new global metadata. See [resource-budget-0.17.md](docs/resource-budget-0.17.md) and [the exact diagnostic evidence](docs/validation-resource-research-source22.json). The private ZIP and offline HTML are development artifacts, not hardware or 95% visual acceptance. That historical pair requires its matching NSP2/15 resource. Use the current split installation above for this feedback stage.
 
-Those source20–22 resource and launcher sizes describe earlier NSP2/14–15 stages. Current UI8 source accepts NSP2/28 and retains old complete-pack readers, including the verified bilingual NSP2/17 and NSP2/18 packs. Gameplay writes **v17**, retaining historical v3–v16 readers; resource-storage and save versions are independent. The browser selects a save key from the actual encoded version and preserves compatible historical keys. Build the current native/ARM sources with the logged commands below. World resource conversion is described in [enemy-assets-0.17.md](docs/enemy-assets-0.17.md), with the latest append-only extensions in [feedback-ui-0.17.md](docs/feedback-ui-0.17.md) and [merchant-effects-0.17.md](docs/merchant-effects-0.17.md). Generated packs and embedded-content HTML stay outside this public repository. The older conversion commands and artifact statistics below describe **0.16 only**.
+Those source20–22 resource and launcher sizes describe earlier NSP2/14–15 stages. The later historical UI8 source accepted NSP2/28 and retained old complete-pack readers, including the verified bilingual NSP2/17 and NSP2/18 packs. Its gameplay writer used **v17** with historical v3–v16 readers; resource-storage and save versions are independent. Its browser selected a save key from the actual encoded version and preserved compatible historical keys. These are earlier-stage format descriptions; the current UI17 installation is specified above. Build the current native/ARM sources with the logged commands below. Earlier world resource conversion is described in [enemy-assets-0.17.md](docs/enemy-assets-0.17.md), [feedback-ui-0.17.md](docs/feedback-ui-0.17.md) and [merchant-effects-0.17.md](docs/merchant-effects-0.17.md). Generated packs and embedded-content HTML stay outside this public repository. The older conversion commands and artifact statistics below describe **0.16 only**.
 
 ## Verified 0.16 baseline — historical content
 
@@ -133,14 +161,16 @@ Read [current work state](docs/WORK_STATE.md) before resuming development and th
 
 ## Source builds and historical 0.16 conversion
 
-GitHub Actions is enabled in [`.github/workflows/ci.yml`](.github/workflows/ci.yml).
-It runs native ASan/UBSan regressions, converter tests and ARM/WASM builds without
-private original assets. See the [workflow runs](https://github.com/maxmixalex/slay-the-nspire-2/actions)
-for each exact source checkpoint's status.
+The workflow in [`.github/workflows/ci.yml`](.github/workflows/ci.yml) defines
+native ASan/UBSan regressions, converter tests and ARM/WASM builds without
+private original assets. Historical remote results are listed in the
+[workflow runs](https://github.com/maxmixalex/slay-the-nspire-2/actions).
+Current UI17 validation uses the local checkpoint receipts in the delivery
+record; the presence of this workflow is not a current remote CI result.
 
 ```sh
-# Set this to the full commit whose remote branch and source tree were verified.
-NSPIRE_CHECKPOINT='<verified-full-commit-sha>'
+# Set this to the exact full source commit being tested.
+NSPIRE_CHECKPOINT='<full-commit-sha>'
 python3 tools/run_logged.py --checkpoint "$NSPIRE_CHECKPOINT" --label arm -- python3 tools/build_ndless.py
 cmake -S . -B build/host -DSPIRE_X11=OFF
 python3 tools/run_logged.py --checkpoint "$NSPIRE_CHECKPOINT" --label native-build -- cmake --build build/host --parallel
@@ -171,9 +201,9 @@ Fresh X11 host processes loaded and identically re-saved v14 ordinary **88,764-b
 
 The final **12,910,778-byte NSP2/13** pack contains 2,638 images, 7,215 glyph records and 38 clips. All 1,622 old image payloads, 6,265 old glyph payloads and earlier card/string/auxiliary/clip records are preserved. It fits the **13 MiB** resource buffer with 720,710 bytes remaining. ARM produces a **284,458-byte** launcher with **16,174,284-byte** static allocation, below the unchanged 16 MiB packer ceiling. WASM is **817,288 bytes**, links with fixed **16 MiB** memory and is embedded with the identical pack in the **18,319,349-byte** offline HTML. No new Firebird or physical-device execution is established. All **19 final journals** passed with unchanged frozen source; the two canonical release files are `Slay-the-Nspire-2-calculator.zip` and `Slay-the-Nspire-2-offline.html`.
 
-Commit source to a named work branch and read the remote ref back **before** long compilation or conversion. `tools/run_logged.py` records the supplied checkpoint, input hashes, command, running/completed state, exit code and log hash. It does not itself verify or push a remote commit. A running journal after interruption is not a passed test.
+Commit source to a named work branch **before** long compilation or conversion. Record remote publication receipts separately; when publication is unavailable, preserve the local source and history bundle and state that limitation. `tools/run_logged.py` records the supplied checkpoint, input hashes, command, running/completed state, exit code and log hash. It does not itself verify or push a remote commit. A running journal after interruption is not a passed test.
 
-Current execution results belong in WORK_STATE, not inherited historical reports. Compilation, cross-backend agreement and actual target execution are different evidence levels. Physical performance, complete original encounters/runs and exact UI parity remain unverified or unfinished.
+Current execution results belong in WORK_STATE and the UI17 delivery record, not inherited historical reports. Compilation, cross-backend agreement and actual target execution are different evidence levels. Historical incomplete-work statements above describe their stated checkpoints; the current feedback ledger records the remaining implementation and evidence boundaries. Firebird execution does not establish physical-handheld performance or exhaustive original-game parity.
 
 ## Controls and license
 
