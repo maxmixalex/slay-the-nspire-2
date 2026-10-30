@@ -89,6 +89,19 @@ That bounded run records 19,157,358 preparation microsteps, with a maximum of
 budget, not one display frame per step. Cold-cache boundaries occur again at
 each range, so these totals are not ordinary-OS scene latency measurements.
 
+The exact executed orchestration script is committed as
+`tools/verify_content_images.py` (identical bytes to the private driver used by
+the recorded run, SHA-256
+`beeacdc9df49136bbbcf11a75f06a11bc5bed4a3465d3c296c4740034ae96a6b`).
+It invokes the existing native executable under the Linux dynamic loader,
+derives contiguous ranges from the pack's decoded-cost table, requires every
+range's successful byte-comparison and preparation summary, and only marks the
+receipt complete after its covered image count equals the full catalog. Its
+arguments are `--binary`, `--pack`, `--reference`, `--output`, and optional
+`--spool-mib` (128 in this run). Run it through `tools/run_logged.py` with the
+selected source checkpoint; the receipt records both pack hashes, the actual
+native executable hash, every range and the aggregate totals.
+
 The ARM gate executes the integrated ELF with SHA-256
 `c8df6b988a2ad0546b251d598f847fdc72ffe6250414110b979acc71ef081c8d`
 using the private official-PyPI Unicorn 2.1.4 test dependency. It covers all
