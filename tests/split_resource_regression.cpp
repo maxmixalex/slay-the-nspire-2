@@ -1,4 +1,5 @@
 #include "resource_source.hpp"
+#include "index_prediction.hpp"
 #include "ui12_assets.hpp"
 #include "scene_font_assets.hpp"
 #include "retained_filter.hpp"
