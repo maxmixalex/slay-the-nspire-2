@@ -7,7 +7,7 @@ void App::sync_combat_preparation(){
     auto&p=combat_preparation;
     const int encounter=game.enemy_world.active?int(game.enemy_world.encounter):-1;
     if(p.initialized&&p.seed==game.seed&&p.floor==game.floor&&p.combat==game.world.combat_count&&p.encounter==encounter)return;
-    p.reset();p.initialized=true;p.seed=game.seed;p.floor=game.floor;p.combat=game.world.combat_count;p.encounter=encounter;
+    content.cancel_preload();p.reset();p.initialized=true;p.seed=game.seed;p.floor=game.floor;p.combat=game.world.combat_count;p.encounter=encounter;
     sync_enemy_feedback();
     struct Track {Clip clip;unsigned start;int id;};Track tracks[CombatPreparation::FirstCapacity]{};unsigned count=0;
     auto track=[&](int id,uint32_t elapsed=0){
@@ -92,26 +92,39 @@ void App::sync_combat_preparation(){
         if(!more||full)break;
     }
     for(unsigned i=1;i<p.count;++i){uint32_t id=p.images[i];unsigned j=i;while(j&&p.images[j-1]>id){p.images[j]=p.images[j-1];--j;}p.images[j]=id;}
+    // Planning only reads resident directory/game metadata. Preserve the
+    // immediate warm path when all pictures are already resident, while a
+    // cold room includes its controls/cards and exact fitted glyphs too.
+    plan_combat_frontend(*this);p.active=p.ui_count!=0;
     for(unsigned i=0;i<p.count;++i)if(!content.image_cached(int(p.images[i]))){p.active=true;break;}
-    if(!p.active)p.cursor=p.count;
+    if(!p.active){p.cursor=p.count;p.ui_stage=4;}
 }
 void App::step_combat_preparation(){
     auto&p=combat_preparation;if(!p.active||!p.shown||paused)return;
-    ++p.updates;unsigned decoded_count=0;
-    while(p.cursor<p.count){
-        const int image=int(p.images[p.cursor]);
-        if(content.image_cached(image)){++p.cursor;continue;}
-        if(decoded_count>=CombatPreparation::ImagesPerUpdate)return;
-        ++p.cursor;
-        const auto before=content.read_stats();const auto decoded=content.image(image);const auto after=content.read_stats();
-        p.read_calls+=after.callbacks-before.callbacks;p.read_bytes+=after.callback_bytes-before.callback_bytes;++p.cold_images;++decoded_count;
-        if(!decoded.pixels){p.active=false;message("Could not load resources.");return;}
-        // Consecutive images commonly share a resident tile group. Process
-        // a small bounded batch before yielding, instead of imposing one
-        // complete 33 ms host interval on every cheap cache assembly.
+    ++p.updates;const auto initial=p.cold_images;
+    GlyphPreparationBudget budget(callbacks.foreground_clock_ticks,CombatPreparation::UpdateTicks);
+    budget.remaining=budget.clock?CombatPreparation::MaximumSteps:CombatPreparation::OfflineSteps;
+    while(budget.take()){
+        if(callbacks.foreground_poll)callbacks.foreground_poll();
+        while(p.cursor<p.count&&content.image_cached(int(p.images[p.cursor])))++p.cursor;
+        if(p.cold_images-initial>=CombatPreparation::ImagesPerUpdate)return;
+        const auto before=content.read_stats();PreparationResult result;
+        if(p.cursor<p.count){
+            result=content.preload_image_step(int(p.images[p.cursor]));
+            if(result==PreparationResult::Ready){++p.cursor;++p.cold_images;result=PreparationResult::Pending;}
+        }else result=prepare_combat_frontend(*this,budget);
+        const auto after=content.read_stats();
+        p.read_calls+=after.callbacks-before.callbacks;p.read_bytes+=after.callback_bytes-before.callback_bytes;
+        if(result==PreparationResult::Failed||!content.healthy()){
+            content.cancel_preload();p.active=false;message("Could not load resources.");return;
+        }
+        if(result==PreparationResult::Ready)break;
+        if(!budget.remaining)return;
     }
+    if(p.cursor<p.count||p.ui_stage<4)return;
     // Touch already resident initial poses last. This cannot issue new I/O;
     // it protects them while the first visible frame loads its HUD images.
     for(unsigned i=0;i<p.first_count;++i)if(content.image_cached(int(p.first[i])))content.image(int(p.first[i]));
+    content.cancel_preload();
     p.active=false;
 }

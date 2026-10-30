@@ -75,6 +75,8 @@ static void world_region_image_key(const State&s,char*out,size_t size){
 #include "world_enemy_ui.inc"
 #include "combat_doom_ui.inc"
 #include "turn_banner_ui.inc"
+static void plan_combat_frontend(App&);
+static PreparationResult prepare_combat_frontend(App&,GlyphPreparationBudget&);
 #include "combat_preparation.inc"
 #include "world_map_motion.inc"
 static bool ui_ancient_event(OriginalEventId);
@@ -144,6 +146,7 @@ static void log_line(App&a,Log l,char*b,size_t n){
 #include "status_ui.inc"
 #include "world_intent_ui.inc"
 #include "combat_ui.inc"
+#include "combat_frontend_preparation.inc"
 #include "architect_effects_ui13.inc"
 static void large_card(Canvas&c,Card card,int x,int y,bool selected,int fee=-2,int stars=-2,int instance=-1,int deck_index=-1,const EventCardFacts*facts=nullptr){
     if(selected){c.box(x-2,y-2,84,116,Gold);c.box(x-1,y-1,82,114,Gold);}

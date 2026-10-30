@@ -1123,4 +1123,5 @@ int main(int argc,char**argv){
     owners_lifetime_and_fragmentation(medium);failures_and_inactive_rebuild(tiny);
     inactive_tiles_across_owners(tiny);directory_capacity_without_prescan(tiny);
     std::printf("content tiles: %u checks passed; synthetic NSP2/15 directory-only startup, selected decoding, aliases, owners, failures, capacity and fragmented group reuse\n",checks);
+    return 0;
 }

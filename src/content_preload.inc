@@ -2,15 +2,20 @@
 // dictionary, probability table and input page live in the existing tile pool;
 // unpublished image/glyph reservations use their existing final caches.
 constexpr unsigned PreloadOutputBytes=512,PreloadInputBytes=4096;
+constexpr unsigned TilePreloadOutputBytes=4096,TilePreloadInputBytes=32768;
 static_assert(Lzma2ProbabilityBytes+PreloadInputBytes<=RetainedPageBytes,
               "Incremental LZMA2 workspace must fit one existing 32 KiB quarter");
 enum class PreloadPhase:uint8_t {Descriptor,Header,Decode,FilterSlice,FilterColors,
-    ReserveCopy,Copy,Literal,Lz4Header,Lz4,Verify};
+    ReserveCopy,Copy,Literal,Lz4Header,Lz4,Verify,
+    TileDescriptor,TileGroup,TileDecode,TilePredict,TileFilter,TileReady,
+    TilePlan,TileGeometry,TileNeeds,TileSelect,TileCopy};
 struct ContentPreload {
     const Content*owner=nullptr;
     const ResourceReader*reader=nullptr;
     ImageDirectoryView directory{};
     TileGroup*raw=nullptr,*workspace=nullptr;
+    TileGroup*index=nullptr,*restored=nullptr;
+    const uint8_t*tile_header=nullptr;
     ImageCache*image=nullptr;
     GlyphByteCache::Reservation glyph{};
     Lzma2BlockStream stream{};
@@ -19,6 +24,9 @@ struct ContentPreload {
     uint32_t filter_count=0,filter_index=0,filter_end=0,slice_offset=0,slice_size=0;
     uint32_t scan=0,colors=0,spans=0,rows=0,previous=0;
     uint32_t lz4_length=0,lz4_offset=0;
+    uint32_t tile_header_offset=0,tile_record_offset=0,tile_record_length=0,tile_id=0,tile_copied=0,tile_geometry=0;
+    uint16_t tile_columns=0,tile_count=0,tile_needed=0,tile_next=0,tile_slot=0;
+    uint8_t tile_pass=0;
     uint16_t input_at=0,input_size=0,w=0,h=0;
     uint8_t format=0,stored_format=0,filter_mode=0,slice_format=0,stride=0,lz4_phase=0,lz4_token=0;
     PreloadPhase phase=PreloadPhase::Descriptor;
@@ -31,6 +39,8 @@ static void cancel_content_preload(const Content*owner){
     if(p.image&&!p.image->owner)discard_image(*p.image);
     glyph_cache.cancel(p.glyph);
     if(p.raw){if(p.raw->owner)p.raw->first&=127u;else tile_discard(*p.raw);}
+    if(p.index){if(p.index->owner)p.index->first&=127u;else tile_discard(*p.index);}
+    if(p.restored)tile_discard(*p.restored);
     if(p.workspace)tile_discard(*p.workspace);
     p={};
 }
@@ -38,7 +48,7 @@ static uint8_t* preload_output(ContentPreload&p){return p.is_glyph?p.glyph.data:
 static uint8_t* preload_input(ContentPreload&p){return tile_bytes(*p.workspace)+Lzma2ProbabilityBytes;}
 static bool preload_workspace(ContentPreload&p){
     if(p.workspace)return true;
-    p.workspace=reserve_tile_group(RetainedPageBytes,true);if(!p.workspace)return false;
+    p.workspace=reserve_tile_group(RetainedPageBytes*(p.stored_format==6?2u:1u),true);if(!p.workspace)return false;
     p.workspace->first|=128u;return true;
 }
 static bool preload_reserve_output(ContentPreload&p){
@@ -53,8 +63,10 @@ static bool preload_reserve_output(ContentPreload&p){
 }
 static bool preload_fill(ContentPreload&p){
     if(p.input_at!=p.input_size||p.loaded>=p.source_size)return false;
-    const unsigned left=p.source_size-p.loaded,n=left<PreloadInputBytes?left:PreloadInputBytes;
-    if(!p.reader->read_bounded(p.source_offset+p.loaded,preload_input(p),n))return false;
+    const unsigned capacity=p.stored_format==6?TilePreloadInputBytes:PreloadInputBytes;
+    const unsigned left=p.source_size-p.loaded,n=left<capacity?left:capacity;
+    if(p.stored_format==6?!p.reader->read(p.source_offset+p.loaded,preload_input(p),n):
+       !p.reader->read_bounded(p.source_offset+p.loaded,preload_input(p),n))return false;
     p.loaded+=n;p.input_at=0;p.input_size=uint16_t(n);return true;
 }
 static void preload_group_ready(ContentPreload&p){
@@ -181,12 +193,14 @@ static PreparationResult preload_verify(ContentPreload&p){
     reservation.publish(p.owner,p.directory,p.key,p.format,true);p.image=nullptr;
     cancel_content_preload(nullptr);return PreparationResult::Ready;
 }
+#include "content_preload_tiles.inc"
 static PreparationResult step_content_preload(){
     auto&p=content_preload;
     // A lease exists only during this call, excluding reentrant cold readers.
     // No input or probability bytes point into this foreground workspace.
     ResourceTransferLease transfer(ResourceTransferUse::Bytes);
     if(!transfer)return PreparationResult::Pending;
+    if(p.stored_format==6&&p.phase!=PreloadPhase::Verify)return preload_tile_step(p);
     switch(p.phase){
     case PreloadPhase::Descriptor:{
         uint8_t row[16];if(!p.reader->read_bounded(p.descriptor,row,sizeof row))return PreparationResult::Failed;
@@ -287,6 +301,7 @@ static PreparationResult step_content_preload(){
         return result;
     }
     case PreloadPhase::Verify:return preload_verify(p);
+    default:return PreparationResult::Failed;
     }
     return PreparationResult::Failed;
 }

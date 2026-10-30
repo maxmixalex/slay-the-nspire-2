@@ -474,18 +474,22 @@ PreparationResult Content::preload_image_step(int id)const{
     }
     const auto r=image_directory_[unsigned(id)];const unsigned format=r.format,length=r.length;
     const unsigned w=r.width(),h=r.height(),offset=r.offset;
-    // Tiled animation reconstruction stays with its explicit animation
-    // preparation path; it is never a static merchant inventory request.
-    if(format==6)return PreparationResult::Failed;
+    // The ordinary combat tier has room for a pinned index, current tile
+    // dictionary and bounded incremental workspace. Keep the historical
+    // unsupported/healthy result in the smaller static-room tier.
+    if(format==6&&tile_page_limit<TilePages)return PreparationResult::Failed;
     const auto fail=[&](){io_good_=false;clear_caches(this);return PreparationResult::Failed;};
     if(!w||w>320||!h||h>240||format>7||!length||length>MaxEncodedImage||
-       (format==5&&version_<5)||(format==7&&(version_<RetainedContentVersion||length!=16))||
+       (format==5&&version_<5)||(format==6&&(!tile_metadata_||length!=16))||
+       (format==7&&(version_<RetainedContentVersion||length!=16))||
        !reader_.contains(offset,length))return fail();
     if(p.owner!=this||p.is_glyph||p.key!=unsigned(id)){
         cancel_content_preload();p.owner=this;p.reader=&reader_;p.directory=image_directory_;p.key=unsigned(id);
         p.descriptor=offset;p.stored_size=length;p.stored_format=p.format=uint8_t(format);
         p.w=uint16_t(w);p.h=uint16_t(h);p.size=length;
-        p.phase=format==7?PreloadPhase::Descriptor:format==5?PreloadPhase::Lz4Header:PreloadPhase::Literal;
+        p.tile_header=tile_metadata_;p.tile_header_offset=tile_metadata_?uint32_t(tile_metadata_-metadata_)+directory_reduction_:0;
+        p.phase=format==6?PreloadPhase::TileDescriptor:format==7?PreloadPhase::Descriptor:
+            format==5?PreloadPhase::Lz4Header:PreloadPhase::Literal;
     }
     const auto result=step_content_preload();
     if(result==PreparationResult::Failed)return fail();
