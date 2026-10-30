@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
-"""NSP2/42: remove unreferenced slots inside existing direct tile groups.
+"""NSP2/42..45: remove unreferenced slots inside existing direct tile groups.
 
 Group IDs, the divisor in TIL1 and every frame's group set are preserved. The
 existing pixel codec decodes fewer complete 770-byte records. A wholly unused
 group retains one unreferenced 1x1 zero dummy; no empty decoder allocation is
 introduced. Raw size is always items*770, and references are bounded by items.
+Only live image descriptors retain tiles. Unused index records keep their
+structure but removed slots point to their group's first valid record.
 """
 from __future__ import annotations
 
@@ -36,7 +38,7 @@ def weighted_sample(reader, eligible, count):
 
 def make_plan(source, work, *, workers=2, sample=None):
     reader=t.TileReader(source)
-    indices,frames,referenced=coalesce.index_inventory(source,reader)
+    indices,frames,referenced=coalesce.index_inventory(source,reader,live_only=True)
     cache=Path(work)/'compact-encoded';cache.mkdir(parents=True,exist_ok=True)
     eligible=[]
     for group in range(reader.tile_groups):
@@ -52,8 +54,12 @@ def make_plan(source, work, *, workers=2, sample=None):
     def convert(group):
         items=reader.groups[group][5];first=group*reader.per_group
         kept=np.flatnonzero(referenced[first:first+items])
-        raw=t.decode_lzma2(original[group][32:],items*t.TILE_BYTES)
-        if reader.filters[group]: raw=restore_tiles(raw,reader.filters[group])
+        decoded=reader.groups[group][3] if reader.sparse[group] else items*t.TILE_BYTES
+        raw=t.decode_lzma2(original[group][32:],decoded,reader.dictionary)
+        if reader.sparse[group]:
+            from sparse_tile_filter import restore
+            raw=restore(raw,items,reader.filters[group])
+        elif reader.filters[group]:raw=restore_tiles(raw,reader.filters[group])
         t.validate_tiles(raw)
         compact=(np.frombuffer(raw,dtype='u1').reshape(items,t.TILE_BYTES)[kept].tobytes()
                  if len(kept) else b'\x01\x01'+bytes(t.TILE_BYTES-2))
@@ -68,6 +74,12 @@ def make_plan(source, work, *, workers=2, sample=None):
         for done,(group,payload,physical,kept) in enumerate(pool.map(convert,selected),1):
             if payload is not None:
                 plan[group]=original[group],payload,physical;slots[group]=kept
+                # A replacement image can orphan old index records. Keep their
+                # stable offsets/geometry while ensuring every stale reference
+                # still names a real slot after compaction. These IDs never
+                # occur in any live image descriptor, including indirect art.
+                first=group*reader.per_group
+                mapping[first:first+reader.groups[group][5]]=first
                 if len(kept):mapping[group*reader.per_group+kept]=group*reader.per_group+np.arange(len(kept),dtype='<u4')
             if done%64==0 or done==len(selected):
                 print(json.dumps(dict(stage='compact_tile_groups',tested=done,total=len(selected),
@@ -89,6 +101,14 @@ def make_plan(source, work, *, workers=2, sample=None):
             if done%128==0 or done==reader.index_groups:
                 print(json.dumps(dict(stage='compact_frame_indices',completed=done,groups=reader.index_groups,
                     net_bytes_saved=sum(len(a)-len(c) for a,_b,c in plan.values()))),flush=True)
+    # Keep the verified retained/language suffix at the same 4 KiB read phase
+    # after compacting modern mixed-size groups. This never adds a decoder or
+    # a frame reference, and the padding belongs to the final physical block.
+    padding=0
+    if source.version>=44:
+        padding=sum(len(a)-len(c) for a,_b,c in plan.values())%4096
+        last=max(plan,key=lambda g:sum(reader.groups[g][:2]))
+        a,b,c=plan[last];plan[last]=a,b,c+bytes(padding)
     old_raw=sum(row[2] for row in reader.groups[:reader.tile_groups])
     new_raw=sum(t.GROUP.unpack_from(plan[g][1])[3] for g in range(reader.tile_groups))
     groups=[]
@@ -104,6 +124,7 @@ def make_plan(source, work, *, workers=2, sample=None):
                 pixel_bytes_saved=sum(len(plan[g][0])-len(plan[g][2]) for g in range(reader.tile_groups)),
                 index_bytes_saved=sum(len(plan[g][0])-len(plan[g][2]) for g in range(reader.tile_groups,len(reader.groups))),
                 aligned_bytes_saved=sum(len(a)-len(c) for a,_b,c in plan.values()),
+                alignment_padding_bytes=padding,
                 raw_tile_bytes_before=old_raw,raw_tile_bytes_after=new_raw,raw_tile_bytes_removed=old_raw-new_raw,
                 tile_records_removed=(old_raw-new_raw)//t.TILE_BYTES,
                 tile_page_bytes=131072,tile_pages_before=sum(g['pages_before'] for g in groups),
@@ -112,6 +133,7 @@ def make_plan(source, work, *, workers=2, sample=None):
                 tile_page_distribution_after=dict(sorted(Counter(g['pages_after'] for g in groups).items())),
                 groups_using_fewer_pages=sum(g['pages_after']<g['pages_before'] for g in groups),groups=groups,
                 frame_group_sets_unchanged=True,group_ids_unchanged=True,resident_bytes_added=0,
+                live_image_descriptors_only=True,
                 all_eligible_groups_considered=len(selected)==len(eligible),sample=sample)
     return plan,mapping,referenced,slots,report
 
@@ -208,7 +230,8 @@ def main():
         layout_logical=split.reconstruct(shared,(folder/'nSpire2.eng.dat.tns').read_bytes(),'eng')
     started=time.monotonic()
     plan,mapping,keep,slots,report=make_plan(coalesce.view(english),work,workers=args.workers,sample=args.sample)
-    report.update(schema=1,reference='v0.111.0 / 41cef1ea',version=42,locales={})
+    version=max(42,coalesce.view(english).version)
+    report.update(schema=1,reference='v0.111.0 / 41cef1ea',version=version,locales={})
     if report['aligned_bytes_saved']<=0:
         report.update(complete=False,beneficial=False,elapsed_seconds=time.monotonic()-started)
         t.atomic_bytes(target/'compact-slots-receipt.json',json.dumps(report,indent=2).encode()+b'\n')
@@ -218,7 +241,7 @@ def main():
     common=None
     for code in ('eng',*(c for c in split.LANGUAGES if c!='eng' and c in inputs)):
         original=english if code=='eng' else split.reconstruct(old_common,inputs[code].read_bytes(),code)
-        converted,_=coalesce.rewrite(original,plan,version=42)
+        converted,_=coalesce.rewrite(original,plan,version=version)
         proof=coalesce.verify(original,converted,plan,mapping,keep,None,
                               pixel_groups=code=='eng',compact_slots=slots)
         row=split.layout(converted,code);artwork=converted[row['prefix']:row['prefix']+row['artwork']]
@@ -232,7 +255,7 @@ def main():
         language,details=storage.compress_blocks(language)
         t.require(split.reconstruct(common,language,code)==converted,'Split locale does not reconstruct')
         t.atomic_bytes(target/f'nSpire2.{code}.dat.tns',language)
-        if code in ('eng','zhs'):t.atomic_bytes(work/(code+'-compact42.nsp'),converted)
+        if code in ('eng','zhs'):t.atomic_bytes(work/(code+'-compact'+str(version)+'.nsp'),converted)
         report['locales'][code]=dict(proof=proof,storage=details,stored_bytes=len(language))
         print(json.dumps(dict(stage='locale_complete',locale=code,**proof,stored_bytes=len(language))),flush=True)
     report.update(complete=args.sample is None,beneficial=True,elapsed_seconds=time.monotonic()-started,

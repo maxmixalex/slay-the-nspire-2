@@ -8,13 +8,60 @@ import unittest
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'tools'))
 import coalesce_tile_resources as coalesce
 import compact_tile_slots as compact
+import compact_sparse_tiles as sparse_pack
 import content_tiles as t
+import merge_tile_groups as merge
 import split_content as split
 import storage_parts as storage
 from test_coalesce_tile_resources import fixture
+from test_sparse_tile_filter import sparse_fixture
 
 
 class CompactTileSlotsTest(unittest.TestCase):
+    def test_replaced_image_reclaims_orphan_index_tiles_without_dangling_slots(self):
+        before=bytearray(fixture())
+        source=coalesce.view(before)
+        # Image 1 now aliases image 0, orphaning its former index record.
+        t.IMAGE.pack_into(before,56,*source.images[0])
+        before=bytes(before);source=coalesce.view(before)
+        with tempfile.TemporaryDirectory() as folder:
+            plan,mapping,keep,slots,report=compact.make_plan(source,Path(folder),workers=1)
+            after,_=coalesce.rewrite(before,plan,version=42)
+            proof=coalesce.verify(before,after,plan,mapping,keep,None,compact_slots=slots)
+            old,new=t.TileReader(source),t.TileReader(coalesce.view(after))
+            self.assertEqual(slots[1].tolist(),[])
+            self.assertEqual(mapping.tolist(),[0,1,2,2])
+            self.assertTrue(report['live_image_descriptors_only'])
+            self.assertEqual(report['dummy_groups'],1)
+            self.assertTrue(proof['exact_geometry_and_clocks'])
+            for image in range(2):self.assertEqual(old.image_raw(image),new.image_raw(image))
+
+    def test_modern_merged_and_sparse_groups_keep_dictionary_phase_and_pixels(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root=Path(folder)
+            original=sparse_fixture()
+            plan,_mapping,_report=merge.make_plan(coalesce.view(original),root/'merge',workers=1)
+            merged,_relocate,_padding=merge.rewrite(original,plan)
+            plan,_report=sparse_pack.make_plan(coalesce.view(merged),root/'sparse',workers=1)
+            sparse,_relocate=coalesce.rewrite(merged,plan,version=45)
+            for version,before in ((44,merged),(45,sparse)):
+                source=coalesce.view(before);reader=t.TileReader(source)
+                plan,mapping,keep,slots,report=compact.make_plan(source,root/str(version),workers=1)
+                after,_=coalesce.rewrite(before,plan,version=version)
+                proof=coalesce.verify(before,after,plan,mapping,keep,None,compact_slots=slots)
+                target=t.TileReader(coalesce.view(after))
+                self.assertEqual(target.dictionary,t.LARGE_GROUP_LIMIT)
+                self.assertEqual(target.per_group,reader.per_group)
+                self.assertEqual(target.sparse,reader.sparse)
+                self.assertGreater(report['tile_records_removed'],0)
+                self.assertEqual((len(before)-len(after))%4096,0)
+                self.assertTrue(proof['exact_mapped_tile_records'])
+                self.assertEqual(target.groups[0][5],3)
+                for image in range(2):self.assertEqual(reader.image_raw(image),target.image_raw(image))
+                cache=next((root/str(version)/'compact-encoded').glob('*.lzma2'))
+                cache.write_bytes(b'bad')
+                with self.assertRaises(ValueError):compact.make_plan(source,root/str(version),workers=1)
+
     def test_repeated_padding_preserves_existing_concern_boundaries(self):
         original=fixture(strings=6111)
         bounds=split.layout(original,'eng')

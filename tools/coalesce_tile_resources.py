@@ -61,7 +61,7 @@ def active_tiles(geometry, width, height):
     return result
 
 
-def index_inventory(source, reader):
+def index_inventory(source, reader, *, live_only=False):
     """Decode indices once; keep only image-backed records for IO constraints."""
     shapes = {}
     for off, width, height, fmt, _length in source.images:
@@ -82,7 +82,8 @@ def index_inventory(source, reader):
         for at, length in starts.items():
             _size, index_bytes, geometry_bytes = t.FRAME.unpack_from(raw, at)
             ids = np.frombuffer(raw, dtype='<u4', count=index_bytes // 4, offset=at + 12)
-            referenced[ids] = True
+            if not live_only or (local, at) in shapes:
+                referenced[ids] = True
             if (local, at) not in shapes:
                 continue
             width, height, expected = shapes[local, at]
@@ -216,31 +217,40 @@ def encode(raw, original, reader, group, cache):
     """One established profile; no parameter search or new pixel transform."""
     header = list(t.GROUP.unpack_from(original))
     count = header[6]
+    sparse = group < reader.tile_groups and reader.sparse[group]
     if group < reader.tile_groups:
         mode = reader.filters[group]
-        transformed = filter_tiles(raw, mode) if mode else raw
+        if sparse:
+            from sparse_tile_filter import transform
+            transformed = transform(raw, mode)
+        else:
+            transformed = filter_tiles(raw, mode) if mode else raw
     else:
         mode = 0
         transformed = index_transform(raw, count, 3, tile_count=reader.tile_count)
         header[0], header[7] = b'TGI2', 1
     lc,lp,pb=source_lzma_profile(original[32:])
-    key = t.sha256(ENCODER + struct.pack('<6I', group < reader.tile_groups, mode, count,lc,lp,pb) + transformed)
+    key = t.sha256(ENCODER + struct.pack('<8I', group < reader.tile_groups, mode, count,
+                                       lc,lp,pb,reader.dictionary,sparse) + transformed)
     path = cache / (key + '.lzma2')
     if path.is_file():
         payload = path.read_bytes()
     else:
         payload = lzma.compress(transformed, format=lzma.FORMAT_RAW, filters=[dict(
-            id=lzma.FILTER_LZMA2, preset=9, dict_size=t.GROUP_LIMIT,
+            id=lzma.FILTER_LZMA2, preset=9, dict_size=reader.dictionary,
             nice_len=273, depth=512, lc=lc, lp=lp, pb=pb)])
         t.atomic_bytes(path, payload)
-    decoded = t.decode_lzma2(payload, len(transformed))
+    decoded = t.decode_lzma2(payload, len(transformed), reader.dictionary)
     t.require(decoded == transformed, 'Cached/new encoded stream differs')
-    if group < reader.tile_groups and mode:
+    if sparse:
+        from sparse_tile_filter import restore
+        t.require(restore(decoded, count, mode) == raw, 'Sparse tile filter lost a pixel bit')
+    elif group < reader.tile_groups and mode:
         t.require(restore_tiles(decoded, mode) == raw, 'Tile filter lost a pixel bit')
     if group >= reader.tile_groups:
         t.require(index_transform(decoded, count, 3, True, reader.tile_count) == raw,
                   'Index inverse differs')
-    header[4], header[5] = len(payload), 0
+    header[4], header[5] = len(payload), len(transformed) if sparse else 0
     candidate = t.GROUP.pack(*header) + payload
     return candidate, candidate + bytes((len(original) - len(candidate)) & 1)
 

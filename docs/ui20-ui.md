@@ -35,6 +35,27 @@ presentation/host lifecycle state, not a save-format revision or a second State.
 No original assets, private disassembly, or device images are in this source
 change.
 
+## Original scene checks and regenerated art
+
+The owner's pinned PCK confirms `scenes/rooms/map_room.tscn` has a full-anchor
+`Background` ColorRect with `(0,0,0,1)`, and
+`scenes/events/ancient_event_layout.tscn` has a full-anchor `AncientBgContainer`
+without a top-bar inset. `scenes/ui/common_banner.tscn` places its label at
+top 21 and bottom -56 inside a 162-high banner: the label's vertical center is
+39.2% down the banner, above the image's midpoint. The score child scene uses
+a 520x48 HBox, a 36x42 icon, equal 26-point fonts and centered vertical
+alignment for both label and amount. The calculator's retained readable
+10-pixel labels now share that baseline in the narrower column; its font size
+is an explicit 320x240 readability adaptation, not a literal source scaling.
+
+All eight Ancient replacements completed through the original scene/Spine
+renderer at 320x240 with a 1680x1260 logical viewport. The intermediate lossless
+image payloads total 690,277 bytes; their final shared-package cost is measured
+by the integrated resource build. Auxiliary/image IDs remain unchanged.
+The `ui20-ancient-full-viewport-v44-49227f6ad4f0` journal passed; Neow, Darv and
+Vakuu full-frame previews were inspected. This fixes the complete viewport,
+while the previously disclosed static Ancient scene limitation remains.
+
 ## Acceptance scope
 
 The lifecycle regression now covers visible Continue followed by gold/card,
@@ -45,3 +66,12 @@ boundary, both halves of the menu fade, and repeated-input suppression while
 preserving canonical run bytes. Existing profile, map, event and game-over
 regressions remain required. Actual-resource captures and ordinary Firebird
 acceptance are recorded by the integrated release, not inferred from compilation.
+
+`tests/ui20_device_fixtures.cpp` exports ten matching production-codec pairs
+and passed 205 encode/decode/re-encode checks against the integrated native
+core. The Neow pair is the untouched opening room of a real new A3 run and
+has complete progress. Ordinary Continue / Pause / Give Up / Yes produces its
+three score lines without fabricated history. The other seven Ancient rooms
+and act-two/three maps are controlled constructor fixtures and deliberately
+mark their unobserved prefix partial. The exporter does not open or patch a
+calculator image; its README describes ordinary menu input for device capture.

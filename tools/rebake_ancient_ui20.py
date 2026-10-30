@@ -13,10 +13,11 @@ import json
 import mmap
 from pathlib import Path
 
-from content_tiles import atomic_bytes, require
+from content_tiles import PackView, atomic_bytes, require
+from content_version import MAXIMUM_CONTENT_VERSION
 from patch_feedback_assets import write_image
 from pck import Pack
-from retile_appended_resources import view
+from repack_retained import auxiliary_count
 from world_enemy_assets import SpineSampler
 from world_scene_assets import render_scene
 from world_ui_profile import AUXILIARY_ROWS, BASE_AUXILIARY
@@ -49,7 +50,8 @@ def source_assets(pck_path, source_path, cache, *, runtime, dotnet='dotnet'):
     require(all(tuple(row['size']) == SIZE and tuple(row.get('viewport', ())) == VIEWPORT
                 for _, row in selected), 'Ancient profile must use the full 4:3 viewport')
     with source_path.open('rb') as handle, mmap.mmap(handle.fileno(), 0, access=mmap.ACCESS_READ) as data:
-        source = view(data)
+        source = PackView(data, auxiliary_count(data),
+                          versions=tuple(range(39, MAXIMUM_CONTENT_VERSION + 1)))
         image_ids = {auxiliary: source.aux[auxiliary] for auxiliary, _ in selected}
     images = []
     pack = Pack(pck_path)
@@ -81,7 +83,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--pck', required=True, type=Path)
     parser.add_argument('--source', required=True, type=Path,
-                        help='Existing private NSP2/39 or /40 monolithic pack')
+                        help='Existing private NSP2/39 or newer monolithic pack')
     parser.add_argument('--output', required=True, type=Path)
     parser.add_argument('--runtime', required=True, type=Path)
     parser.add_argument('--dotnet', default='dotnet')
