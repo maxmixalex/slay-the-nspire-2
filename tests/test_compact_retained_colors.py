@@ -13,6 +13,8 @@ import compact_retained_colors as colors
 import content_tiles as tiles
 import repack_retained
 import split_content
+import predict_index_resources as indices
+from complete_retained_resources_ui17 import verify as verify_completed
 from retained_filter import group_layout, transform_group
 from test_repack_retained import fixture, stored
 
@@ -33,6 +35,29 @@ def source(language='eng', glyphs=1, group_bytes=128 * 1024):
 
 
 class RetainedColorPackTest(unittest.TestCase):
+    def test_appended_groups_preserve_v41_predictive_indices_and_exact_pixels(self):
+        original=source()
+        indexed,_=indices.rewrite(original,indices.make_plan(indices.view(original),workers=1))
+        old=colors.view(indexed);reader=tiles.TileReader(old)
+        self.assertTrue(any(reader.predictors))
+        with tempfile.TemporaryDirectory() as folder:
+            choices=colors.plan(old,Path(folder),jobs=1)
+            self.assertTrue(any(choice.payload is not None for choice in choices))
+            result=colors.rewrite(old,choices)
+            proof=verify_completed(old,result,choices,decode_groups=True)
+            self.assertEqual(proof['original_version'],41)
+            self.assertEqual(proof['output_version'],41)
+            self.assertEqual(proof['complete_raw_retained_groups_compared'],len(choices))
+            self.assertGreater(proof['complete_raw_retained_bytes_compared'],0)
+            self.assertGreater(proof['saved_bytes'],0)
+            exact=colors.verify(old,result)
+            self.assertTrue(exact['all_images_decoded'])
+            after=colors.view(result);new_reader=tiles.TileReader(after)
+            self.assertEqual(new_reader.predictors,reader.predictors)
+            # No second filtering, raw page change, or downgrade on repeated conversion.
+            again=colors.plan(after,Path(folder),jobs=1)
+            self.assertEqual(colors.rewrite(after,again),result)
+
     def test_own_receipt_reuses_exact_output_with_an_empty_cache(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
