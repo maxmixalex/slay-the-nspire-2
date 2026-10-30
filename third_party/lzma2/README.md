@@ -13,7 +13,7 @@ headers and the official [SDK licensing statement](https://www.7-zip.org/sdk.htm
 The project wrapper in `src/lzma2_block.cpp` supplies one fixed 28,544-byte
 probability arena and uses the caller's output as the dictionary. It accepts
 only property 14, corresponding to a 512 KiB dictionary, and requires exact
-input/output lengths, an end marker and decoded CRC32. Failed output is never
+input/output lengths and an end marker. Failed output is never
 eligible for cache publication. This is a serial decoder for the existing
 serial resource reader, not a reentrant general compression service.
 
