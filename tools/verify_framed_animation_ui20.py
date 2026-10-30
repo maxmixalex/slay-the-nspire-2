@@ -87,7 +87,13 @@ def verify_frames(source,record,directory,draws,scale,out,auxiliary):
             occupied[py:py+h,px:px+w]=True
             color[py:py+h,px:px+w],alpha[py:py+h,px:px+w]=part_color,part_alpha
             assembled.paste(cached,(px,py));totals['parts']+=1
-        delta=np.abs(np.asarray(assembled,dtype=np.int16)-np.asarray(expected,dtype=np.int16))
+        actual_rgba=np.asarray(assembled,dtype=np.int16);expected_rgba=np.asarray(expected,dtype=np.int16)
+        delta=np.abs(actual_rgba-expected_rgba)
+        # Alpha trimming and the established sparse encoder intentionally
+        # omit source RGB with zero 8-bit alpha. Compare its coverage, not
+        # colour that cannot reach the LCD; retained alpha>0 RGB stays exact.
+        invisible=(actual_rgba[:,:,3]==0)&(expected_rgba[:,:,3]==0)
+        delta[invisible,:3]=0
         # An integer translation of a floating point solve can straddle one
         # 8-bit threshold. It must never move coverage, geometry or detail.
         maximum=int(delta.max());tiles.require(maximum<=1,'Source pixels differ beyond one rounding threshold')
