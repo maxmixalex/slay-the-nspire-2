@@ -33,7 +33,10 @@ def main()->None:
             compile_flags=flags
         subprocess.run([clang,*compile_flags,*options,'-c',str(ROOT/source),'-o',str(out)],check=True)
     elf=directory/'nSpire2.elf'
-    subprocess.run([link,'-T',str(ROOT/'platform/ndless/link.ld'),'--gc-sections','--emit-relocs','-Map='+str(directory/'nSpire2.map'),*objects,'-o',str(elf)],check=True)
+    # Clang emits address-significance metadata. Safe ICF can share identical
+    # unobserved function bodies while preserving distinct significant
+    # addresses; the unrestricted "all" mode is deliberately not enabled.
+    subprocess.run([link,'-T',str(ROOT/'platform/ndless/link.ld'),'--gc-sections','--icf=safe','--emit-relocs','-Map='+str(directory/'nSpire2.map'),*objects,'-o',str(elf)],check=True)
     output=args.output or ROOT/'dist'/'nSpire2.tns'
     output.parent.mkdir(parents=True,exist_ok=True);build(elf,output,args.compression)
 
