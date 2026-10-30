@@ -10,11 +10,13 @@ struct ResourceFileCursor {
     uint32_t position=0;bool known=false;
     bool read(void*file,uint32_t offset,void*output,uint32_t count,
               int(*seek)(void*,long,int),unsigned(*get)(void*,unsigned,unsigned,void*),
-              bool&did_seek){
+              bool&did_seek,bool*did_read=nullptr){
         did_seek=false;
+        if(did_read)*did_read=false;
         if(!file||!seek||!get||offset>0x7fffffffu||count>0x7fffffffu-offset){known=false;return false;}
         did_seek=!known||position!=offset;known=false;
         if(did_seek&&seek(file,(long)offset,0)!=0)return false;
+        if(did_read)*did_read=true;
         if(get(output,1,count,file)!=count)return false;
         position=offset+count;known=true;return true;
     }

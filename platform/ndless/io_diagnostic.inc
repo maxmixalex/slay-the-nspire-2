@@ -81,6 +81,13 @@ static unsigned device_io_read(void*output,unsigned size,unsigned count,void*fil
     if(item&&item->known)item->position+=size*result;
     return result;
 }
+static int device_io_stat(const char*path,spire::CalculatorFileMetadata*metadata){
+    const uint32_t started=device_io_active?timer_ticks():0;
+    const int result=nd_stat(path,metadata);
+    device_io_add(8,device_io_active?device_io_name(path):255,0,0,
+                  result<0?UINT32_MAX:metadata->size,started);
+    return result;
+}
 static void device_trace_stage(unsigned value){
     if(device_io_stage==value)return;
     device_io_stage=uint8_t(value);const uint32_t now=device_io_active?timer_ticks():0;
@@ -107,6 +114,7 @@ static void device_trace_flush(const char*launcher){
 #define nd_seek device_io_seek
 #define nd_tell device_io_tell
 #define nd_read device_io_read
+#define nd_stat device_io_stat
 #else
 static inline void device_trace_stage(unsigned){}
 static inline void device_trace_begin(bool){}

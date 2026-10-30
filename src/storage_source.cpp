@@ -124,9 +124,21 @@ void BlockedResourceSource::progress_at(void*p,ResourceStage s,uint32_t n,uint32
 }
 ResourceSource BlockedResourceSource::source(){return length_?ResourceSource{this,length_,read_at,nullptr,progress_at}:ResourceSource{};}
 
+bool artwork_part_header(const uint8_t*p,uint32_t length,unsigned part){
+    return p&&length>=32&&part<MultipartResourceSource::MaxParts&&word(p)==0x3153534eu&&
+        word(p+4)==1&&word(p+8)==0x41cef1eau&&word(p+12)==32&&word(p+16)==length&&
+        word(p+20)==part&&!word(p+24)&&!word(p+28);
+}
 void MultipartResourceSource::close(){length_=span_count_=part_count_=last_=0;for(auto&p:parts_)p={};}
 bool MultipartResourceSource::open(ResourceSource index,const ResourceSource*parts,unsigned count,
                                    const uint8_t(*part_headers)[32]){
+    return open_table(index,parts,count,part_headers,false);
+}
+bool MultipartResourceSource::open_deferred(ResourceSource index,const ResourceSource*parts,unsigned count){
+    return open_table(index,parts,count,nullptr,true);
+}
+bool MultipartResourceSource::open_table(ResourceSource index,const ResourceSource*parts,unsigned count,
+                                   const uint8_t(*part_headers)[32],bool deferred){
     close();uint8_t h[96];
     if(!parts||count!=MaxParts||index.context==this||!get(index,0,h,sizeof h)||
        word(h)!=0x314d534eu||word(h+4)!=1||word(h+8)!=0x41cef1eau||word(h+12)!=96||
@@ -137,10 +149,10 @@ bool MultipartResourceSource::open(ResourceSource index,const ResourceSource*par
        word(h+44)!=64||word(h+48)!=length||word(h+52)!=length-64)return false;
     for(unsigned i=0;i<count;++i){
         uint8_t buffer[32];const uint8_t*p=part_headers?part_headers[i]:buffer;
-        if(parts[i].context==this||parts[i].length<sizeof buffer||(!parts[i].direct&&!parts[i].read_at)||
-           (!part_headers&&!get(parts[i],0,buffer,sizeof buffer))||word(p)!=0x3153534eu||
-           word(p+4)!=1||word(p+8)!=0x41cef1eau||word(p+12)!=32||
-           word(p+16)!=parts[i].length||word(p+20)!=i||word(p+24)||word(p+28))return false;
+        if(parts[i].context==this||parts[i].length<sizeof buffer||(!parts[i].direct&&!parts[i].read_at))return false;
+        if(deferred){if(parts[i].direct||!parts[i].read_at)return false;}
+        else if((!part_headers&&!get(parts[i],0,buffer,sizeof buffer))||
+                !artwork_part_header(p,parts[i].length,i))return false;
     }
     if(!get(index,96,spans_,spans*16))return false;
     uint32_t end=64;

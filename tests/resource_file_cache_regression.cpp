@@ -15,12 +15,12 @@ struct FakeHost {
     struct Event {char kind;unsigned id;};
     std::array<std::vector<uint8_t>,16> bytes;
     std::array<File,16> handles{};
-    std::array<unsigned,16> opens{},seeks{},reads{};
+    std::array<unsigned,16> opens{},seeks{},reads{},metadata_reads{};
     std::array<bool,16> present{};
     std::vector<Event> events;
     std::vector<bool> captured;
     unsigned limit=7,live=0,peak=0,refused=0,closed=0,polls=0;
-    int fail_open=-1,fail_seek=-1,fail_rewind=-1,fail_tell=-1,short_read=-1,fail_close=-1;
+    int fail_open=-1,fail_seek=-1,fail_rewind=-1,fail_tell=-1,short_read=-1,fail_close=-1,fail_metadata=-1;
     bool input=false,edge_on_open=false,edge_on_close=false;
     FakeHost(){
         present.fill(true);
@@ -63,25 +63,32 @@ struct FakeHost {
     }
     static void poll(void*context){auto&h=*static_cast<FakeHost*>(context);++h.polls;h.events.push_back({'p',0});
         if(h.captured.empty()||h.captured.back()!=h.input)h.captured.push_back(h.input);}
+    static bool metadata(void*context,unsigned id,uint32_t&size){
+        auto&h=*static_cast<FakeHost*>(context);h.events.push_back({'m',id});
+        if(id>=h.bytes.size())return false;++h.metadata_reads[id];
+        if(h.fail_metadata==int(id)){h.fail_metadata=-1;return false;}
+        if(!h.present[id])return false;size=uint32_t(h.bytes[id].size());return true;
+    }
     Cache::Host host(){return {this,open,close,seek,tell,get,poll};}
     bool held(unsigned id)const{for(const auto&f:handles)if(f.open&&f.id==id)return true;return false;}
     void polling_edges()const{
-        for(unsigned i=0;i<events.size();++i)if((events[i].kind=='o'||events[i].kind=='c')&&events[i].id<8)
+        for(unsigned i=0;i<events.size();++i)if((events[i].kind=='o'||events[i].kind=='c'||events[i].kind=='m')&&events[i].id<8)
             CHECK(i&&i+1<events.size()&&events[i-1].kind=='p'&&events[i+1].kind=='p');
     }
 };
 struct ProbeLog {
     struct Row {uint32_t bytes;unsigned reads,seeks;bool good;};
-    FakeHost&host;std::vector<Row> rows;size_t first=0;bool active=false;
+    FakeHost&host;std::vector<Row> rows;size_t first=0;bool active=false,metadata_only=false;
     static void begin(void*context){auto&self=*static_cast<ProbeLog*>(context);CHECK(!self.active);
         self.active=true;self.first=self.host.events.size();}
     static void end(void*context,uint32_t bytes,unsigned reads,unsigned seeks,bool good){
         auto&self=*static_cast<ProbeLog*>(context);CHECK(self.active);self.active=false;
-        unsigned actual_reads=0,actual_seeks=0,opens=0,closes=0;
+        unsigned actual_reads=0,actual_seeks=0,opens=0,closes=0,metadata=0;
         for(size_t i=self.first;i<self.host.events.size();++i){const char kind=self.host.events[i].kind;
-            actual_reads+=kind=='r';actual_seeks+=kind=='s';opens+=kind=='o';closes+=kind=='c';}
-        CHECK(actual_reads==reads&&actual_seeks==seeks&&opens==1&&closes<=1);
-        CHECK(reads<=1&&bytes==reads*32);CHECK(!good||closes==1);
+            actual_reads+=kind=='r';actual_seeks+=kind=='s';opens+=kind=='o';closes+=kind=='c';metadata+=kind=='m';}
+        CHECK(actual_reads==reads&&actual_seeks==seeks);
+        if(self.metadata_only)CHECK(metadata==1&&!reads&&!seeks&&!bytes&&!opens&&!closes);
+        else {CHECK(!metadata&&opens==1&&closes<=1);CHECK(reads<=1&&bytes==reads*32);CHECK(!good||closes==1);}
         self.rows.push_back({bytes,reads,seeks,good});
     }
     Cache::Probe probe(){return {this,begin,end};}
@@ -198,6 +205,87 @@ struct MultipartFixture {
         host.bytes[11]=index;
     }
 };
+static bool deferred(Cache&cache,FakeHost&host,Cache::Probe probe={}){
+    return cache.open_deferred(host.host(),2048,FakeHost::metadata,artwork_part_header,probe);
+}
+static void deferred_metadata_and_headers(){
+    MultipartFixture fixture;auto&host=fixture.host;Cache cache;ProbeLog observed{host};observed.metadata_only=true;
+    CHECK(deferred(cache,host,observed.probe()));CHECK(!host.live&&!host.peak&&observed.rows.size()==8);
+    for(unsigned i=0;i<8;++i)CHECK(host.metadata_reads[i]==1&&!host.opens[i]&&!host.reads[i]&&!host.seeks[i]);
+    bool sought=false;Cache::ReadStats stats;uint8_t out[24]{};
+    CHECK(cache.read(3,32,out,12,sought,&stats));CHECK(sought&&stats.calls==2&&stats.bytes==44&&stats.seeks==1);
+    CHECK(std::equal(out,out+12,host.bytes[3].begin()+32));
+    CHECK(cache.read(3,44,out,12,sought,&stats));CHECK(!sought&&stats.calls==1&&stats.bytes==12&&!stats.seeks);
+    for(unsigned i:{0u,1u,2u,4u})CHECK(cache.read(i,32,out,12,sought,&stats));
+    CHECK(!host.held(3));const unsigned old_reads=host.reads[3];
+    CHECK(cache.read(3,56,out,12,sought,&stats));CHECK(sought&&stats.calls==1&&stats.seeks==1&&stats.bytes==12);
+    CHECK(host.reads[3]==old_reads+1); // A validated immutable header survives LRU eviction.
+    const auto before_reads=host.reads,before_seeks=host.seeks,before_opens=host.opens;
+    CHECK(cache.read(7,uint32_t(host.bytes[7].size()),nullptr,0,sought,&stats));CHECK(!sought&&!stats.calls&&!stats.bytes&&!stats.seeks);
+    CHECK(!cache.read(7,UINT32_MAX,out,1,sought,&stats));CHECK(!sought&&!stats.calls&&!stats.bytes&&!stats.seeks);
+    CHECK(host.reads==before_reads&&host.seeks==before_seeks&&host.opens==before_opens);
+    cache.close();CHECK(!host.live);CHECK(deferred(cache,host));
+    CHECK(cache.read(3,32,out,12,sought,&stats));CHECK(stats.calls==2&&stats.bytes==44);cache.close();host.polling_edges();
+    for(unsigned failure=0;failure<5;++failure){
+        MultipartFixture broken;Cache candidate;ProbeLog log{broken.host};log.metadata_only=true;
+        switch(failure){case 0:broken.host.present[4]=false;break;case 1:broken.host.fail_metadata=4;break;
+        case 2:broken.host.bytes[4].clear();break;case 3:broken.host.bytes[4].resize(31);break;case 4:broken.host.bytes[4].resize(2049);break;}
+        CHECK(!deferred(candidate,broken.host,log.probe()));CHECK(!broken.host.live&&!broken.host.peak&&!candidate.source(0).length);
+        CHECK(log.rows.size()==5&&!log.rows.back().good&&!log.active);broken.host.polling_edges();
+    }
+    // Metadata failure closes pre-existing cached handles during reinitialization.
+    CHECK(deferred(cache,host));CHECK(cache.read(0,32,out,12,sought));host.present[4]=false;
+    CHECK(!deferred(cache,host));CHECK(!host.live&&!cache.source(0).length);host.present[4]=true;
+    const size_t events=host.events.size();
+    CHECK(!cache.open_deferred(host.host(),31,FakeHost::metadata,artwork_part_header));
+    CHECK(!cache.open_deferred(host.host(),2048,nullptr,artwork_part_header));
+    CHECK(!cache.open_deferred(host.host(),2048,FakeHost::metadata,nullptr));
+    CHECK(!cache.open_deferred(host.host(),2048,FakeHost::metadata,artwork_part_header,{&observed,ProbeLog::begin,nullptr}));
+    CHECK(host.events.size()==events);
+    // Every identification/bounds field is checked before publishing payload.
+    for(unsigned field=0;field<32;field+=4){
+        MultipartFixture broken;Cache candidate;auto&h=broken.host;h.bytes[3][field]^=1;CHECK(deferred(candidate,h));
+        std::memset(out,0xa5,sizeof out);CHECK(!candidate.read(3,32,out,12,sought,&stats));
+        CHECK(sought&&stats.calls==1&&stats.bytes==32&&stats.seeks==1&&!h.live);
+        CHECK(std::all_of(out,out+sizeof out,[](uint8_t x){return x==0xa5;}));
+        h.bytes[3][field]^=1;CHECK(candidate.read(3,32,out,12,sought,&stats));CHECK(stats.calls==2&&stats.bytes==44);
+        CHECK(std::equal(out,out+12,h.bytes[3].begin()+32));candidate.close();h.polling_edges();
+    }
+    for(unsigned failure=0;failure<3;++failure){
+        MultipartFixture broken;Cache candidate;auto&h=broken.host;CHECK(deferred(candidate,h));
+        if(failure==0)h.fail_open=3;else if(failure==1)h.fail_seek=3;else h.short_read=3;
+        std::memset(out,0xa5,sizeof out);CHECK(!candidate.read(3,32,out,12,sought,&stats));
+        CHECK(stats.calls==unsigned(failure==2)&&stats.bytes==(failure==2?32u:0u)&&stats.seeks==unsigned(failure!=0));
+        CHECK(!h.live&&std::all_of(out,out+sizeof out,[](uint8_t x){return x==0xa5;}));
+        CHECK(candidate.read(3,32,out,12,sought,&stats));CHECK(stats.calls==2&&stats.bytes==44);candidate.close();h.polling_edges();
+    }
+    CHECK(deferred(cache,host));CHECK(cache.read(3,32,out,12,sought,&stats));host.short_read=3;
+    CHECK(!cache.read(3,44,out,12,sought,&stats));CHECK(!sought&&stats.calls==1&&stats.bytes==12&&!stats.seeks&&!host.live);
+    CHECK(cache.read(3,44,out,12,sought,&stats));CHECK(sought&&stats.calls==2&&stats.bytes==44&&stats.seeks==2);cache.close();
+}
+static void deferred_multipart_and_languages(){
+    MultipartFixture fixture;auto&host=fixture.host;Cache cache;static MultipartResourceSource common;
+    CHECK(deferred(cache,host));ResourceSource parts[8];for(unsigned i=0;i<8;++i)parts[i]=cache.source(i);
+    const ResourceSource index{nullptr,uint32_t(fixture.index.size()),nullptr,fixture.index.data()};
+    CHECK(common.open_deferred(index,parts,8));CHECK(!host.live&&!host.peak);
+    uint8_t header[64];CHECK(get(common.source(),0,header,64));CHECK(!host.live&&!host.peak);
+    CHECK(std::equal(header,header+64,fixture.canonical.begin()));
+    const auto original=parts[7];parts[7]={nullptr,uint32_t(host.bytes[7].size()),nullptr,host.bytes[7].data()};
+    CHECK(!common.open_deferred(index,parts,8));CHECK(!common.source().length);
+    parts[7]=original;parts[7].read_at=nullptr;CHECK(!common.open_deferred(index,parts,8));
+    parts[7]=original;parts[7].length=31;CHECK(!common.open_deferred(index,parts,8));
+    parts[7]=original;CHECK(common.open_deferred(index,parts,8));
+    void*english=FakeHost::open(&host,8);CHECK(english);host.fail_open=9;CHECK(!FakeHost::open(&host,9));
+    void*chinese=FakeHost::open(&host,9);void*state=FakeHost::open(&host,10);CHECK(chinese&&state&&host.live==3);
+    std::vector<uint8_t> out(fixture.canonical.size());CHECK(get(common.source(),0,out.data(),uint32_t(out.size())));CHECK(out==fixture.canonical);
+    CHECK(host.peak==7&&host.live==7&&host.refused==1);
+    const auto reads=host.reads;
+    // Locale reopening does not invalidate or revalidate immutable part headers.
+    CHECK(FakeHost::close(english)==0);CHECK(FakeHost::close(state)==0);
+    CHECK(get(common.source(),0,out.data(),uint32_t(out.size())));CHECK(out==fixture.canonical);
+    for(unsigned i=0;i<8;++i)CHECK(host.reads[i]==reads[i]+2); // Two payload spans, no new header.
+    cache.close();CHECK(host.live==1&&host.held(9));CHECK(FakeHost::close(chinese)==0);common.close();CHECK(!host.live);host.polling_edges();
+}
 static void supplied_header_bounds(){
     MultipartFixture fixture;Cache cache;static MultipartResourceSource common;uint8_t headers[8][32];
     CHECK(cache.open(fixture.host.host(),2048,headers[0],32));
@@ -271,5 +359,5 @@ static void capture_and_scope_shutdown(){
     {Cache cache;CHECK(cache.open(host.host(),1024));read(cache,host,3,1,1,true);CHECK(host.live==1);}
     CHECK(!host.live);host.polling_edges();
 }
-int main(){sequential_probes();combined_header_probes();cursor_lru_failures();supplied_header_bounds();multipart_and_languages();capture_and_scope_shutdown();
+int main(){sequential_probes();combined_header_probes();cursor_lru_failures();deferred_metadata_and_headers();deferred_multipart_and_languages();supplied_header_bounds();multipart_and_languages();capture_and_scope_shutdown();
     std::printf("resource file cache: %u checks passed; 8 parts, 4 slots, 7-stream host ceiling\n",checks);}
