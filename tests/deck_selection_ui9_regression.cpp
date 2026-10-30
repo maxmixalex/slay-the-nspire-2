@@ -38,10 +38,10 @@ static const HitRegion*hit(HitKind kind,int value){for(int i=a.hit_count-1;i>=0;
 static void click(HitKind kind,int value){a.render();const auto*h=hit(kind,value);if(!h||!h->enabled)std::fprintf(stderr,"missing hit kind=%u value=%d cursor=%d open=%d clock=%u sold=%u\n",unsigned(kind),value,a.cursor,int(a.shop_open),a.map_clock_ms,a.game.shop_sold);CHECK(h&&h->enabled);const HitRegion copy=*h;CHECK(copy.x+copy.w>0&&copy.x<320&&copy.y>=0&&copy.y+copy.h<=240);a.pointer_move(copy.x+copy.w/2,copy.y+copy.h/2);a.pointer_button(true);a.pointer_button(false);a.render();}
 static void capture(const char*name){if(!captures)return;const std::string path=std::string(captures)+"/"+name+".ppm";FILE*f=std::fopen(path.c_str(),"wb");CHECK(f);std::fprintf(f,"P6\n320 240\n255\n");for(auto p:a.pixels){const unsigned char rgb[]={static_cast<unsigned char>(((p>>11)&31)*255/31),static_cast<unsigned char>(((p>>5)&63)*255/63),static_cast<unsigned char>((p&31)*255/31)};CHECK(std::fwrite(rgb,1,3,f)==3);}CHECK(!std::fclose(f));}
 static bool route_to(const reference::ReferenceMap&map,unsigned point,reference::PointType type,unsigned depth=0){if(point>=map.count||depth>reference::MaxRows+2)return false;if(map.points[point].type==type)return true;for(unsigned i=0;i<map.points[point].children.used;++i)if(route_to(map,map.points[point].children.slots[i],type,depth+1))return true;return false;}
-static void room(WorldRoom target){
+static void room(WorldRoom target,unsigned minimum_floor=0){
     new_run(a.game,0x7195c3,false,Character::Ironclad);CHECK(world_set_seed(a.game,"NSPIRE-WORLD-017"));CHECK(world_begin_run(a.game));
     for(unsigned guard=0;guard<120;++guard){
-        if(a.game.world.room_open&&a.game.world.room_type==unsigned(target)){
+        if(a.game.world.room_open&&a.game.world.room_type==unsigned(target)&&a.game.floor>=minimum_floor){
             a.title=a.paused=a.help=a.library=a.character_select=a.settings_open=false;a.frontend_confirm=0;a.reset_presentation(true);a.progress.tutorial_flags=0;a.pointer.visible=false;a.render();settle(1200);CHECK(validate(a.game));return;
         }
         if(world_can_travel(a.game)){uint8_t points[reference::Columns];const unsigned count=world_available_points(a.game,points,reference::Columns);CHECK(count);unsigned selected=points[0];
@@ -49,6 +49,11 @@ static void room(WorldRoom target){
             CHECK(world_choose_point(a.game,selected));
         }else{if(a.game.original_events.active)a.game.original_events=OriginalEventState{};if(world_room_is_combat(a.game))a.game.phase=Phase::Reward;CHECK(world_finish_room(a.game));}
     }CHECK(false);
+}
+static void two_digit_floor(){
+    scenario="two-digit floor spacing";room(WorldRoom::Rest,10);CHECK(a.game.floor>=10);
+    const auto*floor=hit(HitKind::HudInfo,HudFloor);const auto*boss=hit(HitKind::HudInfo,HudBoss);
+    CHECK(floor&&boss&&floor->x+floor->w<boss->x);snapshot();capture("hud-two-digit-floor");unchanged();
 }
 static void begin_smith(){unsigned option=0;while(option<a.game.world.rest_count&&a.game.world.rest_options[option]!=unsigned(WorldRestOption::Smith))++option;CHECK(option<a.game.world.rest_count);click(HitKind::Choice,int(option));CHECK(a.game.phase==Phase::Upgrade&&a.room_presentation.rest.selection.pending);a.render();settle();}
 static void font(const char*key,unsigned size,unsigned face){
@@ -120,5 +125,5 @@ static void long_grid(){
 }
 int main(int argc,char**argv){
     FILE*file=nullptr;if(argc>1){file=std::fopen(argv[1],"rb");CHECK(file);const size_t size=spire_test::pack_size(file);uint8_t header[40];CHECK(read_pack(file,0,header,sizeof header));const auto read32=[](const uint8_t*p){return unsigned(p[0])|unsigned(p[1])<<8|unsigned(p[2])<<16|unsigned(p[3])<<24;};const unsigned images=read32(header+16),glyphs=read32(header+20);for(unsigned i=0;i<glyphs;++i){uint8_t row[16];CHECK(read_pack(file,40+(images+i)*16,row,16));glyph_keys.push_back(read32(row)|(unsigned(row[8])<<24));}CHECK(std::is_sorted(glyph_keys.begin(),glyph_keys.end()));CHECK(a.content.open(ResourceSource{file,uint32_t(size),read_pack,nullptr}));actual=true;}if(argc>2)captures=argv[2];
-    font("TO_UPGRADE",8,0);font("TO_REMOVE",8,0);font("TO_TRANSFORM",8,0);font("VIEW_UPGRADES",8,5);smith();removal();long_grid();CHECK(!actual||a.content.healthy());if(file)CHECK(!std::fclose(file));std::printf("deck selection UI: %u checks passed%s\n",checks,actual?" (actual source assets)":"");
+    font("TO_UPGRADE",8,0);font("TO_REMOVE",8,0);font("TO_TRANSFORM",8,0);font("VIEW_UPGRADES",8,5);smith();removal();long_grid();two_digit_floor();CHECK(!actual||a.content.healthy());if(file)CHECK(!std::fclose(file));std::printf("deck selection UI: %u checks passed%s\n",checks,actual?" (actual source assets)":"");
 }

@@ -29,10 +29,11 @@ inline bool selection_upgrade_label_pixels(spire::App&a){
     using namespace spire;
     struct Letter {unsigned w,h;int x;std::vector<uint8_t>alpha;};
     const std::string text=a.content.world_string("card_selection","VIEW_UPGRADES");
+    const unsigned face=a.content.original_label_fonts()?5:0;
     std::vector<Letter>letters;RichReader reader(text.c_str());RichChar ch{};int pen64=0;
     while(reader.next(ch)){
-        const auto g=a.content.glyph(ch.codepoint,8,5);if(!g.pixels||!g.advance)return false;
-        if(pen64)pen64+=a.content.glyph_kerning64(ch.previous,ch.codepoint,8,5);
+        const auto g=a.content.glyph(ch.codepoint,8,face);if(!g.pixels||!g.advance)return false;
+        if(pen64)pen64+=a.content.glyph_kerning64(ch.previous,ch.codepoint,8,face);
         Letter letter{g.w,g.h,text_pixel(pen64)+g.bearing_x,std::vector<uint8_t>(unsigned(g.w)*g.h)};
         if(g.encoded_size){unsigned at=0;for(unsigned i=0;i<g.encoded_size;i+=2){
             if(i+1>=g.encoded_size||at+g.pixels[i]>letter.alpha.size())return false;
