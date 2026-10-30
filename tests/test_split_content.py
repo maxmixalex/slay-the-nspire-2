@@ -205,9 +205,9 @@ class SplitContentTest(unittest.TestCase):
         current = {'nsl1': raw['eng'], 'nsl2': compressed,
                    'nsl3-nsl1': outer_literal(raw['eng']), 'nsl3-nsl2': outer_literal(compressed)}
         future_raw = bytearray(raw['eng'])
-        struct.pack_into('<I', future_raw, split.LANGUAGE_HEADER + 4, 44)
+        struct.pack_into('<I', future_raw, split.LANGUAGE_HEADER + 4, split.MAXIMUM_CONTENT_VERSION + 1)
         future_compressed = bytearray(compressed)
-        struct.pack_into('<I', future_compressed, split.u32(compressed, 128) + 4, 44)
+        struct.pack_into('<I', future_compressed, split.u32(compressed, 128) + 4, split.MAXIMUM_CONTENT_VERSION + 1)
         future = {'nsl1': bytes(future_raw), 'nsl2': bytes(future_compressed),
                   'nsl3-nsl1': outer_literal(future_raw), 'nsl3-nsl2': outer_literal(future_compressed)}
         with tempfile.TemporaryDirectory() as directory:
@@ -218,7 +218,7 @@ class SplitContentTest(unittest.TestCase):
                     path = Path(directory)/(name + '.tns'); path.write_bytes(data)
                     self.assertEqual(resource_version(path), 43)
             for name, data in future.items():
-                with self.subTest(container=name, version=44):
+                with self.subTest(container=name, version=split.MAXIMUM_CONTENT_VERSION + 1):
                     with self.assertRaisesRegex(ValueError, 'Invalid logical resource version'):
                         split.language_resource_version(data)
                     path = Path(directory)/(name + '-future.tns'); path.write_bytes(data)

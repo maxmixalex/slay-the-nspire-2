@@ -9,11 +9,12 @@ static unsigned checks;
 #define CHECK(x) do {++checks;if(!(x)){std::fprintf(stderr,"LZMA2 failure at %u: %s\n",unsigned(__LINE__),#x);std::exit(1);}}while(0)
 #include "fixtures/lzma2_blocks.inc"
 #include "fixtures/lzma2_contexts.inc"
+#include "fixtures/large_tile_blocks.inc"
 
-static bool incremental(const std::vector<uint8_t>&raw,const std::vector<uint8_t>&packed,unsigned input_chunk,unsigned budget){
+static bool incremental(const std::vector<uint8_t>&raw,const std::vector<uint8_t>&packed,unsigned input_chunk,unsigned budget,unsigned property=14){
     std::vector<uint8_t> guarded(raw.size()+64,0xcd),workspace(Lzma2ProbabilityBytes+64,0xab);
     Lzma2BlockStream stream;
-    if(!begin_lzma2_stream(stream,guarded.data()+32,raw.size(),raw.size(),packed.size(),14,
+    if(!begin_lzma2_stream(stream,guarded.data()+32,raw.size(),raw.size(),packed.size(),property,
                            workspace.data()+32,Lzma2ProbabilityBytes))return false;
     uint32_t at=0;Lzma2StepResult result=Lzma2StepResult::Pending;
     unsigned steps=0;
@@ -50,7 +51,7 @@ static void fixture(const std::vector<uint8_t>&raw,const std::vector<uint8_t>&pa
     CHECK(incremental(raw,packed,7,97));
     auto trailing=packed;trailing.push_back(0);CHECK(!incremental(raw,trailing,31,512));
     auto truncated=packed;truncated.pop_back();CHECK(!incremental(raw,truncated,4096,512));
-    CHECK(!decode(packed,raw.size(),16,raw.size()));
+    CHECK(!decode(packed,raw.size(),15,raw.size()));
     CHECK(!decode(packed,raw.size(),40,raw.size()));
     CHECK(!decode(packed,0,14,raw.size()));
     CHECK(!decode(packed,raw.size(),14,raw.size()-1));
@@ -125,6 +126,13 @@ static void bounded_poll(){
 }
 int main(){
     fixtures();set_lzma2_foreground_poll(count_poll);fixtures();CHECK(foreground_polls>0);
+    std::vector<uint8_t> large(Lzma2LargeRawLimit,0),large_output(Lzma2LargeRawLimit+32,0xcd);
+    CHECK(decode_lzma2_block(large_output.data(),Lzma2LargeRawLimit,Lzma2LargeRawLimit,large_lzma2_zeros,sizeof large_lzma2_zeros,16));
+    CHECK(!std::memcmp(large.data(),large_output.data(),large.size()));
+    for(unsigned i=0;i<32;++i)CHECK(large_output[Lzma2LargeRawLimit+i]==0xcd);
+    CHECK(!decode_lzma2_block(large_output.data(),Lzma2LargeRawLimit,Lzma2LargeRawLimit,large_lzma2_zeros,sizeof large_lzma2_zeros,14));
+    CHECK(!decode_lzma2_block(large_output.data(),Lzma2LargeRawLimit+1,Lzma2LargeRawLimit+1,large_lzma2_zeros,sizeof large_lzma2_zeros,16));
+    CHECK(incremental(large,{large_lzma2_zeros,large_lzma2_zeros+sizeof large_lzma2_zeros},7,4096,16));
     std::vector<uint8_t> output(Lzma2BlockRawLimit,0xcd);observed_output=output.data();observed_limit=output.size();
     foreground_polls=0;set_lzma2_foreground_poll(bounded_poll);
     CHECK(decode_lzma2_block(output.data(),output.size(),output.size(),compressed_zeros,sizeof compressed_zeros,14));

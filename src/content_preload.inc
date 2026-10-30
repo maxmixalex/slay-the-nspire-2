@@ -49,7 +49,9 @@ static uint8_t* preload_output(ContentPreload&p){return p.is_glyph?p.glyph.data:
 static uint8_t* preload_input(ContentPreload&p){return tile_bytes(*p.workspace)+Lzma2ProbabilityBytes;}
 static bool preload_workspace(ContentPreload&p){
     if(p.workspace)return true;
-    p.workspace=reserve_tile_group(RetainedPageBytes*(p.stored_format==6?2u:1u),true);if(!p.workspace)return false;
+    // Anchor probabilities at the first page in the large-tile room tier.
+    // The other three edge pages must stay contiguous for the alpha plane.
+    p.workspace=reserve_tile_group(RetainedPageBytes*(p.stored_format==6?2u:1u),true,true);if(!p.workspace)return false;
     p.workspace->first|=128u;return true;
 }
 static bool preload_reserve_output(ContentPreload&p){

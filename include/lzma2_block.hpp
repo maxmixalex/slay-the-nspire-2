@@ -8,6 +8,11 @@ constexpr uint32_t Lzma2BlockRawLimit=512u*1024u;
 constexpr uint32_t Lzma2BlockEncodedLimit=617291u;
 constexpr uint32_t Lzma2ProbabilityBytes=28544u;
 constexpr uint32_t Lzma2DictionaryProperty=14u;
+constexpr uint32_t Lzma2LargeRawLimit=1024u*1024u,Lzma2LargeDictionaryProperty=16u;
+constexpr uint32_t lzma2_raw_limit(unsigned property){
+    return property==Lzma2DictionaryProperty?Lzma2BlockRawLimit:
+        property==Lzma2LargeDictionaryProperty?Lzma2LargeRawLimit:0u;
+}
 
 // Rejects partial output, missing end markers, trailing input, an unsupported
 // dictionary property and overlapping input/output. Calls are serial, as are the

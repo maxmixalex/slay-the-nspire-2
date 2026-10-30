@@ -369,7 +369,7 @@ bool Content::open(ResourceSource source){
     if(version>=TileContentVersion){
         uint8_t header[64];
         if(!reader_.read(base,header,sizeof header)||
-           !tile_header_bounds(header,base,n,ni,DirectoryInputCapacity,version>=RetainedContentVersion,start))return false;
+           !tile_header_bounds(header,base,n,ni,DirectoryInputCapacity,version>=RetainedContentVersion,start,version))return false;
     }
     // NSL2 only compresses metadata that stays in this existing directory
     // cache. Frame-descriptor reads may already hold an image-transfer lease.
@@ -425,7 +425,9 @@ bool Content::image_cached(int id)const{
     return (data_&&descriptor.format<5)||find_image(this,image_directory_,unsigned(id));
 }
 void Content::set_image_cache_profile(bool room_frames)const{
-    const unsigned pages=room_frames?RoomImagePages:ImagePages;
+    // A large-group room borrows512KiB from its published-image tier. The
+    // total picture arena and execution allocation remain exactly unchanged.
+    const unsigned pages=room_frames?RoomImagePages-(version_>=LargeTileContentVersion?128u:0u):ImagePages;
     if(image_page_limit==pages)return;
     cancel_content_preload();
     // App calls this before requesting frame pictures. Only the tile tier

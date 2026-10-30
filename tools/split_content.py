@@ -79,7 +79,7 @@ def layout(data, language):
     require(base > aux_at and base + 64 <= min(length, DIRECTORY_LIMIT),
             "Invalid tile header position")
     tile = struct.unpack_from("<4s15I", data, base)
-    require(tile[1] == 1 and tile[2] == 16 and tile[3] == 14 and
+    require(tile[1] == 1 and tile[2] == 16 and (tile[3] == 14 or (version >= 44 and tile[3] == 16)) and
             tile[10] == 770,
             "Unexpected TIL1 profile")
     groups = tile[5] + tile[6]
@@ -290,7 +290,7 @@ def _directory_boundary(prefix, total):
     tile = struct.unpack_from("<4s15I", prefix, base)
     groups, frames, descriptors, table = tile[5] + tile[6], tile[7], tile[8], tile[9]
     costs = (ni + 1) & ~1 if version >= 20 else 0
-    require(tile[1:4] == (1, 16, 14) and tile[10] == 770 and
+    require(tile[1:3] == (1, 16) and (tile[3] == 14 or (version >= 44 and tile[3] == 16)) and tile[10] == 770 and
             0 < groups <= 131070 and 0 < frames <= 65535 and table == base + 64 and
             descriptors == table + groups * 8 + costs and descriptors <= DIRECTORY_LIMIT and
             descriptors + frames * 16 <= len(prefix), "Invalid logical directory boundary")

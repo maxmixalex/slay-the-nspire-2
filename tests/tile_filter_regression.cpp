@@ -8,6 +8,7 @@
 #include <vector>
 using namespace spire;
 using Bytes=std::vector<uint8_t>;
+#include "fixtures/large_tile_blocks.inc"
 static unsigned checks;
 #define CHECK(x) do{++checks;if(!(x)){std::fprintf(stderr,"tile filter line %d: %s\n",__LINE__,#x);std::exit(1);}}while(0)
 static void put(Bytes&b,unsigned at,uint32_t value,unsigned n=4){for(unsigned i=0;i<n;++i)b[at+i]=uint8_t(value>>(i*8));}
@@ -36,28 +37,59 @@ static void all_bits(){
     CHECK(!restore_tile_filter(out.data(),raw.data(),769,1,1));CHECK(!restore_tile_filter(out.data(),raw.data(),770,681,1));
     raw[0]=0;CHECK(!restore_tile_filter(out.data(),raw.data(),770,1,1));
 }
+static void in_place_boundaries(){
+    for(unsigned count:{1u,128u,129u,130u,256u,257u,258u,259u,387u,388u,516u,517u,
+        645u,646u,679u,680u,681u,774u,775u,903u,904u,1032u,1033u,1161u,1162u,1290u,1291u,1359u,1360u}){
+        Bytes original(count*770);
+        for(unsigned t=0;t<count;++t){original[t*770]=uint8_t(t%16+1);original[t*770+1]=uint8_t(t/16%16+1);
+            for(unsigned p=0;p<256;++p){put(original,t*770+2+p*2,t*256+p,2);original[t*770+514+p]=uint8_t((t*256+p)*13);}}
+        for(unsigned mode:{1u,2u})for(bool stepped:{false,true}){
+            const Bytes encoded=filtered(original,mode);Bytes guarded(encoded.size()+32,0x91),planes(count*258+32,0xa3);
+            std::memcpy(guarded.data()+16,encoded.data(),encoded.size());
+            if(stepped){std::memcpy(planes.data()+16,encoded.data(),count*2);
+                std::memcpy(planes.data()+16+count*2,encoded.data()+count*514,count*256);
+                for(unsigned step=0;step<count;++step){CHECK(restore_tile_filter_in_place_step(guarded.data()+16,planes.data()+16,count,mode,step));
+                    for(unsigned j=0;j<16;++j)CHECK(guarded[j]==0x91&&guarded[encoded.size()+16+j]==0x91&&planes[j]==0xa3&&planes[count*258+16+j]==0xa3);}}
+            else CHECK(restore_tile_filter_in_place(guarded.data()+16,unsigned(encoded.size()),count,mode,planes.data()+16,count*258));
+            CHECK(!std::memcmp(guarded.data()+16,original.data(),original.size()));
+            for(unsigned j=0;j<16;++j)CHECK(guarded[j]==0x91&&guarded[encoded.size()+16+j]==0x91&&planes[j]==0xa3&&planes[count*258+16+j]==0xa3);
+        }
+    }
+    Bytes one(770),scratch(258);one[0]=one[1]=16;
+    CHECK(!restore_tile_filter_in_place(one.data(),770,1,1,scratch.data(),257));
+    CHECK(!restore_tile_filter_in_place(one.data(),770,1,1,one.data()+1,258));
+    CHECK(!restore_tile_filter_in_place(one.data()+1,770,1,1,one.data(),258));
+    CHECK(!restore_tile_filter_in_place_step(one.data(),scratch.data(),1,1,1));
+    CHECK(!restore_tile_filter_in_place_step(one.data(),scratch.data(),1361,1,0));
+}
 struct Package {
     static constexpr unsigned Images=66,Strings=Ui7StringCount,Clips=CharacterDeathAnimationKinds;
     Bytes bytes,expected;unsigned base{},tile_group{},index_group{},frame{};
     unsigned append(const Bytes&raw){if(bytes.size()&1)bytes.push_back(0);const unsigned at=unsigned(bytes.size());bytes.insert(bytes.end(),raw.begin(),raw.end());return at;}
-    Package(unsigned mode){
-        const unsigned strings=40+Images*16+16,clips=strings+Strings*8,cards=clips+Clips*16,aux=cards+CardKinds*16;
-        base=aux+GameOverTransitionAuxiliaryCount*4;const unsigned table=base+64,costs=table+16;frame=costs+Images;bytes.resize(frame+16);
-        put(bytes,0,0x3250534e);put(bytes,4,TileFilterContentVersion);put(bytes,8,0x41cef1ea);put(bytes,16,Images);put(bytes,20,1);put(bytes,24,Strings);put(bytes,28,Clips);put(bytes,32,CardKinds);
+    Package(unsigned mode,bool large=false){
+        const unsigned clip_count=large?BestiaryKaiserAnimationKinds:Clips;
+        const unsigned strings=40+Images*16+16,clips=strings+Strings*8,cards=clips+clip_count*16,aux=cards+CardKinds*16;
+        base=aux+(large?unsigned(Ui12AuxiliaryCount):unsigned(GameOverTransitionAuxiliaryCount))*4;const unsigned table=base+64,costs=table+16;frame=costs+Images;bytes.resize(frame+16);
+        put(bytes,0,0x3250534e);put(bytes,4,large?LargeTileContentVersion:TileFilterContentVersion);put(bytes,8,0x41cef1ea);put(bytes,16,Images);put(bytes,20,1);put(bytes,24,Strings);put(bytes,28,clip_count);put(bytes,32,CardKinds);
         for(unsigned i=0;i<Images;++i){put(bytes,40+i*16,frame);put(bytes,44+i*16,17,2);put(bytes,46+i*16,17,2);put(bytes,48+i*16,6);put(bytes,52+i*16,16);bytes[costs+i]=1;}
         const unsigned glyph=append({255});put(bytes,40+Images*16,'?');put(bytes,44+Images*16,glyph);put(bytes,48+Images*16,5,2);bytes[50+Images*16]=bytes[51+Images*16]=1;put(bytes,52+Images*16,1,2);
         const unsigned marker=append({'e','n','g',0});for(unsigned i=0;i<Strings;++i){put(bytes,strings+i*8,i==6110?marker:marker+3);put(bytes,strings+i*8+4,i==6110?3:0);}
-        for(unsigned i=0;i<Clips;++i){put(bytes,clips+i*16+4,1,2);put(bytes,clips+i*16+6,33,2);}
+        for(unsigned i=0;i<clip_count;++i){put(bytes,clips+i*16+4,1,2);put(bytes,clips+i*16+6,33,2);}
         Bytes records(4*770),geometry;
         for(unsigned ty=0;ty<2;++ty)for(unsigned tx=0;tx<2;++tx){const unsigned tile=ty*2+tx;records[tile*770]=tx?1:16;records[tile*770+1]=ty?1:16;}
         for(unsigned y=0;y<17;++y){add(expected,1,2);add(expected,0,2);add(expected,17,2);add(expected,1,1);add(geometry,1,2);add(geometry,0,2);add(geometry,17,2);add(geometry,1,1);
             for(unsigned x=0;x<17;++x){const unsigned color=(x*991+y*771)&65535,alpha=(x+y*13)%256,tile=(y/16)*2+x/16,pos=(y%16)*16+x%16;
                 add(expected,color,2);add(expected,alpha,1);put(records,tile*770+2+pos*2,color,2);records[tile*770+514+pos]=uint8_t(alpha);}}
-        Bytes index;add(index,unsigned(expected.size()));add(index,16);add(index,unsigned(geometry.size()));for(unsigned i=0;i<4;++i)add(index,i);index.insert(index.end(),geometry.begin(),geometry.end());
+        if(large){const Bytes first=records;records.resize(LargeTileItems*770);for(unsigned i=0;i<LargeTileItems;++i)std::memcpy(records.data()+i*770,first.data()+(i%4)*770,770);}
+        const unsigned ids[]={0,681,1022,1359};
+        Bytes index;add(index,unsigned(expected.size()));add(index,16);add(index,unsigned(geometry.size()));for(unsigned i=0;i<4;++i)add(index,large?ids[i]:i);index.insert(index.end(),geometry.begin(),geometry.end());
         for(unsigned i=0;i<2;++i){Bytes encoded=stored(i?index:mode?filtered(records,mode):records),block(32);
-            put(block,0,!i&&mode?FilteredTileGroupMagic:0x31524754);put(block,4,i+1);put(block,8,i);put(block,12,unsigned(i?index.size():records.size()));put(block,16,unsigned(encoded.size()));put(block,24,i?1:4);put(block,28,i?0:mode);
+            if(large&&!i){if(mode==1)encoded.assign(large_tiles_mode1,large_tiles_mode1+sizeof large_tiles_mode1);
+                else if(mode==2)encoded.assign(large_tiles_mode2,large_tiles_mode2+sizeof large_tiles_mode2);
+                else encoded.assign(large_tiles_mode0,large_tiles_mode0+sizeof large_tiles_mode0);}
+            put(block,0,!i&&mode?FilteredTileGroupMagic:0x31524754);put(block,4,i+1);put(block,8,i);put(block,12,unsigned(i?index.size():records.size()));put(block,16,unsigned(encoded.size()));put(block,24,i?1:(large?LargeTileItems:4));put(block,28,i?0:mode);
             block.insert(block.end(),encoded.begin(),encoded.end());const unsigned at=append(block);(i?index_group:tile_group)=at;put(bytes,table+i*8,at);put(bytes,table+i*8+4,unsigned(block.size()));}
-        const unsigned header[]={0x314c4954,1,16,14,4,1,1,1,frame,table,770,4,524288,ResourceTransferCapacity,costs,Images};for(unsigned i=0;i<16;++i)put(bytes,base+i*4,header[i]);
+        const unsigned header[]={0x314c4954,1,16,large?16u:14u,large?LargeTileItems:4u,1,1,1,frame,table,770,large?LargeTileItems:4u,large?1048576u:524288u,ResourceTransferCapacity,costs,Images};for(unsigned i=0;i<16;++i)put(bytes,base+i*4,header[i]);
         put(bytes,frame,base);put(bytes,frame+12,unsigned(index.size()));put(bytes,12,unsigned(bytes.size()));
     }
 };
@@ -74,4 +106,28 @@ static void reader(){
     for(unsigned mode=0;mode<5;++mode){Package p(1);switch(mode){case 0:put(p.bytes,4,GroupedGlyphContentVersion);break;case 1:put(p.bytes,p.tile_group+28,3);break;case 2:put(p.bytes,p.index_group,FilteredTileGroupMagic);put(p.bytes,p.index_group+28,1);break;case 3:put(p.bytes,p.tile_group+24,680);break;default:p.bytes[p.tile_group+35]=0;break;}
         CHECK(memory->open(p.bytes.data(),p.bytes.size()));CHECK(!memory->image(0).pixels&&!memory->healthy());}
 }
-int main(){all_bits();reader();std::printf("tile filter: %u checks; both transforms, all RGB565 values, alpha, largest group, old/new readers and malformed bounds passed\n",checks);}
+static void large_reader(){
+    auto c=std::make_unique<Content>();
+    for(unsigned mode:{0u,1u,2u})for(bool room:{false,true}){
+        const Package p(mode,true);Provider provider{p.bytes};CHECK(c->open(provider.source()));c->set_image_cache_profile(room);
+        auto verify=[&](){const auto image=c->image(0);CHECK(image.pixels&&image.format==4&&image.w==17&&image.h==17);
+            CHECK(!std::memcmp(image.pixels,p.expected.data(),p.expected.size()));CHECK(c->healthy()&&!resource_transfer_uses);};
+        verify();CHECK(c->open(provider.source()));c->set_image_cache_profile(room);
+        auto finish=[&](){PreparationResult result=PreparationResult::Pending;unsigned steps=0;
+            while(result==PreparationResult::Pending){const auto before=provider.reads;result=c->preload_image_step(0);
+                CHECK(++steps<3000&&provider.reads-before<=2&&!resource_transfer_uses&&c->healthy());
+                if(result==PreparationResult::Pending)CHECK(!c->image_cached(0));}
+            CHECK(result==PreparationResult::Ready);verify();return steps;};
+        const unsigned total=finish();CHECK(total>250);
+        for(unsigned cutoff:{1u,8u,250u,300u,400u,900u,1600u}){if(cutoff>=total)continue;
+            CHECK(c->open(provider.source()));c->set_image_cache_profile(room);
+            for(unsigned step=0;step<cutoff;++step)CHECK(c->preload_image_step(0)==PreparationResult::Pending);
+            c->cancel_preload();CHECK(c->healthy()&&!resource_transfer_uses);finish();
+        }
+        Bytes old=p.bytes;put(old,4,43);CHECK(!c->open(old.data(),old.size()));
+        old=p.bytes;put(old,p.base+44,1361);CHECK(!c->open(old.data(),old.size()));
+        old=p.bytes;put(old,4,45);CHECK(!c->open(old.data(),old.size()));
+    }
+    c->set_image_cache_profile(false);
+}
+int main(){all_bits();in_place_boundaries();reader();large_reader();std::printf("tile filter: %u checks; exact alias boundaries, 1MiB synchronous/incremental groups, cancellation, room tier and legacy bounds passed\n",checks);}

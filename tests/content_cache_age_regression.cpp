@@ -149,6 +149,32 @@ void profile_surviving_images(unsigned stride){
     for(unsigned page=ImagePages;page<RoomImagePages;++page)CHECK(!(image_used[page/32]&(uint32_t(1)<<(page%32))));
     clear_caches(&owner);clear_caches(&second_owner);
 }
+void large_room_allocations(){
+    owner.set_image_cache_profile(false);clear_caches(&owner);clear_caches(&second_owner);
+    image_page_limit=RoomImagePages-128;tile_pages=picture_pixels+image_page_limit*ImagePageBytes;tile_page_limit=12;
+    for(unsigned initial=0;initial<20;++initial){
+        for(auto&g:tile_groups)tile_discard(g);
+        for(unsigned i=0;i<initial;++i){auto*g=reserve_tile_group((i%3+1)*RetainedPageBytes,true);CHECK(g);g->owner=&owner;g->age=next_tile_age();}
+        auto*workspace=reserve_tile_group(2*RetainedPageBytes,true,true);CHECK(workspace);
+        workspace->first|=128u;CHECK((workspace->first&63u)==0);
+        std::fill_n(tile_bytes(*workspace),2*RetainedPageBytes,uint8_t(0x5a));
+        auto*index=reserve_tile_group(4*TilePageBytes);CHECK(index);index->first|=128u;index->owner=&owner;index->age=next_tile_age();
+        CHECK((index->first&63u)==8);index->first&=127u;
+        auto*raw=reserve_tile_group(Lzma2LargeRawLimit);CHECK(raw);raw->first|=128u;
+        CHECK((raw->first&63u)==4);std::fill_n(tile_bytes(*raw),Lzma2LargeRawLimit,uint8_t(0x36));
+        auto*planes=reserve_tile_group(LargeTileItems*258u,true);CHECK(planes);planes->first|=128u;
+        CHECK((planes->first&63u)==1);std::fill_n(tile_bytes(*planes),LargeTileItems*258u,uint8_t(0x91));
+        for(unsigned i=0;i<2*RetainedPageBytes;++i)CHECK(tile_bytes(*workspace)[i]==0x5a);
+        for(unsigned i=0;i<Lzma2LargeRawLimit;++i)CHECK(tile_bytes(*raw)[i]==0x36);
+        tile_discard(*planes);tile_discard(*raw);tile_discard(*workspace);
+        // Retained RGR3 drops its probabilities before reserving the source
+        // slice; two maximum512KiB retained reservations must still coexist.
+        auto*retained=reserve_tile_group(Lzma2BlockRawLimit,true);CHECK(retained);retained->first|=128u;
+        auto*source=reserve_tile_group(Lzma2BlockRawLimit,true);CHECK(source&&source!=retained);source->first|=128u;
+        tile_discard(*source);tile_discard(*retained);
+    }
+    owner.set_image_cache_profile(false);CHECK(tile_page_limit==48&&!tile_used);
+}
 void retained_quarters_share_and_evict(){
     owner.set_image_cache_profile(true);
     for(auto&group:tile_groups)tile_discard(group);
@@ -239,7 +265,7 @@ void retained_quarters_share_and_evict(){
     CHECK(small->age==1&&large->age==2&&tile_bytes(*small)==small_bytes&&tile_bytes(*large)==large_bytes);
     owner.set_image_cache_profile(false);CHECK(!tile_used);
     for(const auto&g:tile_groups)CHECK(!g.pages&&!g.owner);
-    CHECK(!reserve_tile_group(0,true)&&!reserve_tile_group(Lzma2BlockRawLimit+1,true));
+    CHECK(!reserve_tile_group(0,true)&&!reserve_tile_group(Lzma2LargeRawLimit+1,true));
 }
 }
 int main(){
@@ -255,6 +281,7 @@ int main(){
     image_wrap({});
     profile_surviving_images(12);profile_surviving_images(16);
     frame_pool_profiles();
+    large_room_allocations();
     retained_quarters_share_and_evict();
     std::printf("content cache ages: %u checks passed;1151 colliding keys with all five decoded formats, owner/alias eviction, age wrap, bounded frame-pool splits and compact retained quarters\n",checks);
 }

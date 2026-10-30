@@ -5,4 +5,4 @@ Historical builders retain their explicit output versions and format thresholds.
 The synthetic pipeline gate checks agreement with the C++ runtime boundary.
 """
 
-MAXIMUM_CONTENT_VERSION = 43
+MAXIMUM_CONTENT_VERSION = 44

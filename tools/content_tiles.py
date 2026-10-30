@@ -41,6 +41,7 @@ DIRECTORY_LIMIT = 2 * 1024 * 1024
 IMAGE_LIMIT = 320 * 240 * 8 + 2 * 240
 ENCODED_LIMIT = IMAGE_LIMIT + IMAGE_LIMIT // 255 + 32
 GROUP_LIMIT = 512 * 1024
+LARGE_GROUP_LIMIT = 1024 * 1024
 GLYPH_GROUP_VERSION = 32
 GLYPH_GROUP_FLAG = 0x8000
 GLYPH_GROUP_LIMIT = 64 * 1024
@@ -533,11 +534,12 @@ def build_plan(source, directory, first_clip, per_group, *, progress=None, spool
         spool.close()
 
 
-def decode_lzma2(payload, raw_size):
-    require(0 < raw_size <= GROUP_LIMIT and 0 < len(payload) + GROUP.size <= ENCODED_LIMIT,
+def decode_lzma2(payload, raw_size, dictionary=GROUP_LIMIT):
+    require(dictionary in (GROUP_LIMIT, LARGE_GROUP_LIMIT) and
+            0 < raw_size <= dictionary and 0 < len(payload) + GROUP.size <= ENCODED_LIMIT,
             'LZMA2 block outside bounds')
     decoder = lzma.LZMADecompressor(format=lzma.FORMAT_RAW,
-        filters=[dict(id=lzma.FILTER_LZMA2, dict_size=GROUP_LIMIT)])
+        filters=[dict(id=lzma.FILTER_LZMA2, dict_size=dictionary)])
     try:
         raw = decoder.decompress(payload, max_length=raw_size + 1)
     except lzma.LZMAError as error:
@@ -765,9 +767,11 @@ class TileReader:
         (magic, version, side, prop, self.tile_count, self.tile_groups, self.index_groups,
          self.frame_count, self.descriptors, table, tile_bytes, self.per_group,
          raw_bound, encoded_bound, flags, reserved) = fields
-        require((magic, version, side, prop, tile_bytes, raw_bound, encoded_bound) ==
-                (b'TIL1', 1, SIDE, 14, TILE_BYTES, GROUP_LIMIT, ENCODED_LIMIT), 'Invalid tile codec header')
-        require(1 <= self.per_group <= MAX_TILES_PER_GROUP and 0 < self.tile_count <= MAX_TILES and
+        require(prop == 14 or (pack.version >= 44 and prop == 16), 'Invalid tile dictionary property')
+        self.dictionary = LARGE_GROUP_LIMIT if prop == 16 else GROUP_LIMIT
+        require((magic, version, side, tile_bytes, raw_bound, encoded_bound) ==
+                (b'TIL1', 1, SIDE, TILE_BYTES, self.dictionary, ENCODED_LIMIT), 'Invalid tile codec header')
+        require(1 <= self.per_group <= MAX_TILES_PER_GROUP * (2 if prop == 16 else 1) and 0 < self.tile_count <= MAX_TILES and
                 self.tile_groups == (self.tile_count + self.per_group - 1) // self.per_group and
                 0 < self.index_groups <= self.frame_count <= len(pack.images), 'Invalid tile counts')
         group_count = self.tile_groups + self.index_groups
@@ -816,7 +820,7 @@ class TileReader:
             require(((filtered and pack.version >= 33 and kind == 1 and zero in (1, 2)) or
                      (predicted and pack.version >= 41 and kind == 2 and zero == 1) or
                      (tag == b'TGR1' and zero == 0)) and number == i and encoded_size + GROUP.size == length
-                    and 0 < raw_size <= GROUP_LIMIT, 'Invalid group header')
+                    and 0 < raw_size <= (self.dictionary if i < self.tile_groups else GROUP_LIMIT), 'Invalid group header')
             if i < self.tile_groups:
                 expected = min(self.per_group, self.tile_count - i * self.per_group)
                 require(kind == 1 and (0 < count <= expected if pack.version >= 42 else count == expected)
@@ -836,7 +840,7 @@ class TileReader:
             self.cache.move_to_end(group_id)
             return self.cache[group_id]
         off, encoded_size, raw_size, crc, kind, count = self.groups[group_id]
-        raw = decode_lzma2(self.pack.data[off:off + encoded_size], raw_size)
+        raw = decode_lzma2(self.pack.data[off:off + encoded_size], raw_size, self.dictionary)
         if self.filters[group_id]:
             raw = restore_tiles(raw, self.filters[group_id])
         if self.predictors[group_id]:

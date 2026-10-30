@@ -2,7 +2,7 @@
 import numpy as np
 
 TILE_BYTES = 770
-MAX_ITEMS = 680
+MAX_ITEMS = 1360
 
 
 def shape(raw, mode):

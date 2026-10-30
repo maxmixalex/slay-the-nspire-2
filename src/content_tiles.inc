@@ -1,13 +1,14 @@
 // NSP2/15 sparse tiles. Included in content.cpp's private namespace so the
 // existing encoded scratch and image tiers remain the only picture buffers.
 // The ordinary 6 MiB group tier shares the bounded 13 MiB picture arena.
-// Merchant frames use a1 MiB group tier and retain the finished pictures;
-// even that minimum fits a maximum index group plus a maximum tile group.
+// Merchant frames use a1 MiB group tier (1.5 MiB for NSP2/44) and retain
+// finished pictures; the total picture arena is identical in both profiles.
 constexpr unsigned TileSide=16,TileBytes=770,TilePageBytes=131072,TilePages=48;
 constexpr unsigned RetainedPageBytes=TilePageBytes/4;
 constexpr unsigned MaxFrameTiles=300,MaxTileGroups=64;
 // The offline access model uses the same contiguous first-fit allocation and
-// oldest-unpinned LRU eviction. A frame's index group stays pinned throughout.
+// oldest-unpinned LRU eviction. Incremental preparation releases its index
+// after copying the bounded tile IDs and geometry into existing reservations.
 constexpr bool TileCacheLru=true;
 struct TileGroup {
     const Content* owner{};
@@ -85,8 +86,8 @@ static TileGroup* find_tile_group(const Content* owner,uint32_t id){
     for(auto& group:tile_groups)if(group.owner==owner&&group.id==id)return &group;
     return nullptr;
 }
-static TileGroup* reserve_tile_group(unsigned bytes,bool retained=false){
-    if(!bytes||bytes>Lzma2BlockRawLimit)return nullptr;
+static TileGroup* reserve_tile_group(unsigned bytes,bool retained=false,bool front_workspace=false){
+    if(!bytes||bytes>Lzma2LargeRawLimit)return nullptr;
     const unsigned quarters=(bytes+RetainedPageBytes-1u)/RetainedPageBytes;
     const bool compact=retained&&quarters<4u;
     const unsigned pages=(bytes+TilePageBytes-1)/TilePageBytes;
@@ -105,7 +106,7 @@ static TileGroup* reserve_tile_group(unsigned bytes,bool retained=false){
             uint64_t parents=0;
             for(const auto& group:tile_groups)
                 if(group.pages&&(group.first&64u))parents|=tile_mask(group.first&63u,1);
-            for(unsigned i=0;i<tile_page_limit;++i)if(parents&tile_mask(i,1)){
+            for(unsigned i=0;i<(tile_page_limit==12?(front_workspace?1u:4u):tile_page_limit);++i)if(parents&tile_mask(i,1)){
                 const unsigned used=retained_quarters(i);
                 for(unsigned q=0;q+quarters<=4u;++q)
                     if(!(used&(((1u<<quarters)-1u)<<q))){first=i;quarter=q;break;}
@@ -113,8 +114,14 @@ static TileGroup* reserve_tile_group(unsigned bytes,bool retained=false){
             }
         }
         if(first==tile_page_limit)
-            for(unsigned i=0;i+pages<=tile_page_limit;i+=step)
+            for(unsigned i=0;i+pages<=tile_page_limit;i+=step){
+                // Large-group rooms reserve the two overlapping8-page banks
+                // [0,8) / [4,12). Small pinned index/plane work stays at an
+                // edge; it cannot strand both possible1MiB reservations.
+                if(tile_page_limit==12&&(compact?i>=(front_workspace?1u:4u):
+                    pages>4u?(i!=0u&&i!=4u):!(i+pages<=4u||i>=8u)))continue;
                 if(!(tile_used&tile_mask(i,pages))){first=i;break;}
+            }
         if(first<tile_page_limit){
             for(auto& group:tile_groups)if(!group.pages){
                 // Ownership is published only after a complete decode.
@@ -132,13 +139,14 @@ static TileGroup* reserve_tile_group(unsigned bytes,bool retained=false){
 }
 
 static bool tile_header_bounds(const uint8_t* h,uint32_t base,uint32_t length,
-    uint32_t images,uint32_t directory_capacity,bool prepared_costs,uint32_t& prefix){
+    uint32_t images,uint32_t directory_capacity,bool prepared_costs,uint32_t& prefix,unsigned version=0){
+    const bool large=u32(h+12)==Lzma2LargeDictionaryProperty;
     if(u32(h)!=0x314c4954u||u32(h+4)!=1||u32(h+8)!=TileSide||
-       u32(h+12)!=Lzma2DictionaryProperty||u32(h+40)!=TileBytes||
-       u32(h+48)!=Lzma2BlockRawLimit||u32(h+52)!=MaxEncodedImage)return false;
+       (large?version<LargeTileContentVersion:u32(h+12)!=Lzma2DictionaryProperty)||u32(h+40)!=TileBytes||
+       u32(h+48)!=lzma2_raw_limit(u32(h+12))||u32(h+52)!=MaxEncodedImage)return false;
     const uint32_t tiles=u32(h+16),groups=u32(h+20),indexes=u32(h+24);
     const uint32_t frames=u32(h+28),descriptors=u32(h+32),per_group=u32(h+44);
-    if(!tiles||tiles>65535u*MaxFrameTiles||!per_group||per_group>680||
+    if(!tiles||tiles>65535u*MaxFrameTiles||!per_group||per_group>(large?LargeTileItems:680u)||
        groups!=(tiles+per_group-1)/per_group||!frames||frames>images||
        !indexes||indexes>frames||base>length||length-base<64||
        base>directory_capacity||directory_capacity-base<64)return false;
@@ -164,7 +172,7 @@ static bool valid_tile_group_header(const uint8_t* h,uint32_t id,const uint8_t* 
     if((predicted?(version<PredictiveIndexContentVersion||is_tile||u32(p+28)!=1u):
         filtered?(version<TileFilterContentVersion||!is_tile||u32(p+28)<1||u32(p+28)>2):
         (u32(p)!=0x31524754u))||u32(p+4)!=(is_tile?1u:2u)||u32(p+8)!=id||
-       !size||size>Lzma2BlockRawLimit||encoded!=length-32)return false;
+       !size||size>(is_tile?lzma2_raw_limit(u32(h+12)):Lzma2BlockRawLimit)||encoded!=length-32)return false;
     if(is_tile){
         const unsigned per_group=u32(h+44),left=tiles-id*per_group;
         const unsigned expected=left<per_group?left:per_group;
@@ -202,9 +210,9 @@ static TileGroup* load_tile_group(const Content* owner,const ResourceReader& rea
     if(filter){
         // LZMA2 has consumed its input. Reuse the same transfer lease for the
         // reversible field shuffle; cache size and decoded group IDs stay exact.
-        const uint8_t* decoded=tile_bytes(*group);
-        for(unsigned i=0;i<size;++i)encoded_pixels[i]=decoded[i];
-        if(!restore_tile_filter(tile_bytes(*group),encoded_pixels,size,items,filter)){
+        const bool restored=restore_tile_filter_in_place(tile_bytes(*group),size,items,filter,
+                                                        encoded_pixels,ResourceTransferCapacity);
+        if(!restored){
             tile_discard(*group);return nullptr;
         }
     }

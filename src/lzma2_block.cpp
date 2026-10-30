@@ -30,9 +30,8 @@ void probability_free(ISzAllocPtr source,void* address){
 void set_lzma2_foreground_poll(void(*poll)()){foreground_poll=poll;}
 bool decode_lzma2_block(uint8_t* output,uint32_t capacity,uint32_t expected_size,
     const uint8_t* input,uint32_t input_size,uint32_t property){
-    if(arena.occupied||!output||!input||!expected_size||expected_size>Lzma2BlockRawLimit||
-       capacity<expected_size||!input_size||input_size>Lzma2BlockEncodedLimit||
-       property!=Lzma2DictionaryProperty)return false;
+    if(arena.occupied||!output||!input||!expected_size||expected_size>lzma2_raw_limit(property)||
+       capacity<expected_size||!input_size||input_size>Lzma2BlockEncodedLimit)return false;
     const uintptr_t destination=(uintptr_t)output,source=(uintptr_t)input;
     if(destination<=source?source-destination<expected_size:destination-source<input_size)return false;
     arena.allocations=arena.frees=0;arena.fault=false;
@@ -88,8 +87,8 @@ bool disjoint(const uint8_t*a,uint32_t an,const uint8_t*b,uint32_t bn){
 bool begin_lzma2_stream(Lzma2BlockStream&storage,uint8_t*output,uint32_t capacity,
     uint32_t expected,uint32_t encoded,uint32_t property,uint8_t*probabilities,uint32_t probability_capacity){
     auto&s=*::new(detail::InPlaceAddress{storage.state}) StreamState{};
-    if(!output||!probabilities||!expected||expected>Lzma2BlockRawLimit||capacity<expected||
-       !encoded||encoded>Lzma2BlockEncodedLimit||property!=Lzma2DictionaryProperty||
+    if(!output||!probabilities||!expected||expected>lzma2_raw_limit(property)||capacity<expected||
+       !encoded||encoded>Lzma2BlockEncodedLimit||
        probability_capacity<Lzma2ProbabilityBytes||(reinterpret_cast<uintptr_t>(probabilities)&1u)||
        !disjoint(output,expected,probabilities,Lzma2ProbabilityBytes))return false;
     s.allocator={stream_allocate,stream_free};s.probabilities=probabilities;

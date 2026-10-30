@@ -3,7 +3,7 @@
 // A 64 KiB retained reservation contains the LZMA probabilities, one bounded
 // input chunk and geometry bookkeeping; the completed cache layout is unchanged.
 struct TilePreloadPlan {
-    uint32_t row_geometry[240],row_output[240],needed[MaxFrameTiles];
+    uint32_t ids[MaxFrameTiles],row_output[240],needed[MaxFrameTiles];
     uint8_t active[MaxFrameTiles],cached[MaxFrameTiles];
 };
 constexpr unsigned TilePreloadPlanOffset=Lzma2ProbabilityBytes+TilePreloadInputBytes;
@@ -43,26 +43,24 @@ static PreparationResult preload_tile_predict(ContentPreload&p){
 }
 static PreparationResult preload_tile_filter(ContentPreload&p){
     if(!p.restored){
-        p.restored=reserve_tile_group(p.raw->size);if(!p.restored)return PreparationResult::Failed;
-        p.restored->first|=128u;p.restored->size=p.raw->size;p.restored->items=p.raw->items;
+        const unsigned planes=tile_filter_plane_bytes(p.filter_count);
+        p.restored=reserve_tile_group(planes,true);if(!p.restored)return PreparationResult::Failed;
+        p.restored->first|=128u;p.restored->size=planes;p.position=0;
+    }
+    if(p.position<p.restored->size){
+        const auto*input=tile_bytes(*p.raw);auto*output=tile_bytes(*p.restored);
+        const unsigned headers=p.filter_count*2u,left=p.restored->size-p.position;
+        const unsigned count=left<TilePreloadOutputBytes?left:TilePreloadOutputBytes;
+        for(unsigned i=0;i<count;++i){const unsigned at=p.position+i;
+            output[at]=input[at<headers?at:p.filter_count*514u+at-headers];}
+        p.position+=count;return PreparationResult::Pending;
     }
     if(p.filter_index==p.filter_count){
-        tile_discard(*p.raw);p.raw=p.restored;p.restored=nullptr;
+        tile_discard(*p.restored);p.restored=nullptr;
         p.phase=PreloadPhase::TileReady;return PreparationResult::Pending;
     }
-    const unsigned id=p.filter_index++,items=p.filter_count;
-    const auto*input=tile_bytes(*p.raw);auto*record=tile_bytes(*p.restored)+id*TileBytes;
-    const unsigned w=input[id*2],h=input[id*2+1];
-    if(!w||w>16||!h||h>16)return PreparationResult::Failed;
-    record[0]=uint8_t(w);record[1]=uint8_t(h);
-    const auto*colors=input+items*2u+id*512u;const auto*alpha=input+items*514u+id*256u;
-    for(unsigned pixel=0;pixel<256;++pixel){
-        const unsigned packed=u16(colors+pixel*2),green=packed&63u;
-        unsigned red=(packed>>6)&31u,blue=packed>>11;
-        if(p.filter_mode==2){red=(red>>1)^(0u-(red&1u));blue=(blue>>1)^(0u-(blue&1u));}
-        const unsigned rgb=(((red+(green>>1))&31u)<<11)|(green<<5)|((blue+(green>>1))&31u);
-        record[2+pixel*2]=uint8_t(rgb);record[3+pixel*2]=uint8_t(rgb>>8);record[514+pixel]=alpha[pixel];
-    }
+    if(!restore_tile_filter_in_place_step(tile_bytes(*p.raw),tile_bytes(*p.restored),
+        p.filter_count,p.filter_mode,p.filter_index++))return PreparationResult::Failed;
     return PreparationResult::Pending;
 }
 static PreparationResult preload_tile_step(ContentPreload&p){
@@ -131,17 +129,21 @@ static PreparationResult preload_tile_step(ContentPreload&p){
         if(p.tile_count>MaxFrameTiles||u32(record+4)!=p.tile_count*4u)return PreparationResult::Failed;
         p.size=u32(record);p.tile_geometry=u32(record+8);p.format=4;
         if(!preload_reserve_output(p))return PreparationResult::Failed;
-        auto&plan=preload_tile_plan(p);for(unsigned i=0;i<MaxFrameTiles;++i)plan.active[i]=plan.cached[i]=0;
+        auto&plan=preload_tile_plan(p);for(unsigned i=0;i<MaxFrameTiles;++i){
+            plan.active[i]=plan.cached[i]=0;plan.ids[i]=i<p.tile_count?u32(record+12+i*4u):0u;}
         p.scan=p.position=p.rows=p.tile_copied=0;p.phase=PreloadPhase::TileGeometry;return PreparationResult::Pending;
     }
     case PreloadPhase::TileGeometry:{
         if(p.rows==p.h){
             if(p.scan!=p.tile_geometry||p.position!=p.size)return PreparationResult::Failed;
+            // IDs are in the bounded plan; all geometry is already at its
+            // final output positions. No later stage needs the source index.
+            p.index->first&=127u;p.index=nullptr;
             p.tile_slot=p.tile_needed=0;p.phase=PreloadPhase::TileNeeds;return PreparationResult::Pending;
         }
         const auto*record=preload_tile_record(p);if(!record)return PreparationResult::Failed;
         const auto*geometry=record+12+p.tile_count*4u;auto*out=preload_output(p);auto&plan=preload_tile_plan(p);
-        const unsigned y=p.rows++;plan.row_geometry[y]=p.scan;plan.row_output[y]=p.position;
+        const unsigned y=p.rows++;plan.row_output[y]=p.position;
         if(p.tile_geometry-p.scan<2||p.size-p.position<2)return PreparationResult::Failed;
         const unsigned spans=u16(geometry+p.scan);if(spans>p.w)return PreparationResult::Failed;
         out[p.position++]=geometry[p.scan++];out[p.position++]=geometry[p.scan++];unsigned last=0;
@@ -156,10 +158,9 @@ static PreparationResult preload_tile_step(ContentPreload&p){
         return PreparationResult::Pending;
     }
     case PreloadPhase::TileNeeds:{
-        const auto*record=preload_tile_record(p);if(!record)return PreparationResult::Failed;
         auto&plan=preload_tile_plan(p);const unsigned stop=p.tile_slot+32<p.tile_count?p.tile_slot+32:p.tile_count;
         for(;p.tile_slot<stop;++p.tile_slot)if(plan.active[p.tile_slot]){
-            const unsigned tile=u32(record+12+p.tile_slot*4u);if(tile>=u32(h+16))return PreparationResult::Failed;
+            const unsigned tile=plan.ids[p.tile_slot];if(tile>=u32(h+16))return PreparationResult::Failed;
             const unsigned id=tile/u32(h+44);unsigned at=0;
             while(at<p.tile_needed&&plan.needed[at]<id)++at;
             if(at<p.tile_needed&&plan.needed[at]==id)continue;
@@ -184,22 +185,21 @@ static PreparationResult preload_tile_step(ContentPreload&p){
         return PreparationResult::Pending;
     }
     case PreloadPhase::TileCopy:{
-        const auto*record=preload_tile_record(p);if(!record||!p.raw)return PreparationResult::Failed;
-        const auto*ids=record+12,*geometry=ids+p.tile_count*4u;auto&plan=preload_tile_plan(p);
+        if(!p.raw)return PreparationResult::Failed;auto&plan=preload_tile_plan(p);
         const unsigned per_group=u32(h+44);
-        while(p.tile_slot<p.tile_count&&(!plan.active[p.tile_slot]||u32(ids+p.tile_slot*4u)/per_group!=p.tile_id))++p.tile_slot;
+        while(p.tile_slot<p.tile_count&&(!plan.active[p.tile_slot]||plan.ids[p.tile_slot]/per_group!=p.tile_id))++p.tile_slot;
         if(p.tile_slot==p.tile_count){p.raw->first&=127u;p.raw=nullptr;++p.tile_next;p.phase=PreloadPhase::TileSelect;return PreparationResult::Pending;}
-        const unsigned i=p.tile_slot++,id=u32(ids+i*4u)%per_group;
+        const unsigned i=p.tile_slot++,id=plan.ids[i]%per_group;
         if(id>=p.raw->items)return PreparationResult::Failed;
         const auto*tile=tile_bytes(*p.raw)+id*TileBytes;auto*out=preload_output(p);
         const unsigned tx=(i%p.tile_columns)*TileSide,ty=(i/p.tile_columns)*TileSide;
         const unsigned tw=p.w-tx<TileSide?p.w-tx:TileSide,th=p.h-ty<TileSide?p.h-ty:TileSide;
         for(unsigned y=ty;y<ty+th;++y){
-            unsigned ga=plan.row_geometry[y],oa=plan.row_output[y];const unsigned spans=u16(geometry+ga);ga+=2;oa+=2;
+            unsigned oa=plan.row_output[y];const unsigned spans=u16(out+oa);oa+=2;
             for(unsigned j=0;j<spans;++j){
-                const unsigned x=u16(geometry+ga),count=u16(geometry+ga+2),mode=geometry[ga+4],stride=mode?3:2;
+                const unsigned x=u16(out+oa),count=u16(out+oa+2),mode=out[oa+4],stride=mode?3:2;
                 if(x>=tx+tw)break;
-                ga+=5;oa+=5;const unsigned begin=x>tx?x:tx,end=x+count<tx+tw?x+count:tx+tw;
+                oa+=5;const unsigned begin=x>tx?x:tx,end=x+count<tx+tw?x+count:tx+tw;
                 for(unsigned pixel=begin;pixel<end;++pixel){
                     const unsigned pos=(y-ty)*TileSide+pixel-tx,destination=oa+(pixel-x)*stride;
                     out[destination]=tile[2+pos*2];out[destination+1]=tile[3+pos*2];
