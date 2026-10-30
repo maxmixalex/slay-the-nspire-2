@@ -34,7 +34,7 @@ def readme(info):
     return f"""Slay the Nspire 2 — nSpire 0.1.0 (StS II v0.111.0) — {info['stage']}
 
 安装 / Installation
-将 nSpire2.tns 与 data、state 文件夹一起复制到计算器上的游戏目录，打开 nSpire2.tns。
+首次安装：将 nSpire2.tns 与 data、state 文件夹一起复制到计算器上的游戏目录，打开 nSpire2.tns。
 Copy nSpire2.tns and the data/state folders into the game's calculator directory.
 Open nSpire2.tns. A color TI-Nspire with Ndless is required.
 
@@ -46,9 +46,10 @@ state/                      局面、历史、设置、语言和档位 / saves a
 
 只安装需要的语言文件。设置中可切换已安装语言；语言选择全局保存。
 公共资源索引和全部用途包必须来自同一版本并一起安装，不能按用途删减。
-升级前退出游戏，保留已有 state 文件夹中的档案。
-先删除 data 中旧的 nSpire2*.dat.tns 资源文件，再传入配套的新索引、全部用途包和需要的语言，
-最后替换程序。这同样适用于旧分包版升级，可避免传输时同时暂存旧大文件和新资源。
+升级前退出游戏，保留已有 state 文件夹及其中的档案，不要用包内的空 state 覆盖它。
+删除游戏目录中旧的整个 data 文件夹，然后传入本包的完整 data 文件夹并替换 nSpire2.tns。
+可删除新 data 中不需要的语言文件，但必须保留配套的新索引和全部用途包。
+这同样适用于旧分包版升级，可避免传输时同时暂存旧大文件和新资源。
 等全部配套文件传输完成后再启动。可选语言只传需要的几种，不必安装全部十六种。
 首次启动按系统语言选择；对应语言缺失或无法加载时尝试英语，再选择首个可用语言。
 主菜单左上角可切换三个档案，各自保存局面、历史与游戏设置。
@@ -56,8 +57,10 @@ state/                      局面、历史、设置、语言和档位 / saves a
 Install only the desired language files in data. Settings lists installed languages.
 Install the matching artwork index and every concern file together. They are all required.
 Exit the game before updating; keep existing files in state.
-Delete the old nSpire2*.dat.tns resource files in data before transferring the new
-matching index, every concern file and desired locales, then replace the launcher.
+Do not overwrite the existing state folder with the archive's empty state folder.
+Replace the entire old data folder with this archive's matching data folder,
+and replace nSpire2.tns. You may omit unwanted locale files, but keep the
+matching index and every concern file.
 This also applies to updates from an older multipart installation and avoids
 temporarily storing both old large files and their replacements during transfer.
 Start only after the complete matching set is present.

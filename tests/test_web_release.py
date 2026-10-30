@@ -96,7 +96,8 @@ class WebReleaseTest(unittest.TestCase):
                 self.assertFalse(info['calculator_only'])
                 readme=archive.read('data/README.txt').decode()
                 self.assertIn('Exit the game before updating; keep existing files in state.',readme)
-                self.assertIn('Delete the old nSpire2*.dat.tns',readme)
+                self.assertIn('Replace the entire old data folder',readme)
+                self.assertIn("Do not overwrite the existing state folder",readme)
                 self.assertIn('older multipart installation',readme)
                 self.assertNotIn('/tree/'+'a'*40,readme)
                 for name in ('nSpire2.dat.tns',*storage.PART_FILES):
