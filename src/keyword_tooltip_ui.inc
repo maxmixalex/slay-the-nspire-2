@@ -441,8 +441,9 @@ static void collect_visible_hover_tips(Canvas&c,const CardHoverTarget&owner,Hove
     collect_keyword_hover_tips(c.a,owner,tips);
 }
 static void keyword_tooltips(Canvas&c){
-    auto&a=c.a;CardHoverTarget owner{};
-    if(!keyword_hover_target(a,owner)){a.keyword_hover.owner=0;a.keyword_hover.page=0;if(a.detail_card<0)a.keyword_hover.details=false;return;}
+    auto&a=c.a;CardHoverTarget owner{};const bool found=keyword_hover_target(a,owner);
+    a.combat_cards.blades.set_hovered_card(found&&owner.sovereign_blade?owner.instance:-1,a.animation*33u);
+    if(!found){a.keyword_hover.owner=0;a.keyword_hover.page=0;if(a.detail_card<0)a.keyword_hover.details=false;return;}
     const bool new_owner=a.keyword_hover.owner!=owner.identity;
     if(new_owner){a.keyword_hover.owner=owner.identity;a.keyword_hover.page=0;}
     HoverTipList tips{};collect_visible_hover_tips(c,owner,tips);

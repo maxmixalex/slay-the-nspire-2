@@ -5,7 +5,7 @@ namespace spire {
 // canonical values, cards or RNG state are changed by this bounded queue.
 struct SovereignBladePresentation {
  static constexpr unsigned Capacity=12,Cues=64;
- struct Blade {uint16_t id=0,damage=0;uint32_t forged=0,attack=0,removed=0;int16_t tx=0,ty=0;bool active=false,forging=false,attacking=false,removing=false;};
+ struct Blade {uint16_t id=0,damage=0;uint32_t forged=0,attack=0,removed=0,orbit_paused_at=0,orbit_delay=0;int16_t tx=0,ty=0;bool active=false,forging=false,attacking=false,removing=false,orbit_paused=false;};
  struct Cue {uint32_t at=0;uint16_t id=0,damage=0;int16_t x=0,y=0;uint8_t kind=0;};
  Blade blades[Capacity]{};Cue cues[Cues]{};uint16_t damage[MaxCards]{};
  uint8_t head=0,count=0;uint32_t started=0;bool overflow=false;
@@ -53,13 +53,23 @@ struct SovereignBladePresentation {
    else if(age<350)scale=scale*(4096+(4096-cubic(age-50,300))/5)/4096;}
   if(b.removing)scale=scale*(4096-cubic(now-b.removed,200))/4096;return scale;
  }
+ // NSovereignBladeVfx stops OrbitProgress while its actual hover tip exists.
+ // Track each sword independently; forging, attack and removal keep their
+ // ordinary timestamps. Resuming subtracts the paused span without jumping.
+ void set_hovered_card(int id,uint32_t now){
+  for(auto&b:blades){const bool hovered=b.active&&!b.attacking&&!b.removing&&id>=0&&b.id==id;
+   if(hovered&&!b.orbit_paused){b.orbit_paused_at=now;b.orbit_paused=true;}
+   else if(!hovered&&b.orbit_paused){b.orbit_delay+=now-b.orbit_paused_at;b.orbit_paused=false;}
+  }
+ }
  struct Point {int x=0,y=0;unsigned phase=0;};
  Point orbit(unsigned index,uint32_t now)const{
   struct SourcePoint {int16_t x,y;};static constexpr SourcePoint path[]={
 #include "sovereign_blade_path.inc"
   };
   unsigned total=0,ordinal=0;for(unsigned i=0;i<Capacity;++i)if(blades[i].active){if(i<index)++ordinal;++total;}
-  const unsigned phase=unsigned(uint64_t(now-started)*65536u/21862u)+(total?ordinal*65536u/total:0);
+  const auto&blade=blades[index];const uint32_t elapsed=(blade.orbit_paused?blade.orbit_paused_at:now)-started-blade.orbit_delay;
+  const unsigned phase=unsigned(uint64_t(elapsed)*65536u/21862u)+(total?ordinal*65536u/total:0);
   const unsigned segment=(phase>>10)&63,fraction=phase&1023;
   const auto a=path[segment],b=path[segment+1];
   return {a.x+(b.x-a.x)*int(fraction)/1024,a.y+(b.y-a.y)*int(fraction)/1024,phase&65535};

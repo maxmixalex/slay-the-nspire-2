@@ -203,6 +203,21 @@ static void actual_vantom_shrink(){
  const auto restored_at=a.animation;a.reset_presentation();a.sync_combat_feedback();a.sync_enemy_feedback();
  CHECK(c.vantom_motion(1).scale.started==restored_at*33u&&c.vantom_scale(1)==512);unchanged();
 }
+static void sovereign_hover_clock(){
+ scenario="sword hover pauses only its orbit and resumes continuously";
+ SovereignBladePresentation motion;motion.started=1000;motion.claim(7).damage=40;
+ const auto same=[](SovereignBladePresentation::Point x,SovereignBladePresentation::Point y){return x.x==y.x&&x.y==y.y&&x.phase==y.phase;};
+ const auto held=motion.orbit(0,1500);motion.set_hovered_card(7,1500);
+ for(unsigned now=1500;now<2600;now+=33){motion.set_hovered_card(7,now);CHECK(same(held,motion.orbit(0,now)));}
+ motion.append({1600,7,80,0,0,0});motion.advance(1700);CHECK(motion.find(7)->forging);
+ const auto enlarged=SovereignBladePresentation::size(*motion.find(7),1700);
+ motion.advance(2600);CHECK(!motion.find(7)->forging&&SovereignBladePresentation::size(*motion.find(7),2600)!=enlarged);
+ CHECK(same(held,motion.orbit(0,2600)));motion.set_hovered_card(-1,2600);CHECK(same(held,motion.orbit(0,2600)));
+ const auto moving=motion.orbit(0,3600);CHECK(!same(held,moving));motion.set_hovered_card(7,3600);
+ motion.attack(7,180,120,4000);motion.advance(3850);CHECK(motion.find(7)->attacking);motion.set_hovered_card(7,3850);
+ CHECK(!motion.find(7)->orbit_paused&&same(moving,motion.orbit(0,3850)));
+ motion.advance(4700);CHECK(!motion.find(7)->attacking&&!same(moving,motion.orbit(0,4700)));
+}
 static void actual_forge(){
  scenario="real Forge queues the changed swords and leaves canonical results exact";fresh(Character::Regent);hand({RegentTheSmith,SovereignBlade,RegentDefend});
  direct=a.game;CHECK(play(direct,0,0));{UiCoreObserver observer(a);a.begin_combat_feedback(0);CHECK(play(a.game,0,0));}equal_save();
@@ -220,10 +235,13 @@ static void actual_forge(){
  HoverTipList tips;collect_keyword_hover_tips(a,owner,tips);CHECK(tips.count>=2&&tips.items[0].kind==HoverTipKind::Card&&tips.items[0].amount==2);
  const auto page=card_hover_page(a,owner,tips);CHECK(page.count>=1);
  for(unsigned i=0;i<page.count;++i){const auto&box=page.pieces[i].box;CHECK(box.x>=3&&box.y>=24&&box.x+box.w<=317&&box.y+box.h<=218);}
+ keyword_tooltips(c);CHECK(a.combat_cards.blades.find(1)->orbit_paused);
+ const auto held=a.combat_cards.blades.orbit(0,a.animation*33u);tick(660);
+ const auto still=a.combat_cards.blades.orbit(0,a.animation*33u);CHECK(held.x==still.x&&held.y==still.y&&held.phase==still.phase);unchanged();
  if(original_art){char title[160]{},body[2048]{};format_card_hover_tip(a,owner,tips.items[0],title,sizeof title,body,sizeof body);CHECK(std::strstr(body,"40"));capture("sovereign-blade-hover");}
  a.pointer_button(true);CHECK(!card_hover_target(a,owner));a.pointer_button(false);CHECK(a.selected_hand_card()<0);unchanged();
  auto*blade=a.combat_cards.blades.find(1);CHECK(blade);blade->attacking=true;CHECK(!card_hover_target(a,owner));blade->attacking=false;
- a.pointer_cancel();unchanged();
+ a.pointer_cancel();CHECK(!a.combat_cards.blades.find(1)->orbit_paused);unchanged();
  scenario="Sovereign tooltip carries the current instance enchantment by value";
  CHECK(a.game.hand.count&&a.game.hand.ids[0]==1);CHECK(debug_enchant(a.game,EventEnchantment::Sharp,3,0));CHECK(damage(a.game,a.game.cards[1],-1,1)==43);before=a.game;
  a.hit_count=0;combat_sovereign_blades(c,true);combat_sovereign_blades(c,false);
@@ -344,7 +362,7 @@ int main(int argc,char**argv){
    CHECK(split.open(ResourceSource::memory(common.data(),common.size()),ResourceSource::memory(language.data(),language.size()),ResourceLanguage::English));CHECK(a.init(split.source(),{}));}
   original_art=true;}
  if(argc==3){output=argv[2];std::filesystem::create_directories(output);}
- scale_equations();clock_icon();actual_shrink();actual_vantom_shrink();actual_default_growth();actual_forge();actual_enchant();borders_and_cache();identical_generated_samples();current_intent_preparation();
+ sovereign_hover_clock();scale_equations();clock_icon();actual_shrink();actual_vantom_shrink();actual_default_growth();actual_forge();actual_enchant();borders_and_cache();identical_generated_samples();current_intent_preparation();
  const char note[]="Controlled UI14 fixtures; earlier room outcomes, cards and resources are supplied. These saves validate and round-trip through the production NSR codec. They are not natural runs.\nui19-sword-forged/enchant: live 40-damage Sovereign Blade, with a matching partial-history file; enchanted variant has Sharp 7.\nui14-card-borders: Neow's Fury, Infection and Bound Strike in hand.\nui14-shrink: Shrinker Beetle before its opening move, Beetle Juice in potion slot1; drink on the enemy, then end turn to shrink the player.\nui14-regent-enchant-forge: choose an Attack for Gnarled Hammer's Sharp enchantment, confirm, then play The Smith in the resumed Regent combat.\n";
  write("README.txt",note,sizeof note-1);std::printf("combat UI14: %u checks passed%s\n",checks,original_art?"; original art decoded and rendered":"");
 }
