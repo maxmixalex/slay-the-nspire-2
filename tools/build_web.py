@@ -47,15 +47,18 @@ def resource_package(content_path=None,language='zhs',common_path=None,eng_path=
     if content_path:raise ValueError('Choose --content or --common with locale files')
     from split_content import reconstruct
     common=common_path.read_bytes();languages={}
+    if common[:4]==b'NSM1':
+        from storage_parts import PART_FILES,join_parts
+        common=join_parts(common,{name:(common_path.parent/name).read_bytes() for name in PART_FILES})
     for locale,path in (('eng',eng_path),('zhs',zhs_path)):
         if path:
             data=path.read_bytes()
-            reconstruct(common,data,locale) # Validate NSL1/NSL2 logical segments and locale before embedding.
+            reconstruct(common,data,locale) # Validate NSL1/NSL2/NSL3 segments and locale before embedding.
             languages[locale]=encode(data)
     if not languages:raise ValueError('At least one of --eng and --zhs is required')
     return {'mode':'split','common':encode(common),'languages':languages}
 
-def package_runtime(content_path=None,destination=None,language='zhs',common_path=None,eng_path=None,zhs_path=None,wasm_path=None,source_checkpoint=None):
+def package_runtime(content_path=None,destination=None,language='zhs',common_path=None,eng_path=None,zhs_path=None,wasm_path=None,source_checkpoint=None,local_checkpoints=False):
     output=wasm_path or ROOT/'build'/'web'/'nSpire2.wasm'
     if not output.is_file():raise SystemExit('Compile the matching WebAssembly runtime before packaging.')
     resources=resource_package(content_path,language,common_path,eng_path,zhs_path)
@@ -64,7 +67,10 @@ def package_runtime(content_path=None,destination=None,language='zhs',common_pat
         ('NOTICE.md','COPYING','licenses/Go-BSD-3-Clause.txt','licenses/OkHSV-Godot-MIT.txt','licenses/Noto-Boot-OFL.txt','licenses/NotoEmoji-OFL.txt','licenses/NotoSansSymbols2-OFL.txt','third_party/unicode/LICENSE'))
     if source_checkpoint:
         if not re.fullmatch('[0-9a-f]{40}',source_checkpoint):raise ValueError('Source checkpoint must be a full Git commit ID')
-        notices+='\n\nCorresponding runtime source:\nhttps://github.com/maxmixalex/slay-the-nspire-2/tree/'+source_checkpoint+'\n'
+        if local_checkpoints:
+            notices+='\n\nCorresponding runtime source checkpoint (local):\n'+source_checkpoint+'\nThis source checkpoint has not been published to GitHub.\n'
+        else:
+            notices+='\n\nCorresponding runtime source:\nhttps://github.com/maxmixalex/slay-the-nspire-2/tree/'+source_checkpoint+'\n'
     # A non-executable raw-text element preserves the complete license text,
     # including double hyphens that are invalid inside an HTML comment.
     text+='\n<script type="text/plain" id="distribution-notices">'+notices.replace('</script','<\\/script')+'</script>\n'
@@ -79,12 +85,14 @@ def main():
     mode.add_argument('--package-only',action='store_true',help='Package the already built runtime and the matching private pack')
     parser.add_argument('--language',choices=('zhs','eng'),default='zhs',help='Language of a legacy --content pack; split installations select either language in the browser')
     parser.add_argument('--content',type=Path,help='Private content pack to embed')
-    parser.add_argument('--common',type=Path,help='Common artwork NSC1 file; encoded only once in the HTML')
-    parser.add_argument('--eng',type=Path,help='English NSL1/NSL2 language file')
-    parser.add_argument('--zhs',type=Path,help='Chinese NSL1/NSL2 language file')
+    parser.add_argument('--common',type=Path,help='NSC1 artwork or NSM1 index with adjacent concern files; embedded once')
+    parser.add_argument('--eng',type=Path,help='English NSL1/NSL2/NSL3 language file')
+    parser.add_argument('--zhs',type=Path,help='Chinese NSL1/NSL2/NSL3 language file')
     parser.add_argument('--output',type=Path,help='Generated offline HTML destination')
+    parser.add_argument('--source-checkpoint',help='Full Git commit ID of the matching runtime')
+    parser.add_argument('--local-checkpoints',action='store_true',help='Record a local source receipt without claiming a published Git ref')
     args=parser.parse_args()
     runtime=ROOT/'build'/'web'/'nSpire2.wasm'
     if not args.package_only:runtime=compile_runtime()
-    if not args.compile_only:package_runtime(args.content,args.output,args.language,args.common,args.eng,args.zhs,wasm_path=runtime)
+    if not args.compile_only:package_runtime(args.content,args.output,args.language,args.common,args.eng,args.zhs,wasm_path=runtime,source_checkpoint=args.source_checkpoint,local_checkpoints=args.local_checkpoints)
 if __name__=='__main__':main()
