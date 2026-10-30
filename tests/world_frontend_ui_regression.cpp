@@ -18,7 +18,7 @@ static bool disk_exists=false,read_ok=true,write_ok=true,delete_ok=true;
 static unsigned reads=0,writes=0,deletes=0;
 static unsigned checks;
 static const char* capture_directory;
-#define CHECK(x) do{++checks;if(!(x)){std::fprintf(stderr,"world frontend UI: %s:%d %s (event=%s phase=%u)\n",__FILE__,__LINE__,#x,original_event_key(a.game.original_events.id),unsigned(a.game.phase));std::exit(1);}}while(0)
+#define CHECK(x) do{++checks;if(!(x)){std::fprintf(stderr,"world frontend UI: %s:%d %s (event=%s phase=%u act=%u point=%u)\n",__FILE__,__LINE__,#x,original_event_key(a.game.original_events.id),unsigned(a.game.phase),unsigned(a.game.world.act_index),unsigned(a.game.world.current_point));std::exit(1);}}while(0)
 
 struct TextIndex {const char* key;uint16_t index;};
 static const TextIndex world_text[]={

@@ -29,6 +29,11 @@ resource acceptance before it is treated as delivered.
   A genuinely new run and a different externally replaced checkpoint remain
   protected. Terminal sav/bak/tmp ownership is no longer confused with whether
   the file can be continued, and Save on an ended run cannot recreate it.
+- Abandoning the standalone act map before selecting its first node now
+  remains a valid ended State. That screen legitimately has no current map
+  point; the old validator accepted it only while its phase was Map and
+  rejected the forced Dead state. It now accepts that terminal phase under
+  the existing finished/HP/empty-room constraints without inventing a visit.
 
 The checkpoint identity adds one bounded `SavedRunIdentity` to App. It is
 presentation/host lifecycle state, not a save-format revision or a second State.
