@@ -99,9 +99,16 @@ struct Canvas{
         // RGB565 blend; do not divide all three channels by255 dynamically.
         if(previous==255){pixels[at]=blend(pixels[at],color,alpha);return;}
         unsigned back=div255(previous*(255-alpha)),total=alpha+back;
-        unsigned r=((color>>11)*alpha+(pixels[at]>>11)*back+total/2)/total;
-        unsigned g=(((color>>5)&63)*alpha+((pixels[at]>>5)&63)*back+total/2)/total;
-        unsigned b=((color&31)*alpha+(pixels[at]&31)*back+total/2)/total;
+        const unsigned red=(color>>11)*alpha+(pixels[at]>>11)*back+total/2;
+        const unsigned green=((color>>5)&63)*alpha+((pixels[at]>>5)&63)*back+total/2;
+        const unsigned blue=(color&31)*alpha+(pixels[at]&31)*back+total/2;
+        unsigned r,g,b;
+        if(alpha<=255&&total>1&&total<256){
+            const unsigned reciprocal=presentation::CoverageDivision.values[total];
+            r=presentation::coverage_quotient(red,total,reciprocal);
+            g=presentation::coverage_quotient(green,total,reciprocal);
+            b=presentation::coverage_quotient(blue,total,reciprocal);
+        }else{r=red/total;g=green/total;b=blue/total;}
         pixels[at]=(uint16_t)((r<<11)|(g<<5)|b);coverage[at]=(uint8_t)total;
     }
     void ui(int id,int x,int y,int w=0,int h=0,unsigned alpha=255){picture(a.content.ui_image(id),x,y,w,h,alpha);}

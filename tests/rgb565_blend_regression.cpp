@@ -34,6 +34,18 @@ int main(){
     for(unsigned alpha=0;alpha<256;++alpha)
     for(unsigned a=0;a<64;++a)for(unsigned b=0;b<64;++b)
         check(uint16_t((a<<5)|0xf81f),uint16_t(b<<5),alpha);
+    // Exhaust the full bounded numerator domain for every coverage divisor.
+    // Independent integer division checks the exact one-step correction.
+    for(unsigned divisor=2;divisor<256;++divisor)
+    for(unsigned numerator=0;numerator<=16192;++numerator){
+        ++checks;
+        const unsigned got=spire::presentation::coverage_quotient(
+            numerator,divisor,spire::presentation::CoverageDivision.values[divisor]);
+        if(got!=numerator/divisor){
+            std::fprintf(stderr,"coverage numerator=%u divisor=%u got=%u expected=%u\n",numerator,divisor,got,numerator/divisor);
+            return 1;
+        }
+    }
     std::printf("rgb565_blend_regression: %llu exact checks passed\n",
                 static_cast<unsigned long long>(checks));
 }

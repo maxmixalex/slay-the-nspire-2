@@ -28,6 +28,23 @@ constexpr uint16_t source_over_rgb565(uint16_t destination,uint16_t source,unsig
     const unsigned green=divide255((first_green<<8)-first_green+(second_green-first_green)*alpha);
     return uint16_t((lanes<<11)|(green<<5)|(lanes>>16));
 }
+struct CoverageReciprocals{
+    uint16_t values[256]{};
+    constexpr CoverageReciprocals(){
+        for(unsigned divisor=2;divisor<256;++divisor)
+            values[divisor]=uint16_t((65536u+divisor-1)/divisor);
+    }
+};
+inline constexpr CoverageReciprocals CoverageDivision{};
+// Cached straight-alpha pixels normalize channel sums by their combined
+// coverage. The largest numerator is 63*255+127=16192. A rounded-up Q16
+// reciprocal can overestimate the quotient by at most one in that domain;
+// the comparison removes that one, preserving exact integer division.
+// Callers reuse one table load for all three channels (divisor 2..255).
+constexpr unsigned coverage_quotient(unsigned numerator,unsigned divisor,unsigned reciprocal){
+    const unsigned quotient=(numerator*reciprocal)>>16;
+    return quotient-unsigned(quotient*divisor>numerator);
+}
 // Neutral RGB modulation precedes compositing and never changes coverage.
 // A white multiplier is exactly the existing RGB565 source, including when
 // that source will be added to a partially covered destination.
