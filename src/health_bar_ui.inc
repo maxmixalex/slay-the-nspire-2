@@ -113,15 +113,22 @@ static void health_label(Canvas&c,const char*label,int x,int y,int width,int siz
   // across locales; reusing a fixed+3 Y offset misaligned their red badges.
   int left=x+width,right=x,top=255,bottom=0;
   for(unsigned i=0;i<count;++i){const auto g=glyphs[i];if(!g.pixels||!g.w||!g.h)continue;
-   const auto span=[&](unsigned at,unsigned length){
-    while(length){const unsigned column=at%g.w,row=at/g.w,take=mn(length,unsigned(g.w)-column);
-     left=mn(left,positions[i]+int(column));right=mx(right,positions[i]+int(column+take));
-     top=mn(top,int(row));bottom=mx(bottom,int(row+1));at+=take;length-=take;}
+   const auto span=[&](unsigned row,unsigned column,unsigned length){
+    left=mn(left,positions[i]+int(column));right=mx(right,positions[i]+int(column+length));
+    top=mn(top,int(row));bottom=mx(bottom,int(row+1));
    };
-   const unsigned pixels=unsigned(g.w)*g.h;
-   if(g.encoded_size){unsigned at=0;for(unsigned n=0;n+1<g.encoded_size&&at<pixels;n+=2){
-    const unsigned length=mn(unsigned(g.pixels[n]),pixels-at);if(g.pixels[n+1])span(at,length);at+=length;}}
-   else for(unsigned n=0;n<pixels;++n)if(g.pixels[n])span(n,1);
+   if(g.encoded_size){unsigned at=0,row=0,column=0;const unsigned pixels=unsigned(g.w)*g.h;
+    for(unsigned n=0;n+1<g.encoded_size&&at<pixels;n+=2){
+     unsigned length=mn(unsigned(g.pixels[n]),pixels-at);at+=length;
+     while(length){const unsigned take=mn(length,unsigned(g.w)-column);
+      if(g.pixels[n+1])span(row,column,take);column+=take;length-=take;
+      if(column==g.w){column=0;++row;}}
+    }
+   }else for(unsigned row=0;row<g.h;++row){
+    const auto*line=g.pixels+row*g.w;unsigned first=g.w,last=0;
+    for(unsigned column=0;column<g.w;++column)if(line[column]){if(first==g.w)first=column;last=column+1;}
+    if(last>first)span(row,first,last-first);
+   }
   }
   if(right>left&&bottom>top){const int shift=x+(width-(right-left))/2-left;
    for(unsigned i=0;i<count;++i)positions[i]+=shift;y+=(center_height-(bottom-top))/2-top;}

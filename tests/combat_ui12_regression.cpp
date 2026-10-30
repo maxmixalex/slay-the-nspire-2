@@ -302,8 +302,12 @@ static void actual_selected_description(){
  a.input(Key::Back);CHECK(a.selected_hand_card()<0);a.hand_focus=false;a.render();CHECK(selected_hand_reader.instance<0);unchanged();CHECK(a.content.healthy());
 }
 int main(int argc,char**argv){CHECK(argc==1||argc==2);aimed_preview();numeric_selection();denied_plays();battle_entry();smith();reward_overlap();
- if(argc==2){const std::string root=argv[1];auto common=read(root+"/data/nSpire2.dat.tns"),language=read(root+"/data/nSpire2.eng.dat.tns");SplitResourceSource split;
-  CHECK(split.open(ResourceSource::memory(common.data(),common.size()),ResourceSource::memory(language.data(),language.size()),ResourceLanguage::English));CHECK(a.init(split.source(),{}));
+ if(argc==2){const std::string root=argv[1];std::vector<uint8_t>common,language;SplitResourceSource split;
+  // A complete private .nsp also permits current multipart-resource output
+  // to be verified without constructing another legacy common-file copy.
+  if(root.size()>=4&&root.compare(root.size()-4,4,".nsp")==0){common=read(root);CHECK(a.init(common.data(),common.size(),{}));}
+  else{common=read(root+"/data/nSpire2.dat.tns");language=read(root+"/data/nSpire2.eng.dat.tns");
+   CHECK(split.open(ResourceSource::memory(common.data(),common.size()),ResourceSource::memory(language.data(),language.size()),ResourceLanguage::English));CHECK(a.init(split.source(),{}));}
   aimed_preview();denied_plays();battle_entry();actual_single_battle_banner();smith();reward_overlap();merchant_cache();actual_label_metrics();actual_aimed_descriptions();actual_winning_card();actual_selected_description();
  }
  std::printf("combat UI12: %u checks passed%s\n",checks,argc==2?"; actual source cards rendered":"");
