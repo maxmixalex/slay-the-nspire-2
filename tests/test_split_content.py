@@ -179,7 +179,7 @@ class SplitContentTest(unittest.TestCase):
                 self.assertEqual(base64.b64decode(result['common']), common)
                 self.assertEqual({lang: base64.b64decode(data) for lang, data in result['languages'].items()}, locales)
 
-    def test_release_version_probe_accepts_41_in_all_containers_and_rejects_42(self):
+    def test_release_version_probe_accepts_42_in_all_containers_and_rejects_43(self):
         from package_release import resource_version
 
         def outer_literal(inner):
@@ -195,7 +195,7 @@ class SplitContentTest(unittest.TestCase):
                                 begin + len(inner), len(inner), block, count, begin) +
                     struct.pack('<' + 'I' * len(offsets), *offsets) + inner)
 
-        original = {'eng': fixture('eng', 41), 'zhs': fixture('zhs', 41)}
+        original = {'eng': fixture('eng', 42), 'zhs': fixture('zhs', 42)}
         common, raw, _ = split.split(original)
         # Stored NSL2 directory blocks let the test change only the logical
         # version word; every container length and offset remains valid.
@@ -205,20 +205,20 @@ class SplitContentTest(unittest.TestCase):
         current = {'nsl1': raw['eng'], 'nsl2': compressed,
                    'nsl3-nsl1': outer_literal(raw['eng']), 'nsl3-nsl2': outer_literal(compressed)}
         future_raw = bytearray(raw['eng'])
-        struct.pack_into('<I', future_raw, split.LANGUAGE_HEADER + 4, 42)
+        struct.pack_into('<I', future_raw, split.LANGUAGE_HEADER + 4, 43)
         future_compressed = bytearray(compressed)
-        struct.pack_into('<I', future_compressed, split.u32(compressed, 128) + 4, 42)
+        struct.pack_into('<I', future_compressed, split.u32(compressed, 128) + 4, 43)
         future = {'nsl1': bytes(future_raw), 'nsl2': bytes(future_compressed),
                   'nsl3-nsl1': outer_literal(future_raw), 'nsl3-nsl2': outer_literal(future_compressed)}
         with tempfile.TemporaryDirectory() as directory:
             for name, data in current.items():
-                with self.subTest(container=name, version=41):
-                    self.assertEqual(split.language_resource_version(data), 41)
+                with self.subTest(container=name, version=42):
+                    self.assertEqual(split.language_resource_version(data), 42)
                     self.assertEqual(split.reconstruct(common, data, 'eng'), original['eng'])
                     path = Path(directory)/(name + '.tns'); path.write_bytes(data)
-                    self.assertEqual(resource_version(path), 41)
+                    self.assertEqual(resource_version(path), 42)
             for name, data in future.items():
-                with self.subTest(container=name, version=42):
+                with self.subTest(container=name, version=43):
                     with self.assertRaisesRegex(ValueError, 'Invalid logical resource version'):
                         split.language_resource_version(data)
                     path = Path(directory)/(name + '-future.tns'); path.write_bytes(data)
