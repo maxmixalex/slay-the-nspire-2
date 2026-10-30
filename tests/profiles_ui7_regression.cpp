@@ -88,7 +88,7 @@ static void title_source_scene(const std::vector<uint8_t>&pack,const char*captur
     SCENE(title_scene::MenuCenter==111&&title_scene::MenuHitLeft==24&&title_scene::MenuHitWidth==174&&title_scene::MenuFont==10);
     const int fresh_y[]={138,155,172,189},saved_y[]={121,138,155,172,189};
     for(int i=0;i<4;++i)SCENE(title_scene::menu_y(4,i)==fresh_y[i]);for(int i=0;i<5;++i)SCENE(title_scene::menu_y(5,i)==saved_y[i]);
-    SCENE(title_scene::ContinueX==194&&title_scene::ContinueWidth==120&&title_scene::continue_y(5)==97);
+    SCENE(title_scene::ContinueX==171&&title_scene::ContinueWidth==120&&title_scene::continue_y(5)==97);
     SCENE(title_scene::TextY==24&&title_scene::FireY==42&&title_scene::TextY+title_scene::TextHeight+8<=saved_y[0]);
     SCENE(title_scene::continue_height(false)==66&&title_scene::continue_height(true)==79);
     title_menu_motion::Label motion{};auto value=motion.observe(true,false,1000);SCENE(value.scale==4096&&value.green==246);
