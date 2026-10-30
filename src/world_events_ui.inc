@@ -66,7 +66,10 @@ static void native_ancient_screen(Canvas&c){
  auto&a=c.a;const auto&e=a.game.original_events;a.sync_ancient_dialogue();
  auto&d=a.ancient_dialogue;const unsigned count=unsigned(mn(3,original_event_option_count(a.game)));
  a.cursor=mn(mx(0,a.cursor),mx(0,int(count)-1));
- c.picture(a.content.world_image("events",original_event_key(e.id)),0,17,320,223);
+ // The complete Ancient scene is a viewport background. The shared HUD is
+ // composited afterwards; reserving its height here squeezed and lowered
+ // the scene, leaving an artificial band behind the translucent top bar.
+ c.picture(a.content.world_image("events",original_event_key(e.id)),0,0,320,240);
  const int dialogue_height=ancient_measure(c,count),top=d.y(a.map_clock_ms)+d.scroll;
  Canvas clipped=c;clipped.pixels+=ancient_layout::ClipY*clipped.pitch+ancient_layout::ClipX;
  clipped.clip_w=ancient_layout::ClipW;

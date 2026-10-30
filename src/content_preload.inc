@@ -7,7 +7,7 @@ static_assert(Lzma2ProbabilityBytes+PreloadInputBytes<=RetainedPageBytes,
               "Incremental LZMA2 workspace must fit one existing 32 KiB quarter");
 enum class PreloadPhase:uint8_t {Descriptor,Header,Decode,FilterSlice,FilterColors,PlaneCopy,PlaneRestore,
     ReserveCopy,Copy,Literal,Lz4Header,Lz4,Verify,
-    TileDescriptor,TileGroup,TileDecode,TilePredict,TileFilter,TileReady,
+    TileDescriptor,TileGroup,TileDecode,TilePredict,TileFilter,TileSparseScan,TileSparseRestore,TileReady,
     TilePlan,TileGeometry,TileNeeds,TileSelect,TileCopy};
 struct ContentPreload {
     const Content*owner=nullptr;

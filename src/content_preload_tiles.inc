@@ -42,19 +42,24 @@ static PreparationResult preload_tile_predict(ContentPreload&p){
     return PreparationResult::Pending;
 }
 static PreparationResult preload_tile_filter(ContentPreload&p){
+    const bool sparse=p.filter_mode>=4;unsigned occupied=0;
+    if(sparse&&!sparse_tile_shape(p.filter_count,p.slice_size,occupied))return PreparationResult::Failed;
     if(!p.restored){
-        const unsigned planes=tile_filter_plane_bytes(p.filter_count);
+        const unsigned planes=sparse?p.filter_count*34u+occupied:tile_filter_plane_bytes(p.filter_count);
         p.restored=reserve_tile_group(planes,true);if(!p.restored)return PreparationResult::Failed;
         p.restored->first|=128u;p.restored->size=planes;p.position=0;
     }
     if(p.position<p.restored->size){
         const auto*input=tile_bytes(*p.raw);auto*output=tile_bytes(*p.restored);
-        const unsigned headers=p.filter_count*2u,left=p.restored->size-p.position;
+        const unsigned headers=p.filter_count*(sparse?34u:2u),left=p.restored->size-p.position;
+        const unsigned alpha=sparse?headers+occupied*2u:p.filter_count*514u;
         const unsigned count=left<TilePreloadOutputBytes?left:TilePreloadOutputBytes;
         for(unsigned i=0;i<count;++i){const unsigned at=p.position+i;
-            output[at]=input[at<headers?at:p.filter_count*514u+at-headers];}
+            output[at]=input[at<headers?at:alpha+at-headers];}
         p.position+=count;return PreparationResult::Pending;
     }
+    if(sparse){p.scan=p.previous=0;p.filter_end=p.filter_count;p.colors=occupied;
+        p.phase=PreloadPhase::TileSparseScan;return PreparationResult::Pending;}
     if(p.filter_index==p.filter_count){
         tile_discard(*p.restored);p.restored=nullptr;
         p.phase=PreloadPhase::TileReady;return PreparationResult::Pending;
@@ -96,11 +101,14 @@ static PreparationResult preload_tile_step(ContentPreload&p){
         const unsigned size=u32(input+12),items=u32(input+24);
         p.raw=reserve_tile_group(size);if(!p.raw)return PreparationResult::Failed;
         p.raw->first|=128u;p.raw->size=size;p.raw->items=uint16_t(items);
-        p.filter_mode=u32(input)==PredictiveIndexGroupMagic?3u:u32(input)==FilteredTileGroupMagic?uint8_t(u32(input+28)):0u;
+        const bool sparse=u32(input)==SparseTileGroupMagic;
+        p.filter_mode=sparse?uint8_t(3u+u32(input+28)):u32(input)==PredictiveIndexGroupMagic?3u:
+            u32(input)==FilteredTileGroupMagic?uint8_t(u32(input+28)):0u;
+        p.slice_size=sparse?u32(input+20):size;
         p.filter_count=items;p.filter_index=p.scan=p.previous=p.slice_offset=0;
         p.source_offset=p.group_offset+32;p.source_size=p.group_length-32;p.loaded=first-32;
         p.input_at=32;p.input_size=uint16_t(first);
-        if(!begin_lzma2_stream(p.stream,tile_bytes(*p.raw),tile_capacity(*p.raw),size,p.source_size,u32(h+12),
+        if(!begin_lzma2_stream(p.stream,tile_bytes(*p.raw),tile_capacity(*p.raw),p.slice_size,p.source_size,u32(h+12),
                               tile_bytes(*p.workspace),Lzma2ProbabilityBytes))return PreparationResult::Failed;
         p.phase=PreloadPhase::TileDecode;return PreparationResult::Pending;
     }
@@ -117,6 +125,26 @@ static PreparationResult preload_tile_step(ContentPreload&p){
     }
     case PreloadPhase::TilePredict:return preload_tile_predict(p);
     case PreloadPhase::TileFilter:return preload_tile_filter(p);
+    case PreloadPhase::TileSparseScan:{
+        unsigned budget=32;
+        while(p.scan<p.filter_count&&budget--){
+            if(!sparse_tile_scan(tile_bytes(*p.restored),p.filter_count,p.colors,p.scan++,p.previous,p.filter_end))
+                return PreparationResult::Failed;
+        }
+        if(p.scan==p.filter_count){
+            if(p.previous!=p.colors)return PreparationResult::Failed;
+            p.previous=p.colors;p.filter_index=0;p.phase=PreloadPhase::TileSparseRestore;
+        }
+        return PreparationResult::Pending;
+    }
+    case PreloadPhase::TileSparseRestore:
+        if(p.filter_index==p.filter_count){
+            tile_discard(*p.restored);p.restored=nullptr;p.phase=PreloadPhase::TileReady;
+            return PreparationResult::Pending;
+        }
+        if(!restore_sparse_tile_step(tile_bytes(*p.raw),tile_bytes(*p.restored),p.filter_count,p.colors,
+            p.filter_mode-3u,p.filter_index++,p.filter_end,p.previous))return PreparationResult::Failed;
+        return PreparationResult::Pending;
     case PreloadPhase::TileReady:
         p.raw->id=p.tile_id;p.raw->age=next_tile_age();p.raw->owner=p.owner;
         if(p.tile_id>=u32(h+20)){p.index=p.raw;p.raw=nullptr;p.phase=PreloadPhase::TilePlan;}

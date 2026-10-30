@@ -30,6 +30,9 @@ CardKind world_card_id(const char* key); // CardKinds is the absent sentinel.
 WorldCardPool world_card_pool(CardKind);
 unsigned world_card_pool_models(WorldCardPool,CardKind*,unsigned capacity);
 unsigned world_card_candidates(const State&,const WorldCardOptions&,CardKind*,unsigned capacity,bool combat=false);
+// CardReward.IconPath: boss encounter, then a single-rarity source pool.
+// The first generated card supplies the displayed rarity only for that pool.
+unsigned world_card_reward_icon_rarity(const State&,const WorldCardOptions&,CardKind first);
 unsigned world_merchant_card_candidates(const State&,const WorldCardOptions&,const CardKind* blacklist,unsigned blacklisted,CardKind*,unsigned capacity);
 void world_modifier_card_pools(const State&,WorldCardOptions&,bool merchant=false);
 bool world_card_modifier_allowed(CardKind);

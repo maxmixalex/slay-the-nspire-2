@@ -278,6 +278,12 @@ static void combat_doom_bodies(Canvas&c){
   const unsigned time=b.flags&CombatDoomPresentation::Frozen?b.sample_ms:now-b.at;
   Canvas body=c;body.pixels=c.pixels+top*c.pitch+left;body.clip_w=right-left;body.clip_h=bottom-top;body.coverage=nullptr;body.occlusion=nullptr;
   const auto cl=c.a.content.clip(b.clip);if(!cl.count||!cl.frame_ms)continue;
+  Canvas::FramedDraw framed[FramedUi20MaxLayers];unsigned framed_count=0;
+  if(body.framed_collect(b.clip,b.x-left,b.y-top+int(b.sink(now)),time,b.scale,
+                        (b.flags&CombatDoomPresentation::Loop)!=0,framed,framed_count)){
+   for(unsigned i=0;i<framed_count;++i){const auto&part=framed[i];doom_body_image(body,c.a.content.image(part.image),part.x,part.y,part.w,part.h);}
+   continue;
+  }
   unsigned frame=time/cl.frame_ms;frame=b.flags&CombatDoomPresentation::Loop?frame%cl.count:unsigned(mn(int(frame),cl.count-1));
   const auto p=c.a.content.image(int(cl.first+frame));const int sink=int(b.sink(now));
   if(b.flags&CombatDoomPresentation::Shared)doom_body_image(body,p,-left,22-combat_controls::SceneLift-top+sink,p.w,p.h);

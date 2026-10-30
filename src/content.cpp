@@ -5,9 +5,11 @@
 #include "unicode_text.hpp"
 #include "resource_transfer.hpp"
 #include "tile_filter.hpp"
+#include "sparse_tile_filter.hpp"
 #include "doom_assets.hpp"
 #include "vantom_ui15_resources.hpp"
 #include "vantom_vfx_ui15.hpp"
+#include "framed_animation_ui20.hpp"
 extern "C" void* memcpy(void*,const void*,size_t);
 namespace spire {
 static uint16_t u16(const uint8_t*p){return p[0]|(uint16_t)p[1]<<8;}
@@ -343,7 +345,7 @@ bool Content::open(ResourceSource source){
                                                     FakeMerchantUi13AuxiliaryCount,CombatUi14AuxiliaryCount,
                                                     MerchantUi14AuxiliaryCount,RoomsUi15AuxiliaryCount,
                                                     CombatUi15AuxiliaryCount,VantomUi15AuxiliaryCount,
-                                                    vantom_vfx::AuxiliaryCount};
+                                                    vantom_vfx::AuxiliaryCount,FramedUi20AuxiliaryCount};
                                                 for(unsigned end:endpoints){
                                                     if(next==0x314c4954u)break;
                                                     for(unsigned i=auxiliary;i<end;++i){

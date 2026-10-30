@@ -392,7 +392,8 @@ static void actual_architect(Character character,bool fast,unsigned dialogue,uns
  CHECK(bool(strong)==!(character==Character::Silent&&dialogue>=2));equal_save();
  advance_room(1949);CHECK(!a.game_over_button_ready());a.input(Key::Confirm);CHECK(!a.game_over_summary);equal_save();
  advance_room(1);CHECK(a.game_over_button_ready());a.input(Key::Confirm);CHECK(a.game_over_summary);equal_save();
- const auto&m=a.game_over_presentation;advance_room(m.menu_start()+1);a.ui_action(UiAction::GameOverMainMenu);CHECK(a.title&&!a.screen_motion.count);equal_save();
+ const auto&m=a.game_over_presentation;advance_room(m.menu_start()+1);a.ui_action(UiAction::GameOverMainMenu);CHECK(!a.title&&a.character_departure.phase==3);
+ advance_room(800);CHECK(a.title&&a.character_departure.phase==2&&!a.screen_motion.count);advance_room(800);CHECK(!a.character_departure.active());equal_save();
 }
 static SaveData architect_saved;
 static bool load_architect(State&s){return load(s,architect_saved.bytes,architect_saved.size);}

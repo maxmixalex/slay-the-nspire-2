@@ -43,7 +43,11 @@ constexpr int menu_height(int,int){return MenuRowHeight;}
 constexpr int menu_center_y(int rows,int row){return menu_y(rows,row)+MenuRowHeight/2;}
 constexpr int menu_source_y(int rows,int row=0){return menu_y(rows,row)*21/4;}
 static_assert(TextY+TextHeight+8<=menu_top(5),"The saved-run menu clears the complete logo");
-constexpr int ContinueX=171,ContinueWidth=120;
+constexpr int ContinueWidth=120,ContinueGap=8;
+constexpr int continue_x(int label_width){
+    const int anchor=MenuCenter+(label_width+1)/2+ContinueGap;
+    return anchor+ContinueWidth<=318?anchor:318-ContinueWidth;
+}
 constexpr int continue_y(int rows){return menu_y(rows,0)-24;}
 constexpr int continue_height(bool ascension){return ascension?79:66;}
 }

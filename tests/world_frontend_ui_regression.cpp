@@ -85,6 +85,11 @@ static void settle_departure(){
  for(unsigned frame=0;frame<64&&a.character_departure.active();++frame)a.advance(50);
  CHECK(!a.character_departure.active()&&!a.title);
 }
+static void settle_title_return(){
+ CHECK(a.character_departure.phase==3&&!a.title);
+ for(unsigned frame=0;frame<32&&a.character_departure.active();++frame)a.advance(50);
+ CHECK(!a.character_departure.active()&&a.title);
+}
 static void start(Character character=Character::Ironclad,uint32_t seed=0x82179,const char*run_seed=nullptr,unsigned ascension=3,reference::ActKind region=reference::ActKind::Overgrowth){
  a.forget_run_checkpoint();new_run(a.game,seed,false,character);if(run_seed)CHECK(world_set_seed(a.game,run_seed));
  CHECK(world_begin_run(a.game,region,ascension));presentation();CHECK(validate(a.game));
@@ -347,7 +352,7 @@ static void abandon_current_bypasses_prevention(){
 static void protected_saved_expeditions(){
  // A different seed must survive a completed practice/expedition's end UI.
  empty_disk();start(Character::Ironclad,6001);put_disk();start(Character::Ironclad,6002);player_kill(a.game,true);resolve_pending(a.game);snapshot();unsigned d=deletes;
- CHECK(a.finish_saved_run()&&disk_exists&&deletes==d);unchanged();settle_game_over();a.input(Key::Confirm);CHECK(a.game_over_summary);settle_game_over();action(UiAction::GameOverMainMenu);CHECK(a.title&&a.has_save&&disk_exists&&deletes==d);unchanged();
+ CHECK(a.finish_saved_run()&&disk_exists&&deletes==d);unchanged();settle_game_over();a.input(Key::Confirm);CHECK(a.game_over_summary);settle_game_over();action(UiAction::GameOverMainMenu);settle_title_return();CHECK(a.title&&a.has_save&&disk_exists&&deletes==d);unchanged();
  a.menu=0;a.input(Key::Confirm);settle_departure();CHECK(!a.title);same_saved(expected);
  // Equal seed with a different character is also a distinct saved run.
  empty_disk();start(Character::Silent,6101);put_disk();start(Character::Defect,6101);player_kill(a.game,true);resolve_pending(a.game);snapshot();d=deletes;
@@ -457,8 +462,43 @@ static void ending_clears_only_its_checkpoint(){
  a.sync_game_over_presentation();CHECK(!a.title&&disk_exists&&deletes==d+1&&a.notice_ticks);settle_game_over();
  a.input(Key::Confirm);CHECK(a.game_over_summary);settle_game_over();CHECK(deletes==d+1);
  action(UiAction::GameOverMainMenu);CHECK(!a.title&&a.game_over_summary&&disk_exists&&deletes==d+2);unchanged();
- delete_ok=true;action(UiAction::GameOverMainMenu);CHECK(a.title&&!a.has_save&&!disk_exists&&deletes==d+3);unchanged();
+ delete_ok=true;action(UiAction::GameOverMainMenu);settle_title_return();CHECK(a.title&&!a.has_save&&!disk_exists&&deletes==d+3);unchanged();
  a.input(Key::Load);CHECK(a.title&&!a.has_save&&a.game.phase==Phase::Dead);unchanged();
+}
+static void console_edits_preserve_checkpoint_ownership(){
+ // Resume through the visible Continue control, edit the same run, and
+ // abandon through Pause -> Give Up -> Confirm. None of these commands
+ // autosaves, but the explicit abandonment still retires the owned file.
+ const char*commands[]={"gold 12","card BASH Deck","room shop","act 3","act HIVE"};
+ for(unsigned i=0;i<5;++i){
+  empty_disk();start(Character::Ironclad,7100+i);put_disk();a.return_to_title();
+  press(HitKind::Menu,0);settle_departure();CHECK(a.run_save_linked);
+  const unsigned w=writes,d=deletes;CHECK(a.debug_command(commands[i]));
+  CHECK(a.run_save_linked&&writes==w&&disk_exists);disk_unchanged();
+  // Let the visible MapRoom's ordinary opening/input gate finish before
+  // pressing Pause; do not bypass it by changing App's paused flag.
+  a.render();for(unsigned frame=0;frame<10;++frame)a.advance(100);
+  a.input(Key::Back);CHECK(a.paused);press(HitKind::Menu,3);confirm_accept();
+  CHECK(!a.paused&&a.game.phase==Phase::Dead&&!disk_exists&&!a.run_save_linked&&deletes==d+1);
+  snapshot();a.render();a.input(Key::Save);a.render();CHECK(!disk_exists&&writes==w&&deletes==d+1);unchanged();
+ }
+ // Replacing the disk checkpoint with another run must still protect it,
+ // even after a command edited the currently associated run's parameters.
+ empty_disk();start(Character::Silent,7200);put_disk();CHECK(a.debug_command("act HIVE"));
+ external_run(Character::Regent,7201,"EXTERNAL_REPLACEMENT",0,reference::ActKind::Overgrowth);expected=disk;
+ a.render();for(unsigned frame=0;frame<10;++frame)a.advance(100);
+ const unsigned d=deletes;a.input(Key::Back);press(HitKind::Menu,3);confirm_accept();
+ CHECK(a.game.phase==Phase::Dead&&deletes==d&&disk_exists);disk_unchanged();
+ // A genuinely new console run never acquires the old save's association.
+ empty_disk();start(Character::Ironclad,7300);put_disk();CHECK(a.debug_command("new ironclad 7300"));
+ CHECK(!a.run_save_linked);a.input(Key::Back);press(HitKind::Menu,3);confirm_accept();CHECK(disk_exists);disk_unchanged();
+}
+static void terminal_file_is_retired(){
+ empty_disk();start(Character::Silent,7400);put_disk();CHECK(load(candidate,disk.bytes,disk.size));
+ player_kill(candidate,true);resolve_pending(candidate);CHECK(store_run(candidate));
+ const unsigned d=deletes,w=writes;player_kill(a.game,true);resolve_pending(a.game);snapshot();
+ a.sync_game_over_presentation();CHECK(!disk_exists&&!a.has_save&&!a.run_save_linked&&deletes==d+1);
+ a.input(Key::Save);CHECK(writes==w&&!disk_exists);unchanged();
 }
 static void modal_isolation_and_fast_mode(){
  empty_disk();start(Character::Silent,8001);snapshot();a.return_to_title();a.menu=0;auto h=find_hit(HitKind::Menu,0);
@@ -555,6 +595,7 @@ int main(int argc,char**argv){
  if(argc>2)capture_directory=argv[2];CHECK(a.init(data.data(),data.size(),{store_run,restore_run,erase_run}));CHECK(a.content.current_profile());
  title_glow_curve();title_particle_curves();title_animation_is_bounded_and_repeats();probe_is_read_only();main_menu_and_continue();pause_save_failure_and_success();abandon_saved_with_confirmation();abandon_current_bypasses_prevention();protected_saved_expeditions();
  canonical_identity_and_save_association();refreshed_continue_metadata();title_confirmation_tracks_run_identity();unreadable_save_does_not_abandon();optional_clear_uses_successful_terminal_probe();
+ console_edits_preserve_checkpoint_ownership();terminal_file_is_retired();
  ending_clears_only_its_checkpoint();modal_isolation_and_fast_mode();character_click_confirmation();main_menu_source_blur();
  std::printf("world frontend UI: %u checks passed; %s profile; guarded save lifecycle and presentation-only settings\n",checks,argc>1?"actual":"synthetic");
 }

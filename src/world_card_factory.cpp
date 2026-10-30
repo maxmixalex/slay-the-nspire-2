@@ -82,6 +82,16 @@ unsigned world_card_candidates(const State&s,const WorldCardOptions&o,CardKind*o
   const auto&pool=world_pools[p];for(unsigned j=0;j<pool.count;++j){CardKind k=pool.ids[j];if(seen[k]||!accepts(s,o,k,combat))continue;seen[k]=true;if(n<capacity)out[n++]=k;}}
  return n;
 }
+unsigned world_card_reward_icon_rarity(const State&s,const WorldCardOptions&o,CardKind first){
+ if(o.source==WorldCardSource::Encounter&&o.odds==WorldCardOdds::BossEncounter)return 4;
+ unsigned single=0;
+ for(unsigned i=0;i<o.pool_count&&i<11;++i){const unsigned p=o.pools[i]==WorldCardPool::Own?unsigned(s.character):unsigned(o.pools[i]);if(p>=11)continue;
+  const auto&pool=world_pools[p];for(unsigned j=0;j<pool.count;++j){const CardKind k=pool.ids[j];if(!accepts(s,o,k,false))continue;
+   const unsigned rarity=card_rarity(k);if(single&&single!=rarity)return 0;single=rarity;
+  }
+ }
+ return single&&first<CardKinds?unsigned(card_rarity(first)):0;
+}
 void world_modifier_card_pools(const State&s,WorldCardOptions&o,bool merchant){
  const uint8_t mask=run_modifier_character_mask(s);if(!mask)return;
  for(unsigned i=0;i<run_modifier_count(s.run_options);++i){

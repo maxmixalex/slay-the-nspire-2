@@ -807,7 +807,7 @@ class TileReader:
                 relative, count = struct.unpack_from('<iI', pack.data, off)
                 require(off + relative >= descriptor_end and count <= len(pack.data) - off - relative,
                         'String group invades descriptor array')
-        self.groups, self.filters, self.predictors = [], [], []
+        self.groups, self.filters, self.predictors, self.sparse = [], [], [], []
         previous_end = descriptor_end
         for i in range(group_count):
             off, length = struct.unpack_from('<II', pack.data, table + i * 8)
@@ -816,8 +816,10 @@ class TileReader:
             header = GROUP.unpack_from(pack.data, off)
             tag, kind, number, raw_size, encoded_size, crc, count, zero = header
             filtered = tag == b'TGR2'
+            sparse = tag == b'TGR3'
             predicted = tag == b'TGI2'
             require(((filtered and pack.version >= 33 and kind == 1 and zero in (1, 2)) or
+                     (sparse and pack.version >= 45 and kind == 1 and zero in (1, 2)) or
                      (predicted and pack.version >= 41 and kind == 2 and zero == 1) or
                      (tag == b'TGR1' and zero == 0)) and number == i and encoded_size + GROUP.size == length
                     and 0 < raw_size <= (self.dictionary if i < self.tile_groups else GROUP_LIMIT), 'Invalid group header')
@@ -825,11 +827,15 @@ class TileReader:
                 expected = min(self.per_group, self.tile_count - i * self.per_group)
                 require(kind == 1 and (0 < count <= expected if pack.version >= 42 else count == expected)
                         and raw_size == count * TILE_BYTES, 'Invalid tile group shape')
+                if sparse:
+                    from sparse_tile_filter import pixel_count
+                    pixel_count(count, crc)
             else:
                 require(kind == 2 and 0 < count <= INDEX_FRAMES, 'Invalid index group item count')
             self.groups.append((off + GROUP.size, encoded_size, raw_size, crc, kind, count))
-            self.filters.append(zero if filtered else 0)
+            self.filters.append(zero if filtered or sparse else 0)
             self.predictors.append(predicted)
+            self.sparse.append(sparse)
             previous_end = off + length
         self.cache = OrderedDict()
         self.group_reads = self.decoded_bytes = 0
@@ -840,8 +846,11 @@ class TileReader:
             self.cache.move_to_end(group_id)
             return self.cache[group_id]
         off, encoded_size, raw_size, crc, kind, count = self.groups[group_id]
-        raw = decode_lzma2(self.pack.data[off:off + encoded_size], raw_size, self.dictionary)
-        if self.filters[group_id]:
+        raw = decode_lzma2(self.pack.data[off:off + encoded_size], crc if self.sparse[group_id] else raw_size, self.dictionary)
+        if self.sparse[group_id]:
+            from sparse_tile_filter import restore
+            raw = restore(raw, count, self.filters[group_id])
+        elif self.filters[group_id]:
             raw = restore_tiles(raw, self.filters[group_id])
         if self.predictors[group_id]:
             from tile_prediction import index_transform

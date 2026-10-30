@@ -166,10 +166,14 @@ static bool valid_tile_group_header(const uint8_t* h,uint32_t id,const uint8_t* 
     const unsigned size=u32(p+12),encoded=u32(p+16),items=u32(p+24);
     const bool is_tile=id<groups;
     const bool filtered=u32(p)==FilteredTileGroupMagic;
+    const bool sparse=u32(p)==SparseTileGroupMagic;
     const bool predicted=u32(p)==PredictiveIndexGroupMagic;
     // TGR1 never used its checksum/reserved words at runtime. Keep that legacy
     // behavior; only the distinct TGR2 magic gives word 7 functional meaning.
-    if((predicted?(version<PredictiveIndexContentVersion||is_tile||u32(p+28)!=1u):
+    unsigned occupied=0;
+    if((sparse?(version<SparseTileContentVersion||!is_tile||u32(p+28)<1||u32(p+28)>2||
+                       !sparse_tile_shape(items,u32(p+20),occupied)):
+        predicted?(version<PredictiveIndexContentVersion||is_tile||u32(p+28)!=1u):
         filtered?(version<TileFilterContentVersion||!is_tile||u32(p+28)<1||u32(p+28)>2):
         (u32(p)!=0x31524754u))||u32(p+4)!=(is_tile?1u:2u)||u32(p+8)!=id||
        !size||size>(is_tile?lzma2_raw_limit(u32(h+12)):Lzma2BlockRawLimit)||encoded!=length-32)return false;
@@ -199,19 +203,22 @@ static TileGroup* load_tile_group(const Content* owner,const ResourceReader& rea
     const uint8_t* p=encoded_pixels;
     const unsigned size=u32(p+12),encoded=u32(p+16),items=u32(p+24);
     if(!valid_tile_group_header(h,id,p,length,owner->version()))return nullptr;
-    const unsigned filter=u32(p)==FilteredTileGroupMagic?u32(p+28):0;
+    const bool sparse=u32(p)==SparseTileGroupMagic;
+    const unsigned compact=sparse?u32(p+20):size;
+    const unsigned filter=u32(p)==FilteredTileGroupMagic||sparse?u32(p+28):0;
     const bool predicted=u32(p)==PredictiveIndexGroupMagic;
     TileGroup* group=reserve_tile_group(size);
     if(!group){cancel_content_preload();group=reserve_tile_group(size);}
     if(!group)return nullptr;
-    if(!decode_lzma2_block(tile_bytes(*group),tile_capacity(*group),size,p+32,encoded,u32(h+12))){
+    if(!decode_lzma2_block(tile_bytes(*group),tile_capacity(*group),compact,p+32,encoded,u32(h+12))){
         tile_discard(*group);return nullptr;
     }
     if(filter){
         // LZMA2 has consumed its input. Reuse the same transfer lease for the
         // reversible field shuffle; cache size and decoded group IDs stay exact.
-        const bool restored=restore_tile_filter_in_place(tile_bytes(*group),size,items,filter,
-                                                        encoded_pixels,ResourceTransferCapacity);
+        const bool restored=sparse?
+            restore_sparse_tiles_in_place(tile_bytes(*group),compact,items,filter,encoded_pixels,ResourceTransferCapacity):
+            restore_tile_filter_in_place(tile_bytes(*group),size,items,filter,encoded_pixels,ResourceTransferCapacity);
         if(!restored){
             tile_discard(*group);return nullptr;
         }

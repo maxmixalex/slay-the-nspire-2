@@ -27,7 +27,10 @@ void App::reset_presentation(bool keep_map_visuals,unsigned retained_effects){co
 
 void App::sync_character_feedback(){
     int hp=combat_health(MaxEnemies+1).hp,attacks=combat_status_fact(CombatStatus::OstyAttacks),clip=-1;
-    if(combat_phase(game.phase)){
+    // Canonical damage can already have ended combat while its visible
+    // impact is still queued. Osty's death belongs to that impact, including
+    // a lethal overflow or the last-enemy Bone Shards chain.
+    if(combat_phase(game.phase)||ui_feedback_bound(*this)||combat_status.had_live_scene){
         if(hp<=0&&last_osty_hp>0)clip=AnimOstyDie;
         else if(hp>0&&last_osty_hp<=0)clip=AnimOstyRevive;
         else if(hp<last_osty_hp)clip=AnimOstyHurt;

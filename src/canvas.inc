@@ -575,6 +575,7 @@ struct Canvas{
     }
     #include "vantom_ui15.inc"
     #include "vantom_vfx_ui15.inc"
+    #include "framed_animation_ui20.inc"
     void clip(int id,int x,int y,uint32_t milliseconds,bool anchored=true,bool loop=true){
         auto c=a.content.clip(id);if(!c.count)return;
         if(vantom_frame(id,x+(anchored?0:c.pivot_x),y+(anchored?0:c.pivot_y),milliseconds,1024,loop))return;
@@ -583,6 +584,7 @@ struct Canvas{
         picture((int)c.first+(int)index,x-(anchored?c.pivot_x:0),y-(anchored?c.pivot_y:0));
     }
     void scaled_clip(int id,int x,int y,uint32_t milliseconds,int scale,bool loop=true,int bone_scale=-1){
+        if(framed_clip(id,x,y,milliseconds,scale,loop))return;
         if(vantom_frame(id,x,y,milliseconds,scale,loop,bone_scale))return;
         if(scale==1024){clip(id,x,y,milliseconds,true,loop);return;}
         auto cl=a.content.clip(id);if(!cl.count||scale<=0)return;

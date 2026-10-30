@@ -186,7 +186,7 @@ static void original_osty_and_orbs(){
   HoverTipList tips;collect_creature_hover_tips(a,owner,tips);
   CHECK(tips.count==1&&tips.find(HoverTipKind::Power,"DIE_FOR_YOU_POWER")==0);
   char title[256]{},body[2048]{};format_card_hover_tip(a,owner,tips.items[0],title,sizeof title,body,sizeof body);
-  CHECK(*title&&*body);capture("osty-die-for-you-hover",true);a.pointer.visible=false;
+  CHECK(*title&&*body);CHECK(card_hover_icon(a,owner,tips.items[0])==a.content.world_image("powers","DIE_FOR_YOU_POWER"));capture("osty-die-for-you-hover",true);a.pointer.visible=false;
  };hover_osty();unchanged();
  {UiCoreObserver observer(a);a.begin_combat_feedback();queue_extension(a.game,XOp::NKillOsty);resolve_pending(a.game);}
  snapshot();a.render();CHECK(a.osty_motion.clip==AnimOstyDie);
@@ -714,8 +714,20 @@ static void deferred_enemy_values(){
   CHECK(a.combat_status_amount(0,45)==5);
   a.animation=pet_hit-1;a.render();CHECK(a.combat_health(MaxEnemies+1).hp==5);
   a.animation=pet_hit;a.render();CHECK(a.combat_health(MaxEnemies+1).hp==0&&a.combat_health(0).hp<player);
+  CHECK(a.osty_motion.clip==AnimOstyDie&&a.osty_motion.start==pet_hit);
   CHECK(a.combat_status_amount(0,45)==0);
   snapshot();a.reset_presentation();CHECK(!a.combat_feedback.active&&a.combat_health(0).hp==a.game.hp);unchanged();
+
+  // The same hit may already have killed the owner in canonical State.
+  // Its queued on-screen impact must still start the companion's die track.
+  enemy_visual_fight(EncounterId::NibbitsWeak,Character::Necrobinder);a.fast_mode=fast!=0;
+  a.game.enemy_world.models[0].node=0;a.game.block=0;a.game.hp=1;
+  a.game.expansion.osty_hp=a.game.expansion.osty_max_hp=1;a.last_osty_hp=1;
+  a.input(Key::EndTurn);CHECK(a.game.phase==Phase::Dead&&a.combat_feedback.active);
+  const uint32_t lethal_pet_hit=a.enemy_presentation[0].queue[0].earliest+impact;
+  a.animation=lethal_pet_hit-1;a.render();CHECK(a.combat_health(MaxEnemies+1).hp==1);
+  a.animation=lethal_pet_hit;a.render();CHECK(a.combat_health(MaxEnemies+1).hp==0);
+  CHECK(a.osty_motion.clip==AnimOstyDie&&a.osty_motion.start==lethal_pet_hit);
 
   for(int lethal=0;lethal<2;++lethal){
    enemy_visual_fight(EncounterId::NibbitsNormal);a.fast_mode=fast!=0;

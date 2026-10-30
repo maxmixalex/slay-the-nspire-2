@@ -68,6 +68,15 @@ void App::sync_combat_preparation(){
         return true;
     };
     auto frame_images=[&](const Track&t,unsigned frame,bool first){
+        const int framed=framed_ui20_row(t.id);
+        const int framed_parameters=framed<0?-1:content.ui_image(FramedUi20BaseAuxiliary+unsigned(framed));
+        if(framed_parameters>=0){
+            if(!reserve(framed_parameters,first))return false;
+            Canvas::FramedDraw layers[FramedUi20MaxLayers];unsigned layer_count=0;
+            if(!Canvas{*this}.framed_collect(t.id,0,0,frame*t.clip.frame_ms,1024,false,layers,layer_count,false))return false;
+            for(unsigned i=0;i<layer_count;++i)if(!reserve(layers[i].image,first))return false;
+            return true;
+        }
         const int row=vantom_ui15_row(t.id);
         const int parameters=row<0?-1:content.ui_image(VantomUi15BaseAuxiliary+unsigned(row&127));
         if(parameters<0)return reserve(int(t.clip.first+frame),first);

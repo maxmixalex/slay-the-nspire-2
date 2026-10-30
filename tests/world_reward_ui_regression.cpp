@@ -2,6 +2,7 @@
 #include "content_fixture.hpp"
 #include "original_events.hpp"
 #include "world_run.hpp"
+#include "world_card_factory.hpp"
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -282,10 +283,26 @@ static void acquired_card_visual_facts(){
   a.game.event_cards.deck[0]=EventCardFacts{};a.game.defect.genetic_deck[0]=a.game.necro.scythe_deck[0]=0;a.render();CHECK(pixels()==plain);
  }
 }
+static void original_card_reward_icon_policy(){
+ reset();snapshot();WorldCardOptions options;options.source=WorldCardSource::Encounter;
+ options.odds=WorldCardOdds::BossEncounter;CHECK(world_card_reward_icon_rarity(a.game,options,Strike)==4);
+ options.odds=WorldCardOdds::RegularEncounter;
+ CardKind rare=CardKinds,uncommon=CardKinds;for(unsigned i=0;i<CardKinds;++i){if(card_rarity(CardKind(i))==4)rare=CardKind(i);if(card_rarity(CardKind(i))==3)uncommon=CardKind(i);}
+ CHECK(rare<CardKinds&&uncommon<CardKinds);
+ // Randomly getting rare cards from a mixed pool does not turn its row gold.
+ CHECK(!world_card_reward_icon_rarity(a.game,options,rare));
+ options.rarity_mask=world_rarity_mask(4);CHECK(world_card_reward_icon_rarity(a.game,options,rare)==4);
+ options.rarity_mask=world_rarity_mask(3);CHECK(world_card_reward_icon_rarity(a.game,options,uncommon)==3);
+ // Original IconPath uses the actual first card once the pool is uniform.
+ CHECK(world_card_reward_icon_rarity(a.game,options,rare)==4);
+ options.pool_count=0;CHECK(!world_card_reward_icon_rarity(a.game,options,rare));
+ options.source=WorldCardSource::Other;options.odds=WorldCardOdds::BossEncounter;
+ CHECK(!world_card_reward_icon_rarity(a.game,options,rare));unchanged();
+}
 int main(int argc,char**argv){
  std::vector<uint8_t>data;if(argc>1){FILE*f=std::fopen(argv[1],"rb");CHECK(f);data.resize(spire_test::pack_size(f));CHECK(std::fread(data.data(),1,data.size(),f)==data.size());CHECK(!std::fclose(f));}else data=synthetic_profile();
  if(argc>2)capture_directory=argv[2];CHECK(a.init(data.data(),data.size(),{}));CHECK(a.content.current_profile());
- reward_animation_curves();glass_eye();potion_and_special();last_reward_indexes();event_card_rewards();event_combat_rewards();terminal_combat_cleanup();camp_proceed(false);camp_proceed(true);acquisition_flights();
+ original_card_reward_icon_policy();reward_animation_curves();glass_eye();potion_and_special();last_reward_indexes();event_card_rewards();event_combat_rewards();terminal_combat_cleanup();camp_proceed(false);camp_proceed(true);acquisition_flights();
  if(a.content.version()>=LocaleContentVersion)acquired_card_visual_facts();
  std::printf("world reward UI: %u checks passed; %s profile; reward ownership, direct claim, alternatives and Camp Proceed\n",checks,argc>1?"actual":"synthetic");
 }

@@ -292,8 +292,10 @@ bool App::debug_command(const char*command){
         ok=debug_value(game,value,amount,target);
     }
     if(!ok)return debug_failure(*this,"Command cannot run here: check target, capacity and pending choices.");
-    // Console commands do not autosave over the user's prior checkpoint.
-    forget_run_checkpoint();title=character_select=library=paused=help=settings_open=false;
+    // Console commands edit the current run without autosaving. Preserve an
+    // existing Continue/save association so its later death or explicit
+    // Give Up still retires that run. Only debug_begin (new) starts a new run.
+    title=character_select=library=paused=help=settings_open=false;
     compendium_open=statistics_open=history_open=bestiary.open=profiles_open=profile_pending=false;frontend_confirm=0;map_preview.open=false;reset_presentation();pointer_cancel();
     if(game.phase==Phase::Combat&&game.turn==1&&(debug_equal(cmd,"fight")||debug_equal(cmd,"room")))turn_banner_suppress_intro=false;
     if(!debug_equal(cmd,"godmode")&&!debug_equal(cmd,"travel"))set_debug_reply(*this,"OK",1);return true;

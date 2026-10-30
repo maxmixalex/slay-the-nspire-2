@@ -117,6 +117,26 @@ static void duplicate_rules(){
     b.add({HoverTipKind::Keyword,"ETHEREAL"});b.add({HoverTipKind::Keyword,"EXHAUST"});b.add({HoverTipKind::Keyword,"ETHEREAL"});CHECK(b.find(HoverTipKind::Keyword,"ETHEREAL")==2);
     b.add({HoverTipKind::Static,"SUMMON_DYNAMIC"});b.add({HoverTipKind::Static,"SUMMON_STATIC"});b.finish();CHECK(b.find(HoverTipKind::Static,"SUMMON_DYNAMIC")<0);
 }
+static void associated_card_only_layout(){
+    setup();snapshot();HoverTipList list;HoverTip card{};card.kind=HoverTipKind::Card;card.card={Shiv,0};card.key="SHIV";list.add(card);
+    // Real owner edges, with no text container at all. Test the shared path
+    // for shop stock, creature powers, and ordinary card holders.
+    for(unsigned kind=0;kind<3;++kind)for(int x:{8,32,120,264,284}){
+        CardHoverTarget owner;owner.owner={x,80,30,42};owner.merchant=kind==0;
+        owner.power=kind==1?int(power_token(0,14)):-1;
+        owner.merchant_left=owner.power_left=x>160;
+        const auto page=card_hover_page(a,owner,list);CHECK(page.count==1&&page.pages==1);
+        const auto&box=page.pieces[0].box;CHECK(box.w==46&&box.x>=3&&box.x+box.w<=317);
+        CHECK(box.x+box.w+1==owner.owner.x||owner.owner.x+owner.owner.w+1==box.x);
+    }
+    CardHoverTarget owner;HoverTip power{};power.kind=HoverTipKind::Power;power.key="DIE_FOR_YOU_POWER";
+    CHECK(card_hover_icon(a,owner,power)==a.content.world_image("powers","DIE_FOR_YOU_POWER"));
+    CHECK(card_hover_icon(a,owner,power)>=0);
+    for(const char*key:{"STRENGTH_POWER","WEAK_POWER","VULNERABLE_POWER","DIE_FOR_YOU_POWER"}){
+        power.key=key;CHECK(card_hover_icon(a,owner,power)>=0);
+    }
+    unchanged();
+}
 static void complete_catalog_and_layout(){
     setup();snapshot();a.library=true;
     for(unsigned kind=0;kind<CardKinds;++kind)for(unsigned up=0;up<2;++up){
@@ -299,6 +319,6 @@ static void event_pointer_keyboard_and_text(){
 #include "power_hover_ui_cases.inc"
 int main(int argc,char**argv){
     std::vector<uint8_t>data;actual=argc>1;if(actual){FILE*f=std::fopen(argv[1],"rb");CHECK(f);data.resize(spire_test::pack_size(f));CHECK(std::fread(data.data(),1,data.size(),f)==data.size());CHECK(!std::fclose(f));}else data=fixture();
-    CHECK(a.init(data.data(),data.size(),{}));if(argc>2)screenshots=argv[2];associations();duplicate_rules();complete_catalog_and_layout();pointer_and_keyboard();event_associations();event_potion_and_relic_catalog();event_pointer_keyboard_and_text();power_hover_catalog_and_input();
+    CHECK(a.init(data.data(),data.size(),{}));if(argc>2)screenshots=argv[2];associations();duplicate_rules();associated_card_only_layout();complete_catalog_and_layout();pointer_and_keyboard();event_associations();event_potion_and_relic_catalog();event_pointer_keyboard_and_text();power_hover_catalog_and_input();
     std::printf("keyword tooltip: %u checks passed (%s profile)\n",checks,actual?"private":"synthetic");
 }

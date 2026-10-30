@@ -248,7 +248,8 @@ def render_texture(pack, path, size, fit, kind, texture_cache):
 
 def render_world_scene(pack, row, sampler):
     return render_scene(pack, row['path'], *row['size'], mode=row['kind'],
-                        sampler=sampler, plane=row.get('plane', 'all'))
+                        sampler=sampler, plane=row.get('plane', 'all'),
+                        viewport=row.get('viewport', (1920, 1080)))
 
 
 def render_atlas_resource(pack, row, texture_cache):

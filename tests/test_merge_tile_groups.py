@@ -66,7 +66,7 @@ class MergeTileGroupsTest(unittest.TestCase):
             language,_details=storage.compress_blocks(language)
             self.assertEqual(split.reconstruct(common,language,'eng'),output)
             self.assertLess(report['pixel_stream_bytes_saved']*-1,len(original))
-            for version in (43,45):
+            for version in (43,t.MAXIMUM_CONTENT_VERSION+1):
                 bad=bytearray(output);struct.pack_into('<I',bad,4,version)
                 with self.assertRaises(ValueError):t.TileReader(coalesce.view(bad))
 

@@ -33,8 +33,8 @@ static MapColors map_colors(unsigned region){
     default:return {rgb(40,35,29),rgb(135,114,86),rgb(167,138,103),"OVERGROWTH"};
     }
 }
-static void map_background(Canvas&c,const WorldMapView&view,const MapColors&colors,bool fill_paper=true){
-    if(fill_paper)c.rect(0,WorldMapTop,320,WorldMapBottom-WorldMapTop,colors.paper);const char*parts[]={"_TOP","_MIDDLE","_BOTTOM"};
+static void map_background(Canvas&c,const WorldMapView&view,const MapColors&colors){
+    const char*parts[]={"_TOP","_MIDDLE","_BOTTOM"};
     // The original 4:3 top offset is relative to the screen center. Adjacent
     // 1080-high layers scroll together at the map's uniform calculator scale.
     for(int i=0;i<3;++i){int y=view.origin-458+i*238;map_picture(c,map_named_picture(c.a.content,"BG_",colors.region,parts[i]),160,y+119,320,238,MapShader::Original,0,0,255,0,WorldMapTop,WorldMapBottom);}
@@ -200,9 +200,11 @@ static void world_map_screen(Canvas&parent,bool inspect,const MapWindowSample*wi
         const int hovered=over_history?-1:map_legend_hover(a,legend_offset);
         if(hovered>=0)a.map_legend_item=uint8_t(hovered);
     }
-    // A HUD window uses the authored BG alpha over the retained live room;
-    // the standalone Phase::Map path retains its existing paper fallback.
-    map_background(c,view,colors,window==nullptr||s.phase==Phase::Map);
+    // A standalone MapRoom has no live room behind it. Its source backstop
+    // is black; the paper textures retain their authored alpha at the edges
+    // and during the act-entry sweep, exactly as they do over a live room.
+    if(s.phase==Phase::Map)parent.rect(0,WorldMapTop,320,ScreenH-WorldMapTop,0);
+    map_background(c,view,colors);
     map_paths(c,*m,layout,view,colors);
     uint8_t available[reference::Columns];const unsigned available_count=world_available_points(s,available,reference::Columns);
     if(!inspect&&!a.map_legend&&available_count){bool valid=false;for(unsigned i=0;i<available_count;++i)if(m->points[available[i]].col==a.cursor)valid=true;if(!valid)a.cursor=m->points[available[0]].col;}

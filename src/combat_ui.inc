@@ -346,7 +346,10 @@ static void combat_actors(Canvas&c){
     if(pet){const auto p=a.combat_player_pose(true);const auto&m=a.osty_motion;const auto clip=a.content.clip(m.clip);const unsigned elapsed=(a.animation-m.start)*33;
         if(m.clip>=0&&elapsed<(unsigned)clip.count*clip.frame_ms)c.scaled_clip(m.clip,p.sprite_x,p.sprite_y,elapsed,p.scale,false);
         else if(a.combat_health(MaxEnemies+1).hp>0)c.scaled_clip(AnimOstyIdle,p.sprite_x,p.sprite_y,a.animation*33,p.scale);
-        else{const auto dead=a.content.clip(AnimOstyDie);c.scaled_clip(AnimOstyDie,p.sprite_x,p.sprite_y,dead.count?uint32_t(dead.count-1)*dead.frame_ms:0u,p.scale,false);}
+        else if(a.content.ui_image(FramedUi20BaseAuxiliary+unsigned(framed_ui20_row(FramedUi20OstyDeadLoop)))>=0){
+            const auto dead=a.content.clip(AnimOstyDie);const unsigned duration=unsigned(dead.count)*dead.frame_ms;
+            c.scaled_clip(FramedUi20OstyDeadLoop,p.sprite_x,p.sprite_y,m.clip==AnimOstyDie&&elapsed>=duration?elapsed-duration:a.animation*33u,p.scale,true);
+        }else{const auto dead=a.content.clip(AnimOstyDie);c.scaled_clip(AnimOstyDie,p.sprite_x,p.sprite_y,dead.count?uint32_t(dead.count-1)*dead.frame_ms:0u,p.scale,false);}
     }
     int shared=-1;bool shared_action=false;
     for(int i=0;i<s.enemy_count;i++){

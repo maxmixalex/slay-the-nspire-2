@@ -15,7 +15,7 @@ void App::sync_game_over_presentation(){
 bool App::game_over_button_ready()const{return game_over_presentation.ready(map_clock_ms);}
 bool App::game_over_available()const{
  return game.world.active&&(game.phase==Phase::Complete||game.phase==Phase::Dead)&&
-  !title&&!paused&&!help&&!panel&&!library&&!character_select&&!map_preview.open&&!frontend_confirm&&!settings_open&&
+  !title&&!paused&&!help&&!panel&&!library&&!character_select&&!character_departure.active()&&!map_preview.open&&!frontend_confirm&&!settings_open&&
   !compendium_open&&!statistics_open&&!history_open&&!profiles_open&&!bestiary.open&&auxiliary.screen==AuxiliaryScreen::None&&
   status_actor<0&&detail_card<0&&detail_item<0&&deck_candidate<0;
 }
@@ -151,7 +151,8 @@ static void game_over_backdrop(Canvas&c){
  const bool event_room=(s.phase==Phase::Complete&&s.original_events.id==OriginalEventId::TheArchitect)||
   (s.original_events.active&&!s.original_events.combat_pending&&!s.world.event_combat_parent);
  const int event=event_room?a.content.world_image("events",original_event_key(s.original_events.id)):-1;
- if(event>=0)c.picture(event,0,22,320,218);else c.picture(a.combat_background(),0,22,320,218);
+ if(event>=0){if(ui_ancient_event(s.original_events.id))c.picture(event,0,0,320,240);else c.picture(event,0,22,320,218);}
+ else c.picture(a.combat_background(),0,22,320,218);
  const auto&m=a.game_over_presentation;const unsigned age=m.initial_age(a.map_clock_ms);
  // FullBlackBackstop is true black, not the general UI's green-black Ink.
  // The event's 200 ms fade precedes the 1500 ms source threshold tween.
@@ -183,8 +184,8 @@ static void game_over_score_line(Canvas&c,const char*key,unsigned icon,int y,con
  using namespace game_over_ui;char label[256]{};game_over_format(c.a,game_over_text(c.a,key),label,sizeof label);
  const auto motion=c.a.game_over_presentation.score(row,c.a.map_clock_ms);if(!motion.visible||!motion.alpha)return;
  Canvas text=c;text.opacity=uint8_t(div255(text.opacity*motion.alpha));const int x=ScoreX+motion.offset;text.ui(int(icon),x,y+4,14,16);text.font_face=source_label_face(c.a.content.original_label_fonts(),5);
- text.fitted(label,x+20,y+1,ScoreWidth-64,22,10,10,White);
- text.fitted(points,x+ScoreWidth-40,y+5,40,15,10,10,Gold,false,true);
+ text.fitted(label,x+20,y+1,ScoreWidth-60,20,10,10,White);
+ text.fitted(points,x+ScoreWidth-36,y+1,36,20,10,10,Gold,false,true);
 }
 static void game_over_hover(Canvas&c,int focus,int anchor_x,int anchor_y){
  char title[192]{},body[2048]{};c.a.game_over_detail(focus,title,sizeof title,body,sizeof body);if(!*title)return;
@@ -206,7 +207,7 @@ static void native_game_over_screen(Canvas&c){
  char banner_key[48]{};TextBuffer bk{banner_key,sizeof banner_key,0};
  if(s.phase==Phase::Complete)bk.text("BANNER.falseWin");else{bk.text("BANNER.lose");bk.number(unsigned(s.world.run_seed>>32)%8);}
  Canvas label=c;label.font_face=source_label_face(c.a.content.original_label_fonts(),5);banner.font_face=source_label_face(c.a.content.original_label_fonts(),5);
- banner.fitted(game_over_text(a,banner_key,s.phase==Phase::Complete?"Victory?":"Defeat"),BannerX+11,banner_y+5,BannerWidth-22,20,12,10,Gold,true,true,true);
+ banner.fitted(game_over_text(a,banner_key,s.phase==Phase::Complete?"Victory?":"Defeat"),BannerX+11,banner_y+2,BannerWidth-22,20,12,10,Gold,true,true,true);
  char quote[2048]{};
  if(!a.game_over_summary){
   if(s.phase==Phase::Complete&&known){game_over_format(a,game_over_text(a,"VICTORY_DAMAGE_LOCAL"),quote,sizeof quote);

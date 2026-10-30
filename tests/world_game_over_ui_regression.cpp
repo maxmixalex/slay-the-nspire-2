@@ -116,7 +116,7 @@ static void settled_layer_pixels(){
  // Limit this oracle to the stable top/wings above that independently drawn text.
  // The corrected title occupies y+5..25, centered on the ribbon. Include
  // its one-pixel outline while still checking the top and both source wings.
- verify(I6_CommonBanner,BannerX,a.game_over_presentation.banner_y(a.map_clock_ms),BannerWidth,BannerHeight,9,4,BannerWidth-18,22,255,100);
+ verify(I6_CommonBanner,BannerX,a.game_over_presentation.banner_y(a.map_clock_ms),BannerWidth,BannerHeight,9,1,BannerWidth-18,22,255,100);
  // The centered button label owns (16,2,width-32,22), including its four
  // one-pixel outline passes. Check the source margins outside that rectangle.
  verify(U_RewardSkip,a.game_over_summary?MainMenuX:ContinueX,ButtonY,ButtonWidth,ButtonHeight,15,1,ButtonWidth-30,24,215,60);
@@ -128,6 +128,17 @@ static void capture(const char*name){
 }
 static void capture_stage(const char*prefix,const char*stage){
  char name[160];const int n=std::snprintf(name,sizeof name,"gameover-%s-%s",prefix,stage);CHECK(n>0&&unsigned(n)<sizeof name);capture(name);
+}
+static void return_transition(const char*prefix){
+ CHECK(!a.title&&a.character_departure.phase==3);a.pointer.visible=false;
+ const uint32_t started=a.character_departure.started;
+ a.input(Key::Confirm);a.ui_action(UiAction::GameOverMainMenu);CHECK(a.character_departure.started==started);
+ advance_ms(400);capture_stage(prefix,"menu-fade-out");CHECK(!a.title&&a.character_departure.phase==3);unchanged();
+ advance_ms(400);a.render();CHECK(a.title&&a.character_departure.phase==2);
+ for(unsigned i=0;i<ScreenW*ScreenH;++i)CHECK(a.pixels[i]==0);
+ capture_stage(prefix,"menu-black");unchanged();
+ advance_ms(400);capture_stage(prefix,"menu-fade-in");CHECK(a.title&&a.character_departure.phase==2);
+ advance_ms(400);CHECK(a.title&&!a.character_departure.active());unchanged();
 }
 static unsigned detail_hits(bool discoveries){
  unsigned n=0;for(int i=0;i<a.hit_count;++i)if(a.hits[i].kind==HitKind::GameOverDetail&&a.hits[i].enabled&&(a.hits[i].value>=32)==discoveries)++n;return n;
@@ -235,14 +246,14 @@ static void death_flow(){
   CHECK(!a.title&&a.game_over_summary&&a.game.phase==Phase::Dead);a.render();CHECK(!has_action(UiAction::GameOverMainMenu)&&!has_action(UiAction::GameOverSummary));a.input(Key::Confirm);CHECK(!a.title);summary_stages(character_names[i]);a.render();CHECK(has_action(UiAction::GameOverMainMenu)&&!has_action(UiAction::GameOverViewRun));unchanged();saved_facts();
   if(!i){capture("gameover-defeat-summary");a.ui_action(UiAction::GameOverViewRun);a.open_game_over_history();CHECK(!a.history_open&&!a.history_from_game_over&&!a.compendium_open&&a.game_over_summary);unchanged();
    a.input(Key::Inspect);CHECK(a.panel==1);a.render();a.input(Key::Back);CHECK(!a.panel&&a.game_over_summary);a.input(Key::Relics);CHECK(!a.panel&&a.detail_item<0&&a.game_over_summary);a.render();unchanged();press(UiAction::GameOverMainMenu);}else a.input(Key::Confirm);
-  CHECK(a.title&&!a.game_over_summary&&a.game.phase==Phase::Dead&&a.game.world.finished);unchanged();
+  return_transition(character_names[i]);CHECK(a.title&&!a.game_over_summary&&a.game.phase==Phase::Dead&&a.game.world.finished);unchanged();
  }
 }
 static void victory_flow(){
  victory();unsigned wins=a.game.event_run.wins;uint32_t wongo=a.game.event_run.wongo_total;intro_stages("victory");capture("gameover-victory");
  const auto select=select_key();CHECK(a.physical_key(select,true)&&!a.game_over_summary);CHECK(a.physical_key(select,true)&&!a.game_over_summary);CHECK(a.physical_key(select,false)&&a.game_over_summary&&!a.title);
  summary_stages("victory");saved_facts();capture("gameover-victory-summary");
- a.render();a.pointer_scroll(1);a.render();unchanged();press(UiAction::GameOverMainMenu);CHECK(a.title&&a.game.phase==Phase::Complete&&a.game.event_run.wins==wins&&a.game.event_run.wongo_total==wongo);unchanged();
+ a.render();a.pointer_scroll(1);a.render();unchanged();press(UiAction::GameOverMainMenu);return_transition("victory");CHECK(a.title&&a.game.phase==Phase::Complete&&a.game.event_run.wins==wins&&a.game.event_run.wongo_total==wongo);unchanged();
  // Loading/reopening a terminal save starts on Continue, without repeating
  // any completion accounting. The UI flag is never serialized into the run.
  CHECK(load(a.game,before.bytes,before.size));present();CHECK(!a.game_over_summary);a.render();CHECK(!has_action(UiAction::GameOverSummary));settle_game_over();a.render();CHECK(has_action(UiAction::GameOverSummary));unchanged();
@@ -260,7 +271,7 @@ static void combat_backdrop_flow(){
  CHECK(a.game.phase==Phase::Dead&&a.game.world.finished);present();snapshot();
  a.sync_game_over_presentation();CHECK(!a.game_over_presentation.event_room);intro_stages("combat-silent");
  const auto select=select_key();CHECK(a.physical_key(select,true)&&!a.game_over_summary);CHECK(a.physical_key(select,false)&&a.game_over_summary);
- summary_stages("combat-silent");press(UiAction::GameOverMainMenu);CHECK(a.title);unchanged();
+ summary_stages("combat-silent");press(UiAction::GameOverMainMenu);return_transition("combat-silent");CHECK(a.title);unchanged();
 }
 static void legacy_and_capacity(){
  new_run(a.game,1,true,Character::Ironclad);a.game.phase=Phase::Complete;present();a.input(Key::Confirm);CHECK(a.title&&!a.game_over_summary);

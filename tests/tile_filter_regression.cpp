@@ -1,5 +1,6 @@
 #include "app.hpp"
 #include "tile_filter.hpp"
+#include "sparse_tile_filter.hpp"
 #include "resource_transfer.hpp"
 #include "index_prediction.hpp"
 #include <cstdio>
@@ -25,6 +26,58 @@ static Bytes filtered(const Bytes&raw,unsigned mode){
             put(out,count*2+tile*512+i*2,g|(r<<6)|(b<<11),2);out[count*514+tile*256+i]=raw[at+514+i];
         }
     }return out;
+}
+static Bytes sparsified(const Bytes&raw,unsigned mode){
+    const unsigned count=unsigned(raw.size())/770;const Bytes values=filtered(raw,mode);
+    Bytes out(count*34),colors,alpha;
+    std::memcpy(out.data(),values.data(),count*2);
+    for(unsigned tile=0;tile<count;++tile)for(unsigned pixel=0;pixel<256;++pixel){
+        const unsigned at=count*2+tile*512+pixel*2,opacity=count*514+tile*256+pixel;
+        if(values[at]||values[at+1]||values[opacity]){
+            out[count*2+tile*32+pixel/8]|=uint8_t(1u<<(pixel&7));
+            colors.push_back(values[at]);colors.push_back(values[at+1]);alpha.push_back(values[opacity]);
+        }
+    }
+    out.insert(out.end(),colors.begin(),colors.end());out.insert(out.end(),alpha.begin(),alpha.end());return out;
+}
+static void sparse_boundaries(){
+    for(unsigned count:{1u,2u,3u,7u,17u,128u,129u,130u,257u,258u,259u,680u,681u,1024u,1359u,1360u})
+    for(unsigned pattern:{0u,1u,2u})for(unsigned mode:{1u,2u}){
+        Bytes original(count*770);
+        for(unsigned tile=0;tile<count;++tile){original[tile*770]=original[tile*770+1]=16;
+            for(unsigned pixel=0;pixel<256;++pixel){
+                const bool used=pattern==1?pixel<224:pattern==2?(tile%7==0||pixel<128):false;
+                if(used){put(original,tile*770+2+pixel*2,1u+(tile*256+pixel)%65535u,2);
+                    original[tile*770+514+pixel]=uint8_t((tile+pixel)%5?255:0);}
+            }
+        }
+        const Bytes encoded=sparsified(original,mode);unsigned pixels=0;
+        if(!sparse_tile_shape(count,unsigned(encoded.size()),pixels))continue;
+        const unsigned plane_bytes=count*34+pixels;
+        for(bool stepped:{false,true}){
+            Bytes output(original.size()+32,0xb7),scratch(plane_bytes+32,0xa9);
+            std::memcpy(output.data()+16,encoded.data(),encoded.size());
+            if(stepped){
+                std::memcpy(scratch.data()+16,encoded.data(),count*34);
+                std::memcpy(scratch.data()+16+count*34,encoded.data()+count*34+pixels*2,pixels);
+                unsigned prefix=0,low=count;
+                for(unsigned i=0;i<count;++i)CHECK(sparse_tile_scan(scratch.data()+16,count,pixels,i,prefix,low));
+                CHECK(prefix==pixels);unsigned cursor=pixels;
+                for(unsigned i=0;i<count;++i)CHECK(restore_sparse_tile_step(output.data()+16,scratch.data()+16,count,pixels,mode,i,low,cursor));
+            }else CHECK(restore_sparse_tiles_in_place(output.data()+16,unsigned(encoded.size()),count,mode,scratch.data()+16,plane_bytes));
+            CHECK(!std::memcmp(output.data()+16,original.data(),original.size()));
+            for(unsigned i=0;i<16;++i)CHECK(output[i]==0xb7&&output[16+original.size()+i]==0xb7&&
+                scratch[i]==0xa9&&scratch[16+plane_bytes+i]==0xa9);
+        }
+    }
+    unsigned pixels=0;CHECK(!sparse_tile_shape(0,34,pixels));CHECK(!sparse_tile_shape(1361,1361*34,pixels));
+    CHECK(!sparse_tile_shape(1,33,pixels));CHECK(!sparse_tile_shape(1,35,pixels));CHECK(!sparse_tile_shape(1,34+225*3,pixels));
+    Bytes original(770);original[0]=original[1]=16;Bytes encoded=sparsified(original,1),output(770),scratch(258);
+    std::memcpy(output.data(),encoded.data(),encoded.size());output[2]=1;
+    CHECK(!restore_sparse_tiles_in_place(output.data(),unsigned(encoded.size()),1,1,scratch.data(),unsigned(scratch.size())));
+    std::memcpy(output.data(),encoded.data(),encoded.size());
+    CHECK(!restore_sparse_tiles_in_place(output.data(),unsigned(encoded.size()),1,1,output.data()+1,258));
+    CHECK(!restore_sparse_tiles_in_place(output.data(),unsigned(encoded.size()),1,1,scratch.data(),33));
 }
 static void all_bits(){
     for(unsigned count:{1u,256u,680u}){Bytes original(count*770),output(original.size());
@@ -67,13 +120,13 @@ struct Package {
     static constexpr unsigned Images=66,Strings=Ui7StringCount,Clips=CharacterDeathAnimationKinds;
     Bytes bytes,expected;unsigned base{},tile_group{},index_group{},frame{},frame_ids[4]{};
     unsigned append(const Bytes&raw){if(bytes.size()&1)bytes.push_back(0);const unsigned at=unsigned(bytes.size());bytes.insert(bytes.end(),raw.begin(),raw.end());return at;}
-    Package(unsigned mode,bool large=false,unsigned mixed=0){
+    Package(unsigned mode,bool large=false,unsigned mixed=0,bool sparse=false){
         CHECK(!mixed||large);CHECK(mixed<=2);const unsigned pixel_groups=mixed?3u:1u;
         const unsigned counts[3]={mixed==1?680u:large?LargeTileItems:4u,mixed==1?LargeTileItems:680u,mixed==1?680u:LargeTileItems};
         const unsigned clip_count=large?BestiaryKaiserAnimationKinds:Clips;
         const unsigned strings=40+Images*16+16,clips=strings+Strings*8,cards=clips+clip_count*16,aux=cards+CardKinds*16;
         base=aux+(large?unsigned(Ui12AuxiliaryCount):unsigned(GameOverTransitionAuxiliaryCount))*4;const unsigned table=base+64,costs=table+(pixel_groups+1)*8;frame=costs+Images;bytes.resize(frame+(large?32u:16u));
-        put(bytes,0,0x3250534e);put(bytes,4,large?LargeTileContentVersion:TileFilterContentVersion);put(bytes,8,0x41cef1ea);put(bytes,16,Images);put(bytes,20,1);put(bytes,24,Strings);put(bytes,28,clip_count);put(bytes,32,CardKinds);
+        put(bytes,0,0x3250534e);put(bytes,4,sparse?SparseTileContentVersion:large?LargeTileContentVersion:TileFilterContentVersion);put(bytes,8,0x41cef1ea);put(bytes,16,Images);put(bytes,20,1);put(bytes,24,Strings);put(bytes,28,clip_count);put(bytes,32,CardKinds);
         for(unsigned i=0;i<Images;++i){put(bytes,40+i*16,frame);put(bytes,44+i*16,17,2);put(bytes,46+i*16,17,2);put(bytes,48+i*16,6);put(bytes,52+i*16,16);bytes[costs+i]=1;}
         const unsigned glyph=append({255});put(bytes,40+Images*16,'?');put(bytes,44+Images*16,glyph);put(bytes,48+Images*16,5,2);bytes[50+Images*16]=bytes[51+Images*16]=1;put(bytes,52+Images*16,1,2);
         const unsigned marker=append({'e','n','g',0});for(unsigned i=0;i<Strings;++i){put(bytes,strings+i*8,i==6110?marker:marker+3);put(bytes,strings+i*8+4,i==6110?3:0);}
@@ -92,11 +145,12 @@ struct Package {
         for(unsigned i=0;i<=pixel_groups;++i){const bool is_index=i==pixel_groups;
             if(large)bytes.resize(((bytes.size()+32767u)&~size_t(32767u))+32768u);
             const Bytes raw=is_index?encoded_index:Bytes(records.begin(),records.begin()+counts[i]*770);
-            Bytes encoded=stored(is_index?raw:mode?filtered(raw,mode):raw),block(32);
-            if(large&&!is_index&&counts[i]==LargeTileItems){if(mode==1)encoded.assign(large_tiles_mode1,large_tiles_mode1+sizeof large_tiles_mode1);
+            const Bytes transformed=is_index?raw:sparse?sparsified(raw,mode):mode?filtered(raw,mode):raw;
+            Bytes encoded=stored(transformed),block(32);
+            if(large&&!sparse&&!is_index&&counts[i]==LargeTileItems){if(mode==1)encoded.assign(large_tiles_mode1,large_tiles_mode1+sizeof large_tiles_mode1);
                 else if(mode==2)encoded.assign(large_tiles_mode2,large_tiles_mode2+sizeof large_tiles_mode2);
                 else encoded.assign(large_tiles_mode0,large_tiles_mode0+sizeof large_tiles_mode0);}
-            put(block,0,is_index?(mixed?PredictiveIndexGroupMagic:0x31524754):mode?FilteredTileGroupMagic:0x31524754);put(block,4,is_index?2:1);put(block,8,i);put(block,12,unsigned(raw.size()));put(block,16,unsigned(encoded.size()));put(block,24,is_index?1:counts[i]);put(block,28,is_index?(mixed?1:0):mode);
+            put(block,0,is_index?(mixed?PredictiveIndexGroupMagic:0x31524754):sparse?SparseTileGroupMagic:mode?FilteredTileGroupMagic:0x31524754);put(block,4,is_index?2:1);put(block,8,i);put(block,12,unsigned(raw.size()));put(block,16,unsigned(encoded.size()));put(block,20,sparse&&!is_index?unsigned(transformed.size()):0);put(block,24,is_index?1:counts[i]);put(block,28,is_index?(mixed?1:0):mode);
             block.insert(block.end(),encoded.begin(),encoded.end());const unsigned at=append(block);if(is_index)index_group=at;else if(!i)tile_group=at;put(bytes,table+i*8,at);put(bytes,table+i*8+4,unsigned(block.size()));}
         const unsigned slots=mixed?(pixel_groups-1)*LargeTileItems+counts[pixel_groups-1]:large?LargeTileItems:4u;
         const unsigned header[]={0x314c4954,1,16,large?16u:14u,slots,pixel_groups,1,large?2u:1u,frame,table,770,large?LargeTileItems:4u,large?1048576u:524288u,ResourceTransferCapacity,costs,Images};for(unsigned i=0;i<16;++i)put(bytes,base+i*4,header[i]);
@@ -151,7 +205,7 @@ static void large_reader(){
         provider.bad_byte=0xffffffffu;c->cancel_preload();CHECK(c->open(provider.source()));c->set_image_cache_profile(room);finish();
         Bytes old=p.bytes;put(old,4,43);CHECK(!c->open(old.data(),old.size()));
         old=p.bytes;put(old,p.base+44,1361);CHECK(!c->open(old.data(),old.size()));
-        old=p.bytes;put(old,4,45);CHECK(!c->open(old.data(),old.size()));
+        old=p.bytes;put(old,4,MaximumContentVersion+1);CHECK(!c->open(old.data(),old.size()));
     }
     c->set_image_cache_profile(false);
 }
@@ -207,4 +261,37 @@ static void foreground_shared_index(){
         c->set_image_cache_profile(false);
     }
 }
-int main(){all_bits();in_place_boundaries();reader();large_reader();mixed_group_reader();foreground_shared_index();std::printf("tile filter: %u checks; exact alias boundaries, mixed512KiB/1MiB interior groups, late cancellation/faults, shared-index pressure and legacy bounds passed\n",checks);}
+static void sparse_reader(){
+    for(unsigned mode:{1u,2u})for(unsigned layout:{0u,1u,2u})for(bool room:{false,true}){
+        const Package p(mode,true,layout,true);Provider provider{p.bytes};auto c=std::make_unique<Content>();
+        const auto open=[&](bool direct=false){CHECK(c->open(direct?ResourceSource::memory(p.bytes.data(),p.bytes.size()):provider.source()));c->set_image_cache_profile(room);};
+        const auto verify=[&](){const auto image=c->image(0);CHECK(image.pixels&&image.format==4&&image.w==17&&image.h==17);
+            CHECK(!std::memcmp(image.pixels,p.expected.data(),p.expected.size())&&c->healthy()&&!resource_transfer_uses);};
+        for(bool direct:{false,true}){open(direct);verify();}
+        const auto finish=[&](){PreparationResult result=PreparationResult::Pending;unsigned steps=0;
+            while(result==PreparationResult::Pending){const auto before=provider.reads;result=c->preload_image_step(0);
+                CHECK(++steps<10000&&provider.reads-before<=2&&c->healthy()&&!resource_transfer_uses);
+                if(result==PreparationResult::Pending)CHECK(!c->image_cached(0));}
+            CHECK(result==PreparationResult::Ready);verify();return steps;};
+        open();const unsigned total=finish();CHECK(total>500);
+        for(unsigned cutoff:{1u,200u,400u,total/2,total-1}){
+            open();for(unsigned i=0;i<cutoff;++i)CHECK(c->preload_image_step(0)==PreparationResult::Pending);
+            c->cancel_preload();CHECK(c->healthy()&&!resource_transfer_uses);finish();
+        }
+        for(unsigned fault=0;fault<3;++fault){
+            Bytes bad=p.bytes;
+            if(!fault)put(bad,4,44);
+            else if(fault==1)bad[p.tile_group+32+3+(layout==1?680:1360)*2]^=1;
+            else put(bad,p.tile_group+20,33);
+            Provider broken{bad};CHECK(c->open(broken.source()));c->set_image_cache_profile(room);
+            CHECK(!c->image(0).pixels&&!c->healthy());
+            CHECK(c->open(broken.source()));c->set_image_cache_profile(room);
+            PreparationResult result=PreparationResult::Pending;unsigned steps=0;
+            while(result==PreparationResult::Pending){result=c->preload_image_step(0);CHECK(++steps<10000&&!resource_transfer_uses);}
+            CHECK(result==PreparationResult::Failed&&!c->healthy()&&!c->image_cached(0));
+            c->cancel_preload();open();finish();
+        }
+        c->set_image_cache_profile(false);
+    }
+}
+int main(){all_bits();in_place_boundaries();sparse_boundaries();reader();large_reader();mixed_group_reader();foreground_shared_index();sparse_reader();std::printf("tile filter: %u checks; exact alias/sparse overlap boundaries, mixed512KiB/1MiB interior groups, late cancellation/faults, shared-index pressure and legacy bounds passed\n",checks);}

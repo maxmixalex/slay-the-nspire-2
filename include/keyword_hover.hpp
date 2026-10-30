@@ -106,6 +106,7 @@ void collect_potion_hover_tips(const App&,Potion,HoverTipList&);
 void collect_power_hover_tips(const App&,uint16_t token,HoverTipList&);
 void collect_creature_hover_tips(const App&,const CardHoverTarget&,HoverTipList&);
 void format_card_hover_tip(const App&,const CardHoverTarget&,const HoverTip&,char*title,size_t title_cap,char*body,size_t body_cap);
+int card_hover_icon(const App&,const CardHoverTarget&,const HoverTip&);
 HoverPage card_hover_page(App&,const CardHoverTarget&,const HoverTipList&,int page=0);
 bool keyword_hover_scroll(App&,int rows);
 bool keyword_detail_input(App&,Key);

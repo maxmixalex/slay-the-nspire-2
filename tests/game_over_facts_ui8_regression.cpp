@@ -135,7 +135,8 @@ static void persistence_and_navigation(){
  // A modal appearing while a button is held must consume that release.
  CHECK(a.physical_key(select,true));a.paused=true;CHECK(a.physical_key(select,false)&&!a.title);a.paused=false;
  CHECK(save(a.game,after)&&after.size==before.size&&!std::memcmp(before.bytes,after.bytes,before.size));
- CHECK(a.physical_key(select,true)&&!a.title);CHECK(a.physical_key(select,false)&&a.title);
+ CHECK(a.physical_key(select,true)&&!a.title);CHECK(a.physical_key(select,false)&&!a.title&&a.character_departure.phase==3);
+ advance_ms(800);CHECK(a.title&&a.character_departure.phase==2);advance_ms(800);CHECK(!a.character_departure.active());
  CHECK(save(a.game,after)&&after.size==before.size&&!std::memcmp(before.bytes,after.bytes,before.size));
 }
 static void readable_summary_navigation(){

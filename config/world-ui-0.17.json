@@ -4451,10 +4451,14 @@
       "path": "scenes/events/background_scenes/darv.tscn",
       "size": [
         320,
-        218
+        240
       ],
       "fit": "cover",
-      "origin": "screen"
+      "origin": "screen",
+      "viewport": [
+        1680,
+        1260
+      ]
     },
     {
       "key": "events.DENSE_VEGETATION",
@@ -4602,10 +4606,14 @@
       "path": "scenes/events/background_scenes/neow.tscn",
       "size": [
         320,
-        218
+        240
       ],
       "fit": "cover",
-      "origin": "screen"
+      "origin": "screen",
+      "viewport": [
+        1680,
+        1260
+      ]
     },
     {
       "key": "events.NONUPEIPE",
@@ -4613,10 +4621,14 @@
       "path": "scenes/events/background_scenes/nonupeipe.tscn",
       "size": [
         320,
-        218
+        240
       ],
       "fit": "cover",
-      "origin": "screen"
+      "origin": "screen",
+      "viewport": [
+        1680,
+        1260
+      ]
     },
     {
       "key": "events.OROBAS",
@@ -4624,10 +4636,14 @@
       "path": "scenes/events/background_scenes/orobas.tscn",
       "size": [
         320,
-        218
+        240
       ],
       "fit": "cover",
-      "origin": "screen"
+      "origin": "screen",
+      "viewport": [
+        1680,
+        1260
+      ]
     },
     {
       "key": "events.PAEL",
@@ -4635,10 +4651,14 @@
       "path": "scenes/events/background_scenes/pael.tscn",
       "size": [
         320,
-        218
+        240
       ],
       "fit": "cover",
-      "origin": "screen"
+      "origin": "screen",
+      "viewport": [
+        1680,
+        1260
+      ]
     },
     {
       "key": "events.POTION_COURIER",
@@ -4816,10 +4836,14 @@
       "path": "scenes/events/background_scenes/tanx.tscn",
       "size": [
         320,
-        218
+        240
       ],
       "fit": "cover",
-      "origin": "screen"
+      "origin": "screen",
+      "viewport": [
+        1680,
+        1260
+      ]
     },
     {
       "key": "events.TEA_MASTER",
@@ -4837,10 +4861,14 @@
       "path": "scenes/events/background_scenes/tezcatara.tscn",
       "size": [
         320,
-        218
+        240
       ],
       "fit": "cover",
-      "origin": "screen"
+      "origin": "screen",
+      "viewport": [
+        1680,
+        1260
+      ]
     },
     {
       "key": "events.THE_ARCHITECT",
@@ -4938,10 +4966,14 @@
       "path": "scenes/events/background_scenes/vakuu.tscn",
       "size": [
         320,
-        218
+        240
       ],
       "fit": "cover",
-      "origin": "screen"
+      "origin": "screen",
+      "viewport": [
+        1680,
+        1260
+      ]
     },
     {
       "key": "events.WAR_HISTORIAN_REPY",

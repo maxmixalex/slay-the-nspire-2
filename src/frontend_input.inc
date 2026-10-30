@@ -56,7 +56,7 @@ static bool terminal_probe(State&s){
  if(resumable_run(s)){player_kill(s,true);resolve_pending(s);}
  return validate(s)&&(s.phase==Phase::Dead||s.phase==Phase::Complete);
 }
-void App::forget_run_checkpoint(){run_save_linked=false;confirmed_run={};}
+void App::forget_run_checkpoint(){run_save_linked=false;confirmed_run={};linked_run={};}
 bool App::refresh_save(){
  const bool existing=read_saved(*this)!=nullptr;
  if(ftue_profile_pending){
@@ -69,7 +69,7 @@ bool App::refresh_save(){
 }
 bool App::load_saved_run(){
  const State*probe=read_saved(*this);if(!probe||!has_save)return false;
- game=*probe;run_save_linked=true;reset_presentation();reset_map_act_intro(true);begin_progress(true);return true;
+ game=*probe;run_save_linked=true;linked_run=saved_run_identity(game);reset_presentation();reset_map_act_intro(true);begin_progress(true);return true;
 }
 static bool frontend_continue_saved_run(App&a){
  if(!a.load_saved_run())return false;
@@ -82,19 +82,32 @@ static bool frontend_continue_saved_run(App&a){
  a.content.prepare_images(&mask,1);a.pointer_cancel();a.hit_count=0;return true;
 }
 bool App::save_current_run(){
+ // The terminal screen must never recreate a run checkpoint after its
+ // ordinary end handler retired it (including the keyboard Save command).
+ if(!resumable_run(game))return finish_saved_run();
  if(!callbacks.save||!callbacks.save(game))return false;
  if(progress_matches(progress.current,game)){
   progress.current_saved_at=callbacks.wall_clock?callbacks.wall_clock():0;
   progress.current_saved_revision=game.revision;progress_dirty=true;
  }
- remember_saved(*this,game);run_save_linked=has_save;sync_progress();return persist_progress();
+ remember_saved(*this,game);run_save_linked=has_save;linked_run=saved_run_identity(game);sync_progress();return persist_progress();
 }
 bool App::finish_saved_run(){
  // Starting a run does not associate it with another run already on disk.
  // Only Continue or a successful save establishes that ordinary lifecycle.
  if(!run_save_linked)return true;
+ // Editing this run with the console does not turn it into another run.
+ // Keep the identity established at Continue/save even when an act command
+ // replaces its first-region parameters, while rejecting an unrelated State.
+ const auto current=saved_run_identity(game);
+ if(current.seed!=linked_run.seed||current.character!=linked_run.character||current.world!=linked_run.world||
+    current.practice!=linked_run.practice||(current.world&&current.run_seed!=linked_run.run_seed)){
+  forget_run_checkpoint();return true;
+ }
  State*probe=read_saved(*this);if(!probe)return false;
- if(!has_save||!same_run_identity(saved_run_identity(game),saved_run_identity(*probe))){forget_run_checkpoint();return true;}
+ // A terminal checkpoint still owns sav/bak/tmp files. Its inability to be
+ // continued is not a reason to skip removing those files.
+ if(!same_run_identity(linked_run,saved_run_identity(*probe))){forget_run_checkpoint();return true;}
  if(callbacks.clear_save){if(!callbacks.clear_save())return false;}
  else{
   // Older hosts can persist a terminal checkpoint instead of removing it.
@@ -188,7 +201,7 @@ bool App::frontend_input(Key key){
   case 2:open_compendium();break;
   case 3:if(resumable_run(game)){frontend_confirm=2;frontend_choice=0;}break;
   case 4:
-   if(!resumable_run(game)){if(finish_saved_run())return_to_title();else message("Could not delete the saved run. Please try again.");}
+   if(!resumable_run(game)){if(finish_saved_run())fade_to_title();else message("Could not delete the saved run. Please try again.");}
    else if(save_current_run())fade_to_title();else message("Could not save the run. Please try again.");break;
  }}else if(key==Key::Quit){frontend_confirm=3;frontend_choice=0;}
  else if(key==Key::Collection)return false;

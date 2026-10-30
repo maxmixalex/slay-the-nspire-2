@@ -56,6 +56,11 @@ static void native_reward_scrollbar(Canvas&c,int dy){
  native_scrollbar_grabber(c,244,center-4,9,9);c.hit(241,top-5,15,bottom-top+10,HitKind::RewardScroll);
 }
 #include "reward_cards_ui.inc"
+static int native_card_reward_image(const App&a,const WorldCardOptions&options,CardKind first){
+ const unsigned rarity=world_card_reward_icon_rarity(a.game,options,first);
+ const int special=rarity==4?a.content.ui_image(I20_RewardRare):rarity==3?a.content.ui_image(I20_RewardUncommon):-1;
+ return special>=0?special:a.content.ui_image(U_RewardCard);
+}
 static void native_reward_content(Canvas&c,bool include_proceed=true,int only=-1){
  auto&a=c.a;auto&s=a.game;const auto window=a.reward_presentation.window(a.map_clock_ms);
  UiAction actions[6];int count=ui_reward_actions(s,actions);a.cursor=mn(mx(0,a.cursor),count-1);
@@ -67,7 +72,10 @@ static void native_reward_content(Canvas&c,bool include_proceed=true,int only=-1
   UiAction action=actions[i];int image=-1;char text[256]{};TextBuffer t{text,sizeof text,0,&c.a.content};
   switch(action){
    case UiAction::RewardGold:image=a.content.ui_image(U_RewardGold);t.number(s.last_gold);t.text(" 金币");break;
-   case UiAction::RewardCards:image=a.content.ui_image(U_RewardCard);{const char*label=a.content.world_string("gameplay_ui","COMBAT_REWARD_ADD_CARD");t.text(*label?label:"选择一张牌");}break;
+   case UiAction::RewardCards:{WorldCardOptions options;options.source=WorldCardSource::Encounter;
+    options.odds=s.world.room_type==unsigned(WorldRoom::Boss)?WorldCardOdds::BossEncounter:s.world.room_type==unsigned(WorldRoom::Elite)?WorldCardOdds::EliteEncounter:WorldCardOdds::RegularEncounter;
+    image=native_card_reward_image(a,options,s.world.reward_count?s.world.reward_cards[0].kind:CardKinds);
+    const char*label=a.content.world_string("gameplay_ui","COMBAT_REWARD_ADD_CARD");t.text(*label?label:"选择一张牌");}break;
    case UiAction::RewardPotion:image=a.content.potion_image(s.reward_potion);if(const auto*d=potion_definition(s.reward_potion))t.text(d->name);break;
    case UiAction::RewardRelic:image=a.relic_face_image(s.world.reward_relic);t.text(a.relic_title(s.world.reward_relic));break;
    case UiAction::RewardGrimoire:image=a.content.ui_image(U_NecroPowerStart+(int)NPower::ForbiddenGrimoire);t.text("魔典移牌 × ");t.number(s.necro.grimoire_pending);break;

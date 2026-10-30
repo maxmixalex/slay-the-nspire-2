@@ -127,7 +127,7 @@ static void continue_run_info(Canvas&c){
    a.pointer.y>=title_scene::menu_y(a.title_menu_count(),0)&&a.pointer.y<title_scene::menu_y(a.title_menu_count(),0)+title_scene::MenuRowHeight));
  const auto visual=a.title_presentation.run_info.observe(focused,a.map_clock_ms);if(!visual.alpha||!a.has_save)return;
  Canvas panel=c;panel.opacity=uint8_t(div255(unsigned(panel.opacity)*visual.alpha));
- const int x=title_scene::ContinueX,width=title_scene::ContinueWidth;
+ const int x=title_scene::continue_x(title_label_width(c,frontend_label(a,FrontContinue))),width=title_scene::ContinueWidth;
  const int y=title_scene::continue_y(a.title_menu_count())+(visual.y+2048)/4096,height=title_scene::continue_height(a.saved_ascension!=0);
  const int background=a.content.world_image("menu","CONTINUE_PANEL");
  if(background>=0)panel.nine_image(background,x,y,width,height,2,2,2,2);else panel.dim(x,y,width,height,176);
@@ -158,7 +158,7 @@ static void title_screen(Canvas&c){
         main_menu_backdrop::apply_progress(c.pixels,c.pitch,a.main_menu_backdrop.sample(a.map_clock_ms));}
     title_logo(c);profile_title_button(c);
     title_menu_labels(c);continue_run_info(c);
-    c.text_fitted(UiCurrentVersionLabel,136,229,182,8,White,6);
+    c.text(UiCurrentVersionLabel,ScreenW-2-c.width(UiCurrentVersionLabel,8),229,8,White);
 }
 static void native_pause_screen(Canvas&c){
  using namespace pause_menu_layout;auto&a=c.a;a.hit_count=0;

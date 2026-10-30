@@ -511,7 +511,7 @@ struct App {
     uint64_t saved_run_seed=0;
     uint8_t saved_ascension=0,saved_region=0,saved_current_region=0;bool saved_world=false,saved_practice=false;
     bool run_save_linked=false;
-    SavedRunIdentity confirmed_run{};
+    SavedRunIdentity confirmed_run{},linked_run{};
     void forget_run_checkpoint();
     bool refresh_save();
     bool load_saved_run();
