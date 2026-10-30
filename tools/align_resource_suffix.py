@@ -25,7 +25,7 @@ PAGE_BYTES=4096
 def make_plan(data, reference):
     source, baseline=coalesce.view(data),coalesce.view(reference)
     current, old=t.TileReader(source),t.TileReader(baseline)
-    t.require(source.version in (41,42),'Suffix alignment requires NSP41 or NSP42')
+    t.require(41 <= source.version <= t.MAXIMUM_CONTENT_VERSION,'Unsupported suffix alignment version')
     t.require((current.tile_count,current.per_group,current.tile_groups,current.index_groups)==
               (old.tile_count,old.per_group,old.tile_groups,old.index_groups),
               'Suffix reference has different tile identities')

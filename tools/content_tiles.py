@@ -23,6 +23,7 @@ from tempfile import TemporaryDirectory, NamedTemporaryFile
 import time
 
 import numpy as np
+from content_version import MAXIMUM_CONTENT_VERSION
 from tile_filter import restore_tiles
 from retained_filter import group_layout as retained_group_layout, transform_group as transform_retained_group
 
@@ -757,7 +758,7 @@ def index_records(raw, count, tile_count):
 class TileReader:
     """Independent host reference decoder for a completed v15 pack."""
     def __init__(self, pack):
-        require(15 <= pack.version <= 43, 'Tiled reader requires version 15 through 43')
+        require(15 <= pack.version <= MAXIMUM_CONTENT_VERSION, 'Unsupported tiled reader version')
         self.pack = pack
         require(pack.base_end + GLOBAL.size <= len(pack.data), 'Truncated tile header')
         fields = GLOBAL.unpack_from(pack.data, pack.base_end)

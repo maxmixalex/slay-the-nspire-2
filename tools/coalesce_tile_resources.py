@@ -22,6 +22,7 @@ import time
 import numpy as np
 
 import content_tiles as t
+from content_version import MAXIMUM_CONTENT_VERSION
 from compact_tile_resources import grouped_slices, SLICE
 from recompress_resources import Relocation
 from repack_retained import auxiliary_count
@@ -34,7 +35,7 @@ ENCODER = b'UI18-exact-tile-coalescing-v2-preserve-lzma2-context-nice273-depth51
 
 
 def view(data):
-    return t.PackView(data, auxiliary_count(data), versions=tuple(range(20, 43)))
+    return t.PackView(data, auxiliary_count(data), versions=tuple(range(20, MAXIMUM_CONTENT_VERSION + 1)))
 
 
 def active_tiles(geometry, width, height):
@@ -333,7 +334,7 @@ def rewrite(data, plan, *, version=41):
         t.DESCRIPTOR.pack_into(out, relocate(offset), relocate(global_at), group, raw_at, size)
     for offset, (relative, length, raw_at, shape) in grouped_slices(source).items():
         SLICE.pack_into(out, relocate(offset), relocate(offset+relative)-relocate(offset), length, raw_at, shape)
-    t.require(version in (41,42), 'Unsupported output tile version')
+    t.require(41 <= version <= MAXIMUM_CONTENT_VERSION, 'Unsupported output tile version')
     struct.pack_into('<I', out, 4, version); struct.pack_into('<I', out, 12, len(out)); struct.pack_into('<I', out, 36, 0)
     return bytes(out), relocate
 

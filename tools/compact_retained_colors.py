@@ -19,9 +19,10 @@ import struct
 import content_tiles as tiles
 from repack_retained import DESCRIPTOR, auxiliary_count
 from retained_filter import CONTENT_VERSION, SLICE, group_layout, transform_group
+from content_version import MAXIMUM_CONTENT_VERSION
 import split_content
 
-VERSIONS = tuple(range(34, 44))
+VERSIONS = tuple(range(34, MAXIMUM_CONTENT_VERSION + 1))
 PROFILES = ((3, 0, 2), (3, 0, 0), (4, 0, 1))
 ENCODER = b'RGR2-planar-rgb565-v1-lzma2-9-273-512'
 

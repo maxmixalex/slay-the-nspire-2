@@ -16,6 +16,7 @@ from pathlib import Path
 import struct
 from tempfile import TemporaryDirectory
 from retained_filter import group_layout as retained_group_layout
+from content_version import MAXIMUM_CONTENT_VERSION
 
 ROOT = Path(__file__).resolve().parents[1]
 REFERENCE = 0x41CEF1EA
@@ -58,8 +59,8 @@ def layout(data, language):
     require(language in LANGUAGES, "Unsupported language")
     require(40 <= len(data) <= FILE_LIMIT, "Invalid input size")
     magic, version, reference, length, ni, ng, ns, nc, nk, checksum = struct.unpack_from("<4s9I", data)
-    require(magic == b"NSP2" and version in (17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43) and reference == REFERENCE,
-            "Expected pinned NSP2/17 through NSP2/40")
+    require(magic == b"NSP2" and 17 <= version <= MAXIMUM_CONTENT_VERSION and reference == REFERENCE,
+            "Expected a supported pinned NSP2 pack")
     require(length == len(data), "Input length differs")
     require(0 < ni <= 65535 and 0 < ng <= (65535 if version >= 35 else 32768) and MARKER < ns <= 16384 and
             0 < nc <= 65535 and 0 < nk <= 65535, "Invalid directory counts")
@@ -273,7 +274,7 @@ def _directory_boundary(prefix, total):
     require(len(prefix) >= 40 and prefix[:4] == b"NSP2" and u32(prefix, 8) == REFERENCE and
             u32(prefix, 12) == total, "Invalid logical NSP2 header")
     version = u32(prefix, 4)
-    require(17 <= version <= 43, "Unsupported logical NSP2 version")
+    require(17 <= version <= MAXIMUM_CONTENT_VERSION, "Unsupported logical NSP2 version")
     ni, ng, ns, nc, nk = struct.unpack_from("<5I", prefix, 16)
     require(0 < ni <= 65535 and 0 < ng <= (65535 if version >= 35 else 32768) and
             MARKER < ns <= 16384 and 0 < nc <= 65535 and 0 < nk <= 65535,
@@ -319,7 +320,7 @@ def language_resource_version(localized):
     prefix = _decode_directory_block(localized, compressed["entries"][0]) if compressed else \
              localized[LANGUAGE_HEADER:LANGUAGE_HEADER + 40]
     require(len(prefix) >= 40 and prefix[:4] == b"NSP2" and u32(prefix, 8) == REFERENCE and
-            u32(prefix, 12) == header[5] and 17 <= u32(prefix, 4) <= 43,
+            u32(prefix, 12) == header[5] and 17 <= u32(prefix, 4) <= MAXIMUM_CONTENT_VERSION,
             "Invalid logical resource version")
     return u32(prefix, 4)
 

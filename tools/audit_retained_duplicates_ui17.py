@@ -85,7 +85,7 @@ def main():
     # This diagnostic accepts the newer format explicitly; production format
     # acceptance remains in the matching converter and runtime boundaries.
     data = src.read_bytes()
-    source = tiles.PackView(data, colors.auxiliary_count(data), versions=tuple(range(34,42)))
+    source = colors.view(data)
     report = audit(source)
     report['elapsed_seconds'] = time.monotonic() - start
     tiles.atomic_bytes(dst, json.dumps(report, indent=2).encode() + b'\n')

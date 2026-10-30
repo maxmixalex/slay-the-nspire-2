@@ -53,9 +53,13 @@ def transform(raw, inverse=False):
                 _x, size, alpha = struct.unpack_from('<HHB', source, geom_at)
                 output.extend(source[geom_at:geom_at + 5]); geom_at += 5
                 if alpha:
-                    for _ in range(size):
-                        output.extend(source[color_at:color_at + 2]); color_at += 2
-                        output.append(source[alpha_at]); alpha_at += 1
+                    # Slice assignment performs the exact interleave in C;
+                    # no pixel conversion or host-only NumPy dependency.
+                    span = bytearray(size * 3)
+                    span[0::3] = source[color_at:color_at + size * 2:2]
+                    span[1::3] = source[color_at + 1:color_at + size * 2:2]
+                    span[2::3] = source[alpha_at:alpha_at + size]
+                    output.extend(span); color_at += size * 2; alpha_at += size
                 else:
                     output.extend(source[color_at:color_at + size * 2]); color_at += size * 2
         _require(geom_at == cursor and color_at == cursor + pixels * 2 and
@@ -64,9 +68,10 @@ def transform(raw, inverse=False):
     colors, opacity = bytearray(), bytearray()
     for at, size, alpha in spans:
         if alpha:
-            for pixel in range(size):
-                begin = at + pixel * 3
-                colors.extend(source[begin:begin + 2]); opacity.append(source[begin + 2])
+            span = bytearray(size * 2)
+            span[0::2] = source[at:at + size * 3:3]
+            span[1::2] = source[at + 1:at + size * 3:3]
+            colors.extend(span); opacity.extend(bytes(source[at + 2:at + size * 3:3]))
         else:
             colors.extend(source[at:at + size * 2])
     return bytes(geometry + colors + opacity)
