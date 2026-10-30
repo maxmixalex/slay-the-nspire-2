@@ -59,6 +59,8 @@ int main(int argc,char**argv){
     source.phase="title";for(unsigned i=0;i<610;++i){app.advance(33);app.render();}
     std::printf("{\"operation\":\"title\",\"has_save\":%s,\"ftue\":%s,\"cursor\":%d}\n",app.has_save?"true":"false",app.ftue.active()?"true":"false",app.cursor);
     app.input(Key::Confirm);app.render();
+    // Continue uses the original800ms outgoing fade before replacing title.
+    for(unsigned i=0;app.title&&i<120;++i){app.advance(33);app.render();}
     if(app.title){std::fprintf(stderr,"Continue did not enter combat\n");return 4;}
     source.phase="prepare";unsigned updates=0;
     while(app.combat_preparation.active){if(++updates>4096)return 5;app.advance(33);app.render();}
