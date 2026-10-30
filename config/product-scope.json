@@ -24,11 +24,19 @@
     "potions": 64,
     "enemy_registry_models": 108
   },
-  "source_version": "0.17.0-prototype",
-  "validation_status": "UI14 calculator delivery; completed native/resource/device gates and exact remaining limits are recorded in docs/validation-ui14-0.17.json",
-  "verified_runtime_source": "af154470daa96563f0695d043178285d26dcaee4",
+  "source_version": "0.1.0",
+  "validation_status": "UI19 ordinary ARM/WASM built from the frozen runtime source below. UI feedback and original-behavior evidence are in docs/ui19-ui-feedback.md; final release/storage gates are recorded separately.",
+  "verified_runtime_source": "090023d45ec6211da3b2e5a887cfcc2d1dd68004",
   "original_three_act_campaign_implemented": true,
   "model_counts_are_fidelity_percentages": false,
-  "reference_timing_boundary": "196 AttackCommand profiles and sourced full-move waits are implemented; completing the remaining surrounding waits requires the pinned original assembly. No waits are guessed from clip duration.",
-  "reference_animation_boundary": "Vantom has correct full/half body endpoints; its 750ms independent-bone shrink tween still requires the pinned skeleton/atlas. See docs/ui14-retained-differences-0.17.md."
+  "reference_timing_boundary": "The former surrounding-wait omissions are implemented by source-derived enemy command programs, with UI15 coverage of 108 actor kinds and 1,312 legal moves. Command timing is not inferred from animation length. See docs/ui15-retained-differences-0.17.md and docs/ui17-feedback-acceptance-0.17.md.",
+  "reference_animation_boundary": "Vantom's 750 ms independent-bone shrink transition, separate tail and associated VFX are implemented and validated by UI15. LCD rasterization and sampled CPU materials remain disclosed platform boundaries; see docs/ui17-feedback-acceptance-0.17.md.",
+  "agreed_storage_exception": "The complete Ancient scene actor/background animation is static; Ancient gameplay, dialogue, options, healing and card materials remain in scope.",
+  "retained_platform_boundaries": [
+    "RGB565/LDR output, integer LCD rasterization and sampled CPU shader/particle phases do not establish continuous desktop GPU equality.",
+    "Presentation noise does not reconstruct an unrecorded process-global cosmetic RNG history; canonical gameplay RNG remains separate.",
+    "Offline modes do not reproduce hosted leaderboards, cloud behavior or desktop service integrations.",
+    "UTC RTC timestamps have no desktop timezone/DST database; history retains 96 floors and 32 runs with finite drawing/journal capacity.",
+    "The seed field remains bounded to 64 UTF-8 bytes with no new calculator IME."
+  ]
 }

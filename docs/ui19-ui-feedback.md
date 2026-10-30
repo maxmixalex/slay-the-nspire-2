@@ -133,6 +133,42 @@ enemy-damage device check is still pending at this report checkpoint. Further
 integrated behavior/resource/performance receipts belong in the final UI19
 device/storage report.
 
+## Earlier omissions and current scope
+
+Historical omission lists require their superseding implementation records.
+The [UI17 reconciliation](ui17-feedback-acceptance-0.17.md) already identifies
+the UI15 source-derived monster command programs, Vantom's 750-ms independent
+bone transition and tail, Ancient healing, upgrade notifications and Smith
+impacts as implemented. Doom, Architect, Random and Fake Merchant visual
+families, generated-card arrival, exhaust/discard trails and orb activation
+also have earlier production implementations. Reading those older pending
+paragraphs again does not make them new UI19 work. The stale UI14 pending
+wording in `config/product-scope.json` has been reconciled with these records.
+
+This round closes concrete source-behavior gaps: an orbiting sword exposes
+its current card and enchantment and pauses its orbit during inspection;
+generated-card travel respects Draw versus Discard; Osty's already implemented
+damage interception now has its original Die for You presentation; Save and
+Quit fades out and in; an ended run loses its active checkpoint when the run
+ends; and the outgoing defeat quote retains its position while the score
+layout reserves the incoming quote's height. The related UI19 combat report
+owns the motion, Osty, save transition and checkpoint implementation evidence.
+
+The previously agreed exceptions remain the static complete Ancient actor
+and background scene, excluded audio/multiplayer/Timeline systems, and readable
+320x240 layout and input adaptations. Ancient gameplay, dialogue, options,
+healing and card materials remain implemented. No other missing animation is
+automatically covered by the Ancient exception.
+
+RGB565/LDR output, integer LCD rasterization and sampled CPU shader/particle
+phases remain real platform differences. Local presentation noise does not
+reconstruct an unrecorded process-global cosmetic RNG history. Offline modes
+do not reproduce hosted services; the RTC uses UTC without desktop timezone
+or DST data; progress retains the existing 96-floor/32-run and finite drawing
+and journal bounds; the seed input retains its 64-byte UTF-8 field. These
+boundaries are disclosed, not described as blanket user-approved parity
+exceptions or as newly completed UI19 features.
+
 ## Evidence and limits
 
 Private LCD files and logs remain outside the source tree. Key captures are
