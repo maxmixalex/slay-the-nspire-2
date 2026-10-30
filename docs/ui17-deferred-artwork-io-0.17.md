@@ -45,9 +45,12 @@ Both the first Ndless render and later frames check `Content::healthy()`
 before presentation. A failure closes resources and displays the existing
 built-in English resource error. Independent review found a separate window
 when preparation fails in `advance()` before queued input is dispatched.
-The final integration must also include the resource-failure/write guard;
-render-only checks do not establish that queued Save cannot write after a
-preparation failure.
+The final `d4303baf` integration includes the independently implemented
+resource-failure/write guard around updates, input, services and persistence
+callbacks. Render-only checks would not establish that queued Save cannot
+write after a preparation failure. The integrated ordinary-OS, language and
+error gates are recorded in
+[final device validation](ui17-final-device-validation-0.17.md).
 
 Metadata timing remains inside the original startup scope. Resource timing
 includes metadata, cold opens, header checks and requested reads. Read/byte/
