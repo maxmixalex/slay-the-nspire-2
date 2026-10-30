@@ -88,7 +88,7 @@ bool creature_hover_target(const App&a,CardHoverTarget&target){
  target.identity=0x74000000u|(unsigned(slot)<<16)|target.intent;return true;
 }
 void collect_creature_hover_tips(const App&a,const CardHoverTarget&owner,HoverTipList&out){
- out=HoverTipList{};const int slot=owner.creature-1;if(slot<0||slot>=a.game.enemy_count)return;
+ out.clear();const int slot=owner.creature-1;if(slot<0||slot>=a.game.enemy_count)return;
  const auto intent=a.combat_intent(slot);
  for(const auto&part:ui_intent_parts)if((intent.flags&part.flag)&&(!owner.intent||owner.intent==part.flag)){
   HoverTip tip{};tip.kind=HoverTipKind::Intent;tip.key=part.locale;tip.actor=int16_t(owner.creature);tip.amount=int16_t(part.flag);out.add(tip);

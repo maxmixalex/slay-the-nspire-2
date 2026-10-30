@@ -17,7 +17,7 @@ static void power_hover_origin(const App&a,unsigned id,HoverTipList&out){
     if(upgraded>=0)power_hover_card(a,out,{card,uint8_t(upgraded)});
 }
 void collect_power_hover_tips(const App&a,uint16_t token,HoverTipList&out){
-    out=HoverTipList{};const unsigned id=power_id(token),actor=power_actor(token);
+    out.clear();const unsigned id=power_id(token),actor=power_actor(token);
     if(id>=StatusKinds||actor>a.game.enemy_count||!(CombatStatus::PowerFlags[id]&1))return;
     const char*key=ui_status_key(int(id));if(!key)return;
     HoverTip main{};main.kind=HoverTipKind::Power;main.key=key;main.actor=int16_t(actor);

@@ -103,7 +103,7 @@ static void hover_collect(const App&a,Card card,HoverTipList&out,int instance,in
     const unsigned added_order[]={5,3,4,2,6,1,7};for(auto n:added_order)add_word(n);
 }
 void collect_card_hover_tips(const App&a,Card card,HoverTipList&out,int instance,int deck,const EventCardFacts*facts){
-    out=HoverTipList{};hover_collect(a,card,out,instance,deck,facts,0);out.finish();
+    out.clear();hover_collect(a,card,out,instance,deck,facts,0);out.finish();
 }
 #include "power_hover_ui.inc"
 
@@ -376,7 +376,7 @@ static void prepare_merchant_hover(App&a,const State&stock,GlyphPreparationBudge
         if(merchant_stock_hover_target(a,stock,ShopRelicStart+p.tip_slot,owner))
             collect_keyword_hover_tips(a,owner,tips);
         if(p.tip<tips.count)break;
-        ++p.tip_slot;p.tip=p.tip_stage=0;tips={};
+        ++p.tip_slot;p.tip=p.tip_stage=0;tips.clear();
     }
     if(p.tip_slot>=ShopRemove-ShopRelicStart||!budget.take())return;
     const auto&tip=tips.items[p.tip];char title[160]{},body[2048]{};

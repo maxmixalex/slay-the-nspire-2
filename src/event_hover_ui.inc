@@ -60,10 +60,10 @@ static void event_hover_relic(const App&a,HoverTipList&out,RelicId id,bool inclu
         else if(reference.kind==OriginalTextReferenceKind::Relic)event_hover_relic(a,out,RelicId(reference.model),true,depth+1);
     }
 }
-void collect_relic_hover_tips(const App&a,RelicId id,HoverTipList&out,bool historical){out=HoverTipList{};event_hover_relic(a,out,id,true,0,historical);out.finish();}
-void collect_potion_hover_tips(const App&a,Potion potion,HoverTipList&out){out=HoverTipList{};event_hover_potion(a,out,potion,true);out.finish();}
+void collect_relic_hover_tips(const App&a,RelicId id,HoverTipList&out,bool historical){out.clear();event_hover_relic(a,out,id,true,0,historical);out.finish();}
+void collect_potion_hover_tips(const App&a,Potion potion,HoverTipList&out){out.clear();event_hover_potion(a,out,potion,true);out.finish();}
 void collect_event_hover_tips(const App&a,int option,HoverTipList&out){
-    out=HoverTipList{};const auto&s=a.game;const auto&e=s.original_events;
+    out.clear();const auto&s=a.game;const auto&e=s.original_events;
     if(!e.active||s.phase!=Phase::Event||e.finished||option<0||unsigned(option)>=original_event_option_count(s))return;
     if(ui_ancient_event(e.id)){
         // FromRelic deliberately excludes the relic itself: its acquisition
@@ -223,7 +223,7 @@ static void collect_keyword_hover_tips(const App&a,const CardHoverTarget&owner,H
     if(owner.creature>=0)collect_creature_hover_tips(a,owner,out);
     else if(owner.power>=0)collect_power_hover_tips(a,uint16_t(owner.power),out);
     else if(owner.relic>=0){
-        if(owner.inspect_relic){out=HoverTipList{};event_hover_relic(a,out,RelicId(owner.relic),false,0,owner.historical||owner.canonical_relic);out.finish();}
+        if(owner.inspect_relic){out.clear();event_hover_relic(a,out,RelicId(owner.relic),false,0,owner.historical||owner.canonical_relic);out.finish();}
         else collect_relic_hover_tips(a,RelicId(owner.relic),out,owner.historical||owner.canonical_relic);
     }
     else if(owner.potion>0)collect_potion_hover_tips(a,Potion(owner.potion),out);

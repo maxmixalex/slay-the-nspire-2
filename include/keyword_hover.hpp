@@ -24,6 +24,10 @@ struct HoverTipList {
     HoverTip items[MaxCardHoverTips]{};
     unsigned count=0;
     bool overflow=false;
+    // Every add publishes a complete HoverTip. Rows beyond count have no
+    // lifetime outside this list, so clearing never needs a second temporary
+    // array or a rewrite of inactive card facts during hover preparation.
+    void clear(){count=0;overflow=false;}
     void erase(unsigned at){if(at>=count)return;for(unsigned i=at+1;i<count;++i)items[i-1]=items[i];--count;}
     void add(const HoverTip&tip){
         for(unsigned i=0;i<count;++i){const auto&old=items[i];
