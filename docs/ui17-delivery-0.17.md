@@ -259,6 +259,7 @@ warm action window. The measured warm window does not establish universal
 |---|---:|---|
 | `Slay-the-Nspire-2-0.17-ui17-bilingual-calculator.zip` | 79,127,539 | `750caa91e50efc8f9c0f7234b28806c6d47995676f326dc5fa4c9bf2776466a5` |
 | `Slay-the-Nspire-2-0.17-ui17-optional-languages.zip` | 17,072,413 | `b4ec488a309742d103eba8429985949ebbf5b726b05eedc0d6cceaca2de7f801` |
+| `Slay-the-Nspire-2-0.17-ui17-firebird-evidence.zip` | 6,121,415 | `d24b7eb72b9cbda36bebdefcd7f092f6da99ff4d38da6d8184acb850b87c001b` |
 
 The main ZIP has 23 members and the optional ZIP 15. Every archive member is
 read back against its input. The only state member is an empty `state/`
@@ -274,11 +275,13 @@ index first to release its occupied storage. Keep English for fallback;
 installing all sixteen languages is unnecessary.
 
 The source recovery ZIP contains committed source, the complete all-ref Git
-bundle, source identity and source-only verification records. It preserves
-failed and abandoned experiments with their original statuses. The separate
-device evidence archive carries actual measurements and screenshots without
-ROM, NAND, original assemblies, fonts or game packs. Original game assets
-remain private and are not part of the public source.
+bundle, source identity and **90 original source-only journal/log pairs**
+(184 verification files including indexes). It preserves failed and abandoned
+experiments with their original statuses. The separate device evidence archive
+has **451 members / 37 journal-log pairs** and an explicit SHA-256 allowlist.
+Its actual measurements, losslessly converted PNG screenshots and reproduction
+scripts exclude ROM, NAND, original assemblies, fonts, game packs and test save
+payloads. Original game assets remain private and are not part of public source.
 
 Public source synchronization remains **blocked by automatic approval review**.
 The historical repository authorization was recovered this turn, but the new
