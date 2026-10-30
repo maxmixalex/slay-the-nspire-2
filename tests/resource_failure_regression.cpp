@@ -60,19 +60,28 @@ static bool tracked_settings(const UiPreferences&value){++settings_attempts;retu
 static void put(Bytes&b,unsigned at,uint32_t v,unsigned n=4){for(unsigned i=0;i<n;++i)b[at+i]=uint8_t(v>>(8*i));}
 struct Resource {
  Bytes bytes;bool fail=false;unsigned failures=0,reads=0;
- Resource(){
+ Resource(bool startup=false){
   // A valid synthetic current profile, with separate cold image/text pages.
   // All pictures are one invented pixel; no original text/art is embedded.
   constexpr unsigned images=A_Count;
-  const unsigned text=40+images*16,clips=text+ContentStrings*8;
-  const unsigned cards=clips+AnimationKinds*16,ui=cards+CardKinds*16;
-  const unsigned end=ui+U_Count*4,pixels=((end+4095)/4096+1)*4096,empty=pixels+4096;
-  bytes.resize(empty+4096);put(bytes,0,0x3250534e);put(bytes,4,ContentVersion);put(bytes,8,0x41cef1ea);
-  put(bytes,12,unsigned(bytes.size()));put(bytes,16,images);put(bytes,24,ContentStrings);
-  put(bytes,28,AnimationKinds);put(bytes,32,CardKinds);
+  const unsigned strings=startup?Ui7StringCount:ContentStrings,animations=startup?BestiaryKaiserAnimationKinds:AnimationKinds;
+  const unsigned text=40+images*16,clips=text+strings*8;
+  const unsigned cards=clips+animations*16,ui=cards+CardKinds*16;
+  const unsigned base=ui+(startup?IntroLogoAuxiliaryCount:unsigned(U_Count))*4;
+  const unsigned end=startup?base+80+((images+1)&~1u):base;
+  const unsigned pixels=((end+4095)/4096+1)*4096,empty=pixels+4096,marker=empty+4096;
+  bytes.resize(marker+4096);put(bytes,0,0x3250534e);put(bytes,4,startup?Ui12ContentVersion:ContentVersion);put(bytes,8,0x41cef1ea);
+  put(bytes,12,unsigned(bytes.size()));put(bytes,16,images);put(bytes,24,strings);
+  put(bytes,28,animations);put(bytes,32,CardKinds);
   for(unsigned i=0;i<images;++i){put(bytes,40+i*16,pixels);put(bytes,44+i*16,1,2);put(bytes,46+i*16,1,2);put(bytes,52+i*16,2);}
-  for(unsigned i=0;i<ContentStrings;++i)put(bytes,text+i*8,empty);
-  for(unsigned i=0;i<AnimationKinds;++i){put(bytes,clips+i*16+4,1,2);put(bytes,clips+i*16+6,33,2);}
+  for(unsigned i=0;i<strings;++i)put(bytes,text+i*8,empty);
+  for(unsigned i=0;i<animations;++i){put(bytes,clips+i*16+4,1,2);put(bytes,clips+i*16+6,33,2);}
+  if(startup){
+   const unsigned fields[]={0x314c4954,1,16,14,1,1,1,1,end,base+64,770,85,524288,ResourceTransferCapacity,base+80,images};
+   for(unsigned i=0;i<16;++i)put(bytes,base+i*4,fields[i]);
+   for(unsigned i=0;i<images;++i)bytes[base+80+i]=1;
+   put(bytes,text+LocaleMarkerString*8,marker);put(bytes,text+LocaleMarkerString*8+4,3);std::memcpy(bytes.data()+marker,"eng",4);
+  }
   bytes[pixels]=0x34;bytes[pixels+1]=0x12;
  }
  static bool read(void*context,uint32_t at,void*out,uint32_t count){
@@ -147,7 +156,7 @@ static void failed_advance_pending_input(){
 }
 static void same_input_and_pending_batch(){
  scenario="one real settings action reads a bad string then attempts preferences";
- Resource r;setup(r);app.title=app.settings_open=true;app.progress_dirty=true;
+ Resource r(true);setup(r);app.title=app.settings_open=true;app.progress_dirty=true;
  const auto before=files;r.fail=true;unsigned dispatched=0;
  // This App action performs a localized string read followed by its actual
  // settings callback before the host can regain control to check the fault.
