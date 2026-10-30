@@ -21,6 +21,9 @@ Reference: StS II v0.111.0 / 41cef1ea. Current presentation label:
   Attacking/removing swords and held targeting suppress this inspection.
   Clicking an orbiting sword is explicitly a no-op. A tooltip owns a copy of
   the instance facts; it does not keep a pointer into a temporary preview.
+  Hovering freezes that sword's orbit, as in the original, and leaving resumes
+  from the same phase. Forge, attack and removal animation clocks continue;
+  cancelling the pointer or beginning an attack releases the orbit pause.
 - Continuing from defeat fades the original death quote at its original
   coordinates. The subsequent encounter quote uses independent geometry,
   and its height is reserved from the start of the score animation. The
@@ -39,7 +42,8 @@ Reference: StS II v0.111.0 / 41cef1ea. Current presentation label:
 The private `NSovereignBladeVfx.UpdateHoverTip` reference creates a card hover
 set while the focused sword is not attacking and target selection is idle.
 The new implementation follows that behavior with the calculator's bounded
-card/keyword layout. `NGameOverScreen.AnimateInQuote` fades the existing quote
+card/keyword layout. Its `_Process` advances `OrbitProgress` only while no
+hover-tip set exists. `NGameOverScreen.AnimateInQuote` fades the existing quote
 before replacing it; UI19 retains its position during that outgoing fade.
 
 ## Frozen native verification
@@ -66,6 +70,17 @@ These tests use explicit `CHECK` functions that exit on failure, so Release
   captured tooltip's copied amount stays unchanged when the live instance
   changes, and the next inspection observes the new amount. Matching private
   NSR/NSH device fixtures round-trip through the production codecs.
+- Checkpoint `66a99a0dfdba99e06446b90a0cf589ee156f8d5e` exercises the real
+  Sharp-enchantment transaction, including the runtime revision update. The
+  tooltip reports 43 damage for Sharp 3 and 47 damage for Sharp 7. This avoids
+  treating a test-only mutation without cache invalidation as a valid game
+  transaction. Synthetic and both original-art locale runs passed.
+- Checkpoint `c783dcf04d5865d2a1b1754891fc88155ac25c7e`: the frozen targeted
+  build and synthetic/English/Chinese sword suites passed. Tests hold orbit
+  position and phase across successive hover frames, resume continuously,
+  verify that forging still enlarges and settles the sword, and check attack
+  completion and pointer cancellation. A real forged sword also stays fixed
+  across a 660-ms UI update while the canonical run state remains unchanged.
 
 The Chinese View Upgrades pixel test initially failed because its old oracle
 hardcoded authored face 5, while the runtime correctly applies the original
