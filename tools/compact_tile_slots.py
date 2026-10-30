@@ -9,6 +9,7 @@ introduced. Raw size is always items*770, and references are bounded by items.
 from __future__ import annotations
 
 import argparse
+from collections import Counter
 from concurrent.futures import ThreadPoolExecutor
 import json
 from pathlib import Path
@@ -90,6 +91,13 @@ def make_plan(source, work, *, workers=2, sample=None):
                     net_bytes_saved=sum(len(a)-len(c) for a,_b,c in plan.values()))),flush=True)
     old_raw=sum(row[2] for row in reader.groups[:reader.tile_groups])
     new_raw=sum(t.GROUP.unpack_from(plan[g][1])[3] for g in range(reader.tile_groups))
+    groups=[]
+    for group in range(reader.tile_groups):
+        before=reader.groups[group][2];h=t.GROUP.unpack_from(plan[group][1]);after=h[3]
+        groups.append(dict(group=group,items_before=reader.groups[group][5],items_after=h[6],
+                           raw_bytes_before=before,raw_bytes_after=after,
+                           pages_before=(before+131071)//131072,pages_after=(after+131071)//131072,
+                           physical_bytes_saved=len(plan[group][0])-len(plan[group][2])))
     report=dict(eligible_tile_groups=len(eligible),tested_tile_groups=len(selected),
                 compacted_tile_groups=len(slots),dummy_groups=sum(len(s)==0 for s in slots.values()),
                 changed_index_groups=sum(plan[g][0]!=plan[g][1] for g in range(reader.tile_groups,len(reader.groups))),
@@ -97,6 +105,12 @@ def make_plan(source, work, *, workers=2, sample=None):
                 index_bytes_saved=sum(len(plan[g][0])-len(plan[g][2]) for g in range(reader.tile_groups,len(reader.groups))),
                 aligned_bytes_saved=sum(len(a)-len(c) for a,_b,c in plan.values()),
                 raw_tile_bytes_before=old_raw,raw_tile_bytes_after=new_raw,raw_tile_bytes_removed=old_raw-new_raw,
+                tile_records_removed=(old_raw-new_raw)//t.TILE_BYTES,
+                tile_page_bytes=131072,tile_pages_before=sum(g['pages_before'] for g in groups),
+                tile_pages_after=sum(g['pages_after'] for g in groups),
+                tile_page_distribution_before=dict(sorted(Counter(g['pages_before'] for g in groups).items())),
+                tile_page_distribution_after=dict(sorted(Counter(g['pages_after'] for g in groups).items())),
+                groups_using_fewer_pages=sum(g['pages_after']<g['pages_before'] for g in groups),groups=groups,
                 frame_group_sets_unchanged=True,group_ids_unchanged=True,resident_bytes_added=0,
                 all_eligible_groups_considered=len(selected)==len(eligible),sample=sample)
     return plan,mapping,referenced,slots,report
@@ -198,7 +212,7 @@ def main():
     if report['aligned_bytes_saved']<=0:
         report.update(complete=False,beneficial=False,elapsed_seconds=time.monotonic()-started)
         t.atomic_bytes(target/'compact-slots-receipt.json',json.dumps(report,indent=2).encode()+b'\n')
-        print(json.dumps(report),flush=True)
+        print(json.dumps({k:v for k,v in report.items() if k!='groups'}),flush=True)
         t.require(args.sample is not None,'Full slot compaction is not smaller')
         return
     common=None
@@ -225,7 +239,7 @@ def main():
                   installed_artwork_bytes=sum((target/n).stat().st_size for n in ('nSpire2.dat.tns',*storage.PART_FILES)),
                   installed_locale_bytes=sum((target/f'nSpire2.{c}.dat.tns').stat().st_size for c in inputs))
     t.atomic_bytes(target/'compact-slots-receipt.json',json.dumps(report,indent=2).encode()+b'\n')
-    print(json.dumps({k:v for k,v in report.items() if k not in ('locales','artwork')}),flush=True)
+    print(json.dumps({k:v for k,v in report.items() if k not in ('locales','artwork','groups')}),flush=True)
 
 
 if __name__=='__main__':main()

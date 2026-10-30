@@ -245,6 +245,7 @@ def encode(raw, original, reader, group, cache):
 
 
 def make_plan(source, work, *, workers=2):
+    t.require(source.version<=41,'Coalesce before NSP42 slot compaction')
     work = Path(work); cache = work / 'encoded'; cache.mkdir(parents=True, exist_ok=True)
     reader = t.TileReader(source)
     indices, frames, referenced = index_inventory(source, reader)
@@ -433,6 +434,7 @@ def main():
     parser.add_argument('--work', required=True, type=Path)
     parser.add_argument('--workers', default=2, type=int)
     parser.add_argument('--locales', nargs='+', choices=split.LANGUAGES)
+    parser.add_argument('--extra-locales', type=Path, action='append', default=[])
     args = parser.parse_args(); t.require(1 <= args.workers <= 2, 'Use one or two encoder workers')
     source = t.private_path(args.input, 'Private input'); target = t.private_path(args.output, 'Private output')
     work = t.private_path(args.work, 'Private work')
@@ -442,6 +444,11 @@ def main():
     common = storage.join_parts((source/'nSpire2.dat.tns').read_bytes(),
                                {name:(source/name).read_bytes() for name in storage.PART_FILES})
     inputs = {code:source/f'nSpire2.{code}.dat.tns' for code in (args.locales or split.LANGUAGES)}
+    for folder in args.extra_locales:
+        folder=t.private_path(folder,'Private updated locales')
+        for code in inputs:
+            path=folder/f'nSpire2.{code}.dat.tns'
+            if path.is_file():inputs[code]=path
     t.require('eng' in inputs and all(path.is_file() for path in inputs.values()), 'Requested locale is missing')
     started = time.monotonic()
     english = split.reconstruct(common, inputs['eng'].read_bytes(), 'eng')

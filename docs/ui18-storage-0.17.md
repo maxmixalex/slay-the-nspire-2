@@ -72,3 +72,18 @@ This report will record the selected complete sixteen-language output,
 additional calendar glyph bytes, full image oracle, ARM allocation and actual
 target results after those commands run. The historical 65–70 MB installation
 target is not marked achieved by this candidate or any sample.
+
+The corrected 24-group, original-context sample at `e8ba88d` passed all byte
+and split checks (`ui18-compact-sample-matched-6f213ee5ebc5`, 69.66 seconds).
+Eleven groups were selected; tile streams saved 1,890 bytes and all affected
+indices saved 366, a net 2,256 bytes. Decoded tile data decreased by 164,010
+bytes. The 89 original concern spans reconstruct exactly. These are sample
+figures, not extrapolated full-catalog savings. The 28 corrected Python tests
+pass at `ui18-compact-python-corrected-a435ce1db181`; the corrected seven-target
+native build is `ui18-storage-native-build-6fbfa8533739`. The earlier build
+`ui18-storage-native-build-d19afb147cdc` named a nonexistent target and failed
+before compiling; it is not an executed gate.
+
+The complete receipt also records `ceil(raw_size/131072)` per tile group and
+the before/after one-through-four-page distribution. Catalog-wide sums of
+those page costs are not actual simultaneous cache residency or FPS results.
