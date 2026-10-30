@@ -33,6 +33,10 @@ static void export_save(const char*name){
  CHECK(validate(a.game)&&save(a.game,first));CHECK(load(direct,first.bytes,first.size)&&validate(direct)&&save(direct,second));
  CHECK(first.size==second.size&&!std::memcmp(first.bytes,second.bytes,first.size));write(std::string(name)+".sav.tns",first.bytes,first.size);
 }
+static void export_sword(const char*name){
+ if(output.empty())return;a.begin_progress();a.progress.current.partial=1;a.progress.current.facts.complete=0;a.progress.tutorial_flags=0;export_save(name);
+ std::vector<uint8_t> bytes(UiProgressCapacity);const auto size=encode_ui_progress(a.progress,bytes.data(),bytes.size());CHECK(size);write(std::string(name)+".progress.tns",bytes.data(),size);
+}
 static void fresh(Character character=Character::Ironclad,EncounterId encounter=EncounterId::NibbitsNormal){
  new_run(a.game,0x41cef1ea,false,character);CHECK(world_begin_run(a.game,reference::ActKind::Overgrowth,0));
  // Supply only earlier routing outcomes. The room and encounter still enter
@@ -204,7 +208,7 @@ static void actual_forge(){
  direct=a.game;CHECK(play(direct,0,0));{UiCoreObserver observer(a);a.begin_combat_feedback(0);CHECK(play(a.game,0,0));}equal_save();
  bool forged=false;for(unsigned i=0;i<60;++i){tick(33);const auto*blade=a.combat_cards.blades.find(1);forged|=blade&&blade->forging&&blade->damage==40;
   if(i==6)capture("forge-smith");}
- CHECK(forged&&a.combat_cards.blades.find(1)&&a.combat_cards.blades.find(1)->damage==40);CHECK(a.game.expansion.blade_damage[1]==40);equal_save();
+ CHECK(forged&&a.combat_cards.blades.find(1)&&a.combat_cards.blades.find(1)->damage==40);CHECK(a.game.expansion.blade_damage[1]==40);equal_save();export_sword("ui19-sword-forged");
  scenario="render clocks move a source orbit without mutating the run";before=a.game;
  const auto p=a.combat_cards.blades.orbit(0,a.animation*33u),q=a.combat_cards.blades.orbit(0,a.animation*33u+1000);CHECK(p.x!=q.x||p.y!=q.y);
  for(unsigned i=0;i<20;++i){tick(33);if(original_art)a.render();}unchanged();
@@ -227,7 +231,7 @@ static void actual_forge(){
  CHECK(card_hover_target(a,owner)&&owner.sovereign_blade&&owner.card_facts()==&a.game.event_cards.cards[1]);
  collect_keyword_hover_tips(a,owner,tips);CHECK(tips.items[0].has_facts&&tips.items[0].facts.enchantment==EventEnchantment::Sharp&&tips.items[0].facts.enchantment_amount==3);
  unchanged();a.game.event_cards.cards[1].enchantment_amount=7;CHECK(tips.items[0].facts.enchantment_amount==3);
- CHECK(card_hover_target(a,owner));collect_keyword_hover_tips(a,owner,tips);CHECK(tips.items[0].facts.enchantment_amount==7);a.pointer_cancel();
+ CHECK(card_hover_target(a,owner));collect_keyword_hover_tips(a,owner,tips);CHECK(tips.items[0].facts.enchantment_amount==7);if(original_art)capture("sovereign-blade-enchanted-hover");a.pointer_cancel();export_sword("ui19-sword-enchanted");
 }
 static void actual_enchant(){
  scenario="a real pending enchantment selection survives save/load and commits once";fresh(Character::Regent);hand({RegentTheSmith,SovereignBlade,RegentDefend});
@@ -334,10 +338,13 @@ static void current_intent_preparation(){
 }
 int main(int argc,char**argv){
  CHECK(argc==1||argc==2||argc==3);std::vector<uint8_t>common,language;SplitResourceSource split;
- if(argc>=2){const std::string root=argv[1];common=read(root+"/data/nSpire2.dat.tns");language=read(root+"/data/nSpire2.eng.dat.tns");
-  CHECK(split.open(ResourceSource::memory(common.data(),common.size()),ResourceSource::memory(language.data(),language.size()),ResourceLanguage::English));CHECK(a.init(split.source(),{}));original_art=true;}
+ if(argc>=2){const std::string root=argv[1];
+  if(std::filesystem::is_regular_file(root)){common=read(root);CHECK(a.init(common.data(),common.size(),{}));}
+  else{common=read(root+"/data/nSpire2.dat.tns");language=read(root+"/data/nSpire2.eng.dat.tns");
+   CHECK(split.open(ResourceSource::memory(common.data(),common.size()),ResourceSource::memory(language.data(),language.size()),ResourceLanguage::English));CHECK(a.init(split.source(),{}));}
+  original_art=true;}
  if(argc==3){output=argv[2];std::filesystem::create_directories(output);}
  scale_equations();clock_icon();actual_shrink();actual_vantom_shrink();actual_default_growth();actual_forge();actual_enchant();borders_and_cache();identical_generated_samples();current_intent_preparation();
- const char note[]="Controlled UI14 fixtures; earlier room outcomes, cards and resources are supplied. These saves validate and round-trip through the production NSR codec. They are not natural runs.\nui14-card-borders: Neow's Fury, Infection and Bound Strike in hand.\nui14-shrink: Shrinker Beetle before its opening move, Beetle Juice in potion slot1; drink on the enemy, then end turn to shrink the player.\nui14-regent-enchant-forge: choose an Attack for Gnarled Hammer's Sharp enchantment, confirm, then play The Smith in the resumed Regent combat.\n";
+ const char note[]="Controlled UI14 fixtures; earlier room outcomes, cards and resources are supplied. These saves validate and round-trip through the production NSR codec. They are not natural runs.\nui19-sword-forged/enchant: live 40-damage Sovereign Blade, with a matching partial-history file; enchanted variant has Sharp 7.\nui14-card-borders: Neow's Fury, Infection and Bound Strike in hand.\nui14-shrink: Shrinker Beetle before its opening move, Beetle Juice in potion slot1; drink on the enemy, then end turn to shrink the player.\nui14-regent-enchant-forge: choose an Attack for Gnarled Hammer's Sharp enchantment, confirm, then play The Smith in the resumed Regent combat.\n";
  write("README.txt",note,sizeof note-1);std::printf("combat UI14: %u checks passed%s\n",checks,original_art?"; original art decoded and rendered":"");
 }
