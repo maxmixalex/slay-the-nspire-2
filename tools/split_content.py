@@ -105,8 +105,11 @@ def layout(data, language):
         require(count >= 32, "Truncated compressed animation group")
         group = struct.unpack_from("<4s7I", data, off)
         transformed = group[0] == b"TGR2" and version >= 33 and i < tile[5] and group[1] == 1 and group[7] in (1, 2)
+        sparse = (group[0] == b"TGR3" and version >= 45 and i < tile[5] and group[1] == 1 and
+                  group[7] in (1, 2) and 0 < group[6] <= 1360 and group[3] == group[6] * 770 and
+                  group[6] * 34 <= group[5] <= group[6] * 706 and (group[5] - group[6] * 34) % 3 == 0)
         predicted = group[0] == b"TGI2" and version >= 41 and i >= tile[5] and group[1] == 2 and group[7] == 1
-        require((transformed or predicted or (group[0] == b"TGR1" and group[7] == 0)) and
+        require((transformed or sparse or predicted or (group[0] == b"TGR1" and group[7] == 0)) and
                 group[2] == i and group[4] == count - 32, "Invalid compressed animation group header")
     for i in range(ni):
         off, width, height, fmt, count = struct.unpack_from("<IHHII", data, 40 + i * 16)

@@ -12,6 +12,8 @@ import coalesce_tile_resources as coalesce
 import compact_sparse_tiles as compact
 import content_tiles as t
 import sparse_tile_filter as sparse
+import split_content as split
+import storage_parts as storage
 from test_coalesce_tile_resources import fixture
 
 
@@ -65,10 +67,20 @@ class SparseTileFilterTest(unittest.TestCase):
             self.assertGreater(proof['compared_live_tile_bytes'],0)
             for image in range(len(source.images)):
                 self.assertEqual(old.image_raw(image),new.image_raw(image))
+            # Exercise the independent physical packer too: it validates
+            # group headers without going through the host TileReader.
+            bounds=split.layout(after,'eng')
+            common=split.common_file(after[bounds['prefix']:bounds['prefix']+bounds['artwork']])
+            index,parts,_details=storage.partition(common,after)
+            self.assertEqual(storage.join_parts(index,parts),common)
+            language=split.compress_language_directory(split.language_file(after,bounds,'eng',bytes(32)))
+            language,_details=storage.compress_blocks(language)
+            self.assertEqual(split.reconstruct(common,language,'eng'),after)
             repeated,again=compact.make_plan(source,Path(folder),workers=1)
             self.assertEqual(repeated,plan);self.assertEqual(again,report)
             bad=bytearray(after);struct.pack_into('<I',bad,4,44)
             with self.assertRaises(ValueError):t.TileReader(coalesce.view(bad))
+            with self.assertRaises(ValueError):split.layout(bad,'eng')
             cached=next((Path(folder)/'sparse-encoded').glob('*.lzma2'));cached.write_bytes(b'bad')
             with self.assertRaises(ValueError):compact.make_plan(source,Path(folder),workers=1)
 

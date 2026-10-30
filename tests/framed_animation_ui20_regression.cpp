@@ -37,7 +37,9 @@ int main(int argc,char**argv){
    if(!frame)first=value;else varying|=first!=value;last=value;++frames;
    if(directory&&frame==count/3){char name[64];std::snprintf(name,sizeof name,"clip-%d-native-frame",clip);capture(directory,name);}
   }
-  CHECK(varying);std::memset(a.pixels,0,sizeof a.pixels);c.scaled_clip(clip,160,190,count*ms,scale,true);CHECK(pixels()==first);
+  // The original short Osty dead_loop samples retain one corpse pose at
+  // LCD precision. A loop is not required to invent visible movement.
+  CHECK(varying||clip==FramedUi20OstyDeadLoop);std::memset(a.pixels,0,sizeof a.pixels);c.scaled_clip(clip,160,190,count*ms,scale,true);CHECK(pixels()==first);
   std::memset(a.pixels,0,sizeof a.pixels);c.scaled_clip(clip,160,190,count*ms,scale,false);CHECK(pixels()==last);
   Canvas::FramedDraw invisible[FramedUi20MaxLayers];unsigned n=0;CHECK(c.framed_collect(clip,10000,10000,0,scale,true,invisible,n)&&!n);
  }
