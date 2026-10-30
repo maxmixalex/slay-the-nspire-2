@@ -29,6 +29,7 @@ nd_call nd_tell,89
 nd_call nd_mkdir,15
 nd_call nd_opendir,95
 nd_call nd_closedir,97
+nd_call nd_stat,18
 nd_call nd_unlink,19
 nd_call nd_rename,20
 nd_call nd_touch_read,75

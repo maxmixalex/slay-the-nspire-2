@@ -13,6 +13,7 @@
 #include "resource_transfer.hpp"
 #include "installation_paths.hpp"
 #include "calculator_system_language.hpp"
+#include "calculator_file_metadata.hpp"
 #include "lzma2_block.hpp"
 extern "C" {
 void* nd_open(const char*,const char*);
@@ -26,6 +27,7 @@ int nd_unlink(const char*);
 int nd_mkdir(const char*);
 void* nd_opendir(const char*);
 int nd_closedir(void*);
+int nd_stat(const char*,spire::CalculatorFileMetadata*);
 unsigned nd_hwtype();
 unsigned nd_revision();
 int nd_lcd_init(int);
@@ -48,6 +50,7 @@ static char progress_path[512],progress_temp[512],progress_backup[512];
 static_assert(spire::UiProgressCapacity+1<=spire::ResourceTransferCapacity,"History transfers fit the shared foreground workspace");
 static uint32_t wall_clock(){return *(volatile uint32_t*)0x90090000u;}
 static uint32_t timer_ticks(){return *(volatile uint32_t*)0x900D0004u;}
+#include "io_diagnostic.inc"
 static uint32_t foreground_clock_ticks(){return 0u-timer_ticks();}
 static void performance_render_part(spire::RuntimeRenderPart part,bool begin){
     performance.render_part(part,begin,timer_ticks());
@@ -111,6 +114,7 @@ static bool read_resource(void* context,uint32_t offset,void* output,uint32_t co
     uint32_t started=performance.enabled?timer_ticks():0;
     bool good=source.cursor.read(source.file,offset,output,count,sampled_seek,sampled_read,seek);
     if(performance.enabled)performance.read(started-timer_ticks(),count,good,seek);
+    device_trace_resource(source.file,offset,count,started,good);
     return good;
 }
 static bool state_sibling(char*out,const char*launcher,const char*filename){
@@ -128,6 +132,13 @@ using ArtworkFiles=spire::ResourceFileCache<spire::MultipartResourceSource::MaxP
 static void* open_artwork_file(void*launcher,unsigned part){
     return open_data_file(static_cast<const char*>(launcher),spire::ArtworkPartNames[part]);
 }
+static bool artwork_file_length(void*launcher,unsigned part,uint32_t&length){
+    spire::CalculatorFileMetadata metadata{};length=0;
+    if(!spire::installation_path(pack_path,sizeof pack_path,static_cast<const char*>(launcher),
+            spire::InstallationDirectory::Data,spire::ArtworkPartNames[part])||
+       nd_stat(pack_path,&metadata)<0)return false;
+    length=metadata.size;return true;
+}
 static void artwork_poll(void*){capture_key_matrix();}
 static void artwork_probe_begin(void*context){
     *static_cast<uint32_t*>(context)=performance.enabled?timer_ticks():0;
@@ -139,8 +150,11 @@ static void artwork_probe_end(void*context,uint32_t bytes,unsigned reads,unsigne
 }
 static bool read_artwork(void*context,uint32_t offset,void*output,uint32_t count){
     bool seek=false;const uint32_t started=performance.enabled?timer_ticks():0;
-    const bool good=ArtworkFiles::read_source(context,offset,output,count,seek);
-    if(performance.enabled)performance.read(started-timer_ticks(),count,good,seek);
+    ArtworkFiles::ReadStats stats;
+    const bool good=ArtworkFiles::read_source(context,offset,output,count,seek,performance.enabled?&stats:nullptr);
+    if(performance.enabled){auto&r=performance.resources;r.ticks+=started-timer_ticks();
+        r.calls+=stats.calls;r.bytes+=stats.bytes;r.seeks+=stats.seeks;if(!good)++r.failures;}
+    device_trace_resource(nullptr,offset,count,started,good);
     return good;
 }
 static spire::ResourceSource file_source(ResourceFile&file){
@@ -303,6 +317,7 @@ extern "C" int main(int argc,char**argv){
     performance.hardware=nd_hwtype();performance.ndless_revision=nd_revision();
     entropy_start=*(volatile uint32_t*)0x90090000u^timer_ticks()^*(volatile uint32_t*)0x900C0004u;
     Clock clock{};clock.init();
+    device_trace_begin(performance.enabled);
     Display display;if(!nd_lcd_init(0))return 6;display.active=true;
     auto blit=nd_blitter(0);if(!blit)return 7;
     for(auto&pixel:app.pixels)pixel=0;blit(app.pixels);
@@ -318,22 +333,25 @@ extern "C" int main(int argc,char**argv){
     common.file=open_data_file(launcher,spire::SharedDataFilename);
     if(!common.file)return resource_error(spire::BootText::MissingResources,4);
     const uint32_t startup_start=performance.enabled?timer_ticks():0;
+    device_trace_stage(1);
     auto common_source=file_source(common);uint8_t common_tag[4];
     if(!common_source.length||!read_resource(&common,0,common_tag,sizeof common_tag)){
         return resource_error(spire::BootText::InvalidResources,5);
     }
     if(common_tag[0]=='N'&&common_tag[1]=='S'&&common_tag[2]=='M'&&common_tag[3]=='1'){
-        // The OS rejects an eighth simultaneous stream on the validated CX.
-        // Read each header during its length probe. Multipart validation uses
-        // these exact bytes without opening all eight files a second time.
-        uint8_t part_headers[spire::MultipartResourceSource::MaxParts][32];uint32_t probe_started=0;
-        if(!artwork_files.open({const_cast<char*>(launcher),open_artwork_file,nd_close,
+        // Metadata proves that every required part exists and bounds every
+        // mapping. Its header is validated once, when that part is first used.
+        // Keep four live artwork streams alongside the locale/save streams.
+        uint32_t probe_started=0;
+        device_trace_stage(2);
+        if(!artwork_files.open_deferred({const_cast<char*>(launcher),open_artwork_file,nd_close,
                 sampled_seek,nd_tell,sampled_read,artwork_poll},spire::MaxContentFile,
-                part_headers[0],sizeof part_headers[0],{&probe_started,artwork_probe_begin,artwork_probe_end}))
+                artwork_file_length,spire::artwork_part_header,{&probe_started,artwork_probe_begin,artwork_probe_end}))
             return resource_error(spire::BootText::MissingResources,4);
         spire::ResourceSource inputs[spire::MultipartResourceSource::MaxParts];
         for(unsigned i=0;i<spire::MultipartResourceSource::MaxParts;++i)inputs[i]=artwork_files.source(i,read_artwork);
-        if(!artwork.open(common_source,inputs,spire::MultipartResourceSource::MaxParts,part_headers)){
+        device_trace_stage(3);
+        if(!artwork.open_deferred(common_source,inputs,spire::MultipartResourceSource::MaxParts)){
             return resource_error(spire::BootText::InvalidResources,5);
         }
         common.close(); // The validated index header/spans now live in artwork.
@@ -341,23 +359,28 @@ extern "C" int main(int argc,char**argv){
     }
     // Probe names only; a successful selected locale does not decode or
     // inspect any other optional language. Failed candidates retry below.
+    device_trace_stage(4);
     for(unsigned id=1;id<=spire::LocaleLanguageCount;++id){
         void*f=open_data_file(launcher,spire::locale_language_info(id).file);
         if(f){installed_languages|=spire::locale_language_mask(id);nd_close(f);}
     }
     if(!installed_languages)return resource_error(spire::BootText::MissingLanguage,4);
     const unsigned saved=unsigned(preferred);
+    device_trace_stage(5);
     // Querying the OS is unnecessary when the saved locale opens normally.
     // If that saved pack fails, resolve the current OS preference then.
     unsigned system=(installed_languages&spire::locale_language_mask(saved))?0:system_language();
     bool system_resolved=!(installed_languages&spire::locale_language_mask(saved));
     spire::ResourceSource resource{};app.calculator_keyboard=true;source.blit=blit;
     const auto load=[&](unsigned id){
+        device_trace_stage(6);
         source.close();source.language=static_cast<spire::BootLanguage>(id);
         source.file=open_data_file(launcher,spire::locale_language_info(id).file);
         const auto localized=file_source(source);
+        device_trace_stage(7);
         if(localized.length&&split.open(common_source,localized,static_cast<spire::ResourceLanguage>(id))){
             resource=split.source();
+            device_trace_stage(8);
             if(app.init(resource,{save_game,load_game,clear_save,seed_entropy,load_preferences,save_preferences,available_languages,request_language,load_progress,save_progress,wall_clock,current_profile,profile_info,request_profile,write_feedback}))return true;
         }
         source.close();split.close();resource={};return false;
@@ -378,6 +401,7 @@ extern "C" int main(int argc,char**argv){
     if(performance.enabled){const uint32_t now=timer_ticks();performance.startup.add(startup_start-now);
         if(source.phase!=spire::ResourceStage::Count)performance.startup_phases[(unsigned)source.phase].add(source.phase_start-now);}
     source.blit=nullptr; // Startup progress cannot repaint over the live game.
+    device_trace_stage(9);
     auto change_language=[&](){
         const unsigned requested=pending_language;pending_language=0;
         if(!requested||!common_source.length||!app.title)return;
@@ -397,18 +421,29 @@ extern "C" int main(int argc,char**argv){
     };
     while(pressed(0x10,2)){} // Release ENTER used to open the document.
     app.begin_startup_logo();
+    device_trace_stage(128+unsigned(spire::RuntimeScene::Title));
     Touchpad pad{};pad.init();resource_pad=&pad;spire::TouchpadCursor pad_cursor;spire::CalculatorPadInput pad_keys;
     clock.last=timer_ticks();uint32_t input_clock=0;
     uint16_t text_previous[8]{};uint8_t repeat[spire::CalculatorPhysicalKeyCount]{};bool input_ready=false;unsigned quiet_ms=0;
     uint32_t first_start=performance.enabled?timer_ticks():0;
-    app.render();uint32_t first_present=performance.enabled?timer_ticks():0;blit(app.pixels);
+    app.render();
+    if(!app.content.healthy())return resource_error(spire::BootText::InvalidResources,5);
+    uint32_t first_present=performance.enabled?timer_ticks():0;blit(app.pixels);
     uint32_t last_present=performance.enabled?timer_ticks():0;
     spire::DepartureFrameClock departure_clock;
     if(performance.enabled){performance.first_render.add(first_start-first_present);performance.first_present.add(first_present-last_present);}
     auto render_frame=[&](uint32_t update_start,const spire::RuntimeResourceTiming&before,spire::RuntimeScene update_scene){
         uint32_t render_start=performance.enabled?timer_ticks():0;
         auto scene=performance.enabled?performance_scene():spire::RuntimeScene::Other;
-        app.render();uint32_t present_start=performance.enabled?timer_ticks():0;blit(app.pixels);
+        device_trace_stage(128+unsigned(scene));
+        app.render();
+        if(!app.content.healthy()){
+            // A part first used after startup may be missing/corrupt. Stop
+            // before presenting partial assets or dispatching another action.
+            // This error path never calls the mutable save callbacks.
+            resource_error(spire::BootText::InvalidResources,5);app.quit=true;return;
+        }
+        uint32_t present_start=performance.enabled?timer_ticks():0;blit(app.pixels);
         if(performance.enabled){uint32_t done=timer_ticks();
             // The last preparation update may finish before render starts;
             // the first preparation screen may become active inside render.
@@ -425,6 +460,7 @@ extern "C" int main(int argc,char**argv){
         uint32_t update_start=performance.enabled?timer_ticks():0;
         const auto update_scene=performance.enabled?performance_scene():spire::RuntimeScene::Other;
         const auto resources_before=performance.enabled?performance.resources:spire::RuntimeResourceTiming{};
+        device_trace_stage(128+unsigned(update_scene));
         app.advance(elapsed);
         auto sample=pad.read();
         resource_pad_capture.capture(sample,app.keyboard_only);
@@ -484,7 +520,7 @@ extern "C" int main(int argc,char**argv){
     exit_input_release(timer_ticks,held);
     // Finish filesystem work before the final release gate. In particular,
     // Resource destructors must not issue OS calls after it.
-    close_resources();performance_report();
+    device_trace_stage(250);close_resources();performance_report();device_trace_flush(launcher);
     exit_input_release(timer_ticks,held);
     display.restore();return 0;
 }

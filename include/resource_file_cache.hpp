@@ -28,6 +28,9 @@ public:
         void(*begin)(void*){};
         void(*end)(void*,uint32_t bytes,unsigned reads,unsigned seeks,bool good){};
     };
+    struct ReadStats {uint32_t calls=0,bytes=0,seeks=0;};
+    using Metadata=bool(*)(void*,unsigned,uint32_t&);
+    using HeaderCheck=bool(*)(const uint8_t*,uint32_t,unsigned);
     ResourceFileCache()=default;
     ResourceFileCache(const ResourceFileCache&)=delete;
     ResourceFileCache&operator=(const ResourceFileCache&)=delete;
@@ -57,14 +60,32 @@ public:
             }
             if(probe.end)probe.end(probe.context,bytes,reads,seeks,good);
             if(!good){close();return false;}
-            parts_[i]={this,uint32_t(size),i};
+            parts_[i]={this,uint32_t(size),i,true};
+        }
+        ready_=true;return true;
+    }
+    // Immutable-file metadata proves presence and bounds without opening each
+    // payload. Its 32-byte header is checked before that part yields any data.
+    // This check survives LRU eviction and is reset by close/reinitialization.
+    bool open_deferred(Host host,uint32_t maximum,Metadata metadata,HeaderCheck check,Probe probe={}){
+        close();
+        if(!host.open||!host.close||!host.seek||!host.get||!metadata||!check||maximum<32||
+           bool(probe.begin)!=bool(probe.end))return false;
+        host_=host;check_=check;
+        for(unsigned i=0;i<Files;++i){
+            if(probe.begin)probe.begin(probe.context);
+            uint32_t size=0;poll();const bool found=metadata(host_.context,i,size);poll();
+            const bool good=found&&size>=32&&size<=maximum;
+            if(probe.end)probe.end(probe.context,0,0,0,good);
+            if(!good){close();return false;}
+            parts_[i]={this,size,i,false};
         }
         ready_=true;return true;
     }
     void close(){
         for(unsigned i=0;i<Capacity;++i)release(i);
         for(auto&part:parts_)part.length=0;
-        ready_=false;host_={};
+        ready_=false;host_={};check_=nullptr;
     }
     ResourceSource source(unsigned part,
         bool(*reader)(void*,uint32_t,void*,uint32_t)=read_at){
@@ -72,13 +93,13 @@ public:
     }
     // A host wrapper can account for the complete read, including cold opens,
     // without duplicating the cache's provider contexts or cursor ownership.
-    static bool read_source(void*context,uint32_t at,void*out,uint32_t count,bool&did_seek){
-        did_seek=false;if(!context)return false;
+    static bool read_source(void*context,uint32_t at,void*out,uint32_t count,bool&did_seek,ReadStats*stats=nullptr){
+        did_seek=false;if(stats)*stats={};if(!context)return false;
         auto&part=*static_cast<Part*>(context);
-        return part.owner&&part.owner->read(part.index,at,out,count,did_seek);
+        return part.owner&&part.owner->read(part.index,at,out,count,did_seek,stats);
     }
-    bool read(unsigned part,uint32_t at,void*out,uint32_t count,bool&did_seek){
-        did_seek=false;
+    bool read(unsigned part,uint32_t at,void*out,uint32_t count,bool&did_seek,ReadStats*stats=nullptr){
+        did_seek=false;if(stats)*stats={};
         if(!ready_||part>=Files||at>parts_[part].length||count>parts_[part].length-at||
            (count&&!out))return false;
         if(!count)return true;
@@ -97,14 +118,26 @@ public:
             s.cursor={}; // Even a reused FILE address starts at an unknown position.
         }
         touch(slot);auto&s=slots_[slot];
-        const bool good=s.cursor.read(s.file,at,out,count,host_.seek,host_.get,did_seek);
-        if(!good)release(slot); // Do not retain a failed/poisoned stream.
+        if(!parts_[part].validated){
+            uint8_t header[32];bool sought=false,read=false;
+            const bool fetched=s.cursor.read(s.file,0,header,sizeof header,host_.seek,host_.get,sought,&read);
+            did_seek|=sought;
+            if(stats){stats->seeks+=sought;stats->calls+=read;stats->bytes+=read?sizeof header:0;}
+            if(!fetched||!check_||!check_(header,parts_[part].length,part)){release(slot);return false;}
+            parts_[part].validated=true;
+        }
+        bool sought=false,read=false;
+        const bool good=s.cursor.read(s.file,at,out,count,host_.seek,host_.get,sought,&read);
+        did_seek|=sought;
+        if(stats){stats->seeks+=sought;stats->calls+=read;stats->bytes+=read?count:0;}
+        if(!good){parts_[part].validated=!check_;release(slot);} // Retry checks a fresh failed stream.
         return good;
     }
 private:
-    struct Part {ResourceFileCache*owner{};uint32_t length{};unsigned index{};};
+    struct Part {ResourceFileCache*owner{};uint32_t length{};unsigned index{};bool validated=false;};
     struct Slot {void*file{};ResourceFileCursor cursor{};unsigned part{},rank{};};
     Host host_{};
+    HeaderCheck check_=nullptr;
     Part parts_[Files]{};
     Slot slots_[Capacity]{};
     bool ready_=false;

@@ -3,6 +3,9 @@
 
 namespace spire {
 
+// Shared by eager container validation and deferred immutable-file providers.
+bool artwork_part_header(const uint8_t*,uint32_t length,unsigned part);
+
 // Small independent LZ4 pages around locale containers. They may be read while
 // an image owns ResourceTransferLease: this adapter never borrows that scratch.
 // Literal-only ranges read directly. Mixed ranges use at most 32 KiB of
@@ -40,6 +43,9 @@ public:
     // are validated here exactly like stream reads and are never retained.
     bool open(ResourceSource index,const ResourceSource* parts,unsigned count,
               const uint8_t (*part_headers)[32]=nullptr);
+    // Every part provider must validate artwork_part_header before returning
+    // its first payload bytes. Presence and actual lengths are already known.
+    bool open_deferred(ResourceSource index,const ResourceSource* parts,unsigned count);
     void close();
     ResourceSource source();
     bool read(uint32_t,void*,uint32_t)const;
@@ -50,6 +56,7 @@ private:
     uint8_t header_[64]{};
     uint32_t length_{},span_count_{},part_count_{};
     mutable uint32_t last_=0;
+    bool open_table(ResourceSource,const ResourceSource*,unsigned,const uint8_t(*)[32],bool);
     static bool read_at(void*,uint32_t,void*,uint32_t);
 };
 
