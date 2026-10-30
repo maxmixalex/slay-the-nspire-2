@@ -27,8 +27,17 @@ fourteen additional calendar glyphs. ZIP size is not used for these figures.
 | Fourteen optional languages | 18,542,228 | 18,544,457 | -2,229 |
 | All sixteen languages and shared data | 96,732,662 | **96,506,908** | **225,754** |
 
-The final integration launcher is 1,719,372 bytes, giving 79,681,823 bytes for
-the default installation and 98,226,280 bytes for all sixteen languages.
+The final two-image combat-preparation follow-up is integrated at
+`44d7fb79f7d87d522038a074fa80d25e2bdeff31`. Its confirmed ordinary launcher
+is **1,719,223 bytes**, SHA-256
+`7d34c4163a61c5f4984915d08272c42a3b4b69e003ddb1c388826d21d9098be7`,
+giving **79,681,674 bytes** for the default installation and **98,226,131
+bytes** for all sixteen languages. Root's ordinary ARM journal is
+`ui18-final-ordinary-arm-86e313858b62`, passed with unchanged source; the file
+matches the ordinary program exercised in the final two-image device pair.
+These replace the superseded `a7e3e944` candidate's 79,681,823 and 98,226,280
+totals. Final calculator archive readback and integrated suite acceptance are
+recorded separately below.
 Launcher optimization and final integrated runtime gates belong to the main
 UI18 delivery record; the resource measurements here do not attribute its
 size reduction to tile compression. The historical 65–70 MB installation
@@ -49,6 +58,78 @@ are in `aligned/data/suffix-phase-receipt.json`. Final ENG/ZHS logical files
 and all final data are retained. Completed raw spools and superseded sample
 logical copies were removed to make room for integrated validation; their
 source data and receipts remain available for exact reconstruction.
+
+## Remaining installed size and rejected alternatives
+
+A final read-only inventory of the complete English NSP2/42 directory counts
+each distinct stored range once. Group sizes include their headers and local
+tables; descriptor aliases do not count twice. It does not decode the images,
+run another encoder experiment or extrapolate a sample. The private receipt is
+`../private-ui18-layout-audit/final-storage-components.json`.
+
+| Complete shared-artwork component | Count | Stored bytes |
+| --- | ---: | ---: |
+| Encoded tile pixel groups | 1,155 | 45,850,871 |
+| Encoded retained-image groups | 2,126 | 19,228,027 |
+| Encoded frame-index groups | 500 | 6,693,679 |
+| Literal image payloads | 197 distinct ranges | 717,925 |
+| Retained-slice descriptors | 14,343 distinct ranges | 229,488 |
+| Alignment padding, including the page-phase repair | — | 5,918 |
+| NSM1 index and eight NSS1 headers | — | 1,776 |
+| **Shared installed artwork total** | **8 parts plus index** | **72,727,684** |
+
+English and Simplified Chinese add 5,234,767 bytes. The fourteen optional
+language files are already excluded from the default installation. With the
+confirmed final launcher above, tiles, retained images and frame indices alone
+account for 90.07% of the installed program/resources. The concern names are
+an orthogonal physical partition: enemies occupy 33,914,638 bytes, interface
+10,786,410, effects 10,448,418, bosses 8,692,980, rooms 4,650,074, cards
+2,904,812, characters 1,213,262 and shared 115,570; their file headers are
+included in these numbers. All eight remain required.
+
+Reaching 70,000,000 bytes from the final 79,681,674 would require a
+further **9,681,674 bytes**; reaching 65,000,000 would require 14,681,674.
+Even if the target meant 70 MiB rather than decimal MB, another 6,281,354
+bytes would be necessary. The actual delivered resource saving this round is
+227,983 default bytes, or 225,754 with all sixteen languages. The confirmed
+launcher reduction against UI17 is a separate 47,356 bytes, so the combined
+default reduction is 275,339 bytes. The 87,440,430-byte reduction in decoded
+tile records below cannot be substituted for installed storage saved.
+
+Existing evidence limits the inexpensive alternatives:
+
+- [UI16's storage record](ui16-storage-0.17.md) reports that the sampled byte
+  planes, channel/alpha predictors and palette/bit-plane variants did not beat
+  the existing encoding. Seven LZMA parameter variants improved the sampled
+  best case by only about 0.09%; the descriptor-pruning pass reclaimed zero
+  bytes. These historical probes were not rerun or counted as UI18 work.
+- [UI17's exact 8×8 sample](ui17-artwork-investigation-0.17.md) included all
+  local references, dimensions, dictionary bytes and header/alignment costs.
+  None of 24 groups beat either its stored stream or the same-profile 16×16
+  control; applying all candidates would add 99,132 bytes. No new 8×8 codec
+  was shipped. Global regrouping was not implemented or measured by that
+  sample, so no conclusion about every possible global arrangement follows.
+- The same UI17 full retained-slice audit excluded 1,123 existing aliases and
+  found only one further cross-group exact duplicate, totaling 9,240 raw
+  bytes. It did not justify a new cross-group read dependency; compressed
+  savings were not inferred from that raw count. No repeated complete encoded
+  retained group was found.
+- [UI17's same-group pixel-predictor sample](ui17-index-prediction-0.17.md)
+  enlarged all 24 tested pixel groups. Its separate frame-index predictor did
+  win and was fully implemented; it remains part of the current format.
+- UI18's selected aliases require the destination group to be present in
+  every affected active frame, and selected compaction pays for the complete
+  rewritten index. Relaxing those constraints could change random reads,
+  working-set size and cold stalls; an unimplemented global dictionary is
+  not an additional measured saving.
+
+These are executed results and delivery constraints, **not a mathematical
+lower bound on lossless compression**. No currently verified implementation
+provides the missing 6–10 MB. Removing frames, reducing resolution or colors,
+discarding hidden RGB/alpha, trimming glyph coverage or adding further static
+actor substitutions would change the preserved-content contract. They were
+not used to make the size claim; the previously accepted static Ancient actor
+exception remains unchanged.
 
 ## First implemented candidate: exact aliases
 
