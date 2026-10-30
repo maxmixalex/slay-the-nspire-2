@@ -268,6 +268,11 @@ def partition_relocated(index, source, converted, plan):
             payload = pair.payload+bytes(len(pair.payload)&1) if i == 0 else b''
             replacements.append((group.offset,group.offset+colors.aligned(group.size),payload))
     replacements.sort(); relocate = colors.Relocation(replacements)
+    return partition_with_relocation(index,source,converted,relocate)
+
+
+def partition_with_relocation(index, source, converted, relocate):
+    """Keep each existing physical concern span through an exact relocation."""
     language = source.string_payload(split.MARKER)[:-1].decode('ascii')
     before, after = split.layout(source.data,language),split.layout(converted,language)
     old_prefix, prefix = before['prefix'],after['prefix']
