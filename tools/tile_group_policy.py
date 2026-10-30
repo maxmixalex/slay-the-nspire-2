@@ -77,8 +77,8 @@ def combat_clips(source):
     death = literal_profile(ROOT / 'tools/character_death_assets.py', {'CHARACTERS', 'BASE_CLIPS'})
     for offset, model in enumerate(death['CHARACTERS']):
         add('character.' + model + '.die', death['BASE_CLIPS'] + offset)
-    # These currently use retained images, so they select no tile groups. Keep
-    # their semantic coverage if a later regeneration moves them into tiles.
+    # Death particle tracks also belong to the selected actor's combat image
+    # working set. Their current tile groups are derived like the body tracks.
     for offset, model in enumerate(('defect', 'regent'), 2 * len(death['CHARACTERS'])):
         add('character.' + model + '.die_particles', death['BASE_CLIPS'] + offset)
 
