@@ -228,12 +228,14 @@ static TileGroup* load_retained_group(const Content* owner,const ResourceReader&
     const unsigned size=u32(p+4),encoded=u32(p+8),property=u32(p+12);
     if(!size||size>Lzma2BlockRawLimit||property!=Lzma2DictionaryProperty)return nullptr;
     unsigned start=32,count=0,mode=0;
-    if(u32(p)==FilteredRetainedGroupMagic){
+    const bool planar=u32(p)==PlanarRetainedGroupMagic;
+    if(u32(p)==FilteredRetainedGroupMagic||planar){
         count=u32(p+16);mode=u32(p+20);const unsigned table_bytes=u32(p+24);
-        if(owner->version()<RetainedFilterContentVersion||mode<1||mode>2||u32(p+28)||
+        if(owner->version()<(planar?RetainedPlanesContentVersion:RetainedFilterContentVersion)||
+           mode>2||(!planar&&!mode)||u32(p+28)||
            !count||count>(length-32)/8||table_bytes!=count*8||
            !valid_retained_slices(p+32,count,size))return nullptr;
-        start+=table_bytes;
+        start+=table_bytes;if(planar)mode+=8;
     }else if(u32(p)!=0x31524752u)return nullptr;
     if(!encoded||encoded!=length-start)return nullptr;
     TileGroup* group=reserve_tile_group(size,true);
@@ -243,7 +245,8 @@ static TileGroup* load_retained_group(const Content* owner,const ResourceReader&
     if(!group){cancel_content_preload();group=reserve_tile_group(size,true);}
     if(!group)return nullptr;
     if(!decode_lzma2_block(tile_bytes(*group),tile_capacity(*group),size,p+start,encoded,property)||
-       (mode&&!restore_retained_group(tile_bytes(*group),size,p+32,count,mode))){
+       (mode&&!restore_retained_group(tile_bytes(*group),size,p+32,count,mode,
+                                     encoded_pixels+start,ResourceTransferCapacity-start))){
         tile_discard(*group);return nullptr;
     }
     group->id=id;group->size=size;group->age=next_tile_age();

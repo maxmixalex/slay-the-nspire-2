@@ -13,6 +13,7 @@ import struct
 
 MAX_IMAGE_BYTES = 320 * 240 * 8 + 2 * 240
 CONTENT_VERSION = 36
+PLANES_CONTENT_VERSION = 43
 GROUP_LIMIT = 512 * 1024
 ENCODED_LIMIT = MAX_IMAGE_BYTES + MAX_IMAGE_BYTES // 255 + 32
 GROUP = struct.Struct('<4s7I')
@@ -37,8 +38,10 @@ def group_layout(payload, version):
     if tag == b'RGR1':
         _require(encoded == len(payload) - GROUP.size, 'Invalid retained group stream length')
         return raw_size, GROUP.size, 0, ()
-    _require(tag == b'RGR2' and version >= CONTENT_VERSION, 'Unsupported retained group version')
-    _require(mode in (1, 2) and reserved == 0 and 0 < count <= raw_size // 2 and
+    planar = tag == b'RGR3'
+    _require((planar and version >= PLANES_CONTENT_VERSION) or
+             (tag == b'RGR2' and version >= CONTENT_VERSION), 'Unsupported retained group version')
+    _require(mode in ((0, 1, 2) if planar else (1, 2)) and reserved == 0 and 0 < count <= raw_size // 2 and
              count <= (len(payload) - GROUP.size) // SLICE.size and table_bytes == count * SLICE.size,
              'Invalid retained color table header')
     start = GROUP.size + table_bytes
@@ -52,7 +55,7 @@ def group_layout(payload, version):
         slices.append((at, shape))
         end += length
     _require(end == raw_size, 'Incomplete retained color slice coverage')
-    return raw_size, start, mode, tuple(slices)
+    return raw_size, start, mode + (8 if planar else 0), tuple(slices)
 
 
 def transform_group(raw, slices, mode, inverse=False):
@@ -63,7 +66,18 @@ def transform_group(raw, slices, mode, inverse=False):
         length, fmt = shape & 0xffffff, shape >> 24
         _require(at == end and fmt <= 4 and 0 < length <= len(raw) - end,
                  'Invalid retained color slice coverage')
-        output[at:at + length] = transform(raw[at:at + length], fmt, mode, inverse)
+        data = raw[at:at + length]
+        if mode in (8, 9, 10):
+            from retained_planes import transform as planes
+            if inverse and fmt == 4:
+                data = planes(data, True)
+            if mode != 8:
+                data = transform(data, fmt, mode - 8, inverse)
+            if not inverse and fmt == 4:
+                data = planes(data)
+        else:
+            data = transform(data, fmt, mode, inverse)
+        output[at:at + length] = data
         end += length
     _require(end == len(raw), 'Incomplete retained color slice coverage')
     return bytes(output)

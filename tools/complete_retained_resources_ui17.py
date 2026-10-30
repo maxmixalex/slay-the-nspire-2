@@ -29,11 +29,11 @@ def decoded_group(payload, version):
     return transform_group(raw, slices, mode, True) if mode else raw
 
 
-def verify(source, converted, choices, *, decode_groups):
+def verify(source, converted, choices, *, decode_groups, expected_version=None):
     target = colors.view(converted)
     t.require(source.counts == target.counts and source.clips == target.clips and
               source.cards == target.cards and source.aux == target.aux and
-              target.version == max(source.version, colors.CONTENT_VERSION), 'Retained completion changed catalog or format version')
+              target.version == (expected_version if expected_version is not None else max(source.version, colors.CONTENT_VERSION)), 'Retained completion changed catalog or format version')
     old_tiles, new_tiles = t.TileReader(source), t.TileReader(target)
     t.require((old_tiles.tile_count, old_tiles.frame_count, old_tiles.per_group, len(old_tiles.groups)) ==
               (new_tiles.tile_count, new_tiles.frame_count, new_tiles.per_group, len(new_tiles.groups)),

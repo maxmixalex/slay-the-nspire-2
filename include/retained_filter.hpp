@@ -1,5 +1,6 @@
 #pragma once
 #include <stdint.h>
+#include "retained_planes.hpp"
 
 namespace spire {
 constexpr unsigned RetainedFilterContentVersion=36;
@@ -68,12 +69,19 @@ inline bool valid_retained_slices(const uint8_t*table,unsigned count,unsigned by
     }
     return end==bytes;
 }
-inline bool restore_retained_group(uint8_t*data,unsigned bytes,const uint8_t*table,unsigned count,unsigned mode){
-    if(!data||!bytes||bytes>512u*1024u||mode<1||mode>2||!valid_retained_slices(table,count,bytes))return false;
+inline bool restore_retained_group(uint8_t*data,unsigned bytes,const uint8_t*table,unsigned count,unsigned mode,
+    uint8_t*scratch=nullptr,unsigned capacity=0){
+    const bool planar=mode>=8&&mode<=10;
+    if(!data||!bytes||bytes>512u*1024u||(!planar&&(mode<1||mode>2))||!valid_retained_slices(table,count,bytes))return false;
     for(unsigned i=0;i<count;++i){
         const unsigned at=retained_filter_detail::dword(table+i*8);
         const unsigned shape=retained_filter_detail::dword(table+i*8+4);
-        if(!restore_retained_colors(data+at,shape&0xffffffu,shape>>24,mode))return false;
+        const unsigned size=shape&0xffffffu,format=shape>>24;
+        if(planar&&format==4){
+            if(!scratch||capacity<size)return false;
+            for(unsigned j=0;j<size;++j)scratch[j]=data[at+j];
+            if(!restore_retained_planes(data+at,scratch,size,mode-8))return false;
+        }else if(mode!=8&&!restore_retained_colors(data+at,size,format,planar?mode-8:mode))return false;
     }
     return true;
 }

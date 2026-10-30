@@ -5,7 +5,7 @@ constexpr unsigned PreloadOutputBytes=512,PreloadInputBytes=4096;
 constexpr unsigned TilePreloadOutputBytes=4096,TilePreloadInputBytes=32768;
 static_assert(Lzma2ProbabilityBytes+PreloadInputBytes<=RetainedPageBytes,
               "Incremental LZMA2 workspace must fit one existing 32 KiB quarter");
-enum class PreloadPhase:uint8_t {Descriptor,Header,Decode,FilterSlice,FilterColors,
+enum class PreloadPhase:uint8_t {Descriptor,Header,Decode,FilterSlice,FilterColors,PlaneCopy,PlaneRestore,
     ReserveCopy,Copy,Literal,Lz4Header,Lz4,Verify,
     TileDescriptor,TileGroup,TileDecode,TilePredict,TileFilter,TileReady,
     TilePlan,TileGeometry,TileNeeds,TileSelect,TileCopy};
@@ -19,6 +19,7 @@ struct ContentPreload {
     ImageCache*image=nullptr;
     GlyphByteCache::Reservation glyph{};
     Lzma2BlockStream stream{};
+    RetainedPlanesCursor planes{};
     uint32_t key=0,descriptor=0,stored_size=0,group_offset=0,group_length=0;
     uint32_t raw_offset=0,size=0,position=0,source_offset=0,source_size=0,loaded=0;
     uint32_t filter_count=0,filter_index=0,filter_end=0,slice_offset=0,slice_size=0;
@@ -33,7 +34,7 @@ struct ContentPreload {
     bool is_glyph=false,opaque=true;
 };
 static ContentPreload content_preload;
-static_assert(sizeof(ContentPreload)<=640,"Preparation must retain only small task metadata");
+static_assert(sizeof(ContentPreload)<=704,"Preparation must retain only small task metadata");
 static void cancel_content_preload(const Content*owner){
     auto&p=content_preload;if(!p.owner||(owner&&p.owner!=owner))return;
     if(p.image&&!p.image->owner)discard_image(*p.image);
@@ -77,7 +78,7 @@ static void preload_group_ready(ContentPreload&p){
 static bool preload_filter_colors(ContentPreload&p){
     auto*base=tile_bytes(*p.raw)+p.slice_offset;unsigned budget=PreloadOutputBytes;
     const auto restore=[&](uint8_t*data,unsigned count,unsigned stride){
-        if(p.filter_mode==2){if(stride==3)retained_filter_detail::colors<2,3>(data,count);
+        if(p.filter_mode==2||p.filter_mode==10){if(stride==3)retained_filter_detail::colors<2,3>(data,count);
             else retained_filter_detail::colors<2,2>(data,count);}
         else {if(stride==3)retained_filter_detail::colors<1,3>(data,count);
             else retained_filter_detail::colors<1,2>(data,count);}
@@ -225,11 +226,13 @@ static PreparationResult step_content_preload(){
         if(!size||size>Lzma2BlockRawLimit||(p.is_glyph&&size>GroupedGlyphRawLimit)||
            property!=Lzma2DictionaryProperty)return PreparationResult::Failed;
         unsigned start=32;
-        if(u32(header)==FilteredRetainedGroupMagic){
+        const bool planar=u32(header)==PlanarRetainedGroupMagic;
+        if(u32(header)==FilteredRetainedGroupMagic||planar){
             p.filter_count=u32(header+16);const unsigned mode=u32(header+20),table=u32(header+24);
-            if(p.owner->version()<RetainedFilterContentVersion||mode<1||mode>2||u32(header+28)||
+            if(p.owner->version()<(planar?RetainedPlanesContentVersion:RetainedFilterContentVersion)||
+               mode>2||(!planar&&!mode)||u32(header+28)||
                !p.filter_count||p.filter_count>size/2||p.filter_count>(p.group_length-32)/8||table!=p.filter_count*8)return PreparationResult::Failed;
-            p.filter_mode=uint8_t(mode);start+=table;
+            p.filter_mode=uint8_t(mode+(planar?8u:0u));start+=table;
         }else if(u32(header)!=0x31524752u)return PreparationResult::Failed;
         if(!encoded||encoded!=p.group_length-start||p.raw_offset>size||p.size>size-p.raw_offset)return PreparationResult::Failed;
         p.raw=reserve_tile_group(size,true);if(!p.raw)return PreparationResult::Failed;
@@ -246,7 +249,12 @@ static PreparationResult step_content_preload(){
         const auto result=step_lzma2_stream(p.stream,preload_input(p)+p.input_at,p.input_size-p.input_at,consumed,PreloadOutputBytes);
         p.input_at=uint16_t(p.input_at+consumed);
         if(result==Lzma2StepResult::Failed)return PreparationResult::Failed;
-        if(result==Lzma2StepResult::Ready){if(p.filter_mode)p.phase=PreloadPhase::FilterSlice;else preload_group_ready(p);}
+        if(result==Lzma2StepResult::Ready){
+            // The LZMA stream is finished. Reuse its existing pool reservation
+            // for one source slice rather than allocating another resident arena.
+            if(p.filter_mode>=8){tile_discard(*p.workspace);p.workspace=nullptr;}
+            if(p.filter_mode)p.phase=PreloadPhase::FilterSlice;else preload_group_ready(p);
+        }
         return PreparationResult::Pending;
     }
     case PreloadPhase::FilterSlice:{
@@ -258,6 +266,12 @@ static PreparationResult step_content_preload(){
         p.slice_offset=u32(row);const unsigned shape=u32(row+4);p.slice_size=shape&0xffffffu;p.slice_format=uint8_t(shape>>24);
         if(p.slice_offset!=p.filter_end||!p.slice_size||p.slice_format>4||p.slice_size>p.raw->size-p.filter_end)return PreparationResult::Failed;
         p.scan=p.colors=p.spans=p.rows=p.previous=0;p.stride=2;
+        if(p.filter_mode>=8&&p.slice_format==4){
+            if(p.workspace&&tile_capacity(*p.workspace)<p.slice_size){tile_discard(*p.workspace);p.workspace=nullptr;}
+            if(!p.workspace){p.workspace=reserve_tile_group(p.slice_size,true);if(!p.workspace)return PreparationResult::Failed;p.workspace->first|=128u;}
+            p.position=0;p.planes={};p.phase=PreloadPhase::PlaneCopy;return PreparationResult::Pending;
+        }
+        if(p.filter_mode==8){p.filter_end=p.slice_offset+p.slice_size;++p.filter_index;return PreparationResult::Pending;}
         if(p.slice_format<2){const unsigned stride=p.slice_format?3:2;
             if(p.slice_size%stride)return PreparationResult::Failed;p.colors=p.slice_size/stride;
         }else if(p.slice_format<4){
@@ -268,6 +282,20 @@ static PreparationResult step_content_preload(){
     }
     case PreloadPhase::FilterColors:
         return preload_filter_colors(p)?PreparationResult::Pending:PreparationResult::Failed;
+    case PreloadPhase::PlaneCopy:{
+        const unsigned left=p.slice_size-p.position,n=left<PreloadOutputBytes?left:PreloadOutputBytes;
+        auto*out=tile_bytes(*p.workspace);const auto*in=tile_bytes(*p.raw)+p.slice_offset;
+        for(unsigned i=0;i<n;++i)out[p.position+i]=in[p.position+i];p.position+=n;
+        if(p.position==p.slice_size)p.phase=PreloadPhase::PlaneRestore;
+        return PreparationResult::Pending;
+    }
+    case PreloadPhase::PlaneRestore:{
+        const auto result=step_retained_planes(p.planes,tile_bytes(*p.raw)+p.slice_offset,
+            tile_bytes(*p.workspace),p.slice_size,p.filter_mode-8,PreloadOutputBytes);
+        if(result==RetainedPlanesResult::Failed)return PreparationResult::Failed;
+        if(result==RetainedPlanesResult::Ready){p.filter_end=p.slice_offset+p.slice_size;++p.filter_index;p.phase=PreloadPhase::FilterSlice;}
+        return PreparationResult::Pending;
+    }
     case PreloadPhase::ReserveCopy:
         if(p.raw_offset>p.raw->size||p.size>p.raw->size-p.raw_offset||!preload_reserve_output(p))return PreparationResult::Failed;
         p.position=0;p.phase=PreloadPhase::Copy;return PreparationResult::Pending;

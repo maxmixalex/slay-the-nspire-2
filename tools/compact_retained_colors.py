@@ -21,7 +21,7 @@ from repack_retained import DESCRIPTOR, auxiliary_count
 from retained_filter import CONTENT_VERSION, SLICE, group_layout, transform_group
 import split_content
 
-VERSIONS = tuple(range(34, 42))
+VERSIONS = tuple(range(34, 44))
 PROFILES = ((3, 0, 2), (3, 0, 0), (4, 0, 1))
 ENCODER = b'RGR2-planar-rgb565-v1-lzma2-9-273-512'
 

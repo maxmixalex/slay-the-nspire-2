@@ -757,7 +757,7 @@ def index_records(raw, count, tile_count):
 class TileReader:
     """Independent host reference decoder for a completed v15 pack."""
     def __init__(self, pack):
-        require(15 <= pack.version <= 42, 'Tiled reader requires version 15 through 42')
+        require(15 <= pack.version <= 43, 'Tiled reader requires version 15 through 43')
         self.pack = pack
         require(pack.base_end + GLOBAL.size <= len(pack.data), 'Truncated tile header')
         fields = GLOBAL.unpack_from(pack.data, pack.base_end)

@@ -41,7 +41,7 @@ struct Fixture {
     explicit Fixture(unsigned version=20){
         const unsigned strings=version>=34?Ui7StringCount:LocaleStringCount;
         const unsigned clips=version>=34?BestiaryKaiserAnimationKinds:MerchantEffectsAnimationKinds;
-        const unsigned aux=version>=HistoryBodyContentVersion?unsigned(SettingsUi10AuxiliaryCount):version>=HistoryHeaderContentVersion?unsigned(HistoryHeaderAuxiliaryCount):version>=SpeechBubbleContentVersion?unsigned(SpeechBubbleAuxiliaryCount):version>=34?unsigned(GameOverTransitionAuxiliaryCount):
+        const unsigned aux=version>=Ui12ContentVersion?unsigned(Ui12AuxiliaryCount):version>=HistoryBodyContentVersion?unsigned(SettingsUi10AuxiliaryCount):version>=HistoryHeaderContentVersion?unsigned(HistoryHeaderAuxiliaryCount):version>=SpeechBubbleContentVersion?unsigned(SpeechBubbleAuxiliaryCount):version>=34?unsigned(GameOverTransitionAuxiliaryCount):
             version>=21?unsigned(TitleEffectsAuxiliaryCount):unsigned(MerchantEffectsAuxiliaryCount);
         base=40+Images*16+16+strings*8+clips*16+CardKinds*16+aux*4;
         const unsigned table=base+64;costs=table+16;
@@ -53,6 +53,10 @@ struct Fixture {
         for(unsigned i=0;i<16;++i)put(bytes,base+i*4,fields[i]);
         std::fill(bytes.begin()+costs,bytes.begin()+costs+Images,1);
         raw={{0x34,0x12,0xcd,0xab},{0x56,0x34,0x12,0x78,0,255},Bytes(514),Bytes(516),Bytes(480)};
+        if(version>=RetainedPlanesContentVersion){
+            raw[4]={0,0,2,0,0,0,2,0,0,0xff,0xff,0x1f,0x78,3,0,2,0,1,0x34,0x12,0,0x1f,0xf8,137};
+            raw[4].resize(raw[4].size()+238*2); // Two rows above and all remaining original empty rows.
+        }
         for(unsigned i=0;i<512;++i){raw[2][i]=uint8_t(i*29);raw[3][i]=uint8_t(i*31);}
         raw[2][512]=1;raw[2][513]=9;raw[3][512]=2;raw[3][513]=7;raw[3][514]=0;raw[3][515]=173;
         Bytes joined;std::vector<unsigned> offsets;
@@ -117,6 +121,7 @@ void filter_colors(Bytes&bytes,unsigned offset,unsigned count,unsigned stride,un
 }
 Bytes filtered(const Bytes&raw,unsigned format,unsigned mode){
     Bytes bytes=raw;
+    if(!mode)return bytes;
     if(format<2)filter_colors(bytes,0,unsigned(bytes.size())/(format==1?3:2),2,mode);
     else if(format<4)filter_colors(bytes,0,256,2,mode);
     else for(unsigned at=0;at<bytes.size();){
@@ -128,19 +133,35 @@ Bytes filtered(const Bytes&raw,unsigned format,unsigned mode){
     }
     return bytes;
 }
+Bytes separated_sparse(const Bytes&raw){
+    Bytes geometry,colors,alpha;
+    for(unsigned at=0;at<raw.size();){
+        const unsigned count=color_word(raw.data()+at);
+        geometry.insert(geometry.end(),raw.begin()+at,raw.begin()+at+2);at+=2;
+        for(unsigned i=0;i<count;++i){
+            const unsigned n=color_word(raw.data()+at+2),mixed=raw[at+4];
+            geometry.insert(geometry.end(),raw.begin()+at,raw.begin()+at+5);at+=5;
+            for(unsigned x=0;x<n;++x){colors.push_back(raw[at++]);colors.push_back(raw[at++]);if(mixed)alpha.push_back(raw[at++]);}
+        }
+    }
+    geometry.insert(geometry.end(),colors.begin(),colors.end());geometry.insert(geometry.end(),alpha.begin(),alpha.end());
+    CHECK(geometry.size()==raw.size());return geometry;
+}
 void filter_fixture(Fixture&f,unsigned mode){
     Bytes joined,table;
     for(unsigned format=0;format<f.raw.size();++format){
         const unsigned at=unsigned(joined.size()),size=unsigned(f.raw[format].size());
         const unsigned end=unsigned(table.size());table.resize(end+8);
         put(table,end,at);put(table,end+4,(format<<24)|size);
-        const Bytes bytes=filtered(f.raw[format],format,mode);joined.insert(joined.end(),bytes.begin(),bytes.end());
+        Bytes bytes=filtered(f.raw[format],format,mode>=8?mode-8:mode);
+        if(mode>=8&&format==4)bytes=separated_sparse(bytes);
+        joined.insert(joined.end(),bytes.begin(),bytes.end());
     }
     const unsigned end=unsigned(table.size()),at=unsigned(joined.size());table.resize(end+8);
     put(table,end,at);put(table,end+4,8192-at);joined.resize(8192);
     const Bytes encoded=stored(joined);Bytes block(32);
-    put(block,0,FilteredRetainedGroupMagic);put(block,4,unsigned(joined.size()));put(block,8,unsigned(encoded.size()));
-    put(block,12,14);put(block,16,unsigned(table.size()/8));put(block,20,mode);put(block,24,unsigned(table.size()));
+    put(block,0,mode>=8?PlanarRetainedGroupMagic:FilteredRetainedGroupMagic);put(block,4,unsigned(joined.size()));put(block,8,unsigned(encoded.size()));
+    put(block,12,14);put(block,16,unsigned(table.size()/8));put(block,20,mode>=8?mode-8:mode);put(block,24,unsigned(table.size()));
     block.insert(block.end(),table.begin(),table.end());block.insert(block.end(),encoded.begin(),encoded.end());
     f.group=append(f.bytes,block);f.group_size=unsigned(block.size());
     for(unsigned descriptor:f.descriptors){put(f.bytes,descriptor,uint32_t(int64_t(f.group)-descriptor));put(f.bytes,descriptor+4,f.group_size);}
@@ -283,7 +304,7 @@ void requested_bounds(){
     changed=f.bytes;put(changed,f.base+56,0xffffffff);CHECK(!content->open(changed.data(),changed.size()));
 }
 void foreground_workspace_reuse(unsigned mode=0){
-    Fixture f(mode?RetainedFilterContentVersion:20);if(mode)filter_fixture(f,mode);
+    Fixture f(mode>=8?RetainedPlanesContentVersion:mode?RetainedFilterContentVersion:20);if(mode)filter_fixture(f,mode);
     Provider source{&f.bytes};auto content=std::make_unique<Content>();
     CHECK(content->open(source.source()));const Picture retained=picture(*content,0,f,0);
     const Picture tile=content->image(Fixture::Images-1);CHECK(tile.pixels&&tile.format==4);
@@ -350,7 +371,7 @@ struct ReentrantRead {
     }
 };
 void reentrant_transfer_and_failure(unsigned mode=0){
-    Fixture f(mode?RetainedFilterContentVersion:20);if(mode)filter_fixture(f,mode);
+    Fixture f(mode>=8?RetainedPlanesContentVersion:mode?RetainedFilterContentVersion:20);if(mode)filter_fixture(f,mode);
     Provider source{&f.bytes};auto content=std::make_unique<Content>();
     CHECK(content->open(source.source()));picture(*content,0,f,0);
     static State original,target;static SaveData saved,output;
@@ -400,7 +421,7 @@ unsigned finish_preload(Content&content,Provider&source,int image){
     }
 }
 void bounded_preparation(unsigned mode,bool streamed){
-    Fixture f(RetainedFilterContentVersion);if(mode)filter_fixture(f,mode);
+    Fixture f(mode>=8?RetainedPlanesContentVersion:RetainedFilterContentVersion);if(mode)filter_fixture(f,mode);
     // The requested glyph shares this retained dictionary but must receive its
     // own stable byte-cache entry, not a pointer into a later evicted group.
     Bytes descriptor(16);const unsigned at=(unsigned(f.bytes.size())+1)&~1u;
@@ -532,9 +553,12 @@ int main(){
     for(unsigned version:{20u,21u,34u,35u,36u,37u,38u,39u})for(bool streamed:{false,true})roundtrip(streamed,version);
     for(unsigned mode:{1u,2u})for(bool streamed:{false,true})roundtrip(streamed,RetainedFilterContentVersion,mode);
     for(unsigned mode:{1u,2u})for(bool streamed:{false,true})roundtrip(streamed,SpeechBubbleContentVersion,mode);
+    for(unsigned mode:{8u,9u,10u})for(bool streamed:{false,true})roundtrip(streamed,RetainedPlanesContentVersion,mode);
     filter_all_bits();filtered_bounds();requested_bounds();opaque_alpha_representation();
     for(unsigned mode:{0u,1u,2u}){foreground_workspace_reuse(mode);reentrant_transfer_and_failure(mode);}
     for(unsigned mode:{0u,1u,2u})for(bool streamed:{false,true})bounded_preparation(mode,streamed);
+    for(unsigned mode:{8u,9u,10u}){foreground_workspace_reuse(mode);reentrant_transfer_and_failure(mode);}
+    for(unsigned mode:{8u,9u,10u})for(bool streamed:{false,true})bounded_preparation(mode,streamed);
     bounded_lz4_and_literal();
     for(unsigned mode:{0u,1u,2u})for(bool room:{false,true})preparation_survives_visible_frames(mode,room);
     visible_demand_reclaims_preparation_bank();

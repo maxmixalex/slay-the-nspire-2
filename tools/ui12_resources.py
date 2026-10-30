@@ -32,7 +32,7 @@ _pairs={}
 
 
 def view(data):
-    return tiles.PackView(data,auxiliary_count(data),versions=(39,40,41,42))
+    return tiles.PackView(data,auxiliary_count(data),versions=(39,40,41,42,43))
 
 
 def source_assets(pck,cache):
