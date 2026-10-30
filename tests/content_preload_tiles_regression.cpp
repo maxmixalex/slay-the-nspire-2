@@ -107,13 +107,14 @@ void compact_frames_and_faults(){
             CHECK(same_reads(before,c->read_stats()));
         }
         for(unsigned mutation:{0u,1u,2u,3u,4u,5u}){
-            label="incremental compact bounds and strict old-version contract reject before publication";
+            label="incremental compact bounds and strict old-version contract reject before publication mode="+std::to_string(mode)+" mutation="+std::to_string(mutation);
             Bytes bad=p.bytes;const unsigned group=p.group_offsets[0],live=p.groups[0].items;
             if(mutation==0)put(bad,4,PredictiveIndexContentVersion);
             if(mutation==1)put(bad,group+24,0);
             if(mutation==2)put(bad,group+24,681);
             if(mutation==3)put(bad,group+12,live*TileBytes-1);
-            if(mutation==4)put(bad,p.group_offsets[p.tile_groups()]+32+3+12,mode?live*2:live);
+            // TGI2 stores a zigzag delta plus a low predictor-selection bit.
+            if(mutation==4)put(bad,p.group_offsets[p.tile_groups()]+32+3+12,mode?live*4:live);
             if(mutation==5){provider.fail_first=group+32;provider.fail_last=provider.fail_first+1;}
             provider.bytes=&bad;CHECK(c->open(provider.source()));
             PreparationResult result=PreparationResult::Pending;unsigned steps=0;
