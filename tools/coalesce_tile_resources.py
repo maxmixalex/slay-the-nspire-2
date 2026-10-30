@@ -306,7 +306,7 @@ def rewrite(data, plan, *, version=41):
     for group, (original, payload, physical) in sorted(plan.items()):
         at, length, *_ = old.groups[group]
         t.require(data[at-32:at+length] == original, 'Locale compressed artwork differs from shared plan')
-        if payload != original:
+        if payload != original or physical != original:
             replacements.append((at-32, len(original), payload, physical))
     relocate = Relocation(replacements)
     out, prior, lengths = bytearray(), 0, {}
@@ -338,7 +338,8 @@ def rewrite(data, plan, *, version=41):
     return bytes(out), relocate
 
 
-def verify(data, output, plan, mapping, keep, original_tiles, *, pixel_groups=True, compact_slots=None):
+def verify(data, output, plan, mapping, keep, original_tiles, *, pixel_groups=True, compact_slots=None,
+           encoded_groups_only=False):
     source, target = view(data), view(output)
     old, new = t.TileReader(source), t.TileReader(target)
     t.require(source.counts == target.counts and source.clips == target.clips and
@@ -347,10 +348,13 @@ def verify(data, output, plan, mapping, keep, original_tiles, *, pixel_groups=Tr
     t.require((old.tile_count, old.tile_groups, old.index_groups, old.frame_count, old.per_group) ==
               (new.tile_count, new.tile_groups, new.index_groups, new.frame_count, new.per_group),
               'Tile coalescing changed group boundaries or IDs')
+    if encoded_groups_only:
+        t.require(mapping is None and compact_slots is None and not pixel_groups and source.version==target.version,
+                  'Encoded identity proof requires an unchanged codec and no tile mapping')
     replacements = [(old.groups[g][0]-32, len(a), b, c)
-                    for g,(a,b,c) in sorted(plan.items()) if a != b]
+                    for g,(a,b,c) in sorted(plan.items()) if a != b or a != c]
     relocate = Relocation(replacements)
-    compared_tile_bytes = compared_index_bytes = 0
+    compared_tile_bytes = compared_index_bytes = compared_encoded_bytes = 0
     for group, (a, b) in enumerate(zip(old.groups, new.groups)):
         at, size, raw_size, _crc, kind, items = a
         nat, nsize, nraw, _ncrc, nkind, nitems = b
@@ -360,6 +364,10 @@ def verify(data, output, plan, mapping, keep, original_tiles, *, pixel_groups=Tr
                            and nraw == nitems*t.TILE_BYTES and nitems <= items and target.version >= 42)
         t.require(shape_equal and nat == relocate(at-32)+32, 'Coalescing changed group shape or relocation')
         t.require(output[nat-32:nat+nsize] == plan[group][1], 'New group differs from accepted plan')
+        if encoded_groups_only:
+            t.require(plan[group][0] == plan[group][1], 'Padding proof changed an encoded group')
+            compared_encoded_bytes += len(plan[group][0])
+            continue
         if group < old.tile_groups:
             if pixel_groups:
                 raw = new.group(group)[0]
@@ -422,6 +430,7 @@ def verify(data, output, plan, mapping, keep, original_tiles, *, pixel_groups=Tr
     return dict(input_bytes=len(data), output_bytes=len(output), saved_bytes=len(data)-len(output),
                 input_sha256=t.sha256(data), output_sha256=t.sha256(output),
                 compared_live_tile_bytes=compared_tile_bytes, compared_index_bytes=compared_index_bytes,
+                encoded_groups_only=encoded_groups_only, compared_encoded_group_bytes=compared_encoded_bytes,
                 glyphs=len(source.glyphs), strings=len(source.strings), images=len(source.images),
                 exact_mapped_tile_records=True, exact_geometry_and_clocks=True,
                 exact_glyphs_strings_and_retained=True, shared_encoded_plan_verified=True)
