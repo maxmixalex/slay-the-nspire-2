@@ -476,10 +476,9 @@ PreparationResult Content::preload_image_step(int id)const{
     }
     const auto r=image_directory_[unsigned(id)];const unsigned format=r.format,length=r.length;
     const unsigned w=r.width(),h=r.height(),offset=r.offset;
-    // The ordinary combat tier has room for a pinned index, current tile
-    // dictionary and bounded incremental workspace. Keep the historical
-    // unsupported/healthy result in the smaller static-room tier.
-    if(format==6&&tile_page_limit<TilePages)return PreparationResult::Failed;
+    // NSP2/44 rooms retain12 pages: an8-page tile,3-page planes and the
+    // existing workspace. Legacy rooms keep their historical healthy fallback.
+    if(format==6&&tile_page_limit<12)return PreparationResult::Failed;
     const auto fail=[&](){io_good_=false;clear_caches(this);return PreparationResult::Failed;};
     if(!w||w>320||!h||h>240||format>7||!length||length>MaxEncodedImage||
        (format==5&&version_<5)||(format==6&&(!tile_metadata_||length!=16))||
