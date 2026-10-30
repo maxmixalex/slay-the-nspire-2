@@ -23,14 +23,18 @@ import numpy as np
 
 import content_tiles as t
 from compact_tile_resources import grouped_slices, SLICE
-from predict_index_resources import view
 from recompress_resources import Relocation
+from repack_retained import auxiliary_count
 import split_content as split
 import storage_parts as storage
 from tile_filter import filter_tiles, restore_tiles
 from tile_prediction import index_transform
 
 ENCODER = b'UI18-exact-tile-coalescing-v1-lzma2-lc4-lp0-pb1-nice273-depth512'
+
+
+def view(data):
+    return t.PackView(data, auxiliary_count(data), versions=tuple(range(20, 43)))
 
 
 def active_tiles(geometry, width, height):
@@ -270,7 +274,7 @@ def make_plan(source, work, *, workers=2):
     return plan, mapping, keep, raw_tiles, report
 
 
-def rewrite(data, plan):
+def rewrite(data, plan, *, version=41):
     """Relocate every address; pixel-group references themselves remain direct."""
     source = view(data); old = t.TileReader(source)
     t.require(set(plan) == set(range(len(old.groups))), 'Plan omits/duplicates a group')
@@ -305,11 +309,12 @@ def rewrite(data, plan):
         t.DESCRIPTOR.pack_into(out, relocate(offset), relocate(global_at), group, raw_at, size)
     for offset, (relative, length, raw_at, shape) in grouped_slices(source).items():
         SLICE.pack_into(out, relocate(offset), relocate(offset+relative)-relocate(offset), length, raw_at, shape)
-    struct.pack_into('<I', out, 4, 41); struct.pack_into('<I', out, 12, len(out)); struct.pack_into('<I', out, 36, 0)
+    t.require(version in (41,42), 'Unsupported output tile version')
+    struct.pack_into('<I', out, 4, version); struct.pack_into('<I', out, 12, len(out)); struct.pack_into('<I', out, 36, 0)
     return bytes(out), relocate
 
 
-def verify(data, output, plan, mapping, keep, original_tiles, *, pixel_groups=True):
+def verify(data, output, plan, mapping, keep, original_tiles, *, pixel_groups=True, compact_slots=None):
     source, target = view(data), view(output)
     old, new = t.TileReader(source), t.TileReader(target)
     t.require(source.counts == target.counts and source.clips == target.clips and
@@ -325,22 +330,42 @@ def verify(data, output, plan, mapping, keep, original_tiles, *, pixel_groups=Tr
     for group, (a, b) in enumerate(zip(old.groups, new.groups)):
         at, size, raw_size, _crc, kind, items = a
         nat, nsize, nraw, _ncrc, nkind, nitems = b
-        t.require((raw_size, kind, items) == (nraw, nkind, nitems) and nat == relocate(at-32)+32,
-                  'Coalescing changed group shape or relocation')
+        shape_equal = ((raw_size, kind, items) == (nraw, nkind, nitems))
+        if compact_slots is not None and group in compact_slots:
+            shape_equal = (kind == nkind == 1 and nitems == max(1,len(compact_slots[group]))
+                           and nraw == nitems*t.TILE_BYTES and nitems <= items and target.version >= 42)
+        t.require(shape_equal and nat == relocate(at-32)+32, 'Coalescing changed group shape or relocation')
         t.require(output[nat-32:nat+nsize] == plan[group][1], 'New group differs from accepted plan')
         if group < old.tile_groups:
             if pixel_groups:
                 raw = new.group(group)[0]
                 first = group * old.per_group
-                records = np.frombuffer(raw, dtype='u1').reshape(items, t.TILE_BYTES)
-                selected = keep[first:first+items]
-                t.require(np.array_equal(records[selected], original_tiles[first:first+items][selected]),
-                          'Referenced tile lost RGB, alpha, edge or padding bytes')
-                compared_tile_bytes += int(selected.sum()) * t.TILE_BYTES
+                if compact_slots is not None:
+                    previous = old.group(group)[0]
+                    if group in compact_slots:
+                        slots = compact_slots[group]
+                        previous = (np.frombuffer(previous,dtype='u1').reshape(items,t.TILE_BYTES)[slots].tobytes()
+                                    if len(slots) else b'\x01\x01'+bytes(t.TILE_BYTES-2))
+                    t.require(raw == previous, 'Compacted tile lost RGB, alpha, edge or padding bytes')
+                    compared_tile_bytes += len(raw)
+                else:
+                    records = np.frombuffer(raw, dtype='u1').reshape(items, t.TILE_BYTES)
+                    selected = keep[first:first+items]
+                    t.require(np.array_equal(records[selected], original_tiles[first:first+items][selected]),
+                              'Referenced tile lost RGB, alpha, edge or padding bytes')
+                    compared_tile_bytes += int(selected.sum()) * t.TILE_BYTES
         else:
             original = old.group(group)[0]
-            t.require(new.group(group)[0] == mapped_index(original, items, old.tile_count, mapping),
+            current = new.group(group)[0]
+            t.require(current == mapped_index(original, items, old.tile_count, mapping),
                       'Frame geometry or mapped index differs')
+            if compact_slots is not None:
+                capacities = np.array([g[5] for g in new.groups[:new.tile_groups]],dtype='<u4')
+                for record in t.index_records(current,items,new.tile_count):
+                    count = t.FRAME.unpack_from(current,record)[1]//4
+                    ids = np.frombuffer(current,dtype='<u4',count=count,offset=record+12)
+                    t.require(np.all(ids%new.per_group < capacities[ids//new.per_group]),
+                              'Frame names a removed tile slot')
             compared_index_bytes += raw_size
     for a, b in zip(source.images, target.images):
         offset, _w, _h, fmt, length = a

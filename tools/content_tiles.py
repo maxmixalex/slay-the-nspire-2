@@ -757,7 +757,7 @@ def index_records(raw, count, tile_count):
 class TileReader:
     """Independent host reference decoder for a completed v15 pack."""
     def __init__(self, pack):
-        require(15 <= pack.version <= 41, 'Tiled reader requires version 15 through 41')
+        require(15 <= pack.version <= 42, 'Tiled reader requires version 15 through 42')
         self.pack = pack
         require(pack.base_end + GLOBAL.size <= len(pack.data), 'Truncated tile header')
         fields = GLOBAL.unpack_from(pack.data, pack.base_end)
@@ -818,7 +818,8 @@ class TileReader:
                     and 0 < raw_size <= GROUP_LIMIT, 'Invalid group header')
             if i < self.tile_groups:
                 expected = min(self.per_group, self.tile_count - i * self.per_group)
-                require(kind == 1 and count == expected and raw_size == count * TILE_BYTES, 'Invalid tile group shape')
+                require(kind == 1 and (0 < count <= expected if pack.version >= 42 else count == expected)
+                        and raw_size == count * TILE_BYTES, 'Invalid tile group shape')
             else:
                 require(kind == 2 and 0 < count <= INDEX_FRAMES, 'Invalid index group item count')
             self.groups.append((off + GROUP.size, encoded_size, raw_size, crc, kind, count))
