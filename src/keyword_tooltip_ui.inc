@@ -307,7 +307,14 @@ static HoverPage hover_page(Canvas&c,const CardHoverTarget&owner,const HoverTipL
     if(event_lane)card_x=column.x+column.w-card_w;
     if(enchant_lane)card_x=column.x+(column.w-card_w)/2;
     if(owner.sovereign_blade)card_x=column.x-card_w-1;
-    if((owner.power>=0||owner.creature>=0||owner.merchant)&&!details&&!inspect&&card_count&&result.count){
+    if(card_count&&!result.count&&!details&&!inspect&&!event_lane&&!enchant_lane&&!owner.sovereign_blade){
+        // NHoverTipSet corrects the containers it actually created. With no
+        // text tips, move the card to the other side of its owner directly;
+        // a hypothetical empty text column must not reserve 104 pixels.
+        if(hover_compact_event(owner))card_x=column.x;
+        else if(card_x<3||card_x+card_w>317)
+            card_x=direction>0?owner.owner.x+owner.owner.w+1:owner.owner.x-card_w-1;
+    }else if((owner.power>=0||owner.creature>=0||owner.merchant)&&!details&&!inspect&&card_count&&result.count){
         // NHoverTipSet.CorrectHorizontalOverflow moves the actual containers
         // together. Empty available text columns must not separate a power
         // from its associated card when the original opposite side overflows.
@@ -343,32 +350,40 @@ static HoverPage hover_page(Canvas&c,const CardHoverTarget&owner,const HoverTipL
     result.pages=mx(page+1,card_pages);return result;
 }
 HoverPage card_hover_page(App&a,const CardHoverTarget&owner,const HoverTipList&tips,int page){Canvas c{a};return hover_page(c,owner,tips,page);}
+int card_hover_icon(const App&a,const CardHoverTarget&owner,const HoverTip&tip){
+    int icon=-1;
+    if(tip.kind==HoverTipKind::Relic){
+        const RelicId id=world_relic_id(tip.key);int character=-1;
+        // Only the actual held/history/event model has an owner. Related
+        // relics are canonical models and share Cookie's process variant.
+        if(owner.relic==int(id)&&owner.historical){const auto*run=a.history_at(a.history_index);if(run)character=run->character;}
+        else if(owner.relic==int(id)&&owner.owned_relic>=0)character=int(a.game.character);
+        else if(owner.relic==int(id)&&owner.inspect_relic)character=a.relic_inspect_character();
+        else if(owner.event_option>=0){const auto&e=a.game.original_events;
+            if(e.id!=OriginalEventId::FakeMerchant&&unsigned(owner.event_option)<e.offer_count&&e.offers[owner.event_option]==id)character=int(a.game.character);}
+        icon=a.relic_face_image(id,character);
+    }
+    else if(tip.kind==HoverTipKind::Potion)icon=a.content.potion_image(Potion(tip.amount));
+    else if(tip.kind==HoverTipKind::Power){
+        const int token=tip.power>=0?tip.power:owner.power;
+        icon=tip.instanced&&token>=0?ui_status_image(a,int(power_id(uint16_t(token)))):a.content.world_image("powers",tip.key);
+    }
+    else if(tip.kind==HoverTipKind::Intent){
+        const auto intent=a.combat_intent(tip.actor-1);
+        for(const auto&part:ui_intent_parts)if(part.flag==unsigned(tip.amount)){icon=ui_intent_image(a,part,intent);break;}
+    }
+    else if(tip.kind==HoverTipKind::Enchantment)icon=a.content.world_image("enchantments",tip.key);
+    else if(tip.kind==HoverTipKind::Static&&hover_key_equal(tip.key,"ENERGY"))icon=a.content.energy_image(owner.card);
+    return icon;
+}
 static void draw_hover_piece(Canvas&c,const CardHoverTarget&owner,const HoverTipList&tips,const HoverPiece&piece){
     const auto&tip=tips.items[piece.tip];const auto&r=piece.box;char title[160]{},body[2048]{};
     format_card_hover_tip(c.a,owner,tip,title,sizeof title,body,sizeof body);
     if(tip.kind==HoverTipKind::Card){
         const EventCardFacts canonical{};draw_card_face(c,tip.card,r.x+1,r.y,r.w-3,r.h-2,cost(tip.card),-2,tip.amount>0?tip.amount-1:-1,-1,tip.has_facts?&tip.facts:&canonical,body);return;
     }
-    source_hover_skin(c,r,tip.debuff);int icon=-1;
-    if(tip.kind==HoverTipKind::Relic){
-        const RelicId id=world_relic_id(tip.key);int character=-1;
-        // Only the actual held/history/event model has an owner. Related
-        // relics are canonical models and share Cookie's process variant.
-        if(owner.relic==int(id)&&owner.historical){const auto*run=c.a.history_at(c.a.history_index);if(run)character=run->character;}
-        else if(owner.relic==int(id)&&owner.owned_relic>=0)character=int(c.a.game.character);
-        else if(owner.relic==int(id)&&owner.inspect_relic)character=c.a.relic_inspect_character();
-        else if(owner.event_option>=0){const auto&e=c.a.game.original_events;
-            if(e.id!=OriginalEventId::FakeMerchant&&unsigned(owner.event_option)<e.offer_count&&e.offers[owner.event_option]==id)character=int(c.a.game.character);}
-        icon=c.a.relic_face_image(id,character);
-    }
-    else if(tip.kind==HoverTipKind::Potion)icon=c.a.content.potion_image(Potion(tip.amount));
-    else if(tip.kind==HoverTipKind::Intent){
-        const auto intent=c.a.combat_intent(tip.actor-1);
-        for(const auto&part:ui_intent_parts)if(part.flag==unsigned(tip.amount)){icon=ui_intent_image(c.a,part,intent);break;}
-    }
-    else if(tip.kind==HoverTipKind::Enchantment)icon=c.a.content.world_image("enchantments",tip.key);
-    else if(tip.kind==HoverTipKind::Static&&hover_key_equal(tip.key,"ENERGY"))icon=c.a.content.energy_image(owner.card);
-    source_hover_title(c,title,r,icon);
+    source_hover_skin(c,r,tip.debuff);
+    source_hover_title(c,title,r,card_hover_icon(c.a,owner,tip));
     source_hover_paragraph(c,body,r.x+SourceHoverLeft,r.y+SourceHoverTop+source_hover_step(c),source_hover_body_width(r.w),piece.lines,piece.skip);
 }
 static void prepare_merchant_hover(App&a,const State&stock,GlyphPreparationBudget&budget){
@@ -423,11 +438,7 @@ static void prepare_merchant_hover(App&a,const State&stock,GlyphPreparationBudge
         // their46x62 holder. Reuse that fitting path, never raster a new tile.
         render_card_face(hidden,tip.card,0,0,43,60,cost(tip.card),-2,instance,-1,facts,body);
     }else{
-        int icon=-1;
-        if(tip.kind==HoverTipKind::Relic)icon=a.relic_face_image(world_relic_id(tip.key));
-        else if(tip.kind==HoverTipKind::Potion)icon=a.content.potion_image(Potion(tip.amount));
-        else if(tip.kind==HoverTipKind::Enchantment)icon=a.content.world_image("enchantments",tip.key);
-        else if(tip.kind==HoverTipKind::Static&&hover_key_equal(tip.key,"ENERGY"))icon=a.content.energy_image(owner.card);
+        const int icon=card_hover_icon(a,owner,tip);
         if(!image(icon))return;
         source_hover_title(hidden,title,{0,0,SourceHoverWidth,194},icon);
         source_hover_paragraph(hidden,body,0,0,source_hover_body_width(SourceHoverWidth),1);
