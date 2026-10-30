@@ -41,14 +41,19 @@ static void usage(const char*stage){
         stage,u.entries,u.pages,p.count,p.pages,resident,p.bounded?"true":"false",app.game.hp);
 }
 static bool window(Source&s,const char*name,unsigned frames){
-    s.phase=name;const auto calls=s.calls,bytes=s.bytes,seeks=s.seeks;const auto start=Clock::now();double maximum=0;
+    s.phase=name;const auto calls=s.calls,bytes=s.bytes,seeks=s.seeks;const auto decodes=app.content.retained_decode_serial();const auto start=Clock::now();double maximum=0;
     for(unsigned i=0;i<frames;++i){s.frame=i;const auto begin=Clock::now();app.advance(33);app.render();
         const double ms=std::chrono::duration<double,std::milli>(Clock::now()-begin).count();if(ms>maximum)maximum=ms;
         if(!app.content.healthy()||app.title||app.combat_preparation.active)return false;
     }
     const double ms=std::chrono::duration<double,std::milli>(Clock::now()-start).count();
-    std::printf("{\"operation\":\"window\",\"phase\":\"%s\",\"frames\":%u,\"cpu_ms\":%.3f,\"max_host_ms\":%.3f,\"calls\":%llu,\"bytes\":%llu,\"seeks\":%llu}\n",
-        name,frames,ms,maximum,(unsigned long long)(s.calls-calls),(unsigned long long)(s.bytes-bytes),(unsigned long long)(s.seeks-seeks));usage(name);std::fflush(stdout);return true;
+    std::printf("{\"operation\":\"window\",\"phase\":\"%s\",\"frames\":%u,\"host_elapsed_ms\":%.3f,\"max_host_ms\":%.3f,\"calls\":%llu,\"bytes\":%llu,\"seeks\":%llu,\"retained_decodes\":%u}\n",
+        name,frames,ms,maximum,(unsigned long long)(s.calls-calls),(unsigned long long)(s.bytes-bytes),(unsigned long long)(s.seeks-seeks),app.content.retained_decode_serial()-decodes);usage(name);std::fflush(stdout);return true;
+}
+static void input(Source&s,const char*name,Key key){
+    s.phase=name;const auto calls=s.calls,bytes=s.bytes;const auto decodes=app.content.retained_decode_serial();app.input(key);app.render();
+    std::printf("{\"operation\":\"input\",\"phase\":\"%s\",\"calls\":%llu,\"bytes\":%llu,\"retained_decodes\":%u,\"shop_open\":%s}\n",
+        name,(unsigned long long)(s.calls-calls),(unsigned long long)(s.bytes-bytes),app.content.retained_decode_serial()-decodes,app.shop_open?"true":"false");
 }
 int main(int argc,char**argv){
     if(argc!=4){std::fprintf(stderr,"Usage: combat_cache_working_set LOGICAL_PACK SAVE PROGRESS\n");return 2;}
@@ -64,8 +69,20 @@ int main(int argc,char**argv){
     if(app.title){std::fprintf(stderr,"Continue did not enter combat\n");return 4;}
     source.phase="prepare";unsigned updates=0;
     while(app.combat_preparation.active){if(++updates>4096)return 5;app.advance(33);app.render();}
-    if(app.game.phase!=Phase::Combat||!app.content.healthy())return 6;
+    if((app.game.phase!=Phase::Combat&&app.game.phase!=Phase::Shop)||!app.content.healthy())return 6;
     std::printf("{\"operation\":\"preparation\",\"updates\":%u,\"enemies\":%d}\n",updates,app.game.enemy_count);usage("prepared");
+    if(app.game.phase==Phase::Shop){
+        if(!window(source,"closed_first",790))return 11; //18s Continue wait plus8s closed.
+        input(source,"cold_open_input",Key::Confirm);if(!app.shop_open)return 12;
+        if(!window(source,"cold_open",152))return 13;
+        input(source,"cold_close_input",Key::Back);if(app.shop_open)return 14;
+        if(!window(source,"closed_middle",122))return 15;
+        input(source,"cold_reopen_input",Key::Confirm);if(!app.shop_open)return 16;
+        if(!window(source,"cold_reopen",152))return 17;
+        input(source,"cold_reclose_input",Key::Back);if(app.shop_open)return 18;
+        if(!window(source,"closed_last",31))return 19;
+        std::fclose(f);return 0;
+    }
     for(int i=0;i<app.game.enemy_count;++i){const auto&m=app.enemy_presentation[i];const auto c=app.content.clip(m.clip);unsigned pages=0;
         for(unsigned j=0;j<c.count;++j)pages+=app.content.image_cache_pages(int(c.first+j));
         std::printf("{\"operation\":\"enemy_clip\",\"model\":%u,\"clip\":%d,\"first\":%u,\"count\":%u,\"frame_ms\":%u,\"pages\":%u}\n",m.model,m.clip,c.first,c.count,c.frame_ms,pages);
