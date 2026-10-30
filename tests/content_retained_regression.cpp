@@ -147,7 +147,7 @@ Bytes separated_sparse(const Bytes&raw){
     geometry.insert(geometry.end(),colors.begin(),colors.end());geometry.insert(geometry.end(),alpha.begin(),alpha.end());
     CHECK(geometry.size()==raw.size());return geometry;
 }
-void filter_fixture(Fixture&f,unsigned mode){
+void filter_fixture(Fixture&f,unsigned mode,unsigned padded=8192){
     Bytes joined,table;
     for(unsigned format=0;format<f.raw.size();++format){
         const unsigned at=unsigned(joined.size()),size=unsigned(f.raw[format].size());
@@ -158,7 +158,7 @@ void filter_fixture(Fixture&f,unsigned mode){
         joined.insert(joined.end(),bytes.begin(),bytes.end());
     }
     const unsigned end=unsigned(table.size()),at=unsigned(joined.size());table.resize(end+8);
-    put(table,end,at);put(table,end+4,8192-at);joined.resize(8192);
+    CHECK(padded>at);put(table,end,at);put(table,end+4,padded-at);joined.resize(padded);
     const Bytes encoded=stored(joined);Bytes block(32);
     put(block,0,mode>=8?PlanarRetainedGroupMagic:FilteredRetainedGroupMagic);put(block,4,unsigned(joined.size()));put(block,8,unsigned(encoded.size()));
     put(block,12,14);put(block,16,unsigned(table.size()/8));put(block,20,mode>=8?mode-8:mode);put(block,24,unsigned(table.size()));
@@ -431,7 +431,8 @@ void bounded_preparation(unsigned mode,bool streamed){
     Provider source{&f.bytes};auto content=std::make_unique<Content>();
     const auto open=[&](){CHECK(streamed?content->open(source.source()):content->open(f.bytes.data(),f.bytes.size()));};
     open();const auto serial=content->retained_decode_serial();
-    CHECK(finish_preload(*content,source,0)>=16);picture(*content,0,f,0);
+    const unsigned complete_steps=finish_preload(*content,source,0);
+    CHECK(complete_steps>=16);picture(*content,0,f,0);
     for(unsigned i=1;i<5;++i){finish_preload(*content,source,i);picture(*content,i,f,i);}
     CHECK(content->retained_decode_serial()==serial+1);
     unsigned steps=0;
@@ -456,6 +457,14 @@ void bounded_preparation(unsigned mode,bool streamed){
         finish_preload(*content,source,0);picture(*content,0,f,0);
         content->set_image_cache_profile(false);
     }
+    // Sweep every pending step so cancellation also reaches the new source
+    // copy and sparse inverse phases, rather than only the LZMA decode prefix.
+    if(mode>=8)for(unsigned cut=1;cut<complete_steps;++cut){
+        open();for(unsigned i=0;i<cut;++i)CHECK(content->preload_image_step(0)==PreparationResult::Pending);
+        content->cancel_preload();CHECK(!content->image_cached(0)&&content->healthy());
+        finish_preload(*content,source,0);
+        for(unsigned i=0;i<5;++i)picture(*content,i,f,i);
+    }
     // Visible demand preempts an in-flight dictionary and completes normally.
     open();for(unsigned i=0;i<8;++i)CHECK(content->preload_image_step(0)==PreparationResult::Pending);
     picture(*content,3,f,3);CHECK(content->healthy()&&!resource_transfer_uses);
@@ -469,6 +478,26 @@ void bounded_preparation(unsigned mode,bool streamed){
         open();finish_preload(*content,source,0);picture(*content,0,f,0);
     }
     content->cancel_preload();
+}
+void planar_room_pool_boundary(){
+    for(unsigned mode:{8u,9u,10u}){
+        Fixture f(RetainedPlanesContentVersion);auto&raw=f.raw[4];raw.clear();
+        for(unsigned y=0;y<240;++y){
+            const unsigned spans=y<233?320:0;raw.push_back(uint8_t(spans));raw.push_back(uint8_t(spans>>8));
+            for(unsigned x=0;x<spans;++x){
+                const unsigned rgb=(y*320+x)&65535;
+                for(unsigned value:{x&255u,x>>8,1u,0u,0u,rgb&255u,rgb>>8})raw.push_back(uint8_t(value));
+            }
+        }
+        CHECK(raw.size()==522400);put(f.bytes,f.descriptors[4]+12,(4u<<24)|unsigned(raw.size()));
+        f.bytes[f.costs+4]=uint8_t((raw.size()+4095)/4096);
+        filter_fixture(f,mode,524288);
+        Provider source{&f.bytes};auto content=std::make_unique<Content>();CHECK(content->open(source.source()));
+        content->set_image_cache_profile(true); // Exactly one MiB of existing group storage.
+        CHECK(finish_preload(*content,source,0)>2000);
+        picture(*content,0,f,0);picture(*content,4,f,4);
+        CHECK(content->healthy()&&!resource_transfer_uses);content->cancel_preload();content->set_image_cache_profile(false);
+    }
 }
 void bounded_lz4_and_literal(){
     for(unsigned stored_format:{0u,5u}){
@@ -559,6 +588,7 @@ int main(){
     for(unsigned mode:{0u,1u,2u})for(bool streamed:{false,true})bounded_preparation(mode,streamed);
     for(unsigned mode:{8u,9u,10u}){foreground_workspace_reuse(mode);reentrant_transfer_and_failure(mode);}
     for(unsigned mode:{8u,9u,10u})for(bool streamed:{false,true})bounded_preparation(mode,streamed);
+    planar_room_pool_boundary();
     bounded_lz4_and_literal();
     for(unsigned mode:{0u,1u,2u})for(bool room:{false,true})preparation_survives_visible_frames(mode,room);
     visible_demand_reclaims_preparation_bank();

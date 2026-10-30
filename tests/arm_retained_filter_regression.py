@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Execute the production linked ARM RGR2 inverse, with AAPCS and guards.
+"""Execute the production linked ARM RGR2/RGR3 inverse, with AAPCS and guards.
 
 This validates ARM926 instructions and exact retained pixels. It is neither
 calculator execution nor a timing benchmark. No private resources are needed.
@@ -38,6 +38,8 @@ def filter_words(data, offset, count, stride, mode):
 
 
 def filtered(raw, format_, mode):
+    if not mode:
+        return raw
     result = bytearray(raw)
     if format_ < 2:
         # Dense alpha is a separate plane, not an interleaved triple.
@@ -57,12 +59,28 @@ def filtered(raw, format_, mode):
     return bytes(result)
 
 
+def separated(raw):
+    geometry, colors, alpha = bytearray(), bytearray(), bytearray()
+    cursor = 0
+    while cursor < len(raw):
+        count, = struct.unpack_from('<H', raw, cursor)
+        geometry.extend(raw[cursor:cursor+2]); cursor += 2
+        for _ in range(count):
+            _x, pixels, mixed = struct.unpack_from('<HHB', raw, cursor)
+            geometry.extend(raw[cursor:cursor+5]); cursor += 5
+            for _ in range(pixels):
+                colors.extend(raw[cursor:cursor+2]); cursor += 2
+                if mixed:alpha.append(raw[cursor]); cursor += mixed
+    return bytes(geometry+colors+alpha)
+
+
 def group(slices, mode):
     original, encoded, table = bytearray(), bytearray(), bytearray()
     for format_, raw in slices:
         table.extend(struct.pack('<II', len(original), format_ << 24 | len(raw)))
         original.extend(raw)
-        encoded.extend(filtered(raw, format_, mode))
+        value = filtered(raw, format_, mode - 8 if mode >= 8 else mode)
+        encoded.extend(separated(value) if mode >= 8 and format_ == 4 else value)
     return bytes(original), bytes(encoded), bytes(table)
 
 
@@ -87,7 +105,7 @@ def main():
     parser.add_argument('elf', type=Path)
     args = parser.parse_args()
     elf = args.elf.read_bytes()
-    symbol = b'_ZN5spire22restore_retained_groupEPhjPKhjj'
+    symbol = b'_ZN5spire22restore_retained_groupEPhjPKhjjS0_j'
     segments, (address, size) = linked_helper(elf, symbol)
     emulator = Uc(UC_ARCH_ARM, UC_MODE_ARM | UC_MODE_LITTLE_ENDIAN)
     emulator.ctl_set_cpu_model(UC_CPU_ARM_926)
@@ -98,9 +116,9 @@ def main():
     emulator.mem_map(low, high - low)
     for start, _, payload in segments:
         emulator.mem_write(start, payload)
-    stack, stop, destination, source = 0x20000000, 0x30000000, 0x40000000, 0x41000000
+    stack, stop, destination, source, scratch = 0x20000000, 0x30000000, 0x40000000, 0x41000000, 0x42000000
     for start, length in ((stack, 65536), (stop, 4096),
-                          (destination, 1024 * 1024), (source, 1024 * 1024)):
+                          (destination, 1024 * 1024), (source, 1024 * 1024), (scratch, 1024 * 1024)):
         emulator.mem_map(start, length)
     saved = {reg: 0xA5010000 + i * 0x101 for i, reg in enumerate((
         UC_ARM_REG_R4, UC_ARM_REG_R5, UC_ARM_REG_R6, UC_ARM_REG_R7,
@@ -115,7 +133,9 @@ def main():
         table_guarded = b'\xa7' * 32 + table + b'\xa7' * 32
         emulator.mem_write(destination, guarded)
         emulator.mem_write(source, table_guarded)
-        emulator.mem_write(sp, struct.pack('<I', mode))
+        scratch_guarded = b'\xbc' * 32 + bytes(len(raw)) + b'\xbc' * 32
+        emulator.mem_write(scratch, scratch_guarded)
+        emulator.mem_write(sp, struct.pack('<3I', mode, scratch + 32, len(raw)))
         emulator.reg_write(UC_ARM_REG_CPSR, 0x10)
         for reg, value in saved.items():
             emulator.reg_write(reg, value)
@@ -139,6 +159,9 @@ def main():
             raise AssertionError(f'{label}: inverse wrote outside the guarded output')
         if bytes(emulator.mem_read(source, len(table_guarded))) != table_guarded:
             raise AssertionError(f'{label}: inverse changed the slice table')
+        copied = bytes(emulator.mem_read(scratch, len(scratch_guarded)))
+        if copied[:32] != scratch_guarded[:32] or copied[-32:] != scratch_guarded[-32:]:
+            raise AssertionError(f'{label}: inverse wrote outside the guarded scratch')
         if expected and output[32:-32] != raw:
             raise AssertionError(f'{label}: linked inverse changed RGB565/alpha/palette/index/span bytes')
         if untouched and output != guarded:
@@ -209,6 +232,15 @@ def main():
     for mode in (0, 3, 0xffffffff):
         execute('invalid-mode', raw, encoded, table, mode, False, untouched=True)
     execute('valid-after-rejections', raw, encoded, table, 1)
+    for mode in (8, 9, 10):
+        for label, slices in fixtures:
+            raw, encoded, table = group(slices, mode)
+            execute('planes-' + label, raw, encoded, table, mode)
+            records.append(dict(label='planes-' + label, mode=mode, raw_bytes=len(raw), slices=len(slices),
+                                raw_sha256=hashlib.sha256(raw).hexdigest()))
+    raw, encoded, table = group([(4, sparse(1, 1))], 8)
+    for mode in (7, 11, 0xffffffff):
+        execute('invalid-planes-mode', raw, encoded, table, mode, False, untouched=True)
     print(json.dumps(dict(elf=str(args.elf), elf_sha256=hashlib.sha256(elf).hexdigest(),
         inverse_address=address, inverse_bytes=size, vectors=vectors, rejected_vectors=rejected,
         fixtures=records, cpu='ARM926', output='RGB565, alpha, palette indices and sparse geometry exact',
