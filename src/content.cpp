@@ -8,6 +8,7 @@
 #include "doom_assets.hpp"
 #include "vantom_ui15_resources.hpp"
 #include "vantom_vfx_ui15.hpp"
+extern "C" void* memcpy(void*,const void*,size_t);
 namespace spire {
 static uint16_t u16(const uint8_t*p){return p[0]|(uint16_t)p[1]<<8;}
 static uint32_t u32(const uint8_t*p){return u16(p)|(uint32_t)u16(p+2)<<16;}
@@ -67,25 +68,22 @@ static_assert(sizeof picture_pixels==13u*1024u*1024u-256u*1024u,
 static_assert(sizeof image_cache+sizeof image_buckets+sizeof image_used+sizeof image_age<=28u*1024u,
               "Image-cache bookkeeping must remain below28 KiB on the host");
 static uint8_t* image_buffer(const ImageCache& cache){return image_pixels+unsigned(cache.first)*ImagePageBytes;}
-static unsigned image_bucket(const uint8_t* descriptor){
-    const uint32_t offset=u32(descriptor),shape=u32(descriptor+4),size=u32(descriptor+12);
-    return ((offset>>1)^(offset>>9)^(shape>>5)^shape^size)&(ImageBuckets-1);
+static unsigned image_bucket(const ImageDescriptor& descriptor){
+    return ((descriptor.offset>>1)^(descriptor.offset>>9)^(descriptor.shape>>5)^descriptor.shape^descriptor.length)&(ImageBuckets-1);
 }
-static ImageCache* find_image(const Content* owner,const uint8_t* metadata,unsigned id){
-    const uint8_t* descriptor=metadata+40+16*id;
+static ImageCache* find_image(const Content* owner,ImageDirectoryView directory,unsigned id){
+    const auto descriptor=directory[id];
     for(unsigned link=image_buckets[image_bucket(descriptor)];link;){
         auto& cache=image_cache[link-1];link=cache.next();if(cache.owner!=owner)continue;
-        const uint8_t* key=metadata+40+16*cache.id();
-        if(u32(key)==u32(descriptor)&&u32(key+4)==u32(descriptor+4)&&
-           u32(key+8)==u32(descriptor+8)&&u32(key+12)==u32(descriptor+12))return &cache;
+        if(directory.equal(cache.id(),id))return &cache;
     }
     return nullptr;
 }
-static unsigned image_page_bound(const uint8_t* descriptor){
-    const unsigned format=u32(descriptor+8),w=u16(descriptor+4),h=u16(descriptor+6);
-    if(!w||w>320||!h||h>240||format>7||u32(descriptor+12)>MaxEncodedImage)return 0;
+static unsigned image_page_bound(const ImageDescriptor& descriptor){
+    const unsigned format=descriptor.format,w=descriptor.width(),h=descriptor.height();
+    if(!w||w>320||!h||h>240||format>7||descriptor.length>MaxEncodedImage)return 0;
     const unsigned pixels=w*h,spans=pixels*8u+2u*h,palette=512u+2u*pixels;
-    const unsigned bytes=format<5?u32(descriptor+12):spans>palette?spans:palette;
+    const unsigned bytes=format<5?descriptor.length:spans>palette?spans:palette;
     return (bytes+ImagePageBytes-1)/ImagePageBytes;
 }
 static void discard_image(ImageCache& cache){
@@ -142,13 +140,13 @@ struct ImageReservation {
     ImageReservation& operator=(const ImageReservation&)=delete;
     ~ImageReservation(){if(cache&&!cache->owner)discard_image(*cache);}
     uint8_t* bytes()const{return cache?image_buffer(*cache):nullptr;}
-    unsigned publish(const Content* owner,const uint8_t* metadata,uint32_t image,unsigned format,bool alpha_checked=false){
-        const uint8_t*descriptor=metadata+40+image*16;
+    unsigned publish(const Content* owner,ImageDirectoryView directory,uint32_t image,unsigned format,bool alpha_checked=false){
+        const auto descriptor=directory[image];
         if(!alpha_checked&&(format==1||format==3)){
             // Several full-screen originals store an entirely opaque alpha
             // plane. Prove that once when publishing the decoded image, not
             // in every draw, and use the equivalent opaque sampler thereafter.
-            const unsigned count=unsigned(u16(descriptor+4))*u16(descriptor+6);
+            const unsigned count=descriptor.width()*descriptor.height();
             const uint8_t*alpha=bytes()+(format==1?count*2:512+count);
             unsigned i=0;while(i<count&&alpha[i]==255)++i;
             if(i==count)--format;
@@ -212,6 +210,36 @@ bool valid_image(const uint8_t* p,unsigned len,unsigned w,unsigned h,unsigned fm
     return at==len;
 }
 #include "content_preload.inc"
+static bool compact_directory(const ResourceReader&reader,uint8_t*output,unsigned capacity,
+        unsigned input_size,unsigned images){
+    const unsigned image_end=40+images*16,reduction=images*4;
+    if(input_size<image_end||input_size-reduction>capacity)return false;
+    // Match the NSL2 decoder's natural 64 KiB boundaries. Starting each read
+    // at image offset 40 would decode every boundary block twice. A sixteen-
+    // byte carry holds the one descriptor crossing a boundary instead.
+    ForegroundScratch<uint8_t,65536> scratch;if(!scratch)return false;
+    uint8_t record[16];unsigned partial=0,rows=0;
+    for(unsigned offset=0;offset<input_size;){
+        const unsigned count=input_size-offset<65536?input_size-offset:65536;
+        auto*chunk=scratch.array();if(!reader.read(offset,chunk,count))return false;
+        unsigned at=0;
+        while(at<count){
+            const unsigned absolute=offset+at;
+            if(absolute<40){
+                const unsigned n=count-at<40-absolute?count-at:40-absolute;
+                memcpy(output+absolute,chunk+at,n);at+=n;
+            }else if(absolute<image_end){
+                const unsigned n=count-at<16-partial?count-at:16-partial;
+                memcpy(record+partial,chunk+at,n);partial+=n;at+=n;
+                if(partial==16){ImageDirectoryView::compact(output+40+rows*12,record);++rows;partial=0;}
+            }else{
+                memcpy(output+absolute-reduction,chunk+at,count-at);at=count;
+            }
+        }
+        offset+=count;
+    }
+    return !partial&&rows==images;
+}
 }
 const uint8_t* Content::payload(uint32_t offset,uint32_t count,uint8_t* scratch,uint32_t capacity)const{
     if(!io_good_||!reader_.contains(offset,count)){io_good_=false;return nullptr;}
@@ -223,6 +251,7 @@ bool Content::open(const uint8_t*p,size_t n){return open(ResourceSource::memory(
 bool Content::open(ResourceSource source){
     ++generation_;
     data_=metadata_=tile_metadata_=nullptr;directory_bytes_=0;image_pages_=nullptr;
+    image_directory_={};directory_reduction_=0;
     version_=cards_=0;ui_offset_=ui_count_=0;language_id_=2;io_good_=true;clear_caches(this);
     if(!reader_.reset(source)||source.length<40||source.length>MaxContentFile)return false;
     reader_.progress(ResourceStage::Header,0,1);
@@ -334,48 +363,64 @@ bool Content::open(ResourceSource source){
             }
         }
     }
-    if(base>n||base>DirectoryCapacity)return false;
+    if(base>n||base>DirectoryInputCapacity)return false;
     reader_.progress(ResourceStage::Header,1,1);
     uint32_t start=base;
     if(version>=TileContentVersion){
         uint8_t header[64];
         if(!reader_.read(base,header,sizeof header)||
-           !tile_header_bounds(header,base,n,ni,DirectoryCapacity,version>=RetainedContentVersion,start))return false;
+           !tile_header_bounds(header,base,n,ni,DirectoryInputCapacity,version>=RetainedContentVersion,start))return false;
     }
     // NSL2 only compresses metadata that stays in this existing directory
     // cache. Frame-descriptor reads may already hold an image-transfer lease.
     if(source.required_cached_prefix>start)return false;
     reader_.progress(ResourceStage::Directory,0,start);
     if(source.direct){data_=source.direct;metadata_=source.direct;}
-    else {if(!reader_.read(0,directory_,start))return false;metadata_=directory_;}
+    else {
+        if(!compact_directory(reader_,directory_,DirectoryCapacity,start,ni))return false;
+        metadata_=directory_;directory_reduction_=ni*4;
+    }
     reader_.progress(ResourceStage::Directory,start,start);
     const uint8_t*p=metadata_;length_=n;images_=ni;glyphs_=ng;strings_=ns;clips_=nc;version_=version;
-    directory_bytes_=start;tile_metadata_=version>=TileContentVersion?p+base:nullptr;
+    image_directory_={p+40,data_?16u:12u};
+    directory_bytes_=start-directory_reduction_;tile_metadata_=version>=TileContentVersion?p+base-directory_reduction_:nullptr;
+    if(directory_reduction_&&tile_metadata_){
+        // These two words address resident tables, not virtual payload bytes.
+        // Descriptor and group payload offsets remain their original values.
+        auto*tile=directory_+base-directory_reduction_;
+        ImageDirectoryView::word(tile+36,u32(tile+36)-directory_reduction_);
+        if(version>=RetainedContentVersion)ImageDirectoryView::word(tile+56,u32(tile+56)-directory_reduction_);
+    }
     auto reject=[&](){data_=metadata_=tile_metadata_=nullptr;directory_bytes_=0;image_pages_=nullptr;
-        version_=cards_=ui_offset_=ui_count_=0;language_id_=2;clear_caches(this);return false;};
+        image_directory_={};directory_reduction_=0;version_=cards_=ui_offset_=ui_count_=0;language_id_=2;clear_caches(this);return false;};
     // Opening needs only the directory. Pixel groups, glyphs and strings are
     // read on demand; legacy checksums and unrequested records are ignored.
-    const unsigned available=DirectoryCapacity-start;
-    if(images_<=available){
+    const unsigned available=data_?DirectoryCapacity:DirectoryCapacity-directory_bytes_;
+    if(!data_&&version>=RetainedContentVersion){
+        // The prepared costs already occupy owned, mutable directory storage.
+        // Learning an exact decoded cost can update that row in place instead
+        // of reserving another 58,060 bytes for the current artwork catalog.
+        image_pages_=directory_+u32(tile_metadata_+56);
+    }else if(images_<=available){
         image_pages_=directory_+DirectoryCapacity-images_;
         const uint8_t* costs=version>=RetainedContentVersion?p+u32(tile_metadata_+56):nullptr;
         for(unsigned i=0;i<images_;++i)image_pages_[i]=costs?costs[i]:0;
     }
     if(version>=LocaleContentVersion){
-        const uint8_t* row=p+40+ni*16+ng*16+LocaleMarkerString*8;uint8_t marker[4];
+        const uint8_t* row=p+image_directory_end()+ng*16+LocaleMarkerString*8;uint8_t marker[4];
         if(u32(row+4)!=3||!reader_.read(u32(row),marker,4)||marker[3]||
            !locale_language_id(reinterpret_cast<const char*>(marker)))return reject();
         language_id_=uint8_t(locale_language_id(reinterpret_cast<const char*>(marker)));
     }
     if(version>=5){
-        ui_count_=auxiliary;ui_offset_=40+ni*16+ng*16+ns*8+nc*16+cards*16;
+        ui_count_=auxiliary;ui_offset_=image_directory_end()+ng*16+ns*8+nc*16+cards*16;
     }
     cards_=version>=4?cards:14;reader_.progress(ResourceStage::Ready,1,1);return true;
 }
 bool Content::image_cached(int id)const{
     if(!healthy()||id<0||unsigned(id)>=images_)return false;
-    const uint8_t* descriptor=metadata_+40+16*unsigned(id);
-    return (data_&&u32(descriptor+8)<5)||find_image(this,metadata_,unsigned(id));
+    const auto descriptor=image_directory_[unsigned(id)];
+    return (data_&&descriptor.format<5)||find_image(this,image_directory_,unsigned(id));
 }
 void Content::set_image_cache_profile(bool room_frames)const{
     const unsigned pages=room_frames?RoomImagePages:ImagePages;
@@ -395,15 +440,14 @@ void Content::set_image_cache_profile(bool room_frames)const{
 }
 bool Content::image_alias(int first,int second)const{
     if(!healthy()||first<0||second<0||unsigned(first)>=images_||unsigned(second)>=images_)return false;
-    const uint8_t* a=metadata_+40+16*unsigned(first);const uint8_t* b=metadata_+40+16*unsigned(second);
-    return u32(a)==u32(b)&&u32(a+4)==u32(b+4)&&u32(a+8)==u32(b+8)&&u32(a+12)==u32(b+12);
+    return image_directory_.equal(unsigned(first),unsigned(second));
 }
 unsigned Content::image_cache_pages(int id)const{
     if(!healthy()||id<0||unsigned(id)>=images_)return 0;
-    const uint8_t* descriptor=metadata_+40+16*unsigned(id);
-    if(data_&&u32(descriptor+8)<5)return 0;
+    const auto descriptor=image_directory_[unsigned(id)];
+    if(data_&&descriptor.format<5)return 0;
     if(image_pages_&&image_pages_[id])return image_pages_[id];
-    if(const auto* cache=find_image(this,metadata_,unsigned(id)))return cache->pages;
+    if(const auto* cache=find_image(this,image_directory_,unsigned(id)))return cache->pages;
     if(version_>=RetainedContentVersion){
         const unsigned pages=metadata_[u32(tile_metadata_+56)+unsigned(id)];if(pages)return pages;
     }
@@ -426,8 +470,8 @@ PreparationResult Content::preload_image_step(int id)const{
         if(p.owner==this&&!p.is_glyph&&p.key==unsigned(id))cancel_content_preload(this);
         return PreparationResult::Ready;
     }
-    const uint8_t*r=metadata_+40+16*unsigned(id);const unsigned format=u32(r+8),length=u32(r+12);
-    const unsigned w=u16(r+4),h=u16(r+6),offset=u32(r);
+    const auto r=image_directory_[unsigned(id)];const unsigned format=r.format,length=r.length;
+    const unsigned w=r.width(),h=r.height(),offset=r.offset;
     // Tiled animation reconstruction stays with its explicit animation
     // preparation path; it is never a static merchant inventory request.
     if(format==6)return PreparationResult::Failed;
@@ -436,7 +480,7 @@ PreparationResult Content::preload_image_step(int id)const{
        (format==5&&version_<5)||(format==7&&(version_<RetainedContentVersion||length!=16))||
        !reader_.contains(offset,length))return fail();
     if(p.owner!=this||p.is_glyph||p.key!=unsigned(id)){
-        cancel_content_preload();p.owner=this;p.reader=&reader_;p.metadata=metadata_;p.key=unsigned(id);
+        cancel_content_preload();p.owner=this;p.reader=&reader_;p.directory=image_directory_;p.key=unsigned(id);
         p.descriptor=offset;p.stored_size=length;p.stored_format=p.format=uint8_t(format);
         p.w=uint16_t(w);p.h=uint16_t(h);p.size=length;
         p.phase=format==7?PreloadPhase::Descriptor:format==5?PreloadPhase::Lz4Header:PreloadPhase::Literal;
@@ -444,13 +488,13 @@ PreparationResult Content::preload_image_step(int id)const{
     const auto result=step_content_preload();
     if(result==PreparationResult::Failed)return fail();
     if(result==PreparationResult::Ready&&image_pages_){
-        if(const auto*entry=find_image(this,metadata_,unsigned(id)))image_pages_[id]=entry->pages;
+        if(const auto*entry=find_image(this,image_directory_,unsigned(id)))image_pages_[id]=entry->pages;
     }
     return result;
 }
 ImageDimensions Content::image_dimensions(int id)const{
     if(!healthy()||id<0||unsigned(id)>=images_)return {};
-    const auto*r=metadata_+40+16*unsigned(id);const unsigned w=u16(r+4),h=u16(r+6);
+    const auto r=image_directory_[unsigned(id)];const unsigned w=r.width(),h=r.height();
     if(!w||w>320||!h||h>240)return {};
     return {uint16_t(w),uint16_t(h)};
 }
@@ -464,8 +508,8 @@ void Content::prepare_images(const int* ids,unsigned count)const{
     Request requests[32];unsigned n=0;
     for(unsigned i=0;i<count&&i<32;++i){
         const int id=ids[i];if(id<0||unsigned(id)>=images_||image_cached(id))continue;
-        const uint8_t*r=metadata_+40+16*unsigned(id);
-        const uint32_t offset=u32(r),length=u32(r+12),format=u32(r+8);
+        const auto r=image_directory_[unsigned(id)];
+        const uint32_t offset=r.offset,length=r.length,format=r.format;
         const unsigned pages=image_page_bound(r);
         if(format>5||(format==5&&(version_<5||length<6))||!length||!pages||
            !reader_.contains(offset,length))continue;
@@ -505,15 +549,15 @@ Picture Content::image_payload(int id,const uint8_t* supplied,uint32_t supplied_
     const Picture empty{nullptr,nullptr,nullptr,0,0,0};
     if(!metadata_||!io_good_||id<0||(unsigned)id>=images_)return empty;
     const auto fail=[&](){io_good_=false;clear_caches(this);return empty;};
-    const uint8_t*r=metadata_+40+16*id;const uint32_t off=u32(r),length=u32(r+12);
-    const uint32_t stored_format=u32(r+8);
-    uint16_t w=u16(r+4),h=u16(r+6);unsigned fmt=stored_format,size=length;
+    const auto r=image_directory_[unsigned(id)];const uint32_t off=r.offset,length=r.length;
+    const uint32_t stored_format=r.format;
+    uint16_t w=uint16_t(r.width()),h=uint16_t(r.height());unsigned fmt=stored_format,size=length;
     if(!w||w>320||!h||h>240||fmt>7||(fmt==5&&version_<5)||
        (fmt==6&&(!tile_metadata_||length!=16))||length>MaxEncodedImage||
        (fmt==7&&(version_<RetainedContentVersion||length!=16))||
        !reader_.contains(off,length))return fail();
     const uint8_t*p=nullptr;
-    if(auto* cache=find_image(this,metadata_,unsigned(id))){
+    if(auto* cache=find_image(this,image_directory_,unsigned(id))){
         p=image_buffer(*cache);fmt=cache->format();size=unsigned(cache->pages)*ImagePageBytes;cache->age=next_image_age();
     }
     if(!p){
@@ -545,15 +589,15 @@ Picture Content::image_payload(int id,const uint8_t* supplied,uint32_t supplied_
             const uint8_t* raw=tile_bytes(*group)+raw_offset;
             for(unsigned i=0;i<size;++i)output[i]=raw[i];
             p=output;if(!valid_image(p,size,w,h,fmt))return fail();
-            fmt=reservation.publish(this,metadata_,uint32_t(id),fmt);
+            fmt=reservation.publish(this,image_directory_,uint32_t(id),fmt);
         }else if(fmt==6){
             TileFrame frame;
             if(!tile_metadata_||length!=16||!frame.open(this,reader_,tile_metadata_,
-                    uint32_t(tile_metadata_-metadata_),off,w,h,encoded_pixels))return fail();
+                    uint32_t(tile_metadata_-metadata_)+directory_reduction_,off,w,h,encoded_pixels))return fail();
             size=frame.output_size;fmt=4;
             ImageReservation reservation(size);uint8_t* output=reservation.bytes();if(!output)return fail();
             if(!rebuild_tile_frame(this,reader_,tile_metadata_,frame,w,h,output,encoded_pixels))return fail();
-            p=output;fmt=reservation.publish(this,metadata_,uint32_t(id),fmt);
+            p=output;fmt=reservation.publish(this,image_directory_,uint32_t(id),fmt);
         }else{
             if(fmt==5&&length<6)return fail();
             const uint8_t* source=provided?supplied:payload(off,length,encoded_pixels,ResourceTransferCapacity);if(!source)return fail();
@@ -567,7 +611,7 @@ Picture Content::image_payload(int id,const uint8_t* supplied,uint32_t supplied_
                 ImageReservation reservation(size);uint8_t*output=reservation.bytes();if(!output)return fail();
                 if(stored_format==5){if(!decode_lz4(source+5,length-5,output,size))return fail();}
                 else for(unsigned i=0;i<size;i++)output[i]=source[i];
-                p=output;if(!valid_image(p,size,w,h,fmt))return fail();fmt=reservation.publish(this,metadata_,uint32_t(id),fmt);
+                p=output;if(!valid_image(p,size,w,h,fmt))return fail();fmt=reservation.publish(this,image_directory_,uint32_t(id),fmt);
             }
         }
     }
@@ -585,9 +629,9 @@ int Content::font_size(int preferred,unsigned style,bool at_most,bool sparse_sce
             uint32_t mask=0;const unsigned band=((selected&3u)<<6)|((selected&4u)<<3);
             for(unsigned px=1;px<=(version_>=HistoryUi8ContentVersion?31u:32u);++px){
                 const unsigned encoded=band|px;unsigned lo=0,hi=glyphs_;
-                while(lo<hi){const unsigned mid=lo+(hi-lo)/2;const auto*r=metadata_+40+images_*16+mid*16;
+                while(lo<hi){const unsigned mid=lo+(hi-lo)/2;const auto*r=metadata_+image_directory_end()+mid*16;
                     if(u16(r+8)<encoded)lo=mid+1;else hi=mid;}
-                if(lo<glyphs_){const auto*r=metadata_+40+images_*16+lo*16;
+                if(lo<glyphs_){const auto*r=metadata_+image_directory_end()+lo*16;
                     if(u16(r+8)==encoded&&!kerning_codepoint(u32(r)))mask|=1u<<(px-1);}
             }
             font_sizes_[selected]=mask;font_sizes_known_|=uint8_t(1u<<selected);
@@ -616,9 +660,9 @@ const uint8_t* Content::glyph_record(uint32_t cp,int size,unsigned style)const{
     // A locale may contain only Regular, or no combined BoldItalic band.
     // Sorted resident metadata already proves that absence: skip a whole
     // failed binary search without scanning fonts or adding cache state.
-    if(face&&glyphs_&&u16(metadata_+40+images_*16+(glyphs_-1)*16+8)<band){face=band=0;}
+    if(face&&glyphs_&&u16(metadata_+image_directory_end()+(glyphs_-1)*16+8)<band){face=band=0;}
     const uint32_t key=((uint32_t(size)|band)<<24)|cp;
-    const uint8_t*base=metadata_+40+images_*16,*cached=nullptr;
+    const uint8_t*base=metadata_+image_directory_end(),*cached=nullptr;
     if(glyph_records.lookup(this,key,base,cached))return cached;
     int lo=0,hi=(int)glyphs_;
     while(lo<hi){int mid=(lo+hi)/2;const uint8_t*r=base+mid*16;uint32_t k=(uint32_t)u16(r+8)<<24|u32(r);if(k<key)lo=mid+1;else hi=mid;}
@@ -723,7 +767,7 @@ Glyph Content::glyph(uint32_t cp,int size,unsigned style)const{
 }
 const char* Content::string(int id)const{
     if(!metadata_||!io_good_||id<0||(unsigned)id>=strings_)return "";
-    const uint8_t*r=metadata_+40+images_*16+glyphs_*16+id*8;
+    const uint8_t*r=metadata_+image_directory_end()+glyphs_*16+id*8;
     const uint32_t off=u32(r),stored=u32(r+4),size=stored&~GroupedStringFlag;
     const bool grouped=bool(stored&GroupedStringFlag);
     if(size>=MaxStringBytes||(grouped&&version_<GroupedStringContentVersion)||
@@ -746,7 +790,7 @@ const char* Content::string(int id)const{
 }
 Clip Content::clip(int id)const{
     if(!metadata_||id<0||(unsigned)id>=clips_)return {0,0,1,0,0};
-    const uint8_t*r=metadata_+40+images_*16+glyphs_*16+strings_*8+id*16;
+    const uint8_t*r=metadata_+image_directory_end()+glyphs_*16+strings_*8+id*16;
     const uint32_t first=u32(r);const uint16_t count=u16(r+4),ms=u16(r+6);
     if(first>=images_||!count||count>images_-first||!ms)return {0,0,1,0,0};
     const uint32_t units=version_>=CharacterDeathContentVersion?u32(r+12):0;
@@ -756,12 +800,12 @@ Clip Content::clip(int id)const{
 int Content::card_image(int kind)const{
     if(!metadata_||kind<0||(unsigned)kind>=cards_)return -1;
     if(version_==3)return A_Card0+kind;
-    const uint8_t*r=metadata_+40+images_*16+glyphs_*16+strings_*8+clips_*16+kind*16;return u32(r)<images_?(int)u32(r):-1;
+    const uint8_t*r=metadata_+image_directory_end()+glyphs_*16+strings_*8+clips_*16+kind*16;return u32(r)<images_?(int)u32(r):-1;
 }
 const char* Content::card_string(int kind,int variant)const{
     if(!metadata_||kind<0||(unsigned)kind>=cards_||variant<0||variant>2)return "";
     if(version_==3)return string(kind*3+variant);
-    const uint8_t*r=metadata_+40+images_*16+glyphs_*16+strings_*8+clips_*16+kind*16;return string((int)u32(r+4+variant*4));
+    const uint8_t*r=metadata_+image_directory_end()+glyphs_*16+strings_*8+clips_*16+kind*16;return string((int)u32(r+4+variant*4));
 }
 int Content::ui_image(int key)const{
     if(!metadata_||!ui_offset_||key<0||(unsigned)key>=ui_count_)return -1;

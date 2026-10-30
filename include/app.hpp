@@ -106,6 +106,7 @@
 #include "bestiary_presentation.hpp"
 #include "auxiliary_ui.hpp"
 #include "ui12_assets.hpp"
+#include "image_directory.hpp"
 namespace spire {
 constexpr int ScreenW=320,ScreenH=240,MaxPack=13*1024*1024;
 // MaxPack remains the historical in-memory fixture limit. Production hosts
@@ -125,10 +126,14 @@ struct ImageCacheUsage {unsigned entries=0,pages=0;};
 enum class PreparationResult:uint8_t {Pending,Ready,Failed};
 class Content {
     const uint8_t* data_{};uint32_t version_{},length_{},images_{},glyphs_{},strings_{},clips_{},cards_{},ui_offset_{},ui_count_{};
-    static constexpr uint32_t DirectoryCapacity=2u*1024u*1024u;
+    static constexpr uint32_t DirectoryCapacity=1760u*1024u;
+    static constexpr uint32_t DirectoryInputCapacity=2u*1024u*1024u;
     mutable uint8_t directory_[DirectoryCapacity]{};
     const uint8_t* metadata_{};
     const uint8_t* tile_metadata_{};uint32_t directory_bytes_{};
+    ImageDirectoryView image_directory_{};
+    uint32_t directory_reduction_{};
+    uint32_t image_directory_end()const{return 40+images_*image_directory_.stride;}
     ResourceReader reader_{};
     mutable bool io_good_=true;
     uint8_t language_id_=2;

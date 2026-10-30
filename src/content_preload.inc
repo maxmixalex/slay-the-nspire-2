@@ -9,7 +9,7 @@ enum class PreloadPhase:uint8_t {Descriptor,Header,Decode,FilterSlice,FilterColo
 struct ContentPreload {
     const Content*owner=nullptr;
     const ResourceReader*reader=nullptr;
-    const uint8_t*metadata=nullptr;
+    ImageDirectoryView directory{};
     TileGroup*raw=nullptr,*workspace=nullptr;
     ImageCache*image=nullptr;
     GlyphByteCache::Reservation glyph{};
@@ -178,7 +178,7 @@ static PreparationResult preload_verify(ContentPreload&p){
         if(p.opaque)--p.format;
     }
     ImageReservation reservation(0);reservation.cache=p.image;
-    reservation.publish(p.owner,p.metadata,p.key,p.format,true);p.image=nullptr;
+    reservation.publish(p.owner,p.directory,p.key,p.format,true);p.image=nullptr;
     cancel_content_preload(nullptr);return PreparationResult::Ready;
 }
 static PreparationResult step_content_preload(){
