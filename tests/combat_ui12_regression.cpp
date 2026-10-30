@@ -238,6 +238,16 @@ static void actual_label_metrics(){
   clear();health_label(c,text,40,50,180,size,White,0x2925,true);
   CHECK(!std::memcmp(expected.data(),a.pixels,sizeof a.pixels));
  }
+ // Count badges align actual alpha ink, including each font's bearings,
+ // variable digit widths and padding. Inspect rendered pixels independently
+ // of the layout helper, with the same visible size used by both piles.
+ for(unsigned face:{0u,5u})for(const char*digits:{"1","9","10","19","99","100","599"}){
+  c.font_face=uint8_t(face);clear();health_label(c,digits,40,50,15,8,White,0x2925,true,15);
+  int left=320,right=-1,top=240,bottom=-1;
+  for(int y=0;y<240;++y)for(int x=0;x<320;++x)if(a.pixels[y*320+x]!=0x2925){
+   left=mn(left,x);right=mx(right,x);top=mn(top,y);bottom=mx(bottom,y);}
+  CHECK(right>=left&&bottom>=top&&std::abs(left+right-94)<=1&&std::abs(top+bottom-114)<=1);
+ }
  c.font_face=4;c.sparse_scene_sizes=true;
  for(const char*text:{"BATTLE START","ENEMY TURN","PLAYER TURN","AVATAR"}){
   const int size=a.content.font_size(18,c.font_face,false,true);

@@ -454,7 +454,7 @@ static void ending_clears_only_its_checkpoint(){
  // A real deletion failure is retryable from the result menu and does not
  // silently forget the still resumable file.
  empty_disk();start(Character::Ironclad,7001);put_disk();player_kill(a.game,true);resolve_pending(a.game);presentation();snapshot();d=deletes;delete_ok=false;
- settle_game_over();CHECK(!a.title&&disk_exists&&deletes==d+1&&a.notice_ticks);
+ a.sync_game_over_presentation();CHECK(!a.title&&disk_exists&&deletes==d+1&&a.notice_ticks);settle_game_over();
  a.input(Key::Confirm);CHECK(a.game_over_summary);settle_game_over();CHECK(deletes==d+1);
  action(UiAction::GameOverMainMenu);CHECK(!a.title&&a.game_over_summary&&disk_exists&&deletes==d+2);unchanged();
  delete_ok=true;action(UiAction::GameOverMainMenu);CHECK(a.title&&!a.has_save&&!disk_exists&&deletes==d+3);unchanged();
