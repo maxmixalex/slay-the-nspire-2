@@ -9,13 +9,18 @@ Unicode-derived data is covered by third_party/unicode/LICENSE.
 """
 from __future__ import annotations
 import argparse
+import hashlib
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+ORACLE_SHA256 = '17a88c40b595ca7c3d7d025f30a9fe13f683b3fa802348e41b3320180b546329'
 
 
 def generate(path: Path) -> str:
-    source = [tuple(int(v, 16) for v in line.split()) for line in path.read_text().splitlines()]
+    raw = path.read_bytes()
+    if hashlib.sha256(raw).hexdigest() != ORACLE_SHA256:
+        raise ValueError('Expected the reviewed .NET 9 / ICU 74.2 invariant-culture oracle')
+    source = [tuple(int(v, 16) for v in line.split()) for line in raw.decode().splitlines()]
     for flag, cp in ((2, ord('o')), (4, ord('l')), (8, ord('d'))):
         if [c for c, bits in source if bits & flag] != [cp]:
             raise ValueError('Oracle has additional linguistic letters; review the matching algorithm')
