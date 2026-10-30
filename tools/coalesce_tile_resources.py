@@ -30,7 +30,7 @@ import storage_parts as storage
 from tile_filter import filter_tiles, restore_tiles
 from tile_prediction import index_transform
 
-ENCODER = b'UI18-exact-tile-coalescing-v1-lzma2-lc4-lp0-pb1-nice273-depth512'
+ENCODER = b'UI18-exact-tile-coalescing-v2-preserve-lzma2-context-nice273-depth512'
 
 
 def view(data):
@@ -189,6 +189,28 @@ def mapped_index(raw, count, tile_count, mapping):
     return bytes(result)
 
 
+def source_lzma_profile(encoded):
+    """Retain the established stream's literal context, without a sweep."""
+    at=0
+    while at<len(encoded):
+        control=encoded[at];at+=1
+        if control==0:
+            return 4,0,1  # An all-literal old stream has no LZMA properties.
+        if control in (1,2):
+            t.require(at+2<=len(encoded),'Truncated literal LZMA2 chunk')
+            size=(encoded[at]<<8|encoded[at+1])+1;at+=2
+        else:
+            t.require(control>=0x80 and at+4<=len(encoded),'Invalid LZMA2 control')
+            size=(encoded[at+2]<<8|encoded[at+3])+1;at+=4
+            if control>=0xc0:
+                t.require(at<len(encoded),'Missing LZMA2 properties')
+                prop=encoded[at];lc=prop%9;remaining=prop//9;lp=remaining%5;pb=remaining//5
+                t.require(lc+lp<=4 and pb<=4,'Unsupported original literal context')
+                return lc,lp,pb
+        t.require(size<=len(encoded)-at,'LZMA2 chunk crosses stream boundary');at+=size
+    raise ValueError('LZMA2 stream lacks end marker')
+
+
 def encode(raw, original, reader, group, cache):
     """One established profile; no parameter search or new pixel transform."""
     header = list(t.GROUP.unpack_from(original))
@@ -200,14 +222,15 @@ def encode(raw, original, reader, group, cache):
         mode = 0
         transformed = index_transform(raw, count, 3, tile_count=reader.tile_count)
         header[0], header[7] = b'TGI2', 1
-    key = t.sha256(ENCODER + struct.pack('<III', group < reader.tile_groups, mode, count) + transformed)
+    lc,lp,pb=source_lzma_profile(original[32:])
+    key = t.sha256(ENCODER + struct.pack('<6I', group < reader.tile_groups, mode, count,lc,lp,pb) + transformed)
     path = cache / (key + '.lzma2')
     if path.is_file():
         payload = path.read_bytes()
     else:
         payload = lzma.compress(transformed, format=lzma.FORMAT_RAW, filters=[dict(
             id=lzma.FILTER_LZMA2, preset=9, dict_size=t.GROUP_LIMIT,
-            nice_len=273, depth=512, lc=4, lp=0, pb=1)])
+            nice_len=273, depth=512, lc=lc, lp=lp, pb=pb)])
         t.atomic_bytes(path, payload)
     decoded = t.decode_lzma2(payload, len(transformed))
     t.require(decoded == transformed, 'Cached/new encoded stream differs')

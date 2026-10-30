@@ -19,7 +19,6 @@ import numpy as np
 
 import content_tiles as t
 import coalesce_tile_resources as coalesce
-from recompress_resources import Relocation
 import split_content as split
 import storage_parts as storage
 from tile_filter import restore_tiles
@@ -109,25 +108,47 @@ def partition_like(reference_index, reference_logical, logical):
     a,b=t.TileReader(old),t.TileReader(new)
     t.require((a.tile_count,a.tile_groups,a.index_groups)==(b.tile_count,b.tile_groups,b.index_groups),
               'Concern reference has different groups')
-    replacements=[]
-    for previous,current in zip(a.groups,b.groups):
-        at,length=previous[:2];nat,nlength=current[:2]
-        old_payload=reference_logical[at-32:at+length];payload=logical[nat-32:nat+nlength]
-        if payload!=old_payload:
-            physical=payload+bytes((len(old_payload)-len(payload))&1)
-            replacements.append((at-32,len(old_payload),payload,physical))
-    relocate=Relocation(replacements)
     old_language=old.string_payload(split.MARKER)[:-1].decode('ascii')
     new_language=new.string_payload(split.MARKER)[:-1].decode('ascii')
-    op=split.layout(reference_logical,old_language)['prefix'];bounds=split.layout(logical,new_language)
+    old_bounds=split.layout(reference_logical,old_language)
+    op=old_bounds['prefix'];bounds=split.layout(logical,new_language)
     nprefix=bounds['prefix'];common=split.common_file(logical[nprefix:nprefix+bounds['artwork']])
+    # Repeated aligned replacement can leave two padding bytes between groups.
+    # Recomputing one aggregate length delta loses that padding. Pair semantic
+    # endpoints instead, giving the next object's start priority over the prior
+    # object's end when the old objects were adjacent. Every original concern
+    # boundary must be a known object boundary; no byte interpolation is used.
+    anchors={}
+    def point(previous,current,priority):
+        if previous in anchors:
+            value,rank=anchors[previous]
+            t.require(rank!=priority or value==current,'Conflicting concern boundary identities')
+            if rank>priority:return
+        anchors[previous]=(current,priority)
+    def span(previous,current,length,new_length=None):
+        point(previous,current,2);point(previous+length,current+(length if new_length is None else new_length),1)
+    for previous,current in zip(a.groups,b.groups):
+        at,length=previous[:2];nat,nlength=current[:2]
+        span(at-32,nat-32,length+32,nlength+32)
+    for previous,current in zip(old.images,new.images):
+        if previous[3]!=6:
+            span(previous[0],current[0],previous[4],current[4])
+    old_slices=coalesce.grouped_slices(old);new_slices=coalesce.grouped_slices(new)
+    for previous,current in zip(old.images,new.images):
+        if previous[3]==7:
+            relative,length,*_=old_slices[previous[0]]
+            nrelative,nlength,*_=new_slices[current[0]]
+            span(previous[0]+relative,current[0]+nrelative,length,nlength)
+    point(op,nprefix,3);point(op+old_bounds['artwork'],nprefix+bounds['artwork'],3)
     t.require(reference_index[:4]==b'NSM1' and len(reference_index)>=96,'Invalid concern reference')
     count=struct.unpack_from('<I',reference_index,24)[0]
     t.require(len(reference_index)==96+16*count,'Invalid concern reference size')
     files=[bytearray(32) for _ in storage.NAMES];rows=[]
     for i in range(count):
         first,last,_physical,part=struct.unpack_from('<4I',reference_index,96+i*16)
-        start,end=relocate(op+first-64),relocate(op+last-64)
+        t.require(op+first-64 in anchors and op+last-64 in anchors,
+                  'Concern boundary lacks a matching image/group endpoint')
+        start,end=anchors[op+first-64][0],anchors[op+last-64][0]
         t.require(nprefix<=start<end<=nprefix+bounds['artwork'] and part<len(files),
                   'Relocated concern leaves artwork')
         position=len(files[part]);files[part].extend(logical[start:end])

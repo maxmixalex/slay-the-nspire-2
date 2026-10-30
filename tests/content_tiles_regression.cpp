@@ -618,6 +618,34 @@ void predictive_index_packages(){
     for(unsigned i=0;i<p.frames.size();++i)picture(*ranged,p.image_id(i),p.frames[i]);
     CHECK(!provider.bad_range);
 }
+void compact_tile_packages(){
+    label="v42 compact interior group preserves complete hidden RGB/alpha frames";
+    Package p=basic(680);const unsigned live=unsigned(p.tiles.size());
+    p.tiles.resize(680*2,blank_tile());p.make_groups({{0,1,2,3}});
+    p.groups[0].items=live;p.groups[0].raw.resize(live*TileBytes);
+    p.groups[1].items=1;p.groups[1].raw.assign(TileBytes,0);p.groups[1].raw[0]=p.groups[1].raw[1]=1;
+    p.encode(false,InspectionAuxiliaryCount,CompactTileContentVersion,Ui7StringCount,BestiaryKaiserAnimationKinds);
+    const unsigned strings=40+p.images*16+p.glyphs*16;
+    put(p.bytes,strings+LocaleMarkerString*8,unsigned(p.bytes.size()));put(p.bytes,strings+LocaleMarkerString*8+4,3);
+    const char locale[]="eng";p.bytes.insert(p.bytes.end(),locale,locale+4);seal(p.bytes);
+    auto direct=std::make_unique<Content>(),ranged=std::make_unique<Content>();Provider provider{&p.bytes};
+    CHECK(direct->open(p.bytes.data(),p.bytes.size())&&ranged->open(provider.source()));
+    CHECK(direct->current_profile()&&ranged->current_profile());
+    for(unsigned i=0;i<p.frames.size();++i){picture(*direct,p.image_id(i),p.frames[i]);picture(*ranged,p.image_id(i),p.frames[i]);}
+    const auto before=ranged->read_stats();
+    for(unsigned pass=0;pass<16;++pass)for(unsigned i=0;i<p.frames.size();++i)picture(*ranged,p.image_id(i),p.frames[i]);
+    CHECK(same_reads(before,ranged->read_stats()));picture(*ranged,p.alias_id(),p.frames[0]);
+    ImageRejector reject;const unsigned group=p.group_offsets[0];
+    {Bytes bad=p.bytes;put(bad,4,PredictiveIndexContentVersion);reject("v41 still requires every configured tile slot",std::move(bad));}
+    for(unsigned items:{0u,681u,UINT32_MAX}){Bytes bad=p.bytes;put(bad,group+24,items);reject("compact item count remains nonempty and bounded",std::move(bad));}
+    {Bytes bad=p.bytes;put(bad,group+12,live*TileBytes-1);reject("compact raw size must exactly match items",std::move(bad));}
+    {Bytes bad=p.bytes;put(bad,p.group_offsets[p.tile_groups()]+32+3+12,live);reject("compact index cannot name removed local slot",std::move(bad));}
+    provider.fail_first=group+32;provider.fail_last=provider.fail_first+1;
+    CHECK(ranged->open(provider.source()));CHECK(!ranged->image(1).pixels&&!ranged->healthy());
+    provider.fail_first=provider.fail_last=0;CHECK(ranged->open(provider.source()));
+    for(unsigned i=0;i<p.frames.size();++i)picture(*ranged,p.image_id(i),p.frames[i]);
+    CHECK(!provider.bad_range);
+}
 void bestiary_supplement_packages(){
     // The extended clip directory shifts cards, UI and tile metadata. Exercise
     // both readers against an independently written synthetic directory and
@@ -1088,7 +1116,7 @@ void directory_capacity_without_prescan(const Package&pressure_tiny){
 int main(int argc,char**argv){
     if(argc==2&&!std::strcmp(argv[1],"--native-ui")){native_ui_packages();locale_packages();bestiary_supplement_packages();ui13_source_catalogs();std::printf("native UI and locale content: %u checks passed\n",checks);return 0;}
     required_metadata_prefix();progress_contract();valid_packages();malformed_container();malformed_geometry();catalog_metadata_reuse();maximum_frame_and_unused_tile();
-    native_ui_packages();locale_packages();bestiary_supplement_packages();ui13_source_catalogs();predictive_index_packages();
+    native_ui_packages();locale_packages();bestiary_supplement_packages();ui13_source_catalogs();predictive_index_packages();compact_tile_packages();
     image_pool_cycles_and_fragmentation();
     label="bounded group pressure fixtures";
     const Package medium=pressure(false),tiny=pressure(true);

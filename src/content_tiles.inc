@@ -168,7 +168,13 @@ static bool valid_tile_group_header(const uint8_t* h,uint32_t id,const uint8_t* 
     if(is_tile){
         const unsigned per_group=u32(h+44),left=tiles-id*per_group;
         const unsigned expected=left<per_group?left:per_group;
-        return items==expected&&size==items*TileBytes;
+        // NSP42 records remain independently decodable and directly indexed.
+        // Interior groups may now omit unused trailing slots after every
+        // referring index has been rewritten. A selected local ID is still
+        // checked against group.items by reconstruction, never against the
+        // configured divisor alone. Historical packs retain their exact rule.
+        return (version>=CompactTileContentVersion?(items&&items<=expected):items==expected)&&
+            size==items*TileBytes;
     }
     return true;
 }

@@ -1,6 +1,7 @@
 """Exact tile aliasing, active-group constraints, relocation and cache bounds."""
 from pathlib import Path
 import random
+import lzma
 import struct
 import sys
 import tempfile
@@ -14,8 +15,8 @@ import coalesce_tile_resources as coalesce
 from test_repack_retained import stored
 
 
-def fixture():
-    ni, ng, ns, nc, nk, nu = 2, 1, 1, 1, 1, 1
+def fixture(strings=1):
+    ni, ng, ns, nc, nk, nu = 2, 1, strings, 1, 1, 1
     base = 40 + ni*16 + ng*16 + ns*8 + nc*16 + nk*16 + nu*4
     table = base + 64
     costs = table + 3*8
@@ -42,7 +43,7 @@ def fixture():
     t.GLYPH.pack_into(out,40+ni*16,65,glyph,8,1,1,1,0)
     out.extend(bytes(len(out)&1)); string=len(out); out.extend(b'eng\0')
     string_at=40+ni*16+ng*16
-    struct.pack_into('<II',out,string_at,string,3)
+    for i in range(ns):struct.pack_into('<II',out,string_at+i*8,string,3)
     t.CLIP.pack_into(out,string_at+ns*8,0,2,100,0,0,0)
     t.GLOBAL.pack_into(out,base,b'TIL1',1,16,14,4,2,1,2,descriptors,table,
                        770,2,t.GROUP_LIMIT,t.ENCODED_LIMIT,costs,ni)
@@ -52,6 +53,16 @@ def fixture():
 
 
 class CoalesceTilesTest(unittest.TestCase):
+    def test_existing_literal_context_is_preserved_without_a_search(self):
+        raw=bytes(range(256))*10
+        for lc,lp,pb in ((4,0,1),(3,1,1),(3,0,2),(4,0,0)):
+            packed=lzma.compress(raw,format=lzma.FORMAT_RAW,filters=[dict(
+                id=lzma.FILTER_LZMA2,dict_size=t.GROUP_LIMIT,lc=lc,lp=lp,pb=pb)])
+            self.assertEqual(coalesce.source_lzma_profile(packed),(lc,lp,pb))
+        self.assertEqual(coalesce.source_lzma_profile(stored(raw)),(4,0,1))
+        for raw in (b'',b'\x01',b'\x01\x00\xff',b'\x80',b'\xc0\x00\x00\x00\x00',b'\xc0\x00\x00\x00\x00\xff'):
+            with self.assertRaises(ValueError):coalesce.source_lzma_profile(raw)
+
     def test_active_geometry_matches_runtime_tiles(self):
         geometry=b''.join(struct.pack('<HHHB',1,15,2,mode) for mode in (0,1))
         self.assertEqual(coalesce.active_tiles(geometry,32,2).tolist(),[True,True])

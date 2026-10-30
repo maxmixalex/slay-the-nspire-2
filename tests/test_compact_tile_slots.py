@@ -9,10 +9,39 @@ sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'tools'))
 import coalesce_tile_resources as coalesce
 import compact_tile_slots as compact
 import content_tiles as t
+import split_content as split
+import storage_parts as storage
 from test_coalesce_tile_resources import fixture
 
 
 class CompactTileSlotsTest(unittest.TestCase):
+    def test_repeated_padding_preserves_existing_concern_boundaries(self):
+        original=fixture(strings=6111)
+        bounds=split.layout(original,'eng')
+        common=split.common_file(original[bounds['prefix']:bounds['prefix']+bounds['artwork']])
+        index,_parts,_report=storage.partition(common,original)
+        def replace(data,chunks):
+            reader=t.TileReader(coalesce.view(data));plan={}
+            for group,row in enumerate(reader.groups):
+                at,length=row[:2];old=data[at-32:at+length];candidate=old
+                if group==0:
+                    raw=reader.group(group)[0];encoded=bytearray()
+                    previous=0
+                    for part in range(chunks):
+                        end=len(raw)*(part+1)//chunks;size=end-previous
+                        encoded.extend(bytes((1 if part==0 else 2,(size-1)>>8,(size-1)&255)))
+                        encoded.extend(raw[previous:end]);previous=end
+                    encoded.append(0);header=list(t.GROUP.unpack_from(old));header[4]=len(encoded)
+                    candidate=t.GROUP.pack(*header)+encoded
+                plan[group]=old,candidate,candidate+bytes((len(old)-len(candidate))&1)
+            return coalesce.rewrite(data,plan)[0]
+        converted=replace(replace(original,2),3)
+        common,new_index,parts,receipt=compact.partition_like(index,original,converted)
+        self.assertEqual(storage.join_parts(new_index,parts),common)
+        self.assertEqual(receipt['spans'],struct.unpack_from('<I',index,24)[0])
+        reader=t.TileReader(coalesce.view(converted))
+        for i in range(2):self.assertEqual(reader.image_raw(i),t.TileReader(coalesce.view(original)).image_raw(i))
+
     def test_full_compaction_and_legacy_version_rejection(self):
         original=fixture();before=t.TileReader(coalesce.view(original))
         with tempfile.TemporaryDirectory() as folder:
