@@ -256,7 +256,7 @@ def main():
     parser.add_argument('--workers',type=int,default=2)
     parser.add_argument('--locales',nargs='+',choices=split.LANGUAGES)
     parser.add_argument('--pairing-policy',choices=('combat-working-set','all'),default='combat-working-set',
-                        help='Keep the measured Bowlbug encounter family and all combat actors in original small groups')
+                        help='Keep measured Bowlbug/Construct encounter families and combat actors in original small groups')
     args=parser.parse_args();t.require(1<=args.workers<=2,'Use one or two bounded encoder workers')
     source=t.private_path(args.input,'Private source');target=t.private_path(args.output,'Private output');work=t.private_path(args.work,'Private cache')
     t.require(source!=target and source not in target.parents and target not in source.parents and work!=source,

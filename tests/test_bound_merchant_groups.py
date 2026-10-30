@@ -17,7 +17,10 @@ import content_tiles as t
 import merge_retained_resources as merge
 import split_content as split
 import storage_parts as storage
+from complete_retained_resources_ui17 import decoded_group
+from retained_filter import group_layout,transform_group
 from test_merge_retained_resources import source,installation
+from test_repack_retained import stored
 
 
 def stages(root,code='eng'):
@@ -35,6 +38,22 @@ def stages(root,code='eng'):
 
 
 class BoundMerchantGroupsTest(unittest.TestCase):
+    def test_planar_medium_uses_rgr2_and_rejects_wrong_cached_codec(self):
+        raw=struct.pack('<HHHB',1,0,2,1)+bytes.fromhex('1122003344ff')
+        slices=((0,(4<<24)|len(raw)),);table=struct.pack('<II',*slices[0])
+        stream=stored(transform_group(raw,slices,8))
+        original=t.GROUP.pack(b'RGR3',len(raw),len(stream),14,1,0,8,0)+table+stream
+        with tempfile.TemporaryDirectory() as folder:
+            proposed=bound.medium_stream(original,raw,slices,44,folder)
+            self.assertEqual(group_layout(proposed,44)[2:],(2,slices))
+            self.assertEqual(decoded_group(proposed,44),raw)
+            with mock.patch.object(bound.lzma,'compress',side_effect=AssertionError('Unexpected encoding')):
+                self.assertEqual(bound.medium_stream(original,raw,slices,44,folder),proposed)
+            # Equal pixels do not make the slower wrong cached codec eligible.
+            next(Path(folder).glob('*.bin')).write_bytes(original)
+            with self.assertRaisesRegex(ValueError,'RGR2 mode2'):
+                bound.medium_stream(original,raw,slices,44,folder)
+
     def test_exact_reference_blocks_slices_aliases_and_namespace(self):
         with tempfile.TemporaryDirectory() as folder:
             original,current=stages(Path(folder));old=colors.view(original);source=colors.view(current)

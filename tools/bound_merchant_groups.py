@@ -2,7 +2,8 @@
 """Restore measured merchant group bounds from the same generation's references.
 
 The ordinary/focused top actor uses the original small RGR2 groups. Other
-merchant bodies use the first retained merge's at-most-one-cache-page groups.
+merchant bodies use the first retained merge's at-most-one-cache-page groups,
+re-encoded with the established RGR2 color filter to remove plane-restore CPU.
 Every reference byte and slice is proved against the current complete group;
 no image, frame, clock, sample, palette or alpha value changes. The existing
 NSP44 runtime and pools are unchanged. This is not a cross-game-version import.
@@ -12,6 +13,7 @@ from __future__ import annotations
 import argparse
 from dataclasses import dataclass
 import json
+import lzma
 from pathlib import Path
 import struct
 import time
@@ -21,13 +23,14 @@ from compact_tile_resources import SLICE, grouped_slices
 from complete_retained_resources_ui17 import decoded_group
 import content_tiles as t
 from merge_retained_resources import partition_with_relocation
-from retained_filter import group_layout
+from retained_filter import group_layout, transform_group
 import split_content as split
 import storage_parts as storage
 from tile_group_policy import literal_profile
 
 ROOT = Path(__file__).resolve().parents[1]
 PAGE_BYTES = 128 * 1024
+MEDIUM_ENCODER = b'UI19-merchant-one-page-rgr2-lc4-v1'
 
 
 @dataclass
@@ -69,7 +72,32 @@ def inventory(source):
     return catalog,images,members
 
 
-def make_plan(source, references, selection):
+def medium_stream(original, raw, slices, version, cache=None):
+    """Same one-page group and pixels, without the RGR3 copy/plane passes."""
+    if group_layout(original,version)[2]<8:return original
+    t.require(len(raw)<=PAGE_BYTES,'Medium merchant stream exceeds one cache page')
+    path=None
+    if cache is not None:
+        cache=Path(cache);cache.mkdir(parents=True,exist_ok=True)
+        path=cache/(t.sha256(MEDIUM_ENCODER+original)+'.bin')
+    if path is not None and path.is_file():
+        proposed=path.read_bytes()
+    else:
+        transformed=transform_group(raw,slices,2)
+        table=b''.join(struct.pack('<II',*row) for row in slices)
+        stream=lzma.compress(transformed,format=lzma.FORMAT_RAW,filters=[dict(
+            id=lzma.FILTER_LZMA2,preset=9,dict_size=t.GROUP_LIMIT,
+            nice_len=273,depth=512,lc=4,lp=0,pb=1)])
+        proposed=t.GROUP.pack(b'RGR2',len(raw),len(stream),14,len(slices),2,len(table),0)+table+stream
+    size,_start,mode,coverage=group_layout(proposed,version)
+    t.require(size==len(raw) and mode==2 and coverage==slices,'Medium merchant cache must use exact RGR2 mode2 slices')
+    t.require(decoded_group(proposed,version)==raw,'Medium merchant encoding changed raw bytes')
+    if path is not None and not path.exists():t.atomic_bytes(path,proposed)
+    return proposed
+
+
+def make_plan(source, references, selection, *, medium_codec='rgr2', cache=None):
+    t.require(medium_codec in ('rgr2','reference'),'Unknown medium merchant codec')
     catalog,images,members=inventory(source)
     inventories={}
     for name,reference in references.items():
@@ -101,7 +129,7 @@ def make_plan(source, references, selection):
         ref_catalog,ref_images,ref_members=inventories[reference_name]
         t.require(all(image in ref_images for image in members[group]),'Reference changed an image codec')
         ids=sorted({ref_images[image][0] for image in members[group]})
-        parts=[];shifts={};raw_parts=[];raw_at=0
+        parts=[];shifts={};raw_parts=[];raw_at=0;codec_extra=0
         for part,ref_group in enumerate(ids):
             g=ref_catalog[ref_group];block=bytes(reference.block(g.offset,g.size))
             raw,_start,mode,_slices=group_layout(block,source.version)
@@ -113,8 +141,12 @@ def make_plan(source, references, selection):
             # The small reference deliberately removes the new plane restore
             # cost as well as the larger group. Original RGR1 remains legal.
             t.require(reference_name!='small' or mode<8,'Small reference must use the pre-plane codec')
+            reference_raw=decoded_group(block,source.version)
+            if reference_name=='medium' and medium_codec=='rgr2':
+                encoded=medium_stream(block,reference_raw,g.slices,source.version,cache)
+                codec_extra+=colors.aligned(len(encoded))-colors.aligned(len(block));block=encoded
             shifts[ref_group]=(part,raw_at);parts.append(block)
-            raw_parts.append(decoded_group(block,source.version));raw_at+=raw
+            raw_parts.append(reference_raw);raw_at+=raw
         raw=decoded_group(payload,source.version)
         t.require(raw_size==raw_at and raw==b''.join(raw_parts),'Reference changes complete retained raw bytes')
         rows=[]
@@ -130,6 +162,7 @@ def make_plan(source, references, selection):
             source_raw_bytes=raw_size,source_encoded_bytes=original.size,
             replacement_groups=len(parts),replacement_encoded_bytes=len(replacement),
             extra_encoded_bytes=len(replacement)-colors.aligned(original.size),
+            reference_codec_extra_bytes=codec_extra,
             raw_sha256=t.sha256(raw),source_stream_sha256=t.sha256(payload),
             replacement_stream_sha256=[t.sha256(block) for block in parts],
             max_replacement_raw_bytes=max(len(raw) for raw in raw_parts),
@@ -144,6 +177,7 @@ def make_plan(source, references, selection):
     return plan,dict(selected_clips=selection,changed_groups=sum(len(p.parts)>1 or
         p.parts[0]!=bytes(source.block(catalog[p.group].offset,catalog[p.group].size)) for p in plan),
         raw_bytes_compared=sum(p.receipt['source_raw_bytes'] for p in plan),
+        medium_codec=medium_codec,reference_codec_extra_bytes=sum(p.receipt['reference_codec_extra_bytes'] for p in plan),
         payload_extra_bytes=extra,alignment_padding_bytes=padding,
         results=[p.receipt for p in plan],runtime_bytes_added=0)
 
@@ -249,6 +283,8 @@ def main():
     for name in ('input','output','work','small-reference','medium-reference'):
         parser.add_argument('--'+name,type=Path,required=True)
     parser.add_argument('--policy',choices=('cache-page','original'),default='cache-page')
+    parser.add_argument('--medium-codec',choices=('rgr2','reference'),default='rgr2',
+                        help='Use existing RGR2 filtering inside the same one-page medium boundaries')
     parser.add_argument('--locales',nargs='+',choices=split.LANGUAGES)
     args=parser.parse_args()
     source=t.private_path(args.input,'Private input');output=t.private_path(args.output,'Private output')
@@ -264,7 +300,8 @@ def main():
     english=split.reconstruct(common,inputs['eng'],'eng');initial=colors.view(english)
     references={key:colors.view(t.private_path(path,'Private matching reference').read_bytes())
                 for key,path in (('small',args.small_reference),('medium',args.medium_reference))}
-    started=time.monotonic();plan,report=make_plan(initial,references,merchant_selection(initial,args.policy))
+    started=time.monotonic();plan,report=make_plan(initial,references,merchant_selection(initial,args.policy),
+        medium_codec=args.medium_codec,cache=work/'merchant-rgr2')
     report.update(schema=1,policy=args.policy,version=initial.version,reference='v0.111.0 / 41cef1ea',locales={},
                   matching_reference_sha256={key:t.sha256(value.data) for key,value in references.items()})
     new_common=None

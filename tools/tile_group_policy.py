@@ -16,7 +16,7 @@ import re
 import content_tiles as t
 
 ROOT = Path(__file__).resolve().parents[1]
-POLICY = 'bowlbug-family-all-combat-actors-v1'
+POLICY = 'bowlbug-construct-families-all-combat-actors-v2'
 
 
 def literal_profile(path, names):
@@ -39,11 +39,12 @@ def literal_profile(path, names):
 
 
 def combat_clips(source):
-    """All tracks in the measured encounter family and its playable actors.
+    """All tracks in the measured encounter families and their playable actors.
 
     BowlbugsNormal chooses two of Egg/Silk/Nectar alongside Rock. Selecting the
-    entire semantic model family also covers the alternative encounter seeds,
-    rather than tuning only the Ironclad/Egg/Nectar/Rock acceptance fixture.
+    entire semantic model family also covers the alternative encounter seeds.
+    ConstructMenagerie action-phase replay independently exposed the same
+    repeated large-group reads; include all Cubex skins/tracks and Punch.
     """
     from asset_profile import CLIPS as original
     from all_character_ui_profile import BASE_CLIPS, NEW_CLIPS
@@ -84,11 +85,13 @@ def combat_clips(source):
 
     models = set()
     for row in CLIP_ROWS:
-        if row.get('model', '').startswith('Bowlbug'):
+        model=row.get('model', '')
+        if model.startswith('Bowlbug') or model in ('CubexConstruct','PunchConstruct'):
             models.add(row['model'])
             add('enemy.' + row['key'], row['id'])
     t.require({'BowlbugEgg', 'BowlbugNectar', 'BowlbugRock', 'BowlbugSilk'} <= models,
               'Bowlbug encounter family is incomplete')
+    t.require({'CubexConstruct','PunchConstruct'} <= models,'Construct encounter family is incomplete')
     actors = {key.split('.')[1] for key in selection if key.startswith('character.')}
     t.require(actors == {'ironclad', 'silent', 'defect', 'regent', 'necrobinder', 'osty'},
               'Playable combat actor coverage changed')
