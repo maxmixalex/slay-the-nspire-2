@@ -159,7 +159,7 @@ bool card_hover_target(const App&a,CardHoverTarget&target){
     case HitKind::SovereignBlade:{
         if(!a.pointer.visible||s.phase!=Phase::Combat||h->value<0||h->value>=s.card_count||s.cards[h->value].kind!=SovereignBlade)return false;
         const auto*blade=a.combat_cards.blades.find(unsigned(h->value));if(!blade||blade->attacking||blade->removing)return false;
-        target.instance=h->value;target.card=s.cards[h->value];target.sovereign_blade=true;break;}
+        target.instance=h->value;target.card=s.cards[h->value];target.facts=event_card_facts(s,target.card,target.instance,-1);target.sovereign_blade=true;break;}
     case HitKind::CombatChoice:
         if(h->value<0)return false;
         if(a.combat_selection_kind()==CombatSelectionKind::Hand)

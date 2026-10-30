@@ -140,7 +140,7 @@ static void character_screen(Canvas&c){
     character_info_name(name,title,dx+InfoX,top+(NameHeight-title_size-3)/2,title_size);
     const int stats_y=top+NameHeight+StatsOffset;
     c.picture(A_Heart,dx+InfoX,stats_y,StatsIcon,StatsIcon);
-    char hp[32]{};TextBuffer health{hp,sizeof hp,0};if(random)health.text("??/??");else{health.number(definition.starting_hp);health.ch('/');health.number(definition.starting_hp);}
+    char hp[32]{};TextBuffer health{hp,sizeof hp,0};if(random)health.text("?" "?/??");else{health.number(definition.starting_hp);health.ch('/');health.number(definition.starting_hp);}
     const int hp_x=dx+InfoX+StatsIcon+StatsLabelGap;
     character_info_text(bold,hp,hp_x,stats_y,InfoWidth,character_info_plan(bold,hp,InfoWidth),rgb(255,100,100));
     const int gold_x=hp_x+bold.width(hp,10)+StatsGap;
