@@ -159,7 +159,7 @@ static void daily_run_screen(Canvas&c){
  const unsigned bold=source_label_face(a.content.original_label_fonts(),5);const uint16_t cream=rgb(255,246,226),gold=rgb(239,200,81);
  const auto label=[&](const char*key,const char*fallback){return frontend_text(a,"main_menu_ui",key,fallback);};
  profile_text_box(c,label("DAILY_RUN_MENU.DAILY_TITLE","Daily Challenge"),12,14,296,24,{14,source_label_face(a.content.original_label_fonts(),4),gold,128},true,false);
- const uint32_t now=a.callbacks.wall_clock?a.callbacks.wall_clock():0;char date[64]{},time[32]{},text[1024]{};progress_date_text(a,now,date,sizeof date,time,sizeof time);
+ const uint32_t now=a.callbacks.wall_clock?a.callbacks.wall_clock():0;char date[64]{},time[32]{},text[1024]{};daily_date_text(a,now,date,sizeof date);
  profile_text_box(c,date,16,39,288,14,{10,bold,rgb(135,206,235),64},true,false);
  const unsigned remaining=now?86400-now%86400:0;TextBuffer clock{time,sizeof time,0};time[0]=0;const unsigned hours=remaining/3600,minutes=remaining/60%60,seconds=remaining%60;
  if(hours<10)clock.ch('0');clock.number(hours);clock.ch(':');if(minutes<10)clock.ch('0');clock.number(minutes);clock.ch(':');if(seconds<10)clock.ch('0');clock.number(seconds);

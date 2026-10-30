@@ -383,11 +383,13 @@ bool Content::open(ResourceSource source){
     reader_.progress(ResourceStage::Directory,start,start);
     const uint8_t*p=metadata_;length_=n;images_=ni;glyphs_=ng;strings_=ns;clips_=nc;version_=version;
     image_directory_={p+40,data_?16u:12u};
-    directory_bytes_=start-directory_reduction_;tile_metadata_=version>=TileContentVersion?p+base-directory_reduction_:nullptr;
+    directory_bytes_=start-directory_reduction_;tile_metadata_=version>=TileContentVersion?p+(base-directory_reduction_):nullptr;
     if(directory_reduction_&&tile_metadata_){
         // These two words address resident tables, not virtual payload bytes.
         // Descriptor and group payload offsets remain their original values.
-        auto*tile=directory_+base-directory_reduction_;
+        // The virtual base can exceed the smaller resident array. Subtract
+        // as an integer before forming a pointer into the owned array.
+        auto*tile=directory_+(base-directory_reduction_);
         ImageDirectoryView::word(tile+36,u32(tile+36)-directory_reduction_);
         if(version>=RetainedContentVersion)ImageDirectoryView::word(tile+56,u32(tile+56)-directory_reduction_);
     }
@@ -678,6 +680,12 @@ const uint8_t* Content::glyph_record(uint32_t cp,int size,unsigned style)const{
     // Recursive fallback may find a malformed record. It must poison this
     // owner exactly as before and must never publish a successful memo entry.
     return io_good_?glyph_records.remember(key,base,fallback):nullptr;
+}
+bool Content::has_exact_glyph(uint32_t cp,int size,unsigned style)const{
+    if(style>7||size<=0||size>31||text_format_control(cp)||kerning_codepoint(cp)||inline_icon(cp))return false;
+    const uint8_t* row=glyph_record(cp,size,style);
+    const unsigned band=unsigned(size)|((style&3u)<<6)|((style&4u)<<3);
+    return row&&u32(row)==cp&&u16(row+8)==band;
 }
 Glyph Content::glyph_metrics(uint32_t cp,int size,unsigned style)const{
     if(!metadata_||!io_good_||text_format_control(cp)||kerning_codepoint(cp))return {nullptr,0,0,0};

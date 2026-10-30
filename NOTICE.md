@@ -61,6 +61,19 @@ accompany distributions of these derived tables. The calculator packager
 includes it at `data/licenses/Unicode-License.txt`; the optional offline HTML
 packager also includes the complete text in its embedded distribution notices.
 
+## Calendar culture facts added in UI18
+
+`include/ui_calendar_locale_data.inc` contains the bounded month names,
+grammatical month forms, day-period markers and separators reported by .NET
+9.0.22 / ICU 74.2 for the documented sixteen-language culture map.
+`tools/generate_calendar_locale_data.py` reproduces this Unicode-derived table
+from the optional reference oracle's culture metadata. It also assigns eleven
+display-only identifiers to complete Thai month graphemes; those identifiers
+contain no original font raster. The same Unicode License V3 notice above
+applies and is included in source and calculator packages. The runtime includes
+neither ICU nor original font files. Formatting scope and platform limits are
+recorded in `docs/calendar-locales-ui18-0.17.md`.
+
 ## Game data and animations
 
 Slay the Spire 2, its text, visual assets, characters, logos and trademarks belong

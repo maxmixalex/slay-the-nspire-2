@@ -188,6 +188,9 @@ public:
     // Layout uses the resident descriptor only. Measuring a label must not
     // decode/read glyph pixels or evict the glyphs about to be painted.
     Glyph glyph_metrics(uint32_t cp,int size,unsigned style=0)const;
+    // Capability checks for dynamic localized labels. Exact descriptor only;
+    // never substitutes '?', another face/size, reads a raster or allocates.
+    bool has_exact_glyph(uint32_t cp,int size,unsigned style=0)const;
     int glyph_kerning64(uint32_t left,uint32_t right,int size,unsigned style=0)const;
     const char* string(int id)const;
     Clip clip(int id)const;

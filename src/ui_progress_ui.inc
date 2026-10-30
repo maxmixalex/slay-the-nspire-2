@@ -31,18 +31,37 @@ static void progress_time_text(char*out,size_t capacity,uint32_t seconds){
     if(hours){text.number(hours);text.ch(':');}if(minutes<10)text.ch('0');text.number(minutes);text.ch(':');
     if(seconds%60<10)text.ch('0');text.number(seconds%60);
 }
+static bool calendar_glyphs_available(const App&a,const char*text,unsigned size,unsigned face){
+    RichReader reader(text);RichChar ch{};
+    while(reader.next(ch))if(!a.content.has_exact_glyph(ch.codepoint,int(size),face))return false;
+    return true;
+}
 static void progress_date_text(const App&a,uint32_t timestamp,char*date,size_t date_size,char*time,size_t time_size){
     if(!timestamp){TextBuffer d{date,date_size,0};d.text("—");TextBuffer t{time,time_size,0};t.text("—");return;}
-    unsigned days=timestamp/86400,year=1970;const auto leap=[](unsigned y){return y%4==0&&(y%100!=0||y%400==0);};
-    while(days>=(leap(year)?366u:365u)){days-=leap(year)?366:365;++year;}
-    const unsigned lengths[]={31,28,31,30,31,30,31,31,30,31,30,31};unsigned month=0;
-    while(month<11&&days>=lengths[month]+unsigned(month==1&&leap(year))){days-=lengths[month]+unsigned(month==1&&leap(year));++month;}
-    TextBuffer d{date,date_size,0};
-    if(a.content.language()!=2){static const char*names[]={"January","February","March","April","May","June","July","August","September","October","November","December"};d.text(names[month]);d.ch(' ');d.number(days+1);d.text(", ");d.number(year);}
-    else{static const char*names[]={"一月","二月","三月","四月","五月","六月","七月","八月","九月","十月","十一月","十二月"};d.number(year);d.ch(' ');d.text(names[month]);d.ch(' ');d.number(days+1);}
-    TextBuffer t{time,time_size,0};const unsigned hour=timestamp/3600%24,minute=timestamp/60%60;
-    t.number(hour%12?hour%12:12);t.ch(':');if(minute<10)t.ch('0');t.number(minute);
-    t.text(a.content.language()!=2?(hour<12?" AM":" PM"):(hour<12?" 上午":" 下午"));
+    const auto calendar=ui_calendar(timestamp);const unsigned language=a.content.language();
+    // NRunHistory.LoadTimeDetails passes LocManager.CultureInfo explicitly.
+    // Format immediately: a later packed-string request may reuse its slot.
+    const char* pattern=frontend_text(a,"run_history","INFO.DATE_FORMAT",language==2?"yyyy MMMM d":"MMMM d, yyyy");
+    if(!ui_calendar_format(calendar,language,pattern,date,date_size))TextBuffer{date,date_size,0}.text("—");
+    pattern=frontend_text(a,"run_history","INFO.TIME_FORMAT","h:mm tt");
+    if(!ui_calendar_format(calendar,language,pattern,time,time_size))TextBuffer{time,time_size,0}.text("—");
+    if(language==15){ui_calendar_shape_thai(date);ui_calendar_shape_thai(time);}
+    // An older/private edition may omit dynamic date glyphs. Preserve readable
+    // English dates rather than letting the renderer substitute question marks.
+    if(!calendar_glyphs_available(a,date,8,0)||!calendar_glyphs_available(a,time,8,0)){
+        ui_calendar_format(calendar,0,"MMMM d, yyyy",date,date_size);
+        ui_calendar_format(calendar,0,"h:mm tt",time,time_size);
+    }
+}
+static void daily_date_text(const App&a,uint32_t timestamp,char*date,size_t date_size){
+    if(!timestamp){TextBuffer{date,date_size,0}.text("—");return;}
+    // NDailyRunScreen uses its translated pattern without a culture provider.
+    // NGame establishes InvariantCulture; a Thai daily date is Gregorian and
+    // spelled with invariant month names, unlike the localized run history.
+    const char* pattern=frontend_text(a,"main_menu_ui","DAILY_RUN_MENU.DATE_FORMAT","MMMM d, yyyy");
+    if(!ui_calendar_format(ui_calendar(timestamp),0,pattern,date,date_size))TextBuffer{date,date_size,0}.text("—");
+    if(!calendar_glyphs_available(a,date,10,source_label_face(a.content.original_label_fonts(),5)))
+        ui_calendar_format(ui_calendar(timestamp),0,"MMMM d, yyyy",date,date_size);
 }
 static bool progress_hover(const App&a,int x,int y,int width,int height){return a.pointer.visible&&a.pointer.x>=x&&a.pointer.x<x+width&&a.pointer.y>=y&&a.pointer.y<y+height;}
 static void compendium_button(Canvas&c,unsigned index,int x,int y,int width,int height,int base,int icon,const char*prefix,UiAction action,bool bottom=false){
