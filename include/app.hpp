@@ -126,7 +126,8 @@ struct ImageCacheUsage {unsigned entries=0,pages=0;};
 enum class PreparationResult:uint8_t {Pending,Ready,Failed};
 class Content {
     const uint8_t* data_{};uint32_t version_{},length_{},images_{},glyphs_{},strings_{},clips_{},cards_{},ui_offset_{},ui_count_{};
-    static constexpr uint32_t DirectoryCapacity=1760u*1024u;
+    // Preserve the former full two-MiB, 65,535-image directory boundary.
+    static constexpr uint32_t DirectoryCapacity=2u*1024u*1024u-4u*65535u;
     static constexpr uint32_t DirectoryInputCapacity=2u*1024u*1024u;
     mutable uint8_t directory_[DirectoryCapacity]{};
     const uint8_t* metadata_{};
