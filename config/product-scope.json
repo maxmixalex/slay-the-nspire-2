@@ -25,18 +25,18 @@
     "enemy_registry_models": 108
   },
   "source_version": "0.1.0",
-  "validation_status": "UI19 ordinary ARM/WASM built from the frozen runtime source below. UI feedback and original-behavior evidence are in docs/ui19-ui-feedback.md; final release/storage gates are recorded separately.",
-  "verified_runtime_source": "090023d45ec6211da3b2e5a887cfcc2d1dd68004",
+  "validation_status": "UI20 ordinary ARM and WebAssembly build from frozen runtime 175ca7a; 157 native suites and the final linked ARM 4,799-vector memory gate pass. The complete dependency environment passes 383 Python tests without skips. English and Simplified Chinese actual-resource UI gates pass. Final package sizes, complete storage proofs and named ordinary Firebird scenarios are reported separately; these checks do not establish physical-device timing or complete original-game equivalence. See docs/ui20-ui.md, docs/ui20-animation.md and docs/ui20-retained-differences.md.",
+  "verified_runtime_source": "175ca7a3ef0f2bb70240be6ec93f3e5b0605f80e",
   "original_three_act_campaign_implemented": true,
   "model_counts_are_fidelity_percentages": false,
   "reference_timing_boundary": "The former surrounding-wait omissions are implemented by source-derived enemy command programs, with UI15 coverage of 108 actor kinds and 1,312 legal moves. Command timing is not inferred from animation length. See docs/ui15-retained-differences-0.17.md and docs/ui17-feedback-acceptance-0.17.md.",
-  "reference_animation_boundary": "Vantom's 750 ms independent-bone shrink transition, separate tail and associated VFX are implemented and validated by UI15. LCD rasterization and sampled CPU materials remain disclosed platform boundaries; see docs/ui17-feedback-acceptance-0.17.md.",
-  "agreed_storage_exception": "The complete Ancient scene actor/background animation is static; Ancient gameplay, dialogue, options, healing and card materials remain in scope.",
+  "reference_animation_boundary": "Vantom's 750 ms independent-bone shrink transition, separate tail and associated VFX were implemented in UI15 and remain present. UI20 adds Osty's source dead_loop and restores full source-to-LCD density in nine action clips across six ordinary enemy models. The full static Ancient scene, sampled CPU materials and LCD rasterization remain disclosed differences; see docs/ui20-animation.md and docs/ui20-retained-differences.md.",
+  "agreed_storage_exception": "The complete Ancient scene actor/background animation is still static. UI20 restores the full original viewport in all eight room composites; Ancient gameplay, dialogue, options, healing and card materials remain implemented. This exception does not cover other missing actor animations.",
   "retained_platform_boundaries": [
     "RGB565/LDR output, integer LCD rasterization and sampled CPU shader/particle phases do not establish continuous desktop GPU equality.",
     "Presentation noise does not reconstruct an unrecorded process-global cosmetic RNG history; canonical gameplay RNG remains separate.",
     "Offline modes do not reproduce hosted leaderboards, cloud behavior or desktop service integrations.",
-    "UTC RTC timestamps have no desktop timezone/DST database; history retains 96 floors and 32 runs with finite drawing/journal capacity.",
+    "UTC RTC timestamps have no desktop timezone/DST database; history retains 96 floors and 32 runs, with 2,048 map drawing points and finite transition/journal capacities.",
     "The seed field remains bounded to 64 UTF-8 bytes with no new calculator IME."
   ]
 }

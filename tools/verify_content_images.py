@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Run the existing exact native image oracle in contiguous disk-bounded ranges."""
 import argparse
+from concurrent.futures import ThreadPoolExecutor, as_completed
 import hashlib
 import json
 from pathlib import Path
@@ -15,7 +16,10 @@ p.add_argument('--pack', type=Path, required=True)
 p.add_argument('--reference', type=Path, required=True)
 p.add_argument('--output', type=Path, required=True)
 p.add_argument('--spool-mib', type=int, default=128)
+p.add_argument('--workers', type=int, default=1)
 a = p.parse_args()
+if not 1 <= a.workers <= 4 or not 1 <= a.spool_mib <= 256:
+    raise ValueError('Use one through four workers and 1..256 MiB per-image-range spool budgets')
 a.output.mkdir(parents=True, exist_ok=True)
 data = a.pack.read_bytes()
 ni, ng, ns, nc, nk = struct.unpack_from('<5I', data, 16)
@@ -36,13 +40,17 @@ for image, pages in enumerate(data[costs:costs+ni]):
     size += bound
 if first < ni:ranges.append((first, ni-first, size))
 receipt = dict(complete=False, images=ni, expected_spool_bound=cap, ranges=[],
+    workers=a.workers, aggregate_spool_bound=cap*a.workers,
     pack=str(a.pack), pack_sha256=hashlib.sha256(data).hexdigest(),
     reference=str(a.reference), reference_sha256=hashlib.sha256(a.reference.read_bytes()).hexdigest(),
     binary_sha256=hashlib.sha256(a.binary.read_bytes()).hexdigest(),
     comparison='Every decoded byte via memory, ranged IO and incremental IO against original runtime spool')
 del data
 started = time.monotonic()
-for first, count, bound in ranges:
+
+
+def run_range(interval):
+    first, count, bound = interval
     log = a.output/f'images-{first:05}-{first+count-1:05}.log'
     command = ['/lib64/ld-linux-x86-64.so.2', str(a.binary), str(a.pack), str(a.reference),
                '--images', str(first), str(count), '--preload']
@@ -62,15 +70,37 @@ for first, count, bound in ranges:
     row = dict(first=first, count=count, decoded_bytes=decoded, checks=checks,
                preload_steps=steps, max_preload_steps=maximum, seconds=time.monotonic()-before,
                maximum_spool_bytes=decoded+count*16, log=str(log))
-    receipt['ranges'].append(row)
-    (a.output/'exact-image-receipt.json').write_text(json.dumps(receipt, indent=2)+'\n')
-    print(json.dumps(dict(stage='native_exact_range_complete', **row)), flush=True)
-if sum(r['count'] for r in receipt['ranges']) != ni:raise ValueError('Incomplete image catalog')
+    return row
+
+
+def write_receipt():
+    temporary=a.output/'exact-image-receipt.tmp'
+    temporary.write_text(json.dumps(receipt,indent=2)+'\n')
+    temporary.replace(a.output/'exact-image-receipt.json')
+
+
+# Each child constructs its own complete Content/cache and reads full groups.
+# Prediction never crosses group boundaries; splitting the image catalog does
+# not omit a predictor, cancellation phase or a decoder record from a child.
+write_receipt()
+with ThreadPoolExecutor(max_workers=a.workers) as pool:
+    futures=[pool.submit(run_range,interval) for interval in ranges]
+    for future in as_completed(futures):
+        row=future.result();receipt['ranges'].append(row)
+        receipt['ranges'].sort(key=lambda r:r['first'])
+        write_receipt()
+        print(json.dumps(dict(stage='native_exact_range_complete',**row)),flush=True)
+covered=0
+for row in receipt['ranges']:
+    if row['first']!=covered or row['count']<=0:
+        raise ValueError('Image catalog has a gap, overlap or empty interval')
+    covered+=row['count']
+if covered!=ni:raise ValueError('Incomplete image catalog')
 receipt.update(complete=True, elapsed_seconds=time.monotonic()-started,
     decoded_bytes=sum(r['decoded_bytes'] for r in receipt['ranges']),
     checks=sum(r['checks'] for r in receipt['ranges']),
     preload_steps=sum(r['preload_steps'] for r in receipt['ranges']),
     max_preload_steps=max(r['max_preload_steps'] for r in receipt['ranges']),
     maximum_spool_bytes=max(r['maximum_spool_bytes'] for r in receipt['ranges']))
-(a.output/'exact-image-receipt.json').write_text(json.dumps(receipt, indent=2)+'\n')
+write_receipt()
 print(json.dumps({k:v for k,v in receipt.items() if k!='ranges'}), flush=True)
