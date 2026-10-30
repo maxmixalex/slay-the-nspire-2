@@ -113,14 +113,51 @@ notice. Commit `c0aec0f` adds `third_party/unicode/LICENSE` to the player ZIP
 under the unambiguous **`data/licenses/Unicode-License.txt`** name. A real
 public-synthetic calculator ZIP test reads that notice back byte for byte,
 rejects duplicate archive member names, checks NSP2/41 BUILD-INFO and confirms
-that state contains only its empty directory. The multipart delivery therefore
-expects **23 main archive members**, including the additional notice, and
+that state contains only its empty directory. The final multipart delivery has
+**23 main archive members**, including the additional notice, and
 **15 optional-language archive members**. Original assets remain private.
 
-The existing package tool already verifies each archive member against its
-input. No duplicate packaging or installed-size tool was introduced. Final
-archive filenames, final launcher byte count, source publication status and
-actual ZIP review belong to the final delivery receipt.
+The existing package tool verifies each archive member against its input.
+No duplicate packaging or installed-size tool was introduced.
+
+## Final archive review
+
+The final package journal `ui17-final-calculator-package-9341796a15da` records
+`passed`, unchanged source and runtime checkpoint `d4303ba`. It performs the
+complete byte readback of all packaged files. A separate final review checks
+the ZIP member metadata, BUILD-INFO, README, notice bytes and launcher identity;
+it does not repeat full resource/pixel decoding or the already completed full
+archive readback.
+
+| Final archive under `../ui17-delivery` | ZIP bytes | Members |
+| --- | ---: | ---: |
+| `Slay-the-Nspire-2-0.17-ui17-bilingual-calculator.zip` | **79,127,539** | **23** |
+| `Slay-the-Nspire-2-0.17-ui17-optional-languages.zip` | **17,072,413** | **15** |
+
+The final launcher is **1,766,579 bytes**, with independently checked SHA-256
+`1a9a0fb8de2ba7f99a43ccbef3a21d915e72536c9eb62782634a3abdb6f83459`.
+BUILD-INFO identifies runtime `d4303baf9a720bbeed58c1bb1859ff63343afcd6`,
+converter `44b239e5f41208929661ca70c96545ff65903e08`, NSP2/41, NSL3,
+save 17, progress 9 and settings 6. Every recorded program/resource size equals
+its ZIP entry. Their sum is **79,957,013 bytes** for the default installation.
+The fourteen optional files add **18,542,228 bytes**, yielding **98,499,241
+bytes** with all languages. These program/resource counts exclude saves and
+notices. Savings against the original UI16 deliveries are therefore
+**1,065,701 default bytes** and **1,077,040 all-language bytes**.
+
+The required index and all eight concern files are present. The optional
+language set is exactly `deu, esp, fra, ind, ita, jpn, kor, pol, ptb, rus, spa,
+tha, tur, zht`, with neither English nor Simplified Chinese duplicated. The
+only state member is the empty `state/` directory; no test save, preference,
+profiling or diagnostic file is included. The Unicode notice matches its
+source file byte for byte and has no ambiguous bare `LICENSE` archive name.
+
+README states that an old monolithic common file should first be replaced by
+the small index to release space, then the remaining matching parts/locales
+and launcher transferred before starting. Existing state is preserved. Its
+language fallback statement is in the first-launch context, and it accurately
+identifies the source checkpoints as local and not published to GitHub. No
+substantive archive, identity, member-set or installation-total error was found.
 
 ## Reproduce the resource gates
 
