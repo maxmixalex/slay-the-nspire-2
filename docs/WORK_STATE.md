@@ -1,3 +1,43 @@
+# UI19 / nSpire 0.1.0 integration — 2026-10-30 (Asia/Shanghai)
+
+Continue from the current UI19 integration, not the older public checkout. The
+complete UI18 source baseline is `fc50e39`. The first integrated UI19 production
+runtime is `8411656`; subsequent changes through `6174141` update test oracles,
+offline conversion tools and evidence without changing C++/platform sources.
+All thirteen current feedback corrections are implemented. See
+`ui19-ui-feedback.md` and `combat-ui19-0.17.md` for source and executed evidence.
+
+At `6174141`, the full native suite passes **157/157** (72.90 s) and the full
+Python suite passes **351/351** (50.92 s), with the pinned lz4/zopfli dependency
+directory. The earlier native failure was the old Continue popover coordinate
+oracle; the earlier Python run lacked lz4. Both failed attempts remain in the
+journals. The ordinary integrated ARM program requests **22,297,680 bytes** and
+passes Firebird save/quit fade, no-USB restart/Continue and natural combat death.
+Natural death removes current-run sav/bak/tmp after progress/history handling;
+console-created debug encounters are not used as deletion evidence.
+
+RGR3 / NSP2 v43 is implemented with the existing memory pools. Its actual
+bilingual data occupy **77,227,911 bytes**, down **734,540 bytes** from UI18;
+all sixteen language data save **726,205 bytes** after relocated-directory
+costs. Locale acceptance passes 89,818 checks / 53,072 descriptions. Complete
+image decoding and current-runtime v42/v43 device timing are still in progress.
+Two additional lossless storage candidates are being implemented separately:
+larger tile groups with bounded in-place reconstruction, and same-purpose
+retained-group merging. Neither candidate is an accepted release yet. Final
+installed size must include the final compressed launcher, not just resource
+groups or ZIP bytes.
+
+Source publication is **blocked by this turn's automatic approval review**:
+the public push of the accumulated 178 commits was rejected as potentially
+sensitive game-derived source/history disclosure. The actual remote main and
+development refs were read at `b84801b3`; no alternate transport bypassed the
+rejection. Local commits and source/history bundles preserve the reviewable
+work. Complete the artifacts and then request specific authorization for that
+public source/history payload if the approval block remains. Original game
+assets, assemblies, ROM/NAND and derived resource packs remain private.
+
+---
+
 # UI18 local calculator delivery — 2026-10-30 (Asia/Shanghai)
 
 Continue from the complete local UI18 source/history. Do not restart from the
