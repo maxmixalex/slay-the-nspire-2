@@ -65,6 +65,8 @@ static bool sibling(char*out,const char*launcher,const char*name){
 }
 // Compile the actual calculator callbacks, including their profile summary
 // routing and atomic rename decisions, against a fault-injecting filesystem.
+// Resource failure interlocks are exercised with a real App in their own test.
+static bool resource_mutation_allowed(){return true;}
 #include "../platform/ndless/profile_storage.inc"
 #include "../platform/ndless/progress_storage.inc"
 static UiProgress value,loaded,decoded_reference;

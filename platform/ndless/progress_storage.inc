@@ -25,6 +25,7 @@ static bool load_progress(spire::UiProgress&out){
     return false;
 }
 static bool save_progress(const spire::UiProgress&value){
+    if(!resource_mutation_allowed())return false;
     spire::ResourceTransferLease transfer(spire::ResourceTransferUse::Bytes);if(!transfer)return false;
     uint8_t*bytes=transfer.bytes();
     const unsigned n=unsigned(spire::encode_ui_progress(value,bytes,spire::UiProgressCapacity));if(!n)return false;

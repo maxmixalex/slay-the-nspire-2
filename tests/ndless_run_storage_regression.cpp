@@ -50,6 +50,9 @@ static int nd_unlink(const char*path){if(fail_unlink==path){fail_unlink.clear();
 static int profile_file_present(const char*path){void*f=nd_open(path,"rb");return !f?0:nd_close(f)==0?1:-1;}
 static bool remove_profile_file(const char*path){const int present=profile_file_present(path);return present==0||(present>0&&nd_unlink(path)==0);}
 static const char save_path[]="/game/nSpire2.sav.tns",temp_path[]="/game/nSpire2.tmp.tns",backup_path[]="/game/nSpire2.bak.tns";
+// This isolated codec/transaction fixture has no App resource lifecycle.
+// The real gate plus these callbacks are covered by resource_failure_regression.
+static bool resource_mutation_allowed(){return true;}
 #include "../platform/ndless/run_storage.inc"
 static State source,target,guard;
 static SaveData canonical,again,decoded;

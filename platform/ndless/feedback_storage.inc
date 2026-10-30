@@ -1,5 +1,6 @@
 // Local-only report export, sharing the established profile path and atomic rename helpers.
 static bool write_feedback(const char*report,unsigned length){
+    if(!resource_mutation_allowed())return false;
     char path[512],temporary[512],backup[512];
     if(!profile_sibling(path,"nSpire2-feedback.txt.tns",selected_profile)||
        !profile_sibling(temporary,"nSpire2-feedback.tmp.tns",selected_profile)||

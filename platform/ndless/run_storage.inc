@@ -18,6 +18,7 @@ static bool read(void*file,spire::SaveData&out){
 } // namespace run_storage
 
 static bool save_game(const spire::State&s){
+    if(!resource_mutation_allowed())return false;
     spire::ResourceTransferLease transfer(spire::ResourceTransferUse::Save);if(!transfer)return false;
     auto&scratch=*transfer.save();if(!spire::save(s,scratch))return false;
     void*f=nd_open(temp_path,"wb");if(!f)return false;
@@ -34,6 +35,14 @@ static bool save_game(const spire::State&s){
     }
     // Unlike optional UI history, the preceding run remains recoverable.
     return true;
+}
+static bool clear_save(){
+    if(!resource_mutation_allowed())return false;
+    // A deliberate abandon also removes the preceding atomic-save backup.
+    // Otherwise a later recovery could bring back an abandoned expedition.
+    const char*paths[]={backup_path,temp_path,save_path};for(unsigned i=0;i<3;i++){const char*path=paths[i];
+        void*f=nd_open(path,"rb");if(!f)continue;if(nd_close(f)!=0||nd_unlink(path)!=0)return false;
+    }return true;
 }
 static bool load_game(spire::State&s){
     spire::ResourceTransferLease transfer(spire::ResourceTransferUse::Save);if(!transfer)return false;

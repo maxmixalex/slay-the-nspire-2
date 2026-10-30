@@ -6,6 +6,7 @@
 #include "departure_frame_clock.hpp"
 #include "resource_file_cursor.hpp"
 #include "resource_file_cache.hpp"
+#include "resource_runtime_guard.hpp"
 #include "runtime_performance.hpp"
 #include "runtime_scene.hpp"
 #include "touchpad.hpp"
@@ -43,6 +44,8 @@ int nd_math_to_string(void*,void*,uint16_t**);
 void nd_os_free(void*);
 }
 static spire::App app;
+static spire::ResourceRuntimeGuard resource_runtime;
+static bool resource_mutation_allowed(){return resource_runtime.allow(app.content.healthy());}
 static spire::RuntimePerformance performance;
 static char pack_path[512],save_path[512],temp_path[512],backup_path[512],performance_path[512],profile_path[512],language_path[512];
 static char settings_path[512],settings_temp[512],settings_backup[512];
@@ -73,11 +76,7 @@ static unsigned sampled_read(void*output,unsigned size,unsigned count,void*file)
     if(!input_latch.enabled||size!=1)return nd_read(output,size,count,file);
     return spire::sampled_resource_read(output,count,file,nd_read,capture_key_matrix);
 }
-static unsigned available_languages(){return installed_languages;}
-static bool request_language(unsigned language){
-    if(!spire::locale_language_valid(language)||!(installed_languages&spire::locale_language_mask(language)))return false;
-    pending_language=language;return true;
-}
+#include "language_storage.inc"
 static uint32_t seed_entropy(){
     // Same read-only RTC used by the official Ndless _gettimeofday. Mix the
     // current input-time subsecond counter and pre-init timing; never reset
@@ -167,13 +166,6 @@ static spire::ResourceSource file_source(ResourceFile&file){
 #include "preferences_storage.inc"
 #include "progress_storage.inc"
 #include "run_storage.inc"
-static bool clear_save(){
-    // A deliberate abandon also removes the preceding atomic-save backup.
-    // Otherwise a later recovery could bring back an abandoned expedition.
-    const char*paths[]={backup_path,temp_path,save_path};for(unsigned i=0;i<3;i++){const char*path=paths[i];
-        void*f=nd_open(path,"rb");if(!f)continue;if(nd_close(f)!=0||nd_unlink(path)!=0)return false;
-    }return true;
-}
 #include "feedback_storage.inc"
 static bool pressed(unsigned offset,unsigned mask){return (*(volatile uint16_t*)(0x900E0000u+offset)&mask)!=0;}
 template<class Ticks,class Held>
@@ -201,11 +193,6 @@ static void boot_error(void(*blit)(void*),spire::BootText message,spire::BootLan
     exit_input_release(timer_ticks,boot_keys_held);
     while(!pressed(0x1C,0x80)&&!pressed(0x10,2)&&!pressed(0x1A,0x40)){}
     exit_input_release(timer_ticks,boot_keys_held);
-}
-static spire::BootLanguage language_preference(){
-    void*f=nd_open(language_path,"rb");if(!f)return spire::BootLanguage::Unknown;
-    uint8_t bytes[9];const unsigned count=nd_read(bytes,1,sizeof bytes,f);nd_close(f);
-    return spire::boot_preference(bytes,count);
 }
 static unsigned system_language(){
     // These are the official Ndless SDK calc_cmd/MathExprToStr bindings. The
@@ -240,11 +227,6 @@ static unsigned system_language(){
     const int decoded=nd_inflate(&stream,4);nd_inflate_end(&stream);
     return decoded==1&&stream.total_out==entry.plain&&stream.avail_in==0?
         spire::calculator_language_xml(bytes+16384,entry.plain):0;
-}
-static void store_language(spire::BootLanguage language){
-    void*f=nd_open(language_path,"wb");if(!f)return;
-    bool good=nd_write(spire::boot_preference_bytes(language),1,8,f)==8;
-    good=(nd_close(f)==0)&&good;if(!good)nd_unlink(language_path);
 }
 struct Clock {
     uint32_t load, control, last;bool active=false;
@@ -324,10 +306,14 @@ extern "C" int main(int argc,char**argv){
     ResourceFile common{},source{};ArtworkFiles artwork_files;
     static spire::SplitResourceSource split;
     static spire::MultipartResourceSource artwork;
+    bool resource_error_shown=false;
     auto close_resources=[&](){source.close();common.close();artwork_files.close();split.close();artwork.close();};
     auto resource_error=[&](spire::BootText message,int code){
         // Resource destructors must not perform OS calls after boot's release gate.
-        close_resources();boot_error(blit,message,spire::BootLanguage::English);return code;
+        resource_runtime.fail();
+        close_resources();
+        if(!resource_error_shown){resource_error_shown=true;boot_error(blit,message,spire::BootLanguage::English);}
+        return code;
     };
     const auto preferred=language_preference();
     common.file=open_data_file(launcher,spire::SharedDataFilename);
@@ -391,7 +377,7 @@ extern "C" int main(int argc,char**argv){
         else {installed_languages&=~spire::locale_language_mask(saved);system=system_language();}
     }
     if(!selected)selected=spire::locale_load_initial(installed_languages,0,system,load);
-    if(!selected)return resource_error(spire::BootText::InvalidResources,5);
+    if(!selected||!resource_runtime.start(app.content.healthy()))return resource_error(spire::BootText::InvalidResources,5);
     if(performance.enabled)app.callbacks.profile_render=performance_render_part;
     app.callbacks.foreground_clock_ticks=foreground_clock_ticks;
     app.callbacks.foreground_poll=capture_key_matrix;
@@ -402,7 +388,13 @@ extern "C" int main(int argc,char**argv){
         if(source.phase!=spire::ResourceStage::Count)performance.startup_phases[(unsigned)source.phase].add(source.phase_start-now);}
     source.blit=nullptr; // Startup progress cannot repaint over the live game.
     device_trace_stage(9);
+    const auto runtime_call=[&](auto action){
+        if(resource_runtime.call(app,action))return true;
+        resource_error(spire::BootText::InvalidResources,5);
+        app.quit=true;return false;
+    };
     auto change_language=[&](){
+        if(!resource_mutation_allowed())return;
         const unsigned requested=pending_language;pending_language=0;
         if(!requested||!common_source.length||!app.title)return;
         void*next=open_data_file(launcher,spire::locale_language_info(requested).file);
@@ -426,8 +418,7 @@ extern "C" int main(int argc,char**argv){
     clock.last=timer_ticks();uint32_t input_clock=0;
     uint16_t text_previous[8]{};uint8_t repeat[spire::CalculatorPhysicalKeyCount]{};bool input_ready=false;unsigned quiet_ms=0;
     uint32_t first_start=performance.enabled?timer_ticks():0;
-    app.render();
-    if(!app.content.healthy())return resource_error(spire::BootText::InvalidResources,5);
+    if(!resource_runtime.call(app,[&](){app.render();}))return resource_error(spire::BootText::InvalidResources,5);
     uint32_t first_present=performance.enabled?timer_ticks():0;blit(app.pixels);
     uint32_t last_present=performance.enabled?timer_ticks():0;
     spire::DepartureFrameClock departure_clock;
@@ -436,13 +427,7 @@ extern "C" int main(int argc,char**argv){
         uint32_t render_start=performance.enabled?timer_ticks():0;
         auto scene=performance.enabled?performance_scene():spire::RuntimeScene::Other;
         device_trace_stage(128+unsigned(scene));
-        app.render();
-        if(!app.content.healthy()){
-            // A part first used after startup may be missing/corrupt. Stop
-            // before presenting partial assets or dispatching another action.
-            // This error path never calls the mutable save callbacks.
-            resource_error(spire::BootText::InvalidResources,5);app.quit=true;return;
-        }
+        if(!runtime_call([&](){app.render();}))return;
         uint32_t present_start=performance.enabled?timer_ticks():0;blit(app.pixels);
         if(performance.enabled){uint32_t done=timer_ticks();
             // The last preparation update may finish before render starts;
@@ -461,7 +446,9 @@ extern "C" int main(int argc,char**argv){
         const auto update_scene=performance.enabled?performance_scene():spire::RuntimeScene::Other;
         const auto resources_before=performance.enabled?performance.resources:spire::RuntimeResourceTiming{};
         device_trace_stage(128+unsigned(update_scene));
-        app.advance(elapsed);
+        // Preparation can perform the first read of a deferred part. Do not
+        // dispatch even the first queued Save/Quit after a failed update.
+        if(!runtime_call([&](){app.advance(elapsed);}))break;
         auto sample=pad.read();
         resource_pad_capture.capture(sample,app.keyboard_only);
         uint16_t text_keys[8];read_key_matrix(text_keys);
@@ -503,11 +490,15 @@ extern "C" int main(int argc,char**argv){
         for(unsigned i=0;i<pending;++i){uint16_t pad_key=0;spire::TouchSample touch;uint32_t captured_at=0;
             input_latch.pop(text_keys,&pad_key,&touch,&captured_at);
             pad_changed|=pad_key!=pad_keys.dispatched;
-            spire::dispatch_calculator_sample(pad_keys,pad_cursor,touch,pad_key,captured_at,app,false,dispatch_matrix);}
+            if(!runtime_call([&](){spire::dispatch_calculator_sample(pad_keys,pad_cursor,touch,pad_key,captured_at,app,false,dispatch_matrix);}))break;
+            if(app.quit)break;}
+        if(app.quit)break;
         if(!pending){pad_changed|=resource_pad_capture.captured!=pad_keys.dispatched;
-            spire::dispatch_calculator_sample(pad_keys,pad_cursor,sample,resource_pad_capture.captured,input_clock,app,false,dispatch_matrix);}
-        spire::repeat_calculator_frame(input_latch,pad_keys,input_clock,app,pad_changed,matrix_changed,dispatch_matrix);
-        change_language();service_profile();
+            if(!runtime_call([&](){spire::dispatch_calculator_sample(pad_keys,pad_cursor,sample,resource_pad_capture.captured,input_clock,app,false,dispatch_matrix);}))break;}
+        if(app.quit)break;
+        if(!runtime_call([&](){spire::repeat_calculator_frame(input_latch,pad_keys,input_clock,app,pad_changed,matrix_changed,dispatch_matrix);}))break;
+        if(app.quit)break;
+        if(!runtime_call(change_language)||!runtime_call(service_profile))break;
         // Quit is already committed. A discarded final frame can perform
         // resource syscalls while ENTER is still held and expose that press
         // to the document browser when Ndless restores the foreground.
