@@ -213,9 +213,13 @@ def verify(data, output, plan, mapping, relocate, *, pixels=True):
         t.require(b==(a[0],relocate(a[1]),*a[2:]) and source.glyph_payload(i)==target.glyph_payload(i), 'Glyph shape or metrics changed')
     for i,(a,b) in enumerate(zip(source.strings,target.strings)):
         t.require(b==(relocate(a[0]),a[1]) and source.string_payload(i)==target.string_payload(i), 'Localized text changed')
+    old_costs=t.GLOBAL.unpack_from(data,source.base_end)[14]
+    new_costs=t.GLOBAL.unpack_from(output,target.base_end)[14]
+    t.require(data[old_costs:old_costs+len(source.images)]==output[new_costs:new_costs+len(target.images)],
+              'Decoded preparation page costs changed')
     return dict(input_bytes=len(data),output_bytes=len(output),saved_bytes=len(data)-len(output),
                 tile_record_bytes_compared=compared,images=len(source.images),glyphs=len(source.glyphs),strings=len(source.strings),
-                exact_tiles_and_indices=pixels,exact_catalog_and_retained=True)
+                exact_tiles_and_indices=pixels,exact_catalog_and_retained=True,exact_preparation_costs=True)
 
 
 def main():
