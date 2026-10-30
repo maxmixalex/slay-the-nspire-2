@@ -120,6 +120,11 @@ remain explicit. Both failed journals are retained; they are not reported as
 successful all-locale conversions. The final run above passed. The first native
 GCC 13 build also encountered an unrelated compiler internal error in the
 existing `world_relics.cpp`; the selected native checks used Clang 18.
+The initial Python run also exposed four stale test expectations that treated
+newly supported version 43 as a future unsupported version. The subsequent
+checkpoint advances those boundary fixtures and the recorded current Python
+gate passes. These unsuccessful journals remain part of the evidence, alongside
+their successful replacements.
 
 ## Other measured directions
 
@@ -129,10 +134,11 @@ the smallest tested variant, **19.37% larger**. It is not part of this output.
 
 Retained sparse field separation was initially promising across eight weighted
 groups (184,338 to 171,359 bytes), then implemented and measured across the
-complete catalog as reported above. A further adjacent-retained-group merge
-experiment is separate: it changes group boundaries and therefore requires its
-own raw-slice, concern-boundary and cold-load verification. Do not attribute
-sampled or unfinished merge savings to these delivered RGR3 bytes.
+complete catalog as reported above. The later accepted adjacent-retained-group
+passes have their own [complete results](ui19-retained-groups.md). They change
+group boundaries and have separate raw-slice, concern-boundary and runtime
+verification. The table above remains the measured RGR3-only stage, not the
+final installation after all UI19 storage stages.
 
 ## Reproduction and provenance
 
@@ -146,11 +152,16 @@ python3 tools/run_logged.py --checkpoint da2ba50a0d4096f2a58196006a41951cdb7795f
     --work "$PRIVATE_WORK" --workers 2
 ```
 
-The actual private output is `private-ui19-storage/planes/data`, with
-`retained-planes-receipt.json`. It has the existing nine shared filenames and
-sixteen `nSpire2.<locale>.dat.tns` files. English and Simplified Chinese logical
-verification inputs are retained under `planes/work`; the other fourteen full
-logical intermediates are not duplicated on disk.
+The private stage output was `private-ui19-storage/planes/data`, with
+`retained-planes-receipt.json`, the existing nine shared filenames and sixteen
+`nSpire2.<locale>.dat.tns` files. English and Simplified Chinese logical
+verification inputs were generated under `planes/work`; the other fourteen
+full logical intermediates were not duplicated. After the complete oracle
+passed and later stages were verified, these two logical files and intermediate
+resource files were retired to recover workspace space. Complete receipts,
+every physical file's hash, verification logs and the content-addressed cache
+are retained. The recorded conversion can recreate this intermediate from the
+unchanged UI18 set.
 
 English NSP2/43 logical SHA-256 is
 `e58ad92fc84ed9963073f933551d28658aa7291755ac6e111bf668c1304c1b66`.

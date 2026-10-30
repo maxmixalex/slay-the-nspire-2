@@ -49,7 +49,7 @@ conversion receipts so that an old cache cannot silently supply a changed scene.
 | UI19 retained planes | `compact_retained_planes.py --input COMPLETE_UI18_DATA --output NEW_DATA --work PRIVATE_WORK --workers 2` emits NSP2/43. It preserves all images, frames, glyphs and strings, compares complete decoded English retained groups, and requires every locale to share that proven artwork. |
 | UI19 retained groups | `merge_retained_resources.py --input PLANES_DATA --output MERGED_DATA --work PRIVATE_WORK --workers 2` joins qualifying adjacent retained groups within one physical concern span and the existing 512 KiB raw limit. Each complete pass relocates every locale and proves the original image slices, glyphs, strings and clocks. The final accepted pass count and measured output belong to the corresponding conversion receipt; repeating it indefinitely is not part of the release procedure. |
 | UI19 paired tiles | `merge_tile_groups.py --input MERGED_DATA --output PAIRED_DATA --work PRIVATE_WORK --workers 2` emits NSP2/44, joins tile groups within the 1 MiB tile limit, rewrites all affected indices and partitions the complete shared installation again. The retained bytes stay exact, and their suffix alignment is preserved. Run this after the accepted retained-group passes. |
-| Delivery | `package_release.py --calculator-only ...` checks locale format agreement, reconstructs the shared installation, creates the archives and reads their actual members back. Runtime and resource checkpoints are recorded separately. Use `--local-checkpoints` when the source has not been published; do not invent a remote receipt. |
+| Delivery | `package_release.py ... --wasm MATCHING_RUNTIME` checks locale format agreement, reconstructs the shared installation, creates the calculator archive and offline player, and reads actual archive members back. NSM1 parts are joined in host memory for the HTML; a duplicate intermediate common file is unnecessary. `--calculator-only` omits the player. Runtime and resource checkpoints are recorded separately. `--local-checkpoints` marks both the archive and HTML notices as local when source has not been published. |
 
 For the accepted storage chain, use the exact commands and receipts in
 `docs/ui17-retained-completion-0.17.md` and `docs/ui18-storage-0.17.md`. Stage
@@ -65,6 +65,9 @@ writes a separate output. Keep the prior directory frozen until the new pass's
 all-locale proof and complete native image comparison pass. Cached compression
 streams can be reused only under their verified content identities; an unchanged
 stream does not make its old directory offsets valid in a rewritten pack.
+The accepted UI19 retained conversion uses two measured passes, followed by one
+paired-tile pass. See [retained groups](ui19-retained-groups.md) for their exact
+source checkpoints, complete proof and physical installation sizes.
 
 ## Procedure for a later original release
 
