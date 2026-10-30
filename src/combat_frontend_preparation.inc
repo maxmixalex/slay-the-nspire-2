@@ -1,14 +1,18 @@
 // Prepare the entered room's real controls and current cards before revealing
 // it. This path visits fitted text on a zero-sized surface, never a hidden
 // combat render: no hitboxes, discoveries, holder tweens or label clocks run.
+// Keep the shared alias/cache search out of each call site. ARM otherwise
+// clones it for every control below, costing about12KiB of executable RAM.
+static __attribute__((noinline)) void combat_preparation_add_image(App&a,int image){
+    auto&p=a.combat_preparation;
+    if(image<0||a.content.image_cached(image))return;
+    for(unsigned i=0;i<p.ui_count;++i)if(a.content.image_alias(p.ui_images[i],image))return;
+    if(p.ui_count<CombatPreparation::UiCapacity)p.ui_images[p.ui_count++]=uint16_t(image);
+    else p.bounded=true;
+}
 static void plan_combat_frontend(App&a){
     auto&p=a.combat_preparation;const auto&s=a.game;
-    const auto add=[&](int image){
-        if(image<0||a.content.image_cached(image))return;
-        for(unsigned i=0;i<p.ui_count;++i)if(a.content.image_alias(p.ui_images[i],image))return;
-        if(p.ui_count<CombatPreparation::UiCapacity)p.ui_images[p.ui_count++]=uint16_t(image);
-        else p.bounded=true;
-    };
+    const auto add=[&](int image){combat_preparation_add_image(a,image);};
     const auto ui=[&](int id){add(a.content.ui_image(id));};
     ui(U_TopBar);ui(U_TopBarBackdrop);ui(U_TopFloor);ui(U_TopMap);ui(U_TopDeck);ui(U_TopSettings);
     int portrait=a.content.ui_image(U_TopBarIronclad+int(s.character));
@@ -78,7 +82,7 @@ static void plan_combat_frontend(App&a){
 }
 static void prepare_combat_labels(Canvas&c){
     auto&a=c.a;const auto&s=a.game;
-    const auto number=[&](int value,int size,unsigned face=0){char text[24]{};TextBuffer b{text,sizeof text,0};b.number(value);
+    const auto number=[&](int value,int size,unsigned face=0) __attribute__((noinline)) {char text[24]{};TextBuffer b{text,sizeof text,0};b.number(value);
         Canvas label=c;label.font_face=uint8_t(face);label.text(text,0,0,size);};
     const unsigned face=source_label_face(a.content.original_label_fonts(),5);
     char text[64]{};TextBuffer b{text,sizeof text,0};
