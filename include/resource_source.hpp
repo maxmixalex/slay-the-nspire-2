@@ -32,6 +32,10 @@ private:
     BlockedResourceSource blocked_locale_;
     uint32_t prefix_{},artwork_{},length_{};
     uint32_t packed_directory_{},packed_data_{},packed_tail_{};
+    // Functional NSL2 addressing for at most 32 directory blocks. Content
+    // streams these blocks separately; retaining their 256-byte table avoids
+    // seeking back through NSL3's decoded-page cache between payload reads.
+    uint8_t packed_rows_[32*8]{};
     ResourceLanguage language_id_{ResourceLanguage::English};
     bool valid_{};
     static bool read_at(void*,uint32_t,void*,uint32_t);

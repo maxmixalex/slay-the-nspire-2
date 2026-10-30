@@ -54,11 +54,15 @@ struct Fixture {
 struct File {
     const Bytes* bytes{};unsigned calls{},read_bytes{},progress_calls{};int64_t fail_at=-1;
     unsigned seeks{},position{},first_at{},first_bytes{};bool position_known{};
+    bool scribble_failure{};
     void reset_io(){calls=read_bytes=seeks=position=first_at=first_bytes=0;position_known=false;}
     static bool read(void* c,uint32_t at,void*out,uint32_t n){
         auto& f=*static_cast<File*>(c);if(!f.calls){f.first_at=at;f.first_bytes=n;}
         ++f.calls;f.read_bytes+=n;if(!f.position_known||f.position!=at)++f.seeks;f.position_known=false;
-        if(at>f.bytes->size()||n>f.bytes->size()-at||(f.fail_at>=int64_t(at)&&f.fail_at<int64_t(at)+n))return false;
+        if(at>f.bytes->size()||n>f.bytes->size()-at||(f.fail_at>=int64_t(at)&&f.fail_at<int64_t(at)+n)){
+            if(f.scribble_failure)std::memset(out,0xeb,n);
+            return false;
+        }
         f.position=at+n;f.position_known=true;
         std::memcpy(out,f.bytes->data()+at,n);return true;
     }
@@ -298,37 +302,68 @@ static void packed_requested_table_io(){
     auto reset=[&](){common.reset_io();locale.reset_io();};
     reset();same_read(joined,f,0,f.directory);
     unsigned encoded=0;for(unsigned block=0;block<f.blocks;++block)encoded+=f.stored(block);
-    CHECK(common.calls==0);CHECK(locale.calls==f.blocks+1);
-    CHECK(locale.first_at==128&&locale.first_bytes==f.blocks*8);
-    CHECK(locale.read_bytes==f.blocks*8+encoded);
-    CHECK(locale.seeks==1); // One table read followed by contiguous group streams.
+    CHECK(common.calls==0);CHECK(locale.calls==f.blocks);
+    CHECK(locale.first_at==f.offset(0)&&locale.first_bytes==f.stored(0));
+    CHECK(locale.read_bytes==encoded);
+    CHECK(locale.seeks==1); // Address rows are resident; only contiguous streams are read.
+
+    // Content compacts one 64 KiB logical block at a time. These separate
+    // requests must retain the same physical I/O as one whole-directory read.
+    reset();for(unsigned block=0;block<f.blocks;++block)
+        same_read(joined,f,block*DirectoryFixture::Block,std::min(DirectoryFixture::Block,f.directory-block*DirectoryFixture::Block));
+    CHECK(common.calls==0&&locale.calls==f.blocks&&locale.read_bytes==encoded&&locale.seeks==1);
 
     // Start inside the literal block and finish inside the last compressed
-    // block. Only rows1..3 are fetched, and a literal copies just its slice.
+    // block. A literal copies just its slice, with no addressing-table I/O.
     reset();same_read(joined,f,DirectoryFixture::Block+13,2*DirectoryFixture::Block+3072);
-    CHECK(common.calls==0&&locale.calls==4);CHECK(locale.first_at==136&&locale.first_bytes==24);
-    CHECK(locale.read_bytes==24+DirectoryFixture::Block-13+f.stored(2)+f.stored(3));
-    CHECK(locale.seeks==2);
+    CHECK(common.calls==0&&locale.calls==3);
+    CHECK(locale.first_at==f.offset(1)+13&&locale.first_bytes==DirectoryFixture::Block-13);
+    CHECK(locale.read_bytes==DirectoryFixture::Block-13+f.stored(2)+f.stored(3));
+    CHECK(locale.seeks==1);
 
     // A boundary-spanning request leaves the compressed directory, crosses
     // the raw descriptor tail and then enters common artwork unchanged.
     reset();same_read(joined,f,f.directory-23,23+321+5);
-    CHECK(locale.calls==3&&common.calls==1);CHECK(locale.first_at==152&&locale.first_bytes==8);
-    CHECK(locale.read_bytes==8+f.stored(3)+321&&common.read_bytes==5);
-    CHECK(locale.seeks==2&&common.seeks==1);CHECK(!resource_transfer_uses);
+    CHECK(locale.calls==2&&common.calls==1);CHECK(locale.first_at==f.offset(3)&&locale.first_bytes==f.stored(3));
+    CHECK(locale.read_bytes==f.stored(3)+321&&common.read_bytes==5);
+    CHECK(locale.seeks==1&&common.seeks==1);CHECK(!resource_transfer_uses);
 
     Bytes output(f.directory+32,0xcd);
-    locale.fail_at=136;reset();CHECK(!joined.read(0,output.data()+16,f.directory));
-    CHECK(locale.calls==1&&locale.first_bytes==f.blocks*8&&common.calls==0);
+    // Once opened, losing access to the table range cannot cause a later
+    // block read to seek there again. Actual payload failures still propagate.
+    locale.fail_at=136;reset();same_read(joined,f,0,f.directory);
+    CHECK(locale.calls==f.blocks&&locale.read_bytes==encoded&&common.calls==0);
+
+    // A failing table read, even one overwriting its destination, leaves no
+    // old or partially copied mapping visible. The next open retries fully.
+    locale.scribble_failure=true;reset();CHECK(!joined.open(common.source(),locale.source(),ResourceLanguage::English));
+    CHECK(!joined.valid()&&!joined.source().read_at&&!joined.source().required_cached_prefix);
+    CHECK(!joined.read(0,output.data()+16,f.directory));
     CHECK(std::all_of(output.begin(),output.end(),[](uint8_t value){return value==0xcd;}));
-    CHECK(!resource_transfer_uses);locale.fail_at=-1;
+    CHECK(!resource_transfer_uses);locale.fail_at=-1;locale.scribble_failure=false;
+    CHECK(joined.open(common.source(),locale.source(),ResourceLanguage::English));same_read(joined,f,0,f.directory);
 
     const unsigned original=f.offset(1);put(f.locale,136,get(f.locale,116)+1);
+    // Sources are immutable for an open adapter. Reopen to observe a changed
+    // record; the unused malformed row must still fail when actually selected.
+    CHECK(joined.open(common.source(),locale.source(),ResourceLanguage::English));
     reset();CHECK(!joined.read(0,output.data()+16,f.directory));
-    CHECK(locale.calls==2&&locale.first_bytes==f.blocks*8&&common.calls==0);
-    CHECK(locale.read_bytes==f.blocks*8+f.stored(0));CHECK(!resource_transfer_uses);
+    CHECK(locale.calls==1&&locale.first_bytes==f.stored(0)&&common.calls==0);
+    CHECK(locale.read_bytes==f.stored(0));CHECK(!resource_transfer_uses);
     for(unsigned i=0;i<16;++i)CHECK(output[i]==0xcd&&output[f.directory+16+i]==0xcd);
-    put(f.locale,136,original);same_read(joined,f,0,f.directory);
+    put(f.locale,136,original);CHECK(joined.open(common.source(),locale.source(),ResourceLanguage::English));same_read(joined,f,0,f.directory);
+
+    // Switching the same owner across maximum and minimum table lengths, a
+    // legacy raw source, and languages must not retain stale block addresses.
+    DirectoryFixture maximum(false,2u*1024u*1024u,false),minimum(true,4096,false,false);
+    CHECK(open_directory(joined,maximum));same_read(joined,maximum,maximum.directory-19,37);
+    joined.close();CHECK(!joined.valid()&&!joined.read(0,output.data(),1));
+    CHECK(open_directory(joined,minimum,true));same_read(joined,minimum,0,minimum.directory+17);
+    Fixture raw;CHECK(joined.open(ResourceSource::memory(raw.common.data(),raw.common.size()),
+        ResourceSource::memory(raw.locale.data(),raw.locale.size()),ResourceLanguage::English));
+    CHECK(!joined.source().required_cached_prefix);Bytes raw_copy(raw.original.size());
+    CHECK(joined.read(0,raw_copy.data(),unsigned(raw_copy.size()))&&raw_copy==raw.original);
+    CHECK(open_directory(joined,maximum));same_read(joined,maximum,maximum.directory-19,37);
 }
 
 static void directory_limits(){
