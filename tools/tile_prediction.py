@@ -28,8 +28,9 @@ def unzigzag(values):
     return (values >> 1) ^ -(values & 1)
 
 
-def index_transform(raw, count, mode, inverse=False):
+def index_transform(raw, count, mode, inverse=False, tile_count=65535*300):
     require(1 <= count <= 64 and mode in (1, 2, 3, 5, 6, 7), 'Invalid index predictor')
+    require(0 < len(raw) <= 524288 and 0 < tile_count <= 65535*300, 'Invalid predictive index bound')
     source = memoryview(raw)
     output = bytearray(raw)
     cursor, previous, previous_geometry = 0, None, None
@@ -53,9 +54,12 @@ def index_transform(raw, count, mode, inverse=False):
                     code >>= 1
                 else:
                     base = spatial if predictor == 1 else temporal
+                require(code < tile_count * 2, 'Predictive tile difference exceeds its bound')
                 difference = (code >> 1) ^ -(code & 1)
                 current[i] = (base + difference) & 0xffffffff
+                require(int(current[i]) < tile_count, 'Predicted tile ID exceeds its bound')
             else:
+                require(int(value) < tile_count, 'Original tile ID exceeds its bound')
                 def encode(base):
                     difference = ((int(value) - base + 0x80000000) & 0xffffffff) - 0x80000000
                     return ((difference << 1) ^ (difference >> 31)) & 0xffffffff
