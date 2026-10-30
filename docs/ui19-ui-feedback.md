@@ -128,10 +128,18 @@ counts. The ordinary file-backed resource reader reported no read failures.
 Console commands deliberately detach their state from an existing run
 checkpoint. Consequently, console `die` is suitable for inspecting defeat
 presentation but cannot establish natural-death checkpoint deletion. That
-storage behavior is covered by integrated lifecycle regressions; its ordinary
-enemy-damage device check is still pending at this report checkpoint. Further
-integrated behavior/resource/performance receipts belong in the final UI19
-device/storage report.
+storage behavior subsequently passed the ordinary enemy-damage device check:
+a valid 1-HP Ironclad checkpoint was loaded through Continue, a normal End Turn
+allowed the enemy to kill the player, and the title then offered only
+Singleplayer / Settings / Compendium / Quit. After returning to the OS, the
+state directory contained progress, performance, profile marker and language
+files, with no active, backup or temporary run checkpoint. Progress remained
+present. The same ordinary launcher also placed Osty clearly left of the
+enemy and displayed the original Die for You hover text on his body. The
+[final UI19 device/storage report](ui19-device-storage.md) records the final
+ordinary runtime, rejected and corrected resource candidates, four cache-risk
+scenarios, both Merchant samples, matched warm flow and remaining measured
+performance differences.
 
 ## Earlier omissions and current scope
 
