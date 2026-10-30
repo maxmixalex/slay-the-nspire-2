@@ -9,7 +9,7 @@ import content_tiles as tiles
 from append_native_ui import append_skins
 from locale_cards import bind_template,model_rows
 from localize_content import repack,format_catalog,legacy_single_player,glyph_alphabet
-from locale_profile import validate_generated,bindings_and_keys,runtime_symbols,FRONTEND_TEXTS,UI_BASE
+from locale_profile import validate_generated,bindings_and_keys,direct_bindings,inline_bindings,runtime_symbols,FRONTEND_TEXTS,UI_BASE
 from test_content_tiles import fixture
 
 
@@ -65,6 +65,16 @@ class LocalePack(unittest.TestCase):
         validate_generated();rows,keys=bindings_and_keys()
         self.assertLessEqual(UI_BASE+len(rows),FRONTEND_TEXTS[0][0]);self.assertLessEqual(len(keys),1057)
         self.assertEqual(FRONTEND_TEXTS,((8103,'settings_ui.TAB_GENERAL'),(8104,'settings_ui.TAB_INPUT')))
+
+    def test_japanese_calendar_periods_keep_their_direct_culture_binding(self):
+        # These are ja culture facts, not Chinese fallback prose. Putting them
+        # in a translated table would also move existing private-pack slots.
+        direct={row['source']:row for row in direct_bindings()}
+        translated={row['source'] for row in bindings_and_keys()[0]+inline_bindings()}
+        for source,english in (('午前','AM'),('午後','PM')):
+            self.assertEqual(direct[source]['eng'],english)
+            self.assertEqual(direct[source]['paths'],['include/ui_calendar_locale_data.inc'])
+            self.assertNotIn(source,translated)
         self.assertTrue(any(row.get('reference')=='static_hover_tips.STAR_COUNT.title' for row in rows))
 
     def test_legacy_events_keep_numeric_tokens_in_single_player(self):
