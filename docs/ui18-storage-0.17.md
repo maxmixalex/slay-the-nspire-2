@@ -294,6 +294,28 @@ sequences. Every English and Chinese RGB565 frame and canonical State byte
 matches the saved UI17 `d4303ba` oracle. These are host-provider I/O counts;
 they do not establish calculator FPS or OS read latency.
 
+The later integrated incremental-preparation device trace exposed a different
+issue: two first-use interface reads took longer after installation even though
+the complete 10,786,410-byte interface file, the two requested 4 KiB pages,
+offsets, lengths and preceding interface operation order were identical. Both
+old and new runs had zero action opens/closes and neither had earlier read
+those page ranges. A temporary call trace identified `I7_GlowSpeck` and
+`U_ColorlessSkill`, used by card trails/exhaust/generated particles and status
+card frames. This does not establish a particular internal OS cache mechanism
+or a resource-codec regression.
+
+The accepted runtime follow-up adds those two shared visual dependencies to
+the existing incremental combat frontend queue, without a fixture offset,
+future game-state simulation, resource rewrite or additional cache pool. Their
+29,952 decoded bytes use eight existing 4 KiB image pages. Its cold waiting
+cost and actual warm benefit are measured together in the final integrated
+performance report. The runtime commit is `feb344b`, integrated into `44d7fb79`;
+the final data and converter checkpoint `3acb5b3` remain unchanged. The read-only
+mapping/call records are `../private-ui18-layout-audit/interface-target-mapping.json`
+and `image-call.requests.csv`; journal `ui18-cold-image-call-driver-e77773c5ec78`
+passed unchanged, and all 182 traced frame hashes matched the uninstrumented
+integrated candidate. That diagnostic is not counted as the implementation.
+
 ## Executed verification and scope
 
 Every journal below is passed with `source_changed: false`. Journals are under
@@ -335,6 +357,60 @@ The full replay output and resource identities are in
 providers compare 27,955,200 RGB565 bytes and 41,966,288 canonical State bytes
 with the preserved UI17 baseline. Earlier unaligned receipts remain preserved
 as diagnostic evidence and are not the selected delivery input.
+
+## Final calculator archive readback
+
+The final archives use ordinary runtime
+`44d7fb79f7d87d522038a074fa80d25e2bdeff31` and unchanged aligned resources
+`3acb5b310d2d2cb42dbf98f21a79f0b45d8b42ed`. They were produced with the existing
+calculator-only packager and the complete current `44d` notices. No offline
+HTML, test save, saved preference, profiler marker or raw source asset is
+included. Source refs are labeled local rather than falsely linked to an
+unpublished GitHub commit.
+
+| Calculator archive | ZIP bytes | Members | SHA-256 |
+| --- | ---: | ---: | --- |
+| `Slay-the-Nspire-2-0.17-ui18-bilingual-calculator.zip` | 78,866,855 | 23 | `683b37a41cd51f960de20a6d5eef69860a64408dde5a895875a3cf94d7e81420` |
+| `Slay-the-Nspire-2-0.17-ui18-optional-languages.zip` | 17,075,088 | 15 | `3751311f6cdd275669e26cc97c376e4c636339245f84ae58013acb60d464bf97` |
+
+The main ZIP contains the launcher, NSM1 index, all eight required parts,
+English, Simplified Chinese, eight license/notice files, README, BUILD-INFO,
+and an empty `state/` directory. The optional ZIP contains exactly ZHT, DEU,
+ESP, FRA, IND, ITA, JPN, KOR, POL, PTB, RUS, SPA, THA and TUR plus its README;
+neither default locale is duplicated. `Unicode-License.txt` is present and
+the final 10,748-byte NOTICE includes the UI18 calendar culture attribution.
+
+The README explains matching versions, all eight required parts, preservation
+of existing `state` files, replacing an old large common file with the small
+index before transferring the new parts, optional language installation and
+the startup language fallback. A shared-artwork failure cannot be repaired by
+choosing another language; startup technical errors remain English.
+
+Package creation compares every source member byte for byte after writing.
+The independent audit checks member names/counts, empty state, BUILD-INFO,
+README conditions and every source member's actual size and SHA-256 against
+the confirmed launcher, frozen data and current `44d` notices. Journals
+`ui18-final-package-corrected-notice-6cc7a01dc9f4` and
+`ui18-final-calculator-members-audit-743fd3469503` both passed with
+`source_changed: false` at `44d7fb79`. The exact private receipt is
+`../ui18-delivery/calculator-final-receipt.json`.
+
+Installed program/resources are 79,681,674 bytes by default and 98,226,131
+with all languages. Counting every uncompressed ZIP member, including README,
+BUILD-INFO and notices, yields 79,751,780 and 98,297,072 bytes respectively.
+These are distinct accounting conventions; neither substitutes ZIP bytes for
+installed payload. Saves and filesystem allocation overhead are additional.
+
+The first `44d` packaging command used this storage branch's older NOTICE,
+which omitted the new calendar attribution paragraph. Its creation/readback
+journal `ui18-final-calculator-package-1beac2e2c30b` passed as a command, but
+the subsequent notice review rejected it for delivery. The undelivered ZIP
+was replaced by the corrected archives above, and the receipt preserves that
+reason. Earlier `a7` candidates remain under
+`../ui18-delivery/superseded-a7-candidate` and are not the final archives.
+Packaging finished while the root's final integrated native gate was still
+running; archive identity/readback alone does not assert that gate passed.
+Overall release acceptance is recorded in the final UI18 delivery ledger.
 
 ## Reproduction
 
