@@ -103,12 +103,12 @@ static unsigned missing_hover_glyphs(const State&stock){
 static void actual(const char*folder,bool chinese=false){
  const std::string root=folder;std::vector<uint8_t> raw,common,locale;SplitResourceSource split;
  if(root.size()>=4&&root.substr(root.size()-4)==".nsp"){
-  raw=read(root);CHECK(a.init(ResourceSource::memory(raw.data(),raw.size()),{}));
+  raw=read(root);
  }else{
   common=read(root+"/data/nSpire2.dat.tns");locale=read(root+(chinese?"/data/nSpire2.zhs.dat.tns":"/data/nSpire2.eng.dat.tns"));
-  CHECK(split.open(ResourceSource::memory(common.data(),common.size()),ResourceSource::memory(locale.data(),locale.size()),chinese?ResourceLanguage::Chinese:ResourceLanguage::English));CHECK(a.init(split.source(),{}));
+  CHECK(split.open(ResourceSource::memory(common.data(),common.size()),ResourceSource::memory(locale.data(),locale.size()),chinese?ResourceLanguage::Chinese:ResourceLanguage::English));
  }
- shop();
+ const auto resource=raw.empty()?split.source():ResourceSource::memory(raw.data(),raw.size());CHECK(a.init(resource,{}));shop();
  // Reading a title summary already exposes immutable saved stock. Prepare
  // its picture bytes during ordinary title frames without installing that
  // run into the active game, starting a tween, or invoking a save callback.
@@ -139,7 +139,7 @@ static void actual(const char*folder,bool chinese=false){
  CHECK(a.character_departure.phase==1&&a.character_departure.continuing&&a.run_save_linked);
  CHECK(a.game.phase==Phase::Shop&&!a.merchant_preparation.planned&&a.content.image_cached(saved_picture));
  CHECK(save(saved_shop,before));unchanged();
- CHECK(a.init(split.source(),{}));shop();
+ CHECK(a.init(resource,{}));shop();
  // Resumed merchant stock is known during the original character wipe.
  // That existing interval performs bounded work and keeps its exact800ms
  // transition deadline, even if most of the background queue is unfinished.
@@ -152,7 +152,7 @@ static void actual(const char*folder,bool chinese=false){
  while(a.map_clock_ms-departure_start<800)a.advance(33);
  CHECK(!a.title&&a.character_departure.phase==2&&a.map_clock_ms-departure_start==825);
  CHECK(a.merchant_preparation.active&&a.character_departure.started==a.map_clock_ms);unchanged();
- CHECK(a.init(split.source(),{}));shop();a.render();
+ CHECK(a.init(resource,{}));shop();a.render();
  auto&p=a.merchant_preparation;
  CHECK(!a.shop_open&&p.active&&p.shown&&p.planned&&p.count>0&&p.count<=MerchantPreparation::Capacity);
  CHECK(action(UiAction::OpenShop)&&!action(UiAction::LeaveShop)); // Proceed starts outside the LCD.
@@ -212,7 +212,7 @@ static void actual(const char*folder,bool chinese=false){
  const unsigned decoded=p.cold_images;a.input(Key::Back);CHECK(!p.active&&!a.shop_open&&p.planned);unchanged();
  // An immediate click still starts the source tween at once. Closing while
  // cold keeps the bounded background queue and leaves normal room input live.
- CHECK(a.init(split.source(),{}));shop();a.render();a.ui_action(UiAction::OpenShop);
+ CHECK(a.init(resource,{}));shop();a.render();a.ui_action(UiAction::OpenShop);
  CHECK(p.active&&a.shop_open);const auto cold_open=a.map_clock_ms;
  a.input(Key::Right);unchanged();a.input(Key::Back);CHECK(p.active&&!a.shop_open);unchanged();
  for(unsigned i=0;p.active&&i<8192;++i){a.advance(33);a.render();CHECK(!a.shop_open);unchanged();}
