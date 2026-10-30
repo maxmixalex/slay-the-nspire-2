@@ -130,6 +130,47 @@ static void rect_case(Surface surface,Style style,Placement p,uint16_t value){
   if(x>=p.x&&x<p.x+p.w&&y>=p.y&&y<p.y+p.h)pair.oracle.paint(y*surface.pitch+x,value);
  pair.compare();
 }
+static void dim_backstops(){
+ static const int16_t matrix[]={1731,213,-57,81,1219,37,-21,97,1103};
+ const Surface surface{31,27,39};
+ for(auto style:styles)
+ for(Placement p:{Placement{0,0,31,27},Placement{-3,-5,34,32},Placement{2,3,16,16},
+                   Placement{2,3,15,17},Placement{7,9,6,5},Placement{29,25,7,7},
+                   Placement{-20,3,9,7},Placement{0,0,0,27},Placement{0,0,31,-1}})
+ for(unsigned alpha:{0u,1u,17u,127u,128u,229u,254u,255u})for(unsigned layer=0;layer<3;++layer){
+  Pair pair(surface,style);Bytes occlusion(pair.actual.size());
+  if(layer==1)pair.got.color_matrix=pair.oracle.color_matrix=matrix;
+  if(layer==2){for(unsigned i=0;i<occlusion.size();++i)occlusion[i]=i%3?254:255;
+   pair.got.occlusion=pair.oracle.occlusion=occlusion.data()+Pair::guard;}
+  pair.got.dim(p.x,p.y,p.w,p.h,alpha);
+  for(int y=0;y<surface.h;++y)for(int x=0;x<surface.w;++x)
+   if(x>=p.x&&x<p.x+p.w&&y>=p.y&&y<p.y+p.h)pair.oracle.paint(y*surface.pitch+x,Ink,alpha);
+  pair.compare();
+ }
+ // All 65,536 background colors and all call alpha values cross the table.
+ // Independent channel arithmetic, rather than the optimized blend helper,
+ // proves that no rounding edge changes during a modal fade.
+ for(unsigned alpha=0;alpha<256;++alpha){
+  Pair pair({256,256,256},{});
+  for(unsigned i=0;i<65536;++i){
+   pair.got.pixels[i]=uint16_t(i);
+   const auto channel=[&](unsigned shift,unsigned mask){
+    return ((((i>>shift)&mask)*(255-alpha)+((Ink>>shift)&mask)*alpha+127)/255)<<shift;};
+   pair.oracle.pixels[i]=uint16_t(channel(11,31)|channel(5,63)|channel(0,31));
+  }
+  pair.got.dim(0,0,256,256,alpha);pair.compare();
+ }
+ // Foreground collection cadence is retained even for empty/transparent
+ // rectangles. The renderer must never turn sampling into an input dispatch.
+ static unsigned polls;const auto previous=app.callbacks.foreground_poll;
+ app.callbacks.foreground_poll=[](){++polls;};
+ for(Placement p:{Placement{0,0,320,240},Placement{-5,-3,25,39},Placement{0,0,0,240},Placement{0,250,320,40}})
+ for(unsigned alpha:{0u,1u,255u}){
+  Pair pair({320,240,320},{});polls=0;pair.got.dim(p.x,p.y,p.w,p.h,alpha);
+  const int rows=std::max(0,std::min(240,p.y+p.h)-std::max(0,p.y));CHECK(polls==unsigned((rows+15)/16));
+ }
+ app.callbacks.foreground_poll=previous;
+}
 static void picture_case(Surface surface,Style style,unsigned id,Placement p,unsigned opacity,unsigned mode,bool masked=false){
  Pair pair(surface,style);Bytes mask(pair.actual.size());
  if(masked){static constexpr uint8_t values[]={0,127,254,255,255,1,255};
@@ -710,7 +751,7 @@ static void covered_paint_contract(){
  }
 }
 int main(){
- blend_reference();covered_paint_contract();
+ blend_reference();covered_paint_contract();dim_backstops();
  const auto data=fixture();CHECK(app.content.open(data.data(),data.size()));
  CHECK((uintptr_t(app.content.image(0).pixels)&1u)==0u);
  rectangles();material_icons();pictures();masked_pictures();nine_panels();opaque_covers();picture_regions();picture_row_views();fake_merchant_atlas();title_particles();scaled_sparse_clipping();CHECK(app.content.healthy());

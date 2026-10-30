@@ -1,4 +1,31 @@
-# UI16 completed local calculator delivery — 2026-10-29
+# UI17 continuation in progress — 2026-10-30 (Asia/Shanghai)
+
+The complete UI16 source/history and delivered resources were recovered from
+the final archives at `1526ede2a84e168cd46d430338e5d5a540ecaf18`. This is the
+baseline for the current user request, not the older public UI14 checkout.
+The new priority is installed storage and actual calculator responsiveness.
+Parallel isolated worktrees own (1) bounded artwork encoding, (2) startup/file
+I/O with ordinary-OS Firebird acceptance, and (3) original Unicode/raw legacy
+seed semantics. Root owns exact constant-color rendering and integration.
+No investigation, proposed codec, benchmark, or historical UI16 result is a
+completed UI17 improvement. Preserve the existing pixels, frames, glyphs,
+gameplay, four-stream limit, image pool, and accepted Ancient exception.
+
+The original `sts2.dll` was recovered and matches the pinned SHA-256
+`0861bfa1df347538d932f22d580e75420f08082792eb914e53b4882764acdbe9`.
+Original files and calculator images remain private. The Firebird agent owns
+its NAND copy exclusively; all new timing comparisons must use the same
+recovered upstream core and matched baseline/candidate routes.
+
+Source publication remains blocked by automatic approval review. Personal
+Context was available this turn and recovered the user's historical repository
+authorization, but the new review still rejected the public source/history
+push because it did not accept that as current outbound-payload authorization.
+Do not bypass the rejection through another transport. Continue authorized
+implementation and validation with coherent local commits, all-ref recovery
+bundles, and saved source archives. No new remote ref or CI result is claimed.
+
+## Historical UI16 completed local calculator delivery — 2026-10-29
 
 ## Frozen runtime, resources and current outcome
 

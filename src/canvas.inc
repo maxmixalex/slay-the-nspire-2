@@ -240,8 +240,36 @@ struct Canvas{
     }
     void box(int x,int y,int w,int h,uint16_t c){rect(x,y,w,1,c);rect(x,y+h-1,w,1,c);rect(x,y,1,h,c);rect(x+w-1,y,1,h,c);}
     void dim(int x,int y,int w,int h,unsigned alpha){
-        for(int yy=mx(0,y);yy<mn(clip_h,y+h);yy++){poll_row(unsigned(yy-mx(0,y)));
-            for(int xx=mx(0,x);xx<mn(clip_w,x+w);xx++)paint(yy*pitch+xx,Ink,alpha);}}
+        const int left=mx(0,x),right=mn(clip_w,x+w),top=mx(0,y),bottom=mn(clip_h,y+h);
+        if(!coverage&&!occlusion&&right>left&&bottom>top&&(right-left)*(bottom-top)>=256){
+            // A modal backstop has one foreground color/alpha for its whole
+            // rectangle. Resolve layer modulation once, then map each RGB565
+            // channel with the same independently rounded source-over blend.
+            // The 256-byte table lives on the stack, never in the image pool.
+            if(opacity!=255)alpha=div255(alpha*opacity);
+            uint16_t color=Ink;
+            if(color_matrix)color=presentation::yiq_rotate(color,color_matrix);
+            if(brightness!=255)color=presentation::modulate_rgb(color,brightness);
+            if(tint_red!=255||tint_green!=255||tint_blue!=255)
+                color=presentation::tint_rgb(color,tint_red,tint_green,tint_blue);
+            uint16_t shade[128];
+            if(alpha&&alpha!=255){
+                const unsigned inverse=255-alpha,r=(color>>11)*alpha,g=((color>>5)&63)*alpha,b=(color&31)*alpha;
+                for(unsigned i=0;i<32;++i){shade[i]=uint16_t(div255(i*inverse+r)<<11);shade[96+i]=uint16_t(div255(i*inverse+b));}
+                for(unsigned i=0;i<64;++i)shade[32+i]=uint16_t(div255(i*inverse+g)<<5);
+            }
+            for(int yy=top;yy<bottom;++yy){
+                poll_row(unsigned(yy-top));
+                if(!alpha)continue;
+                uint16_t*out=pixels+yy*pitch+left;
+                if(alpha==255){for(int xx=left;xx<right;++xx)*out++=color;}
+                else for(int xx=left;xx<right;++xx,++out){const unsigned back=*out;
+                    *out=uint16_t(shade[back>>11]|shade[32+((back>>5)&63)]|shade[96+(back&31)]);}
+            }
+            return;
+        }
+        for(int yy=top;yy<bottom;++yy){poll_row(unsigned(yy-top));
+            for(int xx=left;xx<right;++xx)paint(yy*pitch+xx,Ink,alpha);}}
     void line(int x,int y,int xx,int yy,uint16_t color,bool dots=false){
         poll();
         int dx=xx>x?xx-x:x-xx,dy=yy>y?y-yy:yy-y,sx=x<xx?1:-1,sy=y<yy?1:-1,err=dx+dy,step=0;
