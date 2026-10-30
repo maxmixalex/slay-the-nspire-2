@@ -58,8 +58,10 @@ static Glyph directory_glyph(Content&content,unsigned cp,unsigned encoded_size){
     return content.glyph(cp,int(size),face);
 }
 int main(int argc,char**argv){
+    const bool check_preload=argc>1&&!std::strcmp(argv[argc-1],"--preload");
+    if(check_preload)--argc;
     if(argc!=2&&argc!=3&&argc!=5&&argc!=6){
-        std::fprintf(stderr,"Usage: resource_content_regression REAL_PACK [EQUIVALENT_REFERENCE_PACK] [--images FIRST COUNT]\n");return 2;
+        std::fprintf(stderr,"Usage: resource_content_regression REAL_PACK [EQUIVALENT_REFERENCE_PACK] [--images FIRST COUNT] [--preload]\n");return 2;
     }
     const bool has_reference=argc==3||argc==6;
     unsigned first_image=0,requested_images=0;
@@ -109,13 +111,34 @@ int main(int argc,char**argv){
         }
         CHECK(std::fflush(reference_images)==0);
     }
-    auto compare_images=[&](Content& actual,Content& expected,const char* label){
+    uint64_t preload_steps=0;unsigned max_preload_steps=0,prepared_images=0;
+    auto compare_images=[&](Content& actual,Content& expected,const char* label,bool prepare=false){
         uint64_t total=0;
         if(reference_images)CHECK(std::fseek(reference_images,0,SEEK_SET)==0);
         std::printf("%s: checking %u of %u complete decoded images, starting at %u%s\n",
             label,measured_images,images,first_image,requested_images?"; selected range, not a full catalog proof":"");std::fflush(stdout);
         for(unsigned id=first_image;id<first_image+measured_images;id++){
+            if(prepare){
+                // Exercise the production incremental reader on every real
+                // descriptor, including aliases and mixed tile/index filters.
+                // Keep it isolated from the synchronous reference's cache
+                // access order. A million small steps is a conservative bound
+                // even for 300 independent groups in one legal LCD picture.
+                unsigned steps=0;PreparationResult result=PreparationResult::Pending;
+                while(result==PreparationResult::Pending){
+                    result=actual.preload_image_step(int(id));CHECK(++steps<=1000000);
+                }
+                if(result!=PreparationResult::Ready)
+                    std::fprintf(stderr,"incremental image %u failed after %u steps\n",id,steps);
+                CHECK(result==PreparationResult::Ready&&actual.healthy()&&actual.image_cached(int(id)));
+                preload_steps+=steps;if(steps>max_preload_steps)max_preload_steps=steps;++prepared_images;
+            }
+            const auto before=actual.read_stats();
             Picture a=actual.image(id);auto bytes=picture_bytes(a);
+            if(prepare){
+                const auto after=actual.read_stats();
+                CHECK(after.callbacks==before.callbacks&&after.callback_bytes==before.callback_bytes);
+            }
             Picture e;std::vector<uint8_t> original;
             if(reference_images){
                 uint32_t header[4];CHECK(std::fread(header,sizeof(uint32_t),4,reference_images)==4);
@@ -140,6 +163,16 @@ int main(int argc,char**argv){
         decoded_image_bytes=compare_images(*memory,*reference,"new memory / original");
         CHECK(compare_images(*ranged,*reference,"new range / original")==decoded_image_bytes);
     }else decoded_image_bytes=compare_images(*memory,*ranged,"memory / range");
+    std::unique_ptr<Content> incremental;
+    if(check_preload){
+        incremental=std::make_unique<Content>();
+        CHECK(incremental->open({&source,(uint32_t)b.size(),read_at,nullptr}));
+        incremental->set_image_cache_profile(false);
+        CHECK(compare_images(*incremental,reference?*reference:*memory,
+            reference?"incremental range / original":"incremental range / memory",true)==decoded_image_bytes);
+        std::printf("incremental catalog: %u images; %llu steps; maximum %u steps per image; no reads after Ready\n",
+            prepared_images,(unsigned long long)preload_steps,max_preload_steps);std::fflush(stdout);
+    }
     if(reference_images)CHECK(std::fclose(reference_images)==0);
     // UI12 pairs occupy metadata records in the glyph directory. Their
     // codepoints deliberately have no drawable raster. Verify every pair at
