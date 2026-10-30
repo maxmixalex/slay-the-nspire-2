@@ -2,6 +2,7 @@
 import importlib.util
 from pathlib import Path
 import struct
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -223,6 +224,36 @@ class SplitContentTest(unittest.TestCase):
                     path = Path(directory)/(name + '-future.tns'); path.write_bytes(data)
                     with self.assertRaisesRegex(ValueError, 'Expected a valid NSL1/NSL2/NSL3 language resource'):
                         resource_version(path)
+
+    def test_calculator_archive_includes_unicode_notice_with_distinct_name(self):
+        import json
+        import zipfile
+        original = {lang: fixture(lang, 41) for lang in ('eng', 'zhs')}
+        common, locales, _ = split.split(original)
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root/'launcher.tns').write_bytes(b'public synthetic launcher')
+            (root/'common.tns').write_bytes(common)
+            for lang, data in locales.items():
+                (root/(lang+'.tns')).write_bytes(data)
+            result = subprocess.run([sys.executable, str(ROOT/'tools/package_release.py'),
+                '--launcher', str(root/'launcher.tns'), '--common', str(root/'common.tns'),
+                '--eng', str(root/'eng.tns'), '--zhs', str(root/'zhs.tns'),
+                '--output', str(root/'output'), '--runtime-checkpoint', '1'*40,
+                '--resource-checkpoint', '2'*40, '--stage', 'public-notice-test',
+                '--calculator-only', '--local-checkpoints'], cwd=ROOT,
+                capture_output=True, text=True)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            receipt = json.loads(result.stdout)
+            with zipfile.ZipFile(receipt['calculator']) as archive:
+                names = archive.namelist()
+                self.assertEqual(len(names), len(set(names)))
+                self.assertEqual(archive.read('data/licenses/Unicode-License.txt'),
+                                 (ROOT/'third_party/unicode/LICENSE').read_bytes())
+                self.assertNotIn('data/licenses/LICENSE', names)
+                self.assertEqual([name for name in names if name.startswith('state/')], ['state/'])
+                self.assertEqual(archive.read('state/'), b'')
+                self.assertEqual(json.loads(archive.read('data/BUILD-INFO.json'))['resource_format'], 41)
 
     def test_lossless_known_versions(self):
         for version in (17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39):

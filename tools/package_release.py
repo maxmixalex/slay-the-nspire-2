@@ -160,6 +160,7 @@ def main():
     for name in ('COPYING', 'NOTICE.md', 'licenses/Go-BSD-3-Clause.txt',
                  'licenses/OkHSV-Godot-MIT.txt', 'licenses/Noto-Boot-OFL.txt','licenses/NotoEmoji-OFL.txt','licenses/NotoSansSymbols2-OFL.txt'):
         paths["data/licenses/" + Path(name).name] = ROOT / name
+    paths['data/licenses/Unicode-License.txt'] = ROOT / 'third_party/unicode/LICENSE'
     with zipfile.ZipFile(archive, 'w', zipfile.ZIP_DEFLATED, compresslevel=6) as out:
         out.writestr('state/', b'')
         for name, path in paths.items():
