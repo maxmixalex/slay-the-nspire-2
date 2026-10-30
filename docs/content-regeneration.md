@@ -10,7 +10,9 @@ implement changed rules or guarantee compatible image and string identifiers.
 This document describes the implemented entry points as of the UI19 work. It does
 not claim that a complete current pack was rebuilt from a fresh installation in
 this round. UI19's executed resource conversion starts with the complete UI18
-NSP2/42 installation and produces NSP2/43 resources.
+NSP2/42 installation. Its retained-plane stage produces NSP2/43 resources;
+the later paired-tile stage produces NSP2/44 resources. These storage format
+versions are independent of the original game's version.
 
 ## Private inputs and release identity
 
@@ -44,7 +46,9 @@ conversion receipts so that an old cache cannot silently supply a changed scene.
 | Consolidated later scene stages | `ui12_resources.py`, `ui13_resources.py`, `ui14_resources.py` and `ui15_resources.py` take their complete predecessor editions and reviewed original catalogs. UI15 requires `--source-common`, `--source-editions`, `--pck`, `--fonts`, `--cache`, `--output`, plus the complete current artwork catalogs. `--partial-art` is a named test mode, not a final delivery mode. |
 | Existing storage stages | The later chain includes UI15 font/string grouping, `split_content.py` and `storage_parts.py` (NSM1/NSS1 concern files and NSL3 locale pages), `predict_index_resources.py` (NSP2/41 TGI2), and `complete_retained_resources_ui17.py`. The completed UI17 and UI18 resource reports record the accepted stage inputs. |
 | UI18 completion | `calendar_fonts_ui18.py`, followed by the accepted tile coalescing/slot-compaction/suffix-alignment stages in `docs/ui18-storage-0.17.md`, yields the complete NSP2/42 installation. Coalescing is explicitly a pre-slot-compaction operation. |
-| UI19 lossless conversion | `compact_retained_planes.py --input COMPLETE_UI18_DATA --output NEW_DATA --work PRIVATE_WORK --workers 2` emits NSP2/43. It preserves all images, frames, glyphs and strings, compares complete decoded English retained groups, and requires every locale to share that proven artwork. This is a storage conversion, not a new-game-version importer. |
+| UI19 retained planes | `compact_retained_planes.py --input COMPLETE_UI18_DATA --output NEW_DATA --work PRIVATE_WORK --workers 2` emits NSP2/43. It preserves all images, frames, glyphs and strings, compares complete decoded English retained groups, and requires every locale to share that proven artwork. |
+| UI19 retained groups | `merge_retained_resources.py --input PLANES_DATA --output MERGED_DATA --work PRIVATE_WORK --workers 2` joins qualifying adjacent retained groups within one physical concern span and the existing 512 KiB raw limit. Each complete pass relocates every locale and proves the original image slices, glyphs, strings and clocks. The final accepted pass count and measured output belong to the corresponding conversion receipt; repeating it indefinitely is not part of the release procedure. |
+| UI19 paired tiles | `merge_tile_groups.py --input MERGED_DATA --output PAIRED_DATA --work PRIVATE_WORK --workers 2` emits NSP2/44, joins tile groups within the 1 MiB tile limit, rewrites all affected indices and partitions the complete shared installation again. The retained bytes stay exact, and their suffix alignment is preserved. Run this after the accepted retained-group passes. |
 | Delivery | `package_release.py --calculator-only ...` checks locale format agreement, reconstructs the shared installation, creates the archives and reads their actual members back. Runtime and resource checkpoints are recorded separately. Use `--local-checkpoints` when the source has not been published; do not invent a remote receipt. |
 
 For the accepted storage chain, use the exact commands and receipts in
@@ -55,6 +59,12 @@ introduction versions and historical builders' output versions stay explicit.
 `tests/test_retained_planes_pipeline.py` exercises an actual synthetic RGR3 pack
 through conversion, concern partition/join, NSL3, ZIP packaging and readback, and
 checks the Python maximum against the C++ runtime's `MaximumContentVersion`.
+The UI19 tools above convert an already complete pack; none imports or implements
+a new original-game release. Each consumes a coherent predecessor directory and
+writes a separate output. Keep the prior directory frozen until the new pass's
+all-locale proof and complete native image comparison pass. Cached compression
+streams can be reused only under their verified content identities; an unchanged
+stream does not make its old directory offsets valid in a rewritten pack.
 
 ## Procedure for a later original release
 
