@@ -234,8 +234,8 @@ struct Clock {
     // the OS's 0x900C timer: restoring its registers cannot restore elapsed time.
     void init(){auto*t=(volatile uint32_t*)0x900D0000u;
         load=t[0];control=t[2];t[2]=0;t[0]=0xffffffffu;t[2]=0x82;last=t[1];active=true;}
-    unsigned frame(){uint32_t now=*(volatile uint32_t*)0x900D0004u,dt=last-now;
-        if(dt<1092)return 0;last=now;return dt>32768?1000:(dt*1000)>>15;}
+    unsigned frame(unsigned minimum=1092){uint32_t now=*(volatile uint32_t*)0x900D0004u,dt=last-now;
+        if(dt<minimum)return 0;last=now;return dt>32768?1000:(dt*1000)>>15;}
     void restore(){if(!active)return;auto*t=(volatile uint32_t*)0x900D0000u;t[2]=0;t[0]=load;t[2]=control;active=false;}
     ~Clock(){restore();}
 };
@@ -441,7 +441,12 @@ extern "C" int main(int argc,char**argv){
             clock.last=timer_ticks();
     };
     while(!app.quit){
-        unsigned elapsed=clock.frame();if(!elapsed)continue;
+        // The black room transition has no advancing game/actor timeline.
+        // Resume its bounded decoder promptly while still returning to the
+        // ordinary guarded input/render loop between batches. Visible play
+        // retains the original30Hz pacing; all preparation remains profiled.
+        const bool preparing=app.combat_preparation.active&&app.combat_preparation.shown&&!app.paused&&app.character_departure.phase!=1;
+        unsigned elapsed=clock.frame(preparing?262u:1092u);if(!elapsed)continue;
         uint32_t update_start=performance.enabled?timer_ticks():0;
         const auto update_scene=performance.enabled?performance_scene():spire::RuntimeScene::Other;
         const auto resources_before=performance.enabled?performance.resources:spire::RuntimeResourceTiming{};

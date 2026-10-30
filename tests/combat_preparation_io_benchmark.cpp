@@ -25,6 +25,7 @@ static const char*stage="open";
 static unsigned frame=0,sequence=0,calls=0,bytes=0,seeks=0,opens=0;
 static FILE*transcript=nullptr,*pixels_file=nullptr,*states_file=nullptr;
 static SaveData canonical;
+static SaveData cold_before;
 #define CHECK(x) do{if(!(x)){std::fprintf(stderr,"trace:%d %s\n",__LINE__,#x);std::exit(1);}}while(0)
 static void row(const char*kind,const char*name,uint32_t at,uint32_t n,uint32_t aux){
  std::printf("%u,%s,%u,%s,%s,%u,%u,%u\n",++sequence,stage,frame,kind,name,at,n,aux);
@@ -72,14 +73,28 @@ int main(int argc,char**argv){
  stage="title";for(frame=0;frame<900;++frame){app.advance(33);paint();}
  stage="continue";app.input(Key::Confirm);
  stage="cold_entry";bool seen_preparation=false;unsigned ready_frame=0;
+ const char*oracle_clock=std::getenv("SPIRE_COLD_ORACLE_CLOCK");
+ const uint32_t aligned_clock=oracle_clock?uint32_t(std::strtoul(oracle_clock,nullptr,10)):0;
  for(frame=0;frame<2400;++frame){
   const auto before=app.combat_preparation;const auto at=std::chrono::steady_clock::now();
   stage="cold_update";app.advance(33);const auto updated=std::chrono::steady_clock::now();
+  if(seen_preparation){CHECK(save(app.game,canonical));CHECK(canonical.size==cold_before.size&&!std::memcmp(canonical.bytes,cold_before.bytes,canonical.size));}
+  const uint32_t actual_clock=app.map_clock_ms;
+  if(seen_preparation&&!app.combat_preparation.active&&!ready_frame&&aligned_clock){
+   // Correctness-only oracle: both builds expose their first room at the
+   // same presentation clock. Real ready time above is retained separately;
+   // no game/actor tick or resource work is omitted from performance traces.
+   const uint32_t shift=aligned_clock-app.map_clock_ms;app.map_clock_ms+=shift;
+   if(app.character_departure.phase==2)app.character_departure.started+=shift;
+   if(app.map_travel.fading_in)app.map_travel.fade_start+=shift;
+  }
   stage="cold_render";paint();const auto rendered=std::chrono::steady_clock::now();
+  if(!seen_preparation&&app.combat_preparation.active)CHECK(save(app.game,cold_before));
   const auto&p=app.combat_preparation;seen_preparation|=p.active;
   std::fprintf(stderr,"COLD,%u,%u,%u,%u,%u,%u,%u,%u,%u,%.6f,%.6f\n",frame,before.active,p.active,p.count,before.cursor,p.cursor,p.cold_images,app.character_departure.phase,app.animation,
    std::chrono::duration<double,std::milli>(updated-at).count(),std::chrono::duration<double,std::milli>(rendered-updated).count());
-  if(seen_preparation&&!p.active&&!ready_frame){ready_frame=frame;std::fprintf(stderr,"READY,%u,%u,%u,%u\n",frame,app.animation,app.map_clock_ms,p.updates);}
+  if(seen_preparation&&!p.active&&!ready_frame){ready_frame=frame;std::fprintf(stderr,"READY,%u,%u,%u,%u,oracle_clock=%u\n",frame,app.animation,actual_clock,p.updates,aligned_clock);
+   FILE*first=std::fopen((destination+".first.rgb565").c_str(),"wb");CHECK(first&&std::fwrite(app.pixels,1,sizeof app.pixels,first)==sizeof app.pixels&&!std::fclose(first));}
   if(ready_frame&&frame>=ready_frame+180)break;
  }
  CHECK(ready_frame&&frame<2400);
