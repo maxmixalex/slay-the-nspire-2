@@ -18,6 +18,7 @@ import package_release
 import repack_retained as retained
 import split_content as split
 import storage_parts as storage
+import verify_offline_release as offline
 from test_repack_retained import fixture
 
 
@@ -75,6 +76,20 @@ class WebReleaseTest(unittest.TestCase):
             self.assertIn('Corresponding runtime source checkpoint (local):\n'+'a'*40,html)
             self.assertIn('has not been published to GitHub',html)
             self.assertNotIn('/tree/'+'a'*40,html)
+            actual_html=next((root/'release').glob('*.html'))
+            receipt=offline.verify(actual_html,wasm,root/'nSpire2.dat.tns',
+                {code:root/f'nSpire2.{code}.dat.tns' for code in ('eng','zhs')},
+                'a'*40,local_checkpoints=True)
+            self.assertTrue(receipt['complete'])
+            self.assertEqual(receipt['locales']['eng']['version'],43)
+            with self.assertRaisesRegex(ValueError,'Published source receipt is missing'):
+                offline.verify(actual_html,wasm,root/'nSpire2.dat.tns',
+                    {code:root/f'nSpire2.{code}.dat.tns' for code in ('eng','zhs')},'a'*40)
+            wrong_wasm=root/'wrong.wasm';wrong_wasm.write_bytes(wasm.read_bytes()+b'changed')
+            with self.assertRaisesRegex(ValueError,'Embedded WebAssembly differs'):
+                offline.verify(actual_html,wrong_wasm,root/'nSpire2.dat.tns',
+                    {code:root/f'nSpire2.{code}.dat.tns' for code in ('eng','zhs')},
+                    'a'*40,local_checkpoints=True)
             with zipfile.ZipFile(next((root/'release').glob('*.zip'))) as archive:
                 info=json.loads(archive.read('data/BUILD-INFO.json'))
                 self.assertTrue(info['local_checkpoints']);self.assertTrue(info['multipart_artwork'])
