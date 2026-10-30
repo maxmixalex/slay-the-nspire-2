@@ -58,7 +58,8 @@ or original game binary is bundled with the source.
 Copyright © 1991-2026 Unicode, Inc. The complete Unicode License V3 copyright
 and permission notice is preserved in `third_party/unicode/LICENSE` and must
 accompany distributions of these derived tables. The calculator packager
-includes it at `data/licenses/Unicode-License.txt`.
+includes it at `data/licenses/Unicode-License.txt`; the optional offline HTML
+packager also includes the complete text in its embedded distribution notices.
 
 ## Game data and animations
 

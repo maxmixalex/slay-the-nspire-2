@@ -63,11 +63,13 @@ not become final combined calculator results. The e3 I/O report still records
 its candidate-stage pending gates at this production checkpoint; the final
 integration/device ledger owns its superseding acceptance and exact totals.
 
-The optional offline-HTML notice list in `tools/build_web.py` has not yet added
-the Unicode license. The present calculator-only package and source contain
-the complete notice. A later HTML redistribution needs that license added to
-its embedded notice list before release; this review does not create a new
-HTML deliverable or modify the frozen runtime.
+At the reviewed production checkpoint, the optional offline-HTML notice list
+in `tools/build_web.py` had not yet added the Unicode license, although its
+WASM source list already compiled the same `src/reference_rng.cpp` tables.
+The authorized packaging-only follow-up adds that one license path to its
+embedded notice list. Python syntax and the complete notice inputs were
+checked; no HTML or WASM was built and no browser acceptance was performed.
+The current delivery remains calculator-only, with the frozen runtime unchanged.
 
 ## Reviewed UI17 bundles
 

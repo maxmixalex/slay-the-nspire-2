@@ -61,7 +61,7 @@ def package_runtime(content_path=None,destination=None,language='zhs',common_pat
     resources=resource_package(content_path,language,common_path,eng_path,zhs_path)
     text=player_template(language).replace('__WASM__',base64.b64encode(output.read_bytes()).decode()).replace('__RESOURCE_PACKAGE__',json.dumps(resources,separators=(',',':')))
     notices='\n\n'.join((ROOT/name).read_text(encoding='utf-8') for name in
-        ('NOTICE.md','COPYING','licenses/Go-BSD-3-Clause.txt','licenses/OkHSV-Godot-MIT.txt','licenses/Noto-Boot-OFL.txt','licenses/NotoEmoji-OFL.txt','licenses/NotoSansSymbols2-OFL.txt'))
+        ('NOTICE.md','COPYING','licenses/Go-BSD-3-Clause.txt','licenses/OkHSV-Godot-MIT.txt','licenses/Noto-Boot-OFL.txt','licenses/NotoEmoji-OFL.txt','licenses/NotoSansSymbols2-OFL.txt','third_party/unicode/LICENSE'))
     if source_checkpoint:
         if not re.fullmatch('[0-9a-f]{40}',source_checkpoint):raise ValueError('Source checkpoint must be a full Git commit ID')
         notices+='\n\nCorresponding runtime source:\nhttps://github.com/maxmixalex/slay-the-nspire-2/tree/'+source_checkpoint+'\n'
