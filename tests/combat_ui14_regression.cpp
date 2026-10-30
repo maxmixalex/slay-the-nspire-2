@@ -225,13 +225,13 @@ static void actual_forge(){
  auto*blade=a.combat_cards.blades.find(1);CHECK(blade);blade->attacking=true;CHECK(!card_hover_target(a,owner));blade->attacking=false;
  a.pointer_cancel();unchanged();
  scenario="Sovereign tooltip carries the current instance enchantment by value";
- a.game.event_cards.cards[1].enchantment=EventEnchantment::Sharp;a.game.event_cards.cards[1].enchantment_amount=3;before=a.game;
+ CHECK(a.game.hand.count&&a.game.hand.ids[0]==1);CHECK(debug_enchant(a.game,EventEnchantment::Sharp,3,0));CHECK(damage(a.game,a.game.cards[1],-1,1)==43);before=a.game;
  a.hit_count=0;combat_sovereign_blades(c,true);combat_sovereign_blades(c,false);
  for(int i=0;i<a.hit_count;++i)if(a.hits[i].kind==HitKind::SovereignBlade&&a.hits[i].value==1){const auto&h=a.hits[i];a.pointer_move(h.x+h.w/2,h.y+h.h/2);break;}
  CHECK(card_hover_target(a,owner)&&owner.sovereign_blade&&owner.card_facts()==&a.game.event_cards.cards[1]);
  collect_keyword_hover_tips(a,owner,tips);CHECK(tips.items[0].has_facts&&tips.items[0].facts.enchantment==EventEnchantment::Sharp&&tips.items[0].facts.enchantment_amount==3);
- unchanged();a.game.event_cards.cards[1].enchantment_amount=7;CHECK(tips.items[0].facts.enchantment_amount==3);
- CHECK(card_hover_target(a,owner));collect_keyword_hover_tips(a,owner,tips);CHECK(tips.items[0].facts.enchantment_amount==7);if(original_art)capture("sovereign-blade-enchanted-hover");a.pointer_cancel();export_sword("ui19-sword-enchanted");
+ unchanged();a.game.event_cards.cards[1].enchantment_amount=7;++a.game.revision;CHECK(damage(a.game,a.game.cards[1],-1,1)==47);CHECK(tips.items[0].facts.enchantment_amount==3);
+ CHECK(card_hover_target(a,owner));collect_keyword_hover_tips(a,owner,tips);CHECK(tips.items[0].facts.enchantment_amount==7);if(original_art){char title[160]{},body[2048]{};format_card_hover_tip(a,owner,tips.items[0],title,sizeof title,body,sizeof body);CHECK(std::strstr(body,"47"));capture("sovereign-blade-enchanted-hover");}a.pointer_cancel();export_sword("ui19-sword-enchanted");
 }
 static void actual_enchant(){
  scenario="a real pending enchantment selection survives save/load and commits once";fresh(Character::Regent);hand({RegentTheSmith,SovereignBlade,RegentDefend});
