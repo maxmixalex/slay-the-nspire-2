@@ -75,3 +75,71 @@ bytes and malformed lengths/counts/differences. Content's synthetic provider
 gate exercises actual TGI2 loading, image equality, aliases, warm reuse,
 version rejection, failed reads and reopen recovery. Full-resource and ARM
 results are recorded after executing the frozen production checkpoint.
+
+## Completed first candidate at c495273
+
+The full first-stage conversion, independent of later retained-image work,
+completed at `c495273b9a7d66aef5f9bce0879fefd02527f399`. Of 500 index groups,
+496 become TGI2. Their complete artwork footprint decreases by **807,004
+bytes**. All sixteen editions reconstruct and pass the converter's exact
+proofs, including **68,020,408 decoded index bytes per edition**. The 1,155
+compressed tile groups, every retained group and all 58,060 image identities
+are unchanged. No previously cleared unused tile is counted in this saving.
+
+| Component | First index candidate, bytes |
+| --- | ---: |
+| Common index plus eight concern files | 73,219,102 |
+| English | 779,119 |
+| Simplified Chinese | 4,456,897 |
+| All sixteen locale files | 23,785,938 |
+| Actual ARM launcher | 1,761,477 |
+| Launcher plus default English/Chinese resources | **80,216,595** |
+| Launcher plus all sixteen editions | **98,766,517** |
+
+The default total saves **806,119 bytes** relative to UI16; all sixteen save
+**809,764 bytes**. This remains above the prior installation-size target.
+Launcher growth is counted rather than treating the 807,004 artwork saving
+as the final installed saving.
+
+The ordinary ARM build produces SHA256
+`88ed66cfba79527128d95f76444e13377399ae6eb64e27eea1f3007d923cc738`,
+with Zehn allocation **22,524,356 bytes**, 872 bytes above UI16. No static
+buffer or image-cache allocation changes. The actual ARM inverse's stack
+frame is 80 bytes; `load_tile_group` uses 184 bytes. These are compilation
+and instruction-layout evidence, not calculator timing.
+
+All completed journals below have `source_changed:false`:
+
+| Gate | Result / journal |
+| --- | --- |
+| Complete sixteen-edition conversion | `ui17-index16-production-56d537b77f24`, passed in 230.95 seconds |
+| New Python converter tests | 6 passed, `ui17-index-python-7b3c2cd80450` |
+| Affected native suites | 5/5, `ui17-index-native-gates-d86e48aacce2` |
+| Actual sixteen editions | 89,816 checks, 53,072 descriptions, zero failures; `ui17-index-actual16-1c32c603dbc3` |
+| Changed Content/resource-source ASan and UBSan | 18,706,375 checks; `ui17-index-content-sanitize-fba074a50040` |
+| Ordinary ARM build | `ui17-index-arm-d0056f0af0c7` |
+| Complete actual English byte/UI oracle | `ui17-index-sequential-eng-90b337e29457`, test checkpoint `f5a31dd841ed528b22d4e65e97b34e8ff98e84fc` |
+
+The last gate compares **all 58,060 images / 1,167,930,140 decoded bytes**
+against the independent UI16 resource decoder, for both new memory and ranged
+backends. It also compares 13,299 glyph records (7,124 kerning pairs and 56,019
+exact-size samples), 8,704 strings, 1,783 clips and 40 complete UI frames;
+**169,595,016 checks pass**. It writes the old decoder's complete bytes to an
+automatic temporary stream once, then compares both new backends byte for
+byte in ordinary sequential access order. It does not replace bytes with hash
+comparison or reduce image coverage. Synthetic ownership/eviction cases and
+the UI oracle retain their alternating-owner coverage.
+
+The earlier `ui17-index-actual-eng-be9f7fc11c71` invocation used the old test's
+per-image owner alternation, causing repeated eviction from the one fixed
+group pool. It was stopped with the execution tool after the complete
+sequential oracle passed. Its journal remains unfinished, not passed; that
+superseded invocation is not used as acceptance evidence. The changed-path
+sanitizer build instruments Content and the resource-source translation units;
+the unrelated core archive is uninstrumented and leak detection is disabled
+under the executor. No whole-game sanitizer or Firebird speed claim follows.
+
+Private first-stage files remain at `private-ui17-index/data`, with complete
+default logical files under `private-ui17-index/work`. Later retained-color
+output must use a distinct directory and report its additional savings and
+actual performance separately.
