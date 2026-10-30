@@ -679,6 +679,12 @@ const uint8_t* Content::glyph_record(uint32_t cp,int size,unsigned style)const{
     // owner exactly as before and must never publish a successful memo entry.
     return io_good_?glyph_records.remember(key,base,fallback):nullptr;
 }
+bool Content::has_exact_glyph(uint32_t cp,int size,unsigned style)const{
+    if(style>7||size<=0||size>31)return false;
+    const uint8_t* row=glyph_record(cp,size,style);
+    const unsigned band=unsigned(size)|((style&3u)<<6)|((style&4u)<<3);
+    return row&&u32(row)==cp&&u16(row+8)==band;
+}
 Glyph Content::glyph_metrics(uint32_t cp,int size,unsigned style)const{
     if(!metadata_||!io_good_||text_format_control(cp)||kerning_codepoint(cp))return {nullptr,0,0,0};
     if(inline_icon(cp)&&size>0&&size<=255)return {nullptr,uint8_t(size),uint8_t(size),uint16_t(size)};
