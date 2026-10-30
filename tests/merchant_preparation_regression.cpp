@@ -101,8 +101,14 @@ static unsigned missing_hover_glyphs(const State&stock){
  return missing;
 }
 static void actual(const char*folder,bool chinese=false){
- const std::string root=folder;auto common=read(root+"/data/nSpire2.dat.tns"),locale=read(root+(chinese?"/data/nSpire2.zhs.dat.tns":"/data/nSpire2.eng.dat.tns"));SplitResourceSource split;
- CHECK(split.open(ResourceSource::memory(common.data(),common.size()),ResourceSource::memory(locale.data(),locale.size()),chinese?ResourceLanguage::Chinese:ResourceLanguage::English));CHECK(a.init(split.source(),{}));shop();
+ const std::string root=folder;std::vector<uint8_t> raw,common,locale;SplitResourceSource split;
+ if(root.size()>=4&&root.substr(root.size()-4)==".nsp"){
+  raw=read(root);CHECK(a.init(ResourceSource::memory(raw.data(),raw.size()),{}));
+ }else{
+  common=read(root+"/data/nSpire2.dat.tns");locale=read(root+(chinese?"/data/nSpire2.zhs.dat.tns":"/data/nSpire2.eng.dat.tns"));
+  CHECK(split.open(ResourceSource::memory(common.data(),common.size()),ResourceSource::memory(locale.data(),locale.size()),chinese?ResourceLanguage::Chinese:ResourceLanguage::English));CHECK(a.init(split.source(),{}));
+ }
+ shop();
  // Reading a title summary already exposes immutable saved stock. Prepare
  // its picture bytes during ordinary title frames without installing that
  // run into the active game, starting a tween, or invoking a save callback.
