@@ -1,5 +1,15 @@
 # Shared resources and platform language selection
 
+**Historical v18/v19 platform record.** The filenames, bilingual startup
+selector, full-integrity policy, timings and acceptance receipts below describe
+those older implementations. They are preserved as historical evidence, not
+current UI18 installation or language-selection instructions. Use the current
+[README](../README.md), [UI18 delivery record](ui18-delivery-0.17.md) and
+[WORK_STATE.md](WORK_STATE.md) for the small index plus eight required parts,
+optional language files, system-default selection and English technical-error
+behavior. No historical runtime, resource size or device result below is
+relabeled as UI18 evidence.
+
 The runtime accepts the old `nSpire2.nsp.tns` file and the split installation:
 
 | File | Purpose |
