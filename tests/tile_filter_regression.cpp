@@ -69,7 +69,7 @@ struct Package {
     Package(unsigned mode,bool large=false){
         const unsigned clip_count=large?BestiaryKaiserAnimationKinds:Clips;
         const unsigned strings=40+Images*16+16,clips=strings+Strings*8,cards=clips+clip_count*16,aux=cards+CardKinds*16;
-        base=aux+(large?unsigned(Ui12AuxiliaryCount):unsigned(GameOverTransitionAuxiliaryCount))*4;const unsigned table=base+64,costs=table+16;frame=costs+Images;bytes.resize(frame+16);
+        base=aux+(large?unsigned(Ui12AuxiliaryCount):unsigned(GameOverTransitionAuxiliaryCount))*4;const unsigned table=base+64,costs=table+16;frame=costs+Images;bytes.resize(frame+(large?32u:16u));
         put(bytes,0,0x3250534e);put(bytes,4,large?LargeTileContentVersion:TileFilterContentVersion);put(bytes,8,0x41cef1ea);put(bytes,16,Images);put(bytes,20,1);put(bytes,24,Strings);put(bytes,28,clip_count);put(bytes,32,CardKinds);
         for(unsigned i=0;i<Images;++i){put(bytes,40+i*16,frame);put(bytes,44+i*16,17,2);put(bytes,46+i*16,17,2);put(bytes,48+i*16,6);put(bytes,52+i*16,16);bytes[costs+i]=1;}
         const unsigned glyph=append({255});put(bytes,40+Images*16,'?');put(bytes,44+Images*16,glyph);put(bytes,48+Images*16,5,2);bytes[50+Images*16]=bytes[51+Images*16]=1;put(bytes,52+Images*16,1,2);
@@ -89,8 +89,10 @@ struct Package {
                 else encoded.assign(large_tiles_mode0,large_tiles_mode0+sizeof large_tiles_mode0);}
             put(block,0,!i&&mode?FilteredTileGroupMagic:0x31524754);put(block,4,i+1);put(block,8,i);put(block,12,unsigned(i?index.size():records.size()));put(block,16,unsigned(encoded.size()));put(block,24,i?1:(large?LargeTileItems:4));put(block,28,i?0:mode);
             block.insert(block.end(),encoded.begin(),encoded.end());const unsigned at=append(block);(i?index_group:tile_group)=at;put(bytes,table+i*8,at);put(bytes,table+i*8+4,unsigned(block.size()));}
-        const unsigned header[]={0x314c4954,1,16,large?16u:14u,large?LargeTileItems:4u,1,1,1,frame,table,770,large?LargeTileItems:4u,large?1048576u:524288u,ResourceTransferCapacity,costs,Images};for(unsigned i=0;i<16;++i)put(bytes,base+i*4,header[i]);
-        put(bytes,frame,base);put(bytes,frame+12,unsigned(index.size()));put(bytes,12,unsigned(bytes.size()));
+        const unsigned header[]={0x314c4954,1,16,large?16u:14u,large?LargeTileItems:4u,1,1,large?2u:1u,frame,table,770,large?LargeTileItems:4u,large?1048576u:524288u,ResourceTransferCapacity,costs,Images};for(unsigned i=0;i<16;++i)put(bytes,base+i*4,header[i]);
+        put(bytes,frame,base);put(bytes,frame+12,unsigned(index.size()));
+        if(large){std::memcpy(bytes.data()+frame+16,bytes.data()+frame,16);put(bytes,56,frame+16);}
+        put(bytes,12,unsigned(bytes.size()));
     }
 };
 struct Provider {const Bytes&bytes;unsigned reads=0;bool fail=false;uint32_t bad_byte=0xffffffffu;
@@ -143,4 +145,25 @@ static void large_reader(){
     }
     c->set_image_cache_profile(false);
 }
-int main(){all_bits();in_place_boundaries();reader();large_reader();std::printf("tile filter: %u checks; exact alias boundaries, 1MiB synchronous/incremental groups, cancellation, room tier and legacy bounds passed\n",checks);}
+static void foreground_shared_index(){
+    for(unsigned mode:{1u,2u})for(unsigned cutoff:{20u,400u}){
+        Package p(mode,true);Bytes raw(524288);std::memcpy(raw.data(),p.expected.data(),p.expected.size());
+        const Bytes encoded=stored(raw);Bytes group(32);put(group,0,0x31524752);put(group,4,unsigned(raw.size()));
+        put(group,8,unsigned(encoded.size()));put(group,12,14);put(group,16,1);group.insert(group.end(),encoded.begin(),encoded.end());
+        const unsigned at=p.append(group),descriptor_at=(unsigned(p.bytes.size())+1)&~1u;Bytes descriptor(16);
+        put(descriptor,0,uint32_t(int64_t(at)-descriptor_at));put(descriptor,4,unsigned(group.size()));put(descriptor,12,(4u<<24)|unsigned(p.expected.size()));
+        CHECK(p.append(descriptor)==descriptor_at);put(p.bytes,72,descriptor_at);put(p.bytes,80,7);put(p.bytes,84,16);put(p.bytes,12,unsigned(p.bytes.size()));
+        auto c=std::make_unique<Content>();CHECK(c->open(p.bytes.data(),p.bytes.size()));c->set_image_cache_profile(true);
+        for(unsigned step=0;step<cutoff;++step)CHECK(c->preload_image_step(0)==PreparationResult::Pending);
+        // A different frame shares the same index. Its foreground lease
+        // must not clear a still-live background pin. A full retained group
+        // then forces real eviction instead of relying on spare pool pages.
+        for(int id:{1,2}){const auto image=c->image(id);CHECK(image.pixels&&c->healthy());
+            CHECK(!std::memcmp(image.pixels,p.expected.data(),p.expected.size()));}
+        PreparationResult result=PreparationResult::Pending;unsigned steps=0;
+        while(result==PreparationResult::Pending){result=c->preload_image_step(0);CHECK(++steps<3000&&c->healthy()&&!resource_transfer_uses);}
+        CHECK(result==PreparationResult::Ready);const auto image=c->image(0);CHECK(image.pixels&&!std::memcmp(image.pixels,p.expected.data(),p.expected.size()));
+        c->set_image_cache_profile(false);
+    }
+}
+int main(){all_bits();in_place_boundaries();reader();large_reader();foreground_shared_index();std::printf("tile filter: %u checks; exact alias boundaries, 1MiB groups, late cancellation/faults, shared-index pressure and legacy bounds passed\n",checks);}

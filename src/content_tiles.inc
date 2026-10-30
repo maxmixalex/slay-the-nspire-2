@@ -297,6 +297,10 @@ struct TileFrame {
         unsigned slot=0;if(!tile_descriptor_slot(h,descriptor,slot))return false;
         uint8_t row[16];if(!read_tile_descriptor(reader,h,header_offset,descriptor,row))return false;
         pinned=load_tile_group(owner,reader,h,u32(h+20)+u32(row+4),encoded_pixels);if(!pinned)return false;
+        // There is one pin bit per cache entry. Give a visible frame sole
+        // ownership before borrowing a background task's published index;
+        // neither task's cleanup may release the other's live pointer.
+        if(pinned->first&128u)cancel_content_preload();
         pinned->first|=128u;
         const uint8_t* record=tile_record_at(*pinned,u32(row+8),u32(row+12));if(!record)return false;
         columns=(w+TileSide-1)/TileSide;count=columns*((height+TileSide-1)/TileSide);
