@@ -14,10 +14,16 @@ static void world_init_streams(State&s,uint64_t seed){
 }
 bool world_set_seed(State&s,const char*seed){
     char canonical[65]{};
-    if(!reference::canonicalize_ascii(seed,canonical,sizeof canonical))return false;
-    unsigned length=0;while(canonical[length])++length;
-    for(unsigned i=0;i<sizeof canonical;++i)s.world.seed_text[i]=canonical[i];
-    world_init_streams(s,reference::hash64(canonical,length));return true;
+    if(!reference::canonicalize_seed(seed,canonical,sizeof canonical))return false;
+    return world_set_seed_raw(s,canonical);
+}
+bool world_set_seed_raw(State&s,const char*seed){
+    if(!seed)return false;
+    unsigned length=0;while(length<sizeof s.world.seed_text&&seed[length])++length;
+    if(length==sizeof s.world.seed_text)return false;
+    uint64_t value;if(!reference::seed_hash(seed,value))return false;
+    for(unsigned i=0;i<sizeof s.world.seed_text;++i)s.world.seed_text[i]=i<length?seed[i]:0;
+    world_init_streams(s,value);return true;
 }
 reference::Random& world_rng(State&s,WorldRng stream){
     // Standalone card/encounter fixtures may run without a world map. Their

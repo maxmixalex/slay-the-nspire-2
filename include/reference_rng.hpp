@@ -6,7 +6,18 @@ namespace spire::reference {
 // Version-pinned seed primitives. This is deliberately separate from legacy
 // expedition saves; swapping their generator would silently change existing runs.
 uint64_t hash64(const void* bytes, size_t length, uint64_t seed = 0);
-bool canonicalize_ascii(const char* input, char* output, size_t capacity);
+// SeedHelper.CanonicalizeSeed: invariant Unicode uppercase, O/I -> 0/1,
+// Unicode whitespace Trim. No NFC/NFKC or full-case expansion. UTF-8 buffers
+// must not overlap. Invalid UTF-8 / insufficient capacity clears output.
+bool canonicalize_seed(const char* input, char* output, size_t capacity);
+// RunRngSet(string): an already selected seed identity, without recasing or
+// trimming. The invariant-culture lowercase "old" prefix selects the UTF-16
+// legacy hash, including its fixed three-unit slicing and ignorable marks.
+// On failure the caller's hash is unchanged. Empty strings are valid hashes.
+bool seed_hash(const char* utf8, uint64_t& value);
+// Bounded editing never inserts or removes a partial UTF-8 scalar.
+bool seed_append(char* utf8, size_t capacity, uint32_t scalar);
+void seed_backspace(char* utf8);
 
 // floor(binary64(mantissa * bound) / 2^53), including nearest-even rounding.
 // No floating-point runtime or 128-bit integer support is required on ARMv5.

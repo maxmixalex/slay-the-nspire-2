@@ -48,7 +48,7 @@ int main(int argc,char**argv){
     a.ui_action(UiAction::RunAscensionUp);CHECK(a.selected_ascension==1);
     a.ui_action(UiAction::RunSeed);CHECK(a.map_preview.editing&&a.map_preview.open&&a.run_seed_editing);
     for(char c:std::string(" mode i o "))a.reference_text(c);a.reference_text(13);
-    CHECK(!std::strcmp(a.selected_seed,"M0DE 1 0")&&!a.map_preview.open&&!a.map_preview.generated);
+    CHECK(!std::strcmp(a.selected_seed," mode i o ")&&!a.map_preview.open&&!a.map_preview.generated);
     a.run_modifier_select(unsigned(RunModifier::Draft));CHECK(a.run_mode.pending.modifiers==run_modifier_bit(RunModifier::Draft));
     a.run_modifier_select(unsigned(RunModifier::SealedDeck));CHECK(a.run_mode.pending.modifiers==run_modifier_bit(RunModifier::SealedDeck));
     a.run_modifier_select(unsigned(RunModifier::Insanity));CHECK(a.run_mode.pending.modifiers==run_modifier_bit(RunModifier::Insanity));
