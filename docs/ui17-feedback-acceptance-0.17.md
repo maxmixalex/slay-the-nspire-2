@@ -142,7 +142,7 @@ evidence limits, not a blanket claim that the user approved every difference.
 | Loader/OS heap | Native allocation budgets are not a physical peak-RAM measurement or a guarantee under every fragmented OS heap. UI16's warm-French/USB allocation failure is historical evidence before main, not a French font failure. Any UI17 claim to close that exact state requires its own matched target run. |
 | Verification coverage | Full suite passes, exact converter bytes, native/ARM builds and named Firebird scenarios have different meanings. No physical-handheld FPS, universal 30 FPS, zero cold stalls, exhaustive original-Godot acceptance, natural three-act victory or measured 95% restoration follows automatically. |
 
-## What remains to close in this round
+## Final integration closure
 
 This reconciliation found **no additional source-confirmed missing UI feature**
 among the nine reported items after the implemented seed and address-table
@@ -150,14 +150,16 @@ work. The three intentionally retained original behaviors are not open bugs.
 Older Vantom/monster-command pending paragraphs are superseded by actual
 UI15 code and tests, rather than a new unimplemented backlog.
 
-The remaining release work is concrete integration acceptance: freeze the
-combined launcher and matching complete data, pass its full gates, record
-ordinary-OS cold/reopen and matched action-window results, recount the final
-installed bytes including the launcher, and retain any slower scope or failed
-heap configuration. The final evidence must identify its actual source/data
-and distinguish historical captures. A source-publication approval block is
-also separate from gameplay completion; a local bundle is not a new remote
-ref or a CI result.
+The [final UI17 delivery record](ui17-delivery-0.17.md) now supersedes the
+integration work that was pending when this reconciliation was first written.
+It identifies the frozen d430 launcher and matching complete data, successful
+full native/ARM gates, actual installed bytes and the newly matched action
+window. Final ordinary-OS Chinese cold/reopen, French warm/reopen, Dutch cold
+English fallback and two English-error/no-save fault scenarios are recorded
+there with their distinct scopes. The Dutch warm USB attempts did not reach
+the game and remain failed automation records, not successful game tests.
+A source-publication approval block remains separate from gameplay completion;
+a local bundle is not a new remote ref or a CI result.
 
 The seed's field capacity, complete Ancient animation exception, GPU/cosmetic
 representation, timezone/history bounds and unexecuted broad acceptance are

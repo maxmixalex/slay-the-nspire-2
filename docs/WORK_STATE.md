@@ -1,29 +1,124 @@
-# UI17 continuation in progress — 2026-10-30 (Asia/Shanghai)
+# UI17 local calculator delivery — 2026-10-30 (Asia/Shanghai)
+
+## Current source, runtime and resources
 
 The complete UI16 source/history and delivered resources were recovered from
-the final archives at `1526ede2a84e168cd46d430338e5d5a540ecaf18`. This is the
-baseline for the current user request, not the older public UI14 checkout.
-The new priority is installed storage and actual calculator responsiveness.
-Parallel isolated worktrees own (1) bounded artwork encoding, (2) startup/file
-I/O with ordinary-OS Firebird acceptance, and (3) original Unicode/raw legacy
-seed semantics. Root owns exact constant-color rendering and integration.
-No investigation, proposed codec, benchmark, or historical UI16 result is a
-completed UI17 improvement. Preserve the existing pixels, frames, glyphs,
-gameplay, four-stream limit, image pool, and accepted Ancient exception.
+`1526ede2a84e168cd46d430338e5d5a540ecaf18`; the older public UI14 checkout is
+not this delivery's baseline. The final tested production checkpoint is
+**`d4303baf9a720bbeed58c1bb1859ff63343afcd6`**, paired with complete resource
+conversion **`44b239e5f41208929661ca70c96545ff65903e08`** (NSP2/41, NSL3).
+Subsequent commits add documentation and notices without changing the tested
+C++/ARM program or data. The source ZIP records the final documentation/history
+tip separately in `SOURCE-IDENTITY.json`.
 
-The original `sts2.dll` was recovered and matches the pinned SHA-256
-`0861bfa1df347538d932f22d580e75420f08082792eb914e53b4882764acdbe9`.
-Original files and calculator images remain private. The Firebird agent owns
-its NAND copy exclusively; all new timing comparisons must use the same
-recovered upstream core and matched baseline/candidate routes.
+The ordinary launcher is **1,766,579 bytes**, SHA-256
+`1a9a0fb8de2ba7f99a43ccbef3a21d915e72536c9eb62782634a3abdb6f83459`.
+The default English/Simplified-Chinese program and data occupy **79,957,013
+bytes (76.252950 MiB)**; all sixteen editions occupy **98,499,241 bytes**.
+Compared with UI16, these save **1,065,701** and **1,077,040 bytes** respectively.
+The common index/eight parts occupy 72,957,060 bytes. The earlier 65–70 MB
+installation target remains unmet; ZIP compression is not used as an installed
+size, and no additional image, frame, glyph or string was removed.
 
-Source publication remains blocked by automatic approval review. Personal
-Context was available this turn and recovered the user's historical repository
-authorization, but the new review still rejected the public source/history
-push because it did not accept that as current outbound-payload authorization.
-Do not bypass the rejection through another transport. Continue authorized
-implementation and validation with coherent local commits, all-ref recovery
-bundles, and saved source archives. No new remote ref or CI result is claimed.
+Zehn requests **22,269,692 bytes**, including 157,220 metadata bytes;
+contiguous execution/static memory is **22,112,472 bytes**. Total allocation
+falls by **253,792 bytes** while retaining the complete 13,369,344-byte picture
+pool. The 22,450,000-byte execution and 24 MiB total limits pass. These figures
+are not physical peak RAM or a guarantee for arbitrary heap fragmentation.
+
+## Implemented UI17 work and preserved feedback
+
+- Reversible TGI2 frame-index prediction saves **807,004** common bytes across
+  496 smaller groups. Existing tile pixel streams remain unchanged.
+- Complete retained-image RGR2 filtering selects **608** additional smaller
+  groups and saves **262,042** common bytes without another decoder or pool.
+- Streamed resident image rows shrink from 16 to 12 bytes; direct-memory rows
+  keep their layout. The 1,835,012-byte directory fits all actual locales and
+  the existing maximum-image fixture. A retained 256-byte functional address
+  table removes repeated NSL3-backed directory reads.
+- Exact large constant-color RGB565 blending and hover-list reuse avoid
+  repeated per-pixel and inactive-slot work. Foreground polling and decoded
+  pixels remain unchanged.
+- Selected **e3 stat/deferred-header** I/O keeps required-file presence/length
+  checks and validates each functional header before payload use. The a8
+  directory-enumeration experiment is preserved in history but **rejected**
+  from production because actual OS latency was worse.
+- A latched resource-failure guard now blocks subsequent input and actual
+  run/history/settings/profile/language write callbacks after a live failure,
+  including the same App operation. Built-in technical errors are English.
+- Original Unicode seed canonicalization and the separate raw legacy hash
+  path are connected to preview, run creation, RNG, save and Continue. The
+  field remains bounded to 64 UTF-8 bytes. This closes the earlier ASCII/raw
+  legacy omission; it does not add a calculator Unicode input method.
+
+The [feedback ledger](ui17-feedback-acceptance-0.17.md) reconciles all nine
+reported items against source and implementation. The index plus eight
+resource concerns, language fallback, 8 px deck sort text, tucked card center
+(18,78), original locale font roles and treasure-ribbon title correction are
+retained. The pointer-only View Upgrades checkbox, distinct Tablet/Messy and
+Smith effects, and 20/29 px ordinary/focused map nodes reflect the original
+behavior. Previously missing monster-command and Vantom work was implemented
+in UI15 and remains present; it is not counted as new UI17 work.
+
+## Executed acceptance
+
+The complete final native suite passes **152/152**, the ordinary ARM build
+passes, and changed retained/storage Python coverage passes **21 tests**.
+Actual sixteen-language coverage passes **89,816 checks / 53,072 descriptions**.
+The independent old/new resource comparison checks all **58,060 images /
+1,167,930,140 decoded bytes**, glyphs, strings, clips and complete UI frames.
+Final d430 English and Chinese provider replays match complete RGB565/State
+bytes through both new providers and against the old UI16 results. Scoped
+ASan/UBSan, Unicode, failure-guard and allocation results retain their exact
+source identities and instrumentation scope in the component reports.
+
+Matched ordinary-OS Firebird uses unchanged upstream core
+`b10f3b51a9ab8e27d2703444b5e6bd278d4c5e6e`, CX II CAS / 396 MHz / OS 6.4.0.74 /
+Ndless r2022. Selected-resource validation plus App initialization falls from
+**1,518.372 to 1,104.462 ms** (**27.2601%**). The fixed action window changes
+from **28.19176 to 28.45701 FPS** (**0.9409%**), with resource elapsed time
+falling from **272.55249 to 213.16528 ms**. These are newly matched final tests,
+not the historical UI16 setup or a native renderer microbenchmark.
+
+Final warm combat Save & Quit, immediate no-USB reopen and Continue preserve
+the saved Turn 2 state. Chinese cold default/reopen and French warm
+default/reopen pass; language preferences read back as `zhs` and `fra`.
+Dutch cold default opens English and records `eng`. Two earlier Dutch warm
+USB sessions stalled before game execution; their failed records remain and
+are not counted as successful warm launches. French-requested corrupted-part
+and missing-part scenarios show built-in English errors on launch and
+immediate reopen. The 230,352-byte run and 17,591-byte progress files remain
+byte-identical after both fault sequences.
+
+Cold scene preparation can still stall. No physical-handheld timing,
+universal 30 FPS, zero cold stalls, arbitrary fragmented-heap support, natural
+three-act victory or measured restoration percentage is claimed. See the
+[integrated delivery report](ui17-delivery-0.17.md) for the exact scopes,
+package identities and retained representation/history limits. The agreed
+Ancient static scene exception and excluded audio/multiplayer/Timeline remain.
+
+## Installation, history and publication
+
+Install the matching launcher, small `data/nSpire2.dat.tns` index, **all eight**
+concern parts and desired language files. Keep English for fallback; the
+fourteen additional locale files are optional. Preserve the complete existing
+`state` directory. For a monolithic older installation, replacing the large
+common file with the small index first releases its occupied space. Complete
+the full transfer before launching.
+
+The private calculator ZIPs contain no test saves, preferences or profiling
+markers. Source is recovered from its final committed snapshot and complete
+all-ref bundle; the source-only verification collection preserves original
+failures, interrupted commands and unfinished journals with their statuses.
+The separate device evidence keeps measurements and screenshots without
+original assemblies/fonts/game packs, Boot1/NAND/RAM or user/test saves.
+
+Source publication remains **blocked by automatic approval review**. Personal
+Context recovered the user's historical repository authorization this turn,
+but the new review did not accept it as current authorization for this outbound
+source/history payload and destination. No alternate transport bypassed the
+rejection; no new remote main update or remote CI pass is claimed. The complete
+local commits, history and reviewable source archive preserve the work.
 
 ## Historical UI16 completed local calculator delivery — 2026-10-29
 

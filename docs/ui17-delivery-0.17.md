@@ -123,8 +123,9 @@ index; none is counted as a final pass.
 | Final calculator/optional ZIPs | `ui17-final-calculator-package-9341796a15da` |
 
 The complete image gate compares **58,060 images / 1,167,930,140 decoded
-bytes** through both new memory and ranged paths against the independent old
-UI16 output, plus 13,299 glyph records, 7,124 kerning pairs, 56,019 exact-size
+bytes** through both new memory and ranged paths against an independent
+sequential decode of the original UI16 pack through the retained old-format
+path, plus 13,299 glyph records, 7,124 kerning pairs, 56,019 exact-size
 samples, 8,704 strings, 1,783 clips and 40 complete UI frames. It runs at
 `1ec2707`; the relevant native core and data bytes are unchanged at final
 `d4303ba`. A sequential byte spool avoids interleaved cache-owner thrashing;
@@ -212,11 +213,35 @@ profiler. Finite exit-boundary frames may differ, and maxima cannot be
 subtracted between paired aggregate reports. Native provider counts are kept
 separate from these actual OS counts.
 
-Final cold/warm lifecycle, French, Dutch and corrupted-part checks are being
-completed with this frozen program. Their final receipts will replace this
-paragraph before the delivery is closed. Cold scene preparation can still
-stall; the measured warm window does not establish universal 30 FPS or zero
-cold stalls. No physical-handheld timing claim is made.
+The final lifecycle and language gates use this exact launcher and matching
+resources. Each screen was inspected, and successful saved language choices
+were read back from the calculator filesystem.
+
+| Final gate | Actual result |
+|---|---|
+| Warm combat lifecycle | End Turn, Save & Quit, ordinary OS, immediate no-USB reopen and Continue preserve the saved Turn 2 state. |
+| Chinese cold default and reopen | Cold reset, ordinary Ndless installation, no saved language: Chinese title. Normal Quit to OS and immediate no-USB reopen remain Chinese; saved choice is `zhs`. |
+| French warm default and reopen | After two Chinese sessions, change the OS to French and upload the final launcher without resetting the guest. French title and immediate no-USB reopen both pass; saved choice is `fra`. The earlier warm-French loader allocation error does not recur in this tested sequence. |
+| Dutch cold default | Dutch OS after cold reset and ordinary Ndless installation, with no saved language, opens the English title; saved choice is `eng`. |
+| Corrupted required part header | With French requested and installed, corrupt the cards NSS1 part ID. The built-in English `RESOURCE LOADING FAILED` screen appears; ESC, immediate no-USB reopen and the same error all work. |
+| Missing required part | With French requested and installed, remove the shared part. The built-in English `RESOURCES NOT FOUND` screen appears; ESC, immediate no-USB reopen and the same error all work. |
+
+After each fault's second ordinary-OS return, the 230,352-byte run and
+17,591-byte progress files are read back and compared byte for byte with their
+originals. Both remain identical. This verifies the named fault scenarios;
+the broader callback-level failure guard is covered by its separate native
+and sanitizer gates.
+
+The first two Dutch warm attempts stalled in the frontend USB session before
+the game executed. Their failed journals are retained. The successful Dutch
+gate is explicitly **cold default**, not a claimed warm result. French and
+Chinese no-USB immediate-reopen gates are independent of those failures.
+Original RAM/NAND and saved-file payloads are kept private; the device archive
+carries receipts, logs and screenshots.
+
+Cold scene preparation can still stall; the measured warm window does not
+establish universal 30 FPS or zero cold stalls. No physical-handheld timing
+claim is made.
 
 ## Packages, recovery and publication
 
