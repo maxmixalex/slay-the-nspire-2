@@ -213,6 +213,14 @@ profiler. Finite exit-boundary frames may differ, and maxima cannot be
 subtracted between paired aggregate reports. Native provider counts are kept
 separate from these actual OS counts.
 
+The final complete document-Enter-to-first-full-menu observation is **12,960
+ms**, including the original intro. The LCD observer samples twenty opaque
+menu-glyph pixels at 10 ms cadence. This is an absolute final-installation
+duration, not a matched claim about complete-launch speedup. Normal menu
+navigation and exit also pass after the original correct resources are
+restored. See the [final device record](ui17-final-device-validation-0.17.md)
+for commands, evidence paths and all timing scopes.
+
 The final lifecycle and language gates use this exact launcher and matching
 resources. Each screen was inspected, and successful saved language choices
 were read back from the calculator filesystem.
@@ -239,9 +247,11 @@ Chinese no-USB immediate-reopen gates are independent of those failures.
 Original RAM/NAND and saved-file payloads are kept private; the device archive
 carries receipts, logs and screenshots.
 
-Cold scene preparation can still stall; the measured warm window does not
-establish universal 30 FPS or zero cold stalls. No physical-handheld timing
-claim is made.
+Cold scene preparation can still stall: the final control's raw
+`combat_preparation` interval reaches 37,005 ticks (**1,129.303 ms**), with two
+preparation intervals above 250 ms. Those intervals are outside the isolated
+warm action window. The measured warm window does not establish universal
+30 FPS or zero cold stalls. No physical-handheld timing claim is made.
 
 ## Packages, recovery and publication
 

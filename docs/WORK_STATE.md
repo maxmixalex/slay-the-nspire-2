@@ -90,7 +90,12 @@ and missing-part scenarios show built-in English errors on launch and
 immediate reopen. The 230,352-byte run and 17,591-byte progress files remain
 byte-identical after both fault sequences.
 
-Cold scene preparation can still stall. No physical-handheld timing,
+The final complete Enter-to-full-menu LCD observation is **12,960 ms**,
+including the original intro; it is an absolute observation, not a paired
+complete-launch speedup. Correct resources are restored and normal navigation
+and exit pass. Cold scene preparation can still stall: the raw final control
+records a **1,129.303 ms** preparation interval outside the warm action window.
+No physical-handheld timing,
 universal 30 FPS, zero cold stalls, arbitrary fragmented-heap support, natural
 three-act victory or measured restoration percentage is claimed. See the
 [integrated delivery report](ui17-delivery-0.17.md) for the exact scopes,
