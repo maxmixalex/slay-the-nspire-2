@@ -27,7 +27,8 @@ def now() -> str:
 
 
 def inventory(root: Path) -> dict[str, str]:
-    files = [root / n for n in ('CMakeLists.txt', 'requirements.txt', 'VERSION')]
+    files = [root / n for n in ('CMakeLists.txt', 'requirements.txt',
+                               'requirements-release.txt', 'VERSION')]
     for folder in INPUT_DIRS:
         files.extend(p for p in (root / folder).rglob('*') if p.suffix in INPUT_SUFFIXES)
     result = {}
