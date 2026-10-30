@@ -528,6 +528,7 @@ struct App {
     bool start_selected_run(const RunOptions&,bool animated=false);
     void finish_selected_run();
     void advance_character_departure();
+    void fade_to_title();
     const char* run_modifier_text(RunModifier,bool description=false)const;
     uint16_t localized_card_rank(CardKind)const;
     void accept_frontend_confirm();
@@ -820,6 +821,7 @@ struct App {
     bool combat_actions_locked()const;
     bool combat_choice_ready()const;
     void continue_combat_choice();
+    void prepare_combat_selection_motion();
     uint32_t enemy_visual_clock=0,combat_linger_until=0;
     uint32_t enemy_visual_seed=0;int enemy_visual_floor=-1,enemy_visual_combat=-1,enemy_visual_encounter=-1;
     void sync_enemy_feedback();

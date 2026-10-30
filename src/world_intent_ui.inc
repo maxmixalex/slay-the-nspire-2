@@ -75,7 +75,14 @@ bool creature_hover_target(const App&a,CardHoverTarget&target){
  if(!a.pointer.visible||a.pointer.held||a.pointer.armed_card>=0||a.keyboard_card>=0||a.title||a.library||a.paused||a.help||a.panel||
     a.settings_open||a.frontend_confirm||a.map_window.is_open||a.map_preview.open||a.event_reader||a.ftue.active()||
     a.detail_card>=0||a.detail_item>=0||a.status_actor>=0||(!combat_phase(a.game.phase)&&!ui_feedback_bound(a)&&!a.choice_peeking)||!a.game.enemy_world.active)return false;
- const auto*hit=a.hit_at(a.pointer.x,a.pointer.y);if(!hit||(hit->kind!=HitKind::EnemyIntent&&hit->kind!=HitKind::Enemy))return false;
+ const auto*hit=a.hit_at(a.pointer.x,a.pointer.y);if(!hit)return false;
+ if(hit->kind==HitKind::UiAction&&hit->value==int(UiAction::ShowOsty)&&
+    (a.game.character==Character::Necrobinder||a.game.expansion.osty_max_hp>0)){
+  const auto pose=a.combat_player_pose(true);target={};target.creature=MaxEnemies+1;
+  target.owner={pose.body_left,pose.body_top,pose.body_width,pose.body_height};target.power_left=pose.x>=160;
+  target.identity=0x74ff0000u;return true;
+ }
+ if(hit->kind!=HitKind::EnemyIntent&&hit->kind!=HitKind::Enemy)return false;
  const int slot=hit->value;if(slot<0||slot>=a.game.enemy_count||a.combat_health(slot+1).hp<=0)return false;
  const auto pose=a.combat_enemy_pose(slot);target={};target.creature=slot+1;
  target.owner={pose.body_left,pose.body_top,pose.body_width,pose.body_height};target.power_left=pose.x>=160;
@@ -88,7 +95,10 @@ bool creature_hover_target(const App&a,CardHoverTarget&target){
  target.identity=0x74000000u|(unsigned(slot)<<16)|target.intent;return true;
 }
 void collect_creature_hover_tips(const App&a,const CardHoverTarget&owner,HoverTipList&out){
- out.clear();const int slot=owner.creature-1;if(slot<0||slot>=a.game.enemy_count)return;
+ out.clear();if(owner.creature==MaxEnemies+1){
+  HoverTip tip{};tip.kind=HoverTipKind::Power;tip.key="DIE_FOR_YOU_POWER";tip.actor=MaxEnemies+1;out.add(tip);out.finish();return;
+ }
+ const int slot=owner.creature-1;if(slot<0||slot>=a.game.enemy_count)return;
  const auto intent=a.combat_intent(slot);
  for(const auto&part:ui_intent_parts)if((intent.flags&part.flag)&&(!owner.intent||owner.intent==part.flag)){
   HoverTip tip{};tip.kind=HoverTipKind::Intent;tip.key=part.locale;tip.actor=int16_t(owner.creature);tip.amount=int16_t(part.flag);out.add(tip);

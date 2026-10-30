@@ -134,7 +134,7 @@ void App::confirm_choice(){
     if(combat_selection_kind()==CombatSelectionKind::Offer&&choice_selected_count&&!combat_selection_ready())return;
     // Numeric shortcuts also enter here directly. Keep their continuation in
     // the same scoped observer as pointer and ordinary keyboard selection.
-    UiCoreObserver observer(*this);continue_combat_choice();bool done=false;
+    UiCoreObserver observer(*this);continue_combat_choice();prepare_combat_selection_motion();bool done=false;
     if(game.phase==Phase::WorldRelicChoice)done=world_relic_select(game,choice_selected,choice_selected_count);
     else if(game.phase==Phase::ExtendedChoice)done=choose_extended(game,choice_selected,choice_selected_count);
     else if(game.phase==Phase::ReturnChoice)done=choose_return_to_draw(game,choice_selected[0]);

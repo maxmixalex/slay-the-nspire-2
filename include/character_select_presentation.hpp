@@ -63,7 +63,7 @@ struct CharacterSelectPresentation {
 struct CharacterDeparturePresentation {
     static constexpr unsigned FadeMs=800,RandomRevealMs=1000;
     uint32_t started=0,reveal_ms=0;
-    uint8_t phase=0,character=0; // 1: source texture wipe; 2: room fade-in.
+    uint8_t phase=0,character=0; // 1: character wipe; 2: fade-in; 3: main-menu fade-out.
     bool animated_ftue=false,continuing=false;
     bool active()const{return phase!=0;}
     unsigned progress(uint32_t now)const{

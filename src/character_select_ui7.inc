@@ -264,6 +264,12 @@ static void character_departure_screen(Canvas&c){
         character_departure_dim(c,255*(4096-cubic)/4096);return;
     }
     if(!phase)return;
+    if(m.phase==3){
+        // Default fade material has a linear threshold in parallel with
+        // SimpleTransition's QuadIn black overlay.
+        const unsigned threshold=phase*255u/4096u,shade=(phase*phase*255u+8388608u)>>24;
+        character_departure_dim(c,255-div255((255-threshold)*(255-shade)));return;
+    }
     // FadeOut runs the texture wipe and SimpleTransition QUAD_IN in parallel.
     const unsigned shade=(phase*phase*255u+8388608u)>>24,keep=255-shade;
     // Original texture_transition shader: step(1-red, mix(-.1,1.1,t)).

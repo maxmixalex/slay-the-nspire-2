@@ -59,7 +59,7 @@ void App::advance(uint32_t ms){
         merchant_preparation.shown=true;
     }
     advance_character_departure();
-    if(character_departure.phase==1){step_merchant_preparation();return;}
+    if(character_departure.phase==1||character_departure.phase==3){step_merchant_preparation();return;}
     if(library&&card_library.query_pending&&map_clock_ms-card_library.query_changed>=250)commit_library_query();
     progress_page_scroll.step(ms);event_body_scroll.step(ms);
     if(reward_presentation.window_mode)reward_presentation.list_scroll.step(ms);

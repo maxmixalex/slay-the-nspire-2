@@ -165,7 +165,13 @@ bool App::combat_choice_ready()const{
  return !ui_feedback_bound(*this)||!f.choice_pending||int32_t(animation-f.choice_at)>=0;
 }
 void App::continue_combat_choice(){
- if(!ui_feedback_bound(*this)||!combat_feedback.choice_pending||!combat_choice_ready())return;
+ if(!ui_feedback_bound(*this)){
+  // A resumed pending choice has no old presentation queue. Bind its actual
+  // current state before accepting the answer so its transfers and effects
+  // receive the same observers as an uninterrupted selection.
+  if(combat_selection_kind()!=CombatSelectionKind::None)begin_combat_feedback();return;
+ }
+ if(!combat_feedback.choice_pending||!combat_choice_ready())return;
  auto&f=combat_feedback;
  // Original selection commands await the player's answer. Already playing
  // animation tails keep running, but the unexecuted command continuation
@@ -197,7 +203,7 @@ unsigned App::combat_intent_alpha(int slot)const{
  return elapsed<=400?255:elapsed>=900?0:unsigned((900-elapsed)*255/500);
 }
 void App::begin_combat_feedback(int manual_card){
- sync_combat_cards();combat_feedback.reset();if(!game.enemy_world.active||game.phase!=Phase::Combat)return;
+ sync_combat_cards();combat_feedback.reset();if(!game.enemy_world.active||(!combat_phase(game.phase)&&combat_selection_kind()==CombatSelectionKind::None))return;
  sync_enemy_feedback();auto&f=combat_feedback;f.active=true;f.seed=game.seed;f.floor=game.floor;f.combat=game.world.combat_count;f.encounter=int(game.enemy_world.encounter);
  f.effect_at=f.move_at=f.move_end=f.end_at=animation;
  f.hand.begin(game.hand);

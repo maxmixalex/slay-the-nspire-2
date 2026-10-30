@@ -6,6 +6,11 @@ void App::sync_game_over_presentation(){
  if(m.bound&&m.run==s.world.run_seed&&m.seed==s.seed&&m.floor==s.world.total_floor&&m.character==unsigned(s.character)&&m.phase==unsigned(s.phase))return;
  m.reset();m.bound=true;m.run=s.world.run_seed;m.seed=s.seed;m.floor=s.world.total_floor;m.character=uint8_t(s.character);m.phase=uint8_t(s.phase);m.opened=map_clock_ms;
  m.event_room=s.world.room_type==unsigned(WorldRoom::Event)&&!s.world.event_combat_parent&&!s.original_events.combat_pending;
+ // RunManager.OnEnded records the history/progress and deletes the current
+ // solo checkpoint before the result buttons. Failure remains retryable
+ // from Main Menu; finishing this run must not delete another saved run.
+ sync_progress();
+ if(persist_progress()&&!finish_saved_run())message("Could not delete the saved run. Please try again.");
 }
 bool App::game_over_button_ready()const{return game_over_presentation.ready(map_clock_ms);}
 bool App::game_over_available()const{

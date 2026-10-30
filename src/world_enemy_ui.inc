@@ -306,6 +306,12 @@ void App::observe_core(const State&s,Log log){
  if(log.kind==LogKind::Shuffle&&ui_cards_bound(*this)){
   CombatCardMotion::Cue cue;cue.at=ui_feedback_bound(*this)?combat_feedback.effect_at:animation;
   cue.id=MaxCards;cue.from=uint8_t(Zone::Discard);cue.to=uint8_t(Zone::Draw);combat_cards.append(cue);
+  // The batch owns one card-back flight. Mark its settled members before
+  // DrawOne observes the next transfer, keeping a genuine discard-to-draw
+  // return distinct from every card in a shuffle.
+  for(unsigned id=0;id<combat_cards.card_count&&id<s.card_count;++id)
+   if((combat_cards.zones[id]&127u)==unsigned(Zone::Discard)&&s.zones[id]==Zone::Draw)
+    combat_cards.zones[id]=uint8_t(unsigned(Zone::Draw)|(combat_cards.zones[id]&CombatCardMotion::Tracked));
  }
  if(log.kind==LogKind::Play&&(log.a==Inflame||log.a==CrimsonMantle||log.a==Corruption||log.a==Unmovable)){
   // These four original OnPlay methods explicitly create NPowerUpVfx;

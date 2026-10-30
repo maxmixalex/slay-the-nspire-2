@@ -40,7 +40,8 @@ static bool ui_capture_card_changes(App&a,uint32_t at,bool generated_preview=fal
   const uint8_t to=uint8_t(s.zones[id]);const bool tracked=id<m.card_count&&(m.zones[id]&CombatCardMotion::Tracked);
   if(before!=to){
    if(to==unsigned(Zone::Hand)&&before!=CombatCardMotion::NewCard)awaited_hand_add=true;
-   if(tracked||before==unsigned(Zone::Hand)||to==unsigned(Zone::Hand)||to==unsigned(Zone::Exhaust)||to==unsigned(Zone::Power)||(generated_preview&&before==CombatCardMotion::NewCard)){
+   const bool returned=before==unsigned(Zone::Discard)&&to==unsigned(Zone::Draw);
+   if(tracked||returned||before==unsigned(Zone::Hand)||to==unsigned(Zone::Hand)||to==unsigned(Zone::Exhaust)||to==unsigned(Zone::Power)||(generated_preview&&before==CombatCardMotion::NewCard)){
     CombatCardMotion::Cue cue;cue.at=at;cue.id=uint16_t(id);cue.from=before;cue.to=to;cue.card=s.cards[id];cue.fast=a.fast_mode;cue.preview=generated_preview;
     cue.energy=int16_t(cost(s,id));cue.stars=int16_t(card_star_cost(s,cue.card,id));
     if(to==unsigned(Zone::Power)){const auto owner=a.combat_player_pose();cue.target_x=int16_t(owner.center_x);cue.target_y=int16_t(owner.center_y);}
@@ -53,6 +54,20 @@ static bool ui_capture_card_changes(App&a,uint32_t at,bool generated_preview=fal
   m.zones[id]=uint8_t(to|((tracked||to==unsigned(Zone::Hand)||before==unsigned(Zone::Hand)||(generated_preview&&before==CombatCardMotion::NewCard))?CombatCardMotion::Tracked:0));
  }
  m.card_count=s.card_count;m.append_counts(CombatCardMotion::capture_counts(s),at);return awaited_hand_add;
+}
+void App::prepare_combat_selection_motion(){
+ if(!ui_cards_bound(*this)||combat_selection_kind()!=CombatSelectionKind::Pile)return;
+ // NCardSelectScreen returns its real holder. Preserve the selected card's
+ // grid position before the core moves it and closes that screen. Automatic
+ // one-card shortcuts instead use the source pile as their visible origin.
+ for(unsigned i=0;i<choice_selected_count;++i){const unsigned id=choice_selected[i];
+  if(id>=game.card_count)continue;HandPose pose{160,112,800,0,1024};
+  for(int h=hit_count;h;--h){const auto&r=hits[h-1];if(r.kind==HitKind::CombatChoice&&r.value==int(id)){
+   pose={r.x+r.w/2,r.y+r.h/2,mx(1,r.w*HandFocusScale/HandFaceW),0,1024};break;}}
+  auto&v=combat_cards.claim(id);v={};v.id=uint16_t(id);v.mode=CombatCardMotion::Selection;
+  v.at=animation;v.card=game.cards[id];v.energy=int16_t(cost(game,int(id)));v.stars=int16_t(card_star_cost(game,v.card,int(id)));
+  CombatCardMotion::place(v,pose);combat_cards.zones[id]|=CombatCardMotion::Tracked;
+ }
 }
 static void ui_card_finish_wait(App&a){
  auto&m=a.combat_cards;auto&f=a.combat_feedback;

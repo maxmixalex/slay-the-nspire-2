@@ -70,7 +70,9 @@ void App::finish_selected_run(){
 }
 void App::advance_character_departure(){
     auto&m=character_departure;if(!m.active())return;
-    if(m.phase==1&&map_clock_ms-m.started>=m.reveal_ms+CharacterDeparturePresentation::FadeMs){
+    if(m.phase==3&&map_clock_ms-m.started>=CharacterDeparturePresentation::FadeMs){
+        return_to_title();m.phase=2;m.started=map_clock_ms;
+    }else if(m.phase==1&&map_clock_ms-m.started>=m.reveal_ms+CharacterDeparturePresentation::FadeMs){
         const auto character=m.character;
         if(m.continuing){title=character_select=run_settings=false;run_mode={};m.continuing=false;}
         else finish_selected_run();

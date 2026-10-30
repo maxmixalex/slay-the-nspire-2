@@ -199,12 +199,15 @@ inline EnemyFormationPoint player_formation_point(const State&s,int z,bool pet=f
  const bool centered=s.enemy_world.encounter==EncounterId::KaiserCrabBoss;
  const int ordinary=centered?0:-480000;
  if(!pet)return {ordinary-(s.character==Character::Necrobinder?150*z:0),200*z};
- // PositionLocalPlayerOsty places the initial companion from targetXPos,
- // the player's half Bounds width and GetOstyOffsetFromPlayer. Subsequent
- // HP-driven growth/reposition tweens remain a separate presentation flow.
+ // AddCreature immediately calls OstyScaleToSize(maxHP,0), replacing the
+ // temporary PositionLocalPlayerOsty formation with player.Position plus
+ // half its hitbox and the HP-dependent offset. Growth uses that same
+ // player-relative target; retaining the temporary formation shifts Osty
+ // a full half-width plus150 source pixels towards the enemies.
  const auto bounds=player_anchors(s.character);int hp=s.expansion.osty_max_hp;
  if(hp<0)hp=0;if(hp>150)hp=150;
- return {ordinary+(bounds.right-bounds.left+150)*z+100*z*hp/150,125*z};
+ const int player=ordinary-(s.character==Character::Necrobinder?150*z:0);
+ return {player+((bounds.right-bounds.left)/2+150)*z+100*z*hp/150,125*z};
 }
 // NGame.FourByThree is 1680x1260. combat_room.tscn keeps the fixed
 // (960,540) SceneContainer pivot, but both creature parents are anchored at

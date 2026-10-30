@@ -11,7 +11,7 @@ namespace spire {
 struct CombatCardMotion {
  static constexpr unsigned Capacity=64,Visible=MaxHand*3,CountCapacity=32;
  static constexpr uint8_t NewCard=6,Tracked=128;
- enum Mode : uint8_t {Empty,Hand,Play,Fly,Tail,Preview,Exhaust,Power,Shuffle};
+ enum Mode : uint8_t {Empty,Hand,Play,Fly,Tail,Preview,Exhaust,Power,Shuffle,Selection};
  struct Counts {uint16_t draw=0,discard=0,exhaust=0;};
  struct Cue {
   uint32_t at=0;uint16_t id=0;uint8_t from=0,to=0;
@@ -287,8 +287,11 @@ struct CombatCardMotion {
    auto&v=claim(cue.id);if(v.mode==Empty)place(v,pile(cue.from));v.origin=pose(v);v.mode=Play;v.at=cue.at;v.fast=cue.fast;
    v.card=cue.card;v.energy=cue.energy;v.stars=cue.stars;return;
   }
-  if((cue.to==unsigned(Zone::Draw)||cue.to==unsigned(Zone::Discard))&&old&&(cue.from==unsigned(Zone::Hand)||old->mode==Play)){
-   auto&v=*old;fly(v,cue.to,cue.at);v.card=cue.card;v.energy=cue.energy;v.stars=cue.stars;return;
+  const bool returned=cue.id<MaxCards&&cue.from==unsigned(Zone::Discard)&&cue.to==unsigned(Zone::Draw);
+  if(returned||((cue.to==unsigned(Zone::Draw)||cue.to==unsigned(Zone::Discard))&&old&&
+       (cue.from==unsigned(Zone::Hand)||old->mode==Play||old->mode==Selection))){
+   auto&v=claim(cue.id);if(v.mode==Empty)place(v,pile(cue.from));
+   fly(v,cue.to,cue.at);v.card=cue.card;v.energy=cue.energy;v.stars=cue.stars;return;
   }
   if(cue.to==unsigned(Zone::Exhaust)){
    auto&v=claim(cue.id);if(v.mode==Empty)place(v,pile(cue.from));v.origin=pose(v);v.mode=Exhaust;v.at=cue.at;v.trail_count=0;

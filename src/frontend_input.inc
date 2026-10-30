@@ -112,6 +112,13 @@ void App::return_to_title(){
  profiles_open=profile_pending=false;bestiary.open=false;
  run_mode={};
 }
+void App::fade_to_title(){
+ // NGame.ReturnToMainMenu awaits its800ms default fade before replacing
+ // the room. Reuse the existing transition clock and RGB565 shade path;
+ // no framebuffer snapshot or additional arena is required.
+ character_departure={};character_departure.phase=3;character_departure.started=map_clock_ms;
+ pointer_cancel();physical_keys_cancel();hit_count=0;
+}
 void App::accept_frontend_confirm(){
  const unsigned action=frontend_confirm;if(!action)return;
  const SavedRunIdentity confirmed=confirmed_run;
@@ -182,7 +189,7 @@ bool App::frontend_input(Key key){
   case 3:if(resumable_run(game)){frontend_confirm=2;frontend_choice=0;}break;
   case 4:
    if(!resumable_run(game)){if(finish_saved_run())return_to_title();else message("Could not delete the saved run. Please try again.");}
-   else if(save_current_run())return_to_title();else message("Could not save the run. Please try again.");break;
+   else if(save_current_run())fade_to_title();else message("Could not save the run. Please try again.");break;
  }}else if(key==Key::Quit){frontend_confirm=3;frontend_choice=0;}
  else if(key==Key::Collection)return false;
  return true;

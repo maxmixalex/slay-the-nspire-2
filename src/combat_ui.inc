@@ -302,7 +302,7 @@ static void combat_pile(Canvas&c,int image,int count,int x,int y,int tab){
     // the pile itself. Its 15px LCD size leaves the complete lower edge.
     constexpr int badge_size=15;const int badge_x=x+(tab==1?14:-5),badge_y=y+11;
     if(c.a.content.version()>=Ui12ContentVersion)c.ui(I12_PileCount,badge_x,badge_y,badge_size,badge_size);
-    health_label(text,label,badge_x,badge_y+3,badge_size,8,rgb(255,246,226),rgb(136,31,32),true);
+    health_label(text,label,badge_x,badge_y,badge_size,8,rgb(255,246,226),rgb(136,31,32),true,badge_size);
     c.hit(mn(x,badge_x),y,mx(x+size,badge_x+badge_size)-mn(x,badge_x),26,HitKind::OpenPile,tab);
 }
 static void combat_hand_index(Canvas&c,unsigned index,HandPose p){
@@ -497,6 +497,13 @@ static void combat_screen(Canvas&c){
     if(pet){
         const auto p=a.combat_player_pose(true);c.hp(a.combat_health(MaxEnemies+1),a.health_bars[MaxEnemies+1],creature_health_left(p),p.hp,p.width);
         c.action(p.body_left,p.body_top,p.body_width,p.hp+health_bar::Height-p.body_top,UiAction::ShowOsty);
+        // DieForYou is Osty's permanent visible power, including its dead
+        // retained body. Its damage redirection already lives in the core;
+        // this source icon exposes that same rule on the actual companion.
+        const auto scene=a.creature_layout.right?a.creature_layout:combat_layout_for(s);
+        const int icon=mx(8,combat_project_extent(encounter_camera(s.enemy_world.encounter),scene,40));
+        c.picture(a.content.world_image("powers","DIE_FOR_YOU_POWER"),p.body_left,p.status,icon,icon);
+        c.action(p.body_left-1,p.status-1,icon+2,icon+2,UiAction::ShowOsty);
     }
     const bool stars=combat_stars_visible(a);
     status_strip(c,0,player.body_left,player.status,mx(player.body_width+5,48));

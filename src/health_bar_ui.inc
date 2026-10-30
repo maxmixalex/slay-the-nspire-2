@@ -94,7 +94,7 @@ static void health_fill(Canvas&c,const HealthPatch&fill,const HealthPatch&mask,i
   }
  }
 }
-static void health_label(Canvas&c,const char*label,int x,int y,int width,int size,uint16_t color,uint16_t outline,bool full_outline=false){
+static void health_label(Canvas&c,const char*label,int x,int y,int width,int size,uint16_t color,uint16_t outline,bool full_outline=false,int center_height=0){
  size=c.a.content.font_size(size,c.font_face,false,c.sparse_scene_sizes);
  const int origin=x+mx(0,(width-c.width(label,size))/2);const char*text=label;
  int pen64=0;uint32_t previous=0;
@@ -104,8 +104,27 @@ static void health_label(Canvas&c,const char*label,int x,int y,int width,int siz
  while(*text&&count<32){const uint32_t cp=utf8(text);const auto glyph=c.a.content.glyph(cp,size,c.font_face);
   pen64+=c.a.content.glyph_kerning64(previous,cp,size,c.font_face);previous=cp;
   const int advance= glyph.advance64?glyph.advance64:int(glyph.advance)*64;
-  if(origin+text_pixel(pen64+advance)>x+width)break;
+  if(!center_height&&origin+text_pixel(pen64+advance)>x+width)break;
   glyphs[count]=glyph;positions[count++]=origin+text_pixel(pen64)+glyph.bearing_x;pen64+=advance;
+ }
+ if(center_height){
+  // Count badges center the visible digits, not the font's advance box or
+  // padded ascent/descent rows. The original fonts have different bearings
+  // across locales; reusing a fixed+3 Y offset misaligned their red badges.
+  int left=x+width,right=x,top=255,bottom=0;
+  for(unsigned i=0;i<count;++i){const auto g=glyphs[i];if(!g.pixels||!g.w||!g.h)continue;
+   const auto span=[&](unsigned at,unsigned length){
+    while(length){const unsigned column=at%g.w,row=at/g.w,take=mn(length,unsigned(g.w)-column);
+     left=mn(left,positions[i]+int(column));right=mx(right,positions[i]+int(column+take));
+     top=mn(top,int(row));bottom=mx(bottom,int(row+1));at+=take;length-=take;}
+   };
+   const unsigned pixels=unsigned(g.w)*g.h;
+   if(g.encoded_size){unsigned at=0;for(unsigned n=0;n+1<g.encoded_size&&at<pixels;n+=2){
+    const unsigned length=mn(unsigned(g.pixels[n]),pixels-at);if(g.pixels[n+1])span(at,length);at+=length;}}
+   else for(unsigned n=0;n<pixels;++n)if(g.pixels[n])span(n,1);
+  }
+  if(right>left&&bottom>top){const int shift=x+(width-(right-left))/2-left;
+   for(unsigned i=0;i<count;++i)positions[i]+=shift;y+=(center_height-(bottom-top))/2-top;}
  }
  // Complete every outline first: a tightly spaced following character's
  // left stroke must not paint over the preceding character's foreground.
