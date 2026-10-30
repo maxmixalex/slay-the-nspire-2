@@ -32,6 +32,12 @@ class RetainedPlanesPipelineTest(unittest.TestCase):
         self.assertEqual(int(maximum.group(1)), MAXIMUM_CONTENT_VERSION)
 
     def test_convert_partition_merge_and_package_current_rgr3(self):
+        self.check_pipeline(42,43)
+
+    def test_later_version_is_not_downgraded_by_retained_conversion(self):
+        self.check_pipeline(MAXIMUM_CONTENT_VERSION,MAXIMUM_CONTENT_VERSION)
+
+    def check_pipeline(self,input_version,output_version):
         # Legal deliberately uncompressed RGR1 gives this small fixture a
         # guaranteed RGR3 winner. Actual pixels, hidden RGB and alpha exercise
         # the production converter; there is no private-game input here.
@@ -41,7 +47,7 @@ class RetainedPlanesPipelineTest(unittest.TestCase):
             batches = retained.plan_images(source, fast_images='none')
             for batch in batches:
                 batch.encoded = stored(b''.join(record.raw for record in batch.records))
-            original[code] = retained.write_pack(source, batches, output_version=42)[0]
+            original[code] = retained.write_pack(source, batches, output_version=input_version)[0]
         common, locales, _ = split.split(original, compress_directory=True)
         index, parts, _ = storage.partition(common, original['eng'])
         with tempfile.TemporaryDirectory() as folder:
@@ -63,8 +69,8 @@ class RetainedPlanesPipelineTest(unittest.TestCase):
                 locale = (output/f'nSpire2.{code}.dat.tns').read_bytes()
                 self.assertEqual(locale[:4], b'NSL3')
                 logical = split.reconstruct(common, locale, code)
-                self.assertEqual(logical, (work/f'{code}-planes43.nsp').read_bytes())
-                self.assertEqual(split.language_resource_version(locale), 43)
+                self.assertEqual(logical, (work/f'{code}-planes{output_version}.nsp').read_bytes())
+                self.assertEqual(split.language_resource_version(locale), output_version)
                 before, after = colors.view(original[code]), colors.view(logical)
                 self.assertTrue(any(after.data[g.offset:g.offset+4] == b'RGR3'
                                     for g in colors.groups(after)))
@@ -81,7 +87,7 @@ class RetainedPlanesPipelineTest(unittest.TestCase):
             archives = list((root/'release').glob('*.zip')); self.assertEqual(len(archives), 1)
             with zipfile.ZipFile(archives[0]) as archive:
                 info = json.loads(archive.read('data/BUILD-INFO.json'))
-                self.assertEqual(info['resource_format'], 43)
+                self.assertEqual(info['resource_format'], output_version)
                 self.assertTrue(info['local_checkpoints'])
                 for name in ('nSpire2.dat.tns', *storage.PART_FILES,
                              'nSpire2.eng.dat.tns', 'nSpire2.zhs.dat.tns'):

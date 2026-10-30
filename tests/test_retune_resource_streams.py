@@ -1,6 +1,7 @@
 """Modern exact stream retuning covers large groups, split files and bad caches."""
 from pathlib import Path
 import lzma
+import struct
 import sys
 import tempfile
 import unittest
@@ -14,6 +15,7 @@ import split_content as split
 import storage_parts as storage
 from tighten_ui14_resources import tighten
 from test_coalesce_tile_resources import fixture
+from test_repack_retained import stored
 
 
 class RetuneResourceStreamsTest(unittest.TestCase):
@@ -22,6 +24,31 @@ class RetuneResourceStreamsTest(unittest.TestCase):
         plan, _, _ = merge.make_plan(coalesce.view(before), folder/'merge', workers=1)
         result, _, _ = merge.rewrite(before, plan)
         return result
+
+    def test_font_cohort_retunes_without_changing_glyph_or_artwork_phase(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root=Path(folder);before=bytearray(self.modern_fixture(root))
+            source=coalesce.view(before)
+            raw=bytes(range(256))*4;encoded=stored(raw)
+            before.extend(bytes(len(before)&1));group_at=len(before)
+            group=t.GROUP.pack(b'RGR1',len(raw),len(encoded),14,1,0,0,0)+encoded
+            before.extend(group);before.extend(bytes(len(before)&1));descriptor=len(before)
+            before.extend(struct.pack('<iIII',group_at-descriptor,len(group),0,len(raw)))
+            t.GLYPH.pack_into(before,source.glyph_at,65,descriptor,8,32,32,1,t.GLYPH_GROUP_FLAG)
+            struct.pack_into('<I',before,12,len(before));before=bytes(before)
+            source=coalesce.view(before)
+            after,proof=tighten(before,root/'cache',workers=1,profiles=tune.PROFILES,
+                                preserve_suffix_phase=True)
+            target=coalesce.view(after)
+            self.assertEqual(proof['glyph_groups_considered'],1)
+            self.assertGreater(proof['saved_bytes'],500)
+            self.assertEqual(source.glyph_payload(0),target.glyph_payload(0))
+            self.assertEqual(source.glyphs[0][:1]+source.glyphs[0][2:],
+                             target.glyphs[0][:1]+target.glyphs[0][2:])
+            new_descriptor=target.glyphs[0][1]
+            new_group=new_descriptor+struct.unpack_from('<i',after,new_descriptor)[0]
+            self.assertEqual((group_at-new_group)%4096,0)
+            self.assertEqual(t.TileReader(source).image_raw(0),t.TileReader(target).image_raw(0))
 
     def test_complete_modern_split_reconstruction_and_exact_cached_reuse(self):
         with tempfile.TemporaryDirectory() as folder:

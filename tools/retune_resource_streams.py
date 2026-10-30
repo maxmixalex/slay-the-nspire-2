@@ -25,10 +25,12 @@ PROFILES = {
     'tile': ((0, 1, 1), (2, 0, 1), (2, 0, 2), (2, 1, 1), (4, 0, 1), (3, 1, 1)),
     'index': ((0, 1, 0), (2, 0, 0), (3, 1, 0), (4, 0, 0), (4, 0, 1)),
     'retained': ((0, 1, 1), (2, 0, 1), (2, 0, 0), (4, 0, 1)),
+    'font': ((0, 0, 0), (2, 0, 0), (3, 0, 0), (4, 0, 0), (4, 0, 1)),
+    'text': ((0, 0, 0), (2, 0, 0), (3, 0, 0), (4, 0, 0)),
 }
 
 
-def convert(source, target, work, *, workers=2, locales=None):
+def convert(source, target, work, *, workers=2, locales=None, artwork_only=False):
     source = t.private_path(source, 'Private source')
     target = t.private_path(target, 'Private output')
     work = t.private_path(work, 'Private work')
@@ -51,7 +53,7 @@ def convert(source, target, work, *, workers=2, locales=None):
     common = None
     for code in ('eng', *(code for code in codes if code != 'eng')):
         original = english if code == 'eng' else split.reconstruct(old_common, inputs[code].read_bytes(), code)
-        result, proof = tighten(original, work/'encoded', workers=workers, artwork_only=True,
+        result, proof = tighten(original, work/'encoded', workers=workers, artwork_only=artwork_only,
                                 profiles=PROFILES, preserve_suffix_phase=True)
         bounds = split.layout(result, code)
         artwork = result[bounds['prefix']:bounds['prefix']+bounds['artwork']]
@@ -86,8 +88,10 @@ def main():
     parser.add_argument('--work', type=Path, required=True)
     parser.add_argument('--workers', type=int, default=2)
     parser.add_argument('--locales', nargs='+', choices=split.LANGUAGES)
+    parser.add_argument('--artwork-only', action='store_true', help='Keep previous font/text encoded streams')
     args = parser.parse_args()
-    report = convert(args.input, args.output, args.work, workers=args.workers, locales=args.locales)
+    report = convert(args.input, args.output, args.work, workers=args.workers, locales=args.locales,
+                     artwork_only=args.artwork_only)
     print(json.dumps({k:v for k,v in report.items() if k not in ('artwork', 'locales')}), flush=True)
 
 

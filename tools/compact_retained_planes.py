@@ -110,8 +110,9 @@ def main():
     old_common = storage.join_parts(old_index, {n:(source/n).read_bytes() for n in storage.PART_FILES})
     english = split.reconstruct(old_common, (source/'nSpire2.eng.dat.tns').read_bytes(), 'eng')
     initial = colors.view(english); started = time.monotonic()
+    version = max(VERSION, initial.version)
     choices = make_plan(initial, work/'encoded', args.workers)
-    report = dict(schema=1, reference='v0.111.0 / 41cef1ea', version=VERSION,
+    report = dict(schema=1, reference='v0.111.0 / 41cef1ea', version=version,
         independent_group_boundaries_preserved=True, resident_pools_added=0,
         previous_installed_artwork_bytes=sum((source/n).stat().st_size for n in ('nSpire2.dat.tns',*storage.PART_FILES)),
         previous_installed_locale_bytes=sum((source/f'nSpire2.{c}.dat.tns').stat().st_size for c in locales),
@@ -121,9 +122,9 @@ def main():
     for code in ('eng', *(c for c in split.LANGUAGES if c != 'eng' and c in locales)):
         before = english if code == 'eng' else split.reconstruct(old_common, (source/f'nSpire2.{code}.dat.tns').read_bytes(), code)
         old = initial if code == 'eng' else colors.view(before)
-        converted = bytearray(colors.rewrite(old, choices)); struct.pack_into('<I', converted, 4, VERSION)
+        converted = bytearray(colors.rewrite(old, choices)); struct.pack_into('<I', converted, 4, version)
         converted = bytes(converted)
-        proof = verify(old, converted, choices, decode_groups=code == 'eng', expected_version=VERSION)
+        proof = verify(old, converted, choices, decode_groups=code == 'eng', expected_version=version)
         row = split.layout(converted, code); artwork = converted[row['prefix']:row['prefix']+row['artwork']]
         if common is None:
             common, index, parts, partition = partition_like(old_index, english, converted)
@@ -135,7 +136,7 @@ def main():
         locale, compression = storage.compress_blocks(locale)
         t.require(split.reconstruct(common, locale, code) == converted, 'Planar split reconstruction differs')
         t.atomic_bytes(target/f'nSpire2.{code}.dat.tns', locale)
-        if code in ('eng','zhs'):t.atomic_bytes(work/(code+'-planes43.nsp'), converted)
+        if code in ('eng','zhs'):t.atomic_bytes(work/(code+'-planes'+str(version)+'.nsp'), converted)
         report['locales'][code] = dict(proof=proof, storage=compression, stored_bytes=len(locale))
         print(json.dumps(dict(stage='planar_locale_complete', locale=code, stored_bytes=len(locale), **proof)), flush=True)
     report.update(complete=True, elapsed_seconds=time.monotonic()-started,

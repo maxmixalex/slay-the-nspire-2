@@ -53,19 +53,27 @@ def tighten(data, cache, workers=4, artwork_only=False, *, profiles=None, preser
     old_entries = entries(source)
     tile_reader = tiles.TileReader(source)
     tile_offsets = {row[0]-32 for row in tile_reader.groups}
+    font_offsets = {at+struct.unpack_from('<i',data,at)[0]
+                    for _cp,at,_band,_w,_h,_advance,encoded in source.glyphs
+                    if encoded & tiles.GLYPH_GROUP_FLAG}
+    text_offsets = {at+struct.unpack_from('<i',data,at)[0] for at,size in source.strings
+                    if size & tiles.STRING_GROUP_FLAG}
     selected_entries = old_entries
-    if artwork_only:
+    artwork_end = None
+    if artwork_only or preserve_suffix_phase:
         import split_content
         language = source.string_payload(split_content.MARKER)[:-1].decode('ascii')
-        bounds = split_content.layout(data, language);end = bounds['prefix']+bounds['artwork']
-        selected_entries = [(at, size) for at, size in old_entries if at+size <= end]
+        bounds = split_content.layout(data, language);artwork_end = bounds['prefix']+bounds['artwork']
+        if artwork_only:selected_entries = [(at, size) for at, size in old_entries if at+size <= artwork_end]
 
     def convert(item):
         at, size = item
         old = bytes(data[at:at+size]);h, start, raw_size, encoded_field = describe(old, source.version)
         dictionary = tile_reader.dictionary if at in tile_offsets else tiles.GROUP_LIMIT
-        selected_profiles = (profiles.get('index' if h[0] == b'TGI2' else
-                             'tile' if at in tile_offsets else 'retained') if profiles else None)
+        category = ('index' if at in tile_offsets and h[1] == 2 else
+                    'tile' if at in tile_offsets else 'font' if at in font_offsets else
+                    'text' if at in text_offsets else 'retained')
+        selected_profiles = profiles.get(category,profiles.get('retained')) if profiles else None
         selected_profiles = selected_profiles or ((4, 0, 0), (4, 0, 1), (3, 1, 1))
         tiles.require(all(0 <= lc <= 4 and 0 <= lp <= 4 and lc+lp <= 4 and 0 <= pb <= 4
                           for lc, lp, pb in selected_profiles), 'Invalid bounded LZMA2 profile')
@@ -107,10 +115,15 @@ def tighten(data, cache, workers=4, artwork_only=False, *, profiles=None, preser
     replacements = [row[:4] for row in plan if len(row[3]) < row[1]]
     padding = 0
     if preserve_suffix_phase and replacements:
-        tiles.require(artwork_only, 'Suffix alignment requires artwork-only conversion')
-        padding = sum(length-len(physical) for _at,length,_payload,physical in replacements) % 4096
-        at,size,payload,physical = replacements[-1]
-        replacements[-1] = at,size,payload,physical+bytes(padding)
+        # Locale groups can also be retuned, but only the artwork delta
+        # belongs in this alignment. Its following font/text suffix begins
+        # at the same read-page phase; no group is enlarged or combined.
+        artwork_replacements=[i for i,(at,size,_payload,_physical) in enumerate(replacements)
+                              if at+size<=artwork_end]
+        if artwork_replacements:
+            padding = sum(replacements[i][1]-len(replacements[i][3]) for i in artwork_replacements)%4096
+            last=artwork_replacements[-1];at,size,payload,physical=replacements[last]
+            replacements[last] = at,size,payload,physical+bytes(padding)
     relocate = Relocation(replacements);sizes = {};out = bytearray();previous = 0
     for at, size, payload, physical in replacements:
         out.extend(data[previous:at]);out.extend(physical);previous = at+size;sizes[at] = len(payload)
@@ -173,4 +186,6 @@ def tighten(data, cache, workers=4, artwork_only=False, *, profiles=None, preser
         groups=len(plan), improved_groups=len(replacements), unchanged_decoder_bytes=True,
         unchanged_pixels_geometry_clocks=True, runtime_memory_added=0,
         alignment_padding_bytes=padding, decoded_group_bytes=sum(row[4] for row in plan),
-        compressed_group_boundaries_unchanged=True, version=source.version)
+        compressed_group_boundaries_unchanged=True, version=source.version,
+        glyph_groups_considered=sum(at in font_offsets for at,_size in selected_entries),
+        text_groups_considered=sum(at in text_offsets for at,_size in selected_entries))
