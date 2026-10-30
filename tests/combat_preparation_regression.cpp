@@ -1,7 +1,7 @@
 #define main existing_content_tiles_suite
 #include "content_tiles_regression.cpp"
 #undef main
-#include "../src/app.cpp"
+#include "resource_transfer.hpp"
 
 namespace {
 App app;
@@ -35,10 +35,13 @@ void run_preparation(){
     for(bool timed:{false,true}){
         label=timed?"clock-bounded battle preparation":"deterministic offline battle preparation";
         clock_step=timed?100:0;clock_value=UINT32_MAX-300;polls=0;battle(provider,timed);
-        const unsigned animation=app.animation;const auto labels=app.rich_label_clocks,overflow=app.overflow_label_clocks;
+        const unsigned animation=app.animation;
         const auto progress=app.progress;unsigned steps=0;
         while(app.combat_preparation.active){
             const auto before=app.combat_preparation.cold_images,clock_before=clock_value;
+            // A real black render still advances Frame bookkeeping. Only
+            // the preparation update must leave these clocks untouched.
+            const auto labels=app.rich_label_clocks,overflow=app.overflow_label_clocks;
             app.advance(33);CHECK(++steps<2000);CHECK(app.content.healthy()&&app.animation==animation);same_game();
             CHECK(app.combat_preparation.cold_images-before<=CombatPreparation::ImagesPerUpdate);
             if(timed)CHECK(uint32_t(clock_value-clock_before)<=CombatPreparation::UpdateTicks+200);

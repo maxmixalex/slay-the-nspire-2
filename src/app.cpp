@@ -75,6 +75,7 @@ static void world_region_image_key(const State&s,char*out,size_t size){
 #include "world_enemy_ui.inc"
 #include "combat_doom_ui.inc"
 #include "turn_banner_ui.inc"
+static void plan_combat_frontend(App&);
 static PreparationResult prepare_combat_frontend(App&,GlyphPreparationBudget&);
 #include "combat_preparation.inc"
 #include "world_map_motion.inc"

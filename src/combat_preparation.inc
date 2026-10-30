@@ -92,9 +92,12 @@ void App::sync_combat_preparation(){
         if(!more||full)break;
     }
     for(unsigned i=1;i<p.count;++i){uint32_t id=p.images[i];unsigned j=i;while(j&&p.images[j-1]>id){p.images[j]=p.images[j-1];--j;}p.images[j]=id;}
-    // The first visible room also owns its static controls, current hand and
-    // fitted glyphs. Even resident actor poses do not prove those are ready.
-    p.active=true;
+    // Planning only reads resident directory/game metadata. Preserve the
+    // immediate warm path when all pictures are already resident, while a
+    // cold room includes its controls/cards and exact fitted glyphs too.
+    plan_combat_frontend(*this);p.active=p.ui_count!=0;
+    for(unsigned i=0;i<p.count;++i)if(!content.image_cached(int(p.images[i]))){p.active=true;break;}
+    if(!p.active){p.cursor=p.count;p.ui_stage=4;}
 }
 void App::step_combat_preparation(){
     auto&p=combat_preparation;if(!p.active||!p.shown||paused)return;
