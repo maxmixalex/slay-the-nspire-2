@@ -118,7 +118,70 @@ The integration tree names the separate controlled exporter
 UI lane's independent `ui20_device_fixtures` target. Its six saved scenarios
 cover live Ceremonial Beast Plow, Osty's nonterminal and terminal death,
 already-dead Osty, merchant Accuracy's card-only hover and the boss's golden
-card reward. They use production NSR/NSH codecs, mark the unobserved prefix
+card reward. They use the production run/history codecs, mark the unobserved prefix
 partial and are explicitly controlled test prerequisites. Ordinary Firebird
 performance and final 45-package checks remain owned by the integration lane;
 native wall time is not presented as calculator FPS.
+
+## Required private rebuild stage
+
+The historical `build_content.py` entry point does **not** automatically run
+the complete later UI conversion chain. A current UI20 rebuild must include
+the following source-art repair before locale grafting or compression. The
+runtime's deliberate compatibility with the previous 5,409-entry artwork
+directory does not make that old artwork a complete UI20 release.
+
+Start with the accepted complete UI19 NSP2/44 English logical pack (5,409
+auxiliary entries), the user's pinned original `v0.111.0 / 41cef1ea` PCK, and
+the official private Spine runtime built with `build_private_spine_runtime.py`.
+The runtime source revision used here is
+`e7dc1435fa4a0083ab431f1b28e083c14a1f5c68`; the private runtime DLL and its
+build receipt must accompany the work directory. Set `UI20_SOURCE_44`,
+`UI20_PCK`, `UI20_RUNTIME`, `UI20_DOTNET` and `UI20_WORK` to those private paths
+outside the public source checkout. After publishing and verifying a source
+checkpoint, run these commands through `tools/run_logged.py` as required by
+the repository's build policy:
+
+```sh
+python3 tools/rebake_ancient_ui20.py \
+  --source "$UI20_SOURCE_44" --pck "$UI20_PCK" \
+  --runtime "$UI20_RUNTIME" --dotnet "$UI20_DOTNET" \
+  --output "$UI20_WORK/ancient"
+
+python3 tools/framed_animation_ui20_assets.py \
+  --input "$UI20_SOURCE_44" --pck "$UI20_PCK" \
+  --runtime "$UI20_RUNTIME" --dotnet "$UI20_DOTNET" \
+  --work "$UI20_WORK/framed" \
+  --extra-replacements "$UI20_WORK/ancient/ancient-ui20.json" \
+  --output "$UI20_WORK/eng-ui20-complete44.nsp"
+
+python3 tools/verify_framed_animation_ui20.py \
+  --content "$UI20_WORK/eng-ui20-complete44.nsp" --pck "$UI20_PCK" \
+  --runtime "$UI20_RUNTIME" --dotnet "$UI20_DOTNET" \
+  --cache "$UI20_WORK/framed/sampled" \
+  --output "$UI20_WORK/source-pixel-oracle"
+```
+
+The second command is the mandatory integration point: it replaces the 325
+action frames and eight Ancient backgrounds, appends the bounded overflow
+pieces, Osty dead-loop frames, original reward icons and ten registration
+tables, and emits the adjacent JSON receipt. It rejects an unexpected source
+version or auxiliary endpoint and never overwrites its input. Omitting its
+`--extra-replacements` argument also omits the separately baked Ancient
+background fixes; the production command above deliberately includes them.
+
+The resulting logical English file must have 58,099 images, 1,783 unchanged
+original clip descriptors and 5,422 auxiliary entries. Feed **this repaired
+file** to `refresh_artwork_resources.py --artwork`, then run the documented
+`compact_tile_slots.py`, `compact_sparse_tiles.py` and
+`retune_resource_streams.py` pipeline in [ui20-storage.md](ui20-storage.md).
+Those stages preserve the repaired pixels, registration tables, animation
+timing and locale contents while reclaiming unused slots and choosing smaller
+byte streams. Running compression directly on the historical UI19 file skips
+the visual fixes and is not the UI20 production chain.
+
+The UI20 packaging gate checks the decoded registration tables and the
+required artwork identities before release packaging. This is a regression
+guard in the converter/packager, with no extra whole-file scan added to the
+calculator's runtime. The source-art conversion and the original-frame pixel
+oracle above remain required; the gate is not a replacement for either.

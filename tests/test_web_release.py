@@ -57,6 +57,19 @@ class WebReleaseTest(unittest.TestCase):
             with self.assertRaises(ValueError):
                 build_web.resource_package(common_path=root/'nSpire2.dat.tns',eng_path=root/'nSpire2.eng.dat.tns')
 
+    def test_ui20_refuses_legacy_content_before_creating_archives(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root=Path(folder);resources(root)
+            (root/'launcher.tns').write_bytes(b'public synthetic launcher')
+            argv=['package_release','--launcher',str(root/'launcher.tns'),
+                '--common',str(root/'nSpire2.dat.tns'),'--eng',str(root/'nSpire2.eng.dat.tns'),
+                '--zhs',str(root/'nSpire2.zhs.dat.tns'),'--calculator-only',
+                '--output',str(root/'release'),'--local-checkpoints',
+                '--runtime-checkpoint','a'*40,'--resource-checkpoint','b'*40,'--stage','ui20']
+            with mock.patch.object(sys,'argv',argv), self.assertRaisesRegex(ValueError, 'UI20 content is missing'):
+                package_release.main()
+            self.assertEqual(list((root/'release').iterdir()), [])
+
     def test_complete_release_embeds_multipart_and_honest_local_source_receipt(self):
         with tempfile.TemporaryDirectory() as folder:
             root=Path(folder);original,common=resources(root)

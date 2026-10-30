@@ -11,6 +11,7 @@ import zipfile
 from build_web import ROOT, package_runtime
 from split_content import language_resource_version, reconstruct, LANGUAGES
 from storage_parts import PART_FILES, join_parts
+from release_content_guard import validate_release_content
 
 
 def resource_version(path):
@@ -116,7 +117,7 @@ def main():
     p.add_argument('--optional-locales',type=Path,help='Verified language editions directory; package additional locales separately')
     p.add_argument('--runtime-checkpoint', required=True)
     p.add_argument('--resource-checkpoint', required=True)
-    p.add_argument('--stage', default='ui19', help='Release suffix, for example ui19')
+    p.add_argument('--stage', default='ui20', help='Release suffix; UI20 and newer require the completed UI20 content')
     args = p.parse_args()
     if not re.fullmatch('[A-Za-z0-9][A-Za-z0-9_-]*', args.stage):
         p.error('Stage must contain only letters, digits, underscores or hyphens')
@@ -142,8 +143,12 @@ def main():
     version = resource_version(args.eng)
     if resource_version(args.zhs) != version:
         p.error('English and Chinese resources must use the same format version')
+    content_validation = None
     for code,path in (('eng',args.eng),('zhs',args.zhs)):
-        reconstruct(common_bytes,path.read_bytes(),code)
+        logical = reconstruct(common_bytes,path.read_bytes(),code)
+        if code == 'eng':
+            content_validation = validate_release_content(logical, args.stage)
+        del logical
     info = dict(version='0.1.0', reference='v0.111.0 / 41cef1ea', resource_format=version, save_version=17,
                 progress_version=9, settings_version=6, calculator_run_storage='NSZ1 or raw NSV1',
                 calculator_history_storage='NSZ1 or raw NSH1-9',
@@ -154,6 +159,8 @@ def main():
                 locale_storage='NSL3' if args.eng.read_bytes()[:4]==b'NSL3' else 'NSL1/NSL2',
                 calculator_only=args.calculator_only,local_checkpoints=args.local_checkpoints,
                 files={name: path.stat().st_size for name, path in paths.items()})
+    if content_validation is not None:
+        info['required_content_validation'] = content_validation
     stem = f'Slay-the-Nspire-2-0.1.0-{args.stage}-bilingual'
     archive = args.output / (stem + '-calculator.zip')
     offline = args.output / (stem + '-offline.html')
