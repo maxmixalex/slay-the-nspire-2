@@ -21,7 +21,7 @@ from repack_retained import DESCRIPTOR, auxiliary_count
 from retained_filter import CONTENT_VERSION, SLICE, group_layout, transform_group
 import split_content
 
-VERSIONS = (34, 35, CONTENT_VERSION)
+VERSIONS = tuple(range(34, 42))
 PROFILES = ((3, 0, 2), (3, 0, 0), (4, 0, 1))
 ENCODER = b'RGR2-planar-rgb565-v1-lzma2-9-273-512'
 
@@ -293,7 +293,9 @@ def rewrite(source, choices):
         new_off = relocate(off)
         DESCRIPTOR.pack_into(output, new_off, relocate(group_at) - new_off,
             new_lengths.get(group_at, length), raw_at, shape)
-    struct.pack_into('<I', output, 4, CONTENT_VERSION)
+    # Later appends may contain newer independent group formats (TGI2 in
+    # NSP2/41). Adding an existing retained filter must never downgrade them.
+    struct.pack_into('<I', output, 4, max(source.version, CONTENT_VERSION))
     struct.pack_into('<I', output, 12, len(output))
     struct.pack_into('<I', output, 36, 0)
     return bytes(output)
