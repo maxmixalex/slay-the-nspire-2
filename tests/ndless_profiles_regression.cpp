@@ -49,6 +49,8 @@ static bool sibling(char*out,const char*launcher,const char*name){
  if(prefix+std::strlen(name)>=512)return false;std::memcpy(out,launcher,prefix);std::strcpy(out+prefix,name);return true;
 }
 // Exercise the exact storage implementation used by the ARM foreground host.
+// Resource failure interlocks are exercised with a real App in their own test.
+static bool resource_mutation_allowed(){return true;}
 #include "../platform/ndless/profile_storage.inc"
 #include "../platform/ndless/preferences_storage.inc"
 #include "../platform/ndless/feedback_storage.inc"

@@ -6,6 +6,7 @@ static bool load_preferences(spire::UiPreferences& value){
     const bool closed=nd_close(f)==0;return closed&&spire::decode_ui_preferences(bytes,n,value);
 }
 static bool save_preferences(const spire::UiPreferences& value){
+    if(!resource_mutation_allowed())return false;
     uint8_t bytes[spire::UiPreferencesBytes];spire::encode_ui_preferences(value,bytes);
     void*f=nd_open(settings_temp,"wb");if(!f)return false;
     bool ok=nd_write(bytes,1,sizeof bytes,f)==sizeof bytes;ok=(nd_close(f)==0)&&ok;

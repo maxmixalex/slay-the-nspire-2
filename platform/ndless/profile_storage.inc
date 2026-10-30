@@ -61,6 +61,7 @@ static unsigned load_profile_selector(){
 static int profile_file_present(const char*path){void*f=nd_open(path,"rb");return !f?0:nd_close(f)==0?1:-1;}
 static bool remove_profile_file(const char*path){const int present=profile_file_present(path);return present==0||(present>0&&nd_unlink(path)==0);}
 static bool store_profile_selector(unsigned profile){
+    if(!resource_mutation_allowed())return false;
     uint8_t bytes[spire::UiProfileSelectorBytes];spire::encode_profile_selector(profile,bytes);
     void*f=nd_open(selector_temp,"wb");if(!f)return false;
     bool ok=nd_write(bytes,1,sizeof bytes,f)==sizeof bytes;ok=(nd_close(f)==0)&&ok;
@@ -95,10 +96,11 @@ static bool profile_info(unsigned profile,spire::UiProgressSummary&out){
     out.exists=nonempty&&closed;return out.exists;
 }
 static bool request_profile(unsigned profile,bool erase){
-    if(!app.title||profile<1||profile>spire::UiProfileCount||pending_profile)return false;
+    if(!resource_mutation_allowed()||!app.title||profile<1||profile>spire::UiProfileCount||pending_profile)return false;
     pending_profile=profile;pending_profile_delete=erase;return true;
 }
 static bool erase_profile_files(unsigned profile){
+    if(!resource_mutation_allowed())return false;
     spire::ForegroundScratch<char[512],ProfileFileCount> paths_storage,removed_storage;if(!paths_storage||!removed_storage)return false;
     auto&paths=paths_storage.array();auto&removed=removed_storage.array();if(!profile_paths(profile,paths)||!profile_paths(profile,removed,true))return false;
     unsigned present=0,moved=0;
@@ -115,6 +117,7 @@ static bool erase_profile_files(unsigned profile){
 }
 static void service_profile(){
     if(!pending_profile)return;const unsigned target=pending_profile;pending_profile=0;
+    if(!resource_mutation_allowed()){pending_profile_delete=false;return;}
     bool ok=false;
     if(app.title){
         if(pending_profile_delete)ok=erase_profile_files(target);
