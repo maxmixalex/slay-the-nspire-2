@@ -1,4 +1,25 @@
-# UI17 local calculator delivery — 2026-10-30 (Asia/Shanghai)
+# UI18 implementation in progress — 2026-10-30 (Asia/Shanghai)
+
+Continue from the complete local UI17 tip `433445c`; do not restart from
+the older public UI14 checkout. The prior UI17 installation, source archive
+and device evidence remain immutable controls. The three parallel component
+branches cover exact tile-group compaction, incremental cold combat loading,
+and original locale calendar formatting/font glyphs. Root owns rendering and
+final integration. No UI18 final installed-size or device-performance result
+is claimed before the final integrated resources and runtime are measured.
+
+The renderer component at `3fba5bb` replaces three bounded coverage divisions
+with exact reciprocal operations. Its 273,597,054 comparisons pass. Native
+cached-coverage operation time falls from 158.602872 to 69.635448 ms in the
+scoped alternating benchmark; this is not a calculator FPS measurement.
+The separate opaque multiplication factor was withdrawn after a native
+regression. See [the component record](ui18-rendering-0.17.md).
+
+Source remains in named local commits plus an all-ref bundle before long
+commands. The prior automatic-review rejection of outbound source/history
+publication remains unresolved; no new remote receipt or remote CI is claimed.
+
+## UI17 local calculator delivery — 2026-10-30 (Asia/Shanghai)
 
 ## Current source, runtime and resources
 
