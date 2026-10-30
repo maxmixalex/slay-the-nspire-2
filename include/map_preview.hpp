@@ -11,6 +11,7 @@ struct MapPreview {
     bool open = false, generated = false, editing = false;
     uint32_t seed_number = 1;
     int first_row = 0, selected = -1, editor_selection = SeedButtonCount - 1;
+    // Preserve the existing bounded UTF-8 storage, including the terminator.
     char seed[65] = "NSP1RE-1", draft[65]{};
     const char* error = "";
     bool generate();
@@ -18,6 +19,6 @@ struct MapPreview {
     void change_seed(int direction);
     void change_act();
     void begin_edit();
-    void edit(int character); // ASCII, 8 backspace, 13 apply, 27 cancel, -1 clear.
+    void edit(int character); // Unicode scalar; 8 backspace, 13 apply, 27 cancel, -1 clear.
 };
 }

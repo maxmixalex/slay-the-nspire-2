@@ -5,11 +5,15 @@ void App::reference_text(int code) {
     if (map_preview.open && map_preview.editing) {
         if(run_seed_editing&&code==13){
             char canonical[65]{};
-            if(*map_preview.draft&&!reference::canonicalize_ascii(map_preview.draft,canonical,sizeof canonical))return;
-            unsigned n=0;do{selected_seed[n]=canonical[n];}while(canonical[n++]);
+            if(!reference::canonicalize_seed(map_preview.draft,canonical,sizeof canonical)){
+                map_preview.error="Seed must fit in 64 UTF-8 bytes.";return;
+            }
+            // NCustomRunScreen stores the entered text; StartRunLobby applies
+            // SeedHelper only at departure. Whitespace-only is therefore an
+            // explicit empty canonical seed, whereas blank means random.
+            unsigned n=0;do{selected_seed[n]=map_preview.draft[n];}while(map_preview.draft[n++]);
             map_preview.editing=map_preview.open=run_seed_editing=false;return;
         }
-        if(run_seed_editing&&code==13&&!map_preview.draft[0]){selected_seed[0]=0;map_preview.editing=map_preview.open=run_seed_editing=false;return;}
         map_preview.edit(code);
         if(run_seed_editing&&!map_preview.editing){if(code==13){unsigned n=0;do{selected_seed[n]=map_preview.seed[n];}while(map_preview.seed[n++]);}run_seed_editing=false;map_preview.open=false;}
     }

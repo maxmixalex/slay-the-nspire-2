@@ -23,15 +23,15 @@ void App::run_modifier_select(unsigned index){
 bool App::start_selected_run(const RunOptions&options,bool animated){
     if(character_departure.active()||!valid_run_options(options))return false;
     if(!practice_entry&&!seen_ftue(FtueId::AcceptTutorials)&&open_ftue(FtueId::AcceptTutorials)){ftue.embark=options;character_departure.animated_ftue=animated;return false;}
-    uint32_t seed=0;char canonical[65]{};
-    if(!practice_entry&&*selected_seed){
-        if(!reference::canonicalize_ascii(selected_seed,canonical,sizeof canonical)){message("种子无效");return false;}++run_number;
+    uint32_t seed=0;char canonical[65]{};bool string_seed=!practice_entry&&*selected_seed;
+    if(string_seed){
+        if(!reference::canonicalize_seed(selected_seed,canonical,sizeof canonical)){message("种子无效");return false;}++run_number;
     }else{
         bool randomized=false;seed=next_run_seed(&randomized);
-        if(randomized&&!practice_entry){static const char digits[]="0123456789ABCDEF";for(unsigned i=0;i<8;++i)canonical[i]=digits[(seed>>((7-i)*4))&15];}
+        if(randomized&&!practice_entry){static const char digits[]="0123456789ABCDEF";for(unsigned i=0;i<8;++i)canonical[i]=digits[(seed>>((7-i)*4))&15];string_seed=true;}
     }
     uint64_t run_hash=seed;
-    if(*canonical){unsigned length=0;while(canonical[length])++length;run_hash=reference::hash64(canonical,length);seed=uint32_t(run_hash)^uint32_t(run_hash>>32);if(!seed)seed=1;}
+    if(string_seed){if(!reference::seed_hash(canonical,run_hash)){message("种子无效");return false;}seed=uint32_t(run_hash)^uint32_t(run_hash>>32);if(!seed)seed=1;}
     const bool random=character_random;
     if(random){
         // StartRunLobby resolves Random after the three ActModel choices,
@@ -44,7 +44,7 @@ bool App::start_selected_run(const RunOptions&options,bool animated){
     forget_run_checkpoint();new_run(game,seed,practice_entry,selected_character);
     if(!practice_entry){
         game.run_options=options;
-        if(*canonical&&!world_set_seed(game,canonical)){message("种子无效");return false;}
+        if(string_seed&&!world_set_seed_raw(game,canonical)){message("种子无效");return false;}
         if(!world_begin_run(game,selected_region,selected_ascension)){message("Could not start the run.");return false;}
     }
     if(animated){

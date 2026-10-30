@@ -11,6 +11,9 @@ enum class WorldRng:uint8_t {
 };
 constexpr unsigned WorldRngCount=unsigned(WorldRng::Count);
 bool world_set_seed(State&,const char*);
+// DebugSeedOverride / already-recorded original seed identity. Ordinary run
+// input must use world_set_seed so SeedHelper canonicalization happens first.
+bool world_set_seed_raw(State&,const char*);
 reference::Random& world_rng(State&,WorldRng);
 uint64_t world_run_seed(const State&);
 unsigned world_act_index(const State&);

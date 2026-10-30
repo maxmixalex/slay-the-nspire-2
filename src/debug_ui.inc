@@ -19,7 +19,7 @@ static const DebugCommandInfo DebugCommands[]={
  {"bestiary","bestiary"},{"instant","instant (enable Fast Mode)"},
  {"unlock","unlock cards|relics|potions|monsters|events|acts|ascensions|all [IDs...]"},
  {"dump","dump [cards|relics|potions|powers|events|fights|acts] [page=1]"},
- {"clear","clear (console output)"},{"new","new [character] [seed] (Nspire shortcut)"},
+ {"clear","clear (console output)"},{"new","new [character] [integer-seed|raw:TEXT] (Nspire shortcut)"},
  {"achievement","achievement: platform service unavailable"},{"cloud","cloud: network service unavailable"},
  {"getlogs","getlogs: desktop log export unavailable"},{"leaderboard","leaderboard: network service unavailable"},
  {"log","log: desktop logger unavailable"},{"multiplayer","multiplayer: unavailable in the solo port"},
@@ -53,9 +53,9 @@ static void debug_print(App&a,const char*text,unsigned kind=0){
 }
 static void set_debug_reply(App&a,const char*text,unsigned kind=0){debug_copy(a.debug_reply,sizeof a.debug_reply,text);debug_print(a,text,kind);}
 static bool debug_failure(App&a,const char*text){set_debug_reply(a,text,2);return false;}
-static void debug_begin(App&a,Character character=Character::Ironclad,uint32_t seed=1){
+static void debug_begin(App&a,Character character=Character::Ironclad,uint32_t seed=1,const char*raw_seed=nullptr){
     state_workspace::invalidate_saved_probe(&a);
-    new_run(a.game,seed,false,character);world_begin_run(a.game);
+    new_run(a.game,seed,false,character);if(raw_seed)world_set_seed_raw(a.game,raw_seed);world_begin_run(a.game);
     a.title=a.character_select=a.library=a.paused=a.help=a.settings_open=false;
     a.compendium_open=a.statistics_open=a.history_open=a.bestiary.open=a.profiles_open=a.profile_pending=false;
     a.frontend_confirm=0;a.practice_entry=false;a.map_preview.open=false;a.forget_run_checkpoint();a.reset_presentation();
@@ -219,8 +219,16 @@ bool App::debug_command(const char*command){
     if(debug_equal(cmd,"new")){
         if(count>3)return debug_failure(*this,DebugCommands[command_index].usage);Character character=Character::Ironclad;int seed=1;
         if(count>=2){int found=-1;for(int i=0;i<CharacterKinds;++i)if(debug_equal(args[1],character_definitions[i].key))found=i;if(found<0)return debug_failure(*this,"Unknown character ID.");character=Character(found);}
-        if(count==3&&!debug_number(args[2],1,2147483647,seed))return debug_failure(*this,"Seed must be 1..2147483647.");
-        debug_begin(*this,character,uint32_t(seed));set_debug_reply(*this,"Run started.",1);return validate(game);
+        const char*raw=nullptr;uint32_t bootstrap=1;
+        if(count==3&&debug_prefix(args[2],"raw:")){
+            raw=args[2]+4;uint64_t value=0;
+            if(debug_length(raw)>=sizeof game.world.seed_text||!reference::seed_hash(raw,value))return debug_failure(*this,"Raw seed must fit in 64 UTF-8 bytes.");
+            bootstrap=uint32_t(value)^uint32_t(value>>32);if(!bootstrap)bootstrap=1;
+        }else{
+            if(count==3&&!debug_number(args[2],1,2147483647,seed))return debug_failure(*this,"Seed must be 1..2147483647 or raw:TEXT.");
+            bootstrap=uint32_t(seed);
+        }
+        debug_begin(*this,character,bootstrap,raw);set_debug_reply(*this,"Run started.",1);return validate(game);
     }
     if(title||!game.world.active)return debug_failure(*this,"A run is not in progress. Start a game or use new.");
     bool ok=false;int amount=0,target=0;

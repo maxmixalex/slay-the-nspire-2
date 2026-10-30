@@ -34,7 +34,7 @@ Quota means requested room counts, not a guarantee that the constrained/repaired
 
 The arithmetic and bounded integer sampler round nearest-even. Logarithm and sine are approximations: **they are not claimed to reproduce every last bit of Windows' original math library**. Inputs to the quota sampler are bounded. If a value is within 2^-36 of a half-integer, generation returns `AmbiguousRounding` instead of silently selecting a side or consuming replacement random draws. The guard is conservative engineering protection, not a proof of universal cross-library equivalence. Other failures are explicit as well.
 
-Seed entry accepts 1–64 ASCII characters after normalization. It uppercases, replaces O/I with 0/1, and trims outer whitespace. Unicode normalization and the raw lowercase `old` legacy seed path remain unsupported; the editor rejects that legacy prefix. These input limits are not advertised as the complete original seed-input specification.
+UI17 supersedes the former ASCII-only input boundary: seed entry uses the original invariant Unicode uppercase, O/I replacement and whitespace trimming rules, within the existing 64-byte UTF-8 field. Raw/debug legacy `old` seed hashing is also implemented separately from ordinary canonicalized input. This operation does not perform NFC/NFKC normalization. See [the UI17 seed report](seed-unicode-ui17-0.17.md) for original-method comparisons, integration tests and the retained byte-capacity/globalization boundaries. The map/quota verification below remains historical evidence for its stated version.
 
 ## Historical verification executed in 0.6 (not rerun as new 0.9 evidence)
 

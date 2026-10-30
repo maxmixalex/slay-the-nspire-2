@@ -352,11 +352,14 @@ int main(int argc,char**argv){
                     else if(size>0&&size<=int(sizeof text))spire::host_text_utf8(text,size,[](int code){app.library_text(code);});
                 }else
                 if(app.map_preview.open&&app.map_preview.editing&&!(e.xkey.state&(ControlMask|Mod1Mask))){
-                    char text[16];KeySym actual;int size=XLookupString(&e.xkey,text,sizeof text,&actual,nullptr);
+                    char text[512];KeySym actual=symbol;Status status=XLookupNone;int size=0;
+                    if(input_context)size=Xutf8LookupString(input_context,&e.xkey,text,sizeof text,&actual,&status);
+                    else size=XLookupString(&e.xkey,text,sizeof text,&actual,nullptr);
                     if(actual==XK_Return||actual==XK_KP_Enter)app.reference_text(13);
                     else if(actual==XK_BackSpace)app.reference_text(8);
                     else if(actual==XK_Escape)app.reference_text(27);
-                    else if(size==1&&(unsigned char)text[0]>=32)app.reference_text((unsigned char)text[0]);
+                    else if(status==XBufferOverflow&&size>0&&size<=65536){std::vector<char>commit(size+1);size=Xutf8LookupString(input_context,&e.xkey,commit.data(),int(commit.size()),&actual,&status);if(status!=XBufferOverflow&&size>0)spire::host_text_utf8(commit.data(),size,[](int code){app.reference_text(code);});}
+                    else if(size>0&&size<=int(sizeof text))spire::host_text_utf8(text,size,[](int code){app.reference_text(code);});
                     else app.physical_key(physical_keycode(symbol),true);
                 }else app.physical_key(physical_keycode(symbol),true);}
         }

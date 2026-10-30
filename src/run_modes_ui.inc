@@ -127,7 +127,7 @@ static void custom_run_screen(Canvas&c){
  profile_text_box(c,label("CUSTOM_RUN_SCREEN.SEED_LABEL","Seed:"),9,SeedTop,40,seed_height,{8,bold,gold,128},false,true);
  c.dim(seed_left,SeedTop,seed_width,seed_height,140);c.rect(seed_left,SeedBottom-1,seed_width,1,editing?gold:Muted);
  const char*seed=editing?a.map_preview.draft:a.selected_seed;const bool has_seed=*seed;Canvas seed_font=c;seed_font.sparse_scene_sizes=true;
- while(*seed&&seed_font.width(seed,8)>seed_width-4)++seed;
+ while(*seed&&seed_font.width(seed,8)>seed_width-4){++seed;while((uint8_t(*seed)&0xc0)==0x80)++seed;}
  profile_text_box(c,has_seed?seed:label("CUSTOM_RUN_SCREEN.SEED_RANDOM_PLACEHOLDER","Random"),seed_left+2,SeedTop,seed_width-4,seed_height,{8,0,has_seed?cream:rgb(128,128,128),0},false,false,{},true);
  if(editing)c.rect(seed_left+2+mn(seed_width-4,seed_font.width(seed,8)),SeedTop+5,1,10,cream);
  else c.action(seed_left,SeedTop,seed_width,seed_height,UiAction::RunSeed);
