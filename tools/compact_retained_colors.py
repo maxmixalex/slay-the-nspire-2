@@ -368,7 +368,7 @@ def main():
     for language in packs:
         tiles.require(split_content.reconstruct(common, localized[language], language) == packs[language],
                       'Filtered split reconstruction differs')
-    result = dict(schema=1, reference='v0.111.0 / 41cef1ea', version=CONTENT_VERSION,
+    result = dict(schema=1, reference='v0.111.0 / 41cef1ea', version=struct.unpack_from('<I', packs['eng'], 4)[0],
         groups=len(choices), changed_groups=sum(c.payload is not None for c in choices),
         new_runtime_pools=0, new_runtime_integrity_checks=False, locales=receipts,
         split=split_receipt, results=[c.receipt for c in choices])
