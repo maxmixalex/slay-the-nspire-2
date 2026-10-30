@@ -13,19 +13,18 @@ constexpr unsigned divide255(unsigned value){
 }
 // Exact source-over for an opaque RGB565 destination. Red and blue use
 // separate 16-bit arithmetic lanes. Each accumulated component is <8192,
-// so the rounding term cannot carry between them. For each lane, factor
-// destination*(255-alpha)+source*alpha as destination*255 +
-// (source-destination)*alpha. Unsigned wrap in the difference is intentional:
-// modulo-2^32 arithmetic restores the same nonnegative final accumulation.
-// This needs two variable multiplies in total rather than four on ARMv5.
+// so the rounding term cannot carry between them. Keep the established
+// destination/source weighted sum: factoring it into a color difference
+// reduced multiplies but regressed the measured native rendering operation.
 constexpr uint16_t source_over_rgb565(uint16_t destination,uint16_t source,unsigned alpha){
+    const unsigned inverse=255-alpha;
     const uint32_t first=(destination>>11)|(uint32_t(destination&31)<<16);
     const uint32_t second=(source>>11)|(uint32_t(source&31)<<16);
-    uint32_t lanes=(first<<8)-first+(second-first)*alpha+0x00800080u;
+    uint32_t lanes=first*inverse+second*alpha+0x00800080u;
     lanes=(lanes+((lanes>>8)&0x00ff00ffu))>>8;
     lanes&=0x001f001fu;
     const uint32_t first_green=(destination>>5)&63,second_green=(source>>5)&63;
-    const unsigned green=divide255((first_green<<8)-first_green+(second_green-first_green)*alpha);
+    const unsigned green=divide255(first_green*inverse+second_green*alpha);
     return uint16_t((lanes<<11)|(green<<5)|(lanes>>16));
 }
 struct CoverageReciprocals{
