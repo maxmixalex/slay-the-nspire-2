@@ -21,7 +21,6 @@ import time
 
 import compact_retained_colors as colors
 from compact_tile_resources import grouped_slices, SLICE
-from compact_tile_slots import partition_like
 from coalesce_tile_resources import source_lzma_profile
 from complete_retained_resources_ui17 import decoded_group
 import content_tiles as t
@@ -57,7 +56,7 @@ def eligible_pairs(source, index):
     def span(group):
         at = 64 + group.offset - prefix
         i = bisect_right(starts, at)-1
-        return i if i >= 0 and at+group.size <= spans[i][1] else -1
+        return i if i >= 0 and at+colors.aligned(group.size) <= spans[i][1] else -1
 
     pairs = []; at = 0
     while at+1 < len(catalog):
@@ -80,16 +79,19 @@ def candidate(source, entry, cache, minimum_saved, minimum_percent):
     key = t.sha256(ENCODER + original[0] + original[1] + table)
     path = cache/(key+'.bin')
     before = sum(colors.aligned(len(p)) for p in original)
-    raw = b''.join(decoded_group(p, source.version) for p in original)
-    t.require(len(raw) == a+b, 'Retained pair size differs')
     best = None; best_size = before; chosen = None
     if path.is_file():
         proposed = path.read_bytes()
         if proposed:
-            t.require(decoded_group(proposed, source.version) == raw, 'Cached merged group differs')
+            size, _start, mode, coverage = group_layout(proposed, source.version)
+            t.require(size == a+b and (not mode or coverage == slices), 'Cached merged layout differs')
+            # Cache entries are proposals. The complete raw-byte comparison in
+            # verify() is mandatory before any common/locale output is written.
             t.require(colors.aligned(len(proposed)) < before, 'Cached merged group is not smaller')
             best = proposed; best_size = colors.aligned(len(best)); chosen = group_layout(best, source.version)[2]
     else:
+        raw = b''.join(decoded_group(p, source.version) for p in original)
+        t.require(len(raw) == a+b, 'Retained pair size differs')
         profiles = {(3, 0, 2)}
         for payload in original:
             profiles.add(source_lzma_profile(payload[group_layout(payload, source.version)[1]:]))
@@ -252,6 +254,48 @@ def verify(source, converted, plan, mapping, *, decode_groups):
         input_sha256=t.sha256(source.data),output_sha256=t.sha256(converted))
 
 
+def partition_relocated(index, source, converted, plan):
+    """Map the actual replaced byte spans, including descriptors between groups.
+
+    Two old encoded groups can now alias one new group. Mapping only semantic
+    group endpoints can move intervening descriptor bytes to another concern;
+    the exact replacement deltas preserve the existing physical ownership.
+    """
+    groups = colors.groups(source); replacements = []
+    for pair in plan:
+        if pair.payload is None:continue
+        for i, group in enumerate(groups[pair.first:pair.first+2]):
+            payload = pair.payload+bytes(len(pair.payload)&1) if i == 0 else b''
+            replacements.append((group.offset,group.offset+colors.aligned(group.size),payload))
+    replacements.sort(); relocate = colors.Relocation(replacements)
+    language = source.string_payload(split.MARKER)[:-1].decode('ascii')
+    before, after = split.layout(source.data,language),split.layout(converted,language)
+    old_prefix, prefix = before['prefix'],after['prefix']
+    common = split.common_file(converted[prefix:prefix+after['artwork']])
+    count = struct.unpack_from('<I',index,24)[0]
+    t.require(index[:4] == b'NSM1' and len(index) == 96+count*16, 'Invalid concern index')
+    files = [bytearray(32) for _ in storage.NAMES]; rows = []
+    for i in range(count):
+        first,last,_physical,part = struct.unpack_from('<4I',index,96+i*16)
+        start,end = relocate(old_prefix+first-64),relocate(old_prefix+last-64)
+        t.require(prefix <= start < end <= prefix+after['artwork'] and part < len(files),
+                  'Merged concern leaves its artwork')
+        at = len(files[part]); files[part].extend(converted[start:end])
+        rows.append((64+start-prefix,64+end-prefix,at,part))
+    for i,payload in enumerate(files):
+        struct.pack_into('<4s7I',payload,0,b'NSS1',1,t.REFERENCE,32,len(payload),i,0,0)
+    new_index = struct.pack('<4s7I',b'NSM1',1,t.REFERENCE,96,96+count*16,len(common),count,len(files))+common[:64]
+    new_index += b''.join(struct.pack('<4I',*row) for row in rows)
+    parts = {name:bytes(payload) for name,payload in zip(storage.PART_FILES,files)}
+    t.require(storage.join_parts(new_index,parts) == common,'Relocated concerns changed artwork bytes')
+    receipt = dict(spans=count,virtual_bytes=len(common),index_bytes=len(new_index),
+        installed_bytes=len(new_index)+sum(len(v) for v in parts.values()),
+        original_concern_ownership_preserved=True,physical_replacement_boundaries=True,
+        complete_byte_identical_roundtrip=True,
+        files={n:dict(bytes=len(v),sha256=t.sha256(v)) for n,v in parts.items()})
+    return common,new_index,parts,receipt
+
+
 def main():
     p = argparse.ArgumentParser(description=__doc__)
     for name in ('input','output','work'):p.add_argument('--'+name,type=Path,required=True)
@@ -290,7 +334,7 @@ def main():
         proof = verify(old,converted,plan,mapping,decode_groups=code == 'eng')
         row = split.layout(converted,code); artwork = converted[row['prefix']:row['prefix']+row['artwork']]
         if common is None:
-            common,new_index,parts,partition = partition_like(index,english,converted)
+            common,new_index,parts,partition = partition_relocated(index,initial,converted,plan)
             t.atomic_bytes(target/'nSpire2.dat.tns',new_index)
             for name,payload in parts.items():t.atomic_bytes(target/name,payload)
             report['artwork'] = partition

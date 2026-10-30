@@ -3,6 +3,7 @@ from contextlib import redirect_stdout
 from dataclasses import replace
 import io
 import json
+import lzma
 from pathlib import Path
 import struct
 import sys
@@ -119,6 +120,36 @@ class MergeRetainedTest(unittest.TestCase):
                 self.assertEqual(logical,(work/f'{code}-merged.nsp').read_bytes())
                 self.assertEqual(struct.unpack_from('<I',logical,4)[0],43)
                 self.assertEqual(len(colors.view(logical).images),len(colors.view(original[code]).images))
+
+
+    def test_alignment_padding_cannot_cross_a_concern(self):
+        original=source();old=colors.view(original)
+        common,index,_parts,_locales=installation({'eng':original,'zhs':source('zhs')})
+        groups=colors.groups(old);last=groups[-1]
+        self.assertEqual(last.size&1,1)
+        prefix=split.layout(original,'eng')['prefix'];boundary=64+last.offset+last.size-prefix
+        fake=bytearray(index[:96]);fake.extend(struct.pack('<4I',64,boundary,32,0))
+        fake.extend(struct.pack('<4I',boundary,len(common),32,1))
+        struct.pack_into('<I',fake,16,len(fake));struct.pack_into('<I',fake,24,2)
+        _,pairs=merge.eligible_pairs(old,bytes(fake))
+        self.assertFalse(any(entry[0]+1==len(groups)-1 for entry in pairs))
+
+    def test_cached_proposal_cannot_bypass_complete_raw_proof(self):
+        original=source();old=colors.view(original)
+        _common,index,_parts,_locales=installation({'eng':original,'zhs':source('zhs')})
+        with tempfile.TemporaryDirectory() as folder:
+            cache=Path(folder)
+            plan,_=merge.make_plan(old,index,cache,workers=1,minimum_saved=1,minimum_percent=0)
+            pair=next(p for p in plan if p.payload is not None)
+            path=next(p for p in cache.glob('*.bin') if p.read_bytes()==pair.payload)
+            raw=bytearray(merge.decoded_group(pair.payload,43));raw[0]^=1
+            packed=lzma.compress(raw,format=lzma.FORMAT_RAW,filters=[dict(id=lzma.FILTER_LZMA2,dict_size=524288)])
+            bad=t.GROUP.pack(b'RGR1',len(raw),len(packed),14,1,0,0,0)+packed
+            path.write_bytes(bad)
+            again,_=merge.make_plan(old,index,cache,workers=1,minimum_saved=1,minimum_percent=0)
+            result,mapping=merge.rewrite(old,again)
+            with self.assertRaisesRegex(ValueError,'Complete retained raw bytes changed'):
+                merge.verify(old,result,again,mapping,decode_groups=True)
 
 
 if __name__=='__main__':unittest.main()

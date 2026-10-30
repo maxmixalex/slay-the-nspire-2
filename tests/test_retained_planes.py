@@ -6,7 +6,7 @@ import unittest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]/'tools'))
 from retained_planes import transform
-from retained_filter import group_layout, transform_group
+from retained_filter import group_layout, transform_group, transform as color_transform
 
 
 class RetainedPlanesTest(unittest.TestCase):
@@ -32,6 +32,11 @@ class RetainedPlanesTest(unittest.TestCase):
         raw = bytes(source); slices = ((0, (4 << 24) | len(raw)),)
         for mode in (8, 9, 10):
             encoded = transform_group(raw, slices, mode)
+            # Independent old operation order: per-span color first, then
+            # field separation. New contiguous-plane filtering must emit the
+            # same bytes so existing content-addressed caches remain valid.
+            expected = transform(color_transform(raw, 4, mode-8)) if mode != 8 else transform(raw)
+            self.assertEqual(encoded, expected)
             self.assertEqual(transform_group(encoded, slices, mode, True), raw)
             self.assertEqual(source, raw)
 

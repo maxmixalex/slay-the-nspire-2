@@ -15,8 +15,9 @@ def _require(ok, message):
         raise ValueError(message)
 
 
-def transform(raw, inverse=False):
+def transform(raw, inverse=False, color_mode=0):
     _require(0 < len(raw) <= 512 * 1024, 'Sparse planes exceed the group bound')
+    _require(color_mode in (0, 1, 2), 'Unsupported sparse plane color mode')
     source = memoryview(raw)
     cursor = total = pixels = alphas = rows = 0
     geometry = bytearray()
@@ -44,6 +45,14 @@ def transform(raw, inverse=False):
              'Sparse planes coverage differs')
     if inverse:
         _require(cursor == len(geometry), 'Sparse planes geometry extent differs')
+        # Field separation makes all RGB565 words contiguous. Applying the
+        # same per-word inverse once avoids a NumPy setup per sparse span.
+        if color_mode and pixels:
+            from retained_filter import transform as color_transform
+            restored = bytearray(raw)
+            restored[cursor:cursor + pixels * 2] = color_transform(
+                raw[cursor:cursor + pixels * 2], 0, color_mode, True)
+            source = memoryview(restored)
         output = bytearray()
         geom_at = 0; color_at = cursor; alpha_at = cursor + pixels * 2
         for _ in range(rows):
@@ -74,4 +83,7 @@ def transform(raw, inverse=False):
             colors.extend(span); opacity.extend(bytes(source[at + 2:at + size * 3:3]))
         else:
             colors.extend(source[at:at + size * 2])
+    if color_mode and pixels:
+        from retained_filter import transform as color_transform
+        colors = color_transform(bytes(colors), 0, color_mode)
     return bytes(geometry + colors + opacity)

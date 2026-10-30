@@ -69,12 +69,10 @@ def transform_group(raw, slices, mode, inverse=False):
         data = raw[at:at + length]
         if mode in (8, 9, 10):
             from retained_planes import transform as planes
-            if inverse and fmt == 4:
-                data = planes(data, True)
-            if mode != 8:
+            if fmt == 4:
+                data = planes(data, inverse, mode - 8)
+            elif mode != 8:
                 data = transform(data, fmt, mode - 8, inverse)
-            if not inverse and fmt == 4:
-                data = planes(data)
         else:
             data = transform(data, fmt, mode, inverse)
         output[at:at + length] = data
