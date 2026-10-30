@@ -103,7 +103,7 @@ def rewrite_directory(data, auxiliary, retired, additions, *, profile=None, outp
     groups. TIL1's absolute offsets are the only payload-adjacent fields
     rewritten. Unreferenced retired glyph payloads are deliberately retained.
     """
-    source = tiles.PackView(data, auxiliary, versions=(VERSION, 35, 36, 37, 38, 39, 40), profile=profile)
+    source = tiles.PackView(data, auxiliary, versions=(VERSION, 35, 36, 37, 38, 39, 40, 41), profile=profile)
     tiles.require(source.version <= output_version <= 35 or
                   (source.version >= 36 and output_version == source.version),
                   'Unsupported font version transition')
@@ -159,8 +159,8 @@ def rewrite_directory(data, auxiliary, retired, additions, *, profile=None, outp
 
 
 def verify_preserved(before, after, auxiliary, retired):
-    source = tiles.PackView(before, auxiliary, versions=(VERSION, 35, 36, 37, 38, 39, 40))
-    target = tiles.PackView(after, auxiliary, versions=(VERSION, 35, 36, 37, 38, 39, 40))
+    source = tiles.PackView(before, auxiliary, versions=(VERSION, 35, 36, 37, 38, 39, 40, 41))
+    target = tiles.PackView(after, auxiliary, versions=(VERSION, 35, 36, 37, 38, 39, 40, 41))
     tiles.require(source.cards == target.cards and source.clips == target.clips and
                   source.aux == target.aux, 'Card Library patch changed model or clip indices')
     delta = (len(target.glyphs)-len(source.glyphs))*tiles.GLYPH.size

@@ -59,12 +59,12 @@ AssemblyLoadContext.Default.Resolving+=(ctx,name)=>{
 };
 var assembly=AssemblyLoadContext.Default.LoadFromAssemblyPath(Path.Combine(isolated,"sts2.dll"));
 const BindingFlags flags=BindingFlags.Static|BindingFlags.Public|BindingFlags.NonPublic;
-var type=assembly.GetType("MegaCrit.Sts2.Core.Localization.LocManager",true)!;
-var mapper=type.GetMethod("CultureInfoFromThreeLetterCode",flags|BindingFlags.Instance)!;
+var cultureType=assembly.GetType("MegaCrit.Sts2.Core.Localization.LocManager",true)!;
+var mapper=cultureType.GetMethod("CultureInfoFromThreeLetterCode",flags|BindingFlags.Instance)!;
 if(mapper.MetadataToken!=0x06004aad)throw new InvalidDataException("Original culture method changed");
 // No SaveManager/Godot constructor or game scene is invoked. The unchanged
 // mapper only uses its static table for these supported language identifiers.
-var manager=RuntimeHelpers.GetUninitializedObject(type);
+var manager=RuntimeHelpers.GetUninitializedObject(cultureType);
 CultureInfo.CurrentCulture=CultureInfo.InvariantCulture;
 CultureInfo.CurrentUICulture=CultureInfo.InvariantCulture;
 using var formats=JsonDocument.Parse(File.ReadAllBytes(args[1]));
@@ -79,7 +79,7 @@ foreach(int year in new[]{1970,2000,2024,2026,2099,2100,2106})
 var compact=new HashSet<uint>();
 foreach(int hour in new[]{0,12,23})compact.Add((uint)new DateTimeOffset(2026,10,24,hour,7,0,TimeSpan.Zero).ToUnixTimeSeconds());
 compact.Add(951825600);samples.UnionWith(compact);
-var metadata=new List<object>();int count=0;
+var cultureMetadata=new List<object>();int count=0;
 string hex(string value)=>Convert.ToHexString(Encoding.UTF8.GetBytes(value));
 string vectors=Path.Combine(output,"calendar-original.tsv"),small=Path.Combine(output,"calendar-synthetic-ui18.tsv");
 using(var writer=new StreamWriter(vectors){NewLine="\n"})
@@ -90,7 +90,7 @@ using(var fixture=new StreamWriter(small){NewLine="\n"}){
   string code=codes[i];var culture=(CultureInfo)mapper.Invoke(manager,new object[]{code})!;var dtf=culture.DateTimeFormat;
   var record=formats.RootElement.GetProperty(code);
   string df=record.GetProperty("date_format").GetString()!,tf=record.GetProperty("time_format").GetString()!,daily=record.GetProperty("daily_date_format").GetString()!;
-  metadata.Add(new{code,culture=culture.Name,calendar=dtf.Calendar.GetType().Name,year=dtf.Calendar.GetYear(new DateTime(2026,1,1)),months=dtf.MonthNames,genitive=dtf.MonthGenitiveNames,am=dtf.AMDesignator,pm=dtf.PMDesignator,date_separator=dtf.DateSeparator,time_separator=dtf.TimeSeparator});
+  cultureMetadata.Add(new{code,culture=culture.Name,calendar=dtf.Calendar.GetType().Name,year=dtf.Calendar.GetYear(new DateTime(2026,1,1)),months=dtf.MonthNames,genitive=dtf.MonthGenitiveNames,am=dtf.AMDesignator,pm=dtf.PMDesignator,date_separator=dtf.DateSeparator,time_separator=dtf.TimeSeparator});
   foreach(uint timestamp in samples){
    // The platform time-zone adapter is a separately retained boundary. Use
    // identical UTC calendar fields to isolate the original format/provider.
@@ -101,7 +101,7 @@ using(var fixture=new StreamWriter(small){NewLine="\n"}){
  }
 }
 var jsonOptions=new JsonSerializerOptions{WriteIndented=true,Encoder=JavaScriptEncoder.UnsafeRelaxedJsonEscaping};
-File.WriteAllText(Path.Combine(output,"cultures.json"),JsonSerializer.Serialize(metadata,jsonOptions)+"\n");
+File.WriteAllText(Path.Combine(output,"cultures.json"),JsonSerializer.Serialize(cultureMetadata,jsonOptions)+"\n");
 var receipt=new{
  reference="v0.111.0 / 41cef1ea",original_sha256=expected,isolated_sha256=digest(copy),
  isolation=new{changed_offsets=new[]{offset,offset+1},purpose="Disable only Sentry module initializer; all localization/history/daily IL unchanged"},
