@@ -2,11 +2,20 @@
 
 ## Complete measured conversion
 
-The final combined NSP2/44 data occupy **72,120,507 bytes** for English/Chinese
-or **90,617,943 bytes** with all sixteen languages. Against the accepted complete
-UI18/42 installation, the reductions are **5,841,944 bytes (7.49%)** and
-**5,888,965 bytes (6.10%)**, respectively. The final complete conversion is
-frozen; its paired-tile stage uses the two retained passes documented here.
+The accepted final NSP2/44 data occupy **72,814,490 bytes** for English/Chinese
+or **91,312,346 bytes** with all sixteen languages. Against the accepted complete
+UI18/42 installation, the reductions are **5,147,961 bytes (6.603129%)** and
+**5,194,562 bytes (5.382580%)**, respectively. These are the actual final files,
+after all directory rewrites, alignment and the measured cache-policy repair.
+
+The smaller all-paired candidate was rejected by ordinary Firebird performance
+checks. It caused recurring tile reads in the three-Bowlbug scene and expanded
+merchant preparation work. The accepted layout keeps 59 semantically selected
+tile pairs as their original small groups and bounds the merchant's active
+groups. It costs **694,403 bytes** across all sixteen languages relative to the
+rejected candidate. No pixel, alpha value, frame or game feature was removed.
+See [cache recovery](ui19-cache-recovery.md) for the actual failures, repair and
+remaining measured performance limits.
 
 Two complete retained-group passes reduce the sixteen-language installation
 from **95,780,703 to 94,474,866 bytes**, a further **1,305,837 bytes** after the
@@ -21,14 +30,14 @@ runtime codec, resident pool, buffer capacity or resource version: both passes
 remain NSP2/43 and use the existing **512 KiB retained-group limit**. The
 separate paired-tile stage consumes this final directory and produces NSP2/44.
 
-| Installed data | Accepted UI18 / 42 | RGR3 / 43 | First retained pass | Second retained pass | Final paired tiles / 44 |
-| --- | ---: | ---: | ---: | ---: | ---: |
-| Shared index and eight concern files | 72,727,684 | 71,991,296 | 71,253,500 | 70,718,398 | 66,893,270 |
-| English locale | 778,844 | 779,011 | 778,310 | 777,152 | 775,441 |
-| Simplified Chinese locale | 4,455,923 | 4,457,604 | 4,456,388 | 4,454,615 | 4,451,796 |
-| Default bilingual data | **77,962,451** | **77,227,911** | **76,488,198** | **75,950,165** | **72,120,507** |
-| All sixteen locale files | 23,779,224 | 23,789,407 | 23,779,294 | 23,756,468 | 23,724,673 |
-| All sixteen languages plus shared data | **96,506,908** | **95,780,703** | **95,032,794** | **94,474,866** | **90,617,943** |
+| Installed data | Accepted UI18 / 42 | RGR3 / 43 | First retained pass | Second retained pass | Rejected all-paired / 44 | Accepted final / 44 |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| Shared index and eight concern files | 72,727,684 | 71,991,296 | 71,253,500 | 70,718,398 | 66,893,270 | 67,585,022 |
+| English locale | 778,844 | 779,011 | 778,310 | 777,152 | 775,441 | 776,922 |
+| Simplified Chinese locale | 4,455,923 | 4,457,604 | 4,456,388 | 4,454,615 | 4,451,796 | 4,452,546 |
+| Default bilingual data | **77,962,451** | **77,227,911** | **76,488,198** | **75,950,165** | **72,120,507** | **72,814,490** |
+| All sixteen locale files | 23,779,224 | 23,789,407 | 23,779,294 | 23,756,468 | 23,724,673 | 23,727,324 |
+| All sixteen languages plus shared data | **96,506,908** | **95,780,703** | **95,032,794** | **94,474,866** | **90,617,943** | **91,312,346** |
 
 The table excludes the launcher, saves and distribution text/licenses. Add the
 actual final launcher's size to the selected data row for the program/resources
@@ -38,15 +47,23 @@ baseline is **96,506,908 bytes**, including all twenty-five resource files.
 
 The final ordinary ARM launcher is **1,724,027 bytes**, measured from the actual
 file used by the release package. The default bilingual program/resources
-installation is therefore **73,844,534 bytes (70.424 MiB)**; the single Simplified
-Chinese installation is **73,069,093 bytes (69.684 MiB)**; the all-language
-installation is **92,341,970 bytes (88.064 MiB)**. The default calculator archive's
-instructions and licenses occupy another **70,161 bytes**; player state is
-additional. The old
-default program/resources installation was 79,681,674 bytes, so the complete
-default reduction is **5,837,140 bytes** after paying for the new launcher's
-4,804-byte growth. A single-language figure is not the bilingual size, and the
-bilingual program/resources do not fall below 70 MiB.
+installation is therefore **74,538,517 bytes (71.085469 MiB)**; Simplified Chinese
+alone is **73,761,595 bytes (70.344539 MiB)**; English alone is **70,085,971 bytes
+(66.839190 MiB)**; all sixteen languages use **93,036,373 bytes (88.726399 MiB)**.
+Instructions, licenses, save growth and filesystem allocation overhead are
+additional. The old default program/resources installation was 79,681,674 bytes,
+so the complete default reduction is **5,143,157 bytes (6.454630%)**, after paying
+for the new launcher's 4,804-byte growth. Single-language figures are not the
+bilingual size; the accepted bilingual program/resources do not fall below
+70 MiB.
+
+These single-language sizes describe supported optional file combinations.
+The production launcher enumerates installed locales and falls back to the
+first available locale if saved/system preferences and English are absent;
+the existing boot regression covers every single-language mask. Final ordinary
+device measurements in this round used English alone. The Simplified Chinese
+combination has host/embedded-resource coverage, not a separate final ordinary
+device installation sample.
 
 | Retained pass | First | Second |
 | --- | ---: | ---: |
@@ -60,14 +77,17 @@ bilingual program/resources do not fall below 70 MiB.
 
 Recompressing relocated locale directories changes their size too; this is why
 the physical savings differ from the logical artwork savings. The second pass
-was the final compression candidate in this round. There is no unbounded
-fixed-point search or further unmeasured saving included in the result.
+was the last general retained-merge pass. The later cache repair changes only
+the measured semantic hot sets; no unbounded fixed-point search or unmeasured
+saving is included in the accepted result.
 
-The final paired-tile pass saves **3,856,923 bytes** on top of the second retained
-pass's all-language installation. Its earlier standalone candidate had different
-locale addressing and a different physical saving; those intermediate numbers
-are not added to the retained savings. The last table column measures the
-actual combined twenty-five files after all directory rewrites and alignment.
+The accepted mixed-tile pass saves **3,471,759 bytes** on top of the second
+retained pass's all-language installation, producing 91,003,107 bytes. The final
+merchant bounds/RGR2 stage adds **309,239 installed bytes**, producing the
+91,312,346-byte accepted set. The net saving after the second retained pass is
+therefore **3,162,520 bytes**. The rejected all-paired stage's 3,856,923-byte
+saving is retained only as a historical measurement, not added to this result.
+The last table column measures all twenty-five actual files.
 The new 1 MiB bound applies only to tile groups; retained groups remain limited
 to 512 KiB, and the existing runtime pools are reused.
 The [paired-tile implementation report](ui19-tile-layout-0.17.md) records the
@@ -120,9 +140,14 @@ Final boundary, cached-proof and host transformation checkpoint:
 | Second and final retained conversion | `ui19-retained-second-final-all16-7bc2de76ccb6`; all sixteen locales and complete raw proof, 781.80 s, source unchanged |
 | First-pass native image oracle | `ui19-merged-all-images-exact-238fbb6af03f`; 58,060 images, 1,167,930,140 decoded bytes, 247,885,340 checks; passed, source unchanged |
 | First-pass native locale coverage | `ui19-merged-all16-locales-b6669d4a6681`; 53,072 descriptions, 89,806 checks, zero failures; passed, source unchanged |
-| Final combined all-language conversion | `ui19-final-paired-all16-48f351cb20fe`; 149.23 s, all sixteen locales, passed with source unchanged; converter checkpoint `83b08dd025c41fbdbf56821b8dca9fc6eaf6d660` |
-| Final combined native image oracle | `ui19-final44-all-images-4c094c092250`; all 58,060 images, 1,167,930,140 decoded bytes, 271,962,257 checks, 20 contiguous ranges, 594.89 s; passed, source unchanged |
-| Final combined locale coverage | `ui19-final44-all16-locales-4aa31d0fa0a8`; 53,072 descriptions, 89,786 checks, zero failures; passed, source unchanged |
+| Rejected all-paired conversion | `ui19-final-paired-all16-48f351cb20fe`; 149.23 s, all sixteen locales, byte proof passed with source unchanged; later rejected by ordinary performance gates |
+| Rejected all-paired image oracle | `ui19-final44-all-images-4c094c092250`; 58,060 images, 1,167,930,140 decoded bytes, 271,962,257 checks, 20 ranges, 594.89 s; byte proof passed, source unchanged |
+| Rejected all-paired locale coverage | `ui19-final44-all16-locales-4aa31d0fa0a8`; 53,072 descriptions, 89,786 checks, zero failures; source unchanged |
+| Accepted final mixed tile conversion | `ui19-refined59-final-all16-1bf452858700`; 159.226 s, all sixteen locales, 516,960,290 raw tile bytes compared; passed, source unchanged |
+| Accepted final merchant conversion | `ui19-refined-rgr2-final-all16-d51cf6d5e64e`; 100.743 s, all sixteen locales, 11,417,876 replacement raw bytes compared; passed, source unchanged |
+| Device-to-final identity guard | `ui19-refined-final-manifest-c43c8bacfb13`; all nine shared files, English locale and logical English pack identical to the tested candidate; passed, source unchanged |
+| Accepted final locale coverage | `ui19-corrected44-final-all16-locales-1194d77dee25`; 53,072 descriptions, 89,790 checks, zero failures; source unchanged |
+| Accepted final full image oracle | `ui19-corrected44-final-all-images-a3d6e468f4d9`; all 58,060 images / 1,167,930,140 decoded bytes, 20 contiguous ranges, memory/ranged/incremental equality, 547.541 s; passed, source unchanged |
 | Public retained tooling gates | 26 selected merge/plane/filter tests passed after the final boundary and cached-proof changes |
 
 The first native oracle directly compares every byte against the complete old
@@ -131,7 +156,7 @@ nonoverlapping ranges cover the entire image catalog; the maximum temporary
 spool is 131,090,340 bytes. Its 19,148,518 preparation microsteps are internal
 bounded operations, not displayed frames or measured calculator latency.
 
-The second retained output's decoding passed the final combined NSP2/44 complete
+The second retained output's decoding first passed the all-paired NSP2/44 complete
 native oracle, directly against that same unchanged UI18/42 baseline through
 memory, ranged and incremental paths. Its twenty contiguous ranges cover the
 complete catalog; the maximum temporary spool is **67,108,736 bytes**, below
@@ -139,8 +164,11 @@ complete catalog; the maximum temporary spool is **67,108,736 bytes**, below
 `private-ui19-combat/paired/final-native-images.json`, SHA-256
 `970cd94d78287a15a1395fbf57bf6033789c87e2bf7b65a009ece3072bec2685`.
 It records the native runtime checkpoint
-`090023d45ec6211da3b2e5a887cfcc2d1dd68004` and executable hash. This final check
-is deliberately not duplicated as another complete intermediate NSP2/43 run.
+`090023d45ec6211da3b2e5a887cfcc2d1dd68004` and executable hash. This is preserved
+as a superseded candidate's pixel proof. It did not detect the later ordinary
+cache regression and is not substituted for the accepted final layout's proof.
+The accepted policy's complete final native receipt is recorded in
+[cache recovery](ui19-cache-recovery.md).
 Paired ordinary Firebird scene/combat timing belongs to the integration record.
 Host conversion duration, native byte proof and ARM instruction tests do not
 substitute for device timing or establish that the new format is faster.
@@ -155,12 +183,14 @@ Simplified Chinese is
 The frozen NSM1 index hash is
 `869d22e14c08cc2a5734ce78cca4b054ad28bd9b56e9d07cd547981febb27501`.
 
-The final combined resources are
-`private-ui19-combat/paired/data`, with `paired-tiles-receipt.json` SHA-256
-`082d00ec73f152f8bcf5dcdb838c92208537633e67d66dc0524ae629d8f4b531`.
-Its complete twenty-five-file identity is recorded by
-`private-ui19-combat/paired/final-resource-manifest.json`, SHA-256
-`29764c3278ec36dbb5e23b93249027e0d2980f66497c161ed54ad06092525a53`.
+The accepted final resources are `private-ui19-storage/risk-refined/data`.
+`merchant-bounds-receipt.json` has SHA-256
+`8c090f1edefccab14391415ab706ec239acecf071327ed517e661272bb0a97c7`.
+The complete twenty-five-file identity is
+`private-ui19-storage/risk-refined/final-resource-manifest.json`, SHA-256
+`463582860bf9a354771cbfd2f9ac5044433b943bcdcc019f55d8a7c1efd569ab`.
+The final English logical pack is 69,923,632 bytes, SHA-256
+`775cc5895dbc59fdf4c79b53d78854c3de9e488e659caeb0e530c2fe3dbc26b4`.
 
 ## Reproduction and delivery
 
@@ -177,19 +207,25 @@ python3 tools/run_logged.py --checkpoint 82cc5d68f0037f01d0df1a8dee2132fb77725d1
 ```
 
 The first predecessor is the complete RGR3/43 directory. The second is the first
-pass's complete output. The paired-tile converter then reads the second pass's
+pass's complete output. The mixed-tile converter then reads the second pass's
 complete directory. Its compressed tile/index cache does not depend on directory
 offsets, so it can reuse the already proved streams while rewriting all final
-addresses and concern spans. Every final installed file must come from the same
-final combined conversion; do not mix the intermediate directories.
+addresses and concern spans. Run `bound_merchant_groups.py` afterward, preserving
+the same-generation 42 English pack and first-merged 43 English pack as its
+checked references. This final stage reuses the original small Top/Focused
+groups and the one-page medium boundaries, with existing RGR2 encoding.
+Every installed file must come from the same final conversion; do not mix the
+intermediate directories. The exact commands and semantic guards are in
+[cache recovery](ui19-cache-recovery.md).
 
 Workspace space was limited during the full native build. After their complete
-proofs finished, the RGR3-only and first-retained-pass data and logical pack
-copies were removed; per-file cleanup manifests preserve their exact hashes and
-sizes. Their receipts, logs and compression caches remain. The last retained
-input directory stays frozen for the combined conversion. Its temporary English
-and Chinese logical copies were also retired after their hashes and complete
-proof were recorded; the converter and preserved split files can recreate them.
+proofs finished, redundant generated data and logical pack copies were removed;
+per-file cleanup manifests preserve their exact hashes and sizes. Receipts, logs
+and compression caches remain. The final intermediate mixed-tile files were
+retired only after the all-language merchant transform and exact device-English
+identity guard passed. The matching-generation 42 and first-merged 43 English
+references were retained until the merchant conversion completed. These
+temporary workspace deletions are not counted as game installation savings.
 No original private input, final delivery, receipt or source checkpoint was
 deleted to obtain these installation savings.
 
@@ -202,39 +238,21 @@ archive members and reject missing or damaged concern files. All twenty-four
 selected package/split/storage/retained-pipeline tests passed for checkpoint
 `1dd34eacef09357acbdefcefdda7b52b000dfd24`.
 
-The actual release was then read independently by
-`tools/verify_offline_release.py`, checkpoint
-`b2d7fffcf9615ea1f387d7ae485f08aed173b0ab`. Gate
-`ui19-offline-embedded-readback-daae8f384e87` passed with source unchanged against
-the packaging readers at `c45d588f2c9145f04106cb9aeffb33dd7611190e`. Its executed
-driver was a byte-identical private copy of the committed tool, SHA-256
-`a1f7fc88885e59eb3baa8b93dc4637257eb7986d54a047e884ba473c860afcc8`.
-The resulting `private-ui19-storage/offline-embedded-receipt.json` records:
+`tools/verify_offline_release.py` independently decodes the actual HTML's embedded
+WASM, common resources and English/Chinese streams, compares each with the final
+inputs, reconstructs both logical packs and checks the English pack against the
+native oracle's exact input. The release report records the final package sizes,
+readback receipt and their hashes. The earlier all-paired HTML receipt remains a
+superseded artifact's successful byte audit, not evidence for the accepted pack.
 
-- The actual **106,285,973-byte HTML** contains the exact **7,516,049-byte WASM**
-  from runtime checkpoint `090023d45ec6211da3b2e5a887cfcc2d1dd68004`.
-- Its embedded **66,891,542-byte NSC1** exactly equals the in-memory join of the
-  final NSM1 index and eight parts. The installed shared set is slightly larger
-  because its physical map and eight part headers also take space.
-- Embedded English and Simplified Chinese locale bytes equal the final files,
-  and both reconstruct valid NSP2/44 packs with all 58,060 images, 1,783 clips
-  and 8,704 strings. The reconstructed English bytes also equal the exact
-  logical candidate used by the final native image oracle.
-- The HTML identifies the runtime checkpoint as local and explicitly
-  unpublished. It contains no GitHub tree URL claiming that checkpoint was
-  published. The calculator README uses the same local-source convention.
-
-The HTML SHA-256 is
-`1704d533aa0adbb7cd3e022e16e43eddfe5b71824322a1257d245c2b426c39e3`;
-embedded WASM SHA-256 is
-`9a8b10c694cff7eeface7742a34e2d30f8b638964f7b666e9b79c6daa273e811`.
-This verifies the distributed bytes and their source notices, without claiming
-browser interaction or browser performance. Reproduce with
-`verify_offline_release.py --html ... --wasm ... --common ... --eng ... --zhs ...
---english-logical ... --runtime-checkpoint FULL_SHA --local-checkpoints
---output RECEIPT.json`; it creates only the small JSON receipt. Its two public
-end-to-end tests also reject a mismatched WASM and an unpublished source notice
-presented as a published reference.
+Reproduce with `verify_offline_release.py --html ... --wasm ... --common ...
+--eng ... --zhs ... --english-logical ... --runtime-checkpoint FULL_SHA
+--local-checkpoints --output RECEIPT.json`. It writes only a small receipt. Its
+two public end-to-end tests reject mismatched WASM and an unpublished source
+notice presented as a published reference. The complete integrated Python suite
+at `ec76d3bb3316ad7345a768ccb8d3b6d8705db0bb` passes **369 tests**, including the
+mixed-tile, merchant-boundary and cache-validation regressions. This verifies
+bytes and source notices without claiming browser interaction or performance.
 
 This round's public source upload was rejected by automatic approval review.
 The release tools' `--local-checkpoints` option therefore labels both archive

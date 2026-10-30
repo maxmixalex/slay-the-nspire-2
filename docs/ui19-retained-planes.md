@@ -55,7 +55,10 @@ More inverse work can still affect a cold scene. Native byte equality and ARM
 instruction emulation do not establish ordinary calculator timing. The final
 paired ordinary-OS Firebird test uses the same integrated ARM build and fixtures
 with the old 42 data and the final 44 installation, which includes the later
-retained-group and paired-tile stages. Its scene and first-visible timing results
+retained-group, mixed-tile and bounded merchant stages. The original all-paired
+candidate was rejected by ordinary cache-risk checks; the accepted policy and
+measured residuals are recorded in [cache recovery](ui19-cache-recovery.md).
+Its scene and first-visible timing results
 belong in the final UI19 integration record; this codec report alone does not
 claim a calculator FPS improvement.
 

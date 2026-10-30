@@ -11,7 +11,8 @@ This document describes the implemented entry points as of the UI19 work. It doe
 not claim that a complete current pack was rebuilt from a fresh installation in
 this round. UI19's executed resource conversion starts with the complete UI18
 NSP2/42 installation. Its retained-plane stage produces NSP2/43 resources;
-the later paired-tile stage produces NSP2/44 resources. These storage format
+the later mixed-tile and merchant-boundary stages produce NSP2/44 resources.
+These storage format
 versions are independent of the original game's version.
 
 ## Private inputs and release identity
@@ -48,7 +49,8 @@ conversion receipts so that an old cache cannot silently supply a changed scene.
 | UI18 completion | `calendar_fonts_ui18.py`, followed by the accepted tile coalescing/slot-compaction/suffix-alignment stages in `docs/ui18-storage-0.17.md`, yields the complete NSP2/42 installation. Coalescing is explicitly a pre-slot-compaction operation. |
 | UI19 retained planes | `compact_retained_planes.py --input COMPLETE_UI18_DATA --output NEW_DATA --work PRIVATE_WORK --workers 2` emits NSP2/43. It preserves all images, frames, glyphs and strings, compares complete decoded English retained groups, and requires every locale to share that proven artwork. |
 | UI19 retained groups | `merge_retained_resources.py --input PLANES_DATA --output MERGED_DATA --work PRIVATE_WORK --workers 2` joins qualifying adjacent retained groups within one physical concern span and the existing 512 KiB raw limit. Each complete pass relocates every locale and proves the original image slices, glyphs, strings and clocks. The final accepted pass count and measured output belong to the corresponding conversion receipt; repeating it indefinitely is not part of the release procedure. |
-| UI19 paired tiles | `merge_tile_groups.py --input MERGED_DATA --output PAIRED_DATA --work PRIVATE_WORK --workers 2` emits NSP2/44, joins tile groups within the 1 MiB tile limit, rewrites all affected indices and partitions the complete shared installation again. The retained bytes stay exact, and their suffix alignment is preserved. Run this after the accepted retained-group passes. |
+| UI19 cache-aware tiles | `merge_tile_groups.py --input MERGED_DATA --output MIXED_DATA --work PRIVATE_WORK --workers 2` emits NSP2/44. The default semantic policy derives protected groups from reviewed model/animation profiles: all Bowlbugs, all combat actors/Osty and the Construct families keep original small groups; other groups may combine within 1 MiB. It rewrites the complete slot namespace and indices, preserves retained bytes/suffix alignment, and repartitions the shared installation. Current resolved pair IDs are receipt outputs, not hardcoded update rules. |
+| UI19 merchant bounds | `bound_merchant_groups.py --input MIXED_DATA --output FINAL_DATA --work PRIVATE_WORK --small-reference SAME_BUILD_42_ENG --medium-reference SAME_BUILD_FIRST_MERGED_43_ENG` restores original small Top/Focused groups and one-page bounds for Bottom and all five merchant actors. Default `--medium-codec rgr2` uses the existing RGR2 codec with those bounds. Complete decoded references, aliases and catalogs must agree; a mismatched reference fails rather than importing old artwork. Other streams remain exact. |
 | Delivery | `package_release.py ... --wasm MATCHING_RUNTIME` checks locale format agreement, reconstructs the shared installation, creates the calculator archive and offline player, and reads actual archive members back. NSM1 parts are joined in host memory for the HTML; a duplicate intermediate common file is unnecessary. `--calculator-only` omits the player. Runtime and resource checkpoints are recorded separately. `--local-checkpoints` marks both the archive and HTML notices as local when source has not been published. |
 
 For the accepted storage chain, use the exact commands and receipts in
@@ -65,9 +67,23 @@ writes a separate output. Keep the prior directory frozen until the new pass's
 all-locale proof and complete native image comparison pass. Cached compression
 streams can be reused only under their verified content identities; an unchanged
 stream does not make its old directory offsets valid in a rewritten pack.
-The accepted UI19 retained conversion uses two measured passes, followed by one
-paired-tile pass. See [retained groups](ui19-retained-groups.md) for their exact
-source checkpoints, complete proof and physical installation sizes.
+The accepted UI19 chain uses two measured retained passes, then one mixed-tile
+pass and one merchant-boundary pass. Preserve the complete same-generation 42
+English logical pack and first-merged 43 English logical pack until the merchant
+pass completes. They are earlier stages of the new build, never references from
+the previous original-game release. The converter compares the full selected
+decoded bytes and catalog identities before using their group boundaries.
+
+The final layout tools are frozen at
+`171f30b97e03b0a18e2977bdd0459f31689d1ec6`. Their defaults select the measured
+cache policy. `--pairing-policy all` and `--medium-codec reference` reproduce the
+rejected all-paired and superseded merchant candidates for investigation;
+they are not the accepted release defaults. Semantic profile/header mismatches
+must be adapted and reviewed on a new reference release. Pixel equality alone
+does not certify cache behavior: validate representative legal multi-enemy
+combinations, action transitions, merchant preparation and repeated openings on
+the ordinary runtime. See [retained groups](ui19-retained-groups.md) and
+[cache recovery](ui19-cache-recovery.md) for exact bytes, receipts and limits.
 
 ## Procedure for a later original release
 
@@ -81,7 +97,8 @@ source checkpoints, complete proof and physical installation sizes.
 3. Regenerate a complete set from the matching input stages, with new source and
    cache identities. Do not splice new locale directories into old artwork or
    combine an old index with newly compressed concern files. Preserve receipts
-   and intermediate manifests needed to reproduce the append chain.
+   and intermediate manifests needed to reproduce the append chain, including
+   the two same-build English references used by the merchant boundary policy.
 4. Verify source behavior against the new reference, then run lossless
    before/after proofs for each storage transform using that same new input.
    Changed original artwork should match the new original; it is not expected
