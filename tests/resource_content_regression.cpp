@@ -88,13 +88,41 @@ int main(int argc,char**argv){
         for(unsigned at=16;at<=32;at+=4)CHECK(word(b.data()+at)==word(reference_bytes.data()+at));
     }
     uint64_t decoded_image_bytes=0;
+    // Record the independent old decoder's complete bytes in one sequential
+    // traversal. Alternating old/new owners per image forces unrelated
+    // datasets to compete for the one fixed group cache and can repeatedly
+    // decode gigabytes of the same groups. The spool retains a direct byte
+    // oracle (not a hash), while each new backend gets the ordinary one-owner
+    // access order. At most one decoded image is held in the host test heap.
+    FILE* reference_images=nullptr;
+    if(reference){
+        reference_images=std::tmpfile();CHECK(reference_images);
+        std::printf("reference spool: checking %u complete decoded images, starting at %u\n",measured_images,first_image);std::fflush(stdout);
+        for(unsigned id=first_image;id<first_image+measured_images;++id){
+            Picture p=reference->image(id);auto bytes=picture_bytes(p);
+            const uint32_t header[]={p.w,p.h,p.format,uint32_t(bytes.size())};
+            CHECK(std::fwrite(header,sizeof(uint32_t),4,reference_images)==4);
+            CHECK(std::fwrite(bytes.data(),1,bytes.size(),reference_images)==bytes.size());CHECK(reference->healthy());
+            if((id+1-first_image)%1000==0||id+1==first_image+measured_images){
+                std::printf("reference spool: %u/%u images recorded byte for byte\n",id+1-first_image,measured_images);std::fflush(stdout);
+            }
+        }
+        CHECK(std::fflush(reference_images)==0);
+    }
     auto compare_images=[&](Content& actual,Content& expected,const char* label){
         uint64_t total=0;
+        if(reference_images)CHECK(std::fseek(reference_images,0,SEEK_SET)==0);
         std::printf("%s: checking %u of %u complete decoded images, starting at %u%s\n",
             label,measured_images,images,first_image,requested_images?"; selected range, not a full catalog proof":"");std::fflush(stdout);
         for(unsigned id=first_image;id<first_image+measured_images;id++){
             Picture a=actual.image(id);auto bytes=picture_bytes(a);
-            Picture e=expected.image(id);auto original=picture_bytes(e);
+            Picture e;std::vector<uint8_t> original;
+            if(reference_images){
+                uint32_t header[4];CHECK(std::fread(header,sizeof(uint32_t),4,reference_images)==4);
+                CHECK(header[0]&&header[0]<=320&&header[1]&&header[1]<=240&&header[2]<=4&&header[3]&&header[3]<=614880);
+                e.w=header[0];e.h=header[1];e.format=header[2];original.resize(header[3]);
+                CHECK(std::fread(original.data(),1,original.size(),reference_images)==original.size());
+            }else{e=expected.image(id);original=picture_bytes(e);}
             CHECK(a.w==e.w&&a.h==e.h&&a.format==e.format);CHECK(bytes==original);
             CHECK(actual.healthy()&&expected.healthy());total+=bytes.size();
             if((id+1-first_image)%1000==0||id+1==first_image+measured_images){
@@ -102,18 +130,17 @@ int main(int argc,char**argv){
                 std::fflush(stdout);
             }
         }
+        if(reference_images)CHECK(std::fgetc(reference_images)==EOF&&!std::ferror(reference_images));
         return total;
     };
     if(reference){
-        // Traverse each new backend against the independent old pack. The
-        // default checks every image; --images labels an explicit selection.
-        // Alternating tiled owners for every image would deliberately thrash
-        // the shared 5 MiB group pool. Transitive byte equality preserves the
-        // three-way proof; synthetic pressure tests and the UI below still
-        // alternate owners and exercise eviction/identity boundaries.
+        // Both backends compare every byte with the old decoder's spool.
+        // Synthetic pressure tests and the UI below still alternate owners
+        // and exercise eviction/identity boundaries.
         decoded_image_bytes=compare_images(*memory,*reference,"new memory / original");
         CHECK(compare_images(*ranged,*reference,"new range / original")==decoded_image_bytes);
     }else decoded_image_bytes=compare_images(*memory,*ranged,"memory / range");
+    if(reference_images)CHECK(std::fclose(reference_images)==0);
     // UI12 pairs occupy metadata records in the glyph directory. Their
     // codepoints deliberately have no drawable raster. Verify every pair at
     // every exact raster size of its face through the public layout API.
