@@ -276,7 +276,7 @@ static void native_treasure_screen(Canvas&c){
   // readable10px line down on the ribbon's lower edge. Keep long locales
   // on this same line, scrolling horizontally inside their actual label.
   banner.font_face=source_label_face(c.a.content.original_label_fonts(),5);
-  banner.text_fitted(treasure_text(a,"TREASURE_BANNER","Treasure"),117,62+y,87,10, rgb(255,246,226),10,true,true,rgb(74,60,42));}
+  banner.text_fitted(treasure_text(a,"TREASURE_BANNER","Treasure"),117,59+y,87,10, rgb(255,246,226),10,true,true,rgb(74,60,42));}
  if(!s.treasure_state){
   // Projection of the original centered 800x500 Chest control at 1920x1080.
   c.action(87,96,162,101,UiAction::TreasureOpen);

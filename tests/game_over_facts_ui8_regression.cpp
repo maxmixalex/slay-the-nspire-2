@@ -23,7 +23,8 @@ static void presentation_timing(){
  CHECK(!m.continue_ready(2749)&&m.continue_ready(2750)&&m.ui_alpha(2499)==0&&m.ui_alpha(2750)==255);
  CHECK(m.initial_quote_alpha(2750)==0&&m.initial_quote_alpha(4250)==255&&m.continue_offset(2750)==36&&m.continue_offset(3250)==0);
  m.event_room=true;CHECK(!m.continue_ready(2949)&&m.continue_ready(2950));m.event_room=false;
- constexpr unsigned at=4250;m.begin_summary(at,3,2,1);CHECK(m.quote_from==255&&m.summary_opacity(at)==0&&m.summary_opacity(at+500)==255);
+ constexpr unsigned at=4250;const int quote_before=m.quote_y(at);m.begin_summary(at,3,2,1);CHECK(m.quote_from==255&&m.summary_opacity(at)==0&&m.summary_opacity(at+500)==255);
+ CHECK(m.quote_y(at)==quote_before&&m.quote_y(at+249)==quote_before);
  CHECK(m.banner_y(at)==game_over_ui::BannerInitialY&&m.banner_y(at+500)==game_over_ui::BannerSummaryY);
  CHECK(!m.score(1,at+399).visible&&m.score(1,at+400).visible&&m.score(1,at+400).offset==-10&&m.score(1,at+400).alpha==0);
  CHECK(m.score(1,at+700).offset==0&&m.score(1,at+700).alpha==255);

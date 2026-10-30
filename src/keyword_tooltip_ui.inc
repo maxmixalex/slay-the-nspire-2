@@ -156,6 +156,10 @@ bool card_hover_target(const App&a,CardHoverTarget&target){
         target.card={ids[h->value],uint8_t(a.library_upgraded&&card_upgradeable({ids[h->value],0}))};break;}
     case HitKind::DeckCard:if(h->value<0||h->value>=s.deck_count)return false;target.deck=h->value;target.card=s.deck[h->value];if(a.panel==1&&!a.pile_tab&&a.pile_upgraded&&card_upgradeable(target.card))target.card.upgraded=1;break;
     case HitKind::InstanceCard:if(h->value<0||h->value>=s.card_count)return false;target.instance=h->value;target.card=s.cards[h->value];break;
+    case HitKind::SovereignBlade:{
+        if(!a.pointer.visible||s.phase!=Phase::Combat||h->value<0||h->value>=s.card_count||s.cards[h->value].kind!=SovereignBlade)return false;
+        const auto*blade=a.combat_cards.blades.find(unsigned(h->value));if(!blade||blade->attacking||blade->removing)return false;
+        target.instance=h->value;target.card=s.cards[h->value];target.sovereign_blade=true;break;}
     case HitKind::CombatChoice:
         if(h->value<0)return false;
         if(a.combat_selection_kind()==CombatSelectionKind::Hand)
@@ -261,9 +265,9 @@ static HoverPage hover_page(Canvas&c,const CardHoverTarget&owner,const HoverTipL
     const bool enchant_lane=hover_enchant_selection(c.a,owner);
     // Associated cards share the inspector's right column vertically. They
     // must not cover its text or the enlarged primary card on the left.
-    const int card_w=(details||inspect||event_lane||enchant_lane)?69:46,card_h=(details||inspect||event_lane||enchant_lane)?96:62,card_step=card_h+1;
+    const int card_w=(details||inspect||event_lane||enchant_lane||owner.sovereign_blade)?69:46,card_h=(details||inspect||event_lane||enchant_lane||owner.sovereign_blade)?96:62,card_step=card_h+1;
     const HoverRect column=enchant_lane?(card_count?HoverRect{212,121,104,71}:HoverRect{212,24,104,168}):event_lane&&card_count?HoverRect{8,125,SourceHoverWidth,93}:details?HoverRect{8,32,card_count?225:145,178}:inspect?
-        HoverRect{212,8,104,card_count?109:209}:keyword_hover_column(owner);
+        HoverRect{212,8,104,card_count?109:209}:owner.sovereign_blade?HoverRect{mx(3,mn(213,owner.owner.x+owner.owner.w+card_w+3)),24,104,194}:keyword_hover_column(owner);
     int direction=column.x<owner.owner.x?-1:1;if(owner.relic>=0)direction=owner.owner.x>240?-1:1;
     if(owner.power>=0||owner.creature>=0)direction=owner.power_left?-1:1;
     if(owner.merchant)direction=owner.merchant_left?-1:1;
@@ -302,6 +306,7 @@ static HoverPage hover_page(Canvas&c,const CardHoverTarget&owner,const HoverTipL
     if(hover_compact_event(owner))card_x=column.x+columns*(column.w+1);
     if(event_lane)card_x=column.x+column.w-card_w;
     if(enchant_lane)card_x=column.x+(column.w-card_w)/2;
+    if(owner.sovereign_blade)card_x=column.x-card_w-1;
     if((owner.power>=0||owner.creature>=0||owner.merchant)&&!details&&!inspect&&card_count&&result.count){
         // NHoverTipSet.CorrectHorizontalOverflow moves the actual containers
         // together. Empty available text columns must not separate a power

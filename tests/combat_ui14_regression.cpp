@@ -208,6 +208,18 @@ static void actual_forge(){
  scenario="render clocks move a source orbit without mutating the run";before=a.game;
  const auto p=a.combat_cards.blades.orbit(0,a.animation*33u),q=a.combat_cards.blades.orbit(0,a.animation*33u+1000);CHECK(p.x!=q.x||p.y!=q.y);
  for(unsigned i=0;i<20;++i){tick(33);if(original_art)a.render();}unchanged();
+ scenario="orbiting Sovereign Blade exposes its own live card tooltip without playing it";
+ a.hit_count=0;Canvas c{a};combat_sovereign_blades(c,true);combat_sovereign_blades(c,false);
+ const HitRegion*sword=nullptr;for(int i=0;i<a.hit_count;++i)if(a.hits[i].kind==HitKind::SovereignBlade&&a.hits[i].value==1)sword=&a.hits[i];
+ CHECK(sword);a.pointer_move(sword->x+sword->w/2,sword->y+sword->h/2);CardHoverTarget owner{};
+ CHECK(card_hover_target(a,owner)&&owner.sovereign_blade&&owner.instance==1&&owner.card.kind==SovereignBlade);
+ HoverTipList tips;collect_keyword_hover_tips(a,owner,tips);CHECK(tips.count>=2&&tips.items[0].kind==HoverTipKind::Card&&tips.items[0].amount==2);
+ const auto page=card_hover_page(a,owner,tips);CHECK(page.count>=1);
+ for(unsigned i=0;i<page.count;++i){const auto&box=page.pieces[i].box;CHECK(box.x>=3&&box.y>=24&&box.x+box.w<=317&&box.y+box.h<=218);}
+ if(original_art){char title[160]{},body[2048]{};format_card_hover_tip(a,owner,tips.items[0],title,sizeof title,body,sizeof body);CHECK(std::strstr(body,"40"));capture("sovereign-blade-hover");}
+ a.pointer_button(true);CHECK(!card_hover_target(a,owner));a.pointer_button(false);CHECK(a.selected_hand_card()<0);unchanged();
+ auto*blade=a.combat_cards.blades.find(1);CHECK(blade);blade->attacking=true;CHECK(!card_hover_target(a,owner));blade->attacking=false;
+ a.pointer_cancel();unchanged();
 }
 static void actual_enchant(){
  scenario="a real pending enchantment selection survives save/load and commits once";fresh(Character::Regent);hand({RegentTheSmith,SovereignBlade,RegentDefend});

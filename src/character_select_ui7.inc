@@ -139,17 +139,16 @@ static void character_screen(Canvas&c){
     const int title_size=character_name_size(name,title);
     character_info_name(name,title,dx+InfoX,top+(NameHeight-title_size-3)/2,title_size);
     const int stats_y=top+NameHeight+StatsOffset;
-    if(!random){
     c.picture(A_Heart,dx+InfoX,stats_y,StatsIcon,StatsIcon);
-    char hp[32]{};TextBuffer health{hp,sizeof hp,0};health.number(definition.starting_hp);health.ch('/');health.number(definition.starting_hp);
+    char hp[32]{};TextBuffer health{hp,sizeof hp,0};if(random)health.text("??/??");else{health.number(definition.starting_hp);health.ch('/');health.number(definition.starting_hp);}
     const int hp_x=dx+InfoX+StatsIcon+StatsLabelGap;
     character_info_text(bold,hp,hp_x,stats_y,InfoWidth,character_info_plan(bold,hp,InfoWidth),rgb(255,100,100));
     const int gold_x=hp_x+bold.width(hp,10)+StatsGap;
     c.picture(A_Coin,gold_x,stats_y,StatsIcon,StatsIcon);
-    character_info_text(bold,"99",gold_x+StatsIcon+StatsLabelGap,stats_y,30,character_info_plan(bold,"99",30),rgb(239,200,81));
-    }
-    const int body_y=top+NameHeight+(random?5:StatsHeight);
-    const int body_height=InfoPanelY+InfoPanelHeight-10-body_y;
+    const char*gold=random?"???":"99";
+    character_info_text(bold,gold,gold_x+StatsIcon+StatsLabelGap,stats_y,30,character_info_plan(bold,gold,30),rgb(239,200,81));
+    const int body_y=top+NameHeight+StatsHeight;
+    const int body_height=InfoPanelY+InfoPanelHeight-14-body_y;
     const auto relic_title_plan=character_info_plan(bold,relic?a.relic_title(relic_id):"",RelicTextWidth);
     const int total_height=description_height+(relic?6+mx(RelicIcon,relic_title_plan.rows*relic_title_plan.step+2+relic_plan.rows*relic_plan.step):0);
     const int overflow=mx(0,total_height-body_height);

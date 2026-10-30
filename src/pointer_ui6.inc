@@ -54,6 +54,8 @@ static void pointer_overlay(Canvas&c){
     const bool modal=a.title||a.paused||a.settings_open||a.frontend_confirm||a.help||a.library||a.detail_card>=0||a.detail_item>=0||a.status_actor>=0||a.map_transition_blocks_pointer();
     card_target_reticles(c,modal);
     const auto*focused_hud=modal?nullptr:hud_focused_hit(a);
+    if(!modal&&p.visible&&!p.held){const auto*hit=a.hit_at(p.x,p.y);
+        if(hit&&hit->kind==HitKind::SovereignBlade)focused_hud=hit;}
     a.hud_focus_reticle.observe(focused_hud!=nullptr,a.map_clock_ms);
     if(focused_hud)a.hud_focus_reticle.bounds(focused_hud->x,focused_hud->y+2,focused_hud->w,focused_hud->h-4);
     target_reticle_draw(c,a.hud_focus_reticle);

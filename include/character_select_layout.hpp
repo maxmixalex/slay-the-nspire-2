@@ -10,11 +10,11 @@ constexpr int portrait_x(unsigned index){return 55+int(index)*36;}
 constexpr int portrait_center(unsigned index){return portrait_x(index)+PortraitWidth/2;}
 // InfoPanel/VBox has center alignment and fixed Name / HpGoldSpacer /
 // Relic minimum heights. Its background is independent of localized text.
-constexpr int InfoX=16,InfoY=22,InfoWidth=177,InfoHeight=141;
+constexpr int InfoX=20,InfoY=26,InfoWidth=169,InfoHeight=133;
 constexpr int NameHeight=25,StatsHeight=17,RelicHeight=42;
 constexpr int InfoPanelX=3,InfoPanelY=13,InfoPanelWidth=203,InfoPanelHeight=160;
 constexpr int StatsOffset=-1,StatsIcon=11,StatsGap=14,StatsLabelGap=3;
-constexpr int RelicIcon=18,RelicIconY=2,RelicTextX=22,RelicTextWidth=155;
+constexpr int RelicIcon=18,RelicIconY=2,RelicTextX=22,RelicTextWidth=147;
 constexpr int RelicTitleY=0,RelicDescriptionY=11;
 constexpr int info_top(int description_height){
     // Godot containers expand to their combined minimum size; center

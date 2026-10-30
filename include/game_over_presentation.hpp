@@ -58,7 +58,15 @@ struct GameOverPresentation {
   if(age<250)return quote_from*(4096-room_curve::linear(age,250))/4096;
   return age<1250?0:255*room_curve::linear(age-1250,1500)/4096;
  }
+ int initial_quote_y(uint32_t now)const{
+  const unsigned age=initial_age(now),start=intro_delay();
+  return game_over_ui::BannerInitialY+17+(age<start?0:int(13*room_curve::expo_out(age-start,2000)/4096));
+ }
  int quote_y(uint32_t now)const{
+  // The outgoing death quote stays exactly where Continue interrupted its
+  // tween until its fade finishes. The summary owns a separate article.
+  if(!summary)return initial_quote_y(now);
+  if(quote_from&&summary_age(now)<250)return initial_quote_y(summary_started);
   const unsigned age=summary?summary_age(now):initial_age(now);const unsigned start=summary?(quote_from?1250u:0u):intro_delay();
   return banner_y(now)+17+(age<start?0:int(13*room_curve::expo_out(age-start,2000)/4096));
  }

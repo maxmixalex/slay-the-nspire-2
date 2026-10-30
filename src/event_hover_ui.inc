@@ -228,7 +228,10 @@ static void collect_keyword_hover_tips(const App&a,const CardHoverTarget&owner,H
     }
     else if(owner.potion>0)collect_potion_hover_tips(a,Potion(owner.potion),out);
     else if(owner.event_option>=0)collect_event_hover_tips(a,owner.event_option,out);
-    else collect_card_hover_tips(a,owner.card,out,owner.instance,owner.deck,owner.card_facts());
+    else if(owner.sovereign_blade){
+        out.clear();power_hover_card(a,out,owner.card,owner.instance,owner.card_facts());
+        hover_collect(a,owner.card,out,owner.instance,owner.deck,owner.card_facts(),0);out.finish();
+    }else collect_card_hover_tips(a,owner.card,out,owner.instance,owner.deck,owner.card_facts());
     if(hover_enchant_selection(a,owner)){
         // NDeckEnchant's fixed description and a hovered card share the
         // reserved right column on the LCD. Keep the pending enchantment

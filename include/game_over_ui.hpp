@@ -3,7 +3,7 @@
 namespace spire::game_over_ui {
 // Pinned game_over_screen, score_line, badge and game_over_button scenes,
 // uniformly projected from the 4:3 1680x1260 viewport to 320x240.
-constexpr int BannerX=98,BannerWidth=125,BannerHeight=31;
+constexpr int BannerX=104,BannerWidth=112,BannerHeight=28;
 constexpr int BannerInitialY=56,BannerSummaryY=50;
 constexpr int ButtonY=211,ButtonWidth=112,ButtonHeight=26;
 // NReturnToMainMenuButton._Ready moves the scene's button -140 source
@@ -11,7 +11,8 @@ constexpr int ButtonY=211,ButtonWidth=112,ButtonHeight=26;
 constexpr int ContinueX=104,ViewRunX=4,MainMenuX=104;
 constexpr bool ViewRunEnabled=false; // Pinned _Ready disables it; no Enable call exists.
 constexpr int BodyTop=85,BodyHeight=119;
-constexpr int ScoreX=52,ScoreWidth=216,ScoreHeight=22,ScoreStep=24;
+constexpr int QuoteX=52,QuoteWidth=216;
+constexpr int ScoreX=66,ScoreWidth=188,ScoreHeight=20,ScoreStep=22;
 constexpr int BadgeSize=22,BadgesPerRow=10;
 // NBadge.OnFocus (+10,-132) and NDiscoveredItem.OnFocus (-76,-200),
 // projected at the same 320/1680 scale as their ordinary NHoverTipSet.

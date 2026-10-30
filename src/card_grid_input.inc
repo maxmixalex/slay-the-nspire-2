@@ -3,7 +3,7 @@ CardGridScroll& App::configure_card_grid(CardGridSurface surface,int count,uint3
     if(surface==CardGridSurface::Pile){top=26;bottom=pile_tab?213:202;inset=pile_tab?8:27;left=42;identity=identity*8+unsigned(pile_tab);}
     else if(surface==CardGridSurface::CombatChoice){top=12;bottom=213;inset=15;}
     else if(surface==CardGridSurface::WorldChoice&&world_selection_kind()!=WorldSelectionKind::None){
-        top=12;bottom=213;inset=15;
+        top=12;bottom=world_selection_upgrades()?deck_selection_layout::UpgradeGridBottom:213;inset=15;
         if(world_selection_kind()==WorldSelectionKind::Enchant){
             // The pinned enchant screen owns a description sidebar. Reserve
             // its column before laying out cards and their scrollbar.
@@ -14,7 +14,7 @@ CardGridScroll& App::configure_card_grid(CardGridSurface surface,int count,uint3
         if(library_tab){prepare_collection();return card_grids[unsigned(surface)];}
         grid.configure(card_library.epoch,pile_sort_epoch,count,0,213,15,2,117,false);return grid;
     }
-    else if(surface==CardGridSurface::DeckChoice){top=deck_selection_layout::GridTop;bottom=deck_selection_layout::GridBottom;inset=deck_selection_layout::GridInset;identity=identity*32+unsigned(game.phase)+unsigned(grimoire_select)*256;}
+    else if(surface==CardGridSurface::DeckChoice){top=deck_selection_layout::GridTop;bottom=game.phase==Phase::Upgrade?deck_selection_layout::UpgradeGridBottom:deck_selection_layout::GridBottom;inset=deck_selection_layout::GridInset;identity=identity*32+unsigned(game.phase)+unsigned(grimoire_select)*256;}
     grid.bar_inset=surface==CardGridSurface::Pile?18:25;
     grid.configure(identity,pile_sort_epoch,count,top,bottom,inset,CardGridScroll::Columns,left);return grid;
 }

@@ -158,7 +158,7 @@ static void title_screen(Canvas&c){
         main_menu_backdrop::apply_progress(c.pixels,c.pitch,a.main_menu_backdrop.sample(a.map_clock_ms));}
     title_logo(c);profile_title_button(c);
     title_menu_labels(c);continue_run_info(c);
-    c.text("nSpire II 0.17",235,229,8,White,83);
+    c.text_fitted(UiCurrentVersionLabel,136,229,182,8,White,6);
 }
 static void native_pause_screen(Canvas&c){
  using namespace pause_menu_layout;auto&a=c.a;a.hit_count=0;

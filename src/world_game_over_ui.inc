@@ -186,6 +186,12 @@ static void game_over_hover(Canvas&c,int focus,int anchor_x,int anchor_y){
  using namespace game_over_ui;
  source_hover_box(c,title,body,anchor_x+(focus<32?BadgeTipX:DiscoveryTipX),anchor_y+(focus<32?BadgeTipY:DiscoveryTipY));
 }
+static void game_over_death_quote(Canvas&c,const char*quote,int y,unsigned alpha){
+ using namespace game_over_ui;Canvas italic=c;italic.font_face=source_label_face(c.a.content.original_label_fonts(),6);
+ italic.opacity=uint8_t(div255(italic.opacity*alpha));
+ const int height=mn(100,italic.paragraph(quote,QuoteX,0,QuoteWidth,0,0,10)*13+2);
+ italic.paragraph_fitted(quote,QuoteX,y,QuoteWidth,height,10,rgb(255,100,100),10,true);
+}
 static void native_game_over_screen(Canvas&c){
  using namespace game_over_ui;auto&a=c.a;const auto&s=a.game;a.hit_count=0;game_over_backdrop(c);
  auto&motion=a.game_over_presentation;const auto now=a.map_clock_ms;
@@ -205,9 +211,8 @@ static void native_game_over_screen(Canvas&c){
    label.text_visible_characters=count*room_curve::sine_out(elapsed,2000)/4096;
    label.font_face=source_label_face(a.content.original_label_fonts(),6);label.paragraph_fitted(quote,26,96,268,105,10,White,10,true);
   }else if(s.phase!=Phase::Complete){char key[24]{};TextBuffer b{key,sizeof key,0};b.text("QUOTES.");unsigned index=unsigned(s.world.run_seed)%17;if(index<10)b.ch('0');b.number(index);
-   game_over_format(a,game_over_text(a,key),quote,sizeof quote);Canvas italic=label;italic.font_face=source_label_face(a.content.original_label_fonts(),6);italic.opacity=uint8_t(div255(italic.opacity*motion.quote_alpha(now)));
-   const int height=mn(100,italic.paragraph(quote,26,0,268,0,0,10)*13+2);
-   italic.paragraph_fitted(quote,26,motion.quote_y(now)+8,268,height,10,rgb(255,100,100),10,true);
+   game_over_format(a,game_over_text(a,key),quote,sizeof quote);
+   game_over_death_quote(label,quote,motion.quote_y(now)+8,motion.quote_alpha(now));
   }else{
    // A compatible older save lacks score facts, but its explanatory text
    // still belongs to the victory quote stage. Do not cover the retained
@@ -221,12 +226,15 @@ static void native_game_over_screen(Canvas&c){
  // The original terminal sequence remains timed; its readable summary is a
  // clipped 10px article with a fixed confirmation button on the LCD.
  if(s.phase!=Phase::Complete){
-  if(motion.quote_from&&motion.summary_age(now)<250){char key[24]{};TextBuffer b{key,sizeof key,0};b.text("QUOTES.");unsigned index=unsigned(s.world.run_seed)%17;if(index<10)b.ch('0');b.number(index);game_over_format(a,game_over_text(a,key),quote,sizeof quote);}
-  else a.game_over_quote(quote,sizeof quote);
+  if(motion.quote_from&&motion.summary_age(now)<250){char key[24]{};TextBuffer b{key,sizeof key,0};b.text("QUOTES.");unsigned index=unsigned(s.world.run_seed)%17;if(index<10)b.ch('0');b.number(index);game_over_format(a,game_over_text(a,key),quote,sizeof quote);
+   game_over_death_quote(label,quote,motion.quote_y(now)+8,motion.quote_alpha(now));}
+  // Reserve the final quote height from the first summary frame so score
+  // rows cannot jump when the outgoing quote is replaced after250ms.
+  a.game_over_quote(quote,sizeof quote);
  }
  Canvas body=label;body.pixels+=BodyTop*body.pitch;if(body.coverage)body.coverage+=BodyTop*body.pitch;body.clip_h=BodyHeight;
  Canvas quote_measure=body;quote_measure.font_face=source_label_face(a.content.original_label_fonts(),6);
- const int quote_height=*quote?quote_measure.paragraph(quote,26,0,268,0,0,10)*13+9:0;
+ const int quote_height=*quote?quote_measure.paragraph(quote,QuoteX,0,QuoteWidth,0,0,10)*13+9:0;
  const int score_top=quote_height;
  int8_t items[UiRunBadgeCount+4]{};const unsigned item_count=game_over_focus_items(a,items);
  unsigned badge_count=0;while(badge_count<item_count&&items[badge_count]<32)++badge_count;
@@ -243,8 +251,8 @@ static void native_game_over_screen(Canvas&c){
   }motion.reveal_focus=false;
  }
  motion.scroll=uint16_t(mx(0,mn(motion.scroll,motion.scroll_maximum)));const int scroll=motion.scroll;
- if(*quote){Canvas italic=body;italic.font_face=source_label_face(a.content.original_label_fonts(),6);italic.opacity=uint8_t(div255(italic.opacity*motion.quote_alpha(now)));
-  italic.paragraph(quote,26,-scroll,268,200,0,10,rgb(255,100,100));}
+ if(*quote&&(!motion.quote_from||motion.summary_age(now)>=250)){Canvas italic=body;italic.font_face=source_label_face(a.content.original_label_fonts(),6);italic.opacity=uint8_t(div255(italic.opacity*motion.quote_alpha(now)));
+  italic.paragraph_fitted(quote,QuoteX,-scroll,QuoteWidth,quote_height,10,rgb(255,100,100),10,true);}
  int y=score_top-scroll;
  if(known){const auto score=ui_run_score(*r);char amount[32]{};unsigned row=0;
   const auto points=[&](unsigned n){amount[0]=0;TextBuffer b{amount,sizeof amount,0};b.ch('+');b.number(n);};

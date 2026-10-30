@@ -46,6 +46,15 @@ static void combat_sovereign_blades(Canvas&c,bool behind){
   const int w=mx(1,combat_project_extent(camera,layout,100,int(size),4096));
   const int h=mx(1,combat_project_extent(camera,layout,300,int(size),4096));
   card_effect_texture(c,a.content.ui_image(I14_SovereignBlade+(blade.damage>=60)),x,y,w,h,sine,cosine);
+  // NSovereignBladeVfx owns a hoverable hitbox attached to the actual sword.
+  // Ignore attack/removal and targeting just as the source does; inspecting
+  // the orbiting model must never play or select the matching hand card.
+  if(!blade.attacking&&!blade.removing&&blade.id<a.game.card_count&&a.game.phase==Phase::Combat&&
+     a.selected_hand_card()<0&&!a.pointer.held&&!a.panel){
+   const int half_w=mx(5,(CombatCardMotion::magnitude(cosine)*w+CombatCardMotion::magnitude(sine)*h+2047)/2048);
+   const int half_h=mx(5,(CombatCardMotion::magnitude(sine)*w+CombatCardMotion::magnitude(cosine)*h+2047)/2048);
+   c.hit(x-half_w,y-half_h,2*half_w,2*half_h,HitKind::SovereignBlade,blade.id);
+  }
   if(blade.forging){const unsigned age=now-blade.forged;if(age<550){const unsigned t=age>50?(age-50)*4096/500:0;
     const unsigned alpha=age<50?age*255/50:255-(t*t/4096*t/4096)*255/4096;
     Canvas glow=c;glow.tint_green=115;glow.tint_blue=0;

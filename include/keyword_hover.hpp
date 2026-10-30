@@ -72,7 +72,7 @@ struct CardHoverTarget {
     // History stores relic IDs, not their acquisition-time mutable models.
     bool historical=false;
     bool inspect_relic=false,canonical_relic=false;
-    bool merchant=false,merchant_left=false;
+    bool merchant=false,merchant_left=false,sovereign_blade=false;
 };
 struct HoverPiece {unsigned tip=0;int skip=0,lines=0;HoverRect box{};};
 struct HoverPage {HoverPiece pieces[MaxCardHoverTips]{};unsigned count=0;int pages=1;};

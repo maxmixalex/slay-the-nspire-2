@@ -152,7 +152,7 @@ static void hud_room_nodes(Canvas&c){
     if(info.room_enabled){hud_room_icon(c,info.room_key,p.room,2,10,17);c.hit(p.room,0,10,22,HitKind::HudInfo,HudRoom);}
     c.ui(U_TopFloor,p.floor,4,10,14);char floor[16]{};TextBuffer text{floor,sizeof floor,0};text.number(a.game.floor);
     const int number_width=mn(12,p.boss-p.floor-11);
-    c.text_fitted(floor,p.floor+10,4,number_width,10,rgb(197,218,206),6);c.hit(p.floor,0,10+number_width,22,HitKind::HudInfo,HudFloor);
+    c.text_fitted(floor,p.floor+10,4,number_width,10,rgb(197,218,206),6,true);c.hit(p.floor,0,10+number_width,22,HitKind::HudInfo,HudFloor);
     if(info.boss_enabled&&info.second_boss!=EncounterId::None){
         static const uint16_t act_tints[]={rgb(135,114,86),rgb(83,74,98),rgb(110,119,80),rgb(96,113,124)};
         const unsigned region=a.game.world.rooms[a.game.world.act_index].region;

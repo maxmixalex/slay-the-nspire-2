@@ -6,7 +6,7 @@ namespace spire {
 // NDeckUpgradeSelectScreen / NDeckCardSelectScreen, 1680x1260 -> 320x240.
 // These are overlay presentation values, never canonical run/save fields.
 namespace deck_selection_layout {
-constexpr int GridTop=12,GridBottom=210,GridInset=15;
+constexpr int GridTop=12,GridBottom=210,UpgradeGridBottom=190,GridInset=15;
 constexpr int PromptY=214,PromptH=24,PromptSize=8,PromptPadding=5;
 constexpr int PreviewW=96,PreviewH=135,PreviewY=49;
 constexpr int BeforeX=38,AfterX=186,SingleX=112;
