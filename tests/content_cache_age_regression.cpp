@@ -38,7 +38,7 @@ void image_wrap(const std::vector<unsigned>& indexes){
     for(unsigned i=0;i<ImageEntries;++i)if(!image_cache[i].owner)CHECK(image_cache[i].age==0);
     CHECK(next_image_age()==indexes.size()+2);
 }
-void collision_and_eviction(){
+void collision_and_eviction(unsigned stride){
     for(auto& entry:image_cache)entry={};
     for(auto& bucket:image_buckets)bucket=0;
     for(auto& page:image_used)page=0;
@@ -46,37 +46,39 @@ void collision_and_eviction(){
     // Deliberately put every descriptor into the same bucket. The complete
     // descriptor and owner must still distinguish images, while a true alias
     // retains the very same stable decoded address.
-    std::vector<uint8_t> metadata(40+(ImageEntries+2)*16);
+    std::vector<uint8_t> metadata(40+(ImageEntries+2)*stride);
+    const ImageDirectoryView directory{metadata.data()+40,stride};
     auto word=[&](unsigned at,uint32_t value){for(unsigned b=0;b<4;++b)metadata[at+b]=uint8_t(value>>(b*8));};
     for(unsigned id=0;id<ImageEntries+1;++id){
-        word(40+id*16,id*65536u);word(44+id*16,0x00010001u);word(52+id*16,2);
+        word(40+id*stride,id*65536u);word(44+id*stride,0x00010001u);
+        word(48+id*stride,stride==12?2:0);if(stride==16)word(52+id*stride,2);
     }
-    std::copy_n(metadata.begin()+40,16,metadata.begin()+40+(ImageEntries+1)*16);
+    std::copy_n(metadata.begin()+40,stride,metadata.begin()+40+(ImageEntries+1)*stride);
     const uint8_t* first=nullptr;
     for(unsigned id=0;id<ImageEntries;++id){
-        CHECK(image_bucket(metadata.data()+40+id*16)==image_bucket(metadata.data()+40));
+        CHECK(image_bucket(directory[id])==image_bucket(directory[0]));
         ImageReservation reservation(2);CHECK(reservation.bytes());
         reservation.bytes()[0]=uint8_t(id);if(!id)first=reservation.bytes();
-        reservation.publish(id&1?&second_owner:&owner,metadata.data(),id,id%5,true);
+        reservation.publish(id&1?&second_owner:&owner,directory,id,id%5,true);
     }
-    CHECK(image_buffer(*find_image(&owner,metadata.data(),ImageEntries+1))==first);
+    CHECK(image_buffer(*find_image(&owner,directory,ImageEntries+1))==first);
     for(unsigned id=0;id<ImageEntries;++id){
         const Content* actual=id&1?&second_owner:&owner;
-        auto* result=find_image(actual,metadata.data(),id);CHECK(result&&result->id()==id);
+        auto* result=find_image(actual,directory,id);CHECK(result&&result->id()==id);
         CHECK(result->format()==id%5);
         CHECK(image_buffer(*result)[0]==uint8_t(id));
-        CHECK(!find_image(id&1?&owner:&second_owner,metadata.data(),id));
+        CHECK(!find_image(id&1?&owner:&second_owner,directory,id));
     }
     // Overflow the key capacity, then remove every other chain link through
     // the real owner-clear operation. Neither operation may strand survivors.
     {ImageReservation reservation(2);CHECK(reservation.bytes());
-     reservation.publish(&owner,metadata.data(),ImageEntries,0);}
-    CHECK(!find_image(&owner,metadata.data(),0));
-    CHECK(!find_image(&owner,metadata.data(),ImageEntries+1));
-    CHECK(find_image(&owner,metadata.data(),ImageEntries));
+     reservation.publish(&owner,directory,ImageEntries,0);}
+    CHECK(!find_image(&owner,directory,0));
+    CHECK(!find_image(&owner,directory,ImageEntries+1));
+    CHECK(find_image(&owner,directory,ImageEntries));
     clear_caches(&owner);
     for(unsigned id=0;id<ImageEntries;++id)
-        CHECK(bool(find_image(id&1?&second_owner:&owner,metadata.data(),id))==bool(id&1));
+        CHECK(bool(find_image(id&1?&second_owner:&owner,directory,id))==bool(id&1));
     clear_caches(&second_owner);
     for(auto bucket:image_buckets)CHECK(!bucket);
     for(auto page:image_used)CHECK(!page);
@@ -115,31 +117,33 @@ void frame_pool_profiles(){
     for(const auto&entry:image_cache)CHECK(!entry.pages&&!entry.owner);
     for(auto page:image_used)CHECK(!page);
 }
-void profile_surviving_images(){
+void profile_surviving_images(unsigned stride){
     clear_caches(&owner);clear_caches(&second_owner);owner.set_image_cache_profile(false);
-    std::vector<uint8_t> metadata(40+24*16);
+    std::vector<uint8_t> metadata(40+24*stride);
+    const ImageDirectoryView directory{metadata.data()+40,stride};
     const auto word=[&](unsigned at,uint32_t value){for(unsigned b=0;b<4;++b)metadata[at+b]=uint8_t(value>>(b*8));};
-    for(unsigned id=0;id<24;++id){word(40+id*16,id*65536u);word(44+id*16,0x00010001u);word(52+id*16,2);}
+    for(unsigned id=0;id<24;++id){word(40+id*stride,id*65536u);word(44+id*stride,0x00010001u);
+        word(48+id*stride,stride==12?2:0);if(stride==16)word(52+id*stride,2);}
     ImageReservation first(ImagePageBytes);CHECK(first.bytes());
     std::fill_n(first.bytes(),ImagePageBytes,uint8_t(0x37));const auto*address=first.bytes();
-    first.publish(&owner,metadata.data(),0,0);const unsigned age=image_age;
+    first.publish(&owner,directory,0,0);const unsigned age=image_age;
     owner.set_image_cache_profile(true);
-    auto*kept=find_image(&owner,metadata.data(),0);CHECK(kept&&image_buffer(*kept)==address&&image_age==age);
+    auto*kept=find_image(&owner,directory,0);CHECK(kept&&image_buffer(*kept)==address&&image_age==age);
     for(unsigned byte=0;byte<ImagePageBytes;++byte)CHECK(address[byte]==0x37);
     // Cross the old boundary with a real published allocation. The shrink
     // must release that entire entry before its bytes become tile storage.
     unsigned crossing=0;std::vector<unsigned> survivors;
     for(unsigned id=1;id<=18;++id){ImageReservation image(128*ImagePageBytes);CHECK(image.bytes());
-        std::fill_n(image.bytes(),128*ImagePageBytes,uint8_t(id));image.publish(&owner,metadata.data(),id,id%5);
-        auto*entry=find_image(&owner,metadata.data(),id);CHECK(entry);
+        std::fill_n(image.bytes(),128*ImagePageBytes,uint8_t(id));image.publish(&owner,directory,id,id%5);
+        auto*entry=find_image(&owner,directory,id);CHECK(entry);
         if(entry->first<ImagePages&&unsigned(entry->first)+entry->pages>ImagePages)crossing=id;
         if(unsigned(entry->first)+entry->pages<=ImagePages)survivors.push_back(id);
     }
     CHECK(crossing&&survivors.size()>1);owner.set_image_cache_profile(false);
-    CHECK(!find_image(&owner,metadata.data(),crossing)&&find_image(&owner,metadata.data(),0));
+    CHECK(!find_image(&owner,directory,crossing)&&find_image(&owner,directory,0));
     auto*group=reserve_tile_group(Lzma2BlockRawLimit,true);CHECK(group);group->owner=&second_owner;
     std::fill_n(tile_bytes(*group),Lzma2BlockRawLimit,uint8_t(0xd9));
-    for(unsigned id:survivors){auto*entry=find_image(&owner,metadata.data(),id);CHECK(entry);
+    for(unsigned id:survivors){auto*entry=find_image(&owner,directory,id);CHECK(entry);
         for(unsigned byte=0;byte<128*ImagePageBytes;++byte)CHECK(image_buffer(*entry)[byte]==id);}
     for(unsigned byte=0;byte<ImagePageBytes;++byte)CHECK(address[byte]==0x37);
     for(unsigned page=ImagePages;page<RoomImagePages;++page)CHECK(!(image_used[page/32]&(uint32_t(1)<<(page%32))));
@@ -239,7 +243,7 @@ void retained_quarters_share_and_evict(){
 }
 }
 int main(){
-    collision_and_eviction();
+    collision_and_eviction(12);collision_and_eviction(16);
     // Include indexes on both sides of the former byte boundary. The count,
     // permutation and returned age must survive entries 256 through 319.
     CHECK(ImageEntries==Content::image_capacity_entries()&&ImageEntries==1151);
@@ -249,7 +253,7 @@ int main(){
     image_wrap({0,7,63,127,128,191,254,255,256,287,319,1022,1023,1024,1150});
     image_wrap({ImageEntries-1});
     image_wrap({});
-    profile_surviving_images();
+    profile_surviving_images(12);profile_surviving_images(16);
     frame_pool_profiles();
     retained_quarters_share_and_evict();
     std::printf("content cache ages: %u checks passed;1151 colliding keys with all five decoded formats, owner/alias eviction, age wrap, bounded frame-pool splits and compact retained quarters\n",checks);
