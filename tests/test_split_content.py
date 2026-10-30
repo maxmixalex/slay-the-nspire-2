@@ -178,6 +178,52 @@ class SplitContentTest(unittest.TestCase):
                 self.assertEqual(base64.b64decode(result['common']), common)
                 self.assertEqual({lang: base64.b64decode(data) for lang, data in result['languages'].items()}, locales)
 
+    def test_release_version_probe_accepts_41_in_all_containers_and_rejects_42(self):
+        from package_release import resource_version
+
+        def outer_literal(inner):
+            # Independent legal NSL3 literal pages allow a future logical
+            # header to reach the reader without asking the current writer
+            # to accept/rewrite an unsupported NSP version.
+            block = 4096
+            count = (len(inner) + block - 1) // block
+            begin = 32 + 4 * (count + 1)
+            offsets = [begin + i*block | 0x80000000 for i in range(count)]
+            offsets.append(begin + len(inner))
+            return (struct.pack('<4s7I', b'NSL3', 3, split.REFERENCE,
+                                begin + len(inner), len(inner), block, count, begin) +
+                    struct.pack('<' + 'I' * len(offsets), *offsets) + inner)
+
+        original = {'eng': fixture('eng', 41), 'zhs': fixture('zhs', 41)}
+        common, raw, _ = split.split(original)
+        # Stored NSL2 directory blocks let the test change only the logical
+        # version word; every container length and offset remains valid.
+        with mock.patch.object(split.lzma, 'compress', side_effect=lambda data, **_kwargs: bytes(len(data) + 1)):
+            compressed = split.compress_language_directory(raw['eng'])
+        self.assertTrue(split.u32(compressed, 132) & split.DIRECTORY_LITERAL)
+        current = {'nsl1': raw['eng'], 'nsl2': compressed,
+                   'nsl3-nsl1': outer_literal(raw['eng']), 'nsl3-nsl2': outer_literal(compressed)}
+        future_raw = bytearray(raw['eng'])
+        struct.pack_into('<I', future_raw, split.LANGUAGE_HEADER + 4, 42)
+        future_compressed = bytearray(compressed)
+        struct.pack_into('<I', future_compressed, split.u32(compressed, 128) + 4, 42)
+        future = {'nsl1': bytes(future_raw), 'nsl2': bytes(future_compressed),
+                  'nsl3-nsl1': outer_literal(future_raw), 'nsl3-nsl2': outer_literal(future_compressed)}
+        with tempfile.TemporaryDirectory() as directory:
+            for name, data in current.items():
+                with self.subTest(container=name, version=41):
+                    self.assertEqual(split.language_resource_version(data), 41)
+                    self.assertEqual(split.reconstruct(common, data, 'eng'), original['eng'])
+                    path = Path(directory)/(name + '.tns'); path.write_bytes(data)
+                    self.assertEqual(resource_version(path), 41)
+            for name, data in future.items():
+                with self.subTest(container=name, version=42):
+                    with self.assertRaisesRegex(ValueError, 'Invalid logical resource version'):
+                        split.language_resource_version(data)
+                    path = Path(directory)/(name + '-future.tns'); path.write_bytes(data)
+                    with self.assertRaisesRegex(ValueError, 'Expected a valid NSL1/NSL2/NSL3 language resource'):
+                        resource_version(path)
+
     def test_lossless_known_versions(self):
         for version in (17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39):
             original={lang:fixture(lang,version) for lang in ("eng","zhs")}

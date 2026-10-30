@@ -319,7 +319,7 @@ def language_resource_version(localized):
     prefix = _decode_directory_block(localized, compressed["entries"][0]) if compressed else \
              localized[LANGUAGE_HEADER:LANGUAGE_HEADER + 40]
     require(len(prefix) >= 40 and prefix[:4] == b"NSP2" and u32(prefix, 8) == REFERENCE and
-            u32(prefix, 12) == header[5] and 17 <= u32(prefix, 4) <= 40,
+            u32(prefix, 12) == header[5] and 17 <= u32(prefix, 4) <= 41,
             "Invalid logical resource version")
     return u32(prefix, 4)
 
