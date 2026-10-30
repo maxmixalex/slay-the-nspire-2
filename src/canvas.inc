@@ -248,10 +248,12 @@ struct Canvas{
             // The 256-byte table lives on the stack, never in the image pool.
             if(opacity!=255)alpha=div255(alpha*opacity);
             uint16_t color=Ink;
-            if(color_matrix)color=presentation::yiq_rotate(color,color_matrix);
-            if(brightness!=255)color=presentation::modulate_rgb(color,brightness);
-            if(tint_red!=255||tint_green!=255||tint_blue!=255)
-                color=presentation::tint_rgb(color,tint_red,tint_green,tint_blue);
+            if(alpha){
+                if(color_matrix)color=presentation::yiq_rotate(color,color_matrix);
+                if(brightness!=255)color=presentation::modulate_rgb(color,brightness);
+                if(tint_red!=255||tint_green!=255||tint_blue!=255)
+                    color=presentation::tint_rgb(color,tint_red,tint_green,tint_blue);
+            }
             uint16_t shade[128];
             if(alpha&&alpha!=255){
                 const unsigned inverse=255-alpha,r=(color>>11)*alpha,g=((color>>5)&63)*alpha,b=(color&31)*alpha;

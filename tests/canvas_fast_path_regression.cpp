@@ -170,6 +170,14 @@ static void dim_backstops(){
   const int rows=std::max(0,std::min(240,p.y+p.h)-std::max(0,p.y));CHECK(polls==unsigned((rows+15)/16));
  }
  app.callbacks.foreground_poll=previous;
+ // A transparent draw, including opacity rounded down to zero, never reads
+ // an inactive material matrix. paint() makes the same early alpha decision.
+ for(unsigned alpha:{0u,1u,255u})for(unsigned opacity:{0u,1u}){
+  if(rounded_alpha(alpha,opacity))continue;
+  Pair pair({320,240,320},{});pair.got.opacity=uint8_t(opacity);
+  pair.got.color_matrix=reinterpret_cast<const int16_t*>(uintptr_t(1));
+  pair.got.dim(0,0,320,240,alpha);pair.compare();
+ }
 }
 static void picture_case(Surface surface,Style style,unsigned id,Placement p,unsigned opacity,unsigned mode,bool masked=false){
  Pair pair(surface,style);Bytes mask(pair.actual.size());
