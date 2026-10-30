@@ -1,6 +1,6 @@
 # Slay the Nspire 2
 
-Native TI-Nspire Ndless adaptation of Slay the Spire 2. Reference: the owner's **v0.111.0 / 41cef1ea** installation. The current calculator delivery is **0.17 UI17**, with independently packaged resource groups, lossless storage improvements, a smaller resident directory and original Unicode/legacy seed handling. Exact tested checkpoints, installation sizes, measured results and remaining limits are in the [UI17 delivery record](docs/ui17-delivery-0.17.md) and [WORK_STATE.md](docs/WORK_STATE.md). UI17 was built and validated locally; this delivery does not claim a new remote `main` update or a GitHub Actions pass. Earlier results below retain their historical identities.
+Native TI-Nspire Ndless adaptation of Slay the Spire 2. Reference: the owner's **v0.111.0 / 41cef1ea** installation. The current calculator delivery is **0.17 UI18**, with exact tile-slot compaction, a smaller release launcher, incremental combat resource preparation and all sixteen original locale calendars. The default English/Simplified-Chinese program and data occupy **79,681,674 bytes** before saves. The longest preparation interval in the fixed ordinary-OS target fixture falls from 1,129.30 to 192.54 ms; its final warm window remains 0.5737% below the UI17 control, and the earlier 65–70 MB installation target remains unmet. Exact checkpoints, measured results and remaining limits are in the [UI18 delivery record](docs/ui18-delivery-0.17.md) and [WORK_STATE.md](docs/WORK_STATE.md). UI18 was built and validated locally; this delivery does not claim a new public `main` update or a remote CI pass. Earlier results below retain their historical identities.
 
 **Audio, multiplayer and Timeline are excluded.** Original UI fidelity, animation and single-player content breadth remain in scope. Original game data, fonts and calculator images are not included in public source.
 
@@ -10,7 +10,7 @@ The original three-act route now drives the playable world: Overgrowth or Underd
 
 ### Current calculator installation
 
-The UI17 calculator release uses the following layout. Only the launcher stays at
+The UI18 calculator release uses the following layout. Only the launcher stays at
 installation root; resources are read from `data` and every mutable file is
 written under `state`. The launcher creates `state` when it is absent.
 
@@ -33,7 +33,7 @@ written under `state`. The launcher creates `state` when it is absent.
 | `state/` | Other profiles, progress, preferences, backups and temporary files |
 
 Install the launcher, index, **all eight artwork parts**, and language files
-from the same UI17 release. The default calculator ZIP contains English and
+from the same UI18 release. The default calculator ZIP contains English and
 Simplified Chinese; the optional-language ZIP provides the other fourteen
 original editions. Add their language files to the same `data` directory.
 All eight artwork parts are required for every language, and English should
@@ -68,7 +68,7 @@ integrity hashes or CRCs. The runtime retains the bounds and format checks
 needed to load and render the requested content. Original assets remain private.
 
 Current verification and exact checkpoints are recorded in the
-[UI17 delivery record](docs/ui17-delivery-0.17.md) and
+[UI18 delivery record](docs/ui18-delivery-0.17.md) and
 [WORK_STATE.md](docs/WORK_STATE.md). The [UI17 feedback ledger](docs/ui17-feedback-acceptance-0.17.md)
 distinguishes new implementation, retained UI16 fixes, original behavior and
 accepted calculator adaptations. Earlier UI12/UI13 results remain historical
@@ -78,7 +78,7 @@ records in [UI12](docs/validation-ui12-0.17.json) and
 ### Historical UI3 measurements and delivery
 
 This section records UI3 as delivered. Statements about work remaining at that
-checkpoint are historical; use the UI17 reports above for the current status.
+checkpoint are historical; use the UI18 reports above for the current status.
 
 The historical UI3 title-glow hybrid resources total **81,100,703 bytes**, compared with
 93,783,363 bytes for the previous bilingual NSP2/19 split. Common card/UI images
@@ -203,10 +203,10 @@ The final **12,910,778-byte NSP2/13** pack contains 2,638 images, 7,215 glyph re
 
 Commit source to a named work branch **before** long compilation or conversion. Record remote publication receipts separately; when publication is unavailable, preserve the local source and history bundle and state that limitation. `tools/run_logged.py` records the supplied checkpoint, input hashes, command, running/completed state, exit code and log hash. It does not itself verify or push a remote commit. A running journal after interruption is not a passed test.
 
-Current execution results belong in WORK_STATE and the UI17 delivery record, not inherited historical reports. Compilation, cross-backend agreement and actual target execution are different evidence levels. Historical incomplete-work statements above describe their stated checkpoints; the current feedback ledger records the remaining implementation and evidence boundaries. Firebird execution does not establish physical-handheld performance or exhaustive original-game parity.
+Current execution results belong in WORK_STATE and the UI18 delivery record. Compilation, cross-backend agreement and actual target execution are different evidence levels. Historical incomplete-work statements above describe their stated checkpoints; the current feedback ledger records the remaining implementation and evidence boundaries. Firebird execution does not establish physical-handheld performance or exhaustive original-game parity.
 
 ## Controls and license
 
-Directions navigate; Enter confirms; Space ends a turn or confirms a pending selection; Tab piles; I details; C compendium; V statuses; M map; P potions; R relics; S save; O load; Esc return/pause. Touchpad clicks and dragging share the native dispatcher.
+Current calculator controls are listed under “Current calculator installation” above and are remappable. The historical desktop mapping uses Directions to navigate; Enter confirms; Space ends a turn or confirms a pending selection; Tab piles; I details; C compendium; V statuses; M map; P potions; R relics; S save; O load; Esc return/pause. Touchpad clicks and dragging share the native dispatcher.
 
 Source: GPL-3.0-or-later (COPYING). Preserve NOTICE.md and licenses/. Original assets and trademarks remain with their owners; source licensing grants no additional asset redistribution rights.

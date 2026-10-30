@@ -1,6 +1,6 @@
 # UI18 launcher compression and conservative code folding
 
-Selected runtime: `a7e3e9441c0dbd1c0372475769f0ea2a92c0cb81`.
+Selected runtime: `44d7fb79f7d87d522038a074fa80d25e2bdeff31`.
 This report separates same-image packaging savings from the net size of the
 whole UI18 program, which also adds incremental preparation and locale dates.
 
@@ -15,19 +15,19 @@ executable bytes, relocations, flags and allocation request.
 
 | Same final ELF | Bytes |
 |---|---:|
-| Level-9 zlib launcher | 1,780,918 |
-| Selected Zopfli launcher | **1,719,372** |
-| Packaging saving | **61,546** |
-| Identical decompressed executable image | 7,268,600 |
+| Level-9 zlib launcher | 1,780,919 |
+| Selected Zopfli launcher | **1,719,223** |
+| Packaging saving | **61,696** |
+| Identical decompressed executable image | 7,268,736 |
 | Identical metadata prefix | 157,612 |
-| Total Zehn allocation | 22,289,244 |
-| Execution/static memory | 22,131,632 |
+| Total Zehn allocation | 22,289,380 |
+| Execution/static memory | 22,131,768 |
 
 The two prefixes are byte-identical except for their stored file-length word.
 Both compressed streams restore exactly the same image, whose SHA-256 is
-`d12ce7ccae82244c4e845013fdf633f3626b876b13c884defa81a92d8239ef85`.
+`0b3beb967148759e2b3456b7e01ee4d4d20382a6df57a8fbbc987d0553be82bb`.
 The selected launcher SHA-256 is
-`909bfbb0501b6828916e69324c8f44d3fbe33ce95e32db1d379abb217bd20e13`.
+`7d34c4163a61c5f4984915d08272c42a3b4b69e003ddb1c388826d21d9098be7`.
 There are **39,361 absolute relocations**. The complete **13,369,344-byte
 picture pool** is unchanged.
 
@@ -35,12 +35,20 @@ The ordinary Python build checks decompression and every relocation rebase
 before writing the destination. Failed packaging preserves an existing output.
 The seven focused packer cases cover valid packaging, both allocation bounds,
 the rejected image/relocation paths and output preservation. The full integrated
-Python gate subsequently passes all 340 tests, including the locale-binding fix.
+Python gate subsequently passes all 345 tests, including the locale-binding fix
+and the final suffix-alignment cases.
 
-The selected launcher is **47,207 bytes smaller than UI17**, rather than the
-full 61,546-byte same-image saving: the new runtime features have their own
-code cost. Total allocation increases by **19,552 bytes** and execution/static
-memory by **19,160 bytes** relative to UI17. These remain below the existing
+The complete final 29-object ARM rebuild at `44d7fb7` is byte-identical to
+the ordinary `feb344b` launcher used for the final same-NAND device pair.
+Their production `src/`, `include/` and `platform/` trees also match exactly;
+`final-device-launcher-identity.json` records that relation. The earlier a7e3
+launcher and its different 61,546-byte same-image comparison remain historical
+controls and are not the final installation.
+
+The selected launcher is **47,356 bytes smaller than UI17**, rather than the
+full 61,696-byte same-image saving: the new runtime features have their own
+code cost. Total allocation increases by **19,688 bytes** and execution/static
+memory by **19,296 bytes** relative to UI17. These remain below the existing
 24 MiB total and 22,450,000-byte execution limits. Neither figure is a physical
 peak-RAM measurement or a guarantee for arbitrary OS heap fragmentation.
 
@@ -92,10 +100,10 @@ compression. No remote CI execution is claimed while publication is blocked.
 | `ui18-zehn-python-720d30f11f3f` | Seven focused packer cases |
 | `ui18-zehn-real-elf-2ba6c48ddefc` | Earlier same-image component compression control |
 | `ui18-safe-icf-real-link-5c7023f03625` | Same 29 objects, safe ICF comparison |
-| `ui18-integrated-arm-8c5fa6aae6ea` | Final a7e3 ordinary ARM and selected launcher |
-| `ui18-final-zlib-control-f1b135ce2015` | Same final ELF, normal zlib control |
+| `ui18-final-ordinary-arm-86e313858b62` | Final 44d7 ordinary ARM and selected launcher |
+| `ui18-final-warmup-zlib-control-045a5ee65756` | Same final 44d7 ELF, normal zlib control |
 | `final-zehn-compression-identity.json` | Final complete prefix and decompressed-image equality |
-| `ui18-integrated-python-fixed-91b3bf539185` | 340 integrated Python tests, unchanged inputs |
+| `ui18-final-python-suite-451ac753ab9c` | 345 integrated Python tests at 299ee, unchanged inputs |
 
 The first integrated Python run failed on two undeclared Japanese calendar
 literals. Their exact culture bindings were added and the complete run passed;

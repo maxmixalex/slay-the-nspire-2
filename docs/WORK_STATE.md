@@ -1,23 +1,101 @@
-# UI18 implementation in progress — 2026-10-30 (Asia/Shanghai)
+# UI18 local calculator delivery — 2026-10-30 (Asia/Shanghai)
 
-Continue from the complete local UI17 tip `433445c`; do not restart from
-the older public UI14 checkout. The prior UI17 installation, source archive
-and device evidence remain immutable controls. The three parallel component
-branches cover exact tile-group compaction, incremental cold combat loading,
-and original locale calendar formatting/font glyphs. Root owns rendering and
-final integration. No UI18 final installed-size or device-performance result
-is claimed before the final integrated resources and runtime are measured.
+Continue from the complete local UI18 source/history. Do not restart from the
+older public UI14 checkout. The frozen production runtime is
+**`44d7fb79f7d87d522038a074fa80d25e2bdeff31`** and the complete final resource
+conversion is **`3acb5b310d2d2cb42dbf98f21a79f0b45d8b42ed`** (NSP2/42, NSM1,
+NSL3). Later changes are documentation only; the source archive records that
+final tip separately and checks its production trees against the tested runtime.
+The previous UI17 source, installation and measurements remain controls.
 
-The renderer component at `3fba5bb` replaces three bounded coverage divisions
-with exact reciprocal operations. Its 273,597,054 comparisons pass. Native
-cached-coverage operation time falls from 158.602872 to 69.635448 ms in the
-scoped alternating benchmark; this is not a calculator FPS measurement.
-The separate opaque multiplication factor was withdrawn after a native
-regression. See [the component record](ui18-rendering-0.17.md).
+## Current implemented outcome
 
-Source remains in named local commits plus an all-ref bundle before long
-commands. The prior automatic-review rejection of outbound source/history
-publication remains unresolved; no new remote receipt or remote CI is claimed.
+- Exact duplicate-tile redirection and group-local unused-slot compaction
+  preserve existing images, group IDs and frames. Retained suffix alignment
+  fixes the first compact candidate's extra read-boundary cost. Default data
+  decrease by 227,983 bytes; all sixteen languages decrease by 225,754 bytes.
+- Safe identical-code folding and release-only Zopfli produce the ordinary
+  **1,719,223-byte** launcher, SHA-256
+  `7d34c4163a61c5f4984915d08272c42a3b4b69e003ddb1c388826d21d9098be7`.
+  The default program/data occupy **79,681,674 bytes (75.990366 MiB)** and all
+  sixteen editions **98,226,131 bytes**. Savings against UI17 are 275,339 and
+  273,110 bytes. The 65–70 MB default goal remains unmet; no additional image,
+  frame, glyph or string was cut. ZIP bytes are not installed bytes.
+- Tile decoding, reconstruction and current combat frontend work now prepare
+  incrementally using existing arenas and four artwork streams. The final
+  correction additionally prepares the common card trail when combat has
+  card records, and the status-card frame for an actually displayed status
+  intent. It adds no simulated future action, RNG call or new pool.
+- Exact coverage arithmetic replaces bounded per-pixel divisions. The scoped
+  native benchmark improves, but it is not reported as calculator FPS. The
+  slower opaque-blend experiment and the larger static-App/BSS candidate
+  remain rejected, with evidence preserved.
+- History and daily dates now follow all sixteen original locale/provider
+  rules, including Thai Buddhist history years and invariant Gregorian daily
+  dates. Fourteen original-font glyphs complete the required 8 px calendar
+  text. RTC/timezone and finite-history boundaries remain explicit.
+
+All nine feedback items retain their implemented UI16 fixes or source-confirmed
+original behavior. See the [UI18 delivery record](ui18-delivery-0.17.md) and
+[feedback ledger](ui17-feedback-acceptance-0.17.md). Older Vantom/monster-command,
+Smith, secondary effects and Unicode/raw legacy seed omissions are already
+closed; historical omission lists do not supersede these records. The agreed
+static full Ancient scene and excluded audio/multiplayer/Timeline remain.
+Other disclosed CPU materials, finite capacities and offline services are not
+blanket user-approved parity exceptions.
+
+## Final executed acceptance
+
+The final native suite passes **157/157** at runtime `44d7fb7`
+(`ui18-final-warmup-native-suite-e8bea92722e6`, 82.53 s), with unchanged inputs.
+The complete 29-object ordinary ARM rebuild at the same checkpoint passes and
+is byte-identical to the `feb344b` ordinary program used in the final device
+pair. The full Python suite passes **345/345** at `299ee00`; later production
+changes only concern the two frontend image requests and their C++ regression.
+
+At `e84f3ef`, the actual frozen resources pass **58,060 complete images /
+1,167,930,140 decoded bytes** through memory, ranged and incremental decoders,
+plus glyphs, text, clips and full UI frames. Actual sixteen-language coverage
+passes **89,814 locale checks / 53,072 descriptions** and **831,111 calendar
+checks**. These Content/Canvas/calendar and resource bytes remain unchanged by
+the final two-image App correction. Storage-component 728-frame provider
+replay and the final bilingual 182-frame/first-visible App replay keep their
+separate source identities. Scoped sanitizer boundaries and all initial
+failed/timed-out attempts remain in the verification archive.
+
+Ordinary Firebird uses the unchanged upstream core, CX II CAS / 396 MHz /
+OS 6.4.0.74 / Ndless r2022. UI17's 1,129.303 ms longest preparation frame becomes
+**192.535 ms**; Continue to complete controls changes **5,530 → 5,480 ms**.
+The final two-image correction, tested from exactly the same installed NAND
+with matching launcher-transfer procedures, adds 20 ms cold wait and removes
+64.972 ms of warm resource time, improving **28.02455 → 28.29246 FPS** in its
+fixed action window. That final window remains **0.5737% below** the initial
+UI17 28.45571 FPS control. No universal 30 FPS or physical-handheld result is
+claimed. See [ordinary-OS evidence](ui18-cold-preparation-0.17.md).
+
+The accepted ordinary program completes End Turn, save/quit, normal OS exit,
+immediate no-USB reopen and Continue. Its same-action run save is byte-identical
+to the prior integrated program. Chinese/French defaults, unsupported Dutch
+English fallback and English resource-failure screens were exercised on `a7`
+with the same final resources; the later artwork correction leaves those
+paths unchanged. Early missing-part failures preserve entire save files. Late
+bad-header failure permits the legitimate preceding Continue timestamp write;
+only subsequent callbacks are blocked by the failure latch. The report does
+not mislabel that whole launch as zero-write.
+
+## Installation, source and publication
+
+Install the final launcher, the 1,520-byte index, all eight matching artwork
+parts, English and desired locales, while preserving the whole `state`
+directory. The default player ZIP is **78,866,855 bytes**; the optional fourteen
+language ZIP is **17,075,088 bytes**. Both pass complete member/hash/notice
+readback and contain no test state. Source/history and device evidence are
+separate archives with exact identity and recovery checks. The final local
+`main` and development branch advance to the complete documentation tip;
+source/history outbound publication remains subject to the earlier automatic
+approval-review rejection, with no new public push or remote CI claimed.
+
+---
 
 ## UI17 local calculator delivery — 2026-10-30 (Asia/Shanghai)
 

@@ -12,11 +12,12 @@ The selected local **UI18** runtime is
 [the UI18 delivery record](ui18-delivery-0.17.md), the current
 [README](../README.md), and [WORK_STATE.md](WORK_STATE.md) for installation,
 final acceptance, package identities and measured performance. The complete
-UI18 suites contain **157 native tests and 345 Python tests**. Their preceding
-integrated run at `299ee0085097cc281e1745a67dedcf36f395482c` passed 157/157
-and 345/345; the delivery record identifies later matching-runtime results
-separately rather than relabeling those earlier runs. The final source/document
-tip is recorded separately from the tested program and resource converter.
+UI18 suites contain **157 native tests and 345 Python tests**. The final native
+run at `44d7fb79f7d87d522038a074fa80d25e2bdeff31` passes 157/157, and the full
+Python run at `299ee0085097cc281e1745a67dedcf36f395482c` passes 345/345. Both
+complete with unchanged inputs; the delivery record keeps their separate
+checkpoints and scopes. The final source/document tip is recorded separately
+from the tested program and resource converter.
 
 UI18 closes the locale-specific history/daily calendar formatting gap; the
 [calendar report](calendar-locales-ui18-0.17.md) distinguishes that implemented
