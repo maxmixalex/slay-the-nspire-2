@@ -383,11 +383,13 @@ bool Content::open(ResourceSource source){
     reader_.progress(ResourceStage::Directory,start,start);
     const uint8_t*p=metadata_;length_=n;images_=ni;glyphs_=ng;strings_=ns;clips_=nc;version_=version;
     image_directory_={p+40,data_?16u:12u};
-    directory_bytes_=start-directory_reduction_;tile_metadata_=version>=TileContentVersion?p+base-directory_reduction_:nullptr;
+    directory_bytes_=start-directory_reduction_;tile_metadata_=version>=TileContentVersion?p+(base-directory_reduction_):nullptr;
     if(directory_reduction_&&tile_metadata_){
         // These two words address resident tables, not virtual payload bytes.
         // Descriptor and group payload offsets remain their original values.
-        auto*tile=directory_+base-directory_reduction_;
+        // The virtual base can exceed the smaller resident array. Subtract
+        // as an integer before forming a pointer into the owned array.
+        auto*tile=directory_+(base-directory_reduction_);
         ImageDirectoryView::word(tile+36,u32(tile+36)-directory_reduction_);
         if(version>=RetainedContentVersion)ImageDirectoryView::word(tile+56,u32(tile+56)-directory_reduction_);
     }
