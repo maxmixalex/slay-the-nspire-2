@@ -137,10 +137,19 @@ static void skipped_frames_and_bounds(){
  const auto original_state=state.hand;const auto original_seed=state.seed;
  for(unsigned i=0;i<=CombatCardMotion::Capacity;++i)serial.append(transfer(i,Zone::Draw,Zone::Hand,false,i));
  CHECK(serial.overflow&&serial.count==CombatCardMotion::Capacity&&state.seed==original_seed&&!std::memcmp(&state.hand,&original_state,sizeof original_state));
- // An unrelated unsupported transition removes an old visual rather than
- // continuing a discard flight after the card was returned or shuffled.
+ // A true return redirects the actual holder, including a card whose
+ // previous discard flight has not finished. Its counter waits for arrival.
  hand(1);serial.begin(state,0);serial.apply(transfer(0,Zone::Hand,Zone::Discard));serial.set_hand({});serial.advance(2);
- serial.apply(transfer(0,Zone::Discard,Zone::Draw));CHECK(!serial.find(0));
+ const auto origin=CombatCardMotion::pose(*serial.find(0));
+ serial.apply(transfer(0,Zone::Discard,Zone::Draw,false,2));serial.counts.draw=1;
+ CHECK(serial.find(0)&&serial.find(0)->mode==CombatCardMotion::Fly&&serial.find(0)->to==unsigned(Zone::Draw));
+ CHECK(same_pose(serial.find(0)->origin,origin)&&serial.visible_counts().draw==0);
+ serial.advance(130);CHECK(!serial.find(0)&&serial.visible_counts().draw==1);
+ // Automatic one-card shortcuts have no selected grid holder. They begin
+ // at the actual discard pile and use the same draw-pile destination.
+ hand(0);serial.begin(state,0);serial.apply(transfer(5,Zone::Discard,Zone::Draw));
+ CHECK(serial.find(5)&&same_pose(serial.find(5)->origin,CombatCardMotion::pile(unsigned(Zone::Discard))));
+ CHECK(serial.find(5)->to==unsigned(Zone::Draw));
 }
 static void generated_preview(){
  hand(0);CombatCardMotion m;m.begin(state,0);const auto saved=state;

@@ -176,12 +176,24 @@ static void original_osty_and_orbs(){
  a.animation=gain+23;a.render();const auto grown=a.combat_player_pose(true);
  CHECK(grown.scale>middle.scale&&grown.body_width>begin.body_width);
  CHECK(a.health_bars[MaxEnemies+1].width==health_bar::inner_width(grown.width));capture("osty-grown-original-position");unchanged();
+ // The trait is a permanent original power on Osty's body and status icon.
+ // Its implementation remains the same tested damage-redirection mechanism.
+ const auto hover_osty=[&](){
+  const HitRegion*trait=nullptr;for(int i=0;i<a.hit_count;++i){const auto&h=a.hits[i];
+   if(h.kind==HitKind::UiAction&&h.value==int(UiAction::ShowOsty)&&h.h<24)trait=&h;}
+  CHECK(trait);a.pointer_move(trait->x+trait->w/2,trait->y+trait->h/2);
+  CardHoverTarget owner;CHECK(creature_hover_target(a,owner)&&owner.creature==MaxEnemies+1);
+  HoverTipList tips;collect_creature_hover_tips(a,owner,tips);
+  CHECK(tips.count==1&&tips.find(HoverTipKind::Power,"DIE_FOR_YOU_POWER")==0);
+  char title[256]{},body[2048]{};format_card_hover_tip(a,owner,tips.items[0],title,sizeof title,body,sizeof body);
+  CHECK(*title&&*body);capture("osty-die-for-you-hover",true);a.pointer.visible=false;
+ };hover_osty();unchanged();
  {UiCoreObserver observer(a);a.begin_combat_feedback();queue_extension(a.game,XOp::NKillOsty);resolve_pending(a.game);}
  snapshot();a.render();CHECK(a.osty_motion.clip==AnimOstyDie);
  const uint32_t death_begin=a.osty_presentation.started;CHECK(int32_t(death_begin-a.animation*33u)>0);
  CHECK(a.combat_player_pose(true).scale==grown.scale);
  a.animation=(death_begin+782)/33u;a.render();const auto down=a.combat_player_pose(true);
- CHECK(down.scale<grown.scale&&a.osty_presentation.bounds_scale==1024);capture("osty-death-terminal-pose");unchanged();
+ CHECK(down.scale<grown.scale&&a.osty_presentation.bounds_scale==1024);capture("osty-death-terminal-pose");hover_osty();unchanged();
  enemy_visual_fight(EncounterId::NibbitsWeak,Character::Defect);a.animation+=15;a.render();
  CHECK(a.orb_presentation.slots==3);const auto edge=CombatOrbPresentation::target(3,0),center=CombatOrbPresentation::target(3,1);
  CHECK(edge.x>0&&center.y<edge.y);const uint32_t slots_at=a.animation+5;
@@ -1433,6 +1445,66 @@ static void original_card_movement(){
  }
  a.fast_mode=false;
 }
+static void returned_and_created_card_movement(){
+ static State direct;static SaveData expected;
+ for(unsigned fast=0;fast<2;++fast)for(CardKind kind:{Headbutt,RegentCosmicIndifference})for(unsigned variant=0;variant<3;++variant){
+  const bool select=variant!=0,resumed=variant==2;
+  enemy_visual_fight(EncounterId::NibbitsWeak,kind==Headbutt?Character::Ironclad:Character::Regent);a.fast_mode=fast!=0;a.tick_remainder=0;a.game.energy=99;
+  const int returned=a.game.card_count;queue_extension(a.game,XOp::EnemyGenerateCard,Wound,2049);resolve_pending(a.game);
+  if(select){queue_extension(a.game,XOp::EnemyGenerateCard,Dazed,2049);resolve_pending(a.game);}
+  const int played=a.game.card_count;queue_extension(a.game,XOp::EnemyGenerateCard,kind,1025);resolve_pending(a.game);
+  a.reset_presentation();a.render();for(unsigned frame=0;a.combat_preparation.active&&frame<1024;++frame){a.advance(33);a.render();}
+  CHECK(!a.combat_preparation.active&&a.game.zones[returned]==Zone::Discard);a.cursor=a.game.hand.count-1;
+  snapshot();CHECK(load(direct,before.bytes,before.size));CHECK(play(direct,a.cursor,0));
+  if(select){if(direct.phase==Phase::ReturnChoice)CHECK(choose_return_to_draw(direct,returned));else{const uint16_t id=uint16_t(returned);CHECK(choose_extended(direct,&id,1));}}
+  CHECK(save(direct,expected));a.input(Key::Confirm);a.input(Key::Confirm);a.render();
+  int origin_x=CombatCardMotion::pile(unsigned(Zone::Discard)).cx,origin_y=CombatCardMotion::pile(unsigned(Zone::Discard)).cy;
+  if(select){
+   CHECK(choice_phase(a.game.phase));
+   if(resumed){snapshot();CHECK(load(a.game,before.bytes,before.size));a.reset_presentation();a.render();
+    for(unsigned frame=0;a.combat_preparation.active&&frame<1024;++frame){a.advance(33);a.render();}
+    CHECK(!a.combat_feedback.active);}
+   for(unsigned frame=0;!a.combat_choice_ready()&&frame<256;++frame){advance_combat_ms(33);a.render();}
+   CHECK(a.combat_choice_ready());a.render();bool hit=false;
+   for(int i=0;i<a.hit_count;++i){const auto&h=a.hits[i];if(h.kind==HitKind::CombatChoice&&h.value==returned){origin_x=h.x+h.w/2;origin_y=h.y+h.h/2;hit=true;}}
+   CHECK(hit);a.toggle_choice(returned);CHECK(a.game.phase==Phase::Combat);
+  }
+  CHECK(a.game.zones[returned]==Zone::Draw&&a.game.zones[played]==Zone::Discard);
+  CHECK(save(a.game,after)&&after.size==expected.size&&!std::memcmp(after.bytes,expected.bytes,after.size));
+  for(unsigned tick=0;tick<128;++tick){a.render();const auto*v=a.combat_cards.find(unsigned(returned));if(v&&v->mode==CombatCardMotion::Fly)break;advance_combat_ms(33);}
+  const auto*v=a.combat_cards.find(unsigned(returned));CHECK(v&&v->mode==CombatCardMotion::Fly&&v->to==unsigned(Zone::Draw));
+  CHECK(v->origin.cx==origin_x&&v->origin.cy==origin_y);CHECK(a.combat_pile_counts().draw==a.game.draw.count-1);
+  if(kind==RegentCosmicIndifference&&variant==1)capture(fast?"cosmic-return-to-draw-fast":"cosmic-return-to-draw");
+  advance_combat_ms(128*33);a.render();CHECK(!a.combat_cards.find(unsigned(returned))&&a.combat_pile_counts().draw==a.game.draw.count);
+  CHECK(save(a.game,after)&&after.size==expected.size&&!std::memcmp(after.bytes,expected.bytes,after.size));
+ }
+ // Generic creation observers also cover card/relic-generated draw cards,
+ // not only EnemyGenerateCard. Preserve the real destination after preview.
+ for(unsigned generator=0;generator<3;++generator){
+  enemy_visual_fight(EncounterId::NibbitsWeak,Character::Necrobinder);a.fast_mode=false;a.tick_remainder=0;
+  const unsigned id=a.game.card_count;snapshot();CHECK(load(direct,before.bytes,before.size));
+  const auto create=[&](State&s){
+   if(!generator)queue_extension(s,XOp::EnemyGenerateCard,Wound,1);
+   else if(generator==1)queue_extension(s,XOp::NMakeSoul,1,0);
+   else queue_extension(s,XOp::EventCardMaterialize,card_token({Strike,0}),2);
+   resolve_pending(s);
+  };
+  create(direct);CHECK(save(direct,expected));{UiCoreObserver observer(a);a.begin_combat_feedback();create(a.game);}a.render();
+  CHECK(a.game.card_count==id+1&&a.game.zones[id]==Zone::Draw);
+  const auto*v=a.combat_cards.find(id);CHECK(v&&v->mode==CombatCardMotion::Preview&&v->to==unsigned(Zone::Draw));
+  CHECK(a.combat_pile_counts().draw==a.game.draw.count-1);
+  advance_combat_ms(44*33);a.render();v=a.combat_cards.find(id);CHECK(v&&v->mode==CombatCardMotion::Fly&&v->to==unsigned(Zone::Draw));
+  advance_combat_ms(128*33);a.render();CHECK(!a.combat_cards.find(id)&&a.combat_pile_counts().draw==a.game.draw.count);
+  CHECK(save(a.game,after)&&after.size==expected.size&&!std::memcmp(after.bytes,expected.bytes,after.size));
+ }
+ // Transforming a selected draw card without moving it must not leave its
+ // temporary selection holder floating above the returned battlefield.
+ enemy_visual_fight(EncounterId::NibbitsWeak,Character::Necrobinder);
+ {UiCoreObserver observer(a);a.begin_combat_feedback();queue_extension(a.game,XOp::NChooseSeance);resolve_pending(a.game);}a.render();
+ const int transformed=a.game.draw.ids[0];a.toggle_choice(transformed);a.render();
+ CHECK(a.game.cards[transformed].kind==Soul&&a.game.zones[transformed]==Zone::Draw);
+ CHECK(!a.combat_cards.find(unsigned(transformed)));a.fast_mode=false;
+}
 static void ui6_room_removal(){
  new_run(a.game,0x6016,false);a.game.map[0].room=Room::Shop;CHECK(choose_node(a.game,0));a.game.gold=999;
  CHECK(event_card_enchant(a.game,0,EventEnchantment::Sharp,7));
@@ -1493,4 +1565,4 @@ static void feedback_hud_and_merchant(){
 }
 int main(int argc,char**argv){std::vector<uint8_t>b;
  if(argc>1){actual_pack=true;FILE*f=std::fopen(argv[1],"rb");CHECK(f);CHECK(!std::fseek(f,0,SEEK_END));long size=std::ftell(f);CHECK(size>0&&size<=MaxContentFile);CHECK(!std::fseek(f,0,SEEK_SET));b.resize(size);CHECK(std::fread(b.data(),1,b.size(),f)==b.size());CHECK(!std::fclose(f));}else b=synthetic_profile();
- if(argc>2)screenshot_directory=argv[2];CHECK(a.init(b.data(),b.size(),{}));options_and_readers();crystal_and_large_rewards();potion_lock_and_capacity();offer_facts();special_reward_snapshots();original_enemy_presentation();original_aspect_layout();original_osty_and_orbs();spatial_card_targeting();original_enemy_transformations();original_enemy_command_waits();audited_leaf_and_cultist_timing();original_combat_clock();deferred_enemy_values();deferred_combat_hand();deferred_enemy_statuses();ui6_combat_fidelity();deferred_combat_choices();original_card_movement();sequential_hit_feedback();synchronous_damage_hook_feedback();ui6_room_removal();feedback_hud_and_merchant();std::printf("world UI: %u checks passed; %s profile\n",checks,argc>1?"actual":"synthetic");}
+ if(argc>2)screenshot_directory=argv[2];CHECK(a.init(b.data(),b.size(),{}));options_and_readers();crystal_and_large_rewards();potion_lock_and_capacity();offer_facts();special_reward_snapshots();original_enemy_presentation();original_aspect_layout();original_osty_and_orbs();spatial_card_targeting();original_enemy_transformations();original_enemy_command_waits();audited_leaf_and_cultist_timing();original_combat_clock();deferred_enemy_values();deferred_combat_hand();deferred_enemy_statuses();ui6_combat_fidelity();deferred_combat_choices();original_card_movement();returned_and_created_card_movement();sequential_hit_feedback();synchronous_damage_hook_feedback();ui6_room_removal();feedback_hud_and_merchant();std::printf("world UI: %u checks passed; %s profile\n",checks,argc>1?"actual":"synthetic");}

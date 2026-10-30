@@ -40,7 +40,9 @@ static SourcePoint local_player(bool pet=false){
  const long double player=game.enemy_world.encounter==EncounterId::KaiserCrabBoss?0:-480/zoom;
  if(!pet)return {player-(game.character==Character::Necrobinder?150:0),200};
  const auto b=player_anchors(game.character);const int hp=game.expansion.osty_max_hp<0?0:game.expansion.osty_max_hp>150?150:game.expansion.osty_max_hp;
- return {player+b.right-b.left+150+100.0L*hp/150,125};
+ // AddCreature immediately applies OstyScaleToSize: owner center plus
+ // half its hitbox and the min/max offset, replacing the temporary formation.
+ return {player-(game.character==Character::Necrobinder?150:0)+(b.right-b.left)/2.0L+150+100.0L*hp/150,125};
 }
 static long double source_right(){
  const auto camera=encounter_camera(game.enemy_world.encounter);const long double zoom=camera.zoom/1000.0L;

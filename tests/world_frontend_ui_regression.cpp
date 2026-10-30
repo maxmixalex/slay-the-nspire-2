@@ -308,7 +308,14 @@ static void pause_save_failure_and_success(){
   back=true;CHECK(h.enabled&&h.x+h.w>0&&h.y==215);a.pointer_move(20,226);a.pointer_button(true);a.pointer_button(false);break;}}
  CHECK(back&&!a.paused&&!a.title);unchanged();a.pointer.visible=false;a.render();a.input(Key::Back);CHECK(a.paused);a.render();
  unsigned w=writes;write_ok=false;press(HitKind::Menu,4);CHECK(a.paused&&!a.title&&!disk_exists&&writes==w+1&&a.notice_ticks);unchanged();
- write_ok=true;press(HitKind::Menu,4);CHECK(a.title&&!a.paused&&a.has_save&&disk_exists);same_saved(disk);unchanged();
+ write_ok=true;press(HitKind::Menu,4);CHECK(!a.title&&a.paused&&a.has_save&&disk_exists&&a.character_departure.phase==3);same_saved(disk);unchanged();
+ const unsigned saved_writes=writes;const uint32_t outgoing=a.map_clock_ms;
+ a.input(Key::Confirm);a.input(Key::EndTurn);CHECK(writes==saved_writes);unchanged();
+ for(unsigned i=0;i<3;++i)a.advance(250);a.advance(49);a.render();
+ CHECK(!a.title&&a.paused&&a.character_departure.phase==3&&a.map_clock_ms-outgoing==799);capture("frontend-save-fade-out");
+ a.advance(1);a.render();CHECK(a.title&&!a.paused&&a.character_departure.phase==2&&a.has_save&&disk_exists);unchanged();
+ for(unsigned i=0;i<3;++i)a.advance(250);a.advance(50);a.render();
+ CHECK(!a.character_departure.active()&&a.title&&writes==saved_writes);capture("frontend-save-fade-in");unchanged();
  // The saved expedition remains exactly resumable after returning to title.
  a.game.gold+=9;CHECK(validate(a.game));a.menu=0;a.input(Key::Confirm);settle_departure();CHECK(!a.title&&!a.paused);same_saved(disk);
  a.input(Key::Back);CHECK(a.paused);press(HitKind::Menu,1);CHECK(a.settings_open&&a.paused);
@@ -437,9 +444,20 @@ static void optional_clear_uses_successful_terminal_probe(){
  write_ok=true;CHECK(a.finish_saved_run()&&!a.has_save&&disk_exists&&writes==w+2);same_saved(disk);unchanged();a.callbacks.clear_save=erase_run;
 }
 static void ending_clears_only_its_checkpoint(){
- empty_disk();start(Character::Ironclad,7001);put_disk();player_kill(a.game,true);resolve_pending(a.game);presentation();snapshot();unsigned d=deletes;
- settle_game_over();a.input(Key::Confirm);CHECK(a.game_over_summary);settle_game_over();delete_ok=false;action(UiAction::GameOverMainMenu);CHECK(!a.title&&a.game_over_summary&&disk_exists&&deletes==d+1);unchanged();
- delete_ok=true;action(UiAction::GameOverMainMenu);CHECK(a.title&&!a.has_save&&!disk_exists&&deletes==d+2);unchanged();
+ // OnEnded retires the checkpoint before Continue; history remains and
+ // repeated rendering cannot append another outcome or retry I/O every frame.
+ empty_disk();start(Character::Ironclad,7000);a.begin_progress();put_disk();
+ const unsigned old_history=a.progress.count;player_kill(a.game,true);resolve_pending(a.game);presentation();snapshot();unsigned d=deletes;
+ a.sync_game_over_presentation();CHECK(!disk_exists&&!a.has_save&&deletes==d+1&&!a.game_over_summary);
+ CHECK(a.progress.count==old_history+1&&a.progress.current.outcome==2);const unsigned history=a.progress.count;
+ a.render();a.advance(33);a.render();CHECK(a.progress.count==history&&deletes==d+1);unchanged();
+ // A real deletion failure is retryable from the result menu and does not
+ // silently forget the still resumable file.
+ empty_disk();start(Character::Ironclad,7001);put_disk();player_kill(a.game,true);resolve_pending(a.game);presentation();snapshot();d=deletes;delete_ok=false;
+ settle_game_over();CHECK(!a.title&&disk_exists&&deletes==d+1&&a.notice_ticks);
+ a.input(Key::Confirm);CHECK(a.game_over_summary);settle_game_over();CHECK(deletes==d+1);
+ action(UiAction::GameOverMainMenu);CHECK(!a.title&&a.game_over_summary&&disk_exists&&deletes==d+2);unchanged();
+ delete_ok=true;action(UiAction::GameOverMainMenu);CHECK(a.title&&!a.has_save&&!disk_exists&&deletes==d+3);unchanged();
  a.input(Key::Load);CHECK(a.title&&!a.has_save&&a.game.phase==Phase::Dead);unchanged();
 }
 static void modal_isolation_and_fast_mode(){

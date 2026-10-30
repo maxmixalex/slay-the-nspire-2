@@ -41,8 +41,9 @@ static bool ui_capture_card_changes(App&a,uint32_t at,bool generated_preview=fal
   if(before!=to){
    if(to==unsigned(Zone::Hand)&&before!=CombatCardMotion::NewCard)awaited_hand_add=true;
    const bool returned=before==unsigned(Zone::Discard)&&to==unsigned(Zone::Draw);
-   if(tracked||returned||before==unsigned(Zone::Hand)||to==unsigned(Zone::Hand)||to==unsigned(Zone::Exhaust)||to==unsigned(Zone::Power)||(generated_preview&&before==CombatCardMotion::NewCard)){
-    CombatCardMotion::Cue cue;cue.at=at;cue.id=uint16_t(id);cue.from=before;cue.to=to;cue.card=s.cards[id];cue.fast=a.fast_mode;cue.preview=generated_preview;
+   const bool created=before==CombatCardMotion::NewCard&&(to==unsigned(Zone::Draw)||to==unsigned(Zone::Discard));
+   if(tracked||returned||created||before==unsigned(Zone::Hand)||to==unsigned(Zone::Hand)||to==unsigned(Zone::Exhaust)||to==unsigned(Zone::Power)||(generated_preview&&before==CombatCardMotion::NewCard)){
+    CombatCardMotion::Cue cue;cue.at=at;cue.id=uint16_t(id);cue.from=before;cue.to=to;cue.card=s.cards[id];cue.fast=a.fast_mode;cue.preview=generated_preview||created;
     cue.energy=int16_t(cost(s,id));cue.stars=int16_t(card_star_cost(s,cue.card,id));
     if(to==unsigned(Zone::Power)){const auto owner=a.combat_player_pose();cue.target_x=int16_t(owner.center_x);cue.target_y=int16_t(owner.center_y);}
     // The manually played card keeps the resource labels seen before
@@ -51,7 +52,7 @@ static bool ui_capture_card_changes(App&a,uint32_t at,bool generated_preview=fal
     m.append(cue);
    }
   }
-  m.zones[id]=uint8_t(to|((tracked||to==unsigned(Zone::Hand)||before==unsigned(Zone::Hand)||(generated_preview&&before==CombatCardMotion::NewCard))?CombatCardMotion::Tracked:0));
+  m.zones[id]=uint8_t(to|((tracked||to==unsigned(Zone::Hand)||before==unsigned(Zone::Hand)||(before==CombatCardMotion::NewCard&&(generated_preview||to==unsigned(Zone::Draw)||to==unsigned(Zone::Discard))))?CombatCardMotion::Tracked:0));
  }
  m.card_count=s.card_count;m.append_counts(CombatCardMotion::capture_counts(s),at);return awaited_hand_add;
 }
@@ -129,6 +130,12 @@ void App::sync_combat_cards(){
  }
  if(keyboard_card>=0||m.selected_centered)m.fit_centered_selection();
  ui_sync_card_queues(*this);
+ // A pile selection may transform a card without moving it. Its old grid
+ // holder belongs only to a queued transfer, never to the settled combat.
+ for(auto&v:m.sprites)if(v.mode==CombatCardMotion::Selection){
+  bool queued=false;for(unsigned i=m.head;i<m.count;++i)if(m.cues[i].id==v.id){queued=true;break;}
+  if(!queued)v.mode=CombatCardMotion::Empty;
+ }
  if(!ui_feedback_bound(*this)){
   // Continue, initial preparation and direct fixture/core entry are already
   // settled. Do not replay old run/room motions when their identity changes.
