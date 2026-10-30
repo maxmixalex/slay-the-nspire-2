@@ -64,7 +64,7 @@ void App::prepare_combat_selection_motion(){
  for(unsigned i=0;i<choice_selected_count;++i){const unsigned id=choice_selected[i];
   if(id>=game.card_count)continue;HandPose pose{160,112,800,0,1024};
   for(int h=hit_count;h;--h){const auto&r=hits[h-1];if(r.kind==HitKind::CombatChoice&&r.value==int(id)){
-   pose={r.x+r.w/2,r.y+r.h/2,mx(1,r.w*HandFocusScale/HandFaceW),0,1024};break;}}
+   const int scale=r.w*HandFocusScale/HandFaceW;pose={r.x+r.w/2,r.y+r.h/2,scale>0?scale:1,0,1024};break;}}
   auto&v=combat_cards.claim(id);v={};v.id=uint16_t(id);v.mode=CombatCardMotion::Selection;
   v.at=animation;v.card=game.cards[id];v.energy=int16_t(cost(game,int(id)));v.stars=int16_t(card_star_cost(game,v.card,int(id)));
   CombatCardMotion::place(v,pose);combat_cards.zones[id]|=CombatCardMotion::Tracked;
