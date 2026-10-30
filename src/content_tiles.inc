@@ -153,14 +153,16 @@ static bool tile_header_bounds(const uint8_t* h,uint32_t base,uint32_t length,
     return prefix<=length&&prefix<=directory_capacity&&descriptors>=prefix&&!(descriptors&1u)&&
         descriptors<=length&&frames<=(length-descriptors)/16;
 }
-static bool valid_tile_group_header(const uint8_t* h,uint32_t id,const uint8_t* p,unsigned length,bool filtered_allowed){
+static bool valid_tile_group_header(const uint8_t* h,uint32_t id,const uint8_t* p,unsigned length,unsigned version){
     const uint32_t tiles=u32(h+16),groups=u32(h+20);
     const unsigned size=u32(p+12),encoded=u32(p+16),items=u32(p+24);
     const bool is_tile=id<groups;
     const bool filtered=u32(p)==FilteredTileGroupMagic;
+    const bool predicted=u32(p)==PredictiveIndexGroupMagic;
     // TGR1 never used its checksum/reserved words at runtime. Keep that legacy
     // behavior; only the distinct TGR2 magic gives word 7 functional meaning.
-    if((filtered?(!filtered_allowed||!is_tile||u32(p+28)<1||u32(p+28)>2):
+    if((predicted?(version<PredictiveIndexContentVersion||is_tile||u32(p+28)!=1u):
+        filtered?(version<TileFilterContentVersion||!is_tile||u32(p+28)<1||u32(p+28)>2):
         (u32(p)!=0x31524754u))||u32(p+4)!=(is_tile?1u:2u)||u32(p+8)!=id||
        !size||size>Lzma2BlockRawLimit||encoded!=length-32)return false;
     if(is_tile){
@@ -182,8 +184,9 @@ static TileGroup* load_tile_group(const Content* owner,const ResourceReader& rea
     if(!encoded_pixels||length<33||length>ResourceTransferCapacity||!reader.read(offset,encoded_pixels,length))return nullptr;
     const uint8_t* p=encoded_pixels;
     const unsigned size=u32(p+12),encoded=u32(p+16),items=u32(p+24);
-    if(!valid_tile_group_header(h,id,p,length,owner->version()>=TileFilterContentVersion))return nullptr;
+    if(!valid_tile_group_header(h,id,p,length,owner->version()))return nullptr;
     const unsigned filter=u32(p)==FilteredTileGroupMagic?u32(p+28):0;
+    const bool predicted=u32(p)==PredictiveIndexGroupMagic;
     TileGroup* group=reserve_tile_group(size);
     if(!group){cancel_content_preload();group=reserve_tile_group(size);}
     if(!group)return nullptr;
@@ -198,6 +201,9 @@ static TileGroup* load_tile_group(const Content* owner,const ResourceReader& rea
         if(!restore_tile_filter(tile_bytes(*group),encoded_pixels,size,items,filter)){
             tile_discard(*group);return nullptr;
         }
+    }
+    if(predicted&&!restore_index_prediction(tile_bytes(*group),size,items,u32(h+16))){
+        tile_discard(*group);return nullptr;
     }
     group->id=id;group->size=size;group->items=uint16_t(items);group->age=next_tile_age();
     group->owner=owner;return group;

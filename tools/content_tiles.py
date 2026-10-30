@@ -757,7 +757,7 @@ def index_records(raw, count, tile_count):
 class TileReader:
     """Independent host reference decoder for a completed v15 pack."""
     def __init__(self, pack):
-        require(15 <= pack.version <= 40, 'Tiled reader requires version 15 through 40')
+        require(15 <= pack.version <= 41, 'Tiled reader requires version 15 through 41')
         self.pack = pack
         require(pack.base_end + GLOBAL.size <= len(pack.data), 'Truncated tile header')
         fields = GLOBAL.unpack_from(pack.data, pack.base_end)
@@ -802,7 +802,7 @@ class TileReader:
                 relative, count = struct.unpack_from('<iI', pack.data, off)
                 require(off + relative >= descriptor_end and count <= len(pack.data) - off - relative,
                         'String group invades descriptor array')
-        self.groups, self.filters = [], []
+        self.groups, self.filters, self.predictors = [], [], []
         previous_end = descriptor_end
         for i in range(group_count):
             off, length = struct.unpack_from('<II', pack.data, table + i * 8)
@@ -811,7 +811,9 @@ class TileReader:
             header = GROUP.unpack_from(pack.data, off)
             tag, kind, number, raw_size, encoded_size, crc, count, zero = header
             filtered = tag == b'TGR2'
+            predicted = tag == b'TGI2'
             require(((filtered and pack.version >= 33 and kind == 1 and zero in (1, 2)) or
+                     (predicted and pack.version >= 41 and kind == 2 and zero == 1) or
                      (tag == b'TGR1' and zero == 0)) and number == i and encoded_size + GROUP.size == length
                     and 0 < raw_size <= GROUP_LIMIT, 'Invalid group header')
             if i < self.tile_groups:
@@ -821,6 +823,7 @@ class TileReader:
                 require(kind == 2 and 0 < count <= INDEX_FRAMES, 'Invalid index group item count')
             self.groups.append((off + GROUP.size, encoded_size, raw_size, crc, kind, count))
             self.filters.append(zero if filtered else 0)
+            self.predictors.append(predicted)
             previous_end = off + length
         self.cache = OrderedDict()
         self.group_reads = self.decoded_bytes = 0
@@ -834,6 +837,9 @@ class TileReader:
         raw = decode_lzma2(self.pack.data[off:off + encoded_size], raw_size)
         if self.filters[group_id]:
             raw = restore_tiles(raw, self.filters[group_id])
+        if self.predictors[group_id]:
+            from tile_prediction import index_transform
+            raw = index_transform(raw, count, 3, True, self.tile_count)
         if kind == 1:
             validate_tiles(raw)
             starts = None
