@@ -77,6 +77,58 @@ void transformed_frames(){
         for(unsigned i=0;i<p.frames.size();++i){finish_tile(*c,provider,p.image_id(i));picture(*c,p.image_id(i),p.frames[i]);}
     }
 }
+Package compact_incremental_fixture(unsigned mode){
+    Package p=basic(680);const unsigned live=unsigned(p.tiles.size());
+    p.tiles.resize(680*2,blank_tile());p.make_groups({{0,1,2,3}});
+    p.groups[0].items=live;p.groups[0].raw.resize(live*TileBytes);
+    p.groups[1].items=1;p.groups[1].raw.assign(TileBytes,0);p.groups[1].raw[0]=p.groups[1].raw[1]=1;
+    if(mode)for(unsigned i=0;i<p.groups.size();++i){auto&g=p.groups[i];
+        g.encoded=stored_lzma2(i<p.tile_groups()?filtered_fixture(g,mode):predicted_index_fixture(g.raw,g.items));g.custom=true;
+    }
+    p.encode(false,InspectionAuxiliaryCount,CompactTileContentVersion,Ui7StringCount,BestiaryKaiserAnimationKinds);
+    const unsigned strings=40+p.images*16+p.glyphs*16;
+    put(p.bytes,strings+LocaleMarkerString*8,unsigned(p.bytes.size()));put(p.bytes,strings+LocaleMarkerString*8+4,3);
+    p.bytes.insert(p.bytes.end(),{'e','n','g',0});seal(p.bytes);
+    if(mode)for(unsigned i=0;i<p.groups.size();++i){
+        put(p.bytes,p.group_offsets[i],i<p.tile_groups()?FilteredTileGroupMagic:PredictiveIndexGroupMagic);
+        put(p.bytes,p.group_offsets[i]+28,i<p.tile_groups()?mode:1);
+    }
+    return p;
+}
+void compact_frames_and_faults(){
+    for(unsigned mode:{0u,1u,2u}){
+        label="v42 incremental short interior group and unused dummy preserve original bytes";
+        const Package p=compact_incremental_fixture(mode);Provider provider{&p.bytes};auto c=std::make_unique<Content>();
+        for(bool direct:{false,true}){
+            CHECK(c->open(direct?ResourceSource::memory(p.bytes.data(),p.bytes.size()):provider.source()));
+            for(unsigned i=0;i<p.frames.size();++i){finish_tile(*c,provider,p.image_id(i));picture(*c,p.image_id(i),p.frames[i]);}
+            const auto before=c->read_stats();
+            for(unsigned i=0;i<p.frames.size();++i){CHECK(c->preload_image_step(p.image_id(i))==PreparationResult::Ready);picture(*c,p.image_id(i),p.frames[i]);}
+            CHECK(same_reads(before,c->read_stats()));
+        }
+        for(unsigned mutation:{0u,1u,2u,3u,4u,5u}){
+            label="incremental compact bounds and strict old-version contract reject before publication";
+            Bytes bad=p.bytes;const unsigned group=p.group_offsets[0],live=p.groups[0].items;
+            if(mutation==0)put(bad,4,PredictiveIndexContentVersion);
+            if(mutation==1)put(bad,group+24,0);
+            if(mutation==2)put(bad,group+24,681);
+            if(mutation==3)put(bad,group+12,live*TileBytes-1);
+            if(mutation==4)put(bad,p.group_offsets[p.tile_groups()]+32+3+12,mode?live*2:live);
+            if(mutation==5){provider.fail_first=group+32;provider.fail_last=provider.fail_first+1;}
+            provider.bytes=&bad;CHECK(c->open(provider.source()));
+            PreparationResult result=PreparationResult::Pending;unsigned steps=0;
+            while(result==PreparationResult::Pending){result=c->preload_image_step(1);CHECK(++steps<20000);}
+            CHECK(result==PreparationResult::Failed&&!c->healthy()&&!c->image_cached(1));CHECK(!resource_transfer_uses);
+            c->cancel_preload();provider.bytes=&p.bytes;provider.fail_first=provider.fail_last=0;
+            CHECK(c->open(provider.source()));finish_tile(*c,provider,1);picture(*c,1,p.frames[0]);
+        }
+        label="partial compact preparation cancels and reopens without retained pins";
+        CHECK(c->open(provider.source()));
+        for(unsigned i=0;i<8;++i)CHECK(c->preload_image_step(1)==PreparationResult::Pending);
+        c->cancel_preload();CHECK(c->open(provider.source()));finish_tile(*c,provider,1);picture(*c,1,p.frames[0]);
+        CHECK(!provider.bad_range);
+    }
+}
 void cancellation_and_demand(){
     label="cancel/reopen/profile changes and visible demand release unpublished reservations";
     Package p;p.per_group=680;p.frames.push_back(frame(320,240,Pattern::Alpha));p.frames.push_back(frame(32,32,Pattern::Mixed));
@@ -121,6 +173,6 @@ void faults_and_retry(){
 }
 }
 int main(){
-    incremental_frames();transformed_frames();cancellation_and_demand();faults_and_retry();
+    incremental_frames();transformed_frames();compact_frames_and_faults();cancellation_and_demand();faults_and_retry();
     std::printf("incremental tiled preparation: %u checks; exact bytes, bounded reads, transforms, cancellation and faults\n",checks);
 }
