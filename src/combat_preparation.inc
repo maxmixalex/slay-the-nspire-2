@@ -68,8 +68,7 @@ void App::sync_combat_preparation(){
         return true;
     };
     auto frame_images=[&](const Track&t,unsigned frame,bool first){
-        const int framed=framed_ui20_row(t.id);
-        const int framed_parameters=framed<0?-1:content.ui_image(FramedUi20BaseAuxiliary+unsigned(framed));
+        const int framed_parameters=Canvas{*this}.framed_parameters(t.id);
         if(framed_parameters>=0){
             if(!reserve(framed_parameters,first))return false;
             Canvas::FramedDraw layers[FramedUi20MaxLayers];unsigned layer_count=0;

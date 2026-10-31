@@ -95,6 +95,8 @@ static void title_source_scene(const std::vector<uint8_t>&pack,const char*captur
         SCENE(panel.x>=2&&panel.x+panel.w<=318&&panel.y>=2&&panel.y+panel.h<229);
         SCENE(panel.w>=108&&panel.w<=120);
         SCENE(panel.x>=menu.x+menu.w+4||panel.y+panel.h<=menu.y-4);
+        SCENE(panel.x>=title_scene::TextX+title_scene::TextWidth+4||panel.y>=title_scene::TextY+title_scene::TextHeight+4);
+        SCENE(panel.x>=103||panel.y>=30); // Profile control and its focus scale.
     }
     SCENE(title_scene::TextY==24&&title_scene::FireY==42&&title_scene::TextY+title_scene::TextHeight+8<=saved_y[0]);
     SCENE(title_scene::continue_height(false)==66&&title_scene::continue_height(true)==79);

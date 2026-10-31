@@ -1,8 +1,14 @@
     struct FramedDraw {int image,x,y,w,h;};
+    int framed_parameters(int id){
+        const int auxiliary=framed_ui22_auxiliary(id);
+        const int parameters=auxiliary<0?-1:a.content.ui_image(auxiliary);
+        if(parameters>0)return parameters;
+        const int row=framed_ui20_row(id);
+        return row<0?-1:a.content.ui_image(FramedUi20BaseAuxiliary+unsigned(row));
+    }
     bool framed_collect(int id,int x,int y,uint32_t milliseconds,int scale,bool loop,
-                        FramedDraw*out,unsigned&count,bool cull=true){
-        count=0;const int row=framed_ui20_row(id);if(row<0)return false;
-        const int parameters=a.content.ui_image(FramedUi20BaseAuxiliary+unsigned(row));
+                        FramedDraw*out,unsigned&count,bool cull=true,int exact_frame=-1){
+        count=0;const int parameters=framed_parameters(id);
         if(parameters<0)return false;
         const auto table=a.content.image(parameters);const unsigned available=unsigned(table.w)*table.h;
         if(!table.pixels||table.format||table.alpha||table.palette||available<FramedUi20HeaderWords)return false;
@@ -14,7 +20,9 @@
            vantom_word(data,9)!=FramedUi20LayerWords||!frames||frames>256||!frame_ms||
            !units||!reference||units>=1000000||reference>=1000000||
            words>available||words<FramedUi20HeaderWords+frames*FramedUi20FrameWords)return false;
-        unsigned frame=milliseconds/frame_ms;frame=loop?frame%frames:unsigned(mn(int(frame),int(frames)-1));
+        unsigned frame=milliseconds/frame_ms;
+        frame=exact_frame>=0?unsigned(mn(exact_frame,int(frames)-1)):
+            loop?frame%frames:(frame<frames?frame:frames-1);
         const unsigned at=FramedUi20HeaderWords+frame*FramedUi20FrameWords;
         const unsigned start=vantom_word(data,at),layers=vantom_word(data,at+1);
         if(layers>FramedUi20MaxLayers||start>words||layers>(words-start)/FramedUi20LayerWords)return false;
@@ -34,10 +42,10 @@
         }
         return true;
     }
-    bool framed_clip(int id,int x,int y,uint32_t milliseconds,int scale,bool loop){
-        if(framed_ui20_row(id)<0)return false;
+    bool framed_clip(int id,int x,int y,uint32_t milliseconds,int scale,bool loop,
+                     unsigned blend_mode=0,int exact_frame=-1){
         FramedDraw layers[FramedUi20MaxLayers];unsigned count=0;
-        if(!framed_collect(id,x,y,milliseconds,scale,loop,layers,count))return false;
-        for(unsigned i=0;i<count;++i){const auto&layer=layers[i];picture(layer.image,layer.x,layer.y,layer.w,layer.h);}
+        if(!framed_collect(id,x,y,milliseconds,scale,loop,layers,count,true,exact_frame))return false;
+        for(unsigned i=0;i<count;++i){const auto&layer=layers[i];picture(layer.image,layer.x,layer.y,layer.w,layer.h,255,blend_mode);}
         return true;
     }

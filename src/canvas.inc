@@ -578,6 +578,7 @@ struct Canvas{
     #include "framed_animation_ui20.inc"
     void clip(int id,int x,int y,uint32_t milliseconds,bool anchored=true,bool loop=true){
         auto c=a.content.clip(id);if(!c.count)return;
+        if(framed_clip(id,x+(anchored?0:c.pivot_x),y+(anchored?0:c.pivot_y),milliseconds,1024,loop))return;
         if(vantom_frame(id,x+(anchored?0:c.pivot_x),y+(anchored?0:c.pivot_y),milliseconds,1024,loop))return;
         unsigned index=milliseconds/c.frame_ms;
         index=loop?index%c.count:(unsigned)mn((int)index,c.count-1);

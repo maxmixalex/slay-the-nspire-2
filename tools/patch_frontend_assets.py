@@ -112,6 +112,24 @@ def build_art(pck_path, cache):
     return manifest
 
 
+def auxiliary_image_ids(manifest, previous_images, appended_images, added_aux):
+    """Resolve new entries without duplicating images used by sparse tables."""
+    tiles.require(0 <= added_aux <= 65535 and previous_images + appended_images <= 65535,
+                  'Unexpected frontend extension')
+    if 'auxiliary_image_ids' in manifest:
+        tiles.require('auxiliary_rows' not in manifest, 'Ambiguous auxiliary references')
+        result = manifest['auxiliary_image_ids']
+        tiles.require(len(result) == added_aux and all(isinstance(i, int) and
+                      0 <= i < previous_images + appended_images for i in result),
+                      'Invalid absolute auxiliary image references')
+        return list(result)
+    rows = manifest.get('auxiliary_rows', list(range(added_aux)))
+    tiles.require(added_aux <= appended_images and len(rows) == added_aux and
+                  all(isinstance(i, int) and 0 <= i < appended_images for i in rows),
+                  'Invalid appended auxiliary image references')
+    return [previous_images + i for i in rows]
+
+
 def patch_pack(data, manifest, cache, *, base_aux=BASE_AUX, auxiliary=AUXILIARY,
                input_version=21, version=VERSION, texts=FRONTEND_TEXTS, base_clips=CLIPS, base_strings=8192,
                appended_art=None):
@@ -136,10 +154,7 @@ def patch_pack(data, manifest, cache, *, base_aux=BASE_AUX, auxiliary=AUXILIARY,
     rows = manifest['images']
     clips = manifest.get('clips', [])
     count, clip_count, added_aux = len(rows), len(clips), auxiliary - base_aux
-    tiles.require(0 <= added_aux <= count and ni + count <= 65535, 'Unexpected frontend extension')
-    auxiliary_rows = manifest.get('auxiliary_rows', list(range(added_aux)))
-    tiles.require(len(auxiliary_rows) == added_aux and all(isinstance(i, int) and 0 <= i < count for i in auxiliary_rows),
-                  'Invalid appended auxiliary image references')
+    auxiliary_ids = auxiliary_image_ids(manifest, ni, count, added_aux)
     for clip in clips:
         tiles.require(0 <= clip['first'] <= count - clip['count'] and 1 <= clip['count'] <= 256,
                       'Appended animation lies outside new image directory')
@@ -206,7 +221,7 @@ def patch_pack(data, manifest, cache, *, base_aux=BASE_AUX, auxiliary=AUXILIARY,
     out.extend(data[source.glyph_at:source.card_at])
     out.extend(bytes(clip_count * 16))
     out.extend(data[source.card_at:source.base_end])
-    out.extend(struct.pack('<' + 'I' * added_aux, *(ni + i for i in auxiliary_rows)))
+    out.extend(struct.pack('<' + 'I' * added_aux, *auxiliary_ids))
     out.extend(data[source.base_end:cost_at])
     out.extend(costs)
     out.extend(data[old_tiles.descriptors:art_end])
@@ -247,7 +262,7 @@ def patch_pack(data, manifest, cache, *, base_aux=BASE_AUX, auxiliary=AUXILIARY,
     tiles.TileReader(target)
     tiles.require(target.clips[:nc] == source.clips and target.cards == source.cards and target.aux[:nu] == source.aux,
                   'Historical catalog changed')
-    tiles.require(target.aux[nu:] == [ni + i for i in auxiliary_rows], 'Appended auxiliary mapping changed')
+    tiles.require(target.aux[nu:] == auxiliary_ids, 'Appended auxiliary mapping changed')
     tiles.require(out[shifted(descriptor_end):insertion] == data[descriptor_end:art_end] and
                   out[insertion + len(payload):original_end] == data[art_end:], 'Historical payload changed')
     tiles.require(out[header[14]:header[14] + ni] == data[cost_at:cost_at + ni], 'Historical decoded costs changed')

@@ -1,4 +1,34 @@
-# UI21 completed matched calculator release
+# UI22 active: source precision, selection performance, and hover repairs
+
+Continue from `work/ui22-integration`, based on completed UI21 `d02990f`.
+The new user feedback is Continue information overlapping Abandon Run,
+severe character-selection frame drops, missing loot potion/relic tooltips,
+and blurred Necrobinder death. The user explicitly requires avoiding lossy
+compression while improving storage and frame performance, and still requires
+the complete bilingual and optional-language ZIPs.
+
+The first UI checkpoint is
+`8f56d8539d3860a5171a792c69b4468cda749c4a`: whole-menu popover bounds and
+reward tooltip routing. Animation and performance work remain in progress;
+no UI22 installer is complete yet. Preserve all UI21 artifacts as controls.
+
+The source-precision audit found a historical distinction that must not be
+hidden: UI11 applied mixed lossy quantization to 48,293 animation frame
+references. UI21's exact reader/storage comparisons preserve their inputs,
+but do not establish that those inherited inputs equal the original sampled
+RGB565/alpha8. Player death segments include the lower 444a6 tier, and merchant
+death also magnifies a small raster. UI22 is recovering the prequantization
+UI10 data and original sampled frames, with per-frame provenance checks so
+later geometry and registration repairs cannot be overwritten by old art.
+
+The selection performance baseline identifies repeated background decoding
+when full animation loops exceed the existing image cache. Exact keyframe /
+patch storage and existing-arena reuse are being evaluated against whole-frame
+pixels and resource-read work. Neither smaller files alone nor isolated ARM
+decoder instructions establish a frame-rate improvement. Original assets and
+private measurements remain outside this public repository.
+
+# UI21 historical completed matched calculator release
 
 The active release is `work/ui21-integration`, based on UI20
 `f4875c2eee50ecdee4793d7ecb365a20d34857dc`. The owner's supplied conversation

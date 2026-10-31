@@ -321,6 +321,9 @@ static void continue_panel_preserves_menu(){
   for(unsigned i=0;i<ScreenW*ScreenH;++i)painted+=base[i]!=a.pixels[i];CHECK(painted>25);
   for(int i=0;i<a.hit_count;++i){const auto&hit=a.hits[i];if(hit.kind!=HitKind::Menu)continue;
    for(int y=hit.y;y<hit.y+hit.h;++y)for(int x=hit.x;x<hit.x+hit.w;++x)CHECK(a.pixels[y*ScreenW+x]==base[y*ScreenW+x]);}
+  for(int y=title_scene::TextY;y<title_scene::TextY+title_scene::TextHeight;++y)
+   for(int x=title_scene::TextX;x<title_scene::TextX+title_scene::TextWidth;++x)CHECK(a.pixels[y*ScreenW+x]==base[y*ScreenW+x]);
+  for(int y=2;y<30;++y)for(int x=2;x<103;++x)CHECK(a.pixels[y*ScreenW+x]==base[y*ScreenW+x]);
   info=retained;unchanged();disk_unchanged();
   if(ascension==3&&!row)capture(mouse?"frontend-continue-mouse-clear-menu":"frontend-continue-keyboard-clear-menu",true);
   if(ascension==3&&row==1)capture(mouse?"frontend-continue-exit-to-abandon-mouse":"frontend-continue-exit-to-abandon-keyboard",true);

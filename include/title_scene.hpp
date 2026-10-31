@@ -58,11 +58,17 @@ constexpr int continue_y(int rows){return menu_y(rows,0)-24;}
 constexpr int continue_height(bool ascension){return ascension?79:66;}
 inline Rect continue_bounds(Rect menu,bool ascension){
     const int height=continue_height(ascension),space=318-menu.x-menu.w-ContinueGap;
-    if(space>=ContinueMinimumWidth)
-        return {menu.x+menu.w+ContinueGap,menu.y-24,space<ContinueWidth?space:ContinueWidth,height};
+    if(space>=ContinueMinimumWidth){
+        const int x=menu.x+menu.w+ContinueGap;
+        int y=menu.y-24;
+        if(x<TextX+TextWidth+ContinueGap&&y<TextY+TextHeight+ContinueGap)
+            y=TextY+TextHeight+ContinueGap;
+        return {x,y,space<ContinueWidth?space:ContinueWidth,height};
+    }
     // An exceptionally long localized menu cannot fit two readable columns.
-    // Place the whole panel above the menu, retaining its source rise tween.
-    int x=menu.x+menu.w-ContinueWidth/2;if(x>318-ContinueWidth)x=318-ContinueWidth;if(x<2)x=2;
-    return {x,menu.y-height-ContinueGap,ContinueWidth,height};
+    // The upper-right gutter clears both the complete logo and profile button.
+    // Keep its bottom above every menu row, including the fading panel.
+    constexpr int x=TextX+TextWidth+ContinueGap;
+    return {x,menu.y-height-ContinueGap,318-x,height};
 }
 }

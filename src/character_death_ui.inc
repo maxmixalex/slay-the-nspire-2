@@ -5,7 +5,8 @@ static void game_over_actor(Canvas&c,uint32_t elapsed,unsigned opacity){
  auto&a=c.a;const auto&s=a.game;const unsigned character=unsigned(s.character);
  if(a.content.version()<CharacterDeathContentVersion||character>=5||!opacity)return;
  const bool merchant=s.world.room_type==unsigned(WorldRoom::Shop);
- const auto clip=a.content.clip(int((merchant?MerchantDeathAnimationFirst:CharacterDeathAnimationFirst)+character));if(!clip.count)return;
+ const int clip_id=int((merchant?MerchantDeathAnimationFirst:CharacterDeathAnimationFirst)+character);
+ const auto clip=a.content.clip(clip_id);if(!clip.count)return;
  const auto registration=player_sprite_registration(s.character);
  int x=160+registration.x*4/21,y=158+registration.y*4/21,scale=int(registration.units)*4/21;
  if(s.phase==Phase::Complete&&s.original_events.id==OriginalEventId::TheArchitect){
@@ -25,19 +26,23 @@ static void game_over_actor(Canvas&c,uint32_t elapsed,unsigned opacity){
   scale=int(registration.units)*218/1080;
  }
  Canvas actor=c;actor.opacity=uint8_t(div255(actor.opacity*mn(opacity,255u)));
- const auto draw=[&](Clip layer,unsigned frame,unsigned mode){
+ const auto draw=[&](int id,Clip layer,unsigned frame,unsigned mode){
   if(!layer.count)return;const unsigned units=layer.sprite_units?layer.sprite_units:registration.units;
   const int projected=int(int64_t(scale)*units/registration.units);
+  // Death samples include the exact terminal source pose. Preserve that
+  // frame selection instead of inferring it from the rounded frame_ms.
+  if(actor.framed_clip(id,x,y,0,projected,false,mode,int(frame)))return;
   const auto picture=a.content.image(int(layer.first+mn(frame,unsigned(layer.count-1))));
   actor.picture(picture,x-layer.pivot_x*projected/1024,y-layer.pivot_y*projected/1024,
                 mx(1,int(picture.w)*projected/1024),mx(1,int(picture.h)*projected/1024),255,mode);
  };
  if(!merchant&&(s.character==Character::Defect||s.character==Character::Regent)){
-  const auto particles=a.content.clip(s.character==Character::Defect?int(DefectDeathParticles):int(RegentDeathParticles));
+  const int particle_id=s.character==Character::Defect?int(DefectDeathParticles):int(RegentDeathParticles);
+  const auto particles=a.content.clip(particle_id);
   const unsigned duration=s.character==Character::Defect?CharacterDeathDurationMs[character]:5000;
   if(particles.count&&elapsed<duration)
-   draw(particles,elapsed*(particles.count-1)/duration,presentation::Add);
+   draw(particle_id,particles,elapsed*(particles.count-1)/duration,presentation::Add);
  }
  const unsigned frame=mn(character_death_frame(character,elapsed),unsigned(clip.count-1));
- draw(clip,frame,presentation::Normal);
+ draw(clip_id,clip,frame,presentation::Normal);
 }

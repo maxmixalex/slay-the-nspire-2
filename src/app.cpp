@@ -44,6 +44,7 @@
 #include "vantom_ui15_resources.hpp"
 #include "vantom_vfx_ui15.hpp"
 #include "framed_animation_ui20.hpp"
+#include "framed_animation_ui22.hpp"
 #include "combat_ui14_resources.hpp"
 #include "inplace_reset.hpp"
 #include "resource_transfer.hpp"
