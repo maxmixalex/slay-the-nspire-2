@@ -31,7 +31,7 @@ def build(args):
         path.mkdir(parents=True,exist_ok=True)
     adapter='SpineSampleAdapter.exe' if os.name=='nt' else 'SpineSampleAdapter'
     noise='nspire_noise'+('.dll' if os.name=='nt' else '.dylib' if sys.platform=='darwin' else '.so')
-    required=(adapter,noise,'OurNotes.Spine.Runtime.dll','FastNoiseLite.h','helper-build.json')
+    required=(adapter,noise,'OurNotes.Spine.Runtime.dll','FastNoiseLite.h','helper-build.json','Spine-Runtimes-LICENSE')
     if not all((helpers/name).is_file() for name in required):
         raise ValueError('Helper directory is incomplete or targets a different OS')
     recipe=Recipe('/game','/work','/runtime','dotnet','/noise','-')
@@ -69,12 +69,24 @@ def build(args):
     subprocess.run(command,check=True,cwd=ROOT)
     executable=output/('nspire2-convert.exe' if os.name=='nt' else 'nspire2-convert')
     subprocess.run([str(executable),'--help'],check=True)
+    # Keep OS facilities (.NET extraction, Windows system DLL resolution), but
+    # remove the developer's Python, dotnet and compiler paths for this smoke.
+    environment=os.environ.copy()
+    environment['PATH']=str(Path(os.environ.get('SystemRoot','C:/Windows'))/'System32') if os.name=='nt' else '/usr/bin:/bin'
+    for key in ('PYTHONPATH','PYTHONHOME','NSPIRE_SPINE_ADAPTER','NSPIRE_FASTNOISE_LIBRARY',
+                'NSPIRE_SPINE_RUNTIME','NSPIRE_FASTNOISE_HEADER','NSPIRE_DOTNET'):
+        environment.pop(key,None)
+    smoke=subprocess.run([str(executable),'--self-test'],check=True,text=True,capture_output=True,env=environment)
+    helper_test=json.loads(smoke.stdout)
     receipt=dict(schema=1,platform=sys.platform,embedded_python=True,native_cpp_converter=False,
         separately_installed_python_required=False,dotnet_sdk_required=False,cxx_compiler_required=False,
         original_assets_included=False,bytes=executable.stat().st_size,
         sha256=hashlib.sha256(executable.read_bytes()).hexdigest(),
-        smoke_test='--help passed; original game conversion has a separate receipt')
+        smoke_test='--help and embedded dependency/native helper self-test passed',helper_self_test=helper_test,
+        original_game_conversion_tested=False)
     (output/'converter-bundle.json').write_text(json.dumps(receipt,indent=2)+'\n')
+    (output/'Spine-Runtimes-LICENSE').write_bytes((helpers/'Spine-Runtimes-LICENSE').read_bytes())
+    (output/'FastNoiseLite-LICENSE.txt').write_text((helpers/'FastNoiseLite.h').read_text().split('#ifndef',1)[0])
     return receipt
 
 

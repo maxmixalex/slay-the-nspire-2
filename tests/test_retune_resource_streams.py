@@ -99,6 +99,28 @@ class RetuneResourceStreamsTest(unittest.TestCase):
                 tighten(before, root/'cache', workers=1,
                         profiles={'tile':((4,1,0),), 'index':((4,1,0),), 'retained':((4,1,0),)})
 
+    def test_bounded_retuning_keeps_reduced_profile_and_actual_pixels(self):
+        from retune_color_contexts_ui23 import convert
+        with tempfile.TemporaryDirectory() as folder:
+            root=Path(folder)
+            before=bytearray(self.modern_fixture(root))
+            struct.pack_into('<I',before,4,46)
+            before[36:40]=b'NAF1'
+            before=bytes(before)
+            after,proof=convert(before,root/'color-cache',workers=1)
+            self.assertEqual(after[36:40],b'NAF1')
+            self.assertTrue(proof['literal_contexts_not_increased'])
+            source=coalesce.view(before);target=coalesce.view(after)
+            a,b=t.TileReader(source),t.TileReader(target)
+            self.assertEqual(a.dictionary,b.dictionary)
+            for left,right in zip(a.groups,b.groups):
+                old=coalesce.source_lzma_profile(before[left[0]:left[0]+left[1]])
+                new=coalesce.source_lzma_profile(after[right[0]:right[0]+right[1]])
+                self.assertLessEqual(sum(new[:2]),sum(old[:2]))
+            for image in range(len(source.images)):
+                self.assertEqual(a.image_raw(image),b.image_raw(image))
+            self.assertEqual(source.clips,target.clips)
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -97,6 +97,46 @@ def configure_helpers():
             raise ValueError('Incomplete converter bundle: '+path.name+' is missing')
 
 
+def self_test():
+    """Check a bundle's dependencies without original game data or SDK tools."""
+    import ctypes
+    import numpy as np
+    configure_helpers()
+    for module in ('PIL.Image','numpy','fontTools.ttLib','zstandard','lz4.block','regex'):
+        importlib.import_module(module)
+    recipe=Recipe('/game','/work','/runtime','dotnet','/noise','-')
+    from converter_finalize import add_final_stages
+    add_final_stages(recipe,recipe.source_stages(),Path('/output'),['eng','zhs'],True)
+    modules=sorted({stage.module for stage in recipe.stages if not stage.module.startswith('@')})
+    for module in modules:
+        importlib.import_module(module)
+    from concurrent.futures import ProcessPoolExecutor
+    import multiprocessing
+    with ProcessPoolExecutor(max_workers=1,mp_context=multiprocessing.get_context('spawn')) as pool:
+        if pool.submit(digest,Path(__file__)).result(timeout=30)!=digest(Path(__file__)):
+            raise ValueError('Embedded multiprocessing worker could not import its source recipe')
+    # An unsupported protocol is rejected before attempting to load a skeleton.
+    result=subprocess.run([os.environ['NSPIRE_SPINE_ADAPTER']],input='{"schema_version":2}\n',
+        text=True,capture_output=True,check=True,timeout=30)
+    reply=json.loads(result.stdout)
+    if reply.get('ok') is not False or reply.get('error')!='Unsupported adapter protocol':
+        raise ValueError('Bundled Spine adapter did not answer its protocol self-test')
+    library=ctypes.CDLL(os.environ['NSPIRE_FASTNOISE_LIBRARY'])
+    library.nspire_decim_noise.argtypes=[ctypes.c_float];library.nspire_decim_noise.restype=ctypes.c_float
+    decim=np.array([library.nspire_decim_noise((i-512)/17) for i in range(1025)],dtype='<f4')
+    library.vantom_noise.argtypes=[ctypes.POINTER(ctypes.c_float)];library.vantom_noise.restype=None
+    field=np.empty((512,512),dtype=np.float32)
+    library.vantom_noise(field.ctypes.data_as(ctypes.POINTER(ctypes.c_float)))
+    if not np.isfinite(decim).all() or not np.isfinite(field).all() or field.min()==field.max():
+        raise ValueError('Bundled noise helper returned invalid values')
+    pixels=np.uint8((field-field.min())/(field.max()-field.min())*np.float32(255))
+    noise_hash=hashlib.sha256(pixels.tobytes()).hexdigest()
+    if noise_hash!='8d1ff0abcf0ed493a5453ba58ba481bfbc8008bb8e2c8b1d7f52a1a5bc0a918a':
+        raise ValueError('Bundled noise helper differs from the pinned source oracle')
+    return dict(passed=True,recipe_modules=len(modules),spawn_worker=True,spine_protocol=True,decim_samples=len(decim),
+        vantom_pixels=field.size,vantom_sha256=noise_hash,original_game_conversion_tested=False)
+
+
 class Recipe:
     def __init__(self, game, work, runtime, dotnet, noise, key_font, workers=2):
         self.game, self.work = Path(game), Path(work)
@@ -372,9 +412,12 @@ def main(argv=None):
     parser.add_argument('--fastnoise-header',type=Path,help=argparse.SUPPRESS)
     parser.add_argument('--key-font',type=Path,help='Optional owner-supplied TINspireKeysCX.ttf; default: public calculator keycaps')
     parser.add_argument('--plan',action='store_true',help='Show every source build stage without converting')
+    parser.add_argument('--self-test',action='store_true',help='Check embedded modules and native helpers without game data')
     parser.add_argument('--stop-after',help='Developer checkpoint; never produces a release receipt')
     args=parser.parse_args(argv)
     try:
+        if args.self_test:
+            print(json.dumps(self_test(),indent=2));return 0
         game=locate_game(args.game)
         from reference_inventory import verify_release
         _lock,assembly,reference=verify_release(game)

@@ -47,7 +47,8 @@ class ConverterTests(unittest.TestCase):
     def test_original_stage_arguments_match_real_parsers(self):
         """Exercise the actual legacy parsers before long source conversion."""
         recipe=converter.Recipe('/game','/tmp/converter-parser-test','/runtime','dotnet','/noise','-')
-        recipe.source_stages()
+        from converter_finalize import add_final_stages
+        add_final_stages(recipe,recipe.source_stages(),Path('/tmp/converter-parser-output'),['eng','zhs'],True)
         parse=argparse.ArgumentParser.parse_args
         class Parsed(Exception):
             pass

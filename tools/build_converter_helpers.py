@@ -59,6 +59,10 @@ def build(args):
     # remain private bundle files, while the executable avoids first-run builds.
     shutil.copyfile(runtime, target / "OurNotes.Spine.Runtime.dll")
     shutil.copyfile(header, target / "FastNoiseLite.h")
+    license_path=runtime.parent/'Spine-Runtimes-LICENSE'
+    if not license_path.is_file():
+        raise ValueError('The supplied runtime must include Spine-Runtimes-LICENSE beside its DLL')
+    shutil.copyfile(license_path,target/'Spine-Runtimes-LICENSE')
     receipt = {"schema": 1, "rid": args.rid, "self_contained_adapter": True,
                "player_needs_dotnet_sdk": False, "player_needs_cxx_compiler": False,
                "spine_runtime_sha256": hashlib.sha256(runtime.read_bytes()).hexdigest(),

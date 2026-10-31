@@ -1,0 +1,253 @@
+{
+  "upstream": "EsotericSoftware/spine-runtimes",
+  "commit": "e7dc1435fa4a0083ab431f1b28e083c14a1f5c68",
+  "files": [
+    {
+      "path": "Animation.cs",
+      "bytes": 100651,
+      "sha256": "e6dff6844b13b277c213a2449e60621bac69f68635274d779b309409bae8ca3d"
+    },
+    {
+      "path": "AnimationState.cs",
+      "bytes": 67070,
+      "sha256": "d4c3f4e66667f1c65538aad6c362b9766351d3b48e9e95828426006c2ab6c586"
+    },
+    {
+      "path": "AnimationStateData.cs",
+      "bytes": 5158,
+      "sha256": "c6dffe0e294e8d20334f252a29be01e49817715d78625a3f8ccd88d4d74dd565"
+    },
+    {
+      "path": "Atlas.cs",
+      "bytes": 13335,
+      "sha256": "ca3a48d903be77ada15d4507917321fea3b46ce48bad3a112abed88336b287eb"
+    },
+    {
+      "path": "Attachments/AtlasAttachmentLoader.cs",
+      "bytes": 4406,
+      "sha256": "bad453b26329cee4bfb6b4e39d97137061694250a4adc5eb3ca5b62453068652"
+    },
+    {
+      "path": "Attachments/Attachment.cs",
+      "bytes": 2338,
+      "sha256": "f6710f87244dafe133b169a0b3eaec4cb411fbfab289cc1af7ed74f4dda436dc"
+    },
+    {
+      "path": "Attachments/AttachmentLoader.cs",
+      "bytes": 2479,
+      "sha256": "eabc4900f070a834e316332c533cce9f231a3320e061df00b6ea04866f903a03"
+    },
+    {
+      "path": "Attachments/AttachmentType.cs",
+      "bytes": 1829,
+      "sha256": "1969a91be8ceafc6c246c16999d5f4a0d3f7e166aa08146afdf2148e9c9aefd5"
+    },
+    {
+      "path": "Attachments/BoundingBoxAttachment.cs",
+      "bytes": 2158,
+      "sha256": "45d103f7d9143f2916068ec58a3be66e89f03531f4fdd338e38f9057c3eb258a"
+    },
+    {
+      "path": "Attachments/ClippingAttachment.cs",
+      "bytes": 2203,
+      "sha256": "9284b2e971489b157486fac55e354d73819539c1b4023f9bea1eea9bcfaad163"
+    },
+    {
+      "path": "Attachments/IHasTextureRegion.cs",
+      "bytes": 2514,
+      "sha256": "ca4edc88e73998ccf9831e6950d20eb3b2f39439adcb2bc5bae049ca945b9d4f"
+    },
+    {
+      "path": "Attachments/MeshAttachment.cs",
+      "bytes": 8248,
+      "sha256": "0b8aff63e50e9015e05c66e78266a1419f85b8dbdf5e787e87e35eeaa1e9c213"
+    },
+    {
+      "path": "Attachments/PathAttachment.cs",
+      "bytes": 2935,
+      "sha256": "1bd292e01077f60a6fae0a084d780b86b96cca601a8c66b845ed3d5274b475ac"
+    },
+    {
+      "path": "Attachments/PointAttachment.cs",
+      "bytes": 3169,
+      "sha256": "e784435a8b7f02d390c5899aff931e4eecf9d0ddde07d0ceddfead04a4aa49a2"
+    },
+    {
+      "path": "Attachments/RegionAttachment.cs",
+      "bytes": 8738,
+      "sha256": "312a3b729986730fe5274eed53147478b1605672751683562f9ade377dac68f8"
+    },
+    {
+      "path": "Attachments/Sequence.cs",
+      "bytes": 3725,
+      "sha256": "d0dc0362f4c98ab3d01e619a65b1e5e47e3dd44ca004a28442267981efd9b623"
+    },
+    {
+      "path": "Attachments/VertexAttachment.cs",
+      "bytes": 6912,
+      "sha256": "ed3796bba27f65f10f7bff3c786dfc03b44c63ce72324c76a222da46f33b6857"
+    },
+    {
+      "path": "BlendMode.cs",
+      "bytes": 1788,
+      "sha256": "2ffa28860439188e53da60161d2b76e5c41fbd83ff1006e4759cf8c31d8bcf82"
+    },
+    {
+      "path": "Bone.cs",
+      "bytes": 18822,
+      "sha256": "554d495ee6dda680f8f1050f200f81808710492ca6daa23ef290f0e28039bda1"
+    },
+    {
+      "path": "BoneData.cs",
+      "bytes": 4454,
+      "sha256": "5253f34ec32075c35429bdfe85406eaba04182a73de614022b3c05dd092c87d6"
+    },
+    {
+      "path": "ConstraintData.cs",
+      "bytes": 2924,
+      "sha256": "3e0aaae338b4e176dd2fb25fd0a984b198cfd634aa3162526e35b542c7cb7a37"
+    },
+    {
+      "path": "Event.cs",
+      "bytes": 2833,
+      "sha256": "39a7022ca90dd78cb93242dc33c1fdd52f4f4a31e355ee0b81ab1059b9bab38b"
+    },
+    {
+      "path": "EventData.cs",
+      "bytes": 2429,
+      "sha256": "3c30dca281e5f09dcf45c3358cd20e9b8e2ae226b97660ff5af1920372a95c02"
+    },
+    {
+      "path": "ExposedList.cs",
+      "bytes": 15973,
+      "sha256": "320ade564152dd9407cbbc3753696a4d69bbdb5748710a3fe4b406c0847c0b2b"
+    },
+    {
+      "path": "IUpdatable.cs",
+      "bytes": 2500,
+      "sha256": "4ad5c537820bdc3d84f2f558fbdc595c409c8b050f37a2ba9fe5f276f428b736"
+    },
+    {
+      "path": "IkConstraint.cs",
+      "bytes": 13148,
+      "sha256": "6870a9afa2ce5257b13fc947d9eb4ed1dbf6e58bf5dc67698649ada9843252ad"
+    },
+    {
+      "path": "IkConstraintData.cs",
+      "bytes": 4184,
+      "sha256": "85be5aeacc3d19f117f0d5b1baaff791e8f99877d1ece76c52e0be9cbab3b54f"
+    },
+    {
+      "path": "Json.cs",
+      "bytes": 11972,
+      "sha256": "7c84899a862fe876b17b77b4a42cdd6e9bae56ce60f6ba4ffd9a324d8d6de735"
+    },
+    {
+      "path": "MathUtils.cs",
+      "bytes": 6478,
+      "sha256": "0529e0fcd868743ae854d02b0b4b70cbc2fd797cf55050b2b08aa32d8fadbd83"
+    },
+    {
+      "path": "PathConstraint.cs",
+      "bytes": 18485,
+      "sha256": "0c3295da72e82029d3629f7c564bb28c7174ee67ec3075c709e808c6b8c66eaa"
+    },
+    {
+      "path": "PathConstraintData.cs",
+      "bytes": 3588,
+      "sha256": "b1e54662452466ccb5c9b4062191fee4e22c6274d4b24695823ea8616ea579fe"
+    },
+    {
+      "path": "PhysicsConstraint.cs",
+      "bytes": 10732,
+      "sha256": "a0ed53c560306bee053ce03a399ae961a1330ec1b96822c1c3b3bb4fc6e86309"
+    },
+    {
+      "path": "PhysicsConstraintData.cs",
+      "bytes": 4221,
+      "sha256": "ac32c7f85fa8c8b0f537e6b5ce16a5fa8fae814d7868ef0aa1768f62cc7bd4bd"
+    },
+    {
+      "path": "Skeleton.cs",
+      "bytes": 32598,
+      "sha256": "90e117de3600de7556d7ca482108d0043168b7e399822276c1d9b5263ef802a6"
+    },
+    {
+      "path": "SkeletonBinary.cs",
+      "bytes": 54127,
+      "sha256": "11a8fd039b918c5680163eca7216003bb967c8c2a9bb3bd84231d7e69984e460"
+    },
+    {
+      "path": "SkeletonBounds.cs",
+      "bytes": 9491,
+      "sha256": "f2cf2b2b2ce1309562c39e1a0987d1503629df9adea192c6b8290b74b17c4789"
+    },
+    {
+      "path": "SkeletonClipping.cs",
+      "bytes": 13468,
+      "sha256": "e744ecefa7f8c5a67a57df05e24fffd2f4bd35e0a4747db5eee18c5a5c3e0f09"
+    },
+    {
+      "path": "SkeletonData.cs",
+      "bytes": 11110,
+      "sha256": "cc0d86d9bc90d00e3b0d3c5e218ad7af0205e3cb806c8448f9d2c0fceda5860a"
+    },
+    {
+      "path": "SkeletonJson.cs",
+      "bytes": 60649,
+      "sha256": "6b2fa4aaca2e25880ae1d11ff6ffcc3f2f11276034cc4937d8f2a21ff4c75ca3"
+    },
+    {
+      "path": "SkeletonLoader.cs",
+      "bytes": 3543,
+      "sha256": "6ea18d1b35fb1351a50c88e7e7b199ac5bf0cae90e7c5dd70d2f867d09e8e29b"
+    },
+    {
+      "path": "Skin.cs",
+      "bytes": 8710,
+      "sha256": "b42cc8d383f0541560f74a19b3d8b80b2ef122398106232c6807ca03d874def3"
+    },
+    {
+      "path": "Slot.cs",
+      "bytes": 8712,
+      "sha256": "d68b0a61f83e16ee41705b6164eb26dbd0721efe92f497010336bd4aebf56bf8"
+    },
+    {
+      "path": "SlotData.cs",
+      "bytes": 3836,
+      "sha256": "17ac5bf1dceeb6e25b9574891544520b0ee7bcd352d0e2b95abb77038ff5566a"
+    },
+    {
+      "path": "TextureRegion.cs",
+      "bytes": 2160,
+      "sha256": "7d4ecab0794740a6dffe3a66ed48ec9d83d5c6149d6a103ad54f8e1d458ab270"
+    },
+    {
+      "path": "TransformConstraint.cs",
+      "bytes": 12567,
+      "sha256": "aff64301228d1d499a0878e9db05acaed2c0a7fc8ac6d80ac225990b27e6e51f"
+    },
+    {
+      "path": "TransformConstraintData.cs",
+      "bytes": 4150,
+      "sha256": "13aa9318b59a940aca5d93acbba838847e6a9d726bcaca2d00300f2dab6e6a4f"
+    },
+    {
+      "path": "Triangulator.cs",
+      "bytes": 10583,
+      "sha256": "f906bfc88c991641b85642b23f273d0628de418f75bc2bba01f0ceffad15ed05"
+    },
+    {
+      "path": "LICENSE",
+      "bytes": 1469,
+      "sha256": "b9d50158f6c23a704d123fd0200cc00633a693ccf9b0aacb15e5d5b9cf6c0d58"
+    }
+  ],
+  "license_sha256": "b9d50158f6c23a704d123fd0200cc00633a693ccf9b0aacb15e5d5b9cf6c0d58",
+  "fastnoise": {
+    "upstream": "godotengine/godot",
+    "ref": "4.5.1-stable",
+    "path": "thirdparty/misc/FastNoiseLite.h",
+    "sha256": "38b24b9b04aa5e9f1e63336d4acbbbb73b11f15b697bb08a25f5ec0c6c274901"
+  }
+}

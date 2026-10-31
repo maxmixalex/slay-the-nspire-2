@@ -1,0 +1,72 @@
+name: Windows original-install converter
+
+on:
+  workflow_dispatch:
+  push:
+    branches: ['work/ui23-integration']
+    paths:
+      - '.github/workflows/converter-windows.yml'
+      - 'tools/build_converter_bundle.py'
+      - 'tools/build_converter_helpers.py'
+      - 'tools/prepare_converter_dependencies.py'
+      - 'tools/converter*.py'
+      - 'tools/SpineSampleAdapter.cs'
+      - 'tools/spine_sample_adapter/**'
+      - 'config/converter-dependencies.json'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: windows-converter-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  windows-converter:
+    runs-on: windows-2022
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+      - name: Install the pinned converter build dependencies
+        shell: pwsh
+        run: |
+          python -m pip install -r requirements.txt -r requirements-release.txt pyinstaller==6.16.0
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Build the public pinned Spine source and native helpers
+        shell: pwsh
+        run: |
+          $deps = Join-Path $env:RUNNER_TEMP 'converter-dependencies'
+          $helpers = Join-Path $env:RUNNER_TEMP 'converter-helpers'
+          python tools/prepare_converter_dependencies.py --output $deps
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          $candidates = @('C:\mingw64\bin\g++.exe', 'C:\msys64\mingw64\bin\g++.exe')
+          $compiler = $candidates | Where-Object { Test-Path $_ } | Select-Object -First 1
+          if (-not $compiler) { $compiler = (Get-Command g++.exe -ErrorAction Stop).Source }
+          python tools/build_converter_helpers.py --rid win-x64 --dotnet (Get-Command dotnet).Source --cxx $compiler --spine-runtime "$deps/spine-runtime/OurNotes.Spine.Runtime.dll" --fastnoise-header "$deps/FastNoiseLite.h" --output $helpers
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Build and check the executable without developer runtime paths
+        shell: pwsh
+        run: |
+          $helpers = Join-Path $env:RUNNER_TEMP 'converter-helpers/win-x64'
+          $output = Join-Path $env:RUNNER_TEMP 'converter-delivery'
+          $work = Join-Path $env:RUNNER_TEMP 'converter-bundle-work'
+          python tools/build_converter_bundle.py --helpers $helpers --output $output --work $work
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          Copy-Item docs/converter-ui23.md "$output/README.md"
+          git rev-parse HEAD | Out-File -Encoding ascii "$output/COMMIT"
+      - name: Upload the Windows converter and dependency license notices
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: nspire2-converter-windows-${{ github.sha }}
+          path: ${{ runner.temp }}/converter-delivery/
+          if-no-files-found: error
+          retention-days: 30
+          compression-level: 0
