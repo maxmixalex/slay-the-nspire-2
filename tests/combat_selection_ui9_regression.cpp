@@ -56,7 +56,7 @@ static void setup(Card card,Character character=Character::Ironclad){
     a.statistics_open=a.history_open=a.map_preview.open=false;a.run_mode={};a.frontend_confirm=0;a.progress.tutorial_flags=0;a.pointer.visible=false;
     a.game.energy=99;const int id=a.game.hand.ids[0];a.game.cards[id]=card;a.game.event_cards.deck_origin[id]=0;a.game.enemies[0].hp=a.game.enemies[0].max_hp=999;
     a.render();snapshot();const auto animation=a.animation;for(unsigned i=0;i<256&&a.combat_preparation.active;++i)a.advance(33);
-    CHECK(!a.combat_preparation.active);CHECK(a.animation==animation);unchanged();CHECK(validate(a.game));
+    CHECK(!a.combat_preparation.active);CHECK(a.animation==animation);unchanged();CHECK(validate(a.game));outcome_comparison_contract();
 }
 static void played(){
     {UiCoreObserver observer(a);CHECK(play(a.game,0,0));}
@@ -114,7 +114,7 @@ static void offers(){
     advance(500);unchanged();no_legacy_controls();CHECK(!has(HitKind::UiAction,int(UiAction::ConfirmChoice),false));
     const auto number=a.input_bindings.keys[0][unsigned(InputCommand::Card1)];CHECK(a.physical_key(number,true));CHECK(a.physical_key(number,false));unchanged();CHECK(!a.choice_selected_count);
     CHECK(has(HitKind::UiAction,int(UiAction::SkipCombatChoice)));CHECK(a.active_card_grid()<0);
-    for(unsigned i=0;i<3;++i){const auto h=region(HitKind::CombatChoice,a.game.expansion.choices.ids[i]);CHECK(h.w==73&&h.h==100);CHECK(h.x+h.w/2==131-36+int(i)*65);CHECK(h.y+h.h/2==131);}
+    for(unsigned i=0;i<3;++i){const auto h=region(HitKind::CombatChoice,a.game.expansion.choices.ids[i]);CHECK(h.w==73&&h.h==100);CHECK(h.x+h.w/2==95+int(i)*65);CHECK(h.y+h.h/2==131);}
     a.cursor=1;a.input(Key::Detail);CHECK(a.detail_card==card_token(choice_card(a.game,id)));a.input(Key::Back);unchanged();capture("combat-offer-discovery");
     std::memcpy(&expected,&a.game,sizeof(State));const uint16_t selected=uint16_t(id);CHECK(choose_extended(expected,&selected,1));click(HitKind::CombatChoice,id);CHECK(a.game.phase==Phase::Combat);matches();
     scenario="Offer skip release";setup({Discovery,0});played();snapshot();std::memcpy(&expected,&a.game,sizeof(State));CHECK(choose_extended(expected,nullptr,0));
@@ -201,6 +201,6 @@ static void source_geometry_and_ripple(){
 }
 int main(int argc,char**argv){
     Bytes data;if(argc>1){FILE*f=std::fopen(argv[1],"rb");CHECK(f);data.resize(spire_test::pack_size(f));CHECK(std::fread(data.data(),1,data.size(),f)==data.size());std::fclose(f);actual=true;}else data=fixture();
-    CHECK(a.init(data.data(),data.size(),{}));if(argc>2)captures=argv[2];outcome_comparison_contract();source_prompt_templates();offers();hand();piles();relic_offers();source_geometry_and_ripple();CHECK(a.content.healthy());
+    CHECK(a.init(data.data(),data.size(),{}));if(argc>2)captures=argv[2];source_prompt_templates();offers();hand();piles();relic_offers();source_geometry_and_ripple();CHECK(a.content.healthy());
     std::printf("combat selection: %u checks passed (%s)\n",checks,actual?"actual":"synthetic");
 }

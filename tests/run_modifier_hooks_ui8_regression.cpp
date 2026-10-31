@@ -166,7 +166,10 @@ static void character_card_merchant_multiplicity(){
     WorldCardOptions reward=options;world_modifier_card_pools(game,reward);CHECK(reward.pool_count==1); // Reward uses Union, not merchant Concat.
     other=game;other.run_options.modifiers=bit(RunModifier::Flight);Card cards[3],control[3];EventCardFacts facts[3],control_facts[3];reward.flags=WorldIsCardReward|WorldNoUpgradeRoll;
     CHECK(world_create_reward(game,world_rng(game,WorldRng::Rewards),3,reward,cards,facts)&&world_create_reward(other,world_rng(other,WorldRng::Rewards),3,reward,control,control_facts));
-    CHECK(!std::memcmp(cards,control,sizeof cards)&&world_rng(game,WorldRng::Rewards).calls==world_rng(other,WorldRng::Rewards).calls);
+    // Card has trailing padding. Independently generated cards must match
+    // their complete fields, not indeterminate padding left by assignment.
+    for(unsigned i=0;i<3;++i)CHECK(cards[i].kind==control[i].kind&&cards[i].upgraded==control[i].upgraded);
+    CHECK(world_rng(game,WorldRng::Rewards).calls==world_rng(other,WorldRng::Rewards).calls);
     begin(bit(RunModifier::IroncladCards)|bit(RunModifier::SilentCards)|bit(RunModifier::DefectCards));
     WorldCardOptions merchant;world_modifier_card_pools(game,merchant,true);CHECK(merchant.pool_count==3&&merchant.pools[1]==WorldCardPool::Ironclad&&merchant.pools[2]==WorldCardPool::Silent);
     route(reference::PointType::Shop,false,false,&other);CHECK(game.phase==Phase::Shop);
