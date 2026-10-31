@@ -20,13 +20,21 @@ class AnimationColorCandidateTest(unittest.TestCase):
     def test_all_rgb565_words_have_declared_bounds(self):
         original = np.arange(65536, dtype=np.int32)
         for policy, expected in [('555a8', (0, 1, 0)), ('454a8', (1, 1, 1)),
-                                 ('444a8', (1, 2, 1))]:
+                                 ('444a8', (1, 2, 1)), ('bounded-a6', (1, 2, 1)),
+                                 ('dark-safe-a6', (1, 2, 1))]:
             mapped = candidate.color_lut(policy).astype(np.int32)
             actual = tuple(int(np.abs(((mapped >> shift) & mask) -
                                      ((original >> shift) & mask)).max())
                            for shift, mask in ((11, 31), (5, 63), (0, 31)))
             self.assertEqual(actual, expected)
             self.assertEqual((mapped[0], mapped[-1]), (0, 65535))
+
+    def test_dark_palette_keeps_low_channel_codes(self):
+        original = np.arange(65536, dtype=np.int32)
+        mapped = candidate.color_lut('dark-safe-a6').astype(np.int32)
+        for shift, mask, dark in ((11,31,3), (5,63,7), (0,31,3)):
+            before, after = (original >> shift) & mask, (mapped >> shift) & mask
+            self.assertTrue(np.array_equal(before[before<=dark], after[before<=dark]))
 
     def test_every_opacity_class_and_tile_edge_survive(self):
         raw = bytes((16, 16)) + np.arange(256, dtype='<u2').tobytes() + bytes(range(256))
@@ -86,6 +94,20 @@ class AnimationColorCandidateTest(unittest.TestCase):
         with redirect_stdout(StringIO()), self.assertRaises(SystemExit):
             candidate.main(['--input', '/tmp/source.nsp', '--output', '/tmp/out.nsp',
                             '--policy', '444a8'])
+
+    def test_static_consumers_keep_aliased_animation_pixels(self):
+        with tempfile.TemporaryDirectory() as tmp, redirect_stdout(StringIO()):
+            root = Path(tmp)
+            original = retile.view(source())
+            plan = retile.make_plan(original, root)
+            encoded = retile.compress_plan(plan, root, root/'cache', 1)
+            data, _ = retile.rewrite(original, plan, encoded)
+            before = retile.view(data)
+            results = candidate.convert(before, 'bounded-a6', workers=1, preserve_static=True)
+            after = retile.view(candidate.rewrite(before, {}, results))
+            for image in candidate.protected_images(before):
+                read = lambda s: tiles.TileReader(s).image_raw(image) if s.images[image][3]==6 else s.image_raw(image)
+                self.assertEqual(read(before), read(after))
 
 
 if __name__ == '__main__':

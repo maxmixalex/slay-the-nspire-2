@@ -23,7 +23,7 @@ import time
 import numpy as np
 
 import content_tiles as t
-from coalesce_tile_resources import source_lzma_profile
+from coalesce_tile_resources import active_tiles, source_lzma_profile
 from compact_retained_colors import groups as retained_groups
 from quantize_animation_resources import rewrite
 from retained_filter import _color_ranges, group_layout, transform_group
@@ -34,7 +34,8 @@ from tile_filter import filter_tiles
 LEVELS = {'555a8': (31, 31, 31), '454a8': (15, 31, 15),
           '444a8': (15, 15, 15), '454a6': (15, 31, 15),
           '444a6': (15, 15, 15), '444a8-adaptive': (15, 15, 15),
-          '444a6-adaptive': (15, 15, 15)}
+          '444a6-adaptive': (15, 15, 15), 'bounded-a6': (15, 15, 15),
+          'dark-safe-a6': (15, 15, 15)}
 
 
 def alpha_error(policy):
@@ -47,6 +48,11 @@ def alpha_lut(policy):
     alpha = np.arange(256, dtype=np.int32)
     if not alpha_error(policy):
         return alpha.astype('u1')
+    if policy in ('bounded-a6', 'dark-safe-a6'):
+        points = np.unique(np.r_[0, np.arange(1, 255, 5), 254, 255])
+        result = points[np.abs(alpha[:, None] - points).argmin(axis=1)]
+        result[1:255] = np.clip(result[1:255], 1, 254)
+        return result.astype('u1')
     levels = (alpha * 63 + 127) // 255
     result = (levels * 255 + 31) // 63
     # Sparse geometry distinguishes zero, partial and full opacity. Keep all
@@ -59,6 +65,17 @@ def alpha_lut(policy):
 def color_lut(policy):
     """One time-independent color map; opacity is deliberately not an input."""
     t.require(policy in LEVELS, 'Unknown color policy')
+    if policy in ('bounded-a6', 'dark-safe-a6'):
+        colors = np.arange(65536, dtype=np.int32)
+        result = np.zeros(65536, dtype=np.int32)
+        for shift, maximum, step, dark in ((11, 31, 3, 3), (5, 63, 5, 7), (0, 31, 3, 3)):
+            prefix = np.arange(dark+1) if policy == 'dark-safe-a6' else np.array([0])
+            start = dark+step if policy == 'dark-safe-a6' else step
+            points = np.unique(np.r_[prefix, np.arange(start, maximum, step), maximum])
+            values = np.arange(maximum+1)
+            table = points[np.abs(values[:, None]-points).argmin(axis=1)]
+            result |= table[(colors >> shift) & maximum] << shift
+        return result.astype('<u2')
     return channel_lut(LEVELS[policy])
 
 
@@ -141,14 +158,63 @@ def encode_like(raw, original, dictionary):
     return encoded
 
 
-def jobs(source, policy, *, retained=True):
+def protected_images(source, preserve_selection=False):
+    """Classify live animation pictures while retaining all static consumers."""
+    animated = {i for first, count, *_ in source.clips for i in range(first, first+count)}
+    if len(source.aux) >= 7206:
+        from retired_assets_ui22 import framed_references, vantom_references
+        for auxiliary in [*range(5409, 5419), *range(5422, 7206)]:
+            image = source.aux[auxiliary]
+            if image:
+                _w, _h, fmt, raw = source.image_raw(image)
+                t.require(fmt == 0, 'Registered frame table must remain opaque words')
+                animated.update(framed_references(raw))
+        for auxiliary in range(5288, 5404):
+            _w, _h, fmt, raw = source.image_raw(source.aux[auxiliary])
+            t.require(fmt == 0, 'Vantom frame table must remain opaque words')
+            animated.update(vantom_references(raw))
+    protected = (set(range(len(source.images))) - animated) | set(source.aux) | {r[0] for r in source.cards}
+    if len(source.aux) >= 1505:
+        if not preserve_selection:
+            protected.difference_update(source.aux[1500:1505])
+        elif len(source.clips) >= 1710:
+            protected.update(i for first, count, *_ in source.clips[1705:1710]
+                             for i in range(first, first+count))
+    return protected
+
+
+def jobs(source, policy, *, retained=True, preserve_static=False, preserve_selection=False):
     """Yield bounded independent groups; no full decoded animation spool."""
     reader = t.TileReader(source)
     t.require(not any(reader.sparse), 'Candidate requires ordinary TGR1/TGR2 pixel groups')
+    protected = protected_images(source, preserve_selection) if preserve_static else set()
+    exact_tiles = np.zeros(reader.tile_count, dtype=np.bool_)
+    protected_ranges = {}
+    for image in protected:
+        offset, width, height, fmt, length = source.images[image]
+        if fmt == 6:
+            _global, local, at, size = t.DESCRIPTOR.unpack_from(source.data, offset)
+            raw = reader.group(reader.tile_groups + local)[0]
+            _decoded, indices, _geometry = t.FRAME.unpack_from(raw, at)
+            ids = np.frombuffer(raw, dtype='<u4', count=indices//4, offset=at+12)
+            mask = active_tiles(raw[at+12+indices:at+size], width, height)
+            exact_tiles[ids[mask]] = True
+        elif fmt == 7:
+            relative, _size, at, shape = struct.unpack_from('<iIII', source.data, offset)
+            protected_ranges.setdefault(offset+relative, []).append((at, at+(shape & 0xffffff)))
+    emit('protected_static_art', images=len(protected), tiles=int(exact_tiles.sum()),
+         preserve_static=preserve_static, preserve_selection=preserve_selection)
     for group in range(reader.tile_groups):
         offset, length, *_ = reader.groups[group]
         original = bytes(source.data[offset - 32:offset + length])
-        raw = color_tiles(reader.group(group)[0], policy)
+        original_raw = reader.group(group)[0]
+        raw = color_tiles(original_raw, policy)
+        first = group * reader.per_group
+        selected = exact_tiles[first:first+len(raw)//t.TILE_BYTES]
+        if np.any(selected):
+            records = np.frombuffer(raw, dtype='u1').reshape(-1, t.TILE_BYTES).copy()
+            records[selected] = np.frombuffer(original_raw, dtype='u1').reshape(-1, t.TILE_BYTES)[selected]
+            raw = records.tobytes()
         mode = reader.filters[group]
         filtered = filter_tiles(raw, mode) if mode else raw
         yield dict(kind='tile', index=group, original=original, raw=raw,
@@ -175,9 +241,16 @@ def jobs(source, policy, *, retained=True):
         selected = []
         for at, shape in group.slices:
             length, fmt = shape & 0xffffff, shape >> 24
+            if any(at < end and begin < at+length for begin, end in protected_ranges.get(group.offset, ())):
+                continue
             if fmt in (1, 3, 4) or (group.offset, at) in opaque_slices:
                 out[at:at+length] = color_image(raw[at:at+length], fmt, policy)
                 selected.append(at)
+        for at, shape in group.slices:
+            if at not in selected:
+                length = shape & 0xffffff
+                t.require(out[at:at+length] == raw[at:at+length],
+                          'Selected sprite overlaps protected or typed image bytes')
         if out == raw:
             continue
         updated = bytes(out)
@@ -203,12 +276,13 @@ def convert_job(job):
     return result
 
 
-def convert(source, policy, *, workers=2, retained=True):
+def convert(source, policy, *, workers=2, retained=True, preserve_static=False, preserve_selection=False):
     """Bound submissions: at most one raw group per worker plus its successor."""
     results = []
     with ThreadPoolExecutor(max_workers=workers) as pool:
         pending = []
-        for job in jobs(source, policy, retained=retained):
+        for job in jobs(source, policy, retained=retained, preserve_static=preserve_static,
+                        preserve_selection=preserve_selection):
             pending.append(pool.submit(convert_job, job))
             if len(pending) >= workers * 2:
                 results.append(pending.pop(0).result())
@@ -233,7 +307,8 @@ def verify(source, output, results, policy):
         a = np.frombuffer(before.group(group)[0], dtype='u1').reshape(-1, t.TILE_BYTES)
         b = np.frombuffer(raw, dtype='u1').reshape(-1, t.TILE_BYTES)
         t.require(np.array_equal(a[:, :2], b[:, :2]) and
-                  np.array_equal(alpha_lut(policy)[a[:, 514:]], b[:, 514:]),
+                  np.all((alpha_lut(policy)[a[:, 514:]] == b[:, 514:]) |
+                         (a[:, 514:] == b[:, 514:])),
                   'Tile dimensions or declared alpha mapping changed')
     for group in range(before.tile_groups, len(before.groups)):
         a, b = before.groups[group], after.groups[group]
@@ -281,6 +356,10 @@ def main(argv=None):
     parser.add_argument('--policy', choices=tuple(LEVELS), required=True)
     parser.add_argument('--workers', type=int, choices=range(1, 5), default=2)
     parser.add_argument('--tiles-only', action='store_true')
+    parser.add_argument('--preserve-static', action='store_true',
+                        help='Keep static background/UI/card consumers and all their shared tiles exact')
+    parser.add_argument('--preserve-selection', action='store_true',
+                        help='Together with preserve-static, keep every selection background sample exact')
     parser.add_argument('--experimental-candidate-only', action='store_true')
     args = parser.parse_args(argv)
     if not args.experimental_candidate_only:
@@ -292,13 +371,15 @@ def main(argv=None):
     started = time.monotonic()
     with args.input.open('rb') as handle, mmap.mmap(handle.fileno(), 0, access=mmap.ACCESS_READ) as data:
         source = view(data)
-        results = convert(source, args.policy, workers=args.workers, retained=not args.tiles_only)
+        results = convert(source, args.policy, workers=args.workers, retained=not args.tiles_only,
+                          preserve_static=args.preserve_static, preserve_selection=args.preserve_selection)
         output = rewrite(source, {}, results)
         checked = verify(source, output, results, args.policy)
         t.atomic_bytes(args.output, output)
         receipt = dict(schema=1, complete=True, not_release_approved=True, policy=args.policy,
             input_sha256=t.sha256(data), output_sha256=t.sha256(output),
             input_bytes=len(data), output_bytes=len(output), saved_bytes=len(data)-len(output),
+            static_art_preserved=args.preserve_static, selection_art_preserved=args.preserve_selection,
             visual_comparison_required=True, complete_decoder_performance_required=True,
             no_runtime_codec_or_buffer_added=True, no_frames_removed_or_resampled=True,
             alpha_error=alpha_error(args.policy),

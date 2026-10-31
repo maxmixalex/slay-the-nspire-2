@@ -54,6 +54,10 @@ def build(args):
     adapter = target / ("SpineSampleAdapter.exe" if windows else "SpineSampleAdapter")
     if not adapter.is_file() or not library.is_file():
         raise ValueError("A helper output is missing")
+    # Legacy conversion stages use these explicit paths as cache inputs. They
+    # remain private bundle files, while the executable avoids first-run builds.
+    shutil.copyfile(runtime, target / "OurNotes.Spine.Runtime.dll")
+    shutil.copyfile(header, target / "FastNoiseLite.h")
     receipt = {"schema": 1, "rid": args.rid, "self_contained_adapter": True,
                "player_needs_dotnet_sdk": False, "player_needs_cxx_compiler": False,
                "spine_runtime_sha256": hashlib.sha256(runtime.read_bytes()).hexdigest(),
