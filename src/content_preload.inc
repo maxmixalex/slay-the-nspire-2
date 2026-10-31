@@ -43,7 +43,7 @@ static void cancel_content_preload(const Content*owner){
     if(p.index){if(p.index->owner)p.index->first&=127u;else tile_discard(*p.index);}
     if(p.restored)tile_discard(*p.restored);
     if(p.workspace)tile_discard(*p.workspace);
-    if(implicit_dense_owner==&p)implicit_dense_owner=nullptr;
+    if(implicit_dense_owner==&p)release_implicit_scratch(&p);
     p={};
 }
 static uint8_t* preload_output(ContentPreload&p){return p.is_glyph?p.glyph.data:image_buffer(*p.image);}

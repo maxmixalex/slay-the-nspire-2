@@ -118,6 +118,10 @@ static void character_screen(Canvas&c){
         if(random_character_background(c,a.map_clock_ms,a.map_clock_ms-motion.panel_start,motion.panel_start)){}
         else if(a.content.version()>=SourceVersion)c.ui(I12_RandomBackground,0,0,320,240);
         else{c.picture(A_Title,0,0,320,240);c.dim(0,0,320,240,110);}
+    }else if(clip.count&&a.content.reduced_animations()){
+        // The reduced pack stores the exact opaque first source pose. Avoid
+        // replaying an identical copy-patch timeline on every menu tick.
+        c.picture(int(clip.first),0,0,320,240);
     }else if(clip.count&&character_select_delta::available(a.content,character,clip.first)){
         if(!character_delta_background(c,clip.first,frame(character,a.map_clock_ms-motion.panel_start,clip.count)))
             c.rect(0,0,ScreenW,ScreenH,0);
@@ -131,7 +135,8 @@ static void character_screen(Canvas&c){
         c.picture(int(clip.first)+int(frame(character,a.map_clock_ms-motion.panel_start,clip.count)),0,0,320,240);
     }
     else c.ui(character_background(a.selected_character),0,0);
-    if(!random){motion.random_background.active=false;character_atmosphere(c,character,a.map_clock_ms-motion.panel_start,motion.panel_start);}
+    if(!random){motion.random_background.active=false;character_atmosphere(c,character,
+        a.content.reduced_animations()?0:a.map_clock_ms-motion.panel_start,motion.panel_start);}
     const auto profile=a.callbacks.profile_render;
     if(profile)profile(RuntimeRenderPart::CharacterInfo,true);
     char description_key[96]{},description[1024]{},relic_text[1024]{};

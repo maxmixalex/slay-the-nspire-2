@@ -14,6 +14,7 @@
 #include "character_select_delta.hpp"
 #include "retired_assets_ui22.hpp"
 #include "implicit_geometry.hpp"
+#include "content_animation_profile.hpp"
 extern "C" void* memcpy(void*,const void*,size_t);
 namespace spire {
 static uint16_t u16(const uint8_t*p){return p[0]|(uint16_t)p[1]<<8;}
@@ -42,6 +43,10 @@ static uint8_t*const image_pixels=picture_pixels;
 static unsigned image_page_limit=ImagePages;
 static_assert(MaxEncodedImage==ResourceTransferCapacity,"Shared transfer capacity must preserve the original decoding bound");
 static void cancel_content_preload(const Content*owner=nullptr);
+struct ImageCache;
+static ImageCache* reserve_image(unsigned size);
+static void discard_image(ImageCache& cache);
+static uint8_t* image_buffer(const ImageCache& cache);
 #include "content_tiles.inc"
 // Keep a directory index in the existing key word. The immutable, resident
 // descriptor supplies offset, geometry, stored format and encoded length
@@ -461,6 +466,9 @@ bool Content::image_cached(int id)const{
     if(!healthy()||id<0||unsigned(id)>=images_)return false;
     const auto descriptor=image_directory_[unsigned(id)];
     return (data_&&descriptor.format<5)||find_image(this,image_directory_,unsigned(id));
+}
+bool Content::reduced_animations()const{
+    return content_animation_profile::reduced(metadata_,version_);
 }
 void Content::set_image_cache_profile(bool room_frames,bool selection_frames)const{
     // A large-group room borrows512KiB from its published-image tier. The

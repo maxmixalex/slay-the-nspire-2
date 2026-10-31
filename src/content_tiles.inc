@@ -6,24 +6,39 @@ constexpr unsigned TileSide=16,TileBytes=770,TilePageBytes=131072,TilePages=48;
 constexpr unsigned RetainedPageBytes=TilePageBytes/4;
 constexpr unsigned MaxFrameTiles=300,MaxTileGroups=64;
 // NSP2/46 reconstructs canonical sparse geometry from the original alpha.
-// This dedicated buffer preserves the old group order and cache capacities;
-// it never aliases the selected-hand/scene arena or a published picture.
+// Borrow unpublished pages from the existing picture arena only while an
+// implicit image is reconstructed. The reservation cannot be evicted, does
+// not alias a published image, and is released before the result is ready.
+// Smaller pictures reserve only their own dense dimensions. Group-cache
+// capacity and the source-group read order remain unchanged.
 struct ImplicitDenseScratch {
-    uint16_t colors[implicit_geometry::Pixels];
-    uint8_t alpha[implicit_geometry::Pixels];
+    uint16_t* colors=nullptr;
+    uint8_t* alpha=nullptr;
+    unsigned bytes=0;
 };
-alignas(4) static ImplicitDenseScratch implicit_dense;
+static ImplicitDenseScratch implicit_dense;
+static ImageCache* implicit_dense_reservation=nullptr;
 static const void* implicit_dense_owner=nullptr;
-static_assert(sizeof implicit_dense==implicit_geometry::DenseBytes,
-              "Implicit geometry may add only one230400-byte dense picture");
+static void release_implicit_scratch(const void*identity){
+    if(implicit_dense_owner!=identity)return;
+    if(implicit_dense_reservation)discard_image(*implicit_dense_reservation);
+    implicit_dense_reservation=nullptr;implicit_dense_owner=nullptr;implicit_dense={};
+}
+static bool acquire_implicit_scratch(const void*identity,unsigned pixels){
+    if(implicit_dense_owner||!pixels||pixels>implicit_geometry::Pixels)return false;
+    auto*reservation=reserve_image(pixels*3u);if(!reservation)return false;
+    auto*bytes=image_buffer(*reservation);
+    implicit_dense={reinterpret_cast<uint16_t*>(bytes),bytes+pixels*2u,pixels*3u};
+    implicit_dense_reservation=reservation;implicit_dense_owner=identity;return true;
+}
 struct ImplicitScratchLease {
     const void*token=nullptr;
-    bool acquire(const void*identity){
+    bool acquire(const void*identity,unsigned pixels){
         if(implicit_dense_owner)cancel_content_preload();
-        if(implicit_dense_owner)return false;
-        implicit_dense_owner=token=identity;return true;
+        if(!acquire_implicit_scratch(identity,pixels))return false;
+        token=identity;return true;
     }
-    ~ImplicitScratchLease(){if(token&&implicit_dense_owner==token)implicit_dense_owner=nullptr;}
+    ~ImplicitScratchLease(){if(token)release_implicit_scratch(token);}
 };
 static bool implicit_copy_tile(const uint8_t*tile,unsigned w,unsigned height,unsigned tx,unsigned ty){
     const unsigned tw=w-tx<TileSide?w-tx:TileSide,th=height-ty<TileSide?height-ty:TileSide;
@@ -361,14 +376,14 @@ static bool rebuild_tile_frame(const Content* owner,const ResourceReader& reader
     ImplicitScratchLease scratch;
     if(dense||bitmap){
         if(owner->version()<implicit_geometry::ContentVersion||!w||w>320||!height||height>240||
-           !scratch.acquire(&frame))return false;
+           !scratch.acquire(&frame,w*height))return false;
         if(dense){
             if(!implicit_geometry::mask(geometry,frame.geometry_size,frame.count,active))return false;
             for(unsigned i=0;i<w*height;++i)implicit_dense.alpha[i]=0;
         }else{
             if(w!=320||height!=240||!implicit_geometry::bitmap_geometry(geometry,frame.geometry_size,
-                reinterpret_cast<uint8_t*>(&implicit_dense),sizeof implicit_dense))return false;
-            geometry=reinterpret_cast<const uint8_t*>(&implicit_dense);
+                reinterpret_cast<uint8_t*>(implicit_dense.colors),implicit_dense.bytes))return false;
+            geometry=reinterpret_cast<const uint8_t*>(implicit_dense.colors);
         }
     }
     unsigned at=0,out=0;
