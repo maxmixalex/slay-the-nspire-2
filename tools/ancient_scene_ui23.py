@@ -95,8 +95,9 @@ def signature(pack, runtime, scene):
 
 class SampledLoop:
     def __init__(self, sampler, scene, times):
+        from character_death_assets import sample_bounded
         self.sampler, self.scene = sampler, scene
-        self.frames = sampler.sample(scene['resource'], scene['clip'], times, loop=True)
+        self.frames = sample_bounded(sampler,scene['resource'],scene['clip'],times,loop=True)
 
     def metadata(self, resource):
         return self.sampler.metadata(resource)
@@ -173,7 +174,8 @@ def append(data, sampled, work, workers):
         for frame in range(record['frames']):
             colors = np.frombuffer((directory/f'{frame:04d}.rgb565').read_bytes(),dtype='<u2').reshape(HEIGHT,WIDTH)
             raw = encode_patch(colors, None if frame == 0 else base if frame % KEY_INTERVAL == 0 else previous)
-            packed = encode(raw); payload, fmt = (packed,5) if len(packed) < len(raw) else (raw,4)
+            packed = struct.pack('<BI',4,len(raw))+encode(raw)
+            payload, fmt = (packed,5) if len(packed) < len(raw) else (raw,4)
             filename = f'{scene_index}-{frame:04d}.bin'; t.atomic_bytes(cache/filename,payload)
             selected.add(first+frame)
             images.append(dict(width=WIDTH,height=HEIGHT,format=fmt,file=filename,bytes=len(payload),
@@ -223,6 +225,8 @@ def main():
     parser.add_argument('--sample-only',action='store_true')
     args = parser.parse_args()
     t.require(args.sample_only or args.input and args.output,'Supply input/output or --sample-only')
+    for path in (args.input,args.output,args.pck,args.runtime,args.work):
+        if path is not None:t.private_path(path,'Private Ancient conversion input/output')
     args.work.mkdir(parents=True,exist_ok=True)
     pack = Pack(args.pck); started=time.monotonic()
     try:

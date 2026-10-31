@@ -13,6 +13,21 @@ from content_tiles import validate_sparse
 
 
 class AncientScene(unittest.TestCase):
+    def test_long_loop_batches_keep_absolute_source_time(self):
+        class Sampler:
+            def __init__(self):self.calls=[]
+            def sample(self,resource,clip,times,**kwargs):
+                self.calls.append(times)
+                self.assertion=len(times)<=256 and kwargs['loop']
+                if not self.assertion:raise ValueError('Invalid batch')
+                return list(times)
+        sampler=Sampler();scene=ancient.SCENES[0]
+        times=[frame*33/1000 for frame in range(546)]
+        loop=ancient.SampledLoop(sampler,scene,times)
+        self.assertEqual([len(call) for call in sampler.calls],[256,256,34])
+        self.assertEqual(loop.frames,times)
+        self.assertEqual(loop.sample(scene['resource'],scene['clip'],[times[545]]),[times[545]])
+
     def test_original_loop_duration_and_tail_tick(self):
         for duration, count in ((18000,546),(16667,506)):
             raw=struct.pack('<8H',ancient.MAGIC,1,58613,count,33,duration,0,0)
