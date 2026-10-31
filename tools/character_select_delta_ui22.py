@@ -105,6 +105,59 @@ def geometry(rows, gap):
     return bytes(out), decoded
 
 
+def merge_same_tile_spans(geometry_bytes, decoded, maximum=15):
+    """Use a frame's existing last cache page to remove redundant span headers.
+
+    Only gaps wholly inside an already active physical tile are copied. The
+    original image pages and tile set therefore remain unchanged. A merged
+    gap costs two bytes per copied RGB565 pixel and removes a five-byte header;
+    cheapest gaps are accepted first within this frame's existing page count.
+    """
+    t.require(0 <= maximum < 16, 'Same-tile gap exceeds the physical tile width')
+    rows, eligible, at = [], [], 0
+    for y in range(HEIGHT):
+        t.require(at+2 <= len(geometry_bytes), 'Truncated selection geometry row')
+        count, = struct.unpack_from('<H', geometry_bytes, at); at += 2
+        row = []
+        for _ in range(count):
+            t.require(at+5 <= len(geometry_bytes), 'Truncated selection copy span')
+            start, length, mode = struct.unpack_from('<HHB', geometry_bytes, at); at += 5
+            t.require(mode == 0 and length and start+length <= WIDTH and
+                      (not row or row[-1][1] <= start), 'Invalid selection copy span')
+            row.append((start, start+length))
+        for index in range(len(row)-1):
+            end, start = row[index][1], row[index+1][0]
+            gap = start-end
+            if 0 < gap <= maximum and (end-1)//16 == start//16:
+                eligible.append((gap*2-5, y, index, gap))
+        rows.append(row)
+    t.require(at == len(geometry_bytes), 'Selection geometry has trailing bytes')
+    pages = (decoded+4095)//4096
+    room, minimum = pages*4096-decoded, (pages-1)*4096+1
+    chosen, extra, copied = set(), 0, 0
+    for cost, y, index, gap in sorted(eligible):
+        if cost <= room and decoded+extra+cost >= minimum:
+            chosen.add((y, index)); room -= cost; extra += cost; copied += gap
+    out = bytearray()
+    for y, row in enumerate(rows):
+        merged = []
+        for index, (start, end) in enumerate(row):
+            if index and (y, index-1) in chosen:
+                merged[-1] = (merged[-1][0], end)
+            else:
+                merged.append((start, end))
+        out.extend(struct.pack('<H', len(merged)))
+        for start, end in merged:
+            out.extend(struct.pack('<HHB', start, end-start, 0))
+    t.require((decoded+4095)//4096 == (decoded+extra+4095)//4096,
+              'Same-tile merging changed the decoded image page budget')
+    t.require(np.array_equal(coalesce.active_tiles(geometry_bytes, WIDTH, HEIGHT),
+                             coalesce.active_tiles(out, WIDTH, HEIGHT)),
+              'Same-tile merging added a physical source tile')
+    return bytes(out), decoded+extra, dict(merged_spans=len(chosen),
+        copied_unchanged_pixels=copied, extra_decoded_bytes=extra)
+
+
 def plan_frames(source, reader):
     frames, reports, added = {}, [], AddedTiles(reader)
     for character in range(CHARACTERS):
@@ -141,8 +194,12 @@ def plan_frames(source, reader):
         eligible = np.flatnonzero((np.arange(WIDTH+1)>=2) & (total_pages<=RESIDENT_PAGES[character]))
         t.require(len(eligible)>0, 'Exact selection loop exceeds its fixed decoded-image budget')
         gap = int(eligible[-1])
+        merges = dict(merged_spans=0, copied_unchanged_pixels=0, extra_decoded_bytes=0)
         for image, ids, row_runs, sha in planned:
             spans, decoded = geometry(row_runs, gap)
+            spans, decoded, joined = merge_same_tile_spans(spans, decoded)
+            for key, value in joined.items():
+                merges[key] += value
             active = coalesce.active_tiles(spans, WIDTH, HEIGHT)
             # Inactive indices still name an existing full-size tile. Reuse a
             # live reference so obsolete color tiles can later be reclaimed.
@@ -156,6 +213,8 @@ def plan_frames(source, reader):
             frame_rgb565_sha256=hashes, decoded_pages=sum(pages), original_decoded_pages=sum(old_pages),
             maximum_frame_pages=max(pages), maximum_replay_patches=KEY_INTERVAL-1,
             maximum_seek_images=KEY_INTERVAL+1, merged_gap_pixels=gap,
+            same_tile_merging=merges, exact_active_tile_sets=True,
+            exact_per_frame_decoded_pages=True,
             decoded_page_budget=RESIDENT_PAGES[character]))
         print(json.dumps(dict(stage='selection_geometry', **{k:v for k,v in reports[-1].items()
                                                              if k != 'frame_rgb565_sha256'})), flush=True)

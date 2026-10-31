@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Execute the actual linked ARM TGR2 inverse, including AAPCS and guards.
+"""Execute the actual linked in-place ARM TGR2 inverse, AAPCS and guards.
 
 This is instruction/ABI evidence, not a calculator storage or FPS benchmark.
 """
@@ -46,7 +46,10 @@ def main():
     parser.add_argument('elf', type=Path)
     args = parser.parse_args()
     data = args.elf.read_bytes()
-    segments, (address, size) = linked_helper(data, b'_ZN5spire19restore_tile_filterEPhPKhjjj')
+    # Content uses the in-place inverse. The linker may discard the unused
+    # out-of-place convenience helper, so testing that symbol misses the real
+    # production path and fails after otherwise harmless compiler changes.
+    segments, (address, size) = linked_helper(data, b'_ZN5spire28restore_tile_filter_in_placeEPhjjjS0_j')
     emulator = Uc(UC_ARCH_ARM, UC_MODE_ARM | UC_MODE_LITTLE_ENDIAN)
     emulator.ctl_set_cpu_model(UC_CPU_ARM_926)
     low = min(a for a, _, _ in segments) & ~4095
@@ -56,8 +59,8 @@ def main():
     emulator.mem_map(low, high - low)
     for start, _, payload in segments:
         emulator.mem_write(start, payload)
-    stack, stop, destination, source = 0x20000000, 0x30000000, 0x40000000, 0x41000000
-    for start, length in ((stack, 65536), (stop, 4096), (destination, 1024 * 1024), (source, 1024 * 1024)):
+    stack, stop, destination, scratch = 0x20000000, 0x30000000, 0x40000000, 0x41000000
+    for start, length in ((stack, 65536), (stop, 4096), (destination, 1024 * 1024), (scratch, 1024 * 1024)):
         emulator.mem_map(start, length)
     saved = {reg: 0xA5010000 + i * 0x101 for i, reg in enumerate((
         UC_ARM_REG_R4, UC_ARM_REG_R5, UC_ARM_REG_R6, UC_ARM_REG_R7,
@@ -65,16 +68,24 @@ def main():
     sp, vectors = stack + 65536 - 64, 0
     records = []
 
-    def execute(raw, filtered, count, mode, expected=True, declared=None):
+    def execute(raw, filtered, count, mode, expected=True, declared=None, *,
+                capacity=None, overlap=False, misalign=False):
         nonlocal vectors
-        guard = b'\xcd' * (len(raw) + 64)
+        # 770-byte tile records naturally alternate between 0 and 2 mod 4;
+        # also exercise a whole group starting at 2 mod 4.
+        prefix = 34 if misalign else 32
+        guard = b'\xcd' * prefix + filtered + b'\xcd' * 32
+        planes = max(count, 1)*258
+        scratch_guard = b'\xa9' * (planes+64)
         emulator.mem_write(destination, guard)
-        emulator.mem_write(source, filtered)
-        emulator.mem_write(sp, struct.pack('<I', mode))
+        emulator.mem_write(scratch, scratch_guard)
+        target = destination+prefix
+        emulator.mem_write(sp, struct.pack('<II', target+2 if overlap else scratch+32,
+                                          planes if capacity is None else capacity))
         emulator.reg_write(UC_ARM_REG_CPSR, 0x10)
         for reg, value in saved.items():emulator.reg_write(reg, value)
         for reg, value in zip((UC_ARM_REG_R0, UC_ARM_REG_R1, UC_ARM_REG_R2, UC_ARM_REG_R3),
-                              (destination + 32, source, len(raw) if declared is None else declared, count)):
+                              (target, len(filtered) if declared is None else declared, count, mode)):
             emulator.reg_write(reg, value)
         emulator.reg_write(UC_ARM_REG_SP, sp);emulator.reg_write(UC_ARM_REG_LR, stop)
         emulator.emu_start(address, stop, timeout=30000000, count=200000000)
@@ -85,27 +96,34 @@ def main():
         if any(emulator.reg_read(reg) != value for reg, value in saved.items()):
             raise AssertionError('Inverse clobbered a callee-saved register')
         output = bytes(emulator.mem_read(destination, len(guard)))
-        if output[:32] != guard[:32] or output[len(raw) + 32:] != guard[len(raw) + 32:]:
+        if output[:prefix] != guard[:prefix] or output[prefix+len(raw):] != guard[prefix+len(raw):]:
             raise AssertionError('Inverse wrote outside the guarded output')
-        if expected and output[32:len(raw) + 32] != raw:
+        scratch_after = bytes(emulator.mem_read(scratch, len(scratch_guard)))
+        if scratch_after[:32] != scratch_guard[:32] or scratch_after[-32:] != scratch_guard[-32:]:
+            raise AssertionError('Inverse wrote outside the guarded scratch')
+        if expected and output[prefix:prefix+len(raw)] != raw:
             raise AssertionError('Linked inverse changed RGB565/alpha/dimensions')
         vectors += 1
 
-    for count in (1, 256, 680):
+    for count in (1, 17, 256, 680, 1360):
         for mode in (1, 2):
             raw, filtered = fixture(count, mode)
             execute(raw, filtered, count, mode)
+            execute(raw, filtered, count, mode, misalign=True)
             records.append(dict(tiles=count, mode=mode, raw_bytes=len(raw), raw_sha256=hashlib.sha256(raw).hexdigest()))
     raw, filtered = fixture(1, 1)
-    for count, mode, length in ((0, 1, 770), (681, 1, 770), (1, 0, 770), (1, 3, 770), (1, 1, 769)):
+    for count, mode, length in ((0, 1, 770), (1361, 1, 770), (1, 0, 770), (1, 3, 770), (1, 1, 769)):
         execute(raw, filtered, count, mode, False, length)
     execute(raw, b'\0' + filtered[1:], 1, 1, False)
     execute(raw, filtered[:1] + b'\x11' + filtered[2:], 1, 1, False)
+    execute(raw, filtered, 1, 1, False, capacity=257)
+    execute(raw, filtered, 1, 1, False, overlap=True)
     execute(raw, filtered, 1, 1)
     print(json.dumps(dict(elf=str(args.elf), elf_sha256=hashlib.sha256(data).hexdigest(),
         inverse_address=address, inverse_bytes=size, vectors=vectors, fixtures=records,
         cpu='ARM926', output='all RGB565 values, alpha and dimensions exact',
-        guards='preserved', callee_saved_registers='r4-r11 preserved', stack='restored',
+        guards='output and scratch preserved', alignment='0 and 2 mod 4 exact',
+        callee_saved_registers='r4-r11 preserved', stack='restored',
         limitation='Linked instruction/ABI validation, not calculator execution or performance')))
 
 
