@@ -297,7 +297,8 @@ static void random_character_white_dot(Canvas&c,const water_reflection::Texture&
             unsigned count=unsigned(last-x),lower=1,upper=0;
             if(cache){
                 const unsigned u_count=u_tiles.count(u),v_count=v_tiles.count(v);
-                count=mn(count,mn(u_count,v_count));const unsigned range=cache->range(u,v);
+                const unsigned tile_count=u_count<v_count?u_count:v_count;
+                count=count<tile_count?count:tile_count;const unsigned range=cache->range(u,v);
                 lower=div255((range&255u)*alpha);upper=div255((range>>8)*alpha);
             }
             if(lower==upper){
