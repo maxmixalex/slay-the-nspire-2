@@ -133,6 +133,10 @@ def validate_release_content(data, stage):
     tiles.require(count >= REQUIRED_AUX,
                   'UI20 content is missing: expected framed actions, Osty dead_loop and reward icons (5422 auxiliaries)')
     source = tiles.PackView(data, count, versions=tuple(range(44, tiles.MAXIMUM_CONTENT_VERSION + 1)))
+    from no_animations import reduced, validate_profile
+    reduced_profile = reduced(data)
+    if 'no-animations' in stage.lower() or 'noanimations' in stage.lower():
+        tiles.require(reduced_profile, 'The no-animation release requires its NAF1 resource profile')
     if int(match[1])>=22:
         tiles.require(source.version>=46,
                       'UI22 final content requires NSP2/46 implicit geometry support')
@@ -222,4 +226,6 @@ def validate_release_content(data, stage):
         result['ui22']=validate_ui22(source,image)
         from retired_assets_ui22 import validate_retired_profile
         result['ui22']['retirement']=validate_retired_profile(source,image)
+    if reduced_profile:
+        result['animation_profile'] = validate_profile(source,image)
     return result
