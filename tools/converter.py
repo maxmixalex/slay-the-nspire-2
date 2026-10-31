@@ -26,6 +26,8 @@ import time
 ROOT = Path(__file__).resolve().parents[1]
 LANGUAGES = ('eng', 'zhs', 'zht', 'deu', 'esp', 'fra', 'ind', 'ita', 'jpn', 'kor',
              'pol', 'ptb', 'rus', 'spa', 'tha', 'tur')
+ENEMY_REBAKE_MODELS = ('Vantom', 'CeremonialBeast', 'WaterfallGiant', 'MechaKnight',
+                       'FrogKnight', 'ThievingHopper', 'BygoneEffigy', 'Architect')
 ORIGINAL_FONTS = ('bitter_medium_italic.ttf', 'NotoSansCJKjp-Bold.otf',
     'NotoSansCJKjp-Medium.otf', 'NotoSansCJKjp-Regular.otf', 'GyeonggiCheonnyeonBatangBold.ttf',
     'kreon_bold.ttf', 'kreon_regular.ttf', 'FiraSansExtraCondensed-Bold.ttf',
@@ -324,6 +326,15 @@ class Recipe:
         ready=self.directory('ui13-input')
         self.add('ui13-input','@rename-editions',[swarm,ready,'new'],
             self.edition_files(ready)+[ready/'eng.nsp'])
+        # UI13 grafts real per-clip source registration into every locale while
+        # proving frame IDs/counts/clocks. Vantom's later typed sampler requires
+        # these measured units; its old model-wide zero fields are insufficient.
+        rebaked=self.directory('enemy-rebake')
+        self.add('enemy-rebake','rebake_enemy_ui13',['--input',ready/'eng.nsp',
+            '--pck',self.pck,*native,'--output',rebaked,
+            '--work',self.directory('cache/enemy-rebake'),'--workers',self.workers,
+            *(value for model in ENEMY_REBAKE_MODELS for value in ('--model',model))],
+            [rebaked/'eng.nsp',rebaked/'enemy-rebake-receipt.json'])
         artcache=self.directory('cache/ui13')
         for name,command,extra in (('ui13-assets','assets',()),
             ('ui13-retained','extend-retained',['--fastnoise-header',self.noise]),
@@ -333,7 +344,7 @@ class Recipe:
             self.add(name,'@ui13-assets',[command,'--pck',self.pck,'--cache',artcache,*native,*extra,
                 '--snapshot',artcache/(name+'-stage.json')],[artcache/(name+'-stage.json')])
         ui13=self.directory('ui13')
-        self.add('ui13','ui13_resources',['pack','--artwork',ready/'eng.nsp',
+        self.add('ui13','ui13_resources',['pack','--artwork',rebaked/'eng.nsp',
             '--base-common',ready/'nSpire2.dat.tns','--editions',ready,'--fonts',self.fonts,
             '--output',ui13,'--pck',self.pck,'--cache',artcache],
             self.edition_files(ui13)+[ui13/'ui13-eng.nsp'])

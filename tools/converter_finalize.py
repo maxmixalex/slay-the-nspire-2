@@ -232,8 +232,10 @@ def add_final_stages(recipe, source_editions, output, codes, no_animations):
     for name, module in (('selection45', 'finish_artwork_ui22'),
                          ('retirement45', 'retire_legacy_resources_ui22')):
         target = recipe.directory(name)/'eng.nsp'
+        work = recipe.directory('cache')/name
+        receipt = work/'retirement-receipt.json' if name == 'retirement45' else target.with_suffix('.json')
         recipe.add(name, module, ['--input', logical, '--output', target,
-            '--work', recipe.directory('cache')/name, '--workers', workers], [target, target.with_suffix('.json')])
+            '--work', work, '--workers', workers], [target, receipt])
         logical = target
     target = recipe.directory('ancient-scenes45')/'eng.nsp'
     exact_scenes = no_animations or getattr(recipe, 'quality_policy', DEFAULT_QUALITY_POLICY) == 'exact'

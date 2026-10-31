@@ -15,6 +15,51 @@ import converter
 
 
 class ConverterTests(unittest.TestCase):
+    def test_native_enemy_rebake_precedes_locale_graft_and_vantom_sampling(self):
+        from collections import Counter
+        from world_enemy_profile import plan
+        recipe=converter.Recipe('/game','/work','/runtime','dotnet','/noise','-')
+        recipe.source_stages()
+        stages={stage.name:stage for stage in recipe.stages}
+        rebake=stages['enemy-rebake'];args=rebake.arguments
+        self.assertEqual(rebake.module,'rebake_enemy_ui13')
+        self.assertEqual(args[args.index('--input')+1],str(stages['ui13-input'].outputs[-1]))
+        models=[args[i+1] for i,value in enumerate(args) if value=='--model']
+        catalog=plan();jobs=[job for job in catalog['jobs'] if job['model'] in models]
+        self.assertEqual(Counter(job['model'] for job in jobs),{
+            'Vantom':232,'CeremonialBeast':11,'WaterfallGiant':9,'MechaKnight':9,
+            'FrogKnight':7,'ThievingHopper':11,'BygoneEffigy':4,'Architect':3})
+        self.assertEqual((len(jobs),sum(job['frames'] for job in jobs)),(286,5340))
+        self.assertTrue(all(not row.get('shared_group') for row in catalog['models'] if row['model'] in models))
+        graft=stages['ui13'].arguments
+        self.assertEqual(graft[graft.index('--artwork')+1],str(rebake.outputs[0]))
+        self.assertEqual(graft[graft.index('--base-common')+1],str(stages['ui13-input'].outputs[0]))
+        self.assertLess(list(stages).index('enemy-rebake'),list(stages).index('ui13'))
+        self.assertLess(list(stages).index('ui13'),list(stages).index('vantom'))
+        self.assertNotIn('align_enemy_tiles_ui13',[stage.module for stage in recipe.stages])
+
+    def test_retirement_tracks_the_receipt_written_by_the_actual_entrypoint(self):
+        from converter_finalize import add_final_stages
+        import retire_legacy_resources_ui22 as retirement
+        with tempfile.TemporaryDirectory() as folder, contextlib.redirect_stdout(io.StringIO()):
+            root=Path(folder)
+            recipe=converter.Recipe('/game',root,'/runtime','dotnet','/noise','-')
+            add_final_stages(recipe,recipe.source_stages(),root/'published',['eng','zhs'],False)
+            stage=next(stage for stage in recipe.stages if stage.name=='retirement45')
+            args=stage.arguments;source=Path(args[args.index('--input')+1])
+            source.parent.mkdir(parents=True);source.write_bytes(b'private source fixture')
+            stage.outputs[0].parent.mkdir(parents=True)
+            receipt=dict(complete=True,input_bytes=22,output_bytes=7,saved_bytes=15,
+                         output_sha256='fixture',active_images_exact=1,auxiliary_count=7212)
+            def convert(data,work,workers):
+                work.mkdir(parents=True)
+                return b'retired',receipt
+            with patch.object(retirement,'convert',side_effect=convert):
+                converter.internal(stage.module,args)
+            self.assertEqual(stage.outputs[0].read_bytes(),b'retired')
+            self.assertTrue(json.loads(stage.outputs[1].read_text())['complete'])
+            self.assertEqual(stage.outputs[1],Path(args[args.index('--work')+1])/'retirement-receipt.json')
+
     def test_scene_fonts_wait_for_the_nine_pixel_glyph_format(self):
         import append_ui10_final_assets as ui10
         recipe=converter.Recipe('/game','/work','/runtime','dotnet','/noise','-')
