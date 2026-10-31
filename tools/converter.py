@@ -26,6 +26,14 @@ import time
 ROOT = Path(__file__).resolve().parents[1]
 LANGUAGES = ('eng', 'zhs', 'zht', 'deu', 'esp', 'fra', 'ind', 'ita', 'jpn', 'kor',
              'pol', 'ptb', 'rus', 'spa', 'tha', 'tur')
+ORIGINAL_FONTS = ('bitter_medium_italic.ttf', 'NotoSansCJKjp-Bold.otf',
+    'NotoSansCJKjp-Medium.otf', 'NotoSansCJKjp-Regular.otf', 'GyeonggiCheonnyeonBatangBold.ttf',
+    'kreon_bold.ttf', 'kreon_regular.ttf', 'FiraSansExtraCondensed-Bold.ttf',
+    'FiraSansExtraCondensed-Italic.ttf', 'FiraSansExtraCondensed-Regular.ttf',
+    'source_code_pro_medium.ttf', 'source_code_pro_semibold.ttf', 'spectral_bold.ttf',
+    'CSChatThaiUI.ttf', 'NotoSansMonoCJKsc-Regular.otf', 'SourceHanSerifSC-Bold.otf',
+    'SourceHanSerifSC-Medium.otf', 'NotoSansMonoCJKtc-Regular.otf',
+    'SourceHanSerifTC-Bold.otf', 'SourceHanSerifTC-Medium.otf')
 
 
 @dataclass(frozen=True)
@@ -117,12 +125,15 @@ class Recipe:
         """All catalog appends start with extracted PCK data, never a prior pack."""
         font = self.fonts/'NotoSansMonoCJKsc-Regular.otf'
         native = ['--runtime', self.runtime, '--dotnet', self.dotnet]
-        self.add('fonts', '@fonts', [self.pck, self.fonts, self.key_font], [self.fonts/'font-extraction.json', font])
+        self.add('fonts', '@fonts', [self.pck, self.fonts, self.key_font],
+            [self.fonts/'font-extraction.json',*(self.fonts/name for name in ORIGINAL_FONTS),
+             self.fonts/'supplement/spectral_bold.ttf',self.fonts/'supplement/bitter_medium_italic.ttf',
+             *([self.fonts/'TINspireKeysCX.ttf'] if str(self.key_font)!='-' else [])])
         base = self.directory('base')/'nSpire2.nsp.tns'
-        self.add('base', 'build_content', [self.game, '--output', base.parent, '--font', font], [base])
+        self.add('base', 'build_content', [self.game, '--output', base.parent, '--font', font,'--host-intermediates'], [base])
         world = self.directory('world')/'world.nsp'
         self.add('world', 'build_world', [self.game, base, '--output', world, '--font', font, *native,
-            '--fastnoise-header', self.noise, '--cache', self.directory('cache/world')], [world])
+            '--fastnoise-header', self.noise, '--cache', self.directory('cache/world'),'--host-intermediates'], [world])
         tiled = self.directory('tiles')/'tiles.nsp'
         self.add('tiles', 'content_tiles', ['--input', world, '--output', tiled, '--work', self.directory('cache/tiles'),
             '--receipt', tiled.with_suffix('.json'), '--workers', self.workers,
@@ -333,11 +344,12 @@ def run_stages(stages, work, identity, stop_after=None):
                 record.update(status='complete',elapsed_seconds=time.time()-started,
                               outputs={str(path):digest(path) for path in stage.outputs})
                 atomic_json(receipt,record)
+                saved=record
             except BaseException as exc:
                 record.update(status='failed',error=str(exc),elapsed_seconds=time.time()-started)
                 atomic_json(receipt,record)
                 raise
-        previous=key
+        previous=hashlib.sha256((key+json.dumps(saved['outputs'],sort_keys=True)).encode()).hexdigest()
         if stop_after==stage.name:
             print('Stopped at the requested build stage; this is not an installable release.',flush=True)
             return False

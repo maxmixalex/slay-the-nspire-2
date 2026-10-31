@@ -183,14 +183,17 @@ def protected_images(source, preserve_selection=False):
     return protected
 
 
-def jobs(source, policy, *, retained=True, preserve_static=False, preserve_selection=False):
-    """Yield bounded independent groups; no full decoded animation spool."""
-    reader = t.TileReader(source)
-    t.require(not any(reader.sparse), 'Candidate requires ordinary TGR1/TGR2 pixel groups')
-    protected = protected_images(source, preserve_selection) if preserve_static else set()
-    exact_tiles = np.zeros(reader.tile_count, dtype=np.bool_)
-    protected_ranges = {}
-    for image in protected:
+def selection_images(source):
+    if len(source.aux) < 1505 or len(source.clips) < 1710:
+        return set()
+    return set(source.aux[1500:1505]) | {i for first, count, *_ in source.clips[1705:1710]
+                                        for i in range(first, first+count)}
+
+
+def mark_consumers(source, reader, images):
+    tiles = np.zeros(reader.tile_count, dtype=np.bool_)
+    ranges = {}
+    for image in images:
         offset, width, height, fmt, length = source.images[image]
         if fmt == 6:
             _global, local, at, size = t.DESCRIPTOR.unpack_from(source.data, offset)
@@ -198,10 +201,22 @@ def jobs(source, policy, *, retained=True, preserve_static=False, preserve_selec
             _decoded, indices, _geometry = t.FRAME.unpack_from(raw, at)
             ids = np.frombuffer(raw, dtype='<u4', count=indices//4, offset=at+12)
             mask = active_tiles(raw[at+12+indices:at+size], width, height)
-            exact_tiles[ids[mask]] = True
+            tiles[ids[mask]] = True
         elif fmt == 7:
             relative, _size, at, shape = struct.unpack_from('<iIII', source.data, offset)
-            protected_ranges.setdefault(offset+relative, []).append((at, at+(shape & 0xffffff)))
+            ranges.setdefault(offset+relative, []).append((at, at+(shape & 0xffffff)))
+    return tiles, ranges
+
+
+def jobs(source, policy, *, retained=True, preserve_static=False, preserve_selection=False,
+         selection_policy=None):
+    """Yield bounded independent groups; no full decoded animation spool."""
+    reader = t.TileReader(source)
+    t.require(not any(reader.sparse), 'Candidate requires ordinary TGR1/TGR2 pixel groups')
+    protected = protected_images(source, preserve_selection) if preserve_static else set()
+    exact_tiles, protected_ranges = mark_consumers(source, reader, protected)
+    selection_tiles, selection_ranges = mark_consumers(source, reader,
+        selection_images(source) if selection_policy else set())
     emit('protected_static_art', images=len(protected), tiles=int(exact_tiles.sum()),
          preserve_static=preserve_static, preserve_selection=preserve_selection)
     for group in range(reader.tile_groups):
@@ -210,6 +225,12 @@ def jobs(source, policy, *, retained=True, preserve_static=False, preserve_selec
         original_raw = reader.group(group)[0]
         raw = color_tiles(original_raw, policy)
         first = group * reader.per_group
+        alternate = selection_tiles[first:first+len(raw)//t.TILE_BYTES]
+        if np.any(alternate):
+            records = np.frombuffer(raw, dtype='u1').reshape(-1, t.TILE_BYTES).copy()
+            finer = np.frombuffer(color_tiles(original_raw, selection_policy), dtype='u1').reshape(-1,t.TILE_BYTES)
+            records[alternate] = finer[alternate]
+            raw = records.tobytes()
         selected = exact_tiles[first:first+len(raw)//t.TILE_BYTES]
         if np.any(selected):
             records = np.frombuffer(raw, dtype='u1').reshape(-1, t.TILE_BYTES).copy()
@@ -244,7 +265,9 @@ def jobs(source, policy, *, retained=True, preserve_static=False, preserve_selec
             if any(at < end and begin < at+length for begin, end in protected_ranges.get(group.offset, ())):
                 continue
             if fmt in (1, 3, 4) or (group.offset, at) in opaque_slices:
-                out[at:at+length] = color_image(raw[at:at+length], fmt, policy)
+                alternate = any(at < end and begin < at+length for begin,end in selection_ranges.get(group.offset,()))
+                out[at:at+length] = color_image(raw[at:at+length], fmt,
+                                               selection_policy if alternate else policy)
                 selected.append(at)
         for at, shape in group.slices:
             if at not in selected:
@@ -276,13 +299,14 @@ def convert_job(job):
     return result
 
 
-def convert(source, policy, *, workers=2, retained=True, preserve_static=False, preserve_selection=False):
+def convert(source, policy, *, workers=2, retained=True, preserve_static=False, preserve_selection=False,
+            selection_policy=None):
     """Bound submissions: at most one raw group per worker plus its successor."""
     results = []
     with ThreadPoolExecutor(max_workers=workers) as pool:
         pending = []
         for job in jobs(source, policy, retained=retained, preserve_static=preserve_static,
-                        preserve_selection=preserve_selection):
+                        preserve_selection=preserve_selection, selection_policy=selection_policy):
             pending.append(pool.submit(convert_job, job))
             if len(pending) >= workers * 2:
                 results.append(pending.pop(0).result())
@@ -293,7 +317,7 @@ def convert(source, policy, *, workers=2, retained=True, preserve_static=False, 
     return results
 
 
-def verify(source, output, results, policy):
+def verify(source, output, results, policy, selection_policy=None):
     target = view(output)
     before, after = t.TileReader(source), t.TileReader(target)
     t.require(source.counts == target.counts and source.clips == target.clips and
@@ -306,9 +330,11 @@ def verify(source, output, results, policy):
         t.require(t.sha256(raw) == changed_tiles[group]['raw_sha256'], 'Candidate tile pixels differ')
         a = np.frombuffer(before.group(group)[0], dtype='u1').reshape(-1, t.TILE_BYTES)
         b = np.frombuffer(raw, dtype='u1').reshape(-1, t.TILE_BYTES)
+        acceptable_alpha = (alpha_lut(policy)[a[:,514:]] == b[:,514:]) | (a[:,514:] == b[:,514:])
+        if selection_policy:
+            acceptable_alpha |= alpha_lut(selection_policy)[a[:,514:]] == b[:,514:]
         t.require(np.array_equal(a[:, :2], b[:, :2]) and
-                  np.all((alpha_lut(policy)[a[:, 514:]] == b[:, 514:]) |
-                         (a[:, 514:] == b[:, 514:])),
+                  np.all(acceptable_alpha),
                   'Tile dimensions or declared alpha mapping changed')
     for group in range(before.tile_groups, len(before.groups)):
         a, b = before.groups[group], after.groups[group]
@@ -360,6 +386,8 @@ def main(argv=None):
                         help='Keep static background/UI/card consumers and all their shared tiles exact')
     parser.add_argument('--preserve-selection', action='store_true',
                         help='Together with preserve-static, keep every selection background sample exact')
+    parser.add_argument('--selection-policy', choices=tuple(LEVELS),
+                        help='Use a finer policy for the complete selection scene and all shared tiles')
     parser.add_argument('--experimental-candidate-only', action='store_true')
     args = parser.parse_args(argv)
     if not args.experimental_candidate_only:
@@ -372,14 +400,16 @@ def main(argv=None):
     with args.input.open('rb') as handle, mmap.mmap(handle.fileno(), 0, access=mmap.ACCESS_READ) as data:
         source = view(data)
         results = convert(source, args.policy, workers=args.workers, retained=not args.tiles_only,
-                          preserve_static=args.preserve_static, preserve_selection=args.preserve_selection)
+                          preserve_static=args.preserve_static, preserve_selection=args.preserve_selection,
+                          selection_policy=args.selection_policy)
         output = rewrite(source, {}, results)
-        checked = verify(source, output, results, args.policy)
+        checked = verify(source, output, results, args.policy, args.selection_policy)
         t.atomic_bytes(args.output, output)
         receipt = dict(schema=1, complete=True, not_release_approved=True, policy=args.policy,
             input_sha256=t.sha256(data), output_sha256=t.sha256(output),
             input_bytes=len(data), output_bytes=len(output), saved_bytes=len(data)-len(output),
             static_art_preserved=args.preserve_static, selection_art_preserved=args.preserve_selection,
+            selection_policy=args.selection_policy,
             visual_comparison_required=True, complete_decoder_performance_required=True,
             no_runtime_codec_or_buffer_added=True, no_frames_removed_or_resampled=True,
             alpha_error=alpha_error(args.policy),

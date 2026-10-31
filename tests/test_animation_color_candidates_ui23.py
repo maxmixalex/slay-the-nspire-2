@@ -6,6 +6,7 @@ import struct
 import sys
 import tempfile
 import unittest
+from unittest.mock import patch
 
 import numpy as np
 
@@ -108,6 +109,22 @@ class AnimationColorCandidateTest(unittest.TestCase):
             for image in candidate.protected_images(before):
                 read = lambda s: tiles.TileReader(s).image_raw(image) if s.images[image][3]==6 else s.image_raw(image)
                 self.assertEqual(read(before), read(after))
+
+    def test_finer_selection_policy_reaches_every_consumed_tile(self):
+        with tempfile.TemporaryDirectory() as tmp, redirect_stdout(StringIO()):
+            root = Path(tmp)
+            original = retile.view(source())
+            plan = retile.make_plan(original, root)
+            encoded = retile.compress_plan(plan, root, root/'cache', 1)
+            data, _ = retile.rewrite(original, plan, encoded)
+            before = retile.view(data)
+            with patch.object(candidate, 'selection_images', return_value={4}):
+                results = candidate.convert(before, 'bounded-a6', workers=1, selection_policy='555a8')
+            output = candidate.rewrite(before, {}, results)
+            candidate.verify(before, output, results, 'bounded-a6', '555a8')
+            w,h,fmt,raw = tiles.TileReader(before).image_raw(4)
+            self.assertEqual(tiles.TileReader(retile.view(output)).image_raw(4),
+                             (w,h,fmt,candidate.color_image(raw,fmt,'555a8',w,h)))
 
 
 if __name__ == '__main__':

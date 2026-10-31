@@ -7,6 +7,7 @@ Only a verified local reference installation is accepted. No source assets or
 installable font are included in the public source tree.
 """
 from __future__ import annotations
+from conversion_context import file_limit
 import argparse, hashlib, json, math, struct
 from pathlib import Path
 import numpy as np
@@ -188,7 +189,7 @@ def build(game: Path, source: Path, output: Path, font: Path) -> dict:
     cdata=b''.join(struct.pack('<4I',*r) for r in records)
     body=idata+gdata+sdata+animations+cdata+struct.pack('<'+str(len(aux))+'I',*aux)+payload
     data=struct.pack('<4s9I',b'NSP2',6,commit,40+len(body),ni,ng,ns,nc,nk,0)+body
-    if len(data)>6*1024*1024:raise ValueError(f'Pack exceeds resident buffer: {len(data):,}')
+    if len(data)>file_limit(6*1024*1024):raise ValueError(f'Pack exceeds conversion file bound: {len(data):,}')
     output.parent.mkdir(parents=True,exist_ok=True);temp=output.with_name(output.name+'.tmp');temp.write_bytes(data);temp.replace(output)
     manifest={'format':'NSP2/6','reference':'v0.111.0 / 41cef1ea','bytes':len(data),'sha256':hashlib.sha256(data).hexdigest(),
               'cards':ALL_CARDS,'card_records':records,'auxiliary_images':{a[0]:i for a,i in zip(ALL_UI,aux)},

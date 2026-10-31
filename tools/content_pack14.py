@@ -1,5 +1,6 @@
 """Strict private NSP2/10..14 reader and append-only versioned encoder."""
 import struct
+from conversion_context import file_limit
 from build_content import fnv
 from character_ui_profile import CARDS,STRINGS,AUXILIARY
 from all_character_ui_profile import CARDS as ALL_CARDS,STRINGS as ALL_STRINGS,AUXILIARY as ALL_AUXILIARY,CLIPS as ALL_CLIPS
@@ -17,7 +18,7 @@ class PackData:
         magic,self.version,commit,n,ni,ng,ns,nc,nk,digest=struct.unpack_from('<4s9I',data)
         if (magic!=b'NSP2' or self.version not in PROFILES or commit!=0x41cef1ea or
             n!=len(data)):raise ValueError('Expected pinned NSP2/10..14')
-        if self.version<14 and n>LIMIT:raise ValueError('Historical pack size outside resident limit')
+        if self.version<14 and n>file_limit(LIMIT):raise ValueError('Historical pack size outside conversion file bound')
         expected_cards,expected_strings,nu=PROFILES[self.version]
         if ni>(65535 if self.version>=14 else 8192) or ng>GLYPH_LIMITS[self.version] or ns!=expected_strings or nc!=CLIP_COUNTS[self.version] or nk!=expected_cards:
             raise ValueError('Incompatible directory profile')
@@ -69,5 +70,5 @@ class PackData:
         strings=b''.join(struct.pack('<II',add(t.encode()+b'\0'),len(t.encode())) for t in self.strings)
         body=images+glyphs+strings+self.clips+b''.join(struct.pack('<4I',*r) for r in self.cards)+struct.pack('<'+'I'*nu,*self.aux)+payload
         output=struct.pack('<4s9I',b'NSP2',version,0x41cef1ea,40+len(body),ni,ng,ns,nc,nk,0)+body
-        if len(output)>(FILE_LIMIT if version>=14 else LIMIT):raise ValueError(f'Pack exceeds versioned size limit: {len(output)}')
+        if len(output)>(FILE_LIMIT if version>=14 else file_limit(LIMIT)):raise ValueError(f'Pack exceeds versioned size limit: {len(output)}')
         return output
