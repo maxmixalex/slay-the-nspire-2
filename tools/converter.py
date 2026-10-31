@@ -129,6 +129,24 @@ def self_test():
     import ctypes
     import numpy as np
     configure_helpers()
+    # Legacy source tools use the process default for some JSON/text files.
+    # The frozen app must select UTF-8 before interpreter initialization, even
+    # on Windows installations using CP936/CP1252 and Chinese work paths.
+    if getattr(sys,'frozen',False) and not sys.flags.utf8_mode:
+        raise ValueError('Converter bundle did not enable UTF-8 before initialization')
+    config=ROOT/'config/profile-ui-fonts.json'
+    if config.read_text().encode('utf-8')!=config.read_bytes():
+        raise ValueError('Default text decoding changed the original Unicode font configuration')
+    with tempfile.TemporaryDirectory(prefix='nspire2-unicode-check-') as folder:
+        path=Path(folder)/'转换目录-é';path.mkdir()
+        text='简体中文 / 繁體中文 / café / 한국어'
+        (path/'文字.txt').write_text(text)
+        if (path/'文字.txt').read_bytes()!=text.encode('utf-8'):
+            raise ValueError('Default text writing is not UTF-8')
+        value=dict(path=str(path),text=text)
+        atomic_json(path/'记录.json',value)
+        if json.loads((path/'记录.json').read_text())!=value:
+            raise ValueError('Unicode receipt paths did not survive default text reading')
     if getattr(sys,'frozen',False):
         from build_world import private_path
         with tempfile.TemporaryDirectory(prefix='nspire2-helper-check-') as work:
@@ -179,6 +197,7 @@ def self_test():
     if random_hash!='02fdff4eefbbd073fd014ae4c0b4d237afbd64e0e272050e7b0fc5b808069700':
         raise ValueError('Bundled Random seamless noise differs from its source oracle')
     return dict(passed=True,recipe_modules=len(modules),spawn_worker=True,spine_protocol=True,decim_samples=len(decim),
+        utf8_mode=bool(sys.flags.utf8_mode),unicode_default_io=True,
         retirement_route_sources=len(retirement_plan['runtime_route_sources']),retirement_routes_verified=True,
         vantom_pixels=field.size,vantom_sha256=noise_hash,random_pixels=50,random_sha256=random_hash,
         original_game_conversion_tested=False)

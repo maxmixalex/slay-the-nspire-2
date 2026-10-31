@@ -62,7 +62,7 @@ def build(args):
         f'tools=Path({str(ROOT/"tools")!r}).resolve()\n'+
         'a.pure=[row for row in a.pure if not (Path(row[1]).resolve()==tools or tools in Path(row[1]).resolve().parents)]\n'+
         'pyz=PYZ(a.pure)\n'+
-        'exe=EXE(pyz,a.scripts,a.binaries,a.datas,[],name="nspire2-convert",'
+        'exe=EXE(pyz,a.scripts,a.binaries,a.datas,[("X utf8",None,"OPTION")],name="nspire2-convert",'
         'debug=False,bootloader_ignore_signals=False,strip=False,upx=False,console=True)\n')
     command=[sys.executable,'-m','PyInstaller','--noconfirm','--clean',
              '--distpath',str(output),'--workpath',str(work/'build'),str(spec)]
@@ -73,7 +73,7 @@ def build(args):
     # remove the developer's Python, dotnet and compiler paths for this smoke.
     environment=os.environ.copy()
     environment['PATH']=str(Path(os.environ.get('SystemRoot','C:/Windows'))/'System32') if os.name=='nt' else '/usr/bin:/bin'
-    for key in ('PYTHONPATH','PYTHONHOME','NSPIRE_SPINE_ADAPTER','NSPIRE_FASTNOISE_LIBRARY',
+    for key in ('PYTHONPATH','PYTHONHOME','PYTHONUTF8','NSPIRE_SPINE_ADAPTER','NSPIRE_FASTNOISE_LIBRARY',
                 'NSPIRE_SPINE_RUNTIME','NSPIRE_FASTNOISE_HEADER','NSPIRE_DOTNET'):
         environment.pop(key,None)
     smoke=subprocess.run([str(executable),'--self-test'],check=True,text=True,capture_output=True,env=environment)
