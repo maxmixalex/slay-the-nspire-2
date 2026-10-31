@@ -50,6 +50,7 @@ state/                      局面、历史、设置、语言和档位 / saves a
 升级前退出游戏，保留已有 state 文件夹及其中的档案，不要用包内的空 state 覆盖它。
 删除游戏目录中旧的整个 data 文件夹，然后传入本包的完整 data 文件夹并替换 nSpire2.tns。
 可删除新 data 中不需要的语言文件，但必须保留配套的新索引和全部用途包。
+之前安装的可选语言也必须换成本轮对应文件，不能混用旧版。
 这同样适用于旧分包版升级，可避免传输时同时暂存旧大文件和新资源。
 等全部配套文件传输完成后再启动。可选语言只传需要的几种，不必安装全部十六种。
 首次启动按系统语言选择；对应语言缺失或无法加载时尝试英语，再选择首个可用语言。
@@ -62,6 +63,7 @@ Do not overwrite the existing state folder with the archive's empty state folder
 Replace the entire old data folder with this archive's matching data folder,
 and replace nSpire2.tns. You may omit unwanted locale files, but keep the
 matching index and every concern file.
+Replace previously installed optional languages with this release's matching files too.
 This also applies to updates from an older multipart installation and avoids
 temporarily storing both old large files and their replacements during transfer.
 Start only after the complete matching set is present.
@@ -101,7 +103,7 @@ Reference: v0.111.0 / 41cef1ea
 Resource format: NSP2/{info['resource_format']}; save format: v{info['save_version']}
 Installed program/resources: {sum(info['files'].values()):,} bytes before saves
 {sources.rstrip()}
-UI and calculator performance are validated using Firebird; physical-device timing is separate.
+See the release notes for validation coverage and remaining calculator timing limits.
 Source and third-party notices are included under data/licenses. Original game assets belong
  to Mega Crit and the respective rights holders.
 """
