@@ -50,7 +50,12 @@ def mark(data):
 def sample_map(count, loop):
     """Hold the latest retained pose; never display a death terminal early."""
     require(0 < count <= 256, 'Animation sample count is outside the runtime bound')
-    samples = [0] if loop else sorted({0, count // 2, count - 1})
+    # Finite source clocks include a terminal endpoint. An odd millisecond
+    # duration can select the preceding frame at integer duration/2; retain
+    # that middle pose so a death/action has visibly progressed by halfway.
+    # Tiny one-to-three-frame actions keep every available meaningful pose.
+    middle = min(count - 1, max(1, (count - 2) // 2))
+    samples = [0] if loop else sorted({0, middle, count - 1})
     return [max(sample for sample in samples if sample <= frame) for frame in range(count)]
 
 
@@ -68,7 +73,7 @@ def ancient_rows(source, image):
     for row,duration in enumerate(ANCIENT_DURATIONS):
         index=source.aux[ANCIENT_AUX+row]
         width,height,fmt,raw=image(index)
-        require(fmt==0 and width*height==8 and len(raw)==16,'Ancient loop table must contain eight exact words')
+        require(fmt==0 and (width,height)==(8,1) and len(raw)==16,'Ancient loop table must contain eight exact words')
         words=struct.unpack('<8H',raw)
         first,count,ms=words[2:5]
         require(words[:2]==(0x414e,1) and words[7]==0 and ms==33 and

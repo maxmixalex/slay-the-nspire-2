@@ -39,6 +39,18 @@ class ReducedPoseTests(unittest.TestCase):
                 self.assertNotIn(count - 1, mapped[:-1])
             self.assertEqual(reduced.sample_map(count, True), [0] * count)
 
+    def test_actual_death_midpoints_have_a_middle_pose_before_terminal(self):
+        # These are the source duration/count pairs consumed by the C++
+        # character_death_frame clock, including odd millisecond durations.
+        for duration,count in ((2333,71),(1867,57),(2233,68),(4167,126),(2333,71)):
+            frame=(duration//2)*(count-1)//duration
+            mapping=reduced.sample_map(count,False)
+            self.assertGreater(mapping[frame],0)
+            self.assertLess(mapping[frame],count-1)
+            self.assertNotIn(count-1,mapping[:-1])
+        for count in (1,2,3):
+            self.assertEqual(reduced.sample_map(count,False),list(range(count)))
+
     def test_reject_bad_counts(self):
         for count in (0, -1, 257):
             with self.assertRaises(ValueError):
@@ -70,7 +82,7 @@ class ReducedPoseTests(unittest.TestCase):
     def framed_fixture():
         # Variable piece counts/registration, including an empty terminal
         # picture ID. The converter must choose whole poses, not mix layers.
-        frames = [[(100+i, 7+i, 65530+i), *([(200+i, 65535, 3)] if i == 2 else [])]
+        frames = [[(100+i, 7+i, 65530+i), *([(200+i, 65535, 3)] if i == 1 else [])]
                   for i in range(5)]
         words = [0x4652, 1, 5, 83, 5376, 0, 9500, 0, 0, 3] + [0] * 10
         for i, pieces in enumerate(frames):
@@ -87,11 +99,11 @@ class ReducedPoseTests(unittest.TestCase):
         self.assertEqual(words[:8], list(struct.unpack_from('<8H', raw)))
         self.assertEqual(len(output), width*height*2)
         self.assertEqual(fmt, 0)
-        for frame, selected in enumerate([0, 0, 2, 2, 4]):
+        for frame, selected in enumerate([0, 1, 1, 1, 4]):
             self.assertEqual(frames[frame][0], (100+frame, *original[selected][0][1:]))
             self.assertEqual(frames[frame][1:], original[selected][1:])
-        self.assertEqual(kept, {100,102,104,202})
-        self.assertEqual(before, {100,101,102,103,104,202})
+        self.assertEqual(kept, {100,101,104,201})
+        self.assertEqual(before, {100,101,102,103,104,201})
 
     def test_dead_loop_retains_exact_source_pose(self):
         raw, frames = self.framed_fixture()
@@ -111,10 +123,10 @@ class ReducedPoseTests(unittest.TestCase):
         result = list(struct.unpack('<'+'H'*len(words), output))
         self.assertEqual(result[:12], words[:12])
         self.assertEqual(result[37:], words[37:])
-        for frame, selected in enumerate([0,0,2,2,4]):
+        for frame, selected in enumerate([0,1,1,1,4]):
             self.assertEqual(result[12+frame*5:17+frame*5], words[12+selected*5:17+selected*5])
         self.assertEqual(len(before), 20)
-        self.assertEqual(after, {base+i for base in (100,200,300,400) for i in (0,2,4)})
+        self.assertEqual(after, {base+i for base in (100,200,300,400) for i in (0,1,4)})
 
 
 if __name__ == '__main__':

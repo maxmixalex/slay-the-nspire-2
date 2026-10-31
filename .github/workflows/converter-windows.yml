@@ -3,15 +3,16 @@ name: Windows original-install converter
 on:
   workflow_dispatch:
   push:
-    branches: ['work/ui23-integration']
+    branches: ['main', 'work/ui23-integration']
     paths:
       - '.github/workflows/converter-windows.yml'
-      - 'tools/build_converter_bundle.py'
-      - 'tools/build_converter_helpers.py'
-      - 'tools/prepare_converter_dependencies.py'
-      - 'tools/converter*.py'
-      - 'tools/SpineSampleAdapter.cs'
-      - 'tools/spine_sample_adapter/**'
+      - 'convert.py'
+      - 'tools/**'
+      - 'include/**'
+      - 'src/**'
+      - 'docs/converter-ui23.md'
+      - 'requirements*.txt'
+      - 'VERSION'
       - 'config/converter-dependencies.json'
 
 permissions:
