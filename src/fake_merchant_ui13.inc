@@ -5,6 +5,9 @@ constexpr int world_x(int q8){return 160*256+int(int64_t(q8-960*256)*218/1080);}
 constexpr int world_y(int q8){return int(int64_t(q8)*218/1080);}
 constexpr int source(double n){return int(n*256+(n<0?-.5:.5));}
 constexpr int size(double n){return source(n*218/1080);}
+constexpr int ancient_x(int q8){return int((int64_t(q8)*3195634-114518200509LL)/16777216);}
+constexpr int ancient_y(int q8){return int((int64_t(q8)*3195634+89989748010LL)/16777216);}
+constexpr int ancient_size(double n){return source(n*3195634/16777216);}
 struct Room {
  const App*owner=nullptr;uint32_t generation=0,seed=0,start=0,last=0,entry=0;int floor=-1;
  Squares squares{};
@@ -23,22 +26,24 @@ static Room room;
 // is .5..1.6px. Keep all300 particles; cull only fragments outside the room.
 // The larger soft masks retain Canvas's usual nearest LCD texture sampling.
 static void quad(Canvas c,const water_reflection::Texture&tex,int cx,int cy,int w,int h,
-                 int angle,unsigned red,unsigned green,unsigned blue,unsigned alpha,unsigned blend_mode){
+                 int angle,unsigned red,unsigned green,unsigned blue,unsigned alpha,unsigned blend_mode,int shear=0){
  if(w<=0||h<=0||!alpha||!tex.valid()||c.clip_w<=0||c.clip_h<=0)return;
  const int sn=CombatCardMotion::sine(angle),cs=CombatCardMotion::sine(angle+1024);
- const int hw=(CombatCardMotion::magnitude(cs)*w+CombatCardMotion::magnitude(sn)*h)/2048;
- const int hh=(CombatCardMotion::magnitude(sn)*w+CombatCardMotion::magnitude(cs)*h)/2048;
+ const int bound_w=w+int((int64_t(CombatCardMotion::magnitude(shear))*h+65535)/65536);
+ const int hw=(CombatCardMotion::magnitude(cs)*bound_w+CombatCardMotion::magnitude(sn)*h)/2048;
+ const int hh=(CombatCardMotion::magnitude(sn)*bound_w+CombatCardMotion::magnitude(cs)*h)/2048;
  const int left=mx(0,(cx-hw)/256-1),right=mn(c.clip_w,(cx+hw)/256+2);
  const int top=mx(0,(cy-hh)/256-1),bottom=mn(c.clip_h,(cy+hh)/256+2);
  if(right<=left||bottom<=top)return;
  c.tint_red=uint8_t(div255(c.tint_red*red));c.tint_green=uint8_t(div255(c.tint_green*green));c.tint_blue=uint8_t(div255(c.tint_blue*blue));
  c.opacity=uint8_t(div255(c.opacity*alpha));
- const int du=int(int64_t(cs)*16384/w),dv=int(-int64_t(sn)*16384/h);
+ const int du=int((int64_t(cs)*16384+int64_t(sn)*shear/4)/w),dv=int(-int64_t(sn)*16384/h);
  const bool linear=w<4*256||h<4*256;
  for(int y=top;y<bottom;++y){
   const int dx=left*256+128-cx,dy=y*256+128-cy;
-  int u=32768+int((int64_t(dx)*cs+int64_t(dy)*sn)*64/w);
-  int v=32768+int((-int64_t(dx)*sn+int64_t(dy)*cs)*64/h);
+  const int64_t vy=-int64_t(dx)*sn+int64_t(dy)*cs;
+  int u=32768+int(((int64_t(dx)*cs+int64_t(dy)*sn)*64-vy*shear/1024)/w);
+  int v=32768+int(vy*64/h);
   for(int x=left;x<right;++x,u+=du,v+=dv){
    if(unsigned(u)>=65536u||unsigned(v)>=65536u)continue;
    const auto sample=linear?tex.bilinear(u,v):tex.at(int(int64_t(u)*tex.width()>>16),int(int64_t(v)*tex.height()>>16));
@@ -91,7 +96,8 @@ static void glitter(Canvas&c,uint32_t clock){
   }
  }
 }
-static void lights(Canvas&c,uint32_t clock,uint32_t seed,bool ambient){
+static void lights(Canvas&c,uint32_t clock,uint32_t seed,unsigned mode){
+ if(mode==2&&!clock)return; // No preprocessing: the source entry pose has no emitted lights.
  struct Light {int x,y,w,h;uint8_t r,g,b,a;};
  static constexpr Light candles[]={
   {world_x(source(-10+1.01*(1306.93+.7*106.083))),world_y(source(20+1.01*(868.317+.8*-73.02))),size(256*12*.189*.7*1.01),size(256*12*.189*.8*1.01),194,95,32,255},
@@ -102,15 +108,30 @@ static void lights(Canvas&c,uint32_t clock,uint32_t seed,bool ambient){
   {world_x(source(-267)),world_y(source(-7)),size(256*10*1.01),size(256*10*1.01),225,78,81,77},
   {world_x(source(2248)),world_y(source(1165)),size(256*10*1.01),size(256*10*1.01),106,78,168,77}
  };
+ // Darv's two zero-velocity emitters use the existing original light texture.
+ // Preserve their authored skew: h includes cos(skew), shear is -tan(skew)
+ // in Q16. The per-row inverse above leaves the zero-shear merchant exact.
+ static constexpr Light darv[]={
+  {ancient_x(source(556)),ancient_y(source(233)),ancient_size(256*5.22916),ancient_size(256*5*.99999976922549),222,125,31,46},
+  {ancient_x(source(-10)),ancient_y(source(-112)),ancient_size(256*5.22916*3),ancient_size(256*5*3*.99999976922549),255,71,150,66}
+ };
+ static constexpr Key darv_scale[]={key(0,.321019),key(.502521,.507939),key(1,.36242)};
+ static constexpr ColorKey darv_color[]={color_key(0,.34902,.34902,.34902),color_key(.411546,1,1,1),color_key(.994413,.34902,.34902,.34902)};
  const water_reflection::Texture texture(c.a.content.image(c.a.content.ui_image(I13_RandomLight)),256,256);
- const auto*list=ambient?background:candles;const unsigned count=ambient?2:3;
- for(unsigned i=0;i<count;++i){const auto&l=list[i];
+ const auto*list=mode==2?darv:mode?background:candles;const unsigned count=mode==2?4:mode?2:3;
+ for(unsigned i=0;i<count;++i){const auto&l=list[mode==2?i/2:i];
   // little_light_script: independent integer preprocessing in[0,5] seconds.
-  const unsigned q=((clock+hash(seed+i+(ambient?90:3))%6*1000)%3000)*Q/3000;
-  const auto color=ambient?gradient(AmbientColor,q):gradient(CandleColor,q);
-  const int scale=ambient?curve(AmbientScale,q):curve(CandleScale,q);
-  quad(c,texture,l.x,l.y,l.w*scale/Q,l.h*scale/Q,ambient?2023:0,
-       div255(l.r*color.r),div255(l.g*color.g),div255(l.b*color.b),l.a,presentation::Add);
+  // Darv has no such script/preprocessing or randomized parameters. Its two
+  // particles are born at 0/1500ms in each 3000ms cycle, not both at entry.
+  const unsigned phase=(i&1)*1500;
+  if(mode==2&&clock<=phase)continue;
+  // Source births use restart_time < time: keep the end pose at an exact
+  // cycle boundary; the next cycle begins on the following positive tick.
+  const unsigned q=(mode==2?(clock-phase-1)%3000+1:(clock+hash(seed+i+(mode?90:3))%6*1000)%3000)*Q/3000;
+  const auto color=mode==2?gradient(darv_color,q):mode?gradient(AmbientColor,q):gradient(CandleColor,q);
+  const int scale=mode==2?curve(darv_scale,q):mode?curve(AmbientScale,q):curve(CandleScale,q);
+  quad(c,texture,l.x,l.y,l.w*scale/Q,l.h*scale/Q,mode==1?2023:0,
+       div255(l.r*color.r),div255(l.g*color.g),div255(l.b*color.b),l.a,presentation::Add,mode==2?45:0);
  }
 }
 static void stars(Canvas&c,uint32_t clock,uint32_t seed,bool ancient=false){
@@ -127,8 +148,8 @@ static void stars(Canvas&c,uint32_t clock,uint32_t seed,bool ancient=false){
   // 1680x1260 AncientContainer transform differs from the merchant camera.
   // Q24 scale/Q32 offsets retain the authored aspect interpolation; no new
   // particle state, texture, framebuffer or cache is needed.
-  const int cx=ancient?int((int64_t(px)*3195634-114518200509LL)/16777216):world_x(px);
-  const int cy=ancient?int((int64_t(py)*3195634+89989748010LL)/16777216):world_y(py);
+  const int cx=ancient?ancient_x(px):world_x(px);
+  const int cy=ancient?ancient_y(py):world_y(py);
   const int side=(ancient?12608:size(256*1.01))*(10+int(hash(h+2)%21))/1000;
   const auto color=gradient(StarColor,age*Q/3000);
   quad(c,texture,cx,cy,side,side,0,div255(224*color.r),div255(127*color.g),div255(100*color.b),div255(156*color.a),presentation::Normal);

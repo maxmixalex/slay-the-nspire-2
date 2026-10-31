@@ -81,12 +81,15 @@ static void native_ancient_screen(Canvas&c){
  // the scene, leaving an artificial band behind the translucent top bar.
  if(!native_ancient_background(c,e.id))
   c.picture(a.content.world_image("events",original_event_key(e.id)),0,0,320,240);
- // Source Darv/stars is absent from the baked room and is ordered after its
- // painted background, before dialogue/HUD. Reuse the identical merchant
- // emitter and its deterministic cosmetic policy, without consuming game RNG.
- if(e.id==OriginalEventId::Darv)
-  fake_merchant::stars(c,a.content.reduced_animations()?0u:a.map_clock_ms-d.entered,
+ // Authored Darv order: painted room, light7, light8, stars, then dialogue/HUD.
+ // The baked room omits these emitters. Reduced resources hold the source
+ // entry pose; both paths use the same room clock without consuming game RNG.
+ if(e.id==OriginalEventId::Darv){
+  const uint32_t clock=a.content.reduced_animations()?0u:a.map_clock_ms-d.entered;
+  fake_merchant::lights(c,clock,0,2);
+  fake_merchant::stars(c,clock,
       fake_merchant::hash(uint32_t(a.game.seed)^uint32_t(a.game.floor)*0x9e3779b9u^0x44415256u),true);
+ }
  const int dialogue_height=ancient_measure(c,count),top=d.y(a.map_clock_ms)+d.scroll;
  Canvas clipped=c;clipped.pixels+=ancient_layout::ClipY*clipped.pitch+ancient_layout::ClipX;
  clipped.clip_w=ancient_layout::ClipW;
