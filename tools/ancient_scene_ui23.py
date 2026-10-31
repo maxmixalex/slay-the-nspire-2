@@ -230,7 +230,7 @@ def append(data, sampled, work, workers, *, bounded_color_hold=False,key_interva
             restored=np.zeros_like(colors) if reference is None else reference.copy()
             restored[alpha!=0]=decoded[alpha!=0]
             t.require(np.array_equal(restored,colors),'Ancient copy patch failed full-frame reconstruction')
-            packed = struct.pack('<BI',4,len(raw))+encode(raw)
+            packed = struct.pack('<BI',4,len(raw))+encode(raw) if not retained_planes else raw
             payload, fmt = (packed,5) if len(packed) < len(raw) else (raw,4)
             filename = f'{scene_index}-{frame:04d}.bin'; t.atomic_bytes(cache/filename,payload)
             selected.add(first+frame)
