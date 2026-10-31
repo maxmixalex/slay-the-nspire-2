@@ -309,11 +309,12 @@ static void ancient_ambient(){
  for(auto id:{OriginalEventId::Darv,OriginalEventId::Orobas}){
  begin(id,53,1);a.pointer_move(319,23);a.reset_presentation();a.render();
  CHECK(a.ancient_dialogue.entered==a.map_clock_ms);
- const auto entry_pixels=image_hash(0,30,320,45);
+ // Entry-time HUD/banner easing reaches y48; this source-room strip excludes it.
+ const auto entry_pixels=image_hash(0,50,320,25);
  // Orobas has only these newly restored lights in the runtime, so its first
  // positive source tick exercises actual texture birth without a star clock.
  advance_ms(1);
- if(id==OriginalEventId::Orobas)CHECK((image_hash(0,30,320,45)!=entry_pixels)!=a.content.reduced_animations());
+ if(id==OriginalEventId::Orobas)CHECK((image_hash(0,50,320,25)!=entry_pixels)!=a.content.reduced_animations());
  advance_ms(17999);
  const auto entered=a.ancient_dialogue.entered;const auto initial=image_hash(0,30,320,45);
  snapshot();bool moved=false;
