@@ -25,6 +25,12 @@ static void write(const std::string&name,const void*bytes,size_t count){
 }
 static void capture(const char*name){
  if(output.empty()||!original_art)return;a.render();
+ // Fixture card/revision changes can replan the normal combat preparation.
+ // Drain that work at the requested visual clock before capturing the room;
+ // otherwise the capture contains only its temporary black transition.
+ for(unsigned step=0;a.combat_preparation.active&&step<4096;++step){a.step_combat_preparation();a.render();}
+ CHECK(!a.combat_preparation.active);
+ bool visible=false;for(auto pixel:a.pixels)visible|=pixel!=0;CHECK(visible);
  std::string image="P6\n320 240\n255\n";image.reserve(image.size()+320*240*3);
  for(const auto p:a.pixels){image.push_back(char((p>>11)*255/31));image.push_back(char(((p>>5)&63)*255/63));image.push_back(char((p&31)*255/31));}
  write(std::string(name)+".ppm",image.data(),image.size());CHECK(a.content.healthy());

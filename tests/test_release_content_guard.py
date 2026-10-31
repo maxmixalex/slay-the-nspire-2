@@ -12,7 +12,7 @@ import release_content_guard as guard
 def fixture(auxiliary=5422):
     # Public synthetic artwork. Preserve production directory dimensions and
     # clocks so a shape-only/format-only gate cannot pass these negative cases.
-    ni, ng, ns, nc, nk = 58099, 1, 1, 1783, 1
+    ni, ng, ns, nc, nk = (58612 if auxiliary >= 7211 else 58099), 1, 1, 1783, 1
     glyph_at = 40 + ni * 16
     string_at = glyph_at + 16
     clip_at = string_at + 8
@@ -68,8 +68,34 @@ def fixture(auxiliary=5422):
         tiles.IMAGE.pack_into(out, 40 + image_id * 16, offset, 23, 23, 0, len(raw))
         if 5419 + i < auxiliary:
             struct.pack_into('<I', out, aux_at + (5419 + i) * 4, image_id)
+    native_offsets={}
+    if auxiliary>=7211:
+        for index,(frames,ms) in enumerate(guard.UI22_DEATH_CLOCKS):
+            tiles.CLIP.pack_into(out,clip_at+(1753+index)*16,0,frames,ms,0,0,5376)
+        for ordinal,index in enumerate(sorted(guard.UI22_EXPECTED)):
+            image_id=58099+ordinal
+            if index<guard.UI22_CLIPS:
+                first,frames,ms,_px,_py,reference=tiles.CLIP.unpack_from(out,clip_at+index*16)
+                units=min(reference,5376)
+            else:frames,ms,units,reference=3,56,2688,4254
+            words=[guard.MAGIC,1,frames,ms,units,0,reference,0,0,3]+[0]*(2*frames)
+            for frame in range(frames):
+                words[10+2*frame:12+2*frame]=[len(words),1]
+                words.extend([first+frame if index<guard.UI22_CLIPS else 58596+frame,0,0])
+            words[8]=len(words);width=min(320,len(words));height=(len(words)+width-1)//width
+            words.extend([0]*(width*height-len(words)));raw=struct.pack('<'+'H'*len(words),*words);offset=append(raw)
+            tiles.IMAGE.pack_into(out,40+image_id*16,offset,width,height,0,len(raw))
+            struct.pack_into('<I',out,aux_at+(guard.UI22_BASE_AUX+index)*4,image_id);native_offsets[index]=offset
+        opaque=append(b'\x11\x22'*(320*240));empty=append(b'\0\0'*240)
+        first=20000
+        for character,count in enumerate(guard.UI22_SELECTION_COUNTS):
+            tiles.CLIP.pack_into(out,clip_at+(1705+character)*16,first,count,83,0,0,0)
+            struct.pack_into('<I',out,aux_at+(guard.UI22_ACTOR_AUX+character)*4,first)
+            for frame in range(count):
+                tiles.IMAGE.pack_into(out,40+(first+frame)*16,empty if frame else opaque,320,240,4 if frame else 0,480 if frame else 320*240*2)
+            first+=count
     tiles.HEADER.pack_into(out, 0, b'NSP2', 45, tiles.REFERENCE, len(out), ni, ng, ns, nc, nk, 0)
-    return out, dict(aux=aux_at, tables=table_offsets, table_ids=table_ids)
+    return out, dict(aux=aux_at, tables=table_offsets, table_ids=table_ids,native=native_offsets,clips=clip_at)
 
 
 class ReleaseContentGuardTest(unittest.TestCase):
@@ -114,6 +140,41 @@ class ReleaseContentGuardTest(unittest.TestCase):
         struct.pack_into('<I', data, at['aux'] + 5418 * 4, at['table_ids'][0])
         with self.assertRaisesRegex(ValueError, 'distinct'):
             guard.validate_release_content(data, 'ui20')
+
+
+    def test_ui22_requires_actor_and_selection_completion(self):
+        for auxiliary in (5422,7206):
+            data,_=fixture(auxiliary)
+            with self.subTest(auxiliary=auxiliary),self.assertRaisesRegex(ValueError,'UI22 content is missing'):
+                guard.validate_release_content(data,'ui22')
+        data,_=fixture(7211);result=guard.validate_release_content(data,'UI22-release')['ui22']
+        self.assertTrue(result['complete']);self.assertEqual(result['registered_tables'],427)
+        self.assertEqual(result['selection_frames'],540);self.assertEqual(result['vantom_generic_entries'],0)
+
+    def test_ui22_missing_actor_and_wrong_registry_routes_fail(self):
+        original,at=fixture(7211)
+        for index,value in ((1757,0),(1383,58099),(0,58100)):
+            data=bytearray(original);struct.pack_into('<I',data,at['aux']+(guard.UI22_BASE_AUX+index)*4,value)
+            with self.subTest(index=index),self.assertRaisesRegex(ValueError,'registry|identities'):
+                guard.validate_release_content(data,'ui22')
+
+    def test_ui22_clock_bounds_and_selection_contract_fail(self):
+        original,at=fixture(7211)
+        data=bytearray(original);struct.pack_into('<H',data,at['native'][1757]+6,31)
+        with self.assertRaisesRegex(ValueError,'frame clock'):guard.validate_release_content(data,'ui22')
+        data=bytearray(original);struct.pack_into('<H',data,at['native'][1757]+6,31)
+        struct.pack_into('<H',data,at['clips']+1757*16+6,31)
+        with self.assertRaisesRegex(ValueError,'terminal death'):guard.validate_release_content(data,'ui22')
+        data=bytearray(original);struct.pack_into('<H',data,40+100*16+4,321)
+        with self.assertRaisesRegex(ValueError,'dimensions'):guard.validate_release_content(data,'ui22')
+        data=bytearray(original);struct.pack_into('<I',data,at['aux']+guard.UI22_ACTOR_AUX*4,20001)
+        with self.assertRaisesRegex(ValueError,'selection marker'):guard.validate_release_content(data,'ui22')
+        data=bytearray(original);data[40+20000*16:40+20001*16]=data[40+20001*16:40+20002*16]
+        with self.assertRaisesRegex(ValueError,'base is not opaque'):guard.validate_release_content(data,'ui22')
+        data=bytearray(original);raw=struct.pack('<HHHB',1,0,1,1)+b'\0\0\x7f'+b'\0\0'*239
+        offset=len(data);data.extend(raw);tiles.IMAGE.pack_into(data,40+20001*16,offset,320,240,4,len(raw))
+        struct.pack_into('<I',data,12,len(data))
+        with self.assertRaisesRegex(ValueError,'exact opaque copy'):guard.validate_release_content(data,'ui22')
 
 
 if __name__ == '__main__':

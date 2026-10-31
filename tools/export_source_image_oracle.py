@@ -17,7 +17,11 @@ from restore_animation_precision import read_image
 from ui12_resources import view
 
 
-def export(data: bytes, output: Path, first=0, count=None):
+def export(data: bytes, output: Path, first=0, count=None, cache_groups=32):
+    t.require(1<=cache_groups<=32,'Keep the independent source oracle LRU bounded to at most 32 groups')
+    # The image and retained decoders each keep a bounded LRU. Source bytes
+    # stream to disk one image at a time; never accumulate the 1+GiB catalog.
+    t.HOST_CACHE_GROUPS=cache_groups
     source=view(data);reader=t.TileReader(source);total=len(source.images)
     count=total-first if count is None else count
     t.require(0<=first<total and 0<count<=total-first,'Invalid source image oracle range')
@@ -44,7 +48,7 @@ def export(data: bytes, output: Path, first=0, count=None):
     os.replace(temporary,output)
     report=dict(complete=first==0 and count==total,images=count,catalog_images=total,first_image=first,
         input_sha256=t.sha256(data),oracle_sha256=digest.hexdigest(),oracle_bytes=size,decoded_image_bytes=decoded,
-        independent_python_decode=True,comparison='All decoded bytes, dimensions and image formats; not hashes alone')
+        independent_python_decode=True,cache_groups_per_lru=cache_groups,max_decoded_group_cache_bytes=cache_groups*2*t.LARGE_GROUP_LIMIT,comparison='All decoded bytes, dimensions and image formats; not hashes alone')
     t.atomic_bytes(output.with_suffix(output.suffix+'.json'),json.dumps(report,indent=2).encode()+b'\n')
     return report
 
@@ -53,8 +57,9 @@ def main():
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--input',type=Path,required=True);parser.add_argument('--output',type=Path,required=True)
     parser.add_argument('--first',type=int,default=0);parser.add_argument('--count',type=int)
+    parser.add_argument('--cache-groups',type=int,default=32)
     args=parser.parse_args();t.private_path(args.output,'Private image byte oracle')
-    print(json.dumps(export(args.input.read_bytes(),args.output,args.first,args.count)),flush=True)
+    print(json.dumps(export(args.input.read_bytes(),args.output,args.first,args.count,args.cache_groups)),flush=True)
 
 
 if __name__=='__main__':main()
