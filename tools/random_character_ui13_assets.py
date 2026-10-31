@@ -26,14 +26,13 @@ BASE_AUX, AUXILIARY = 3339, 3343
 SCENE = 'scenes/screens/char_select/char_select_bg_random_character.tscn'
 SHADER = 'shaders/vfx/vfx_water_reflection.gdshader'
 
-
-def _noise_values(width, height, frequency, header, cache):
-    header = Path(header).resolve()
-    tiles.require(header.is_file(), 'Supply Godot 4.5.1 FastNoiseLite.h with NSPIRE_FASTNOISE_HEADER')
-    cache = Path(cache)
-    cache.mkdir(parents=True, exist_ok=True)
-    source = r'''#include "FastNoiseLite.h"
-extern "C" void nspire_noise(float*out,int w,int h,float frequency){
+_RANDOM_NOISE_CALLER = r'''#include "FastNoiseLite.h"
+#if defined(_WIN32)
+#define NSPIRE_RANDOM_EXPORT __declspec(dllexport)
+#else
+#define NSPIRE_RANDOM_EXPORT
+#endif
+extern "C" NSPIRE_RANDOM_EXPORT void nspire_noise(float*out,int w,int h,float frequency){
  fastnoiselite::FastNoiseLite noise(0);
  noise.SetNoiseType(fastnoiselite::FastNoiseLite::NoiseType_OpenSimplex2);
  noise.SetFrequency(frequency);
@@ -43,12 +42,24 @@ extern "C" void nspire_noise(float*out,int w,int h,float frequency){
  for(int y=0;y<h;++y)for(int x=0;x<w;++x)out[y*w+x]=noise.GetNoise(float(x),float(y));
 }
 '''
-    identity = hashlib.sha256(header.read_bytes()+source.encode()).hexdigest()
-    cpp, library = cache/('noise-'+identity+'.cpp'), cache/('noise-'+identity+'.so')
-    if not library.is_file():
-        cpp.write_text(source)
-        subprocess.run([os.environ.get('CXX', 'clang++-18'), '-O2', '-ffp-contract=off',
-                        '-shared', '-fPIC', '-I'+str(header.parent), str(cpp), '-o', str(library)], check=True)
+
+
+def _noise_values(width, height, frequency, header, cache):
+    header = Path(header).resolve()
+    tiles.require(header.is_file(), 'Supply Godot 4.5.1 FastNoiseLite.h with NSPIRE_FASTNOISE_HEADER')
+    cache = Path(cache)
+    cache.mkdir(parents=True, exist_ok=True)
+    bundled=os.environ.get('NSPIRE_FASTNOISE_LIBRARY')
+    if bundled:
+        library=Path(bundled).resolve()
+        tiles.require(library.is_file(),'The bundled noise sampling library is missing')
+    else:
+        identity = hashlib.sha256(header.read_bytes()+_RANDOM_NOISE_CALLER.encode()).hexdigest()
+        cpp, library = cache/('noise-'+identity+'.cpp'), cache/('noise-'+identity+'.so')
+        if not library.is_file():
+            cpp.write_text(_RANDOM_NOISE_CALLER)
+            subprocess.run([os.environ.get('CXX', 'clang++-18'), '-O2', '-ffp-contract=off',
+                            '-shared', '-fPIC', '-I'+str(header.parent), str(cpp), '-o', str(library)], check=True)
     helper = ctypes.CDLL(str(library))
     helper.nspire_noise.argtypes = [ctypes.POINTER(ctypes.c_float), ctypes.c_int, ctypes.c_int, ctypes.c_float]
     helper.nspire_noise.restype = None

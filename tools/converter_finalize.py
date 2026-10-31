@@ -11,10 +11,11 @@ from pathlib import Path
 import time
 
 ROOT = Path(__file__).resolve().parents[1]
-# Change this only after the complete visual/decoder candidate is accepted.
-# The source converter remains exact while that comparison is in progress.
-DEFAULT_QUALITY_POLICY = 'exact'
-DEFAULT_PRESERVE_SELECTION = True
+# Accepted UI23 artwork policy. Reduced editions keep their original colors.
+DEFAULT_QUALITY_POLICY = 'bounded-a5'
+DEFAULT_PRESERVE_SELECTION = False
+DEFAULT_SELECTION_POLICY = 'dark-safe-a6'
+DEFAULT_SELECTION_OVERRIDES = {0: '555a8', 2: '555a8', 3: '555a8'}
 
 
 def save_result(path, data, receipt):
@@ -90,7 +91,8 @@ def optional_prune(input_path, output_path, elf_path):
         input_sha256=t.sha256(data), **details))
 
 
-def quality(input_path, output_path, work, workers, policy, preserve_selection, selection_policy=None):
+def quality(input_path, output_path, work, workers, policy, preserve_selection,
+            selection_policy=None, selection_overrides=None):
     import content_tiles as t
     data = Path(input_path).read_bytes()
     if policy == 'exact':
@@ -101,15 +103,43 @@ def quality(input_path, output_path, work, workers, policy, preserve_selection, 
     import coalesce_color_candidates_ui23 as coalescer
     source = colors.view(data)
     results = colors.convert(source, policy, workers=workers, preserve_static=True,
-                             preserve_selection=preserve_selection, selection_policy=selection_policy)
+                             preserve_selection=preserve_selection, selection_policy=selection_policy,
+                             selection_overrides=selection_overrides)
     quantized = colors.rewrite(source, {}, results)
-    proof = colors.verify(source, quantized, results, policy, selection_policy)
+    proof = colors.verify(source, quantized, results, policy, selection_policy, selection_overrides)
     output, compaction = coalescer.convert(quantized, Path(work), workers=workers)
     save_result(output_path, output, dict(stage='quality', policy=policy,
         input_sha256=t.sha256(data), static_art_preserved=True,
         selection_art_preserved=preserve_selection, selection_policy=selection_policy,
+        selection_overrides=selection_overrides or {},
         color_verification=proof,
         exact_tile_coalescing=compaction))
+
+
+def sparse_exact(input_path, output_path, work, workers):
+    import coalesce_tile_resources as coalesce
+    import compact_sparse_tiles as sparse
+    import content_tiles as t
+    data = Path(input_path).read_bytes(); source = coalesce.view(data)
+    plan, details = sparse.make_plan(source, Path(work), workers=workers)
+    # Implicit frame geometry requires version 46 even though TGR3 began at 45.
+    output, _ = coalesce.rewrite(data, plan, version=source.version)
+    proof = sparse.verify(data, output, plan)
+    t.require(len(output) <= len(data), 'Exact sparse conversion increased the resource')
+    save_result(output_path, output, dict(stage='exact_sparse_tiles',
+        input_sha256=t.sha256(data), exact_pixels=True, resident_bytes_added=0,
+        details=details, verification=proof))
+
+
+def retune_exact(input_path, output_path, work, workers):
+    import content_tiles as t
+    import retune_color_contexts_ui23 as retune
+    data = Path(input_path).read_bytes()
+    output, proof = retune.convert(data, Path(work), workers=workers)
+    t.require(len(output) <= len(data), 'Exact literal-context retuning increased the resource')
+    save_result(output_path, output, dict(stage='exact_literal_contexts',
+        input_sha256=t.sha256(data), exact_pixels=True, resident_bytes_added=0,
+        literal_contexts_never_larger=True, profiles=retune.PROFILES, verification=proof))
 
 
 def validate_install(artwork_path, output, codes, no_animations):
@@ -168,7 +198,11 @@ def execute_builtin(module, arguments):
         optional_prune(*arguments)
     elif module == '@final-quality':
         quality(*arguments[:3], int(arguments[3]), arguments[4], arguments[5] == 'true',
-                arguments[6] or None)
+                arguments[6] or None, {int(key): value for key, value in json.loads(arguments[7]).items()})
+    elif module == '@final-sparse':
+        sparse_exact(*arguments[:3], int(arguments[3]))
+    elif module == '@final-retune':
+        retune_exact(*arguments[:3], int(arguments[3]))
     elif module == '@validate-install':
         validate_install(arguments[0], arguments[1], arguments[2].split(','), arguments[3] == 'true')
     else:
@@ -216,12 +250,19 @@ def add_final_stages(recipe, source_editions, output, codes, no_animations):
     recipe.add('pruned46', '@optional-orphan-prune', [logical, target, str(elf) if elf else ''],
                [target, target.with_suffix('.json')]); logical = target
     target = recipe.directory('quality46')/'eng.nsp'
-    selection_policy = getattr(recipe, 'selection_policy', None)
+    selection_policy = None if no_animations else getattr(recipe, 'selection_policy', DEFAULT_SELECTION_POLICY)
+    selection_overrides = {} if no_animations else getattr(recipe, 'selection_overrides', DEFAULT_SELECTION_OVERRIDES)
     recipe.add('quality46', '@final-quality', [logical, target, recipe.directory('cache/quality46'), workers,
-        getattr(recipe, 'quality_policy', DEFAULT_QUALITY_POLICY),
-        'true' if getattr(recipe, 'preserve_selection', DEFAULT_PRESERVE_SELECTION if not selection_policy else False) else 'false',
-        selection_policy or ''],
+        'exact' if no_animations else getattr(recipe, 'quality_policy', DEFAULT_QUALITY_POLICY),
+        'true' if no_animations or getattr(recipe, 'preserve_selection', DEFAULT_PRESERVE_SELECTION) else 'false',
+        selection_policy or '', json.dumps(selection_overrides, sort_keys=True)],
         [target, target.with_suffix('.json')]); logical = target
+    if not no_animations:
+        for name, module in (('sparse46', '@final-sparse'), ('retuned46', '@final-retune')):
+            target = recipe.directory(name)/'eng.nsp'
+            recipe.add(name, module, [logical, target, recipe.directory('cache')/name, workers],
+                       [target, target.with_suffix('.json')])
+            logical = target
     if no_animations:
         target = recipe.directory('reduced46')/'eng.nsp'; work = recipe.directory('cache/reduced46')
         recipe.add('reduced46', 'no_animations', ['--input', logical, '--output', target,

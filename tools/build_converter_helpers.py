@@ -17,6 +17,7 @@ ROOT = Path(__file__).resolve().parents[1]
 def build(args):
     from world_enemy_assets import _FASTNOISE_CALLER
     from vantom_vfx_ui15_assets import _VANTOM_NOISE_CALLER
+    from random_character_ui13_assets import _RANDOM_NOISE_CALLER
     output = args.output.resolve()
     if output == ROOT or ROOT in output.parents:
         raise ValueError("Private runtime helper outputs must stay outside the source repository")
@@ -39,7 +40,7 @@ def build(args):
                     "-p:BaseOutputPath=" + str(work / "bin") + os.sep],
                    check=True, env=env)
     noise_source = work / "noise.cpp"
-    noise_source.write_text(_FASTNOISE_CALLER + "\n" + _VANTOM_NOISE_CALLER)
+    noise_source.write_text(_FASTNOISE_CALLER + "\n" + _VANTOM_NOISE_CALLER + "\n" + _RANDOM_NOISE_CALLER)
     shutil.copyfile(header, work / "FastNoiseLite.h")
     windows = args.rid.startswith("win-")
     mac = args.rid.startswith("osx-")

@@ -15,6 +15,52 @@ import converter
 
 
 class ConverterTests(unittest.TestCase):
+    def test_final_profiles_select_approved_color_policy_and_keep_reduced_exact(self):
+        from converter_finalize import add_final_stages
+        for reduced in (False, True):
+            recipe=converter.Recipe('/game','/tmp/converter-profile-test','/runtime','dotnet','/noise','-')
+            add_final_stages(recipe,recipe.source_stages(),Path('/tmp/converter-profile-output'),
+                             ['eng','zhs'],reduced)
+            stages={stage.name:stage for stage in recipe.stages}
+            quality=stages['quality46'].arguments
+            if reduced:
+                self.assertEqual(quality[4:7],('exact','true',''))
+                self.assertEqual(json.loads(quality[7]),{})
+                self.assertNotIn('sparse46',stages)
+                self.assertEqual(stages['reduced46'].arguments[1],str(stages['quality46'].outputs[0]))
+            else:
+                self.assertEqual(quality[4:7],('bounded-a5','false','dark-safe-a6'))
+                self.assertEqual(json.loads(quality[7]),{'0':'555a8','2':'555a8','3':'555a8'})
+                self.assertEqual(stages['sparse46'].arguments[0],str(stages['quality46'].outputs[0]))
+                self.assertEqual(stages['retuned46'].arguments[0],str(stages['sparse46'].outputs[0]))
+                self.assertEqual(stages['publish-locales'].arguments[1],str(stages['retuned46'].outputs[0]))
+            names=list(stages)
+            self.assertLess(names.index('ancient-scenes45'),names.index('implicit46'))
+            self.assertLess(names.index('implicit46'),names.index('quality46'))
+
+    def test_exact_tail_preserves_pixels_metadata_and_version46(self):
+        import coalesce_tile_resources as coalesce
+        import content_tiles as tiles
+        import converter_finalize as finalize
+        from test_sparse_tile_filter import sparse_fixture
+        import struct
+        with tempfile.TemporaryDirectory() as folder, contextlib.redirect_stdout(io.StringIO()):
+            root=Path(folder)
+            data=bytearray(sparse_fixture());struct.pack_into('<I',data,4,46)
+            source=root/'source.nsp';source.write_bytes(data)
+            sparse=root/'sparse.nsp';retuned=root/'retuned.nsp'
+            finalize.sparse_exact(source,sparse,root/'sparse-work',1)
+            finalize.retune_exact(sparse,retuned,root/'retune-work',1)
+            before,after=coalesce.view(bytes(data)),coalesce.view(retuned.read_bytes())
+            self.assertEqual(after.version,46)
+            self.assertEqual(before.clips,after.clips)
+            self.assertEqual(before.aux,after.aux)
+            self.assertLessEqual(retuned.stat().st_size,len(data))
+            old,new=tiles.TileReader(before),tiles.TileReader(after)
+            for image in range(len(before.images)):
+                self.assertEqual(old.image_raw(image),new.image_raw(image))
+            self.assertTrue(json.loads(retuned.with_suffix('.json').read_text())['literal_contexts_never_larger'])
+
     def test_stale_optional_locale_is_rejected_before_mutation(self):
         with tempfile.TemporaryDirectory() as folder:
             output=Path(folder);(output/'data').mkdir()

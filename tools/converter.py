@@ -166,8 +166,17 @@ def self_test():
     noise_hash=hashlib.sha256(pixels.tobytes()).hexdigest()
     if noise_hash!='8d1ff0abcf0ed493a5453ba58ba481bfbc8008bb8e2c8b1d7f52a1a5bc0a918a':
         raise ValueError('Bundled noise helper differs from the pinned source oracle')
+    from random_character_ui13_assets import godot_noise_image
+    noise_header=Path(os.environ.get('NSPIRE_FASTNOISE_HEADER') or
+                      Path(os.environ['NSPIRE_FASTNOISE_LIBRARY']).with_name('FastNoiseLite.h'))
+    with tempfile.TemporaryDirectory(prefix='nspire2-random-check-') as work:
+        random_noise=godot_noise_image(10,5,.0259,.093,noise_header,Path(work))
+    random_hash=hashlib.sha256(random_noise.tobytes()).hexdigest()
+    if random_hash!='02fdff4eefbbd073fd014ae4c0b4d237afbd64e0e272050e7b0fc5b808069700':
+        raise ValueError('Bundled Random seamless noise differs from its source oracle')
     return dict(passed=True,recipe_modules=len(modules),spawn_worker=True,spine_protocol=True,decim_samples=len(decim),
-        vantom_pixels=field.size,vantom_sha256=noise_hash,original_game_conversion_tested=False)
+        vantom_pixels=field.size,vantom_sha256=noise_hash,random_pixels=50,random_sha256=random_hash,
+        original_game_conversion_tested=False)
 
 
 class Recipe:

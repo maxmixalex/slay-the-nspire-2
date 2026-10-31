@@ -27,6 +27,22 @@ including `eng`, for example `--languages eng,zhs,jpn`. The converter's early
 catalog stages build a common multilingual source; choosing fewer final
 languages reduces the delivered files, not all intermediate conversion work.
 
+## Animated artwork policy
+
+The full animated edition keeps every source sample, frame size and action
+clock. Its UI23 color policy uses bounded RGB565 reduction and at most four
+alpha units of error for animated actors. Character-selection artwork uses a
+separate policy that preserves dark channel values; Ironclad, Defect and
+Regent selection art retains exact alpha and only reduces the green
+channel by at most one RGB565 code. Static interface/card art, typed parameter
+tables and the appended Neow/Tezcatara scene loops remain exact.
+
+After color selection, the converter performs exact tile deduplication, bounded
+sparse-tile encoding, and literal-context retuning. These steps preserve the
+selected pixels and use the existing calculator cache and decoder bounds.
+Receipts record each conversion and its verification; they do not imply that
+physical-calculator performance has been measured.
+
 ## Reduced actor animation profile
 
 ```text
@@ -44,7 +60,8 @@ clip identifiers, registered positions, and final death/transition poses
 remain intact. Aliased frames share cached image data. The calculator detects
 the profile from a reserved metadata word; no separate launcher or settings
 toggle is required. Character selection and its Random background are static
-in this profile.
+in this profile. The reduced edition skips color quantization entirely and
+retains the original RGB565 and alpha values in every representative pose.
 
 The reducer runs after the complete source catalog has been generated. It does
 not currently save the original-source sampling time of the first conversion.
