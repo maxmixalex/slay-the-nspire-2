@@ -5,6 +5,7 @@
 namespace spire::ancient_scene_ui23 {
 constexpr unsigned AuxiliaryFirst=retired_assets_ui22::AuxiliaryCount;
 constexpr unsigned AuxiliaryCount=AuxiliaryFirst+2,StepMs=33;
+constexpr unsigned Images=retired_assets_ui22::Images+546+506+2;
 struct Timeline {
     unsigned first=0,count=0,duration=0;
     static unsigned word(const uint8_t*p){return unsigned(p[0])|(unsigned(p[1])<<8);}

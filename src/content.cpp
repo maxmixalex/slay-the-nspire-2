@@ -432,12 +432,13 @@ bool Content::open(ResourceSource source){
     if(version>=5){
         ui_count_=auxiliary;ui_offset_=image_directory_end()+ng*16+ns*8+nc*16+cards*16;
     }
-    if(auxiliary==retired_assets_ui22::AuxiliaryCount){
+    if(auxiliary==retired_assets_ui22::AuxiliaryCount||auxiliary==ancient_scene_ui23::AuxiliaryCount){
         using namespace retired_assets_ui22;
         // The offline release guard proves the fixed retirement plan and all
         // live roots. Opening additionally rejects a missing/corrupt marker;
         // an IO failure cannot turn a partial pack into a legacy fallback.
-        if(version<45||images_!=Images||clips_!=1783||ui_image(AuxiliaryFirst)!=int(MarkerImage))return reject();
+        const unsigned expected_images=auxiliary==ancient_scene_ui23::AuxiliaryCount?ancient_scene_ui23::Images:Images;
+        if(version<45||images_!=expected_images||clips_!=1783||ui_image(AuxiliaryFirst)!=int(MarkerImage))return reject();
         const auto marker=image_directory_[MarkerImage];uint8_t bytes[16];
         if(marker.width()!=8||marker.height()!=1||marker.format!=0||marker.length!=sizeof bytes||
            marker.offset<base||!reader_.read(marker.offset,bytes,sizeof bytes)||

@@ -1,5 +1,6 @@
 """Retirement requires the fixed plan, all live roots, and complete new art."""
 from pathlib import Path
+import copy
 import lzma
 import struct
 import sys
@@ -20,6 +21,39 @@ from test_release_content_guard import fixture
 
 
 class RetirementGuardTest(unittest.TestCase):
+    def test_reviewed_storage_permutation_still_pins_every_routing_value(self):
+        relative='src/world_enemy_assets.inc';raw=(retired.ROOT/relative).read_bytes()
+        self.assertEqual(retired.route_digest(relative,raw),retired.PLAN['runtime_route_sources'][relative])
+        at=raw.index(b'static const WorldEnemyVisualMove we_moves[]={\n')
+        row=raw.index(b'\n',at)+1;end=raw.index(b'\n',row)
+        fields=raw[row:end-2].rsplit(b',',3)
+        for field in (1,2,3):
+            changed=fields[:];changed[field]=str(int(changed[field])+1).encode()
+            mutated=raw[:row]+b','.join(changed)+b'},'+raw[end:]
+            with self.subTest(field=field):
+                self.assertNotEqual(retired.route_digest(relative,mutated),retired.PLAN['runtime_route_sources'][relative])
+
+    def test_ancient_extension_keeps_retirement_marker_and_disjoint_live_roots(self):
+        data,_=fixture(7212);source=t.PackView(data,7212,versions=(45,46))
+        source=copy.copy(source);source.images=list(source.images);source.aux=list(source.aux);tables={}
+        original_image=source.image_raw
+        first=58613
+        for duration in (18000,16667):
+            count=(duration+32)//33;index=first+count
+            source.images.extend([(0,320,240,0,320*240*2)]*count)
+            source.images.append((0,8,1,0,16));source.aux.append(index)
+            tables[index]=(8,1,0,struct.pack('<8H',0x414e,1,first,count,33,duration,0,0));first=index+1
+        image=lambda index:tables[index] if index in tables else original_image(index)
+        self.assertTrue(retired.validate_retired_profile(source,image)['complete'])
+        saved=tables[source.aux[-1]]
+        tables[source.aux[-1]]=(8,1,0,struct.pack('<8H',0x414e,1,321,506,33,16667,0,0))
+        with self.assertRaisesRegex(ValueError,'Ancient loop range'):
+            retired.validate_retired_profile(source,image)
+        tables[source.aux[-1]]=saved
+        source.aux[7211]=58611
+        with self.assertRaisesRegex(ValueError,'marker/catalog'):
+            retired.validate_retired_profile(source,image)
+
     def test_plan_and_native_marker_agree(self):
         retired.verify_runtime_routes()
         header=(retired.ROOT/'include/retired_assets_ui22.hpp').read_text()
@@ -61,7 +95,7 @@ class RetirementGuardTest(unittest.TestCase):
         data=bytearray(original);struct.pack_into('<H',data,40+45956*16+4,56)
         with self.assertRaisesRegex(ValueError,'merchant moving-layer dimensions'):
             guard.validate_release_content(data,'ui22')
-        source=t.PackView(original,7212,versions=(45,));ids=retired.retired_images(source)
+        source=t.PackView(original,7212,versions=(45,46));ids=retired.retired_images(source)
         self.assertEqual(len(ids),1598)
         self.assertFalse(ids&set(range(840,999)))
         self.assertFalse(ids&set(retired.PLAN['preserved_ui20_leaves']))

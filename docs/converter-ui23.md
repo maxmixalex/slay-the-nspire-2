@@ -6,6 +6,37 @@ embeds Python and native sampling helpers. It is **not** a native C++ rewrite.
 An executable built with the complete helper bundle needs no separately
 installed Python, .NET SDK, or C++ compiler on the player's computer.
 
+## Quick start / 快速使用
+
+Run the desktop converter in your original game folder. These three commands
+create the default bilingual animated edition, the exact-color reduced edition,
+and an animated edition with all sixteen languages, respectively:
+
+将桌面转换器放在原版游戏目录中运行。Windows 可直接双击 EXE 执行默认
+转换；在 PowerShell 中将下方程序名写成 `./nspire2-convert.exe`，Linux
+则写成 `./nspire2-convert`。
+以下三条命令分别生成中英双语完整动画版、保留必要动作姿势的无动画版、
+以及包含全部 16 种语言的完整动画版：
+
+```text
+nspire2-convert
+nspire2-convert --no-animations
+nspire2-convert --languages all
+```
+
+The calculator detects the animation profile from the generated data. Both
+profiles use the same launcher. The desktop converter is a separate download
+from the three calculator installation ZIPs; run it on your computer and copy
+its generated `data/` directory beside the calculator's `nSpire2.tns` launcher.
+
+计算器会从数据文件自动识别动画模式，两种模式共用同一个启动程序，无需在
+设置中切换。转换器与三个计算器安装 ZIP 分开提供：转换器在电脑上运行，
+生成的 `data/` 目录应放在计算器的 `nSpire2.tns` 旁边。
+
+可执行版内部嵌入了 Python 和原生辅助程序，因此使用者无需另行安装
+Python、.NET SDK 或 C++ 编译器。这是打包后的完整转换流程，**并非 C++
+重写版**。原版游戏素材不包含在转换器中，需读取你本机的原版安装。
+
 The supported original release is **v0.111.0 / 41cef1ea**. Put the executable in
 the original game directory and run:
 
