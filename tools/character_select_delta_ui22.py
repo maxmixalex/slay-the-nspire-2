@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import hashlib
 import lzma
 from pathlib import Path
 import struct
@@ -21,6 +22,7 @@ import coalesce_tile_resources as coalesce
 import content_tiles as t
 from patch_frontend_assets import patch_pack
 from tile_prediction import index_transform
+from tile_filter import filter_tiles, restore_tiles
 
 FIRST_CLIP, FIRST_BASE, CHARACTERS = 1705, 1500, 5
 BASE_AUXILIARY, AUXILIARY, KEY_INTERVAL = 7206, 7211, 8
@@ -36,10 +38,36 @@ def pixels(source, reader, image):
     return color, alpha
 
 
-def indices(source, reader, image):
+class AddedTiles:
+    def __init__(self, reader):
+        self.reader, self.records, self.seen = reader, [], {}
+
+    @property
+    def count(self):
+        return (self.reader.tile_groups*self.reader.per_group+len(self.records)
+                if self.records else self.reader.tile_count)
+
+    def add(self, record):
+        digest = hashlib.sha256(record).digest()
+        for previous in self.seen.get(digest, ()):
+            if self.records[previous] == record:
+                return self.reader.tile_groups*self.reader.per_group+previous
+        index = len(self.records); self.records.append(record)
+        self.seen.setdefault(digest, []).append(index)
+        return self.reader.tile_groups*self.reader.per_group+index
+
+
+def indices(source, reader, image, added):
     offset, width, height, fmt, _length = source.images[image]
-    t.require((width, height, fmt) == (WIDTH, HEIGHT, 6),
-              'Tile exact source artwork before building selection patches')
+    t.require((width, height) == (WIDTH, HEIGHT), 'Selection tile dimensions changed')
+    if fmt != 6:
+        color, alpha = pixels(source, reader, image)
+        ids = []
+        for y in range(0, HEIGHT, 16):
+            for x in range(0, WIDTH, 16):
+                ids.append(added.add(b'\x10\x10'+color[y:y+16, x:x+16].astype('<u2').tobytes()+
+                                     alpha[y:y+16, x:x+16].tobytes()))
+        return np.array(ids, dtype='<u4')
     _global, local, at, size = t.DESCRIPTOR.unpack_from(source.data, offset)
     raw, starts = reader.group(reader.tile_groups + local)
     t.require(starts.get(at) == size, 'Selection descriptor is not a whole record')
@@ -67,12 +95,12 @@ def geometry(mask):
 
 
 def plan_frames(source, reader):
-    frames, reports = {}, []
+    frames, reports, added = {}, [], AddedTiles(reader)
     for character in range(CHARACTERS):
         first, count, *_ = source.clips[FIRST_CLIP+character]
         base = source.aux[FIRST_BASE+character]
         base_color, base_alpha = pixels(source, reader, base)
-        base_ids = indices(source, reader, base)
+        base_ids = indices(source, reader, base, added)
         base_grid = base_alpha.reshape(HEIGHT//16, 16, WIDTH//16, 16).transpose(0, 2, 1, 3)
         t.require(np.all((base_grid == 0).all(axis=(2, 3)) |
                          (base_grid == 255).all(axis=(2, 3))),
@@ -87,7 +115,7 @@ def plan_frames(source, reader):
             full = np.where(base_alpha != 0, base_color, color).astype('<u2')
             t.require(np.all(np.where(base_alpha != 0, base_alpha, alpha) == 255),
                       'A selection frame is not opaque')
-            ids = np.where(static, base_ids, indices(source, reader, image)).astype('<u4')
+            ids = np.where(static, base_ids, indices(source, reader, image, added)).astype('<u4')
             selected = np.ones(full.shape, dtype=bool) if frame % KEY_INTERVAL == 0 else full != previous
             spans, decoded = geometry(selected)
             active = coalesce.active_tiles(spans, WIDTH, HEIGHT)
@@ -100,17 +128,18 @@ def plan_frames(source, reader):
             frames[image] = dict(raw=record, decoded=decoded, full_sha256=t.sha256(full.tobytes()))
             hashes.append(frames[image]['full_sha256'])
             pages.append((decoded+4095)//4096)
-            old_pages.append((reader.image_raw(image)[3].__len__()+4095)//4096)
+            old_raw = reader.image_raw(image)[3] if source.images[image][3] == 6 else source.image_raw(image)[3]
+            old_pages.append((len(old_raw)+4095)//4096)
             previous = full
         reports.append(dict(character=character, frames=count, key_interval=KEY_INTERVAL,
             frame_rgb565_sha256=hashes, decoded_pages=sum(pages), original_decoded_pages=sum(old_pages),
             maximum_frame_pages=max(pages), maximum_replay_patches=KEY_INTERVAL-1))
         print(json.dumps(dict(stage='selection_geometry', **{k:v for k,v in reports[-1].items()
                                                              if k != 'frame_rgb565_sha256'})), flush=True)
-    return frames, reports
+    return frames, reports, added
 
 
-def rewrite(source, frames):
+def rewrite(source, frames, added):
     """Append bounded index groups, then drop unreferenced old descriptors/groups."""
     reader = t.TileReader(source)
     old_descriptors = {}
@@ -119,6 +148,17 @@ def rewrite(source, frames):
             old_descriptors[offset] = t.DESCRIPTOR.unpack_from(source.data, offset)
     live = sorted({row[1] for row in old_descriptors.values()})
     remap = {old: new for new, old in enumerate(live)}
+    tile_groups = []
+    for first in range(0, len(added.records), reader.per_group):
+        records = added.records[first:first+reader.per_group]; raw = b''.join(records)
+        filtered = filter_tiles(raw, 2)
+        compressed = lzma.compress(filtered, format=lzma.FORMAT_RAW, filters=[dict(
+            id=lzma.FILTER_LZMA2, preset=6, dict_size=reader.dictionary, lc=4, lp=0, pb=1)])
+        t.require(restore_tiles(t.decode_lzma2(compressed, len(raw), reader.dictionary), 2) == raw,
+                  'Source plane tile compression is not exact')
+        tile_groups.append(t.GROUP.pack(b'TGR2', 1, reader.tile_groups+len(tile_groups), len(raw),
+            len(compressed), 0, len(records), 2)+compressed)
+    tile_group_count = reader.tile_groups+len(tile_groups)
     groups, pending, size, locations = [], [], 0, {}
 
     def finish():
@@ -126,7 +166,7 @@ def rewrite(source, frames):
         if not pending:
             return
         raw = b''.join(frames[image]['raw'] for image in pending)
-        transformed = index_transform(raw, len(pending), 3, tile_count=reader.tile_count)
+        transformed = index_transform(raw, len(pending), 3, tile_count=added.count)
         compressed = lzma.compress(transformed, format=lzma.FORMAT_RAW, filters=[dict(
             id=lzma.FILTER_LZMA2, preset=6, dict_size=reader.dictionary, lc=4, lp=0, pb=1)])
         t.require(t.decode_lzma2(compressed, len(raw), reader.dictionary) == transformed,
@@ -135,7 +175,7 @@ def rewrite(source, frames):
         for image in pending:
             locations[image] = (local, at, len(frames[image]['raw']))
             at += len(frames[image]['raw'])
-        groups.append(t.GROUP.pack(b'TGI2', 2, reader.tile_groups+local, len(raw), len(compressed),
+        groups.append(t.GROUP.pack(b'TGI2', 2, tile_group_count+local, len(raw), len(compressed),
                                    0, len(pending), 1)+compressed)
         pending, size = [], 0
 
@@ -148,13 +188,14 @@ def rewrite(source, frames):
     finish()
     header = list(t.GLOBAL.unpack_from(source.data, source.base_end))
     old_cost = header[14]
+    header[4], header[5] = added.count, tile_group_count
     header[6], header[7] = len(live)+len(groups), len(old_descriptors)+len(frames)
     header[9] = source.base_end+64
-    header[14] = header[9]+(reader.tile_groups+header[6])*8
+    header[14] = header[9]+(tile_group_count+header[6])*8
     header[8] = header[14]+((len(source.images)+1)&~1)
     t.require(header[8] <= t.DIRECTORY_LIMIT, 'Selection directory exceeds fixed metadata reservation')
     out = bytearray(source.data[:source.base_end]); out.extend(t.GLOBAL.pack(*header))
-    out.extend(bytes((reader.tile_groups+header[6])*8))
+    out.extend(bytes((tile_group_count+header[6])*8))
     out.extend(source.block(old_cost, (len(source.images)+1)&~1))
     descriptor_at = {}
     for offset, (_global, group, at, count) in sorted(old_descriptors.items()):
@@ -176,11 +217,13 @@ def rewrite(source, frames):
     for number in range(reader.tile_groups):
         at, count, *_ = reader.groups[number]
         group(source.block(at-32, count+32), number)
+    for number, payload in enumerate(tile_groups):
+        group(payload, reader.tile_groups+number)
     for number, old in enumerate(live):
         at, count, *_ = reader.groups[reader.tile_groups+old]
-        group(source.block(at-32, count+32), reader.tile_groups+number)
+        group(source.block(at-32, count+32), tile_group_count+number)
     for number, payload in enumerate(groups):
-        group(payload, reader.tile_groups+len(live)+number)
+        group(payload, tile_group_count+len(live)+number)
     copied, slices = {}, {}
 
     def copy(at, count):
@@ -199,6 +242,8 @@ def rewrite(source, frames):
     for image, (offset, width, height, fmt, length) in enumerate(source.images):
         at = (image_at[image] if image in frames else descriptor_at[offset] if fmt == 6
               else slice_copy(offset) if fmt == 7 else copy(offset, length))
+        if image in frames:
+            fmt, length = 6, 16
         t.IMAGE.pack_into(out, 40+image*16, at, width, height, fmt, length)
     for index, (cp, offset, band, width, height, advance, encoded) in enumerate(source.glyphs):
         size = (encoded & ~t.GLYPH_GROUP_FLAG) or width*height
@@ -211,6 +256,7 @@ def rewrite(source, frames):
     return bytes(out), dict(original_index_groups=reader.index_groups,
         copied_index_groups=len(live), added_index_groups=len(groups),
         tile_streams_copied_byte_exact=reader.tile_groups,
+        new_exact_source_tiles=len(added.records), new_source_tile_bytes=sum(map(len, tile_groups)),
         source_bytes=len(source.data), geometry_bytes=len(out),
         geometry_byte_delta=len(out)-len(source.data))
 
@@ -245,8 +291,8 @@ def main():
     data = args.input.read_bytes(); source = coalesce.view(data)
     t.require(source.version == 45 and len(source.aux) == BASE_AUXILIARY,
               'Selection conversion requires the complete UI22 source catalog')
-    frames, reports = plan_frames(source, t.TileReader(source))
-    output, receipt = rewrite(source, frames)
+    frames, reports, added = plan_frames(source, t.TileReader(source))
+    output, receipt = rewrite(source, frames, added)
     language = source.string_payload(6110)[:-1].decode('ascii')
     output, registration = patch_pack(output, dict(images=[], clips=[], localized_text={language:{}},
         auxiliary_image_ids=[source.clips[FIRST_CLIP+i][0] for i in range(CHARACTERS)]), args.output.parent,
