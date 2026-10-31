@@ -77,6 +77,19 @@ static void character_info_name(Canvas&c,const char*text,int x,int y,int size){
         }
     }
 }
+static bool character_delta_background(Canvas&c,unsigned first,unsigned frame){
+    auto& raster=character_selection_raster();
+    if(!raster.restore(c.a.content,first,frame,c.a.callbacks.foreground_poll))return false;
+    if(!c.coverage&&!c.occlusion&&c.opacity==255&&c.brightness==255&&
+       c.tint_red==255&&c.tint_green==255&&c.tint_blue==255&&!c.color_matrix&&
+       c.pitch==ScreenW&&c.clip_w==ScreenW&&c.clip_h==ScreenH){
+        for(unsigned y=0;y<ScreenH;y+=16){
+            c.poll();__builtin_memcpy(c.pixels+y*ScreenW,raster.pixels+y*ScreenW,16*ScreenW*2);
+        }
+    }else c.picture(Picture{reinterpret_cast<const uint8_t*>(raster.pixels),nullptr,nullptr,
+                            ScreenW,ScreenH,0},0,0);
+    return true;
+}
 static void character_screen(Canvas&c){
     using namespace character_select_layout;
     auto&a=c.a;a.hit_count=0;
@@ -105,6 +118,9 @@ static void character_screen(Canvas&c){
         if(random_character_background(c,a.map_clock_ms,a.map_clock_ms-motion.panel_start,motion.panel_start)){}
         else if(a.content.version()>=SourceVersion)c.ui(I12_RandomBackground,0,0,320,240);
         else{c.picture(A_Title,0,0,320,240);c.dim(0,0,320,240,110);}
+    }else if(clip.count&&character_select_delta::available(a.content,character,clip.first)){
+        if(!character_delta_background(c,clip.first,frame(character,a.map_clock_ms-motion.panel_start,clip.count)))
+            c.rect(0,0,ScreenW,ScreenH,0);
     }else if(clip.count){
         // Exact disjoint static/dynamic planes keep the full source loop
         // without repeating unchanging background pixels in every frame.

@@ -177,12 +177,13 @@ union SceneRasterStorage {
     RandomSceneRasters random;
     MerchantRugRaster merchant;
     SelectedHandRaster selected;
+    character_select_delta::Raster character;
 };
-enum class SceneRasterOwner:uint8_t { None,Random,Merchant,SelectedHand };
+enum class SceneRasterOwner:uint8_t { None,Random,Merchant,SelectedHand,Character };
 static SceneRasterStorage scene_raster_storage{0};
 static SceneRasterOwner scene_raster_owner=SceneRasterOwner::None;
 static_assert(sizeof(SceneRasterStorage)==sizeof(MerchantRugRaster),
-    "Random, merchant and selected-hand rasters share one fixed scene allocation");
+    "Random, merchant, selection and selected-hand rasters share one fixed scene allocation");
 static_assert(sizeof(SelectedHandRaster)<56u*1024u,
     "Only one selected description may animate");
 static_assert(sizeof(RandomSceneRasters)>=160u*1024u,
@@ -209,4 +210,11 @@ static SelectedHandRaster& selected_hand_raster(){
         scene_raster_owner=SceneRasterOwner::SelectedHand;
     }
     return scene_raster_storage.selected;
+}
+static character_select_delta::Raster& character_selection_raster(){
+    if(scene_raster_owner!=SceneRasterOwner::Character){
+        ::new(detail::InPlaceAddress{&scene_raster_storage.character}) character_select_delta::Raster;
+        scene_raster_owner=SceneRasterOwner::Character;
+    }
+    return scene_raster_storage.character;
 }

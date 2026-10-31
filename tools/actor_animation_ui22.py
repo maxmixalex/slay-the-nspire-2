@@ -103,9 +103,10 @@ def input_identity(pack,runtime):
 
 
 def resource(name,merchant=False):
-    return dict(skeleton_path=f'res://animations/characters/{name}/{name}.skel',
+    family='monsters' if name=='osty' else 'characters'
+    return dict(skeleton_path=f'res://animations/{family}/{name}/{name}.skel',
         atlas_path=f'res://animations/merchant/{name}/{name}_shop.atlas' if merchant else
-                   f'res://animations/characters/{name}/{name}.atlas')
+                   f'res://animations/{family}/{name}/{name}.atlas')
 
 
 def jobs(pack,source,sampler,enemy_limits=None):
