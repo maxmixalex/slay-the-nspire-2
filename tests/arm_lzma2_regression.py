@@ -34,7 +34,8 @@ def fixtures():
         yield f'contexts-{lc}-{lp}-{pb}', raw, packed
     for name, raw in (
             ('ramp', bytes(i % 251 for i in range(4097))),
-            ('maximum', bytes(512 * 1024))):
+            ('maximum', bytes(512 * 1024)),
+            ('maximum-large', bytes(1024 * 1024))):
         packed = lzma.compress(raw, format=lzma.FORMAT_RAW,
             filters=[dict(id=lzma.FILTER_LZMA2, dict_size=512 * 1024)])
         yield name, raw, packed
@@ -68,8 +69,8 @@ def main():
     stack, stop, destination, source = 0x20000000, 0x30000000, 0x40000000, 0x41000000
     emulator.mem_map(stack, 65536)
     emulator.mem_map(stop, 4096)
-    emulator.mem_map(destination, 1024 * 1024)
-    emulator.mem_map(source, 1024 * 1024)
+    emulator.mem_map(destination, 2 * 1024 * 1024)
+    emulator.mem_map(source, 2 * 1024 * 1024)
     saved = {reg: 0xA5010000 + i * 0x101 for i, reg in enumerate((
         UC_ARM_REG_R4, UC_ARM_REG_R5, UC_ARM_REG_R6, UC_ARM_REG_R7,
         UC_ARM_REG_R8, UC_ARM_REG_R9, UC_ARM_REG_R10, UC_ARM_REG_R11))}
@@ -108,15 +109,22 @@ def main():
         count += 1
 
     for name, raw, packed in fixtures():
-        decode(raw, packed, len(raw), len(raw), 14, True)
-        decode(raw, packed[:-1], len(raw), len(raw), 14, False)
-        decode(raw, packed + b'\0', len(raw), len(raw), 14, False)
-        decode(raw, packed, len(raw), len(raw), 16, False)
-        decode(raw, packed, len(raw), len(raw) - 1, 14, False)
+        property = 16 if len(raw) > 512 * 1024 else 14
+        decode(raw, packed, len(raw), len(raw), property, True)
+        decode(raw, packed[:-1], len(raw), len(raw), property, False)
+        decode(raw, packed + b'\0', len(raw), len(raw), property, False)
+        # Production accepts exactly the 512 KiB and 1 MiB dictionary
+        # properties. Property 16 stopped being an invalid vector when the
+        # large group path was added; 15 and 17 remain unsupported.
+        for unsupported in (15, 17):
+            decode(raw, packed, len(raw), len(raw), unsupported, False)
+        decode(raw, packed, len(raw), len(raw) - 1, property, False)
+        decode(raw, packed, len(raw), len(raw), 14, len(raw) <= 512 * 1024)
+        decode(raw, packed, len(raw), len(raw), 16, True)
         # A failed stream must not leave the shared fixed arena occupied.
-        decode(raw, packed, len(raw), len(raw), 14, True)
+        decode(raw, packed, len(raw), len(raw), property, True)
         records.append(dict(name=name, raw_bytes=len(raw), encoded_bytes=len(packed),
-            raw_sha256=hashlib.sha256(raw).hexdigest()))
+            dictionary_property=property, raw_sha256=hashlib.sha256(raw).hexdigest()))
     print(json.dumps(dict(elf=str(args.elf), elf_sha256=hashlib.sha256(data).hexdigest(),
         decoder_address=address, decoder_bytes=size, vectors=count, fixtures=records,
         cpu='ARM926', output='exact original synthetic bytes',
