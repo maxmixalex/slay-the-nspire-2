@@ -123,6 +123,25 @@ def validate_ui22(source, image):
 
 
 def validate_release_content(data, stage):
+    """Validate publishable content; UI22 and newer always require NSP2/46."""
+    return _validate_content(data, stage, retirement_intermediate=False)
+
+
+def validate_retirement_intermediate(data):
+    """Check the exact NSP2/45 retirement boundary before implicit geometry.
+
+    This is not a release profile. It shares every artwork, actor, selection,
+    retired-root and unsupported-geometry check with the final UI22 guard;
+    only its explicitly pinned intermediate wire/catalog schema differs.
+    """
+    result = _validate_content(data, 'ui22', retirement_intermediate=True)
+    result.update(validation_scope='retirement-before-implicit-geometry',
+                  content_version=45, final_release_ready=False,
+                  required_next_content_version=46)
+    return result
+
+
+def _validate_content(data, stage, *, retirement_intermediate):
     match = re.match(r'ui([0-9]+)(?:$|[-_])', stage, re.IGNORECASE)
     if not match or int(match[1]) < 20:
         return None
@@ -137,7 +156,12 @@ def validate_release_content(data, stage):
     reduced_profile = reduced(data)
     if 'no-animations' in stage.lower() or 'noanimations' in stage.lower():
         tiles.require(reduced_profile, 'The no-animation release requires its NAF1 resource profile')
-    if int(match[1])>=22:
+    if retirement_intermediate:
+        tiles.require(source.version==45 and count==7212 and len(source.images)==58613,
+                      'Retirement intermediate requires exact NSP2/45 with 7212 auxiliaries and 58613 images')
+        tiles.require(not reduced_profile and struct.unpack_from('<I',data,36)[0]==0,
+                      'Retirement intermediate must precede animation profile selection')
+    elif int(match[1])>=22:
         tiles.require(source.version>=46,
                       'UI22 final content requires NSP2/46 implicit geometry support')
     tiles.require(len(source.clips) >= 1783 and len(source.images) >= 58099,
