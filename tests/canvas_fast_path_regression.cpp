@@ -701,14 +701,16 @@ static void character_name_outline_before_ui14(Canvas&c,Glyph glyph,int x,int y)
 static void character_name_outlines(){
  const Surface surface{57,43,63};
  const Placement placements[]={{2,2,0,0},{-5,-7,0,0},{53,39,0,0},{-52,0,0,0},{60,0,0,0}};
+ unsigned source_key=0;
  const auto verify=[&](Glyph glyph){
+  const unsigned key=++source_key;
   for(auto style:{styles[0],styles[1],styles[2],styles[4],styles[16],styles[17]})
   for(auto position:placements)for(int bearing:{-3,2})for(bool masked:{false,true}){
    Pair pair(surface,style);Bytes occlusion(pair.actual.size());
    if(masked){for(unsigned i=0;i<occlusion.size();++i)occlusion[i]=i%3?254:255;
     pair.got.occlusion=pair.oracle.occlusion=occlusion.data()+Pair::guard;}
    glyph.bearing_x=int8_t(bearing);
-   character_name_outline(pair.got,glyph,position.x,position.y);
+   character_name_outline(pair.got,glyph,key,18,0,position.x,position.y);
    character_name_outline_before_ui14(pair.oracle,glyph,position.x,position.y);
    pair.compare();
   }

@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <AssemblyName>SpineSampleAdapter</AssemblyName>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <Nullable>disable</Nullable>
+    <PublishSingleFile>true</PublishSingleFile>
+    <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
+    <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
+    <DebugType>none</DebugType>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="../SpineSampleAdapter.cs" />
+    <Reference Include="OurNotes.Spine.Runtime">
+      <HintPath>$(SpineRuntimePath)</HintPath>
+      <Private>true</Private>
+    </Reference>
+  </ItemGroup>
+  <Target Name="CheckPrivateSpineRuntime" BeforeTargets="ResolveReferences">
+    <Error Condition="!Exists('$(SpineRuntimePath)')"
+           Text="Pass -p:SpineRuntimePath=/absolute/path/to/OurNotes.Spine.Runtime.dll. The separately supplied runtime must stay outside this source repository." />
+  </Target>
+</Project>

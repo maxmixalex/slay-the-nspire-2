@@ -35,13 +35,15 @@ static int character_name_size(Canvas&c,const char*text){
     for(int size:sizes)if(character_name_width(c,text,size)<=character_select_layout::InfoWidth)return c.a.content.font_size(size,face);
     return c.a.content.font_size(12,face);
 }
-static void character_name_outline(Canvas&c,Glyph glyph,int x,int y){
+static void character_name_outline(Canvas&c,Glyph glyph,uint32_t codepoint,unsigned size,unsigned style,int x,int y){
     // One LCD pixel is sufficient; the source five-pixel dilation swallowed
     // small counters and made localized character names unreadable.
     constexpr int Radius=1,Stride=48,Height=40;
     if(!glyph.pixels||!glyph.w||!glyph.h||glyph.w+2*Radius>Stride||glyph.h+2*Radius>Height)return;
     const unsigned width=glyph.w+2*Radius,height=glyph.h+2*Radius;
-    uint8_t mask[Stride*Height];
+    auto&cached=character_outline_cache(c.a.character_random).entry(c.a.content,codepoint,size,style);
+    uint8_t*const mask=cached.mask;
+    if(!cached.valid||cached.width!=width||cached.height!=height){
     for(unsigned i=0;i<width*height;++i)mask[i]=0;
     constexpr int span[3]={0,1,0};
     unsigned row=0,column=0;
@@ -59,6 +61,8 @@ static void character_name_outline(Canvas&c,Glyph glyph,int x,int y){
     if(glyph.encoded_size){unsigned at=0;for(unsigned i=0;i+1<glyph.encoded_size&&at<length;i+=2){
         const unsigned stop=mn(length,at+glyph.pixels[i]);while(at<stop){pixel(glyph.pixels[i+1]);++at;}
     }}else for(unsigned at=0;at<length;++at)pixel(glyph.pixels[at]);
+    cached.width=uint8_t(width);cached.height=uint8_t(height);cached.valid=true;
+    }
     Canvas shade=c;shade.opacity=uint8_t(div255(shade.opacity*64));
     // The old48px stride painted transparent padding beside every letter.
     // A tight row has the same cross-dilated pixels without those visits.
@@ -71,7 +75,7 @@ static void character_info_name(Canvas&c,const char*text,int x,int y,int size){
         while(reader.next(ch)&&ch.codepoint!='\n'){
             const auto metric=label.text_metric(ch,size);if(pen)pen+=metric.kerning64;
             const auto glyph=c.a.content.glyph(ch.codepoint,size,label.font_style(ch));
-            if(!pass)character_name_outline(label,glyph,x+text_pixel(pen),y);
+            if(!pass)character_name_outline(label,glyph,ch.codepoint,unsigned(size),label.font_style(ch),x+text_pixel(pen),y);
             else label.character(ch.codepoint,glyph,x+text_pixel(pen),y,rgb(239,200,81));
             pen+=fitted_text::advance64(metric);
         }
