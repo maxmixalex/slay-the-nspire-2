@@ -162,8 +162,9 @@ def plan_frames(source, reader):
     return frames, reports, added
 
 
-def rewrite(source, frames, added):
+def rewrite(source, frames, added, *, index_frames=KEY_INTERVAL):
     """Append bounded index groups, then drop unreferenced old descriptors/groups."""
+    t.require(0 < index_frames <= t.INDEX_FRAMES, 'Unbounded selection index group')
     reader = t.TileReader(source)
     old_descriptors = {}
     for image, (offset, _w, _h, fmt, _size) in enumerate(source.images):
@@ -202,9 +203,14 @@ def rewrite(source, frames, added):
                                    0, len(pending), 1)+compressed)
         pending, size = [], 0
 
+    clip_starts = {source.clips[FIRST_CLIP+character][0] for character in range(CHARACTERS)}
     for image in sorted(frames):
         count = len(frames[image]['raw'])
-        if pending and (len(pending) == t.INDEX_FRAMES or size+count > t.GROUP_LIMIT):
+        # Cold selection must not decode dozens of future frames' complex
+        # span geometry. An independently decodable checkpoint-sized group
+        # also avoids loading the previous character when a loop is selected.
+        if pending and (image in clip_starts or len(pending) == index_frames or
+                        size+count > t.GROUP_LIMIT):
             finish()
         t.require(count <= t.GROUP_LIMIT, 'A selection geometry record exceeds its bound')
         pending.append(image); size += count
@@ -278,6 +284,7 @@ def rewrite(source, frames, added):
     struct.pack_into('<I', out, 12, len(out)); struct.pack_into('<I', out, 36, 0)
     return bytes(out), dict(original_index_groups=reader.index_groups,
         copied_index_groups=len(live), added_index_groups=len(groups),
+        index_frames_per_group=index_frames, index_groups_respect_clip_boundaries=True,
         tile_streams_copied_byte_exact=reader.tile_groups,
         new_exact_source_tiles=len(added.records), new_source_tile_bytes=sum(map(len, tile_groups)),
         source_bytes=len(source.data), geometry_bytes=len(out),
@@ -309,13 +316,13 @@ def verify(source, result, reports):
                 lossless=True, runtime_arena_growth=0)
 
 
-def convert(data, work):
+def convert(data, work, *, index_frames=KEY_INTERVAL):
     """Produce the exact selection representation for a logical private pack."""
     source = coalesce.view(data)
     t.require(source.version == 45 and len(source.aux) == BASE_AUXILIARY,
               'Selection conversion requires the complete UI22 source catalog')
     frames, reports, added = plan_frames(source, t.TileReader(source))
-    output, receipt = rewrite(source, frames, added)
+    output, receipt = rewrite(source, frames, added, index_frames=index_frames)
     language = source.string_payload(6110)[:-1].decode('ascii')
     output, registration = patch_pack(output, dict(images=[], clips=[], localized_text={language:{}},
         auxiliary_image_ids=[source.clips[FIRST_CLIP+i][0] for i in range(CHARACTERS)]), Path(work),
@@ -331,9 +338,10 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--input', type=Path, required=True)
     parser.add_argument('--output', type=Path, required=True)
+    parser.add_argument('--index-frames', type=int, choices=(8,16,32,64), default=KEY_INTERVAL)
     args = parser.parse_args()
     t.private_path(args.output, 'Private selection output')
-    output, receipt = convert(args.input.read_bytes(), args.output.parent)
+    output, receipt = convert(args.input.read_bytes(), args.output.parent, index_frames=args.index_frames)
     t.atomic_bytes(args.output, output)
     t.atomic_bytes(args.output.with_suffix('.json'), json.dumps(receipt, indent=2).encode()+b'\n')
     print(json.dumps({k:v for k,v in receipt.items() if k not in ('loops', 'registration')}), flush=True)

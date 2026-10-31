@@ -116,6 +116,27 @@ static void in_place_boundaries(){
     CHECK(!restore_tile_filter_in_place_step(one.data(),scratch.data(),1,1,1));
     CHECK(!restore_tile_filter_in_place_step(one.data(),scratch.data(),1361,1,0));
 }
+static void pair_alignment_and_tails(){
+    // Odd byte pointers take the scalar fallback. Halfword-aligned pairs
+    // cover both ARM word phases, arbitrary overlap, and an odd pixel tail.
+    for(unsigned count:{1u,2u,3u,255u,256u})for(unsigned mode:{1u,2u}){
+        Bytes source(770),expected(count*2);source[0]=source[1]=16;
+        for(unsigned pixel=0;pixel<256;++pixel)put(source,2+pixel*2,(pixel*4127u+mode*0x5a37u)&65535u,2);
+        const Bytes encoded=filtered(source,mode);
+        std::memcpy(expected.data(),source.data()+2,expected.size());
+        for(unsigned phase=0;phase<4;++phase)for(int delta:{-4,-2,-1,0,1,2,4}){
+            const unsigned from=24+phase,to=unsigned(int(from)+delta);
+            Bytes guarded(count*2+64,0x93);
+            std::memcpy(guarded.data()+from,encoded.data()+2,count*2);
+            Bytes oracle=guarded;std::memcpy(oracle.data()+to,expected.data(),expected.size());
+            if(delta>0){if(mode==2)restore_tile_filter_colors<2,true>(guarded.data()+to,guarded.data()+from,count);
+                else restore_tile_filter_colors<1,true>(guarded.data()+to,guarded.data()+from,count);}
+            else {if(mode==2)restore_tile_filter_colors<2,false>(guarded.data()+to,guarded.data()+from,count);
+                else restore_tile_filter_colors<1,false>(guarded.data()+to,guarded.data()+from,count);}
+            CHECK(guarded==oracle);
+        }
+    }
+}
 struct Package {
     static constexpr unsigned Images=66,Strings=Ui7StringCount,Clips=CharacterDeathAnimationKinds;
     Bytes bytes,expected;unsigned base{},tile_group{},index_group{},frame{},frame_ids[4]{};
@@ -294,4 +315,6 @@ static void sparse_reader(){
         c->set_image_cache_profile(false);
     }
 }
-int main(){all_bits();in_place_boundaries();sparse_boundaries();reader();large_reader();mixed_group_reader();foreground_shared_index();sparse_reader();std::printf("tile filter: %u checks; exact alias/sparse overlap boundaries, mixed512KiB/1MiB interior groups, late cancellation/faults, shared-index pressure and legacy bounds passed\n",checks);}
+int main(int argc,char**argv){all_bits();in_place_boundaries();pair_alignment_and_tails();
+    if(argc==2&&!std::strcmp(argv[1],"--inverse-only")){std::printf("tile inverse: %u checks; all RGB565 bits, halfword phases, byte fallback, odd tails and overlap boundaries passed\n",checks);return 0;}
+    CHECK(argc==1);sparse_boundaries();reader();large_reader();mixed_group_reader();foreground_shared_index();sparse_reader();std::printf("tile filter: %u checks; exact alias/sparse overlap boundaries, mixed512KiB/1MiB interior groups, late cancellation/faults, shared-index pressure and legacy bounds passed\n",checks);}

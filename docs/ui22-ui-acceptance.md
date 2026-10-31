@@ -96,6 +96,13 @@ the source image selected by that reference. Eight sampled affliction phases
 remain a finite representation; this change resolves the accumulated clock
 error without claiming continuous shader rendering.
 
+The actual complete-color control passed 77,968 checks with the corrected
+capture helper from `83ebb477cb495c4dc986dcb8d68fd6b2e72fff6e`. A fixture hand
+change can restart normal combat preparation; the helper now drains that work
+at the requested visual clock and rejects a wholly black capture. Both full
+card scenes at 39,999 ms were inspected after this correction. The earlier
+black transition captures are not accepted card-image evidence.
+
 ## Reused App address and shared scene memory
 
 An independent review of the selection raster cache found that a newly
@@ -109,6 +116,16 @@ the same address using both memory and ranged input. Each starts at Content
 generation one, invalidates the owner and reconstructs all 76,800 pixels from
 its new source. Existing Random/merchant ownership checks remain in place.
 
+## Random performance decision
+
+Two exact white-dot sampling candidates were evaluated with complete rendered
+frames, cold entry and rapid character/Random switches. Their frame pixels
+matched, but the measured warm complete-frame and white-dot CPU costs increased.
+Both candidates were removed from the production runtime. Random retains its
+previous rendering path, with only a zero-alpha early return and its boundary
+check retained. No Random speedup or storage reduction is claimed. The five
+character selection optimization is a separate result.
+
 ## Source and asset validation boundary
 
 The UI/lifecycle runtime and public tests above were executed from published
@@ -119,11 +136,24 @@ a small synthetic fixture's missing hover text, and the overlay Back shortcut
 that previously entered Pause; the corrected checkpoint passes all five scoped
 synthetic UI/lifecycle targets and all actual-language runs above.
 
+The complete native Release build of published runtime checkpoint
+`d940fec9eeae87d10d4e806d46bdf73e862debd1` passed all 160 CTest regressions with
+clang 18: zero failures in 69.12 seconds. This gate includes the final shared
+actor sampling grid, exact phase clocks, scene-cache lifecycle and restored
+Random implementation. The later capture-helper checkpoint changes tests and
+offline tools/documents only; its production source files are identical.
+
 The first complete 427-action / 11,051-frame actor resource input also passed
 `character_death_ui9_regression`, `world_ui_regression` and
 `five_character_ui_regression` through the production renderer. These checks
 cover all five characters' combat/event/rest/shop death routing, terminal holds,
 particle decay, and actual Osty growth, kill, dead-loop and revival gameplay.
+On the final runtime and complete-color control, an additional ordinary-command
+Osty flow passed 1,989 checks: Bodyguard growth, Bone Shards death, all 17 death
+frames elapsed, the actual dead-loop route, and the 12-frame revival through
+terminal idle. Seven full-scene captures were inspected, including the corpse
+and the middle/end of revival; canonical saves remained unchanged while the
+presentation clock advanced.
 The native source-pixel oracle and final-resource receipts are separate release
 gates; intermediate artwork acceptance is not a claim that the final installer
 has already been built or tested on a calculator.
