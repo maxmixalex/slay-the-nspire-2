@@ -1,36 +1,92 @@
-# UI21 integration — complete private resources recovered
+# UI21 completed matched calculator release
 
-The active continuation is `work/ui21-integration`, based on UI20
+The active release is `work/ui21-integration`, based on UI20
 `f4875c2eee50ecdee4793d7ecb365a20d34857dc`. The owner's supplied conversation
-attachment has been read in full. The accepted UI19 bilingual and optional
-language installers were recovered, and the supplied original four-part game
-archive matches the pinned v0.111.0 / `41cef1ea` reference.
+attachment was read in full. The accepted UI19 bilingual and optional-language
+installers were recovered, and the supplied four-part original game archive
+matches the pinned v0.111.0 / `41cef1ea` reference. Both complete UI21 player
+ZIPs are built with the matching repaired artwork and all sixteen locales.
+Original assets, derived packs, private captures and calculator firmware remain
+outside the public repository.
 
-- Recovered UI19 bilingual installation: **74,538,517 bytes** including its
-  1,724,027-byte launcher; all 16 language data files are available.
-- Rebuilt complete UI20 English artwork: **71,028,106 bytes**, SHA-256
-  `d823e669731c75bcf7f62f307f699c0212a211af0f236c36383a4b6777cf66b5`;
-  independently matches the historical repaired artwork. Source sampling and
-  production Canvas acceptance pass 328 frames / 351 pieces.
-- Baseline 158 native suites have actually passed. Independent host processes
-  exercise the real Ndless storage implementation through abandon/death and
-  reopen, retiring sav/bak/tmp without deleting settings or progress.
-- The runtime adds occupied-pixel sparse restoration. Final linked ARM checks
-  pass 44 sparse vectors and 4,799 memory vectors. Whole-group instruction
-  measurements reject dense low-benefit sparse conversions and new font/text
-  retuning; the release caps sparse occupancy at 60% and preserves the prior
-  font/text streams. The two extra font candidates were evaluated and removed.
-  Complete final all-locale readback and the two installer ZIPs remain in
-  progress; this checkpoint is not a completed player release.
-- No current Firebird BootROM/NAND has been recovered. Host rendering, linked
-  ARM instruction measurements and historical emulator results must not be
-  relabelled as a new ordinary-OS or physical-device frame-rate measurement.
+## Frozen source and complete artifacts
 
-Next: verify this source checkpoint remotely, build its ordinary ARM launcher,
-finish the exact compaction chain, validate the matched final data and publish
-the bilingual installer and optional-language ZIP. See
-[ui21-art-and-font-storage.md](ui21-art-and-font-storage.md) for current art and
-font evidence. The preceding UI20 handoff is retained below for provenance.
+- Runtime: **`7b0cd8b4f2fd824eea781e0e0a853011c3474b1c`**.
+- Permanent filesystem regression: `c8dbcd16739762b389858e912742dd384f301f96`.
+- Final offline selection policy: `9d5f9966bb061cec48f7f6efeef131aa243540c6`.
+- Packaging instructions: `01176770c7bcb29c63e03f0bdf302fcd701669ac`.
+- Final launcher: **1,679,979 bytes**; formal allocation **22,291,016 bytes**,
+  below 24 MiB. The same-toolchain UI20 launcher is 1,679,626 bytes: the new
+  sparse inverse adds 353 bytes, not a launcher-size reduction. The older
+  delivered UI19 launcher was 1,724,027 bytes.
+
+| Private release ZIP | ZIP bytes | SHA-256 |
+| --- | ---: | --- |
+| Slay-the-Nspire-2-0.1.0-ui21-bilingual-calculator.zip | 72,473,950 | `172789594bfa5509b4f1567db5843abb90e6402e657ab1b4f4dda359d5f10cef` |
+| Slay-the-Nspire-2-0.1.0-ui21-optional-languages.zip | 17,035,233 | `752f0b338622f0f1917cbbd947c26f83ddac9badd4bdf0743b53d6d9e777a7e7` |
+
+Default installation is **73,295,445 bytes** for the launcher and required
+`.tns` resources, before saves; the complete extracted bilingual ZIP including
+README, build information and licenses is **73,367,990 bytes**. The fourteen
+optional locale files add **18,507,815 bytes** if all are installed; users can
+select only the languages they need. Preserve `state/` and replace the complete
+matching launcher/data set, including any previously installed optional locale.
+
+The comparable UI19 default `.tns` installation was **74,538,517 bytes**.
+UI21 is **1,243,072 bytes smaller (1.67%)** while adding **1,105,032 bytes** of
+repaired source-derived artwork. Against the same complete artwork, the data
+pipeline saves **2,304,056 bytes**. The historical 65-70 decimal-MB target is
+not reached: 73.30 MB is 69.90 MiB, and the unit difference is not an extra gain.
+
+## Completed functional and resource acceptance
+
+- Rebuilt complete English artwork is 71,028,106 bytes, SHA-256
+  `d823e669731c75bcf7f62f307f699c0212a211af0f236c36383a4b6777cf66b5`,
+  reproducing the historical repaired artwork exactly. Eight complete Ancient
+  backgrounds, nine native-density enemy clips, Osty's terminal pose and
+  rarity-specific reward icons are present in the actual delivered data.
+- All **159 native targets** have executed and passed. The new public test
+  runs four lifecycle scenarios in twelve independent processes using the
+  production Ndless run callbacks and synthetic resources.
+- Final English/Chinese resources pass **16/16 production-Canvas UI runs** and
+  **20/20 filesystem/icon subprocesses**, including title abandonment, pause
+  abandonment, death, act-2/act-3 abandonment and independent restart. Active
+  sav/bak/tmp files retire; unrelated profiles and preferences remain intact.
+- **58,099 images** pass exact memory/ranged/preload reader comparison. The
+  107 groups changed by the final density decision additionally pass complete
+  95,118,870-byte record comparison and production-reader image coverage;
+  unchanged group streams and image references are byte-identical. Final
+  glyphs, strings and clip descriptors retain the matching source semantics.
+- The source oracle and final Canvas pass **328 frames / 351 pieces**. Ten
+  frame captures remain byte-identical after the final compression and runtime
+  changes. Osty's existing death animation completes before its source corpse
+  loop, with the existing revive action retained.
+- Linked ARM passes **44 sparse vectors**, **4,799 memory vectors** and exact
+  ABI/bounds checks. Sparse inverse instruction work falls 10.39-66.92% in the
+  twelve controlled windows. Complete decoder samples include low/mid/high
+  occupancy improvements of 22.77%, 12.25% and 8.65%; these are instruction
+  counts, not device frame rates.
+
+Dense low-benefit sparse conversions and font/text retuning were rejected
+after complete ARM decoder measurements showed extra work. The release caps
+new sparse selection at 60% occupancy and preserves prior font/text streams.
+The 29,614-byte font-profile candidate, color-plane alternatives and cold-TU
+compiler candidates are not shipped gains. There are no added resident pixel
+buffers or startup-wide integrity scans.
+
+## Evidence and retained platform boundaries
+
+See [ui21-storage.md](ui21-storage.md),
+[ui21-ui-acceptance.md](ui21-ui-acceptance.md) and
+[ui21-art-and-font-storage.md](ui21-art-and-font-storage.md) for measured
+acceptance, rejected candidates and exact resource identities. Continue from
+these complete UI21 artifacts rather than the historical launcher-only UI20
+checkpoint. No currently recovered Firebird BootROM/NAND was available in this
+session, so no new ordinary-OS or physical-calculator FPS is claimed. Static
+Ancient compositing, sampled LCD materials, the established display/input
+capacities and the existing audio/multiplayer/Timeline exclusions remain
+explicit platform boundaries. The preceding UI20 handoff is retained below
+for provenance.
 
 # UI20 continuation — historical source and launcher checkpoint
 

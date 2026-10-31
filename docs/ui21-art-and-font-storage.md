@@ -52,6 +52,26 @@ uses its existing pinned source commit with .NET SDK 8.0.427. Private journals
 `ui21-framed-art-3cf0ffa71bec` dependency failure is retained separately; it
 failed before producing artwork because Python `lz4` was absent.
 
+## Osty's complete death and revival sequence
+
+The pinned original `Osty.GenerateAnimator` maps `Dead` to `die`, whose next
+state is the looping `dead_loop`; `Revive` selects `revive` and then returns to
+the looping idle state. The three newly supplied downed samples complete the
+last part of the death presentation. They are not a replacement for the death
+motion itself.
+
+The matching pack retains the existing 17-frame `AnimOstyDie` schedule
+(17 x 78 ms), adds the three-frame `dead_loop` schedule (3 x 56 ms), and retains
+the 12-frame revival schedule (12 x 81 ms). The short original downed loop has
+the same corpse pose at LCD precision. `App::sync_character_feedback` triggers
+the death clip at the visible positive-HP to zero-HP edge even when queued
+combat feedback outlives the canonical combat phase. `combat_actors` finishes
+that clip, holds the original downed loop while HP is zero, and follows the
+existing revival/idle path when HP becomes positive. The world UI regression
+covers the normal death edge and lethal owner-overflow timing; the production
+framed regression also covers the downed loop. The private source-symbol and
+pack-descriptor receipt is `artwork/osty-death-semantics.json`.
+
 ## Font-stream candidate rejected after ARM measurements
 
 The UI15 font pipeline already removes obsolete glyph tails and identical
@@ -89,6 +109,82 @@ font/text streams; the two added default font candidates were removed from
 recover that space. The candidate's exact-byte proofs remain useful for
 explaining the rejected tradeoff, but do not turn it into an accepted speed or
 storage improvement.
+
+## Acceptance of the final selected streams
+
+The runtime used for these gates is checkpoint
+`7b0cd8b4f2fd824eea781e0e0a853011c3474b1c`. The final offline policy is
+`9d5f9966bb061cec48f7f6efeef131aa243540c6`; it does not change the production
+decoder. It restores dense groups above 60% occupancy to their original
+streams and retains the original font/text streams. The following are complete
+logical validation files; installation files share the common artwork rather
+than storing two complete copies:
+
+| Locale | Logical bytes | SHA-256 |
+| --- | ---: | --- |
+| English | 68,726,154 | `36e7c560558617053081bc4c731d838a3916801f6f9ce3cc8747e1c77dc94e40` |
+| Simplified Chinese | 73,150,868 | `6094d63ef015d691252e5bb788aed356f7b252d1cd77b5fc6d322646f59ce2ee` |
+
+The full native image oracle first checked the retuned candidate against the
+matching repaired NSP2/44 artwork: **58,099 images and 1,170,062,350 decoded
+bytes**, byte for byte through memory, ranged IO and incremental preload. Ten
+bounded ranges cover the catalog exactly once. The candidate's SHA-256 is
+`c28917a1f93de76208fbba9a6b6a410d52b9089251f6e691a499837b52abd11f`.
+
+The final policy changes compressed stream selection, so its verification
+explicitly connects the final files to that complete proof:
+
+- All 1,030 unchanged tile/index streams are byte-identical to the verified
+  candidate. All 58,099 image dimensions and references remain unchanged;
+  the 1,865 retained streams and direct image bytes are also identical.
+- The 107 restored dense streams are byte-identical to the original dense
+  reference. An independent comparison checks all **95,118,870 complete
+  decoded tile bytes**, including hidden RGB and padding, against the
+  candidate. The 338 remaining sparse groups satisfy the 60% limit.
+- A coverage set of **42 actual images** reaches every restored group. The
+  production reader checks these against the repaired artwork through memory,
+  ranged IO and incremental preload. This is a targeted final check, not a
+  second claimed run of the entire catalog.
+- Final English and Chinese artwork is byte-identical over 66,385,036 bytes.
+  Their original font/text tails remain byte-identical over 503,314 and
+  4,282,700 bytes respectively. Complete production metadata checks pass for
+  **13,299 English and 53,632 Chinese glyph records**, 8,704 strings per locale,
+  all 1,783 clips, and 40 memory/ranged/reference UI frames per invocation.
+- The final production Canvas run again passes all **328 repaired frames and
+  351 pieces**, loop/clamp/culling and distinct reward icons. Ten captures,
+  totaling 2,304,150 bytes, are byte-identical to the repaired NSP2/44 artwork
+  rendered before the storage changes.
+
+The private receipts are `final-oracles/images/exact-image-receipt.json`,
+`final-oracles/final-policy-mapping-eng.json`,
+`final-oracles/final-changed-native/receipt.json`,
+`final-oracles/final-chinese-art-font-binding.json` and
+`final-oracles/final-framed-capture-equivalence.json`. Final journals
+`ui21-final-policy-mapping-71c44371790b`,
+`ui21-final-changed-native-e5ca413a4376`,
+`ui21-final-policy-zhs-metadata-5ddac5ef9bb3` and
+`ui21-final-policy-framed-f9331cf305ca` all pass without source changes.
+
+## Continuing representation limits
+
+The eight Ancient rooms now use their correct full viewport and original
+source pixels, but the complete room remains a static actor/background
+composite under the recorded storage exception. Dialogue, choices, healing
+and the separately implemented card materials still animate. Osty and other
+missing creature motion do not inherit that exception.
+
+Output remains 320x240 RGB565/LDR with integer rasterization, bounded CPU
+particles and sampled materials. Existing Affliction material sampling has
+eight phases, Infection has 30 source frames, and Ancient card fire has ten;
+this release does not reduce those representations. These are not continuous
+Godot GPU materials. The exclusions for audio, multiplayer and Timeline, and
+the existing cosmetic RNG, hosted-service, RTC/timezone, history, seed/input
+and allocation limits remain listed in
+[the retained-differences record](ui20-retained-differences.md).
+
+Native pixel checks and linked ARM instruction measurements do not establish
+normal-OS or physical-calculator frame rates. This round has no new Firebird
+or physical-device timing result.
 
 Final installed sizes must include the launcher, all common concern files and
 the selected language files. See the current work-state/release record for the
