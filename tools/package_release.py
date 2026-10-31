@@ -38,6 +38,17 @@ def readme(info):
     else:
         sources = (f"Runtime source: https://github.com/maxmixalex/slay-the-nspire-2/tree/{info['runtime_checkpoint']}\n"
                    f"Resource converter: https://github.com/maxmixalex/slay-the-nspire-2/tree/{info['resource_checkpoint']}\n")
+    validation = ''
+    if info.get('stage', '').startswith('ui23'):
+        validation = '''
+验证范围 / Verification scope
+本包没有计算器实机测试记录，不能据此给出实机帧率或实机峰值内存。
+打包校验覆盖文件完整性和资源内容；画质、性能对照和保留差异的记录附在 data/validation。
+先古场景仍有未实现的独立粒子和材质时钟差异，详见附带的 ui23-retained-differences.md。
+No physical-calculator test is recorded for this package. Calculator FPS and physical peak RAM remain unmeasured.
+Packaging checks file integrity and resource content. Quality, performance and remaining-difference records are included in data/validation.
+Independent Ancient particles and material clocks remain incomplete; see the included ui23-retained-differences.md.
+'''
     return f"""Slay the Nspire 2 — nSpire {info['version']} (StS II v0.111.0)
 
 安装 / Installation
@@ -110,7 +121,7 @@ Reference: v0.111.0 / 41cef1ea
 Resource format: NSP2/{info['resource_format']}; save format: v{info['save_version']}
 Installed program/resources: {sum(info['files'].values()):,} bytes before saves
 {sources.rstrip()}
-See the release notes for validation coverage and remaining calculator timing limits.
+{validation.rstrip()}
 Source and third-party notices are included under data/licenses. Original game assets belong
  to Mega Crit and the respective rights holders.
 """
@@ -180,6 +191,10 @@ def main():
                 files={name: path.stat().st_size for name, path in paths.items()})
     if content_validation is not None:
         info['required_content_validation'] = content_validation
+    if args.stage.startswith('ui23'):
+        info['physical_device_tested'] = False
+        info['calculator_fps_measured'] = False
+        info['physical_peak_ram_measured'] = False
     stem = f'Slay-the-Nspire-2-{release_version}-bilingual'
     archive = args.output / (stem + '-calculator.zip')
     offline = args.output / (stem + '-offline.html')
@@ -189,6 +204,9 @@ def main():
                  'licenses/OkHSV-Godot-MIT.txt', 'licenses/Noto-Boot-OFL.txt','licenses/NotoEmoji-OFL.txt','licenses/NotoSansSymbols2-OFL.txt'):
         paths["data/licenses/" + Path(name).name] = ROOT / name
     paths['data/licenses/Unicode-License.txt'] = ROOT / 'third_party/unicode/LICENSE'
+    if args.stage.startswith('ui23'):
+        for name in ('ui23-color-storage-evidence.md', 'ui23-retained-differences.md'):
+            paths['data/validation/' + name] = ROOT / 'docs' / name
     with zipfile.ZipFile(archive, 'w', zipfile.ZIP_DEFLATED, compresslevel=6) as out:
         out.writestr('state/', b'')
         for name, path in paths.items():

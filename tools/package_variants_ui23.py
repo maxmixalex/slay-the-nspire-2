@@ -94,6 +94,11 @@ def build(args):
             candidates[0].replace(archive)
             receipts[profile] = check_archive(archive)
             receipts[profile]["installed_bytes"] = resources[profile]["installed_bytes"]
+            if profile == "animated" and receipts[profile]["extracted_bytes"] > args.maximum_animated_bytes:
+                meets_budget = False
+                if not args.allow_over_budget_candidate:
+                    raise ValueError("Complete animated archive expands to %d bytes, above the %d-byte limit" %
+                                     (receipts[profile]["extracted_bytes"], args.maximum_animated_bytes))
 
     extras = [code for code in LANGUAGES if code not in ("eng", "zhs")]
     optional = args.output / (stem + "-optional-languages.zip")
