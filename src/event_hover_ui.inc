@@ -178,15 +178,16 @@ bool merchant_hover_target(const App&a,CardHoverTarget&target){
 }
 bool reward_hover_target(const App&a,CardHoverTarget&target){
     target={};
-    if(!a.reward_list_interactive()||a.pointer.held||a.pointer.armed_card>=0||a.keyboard_card>=0||
+    const bool reading=a.keyword_hover.details,keyboard=!a.pointer.visible||reading;
+    if(!a.reward_list_interactive()||(a.pointer.held&&!reading)||a.pointer.armed_card>=0||a.keyboard_card>=0||
        a.map_preview.open||a.ftue.active()||a.map_transition_blocks_pointer()||
-       (!a.pointer.visible&&a.hud_focus>=0)||!a.reward_presentation.window(a.map_clock_ms).alpha)return false;
-    const auto&s=a.game;const HitRegion*hit=a.pointer.visible?a.hit_at(a.pointer.x,a.pointer.y):nullptr;
+       (keyboard&&!reading&&a.hud_focus>=0)||!a.reward_presentation.window(a.map_clock_ms).alpha)return false;
+    const auto&s=a.game;const HitRegion*hit=keyboard?nullptr:a.hit_at(a.pointer.x,a.pointer.y);
     unsigned mode=0;
     if(s.phase==Phase::Reward){
         UiAction actions[6];const unsigned count=ui_reward_actions(s,actions);int selected=-1;
         for(unsigned i=0;i<count;++i){
-            if(a.pointer.visible){if(hit&&hit->enabled&&hit->kind==HitKind::UiAction&&hit->value==int(actions[i]))selected=int(i);}
+            if(!keyboard){if(hit&&hit->enabled&&hit->kind==HitKind::UiAction&&hit->value==int(actions[i]))selected=int(i);}
             else if(a.cursor==int(i)){selected=int(i);for(int j=0;j<a.hit_count;++j)
                 if(a.hits[j].kind==HitKind::UiAction&&a.hits[j].value==int(actions[i])&&a.hits[j].enabled){hit=&a.hits[j];break;}}
         }
@@ -196,7 +197,7 @@ bool reward_hover_target(const App&a,CardHoverTarget&target){
         else return false;
         mode=1;
     }else{
-        if(!a.pointer.visible)hit=hover_keyboard_hit(a);
+        if(keyboard)hit=hover_keyboard_hit(a);
         if(!hit||!hit->enabled||hit->kind!=HitKind::WorldChoice||hit->value<0)return false;
         uint16_t ids[MaxWorldUiChoices];const unsigned count=a.world_choice_options(ids,MaxWorldUiChoices);bool eligible=false;
         for(unsigned i=0;i<count&&i<MaxWorldUiChoices;++i)if(ids[i]==hit->value)eligible=true;
@@ -213,7 +214,7 @@ bool reward_hover_target(const App&a,CardHoverTarget&target){
     if(target.relic>=WorldRelicKinds||(target.relic<0&&!potion_definition(Potion(target.potion))))return false;
     // NRewardButton.OnFocus owns Reward.HoverTips for both pointer and
     // controller focus. Its unclaimed model has no owned-inventory index.
-    target.reward=true;target.canonical_relic=true;target.owner={hit->x,hit->y,hit->w,hit->h};
+    target.reward=true;target.detail=reading;target.canonical_relic=true;target.owner={hit->x,hit->y,hit->w,hit->h};
     target.identity=0x7a000000u|(mode<<20)|(unsigned(hit->value)&255u)<<12|unsigned(target.relic>=0?target.relic:target.potion);
     return true;
 }
@@ -259,7 +260,10 @@ static bool inspect_relic_hover_target(const App&a,CardHoverTarget&target){
     target.inspect_relic=true;target.canonical_relic=collection||a.history_open;target.historical=a.history_open;
     target.identity=0x74000000u|unsigned(a.detail_item)|(unsigned(a.detail_owned+1)<<12);return true;
 }
-static bool keyword_hover_target(const App&a,CardHoverTarget&target){return inspect_relic_hover_target(a,target)||history_relic_hover_target(a,target)||power_hover_target(a,target)||creature_hover_target(a,target)||collection_hover_target(a,target)||owned_relic_hover_target(a,target)||treasure_hover_target(a,target)||merchant_hover_target(a,target)||reward_hover_target(a,target)||event_hover_target(a,target)||card_hover_target(a,target);}
+static bool keyword_hover_target(const App&a,CardHoverTarget&target){
+    if(a.keyword_hover.details&&reward_hover_target(a,target))return true;
+    return inspect_relic_hover_target(a,target)||history_relic_hover_target(a,target)||power_hover_target(a,target)||creature_hover_target(a,target)||collection_hover_target(a,target)||owned_relic_hover_target(a,target)||treasure_hover_target(a,target)||merchant_hover_target(a,target)||reward_hover_target(a,target)||event_hover_target(a,target)||card_hover_target(a,target);
+}
 static void collect_keyword_hover_tips(const App&a,const CardHoverTarget&owner,HoverTipList&out){
     if(owner.creature>=0)collect_creature_hover_tips(a,owner,out);
     else if(owner.power>=0)collect_power_hover_tips(a,uint16_t(owner.power),out);

@@ -465,7 +465,11 @@ static void keyword_tooltips(Canvas&c){
         else if(tip.kind==HoverTipKind::Potion)a.discover_potion(Potion(tip.amount));
     }
     const bool detail=owner.detail&&a.keyword_hover.details;
-    if(detail){c.dim(3,25,314,194,250);}
+    if(detail){c.dim(3,25,314,194,250);
+        // Reading a pending reward is modal: the reward rows remain available
+        // as focus anchors, but no click may claim or skip the covered list.
+        if(owner.reward)c.hit(0,0,ScreenW,ScreenH,HitKind::Command,int(Key::Back));
+    }
     if(!tips.count){if(detail){c.centered("这张牌没有关联词条。",18,102,284,12,Muted);
         c.centered(owner.event_option>=0?"返回事件":"返回",18,192,284,10,Gold);c.hit(18,190,284,13,HitKind::Command,int(Key::Statuses));}return;}
     HoverPage page=hover_page(c,owner,tips,a.keyword_hover.page);
@@ -484,6 +488,7 @@ static void keyword_tooltips(Canvas&c){
         c.hit(212,222,45,16,HitKind::Scroll,-1,a.keyword_hover.page>0);
         c.hit(271,222,45,16,HitKind::Scroll,1,a.keyword_hover.page+1<page.pages);
     }else if(page.pages>1){
+        if(owner.reward)text.text("  V");
         const auto column=hover_enchant_selection(a,owner)?HoverRect{212,24,104,168}:keyword_hover_column(owner);
         const int foot_y=hover_enchant_selection(a,owner)?192:hover_compact_event(owner)?column.y+column.h+1:219;c.rect(column.x,foot_y,column.w,12,Panel);c.centered(footer,column.x,foot_y,column.w,source_hover_size(c),Gold);
     }
@@ -496,11 +501,15 @@ bool keyword_hover_scroll(App&a,int rows){
     a.keyword_hover.page=mn(mx(0,a.keyword_hover.page+rows),page.pages-1);return true;
 }
 bool keyword_detail_input(App&a,Key k){
-    CardHoverTarget event{};const bool is_event=event_hover_target(a,event);
-    if((a.detail_card<0&&!is_event)||a.status_actor>=0||a.event_reader||a.map_preview.open||a.paused||a.help||a.settings_open||a.frontend_confirm)return false;
-    if(k==Key::Statuses){if(is_event){HoverTipList tips{};collect_event_hover_tips(a,event.event_option,tips);if(!tips.count)return false;}a.keyword_hover.details=!a.keyword_hover.details;a.keyword_hover.page=0;return true;}
+    CardHoverTarget event{},reward{};const bool is_event=event_hover_target(a,event),is_reward=reward_hover_target(a,reward);
+    if((a.detail_card<0&&!is_event&&!is_reward)||a.status_actor>=0||a.event_reader||a.map_preview.open||a.paused||a.help||a.settings_open||a.frontend_confirm)return false;
+    if(k==Key::Statuses||(is_reward&&reward.potion>0&&k==Key::Detail&&!a.keyword_hover.details)){
+        if(is_event||is_reward){HoverTipList tips{};collect_keyword_hover_tips(a,is_reward?reward:event,tips);if(!tips.count)return false;}
+        a.keyword_hover.details=!a.keyword_hover.details;a.keyword_hover.page=0;if(is_reward)a.pointer_cancel();return true;
+    }
     if(!a.keyword_hover.details)return false;
-    if(k==Key::Back||k==Key::Detail){a.keyword_hover.details=false;a.keyword_hover.page=0;return true;}
+    if(k==Key::Back||k==Key::Detail){a.keyword_hover.details=false;a.keyword_hover.page=0;if(is_reward)a.pointer_cancel();return true;}
     if(k==Key::Up||k==Key::Down){keyword_hover_scroll(a,k==Key::Up?-1:1);return true;}
+    if(is_reward&&k!=Key::Save&&k!=Key::Load&&k!=Key::Quit&&k!=Key::Debug)return true;
     return false;
 }

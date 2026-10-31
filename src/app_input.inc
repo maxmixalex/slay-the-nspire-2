@@ -133,6 +133,7 @@ void App::input(Key k){
     if(!title&&!paused&&int32_t(combat_linger_until-animation)>0&&k!=Key::Back&&k!=Key::Save&&k!=Key::Load&&k!=Key::Quit)return;
     HandInputFocus focus(*this,k);
     if(!pointer.dispatching){pointer_cancel(true);pointer.visible=false;pointer.motion_time=map_clock_ms;}
+    if(keyword_hover.details&&reward_list_interactive()&&keyword_detail_input(*this,k))return;
     if(frontend_input(k))return;
     if(detail_item<0&&detail_card<0&&potion_input(k))return;
     if(map_input(k))return;

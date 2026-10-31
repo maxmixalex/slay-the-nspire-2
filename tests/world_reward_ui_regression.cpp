@@ -3,6 +3,7 @@
 #include "original_events.hpp"
 #include "world_run.hpp"
 #include "world_card_factory.hpp"
+#include "fitted_text.hpp"
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -302,6 +303,61 @@ static void check_reward_hover(HitKind kind,int id,int cursor,RelicId relic,Poti
  a.pointer.visible=false;a.hud_focus=0;a.render();CHECK(!reward_hover_target(a,owner));a.hud_focus=-1;
  a.help=true;CHECK(!reward_hover_target(a,owner));a.help=false;
  a.paused=true;CHECK(!reward_hover_target(a,owner));a.paused=false;unchanged();
+ a.input(Key::Statuses);a.render();CHECK(a.keyword_hover.details&&a.status_actor<0&&a.cursor==cursor);
+ CHECK(reward_hover_target(a,owner)&&owner.detail&&owner.reward);
+ for(Key key:{Key::Confirm,Key::EndTurn,Key::Left,Key::Right,Key::Map,Key::Potions,Key::Relics,Key::Inspect}){
+  a.input(key);a.render();CHECK(a.keyword_hover.details&&a.cursor==cursor&&a.detail_card<0&&a.detail_item<0&&a.panel==0);unchanged();
+ }
+ // A click over the covered reward only leaves reading mode. The next
+ // deliberate click may claim it; this release must never reach that row.
+ a.pointer_move(row.x+row.w/2,row.y+row.h/2);a.pointer_button(true);a.pointer_button(false);a.render();
+ CHECK(!a.keyword_hover.details&&a.cursor==cursor);unchanged();
+ if(potion!=Potion::Empty){a.input(Key::Detail);a.render();CHECK(a.keyword_hover.details&&a.detail_item<0);a.input(Key::Back);CHECK(!a.keyword_hover.details);unchanged();}
+}
+static void reward_tooltip_catalog_pages(){
+ unsigned models=0,characters=0,multipage=0;
+ for(unsigned kind:{2u,3u})for(unsigned id=kind==2?0:1;id<(kind==2?unsigned(WorldRelicKinds):unsigned(PotionKinds+1));++id){
+  reset();single_reward(kind,id);a.render();a.advance(500);settle_list();snapshot();CardHoverTarget owner;
+  CHECK(reward_hover_target(a,owner));HoverTipList tips;
+  if(kind==2)collect_relic_hover_tips(a,RelicId(id),tips,true);else collect_potion_hover_tips(a,Potion(id),tips);
+  CHECK(tips.count&&!tips.overflow);++models;
+  for(bool details:{false,true}){a.keyword_hover.details=details;CHECK(reward_hover_target(a,owner)&&owner.detail==details);
+   std::vector<uint32_t>expected[MaxCardHoverTips],seen[MaxCardHoverTips];int lines[MaxCardHoverTips]{},cards[MaxCardHoverTips]{};
+   for(unsigned i=0;i<tips.count;++i)if(tips.items[i].kind!=HoverTipKind::Card){
+    char title[160]{},body[2048]{},localized[1024]{};format_card_hover_tip(a,owner,tips.items[i],title,sizeof title,body,sizeof body);
+    CHECK(*title&&*body);RichReader reader(a.ui_text(body,localized,sizeof localized));RichChar ch{};
+    while(reader.next(ch))if(ch.codepoint>32)expected[i].push_back(ch.codepoint);CHECK(!expected[i].empty());characters+=unsigned(expected[i].size());
+   }
+   const auto first=card_hover_page(a,owner,tips);CHECK(first.pages>0&&first.pages<=128);multipage+=!details&&first.pages>1;
+   for(int page=0;page<first.pages;++page){const auto layout=card_hover_page(a,owner,tips,page);CHECK(layout.pages==first.pages&&layout.count);
+    for(unsigned p=0;p<layout.count;++p){const auto&piece=layout.pieces[p];const auto&r=piece.box;CHECK(piece.tip<tips.count);
+     CHECK(r.x>=3&&r.y>=(details?32:24)&&r.x+r.w<=317&&r.y+r.h<=(details?210:218));
+     if(!details)CHECK(r.x+r.w<=owner.owner.x||r.x>=owner.owner.x+owner.owner.w||r.y+r.h<=owner.owner.y||r.y>=owner.owner.y+owner.owner.h);
+     for(unsigned q=0;q<p;++q){const auto&other=layout.pieces[q].box;CHECK(r.x+r.w<=other.x||other.x+other.w<=r.x||r.y+r.h<=other.y||other.y+other.h<=r.y);}
+     if(tips.items[piece.tip].kind==HoverTipKind::Card){CHECK(piece.lines==0);++cards[piece.tip];continue;}
+     CHECK(piece.skip==lines[piece.tip]&&piece.lines>0);lines[piece.tip]+=piece.lines;
+     char title[160]{},body[2048]{},localized[1024]{};format_card_hover_tip(a,owner,tips.items[piece.tip],title,sizeof title,body,sizeof body);
+     const auto metrics=[&](const RichChar&ch,int size){const unsigned style=rich_font_style(ch),face=style==1?5:style;const auto g=a.content.glyph_metrics(ch.codepoint,size,face);
+      const int kerning=ch.previous_font==style?a.content.glyph_kerning64(ch.previous,ch.codepoint,size,face):0;
+      return fitted_text::Metric{g.advance,std::max(int(g.w)+g.bearing_x,int(g.advance)),g.advance64,kerning};};
+     const int size=a.content.font_size(10);fitted_text::Plan plan{size,piece.skip+piece.lines,piece.skip+piece.lines,size+1,false};
+     fitted_text::visit(a.ui_text(body,localized,sizeof localized),r.w-14,plan,metrics,[&](const RichChar&ch,int,int row,int){if(row>=piece.skip&&ch.codepoint>32)seen[piece.tip].push_back(ch.codepoint);});
+    }
+   }
+   for(unsigned i=0;i<tips.count;++i)if(tips.items[i].kind==HoverTipKind::Card)CHECK(cards[i]==1);else CHECK(seen[i]==expected[i]);
+   unchanged();
+  }a.keyword_hover.details=false;
+ }
+ std::printf("reward catalog: %u models, %u rich-text characters retained across all pages, %u passive multipage entries\n",models,characters,multipage);
+ for(unsigned kind:{2u,3u}){
+  reset();single_reward(kind,kind==2?unsigned(WorldRelicCrackedCore):unsigned(Potion::KingsCourage));a.render();a.advance(500);settle_list();snapshot();
+  a.input(Key::Statuses);a.render();CHECK(a.keyword_hover.details);CardHoverTarget owner;CHECK(reward_hover_target(a,owner));HoverTipList tips;
+  if(kind==2)collect_relic_hover_tips(a,WorldRelicCrackedCore,tips,true);else collect_potion_hover_tips(a,Potion::KingsCourage,tips);
+  const auto first=card_hover_page(a,owner,tips);const int selected=a.cursor;
+  for(int page=0;page<first.pages;++page){CHECK(a.keyword_hover.page==page);if(capture_directory){std::string label=std::string(kind==2?"reward-long-relic-reader-":"reward-long-potion-reader-")+std::to_string(page);capture(label.c_str(),true);}a.input(Key::Down);a.render();CHECK(a.keyword_hover.page==std::min(page+1,first.pages-1));unchanged();}
+  if(first.pages>1){const auto previous=hit(HitKind::Command,int(Key::Up));a.pointer_move(previous.x+2,previous.y+2);a.pointer_button(true);a.pointer_button(false);a.render();CHECK(a.keyword_hover.details&&a.keyword_hover.page==first.pages-2);unchanged();}
+  a.input(Key::Back);a.render();CHECK(!a.keyword_hover.details&&a.cursor==selected&&!a.paused);unchanged();
+ }
 }
 static void reward_tooltip_routes(){
  for(unsigned kind: {2u,3u}){
@@ -346,7 +402,7 @@ static void original_card_reward_icon_policy(){
 int main(int argc,char**argv){
  std::vector<uint8_t>data;if(argc>1){FILE*f=std::fopen(argv[1],"rb");CHECK(f);data.resize(spire_test::pack_size(f));CHECK(std::fread(data.data(),1,data.size(),f)==data.size());CHECK(!std::fclose(f));}else data=synthetic_profile();
  if(argc>2)capture_directory=argv[2];CHECK(a.init(data.data(),data.size(),{}));CHECK(a.content.current_profile());
- original_card_reward_icon_policy();reward_tooltip_routes();reward_animation_curves();glass_eye();potion_and_special();last_reward_indexes();event_card_rewards();event_combat_rewards();terminal_combat_cleanup();camp_proceed(false);camp_proceed(true);acquisition_flights();
+ original_card_reward_icon_policy();reward_tooltip_routes();reward_tooltip_catalog_pages();reward_animation_curves();glass_eye();potion_and_special();last_reward_indexes();event_card_rewards();event_combat_rewards();terminal_combat_cleanup();camp_proceed(false);camp_proceed(true);acquisition_flights();
  if(a.content.version()>=LocaleContentVersion)acquired_card_visual_facts();
  std::printf("world reward UI: %u checks passed; %s profile; reward ownership, direct claim, alternatives and Camp Proceed\n",checks,argc>1?"actual":"synthetic");
 }
