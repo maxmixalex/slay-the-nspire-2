@@ -105,6 +105,19 @@ static void particle_schedule(){
  for(const auto&b:births)for(unsigned node=0;node<4;++node){
   CHECK(light_age(b.clock,node*2)==b.first);CHECK(light_age(b.clock,node*2+1)==b.second);
  }
+ // Independent wide-clock oracle covers each authored preprocessing value,
+ // strict births/restarts and elapsed times near the uint32 clock wrap.
+ for(unsigned seconds=0;seconds<=5;++seconds){
+  for(unsigned elapsed=0;elapsed<=9000;++elapsed)for(unsigned particle=0;particle<2;++particle){
+   const uint64_t clock=uint64_t(elapsed)+seconds*1000u,phase=particle*1500u;
+   const unsigned expected=clock<=phase?0:unsigned((clock-phase-1)%3000+1);
+   CHECK(preprocessed_light_age(elapsed,particle,seconds)==expected);
+  }
+  for(unsigned back:{0u,1u,1499u,1500u,2999u,3000u,5000u})for(unsigned particle=0;particle<2;++particle){
+   const uint32_t elapsed=UINT32_MAX-back;const uint64_t clock=uint64_t(elapsed)+seconds*1000u,phase=particle*1500u;
+   CHECK(preprocessed_light_age(elapsed,particle,seconds)==unsigned((clock-phase-1)%3000+1));
+  }
+ }
 }
 static void event(unsigned character){
  new_run(app.game,0x71351u+character,false,Character(character));CHECK(world_begin_run(app.game,reference::ActKind::Overgrowth,0));

@@ -82,13 +82,15 @@ static void native_ancient_screen(Canvas&c){
  if(!native_ancient_background(c,e.id))
   c.picture(a.content.world_image("events",original_event_key(e.id)),0,0,320,240);
  // Authored Darv order: room, light7/light8, stars, then dialogue/HUD.
- // Orobas light7..light10 are its last children, before dialogue/HUD; its
- // earlier independent GPU layers remain separate outstanding work.
- // Reduced resources hold the source entry pose without consuming game RNG.
+ // Orobas/Pael CPU lights follow their earlier independent GPU layers.
+ // Vakuu's visible CPU lights precede its still-outstanding final sparkles.
+ // Reduced resources hold each source entry/preprocessing pose, not time.
  const bool darv=e.id==OriginalEventId::Darv;
- if(darv||e.id==OriginalEventId::Orobas){
+ const unsigned light_mode=darv?2:e.id==OriginalEventId::Orobas?3:e.id==OriginalEventId::Pael?4:e.id==OriginalEventId::Vakuu?5:0;
+ if(light_mode){
   const uint32_t clock=a.content.reduced_animations()?0u:a.map_clock_ms-d.entered;
-  fake_merchant::lights(c,clock,0,darv?2:3);
+  const auto seed=fake_merchant::hash(uint32_t(a.game.seed)^uint32_t(a.game.floor)*0x9e3779b9u^uint32_t(e.id));
+  fake_merchant::lights(c,clock,seed,light_mode);
   if(darv)fake_merchant::stars(c,clock,
       fake_merchant::hash(uint32_t(a.game.seed)^uint32_t(a.game.floor)*0x9e3779b9u^0x44415256u),true);
  }

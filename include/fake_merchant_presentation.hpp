@@ -50,6 +50,13 @@ constexpr unsigned light_age(uint32_t clock,unsigned particle){
  const unsigned phase=(particle&1u)*1500u;
  return clock<=phase?0u:(clock-phase-1u)%3000u+1u;
 }
+// little_light_script chooses one integer preprocessing time in[0,5] seconds
+// per node. Reduce the elapsed clock before addition to avoid uint32 wrap.
+constexpr unsigned preprocessed_light_age(uint32_t clock,unsigned particle,unsigned seconds){
+ const unsigned phase=(particle&1u)*1500u,preprocess=seconds*1000u;
+ if(clock<=phase&&preprocess<=phase-clock)return 0;
+ return (clock%3000u+preprocess+3000u-phase-1u)%3000u+1u;
+}
 constexpr Key SquareScale[]={key(0,0,0,3.42211),key(.0678295,.354897),key(.143411,.0674747),
  key(.234496,.457091),key(.317829,.144121),key(.395349,.254831),key(.48062,.0930233),
  key(.532946,.363413),key(.606589,.0461842),key(.705426,.450704),key(.75969,.12283),

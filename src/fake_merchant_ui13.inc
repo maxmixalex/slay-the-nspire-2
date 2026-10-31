@@ -100,51 +100,81 @@ static void glitter(Canvas&c,uint32_t clock){
  }
 }
 static void lights(Canvas&c,uint32_t clock,uint32_t seed,unsigned mode){
- const bool ancient=mode>=2;
- if(ancient&&!clock)return; // No preprocessing: the source entry pose has no emitted lights.
- struct Light {int x,y,w,h;uint8_t r,g,b,a;};
+ const bool ancient=mode>=2,scripted=mode>=4;
+ if(ancient&&!scripted&&!clock)return; // Unpreprocessed source entry has no lights.
+ struct Light {int x,y;uint8_t r,g,b,a;};
+ struct Geometry {int w,h;int16_t angle,shear;};
+ // Share only identical projected tuples. In particular, rounding a source
+ // scale*2 can differ from doubling an already rounded Q8 dimension.
+ static constexpr Geometry geometry[]={
+  {size(256*12*.189*.7*1.01),size(256*12*.189*.8*1.01),0,0},
+  {size(256*10*1.01),size(256*10*1.01),2023,0},
+  {ancient_size(256*5.22916),ancient_size(256*5*.99999976922549),0,45},
+  {ancient_size(256*5.22916*3),ancient_size(256*5*3*.99999976922549),0,45},
+  {ancient_size(256*5.22916*2),ancient_size(256*5*2*.99999976922549),0,45},
+  {ancient_size(256*.3*15),ancient_size(256*.3*15*.9999998656711552),1618,34},
+  {ancient_size(256*.1*15),ancient_size(256*.1*15*.9999998656711552),0,34},
+  {ancient_size(256*.3*15),ancient_size(256*.6*15*.9999998656711552),0,34},
+  {ancient_size(256*.815*4.49),ancient_size(256*.625*4.49*.9999998656711552),-236,34},
+  {ancient_size(256*1.68*4.49),ancient_size(256*1.815*4.49*.9999998656711552),-236,34}
+ };
  static constexpr Light nodes[]={
   // Fake Merchant candle emitters, then ambient emitters.
-  {world_x(source(-10+1.01*(1306.93+.7*106.083))),world_y(source(20+1.01*(868.317+.8*-73.02))),size(256*12*.189*.7*1.01),size(256*12*.189*.8*1.01),194,95,32,255},
-  {world_x(source(-10+1.01*(1306.93+.7*4.24413))),world_y(source(20+1.01*(868.317+.8*-111.386))),size(256*12*.189*.7*1.01),size(256*12*.189*.8*1.01),194,95,32,255},
-  {world_x(source(-10+1.01*(1306.93+.7*328.148))),world_y(source(20+1.01*(868.317+.8*-342.822))),size(256*12*.189*.7*1.01),size(256*12*.189*.8*1.01),160,82,220,255},
-  {world_x(source(-267)),world_y(source(-7)),size(256*10*1.01),size(256*10*1.01),225,78,81,77},
-  {world_x(source(2248)),world_y(source(1165)),size(256*10*1.01),size(256*10*1.01),106,78,168,77},
-  // Darv light7/light8, then Orobas light7..light10, in original child order.
-  // Both use the existing light texture and zero velocity. h includes
-  // cos(source skew); the inverse quad shear preserves its affine geometry.
-  {ancient_x(source(556)),ancient_y(source(233)),ancient_size(256*5.22916),ancient_size(256*5*.99999976922549),222,125,31,46},
-  {ancient_x(source(-10)),ancient_y(source(-112)),ancient_size(256*5.22916*3),ancient_size(256*5*3*.99999976922549),255,71,150,66},
-  {ancient_x(source(338)),ancient_y(source(997)),ancient_size(256*5.22916*2),ancient_size(256*5*2*.99999976922549),230,113,98,22},
-  {ancient_x(source(1746)),ancient_y(source(642)),ancient_size(256*5.22916*2),ancient_size(256*5*2*.99999976922549),156,128,255,22},
-  {ancient_x(source(-48.9999)),ancient_y(source(137)),ancient_size(256*5.22916*2),ancient_size(256*5*2*.99999976922549),165,158,10,39},
-  {ancient_x(source(1500)),ancient_y(source(16)),ancient_size(256*5.22916*2),ancient_size(256*5*2*.99999976922549),0,180,136,103}
+  {world_x(source(-10+1.01*(1306.93+.7*106.083))),world_y(source(20+1.01*(868.317+.8*-73.02))),194,95,32,255},
+  {world_x(source(-10+1.01*(1306.93+.7*4.24413))),world_y(source(20+1.01*(868.317+.8*-111.386))),194,95,32,255},
+  {world_x(source(-10+1.01*(1306.93+.7*328.148))),world_y(source(20+1.01*(868.317+.8*-342.822))),160,82,220,255},
+  {world_x(source(-267)),world_y(source(-7)),225,78,81,77},
+  {world_x(source(2248)),world_y(source(1165)),106,78,168,77},
+  // Darv light7/light8; Orobas light7..light10, in original child order.
+  {ancient_x(source(556)),ancient_y(source(233)),222,125,31,46},
+  {ancient_x(source(-10)),ancient_y(source(-112)),255,71,150,66},
+  {ancient_x(source(338)),ancient_y(source(997)),230,113,98,22},
+  {ancient_x(source(1746)),ancient_y(source(642)),156,128,255,22},
+  {ancient_x(source(-48.9999)),ancient_y(source(137)),165,158,10,39},
+  {ancient_x(source(1500)),ancient_y(source(16)),0,180,136,103},
+  // Pael light_small2/6/3/4/5. These five nodes follow its GPU layers.
+  {ancient_x(source(366.00003)),ancient_y(source(308)),191,140,36,65},
+  {ancient_x(source(1053)),ancient_y(source(435)),255,0,36,65},
+  {ancient_x(source(1883)),ancient_y(source(343)),191,140,36,65},
+  {ancient_x(source(1706)),ancient_y(source(641)),77,173,105,104},
+  {ancient_x(source(239)),ancient_y(source(770)),236,98,108,77},
+  // Vakuu visible light_small6..10. Source light_small2/3/5/4 stay hidden.
+  // Their white node modulate has alpha77/255; the last color alpha112/255
+  // composes to34/255. Its independent later sparkles remain outstanding.
+  {ancient_x(source(850.00006)),ancient_y(source(329)),200,70,94,77},
+  {ancient_x(source(562.00006)),ancient_y(source(312)),200,70,94,77},
+  {ancient_x(source(-21.999939)),ancient_y(source(496)),200,70,94,77},
+  {ancient_x(source(393.00006)),ancient_y(source(649)),200,70,94,77},
+  {ancient_x(source(1296)),ancient_y(source(348)),200,70,94,34}
  };
- static constexpr Key darv_scale[]={key(0,.321019),key(.502521,.507939),key(1,.36242)};
- static_assert(light_curve_compatible(darv_scale),"Ancient source light curve bounds");
- static constexpr auto ancient_scale=light_curve(darv_scale);
- static constexpr ColorKey darv_color[]={color_key(0,.34902,.34902,.34902),color_key(.411546,1,1,1),color_key(.994413,.34902,.34902,.34902)};
+ static constexpr uint8_t shapes[]={0,0,0,1,1,2,3,4,4,4,4,5,6,5,5,7,8,8,9,9,9};
+ static constexpr uint8_t groups[][2]={{0,3},{3,2},{5,2},{7,4},{11,5},{16,5}};
+ static_assert(sizeof shapes==sizeof nodes/sizeof nodes[0],"every authored light has one geometry");
+ static constexpr Key ancient_keys[]={key(0,.321019),key(.502521,.507939),key(1,.36242)};
+ static_assert(light_curve_compatible(ancient_keys),"Ancient source light curve bounds");
+ static constexpr auto ancient_scale=light_curve(ancient_keys);
+ static constexpr ColorKey ancient_color[]={color_key(0,.34902,.34902,.34902),color_key(.411546,1,1,1),color_key(.994413,.34902,.34902,.34902)};
  const water_reflection::Texture texture(c.a.content.image(c.a.content.ui_image(I13_RandomLight)),256,256);
- const unsigned first=mode==3?7:ancient?5:mode?3:0,count=mode==3?8:ancient?4:mode?2:3;
+ const unsigned first=groups[mode][0],count=groups[mode][1];
  const auto&scale_keys=ancient?ancient_scale:mode?AmbientLightScale:CandleLightScale;
- const auto&color_keys=ancient?darv_color:mode?AmbientColor:CandleColor;
- // All three authored ramps are grayscale after the existing RGB8 projection.
- // Share their identical interpolation; keep colored future ramps explicit.
+ const auto&color_keys=ancient?ancient_color:mode?AmbientColor:CandleColor;
  constexpr auto grayscale=[](const ColorKey(&keys)[3]){
   for(const auto&k:keys)if(k.r!=k.g||k.r!=k.b)return false;return true;
  };
- static_assert(grayscale(CandleColor)&&grayscale(AmbientColor)&&grayscale(darv_color),"light ramp must stay grayscale");
- for(unsigned i=0;i<count;++i){const auto&l=nodes[first+(ancient?i/2:i)];
-  // little_light_script: independent integer preprocessing in[0,5] seconds.
-  // These Ancients have no such script/preprocessing or randomized values.
-  // Each node retains the strict source births at 0/1500ms per 3000ms cycle.
-  const unsigned age=ancient?light_age(clock,i):0;
-  if(ancient&&!age)continue;
-  const unsigned q=(ancient?age:(clock+hash(seed+i+(mode?90:3))%6*1000)%3000)*Q/3000;
-  const unsigned shade=gradient(color_keys,q).r;
-  const int scale=curve(scale_keys,q);
-  quad(c,texture,l.x,l.y,l.w*scale/Q,l.h*scale/Q,mode==1?2023:0,
-       div255(l.r*shade),div255(l.g*shade),div255(l.b*shade),l.a,presentation::Add,ancient?45:0);
+ static_assert(grayscale(CandleColor)&&grayscale(AmbientColor)&&grayscale(ancient_color),"light ramp must stay grayscale");
+ for(unsigned node=0;node<count;++node){const auto&l=nodes[first+node];const auto&g=geometry[shapes[first+node]];
+  // The native cosmetic seed supplies one stable0..5s value per scripted
+  // node, shared by both particles; it never consumes saved gameplay RNG.
+  const unsigned preprocess=scripted?hash(seed+first+node)%6:0;
+  for(unsigned particle=0;particle<(ancient?2u:1u);++particle){
+   const unsigned age=scripted?preprocessed_light_age(clock,particle,preprocess):ancient?light_age(clock,particle):0;
+   if(ancient&&!age)continue;
+   // Preserve the existing Merchant preprocessing/wrap and single-quad path.
+   const unsigned q=(ancient?age:(clock+hash(seed+node+(mode?90:3))%6*1000)%3000)*Q/3000;
+   const unsigned shade=gradient(color_keys,q).r;const int scale=curve(scale_keys,q);
+   quad(c,texture,l.x,l.y,g.w*scale/Q,g.h*scale/Q,g.angle,
+        div255(l.r*shade),div255(l.g*shade),div255(l.b*shade),l.a,presentation::Add,g.shear);
+  }
  }
 }
 static void stars(Canvas&c,uint32_t clock,uint32_t seed,bool ancient=false){

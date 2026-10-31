@@ -306,8 +306,8 @@ static void ancient_conversation(bool synthetic){
 static void ancient_ambient(){
  // Actual source textures are required here. The ordinary synthetic fixture
  // separately covers dialogue clock continuity without pretending to be art.
- for(auto id:{OriginalEventId::Darv,OriginalEventId::Orobas}){
- begin(id,53,1);a.pointer_move(319,23);a.reset_presentation();a.render();
+ for(auto id:{OriginalEventId::Darv,OriginalEventId::Orobas,OriginalEventId::Pael,OriginalEventId::Vakuu}){
+ begin(id,53,id==OriginalEventId::Vakuu?2:1);a.pointer_move(319,23);a.reset_presentation();a.render();
  CHECK(a.ancient_dialogue.entered==a.map_clock_ms);
  // Entry-time HUD/banner easing reaches y48; this source-room strip excludes it.
  const auto entry_pixels=image_hash(0,50,320,25);
