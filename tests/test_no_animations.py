@@ -20,6 +20,16 @@ class ReducedPoseTests(unittest.TestCase):
         rows=reduced.ancient_rows(source,image)
         self.assertEqual([row['frames'] for row in rows],[546,506])
         self.assertEqual([row['duration_ms'] for row in rows],[18000,16667])
+        self.assertEqual([row['key_interval'] for row in rows],[8,8])
+        original=tables[58613]
+        tables[58613]=original[:-2]+struct.pack('<H',32)
+        self.assertEqual(reduced.ancient_rows(source,image)[0]['key_interval'],32)
+        tables[58613]=original[:-2]+struct.pack('<H',16)
+        with self.assertRaisesRegex(ValueError,'Invalid Ancient'):
+            reduced.ancient_rows(source,image)
+        tables[58613]=original
+        with self.assertRaisesRegex(ValueError,'eight exact words'):
+            reduced.ancient_rows(source,lambda index:(4,2,0,tables[index]))
         tables[58614]=struct.pack('<8H',0x414e,1,58615,506,33,16667,0,0)
         with self.assertRaisesRegex(ValueError,'overlap'):
             reduced.ancient_rows(source,image)

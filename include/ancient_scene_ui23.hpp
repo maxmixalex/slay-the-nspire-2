@@ -7,13 +7,14 @@ constexpr unsigned AuxiliaryFirst=retired_assets_ui22::AuxiliaryCount;
 constexpr unsigned AuxiliaryCount=AuxiliaryFirst+2,StepMs=33;
 constexpr unsigned Images=retired_assets_ui22::Images+546+506+2;
 struct Timeline {
-    unsigned first=0,count=0,duration=0;
+    unsigned first=0,count=0,duration=0,interval=8;
     static unsigned word(const uint8_t*p){return unsigned(p[0])|(unsigned(p[1])<<8);}
     template<class Picture> bool read(Picture p){
         if(!p.pixels||p.w!=8||p.h!=1||p.format||p.alpha||p.palette)return false;
         const auto*d=p.pixels;
         first=word(d+4);count=word(d+6);duration=word(d+10)|(word(d+12)<<16);
-        return word(d)==0x414e&&word(d+2)==1&&word(d+8)==StepMs&&!word(d+14)&&
+        const unsigned checkpoint=word(d+14);interval=checkpoint?checkpoint:8;
+        return word(d)==0x414e&&word(d+2)==1&&word(d+8)==StepMs&&(checkpoint==0||checkpoint==32)&&
             duration&&duration<=120000&&count==(duration+StepMs-1)/StepMs&&
             first+count<=65536;
     }

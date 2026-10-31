@@ -2,7 +2,9 @@
 """Sample the two authored Ancient skeleton loops without adding a framebuffer.
 
 The complete original scene camera, draw order and bone followers are rendered
-at 320x240. Exact opaque RGB565 key/copy patches share the existing scene raster.
+at 320x240. Opaque RGB565 key/copy patches share the existing scene raster.
+The default path is source-exact. The full compact edition explicitly selects
+bounded cyclic color hold and existing retained planes; no cadence is removed.
 Source particle systems remain explicitly listed as omitted; no substitute
 particles are invented. The six painted Ancient scenes have no Spine loop.
 """
@@ -10,6 +12,7 @@ from __future__ import annotations
 
 import argparse
 from functools import lru_cache
+from concurrent.futures import ThreadPoolExecutor
 import hashlib
 import json
 import math
@@ -41,12 +44,51 @@ def emit(stage, **values):
 
 def parameters(raw, image_count):
     t.require(len(raw) == 16, 'Ancient scene parameters must contain eight words')
-    magic, version, first, count, step, low, high, reserved = struct.unpack('<8H', raw)
+    magic, version, first, count, step, low, high, interval = struct.unpack('<8H', raw)
     duration = low | high << 16
-    t.require((magic, version, step, reserved) == (MAGIC, 1, STEP_MS, 0) and
+    t.require((magic, version, step) == (MAGIC, 1, STEP_MS) and interval in (0,32) and
               0 < duration <= 120000 and count == (duration + step - 1) // step and
               count and first + count <= image_count, 'Invalid Ancient scene timeline')
-    return dict(first=first, frames=count, frame_ms=step, duration_ms=duration)
+    return dict(first=first, frames=count, frame_ms=step, duration_ms=duration,key_interval=interval or 8)
+
+
+def held_colors(frames):
+    """Cyclic bounded RGB565 hold; nonconvergent pixels stay source-exact.
+
+    Every pixel evolves independently. Four warm cycles identify the pixels
+    whose end state still differs from their start state. Keeping those few
+    pixels exact makes the whole sequence cyclic without resetting its stable
+    shading at frame zero or introducing a runtime color operation.
+    """
+    t.require(bool(frames),'Ancient color hold needs source frames')
+    def channels(raw):
+        return np.stack(((raw>>11)&31,(raw>>5)&63,raw&31),axis=-1).astype(np.int16)
+    def encode(value):
+        return ((value[:,:,0].astype(np.uint16)<<11)|(value[:,:,1].astype(np.uint16)<<5)|
+                value[:,:,2].astype(np.uint16)).astype('<u2')
+    limit=np.array([1,2,1]);previous=channels(frames[0]);changes=[]
+    for cycle in range(4):
+        seed=previous.copy();chosen=[]
+        for raw in frames:
+            current=channels(raw)
+            previous=np.where(np.all(np.abs(previous-current)<=limit,axis=-1)[:,:,None],previous,current)
+            chosen.append(encode(previous))
+        fallback=np.any(previous!=seed,axis=-1);changes.append(int(fallback.sum()))
+        if not np.any(fallback):break
+    maximum=np.zeros(3,dtype=int)
+    for raw,output in zip(frames,chosen):
+        output[fallback]=raw[fallback]
+        maximum=np.maximum(maximum,np.abs(channels(raw)-channels(output)).max(axis=(0,1)))
+    # Verify the actual seam recurrence, including the exact fallback pixels.
+    current=channels(frames[0]);previous=channels(chosen[-1])
+    seam=np.where(np.all(np.abs(previous-current)<=limit,axis=-1)[:,:,None],previous,current)
+    seam[fallback]=current[fallback]
+    t.require(np.array_equal(encode(seam),chosen[0]) and np.all(maximum<=limit),
+              'Ancient cyclic hold violates its seam or color bound')
+    return chosen,dict(policy='cyclic-hold-r1-g2-b1-exact-fallback',warm_cycles=cycle+1,
+        end_state_changes=changes,exact_fallback_pixels=int(fallback.sum()),
+        maximum_rgb565_channel_error=maximum.tolist(),cyclic_seam_verified=True,
+        source_first_pose_exact=bool(np.array_equal(chosen[0],frames[0])))
 
 
 def rgb565(image):
@@ -155,7 +197,7 @@ def sample_scene(pack, sampler, runtime, scene, work):
     return directory, report
 
 
-def append(data, sampled, work, workers):
+def append(data, sampled, work, workers, *, bounded_color_hold=False,key_interval=8,retained_planes=False):
     from coalesce_tile_resources import view
     from patch_frontend_assets import patch_pack
     from split_content import LANGUAGES
@@ -163,6 +205,7 @@ def append(data, sampled, work, workers):
     import retile_character_ui12 as dice
     import retile_appended_resources as retile
     source = view(data)
+    t.require(key_interval in (8,32),'Ancient checkpoint interval must be8 or32')
     t.require(source.version in (45,46) and len(source.aux) == BASE_AUX and len(source.clips) == 1783,
               'Ancient extension requires complete post-retirement UI22 artwork')
     work = Path(work); cache = work/'patches'; cache.mkdir(parents=True,exist_ok=True)
@@ -170,10 +213,23 @@ def append(data, sampled, work, workers):
     for scene_index, (directory, record) in enumerate(sampled):
         first = len(source.images)+len(images)
         t.require(first+record['frames'] < 65536, 'Ancient frame image ids exceed compact words')
+        originals=[]
+        for frame in range(record['frames']):
+            raw=(directory/f'{frame:04d}.rgb565').read_bytes()
+            t.require(len(raw)==WIDTH*HEIGHT*2 and t.sha256(raw)==record['source_rgb565_sha256'][frame],
+                      'Ancient source-frame cache changed')
+            originals.append(np.frombuffer(raw,dtype='<u2').reshape(HEIGHT,WIDTH))
+        chosen,hold=(held_colors(originals) if bounded_color_hold else
+                     (originals,dict(policy='exact',maximum_rgb565_channel_error=[0,0,0],source_first_pose_exact=True)))
         base = previous = None
         for frame in range(record['frames']):
-            colors = np.frombuffer((directory/f'{frame:04d}.rgb565').read_bytes(),dtype='<u2').reshape(HEIGHT,WIDTH)
-            raw = encode_patch(colors, None if frame == 0 else base if frame % KEY_INTERVAL == 0 else previous)
+            colors = chosen[frame]
+            reference=None if frame == 0 else base if frame % key_interval == 0 else previous
+            raw = encode_patch(colors,reference)
+            _,decoded,alpha=t.validate_sparse(raw,WIDTH,HEIGHT,pixels=True)
+            restored=np.zeros_like(colors) if reference is None else reference.copy()
+            restored[alpha!=0]=decoded[alpha!=0]
+            t.require(np.array_equal(restored,colors),'Ancient copy patch failed full-frame reconstruction')
             packed = struct.pack('<BI',4,len(raw))+encode(raw)
             payload, fmt = (packed,5) if len(packed) < len(raw) else (raw,4)
             filename = f'{scene_index}-{frame:04d}.bin'; t.atomic_bytes(cache/filename,payload)
@@ -183,23 +239,42 @@ def append(data, sampled, work, workers):
             if frame == 0: base = colors
             previous = colors
         raw = struct.pack('<8H',MAGIC,1,first,record['frames'],STEP_MS,
-                          record['duration_ms']&65535,record['duration_ms']>>16,0)
+                          record['duration_ms']&65535,record['duration_ms']>>16,0 if key_interval==8 else key_interval)
         filename = f'parameters-{scene_index}.bin'; t.atomic_bytes(cache/filename,raw)
         tables.append(len(source.images)+len(images))
         images.append(dict(width=8,height=1,format=0,file=filename,bytes=len(raw),
                            sha256=t.sha256(raw),raw_sha256=t.sha256(raw)))
         reports.append(dict(key=record['key'],first=first,frames=record['frames'],
-            duration_ms=record['duration_ms'],frame_ms=STEP_MS,source=record['path'],cache=str(directory)))
+            duration_ms=record['duration_ms'],frame_ms=STEP_MS,source=record['path'],cache=str(directory),
+            key_interval=key_interval,color=hold,source_rgb565_sha256=record['source_rgb565_sha256'],
+            candidate_rgb565_sha256=[t.sha256(frame.tobytes()) for frame in chosen]))
     manifest = dict(images=images,auxiliary_image_ids=tables,localized_text={code:{} for code in LANGUAGES})
+    from patch_phobia_assets import grouped_art
+    grouped=grouped_art(images,cache) if retained_planes else None
     added, details = patch_pack(data,manifest,cache,base_aux=BASE_AUX,auxiliary=AUXILIARY,
         input_version=source.version,version=source.version,texts=(),base_clips=len(source.clips),
-        base_strings=len(source.strings))
-    spool = work/'retile'; spool.mkdir(parents=True,exist_ok=True)
-    current = view(added); plan = dice.make_plan(current,spool,selected,precision=8)
-    plan['compact_replaced_directory'] = True
-    encoded = retile.compress_plan(plan,spool,spool/'encoded',workers)
-    output, compression = retile.rewrite(current,plan,encoded)
-    proof = dice.verify(current,output,plan,spool)
+        base_strings=len(source.strings),appended_art=grouped)
+    current = view(added)
+    if retained_planes:
+        import compact_retained_colors as groups
+        import compact_retained_planes as planes
+        from complete_retained_resources_ui17 import verify
+        encoded=work/'retained-planes';encoded.mkdir(exist_ok=True)
+        catalog=groups.groups(current)
+        def candidate(group):
+            if group.first_image>=len(source.images):return planes.candidate(current,group,encoded)
+            return groups.Choice(t.sha256(current.block(group.offset,group.size)),group.slices,None,{})
+        with ThreadPoolExecutor(max_workers=workers) as pool:choices=list(pool.map(candidate,catalog))
+        output=groups.rewrite(current,choices)
+        proof=verify(current,output,choices,decode_groups=True,expected_version=source.version)
+        compression=dict(grouping=grouped['report'],planes=[choice.receipt for choice in choices if choice.receipt])
+    else:
+        spool = work/'retile'; spool.mkdir(parents=True,exist_ok=True)
+        plan = dice.make_plan(current,spool,selected,precision=8)
+        plan['compact_replaced_directory'] = True
+        encoded = retile.compress_plan(plan,spool,spool/'encoded',workers)
+        output, compression = retile.rewrite(current,plan,encoded)
+        proof = dice.verify(current,output,plan,spool)
     target = view(output)
     t.require(target.clips == source.clips and target.aux[:BASE_AUX] == source.aux,
               'Ancient extension moved existing clip or auxiliary identities')
@@ -207,7 +282,9 @@ def append(data, sampled, work, workers):
     t.require(selected <= protected_images(target), 'Ancient source colors must remain exact')
     return output, dict(complete=True,scenes=reports,appended_images=len(images),
         auxiliary_count=AUXILIARY,input_bytes=len(data),output_bytes=len(output),
-        added_bytes=len(output)-len(data),exact_rgb565=True,framebuffer_growth=0,
+        added_bytes=len(output)-len(data),exact_rgb565=not bounded_color_hold,framebuffer_growth=0,
+        converter_sha256=t.sha256(Path(__file__).read_bytes()),key_interval=key_interval,
+        source_frames_verified=sum(row['frames'] for row in reports),
         append=details,compression=compression,verification=proof)
 
 
@@ -223,6 +300,9 @@ def main():
     parser.add_argument('--work',required=True,type=Path)
     parser.add_argument('--workers',type=int,default=2)
     parser.add_argument('--sample-only',action='store_true')
+    parser.add_argument('--bounded-color-hold',action='store_true',help='Cyclic RGB565 hold within R/B±1,G±2; exact fallback at nonconvergent pixels')
+    parser.add_argument('--key-interval',type=int,choices=(8,32),default=8)
+    parser.add_argument('--retained-planes',action='store_true',help='Keep neighboring copy patches in existing bounded RGR1/RGR3 groups')
     args = parser.parse_args()
     t.require(args.sample_only or args.input and args.output,'Supply input/output or --sample-only')
     for path in (args.input,args.output,args.pck,args.runtime,args.work):
@@ -233,7 +313,8 @@ def main():
         with SpineSampler(pack,runtime=args.runtime,dotnet=args.dotnet,work_dir=args.work/'adapter') as sampler:
             sampled=[sample_scene(pack,sampler,args.runtime,scene,args.work/'sampled') for scene in SCENES]
         if not args.sample_only:
-            output,report=append(args.input.read_bytes(),sampled,args.work,args.workers)
+            output,report=append(args.input.read_bytes(),sampled,args.work,args.workers,
+                bounded_color_hold=args.bounded_color_hold,key_interval=args.key_interval,retained_planes=args.retained_planes)
             report.update(output_sha256=t.sha256(output),seconds=time.monotonic()-started)
             t.atomic_bytes(args.output,output)
             t.atomic_bytes(args.output.with_suffix('.json'),(json.dumps(report,indent=2)+'\n').encode())

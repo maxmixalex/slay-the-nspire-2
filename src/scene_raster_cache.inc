@@ -221,9 +221,9 @@ static character_select_delta::Raster& character_selection_raster(){
     }
     return scene_raster_storage.character;
 }
-static bool scene_delta_background(Canvas&c,unsigned first,unsigned frame){
+static bool scene_delta_background(Canvas&c,unsigned first,unsigned frame,unsigned interval=character_select_delta::KeyInterval){
     auto& raster=character_selection_raster();
-    if(!raster.restore(c.a.content,first,frame,c.a.callbacks.foreground_poll))return false;
+    if(!raster.restore(c.a.content,first,frame,c.a.callbacks.foreground_poll,interval))return false;
     if(!c.coverage&&!c.occlusion&&c.opacity==255&&c.brightness==255&&
        c.tint_red==255&&c.tint_green==255&&c.tint_blue==255&&!c.color_matrix&&
        c.pitch==ScreenW&&c.clip_w==ScreenW&&c.clip_h==ScreenH){

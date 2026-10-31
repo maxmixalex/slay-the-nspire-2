@@ -14,19 +14,19 @@ struct Source {
     uint32_t generation()const{return epoch;}
     Picture image(int id){
         ++reads;last=unsigned(id);
-        if(id<0||unsigned(id)>=images.size())return {};
+        if(id<0||unsigned(id)>=images.size()||images[id].empty())return {};
         return {images[id].data(),nullptr,nullptr,320,240,uint8_t(images[id].size()==320*240*2?0:4)};
     }
 };
 static void word(std::vector<uint8_t>& data,unsigned value){data.push_back(uint8_t(value));data.push_back(uint8_t(value>>8));}
-static Source make_source(){
+static Source make_source(unsigned interval=8,unsigned frames=32){
     Source source;std::vector<uint16_t> color(320*240);
     for(unsigned i=0;i<color.size();++i)color[i]=uint16_t(i*237+19);
-    for(unsigned frame=0;frame<32;++frame){
+    for(unsigned frame=0;frame<frames;++frame){
         const unsigned x=(frame*71)%320,y=(frame*37)%240;
         color[y*320+x]^=uint16_t(0xb72d+frame*17);
         std::vector<uint8_t> raw;
-        if(!(frame%8)){
+        if(!(frame%interval)){
             raw.resize(color.size()*2);std::memcpy(raw.data(),color.data(),raw.size());
         }else for(unsigned row=0;row<240;++row){
             word(raw,row==y);
@@ -49,6 +49,8 @@ int main(){
     CHECK(timeline.frame(18033,false)==1&&timeline.frame(17999,true)==0);
     parameters[6]=0;CHECK(!timeline.read(table));parameters[6]=546&255;
     parameters[14]=1;CHECK(!timeline.read(table));parameters[14]=0;
+    parameters[14]=32;CHECK(timeline.read(table)&&timeline.interval==32);
+    parameters[14]=16;CHECK(!timeline.read(table));parameters[14]=0;
     table.format=4;CHECK(!timeline.read(table));
     auto source=make_source();static delta::Raster raster;
     CHECK(sizeof(SceneRasterStorage)==sizeof(MerchantRugRaster));
@@ -99,5 +101,19 @@ int main(){
     CHECK(character_selection_raster().restore(source,0,31));equal(character_selection_raster(),source,31);
     (void)selected_hand_raster();CHECK(!character_selection_raster().valid);
     CHECK(character_selection_raster().restore(source,0,1));equal(character_selection_raster(),source,1);
+    struct OldRasterLayout{const void*owner;uint32_t generation;unsigned first,index;bool valid;uint16_t pixels[320*240];};
+    CHECK(sizeof(delta::Raster)==sizeof(OldRasterLayout));
+    Source longer=make_source(32,96);
+    for(unsigned frame:{0u,1u,7u,31u,32u,39u,63u,64u,95u,34u,0u,94u}){
+        reads=longer.reads;CHECK(raster.restore(longer,0,frame,nullptr,32));equal(raster,longer,frame);
+        CHECK(longer.reads-reads<=33);
+    }
+    ++longer.epoch;reads=longer.reads;CHECK(raster.restore(longer,0,31,nullptr,32));
+    CHECK(longer.reads-reads==32);equal(raster,longer,31);
+    auto broken=longer.images[17];longer.images[17].clear();++longer.epoch;
+    CHECK(!raster.restore(longer,0,31,nullptr,32));CHECK(!raster.valid);
+    longer.images[17]=broken;CHECK(raster.restore(longer,0,31,nullptr,32));equal(raster,longer,31);
+    CHECK(!raster.restore(longer,0,31,nullptr,16));CHECK(!raster.valid);
+    CHECK(raster.restore(source,0,7));equal(raster,source,7);
     std::printf("selection delta: %u checks; sequential, seek, reopen and scene eviction exact\n",checks);
 }

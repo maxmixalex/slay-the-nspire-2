@@ -24,11 +24,15 @@ class ConverterTests(unittest.TestCase):
             stages={stage.name:stage for stage in recipe.stages}
             quality=stages['quality46'].arguments
             if reduced:
+                self.assertNotIn('--bounded-color-hold',stages['ancient-scenes45'].arguments)
+                self.assertNotIn('--retained-planes',stages['ancient-scenes45'].arguments)
                 self.assertEqual(quality[4:7],('exact','true',''))
                 self.assertEqual(json.loads(quality[7]),{})
                 self.assertNotIn('sparse46',stages)
                 self.assertEqual(stages['reduced46'].arguments[1],str(stages['quality46'].outputs[0]))
             else:
+                self.assertEqual(stages['ancient-scenes45'].arguments[-4:],
+                                 ('--bounded-color-hold','--key-interval','32','--retained-planes'))
                 self.assertEqual(quality[4:7],('bounded-a5','false','dark-safe-a6'))
                 self.assertEqual(json.loads(quality[7]),{'0':'555a8','2':'555a8','3':'555a8'})
                 self.assertEqual(stages['sparse46'].arguments[0],str(stages['quality46'].outputs[0]))
@@ -37,6 +41,12 @@ class ConverterTests(unittest.TestCase):
             names=list(stages)
             self.assertLess(names.index('ancient-scenes45'),names.index('implicit46'))
             self.assertLess(names.index('implicit46'),names.index('quality46'))
+        exact=converter.Recipe('/game','/tmp/converter-exact-test','/runtime','dotnet','/noise','-')
+        exact.quality_policy='exact'
+        add_final_stages(exact,exact.source_stages(),Path('/tmp/converter-exact-output'),['eng','zhs'],False)
+        scene=next(stage for stage in exact.stages if stage.name=='ancient-scenes45')
+        self.assertNotIn('--bounded-color-hold',scene.arguments)
+        self.assertNotIn('--retained-planes',scene.arguments)
 
     def test_exact_tail_preserves_pixels_metadata_and_version46(self):
         import coalesce_tile_resources as coalesce
@@ -103,7 +113,7 @@ class ConverterTests(unittest.TestCase):
         """Exercise the actual legacy parsers before long source conversion."""
         recipe=converter.Recipe('/game','/tmp/converter-parser-test','/runtime','dotnet','/noise','-')
         from converter_finalize import add_final_stages
-        add_final_stages(recipe,recipe.source_stages(),Path('/tmp/converter-parser-output'),['eng','zhs'],True)
+        add_final_stages(recipe,recipe.source_stages(),Path('/tmp/converter-parser-output'),['eng','zhs'],False)
         parse=argparse.ArgumentParser.parse_args
         class Parsed(Exception):
             pass

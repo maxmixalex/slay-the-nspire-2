@@ -21,6 +21,7 @@ struct Raster {
     uint32_t generation=0;
     unsigned first=0,index=0;
     bool valid=false;
+    uint8_t interval=KeyInterval;
     uint16_t pixels[Width*Height];
 
     static unsigned word(const uint8_t* p){return unsigned(p[0])|(unsigned(p[1])<<8);}
@@ -51,11 +52,12 @@ struct Raster {
     }
 
     template<class Content> bool restore(Content& content,unsigned clip_first,unsigned target,
-                                        void(*poll)()=nullptr){
-        const unsigned key=target-target%KeyInterval;
+                                        void(*poll)()=nullptr,unsigned key_interval=KeyInterval){
+        if(key_interval!=KeyInterval&&key_interval!=32){valid=false;return false;}
+        const unsigned key=target&~(key_interval-1);
         unsigned next=key;
         if(valid&&owner==&content&&generation==content.generation()&&first==clip_first&&
-           index>=key&&index<=target){
+           interval==key_interval&&index>=key&&index<=target){
             if(index==target)return true;
             next=index+1;
         }else{
@@ -65,9 +67,11 @@ struct Raster {
             // at every eighth sample, keeping more room for cold tile groups.
             if(!apply(content.image(int(clip_first)),true,poll))return false;
             if(key&&!apply(content.image(int(clip_first+key)),false,poll))return false;
-            owner=&content;generation=content.generation();first=clip_first;next=key+1;
+            owner=&content;generation=content.generation();first=clip_first;interval=uint8_t(key_interval);next=key+1;
         }
-        // A seek reads the base, at most one checkpoint and seven time patches.
+        // Each view is consumed before the next image request. Content's
+        // bounded LRU can evict earlier patches; no view/pin is accumulated.
+        // Selection seeks keep seven patches; Ancient seeks allow at most31.
         for(unsigned frame=next;frame<=target;++frame){
             if(!apply(content.image(int(clip_first+frame)),false,poll)){valid=false;return false;}
         }

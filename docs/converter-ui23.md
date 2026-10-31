@@ -65,8 +65,13 @@ clock. Its UI23 color policy uses bounded RGB565 reduction and at most four
 alpha units of error for animated actors. Character-selection artwork uses a
 separate policy that preserves dark channel values; Ironclad, Defect and
 Regent selection art retains exact alpha and only reduces the green
-channel by at most one RGB565 code. Static interface/card art, typed parameter
-tables and the appended Neow/Tezcatara scene loops remain exact.
+channel by at most one RGB565 code. Static interface/card art and typed parameter
+tables remain exact. Neow/Tezcatara scene loops keep all 1,052 samples at the
+original 33 ms cadence and 320×240 resolution, holding a color only while its
+red/blue channel error stays within one RGB565 code and green within two.
+Existing retained-plane encoding uses full checkpoints every 32 samples.
+The reduced edition takes the exact source-scene path and retains its exact
+original first poses instead of applying this temporal color policy.
 
 After color selection, the converter performs exact tile deduplication, bounded
 sparse-tile encoding, and literal-context retuning. These steps preserve the

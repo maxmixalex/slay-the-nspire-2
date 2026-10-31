@@ -76,13 +76,14 @@ def ancient_rows(source, image):
         require(fmt==0 and (width,height)==(8,1) and len(raw)==16,'Ancient loop table must contain eight exact words')
         words=struct.unpack('<8H',raw)
         first,count,ms=words[2:5]
-        require(words[:2]==(0x414e,1) and words[7]==0 and ms==33 and
+        require(words[:2]==(0x414e,1) and words[7] in (0,32) and ms==33 and
                 (words[5]|words[6]<<16)==duration and count==(duration+ms-1)//ms and
                 first>=58613 and first+count<=len(source.images),'Invalid Ancient loop range or source clock')
         frames=set(range(first,first+count))
         require(not seen.intersection(frames) and not table_ids.intersection(frames),'Ancient loop directories overlap')
         seen.update(frames)
-        result.append(dict(table=index,first=first,frames=count,frame_ms=ms,duration_ms=duration))
+        result.append(dict(table=index,first=first,frames=count,frame_ms=ms,duration_ms=duration,
+                           key_interval=words[7] or 8))
     return result
 
 

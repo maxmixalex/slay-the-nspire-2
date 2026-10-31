@@ -70,7 +70,7 @@ static bool native_ancient_background(Canvas&c,OriginalEventId id){
  ancient_scene_ui23::Timeline timeline;
  if(!timeline.read(c.a.content.image(image)))return false;
  return scene_delta_background(c,timeline.first,
-     timeline.frame(c.a.map_clock_ms-c.a.ancient_dialogue.entered,c.a.content.reduced_animations()));
+     timeline.frame(c.a.map_clock_ms-c.a.ancient_dialogue.entered,c.a.content.reduced_animations()),timeline.interval);
 }
 static void native_ancient_screen(Canvas&c){
  auto&a=c.a;const auto&e=a.game.original_events;a.sync_ancient_dialogue();

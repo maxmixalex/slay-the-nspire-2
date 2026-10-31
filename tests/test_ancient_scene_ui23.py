@@ -33,6 +33,11 @@ class AncientScene(unittest.TestCase):
             raw=struct.pack('<8H',ancient.MAGIC,1,58613,count,33,duration,0,0)
             row=ancient.parameters(raw,60000)
             self.assertEqual(row['frames'],count)
+            self.assertEqual(row['key_interval'],8)
+            words=list(struct.unpack('<8H',raw));words[7]=32
+            self.assertEqual(ancient.parameters(struct.pack('<8H',*words),60000)['key_interval'],32)
+            words[7]=16
+            with self.assertRaises(ValueError):ancient.parameters(struct.pack('<8H',*words),60000)
             self.assertEqual((duration-1)//33,count-1)
             with self.assertRaises(ValueError):ancient.parameters(raw,58613+count-1)
         with self.assertRaises(ValueError):
@@ -61,6 +66,24 @@ class AncientScene(unittest.TestCase):
         image=Image.fromarray(np.array([[[255,255,255,255],[255,255,255,0],
                                          [255,0,0,128],[0,255,0,128]]],dtype='u1'))
         np.testing.assert_array_equal(ancient.rgb565(image),[[65535,0,16<<11,32<<5]])
+
+    def test_cyclic_hold_bounds_and_exact_fallback(self):
+        rng=np.random.default_rng(41)
+        channels=rng.integers(0,5,size=(30,3,7,3),dtype=np.int16)+np.array([10,25,10])
+        frames=[((c[:,:,0]<<11)|(c[:,:,1]<<5)|c[:,:,2]).astype('<u2') for c in channels]
+        chosen,report=ancient.held_colors(frames)
+        self.assertTrue(report['cyclic_seam_verified'])
+        self.assertLessEqual(report['warm_cycles'],4)
+        self.assertTrue(np.all(np.array(report['maximum_rgb565_channel_error'])<=[1,2,1]))
+        again,other=ancient.held_colors(frames)
+        self.assertEqual(report,other)
+        for source,output,repeated in zip(frames,chosen,again):
+            np.testing.assert_array_equal(output,repeated)
+            self.assertEqual(source.shape,output.shape)
+        unchanged=[np.full((2,3),0x1234,dtype='<u2') for _ in range(4)]
+        output,proof=ancient.held_colors(unchanged)
+        self.assertEqual(proof['warm_cycles'],1);self.assertEqual(proof['exact_fallback_pixels'],0)
+        for frame in output:np.testing.assert_array_equal(frame,unchanged[0])
 
 
 if __name__=='__main__':unittest.main()

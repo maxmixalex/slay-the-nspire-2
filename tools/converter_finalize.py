@@ -236,10 +236,12 @@ def add_final_stages(recipe, source_editions, output, codes, no_animations):
             '--work', recipe.directory('cache')/name, '--workers', workers], [target, target.with_suffix('.json')])
         logical = target
     target = recipe.directory('ancient-scenes45')/'eng.nsp'
+    exact_scenes = no_animations or getattr(recipe, 'quality_policy', DEFAULT_QUALITY_POLICY) == 'exact'
+    scene_options = [] if exact_scenes else ['--bounded-color-hold', '--key-interval', 32, '--retained-planes']
     recipe.add('ancient-scenes45', 'ancient_scene_ui23', ['--input', logical,
         '--output', target, '--pck', recipe.pck, '--runtime', recipe.runtime,
         '--dotnet', recipe.dotnet, '--work', recipe.directory('cache/ancient-scenes45'),
-        '--workers', workers], [target,target.with_suffix('.json')]); logical = target
+        '--workers', workers, *scene_options], [target,target.with_suffix('.json')]); logical = target
     target = recipe.directory('implicit46')/'eng.nsp'
     recipe.add('implicit46', 'implicit_tile_geometry_ui22', ['--input', logical,
         '--output', target, '--work', recipe.directory('cache/implicit46'),
