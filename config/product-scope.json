@@ -25,8 +25,8 @@
     "enemy_registry_models": 108
   },
   "source_version": "0.1.0",
-  "validation_status": "UI20 ordinary ARM and WebAssembly build from frozen runtime 175ca7a; 157 native suites and the final linked ARM 4,799-vector memory gate pass. The complete dependency environment passes 383 Python tests without skips. English and Simplified Chinese actual-resource UI gates pass. Final package sizes, complete storage proofs and named ordinary Firebird scenarios are reported separately; these checks do not establish physical-device timing or complete original-game equivalence. See docs/ui20-ui.md, docs/ui20-animation.md and docs/ui20-retained-differences.md.",
-  "verified_runtime_source": "175ca7a3ef0f2bb70240be6ec93f3e5b0605f80e",
+  "validation_status": "UI20 source-and-launcher checkpoint: 158 registered native suites, 399 converter tests, 54 additional converter tests and 4,799 linked ARM memory vectors pass. Ordinary ARM and WebAssembly compile-only builds pass. The 1,675,061-byte launcher saves 49,336 bytes against the same-toolchain rebuilt UI20 baseline; total Zehn allocation falls by 15,508 bytes, while execution/BSS alone grows by 11,912 bytes. The private resource package was not recovered or rebuilt in this continuation; new whole-installation size, actual-art acceptance and ordinary Firebird/physical-device timings are unverified. Historical original-art records are not counted as new runs. See docs/ui20-storage.md and docs/WORK_STATE.md.",
+  "verified_runtime_source": "f1d5fcdb702806fb3a0c447b46d3120466e89e8c",
   "original_three_act_campaign_implemented": true,
   "model_counts_are_fidelity_percentages": false,
   "reference_timing_boundary": "The former surrounding-wait omissions are implemented by source-derived enemy command programs, with UI15 coverage of 108 actor kinds and 1,312 legal moves. Command timing is not inferred from animation length. See docs/ui15-retained-differences-0.17.md and docs/ui17-feedback-acceptance-0.17.md.",

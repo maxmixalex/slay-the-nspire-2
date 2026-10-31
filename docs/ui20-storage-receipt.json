@@ -1,0 +1,50 @@
+{
+  "schema": 1,
+  "reference": "StS II v0.111.0 / 41cef1ea",
+  "status": "source-and-launcher-checkpoint; not a full game-resource release",
+  "runtime_checkpoint": "f1d5fcdb702806fb3a0c447b46d3120466e89e8c",
+  "test_checkpoint": "9342f4f8086df7525fddec3c50a9c9e47aa25088",
+  "baseline": {
+    "bytes": 1724397,
+    "sha256": "0b63fb299348da7401832b41fe87f1aa11d54b66e2fcc85bd6843effb1f8bf04",
+    "zehn_prefix": 157744,
+    "zehn_allocation": 22289604,
+    "execution_and_bss": 22131860,
+    "absolute_relocations": 39394,
+    "loaded_image_bytes": 7268832,
+    "loaded_image_sha256": "b4748604c0c8dea9f3072bfcea3beab7bfc1409ff5802f561336bccd889d752e"
+  },
+  "launcher": {
+    "bytes": 1675061,
+    "sha256": "7946c9225cdf94b668f2709f91044c4f9f0e41492535cdac0f140be0b347c1cb",
+    "zehn_prefix": 130324,
+    "zehn_allocation": 22274096,
+    "execution_and_bss": 22143772,
+    "absolute_relocations": 32539,
+    "loaded_image_bytes": 7280744,
+    "loaded_image_sha256": "03f845c02f463424799c5696e0e958a501678d34feb87b1e8ff278e5d3101305"
+  },
+  "launcher_bytes_saved": 49336,
+  "zehn_allocation_bytes_saved": 15508,
+  "execution_and_bss_bytes_added": 11912,
+  "removed_relocations": 6855,
+  "calculated_on": "same local compiler; ordinary ARM release launchers",
+  "actual_resource_package_rebuilt": false,
+  "actual_resource_bytes_saved": null,
+  "ordinary_firebird_retested": false,
+  "physical_device_fps": null,
+  "original_artwork_included": false,
+  "chatgpt_library_saved": false,
+  "validation": {
+    "native_suites": 158,
+    "native_suites_passed": 158,
+    "converter_tests_passed": 399,
+    "additional_tests_passed": 54,
+    "packed_index_checks": 57137,
+    "arm_memory_vectors_passed": 4799,
+    "arm_release_build": "passed",
+    "wasm_compile_only": "passed",
+    "native_resources": "public synthetic fixtures; no original game artwork",
+    "native_test_checkpoint": "9342f4f8086df7525fddec3c50a9c9e47aa25088"
+  }
+}
