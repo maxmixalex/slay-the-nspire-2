@@ -4,7 +4,8 @@ using WorldContentIndex=packed_content_index::Entry;
 static constexpr WorldContentIndex world_text_source[]={
 #include "world_text_index.inc"
 };
-static constexpr auto world_text_index=packed_content_index::make<packed_content_index::byte_count(world_text_source)>(world_text_source);
+static constexpr auto world_text_layout=packed_content_index::layout(world_text_source);
+static constexpr auto world_text_index=packed_content_index::make<world_text_layout.key_bytes,world_text_layout.group_bytes,world_text_layout.groups>(world_text_source);
 static const WorldContentIndex native_ui_text_index[]={
 #include "native_ui_text_index.inc"
 };
@@ -14,7 +15,8 @@ static const WorldContentIndex selection_text_index[]={
 static constexpr WorldContentIndex world_image_source[]={
 #include "world_image_index.inc"
 };
-static constexpr auto world_image_index=packed_content_index::make<packed_content_index::byte_count(world_image_source)>(world_image_source);
+static constexpr auto world_image_layout=packed_content_index::layout(world_image_source);
+static constexpr auto world_image_index=packed_content_index::make<world_image_layout.key_bytes,world_image_layout.group_bytes,world_image_layout.groups>(world_image_source);
 static const WorldContentIndex native_ui_index[]={
  {"common.END_TURN",U_EndTurnNative},
  {"common.END_TURN_GLOW",U_EndTurnGlow},
@@ -34,7 +36,8 @@ static constexpr WorldContentIndex world_clip_source[]={
 #include "world_clip_index.inc"
  {"~",0} // A terminal sentinel also permits resource-only metadata checkpoints.
 };
-static constexpr auto world_clip_index=packed_content_index::make<packed_content_index::byte_count(world_clip_source)>(world_clip_source);
+static constexpr auto world_clip_layout=packed_content_index::layout(world_clip_source);
+static constexpr auto world_clip_index=packed_content_index::make<world_clip_layout.key_bytes,world_clip_layout.group_bytes,world_clip_layout.groups>(world_clip_source);
 static const WorldContentIndex phobia_clip_index[]={
 #include "phobia_clip_index.inc"
 };
@@ -57,10 +60,25 @@ template<unsigned N> static int wc_find(const WorldContentIndex(&rows)[N],const 
  unsigned lo=0,hi=N;while(lo<hi){unsigned mid=(lo+hi)/2;if(wc_compare(rows[mid].key,joined)<0)lo=mid+1;else hi=mid;}
  return lo<N&&!wc_compare(rows[lo].key,joined)?rows[lo].index:-1;
 }
-template<unsigned N,unsigned Bytes> static int wc_find(const packed_content_index::Table<N,Bytes>&rows,const char*group,const char*key){
- char joined[256];if(!wc_join(joined,sizeof joined,group,key))return -1;
- unsigned lo=0,hi=N;while(lo<hi){unsigned mid=(lo+hi)/2;if(wc_compare(rows.key(mid),joined)<0)lo=mid+1;else hi=mid;}
- return lo<N&&!wc_compare(rows.key(lo),joined)?rows.values[lo]:-1;
+template<unsigned N,unsigned Bytes,unsigned GroupBytes,unsigned Groups>
+static int wc_find(const packed_content_index::Table<N,Bytes,GroupBytes,Groups>&rows,const char*group,const char*key){
+ // Keep the historical 255-byte composite-key limit without constructing
+ // that temporary string. Domain and local key remain separate on disk.
+ if(!group||!key)return -1;unsigned length=1;bool nested=false;
+ for(const char*p=group;*p;++p){if(++length>=256)return -1;nested|=*p=='.';}
+ for(const char*p=key;*p;++p)if(++length>=256)return -1;
+ if(nested){
+  // The former joined lookup also accepted a domain containing dots. Keep
+  // that uncommon spelling equivalent instead of narrowing the public API.
+  char joined[256];if(!wc_join(joined,sizeof joined,group,key))return -1;
+  char*dot=joined;while(*dot!='.')++dot;*dot=0;return wc_find(rows,joined,dot+1);
+ }
+ unsigned lo=0,hi=Groups;
+ while(lo<hi){const unsigned mid=(lo+hi)/2;if(wc_compare(rows.group(mid),group)<0)lo=mid+1;else hi=mid;}
+ if(lo==Groups||wc_compare(rows.group(lo),group))return -1;
+ const unsigned end=rows.end[lo];hi=end;lo=rows.first[lo];
+ while(lo<hi){const unsigned mid=(lo+hi)/2;if(wc_compare(rows.key(mid),key)<0)lo=mid+1;else hi=mid;}
+ return lo<end&&!wc_compare(rows.key(lo),key)?rows.values[lo]:-1;
 }
 
 }

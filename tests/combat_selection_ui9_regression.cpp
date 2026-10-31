@@ -22,7 +22,22 @@ static const char*scenario="init";
 static void advance(unsigned milliseconds){while(milliseconds){const unsigned step=milliseconds>33?33:milliseconds;a.advance(step);milliseconds-=step;}a.render();}
 static void snapshot(){std::memcpy(&before,&a.game,sizeof(State));}
 static void unchanged(){CHECK(!std::memcmp(&before,&a.game,sizeof(State)));}
-static void matches(){CHECK(validate(a.game));CHECK(!std::memcmp(&expected,&a.game,sizeof(State)));}
+static bool same_outcome(const State&left,const State&right){
+    static SaveData l,r;
+    return save(left,l)&&save(right,r)&&l.size==r.size&&!std::memcmp(l.bytes,r.bytes,l.size);
+}
+static void matches(){
+    // Independent command paths may leave different indeterminate padding
+    // in Card/State. Compare every canonical byte, not that padding. The
+    // render-only unchanged() check above deliberately remains bitwise.
+    CHECK(validate(expected)&&validate(a.game));CHECK(same_outcome(expected,a.game));
+}
+static void outcome_comparison_contract(){
+    std::memcpy(&expected,&a.game,sizeof(State));CHECK(same_outcome(expected,a.game));
+    const auto gold=expected.gold;expected.gold=gold>0?gold-1:1;
+    CHECK(validate(expected));CHECK(!same_outcome(expected,a.game));expected.gold=gold;
+    CHECK(same_outcome(expected,a.game));
+}
 static bool has(HitKind kind,int value,bool enabled=true){a.render();for(int i=0;i<a.hit_count;++i)if(a.hits[i].kind==kind&&a.hits[i].value==value&&(!enabled||a.hits[i].enabled))return true;return false;}
 static HitRegion region(HitKind kind,int value){a.render();for(int i=0;i<a.hit_count;++i)if(a.hits[i].kind==kind&&a.hits[i].value==value)return a.hits[i];CHECK(false);return {};}
 static void click(HitKind kind,int value){
@@ -99,7 +114,7 @@ static void offers(){
     advance(500);unchanged();no_legacy_controls();CHECK(!has(HitKind::UiAction,int(UiAction::ConfirmChoice),false));
     const auto number=a.input_bindings.keys[0][unsigned(InputCommand::Card1)];CHECK(a.physical_key(number,true));CHECK(a.physical_key(number,false));unchanged();CHECK(!a.choice_selected_count);
     CHECK(has(HitKind::UiAction,int(UiAction::SkipCombatChoice)));CHECK(a.active_card_grid()<0);
-    for(unsigned i=0;i<3;++i){const auto h=region(HitKind::CombatChoice,a.game.expansion.choices.ids[i]);CHECK(h.w==73&&h.h==100);CHECK(h.x+h.w/2==95+int(i)*65);CHECK(h.y+h.h/2==131);}
+    for(unsigned i=0;i<3;++i){const auto h=region(HitKind::CombatChoice,a.game.expansion.choices.ids[i]);CHECK(h.w==73&&h.h==100);CHECK(h.x+h.w/2==131-36+int(i)*65);CHECK(h.y+h.h/2==131);}
     a.cursor=1;a.input(Key::Detail);CHECK(a.detail_card==card_token(choice_card(a.game,id)));a.input(Key::Back);unchanged();capture("combat-offer-discovery");
     std::memcpy(&expected,&a.game,sizeof(State));const uint16_t selected=uint16_t(id);CHECK(choose_extended(expected,&selected,1));click(HitKind::CombatChoice,id);CHECK(a.game.phase==Phase::Combat);matches();
     scenario="Offer skip release";setup({Discovery,0});played();snapshot();std::memcpy(&expected,&a.game,sizeof(State));CHECK(choose_extended(expected,nullptr,0));
@@ -186,6 +201,6 @@ static void source_geometry_and_ripple(){
 }
 int main(int argc,char**argv){
     Bytes data;if(argc>1){FILE*f=std::fopen(argv[1],"rb");CHECK(f);data.resize(spire_test::pack_size(f));CHECK(std::fread(data.data(),1,data.size(),f)==data.size());std::fclose(f);actual=true;}else data=fixture();
-    CHECK(a.init(data.data(),data.size(),{}));if(argc>2)captures=argv[2];source_prompt_templates();offers();hand();piles();relic_offers();source_geometry_and_ripple();CHECK(a.content.healthy());
+    CHECK(a.init(data.data(),data.size(),{}));if(argc>2)captures=argv[2];outcome_comparison_contract();source_prompt_templates();offers();hand();piles();relic_offers();source_geometry_and_ripple();CHECK(a.content.healthy());
     std::printf("combat selection: %u checks passed (%s)\n",checks,actual?"actual":"synthetic");
 }
