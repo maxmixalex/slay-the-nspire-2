@@ -267,17 +267,25 @@ static void random_character_light(Canvas&c,const RandomLightSampler&light,
         }
     }
 }
-[[gnu::always_inline]] static inline unsigned random_dot_alpha(const uint8_t*alpha,int u,int v){
+[[gnu::always_inline]] static inline unsigned random_dot_alpha(const uint8_t*alpha,int u,int v,unsigned invisible=0){
     const unsigned x=unsigned(u)-128,y=unsigned(v)-128,fx=x&255,fy=y&255;
     const unsigned at=(y&0xff00u)|(x>>8);
-    const unsigned top=(unsigned(alpha[at])*(256-fx)+unsigned(alpha[at+1])*fx+128)>>8;
-    const unsigned bottom=(unsigned(alpha[at+256])*(256-fx)+unsigned(alpha[at+257])*fx+128)>>8;
+    const unsigned a=alpha[at],b=alpha[at+1],c=alpha[at+256],d=alpha[at+257];
+    // Rounded bilinear interpolation stays within its four source samples.
+    // If their conservative upper bound cannot survive the particle opacity,
+    // the contribution is exactly zero, including both interpolation stages.
+    if((a|b|c|d)<=invisible)return 0;
+    if(a==b&&a==c&&a==d)return a;
+    const unsigned top=(a*(256-fx)+b*fx+128)>>8;
+    const unsigned bottom=(c*(256-fx)+d*fx+128)>>8;
     return (top*(256-fy)+bottom*fy+128)>>8;
 }
 static void random_character_white_dot(Canvas&c,const water_reflection::Texture&texture,
         int left,int top,int right,int bottom,int du,int dv,RandomRowQuotient row_u,RandomRowQuotient row_v,
         unsigned alpha,uint16_t color){
+    if(!alpha)return;
     const auto*source=texture.storage().alpha;
+    const unsigned invisible=127/alpha;
     for(int y=top;y<bottom;++y,row_u.advance(),row_v.advance()){
         c.poll_row(unsigned(y-top));
         int u=32768+row_u.value(),v=32768+row_v.value();auto*out=c.pixels+y*c.pitch;
@@ -289,7 +297,7 @@ static void random_character_white_dot(Canvas&c,const water_reflection::Texture&
             if(amount)out[x]=blend(out[x],color,amount);
         }
         for(;x<last;++x,u+=du,v-=dv){
-            const unsigned amount=div255(random_dot_alpha(source,u,v)*alpha);
+            const unsigned amount=div255(random_dot_alpha(source,u,v,invisible)*alpha);
             if(amount)out[x]=blend(out[x],color,amount);
         }
         for(;x<right;++x,u+=du,v-=dv){

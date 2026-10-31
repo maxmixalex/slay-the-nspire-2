@@ -281,6 +281,31 @@ static void interior_raster_contract(){
     for(unsigned i=0;i<4000;++i){seed=seed*1664525u+1013904223u;const int u=128+int(seed%65280);
         seed=seed*1664525u+1013904223u;const int v=128+int(seed%65280);
         CHECK(random_dot_alpha(physical.alpha.data(),u,v)==dot.alpha_bilinear(u,v));}
+    // Particle opacity may make even a nonzero source quad invisible. Verify
+    // every opacity's exact rounding boundary against the general sampler;
+    // one corner above the limit must never be discarded speculatively.
+    for(unsigned opacity=1;opacity<=255;++opacity){
+        const unsigned threshold=127/opacity;
+        for(unsigned mask=0;mask<16;++mask){
+            for(unsigned corner=0;corner<4;++corner)
+                physical.alpha[(corner/2)*256+corner%2]=uint8_t(threshold+((mask>>corner)&1));
+            for(unsigned fx:{0u,1u,127u,128u,129u,254u,255u})for(unsigned fy:{0u,1u,127u,128u,129u,254u,255u}){
+                const int u=int(128+fx),v=int(128+fy);
+                CHECK(div255(random_dot_alpha(physical.alpha.data(),u,v,threshold)*opacity)==
+                      div255(dot.alpha_bilinear(u,v)*opacity));
+            }
+        }
+    }
+    for(unsigned i=0;i<4000;++i){seed=seed*1664525u+1013904223u;const int u=128+int(seed%65280);
+        seed=seed*1664525u+1013904223u;const int v=128+int(seed%65280);
+        const unsigned opacity=1+(seed>>16)%255;
+        CHECK(div255(random_dot_alpha(physical.alpha.data(),u,v,127/opacity)*opacity)==
+              div255(dot.alpha_bilinear(u,v)*opacity));}
+    Canvas transparent{app};for(unsigned i=0;i<320*240;++i)app.pixels[i]=uint16_t(i*37);
+    const std::vector<uint16_t> untouched(app.pixels,app.pixels+320*240);
+    random_character_white_dot(transparent,dot,0,0,320,240,256,0,
+        RandomRowQuotient(0,0,1),RandomRowQuotient(0,0,1),0,0xffff);
+    CHECK(!std::memcmp(untouched.data(),app.pixels,untouched.size()*sizeof(uint16_t)));
     for(int angle:{-735,0,2023})for(int size:{84,500})for(int center:{20,177})for(unsigned clipping:{0u,1u}){
         Canvas c{app};if(clipping){c.clip_w=197;c.clip_h=111;}
         const auto render=[&](RandomTextureSource source){for(unsigned i=0;i<320*240;++i)app.pixels[i]=uint16_t(i*37);
