@@ -1,17 +1,20 @@
+#include "packed_content_index.hpp"
 namespace {
-struct WorldContentIndex {const char* key;uint16_t index;};
-static const WorldContentIndex world_text_index[]={
+using WorldContentIndex=packed_content_index::Entry;
+static constexpr WorldContentIndex world_text_source[]={
 #include "world_text_index.inc"
 };
+static constexpr auto world_text_index=packed_content_index::make<packed_content_index::byte_count(world_text_source)>(world_text_source);
 static const WorldContentIndex native_ui_text_index[]={
 #include "native_ui_text_index.inc"
 };
 static const WorldContentIndex selection_text_index[]={
 #include "selection_text_index.inc"
 };
-static const WorldContentIndex world_image_index[]={
+static constexpr WorldContentIndex world_image_source[]={
 #include "world_image_index.inc"
 };
+static constexpr auto world_image_index=packed_content_index::make<packed_content_index::byte_count(world_image_source)>(world_image_source);
 static const WorldContentIndex native_ui_index[]={
  {"common.END_TURN",U_EndTurnNative},
  {"common.END_TURN_GLOW",U_EndTurnGlow},
@@ -27,10 +30,11 @@ static const WorldContentIndex native_ui_index[]={
  {"common.PAUSE_BUTTON",U_PauseButton},
  {"common.PAUSE_BUTTON_HOVER",U_PauseButtonHover}
 };
-static const WorldContentIndex world_clip_index[]={
+static constexpr WorldContentIndex world_clip_source[]={
 #include "world_clip_index.inc"
  {"~",0} // A terminal sentinel also permits resource-only metadata checkpoints.
 };
+static constexpr auto world_clip_index=packed_content_index::make<packed_content_index::byte_count(world_clip_source)>(world_clip_source);
 static const WorldContentIndex phobia_clip_index[]={
 #include "phobia_clip_index.inc"
 };
@@ -53,6 +57,12 @@ template<unsigned N> static int wc_find(const WorldContentIndex(&rows)[N],const 
  unsigned lo=0,hi=N;while(lo<hi){unsigned mid=(lo+hi)/2;if(wc_compare(rows[mid].key,joined)<0)lo=mid+1;else hi=mid;}
  return lo<N&&!wc_compare(rows[lo].key,joined)?rows[lo].index:-1;
 }
+template<unsigned N,unsigned Bytes> static int wc_find(const packed_content_index::Table<N,Bytes>&rows,const char*group,const char*key){
+ char joined[256];if(!wc_join(joined,sizeof joined,group,key))return -1;
+ unsigned lo=0,hi=N;while(lo<hi){unsigned mid=(lo+hi)/2;if(wc_compare(rows.key(mid),joined)<0)lo=mid+1;else hi=mid;}
+ return lo<N&&!wc_compare(rows.key(lo),joined)?rows.values[lo]:-1;
+}
+
 }
 int Content::world_string_id(const char*table,const char*key)const{
  if(has_selection_assets()){const int selection=wc_find(selection_text_index,table,key);if(selection>=0)return selection;}
