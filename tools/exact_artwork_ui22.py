@@ -33,13 +33,26 @@ class RawInputs:
             path = Path(copied['spool']); copied['spool'] = str(path if path.is_absolute() else root/path)
         self.rows[image] = copied
 
+    def preflight(self):
+        """Reject incomplete private spools before expanding the tile catalog."""
+        sizes = {}
+        for image, row in self.rows.items():
+            if 'spool' not in row:
+                continue
+            path = row['spool']
+            if path not in sizes:
+                sizes[path] = Path(path).stat().st_size
+            at, size = row['offset'], row['bytes']
+            t.require(0 <= at <= sizes[path] and 0 < size <= sizes[path]-at,
+                      f'Source replacement image {image} exceeds its raw spool: {path}')
+
     def decode(self, image, original):
         row = self.rows.get(image)
         if row is None:
             return original
         if 'current_sha256' in row:
             t.require(t.sha256(original[3]) == row['current_sha256'],
-                      'A historical restoration would overwrite newer source pixels')
+                      f'A historical restoration would overwrite newer source pixels at image {image}')
         if 'spool' in row:
             path = row['spool']
             if path not in self.handles:
@@ -52,7 +65,7 @@ class RawInputs:
                       'A source replacement payload changed')
             width, height, fmt, raw = RowImages([row], [payload]).image_raw(0)
         t.require(len(raw) == row.get('raw_bytes', len(raw)) and t.sha256(raw) == row['raw_sha256'],
-                  'Source replacement raw bytes changed')
+                  f'Source replacement raw bytes changed at image {image}')
         t.require(fmt == 4, 'Animation restoration requires original sparse pixel geometry')
         return width, height, fmt, raw
 
@@ -103,6 +116,7 @@ def source_rows(args, source):
         inputs.rows.pop(image, None)
     t.require(selected and max(selected) < len(source.images) and min(selected) >= 0,
               'Exact replacement names an absent image')
+    inputs.preflight()
     return inputs, selected, dict(restored_original_images=restored, rebaked_actor_images=len(actor_images),
                                   explicit_raw_replacements=len(inputs.rows))
 

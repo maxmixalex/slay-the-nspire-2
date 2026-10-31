@@ -281,7 +281,7 @@ static void combat_doom_bodies(Canvas&c){
   Canvas::FramedDraw framed[FramedUi20MaxLayers];unsigned framed_count=0;
   if(body.framed_collect(b.clip,b.x-left,b.y-top+int(b.sink(now)),time,b.scale,
                         (b.flags&CombatDoomPresentation::Loop)!=0,framed,framed_count)){
-   for(unsigned i=0;i<framed_count;++i){const auto&part=framed[i];doom_body_image(body,c.a.content.image(part.image),part.x,part.y,part.w,part.h);}
+   for(unsigned i=0;i<framed_count;++i)body.framed_picture(framed[i],255,presentation::Normal,doom_grayscale);
    continue;
   }
   unsigned frame=time/cl.frame_ms;frame=b.flags&CombatDoomPresentation::Loop?frame%cl.count:unsigned(mn(int(frame),cl.count-1));

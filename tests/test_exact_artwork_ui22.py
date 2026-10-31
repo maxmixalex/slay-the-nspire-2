@@ -14,6 +14,14 @@ from test_retile_appended_resources import source
 
 
 class ExactArtworkTest(unittest.TestCase):
+    def test_truncated_spool_is_rejected_before_tile_expansion(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary); (root/'source.raw').write_bytes(b'\x00\x00')
+            inputs = RawInputs()
+            inputs.add(dict(image=47003, spool='source.raw', offset=2, bytes=2), root, 'source')
+            with self.assertRaisesRegex(ValueError, 'image 47003 exceeds its raw spool'):
+                inputs.preflight()
+
     def test_raw_spool_is_bound_to_both_original_and_current_pixels(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary); raw = b'\x00\x00'; (root/'source.raw').write_bytes(raw)

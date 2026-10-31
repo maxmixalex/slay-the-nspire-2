@@ -13,6 +13,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import os
 from pathlib import Path
 import struct
 
@@ -41,17 +42,25 @@ def emit(event,**values):
 
 class Spool:
     def __init__(self,path):
-        self.path=path;self.handle=path.open('wb');self.rows=[];self.offset=0;self.digest=hashlib.sha256()
+        self.path=path;self.temporary=path.with_suffix(path.suffix+'.partial')
+        self.handle=self.temporary.open('wb');self.rows=[];self.offset=0;self.digest=hashlib.sha256()
 
     def add(self,image,decoded,**provenance):
         width,height,fmt,raw=decoded;t.validate_raw(raw,width,height,fmt)
-        self.handle.write(raw);self.digest.update(raw)
+        t.require(self.handle.write(raw)==len(raw),'Original-color spool short write')
+        self.digest.update(raw)
         row=dict(image=image,width=width,height=height,format=fmt,offset=self.offset,
             bytes=len(raw),raw_sha256=t.sha256(raw),**provenance)
         self.rows.append(row);self.offset+=len(raw);return row
 
     def finish(self):
-        self.handle.close()
+        self.handle.flush();os.fsync(self.handle.fileno());self.handle.close()
+        t.require(self.temporary.stat().st_size==self.offset,'Original-color spool length changed')
+        digest=hashlib.sha256()
+        with self.temporary.open('rb') as source:
+            for block in iter(lambda:source.read(1024*1024),b''):digest.update(block)
+        t.require(digest.hexdigest()==self.digest.hexdigest(),'Original-color spool bytes changed')
+        os.replace(self.temporary,self.path)
         return dict(file=str(self.path.resolve()),bytes=self.offset,sha256=self.digest.hexdigest(),rows=self.rows)
 
 

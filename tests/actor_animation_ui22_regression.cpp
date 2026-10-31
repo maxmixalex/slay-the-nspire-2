@@ -7,6 +7,7 @@
 #include <cstring>
 #include <filesystem>
 #include <vector>
+#include <algorithm>
 using namespace spire;
 static App a;static uint64_t checks=0;
 #define CHECK(x) do{++checks;if(!(x)){std::fprintf(stderr,"actor UI22:%d %s\n",__LINE__,#x);std::exit(1);}}while(0)
@@ -19,6 +20,25 @@ static bool read_at(void*context,uint32_t offset,void*out,uint32_t count){
 }
 static uint32_t read_word(FILE*f){uint8_t b[4];CHECK(std::fread(b,1,4,f)==4);return word(b);}
 static void background(){for(unsigned y=0;y<240;++y)for(unsigned x=0;x<320;++x)a.pixels[y*320+x]=uint16_t(0x4a69u^(x*13u+y*29u));}
+static int reference_floor(int64_t value,int divisor){
+ const auto quotient=value/divisor,remainder=value%divisor;
+ return int(quotient-(remainder<0));
+}
+static void reference_picture(Canvas&c,Picture p,int anchor_x,int anchor_y,int source_x,int source_y,
+                              int scale,unsigned mode,uint16_t(*transform)(uint16_t)=nullptr){
+ // Independent full-source inverse sampling. The reference uses the entire
+ // original raster and knows nothing about piece extents or the span walker.
+ int columns[320],rows[240];
+ for(int x=0;x<320;++x)columns[x]=reference_floor(int64_t(x-anchor_x)*1024+512,scale)-source_x;
+ for(int y=0;y<240;++y)rows[y]=reference_floor(int64_t(y-anchor_y)*1024+512,scale)-source_y;
+ for(int y=0;y<240;++y){if(rows[y]<0||rows[y]>=p.h)continue;
+  for(int x=0;x<320;++x){if(columns[x]<0||columns[x]>=p.w)continue;
+   const unsigned index=unsigned(rows[y])*p.w+unsigned(columns[x]),alpha=p.alpha[index];if(!alpha)continue;
+   const uint8_t*pixel=p.pixels+index*2;uint16_t color=uint16_t(pixel[0]|unsigned(pixel[1])<<8);
+   if(transform)color=transform(color);c.paint(y*320+x,color,alpha,mode);
+  }
+ }
+}
 static void capture(const char*directory,int clip,unsigned frame){
  if(!directory)return;std::filesystem::create_directories(directory);
  const auto path=std::filesystem::path(directory)/("clip-"+std::to_string(clip)+"-frame-"+std::to_string(frame)+".ppm");
@@ -44,7 +64,7 @@ int main(int argc,char**argv){
  CHECK(clips&&expected_frames);FILE*reference=std::fopen(argv[2],"rb");CHECK(reference);
  char magic[8];CHECK(std::fread(magic,1,8,reference)==8&&!std::memcmp(magic,"ACTR0022",8));
  const unsigned cases=read_word(reference);CHECK(cases==expected_frames);
- unsigned views=0,visible_parts=0;uint64_t exact_pixels=0;static uint16_t expected[320*240];static State before;before=a.game;
+ unsigned views=0,visible_parts=0,scaled_views=0,gray_views=0;uint64_t exact_pixels=0;static uint16_t expected[320*240];static State before;before=a.game;
  for(unsigned n=0;n<cases;++n){
   const int clip=int32_t(read_word(reference));const unsigned frame=read_word(reference),ms=read_word(reference);
   const int scale=int32_t(read_word(reference)),left=int32_t(read_word(reference)),top=int32_t(read_word(reference));
@@ -62,18 +82,35 @@ int main(int argc,char**argv){
   const unsigned units=Canvas::vantom_word(table.pixels,4)|(Canvas::vantom_word(table.pixels,5)<<16);
   const unsigned old_units=Canvas::vantom_word(table.pixels,6)|(Canvas::vantom_word(table.pixels,7)<<16);
   CHECK(uint64_t(scale)*units/old_units==1024); // Native-reference density; never enlarged source samples.
-  for(const auto anchor:anchors){
-   background();c.picture(source,anchor.first+left,anchor.second+top,int(width),int(height),255,mode);
-   std::memcpy(expected,a.pixels,sizeof expected);background();
-   CHECK(c.framed_clip(clip,anchor.first,anchor.second,0,scale,false,mode,int(frame)));
-   if(std::memcmp(expected,a.pixels,sizeof expected)){
-    for(unsigned p=0;p<320*240;++p)if(expected[p]!=a.pixels[p]){std::fprintf(stderr,"source mismatch clip %d frame %u at %u,%u expected %04x actual %04x\n",clip,frame,p%320,p/320,expected[p],a.pixels[p]);break;}
-    CHECK(false);
+  std::vector<int> projections{scale};
+  const int normal=int(uint64_t(old_units)*4/21);
+  for(const int projection:{normal,normal/2,int(uint64_t(old_units)*218/1080),
+      int(uint64_t(old_units)*760006*218/1080000000),normal*1177/1024,normal*1536/1024,normal*2048/1024})
+   if(projection>0&&projection<=scale&&std::find(projections.begin(),projections.end(),projection)==projections.end())projections.push_back(projection);
+  for(const int projection:projections){const int effective=int(uint64_t(projection)*units/old_units);CHECK(effective>0&&effective<=1024);
+   for(const auto anchor:anchors){
+    background();reference_picture(c,source,anchor.first,anchor.second,left,top,effective,mode);
+    std::memcpy(expected,a.pixels,sizeof expected);background();
+    CHECK(c.framed_clip(clip,anchor.first,anchor.second,0,projection,false,mode,int(frame)));
+    if(std::memcmp(expected,a.pixels,sizeof expected)){
+     for(unsigned p=0;p<320*240;++p)if(expected[p]!=a.pixels[p]){std::fprintf(stderr,"source mismatch clip %d frame %u projection %d/%d at %u,%u expected %04x actual %04x\n",clip,frame,projection,effective,p%320,p/320,expected[p],a.pixels[p]);break;}
+     CHECK(false);
+    }
+    exact_pixels+=320*240;++views;scaled_views+=effective!=1024;
+    Canvas::FramedDraw shown[FramedUi20MaxLayers];unsigned count=0;
+    CHECK(c.framed_collect(clip,anchor.first,anchor.second,frame*ms,projection,false,shown,count));visible_parts+=count;
+    if(mode==0){background();c.scaled_clip(clip,anchor.first,anchor.second,frame*ms,projection,false);CHECK(!std::memcmp(expected,a.pixels,sizeof expected));}
+    if(frame==seen[index].size()/2){
+     Canvas faded=c;faded.opacity=173;background();reference_picture(faded,source,anchor.first,anchor.second,left,top,effective,mode);
+     std::memcpy(expected,a.pixels,sizeof expected);background();CHECK(faded.framed_clip(clip,anchor.first,anchor.second,0,projection,false,mode,int(frame)));
+     CHECK(!std::memcmp(expected,a.pixels,sizeof expected));exact_pixels+=320*240;
+     if(mode==0){background();reference_picture(c,source,anchor.first,anchor.second,left,top,effective,0,doom_grayscale);
+      std::memcpy(expected,a.pixels,sizeof expected);background();
+      for(unsigned piece=0;piece<count;++piece)c.framed_picture(shown[piece],255,0,doom_grayscale);
+      CHECK(!std::memcmp(expected,a.pixels,sizeof expected));exact_pixels+=320*240;++gray_views;
+     }
+    }
    }
-   exact_pixels+=320*240;++views;
-   Canvas::FramedDraw shown[FramedUi20MaxLayers];unsigned count=0;
-   CHECK(c.framed_collect(clip,anchor.first,anchor.second,frame*ms,scale,false,shown,count));visible_parts+=count;
-   if(mode==0){background();c.scaled_clip(clip,anchor.first,anchor.second,frame*ms,scale,false);CHECK(!std::memcmp(expected,a.pixels,sizeof expected));}
   }
   // An invisible actor may consult its resident parameter, but may not read
   // or decode any screen-excluded piece. Cache the parameter before counting.
@@ -88,5 +125,5 @@ int main(int argc,char**argv){
  }
  CHECK(std::fgetc(reference)==EOF&&!std::ferror(reference)&&!std::fclose(reference));
  CHECK(!std::memcmp(&before,&a.game,sizeof before));
- std::printf("actor UI22: %llu checks, %u clips, %u original-clock frames, %u views, %u visible pieces, %llu exact source-reference LCD pixels; invisible pieces require no source reads\n",(unsigned long long)checks,clips,cases,views,visible_parts,(unsigned long long)exact_pixels);
+ std::printf("actor UI22: %llu checks, %u clips, %u original-clock frames, %u views (%u non-native, %u gray), %u visible pieces, %llu exact source-reference LCD pixels; invisible pieces require no source reads\n",(unsigned long long)checks,clips,cases,views,scaled_views,gray_views,visible_parts,(unsigned long long)exact_pixels);
 }
