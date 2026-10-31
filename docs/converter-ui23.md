@@ -27,11 +27,18 @@ nspire2-convert --languages all
 The calculator detects the animation profile from the generated data. Both
 profiles use the same launcher. The desktop converter is a separate download
 from the three calculator installation ZIPs; run it on your computer and copy
-its generated `data/` directory beside the calculator's `nSpire2.tns` launcher.
+its complete generated `data/` directory as a matching set beside the calculator's
+`nSpire2.tns` launcher. Optional locale files must come from that same conversion
+and common-data output. Do not add languages from the prebuilt release's
+optional-language ZIP or from another conversion: the UI23 version and animation
+profile alone do not guarantee matching resource addresses. The provided
+prebuilt optional-language folders match the provided prebuilt game packages.
 
 计算器会从数据文件自动识别动画模式，两种模式共用同一个启动程序，无需在
 设置中切换。转换器与三个计算器安装 ZIP 分开提供：转换器在电脑上运行，
-生成的 `data/` 目录应放在计算器的 `nSpire2.tns` 旁边。
+生成的 `data/` 目录应整套放在计算器的 `nSpire2.tns` 旁边。额外语言文件也必须
+来自同一次转换、与这套公共数据匹配；不要混用预构建发行包的可选语言或另一次
+转换的语言文件。版本号和动画模式相同并不保证资源地址相同。
 
 可执行版内部嵌入了 Python 和原生辅助程序，因此使用者无需另行安装
 Python、.NET SDK 或 C++ 编译器。这是打包后的完整转换流程，**并非 C++

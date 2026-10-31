@@ -276,6 +276,15 @@ class Recipe:
             ('game-over', 'patch_game_over_transition_assets', 'ui9', ()),
         ):
             pair = self.pair(name, module, pair, prefix, extra)
+        # The retained writer handles literal glyphs through NSP2/31. Compact
+        # artwork before glyph grouping changes their representation in /32.
+        compact = self.directory('retained-compact')
+        paths = tuple(compact/f'ui9-{code}.nsp' for code in ('eng','zhs'))
+        self.add('retained-compact','compact_retained_resources',
+            ['--eng',pair[0],'--zhs',pair[1],'--output',compact,
+             '--cache',self.directory('cache/retained-compact'),'--workers',self.workers],
+            [*paths,compact/'compact-retained-receipt.json'])
+        pair = paths
         for name, module in (('glyph-groups','group_glyphs'), ('string-groups','group_strings')):
             output = self.directory(name)
             next_pair = tuple(output/f'{code}.nsp' for code in ('eng','zhs'))

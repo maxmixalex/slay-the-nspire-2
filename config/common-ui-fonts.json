@@ -373,5 +373,16 @@
       },
       "substitutions": "0123456789+.,:?! —"
     }
+  ],
+  "alphabets": [
+    {
+      "name": "card-inspector-energy-cost",
+      "characters": "0123456789X?-",
+      "pixels": [14, 16],
+      "face": 5,
+      "faces": {"eng": 5, "zhs": 0},
+      "source_pixels": 32,
+      "reason": "The 126–146px card-inspection spring selects existing 12/14/16px energy bands. Digits, X and unknown costs must retain the original bold face instead of falling back to regular; the 12px band already exists."
+    }
   ]
 }

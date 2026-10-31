@@ -15,6 +15,57 @@ import converter
 
 
 class ConverterTests(unittest.TestCase):
+    def test_retained_compaction_binds_both_locales_before_grouped_glyphs(self):
+        import compact_retained_resources as compact
+        recipe=converter.Recipe('/game','/work','/runtime','dotnet','/noise','-',workers=3)
+        recipe.source_stages()
+        stages={stage.name:stage for stage in recipe.stages};names=list(stages)
+        stage=stages['retained-compact'];args=stage.arguments
+        self.assertEqual(stage.module,compact.__name__)
+        self.assertEqual(max(compact.VERSIONS),31)
+        self.assertEqual(names[names.index('game-over')+1],'retained-compact')
+        self.assertEqual(names[names.index('retained-compact')+1],'glyph-groups-eng')
+        self.assertEqual(args[args.index('--workers')+1],'3')
+        self.assertEqual(args[args.index('--cache')+1],'/work/cache/retained-compact')
+        output=Path(args[args.index('--output')+1])
+        self.assertEqual(stage.outputs,(output/'ui9-eng.nsp',output/'ui9-zhs.nsp',
+                                        output/'compact-retained-receipt.json'))
+        for position,(code,flag) in enumerate((('eng','--eng'),('zhs','--zhs'))):
+            self.assertEqual(args[args.index(flag)+1],str(stages['game-over'].outputs[position]))
+            following=stages['glyph-groups-'+code].arguments
+            self.assertEqual(following[following.index('--input')+1],str(stage.outputs[position]))
+
+    def test_retained_compaction_entrypoint_writes_tracked_outputs_at_version31(self):
+        import struct
+        import compact_retained_resources as compact
+        import repack_retained as retained
+        from test_repack_retained import fixture
+        with tempfile.TemporaryDirectory() as folder, contextlib.redirect_stdout(io.StringIO()):
+            root=Path(folder)
+            recipe=converter.Recipe('/game',root,'/runtime','dotnet','/noise','-')
+            recipe.source_stages()
+            stage=next(stage for stage in recipe.stages if stage.name=='retained-compact')
+            eng,_,plan=retained.repack(fixture('eng',tail_image=True))
+            zhs,_,_=retained.repack(fixture('zhs',glyphs=3,tail_image=True),batches=plan)
+            originals=[]
+            for flag,data in (('--eng',eng),('--zhs',zhs)):
+                data=bytearray(data);struct.pack_into('<I',data,4,31)
+                path=Path(stage.arguments[stage.arguments.index(flag)+1])
+                path.parent.mkdir(parents=True,exist_ok=True);path.write_bytes(data)
+                originals.append((path,bytes(data)))
+            converter.internal(stage.module,stage.arguments)
+            self.assertTrue(all(path.is_file() for path in stage.outputs))
+            receipt=json.loads(stage.outputs[-1].read_text())
+            self.assertTrue(receipt['complete'])
+            for position,code in enumerate(('eng','zhs')):
+                path,original=originals[position]
+                self.assertEqual(path.read_bytes(),original)
+                result=stage.outputs[position].read_bytes()
+                self.assertEqual(compact.view(result).version,31)
+                self.assertTrue(receipt['languages'][code]['alpha_and_geometry_exact'])
+                self.assertTrue(receipt['languages'][code]['clip_timing_exact'])
+                self.assertEqual(receipt['languages'][code]['file'],str(stage.outputs[position]))
+
     def test_native_enemy_rebake_precedes_locale_graft_and_vantom_sampling(self):
         from collections import Counter
         from world_enemy_profile import plan

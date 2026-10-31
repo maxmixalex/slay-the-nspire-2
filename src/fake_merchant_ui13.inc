@@ -113,18 +113,26 @@ static void lights(Canvas&c,uint32_t clock,uint32_t seed,bool ambient){
        div255(l.r*color.r),div255(l.g*color.g),div255(l.b*color.b),l.a,presentation::Add);
  }
 }
-static void stars(Canvas&c,uint32_t clock,uint32_t seed){
+static void stars(Canvas&c,uint32_t clock,uint32_t seed,bool ancient=false){
  const water_reflection::Texture texture(c.a.content.image(c.a.content.ui_image(I13_RandomDot)),256,256);
+ const uint64_t start=uint64_t(clock)+5000;
+ unsigned age=unsigned(start%3000),cycle=unsigned(start/3000);
  for(unsigned i=0;i<300;++i){
-  const uint64_t t=uint64_t(clock)+5000-i*10;const unsigned age=unsigned(t%3000),cycle=unsigned(t/3000);
   const uint32_t h=hash(seed^i*0x9e3779b9u^cycle*0x85ebca6bu);
   const int x=int(h%3000001)-1500000,y=int(hash(h+1)%2000001)-1000000;
-  const int cx=world_x(source(925)+int(int64_t(x)*256*101/100000));
-  const int drift=int(uint64_t(age)*age*5*256/1000000);
-  const int cy=world_y(source(626)+(int(int64_t(y)*256/1000)-drift)*101/100);
-  const int side=size(256*1.01)*(10+int(hash(h+2)%21))/1000;
+  const int px=source(925)+x*808/3125;
+  const int drift=int(age*age*4/3125);
+  const int py=source(626)+(y*32/125-drift)*101/100;
+  // Darv has this exact source emitter as its last scene child. Its full
+  // 1680x1260 AncientContainer transform differs from the merchant camera.
+  // Q24 scale/Q32 offsets retain the authored aspect interpolation; no new
+  // particle state, texture, framebuffer or cache is needed.
+  const int cx=ancient?int((int64_t(px)*3195634-114518200509LL)/16777216):world_x(px);
+  const int cy=ancient?int((int64_t(py)*3195634+89989748010LL)/16777216):world_y(py);
+  const int side=(ancient?12608:size(256*1.01))*(10+int(hash(h+2)%21))/1000;
   const auto color=gradient(StarColor,age*Q/3000);
   quad(c,texture,cx,cy,side,side,0,div255(224*color.r),div255(127*color.g),div255(100*color.b),div255(156*color.a),presentation::Normal);
+  if(age<10){age+=2990;--cycle;}else age-=10;
  }
 }
 static void squares(Canvas&c,const Squares&state){
