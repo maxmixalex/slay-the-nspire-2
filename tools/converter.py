@@ -307,7 +307,7 @@ class Recipe:
             # Each command extends the same verified source manifest. Use a
             # separate completion snapshot, since later stages update it.
             self.add(name,'@ui13-assets',[command,'--pck',self.pck,'--cache',artcache,*native,*extra,
-                '--snapshot',artcache/(name+'.json')],[artcache/(name+'.json')])
+                '--snapshot',artcache/(name+'-stage.json')],[artcache/(name+'-stage.json')])
         ui13=self.directory('ui13')
         self.add('ui13','ui13_resources',['pack','--artwork',ready/'eng.nsp',
             '--base-common',ready/'nSpire2.dat.tns','--editions',ready,'--fonts',self.fonts,
@@ -417,6 +417,14 @@ def run_stages(stages, work, identity, stop_after=None):
             path.is_file() and digest(path)==saved.get('outputs',{}).get(str(path)) for path in stage.outputs)
         if resumed:
             print(f'[{index}/{len(stages)}] {stage.name}: verified existing output',flush=True)
+            if stage.module=='@ui13-assets':
+                # Later commands extend this mutable scratch manifest. Restore
+                # the verified stage boundary before resuming the next one;
+                # an interrupted extension must not inherit a later suffix.
+                args=stage.arguments
+                snapshot=Path(args[args.index('--snapshot')+1])
+                active=Path(args[args.index('--cache')+1])/'ui13-assets.json'
+                shutil.copy2(snapshot,active)
         else:
             print(f'[{index}/{len(stages)}] {stage.name}: converting (log: {logs/(stage.name+".log")})',flush=True)
             started=time.time();record=dict(stage=stage.name,key=key,status='running',started_at=started)

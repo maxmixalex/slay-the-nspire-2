@@ -15,6 +15,47 @@ import converter
 
 
 class ConverterTests(unittest.TestCase):
+    def test_ui13_snapshots_are_immutable_and_restore_the_resume_boundary(self):
+        import ui13_resources
+        with tempfile.TemporaryDirectory() as folder, contextlib.redirect_stdout(io.StringIO()):
+            root=Path(folder)
+            recipe=converter.Recipe('/game',root,'/runtime','dotnet','/noise','-')
+            recipe.source_stages()
+            stages=[stage for stage in recipe.stages if stage.module=='@ui13-assets']
+            active=root/'cache/ui13/ui13-assets.json'
+            self.assertEqual(len(stages),3)
+            self.assertEqual(len({stage.outputs[0] for stage in stages}),3)
+            self.assertTrue(all(stage.outputs[0]!=active for stage in stages))
+            calls=[]
+            expected={'assets':[], 'extend-retained':['assets'],
+                      'extend-fake-rug':['assets','extend-retained']}
+            def build():
+                command=sys.argv[1]
+                old=[] if command=='assets' else json.loads(active.read_text())
+                self.assertEqual(old,expected[command])
+                calls.append(command)
+                active.parent.mkdir(parents=True,exist_ok=True)
+                active.write_text(json.dumps([*old,command]))
+            def dispatch(command,**kwargs):
+                at=command.index('--internal-stage')
+                converter.internal(command[at+1],command[at+2:])
+            with patch.object(ui13_resources,'main',side_effect=build), \
+                 patch.object(converter.subprocess,'run',side_effect=dispatch):
+                self.assertTrue(converter.run_stages(stages,root,'recipe'))
+                snapshots=[stage.outputs[0].read_bytes() for stage in stages]
+                active.write_text('interrupted mutable scratch')
+                converter.run_stages(stages,root,'recipe')
+                self.assertEqual(len(calls),3)
+                self.assertEqual(active.read_bytes(),snapshots[-1])
+                self.assertEqual([stage.outputs[0].read_bytes() for stage in stages],snapshots)
+                # A missing middle snapshot requires only that extension. The
+                # existing final suffix must not be used as its input prefix.
+                stages[1].outputs[0].unlink()
+                converter.run_stages(stages,root,'recipe')
+                self.assertEqual(calls,['assets','extend-retained','extend-fake-rug','extend-retained'])
+                self.assertEqual([stage.outputs[0].read_bytes() for stage in stages],snapshots)
+                self.assertEqual(active.read_bytes(),snapshots[-1])
+
     def test_final_profiles_select_approved_color_policy_and_keep_reduced_exact(self):
         from converter_finalize import add_final_stages
         for reduced in (False, True):
