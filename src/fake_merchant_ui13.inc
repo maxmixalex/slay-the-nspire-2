@@ -167,7 +167,7 @@ static void lights(Canvas&c,uint32_t clock,uint32_t seed,unsigned mode){
   // node, shared by both particles; it never consumes saved gameplay RNG.
   const unsigned preprocess=scripted?hash(seed+first+node)%6:0;
   for(unsigned particle=0;particle<(ancient?2u:1u);++particle){
-   const unsigned age=scripted?preprocessed_light_age(clock,particle,preprocess):ancient?light_age(clock,particle):0;
+   const unsigned age=ancient?preprocessed_light_age(clock,particle,preprocess):0;
    if(ancient&&!age)continue;
    // Preserve the existing Merchant preprocessing/wrap and single-quad path.
    const unsigned q=(ancient?age:(clock+hash(seed+node+(mode?90:3))%6*1000)%3000)*Q/3000;
