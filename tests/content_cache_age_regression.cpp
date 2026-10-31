@@ -281,6 +281,11 @@ int main(){
     image_wrap({});
     profile_surviving_images(12);profile_surviving_images(16);
     frame_pool_profiles();
+    owner.set_image_cache_profile(false,true);
+    CHECK(image_page_limit==2176&&tile_page_limit==34);
+    CHECK(image_page_limit*ImagePageBytes+tile_page_limit*TilePageBytes==PictureBufferBudget);
+    owner.set_image_cache_profile(false);
+    CHECK(image_page_limit==ImagePages&&tile_page_limit==48);
     large_room_allocations();
     retained_quarters_share_and_evict();
     std::printf("content cache ages: %u checks passed;1151 colliding keys with all five decoded formats, owner/alias eviction, age wrap, bounded frame-pool splits and compact retained quarters\n",checks);

@@ -2,9 +2,9 @@
 """Exact key/copy-patch geometry for the five existing selection loops.
 
 The original RGB565/alpha tile streams are copied byte for byte. Only index
-geometry changes: every eighth frame is a complete opaque key, and the other
-frames name source pixels which differ from their predecessor. The production
-renderer restores at most seven patches into its existing shared scene raster.
+geometry changes: every eighth frame is a checkpoint relative to the opaque
+first frame; other frames name source pixels which differ from their predecessor.
+The renderer restores a base, a checkpoint and at most seven time patches.
 No image, source sample, particle, animation clock or color bit is discarded.
 """
 from __future__ import annotations
@@ -27,6 +27,7 @@ from tile_filter import filter_tiles, restore_tiles
 FIRST_CLIP, FIRST_BASE, CHARACTERS = 1705, 1500, 5
 BASE_AUXILIARY, AUXILIARY, KEY_INTERVAL = 7206, 7211, 8
 WIDTH, HEIGHT = 320, 240
+RESIDENT_PAGES = (1600, 2000, 2000, 1600, 1600)
 
 
 def pixels(source, reader, image):
@@ -76,17 +77,27 @@ def indices(source, reader, image, added):
     return np.frombuffer(raw, dtype='<u4', count=count // 4, offset=at + 12).copy()
 
 
-def geometry(mask):
-    """Keep short unchanged gaps when two extra pixel words cost less than a span."""
-    mask = mask.copy()
-    for gap in (1, 2):
-        fill = mask[:, :-gap-1] & mask[:, gap+1:]
-        for i in range(1, gap+1):
-            mask[:, i:i+fill.shape[1]] |= fill
-    out, decoded = bytearray(), 0
+def runs(mask):
+    rows, histogram, decoded = [], np.zeros(WIDTH+1, dtype='i8'), HEIGHT*2
     for row in mask:
         edges = np.diff(np.pad(row.astype('i1'), (1, 1)))
         starts, ends = np.flatnonzero(edges == 1), np.flatnonzero(edges == -1)
+        rows.append((starts, ends))
+        decoded += len(starts)*5+int(np.sum(ends-starts))*2
+        if len(starts)>1:
+            histogram += np.bincount(starts[1:]-ends[:-1], minlength=WIDTH+1)
+    # Joining a gap copies its unchanged pixels, saving one five-byte span.
+    # This exact cost permits a single budgeted choice over all source frames.
+    costs = decoded+np.cumsum(histogram*(np.arange(WIDTH+1)*2-5))
+    return rows, costs
+
+
+def geometry(rows, gap):
+    out, decoded = bytearray(), 0
+    for starts, ends in rows:
+        if len(starts)>1:
+            separate = starts[1:]-ends[:-1]>gap
+            starts, ends = starts[np.r_[True, separate]], ends[np.r_[separate, True]]
         out.extend(struct.pack('<H', len(starts))); decoded += 2
         for start, end in zip(starts, ends):
             out.extend(struct.pack('<HHB', int(start), int(end-start), 0))
@@ -106,7 +117,7 @@ def plan_frames(source, reader):
                          (base_grid == 255).all(axis=(2, 3))),
                   'Static source planes no longer cover whole opaque tiles')
         static = (base_grid == 255).all(axis=(2, 3)).reshape(-1)
-        previous, hashes, pages, old_pages = None, [], [], []
+        previous, initial, hashes, pages, old_pages, planned, costs = None, None, [], [], [], [], []
         for frame in range(count):
             image = first+frame
             color, alpha = pixels(source, reader, image)
@@ -116,24 +127,36 @@ def plan_frames(source, reader):
             t.require(np.all(np.where(base_alpha != 0, base_alpha, alpha) == 255),
                       'A selection frame is not opaque')
             ids = np.where(static, base_ids, indices(source, reader, image, added)).astype('<u4')
-            selected = np.ones(full.shape, dtype=bool) if frame % KEY_INTERVAL == 0 else full != previous
-            spans, decoded = geometry(selected)
+            selected = (np.ones(full.shape, dtype=bool) if frame == 0 else
+                        full != (initial if frame % KEY_INTERVAL == 0 else previous))
+            row_runs, sizes = runs(selected)
+            planned.append((image, ids, row_runs, t.sha256(full.tobytes())))
+            costs.append((sizes+4095)//4096)
+            old_raw = reader.image_raw(image)[3] if source.images[image][3] == 6 else source.image_raw(image)[3]
+            old_pages.append((len(old_raw)+4095)//4096)
+            if initial is None:
+                initial = full
+            previous = full
+        total_pages = np.sum(costs, axis=0)
+        eligible = np.flatnonzero((np.arange(WIDTH+1)>=2) & (total_pages<=RESIDENT_PAGES[character]))
+        t.require(len(eligible)>0, 'Exact selection loop exceeds its fixed decoded-image budget')
+        gap = int(eligible[-1])
+        for image, ids, row_runs, sha in planned:
+            spans, decoded = geometry(row_runs, gap)
             active = coalesce.active_tiles(spans, WIDTH, HEIGHT)
             # Inactive indices still name an existing full-size tile. Reuse a
             # live reference so obsolete color tiles can later be reclaimed.
-            if np.any(active):
-                ids[~active] = ids[np.flatnonzero(active)[0]]
+            ids[~active] = ids[np.flatnonzero(active)[0]] if np.any(active) else ids[0]
             raw_ids = ids.tobytes()
             record = t.FRAME.pack(decoded, len(raw_ids), len(spans)) + raw_ids + spans
-            frames[image] = dict(raw=record, decoded=decoded, full_sha256=t.sha256(full.tobytes()))
+            frames[image] = dict(raw=record, decoded=decoded, full_sha256=sha)
             hashes.append(frames[image]['full_sha256'])
             pages.append((decoded+4095)//4096)
-            old_raw = reader.image_raw(image)[3] if source.images[image][3] == 6 else source.image_raw(image)[3]
-            old_pages.append((len(old_raw)+4095)//4096)
-            previous = full
         reports.append(dict(character=character, frames=count, key_interval=KEY_INTERVAL,
             frame_rgb565_sha256=hashes, decoded_pages=sum(pages), original_decoded_pages=sum(old_pages),
-            maximum_frame_pages=max(pages), maximum_replay_patches=KEY_INTERVAL-1))
+            maximum_frame_pages=max(pages), maximum_replay_patches=KEY_INTERVAL-1,
+            maximum_seek_images=KEY_INTERVAL+1, merged_gap_pixels=gap,
+            decoded_page_budget=RESIDENT_PAGES[character]))
         print(json.dumps(dict(stage='selection_geometry', **{k:v for k,v in reports[-1].items()
                                                              if k != 'frame_rgb565_sha256'})), flush=True)
     return frames, reports, added
@@ -268,18 +291,22 @@ def verify(source, result, reports):
     checked = 0
     for row in reports:
         first, count, *_ = target.clips[FIRST_CLIP+row['character']]
-        canvas = np.empty((HEIGHT, WIDTH), dtype='<u2')
+        canvas = np.empty((HEIGHT, WIDTH), dtype='<u2'); base = None
         for frame in range(count):
             color, alpha = pixels(target, reader, first+frame)
-            if frame % KEY_INTERVAL == 0:
+            if frame == 0:
                 t.require(np.all(alpha == 255), 'Selection key has transparent pixels')
+                base = color.copy()
+            elif frame % KEY_INTERVAL == 0:
+                canvas[:] = base
             t.require(np.all((alpha == 0) | (alpha == 255)), 'Selection patch is not opaque')
             canvas[alpha != 0] = color[alpha != 0]
             t.require(t.sha256(canvas.tobytes()) == row['frame_rgb565_sha256'][frame],
                       'Reconstructed selection frame differs from its source RGB565')
             checked += 1
     return dict(exact_reconstructed_frames=checked, key_interval=KEY_INTERVAL,
-                maximum_seek_patches=KEY_INTERVAL-1, lossless=True, runtime_arena_growth=0)
+                maximum_seek_patches=KEY_INTERVAL-1, maximum_seek_images=KEY_INTERVAL+1,
+                lossless=True, runtime_arena_growth=0)
 
 
 def main():

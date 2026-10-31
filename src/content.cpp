@@ -33,6 +33,7 @@ constexpr unsigned MaxGlyphBytes=40u*40u*2u,MaxStringBytes=16384;
 // The split changes only at a frame boundary. Picture addresses below the
 // new boundary remain valid; the relocated tile tier is always discarded.
 constexpr unsigned ImagePageBytes=4096,ImagePages=1728,RoomImagePages=3008,ImageEntries=1151;
+constexpr unsigned SelectionImagePages=2176; // 8.5 MiB pictures, 4.25 MiB tiles; same total arena.
 constexpr unsigned PictureBufferBudget=13u*1024u*1024u-256u*1024u;
 alignas(4) static uint8_t picture_pixels[PictureBufferBudget];
 static uint8_t*const image_pixels=picture_pixels;
@@ -429,10 +430,11 @@ bool Content::image_cached(int id)const{
     const auto descriptor=image_directory_[unsigned(id)];
     return (data_&&descriptor.format<5)||find_image(this,image_directory_,unsigned(id));
 }
-void Content::set_image_cache_profile(bool room_frames)const{
+void Content::set_image_cache_profile(bool room_frames,bool selection_frames)const{
     // A large-group room borrows512KiB from its published-image tier. The
     // total picture arena and execution allocation remain exactly unchanged.
-    const unsigned pages=room_frames?RoomImagePages-(version_>=LargeTileContentVersion?128u:0u):ImagePages;
+    const unsigned pages=room_frames?RoomImagePages-(version_>=LargeTileContentVersion?128u:0u):
+        selection_frames?SelectionImagePages:ImagePages;
     if(image_page_limit==pages)return;
     cancel_content_preload();
     // App calls this before requesting frame pictures. Only the tile tier

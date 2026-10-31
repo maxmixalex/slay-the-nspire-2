@@ -300,16 +300,17 @@ void App::render(){
         !world_room_is_combat(game)&&room_parent!=Phase::Reward&&!combat_phase(room_parent)&&
         !(combat_feedback.active&&choice_phase(game.phase))&&int32_t(combat_linger_until-animation)<=0&&
         content.ui_image(I13_FakeMerchantSquareSpeck)>=0;
-    // Merchant frames and UI22's bounded selection patches fit the existing
-    // room image tier. Older complete-frame selection packs keep their larger
-    // tile tier; selecting a different profile must never enlarge the arena.
+    // Only the two longest selection loops borrow a small part of the tile
+    // tier. The other three keep all 6 MiB of cold tiles. Using the merchant
+    // split here evicted hot tile groups throughout the player's first loop.
     const bool entering_merchant=character_departure.phase==1&&character_departure.continuing&&game.phase==Phase::Shop;
     const unsigned character=unsigned(selected_character);
     const bool selection_patches=character_select&&!character_random&&
+        character_select_delta::extended_cache(character)&&
         character_select_delta::available(content,character,
             content.clip(int(character_select_layout::FirstClip+character)).first);
     content.set_image_cache_profile(((!title||entering_merchant)&&game.phase==Phase::Shop)||
-        title_merchant_stock(*this)||fake_room_frames||selection_patches);
+        title_merchant_stock(*this)||fake_room_frames,selection_patches);
     if(startup_logo.active()){Canvas c{*this};startup_logo_screen(c);return;}
     sync_screen_motion();
     if(debug_open){

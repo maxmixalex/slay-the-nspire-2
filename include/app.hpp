@@ -176,7 +176,7 @@ public:
     static constexpr unsigned image_capacity_entries(){return 1151;}
     // Frame-boundary operation: invalidate picture views and redistribute
     // the existing11 MiB arena between decoded images and tile groups.
-    void set_image_cache_profile(bool room_frames)const;
+    void set_image_cache_profile(bool room_frames,bool selection_frames=false)const;
     // Select a real resident font band before layout. This never loads a
     // glyph or scans the resource payload; sparse legacy faces fall back.
     int font_size(int preferred,unsigned style=0,bool at_most=false,bool sparse_scene_sizes=false)const;

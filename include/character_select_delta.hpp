@@ -6,6 +6,8 @@ namespace spire::character_select_delta {
 constexpr unsigned Width=320,Height=240,KeyInterval=8,Characters=5;
 constexpr unsigned AuxiliaryFirst=FramedUi22AuxiliaryCount;
 constexpr unsigned AuxiliaryCount=AuxiliaryFirst+Characters;
+constexpr unsigned ResidentPages[Characters]={1600,2000,2000,1600,1600};
+constexpr bool extended_cache(unsigned character){return character==1||character==2;}
 
 template<class Content> bool available(const Content& content,unsigned character,unsigned first){
     return character<Characters&&content.ui_image(int(AuxiliaryFirst+character))==int(first);
@@ -24,7 +26,7 @@ struct Raster {
     static unsigned word(const uint8_t* p){return unsigned(p[0])|(unsigned(p[1])<<8);}
     template<class Picture> bool apply(Picture p,bool key,void(*poll)()){
         if(!p.pixels||p.w!=Width||p.h!=Height)return false;
-        if(key&&p.format==0&&!p.alpha&&!p.palette){
+        if(p.format==0&&!p.alpha&&!p.palette){
             for(unsigned y=0;y<Height;y+=16){
                 if(poll)poll();
                 __builtin_memcpy(pixels+y*Width,p.pixels+y*Width*2,16*Width*2);
@@ -58,10 +60,14 @@ struct Raster {
             next=index+1;
         }else{
             valid=false;
-            if(!apply(content.image(int(clip_first+key)),true,poll))return false;
+            // Every checkpoint is relative to the same opaque first frame.
+            // Resetting from it avoids retaining a complete full-screen image
+            // at every eighth sample, keeping more room for cold tile groups.
+            if(!apply(content.image(int(clip_first)),true,poll))return false;
+            if(key&&!apply(content.image(int(clip_first+key)),false,poll))return false;
             owner=&content;generation=content.generation();first=clip_first;next=key+1;
         }
-        // Any random seek reads one key and no more than seven copy patches.
+        // A seek reads the base, at most one checkpoint and seven time patches.
         for(unsigned frame=next;frame<=target;++frame){
             if(!apply(content.image(int(clip_first+frame)),false,poll)){valid=false;return false;}
         }

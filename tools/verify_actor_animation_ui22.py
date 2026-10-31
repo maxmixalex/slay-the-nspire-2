@@ -44,6 +44,12 @@ def assembled_parts(parts):
 
 def exact_source(reference,assembled):
     expected,left,top=reference;picture,x,y=assembled
+    if picture.getchannel('A').getbbox() is None:
+        # Empty frames retain their source time with a 1x1 zero-alpha
+        # sentinel at(0,0); its registration cannot affect any LCD pixel.
+        t.require(expected.getchannel('A').getbbox() is None,
+                  'Empty registered frame omitted visible original source pixels')
+        return
     actual=Image.new('RGBA',expected.size)
     t.require(left<=x and top<=y and x+picture.width<=left+expected.width and
               y+picture.height<=top+expected.height,'Registered source frame escapes fresh original raster')
