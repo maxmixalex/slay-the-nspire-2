@@ -309,25 +309,31 @@ def verify(source, result, reports):
                 lossless=True, runtime_arena_growth=0)
 
 
-def main():
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--input', type=Path, required=True)
-    parser.add_argument('--output', type=Path, required=True)
-    args = parser.parse_args()
-    t.private_path(args.output, 'Private selection output')
-    data = args.input.read_bytes(); source = coalesce.view(data)
+def convert(data, work):
+    """Produce the exact selection representation for a logical private pack."""
+    source = coalesce.view(data)
     t.require(source.version == 45 and len(source.aux) == BASE_AUXILIARY,
               'Selection conversion requires the complete UI22 source catalog')
     frames, reports, added = plan_frames(source, t.TileReader(source))
     output, receipt = rewrite(source, frames, added)
     language = source.string_payload(6110)[:-1].decode('ascii')
     output, registration = patch_pack(output, dict(images=[], clips=[], localized_text={language:{}},
-        auxiliary_image_ids=[source.clips[FIRST_CLIP+i][0] for i in range(CHARACTERS)]), args.output.parent,
+        auxiliary_image_ids=[source.clips[FIRST_CLIP+i][0] for i in range(CHARACTERS)]), Path(work),
         base_aux=BASE_AUXILIARY, auxiliary=AUXILIARY, input_version=45, version=45, texts=(),
         base_clips=len(source.clips), base_strings=len(source.strings))
     proof = verify(source, output, reports)
     receipt.update(**proof, loops=reports, registration=registration, output_bytes=len(output),
                    input_sha256=t.sha256(data), output_sha256=t.sha256(output))
+    return output, receipt
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--input', type=Path, required=True)
+    parser.add_argument('--output', type=Path, required=True)
+    args = parser.parse_args()
+    t.private_path(args.output, 'Private selection output')
+    output, receipt = convert(args.input.read_bytes(), args.output.parent)
     t.atomic_bytes(args.output, output)
     t.atomic_bytes(args.output.with_suffix('.json'), json.dumps(receipt, indent=2).encode()+b'\n')
     print(json.dumps({k:v for k,v in receipt.items() if k not in ('loops', 'registration')}), flush=True)

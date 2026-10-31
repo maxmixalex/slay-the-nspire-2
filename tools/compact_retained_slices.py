@@ -46,7 +46,7 @@ def nonimage_groups(source):
     return {at + DESCRIPTOR.unpack(source.block(at, 16))[0] for at in offsets}
 
 
-def candidate(source, group, cache, protected):
+def candidate(source, group, cache, protected, *, preserve_profile=False):
     old = bytes(source.block(group.offset, group.size))
     raw_size, stream_at, mode, _table = group_layout(old, source.version)
     receipt = dict(first_image=group.first_image, input_bytes=len(old),
@@ -91,12 +91,14 @@ def candidate(source, group, cache, protected):
     header[1], header[4] = len(compact), len(slices)
     if mode:
         header[6] = len(table)
-    key = t.sha256(ENCODER + old + b''.join(struct.pack('<II', *row) for row in group.slices))
+    key = t.sha256(ENCODER + bytes((preserve_profile,)) + old +
+                   b''.join(struct.pack('<II', *row) for row in group.slices))
     path = cache / (key + '.bin')
     if path.is_file():
         proposed = path.read_bytes()
     else:
-        profiles = tuple(dict.fromkeys((coalesce.source_lzma_profile(old[stream_at:]), (3, 0, 2))))
+        original_profile = coalesce.source_lzma_profile(old[stream_at:])
+        profiles = (original_profile,) if preserve_profile else tuple(dict.fromkeys((original_profile, (3, 0, 2))))
         streams = [lzma.compress(transformed, format=lzma.FORMAT_RAW, filters=[dict(
             id=lzma.FILTER_LZMA2, preset=9, dict_size=t.GROUP_LIMIT,
             nice_len=273, depth=512, lc=lc, lp=lp, pb=pb)]) for lc, lp, pb in profiles]
@@ -124,14 +126,15 @@ def candidate(source, group, cache, protected):
     return result
 
 
-def make_plan(source, work, *, workers=2):
+def make_plan(source, work, *, workers=2, preserve_profile=False):
     t.require(1 <= workers <= 4, 'Use one through four bounded workers')
     t.require(source.version >= colors.CONTENT_VERSION, 'Preserve the current retained format version')
     cache = Path(work) / 'retained-slices'
     cache.mkdir(parents=True, exist_ok=True)
     protected = nonimage_groups(source)
     with ThreadPoolExecutor(max_workers=workers) as pool:
-        choices = list(pool.map(lambda group: candidate(source, group, cache, protected), colors.groups(source)))
+        choices = list(pool.map(lambda group: candidate(source, group, cache, protected,
+                            preserve_profile=preserve_profile), colors.groups(source)))
     return choices
 
 
