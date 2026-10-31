@@ -39,6 +39,9 @@ static void quad(Canvas c,const water_reflection::Texture&tex,int cx,int cy,int 
  c.opacity=uint8_t(div255(c.opacity*alpha));
  const int du=int((int64_t(cs)*16384+int64_t(sn)*shear/4)/w),dv=int(-int64_t(sn)*16384/h);
  const bool linear=w<4*256||h<4*256;
+ // Black contributes exactly zero to opaque additive destinations. Covered
+ // intermediates still need paint() to preserve their alpha bookkeeping.
+ const bool skip_black=blend_mode==presentation::Add&&!c.coverage;
  for(int y=top;y<bottom;++y){
   const int dx=left*256+128-cx,dy=y*256+128-cy;
   const int64_t vy=-int64_t(dx)*sn+int64_t(dy)*cs;
@@ -47,7 +50,7 @@ static void quad(Canvas c,const water_reflection::Texture&tex,int cx,int cy,int 
   for(int x=left;x<right;++x,u+=du,v+=dv){
    if(unsigned(u)>=65536u||unsigned(v)>=65536u)continue;
    const auto sample=linear?tex.bilinear(u,v):tex.at(int(int64_t(u)*tex.width()>>16),int(int64_t(v)*tex.height()>>16));
-   if(sample.alpha)c.paint(y*c.pitch+x,sample.color,sample.alpha,blend_mode);
+   if(sample.alpha&&(!skip_black||sample.color))c.paint(y*c.pitch+x,sample.color,sample.alpha,blend_mode);
   }
  }
 }
@@ -119,6 +122,8 @@ static void lights(Canvas&c,uint32_t clock,uint32_t seed,unsigned mode){
  static constexpr ColorKey darv_color[]={color_key(0,.34902,.34902,.34902),color_key(.411546,1,1,1),color_key(.994413,.34902,.34902,.34902)};
  const water_reflection::Texture texture(c.a.content.image(c.a.content.ui_image(I13_RandomLight)),256,256);
  const auto*list=mode==2?darv:mode?background:candles;const unsigned count=mode==2?4:mode?2:3;
+ const auto&scale_keys=mode==2?darv_scale:mode?AmbientScale:CandleScale;
+ const auto&color_keys=mode==2?darv_color:mode?AmbientColor:CandleColor;
  for(unsigned i=0;i<count;++i){const auto&l=list[mode==2?i/2:i];
   // little_light_script: independent integer preprocessing in[0,5] seconds.
   // Darv has no such script/preprocessing or randomized parameters. Its two
@@ -128,8 +133,8 @@ static void lights(Canvas&c,uint32_t clock,uint32_t seed,unsigned mode){
   // Source births use restart_time < time: keep the end pose at an exact
   // cycle boundary; the next cycle begins on the following positive tick.
   const unsigned q=(mode==2?(clock-phase-1)%3000+1:(clock+hash(seed+i+(mode?90:3))%6*1000)%3000)*Q/3000;
-  const auto color=mode==2?gradient(darv_color,q):mode?gradient(AmbientColor,q):gradient(CandleColor,q);
-  const int scale=mode==2?curve(darv_scale,q):mode?curve(AmbientScale,q):curve(CandleScale,q);
+  const auto color=gradient(color_keys,q);
+  const int scale=curve(scale_keys,q);
   quad(c,texture,l.x,l.y,l.w*scale/Q,l.h*scale/Q,mode==1?2023:0,
        div255(l.r*color.r),div255(l.g*color.g),div255(l.b*color.b),l.a,presentation::Add,mode==2?45:0);
  }
