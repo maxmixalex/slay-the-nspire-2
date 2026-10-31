@@ -559,14 +559,16 @@ static void modal_isolation_and_fast_mode(){
  for(unsigned i=0;i<30;++i)a.input(Key::Up);CHECK(a.settings_item==0&&a.settings_top==0);
  // OpenDropdown initially focuses the current locale, clamps its endpoints
  // and ignores lateral arrows. Choosing the current locale leaves it open.
- const auto callbacks=a.callbacks;static unsigned locale_requests=0,requested_locale=0;
- a.callbacks.available_languages=[](){return 3u;};a.callbacks.request_language=[](unsigned language){++locale_requests;requested_locale=language;return true;};
- action(UiAction::SettingsLanguage);CHECK(a.settings_language_open&&a.settings_language_item==(a.content.english()?0:1));
- a.input(Key::Up);a.input(Key::Left);a.input(Key::Right);CHECK(a.settings_language_item==0);
- a.input(Key::Down);a.input(Key::Down);CHECK(a.settings_language_item==1);a.input(Key::Left);a.input(Key::Right);CHECK(a.settings_language_item==1);
- const unsigned current=a.content.english()?1u:2u,before_requests=locale_requests;
+ const auto callbacks=a.callbacks;static unsigned locale_requests=0,requested_locale=0,available_locales=0;
+ const unsigned current=a.content.language(),current_row=current<=2?current-1:2,last_row=current<=2?1:2;
+ available_locales=3u|locale_language_mask(current);
+ a.callbacks.available_languages=[](){return available_locales;};a.callbacks.request_language=[](unsigned language){++locale_requests;requested_locale=language;return true;};
+ action(UiAction::SettingsLanguage);CHECK(a.settings_language_open&&a.settings_language_item==current_row);
+ for(unsigned i=0;i<=last_row;++i)a.input(Key::Up);a.input(Key::Left);a.input(Key::Right);CHECK(a.settings_language_item==0);
+ for(unsigned i=0;i<=last_row;++i)a.input(Key::Down);CHECK(a.settings_language_item==last_row);a.input(Key::Left);a.input(Key::Right);CHECK(a.settings_language_item==last_row);
+ const unsigned before_requests=locale_requests,other=current==1?2u:1u;
  CHECK(a.request_language(current)&&a.settings_language_open&&locale_requests==before_requests);capture("settings-language");
- CHECK(a.request_language(3-current)&&!a.settings_language_open&&locale_requests==before_requests+1&&requested_locale==3-current);
+ CHECK(a.request_language(other)&&!a.settings_language_open&&locale_requests==before_requests+1&&requested_locale==other);
  a.callbacks=callbacks;unchanged();
  capture("settings-general");const auto input=find_hit(HitKind::UiAction,int(UiAction::SettingsInputTab));
  CHECK(input.w==88&&input.h==24&&input.y==10);

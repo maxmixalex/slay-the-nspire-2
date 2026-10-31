@@ -182,6 +182,9 @@ union SceneRasterStorage {
 enum class SceneRasterOwner:uint8_t { None,Random,Merchant,SelectedHand,Character };
 static SceneRasterStorage scene_raster_storage{0};
 static SceneRasterOwner scene_raster_owner=SceneRasterOwner::None;
+// A new App can reuse the same address and the same initial Content generation.
+// Its init entry points invalidate only the active member's metadata identity.
+static void scene_raster_reset(){scene_raster_owner=SceneRasterOwner::None;}
 static_assert(sizeof(SceneRasterStorage)==sizeof(MerchantRugRaster),
     "Random, merchant, selection and selected-hand rasters share one fixed scene allocation");
 static_assert(sizeof(SelectedHandRaster)<56u*1024u,

@@ -269,6 +269,10 @@ def build(data,pack,sampler,work,runtime,enemy_limits=None):
         input_version=source.version,version=source.version,texts=(),base_clips=CLIP_COUNT,
         base_strings=len(source.strings),appended_art=grouped_art(appended,cache))
     target=view(result);t.require(target.clips==source.clips,'Stable actor IDs/clocks changed')
+    legacy=[job for job in enemy_plan()['jobs'] if job['model']=='Vantom']
+    legacy_ids={i for job in legacy for i in range(source.clips[job['id']][0],sum(source.clips[job['id']][:2]))}
+    t.require(not legacy_ids.intersection(replacements) and all(tables[job['id']]==0 for job in legacy),
+              'Generic actor resources may not replace the live Vantom mesh/texture slots')
     for i,(old,new) in enumerate(zip(source.images,target.images)):
         if i not in replacements:t.require(old[1:]==new[1:],'Unchanged image metadata changed')
     receipt=dict(complete=True,reference='v0.111.0 / 41cef1ea',input_sha256=t.sha256(data),
@@ -277,6 +281,7 @@ def build(data,pack,sampler,work,runtime,enemy_limits=None):
         auxiliary_count=AUXILIARY,clips=reports,all_clip_metadata_unchanged=True,
         runtime_pixel_buffers_added=0,added_resident_directory_bytes=(AUXILIARY-BASE_AUX)*4,
         palette_quantization=False,alpha_quantization=False,union_downsampling=False,
+        retained_vantom_mesh_clips=len(legacy),retained_vantom_mesh_image_slots=len(legacy_ids),
         replacement=replace_receipt,append=append_receipt)
     return result,receipt
 

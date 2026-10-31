@@ -311,7 +311,7 @@ static void check_reward_hover(HitKind kind,int id,int cursor,RelicId relic,Poti
  // A click over the covered reward only leaves reading mode. The next
  // deliberate click may claim it; this release must never reach that row.
  a.pointer_move(row.x+row.w/2,row.y+row.h/2);a.pointer_button(true);a.pointer_button(false);a.render();
- CHECK(!a.keyword_hover.details&&a.cursor==cursor);unchanged();
+ CHECK(!a.keyword_hover.details&&a.cursor==cursor&&!a.paused);unchanged();
  if(potion!=Potion::Empty){a.input(Key::Detail);a.render();CHECK(a.keyword_hover.details&&a.detail_item<0);a.input(Key::Back);CHECK(!a.keyword_hover.details);unchanged();}
 }
 static void reward_tooltip_catalog_pages(){
@@ -325,7 +325,10 @@ static void reward_tooltip_catalog_pages(){
    std::vector<uint32_t>expected[MaxCardHoverTips],seen[MaxCardHoverTips];int lines[MaxCardHoverTips]{},cards[MaxCardHoverTips]{};
    for(unsigned i=0;i<tips.count;++i)if(tips.items[i].kind!=HoverTipKind::Card){
     char title[160]{},body[2048]{},localized[1024]{};format_card_hover_tip(a,owner,tips.items[i],title,sizeof title,body,sizeof body);
-    CHECK(*title&&*body);RichReader reader(a.ui_text(body,localized,sizeof localized));RichChar ch{};
+    // The small legacy fixture has no complete source hover-text catalog.
+    // Real locale packs must supply every visible title and description.
+    if(!*title||!*body){CHECK(a.content.version()<LocaleContentVersion);continue;}
+    RichReader reader(a.ui_text(body,localized,sizeof localized));RichChar ch{};
     while(reader.next(ch))if(ch.codepoint>32)expected[i].push_back(ch.codepoint);CHECK(!expected[i].empty());characters+=unsigned(expected[i].size());
    }
    const auto first=card_hover_page(a,owner,tips);CHECK(first.pages>0&&first.pages<=128);multipage+=!details&&first.pages>1;

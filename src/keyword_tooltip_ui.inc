@@ -468,7 +468,7 @@ static void keyword_tooltips(Canvas&c){
     if(detail){c.dim(3,25,314,194,250);
         // Reading a pending reward is modal: the reward rows remain available
         // as focus anchors, but no click may claim or skip the covered list.
-        if(owner.reward)c.hit(0,0,ScreenW,ScreenH,HitKind::Command,int(Key::Back));
+        if(owner.reward)c.hit(0,0,ScreenW,ScreenH,HitKind::Command,int(Key::Detail));
     }
     if(!tips.count){if(detail){c.centered("这张牌没有关联词条。",18,102,284,12,Muted);
         c.centered(owner.event_option>=0?"返回事件":"返回",18,192,284,10,Gold);c.hit(18,190,284,13,HitKind::Command,int(Key::Statuses));}return;}

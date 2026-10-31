@@ -7,10 +7,13 @@ and blurred Necrobinder death. The user explicitly requires avoiding lossy
 compression while improving storage and frame performance, and still requires
 the complete bilingual and optional-language ZIPs.
 
-The first UI checkpoint is
-`8f56d8539d3860a5171a792c69b4468cda749c4a`: whole-menu popover bounds and
-reward tooltip routing. Animation and performance work remain in progress;
-no UI22 installer is complete yet. Preserve all UI21 artifacts as controls.
+The current published checkpoint is
+`5933f5e09599bd07883600eac2090b346ddaf39a`. It includes whole-menu popover
+bounds, reward tooltip routing and keyboard reading, native-density actor
+registration, exact selection keyframes/patches, source-provenance recovery
+tools, and lossless conversion defaults. Long conversions and final performance
+gates remain in progress; no UI22 installer is complete yet. Preserve all UI21
+artifacts as controls. Pending fixes must be checkpointed before long runs.
 
 The source-precision audit found a historical distinction that must not be
 hidden: UI11 applied mixed lossy quantization to 48,293 animation frame
@@ -27,6 +30,19 @@ patch storage and existing-arena reuse are being evaluated against whole-frame
 pixels and resource-read work. Neither smaller files alone nor isolated ARM
 decoder instructions establish a frame-rate improvement. Original assets and
 private measurements remain outside this public repository.
+
+The first complete selection A/B matches 8,100 old-input frames exactly and
+eliminates warmed five-character resource reads. This is not final acceptance:
+its cold entry is slower and its temporary geometry grows the data. Optimize
+first entry and rapid switching, then repeat with restored original-precision
+resources. Random remains a separate CPU path. Test representative combat
+loops as well: native-density actor resources must not silently trade clarity
+for cache thrashing.
+
+UI15 Vantom old clip frame slots were repurposed for mesh/rigid-layer data.
+Do not restore or overwrite those slots by legacy clip tuples. Validate their
+typed parameter/image reference closure; the actor job selector must exclude
+those routes and preserve the existing mesh renderer.
 
 # UI21 historical completed matched calculator release
 

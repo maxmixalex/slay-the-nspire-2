@@ -108,7 +108,12 @@ def merchant(original,current,work):
 def legacy_enemies(original,current,pack,sampler,runtime,actor_jobs,work):
     plan=enemy_plan();models={m['model']:m for m in plan['models']}
     active={j['clip'] for j in actor_jobs};changed=changed_owners(original,current)
-    jobs=[job for job in plan['jobs'] if job['id'] in changed-active]
+    # UI15 recycled every old Vantom whole-frame slot into direct-source
+    # layers, mesh words and texture pages. The retained old clip directory is
+    # a semantic map, not the owner of a picture sequence in this format.
+    vantom=[job for job in plan['jobs'] if job['model']=='Vantom']
+    preserved=preserved_vantom_catalog(current,vantom)
+    jobs=[job for job in plan['jobs'] if job['id'] in changed-active and job['model']!='Vantom']
     identity=input_identity(pack,runtime)
     identity=t.sha256(identity.encode()+Path(__file__).read_bytes());reports=[]
     for job in jobs:
@@ -138,10 +143,52 @@ def legacy_enemies(original,current,pack,sampler,runtime,actor_jobs,work):
         reports.append(saved)
         emit('legacy_enemy_original_color',complete=len(reports),total=len(jobs),clip=clip,
              key=job['key'],frames=count)
-    result=dict(clips=reports,frames=sum(r['frames'] for r in reports),
+    result=dict(clips=reports,frames=sum(r['frames'] for r in reports),preserved_vantom=preserved,
         palette_quantization=False,alpha_quantization=False)
     t.atomic_bytes(work/'legacy-enemies-original-color.json',json.dumps(result,indent=2).encode()+b'\n')
     return result
+
+
+def preserved_vantom_catalog(current,jobs):
+    """Resolve the live UI15 graph before interpreting any old frame slots."""
+    t.require(len(current.aux)>=5404 and len(jobs)==232,'Missing completed Vantom source replacement')
+    reader=t.TileReader(current);referenced=set();parameters=[];frames=layers=0
+    for auxiliary in range(5288,5404):
+        image=current.aux[auxiliary];width,height,fmt,raw=read_image(current,reader,image)
+        t.require(fmt==0,'Vantom parameters are exact words, not a color raster')
+        words=struct.unpack('<'+'H'*(len(raw)//2),raw)
+        t.require(words[0]==0x5654 and words[1]==3 and words[8:10]==(7,12),
+                  'Vantom live resource version changed')
+        count,used=words[2],words[10]
+        t.require(0<count<=256 and 12+count*5<=used<=len(words),'Unbounded Vantom frame table')
+        for frame in range(count):
+            start,n=words[12+frame*5:14+frame*5]
+            t.require(n<=64 and 0<=start<=used and n*7<=used-start,'Vantom layer table escapes resource')
+            for layer in range(n):
+                row=words[start+layer*7:start+(layer+1)*7];mode=row[3]
+                t.require(mode<=7,'Unrecognized Vantom live layer')
+                ids=[row[0]]
+                if mode&3==3:ids.append(row[1])
+                ids.extend(i for i in row[5:7] if i!=65535)
+                t.require(all(i<len(current.images) for i in ids),'Vantom live image ID escapes catalog')
+                referenced.update(ids);layers+=1
+        frames+=count;parameters.append(dict(image=image,raw_sha256=t.sha256(raw)))
+    reused={i for job in jobs for i in range(current.clips[job['id']][0],
+                                            sum(current.clips[job['id']][:2]))}
+    unchanged=[]
+    for image in sorted(reused|referenced):
+        width,height,fmt,raw=read_image(current,reader,image)
+        unchanged.append(dict(image=image,width=width,height=height,format=fmt,
+                              raw_sha256=t.sha256(raw),live=image in referenced))
+    root=Path(__file__).resolve().parent
+    provenance={name:t.sha256((root/name).read_bytes()) for name in
+        ('vantom_ui15_assets.py','vantom_ui15_texture_pages.py','patch_feedback_assets.py','sparse_image.py')}
+    return dict(retained_clip_ids=[job['id'] for job in jobs],reused_old_frame_slots=len(reused),
+        live_referenced_images=len(referenced),parameters=parameters,frames=frames,layers=layers,
+        preserved_images=unchanged,source_generator_sha256=provenance,
+        source_pipeline='original PCK RGBA raster/texture -> RGB565 plus alpha8; exact mesh/parameter words',
+        new_color_mapping=False,new_rasterization=False,
+        old_whole_frame_ids_are_not_current_raster_sequences=True)
 
 
 def previous_registered(current,cache,work,active_images):

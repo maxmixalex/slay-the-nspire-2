@@ -20,6 +20,38 @@ static RandomGradientCache& gradient_cache(){
 static void clear(){std::fill(std::begin(a.pixels),std::end(a.pixels),rgb(17,27,39));}
 static std::vector<uint16_t> pixels(){return {std::begin(a.pixels),std::end(a.pixels)};}
 static void unchanged(){CHECK(save(a.game,after));CHECK(before.size==after.size&&!std::memcmp(before.bytes,after.bytes,before.size));}
+#ifndef SPIRE_TEST_ORIGINAL_RASTERS
+static std::vector<uint8_t> lifecycle_pack(uint16_t color){
+ constexpr unsigned images=A_Count,strings=40+images*16,clips=strings+ContentStrings*8;
+ constexpr unsigned cards=clips+AnimationKinds*16,ui=cards+CardKinds*16,payload=ui+U_Count*4;
+ std::vector<uint8_t>data(payload+1+ScreenW*ScreenH*2);
+ const auto put=[&](unsigned at,unsigned value,unsigned bytes=4){for(unsigned i=0;i<bytes;++i)data[at+i]=uint8_t(value>>(8*i));};
+ put(0,0x3250534e);put(4,ContentVersion);put(8,0x41cef1ea);put(12,unsigned(data.size()));put(16,images);put(24,ContentStrings);put(28,AnimationKinds);put(32,CardKinds);
+ for(unsigned i=0;i<images;++i){put(40+i*16,payload+1);put(44+i*16,i?1:ScreenW,2);put(46+i*16,i?1:ScreenH,2);put(52+i*16,i?2:ScreenW*ScreenH*2);}
+ for(unsigned i=0;i<ContentStrings;++i)put(strings+i*8,payload);
+ for(unsigned i=0;i<AnimationKinds;++i){put(clips+i*16+4,1,2);put(clips+i*16+6,33,2);}
+ for(unsigned i=0;i<ScreenW*ScreenH;++i)put(payload+1+i*2,color,2);
+ return data;
+}
+static void reused_app_address(){
+ alignas(App) static uint8_t storage[sizeof(App)];
+ for(bool ranged:{false,true})for(unsigned pass=0;pass<2;++pass){
+  const uint16_t color=pass?0xd361:0x27bd;auto data=lifecycle_pack(color);
+  auto*instance=::new(detail::InPlaceAddress{storage}) App;
+  if(ranged){ResourceSource source;source.context=&data;source.length=uint32_t(data.size());
+   source.read_at=[](void*context,uint32_t at,void*target,uint32_t count){const auto&bytes=*static_cast<const std::vector<uint8_t>*>(context);
+    if(at>bytes.size()||count>bytes.size()-at)return false;std::memcpy(target,bytes.data()+at,count);return true;};
+   CHECK(instance->init(source,{}));
+  }else CHECK(instance->init(data.data(),data.size(),{}));
+  // A fresh object really reuses both its Content address and generation 1.
+  // App initialization must invalidate the old static scene owner itself.
+  CHECK(instance->content.generation()==1&&scene_raster_owner==SceneRasterOwner::None);
+  auto&raster=character_selection_raster();CHECK(!raster.valid);
+  CHECK(raster.restore(instance->content,0,0));for(auto pixel:raster.pixels)CHECK(pixel==color);
+  instance->~App();
+ }
+}
+#endif
 static void synthetic(){
  static uint16_t gradient[64*64],noise_pixels[50],light_pixels[256*256];static uint8_t noise_alpha[50],dot_alpha[256*256];
  for(unsigned y=0;y<64;++y)for(unsigned x=0;x<64;++x)gradient[y*64+x]=rgb(x*4,x*4,x*4);
@@ -74,4 +106,8 @@ static void actual(const char*english,const char*chinese,const char*captures){
   }
  }
 }
-int main(int argc,char**argv){synthetic();CHECK(argc==1||argc==3||argc==4);if(argc>1)actual(argv[1],argv[2],argc>3?argv[3]:nullptr);std::printf("scene rasters: %u checks, %u actual frames\n",checks,frames);}
+int main(int argc,char**argv){synthetic();
+#ifndef SPIRE_TEST_ORIGINAL_RASTERS
+ reused_app_address();
+#endif
+ CHECK(argc==1||argc==3||argc==4);if(argc>1)actual(argv[1],argv[2],argc>3?argv[3]:nullptr);std::printf("scene rasters: %u checks, %u actual frames\n",checks,frames);}
