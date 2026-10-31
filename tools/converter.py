@@ -224,7 +224,7 @@ class Recipe:
         tiled = self.directory('tiles')/'tiles.nsp'
         self.add('tiles', 'content_tiles', ['--input', world, '--output', tiled, '--work', self.directory('cache/tiles'),
             '--receipt', tiled.with_suffix('.json'), '--workers', self.workers,
-            '--max-output-bytes', 256*1024*1024], [tiled])
+            '--max-output-bytes', 256*1024*1024], [tiled, tiled.with_suffix('.json')])
         ui = self.directory('native-ui')/'native-ui.nsp'
         self.add('native-ui', 'append_native_ui', ['--input', tiled, '--pck', self.pck, '--output', ui,
             '--receipt', ui.with_suffix('.json')], [ui])
@@ -411,6 +411,82 @@ def stage_key(stage, recipe_identity, previous):
         name=stage.name,module=stage.module,arguments=stage.arguments),sort_keys=True).encode()).hexdigest()
 
 
+def prepare_tile_generation(stage, work, runner_receipt, log):
+    """Preserve an owned tile generation before its no-overwrite writer reruns."""
+    if stage.module!='content_tiles':return
+    args=stage.arguments
+    source,output,receipt=(Path(args[args.index(flag)+1]) for flag in ('--input','--output','--receipt'))
+    root=Path(work).resolve()
+    if any(path.is_symlink() or root not in path.resolve().parents for path in (output,receipt)):
+        raise ValueError('Tile rebuild outputs must be owned files beneath the work directory')
+    if output.resolve()==receipt.resolve() or source.resolve() in (output.resolve(),receipt.resolve()):
+        raise ValueError('Tile rebuild must preserve its input and distinct receipt')
+    if set(stage.outputs)!={output,receipt}:
+        raise ValueError('Tile rebuild requires both declared output files')
+    if not output.exists() and not receipt.exists():return
+    if not receipt.is_file():
+        raise ValueError('Tile output has no ownership receipt; preserve it and choose a new work directory')
+    raw=receipt.read_bytes();old=json.loads(raw)
+    if not (old.get('schema')==1 and old.get('complete') is True and
+            old.get('format')=='NSP2/15 sparse tiles' and old.get('output_version')==15 and
+            isinstance(old.get('output_bytes'),int) and old['output_bytes']>0 and
+            all(isinstance(old.get(key),str) and len(old[key])==64 and
+                all(c in '0123456789abcdef' for c in old[key])
+                for key in ('input_sha256','output_sha256'))):
+        raise ValueError('Unrecognized prior tile output receipt')
+    history=root/'receipts/superseded/tiles'/hashlib.sha256(raw).hexdigest()
+    if root not in history.resolve().parents:
+        raise ValueError('Tile history must remain beneath the work directory')
+    preserved=history/output.name
+    # A previous interrupted rotation may have removed the output first.
+    # Its exact archived pair proves ownership; a missing output alone does not.
+    current=output if output.is_file() else preserved
+    if not (current.is_file() and current.stat().st_size==old['output_bytes'] and
+            digest(current)==old['output_sha256']):
+        raise ValueError('Prior tile output differs from its ownership receipt')
+    with current.open('rb') as stream:header=stream.read(40)
+    if not (len(header)==40 and header[:8]==b'NSP2\x0f\0\0\0' and
+            int.from_bytes(header[12:16],'little')==old['output_bytes']):
+        raise ValueError('Prior tile output has an invalid version15 header')
+    ownership=dict(output=str(output.resolve()),receipt=str(receipt.resolve()),
+                   input=str(source.resolve()),output_sha256=old['output_sha256'])
+    ownership_path=history/'ownership.json'
+    if not output.exists():
+        if not (ownership_path.is_file() and json.loads(ownership_path.read_text())==ownership and
+                (history/receipt.name).is_file() and (history/receipt.name).read_bytes()==raw):
+            raise ValueError('Incomplete tile rotation has no verified archived ownership')
+    history.mkdir(parents=True,exist_ok=True)
+    def preserve(before,after,expected):
+        if after.exists():
+            if digest(after)!=expected:raise ValueError('Changed archived tile generation')
+            return
+        with tempfile.NamedTemporaryFile(dir=history,delete=False) as temporary:
+            candidate=Path(temporary.name)
+        try:
+            shutil.copy2(before,candidate)
+            if digest(candidate)!=expected:raise ValueError('Tile archive copy changed')
+            try:os.link(candidate,after)
+            except FileExistsError:
+                if digest(after)!=expected:raise ValueError('Changed archived tile generation')
+        finally:candidate.unlink(missing_ok=True)
+    preserve(current,preserved,old['output_sha256'])
+    preserve(receipt,history/receipt.name,hashlib.sha256(raw).hexdigest())
+    for path,label in ((runner_receipt,'runner'),(log,'log')):
+        if path.is_file():
+            checksum=digest(path)
+            preserve(path,history/(label+'-'+checksum+path.suffix),checksum)
+    if ownership_path.exists() and json.loads(ownership_path.read_text())!=ownership:
+        raise ValueError('Changed archived tile ownership')
+    atomic_json(ownership_path,ownership)
+    # Removing only these two verified owned paths allows the legacy writer's
+    # input/output alias and no-clobber publication guards to remain intact.
+    if output.exists():
+        if digest(output)!=old['output_sha256']:raise ValueError('Tile output changed during archival')
+        output.unlink()
+    if receipt.read_bytes()!=raw:raise ValueError('Tile receipt changed during archival')
+    receipt.unlink()
+
+
 def run_stages(stages, work, identity, stop_after=None):
     receipts=Path(work)/'receipts';logs=Path(work)/'logs'
     receipts.mkdir(parents=True,exist_ok=True);logs.mkdir(parents=True,exist_ok=True)
@@ -431,6 +507,7 @@ def run_stages(stages, work, identity, stop_after=None):
                 active=Path(args[args.index('--cache')+1])/'ui13-assets.json'
                 shutil.copy2(snapshot,active)
         else:
+            prepare_tile_generation(stage,work,receipt,logs/(stage.name+'.log'))
             print(f'[{index}/{len(stages)}] {stage.name}: converting (log: {logs/(stage.name+".log")})',flush=True)
             started=time.time();record=dict(stage=stage.name,key=key,status='running',started_at=started)
             atomic_json(receipt,record)
