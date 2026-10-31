@@ -64,6 +64,8 @@ def build(args):
     args.output.mkdir(parents=True, exist_ok=True)
     launcher_bytes = args.launcher.stat().st_size
     directories = {"animated": args.animated, "no-animations": args.no_animations}
+    resource_checkpoints = {"animated": args.resource_checkpoint,
+                            "no-animations": args.no_animations_resource_checkpoint or args.resource_checkpoint}
     resources = {name: inspect_resources(path) for name, path in directories.items()}
     for row in resources.values():
         row["installed_bytes"] = launcher_bytes + row["required_bytes"]
@@ -84,7 +86,7 @@ def build(args):
                        "--zhs", str(directory / "nSpire2.zhs.dat.tns"),
                        "--output", str(destination), "--calculator-only",
                        "--runtime-checkpoint", args.runtime_checkpoint,
-                       "--resource-checkpoint", args.resource_checkpoint,
+                       "--resource-checkpoint", resource_checkpoints[profile],
                        "--stage", "ui23-" + profile]
             subprocess.run(command, check=True)
             candidates = list(destination.glob("*-calculator.zip"))
@@ -128,6 +130,7 @@ def build(args):
     receipts["optional-languages"] = check_archive(optional)
     result = {"schema": 1, "stage": "ui23", "runtime_checkpoint": args.runtime_checkpoint,
               "resource_checkpoint": args.resource_checkpoint,
+              "resource_checkpoints": resource_checkpoints,
               "maximum_animated_bytes": args.maximum_animated_bytes,
               "animated_storage_target_met": meets_budget,
               "physical_device_tested": False,
@@ -145,6 +148,8 @@ def main():
         parser.add_argument("--" + name, type=Path, required=True)
     parser.add_argument("--runtime-checkpoint", required=True)
     parser.add_argument("--resource-checkpoint", required=True)
+    parser.add_argument("--no-animations-resource-checkpoint",
+                        help="Record a different verified source checkpoint for the reduced resources")
     parser.add_argument("--maximum-animated-bytes", type=int, default=70_000_000)
     parser.add_argument("--allow-over-budget-candidate", action="store_true",
                         help="Produce explicitly over-budget evaluation artifacts; never marks the target met")
