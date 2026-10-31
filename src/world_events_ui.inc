@@ -81,13 +81,15 @@ static void native_ancient_screen(Canvas&c){
  // the scene, leaving an artificial band behind the translucent top bar.
  if(!native_ancient_background(c,e.id))
   c.picture(a.content.world_image("events",original_event_key(e.id)),0,0,320,240);
- // Authored Darv order: painted room, light7, light8, stars, then dialogue/HUD.
- // The baked room omits these emitters. Reduced resources hold the source
- // entry pose; both paths use the same room clock without consuming game RNG.
- if(e.id==OriginalEventId::Darv){
+ // Authored Darv order: room, light7/light8, stars, then dialogue/HUD.
+ // Orobas light7..light10 are its last children, before dialogue/HUD; its
+ // earlier independent GPU layers remain separate outstanding work.
+ // Reduced resources hold the source entry pose without consuming game RNG.
+ const bool darv=e.id==OriginalEventId::Darv;
+ if(darv||e.id==OriginalEventId::Orobas){
   const uint32_t clock=a.content.reduced_animations()?0u:a.map_clock_ms-d.entered;
-  fake_merchant::lights(c,clock,0,2);
-  fake_merchant::stars(c,clock,
+  fake_merchant::lights(c,clock,0,darv?2:3);
+  if(darv)fake_merchant::stars(c,clock,
       fake_merchant::hash(uint32_t(a.game.seed)^uint32_t(a.game.floor)*0x9e3779b9u^0x44415256u),true);
  }
  const int dialogue_height=ancient_measure(c,count),top=d.y(a.map_clock_ms)+d.scroll;

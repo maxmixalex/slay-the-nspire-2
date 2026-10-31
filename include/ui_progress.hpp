@@ -11,8 +11,8 @@ namespace spire {
 constexpr unsigned UiHistoryCapacity=32,UiHistoryFloors=96;
 constexpr unsigned UiProgressCapacity=512*1024;
 constexpr unsigned UiBuildIdBytes=16;
-constexpr char UiCurrentBuildId[]="0.1.0-ui22";
-constexpr char UiCurrentVersionLabel[]="nSpire 0.1.0-ui22 (StS II v0.111.0)";
+constexpr char UiCurrentBuildId[]="0.1.0-ui23";
+constexpr char UiCurrentVersionLabel[]="nSpire 0.1.0-ui23 (StS II v0.111.0)";
 static_assert(sizeof UiCurrentBuildId<=UiBuildIdBytes,"Recorded build identifier must fit");
 constexpr unsigned UiProgressMetadataBytes=8+(UiHistoryCapacity+1)*UiBuildIdBytes;
 struct UiEnemyStatistics {uint32_t seen=0,wins=0,losses=0;};

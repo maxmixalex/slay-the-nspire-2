@@ -87,6 +87,24 @@ static void particle_schedule(){
  const auto once=jumped;jumped.advance(Squares::Preprocess+2345,0x61eac39u);
  CHECK(jumped.tick==once.tick);for(unsigned i=0;i<Squares::Count;++i)CHECK(jumped.particles[i].x==once.particles[i].x&&jumped.particles[i].y==once.particles[i].y);
  CHECK(curve(SquareScale,0)==0&&curve(SquareScale,Q)==0);CHECK(curve(SquareAlpha,0)==Q&&curve(SquareAlpha,Q)==0);
+ // Compact light curves retain every fixed-point Hermite rounding step,
+ // including the decreasing portions of the three original source ramps.
+ constexpr fake_merchant::Key ancient[]={key(0,.321019),key(.502521,.507939),key(1,.36242)};
+ static_assert(light_curve_compatible(ancient),"source Ancient light curve");
+ constexpr auto compact=light_curve(ancient);
+ for(unsigned q=0;q<=Q;++q){
+  CHECK(curve(CandleLightScale,q)==curve(CandleScale,q));
+  CHECK(curve(AmbientLightScale,q)==curve(AmbientScale,q));
+  CHECK(curve(compact,q)==curve(ancient,q));
+ }
+ struct Birth {uint32_t clock;unsigned first,second;};
+ constexpr Birth births[]={{0,0,0},{1,1,0},{1499,1499,0},{1500,1500,0},
+  {1501,1501,1},{2999,2999,1499},{3000,3000,1500},{3001,1,1501},
+  {4500,1500,3000},{4501,1501,1},{6000,3000,1500},{6001,1,1501},
+  {UINT32_MAX,2295,795}};
+ for(const auto&b:births)for(unsigned node=0;node<4;++node){
+  CHECK(light_age(b.clock,node*2)==b.first);CHECK(light_age(b.clock,node*2+1)==b.second);
+ }
 }
 static void event(unsigned character){
  new_run(app.game,0x71351u+character,false,Character(character));CHECK(world_begin_run(app.game,reference::ActKind::Overgrowth,0));

@@ -303,10 +303,18 @@ static void ancient_conversation(bool synthetic){
  std::strcpy(e.page_key,"DONE");std::strcpy(e.option_keys[0],"LEAVE");a.render();advance_ms(1000);
  CHECK(!d.count&&choice_count()==1);capture("ancient-dialogue-cleared-on-finish");
 }
-static void darv_ambient(){
+static void ancient_ambient(){
  // Actual source textures are required here. The ordinary synthetic fixture
  // separately covers dialogue clock continuity without pretending to be art.
- begin(OriginalEventId::Darv,53,1);a.pointer_move(319,23);advance_ms(18000);
+ for(auto id:{OriginalEventId::Darv,OriginalEventId::Orobas}){
+ begin(id,53,1);a.pointer_move(319,23);a.reset_presentation();a.render();
+ CHECK(a.ancient_dialogue.entered==a.map_clock_ms);
+ const auto entry_pixels=image_hash(0,30,320,45);
+ // Orobas has only these newly restored lights in the runtime, so its first
+ // positive source tick exercises actual texture birth without a star clock.
+ advance_ms(1);
+ if(id==OriginalEventId::Orobas)CHECK((image_hash(0,30,320,45)!=entry_pixels)!=a.content.reduced_animations());
+ advance_ms(17999);
  const auto entered=a.ancient_dialogue.entered;const auto initial=image_hash(0,30,320,45);
  snapshot();bool moved=false;
  for(unsigned frame=0;frame<100;++frame){advance_ms(33);CHECK(a.ancient_dialogue.entered==entered);
@@ -315,6 +323,7 @@ static void darv_ambient(){
  // The ordinary offer action refreshes the conversation, not the room clock.
  a.cursor=0;a.input(Key::Confirm);a.render();CHECK(a.ancient_dialogue.entered==entered);
  CHECK(validate(a.game)&&a.content.healthy());
+ }
 }
 static void ordinary_events(bool synthetic){
  const OriginalEventId ids[]={OriginalEventId::Wellspring,OriginalEventId::ColorfulPhilosophers,OriginalEventId::RelicTrader};
@@ -412,5 +421,5 @@ int main(int argc,char**argv){
  // Only an explicit caller-selected private directory receives captures.
  if(argc>asset_argument+1)capture_directory=argv[asset_argument+1];CHECK(a.init(data.data(),data.size(),{}));CHECK(a.content.current_profile());
  if(reading_only){reading_focus();std::printf("World inline reading focus and canonical pointer choice: %u checks; %s profile\n",checks,actual?"actual":"synthetic");return 0;}
- if(argc==1)ancient_original_modulation();merchant_welcome();merchant();ancients();ancient_conversation(argc==1);if(actual)darv_ambient();ordinary_events(argc==1);reported_event_geometry();std::printf("world event UI: %u checks passed; %s profile; merchant welcome/inventory, eight ancients, revealed dialogue/history and centered ordinary events\n",checks,argc>1?"actual":"synthetic");
+ if(argc==1)ancient_original_modulation();merchant_welcome();merchant();ancients();ancient_conversation(argc==1);if(actual)ancient_ambient();ordinary_events(argc==1);reported_event_geometry();std::printf("world event UI: %u checks passed; %s profile; merchant welcome/inventory, eight ancients, revealed dialogue/history and centered ordinary events\n",checks,argc>1?"actual":"synthetic");
 }
