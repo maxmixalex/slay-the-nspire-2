@@ -5,7 +5,7 @@ Every non-replaced tiled image is included in the liveness scan, including
 static auxiliary pictures and aliased frames. Live tile IDs remain unchanged.
 New tiles first use dead slots; only changed groups are recompressed. Existing
 index groups, all other pictures, fonts, strings and clip clocks are preserved.
-The existing UI11 character precision (454a6) also applies to repaired pixels.
+The default path preserves the source RGB565 and all eight alpha bits.
 No runtime codec, buffers, frame dropping or extra image cache is introduced.
 """
 from __future__ import annotations
@@ -62,8 +62,15 @@ class RecycledCatalog:
         blank = bytes((t.SIDE, t.SIDE))+bytes(t.TILE_BYTES-2)
         for group in range(old.tile_groups):
             raw = old.group(group)[0]
-            result = bytearray(raw)
             first = group*old.per_group
+            count = min(old.per_group, old.tile_count-first)
+            # NSP42+ retains stable group IDs while compacting each group's
+            # physical slots. A disk spool is indexed by logical tile ID, so
+            # explicitly fill its holes before the following group is written.
+            # Live references can never name these absent slots.
+            t.require(not np.any(used[first+len(raw)//t.TILE_BYTES:first+count]),
+                      'A live reference points into a compacted slot hole')
+            result = bytearray(raw)+blank*(count-len(raw)//t.TILE_BYTES)
             for local, at in enumerate(range(0, len(raw), t.TILE_BYTES)):
                 tile = first+local
                 if used[tile]:
@@ -114,7 +121,7 @@ def replacements_from_manifest(source, path):
     return result
 
 
-def make_plan(source, work, selected, replacements=None, precision=2, *,
+def make_plan(source, work, selected, replacements=None, precision=8, *,
               allow_geometry=False, clip_overrides=None, raw_transform=None):
     replacements = replacements or {}
     selected = set(selected)
@@ -149,7 +156,8 @@ def make_plan(source, work, selected, replacements=None, precision=2, *,
                 t.require((allow_geometry or (width, height) == source.images[image][1:3]) and
                           0 < width <= 320 and 0 < height <= 240 and fmt == 4,
                           'Replacement geometry or sparse format differs')
-                raw = quantize_image(raw, width, height, fmt, precision)
+                if precision != 8:
+                    raw = quantize_image(raw, width, height, fmt, precision)
                 original_bytes += len(raw)
                 key = width, height, len(raw), t.sha256(raw)
                 if key in seen:
@@ -188,10 +196,16 @@ def make_plan(source, work, selected, replacements=None, precision=2, *,
         plan = dict(selected=sorted(selected), mapping=mapping, frames=frames, tiles=catalog.count,
                     old_tiles=old.tile_count, per_group=old.per_group, changed_groups=changed,
                     tile_ranges=tile_ranges, index_ranges=ranges, require_smaller=False,
-                    precision='454a6' if precision == 2 else 'exact', original_sparse_bytes=original_bytes,
+                    precision={1:'444a6',2:'454a6',4:'555a6',8:'exact'}[precision], original_sparse_bytes=original_bytes,
                     dead_slots=len(catalog.free), recycled_slots=catalog.next_free,
                     reused_tile_references=catalog.reused, protected_tiles=int(np.count_nonzero(used)),
                     allow_geometry=allow_geometry, clip_overrides=clip_overrides)
+        plan['dictionary'] = old.dictionary
+        if precision == 8:
+            from coalesce_tile_resources import source_lzma_profile
+            plan['preserve_tile_profiles'] = [
+                (old.filters[group], source_lzma_profile(source.block(old.groups[group][0], old.groups[group][1])))
+                if group < old.tile_groups else (2, (4, 0, 1)) for group in changed]
         emit('character_retile_plan', images=len(selected), changed_groups=len(changed),
              new_tiles=catalog.count-old.tile_count, recycled_slots=catalog.next_free,
              reused_references=catalog.reused)

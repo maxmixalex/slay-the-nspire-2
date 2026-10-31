@@ -35,13 +35,19 @@ class FrameRegistrationTests(unittest.TestCase):
         for image,x,y in parts:
             self.assertLessEqual(image.width,320);self.assertLessEqual(image.height,240)
             actual.paste(image,(x+102,y+192))
-            # Shifting the solve origin may differ by one source byte at a
-            # floating-point threshold. Retained 454a6 pixels must be exact.
+            # A single whole-frame solve keeps every source alpha8/RGB byte
+            # exact across partition boundaries without a quantization map.
             oracle=expected.crop((x+102,y+192,x+102+image.width,y+192+image.height))
-            actual_raw=f.quantize_image(f.sparse_encode(image),image.width,image.height,4,2)
-            expected_raw=f.quantize_image(f.sparse_encode(oracle),oracle.width,oracle.height,4,2)
+            actual_raw=f.sparse_encode(image)
+            expected_raw=f.sparse_encode(oracle)
             self.assertEqual(actual_raw,expected_raw)
         np.testing.assert_array_equal(np.asarray(actual)[:,:,3],np.asarray(expected)[:,:,3])
+
+    def test_active_writer_rejects_retired_lossy_profiles(self):
+        with TemporaryDirectory() as temporary:
+            picture=Image.new('RGBA',(4,3),(19,47,113,17))
+            for profile in (1,2,4):
+                with self.assertRaises(ValueError):f.pixel_row(Path(temporary),'retired',picture,profile)
 
     def test_empty_frame_retains_its_clock_without_allocating_a_canvas(self):
         parts=f.frame_parts([],f.NATIVE_DENSITY)

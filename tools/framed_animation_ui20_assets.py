@@ -55,10 +55,13 @@ def frame_parts(draw,scale):
     left,top=math.floor(low[0]*scale)-2,math.floor(-high[1]*scale)-2
     right,bottom=math.ceil(high[0]*scale)+2,math.ceil(-low[1]*scale)+2
     tiles.require(right-left<=2560 and bottom-top<=1920,'Unexpected source extent')
+    # Solve the full source frame once. Cropping its exact RGBA bytes avoids
+    # different floating-point rounding at independently solved tile edges.
+    picture=raster(draw,scale,(-left,-top),(right-left,bottom-top))
     parts=[]
     for y in range(top,bottom,240):
         for x in range(left,right,320):
-            image=raster(draw,scale,(-x,-y),(min(320,right-x),min(240,bottom-y)))
+            image=picture.crop((x-left,y-top,min(right,x+320)-left,min(bottom,y+240)-top))
             box=image.getchannel('A').getbbox()
             if box:
                 image=image.crop(box);px,py=x+box[0],y+box[1]
@@ -122,7 +125,7 @@ def enemy_frames(pack,sampler,source,cache,runtime):
             draws=_compose(sampler,models[job['model']],job['clip'],times,job['skins'],job_state(job))
             record=store_frames(draws,NATIVE_DENSITY,directory,dict(signature=key,
                 clip=clip,key=job['key'],frame_ms=original[2],frames=original[1],
-                units=NATIVE_UNITS,reference=original[5],precision=2,
+                units=NATIVE_UNITS,reference=original[5],precision=8,
                 original_scale=1024/original[5],scale=NATIVE_DENSITY))
         emit('source_clip_ready',clip=clip,key=job['key'],frames=original[1],
              density_gain=round(original[5]/NATIVE_UNITS,3),parts=sum(map(len,record['parts'])))
@@ -156,15 +159,16 @@ def osty_frames(pack,sampler,source,cache,runtime):
         draws=[sampler.draw('osty',f) for f in frames]
         record=store_frames(draws,scale,directory,dict(signature=key,clip=-2,
             key='osty.dead_loop',frame_ms=max(1,round(duration*1000/count)),frames=count,
-            units=4254,reference=4254,precision=4,scale=scale))
+            units=4254,reference=4254,precision=8,scale=scale))
     emit('source_clip_ready',clip=-2,key=record['key'],frames=record['frames'])
     return directory,record
 
 
-def pixel_row(cache,key,picture,precision):
-    # Preserve the already accepted UI13 454a6 enemy / UI11 555a6 hero
-    # precision. Resolution increases never lower colour or alpha precision.
-    raw=quantize_image(sparse_encode(picture),picture.width,picture.height,4,precision)
+def pixel_row(cache,key,picture,precision=8):
+    # Normal reconstruction is always native RGB565 plus unmodified alpha8.
+    # Historical low-precision maps remain read-only provenance utilities.
+    tiles.require(precision==8,'Lossy animation output is retired; restore original source pixels')
+    raw=sparse_encode(picture)
     compressed=struct.pack('<BI',4,len(raw))+lz4_encode(raw)
     payload,fmt=(compressed,5) if len(compressed)<len(raw) else (raw,4)
     file=key+'.bin';tiles.atomic_bytes(cache/file,payload)
@@ -243,7 +247,7 @@ def repair(source,pack,sampler,work,runtime,extras):
         auxiliary_rows={str(BASE_AUX+i):len(source.images)+row for i,row in enumerate(auxiliary)},
         clips=receipts,replacement=replaced,append=added,unchanged_image_descriptors=unchanged,
         all_clip_metadata_unchanged=True,runtime_buffer_growth=0,
-        enemy_precision='454a6',osty_precision='555a6',source_geometry_public=False)
+        enemy_precision='RGB565/alpha8 exact',osty_precision='RGB565/alpha8 exact',source_geometry_public=False)
     return data,receipt
 
 

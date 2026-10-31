@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
-"""Bound animation color precision for the 320x240 calculator display.
+"""Historical lossy migration and read-only provenance maps (retired).
 
-This is an explicitly lossy, offline platform adaptation, not a new codec.
+This explicitly lossy offline adaptation is no longer a supported build step.
+Normal generators preserve RGB565 and alpha8. The maps remain available to
+prove and reverse a historical migration from the complete original samples.
 Every animation frame, dimension, sparse span, index and clock is retained.
 Static UI/card/icon resources and every glyph/string remain exact. Character
 selection's disjoint static and dynamic planes use the same color mapping.
@@ -340,7 +342,10 @@ def main():
     parser.add_argument('--work', type=Path, required=True)
     parser.add_argument('--workers', type=int, choices=range(1, 5), default=3)
     parser.add_argument('--policy', choices=('mixed', '444a6', '454a6', '555a6'), default='mixed')
+    parser.add_argument('--allow-legacy-lossy-migration',action='store_true',
+        help='Explicitly reproduce a retired historical artifact; never use for a release')
     args = parser.parse_args()
+    parser.error('Lossy output is retired; use original RGB565/alpha8 restoration') if not args.allow_legacy_lossy_migration else None
     for path in (args.eng, args.zhs, args.output, args.work):
         t.private_path(path, 'Private animation precision input/output')
     t.require(args.eng.resolve() != (args.output/'ui11-eng.nsp').resolve() and

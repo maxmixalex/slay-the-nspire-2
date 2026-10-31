@@ -27,7 +27,7 @@ import split_content
 
 
 def view(data):
-    return t.PackView(data, auxiliary_count(data), versions=(39,40))
+    return t.PackView(data, auxiliary_count(data), versions=tuple(range(39, t.MAXIMUM_CONTENT_VERSION+1)))
 
 
 def emit(stage, **values):
@@ -140,28 +140,32 @@ def make_plan(source, work):
         catalog.close()
 
 
-def encode(raw, kind, cache):
-    identity = b'ui11-retile-lzma2-v1' + bytes((kind,)) + raw
+def encode(raw, kind, cache, *, dictionary=t.GROUP_LIMIT, profile=None, fixed_mode=None):
+    t.require(dictionary in (t.GROUP_LIMIT, t.LARGE_GROUP_LIMIT), 'Unsupported retile dictionary')
+    identity = (b'ui22-exact-retile-lzma2-v2' + bytes((kind,)) +
+                repr((dictionary, profile, fixed_mode)).encode()+raw)
     path = cache / (t.sha256(identity) + '.bin')
     if path.is_file():
         result = path.read_bytes()
         mode, size = struct.unpack_from('<II', result)
-        candidate = t.decode_lzma2(result[8:], size)
+        candidate = t.decode_lzma2(result[8:], size, dictionary)
         if mode:
             candidate = t.restore_tiles(candidate, mode)
         t.require(candidate == raw, 'Cached retile bytes differ')
         return mode, result[8:]
     best = None
-    for mode in ((0, 1, 2) if kind == 1 else (0,)):
+    modes = (fixed_mode,) if fixed_mode is not None else ((0, 1, 2) if kind == 1 else (0,))
+    profiles = (tuple(profile),) if profile is not None else ((3, 0, 2), (4, 0, 1), (3, 1, 1))
+    for mode in modes:
         transformed = filter_tiles(raw, mode) if mode else raw
-        for lc, lp, pb in ((3, 0, 2), (4, 0, 1), (3, 1, 1)):
+        for lc, lp, pb in profiles:
             compressed = lzma.compress(transformed, format=lzma.FORMAT_RAW,
-                filters=[dict(id=lzma.FILTER_LZMA2, preset=9, dict_size=t.GROUP_LIMIT,
+                filters=[dict(id=lzma.FILTER_LZMA2, preset=9, dict_size=dictionary,
                               nice_len=273, depth=512, lc=lc, lp=lp, pb=pb)])
             if best is None or len(compressed) < len(best[1]):
                 best = mode, compressed
     mode, result = best
-    decoded = t.decode_lzma2(result, len(raw))
+    decoded = t.decode_lzma2(result, len(raw), dictionary)
     t.require((t.restore_tiles(decoded, mode) if mode else decoded) == raw,
               'Retile compressed bytes differ')
     t.atomic_bytes(path, struct.pack('<II', mode, len(raw)) + result)
@@ -170,16 +174,20 @@ def encode(raw, kind, cache):
 
 def compress_plan(plan, work, cache, workers):
     cache.mkdir(parents=True, exist_ok=True)
-    jobs = [(1, work / 'tiles.raw', row) for row in plan['tile_ranges']]
-    jobs += [(2, work / 'indices.raw', row) for row in plan['index_ranges']]
+    jobs = [(1, work / 'tiles.raw', row, index) for index, row in enumerate(plan['tile_ranges'])]
+    jobs += [(2, work / 'indices.raw', row, index) for index, row in enumerate(plan['index_ranges'])]
 
     def one(job):
-        kind, path, (offset, size, count) = job
+        kind, path, (offset, size, count), index = job
         with path.open('rb') as handle:
             handle.seek(offset)
             raw = handle.read(size)
         t.require(len(raw) == size, 'Truncated retile spool')
-        mode, compressed = encode(raw, kind, cache)
+        options = dict(dictionary=plan.get('dictionary', t.GROUP_LIMIT))
+        if plan.get('preserve_tile_profiles'):
+            mode, profile = plan['preserve_tile_profiles'][index] if kind == 1 else (0, (4, 0, 1))
+            options.update(fixed_mode=mode, profile=profile)
+        mode, compressed = encode(raw, kind, cache, **options)
         return dict(kind=kind, size=size, count=count, mode=mode, compressed=compressed)
 
     result = []
@@ -209,9 +217,10 @@ def rewrite(source, plan, encoded):
         t.require(tuple(clip[:3]) == source.clips[directory][:3],
                   'A retile registration override changed a clip clock or frame range')
         t.CLIP.pack_into(out, source.clip_at + directory * t.CLIP.size, *clip)
-    out.extend(t.GLOBAL.pack(b'TIL1', 1, 16, 14, plan['tiles'], tile_count, index_count,
-                            frame_count, descriptor_at, table, t.TILE_BYTES, old.per_group,
-                            t.GROUP_LIMIT, t.ENCODED_LIMIT, cost_at, len(source.images)))
+    header = list(t.GLOBAL.unpack_from(source.data, source.base_end))
+    header[4:10] = (plan['tiles'], tile_count, index_count, frame_count, descriptor_at, table)
+    header[14:16] = (cost_at, len(source.images))
+    out.extend(t.GLOBAL.pack(*header))
     out.extend(bytes((tile_count + index_count) * 8))
     previous_cost_at = t.GLOBAL.unpack_from(source.data, source.base_end)[14]
     out.extend(source.data[previous_cost_at:previous_cost_at + ((len(source.images) + 1) & ~1)])
