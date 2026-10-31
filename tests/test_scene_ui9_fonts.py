@@ -38,6 +38,22 @@ class Labels:
 
 
 class SceneFontsTest(unittest.TestCase):
+    def test_large_card_costs_require_their_original_face_without_legacy_bands(self):
+        # A clean source build has no inherited large scene-bold alphabet.
+        # The live inspector's 126–146px spring selects 12/14/16px costs.
+        english=Labels();chinese=Labels();chinese.values[6110]='zhs'
+        for labels,face in ((english,5),(chinese,0)):
+            required=scene.room_requirements(labels,'common-ui-fonts.json')
+            for character in '0123456789X?-':
+                for pixels in (14,16):
+                    with self.subTest(locale=labels.values[6110],character=character,pixels=pixels):
+                        self.assertIn((ord(character),pixels,face),required)
+            # No wholesale inheritance of obsolete high-size bold/italic
+            # alphabets is needed to repair the actual cost-label route.
+            self.assertNotIn((ord('Z'),16,5),required)
+            self.assertNotIn((ord('2'),20,5),required)
+            self.assertNotIn((ord('2'),16,6),required)
+
     def test_nine_pixel_heading_is_versioned_without_weakening_geometry(self):
         before, auxiliary = original_with_flavor_keys()
         source = bytearray(before)

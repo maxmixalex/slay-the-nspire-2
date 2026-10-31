@@ -22,6 +22,41 @@ inline int curve(const Key*keys,unsigned count,unsigned at){
 template<unsigned N>inline int curve(const Key(&keys)[N],unsigned at){return curve(keys,N,at);}
 constexpr Key CandleScale[]={key(0,.417635),key(.502521,.507939),key(1,.423164)};
 constexpr Key AmbientScale[]={key(0,.996333),key(.503344,.976164),key(1,.996333)};
+// The light emitters use three zero-tangent keys. Retain the general source
+// keys above for equivalence checks; only these compact coordinates are live.
+struct LightCurve {int16_t x[3],y[3];};
+constexpr bool light_curve_compatible(const Key(&keys)[3]){
+ for(unsigned i=0;i<3;++i)if(keys[i].left||keys[i].right||keys[i].y<0||keys[i].y>Q||
+     (i&&keys[i].x<=keys[i-1].x))return false;
+ return keys[0].x==0&&keys[2].x==Q;
+}
+constexpr LightCurve light_curve(const Key(&keys)[3]){
+ return {{keys[0].x,keys[1].x,keys[2].x},{keys[0].y,keys[1].y,keys[2].y}};
+}
+inline int curve(const LightCurve&keys,unsigned at){
+ if(at<=unsigned(keys.x[0]))return keys.y[0];
+ for(unsigned i=1;i<3;++i)if(at<=unsigned(keys.x[i])){
+  const int t=int(at-keys.x[i-1])*Q/(keys.x[i]-keys.x[i-1]),t2=t*t/Q,t3=t2*t/Q;
+  // Same separately rounded Hermite terms and final signed division as
+  // curve(Key). Bounded y[0..Q] and t[0..Q] keep their sum within int32.
+  return ((2*t3-3*t2+Q)*keys.y[i-1]+(-2*t3+3*t2)*keys.y[i])/Q;
+ }return keys.y[2];
+}
+static_assert(light_curve_compatible(CandleScale)&&light_curve_compatible(AmbientScale),"light curve source bounds");
+constexpr auto CandleLightScale=light_curve(CandleScale),AmbientLightScale=light_curve(AmbientScale);
+// No preprocessing: source restart_time < time excludes an exact first
+// birth, and retains the terminal pose at later exact cycle boundaries.
+constexpr unsigned light_age(uint32_t clock,unsigned particle){
+ const unsigned phase=(particle&1u)*1500u;
+ return clock<=phase?0u:(clock-phase-1u)%3000u+1u;
+}
+// little_light_script chooses one integer preprocessing time in[0,5] seconds
+// per node. Reduce the elapsed clock before addition to avoid uint32 wrap.
+constexpr unsigned preprocessed_light_age(uint32_t clock,unsigned particle,unsigned seconds){
+ const unsigned phase=(particle&1u)*1500u,preprocess=seconds*1000u;
+ if(clock<=phase&&preprocess<=phase-clock)return 0;
+ return (clock%3000u+preprocess+3000u-phase-1u)%3000u+1u;
+}
 constexpr Key SquareScale[]={key(0,0,0,3.42211),key(.0678295,.354897),key(.143411,.0674747),
  key(.234496,.457091),key(.317829,.144121),key(.395349,.254831),key(.48062,.0930233),
  key(.532946,.363413),key(.606589,.0461842),key(.705426,.450704),key(.75969,.12283),

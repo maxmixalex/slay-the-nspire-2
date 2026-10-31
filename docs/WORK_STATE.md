@@ -1,4 +1,90 @@
-# UI22 completed matching calculator release
+# UI23 current snapshot — packages verified, conversion and device gates open
+
+Continue on `work/ui23-integration`; this source has **not yet been merged to
+`main`**. UI23 supersedes the historical UI22 lossless-only policy and soft
+storage target: bounded color/alpha changes are permitted while preserving
+sharp 320×240 output, geometry, sampled animation cadence and action clocks.
+The full-animation edition remains the default. The no-animation edition
+retains essential source poses and original action timing, detected by the
+same launcher through its NAF1 content profile.
+
+## Frozen runtime, resource provenance and memory
+
+- Runtime and full-animation resources:
+  `ee6575e5678a0d49d998e2f324c67619f2c71955`.
+- Exact no-animation resource checkpoint:
+  `7409f1cc4a8f71ad948037b6b9644a6eb1b056bd`; it uses the same final launcher.
+- Final launcher: **1,689,275 bytes**, SHA-256
+  `77c82e9dec7cbe934419435e478216073897f0daccee4ef7e85ca0c9b3719fc6`.
+- Final formal ARM allocation: **22,290,328 bytes**, 688 bytes below UI21
+  (22,291,016) and 244,996 below UI22 (22,535,324). Usable cache capacities
+  remain unchanged. This is linked allocation, not physical peak memory.
+- Package builder:
+  `a74fc64edb3816f1dd9160d9dec97ac529dcfb16`; edition receipts record their
+  actual resource checkpoint rather than attributing both to the packager.
+
+## Three completed package artifacts
+
+All three ZIPs were built, checked for CRC errors, and read back byte for byte.
+Both complete bilingual archives passed the strict **70,000,000-byte** gate
+for the **entire extracted archive**, including documentation and licenses.
+The required full-animation launcher/data target is 65–70 decimal MB. Save
+state is additional. ZIP transfer size and installed size are distinct:
+
+| Edition | ZIP bytes | Launcher + required data bytes | Entire extracted archive bytes |
+| --- | ---: | ---: | ---: |
+| Full animation, English + Simplified Chinese | 68,903,208 | 69,725,667 | 69,869,712 |
+| No animation, English + Simplified Chinese | 28,423,751 | 30,263,570 | 30,408,109 |
+| Optional languages, matching sets for both editions | 32,396,898 | Not a standalone installation | 34,598,901 |
+
+ZIP SHA-256 values:
+
+- Full animation:
+  `9bc2ef5e48d54151391a4fbde79933cbe29524005dca1684b98070560ab4987c`.
+- No animation:
+  `4611046f6beb9bc7aa2d60715cc09a3b4c33f90e12291233a4379cb898eeebcd`.
+- Optional languages:
+  `db2631548dea6bbc33fc2304817386acfb16ce61af66f8b50f716b607fbb84f3`.
+
+The final visual review covers actual 320×240 production rendering. Neow and
+Tezcatara now have their authored 546- and 506-frame loops, with bounded cyclic
+color hold and bounded 32-frame replay in the full edition. Production Canvas
+and full-App English/Chinese checks passed; both Ancient rooms had zero warm
+resource reads with normal dialogue and choices, within the existing cache
+limit. These are host correctness, resource-I/O and CPU observations. The
+isolated final warm-selection comparison did not establish a meaningful CPU
+speedup, and no calculator FPS improvement is claimed.
+
+## Remaining acceptance gates and scope
+
+- **Physical device and Firebird:** no physical calculator connection or
+  working Firebird firmware is available. Neither native execution nor ARM
+  build/instruction checks substitute for device testing; historical runs
+  are not UI23 runs. Production memory/cache limits were not enlarged to
+  manufacture passing tests.
+- **Original-game converter:** the fresh original-source conversion and
+  subsequent frozen-executable replay are still running. The stage snapshot
+  and resume fix is pushed at
+  `68f46e93ba87ce195453038f1105aae9f0fb5ae5`. Linux and Windows bundled
+  dependency/helper self-tests passed, but they do not prove a complete
+  original-directory conversion. Do not mark that deliverable complete until
+  the actual end-to-end output and publication guards pass.
+- **Remaining visual parity:** the two authored Ancient actor loops are
+  restored, but independent Ancient particles and material clocks remain
+  partial, including effects in the six painted Ancient scenes. UI23 does
+  not claim full Godot rendering parity. Audio, multiplayer and Timeline
+  remain outside the agreed scope.
+
+See [storage and runtime evidence](ui23-color-storage-evidence.md), the
+[retained-differences ledger](ui23-retained-differences.md), and the
+[converter guide](converter-ui23.md) for detailed proofs and remaining work.
+Original source assets, derived packs, private captures and firmware remain
+outside this public repository.
+
+The frozen UI22 record below is historical; its branch, version and acceptance
+instructions do not supersede this UI23 snapshot.
+
+# Historical UI22 completed matching calculator release
 
 The current version is **0.1.0-ui22**, with **NSP2/46**, 58,613 images,
 1,783 clips and 7,212 auxiliary entries. Continue from the verified UI22

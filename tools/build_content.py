@@ -23,6 +23,7 @@ from animation import Skeleton, bake, load_textures
 from sparse_image import encode as encode_sparse
 from asset_profile import ASSETS, CLIPS, EVENT_STRINGS
 from title_assets import build_title_atlas
+from conversion_context import host_intermediate_files
 
 CARDS = ['STRIKE_IRONCLAD','DEFEND_IRONCLAD','BASH','ANGER','POMMEL_STRIKE','SHRUG_IT_OFF',
          'BURNING_PACT','TRUE_GRIT','TWIN_STRIKE','INFLAME','IRON_WAVE','WHIRLWIND','FEEL_NO_PAIN','DARK_EMBRACE']
@@ -129,6 +130,8 @@ def main()->None:
     ap.add_argument('game',type=Path,help='Directory containing SlayTheSpire2.pck and release_info.json')
     ap.add_argument('--output',type=Path,default=ROOT/'dist')
     ap.add_argument('--font',help='Local Chinese font; only rasterized glyphs enter the pack')
+    ap.add_argument('--host-intermediates',action='store_true',
+                    help='Allow larger host-only legacy files for the current paged converter')
     args=ap.parse_args()
     info=json.loads((args.game/'release_info.json').read_text(encoding='utf-8-sig'))
     if info.get('version')!='v0.111.0' or info.get('commit')!=GAME_COMMIT:
@@ -208,7 +211,7 @@ def main()->None:
     if len(result)>32*1024*1024:raise ValueError(f'Intermediate content exceeds 32 MiB: {len(result)}')
     args.output.mkdir(parents=True,exist_ok=True)
     # Never replace a valid output with one of the larger conversion intermediates.
-    with TemporaryDirectory(prefix='nspire-build-',dir=args.output) as staging:
+    with host_intermediate_files(args.host_intermediates), TemporaryDirectory(prefix='nspire-build-',dir=args.output) as staging:
         output=Path(staging)/'nSpire2.nsp.tns';output.write_bytes(result)
         manifest={'format':'NSP2/3','game':info,'content_sha256':hashlib.sha256(result).hexdigest(),'bytes':len(result),
           'cards':CARDS,'images':len(pictures),'glyphs':len(glyphs),'language':'zhs','animations':animation_meta,

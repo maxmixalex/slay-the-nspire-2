@@ -96,6 +96,19 @@ static void repeated_text_working_set(){
         CHECK(file.calls==44); // All later passes stay in the bounded page cache.
     }
 }
+static void recently_reused_page_survives_one_cold_fill(){
+    constexpr unsigned page=ResourceReader::PageSize,pages=ResourceReader::PageCount;
+    File file;file.readable=(pages+3)*page;ResourceReader reader(file.source());uint8_t one=0;
+    for(unsigned i=0;i<pages;++i)CHECK(reader.u8(i*page,one));
+    // One complete clock pass clears the original reference bits.
+    CHECK(reader.u8(pages*page,one));const auto calls=file.calls;
+    CHECK(reader.u8(page+17,one));CHECK(file.calls==calls);
+    CHECK(reader.u8((pages+1)*page,one));CHECK(file.calls==calls+1);
+    // A frequently reused descriptor page receives its second chance; a
+    // neighbouring page which has not been revisited is the replacement.
+    CHECK(reader.u8(page+19,one));CHECK(one==File::byte(page+19,0));CHECK(file.calls==calls+1);
+    CHECK(reader.u8(2*page+19,one));CHECK(file.calls==calls+2);
+}
 static void paired_cold_pages(){
     constexpr unsigned page=ResourceReader::PageSize,pages=ResourceReader::PageCount;
     File file;file.readable=(pages+6)*page+19;ResourceReader reader(file.source());uint8_t bytes[33]{};
@@ -296,4 +309,4 @@ static void boot_display_progress(){
     CHECK(frame.front()==0x55aa&&frame.back()==0x55aa);
     loading_screen(nullptr,ResourceStage::Header,0,1,0);
 }
-int main(){bounds();cache();repeated_text_working_set();paired_cold_pages();bounded_pages();bounded_bounds_and_failures();bounded_prefix_lease();failures();memory_and_ranges();boot_display_progress();std::printf("resource source: %u checks passed\n",checks);}
+int main(){bounds();cache();repeated_text_working_set();recently_reused_page_survives_one_cold_fill();paired_cold_pages();bounded_pages();bounded_bounds_and_failures();bounded_prefix_lease();failures();memory_and_ranges();boot_display_progress();std::printf("resource source: %u checks passed\n",checks);}

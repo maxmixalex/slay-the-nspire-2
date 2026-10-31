@@ -6,6 +6,7 @@ PC-side converter uses python-lz4's high-compression encoder. No frames, image
 pixels, glyph coverage, clipping geometry or animation timing are discarded.
 """
 from __future__ import annotations
+from conversion_context import file_limit
 import argparse
 import hashlib
 import json
@@ -66,7 +67,7 @@ def localized(key: str, text: str, upgraded: bool) -> str:
 def build(game: Path, source: Path, output: Path, font_path: Path) -> dict:
     verify_release(game)
     data = source.read_bytes()
-    if not 40 <= len(data) <= LIMIT:
+    if not 40 <= len(data) <= file_limit(LIMIT):
         raise ValueError('Input exceeds the resident pack bound')
     magic, version, commit, size, ni, ng, ns, nc, nk, digest = struct.unpack_from('<4s9I', data)
     if (magic != b'NSP2' or version not in (7,8) or commit != 0x41cef1ea
@@ -184,7 +185,7 @@ def build(game: Path, source: Path, output: Path, font_path: Path) -> dict:
     string_dir=b''.join(struct.pack('<II',append(t.encode('utf-8')+b'\0'),len(t.encode('utf-8'))) for t in strings)
     body=image_dir+glyph_dir+string_dir+animations+b''.join(struct.pack('<4I',*rec) for rec in records)+struct.pack('<'+'I'*nu,*aux)+payload
     result=struct.pack('<4s9I',b'NSP2',8,commit,40+len(body),ni,ng,ns,nc,nk,0)+body
-    if len(result)>LIMIT:raise ValueError('Output exceeds six-MiB resident limit')
+    if len(result)>file_limit(LIMIT):raise ValueError('Output exceeds conversion file bound')
     manifest={'format':'NSP2/8','reference':'v0.111.0 / 41cef1ea','bytes':len(result),'sha256':hashlib.sha256(result).hexdigest(),
               'cards':BASE_CARDS+SHARED_CARDS+CARDS,'images':ni,'glyphs':ng,'strings':ns,'clips':nc,'auxiliary_count':nu,
               'legacy_images_losslessly_checked':min(1302,len(original_images)),

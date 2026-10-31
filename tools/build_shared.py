@@ -6,6 +6,7 @@ and glyph coverage are retained; only the additional original art is converted.
 No original game files or installable fonts are copied into public source.
 """
 from __future__ import annotations
+from conversion_context import file_limit
 import argparse
 import hashlib
 import json
@@ -39,7 +40,7 @@ def localized(key: str, text: str, upgraded: bool) -> str:
 def build(game: Path, source: Path, output: Path, font_path: Path) -> dict:
     verify_release(game)
     data = source.read_bytes()
-    if not 40 <= len(data) <= MAX_PACK:
+    if not 40 <= len(data) <= file_limit(MAX_PACK):
         raise ValueError('Input pack is outside the resident size bound')
     magic, version, commit, size, ni, ng, ns, nc, nk, digest = struct.unpack_from('<4s9I', data)
     if magic != b'NSP2' or version not in (6, 7) or commit != 0x41CEF1EA or size != len(data):
@@ -135,7 +136,7 @@ def build(game: Path, source: Path, output: Path, font_path: Path) -> dict:
     string_dir=b''.join(struct.pack('<II',append(text.encode('utf-8')+b'\0'),len(text.encode('utf-8'))) for text in strings)
     body=image_dir+glyph_dir+string_dir+animations+b''.join(struct.pack('<4I',*r) for r in records)+struct.pack('<'+'I'*nu,*aux)+payload
     result=struct.pack('<4s9I',b'NSP2',7,commit,40+len(body),ni,ng,ns,nc,nk,0)+body
-    if len(result)>MAX_PACK:
+    if len(result)>file_limit(MAX_PACK):
         raise ValueError(f'Output exceeds the six-MiB resident buffer: {len(result):,}')
     output.parent.mkdir(parents=True,exist_ok=True)
     temp=output.with_name(output.name+'.tmp');temp.write_bytes(result);temp.replace(output)

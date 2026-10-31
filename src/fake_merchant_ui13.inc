@@ -5,6 +5,9 @@ constexpr int world_x(int q8){return 160*256+int(int64_t(q8-960*256)*218/1080);}
 constexpr int world_y(int q8){return int(int64_t(q8)*218/1080);}
 constexpr int source(double n){return int(n*256+(n<0?-.5:.5));}
 constexpr int size(double n){return source(n*218/1080);}
+constexpr int ancient_x(int q8){return int((int64_t(q8)*3195634-114518200509LL)/16777216);}
+constexpr int ancient_y(int q8){return int((int64_t(q8)*3195634+89989748010LL)/16777216);}
+constexpr int ancient_size(double n){return source(n*3195634/16777216);}
 struct Room {
  const App*owner=nullptr;uint32_t generation=0,seed=0,start=0,last=0,entry=0;int floor=-1;
  Squares squares{};
@@ -23,26 +26,31 @@ static Room room;
 // is .5..1.6px. Keep all300 particles; cull only fragments outside the room.
 // The larger soft masks retain Canvas's usual nearest LCD texture sampling.
 static void quad(Canvas c,const water_reflection::Texture&tex,int cx,int cy,int w,int h,
-                 int angle,unsigned red,unsigned green,unsigned blue,unsigned alpha,unsigned blend_mode){
+                 int angle,unsigned red,unsigned green,unsigned blue,unsigned alpha,unsigned blend_mode,int shear=0){
  if(w<=0||h<=0||!alpha||!tex.valid()||c.clip_w<=0||c.clip_h<=0)return;
  const int sn=CombatCardMotion::sine(angle),cs=CombatCardMotion::sine(angle+1024);
- const int hw=(CombatCardMotion::magnitude(cs)*w+CombatCardMotion::magnitude(sn)*h)/2048;
- const int hh=(CombatCardMotion::magnitude(sn)*w+CombatCardMotion::magnitude(cs)*h)/2048;
+ const int bound_w=w+int((int64_t(CombatCardMotion::magnitude(shear))*h+65535)/65536);
+ const int hw=(CombatCardMotion::magnitude(cs)*bound_w+CombatCardMotion::magnitude(sn)*h)/2048;
+ const int hh=(CombatCardMotion::magnitude(sn)*bound_w+CombatCardMotion::magnitude(cs)*h)/2048;
  const int left=mx(0,(cx-hw)/256-1),right=mn(c.clip_w,(cx+hw)/256+2);
  const int top=mx(0,(cy-hh)/256-1),bottom=mn(c.clip_h,(cy+hh)/256+2);
  if(right<=left||bottom<=top)return;
  c.tint_red=uint8_t(div255(c.tint_red*red));c.tint_green=uint8_t(div255(c.tint_green*green));c.tint_blue=uint8_t(div255(c.tint_blue*blue));
  c.opacity=uint8_t(div255(c.opacity*alpha));
- const int du=int(int64_t(cs)*16384/w),dv=int(-int64_t(sn)*16384/h);
+ const int du=int((int64_t(cs)*16384+int64_t(sn)*shear/4)/w),dv=int(-int64_t(sn)*16384/h);
  const bool linear=w<4*256||h<4*256;
+ // Black contributes exactly zero to opaque additive destinations. Covered
+ // intermediates still need paint() to preserve their alpha bookkeeping.
+ const bool skip_black=blend_mode==presentation::Add&&!c.coverage;
  for(int y=top;y<bottom;++y){
   const int dx=left*256+128-cx,dy=y*256+128-cy;
-  int u=32768+int((int64_t(dx)*cs+int64_t(dy)*sn)*64/w);
-  int v=32768+int((-int64_t(dx)*sn+int64_t(dy)*cs)*64/h);
+  const int64_t vy=-int64_t(dx)*sn+int64_t(dy)*cs;
+  int u=32768+int(((int64_t(dx)*cs+int64_t(dy)*sn)*64-vy*shear/1024)/w);
+  int v=32768+int(vy*64/h);
   for(int x=left;x<right;++x,u+=du,v+=dv){
    if(unsigned(u)>=65536u||unsigned(v)>=65536u)continue;
    const auto sample=linear?tex.bilinear(u,v):tex.at(int(int64_t(u)*tex.width()>>16),int(int64_t(v)*tex.height()>>16));
-   if(sample.alpha)c.paint(y*c.pitch+x,sample.color,sample.alpha,blend_mode);
+   if(sample.alpha&&(!skip_black||sample.color))c.paint(y*c.pitch+x,sample.color,sample.alpha,blend_mode);
   }
  }
 }
@@ -91,40 +99,104 @@ static void glitter(Canvas&c,uint32_t clock){
   }
  }
 }
-static void lights(Canvas&c,uint32_t clock,uint32_t seed,bool ambient){
- struct Light {int x,y,w,h;uint8_t r,g,b,a;};
- static constexpr Light candles[]={
-  {world_x(source(-10+1.01*(1306.93+.7*106.083))),world_y(source(20+1.01*(868.317+.8*-73.02))),size(256*12*.189*.7*1.01),size(256*12*.189*.8*1.01),194,95,32,255},
-  {world_x(source(-10+1.01*(1306.93+.7*4.24413))),world_y(source(20+1.01*(868.317+.8*-111.386))),size(256*12*.189*.7*1.01),size(256*12*.189*.8*1.01),194,95,32,255},
-  {world_x(source(-10+1.01*(1306.93+.7*328.148))),world_y(source(20+1.01*(868.317+.8*-342.822))),size(256*12*.189*.7*1.01),size(256*12*.189*.8*1.01),160,82,220,255}
+static void lights(Canvas&c,uint32_t clock,uint32_t seed,unsigned mode){
+ const bool ancient=mode>=2,scripted=mode>=4;
+ if(ancient&&!scripted&&!clock)return; // Unpreprocessed source entry has no lights.
+ struct Light {int x,y;uint8_t r,g,b,a;};
+ struct Geometry {int w,h;int16_t angle,shear;};
+ // Share only identical projected tuples. In particular, rounding a source
+ // scale*2 can differ from doubling an already rounded Q8 dimension.
+ static constexpr Geometry geometry[]={
+  {size(256*12*.189*.7*1.01),size(256*12*.189*.8*1.01),0,0},
+  {size(256*10*1.01),size(256*10*1.01),2023,0},
+  {ancient_size(256*5.22916),ancient_size(256*5*.99999976922549),0,45},
+  {ancient_size(256*5.22916*3),ancient_size(256*5*3*.99999976922549),0,45},
+  {ancient_size(256*5.22916*2),ancient_size(256*5*2*.99999976922549),0,45},
+  {ancient_size(256*.3*15),ancient_size(256*.3*15*.9999998656711552),1618,34},
+  {ancient_size(256*.1*15),ancient_size(256*.1*15*.9999998656711552),0,34},
+  {ancient_size(256*.3*15),ancient_size(256*.6*15*.9999998656711552),0,34},
+  {ancient_size(256*.815*4.49),ancient_size(256*.625*4.49*.9999998656711552),-236,34},
+  {ancient_size(256*1.68*4.49),ancient_size(256*1.815*4.49*.9999998656711552),-236,34}
  };
- static constexpr Light background[]={
-  {world_x(source(-267)),world_y(source(-7)),size(256*10*1.01),size(256*10*1.01),225,78,81,77},
-  {world_x(source(2248)),world_y(source(1165)),size(256*10*1.01),size(256*10*1.01),106,78,168,77}
+ static constexpr Light nodes[]={
+  // Fake Merchant candle emitters, then ambient emitters.
+  {world_x(source(-10+1.01*(1306.93+.7*106.083))),world_y(source(20+1.01*(868.317+.8*-73.02))),194,95,32,255},
+  {world_x(source(-10+1.01*(1306.93+.7*4.24413))),world_y(source(20+1.01*(868.317+.8*-111.386))),194,95,32,255},
+  {world_x(source(-10+1.01*(1306.93+.7*328.148))),world_y(source(20+1.01*(868.317+.8*-342.822))),160,82,220,255},
+  {world_x(source(-267)),world_y(source(-7)),225,78,81,77},
+  {world_x(source(2248)),world_y(source(1165)),106,78,168,77},
+  // Darv light7/light8; Orobas light7..light10, in original child order.
+  {ancient_x(source(556)),ancient_y(source(233)),222,125,31,46},
+  {ancient_x(source(-10)),ancient_y(source(-112)),255,71,150,66},
+  {ancient_x(source(338)),ancient_y(source(997)),230,113,98,22},
+  {ancient_x(source(1746)),ancient_y(source(642)),156,128,255,22},
+  {ancient_x(source(-48.9999)),ancient_y(source(137)),165,158,10,39},
+  {ancient_x(source(1500)),ancient_y(source(16)),0,180,136,103},
+  // Pael light_small2/6/3/4/5. These five nodes follow its GPU layers.
+  {ancient_x(source(366.00003)),ancient_y(source(308)),191,140,36,65},
+  {ancient_x(source(1053)),ancient_y(source(435)),255,0,36,65},
+  {ancient_x(source(1883)),ancient_y(source(343)),191,140,36,65},
+  {ancient_x(source(1706)),ancient_y(source(641)),77,173,105,104},
+  {ancient_x(source(239)),ancient_y(source(770)),236,98,108,77},
+  // Vakuu visible light_small6..10. Source light_small2/3/5/4 stay hidden.
+  // Their white node modulate has alpha77/255; the last color alpha112/255
+  // composes to34/255. Its independent later sparkles remain outstanding.
+  {ancient_x(source(850.00006)),ancient_y(source(329)),200,70,94,77},
+  {ancient_x(source(562.00006)),ancient_y(source(312)),200,70,94,77},
+  {ancient_x(source(-21.999939)),ancient_y(source(496)),200,70,94,77},
+  {ancient_x(source(393.00006)),ancient_y(source(649)),200,70,94,77},
+  {ancient_x(source(1296)),ancient_y(source(348)),200,70,94,34}
  };
+ static constexpr uint8_t shapes[]={0,0,0,1,1,2,3,4,4,4,4,5,6,5,5,7,8,8,9,9,9};
+ static constexpr uint8_t groups[][2]={{0,3},{3,2},{5,2},{7,4},{11,5},{16,5}};
+ static_assert(sizeof shapes==sizeof nodes/sizeof nodes[0],"every authored light has one geometry");
+ static constexpr Key ancient_keys[]={key(0,.321019),key(.502521,.507939),key(1,.36242)};
+ static_assert(light_curve_compatible(ancient_keys),"Ancient source light curve bounds");
+ static constexpr auto ancient_scale=light_curve(ancient_keys);
+ static constexpr ColorKey ancient_color[]={color_key(0,.34902,.34902,.34902),color_key(.411546,1,1,1),color_key(.994413,.34902,.34902,.34902)};
  const water_reflection::Texture texture(c.a.content.image(c.a.content.ui_image(I13_RandomLight)),256,256);
- const auto*list=ambient?background:candles;const unsigned count=ambient?2:3;
- for(unsigned i=0;i<count;++i){const auto&l=list[i];
-  // little_light_script: independent integer preprocessing in[0,5] seconds.
-  const unsigned q=((clock+hash(seed+i+(ambient?90:3))%6*1000)%3000)*Q/3000;
-  const auto color=ambient?gradient(AmbientColor,q):gradient(CandleColor,q);
-  const int scale=ambient?curve(AmbientScale,q):curve(CandleScale,q);
-  quad(c,texture,l.x,l.y,l.w*scale/Q,l.h*scale/Q,ambient?2023:0,
-       div255(l.r*color.r),div255(l.g*color.g),div255(l.b*color.b),l.a,presentation::Add);
+ const unsigned first=groups[mode][0],count=groups[mode][1];
+ const auto&scale_keys=ancient?ancient_scale:mode?AmbientLightScale:CandleLightScale;
+ const auto&color_keys=ancient?ancient_color:mode?AmbientColor:CandleColor;
+ constexpr auto grayscale=[](const ColorKey(&keys)[3]){
+  for(const auto&k:keys)if(k.r!=k.g||k.r!=k.b)return false;return true;
+ };
+ static_assert(grayscale(CandleColor)&&grayscale(AmbientColor)&&grayscale(ancient_color),"light ramp must stay grayscale");
+ for(unsigned node=0;node<count;++node){const auto&l=nodes[first+node];const auto&g=geometry[shapes[first+node]];
+  // The native cosmetic seed supplies one stable0..5s value per scripted
+  // node, shared by both particles; it never consumes saved gameplay RNG.
+  const unsigned preprocess=scripted?hash(seed+first+node)%6:0;
+  for(unsigned particle=0;particle<(ancient?2u:1u);++particle){
+   const unsigned age=ancient?preprocessed_light_age(clock,particle,preprocess):0;
+   if(ancient&&!age)continue;
+   // Preserve the existing Merchant preprocessing/wrap and single-quad path.
+   const unsigned q=(ancient?age:(clock+hash(seed+node+(mode?90:3))%6*1000)%3000)*Q/3000;
+   const unsigned shade=gradient(color_keys,q).r;const int scale=curve(scale_keys,q);
+   quad(c,texture,l.x,l.y,g.w*scale/Q,g.h*scale/Q,g.angle,
+        div255(l.r*shade),div255(l.g*shade),div255(l.b*shade),l.a,presentation::Add,g.shear);
+  }
  }
 }
-static void stars(Canvas&c,uint32_t clock,uint32_t seed){
+static void stars(Canvas&c,uint32_t clock,uint32_t seed,bool ancient=false){
  const water_reflection::Texture texture(c.a.content.image(c.a.content.ui_image(I13_RandomDot)),256,256);
+ const uint64_t start=uint64_t(clock)+5000;
+ unsigned age=unsigned(start%3000),cycle=unsigned(start/3000);
  for(unsigned i=0;i<300;++i){
-  const uint64_t t=uint64_t(clock)+5000-i*10;const unsigned age=unsigned(t%3000),cycle=unsigned(t/3000);
   const uint32_t h=hash(seed^i*0x9e3779b9u^cycle*0x85ebca6bu);
   const int x=int(h%3000001)-1500000,y=int(hash(h+1)%2000001)-1000000;
-  const int cx=world_x(source(925)+int(int64_t(x)*256*101/100000));
-  const int drift=int(uint64_t(age)*age*5*256/1000000);
-  const int cy=world_y(source(626)+(int(int64_t(y)*256/1000)-drift)*101/100);
-  const int side=size(256*1.01)*(10+int(hash(h+2)%21))/1000;
+  const int px=source(925)+x*808/3125;
+  const int drift=int(age*age*4/3125);
+  const int py=source(626)+(y*32/125-drift)*101/100;
+  // Darv has this exact source emitter as its last scene child. Its full
+  // 1680x1260 AncientContainer transform differs from the merchant camera.
+  // Q24 scale/Q32 offsets retain the authored aspect interpolation; no new
+  // particle state, texture, framebuffer or cache is needed.
+  const int cx=ancient?ancient_x(px):world_x(px);
+  const int cy=ancient?ancient_y(py):world_y(py);
+  const int side=(ancient?12608:size(256*1.01))*(10+int(hash(h+2)%21))/1000;
   const auto color=gradient(StarColor,age*Q/3000);
   quad(c,texture,cx,cy,side,side,0,div255(224*color.r),div255(127*color.g),div255(100*color.b),div255(156*color.a),presentation::Normal);
+  if(age<10){age+=2990;--cycle;}else age-=10;
  }
 }
 static void squares(Canvas&c,const Squares&state){

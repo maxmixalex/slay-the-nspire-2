@@ -6,6 +6,7 @@ import argparse
 import json
 from pathlib import Path
 import re
+import struct
 import zipfile
 
 from build_web import ROOT, package_runtime
@@ -22,6 +23,11 @@ def resource_version(path):
 
 
 def readme(info):
+    profile = info.get('animation_profile', 'animated')
+    animation = ('本包仅保留必要人物/怪物动作姿态，保留原有动作时长。启动器自动识别，无需切换设置。\n'
+                 'This edition keeps essential actor poses and original action durations. The launcher detects it automatically.\n') \
+                if profile == 'no-animations' else \
+                ('本包包含完整采样人物/怪物动画。\nThis edition includes the complete sampled actor animations.\n')
     shared = ('data/nSpire2.dat.tns         公共资源索引 / artwork index\n' +
               ''.join('data/'+name+'\n' for name in PART_FILES)) if info.get('multipart_artwork') else \
              'data/nSpire2.dat.tns         公共图片与动画 / shared artwork and animation\n'
@@ -32,12 +38,24 @@ def readme(info):
     else:
         sources = (f"Runtime source: https://github.com/maxmixalex/slay-the-nspire-2/tree/{info['runtime_checkpoint']}\n"
                    f"Resource converter: https://github.com/maxmixalex/slay-the-nspire-2/tree/{info['resource_checkpoint']}\n")
+    validation = ''
+    if info.get('stage', '').startswith('ui23'):
+        validation = '''
+验证范围 / Verification scope
+本包没有计算器实机测试记录，不能据此给出实机帧率或实机峰值内存。
+打包校验覆盖文件完整性和资源内容；画质、性能对照和保留差异的记录附在 data/validation。
+先古场景仍有未实现的独立粒子和材质时钟差异，详见附带的 ui23-retained-differences.md。
+No physical-calculator test is recorded for this package. Calculator FPS and physical peak RAM remain unmeasured.
+Packaging checks file integrity and resource content. Quality, performance and remaining-difference records are included in data/validation.
+Independent Ancient particles and material clocks remain incomplete; see the included ui23-retained-differences.md.
+'''
     return f"""Slay the Nspire 2 — nSpire {info['version']} (StS II v0.111.0)
 
 安装 / Installation
 首次安装：将 nSpire2.tns 与 data、state 文件夹一起复制到计算器上的游戏目录，打开 nSpire2.tns。
 Copy nSpire2.tns and the data/state folders into the game's calculator directory.
 Open nSpire2.tns. A color TI-Nspire with Ndless is required.
+{animation}
 
 nSpire2.tns                  程序 / launcher
 {shared.rstrip()}
@@ -103,7 +121,7 @@ Reference: v0.111.0 / 41cef1ea
 Resource format: NSP2/{info['resource_format']}; save format: v{info['save_version']}
 Installed program/resources: {sum(info['files'].values()):,} bytes before saves
 {sources.rstrip()}
-See the release notes for validation coverage and remaining calculator timing limits.
+{validation.rstrip()}
 Source and third-party notices are included under data/licenses. Original game assets belong
  to Mega Crit and the respective rights holders.
 """
@@ -146,10 +164,17 @@ def main():
     if resource_version(args.zhs) != version:
         p.error('English and Chinese resources must use the same format version')
     content_validation = None
+    animation_profile = None
     for code,path in (('eng',args.eng),('zhs',args.zhs)):
         logical = reconstruct(common_bytes,path.read_bytes(),code)
+        profile = ('no-animations' if len(logical) >= 40 and
+                   struct.unpack_from('<I', logical, 4)[0] >= 46 and
+                   logical[36:40] == b'NAF1' else 'animated')
         if code == 'eng':
             content_validation = validate_release_content(logical, args.stage)
+            animation_profile = profile
+        elif profile != animation_profile:
+            p.error('English and Chinese animation profiles differ')
         del logical
     base_version = (ROOT/'VERSION').read_text().strip().split('-',1)[0]
     release_version = f'{base_version}-{args.stage}'
@@ -157,6 +182,7 @@ def main():
                 progress_version=9, settings_version=6, calculator_run_storage='NSZ1 or raw NSV1',
                 calculator_history_storage='NSZ1 or raw NSH1-9',
                 stage=args.stage,
+                animation_profile=animation_profile,
                 runtime_checkpoint=args.runtime_checkpoint,
                 resource_checkpoint=args.resource_checkpoint,
                 developer_console=True, installation_layout="data/state",multipart_artwork=multipart,
@@ -165,6 +191,10 @@ def main():
                 files={name: path.stat().st_size for name, path in paths.items()})
     if content_validation is not None:
         info['required_content_validation'] = content_validation
+    if args.stage.startswith('ui23'):
+        info['physical_device_tested'] = False
+        info['calculator_fps_measured'] = False
+        info['physical_peak_ram_measured'] = False
     stem = f'Slay-the-Nspire-2-{release_version}-bilingual'
     archive = args.output / (stem + '-calculator.zip')
     offline = args.output / (stem + '-offline.html')
@@ -174,6 +204,9 @@ def main():
                  'licenses/OkHSV-Godot-MIT.txt', 'licenses/Noto-Boot-OFL.txt','licenses/NotoEmoji-OFL.txt','licenses/NotoSansSymbols2-OFL.txt'):
         paths["data/licenses/" + Path(name).name] = ROOT / name
     paths['data/licenses/Unicode-License.txt'] = ROOT / 'third_party/unicode/LICENSE'
+    if args.stage.startswith('ui23'):
+        for name in ('ui23-color-storage-evidence.md', 'ui23-retained-differences.md'):
+            paths['data/validation/' + name] = ROOT / 'docs' / name
     with zipfile.ZipFile(archive, 'w', zipfile.ZIP_DEFLATED, compresslevel=6) as out:
         out.writestr('state/', b'')
         for name, path in paths.items():

@@ -22,7 +22,7 @@ struct WorldEnemyVisualState {
 };
 struct WorldEnemyVisualTransition {
     const char* trigger;
-    int16_t from,to; // from -1 is the original any-state transition.
+    int8_t from,to; // from -1 is the original any-state transition; generator bounds both ids.
     uint16_t condition;
 };
 struct WorldEnemyVisualAction {
@@ -32,8 +32,8 @@ struct WorldEnemyVisualAction {
 struct WorldEnemyVisualMove {
     const char* key;
     const char* next_clip; // Non-null for direct shared-arm actions.
-    int16_t node;
     uint16_t action_first;
+    int8_t node; // Local node ids are validated before generated table emission.
     uint8_t action_count;
 };
 struct WorldEnemyVisualSkin {
@@ -46,7 +46,7 @@ struct WorldEnemyVisualClip {
     const char* key; // Full Content directory key, without any localization.
     uint16_t directory,condition;
     int16_t move; // -1=ordinary context; exact matching move takes precedence.
-    uint32_t duration_ms,original_ms;
+    uint16_t duration_ms,original_ms; // Exact source milliseconds; generator rejects overflow.
     uint8_t skin,loop;
 };
 

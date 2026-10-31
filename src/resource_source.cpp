@@ -166,7 +166,7 @@ ResourceSource SplitResourceSource::source(){
 bool ResourceReader::reset(ResourceSource source){
     source_=source;valid_=source.direct||source.read_at;
     next_page_=0;stats_={};
-    for(auto& p:pages_){p.valid=false;p.used=0;p.offset=0;}
+    for(auto& p:pages_){p.valid=p.referenced=false;p.used=0;p.offset=0;}
     if(!valid_)source_={};
     return valid_;
 }
@@ -190,7 +190,7 @@ bool ResourceReader::read_bounded(uint32_t offset,void*dst,uint32_t count)const{
         const Page* b=cached_page(offset+first);
         if(!a&&!b){++stats_.bypasses;return fetch(offset,out,count);}
         // Copy resident bytes before a miss can replace their cache slot.
-        // This matters at round-robin wrap with a full sixty-four-page cache.
+        // This matters when replacement reaches a full sixty-four-page cache.
         if(a)copy(a,offset,out,first);
         if(b)copy(b,offset+first,out+first,count-first);
         if(a&&b)return true;
@@ -213,37 +213,51 @@ bool ResourceReader::fetch(uint32_t offset,void* dst,uint32_t count)const{
 }
 const ResourceReader::Page* ResourceReader::cached_page(uint32_t offset)const{
     const uint32_t base=offset&~(PageSize-1u);
-    for(const auto& p:pages_)if(p.valid&&p.offset==base)return &p;
+    for(auto& p:pages_)if(p.valid&&p.offset==base){p.referenced=true;return &p;}
     return nullptr;
+}
+uint32_t ResourceReader::replacement_page(uint32_t exclude)const{
+    for(uint32_t i=0;i<PageCount;++i)if(i!=exclude&&!pages_[i].valid){
+        next_page_=(i+1u)%PageCount;return i;
+    }
+    // A hit gives a page one further turn around the same fixed-size clock.
+    // At most two turns clear all flags and choose a non-excluded victim.
+    // The reference flag occupies an existing padding byte in its tag.
+    for(;;){
+        const unsigned slot=next_page_;next_page_=(slot+1u)%PageCount;
+        if(slot==exclude)continue;
+        auto& p=pages_[slot];if(!p.referenced)return slot;
+        p.referenced=false;
+    }
 }
 const ResourceReader::Page* ResourceReader::page(uint32_t offset)const{
     if(const Page*p=cached_page(offset)){++stats_.cache_hits;return p;}
     const uint32_t base=offset&~(PageSize-1u);
     ++stats_.cache_misses;
-    uint32_t slot=next_page_;
-    for(uint32_t i=0;i<PageCount;++i)if(!pages_[i].valid){slot=i;break;}
+    const uint32_t slot=replacement_page();
     Page& p=pages_[slot];p.valid=false;
     const uint32_t remaining=source_.length-base;
     const uint32_t count=remaining<PageSize?remaining:PageSize;
     if(!fetch(base,page_bytes_+slot*PageSize,count))return nullptr;
-    p.offset=base;p.used=(uint16_t)count;p.valid=true;
-    next_page_=(slot+1u)%PageCount;
+    p.offset=base;p.used=(uint16_t)count;p.valid=p.referenced=true;
     return &p;
 }
-bool ResourceReader::read_cold_pair(uint32_t slot,uint32_t offset,void* dst,uint32_t count)const{
-    // The requested bytes straddle two absent pages. Read exactly the same
-    // page ranges as two ordinary misses, into adjacent existing slots.
+bool ResourceReader::read_cold_pair(uint32_t slot,uint32_t other,uint32_t offset,void* dst,uint32_t count)const{
+    // The requested bytes straddle two absent pages. Adjacent selected slots
+    // allow one combined fetch; other victims use the same two page ranges.
     const uint32_t base=offset&~(PageSize-1u);
     const uint32_t remaining=source_.length-base;
     const uint32_t bytes=remaining<2*PageSize?remaining:2*PageSize;
-    Page& first=pages_[slot];Page& second=pages_[slot+1];
+    Page& first=pages_[slot];Page& second=pages_[other];
     first.valid=second.valid=false;stats_.cache_misses+=2;
     uint8_t* data=page_bytes_+slot*PageSize;
-    if(!fetch(base,data,bytes))return false;
-    first.offset=base;first.used=PageSize;first.valid=true;
-    second.offset=base+PageSize;second.used=uint16_t(bytes-PageSize);second.valid=true;
-    next_page_=(slot+2u)%PageCount;
-    resource_copy(dst,data+(offset-base),count);return true;
+    uint8_t* next=page_bytes_+other*PageSize;
+    if(other==slot+1u){if(!fetch(base,data,bytes))return false;}
+    else if(!fetch(base,data,PageSize)||!fetch(base+PageSize,next,bytes-PageSize))return false;
+    first.offset=base;first.used=PageSize;first.valid=first.referenced=true;
+    second.offset=base+PageSize;second.used=uint16_t(bytes-PageSize);second.valid=second.referenced=true;
+    const uint32_t head=PageSize-(offset-base);
+    resource_copy(dst,data+(offset-base),head);resource_copy(static_cast<uint8_t*>(dst)+head,next,count-head);return true;
 }
 bool ResourceReader::read(uint32_t offset,void* dst,uint32_t count)const{
     if(!contains(offset,count)||(count&&!dst))return false;
@@ -259,14 +273,10 @@ bool ResourceReader::read(uint32_t offset,void* dst,uint32_t count)const{
         // A resident half must stay useful: fetching just the missing page
         // avoids rereading bytes or evicting another page unnecessarily.
         if(!first&&!second){
-            uint32_t slot=next_page_,next=PageCount;
-            for(uint32_t i=0;i<PageCount;++i)if(!pages_[i].valid){slot=i;break;}
-            for(uint32_t i=0;i<PageCount;++i)if(i!=slot&&!pages_[i].valid){next=i;break;}
-            if(next==PageCount)next=(slot+1u)%PageCount;
-            // Preserve the original replacement order, including its wrap.
-            // Nonadjacent victims use the ordinary two reads below instead
-            // of evicting a different page just to combine this request.
-            if(next==slot+1u)return read_cold_pair(slot,offset,dst,count);
+            const uint32_t slot=replacement_page(),next=replacement_page(slot);
+            // Combine physically adjacent victims only; clock selection must
+            // not evict a recently used page merely to combine two reads.
+            return read_cold_pair(slot,next,offset,dst,count);
         }
     }
     auto* out=static_cast<uint8_t*>(dst);

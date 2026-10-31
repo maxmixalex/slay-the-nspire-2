@@ -196,6 +196,9 @@ public:
     Clip clip(int id)const;
     unsigned card_count()const{return cards_;}
     unsigned version()const{return version_;}
+    // Detected from the resident resource header. No extra file, setting,
+    // payload scan, allocation or alteration to gameplay clocks is needed.
+    bool reduced_animations()const;
     bool has_ftue_assets()const{return version_>=FtueContentVersion&&(ui_count_==FtueAuxiliaryCount||has_selection_assets());}
     bool has_selection_assets()const{return version_>=SelectionContentVersion&&(ui_count_==SelectionAuxiliaryCount||has_inspection_assets());}
     bool has_inspection_assets()const{return version_>=SelectionContentVersion&&(ui_count_==InspectionAuxiliaryCount||has_speech_bubble_assets());}

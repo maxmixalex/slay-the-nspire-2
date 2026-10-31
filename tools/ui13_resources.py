@@ -122,6 +122,38 @@ def catalog_endpoint(manifest):
     return end
 
 
+def extension_baseline(path, original, endpoint, message, *, retained=False):
+    """Keep exact baselines within a source revision and archive older ones.
+
+    Callers first verify every current prefix payload. A different source
+    signature starts a new conversion; it must not inherit a former revision's
+    immutable baseline, nor silently replace different bytes under one identity.
+    """
+    def checked_identity(raw):
+        manifest=json.loads(raw)
+        tiles.require(manifest.get('schema')==1 and catalog_endpoint(manifest)==endpoint,
+                      'Invalid extension-baseline catalog')
+        values=[manifest.get('signature')]
+        if retained:
+            values.append(manifest.get('retained_extension',{}).get('signature'))
+        tiles.require(all(isinstance(value,str) and len(value)==64 and
+                          all(c in '0123456789abcdef' for c in value) for value in values),
+                      'Invalid extension-baseline source identity')
+        return tuple(values)
+    current=checked_identity(original)
+    if path.exists():
+        previous=path.read_bytes()
+        if previous==original:return
+        tiles.require(checked_identity(previous)!=current,message)
+        archive=path.parent/'superseded-baselines'/(path.stem+'-'+tiles.sha256(previous)+'.json')
+        if archive.exists():
+            tiles.require(archive.read_bytes()==previous,'Changed archived extension baseline')
+        else:
+            tiles.atomic_bytes(archive,previous)
+        emit('extension_baseline_superseded',baseline=path.name,archive=archive.name)
+    tiles.atomic_bytes(path,original)
+
+
 def extend_retained(args):
     """Append Random/Fake Merchant while preserving the1138 prior payloads."""
     from random_character_ui13_assets import source_assets as random_character
@@ -140,8 +172,7 @@ def extend_retained(args):
             'Earlier UI13 source image changed')
     baseline=cache/'ui13-assets.before-retained.json'
     if end==AUXILIARY:
-        if baseline.exists():tiles.require(baseline.read_bytes()==original,'Different retained-extension baseline')
-        else:tiles.atomic_bytes(baseline,original)
+        extension_baseline(baseline,original,AUXILIARY,'Different retained-extension baseline')
     else:
         tiles.require(baseline.is_file() and json.loads(baseline.read_text())['images']==prefix,
             'The retained extension lost its verified original manifest')
@@ -210,8 +241,7 @@ def extend_fake_rug(args):
             'Earlier retained source image changed')
     baseline=cache/'ui13-assets.before-fake-rug.json'
     if end==start:
-        if baseline.exists():tiles.require(baseline.read_bytes()==original,'Different no-rug extension baseline')
-        else:tiles.atomic_bytes(baseline,original)
+        extension_baseline(baseline,original,start,'Different no-rug extension baseline',retained=True)
     else:
         tiles.require(baseline.is_file() and json.loads(baseline.read_text())['images']==prefix,
             'The no-rug extension lost its verified original manifest')

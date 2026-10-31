@@ -77,19 +77,6 @@ static void character_info_name(Canvas&c,const char*text,int x,int y,int size){
         }
     }
 }
-static bool character_delta_background(Canvas&c,unsigned first,unsigned frame){
-    auto& raster=character_selection_raster();
-    if(!raster.restore(c.a.content,first,frame,c.a.callbacks.foreground_poll))return false;
-    if(!c.coverage&&!c.occlusion&&c.opacity==255&&c.brightness==255&&
-       c.tint_red==255&&c.tint_green==255&&c.tint_blue==255&&!c.color_matrix&&
-       c.pitch==ScreenW&&c.clip_w==ScreenW&&c.clip_h==ScreenH){
-        for(unsigned y=0;y<ScreenH;y+=16){
-            c.poll();__builtin_memcpy(c.pixels+y*ScreenW,raster.pixels+y*ScreenW,16*ScreenW*2);
-        }
-    }else c.picture(Picture{reinterpret_cast<const uint8_t*>(raster.pixels),nullptr,nullptr,
-                            ScreenW,ScreenH,0},0,0);
-    return true;
-}
 static void character_screen(Canvas&c){
     using namespace character_select_layout;
     auto&a=c.a;a.hit_count=0;
@@ -115,11 +102,17 @@ static void character_screen(Canvas&c){
     const auto&definition=character_definitions[character];
     const auto clip=a.content.version()>=RoomUi7ContentVersion?a.content.clip(int(FirstClip+character)):Clip{};
     if(random){
-        if(random_character_background(c,a.map_clock_ms,a.map_clock_ms-motion.panel_start,motion.panel_start)){}
+        if(a.content.reduced_animations()&&a.content.version()>=SourceVersion)
+            c.ui(I12_RandomBackground,0,0,320,240);
+        else if(random_character_background(c,a.map_clock_ms,a.map_clock_ms-motion.panel_start,motion.panel_start)){}
         else if(a.content.version()>=SourceVersion)c.ui(I12_RandomBackground,0,0,320,240);
         else{c.picture(A_Title,0,0,320,240);c.dim(0,0,320,240,110);}
+    }else if(clip.count&&a.content.reduced_animations()){
+        // The reduced pack stores the exact opaque first source pose. Avoid
+        // replaying an identical copy-patch timeline on every menu tick.
+        c.picture(int(clip.first),0,0,320,240);
     }else if(clip.count&&character_select_delta::available(a.content,character,clip.first)){
-        if(!character_delta_background(c,clip.first,frame(character,a.map_clock_ms-motion.panel_start,clip.count)))
+        if(!scene_delta_background(c,clip.first,frame(character,a.map_clock_ms-motion.panel_start,clip.count)))
             c.rect(0,0,ScreenW,ScreenH,0);
     }else if(clip.count){
         // Exact disjoint static/dynamic planes keep the full source loop
@@ -131,7 +124,8 @@ static void character_screen(Canvas&c){
         c.picture(int(clip.first)+int(frame(character,a.map_clock_ms-motion.panel_start,clip.count)),0,0,320,240);
     }
     else c.ui(character_background(a.selected_character),0,0);
-    if(!random){motion.random_background.active=false;character_atmosphere(c,character,a.map_clock_ms-motion.panel_start,motion.panel_start);}
+    if(!random){motion.random_background.active=false;character_atmosphere(c,character,
+        a.content.reduced_animations()?0:a.map_clock_ms-motion.panel_start,motion.panel_start);}
     const auto profile=a.callbacks.profile_render;
     if(profile)profile(RuntimeRenderPart::CharacterInfo,true);
     char description_key[96]{},description[1024]{},relic_text[1024]{};

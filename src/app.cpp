@@ -33,6 +33,7 @@
 #include "frontend_ui7_assets.hpp"
 #include "character_select_layout.hpp"
 #include "character_select_delta.hpp"
+#include "ancient_scene_ui23.hpp"
 #include "random_character_assets.hpp"
 #include "source_water_reflection.hpp"
 #include "card_face_layout.hpp"

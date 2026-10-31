@@ -13,7 +13,9 @@
 #include "framed_animation_ui22.hpp"
 #include "character_select_delta.hpp"
 #include "retired_assets_ui22.hpp"
+#include "ancient_scene_ui23.hpp"
 #include "implicit_geometry.hpp"
+#include "content_animation_profile.hpp"
 extern "C" void* memcpy(void*,const void*,size_t);
 namespace spire {
 static uint16_t u16(const uint8_t*p){return p[0]|(uint16_t)p[1]<<8;}
@@ -42,6 +44,10 @@ static uint8_t*const image_pixels=picture_pixels;
 static unsigned image_page_limit=ImagePages;
 static_assert(MaxEncodedImage==ResourceTransferCapacity,"Shared transfer capacity must preserve the original decoding bound");
 static void cancel_content_preload(const Content*owner=nullptr);
+struct ImageCache;
+static ImageCache* reserve_image(unsigned size);
+static void discard_image(ImageCache& cache);
+static uint8_t* image_buffer(const ImageCache& cache);
 #include "content_tiles.inc"
 // Keep a directory index in the existing key word. The immutable, resident
 // descriptor supplies offset, geometry, stored format and encoded length
@@ -352,7 +358,7 @@ bool Content::open(ResourceSource source){
                                                     CombatUi15AuxiliaryCount,VantomUi15AuxiliaryCount,
                                                     vantom_vfx::AuxiliaryCount,FramedUi20AuxiliaryCount,
                                                     FramedUi22AuxiliaryCount,character_select_delta::AuxiliaryCount,
-                                                    retired_assets_ui22::AuxiliaryCount};
+                                                    retired_assets_ui22::AuxiliaryCount,ancient_scene_ui23::AuxiliaryCount};
                                                 for(unsigned end:endpoints){
                                                     if(next==0x314c4954u)break;
                                                     for(unsigned i=auxiliary;i<end;++i){
@@ -426,12 +432,13 @@ bool Content::open(ResourceSource source){
     if(version>=5){
         ui_count_=auxiliary;ui_offset_=image_directory_end()+ng*16+ns*8+nc*16+cards*16;
     }
-    if(auxiliary==retired_assets_ui22::AuxiliaryCount){
+    if(auxiliary==retired_assets_ui22::AuxiliaryCount||auxiliary==ancient_scene_ui23::AuxiliaryCount){
         using namespace retired_assets_ui22;
         // The offline release guard proves the fixed retirement plan and all
         // live roots. Opening additionally rejects a missing/corrupt marker;
         // an IO failure cannot turn a partial pack into a legacy fallback.
-        if(version<45||images_!=Images||clips_!=1783||ui_image(AuxiliaryFirst)!=int(MarkerImage))return reject();
+        const unsigned expected_images=auxiliary==ancient_scene_ui23::AuxiliaryCount?ancient_scene_ui23::Images:Images;
+        if(version<45||images_!=expected_images||clips_!=1783||ui_image(AuxiliaryFirst)!=int(MarkerImage))return reject();
         const auto marker=image_directory_[MarkerImage];uint8_t bytes[16];
         if(marker.width()!=8||marker.height()!=1||marker.format!=0||marker.length!=sizeof bytes||
            marker.offset<base||!reader_.read(marker.offset,bytes,sizeof bytes)||
@@ -461,6 +468,9 @@ bool Content::image_cached(int id)const{
     if(!healthy()||id<0||unsigned(id)>=images_)return false;
     const auto descriptor=image_directory_[unsigned(id)];
     return (data_&&descriptor.format<5)||find_image(this,image_directory_,unsigned(id));
+}
+bool Content::reduced_animations()const{
+    return content_animation_profile::reduced(metadata_,version_);
 }
 void Content::set_image_cache_profile(bool room_frames,bool selection_frames)const{
     // A large-group room borrows512KiB from its published-image tier. The

@@ -125,6 +125,30 @@ class CoalesceTilesTest(unittest.TestCase):
             with self.assertRaisesRegex(ValueError,'artwork differs'): coalesce.rewrite(original,wrong)
             del raw
 
+    def test_modern_slot_holes_keep_initialized_identity_maps(self):
+        class Reader:
+            tile_count, tile_groups, per_group = 6, 2, 4
+            def group(self, group):
+                record = bytes((16,16))+bytes([7])*768
+                return record*2, None
+        with tempfile.TemporaryDirectory() as folder:
+            raw, canonical = coalesce.exact_tile_inventory(None, Reader(), Path(folder)/'tiles.raw')
+            self.assertEqual(canonical.tolist(), [0,0,2,3,0,0])
+            self.assertTrue(np.array_equal(canonical[canonical], canonical))
+            del raw
+
+    def test_modern_exact_coalescing_and_slot_compaction(self):
+        import coalesce_color_candidates_ui23 as modern
+        original=bytearray(fixture());struct.pack_into('<I',original,4,46)
+        before=t.TileReader(coalesce.view(original))
+        with tempfile.TemporaryDirectory() as folder:
+            output,receipt=modern.convert(bytes(original),Path(folder),workers=1)
+            after=t.TileReader(coalesce.view(output))
+            for image in range(2):self.assertEqual(before.image_raw(image),after.image_raw(image))
+            self.assertLess(len(output),len(original))
+            self.assertEqual(coalesce.view(output).version,46)
+            self.assertTrue(receipt['coalescing']['no_active_frame_adds_a_group'])
+
     def test_corrupt_encoder_cache_cannot_change_output(self):
         original=fixture()
         with tempfile.TemporaryDirectory() as folder:

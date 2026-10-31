@@ -5,7 +5,8 @@ static constexpr WorldContentIndex world_text_source[]={
 #include "world_text_index.inc"
 };
 static constexpr auto world_text_layout=packed_content_index::layout(world_text_source);
-static constexpr auto world_text_index=packed_content_index::make<world_text_layout.key_bytes,world_text_layout.group_bytes,world_text_layout.groups>(world_text_source);
+static constexpr auto world_text_index=packed_content_index::make<world_text_layout.key_bytes,world_text_layout.group_bytes,world_text_layout.groups,
+ (world_text_layout.key_bytes>65536&&world_text_layout.all_grouped&&world_text_layout.max_group_bytes<=65536)>(world_text_source);
 static const WorldContentIndex native_ui_text_index[]={
 #include "native_ui_text_index.inc"
 };
@@ -60,8 +61,8 @@ template<unsigned N> static int wc_find(const WorldContentIndex(&rows)[N],const 
  unsigned lo=0,hi=N;while(lo<hi){unsigned mid=(lo+hi)/2;if(wc_compare(rows[mid].key,joined)<0)lo=mid+1;else hi=mid;}
  return lo<N&&!wc_compare(rows[lo].key,joined)?rows[lo].index:-1;
 }
-template<unsigned N,unsigned Bytes,unsigned GroupBytes,unsigned Groups>
-static int wc_find(const packed_content_index::Table<N,Bytes,GroupBytes,Groups>&rows,const char*group,const char*key){
+template<unsigned N,unsigned Bytes,unsigned GroupBytes,unsigned Groups,bool Relative>
+static int wc_find(const packed_content_index::Table<N,Bytes,GroupBytes,Groups,Relative>&rows,const char*group,const char*key){
  // Keep the historical 255-byte composite-key limit without constructing
  // that temporary string. Domain and local key remain separate on disk.
  if(!group||!key)return -1;unsigned length=1;bool nested=false;
@@ -76,9 +77,9 @@ static int wc_find(const packed_content_index::Table<N,Bytes,GroupBytes,Groups>&
  unsigned lo=0,hi=Groups;
  while(lo<hi){const unsigned mid=(lo+hi)/2;if(wc_compare(rows.group(mid),group)<0)lo=mid+1;else hi=mid;}
  if(lo==Groups||wc_compare(rows.group(lo),group))return -1;
- const unsigned end=rows.end[lo];hi=end;lo=rows.first[lo];
- while(lo<hi){const unsigned mid=(lo+hi)/2;if(wc_compare(rows.key(mid),key)<0)lo=mid+1;else hi=mid;}
- return lo<end&&!wc_compare(rows.key(lo),key)?rows.values[lo]:-1;
+ const unsigned end=rows.end[lo],base=rows.group_base(lo);hi=end;lo=rows.first[lo];
+ while(lo<hi){const unsigned mid=(lo+hi)/2;if(wc_compare(rows.key(mid,base),key)<0)lo=mid+1;else hi=mid;}
+ return lo<end&&!wc_compare(rows.key(lo,base),key)?rows.values[lo]:-1;
 }
 
 }
