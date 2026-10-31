@@ -15,6 +15,23 @@ from world_scene_assets import load_scene_texture
 
 BASE_AUXILIARY, AUXILIARY_COUNT = 5404, 5409
 
+_VANTOM_NOISE_CALLER = r'''#include "FastNoiseLite.h"
+#if defined(_WIN32)
+#define NSPIRE_VANTOM_EXPORT __declspec(dllexport)
+#else
+#define NSPIRE_VANTOM_EXPORT
+#endif
+extern "C" NSPIRE_VANTOM_EXPORT void vantom_noise(float*out){
+ fastnoiselite::FastNoiseLite noise(0);
+ noise.SetNoiseType(fastnoiselite::FastNoiseLite::NoiseType_ValueCubic);
+ noise.SetFrequency(0.063f);
+ noise.SetFractalType(fastnoiselite::FastNoiseLite::FractalType_FBm);
+ noise.SetFractalOctaves(5);noise.SetFractalLacunarity(2.0f);
+ noise.SetFractalGain(0.5f);noise.SetFractalWeightedStrength(0.0f);
+ for(int y=0;y<512;++y)for(int x=0;x<512;++x)out[y*512+x]=noise.GetNoise(float(x),float(y));
+}
+'''
+
 
 def tail_noise(pck, header, cache):
     """Original non-seamless NoiseTexture2D, prior to slot-UV sampling.
@@ -47,20 +64,15 @@ def tail_noise(pck, header, cache):
                 raise ValueError('Pinned Vantom dissolve equation changed: '+token)
     finally:
         pack.close()
-    source = r'''#include "FastNoiseLite.h"
-extern "C" void vantom_noise(float*out){
- fastnoiselite::FastNoiseLite noise(0);
- noise.SetNoiseType(fastnoiselite::FastNoiseLite::NoiseType_ValueCubic);
- noise.SetFrequency(0.063f);
- noise.SetFractalType(fastnoiselite::FastNoiseLite::FractalType_FBm);
- noise.SetFractalOctaves(5);noise.SetFractalLacunarity(2.0f);
- noise.SetFractalGain(0.5f);noise.SetFractalWeightedStrength(0.0f);
- for(int y=0;y<512;++y)for(int x=0;x<512;++x)out[y*512+x]=noise.GetNoise(float(x),float(y));
-}
-'''
+    source = _VANTOM_NOISE_CALLER
     identity = hashlib.sha256(header.read_bytes()+source.encode()).hexdigest()
     cpp, library = cache/('noise-'+identity+'.cpp'), cache/('noise-'+identity+'.so')
-    if not library.is_file():
+    bundled = os.environ.get('NSPIRE_FASTNOISE_LIBRARY')
+    if bundled:
+        library = Path(bundled).resolve()
+        if not library.is_file():
+            raise ValueError('The bundled Vantom noise library is missing: '+str(library))
+    elif not library.is_file():
         cpp.write_text(source)
         subprocess.run([os.environ.get('CXX', 'clang++-18'), '-O2', '-ffp-contract=off',
                         '-shared', '-fPIC', '-I'+str(header.parent), str(cpp), '-o', str(library)], check=True)

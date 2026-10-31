@@ -171,40 +171,13 @@ struct MerchantRugRaster {
 // writes its live entries before publishing valid=true, so a scene change must
 // not clear another 230 KiB on the calculator. Do not add array initializers to
 // the cache types above. Foreground input collection cannot re-enter rendering.
-// Name outlines do not change with the animation clock. Keep each glyph's
-// original mask separately so overlapping outlines retain the exact draw
-// order and RGB565 blend rounding. These bytes fit in the unused tail of the
-// existing scene union for both ordinary and Random character selection.
-struct CharacterOutlineCache {
-    static constexpr unsigned Capacity=24,Stride=48,Height=40;
-    struct Entry {
-        uint32_t codepoint=0;
-        uint16_t size=0,style=0;
-        bool valid=false;
-        uint8_t width=0,height=0;
-        uint8_t mask[Stride*Height];
-    } entries[Capacity];
-    const Content*owner=nullptr;
-    uint32_t generation=0;
-    unsigned next=0;
-    Entry& entry(const Content&content,uint32_t codepoint,unsigned size,unsigned style){
-        if(owner!=&content||generation!=content.generation()){
-            owner=&content;generation=content.generation();next=0;
-            for(auto&item:entries)item.valid=false;
-        }
-        for(auto&item:entries)if(item.valid&&item.codepoint==codepoint&&item.size==size&&item.style==style)return item;
-        auto&item=entries[next];if(++next==Capacity)next=0;
-        item.valid=false;item.codepoint=codepoint;item.size=uint16_t(size);item.style=uint16_t(style);return item;
-    }
-};
-struct RandomSceneRasters { RandomGradientCache gradient;RandomLightQuadCache light;CharacterOutlineCache outlines; };
-struct CharacterSceneRasters {character_select_delta::Raster raster;CharacterOutlineCache outlines;};
+struct RandomSceneRasters { RandomGradientCache gradient;RandomLightQuadCache light; };
 union SceneRasterStorage {
     uint8_t inactive;
     RandomSceneRasters random;
     MerchantRugRaster merchant;
     SelectedHandRaster selected;
-    CharacterSceneRasters character;
+    character_select_delta::Raster character;
 };
 enum class SceneRasterOwner:uint8_t { None,Random,Merchant,SelectedHand,Character };
 static SceneRasterStorage scene_raster_storage{0};
@@ -243,12 +216,8 @@ static SelectedHandRaster& selected_hand_raster(){
 }
 static character_select_delta::Raster& character_selection_raster(){
     if(scene_raster_owner!=SceneRasterOwner::Character){
-        ::new(detail::InPlaceAddress{&scene_raster_storage.character}) CharacterSceneRasters;
+        ::new(detail::InPlaceAddress{&scene_raster_storage.character}) character_select_delta::Raster;
         scene_raster_owner=SceneRasterOwner::Character;
     }
-    return scene_raster_storage.character.raster;
-}
-static CharacterOutlineCache& character_outline_cache(bool random){
-    if(random)return random_scene_rasters().outlines;
-    (void)character_selection_raster();return scene_raster_storage.character.outlines;
+    return scene_raster_storage.character;
 }

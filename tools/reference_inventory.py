@@ -138,7 +138,10 @@ def verify_release(game: Path, *, cache_identity: bool = False) -> tuple[dict, P
     info = json.loads((game / 'release_info.json').read_text(encoding='utf-8-sig'))
     dll = game / 'sts2.dll'
     if not dll.is_file():
-        dll = game / 'data_sts2_windows_x86_64' / 'sts2.dll'
+        candidates = sorted(path for path in game.glob('data_sts2_*/sts2.dll') if path.is_file())
+        if len(candidates) != 1:
+            raise ValueError('Expected one original sts2.dll in the game folder or data_sts2_* subfolder')
+        dll = candidates[0]
     if info.get('commit') != lock['commit'] or info.get('version') != lock['version']:
         raise ValueError('The installation does not match the pinned reference release.')
     identity = {'version': info['version'], 'commit': info['commit']}
