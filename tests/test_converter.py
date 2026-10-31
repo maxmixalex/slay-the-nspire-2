@@ -15,6 +15,28 @@ import converter
 
 
 class ConverterTests(unittest.TestCase):
+    def test_scene_fonts_wait_for_the_nine_pixel_glyph_format(self):
+        import append_ui10_final_assets as ui10
+        recipe=converter.Recipe('/game','/work','/runtime','dotnet','/noise','-')
+        recipe.source_stages()
+        stages={stage.name:stage for stage in recipe.stages}
+        names=list(stages)
+        # Scene requirements now contain nine-pixel glyphs. The font writer
+        # deliberately rejects pre-39 packs, while the retained transform
+        # already accepts the Kaiser stage's version34 input.
+        self.assertLess(names.index('ui10'),names.index('scene-fonts'))
+        self.assertLess(names.index('scene-fonts'),names.index('editions'))
+        self.assertEqual(stages['ui10'].module,ui10.__name__)
+        self.assertEqual((ui10.VERSION,ui10.AUXILIARY),(39,2154))
+        for position,flag in enumerate(('--input-eng','--input-zhs')):
+            args=stages['scene-fonts'].arguments
+            self.assertEqual(args[args.index(flag)+1],str(stages['ui10'].outputs[position]))
+        for position,flag in enumerate(('--eng','--zhs')):
+            args=stages['retained-filter'].arguments
+            self.assertEqual(args[args.index(flag)+1],str(stages['kaiser'].outputs[position]))
+        args=stages['editions'].arguments
+        self.assertEqual(args[args.index('--input')+1],str(stages['scene-fonts'].outputs[0]))
+
     def test_ui13_snapshots_are_immutable_and_restore_the_resume_boundary(self):
         import ui13_resources
         with tempfile.TemporaryDirectory() as folder, contextlib.redirect_stdout(io.StringIO()):

@@ -269,18 +269,23 @@ class Recipe:
             ('kaiser','bestiary_kaiser_assets',native),
         ):
             pair = self.pair(name,module,pair,'ui9',extra)
-        scene = self.directory('scene-fonts')
-        paths = tuple(scene/f'ui9-{code}.nsp' for code in ('eng','zhs'))
-        self.add('scene-fonts','scene_ui9_fonts',['--input-eng',pair[0],'--input-zhs',pair[1],
-            '--font-dir',self.fonts,'--output-dir',scene],paths)
         color = self.directory('retained-filter')
-        pair = tuple(color/f'ui9-{code}.nsp' for code in ('eng','zhs'))
-        self.add('retained-filter','compact_retained_colors',['--eng',paths[0],'--zhs',paths[1],
-            '--output',color,'--cache',self.directory('cache/retained-filter'),'--jobs',self.workers],pair)
+        paths = tuple(color/f'ui9-{code}.nsp' for code in ('eng','zhs'))
+        self.add('retained-filter','compact_retained_colors',['--eng',pair[0],'--zhs',pair[1],
+            '--output',color,'--cache',self.directory('cache/retained-filter'),'--jobs',self.workers],paths)
+        pair = paths
         for name,module in (('fake-merchant','fake_merchant_ui10_assets'),
                             ('history-header','history_header_ui10_assets'),
                             ('ui10','append_ui10_final_assets')):
             pair=self.pair(name,module,pair,'ui10')
+        # Current scene labels include nine-pixel glyph bands. Their wire
+        # interpretation requires the complete NSP2/39 artwork catalog, so
+        # append these fonts only after the UI10 37 -> 38 -> 39 sequence.
+        scene = self.directory('scene-fonts')
+        paths = tuple(scene/f'ui9-{code}.nsp' for code in ('eng','zhs'))
+        self.add('scene-fonts','scene_ui9_fonts',['--input-eng',pair[0],'--input-zhs',pair[1],
+            '--font-dir',self.fonts,'--output-dir',scene],paths)
+        pair = paths
         editions=self.directory('editions')
         self.add('editions','build_locale_editions',['--input',pair[0],'--pck',self.pck,
             '--fonts',self.fonts,'--output',editions,'--languages','all','--keep-logical'],
