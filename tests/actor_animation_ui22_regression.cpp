@@ -87,6 +87,20 @@ int main(int argc,char**argv){
   for(const int projection:{normal,normal/2,int(uint64_t(old_units)*218/1080),
       int(uint64_t(old_units)*760006*218/1080000000),normal*1177/1024,normal*1536/1024,normal*2048/1024})
    if(projection>0&&projection<=scale&&std::find(projections.begin(),projections.end(),projection)==projections.end())projections.push_back(projection);
+  const int character=clip>=int(CharacterDeathAnimationFirst)&&clip<int(MerchantDeathAnimationFirst+5)?
+      (clip-int(CharacterDeathAnimationFirst))%5:clip==int(DefectDeathParticles)?2:clip==int(RegentDeathParticles)?3:-1;
+  if(character>=0){
+   const auto registration=player_sprite_registration(Character(character));
+   // Repeat game_over_actor's integer operation order, including its
+   // registration conversion after the room projection. A single combined
+   // fraction can differ by one target scale unit.
+   const int ordinary=int(registration.units)*4/21;
+   for(const int room_scale:{ordinary,ordinary*1536/1024,int(registration.units)*218/1080,
+       int(int64_t(registration.units)*760006*218/1080000000),architect_scene_pose(Character(character),false).scale}){
+    const int projection=int(int64_t(room_scale)*old_units/registration.units);
+    if(projection>0&&projection<=scale&&std::find(projections.begin(),projections.end(),projection)==projections.end())projections.push_back(projection);
+   }
+  }
   for(const int projection:projections){const int effective=int(uint64_t(projection)*units/old_units);CHECK(effective>0&&effective<=1024);
    for(const auto anchor:anchors){
     background();reference_picture(c,source,anchor.first,anchor.second,left,top,effective,mode);

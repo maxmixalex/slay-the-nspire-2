@@ -281,26 +281,23 @@ static void interior_raster_contract(){
     for(unsigned i=0;i<4000;++i){seed=seed*1664525u+1013904223u;const int u=128+int(seed%65280);
         seed=seed*1664525u+1013904223u;const int v=128+int(seed%65280);
         CHECK(random_dot_alpha(physical.alpha.data(),u,v)==dot.alpha_bilinear(u,v));}
-    // Particle opacity may make even a nonzero source quad invisible. Verify
-    // every opacity's exact rounding boundary against the general sampler;
-    // one corner above the limit must never be discarded speculatively.
-    for(unsigned opacity=1;opacity<=255;++opacity){
-        const unsigned threshold=127/opacity;
-        for(unsigned mask=0;mask<16;++mask){
-            for(unsigned corner=0;corner<4;++corner)
-                physical.alpha[(corner/2)*256+corner%2]=uint8_t(threshold+((mask>>corner)&1));
-            for(unsigned fx:{0u,1u,127u,128u,129u,254u,255u})for(unsigned fy:{0u,1u,127u,128u,129u,254u,255u}){
-                const int u=int(128+fx),v=int(128+fy);
-                CHECK(div255(random_dot_alpha(physical.alpha.data(),u,v,threshold)*opacity)==
-                      div255(dot.alpha_bilinear(u,v)*opacity));
-            }
-        }
-    }
+    // A cached tile must bound every bilinear sample, including its extra
+    // right/bottom texel. Collapsing both bounds after opacity then proves
+    // the exact whole-span contribution at every opacity rounding boundary.
+    static RandomDotAlphaCache cache;CHECK(cache.bind(app.content,dot));
     for(unsigned i=0;i<4000;++i){seed=seed*1664525u+1013904223u;const int u=128+int(seed%65280);
         seed=seed*1664525u+1013904223u;const int v=128+int(seed%65280);
-        const unsigned opacity=1+(seed>>16)%255;
-        CHECK(div255(random_dot_alpha(physical.alpha.data(),u,v,127/opacity)*opacity)==
-              div255(dot.alpha_bilinear(u,v)*opacity));}
+        const unsigned range=cache.range(u,v),actual=dot.alpha_bilinear(u,v);
+        CHECK((range&255)<=actual&&actual<=(range>>8));
+        for(unsigned opacity=1;opacity<=255;++opacity){
+            const unsigned low=div255((range&255)*opacity),high=div255((range>>8)*opacity);
+            if(low==high)CHECK(low==div255(actual*opacity));
+        }
+    }
+    static Content renewed;CHECK(cache.bind(renewed,dot));
+    physical.alpha[0]=0;physical.alpha[1]=255;
+    CHECK(!renewed.open(nullptr,0));CHECK(cache.bind(renewed,dot));CHECK(cache.range(128,128)==0xff00);
+    CHECK(cache.bind(app.content,dot));
     Canvas transparent{app};for(unsigned i=0;i<320*240;++i)app.pixels[i]=uint16_t(i*37);
     const std::vector<uint16_t> untouched(app.pixels,app.pixels+320*240);
     random_character_white_dot(transparent,dot,0,0,320,240,256,0,
@@ -308,10 +305,23 @@ static void interior_raster_contract(){
     CHECK(!std::memcmp(untouched.data(),app.pixels,untouched.size()*sizeof(uint16_t)));
     for(int angle:{-735,0,2023})for(int size:{84,500})for(int center:{20,177})for(unsigned clipping:{0u,1u}){
         Canvas c{app};if(clipping){c.clip_w=197;c.clip_h=111;}
-        const auto render=[&](RandomTextureSource source){for(unsigned i=0;i<320*240;++i)app.pixels[i]=uint16_t(i*37);
-            random_character_particle(c,dot,center*65536,-25*65536,size*65536,angle,110,128,179,69,presentation::Normal,source);};
+        const auto render=[&](RandomTextureSource source,bool cached=false){for(unsigned i=0;i<320*240;++i)app.pixels[i]=uint16_t(i*37);
+            random_character_particle(c,dot,center*65536,-25*65536,size*65536,angle,110,128,179,69,presentation::Normal,source,cached?&cache:nullptr);};
         render(RandomTextureSource::Color);const std::vector<uint16_t> expected(app.pixels,app.pixels+320*240);
         render(RandomTextureSource::WhiteAlpha);CHECK(!std::memcmp(expected.data(),app.pixels,expected.size()*sizeof(uint16_t)));
+        render(RandomTextureSource::WhiteAlpha,true);CHECK(!std::memcmp(expected.data(),app.pixels,expected.size()*sizeof(uint16_t)));
+    }
+    for(unsigned pattern=0;pattern<3;++pattern){
+        for(unsigned i=0;i<physical.alpha.size();++i)physical.alpha[i]=uint8_t(pattern==0?0:pattern==1?19:1+(i%256)/128);
+        CHECK(!renewed.open(nullptr,0));CHECK(cache.bind(renewed,dot));
+        for(unsigned opacity:{1u,35u,110u}){
+            Canvas c{app};const auto render=[&](const RandomDotAlphaCache*bounds){
+                for(unsigned i=0;i<320*240;++i)app.pixels[i]=uint16_t(i*37);
+                random_character_particle(c,dot,120*65536,92*65536,190*65536,2023,opacity,
+                    128,179,69,presentation::Normal,RandomTextureSource::WhiteAlpha,bounds);};
+            render(nullptr);const std::vector<uint16_t> expected(app.pixels,app.pixels+320*240);
+            render(&cache);CHECK(!std::memcmp(expected.data(),app.pixels,expected.size()*sizeof(uint16_t)));
+        }
     }
 }
 static void light_rg_contract(){

@@ -198,21 +198,24 @@ struct RandomInteriorRange {unsigned first,last;};
 // of that tile, especially the large zero-light regions, instead of looking
 // up the same proof at every screen pixel. Only the two setup divisions are
 // dynamic: the row loop uses a multiply-high and an exact remainder correction.
-class RandomLightTileStep {
+template<unsigned FractionBits> class RandomTextureTileStep {
     unsigned step_,inverse_;
     bool forward_;
 public:
-    explicit RandomLightTileStep(int delta):step_(delta<0?0u-unsigned(delta):unsigned(delta)),
+    explicit RandomTextureTileStep(int delta):step_(delta<0?0u-unsigned(delta):unsigned(delta)),
         inverse_(step_?~0u/step_:0),forward_(delta>0){}
     [[gnu::always_inline]] unsigned count(int coordinate)const{
         if(!step_)return ~0u;
-        const unsigned fraction=(unsigned(coordinate)-128)&1023u;
-        const unsigned distance=forward_?1023u-fraction:fraction;
+        constexpr unsigned mask=(1u<<FractionBits)-1;
+        const unsigned fraction=(unsigned(coordinate)-128)&mask;
+        const unsigned distance=forward_?mask-fraction:fraction;
         unsigned quotient=unsigned((uint64_t(distance)*inverse_)>>32);
         quotient+=distance-quotient*step_>=step_;
         return quotient+1;
     }
 };
+using RandomLightTileStep=RandomTextureTileStep<10>;
+using RandomDotTileStep=RandomTextureTileStep<8+RandomDotAlphaCache::TileShift>;
 static RandomInteriorRange random_interior_range(int u,int v,int du,int dv,unsigned count){
     if(RandomLightSampler::interior_span(u,v,du,dv,count))return {0,count};
     unsigned first=0,last=count;int64_t start_u=u,start_v=v;
@@ -267,25 +270,19 @@ static void random_character_light(Canvas&c,const RandomLightSampler&light,
         }
     }
 }
-[[gnu::always_inline]] static inline unsigned random_dot_alpha(const uint8_t*alpha,int u,int v,unsigned invisible=0){
+[[gnu::always_inline]] static inline unsigned random_dot_alpha(const uint8_t*alpha,int u,int v){
     const unsigned x=unsigned(u)-128,y=unsigned(v)-128,fx=x&255,fy=y&255;
     const unsigned at=(y&0xff00u)|(x>>8);
-    const unsigned a=alpha[at],b=alpha[at+1],c=alpha[at+256],d=alpha[at+257];
-    // Rounded bilinear interpolation stays within its four source samples.
-    // If their conservative upper bound cannot survive the particle opacity,
-    // the contribution is exactly zero, including both interpolation stages.
-    if((a|b|c|d)<=invisible)return 0;
-    if(a==b&&a==c&&a==d)return a;
-    const unsigned top=(a*(256-fx)+b*fx+128)>>8;
-    const unsigned bottom=(c*(256-fx)+d*fx+128)>>8;
+    const unsigned top=(unsigned(alpha[at])*(256-fx)+unsigned(alpha[at+1])*fx+128)>>8;
+    const unsigned bottom=(unsigned(alpha[at+256])*(256-fx)+unsigned(alpha[at+257])*fx+128)>>8;
     return (top*(256-fy)+bottom*fy+128)>>8;
 }
 static void random_character_white_dot(Canvas&c,const water_reflection::Texture&texture,
         int left,int top,int right,int bottom,int du,int dv,RandomRowQuotient row_u,RandomRowQuotient row_v,
-        unsigned alpha,uint16_t color){
+        unsigned alpha,uint16_t color,const RandomDotAlphaCache*cache=nullptr){
     if(!alpha)return;
     const auto*source=texture.storage().alpha;
-    const unsigned invisible=127/alpha;
+    const RandomDotTileStep u_tiles(du),v_tiles(-dv);
     for(int y=top;y<bottom;++y,row_u.advance(),row_v.advance()){
         c.poll_row(unsigned(y-top));
         int u=32768+row_u.value(),v=32768+row_v.value();auto*out=c.pixels+y*c.pitch;
@@ -296,9 +293,23 @@ static void random_character_white_dot(Canvas&c,const water_reflection::Texture&
             const unsigned amount=div255(texture.alpha_bilinear(u,v)*alpha);
             if(amount)out[x]=blend(out[x],color,amount);
         }
-        for(;x<last;++x,u+=du,v-=dv){
-            const unsigned amount=div255(random_dot_alpha(source,u,v,invisible)*alpha);
-            if(amount)out[x]=blend(out[x],color,amount);
+        while(x<last){
+            unsigned count=unsigned(last-x),lower=1,upper=0;
+            if(cache){
+                const unsigned u_count=u_tiles.count(u),v_count=v_tiles.count(v);
+                count=mn(count,mn(u_count,v_count));const unsigned range=cache->range(u,v);
+                lower=div255((range&255u)*alpha);upper=div255((range>>8)*alpha);
+            }
+            if(lower==upper){
+                if(upper)for(unsigned i=0;i<count;++i)out[x+int(i)]=blend(out[x+int(i)],color,upper);
+                x+=int(count);u+=du*int(count);v-=dv*int(count);
+            }else{
+                const int end=x+int(count);
+                for(;x<end;++x,u+=du,v-=dv){
+                    const unsigned amount=div255(random_dot_alpha(source,u,v)*alpha);
+                    if(amount)out[x]=blend(out[x],color,amount);
+                }
+            }
         }
         for(;x<right;++x,u+=du,v-=dv){
             if(unsigned(u)>=65536||unsigned(v)>=65536)continue;
@@ -313,7 +324,8 @@ static void random_character_white_dot(Canvas&c,const water_reflection::Texture&
 enum class RandomTextureSource:uint8_t {Color,WhiteAlpha,OpaqueColor};
 static void random_character_particle(Canvas&c,const water_reflection::Texture&texture,
         int center_x_q16,int center_y_q16,int size_q16,int angle,unsigned alpha,
-        unsigned red,unsigned green,unsigned blue,unsigned mode,RandomTextureSource source=RandomTextureSource::Color){
+        unsigned red,unsigned green,unsigned blue,unsigned mode,RandomTextureSource source=RandomTextureSource::Color,
+        const RandomDotAlphaCache*dot_cache=nullptr){
     if(size_q16<=0||!alpha)return;
     const int sine=CombatCardMotion::sine(angle),cosine=CombatCardMotion::sine(angle+1024);
     const int half=int(int64_t(size_q16)*((sine<0?-sine:sine)+(cosine<0?-cosine:cosine))/2048);
@@ -353,7 +365,7 @@ static void random_character_particle(Canvas&c,const water_reflection::Texture&t
         return;
     }
     if(white_fast&&texture.width()==256&&texture.height()==256&&texture.storage().format!=4&&texture.storage().alpha){
-        random_character_white_dot(c,texture,left,top,right,bottom,du,dv,row_u,row_v,alpha,dot_color);return;
+        random_character_white_dot(c,texture,left,top,right,bottom,du,dv,row_u,row_v,alpha,dot_color,dot_cache);return;
     }
     for(int y=top;y<bottom;++y,row_u.advance(),row_v.advance()){
         c.poll_row(unsigned(y-top));
@@ -450,11 +462,13 @@ static bool random_character_background(Canvas&c,uint32_t clock,uint32_t elapsed
     if(profile)profile(RuntimeRenderPart::RandomLight,false);
     if(profile)profile(RuntimeRenderPart::RandomDots,true);
     auto&particles=c.a.character_select_presentation.random_background;particles.observe(elapsed,seed);
+    auto&dot_bounds=random_dot_alphas();
+    const auto*dot_cache=dot_bounds.bind(c.a.content,dot,c.a.callbacks.foreground_poll)?&dot_bounds:nullptr;
     for(unsigned i=0;i<RandomCharacterPresentation::Count;++i){const auto&p=particles.particles[i];
         const unsigned alpha=RandomCharacterPresentation::fade(p.age)*(i<20?35:110)/255;
         const int size=int(uint64_t(256)*p.scale*15832249/(1024*1000));
         random_character_particle(c,dot,RandomCharacterPresentation::project_q16(p.x-107*1024,false),
-            RandomCharacterPresentation::project_q16(p.y+1361*1024,true),size,-int(p.angle),alpha,128,179,69,presentation::Normal,RandomTextureSource::WhiteAlpha);
+            RandomCharacterPresentation::project_q16(p.y+1361*1024,true),size,-int(p.angle),alpha,128,179,69,presentation::Normal,RandomTextureSource::WhiteAlpha,dot_cache);
     }
     if(profile)profile(RuntimeRenderPart::RandomDots,false);
     return true;
