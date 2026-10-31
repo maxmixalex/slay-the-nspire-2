@@ -151,10 +151,11 @@ def main():
     output, pruning = prune(output)
     result = dict(complete=True, precision='RGB565/alpha8 exact', **report, **sizes,
         verification=proof, prune=pruning, input_sha256=t.sha256(source.data), output_sha256=t.sha256(output),
-        output_bytes=len(output), exact_sparse_bytes=plan['original_sparse_bytes'],
+        exact_sparse_bytes=plan['original_sparse_bytes'],
         selected_images=len(selected), recycled_tile_slots=plan['recycled_slots'],
         new_logical_tile_slots=plan['tiles']-plan['old_tiles'],
         seconds=round(time.monotonic()-started, 3))
+    result['output_bytes'] = len(output)
     t.atomic_bytes(args.output, output)
     t.atomic_bytes(args.output.with_suffix('.json'), json.dumps(result, indent=2).encode()+b'\n')
     print(json.dumps(result), flush=True)

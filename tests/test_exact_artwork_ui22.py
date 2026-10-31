@@ -1,19 +1,44 @@
 """Restoration cannot overwrite a newer registered source frame."""
 from pathlib import Path
 from types import SimpleNamespace
+from contextlib import redirect_stdout
+from io import StringIO
 import json
+import struct
 import sys
 import tempfile
 import unittest
+from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]/'tools'))
 import content_tiles as t
-from exact_artwork_ui22 import RawInputs, source_rows
+from exact_artwork_ui22 import RawInputs, source_rows, main
 from retile_appended_resources import view
 from test_retile_appended_resources import source
 
 
 class ExactArtworkTest(unittest.TestCase):
+    def test_complete_cli_writes_bound_pack_and_final_size_receipt(self):
+        with tempfile.TemporaryDirectory() as temporary, redirect_stdout(StringIO()):
+            root = Path(temporary); data = bytearray(source()); struct.pack_into('<I', data, 4, 45)
+            original = view(data); width, height, fmt, raw = original.image_raw(4)
+            (root/'source.nsp').write_bytes(data); (root/'source.raw').write_bytes(raw)
+            manifest = dict(original_spool=dict(file=str(root/'source.raw')),
+                restored_images=[dict(image=4, width=width, height=height, format=fmt,
+                    offset=0, bytes=len(raw), raw_sha256=t.sha256(raw), current_sha256=t.sha256(raw))])
+            (root/'restoration.json').write_text(json.dumps(manifest))
+            arguments = ['exact_artwork_ui22.py','--input',str(root/'source.nsp'),
+                '--restoration',str(root/'restoration.json'),'--work',str(root/'work'),
+                '--output',str(root/'output.nsp'),'--workers','1']
+            with patch.object(sys, 'argv', arguments):
+                main()
+            output = (root/'output.nsp').read_bytes(); report = json.loads((root/'output.json').read_text())
+            self.assertTrue(report['complete'])
+            self.assertEqual(report['output_bytes'], len(output))
+            self.assertEqual(report['output_sha256'], t.sha256(output))
+            self.assertEqual(report['verification']['repaired_images'], 1)
+            self.assertEqual(t.TileReader(view(output)).image_raw(4), (width,height,fmt,raw))
+
     def test_truncated_spool_is_rejected_before_tile_expansion(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary); (root/'source.raw').write_bytes(b'\x00\x00')
