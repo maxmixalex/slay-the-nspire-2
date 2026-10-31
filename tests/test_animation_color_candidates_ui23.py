@@ -125,6 +125,13 @@ class AnimationColorCandidateTest(unittest.TestCase):
             w,h,fmt,raw = tiles.TileReader(before).image_raw(4)
             self.assertEqual(tiles.TileReader(retile.view(output)).image_raw(4),
                              (w,h,fmt,candidate.color_image(raw,fmt,'555a8',w,h)))
+            with patch.object(candidate, 'selection_images', return_value={4}):
+                overridden = candidate.convert(before, 'bounded-a6', workers=1,
+                    selection_policy='dark-safe-a6', selection_overrides={0:'555a8'})
+            other = candidate.rewrite(before, {}, overridden)
+            candidate.verify(before, other, overridden, 'bounded-a6', 'dark-safe-a6', {0:'555a8'})
+            self.assertEqual(tiles.TileReader(retile.view(other)).image_raw(4),
+                             (w,h,fmt,candidate.color_image(raw,fmt,'555a8',w,h)))
 
 
 if __name__ == '__main__':

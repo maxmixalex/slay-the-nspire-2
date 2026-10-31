@@ -183,11 +183,14 @@ def protected_images(source, preserve_selection=False):
     return protected
 
 
-def selection_images(source):
+def selection_images(source, characters=range(5)):
     if len(source.aux) < 1505 or len(source.clips) < 1710:
         return set()
-    return set(source.aux[1500:1505]) | {i for first, count, *_ in source.clips[1705:1710]
-                                        for i in range(first, first+count)}
+    characters = tuple(characters)
+    t.require(all(0 <= c < 5 for c in characters), 'Selection character outside catalog')
+    return {source.aux[1500+c] for c in characters} | {
+        i for c in characters for first,count,*_ in [source.clips[1705+c]]
+        for i in range(first,first+count)}
 
 
 def mark_consumers(source, reader, images):
@@ -209,7 +212,7 @@ def mark_consumers(source, reader, images):
 
 
 def jobs(source, policy, *, retained=True, preserve_static=False, preserve_selection=False,
-         selection_policy=None):
+         selection_policy=None, selection_overrides=None):
     """Yield bounded independent groups; no full decoded animation spool."""
     reader = t.TileReader(source)
     t.require(not any(reader.sparse), 'Candidate requires ordinary TGR1/TGR2 pixel groups')
@@ -217,6 +220,21 @@ def jobs(source, policy, *, retained=True, preserve_static=False, preserve_selec
     exact_tiles, protected_ranges = mark_consumers(source, reader, protected)
     selection_tiles, selection_ranges = mark_consumers(source, reader,
         selection_images(source) if selection_policy else set())
+    overrides = []
+    for character, finer_policy in sorted((selection_overrides or {}).items()):
+        t.require(finer_policy in LEVELS, 'Unknown selection override policy')
+        tiles, ranges = mark_consumers(source, reader, selection_images(source, [int(character)]))
+        overrides.append((finer_policy, tiles, ranges))
+    if overrides:
+        remaining = set(range(5)) - {int(c) for c in selection_overrides}
+        default_tiles, _ = mark_consumers(source, reader, selection_images(source, remaining))
+        policies = [(selection_policy or policy, default_tiles)] + [(p,m) for p,m,_ in overrides]
+        # A shared tile must never inherit whichever character happened to be
+        # processed last. Preserve original bytes where two scene policies meet.
+        for n, (first_policy, first_mask) in enumerate(policies):
+            for second_policy, second_mask in policies[n+1:]:
+                if first_policy != second_policy:
+                    exact_tiles |= first_mask & second_mask
     emit('protected_static_art', images=len(protected), tiles=int(exact_tiles.sum()),
          preserve_static=preserve_static, preserve_selection=preserve_selection)
     for group in range(reader.tile_groups):
@@ -231,6 +249,13 @@ def jobs(source, policy, *, retained=True, preserve_static=False, preserve_selec
             finer = np.frombuffer(color_tiles(original_raw, selection_policy), dtype='u1').reshape(-1,t.TILE_BYTES)
             records[alternate] = finer[alternate]
             raw = records.tobytes()
+        for finer_policy, tiles, _ranges in overrides:
+            selected = tiles[first:first+len(raw)//t.TILE_BYTES]
+            if np.any(selected):
+                records = np.frombuffer(raw, dtype='u1').reshape(-1,t.TILE_BYTES).copy()
+                finer = np.frombuffer(color_tiles(original_raw,finer_policy), dtype='u1').reshape(-1,t.TILE_BYTES)
+                records[selected] = finer[selected]
+                raw = records.tobytes()
         selected = exact_tiles[first:first+len(raw)//t.TILE_BYTES]
         if np.any(selected):
             records = np.frombuffer(raw, dtype='u1').reshape(-1, t.TILE_BYTES).copy()
@@ -266,8 +291,11 @@ def jobs(source, policy, *, retained=True, preserve_static=False, preserve_selec
                 continue
             if fmt in (1, 3, 4) or (group.offset, at) in opaque_slices:
                 alternate = any(at < end and begin < at+length for begin,end in selection_ranges.get(group.offset,()))
-                out[at:at+length] = color_image(raw[at:at+length], fmt,
-                                               selection_policy if alternate else policy)
+                selected_policy = selection_policy if alternate else policy
+                for finer_policy, _tiles, ranges in overrides:
+                    if any(at < end and begin < at+length for begin,end in ranges.get(group.offset,())):
+                        selected_policy = finer_policy
+                out[at:at+length] = color_image(raw[at:at+length], fmt, selected_policy)
                 selected.append(at)
         for at, shape in group.slices:
             if at not in selected:
@@ -300,13 +328,14 @@ def convert_job(job):
 
 
 def convert(source, policy, *, workers=2, retained=True, preserve_static=False, preserve_selection=False,
-            selection_policy=None):
+            selection_policy=None, selection_overrides=None):
     """Bound submissions: at most one raw group per worker plus its successor."""
     results = []
     with ThreadPoolExecutor(max_workers=workers) as pool:
         pending = []
         for job in jobs(source, policy, retained=retained, preserve_static=preserve_static,
-                        preserve_selection=preserve_selection, selection_policy=selection_policy):
+                        preserve_selection=preserve_selection, selection_policy=selection_policy,
+                        selection_overrides=selection_overrides):
             pending.append(pool.submit(convert_job, job))
             if len(pending) >= workers * 2:
                 results.append(pending.pop(0).result())
@@ -317,7 +346,7 @@ def convert(source, policy, *, workers=2, retained=True, preserve_static=False, 
     return results
 
 
-def verify(source, output, results, policy, selection_policy=None):
+def verify(source, output, results, policy, selection_policy=None, selection_overrides=None):
     target = view(output)
     before, after = t.TileReader(source), t.TileReader(target)
     t.require(source.counts == target.counts and source.clips == target.clips and
@@ -333,6 +362,8 @@ def verify(source, output, results, policy, selection_policy=None):
         acceptable_alpha = (alpha_lut(policy)[a[:,514:]] == b[:,514:]) | (a[:,514:] == b[:,514:])
         if selection_policy:
             acceptable_alpha |= alpha_lut(selection_policy)[a[:,514:]] == b[:,514:]
+        for finer_policy in (selection_overrides or {}).values():
+            acceptable_alpha |= alpha_lut(finer_policy)[a[:,514:]] == b[:,514:]
         t.require(np.array_equal(a[:, :2], b[:, :2]) and
                   np.all(acceptable_alpha),
                   'Tile dimensions or declared alpha mapping changed')
@@ -388,10 +419,22 @@ def main(argv=None):
                         help='Together with preserve-static, keep every selection background sample exact')
     parser.add_argument('--selection-policy', choices=tuple(LEVELS),
                         help='Use a finer policy for the complete selection scene and all shared tiles')
+    parser.add_argument('--selection-override', action='append', default=[], metavar='CHARACTER=POLICY',
+                        help='Override a complete character selection scene; characters are0..4')
     parser.add_argument('--experimental-candidate-only', action='store_true')
     args = parser.parse_args(argv)
     if not args.experimental_candidate_only:
         parser.error('Requires --experimental-candidate-only; visual and performance approval are separate')
+    overrides = {}
+    for value in args.selection_override:
+        try:
+            character, finer_policy = value.split('=',1)
+            character = int(character)
+        except ValueError:
+            parser.error('Selection override requires CHARACTER=POLICY')
+        if character not in range(5) or finer_policy not in LEVELS or character in overrides:
+            parser.error('Invalid or repeated selection override')
+        overrides[character] = finer_policy
     t.require(args.input.resolve() != args.output.resolve(), 'Never overwrite the original input')
     for path in (args.input, args.output):
         t.private_path(path, 'Private original-derived candidate')
@@ -401,15 +444,16 @@ def main(argv=None):
         source = view(data)
         results = convert(source, args.policy, workers=args.workers, retained=not args.tiles_only,
                           preserve_static=args.preserve_static, preserve_selection=args.preserve_selection,
-                          selection_policy=args.selection_policy)
+                          selection_policy=args.selection_policy, selection_overrides=overrides)
         output = rewrite(source, {}, results)
-        checked = verify(source, output, results, args.policy, args.selection_policy)
+        checked = verify(source, output, results, args.policy, args.selection_policy, overrides)
         t.atomic_bytes(args.output, output)
         receipt = dict(schema=1, complete=True, not_release_approved=True, policy=args.policy,
             input_sha256=t.sha256(data), output_sha256=t.sha256(output),
             input_bytes=len(data), output_bytes=len(output), saved_bytes=len(data)-len(output),
             static_art_preserved=args.preserve_static, selection_art_preserved=args.preserve_selection,
             selection_policy=args.selection_policy,
+            selection_overrides=overrides,
             visual_comparison_required=True, complete_decoder_performance_required=True,
             no_runtime_codec_or_buffer_added=True, no_frames_removed_or_resampled=True,
             alpha_error=alpha_error(args.policy),
