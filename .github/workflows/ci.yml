@@ -11,7 +11,9 @@ permissions:
 
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  # Keep the running sanitizer build useful during frequent source checkpoints.
+  # GitHub keeps only the latest pending run for this group.
+  cancel-in-progress: false
 
 jobs:
   native:

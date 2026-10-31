@@ -20,11 +20,36 @@ agree at RGB565 precision. The native production Canvas matches every exact
 source frame through two full passes and wrap, seek and shared-raster eviction
 cases. This is host correctness evidence, not calculator FPS.
 
-The first exact full-animation representation adds 9,966,880 bytes and makes
-Neow read about 248 MB per loop even after warming. It is **not accepted for
-the final full-animation edition**. A bounded color-hysteresis representation
-is under measurement; no scene cadence or cache-capacity reduction is claimed.
-The exact reduced-pose edition can retain the verified first poses independently.
+The first exact full-animation representation added 9,966,880 bytes and made
+Neow read about 248 MB per loop even after warming. It was rejected. The
+production `ee6575e5678a0d49d998e2f324c67619f2c71955` converter instead keeps
+all 1,052 samples in existing RGR1/RGR3 copy-patch groups, with checkpoints every
+32 samples. Only the new Ancient rooms use that replay bound; selection stays
+at eight. Each patch view is consumed before the next image request and remains
+evictable through the ordinary cache. No framebuffer or usable cache grows.
+
+The full edition uses cyclic RGB565 color hold bounded to red/blue ±1 and green
+±2. Four warm cycles identify 14 Neow and 106 Tezcatara pixels that do not settle;
+those pixels remain source-exact at every frame. The resulting seam recurrence
+and every frame's error bound are verified. The exact no-animation and exact
+quality converter paths disable hold and retain the original first scene pose.
+
+The final production append adds **1,852,322 bytes**, taking the approved
+63,287,322-byte logical base to **65,139,644 bytes**. Its SHA-256 is
+`f39ea6f0f98e70b2bd0708b6ab50ee03aff2ba7cefa5fe51e0c15ee6b0301bdb`.
+Every source-cache frame hash, full-frame patch reconstruction, candidate pixel
+hash and exact retained-group inverse passed. Original glyphs, strings,
+geometry, clocks, old pixel streams and preparation costs remain unchanged.
+These are logical-pack sizes; the package report owns total installed bytes.
+
+The final native Canvas matches all 2,104 candidate frames across two passes,
+including wrap, skipped frames, seek and shared-raster eviction. With the actual
+App dialogue, three choices and English or Chinese fonts, both Ancient rooms
+perform **zero source reads on a complete warm loop**. Neow peaks at 1,188 image
+pages / 573 entries, Tezcatara at 665 / 532, below the unchanged ordinary
+1,728-page capacity. Cold entry and normal rendering are included in the
+separate timing records. The exact reduced edition also passes both legacy
+eight-checkpoint and explicit 32-checkpoint table tests at all clocks and seeks.
 
 Restoring these two loops does not restore independent particle emitters or
 material clocks. The six other scenes contain painted art and emitters, rather
@@ -67,10 +92,11 @@ full-screen Ancient viewport, localized UI positioning and save retirement.
   unrecorded process-global cosmetic RNG history.
 - The RTC path has no desktop timezone/DST database; the calculator has no
   new IME. Seed fields, run history, map notes and decoded caches remain finite.
-- The c10b8e ARM candidate allocates 22,289,816 bytes, below historical UI21's
-  22,291,016 by 1,200 bytes, with unchanged usable cache capacities. Later
-  runtime fixes require a new measured final build; this linked allocation is
-  not observed physical peak memory.
+- The final ee6575 ARM build allocates **22,290,328 bytes**, below historical
+  UI21's 22,291,016 by 688 bytes and UI22's 22,535,324 by 244,996 bytes, with
+  unchanged usable cache capacities. Its ELF SHA-256 is
+  `63c0760f3687a31b8d2692120705aa29948822c8ec3d8c19424da1e0f7bb232f`.
+  This linked allocation is not observed physical peak memory.
 - Matched-O2 old/new runtime tests preserve complete selection/combat frames
   and read counts. Host timing scatter does not establish an FPS improvement.
   No physical calculator connection or working Firebird firmware is available

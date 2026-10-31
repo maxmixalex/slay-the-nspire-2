@@ -1,9 +1,9 @@
 # UI23 color, storage and native-render evidence
 
-This records the tested UI23 animation policy and its existing-content resource
-pack. It does **not** certify a future Ancient scene representation, an eventual
-complete install size, or calculator FPS. Private original artwork and generated
-captures remain outside the repository.
+This records the tested UI23 animation policy, its existing-content resource
+pack, and the focused final assembled-pack checks. Ancient scene parity has
+separate evidence; host measurements do not establish calculator FPS. Private
+original artwork and generated captures remain outside the repository.
 
 ## What the converter changes
 
@@ -48,10 +48,15 @@ checkpoint `477f1da599d53c4eb649754b6ec0462551ec004a`.
 | Approved color candidate | 65,773,916 | `7b738d710e7216b6d95b03b7347795667db0c10eb1f328391359cfb7791d3ac7` |
 | Exact coalescing + sparse | 63,713,306 | `dab6f474b6f649dd57c21edb5ce7462127dd118074ca1d10f5a86e5901bd7abc` |
 | Exact context retuning | 63,287,322 | `52dadbcfe1f737bf84089e18526147797ccd2848734906181d7ffd00f8a457db` |
+| Final pack including Ancient scenes | 65,139,644 | `f39ea6f0f98e70b2bd0708b6ab50ee03aff2ba7cefa5fe51e0c15ee6b0301bdb` |
 
 These are logical English resource sizes, **not** bilingual installed sizes.
-The final launcher, common physical parts, both language files, and additional
-content must be counted separately against the 70,000,000-byte install limit.
+The final release assembly counts the launcher, common physical parts and both
+English/Chinese language files separately: **69,725,667 installed bytes**, leaving
+274,333 bytes below the 70,000,000-byte limit. The final launcher is 1,689,275
+bytes, SHA-256 `77c82e9dec7cbe934419435e478216073897f0daccee4ef7e85ca0c9b3719fc6`.
+The formal ARM runtime allocation is 22,290,328 bytes, 688 bytes below UI21's
+22,291,016-byte baseline, with no expanded usable cache capacity.
 
 The coalescing/sparse proof compared 577,669,400 live tile bytes and 70,883,847
 index bytes, preserving all 58,613 images, 13,299 glyph entries and 8,704 strings.
@@ -148,7 +153,38 @@ reduces retuned-data requests from 1,103 calls/17,671,380 bytes to
 1,101 calls/17,663,188 bytes. These diagnostic runs include setup and cold
 rendering and are not CPU benchmarks. The focused source-reader regression
 passes 24,945 checks. Final assembled-pack traces and formal calculator memory
-size remain separate gates before selecting this runtime change.
+were subsequently checked on the final runtime and assembled pack below.
+
+## Focused final acceptance checks
+
+The final source checkpoint was `ee6575e5678a0d49d998e2f324c67619f2c71955`.
+The same final Clang 18 `-O2 -DNDEBUG` core served original and final resource
+data. An isolated five-character ABBA used a full-loop warmup followed by two
+180-frame hot windows per character. Verified producer/helper processes were
+paused for 19.04 seconds and resumed unconditionally. Every hot window made
+**zero resource reads**. Aggregate mean CPU was 0.41070/0.40360 ms for reference
+and 0.40068/0.39820 ms for final data: -1.89%, within the 5% noise floor, so no
+speedup is claimed. Per-character median changes were Ironclad -9.0%, Silent
+-3.1%, Defect -2.9%, Regent +1.9%, and Necrobinder +3.9%. The initial +9.4%
+aggregate warm-selection regression did not persist in this isolated final
+check. Tail timings still vary; these are not device-FPS measurements.
+
+The concrete Strike read regressions are resolved on the assembled data:
+
+| First 100-frame combat window | Reference calls / bytes | Final calls / bytes |
+|---|---:|---:|
+| Axebot Strike | 6 / 56,091 | 6 / 55,887 |
+| Ceremonial Strike | 6 / 56,091 | 5 / 51,791 |
+| Decimillipede Unleash | 11 / 470,123 | 11 / 302,861 |
+| Ceremonial Plow | 17 / 347,732 | 18 / 263,939 |
+
+Plow has one more provider call despite fewer bytes; it is not presented as a
+call-count improvement. Including setup, cold rendering and three short windows
+across all seven diagnostic combat scenes, requests fall from 21,059,022
+bytes/1,181 calls to 17,754,264 bytes/1,079 calls. These diagnostic traces are
+not CPU benchmarks. Twenty selection-switch visits request 3,747,906 bytes
+versus 4,629,565 (-19.0%), with 120 versus 118 calls and 115 versus 116 seeks.
+These remain logical-provider counters rather than physical calculator I/O.
 
 ## Private evidence locations
 
@@ -167,7 +203,12 @@ size remain separate gates before selecting this runtime change.
   `/tmp/slay-ui23-data-bench/build-provenance.json`.
 - Isolated warm control: `/tmp/slay-ui23-data-bench/isolated-warm/receipt.json`.
 - Descriptor read traces: `/tmp/slay-ui23-data-bench/*-read-trace.txt`.
+- Final assembled logical pack:
+  `/tmp/nspire-ui23-ancient/production-ee6575/eng-final46.nsp`.
+- Final focused proof, runtime hash and raw traces:
+  `/tmp/slay-ui23-final-bench/final-evidence.json` and neighbouring files.
 
 No physical-device FPS or universal visual-equivalence claim follows from these
-host measurements. Final newly appended Ancient animation quality and complete
-bilingual install size require their own evidence.
+host measurements. Newly appended Ancient animation quality, full-screen
+English/Chinese cache pressure and source-frame parity have their own release
+evidence in addition to the installed-byte accounting above.
