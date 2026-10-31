@@ -142,6 +142,7 @@ def main():
         plan = make_plan(source, args.work, selected, precision=8, raw_transform=inputs.decode)
     finally:
         inputs.close()
+    plan['compact_replaced_directory'] = True
     t.atomic_bytes(args.work/'plan.json', json.dumps(plan, indent=2).encode()+b'\n')
     t.atomic_bytes(args.work/'provenance.json', json.dumps(inputs.rows, indent=2).encode()+b'\n')
     encoded = compress_plan(plan, args.work, args.work/'encoded', args.workers)

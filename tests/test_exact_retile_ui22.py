@@ -29,6 +29,33 @@ class Compacted:
 
 
 class ExactRetileTest(unittest.TestCase):
+    def test_bulk_replacement_prunes_before_descriptor_capacity_is_exceeded(self):
+        with tempfile.TemporaryDirectory() as temporary, redirect_stdout(StringIO()):
+            root = Path(temporary); original = retile.view(source())
+            for step in range(2):
+                work = root/str(step); work.mkdir()
+                plan = character.make_plan(original, work, [4,5])
+                encoded = retile.compress_plan(plan, work, work/'encoded', 1)
+                data, _ = retile.rewrite(original, plan, encoded)
+                original = retile.view(data)
+            self.assertEqual(t.TileReader(original).frame_count, 5)
+            for selected in ([4,5], [4]):
+                work = root/('final-'+str(len(selected))); work.mkdir()
+                plan = character.make_plan(original, work, selected)
+                encoded = retile.compress_plan(plan, work, work/'encoded', 1)
+                if len(selected) == 2:
+                    with self.assertRaisesRegex(ValueError, 'needs compact_replaced_directory'):
+                        retile.rewrite(original, plan, encoded)
+                plan['compact_replaced_directory'] = True
+                output, receipt = retile.rewrite(original, plan, encoded)
+                character.verify(original, output, plan, work)
+                after = t.TileReader(retile.view(output)); before = t.TileReader(original)
+                self.assertEqual(after.frame_count, 2)
+                self.assertGreater(receipt['removed_old_descriptors'], 0)
+                self.assertGreater(receipt['removed_old_index_groups'], 0)
+                for image in (4,5):
+                    self.assertEqual(before.image_raw(image), after.image_raw(image))
+
     def test_compacted_slots_do_not_shift_following_groups(self):
         with tempfile.TemporaryDirectory() as temporary:
             path = Path(temporary)/'tiles.raw'

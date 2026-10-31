@@ -18,6 +18,8 @@ import coalesce_tile_resources as coalesce
 import compact_retained_slices as retained
 import compact_tile_slots as slots
 import content_tiles as t
+import retile_appended_resources as retile
+import retile_character_ui12 as dice
 
 
 def compact_tiles(data, work, workers):
@@ -58,7 +60,24 @@ def main():
                           sha256=t.sha256(control))), flush=True)
     geometry, geometry_report = selection.convert(control, args.work)
     save(args.work/'eng-selection7211.nsp', geometry, geometry_report)
-    output, tile_report = compact_tiles(geometry, args.work/'selection-slots', args.workers)
+    # The new spans no longer read many pixels from the old whole-frame
+    # tiles. Dice their exact sparse output once more so those unreachable
+    # colors can disappear, while every image_raw byte remains identical.
+    patch_source = coalesce.view(geometry)
+    selected = {image for first, count, *_ in patch_source.clips[
+                    selection.FIRST_CLIP:selection.FIRST_CLIP+selection.CHARACTERS]
+                for image in range(first, first+count)}
+    patch_work = args.work/'patch-tiles'; patch_work.mkdir(exist_ok=True)
+    patch_plan = dice.make_plan(patch_source, patch_work, selected, precision=8)
+    patch_plan['compact_replaced_directory'] = True
+    encoded = retile.compress_plan(patch_plan, patch_work, patch_work/'encoded', args.workers)
+    patched, patch_report = retile.rewrite(patch_source, patch_plan, encoded)
+    patch_report.update(verification=dice.verify(patch_source, patched, patch_plan, patch_work),
+        exact_sparse_images=len(selected), reused_tile_references=patch_plan['reused_tile_references'],
+        recycled_tile_slots=patch_plan['recycled_slots'],
+        removed_only_pixels_outside_all_live_spans=True)
+    save(args.work/'eng-selection-retiled7211.nsp', patched, patch_report)
+    output, tile_report = compact_tiles(patched, args.work/'selection-slots', args.workers)
     old = coalesce.view(output)
     choices = retained.make_plan(old, args.work/'retained', workers=args.workers, preserve_profile=True)
     compacted = retained.rewrite(old, choices)
@@ -69,7 +88,8 @@ def main():
         existing_literal_profiles_preserved=True, verification=retained_proof,
         results=[c.receipt for c in choices])
     report = dict(complete=True, input_bytes=len(original), input_sha256=t.sha256(original),
-        same_quality_control=control_report, selection=geometry_report, tile_reclamation=tile_report,
+        same_quality_control=control_report, selection=geometry_report, sparse_patch_retile=patch_report,
+        tile_reclamation=tile_report,
         retained_reclamation=retained_report, runtime_arena_growth=0,
         no_frame_clock_color_alpha_or_locale_quantization=True,
         seconds=round(time.monotonic()-started, 3))

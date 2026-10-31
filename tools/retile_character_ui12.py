@@ -218,6 +218,13 @@ def verify(source, output, plan, work):
     target = view(output)
     old, new = t.TileReader(source), t.TileReader(target)
     selected = set(plan['selected'])
+    if plan.get('compact_replaced_directory'):
+        preserved_indices = sorted({t.DESCRIPTOR.unpack_from(source.data, entry[0])[1]
+                                    for image, entry in enumerate(source.images)
+                                    if entry[3] == 6 and image not in selected})
+    else:
+        preserved_indices = list(range(old.index_groups))
+    index_map = {group: i for i, group in enumerate(preserved_indices)}
     expected_clips = list(source.clips)
     for directory, clip in plan.get('clip_overrides', {}).items():
         expected_clips[int(directory)] = tuple(clip)
@@ -235,8 +242,8 @@ def verify(source, output, plan, work):
         b = np.frombuffer(rewritten, dtype='u1').reshape(-1, t.TILE_BYTES)[:count]
         t.require(np.array_equal(a[live], b[live]), 'A protected static or animation tile changed')
         checked_tiles += int(np.count_nonzero(live))
-    for group in range(old.index_groups):
-        t.require(old.group(old.tile_groups+group)[0] == new.group(new.tile_groups+group)[0],
+    for group in preserved_indices:
+        t.require(old.group(old.tile_groups+group)[0] == new.group(new.tile_groups+index_map[group])[0],
                   'A pre-existing index group changed')
     for image, entry in enumerate(source.images):
         if image in selected:
@@ -249,7 +256,8 @@ def verify(source, output, plan, work):
         if image not in selected and entry[3] == 6:
             a = t.DESCRIPTOR.unpack_from(source.data, entry[0])
             b = t.DESCRIPTOR.unpack_from(output, target.images[image][0])
-            t.require(a == b, 'Protected tiled image registration changed')
+            t.require((a[0], index_map[a[1]], a[2], a[3]) == b,
+                      'Protected tiled image registration changed')
         elif image not in selected:
             t.require(source.image_raw(image) == target.image_raw(image), 'Unselected retained image changed')
     for i in range(len(source.glyphs)):
@@ -258,7 +266,7 @@ def verify(source, output, plan, work):
     for i in range(len(source.strings)):
         t.require(source.string_payload(i) == target.string_payload(i), 'Localized text changed')
     return dict(repaired_images=len(selected), exact_protected_tiles=checked_tiles,
-                existing_index_groups_exact=old.index_groups, glyphs_unchanged=len(source.glyphs),
+                existing_index_groups_exact=len(preserved_indices), glyphs_unchanged=len(source.glyphs),
                 strings_unchanged=len(source.strings), all_frames_clocks_preserved=True,
                 all_frames_dimensions_clocks_preserved=not plan.get('allow_geometry', False),
                 registered_clip_layouts=len(plan.get('clip_overrides', {})))

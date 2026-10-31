@@ -205,8 +205,19 @@ def rewrite(source, plan, encoded):
     t.require(old.tile_count == plan['old_tiles'] and old.per_group == plan['per_group'],
               'Locale original tile catalogs differ')
     tile_count = (plan['tiles'] + old.per_group - 1) // old.per_group
-    index_count = old.index_groups + len(plan['index_ranges'])
-    frame_count = old.frame_count + len(plan['frames'])
+    if plan.get('compact_replaced_directory'):
+        old_descriptors = sorted({offset for image, (offset, _w, _h, fmt, _length)
+                                  in enumerate(source.images) if fmt == 6 and image not in plan['mapping']})
+        old_indices = sorted({t.DESCRIPTOR.unpack_from(source.data, at)[1] for at in old_descriptors})
+    else:
+        old_descriptors = list(range(old.descriptors, old.descriptors+old.frame_count*16, 16))
+        old_indices = list(range(old.index_groups))
+    descriptor_map = {at: i for i, at in enumerate(old_descriptors)}
+    index_map = {group: i for i, group in enumerate(old_indices)}
+    index_count = len(old_indices) + len(plan['index_ranges'])
+    frame_count = len(old_descriptors) + len(plan['frames'])
+    t.require(frame_count <= len(source.images),
+              'Retile frame directory needs compact_replaced_directory before replacement')
     table = source.base_end + 64
     cost_at = table + (tile_count + index_count) * 8
     descriptor_at = cost_at + ((len(source.images) + 1) & ~1)
@@ -224,9 +235,11 @@ def rewrite(source, plan, encoded):
     out.extend(bytes((tile_count + index_count) * 8))
     previous_cost_at = t.GLOBAL.unpack_from(source.data, source.base_end)[14]
     out.extend(source.data[previous_cost_at:previous_cost_at + ((len(source.images) + 1) & ~1)])
-    out.extend(source.data[old.descriptors:old.descriptors + old.frame_count * 16])
+    for at in old_descriptors:
+        global_at, group_index, raw_at, size = t.DESCRIPTOR.unpack_from(source.data, at)
+        out.extend(t.DESCRIPTOR.pack(global_at, index_map[group_index], raw_at, size))
     for frame in plan['frames']:
-        out.extend(t.DESCRIPTOR.pack(source.base_end, old.index_groups + frame['index_group'],
+        out.extend(t.DESCRIPTOR.pack(source.base_end, len(old_indices) + frame['index_group'],
                                     frame['record_offset'], frame['record_bytes']))
     t.require(len(out) == descriptor_at + frame_count * 16, 'Retile descriptor layout differs')
 
@@ -264,10 +277,10 @@ def rewrite(source, plan, encoded):
             group(source.data[offset - 32:offset + size], index)
         for index, row in enumerate(encoded[:new_tile_rows], plan['first_changed']):
             compressed_group(row, index)
-    for index in range(old.index_groups):
-        offset, size, *_ = old.groups[old.tile_groups + index]
+    for index, original in enumerate(old_indices):
+        offset, size, *_ = old.groups[old.tile_groups + original]
         group(source.data[offset - 32:offset + size], tile_count + index)
-    for index, row in enumerate(encoded[new_tile_rows:], tile_count + old.index_groups):
+    for index, row in enumerate(encoded[new_tile_rows:], tile_count + len(old_indices)):
         compressed_group(row, index)
 
     copied, slices = {}, {}
@@ -290,12 +303,12 @@ def rewrite(source, plan, encoded):
     for image, (offset, width, height, fmt, length) in enumerate(source.images):
         if image in plan['mapping']:
             frame = plan['frames'][plan['mapping'][image]]
-            new_at = descriptor_at + (old.frame_count + plan['mapping'][image]) * 16
+            new_at = descriptor_at + (len(old_descriptors) + plan['mapping'][image]) * 16
             width, height = frame['width'], frame['height']
             fmt, length = 6, 16
             out[cost_at + image] = (frame['raw_bytes'] + 4095) // 4096
         elif fmt == 6:
-            new_at = descriptor_at + offset - old.descriptors
+            new_at = descriptor_at + descriptor_map[offset] * 16
         else:
             new_at = slice_copy(offset) if fmt == 7 else copy(offset, length)
         t.IMAGE.pack_into(out, 40 + image * 16, new_at, width, height, fmt, length)
@@ -316,7 +329,9 @@ def rewrite(source, plan, encoded):
     return bytes(out), dict(input_bytes=len(source.data), output_bytes=len(out),
                            saved_bytes=len(source.data)-len(out), artwork_end=artwork_end,
                            old_tile_groups=old.tile_groups, tile_groups=tile_count,
-                           old_frame_count=old.frame_count, frame_count=frame_count)
+                           old_frame_count=old.frame_count, frame_count=frame_count,
+                           removed_old_descriptors=old.frame_count-len(old_descriptors),
+                           removed_old_index_groups=old.index_groups-len(old_indices))
 
 
 def verify(source, output, plan):
