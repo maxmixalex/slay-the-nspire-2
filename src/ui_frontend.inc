@@ -81,12 +81,17 @@ static int title_label_width(Canvas&c,const char*text){
     Canvas label=c;label.font_face=0;
     return label.width(text,title_scene::MenuFont);
 }
-static void title_menu_labels(Canvas&c){
+static title_scene::Rect title_menu_bounds(Canvas&c){
+    int widest=0;for(int i=0;i<c.a.title_menu_count();++i)
+        widest=mx(widest,title_label_width(c,frontend_label(c.a,front_item(c.a,i))));
+    return title_scene::menu_bounds(c.a.title_menu_count(),widest);
+}
+static void title_menu_labels(Canvas&c,const title_scene::Rect&menu){
     auto&a=c.a;const int count=a.title_menu_count();auto&presentation=a.title_presentation;presentation.bind(count);
     int focused=-1,focus_left=0,focus_width=0,focus_top=0;
     for(int i=0;i<count;++i){
         const auto item=front_item(a,i);const char*label=frontend_label(a,item);const int y=title_scene::menu_y(count,i),height=title_scene::menu_height(count,i);
-        const bool inside=a.pointer.visible&&a.pointer.x>=title_scene::MenuHitLeft&&a.pointer.x<title_scene::MenuHitLeft+title_scene::MenuHitWidth&&a.pointer.y>=y&&a.pointer.y<y+height;
+        const bool inside=a.pointer.visible&&a.pointer.x>=menu.x&&a.pointer.x<menu.x+menu.w&&a.pointer.y>=y&&a.pointer.y<y+height;
         const bool selected=inside||(!a.pointer.visible&&a.menu==i);
         const bool pressed=inside&&a.pointer.held&&a.pointer.captured.kind==HitKind::Menu&&a.pointer.captured.value==i&&a.pointer.context==a.input_context();
         const auto visual=presentation.labels[item].observe(selected,pressed,a.map_clock_ms);
@@ -95,7 +100,7 @@ static void title_menu_labels(Canvas&c){
         Canvas text=c;text.opacity=uint8_t(div255(unsigned(text.opacity)*visual.alpha));
         profile_text_box(text,label,left,center_y-7,width,15,{title_scene::MenuFont,0,rgb(visual.red,visual.green,visual.blue),0,1,0,0,96,1,0,0},false,false,transform);
         if(selected){focused=i;focus_left=left;focus_width=width;focus_top=center_y-4;}
-        c.hit(title_scene::MenuHitLeft,y,title_scene::MenuHitWidth,height,HitKind::Menu,i);
+        c.hit(menu.x,y,menu.w,height,HitKind::Menu,i);
     }
     auto&motion=presentation.reticle;motion.observe(focused,focus_left,focus_top,focus_width,a.map_clock_ms);
     const unsigned alpha=motion.alpha(a.map_clock_ms);if(!alpha)return;
@@ -121,30 +126,30 @@ static void continue_saved_time(const App&a,char*out,size_t capacity){
 static LocalizedValue continue_saved_value(const void*context,const char*key){
     return wt_equal(key,"LastSavedTime")?LocalizedValue{true,0,1,static_cast<const char*>(context)}:LocalizedValue{};
 }
-static void continue_run_info(Canvas&c){
+static void continue_run_info(Canvas&c,const title_scene::Rect&menu){
  auto&a=c.a;const bool focused=a.has_save&&front_item(a,a.menu)==FrontContinue&&
-  (!a.pointer.visible||(a.pointer.x>=title_scene::MenuHitLeft&&a.pointer.x<title_scene::MenuHitLeft+title_scene::MenuHitWidth&&
+  (!a.pointer.visible||(a.pointer.x>=menu.x&&a.pointer.x<menu.x+menu.w&&
    a.pointer.y>=title_scene::menu_y(a.title_menu_count(),0)&&a.pointer.y<title_scene::menu_y(a.title_menu_count(),0)+title_scene::MenuRowHeight));
  const auto visual=a.title_presentation.run_info.observe(focused,a.map_clock_ms);if(!visual.alpha||!a.has_save)return;
  Canvas panel=c;panel.opacity=uint8_t(div255(unsigned(panel.opacity)*visual.alpha));
- const int x=title_scene::continue_x(title_label_width(c,frontend_label(a,FrontContinue))),width=title_scene::ContinueWidth;
- const int y=title_scene::continue_y(a.title_menu_count())+(visual.y+2048)/4096,height=title_scene::continue_height(a.saved_ascension!=0);
+ const auto bounds=title_scene::continue_bounds(menu,a.saved_ascension!=0);
+ const int x=bounds.x,width=bounds.w,y=bounds.y+(visual.y+2048)/4096,height=bounds.h;
  const int background=a.content.world_image("menu","CONTINUE_PANEL");
  if(background>=0)panel.nine_image(background,x,y,width,height,2,2,2,2);else panel.dim(x,y,width,height,176);
  const ProfileTextStyle style{8,0,rgb(255,246,226),40,0,0,0,112,1,1};
  char row[192]{},saved_time[48]{};continue_saved_time(a,saved_time,sizeof saved_time);
  LocalizedTemplate date(row,sizeof row,continue_saved_value,saved_time);date.for_language(a.content.language()).format(frontend_text(a,"main_menu_ui","CONTINUE_RUN_INFO.saved","{LastSavedTime}"));
- profile_text_box(panel,row,x+7,y+6,106,20,style,false,true,{},true,true);
+ profile_text_box(panel,row,x+7,y+6,width-14,20,style,false,true,{},true,true);
  int portrait=a.content.ui_image(U_TopBarIronclad+int(a.saved_character));if(portrait<0)portrait=a.content.ui_image(character_portrait(a.saved_character));
  panel.picture(portrait,x+7,y+31,11,11);TextBuffer b{row,sizeof row,0,&a.content};row[0]=0;
  if(a.saved_world){const char*act=a.content.world_title("acts",map_colors(a.saved_current_region).region);if(*act){b.text(act);b.ch(' ');}}
  b.text("[blue]");if(a.saved_world)b.text("- ");frontend_number(b,frontend_text(a,"main_menu_ui","CONTINUE_RUN_INFO.floor",a.content.language()==2?"楼层":"Floor"),a.saved_floor);b.text("[/blue]");
- profile_text_box(panel,row,x+23,y+29,90,18,style,false,false,{},true,false,0,true,a.title_presentation.run_info.changed);
+ profile_text_box(panel,row,x+23,y+29,width-30,18,style,false,false,{},true,false,0,true,a.title_presentation.run_info.changed);
  if(a.saved_ascension){row[0]=0;b.n=0;frontend_number(b,frontend_text(a,"main_menu_ui","CONTINUE_RUN_INFO.ascension",a.content.language()==2?"进阶":"Ascension"),a.saved_ascension);
-   profile_text_box(panel,row,x+7,y+49,106,12,style,false,false,{},true,false,0,true,a.title_presentation.run_info.changed);}
+   profile_text_box(panel,row,x+7,y+49,width-14,12,style,false,false,{},true,false,0,true,a.title_presentation.run_info.changed);}
  const int bottom=a.saved_ascension?62:49;row[0]=0;b.n=0;b.text("[red]");b.number(a.saved_hp);b.ch('/');b.number(a.saved_max_hp);b.text("[/red]");
- panel.picture(A_Heart,x+7,y+bottom,11,11);profile_text_box(panel,row,x+22,y+bottom,42,12,style,false,false);
- row[0]=0;b.n=0;b.text("[gold]");b.number(a.saved_gold);b.text("[/gold]");panel.picture(A_Coin,x+72,y+bottom,11,11);profile_text_box(panel,row,x+87,y+bottom,26,12,style,false,false);
+ panel.picture(A_Heart,x+7,y+bottom,11,11);profile_text_box(panel,row,x+22,y+bottom,width-74,12,style,false,false);
+ row[0]=0;b.n=0;b.text("[gold]");b.number(a.saved_gold);b.text("[/gold]");panel.picture(A_Coin,x+width-48,y+bottom,11,11);profile_text_box(panel,row,x+width-33,y+bottom,26,12,style,false,false);
 }
 static void title_screen(Canvas&c){
     auto&a=c.a;
@@ -157,7 +162,7 @@ static void title_screen(Canvas&c){
     if(title_source_backstop(c)){a.main_menu_backdrop.observe(false,a.map_clock_ms);
         main_menu_backdrop::apply_progress(c.pixels,c.pitch,a.main_menu_backdrop.sample(a.map_clock_ms));}
     title_logo(c);profile_title_button(c);
-    title_menu_labels(c);continue_run_info(c);
+    const auto menu=title_menu_bounds(c);title_menu_labels(c,menu);continue_run_info(c,menu);
     c.text(UiCurrentVersionLabel,ScreenW-2-c.width(UiCurrentVersionLabel,8),229,8,White);
 }
 static void native_pause_screen(Canvas&c){

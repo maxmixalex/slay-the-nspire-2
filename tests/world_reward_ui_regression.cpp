@@ -85,8 +85,8 @@ static void reset(uint64_t seed=0x5a8317){
  a.game.world_relics.count=0;a.game.relic_count=0;a.game.relics=0;for(auto&r:a.game.world_relics.entries)r=WorldRelicInstance{};present();
 }
 static void add(RelicId id){CHECK(gain_world_relic(a.game,id));CHECK(!world_relic_pending(a.game));}
-static void capture(const char*name){
- if(!capture_directory)return;a.pointer.visible=false;a.render();char path[1024]{};int n=std::snprintf(path,sizeof path,"%s/%s.ppm",capture_directory,name);CHECK(n>0&&unsigned(n)<sizeof path);
+static void capture(const char*name,bool preserve_pointer=false){
+ if(!capture_directory)return;if(!preserve_pointer)a.pointer.visible=false;a.render();char path[1024]{};int n=std::snprintf(path,sizeof path,"%s/%s.ppm",capture_directory,name);CHECK(n>0&&unsigned(n)<sizeof path);
  FILE*f=std::fopen(path,"wb");CHECK(f);CHECK(std::fprintf(f,"P6\n320 240\n255\n")>0);uint8_t row[ScreenW*3];
  for(unsigned y=0;y<ScreenH;y++){for(unsigned x=0;x<ScreenW;x++){uint16_t p=a.pixels[y*ScreenW+x];row[x*3]=uint8_t((p>>11)*255/31);row[x*3+1]=uint8_t(((p>>5)&63)*255/63);row[x*3+2]=uint8_t((p&31)*255/31);}CHECK(std::fwrite(row,1,sizeof row,f)==sizeof row);}CHECK(!std::fclose(f));
 }
@@ -283,6 +283,50 @@ static void acquired_card_visual_facts(){
   a.game.event_cards.deck[0]=EventCardFacts{};a.game.defect.genetic_deck[0]=a.game.necro.scythe_deck[0]=0;a.render();CHECK(pixels()==plain);
  }
 }
+static void check_reward_hover(HitKind kind,int id,int cursor,RelicId relic,Potion potion,const char*name){
+ a.cursor=cursor;a.pointer.visible=false;a.render();a.advance(500);settle_list();snapshot();
+ const auto row=hit(kind,id);CardHoverTarget owner;
+ for(bool mouse: {false,true}){
+  if(mouse)a.pointer_move(row.x+row.w/2,row.y+row.h/2);else a.pointer.visible=false;
+  a.render();CHECK(reward_hover_target(a,owner)&&owner.reward&&owner.owner.x==row.x&&owner.owner.y==row.y);
+  CHECK(owner.relic==(relic==NoWorldRelic?-1:int(relic))&&owner.potion==int(potion)&&owner.owned_relic==-1);
+  CHECK(a.keyword_hover.owner==owner.identity&&!card_hover_target(a,owner));
+  const std::vector<uint16_t>shown(a.pixels,a.pixels+ScreenW*ScreenH);
+  // Suppress only the passive hover at the same instant. The left gutter
+  // must really gain tooltip pixels, while the claimed model stays intact.
+  a.pointer.held=true;a.render();CHECK(!reward_hover_target(a,owner)&&!a.keyword_hover.owner);a.pointer.held=false;
+  unsigned painted=0;for(int y=24;y<219;++y)for(int x=3;x<row.x-4;++x)painted+=a.pixels[y*ScreenW+x]!=shown[y*ScreenW+x];CHECK(painted>20);
+  a.render();unchanged();if(capture_directory){std::string label=std::string(name)+(mouse?"-mouse":"-keyboard");capture(label.c_str(),true);}
+ }
+ a.pointer_move(319,239);a.render();CHECK(!reward_hover_target(a,owner)&&!a.keyword_hover.owner);unchanged();
+ a.pointer.visible=false;a.hud_focus=0;a.render();CHECK(!reward_hover_target(a,owner));a.hud_focus=-1;
+ a.help=true;CHECK(!reward_hover_target(a,owner));a.help=false;
+ a.paused=true;CHECK(!reward_hover_target(a,owner));a.paused=false;unchanged();
+}
+static void reward_tooltip_routes(){
+ for(unsigned kind: {2u,3u}){
+  reset();single_reward(kind,kind==2?unsigned(WorldRelicGoldenPearl):unsigned(Potion::Strength));
+  check_reward_hover(HitKind::WorldChoice,0,0,kind==2?WorldRelicGoldenPearl:NoWorldRelic,kind==3?Potion::Strength:Potion::Empty,kind==2?"reward-relic-tooltip":"reward-potion-tooltip");
+ }
+ reset();a.game.phase=Phase::Reward;a.game.last_gold=1;a.game.reward_potion=Potion::Strength;a.game.reward_claimed=0;present();
+ UiAction actions[6];const unsigned count=ui_reward_actions(a.game,actions);unsigned slot=0;while(slot<count&&actions[slot]!=UiAction::RewardPotion)++slot;CHECK(slot<count);
+ check_reward_hover(HitKind::UiAction,int(UiAction::RewardPotion),int(slot),NoWorldRelic,Potion::Strength,"reward-legacy-potion-tooltip");
+ // Event reward indexes have gaps after an earlier claim; the keyboard
+ // cursor names a visible row, not the saved reward's array index.
+ reset();CHECK(original_event_begin(a.game,OriginalEventId::CrystalSphere,31,1)&&original_event_choose(a.game,1));auto&e=a.game.original_events;
+ e.finished=1;e.selection=OriginalEventSelection::Rewards;e.select_min=0;e.select_max=1;e.select_cancelable=1;e.reward_active=1;e.reward_count=3;e.reward_current=NoOriginalEventReward;e.reward_card_count=0;
+ for(auto&r:e.rewards)r={};e.rewards[0].kind=1;e.rewards[0].amount=1;e.rewards[0].claimed=1;e.rewards[1].kind=2;e.rewards[1].model=unsigned(Potion::Strength);e.rewards[2].kind=3;e.rewards[2].model=WorldRelicGoldenPearl;
+ a.game.phase=Phase::OriginalEventChoice;present();
+ check_reward_hover(HitKind::WorldChoice,1,0,NoWorldRelic,Potion::Strength,"reward-event-potion-tooltip");
+ check_reward_hover(HitKind::WorldChoice,2,1,WorldRelicGoldenPearl,Potion::Empty,"reward-event-relic-tooltip");
+ for(bool event: {false,true}){
+  reset();if(event){CHECK(original_event_begin(a.game,OriginalEventId::CrystalSphere,31,1)&&original_event_choose(a.game,1));auto&pending=a.game.original_events;pending.selection=OriginalEventSelection::Potion;pending.offer_count=1;pending.offers[0]=unsigned(Potion::Strength);pending.select_min=0;pending.select_max=1;pending.select_cancelable=1;a.game.phase=Phase::OriginalEventChoice;}
+  else{auto&w=a.game.world_relics;w.choice=WorldRelicChoice::Potion;w.offer_count=1;w.offers[0]=unsigned(Potion::Strength);w.choice_min=0;w.choice_max=1;w.choice_cancelable=1;w.return_phase=uint8_t(Phase::Map);a.game.phase=Phase::WorldRelicChoice;}
+  present();check_reward_hover(HitKind::WorldChoice,0,0,NoWorldRelic,Potion::Strength,event?"reward-event-standalone-potion-tooltip":"reward-standalone-potion-tooltip");
+ }
+ reset();single_reward(4,3);a.render();a.advance(500);a.render();CardHoverTarget owner;CHECK(!reward_hover_target(a,owner));
+ reset();single_reward(5,card_token({DefectGeneticAlgorithm,1}));a.render();a.advance(500);a.render();CHECK(!reward_hover_target(a,owner));
+}
 static void original_card_reward_icon_policy(){
  reset();snapshot();WorldCardOptions options;options.source=WorldCardSource::Encounter;
  options.odds=WorldCardOdds::BossEncounter;CHECK(world_card_reward_icon_rarity(a.game,options,Strike)==4);
@@ -302,7 +346,7 @@ static void original_card_reward_icon_policy(){
 int main(int argc,char**argv){
  std::vector<uint8_t>data;if(argc>1){FILE*f=std::fopen(argv[1],"rb");CHECK(f);data.resize(spire_test::pack_size(f));CHECK(std::fread(data.data(),1,data.size(),f)==data.size());CHECK(!std::fclose(f));}else data=synthetic_profile();
  if(argc>2)capture_directory=argv[2];CHECK(a.init(data.data(),data.size(),{}));CHECK(a.content.current_profile());
- original_card_reward_icon_policy();reward_animation_curves();glass_eye();potion_and_special();last_reward_indexes();event_card_rewards();event_combat_rewards();terminal_combat_cleanup();camp_proceed(false);camp_proceed(true);acquisition_flights();
+ original_card_reward_icon_policy();reward_tooltip_routes();reward_animation_curves();glass_eye();potion_and_special();last_reward_indexes();event_card_rewards();event_combat_rewards();terminal_combat_cleanup();camp_proceed(false);camp_proceed(true);acquisition_flights();
  if(a.content.version()>=LocaleContentVersion)acquired_card_visual_facts();
  std::printf("world reward UI: %u checks passed; %s profile; reward ownership, direct claim, alternatives and Camp Proceed\n",checks,argc>1?"actual":"synthetic");
 }

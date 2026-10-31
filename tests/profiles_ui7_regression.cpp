@@ -85,11 +85,17 @@ static void compendium_scene(const std::vector<uint8_t>&pack){
     transition.observe_compendium(0,1175,false);visual=transition.observe_compendium(0,1475,false);SCENE(visual.scale==1000&&visual.shade==255&&visual.focus==0);
 }
 static void title_source_scene(const std::vector<uint8_t>&pack,const char*captures){
-    SCENE(title_scene::MenuCenter==111&&title_scene::MenuHitLeft==24&&title_scene::MenuHitWidth==174&&title_scene::MenuFont==10);
+    SCENE(title_scene::MenuCenter==111&&title_scene::MenuFont==10);
     const int fresh_y[]={138,155,172,189},saved_y[]={121,138,155,172,189};
     for(int i=0;i<4;++i)SCENE(title_scene::menu_y(4,i)==fresh_y[i]);for(int i=0;i<5;++i)SCENE(title_scene::menu_y(5,i)==saved_y[i]);
     SCENE(title_scene::ContinueWidth==120&&title_scene::continue_y(5)==97);
-    SCENE(title_scene::continue_x(40)==139&&title_scene::continue_x(60)==149&&title_scene::continue_x(200)==198);
+    for(int width=0;width<=600;width+=5)for(bool ascension:{false,true}){
+        const auto menu=title_scene::menu_bounds(5,width),panel=title_scene::continue_bounds(menu,ascension);
+        SCENE(menu.x>=2&&menu.x+menu.w<=318&&menu.w>=96);
+        SCENE(panel.x>=2&&panel.x+panel.w<=318&&panel.y>=2&&panel.y+panel.h<229);
+        SCENE(panel.w>=108&&panel.w<=120);
+        SCENE(panel.x>=menu.x+menu.w+4||panel.y+panel.h<=menu.y-4);
+    }
     SCENE(title_scene::TextY==24&&title_scene::FireY==42&&title_scene::TextY+title_scene::TextHeight+8<=saved_y[0]);
     SCENE(title_scene::continue_height(false)==66&&title_scene::continue_height(true)==79);
     title_menu_motion::Label motion{};auto value=motion.observe(true,false,1000);SCENE(value.scale==4096&&value.green==246);
@@ -107,7 +113,7 @@ static void title_source_scene(const std::vector<uint8_t>&pack,const char*captur
     for(unsigned saved=0;saved<2;++saved)for(unsigned state=0;state<5;++state){
         const unsigned count=saved?5:4;app.has_save=saved;app.title_presentation={};app.map_clock_ms=3000;app.pointer={};app.pointer.visible=state==0;
         app.pointer.x=319;app.pointer.y=0;app.menu=2;
-        const auto paint=[&](bool visible){for(auto&pixel:app.pixels)pixel=scene_rgb(21,40,65);app.hit_count=0;Canvas c{app};if(!visible)c.text_visible_characters=0;title_menu_labels(c);};
+        const auto paint=[&](bool visible){for(auto&pixel:app.pixels)pixel=scene_rgb(21,40,65);app.hit_count=0;Canvas c{app};if(!visible)c.text_visible_characters=0;title_menu_labels(c,title_menu_bounds(c));};
         paint(true);if(state){app.map_clock_ms+=50;paint(true);}
         if(state>=2){app.pointer.visible=true;app.pointer.x=111;app.pointer.y=saved?163:180;app.pointer.held=true;
             app.pointer.captured={24,int16_t(saved?155:172),174,17,HitKind::Menu,2,true};app.pointer.context=app.input_context();paint(true);
@@ -124,7 +130,7 @@ static void title_source_scene(const std::vector<uint8_t>&pack,const char*captur
         // The authored highlight siblings paint after the Label. Preserve
         // that order when isolating the independently rasterized text; a
         // highlight-under-text baseline changes their overlapping antialias.
-        Canvas highlight{app};highlight.pixels=expected.data();highlight.text_visible_characters=0;title_menu_labels(highlight);
+        Canvas highlight{app};highlight.pixels=expected.data();highlight.text_visible_characters=0;title_menu_labels(highlight,title_menu_bounds(highlight));
         for(unsigned i=0;i<actual.size();++i){if(actual[i]!=expected[i])std::fprintf(stderr,"title saved=%u state=%u pixel=%u,%u actual=%u expected=%u\n",saved,state,i%320,i/320,actual[i],expected[i]);SCENE(actual[i]==expected[i]);}
     }
     // The compact Continue panel retains original localized labels and
@@ -134,19 +140,20 @@ static void title_source_scene(const std::vector<uint8_t>&pack,const char*captur
         app.saved_at=saved_at;
         app.saved_floor=42;app.saved_hp=73;app.saved_max_hp=80;app.saved_gold=109;app.saved_ascension=uint8_t(ascension);app.menu=0;
         app.pointer={};app.title_presentation={};app.title_presentation.bind(5);app.map_clock_ms=5000;
-        const auto paint=[&](bool visible){for(auto&pixel:app.pixels)pixel=scene_rgb(21,40,65);Canvas c{app};if(!visible)c.text_visible_characters=0;continue_run_info(c);};
+        const auto paint=[&](bool visible){for(auto&pixel:app.pixels)pixel=scene_rgb(21,40,65);Canvas c{app};if(!visible)c.text_visible_characters=0;continue_run_info(c,title_menu_bounds(c));};
         paint(true);app.map_clock_ms+=200;paint(true);const std::vector<uint16_t>actual(app.pixels,app.pixels+320*240);paint(false);std::vector<uint16_t>expected(app.pixels,app.pixels+320*240);
+        Canvas measure{app};const auto placement=title_scene::continue_bounds(title_menu_bounds(measure),ascension!=0);const int px=placement.x,py=placement.y+(app.title_presentation.run_info.sample(app.map_clock_ms).y+2048)/4096,pw=placement.w;
         const bool longest=saved_at==1790771400u;
         std::string date=scene_text("CONTINUE_RUN_INFO.saved");scene_replace(date,"{LastSavedTime}",!saved_at?"—":longest?"2026-09-30 12:30":"2026-10-25 12:30");
         const auto newline=date.find('\n');SCENE(newline!=std::string::npos&&date.find('\n',newline+1)==std::string::npos);
-        lcd_scene_label(expected,scene_letters(pack,date,8,0),201,103,106,20,8,scene_rgb(255,246,226),40,0,0,0,false,true,112,0,0,4096,true,1,1,255,255,true);
+        lcd_scene_label(expected,scene_letters(pack,date,8,0),px+7,py+6,pw-14,20,8,scene_rgb(255,246,226),40,0,0,0,false,true,112,0,0,4096,true,1,1,255,255,true);
         const auto numbered=[](std::string label,const char*number){RichReader reader(label.c_str());RichChar ch{};unsigned last=0;
             while(reader.next(ch))last=ch.codepoint;if(last&&last!=' '&&last!='\t'&&last!='\n')label+=' ';return label+number;};
         const std::string progress=std::string(app.content.world_title("acts","OVERGROWTH"))+" [blue]- "+numbered(scene_text("CONTINUE_RUN_INFO.floor"),"42")+"[/blue]";
-        lcd_scene_label(expected,scene_letters(pack,progress,8,0),217,126,90,18,8,scene_rgb(255,246,226),40,0,0,0,false,false,112,0,0,4096,true,1,1);
-        if(ascension)lcd_scene_label(expected,scene_letters(pack,numbered(scene_text("CONTINUE_RUN_INFO.ascension"),"3"),8,0),201,146,106,12,8,scene_rgb(255,246,226),40,0,0,0,false,false,112,0,0,4096,true,1,1);
-        lcd_scene_label(expected,scene_letters(pack,"[red]73/80[/red]",8,0),216,ascension?159:146,42,12,8,scene_rgb(255,246,226),40,0,0,0,false,false,112,0,0,4096,false,1,1);
-        lcd_scene_label(expected,scene_letters(pack,"[gold]109[/gold]",8,0),281,ascension?159:146,26,12,8,scene_rgb(255,246,226),40,0,0,0,false,false,112,0,0,4096,false,1,1);
+        lcd_scene_label(expected,scene_letters(pack,progress,8,0),px+23,py+29,pw-30,18,8,scene_rgb(255,246,226),40,0,0,0,false,false,112,0,0,4096,true,1,1);
+        if(ascension)lcd_scene_label(expected,scene_letters(pack,numbered(scene_text("CONTINUE_RUN_INFO.ascension"),"3"),8,0),px+7,py+49,pw-14,12,8,scene_rgb(255,246,226),40,0,0,0,false,false,112,0,0,4096,true,1,1);
+        lcd_scene_label(expected,scene_letters(pack,"[red]73/80[/red]",8,0),px+22,py+(ascension?62:49),pw-74,12,8,scene_rgb(255,246,226),40,0,0,0,false,false,112,0,0,4096,false,1,1);
+        lcd_scene_label(expected,scene_letters(pack,"[gold]109[/gold]",8,0),px+pw-33,py+(ascension?62:49),26,12,8,scene_rgb(255,246,226),40,0,0,0,false,false,112,0,0,4096,false,1,1);
         for(unsigned i=0;i<actual.size();++i){if(actual[i]!=expected[i])std::fprintf(stderr,"Continue asc=%u saved_at=%u pixel=%u,%u actual=%u expected=%u\n",ascension,saved_at,i%320,i/320,actual[i],expected[i]);SCENE(actual[i]==expected[i]);}
         Canvas c{app};title_screen(c);app.map_clock_ms+=250;title_screen(c);profile_capture(captures,longest?(ascension?"title-source-continue-long-ascension":"title-source-continue-long"):saved_at?(ascension?"title-source-continue-saved-ascension":"title-source-continue-saved"):(ascension?"title-source-continue-ascension":"title-source-continue"));
     }

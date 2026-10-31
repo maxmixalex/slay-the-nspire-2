@@ -72,7 +72,7 @@ struct CardHoverTarget {
     // History stores relic IDs, not their acquisition-time mutable models.
     bool historical=false;
     bool inspect_relic=false,canonical_relic=false;
-    bool merchant=false,merchant_left=false,sovereign_blade=false;
+    bool merchant=false,merchant_left=false,sovereign_blade=false,reward=false;
 };
 struct HoverPiece {unsigned tip=0;int skip=0,lines=0;HoverRect box{};};
 struct HoverPage {HoverPiece pieces[MaxCardHoverTips]{};unsigned count=0;int pages=1;};
@@ -97,6 +97,7 @@ void collect_card_hover_tips(const App&,Card,HoverTipList&,int instance=-1,int d
 bool card_hover_target(const App&,CardHoverTarget&);
 bool event_hover_target(const App&,CardHoverTarget&);
 bool merchant_hover_target(const App&,CardHoverTarget&);
+bool reward_hover_target(const App&,CardHoverTarget&);
 bool owned_relic_hover_target(const App&,CardHoverTarget&);
 bool power_hover_target(const App&,CardHoverTarget&);
 bool creature_hover_target(const App&,CardHoverTarget&);

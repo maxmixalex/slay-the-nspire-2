@@ -176,6 +176,47 @@ bool merchant_hover_target(const App&a,CardHoverTarget&target){
     }
     return false;
 }
+bool reward_hover_target(const App&a,CardHoverTarget&target){
+    target={};
+    if(!a.reward_list_interactive()||a.pointer.held||a.pointer.armed_card>=0||a.keyboard_card>=0||
+       a.map_preview.open||a.ftue.active()||a.map_transition_blocks_pointer()||
+       (!a.pointer.visible&&a.hud_focus>=0)||!a.reward_presentation.window(a.map_clock_ms).alpha)return false;
+    const auto&s=a.game;const HitRegion*hit=a.pointer.visible?a.hit_at(a.pointer.x,a.pointer.y):nullptr;
+    unsigned mode=0;
+    if(s.phase==Phase::Reward){
+        UiAction actions[6];const unsigned count=ui_reward_actions(s,actions);int selected=-1;
+        for(unsigned i=0;i<count;++i){
+            if(a.pointer.visible){if(hit&&hit->enabled&&hit->kind==HitKind::UiAction&&hit->value==int(actions[i]))selected=int(i);}
+            else if(a.cursor==int(i)){selected=int(i);for(int j=0;j<a.hit_count;++j)
+                if(a.hits[j].kind==HitKind::UiAction&&a.hits[j].value==int(actions[i])&&a.hits[j].enabled){hit=&a.hits[j];break;}}
+        }
+        if(selected<0||!hit)return false;
+        if(actions[selected]==UiAction::RewardPotion)target.potion=int(s.reward_potion);
+        else if(actions[selected]==UiAction::RewardRelic)target.relic=s.world.reward_relic;
+        else return false;
+        mode=1;
+    }else{
+        if(!a.pointer.visible)hit=hover_keyboard_hit(a);
+        if(!hit||!hit->enabled||hit->kind!=HitKind::WorldChoice||hit->value<0)return false;
+        uint16_t ids[MaxWorldUiChoices];const unsigned count=a.world_choice_options(ids,MaxWorldUiChoices);bool eligible=false;
+        for(unsigned i=0;i<count&&i<MaxWorldUiChoices;++i)if(ids[i]==hit->value)eligible=true;
+        if(!eligible)return false;
+        const unsigned id=unsigned(hit->value);target.potion=int(a.world_choice_potion(int(id)));
+        if(s.phase==Phase::WorldRelicChoice){const auto&w=s.world_relics;mode=2;
+            if(w.choice==WorldRelicChoice::OfferReward&&id<w.offer_count&&w.offers[id]<w.reward_count){
+                const auto&r=w.rewards[w.offers[id]];if(r.kind==2)target.relic=r.value;
+            }
+        }else if(s.phase==Phase::OriginalEventChoice){const auto&e=s.original_events;mode=3;
+            if(e.selection==OriginalEventSelection::Rewards&&id<e.reward_count&&e.rewards[id].kind==3)target.relic=e.rewards[id].model;
+        }
+    }
+    if(target.relic>=WorldRelicKinds||(target.relic<0&&!potion_definition(Potion(target.potion))))return false;
+    // NRewardButton.OnFocus owns Reward.HoverTips for both pointer and
+    // controller focus. Its unclaimed model has no owned-inventory index.
+    target.reward=true;target.canonical_relic=true;target.owner={hit->x,hit->y,hit->w,hit->h};
+    target.identity=0x7a000000u|(mode<<20)|(unsigned(hit->value)&255u)<<12|unsigned(target.relic>=0?target.relic:target.potion);
+    return true;
+}
 bool owned_relic_hover_target(const App&a,CardHoverTarget&target){
     if(a.event_reader||a.pointer.held||a.title||a.paused||a.help||a.settings_open||a.frontend_confirm||
        (a.panel&&a.panel!=3)||a.library||a.character_select||a.map_preview.open||a.status_actor>=0||
@@ -218,7 +259,7 @@ static bool inspect_relic_hover_target(const App&a,CardHoverTarget&target){
     target.inspect_relic=true;target.canonical_relic=collection||a.history_open;target.historical=a.history_open;
     target.identity=0x74000000u|unsigned(a.detail_item)|(unsigned(a.detail_owned+1)<<12);return true;
 }
-static bool keyword_hover_target(const App&a,CardHoverTarget&target){return inspect_relic_hover_target(a,target)||history_relic_hover_target(a,target)||power_hover_target(a,target)||creature_hover_target(a,target)||collection_hover_target(a,target)||owned_relic_hover_target(a,target)||treasure_hover_target(a,target)||merchant_hover_target(a,target)||event_hover_target(a,target)||card_hover_target(a,target);}
+static bool keyword_hover_target(const App&a,CardHoverTarget&target){return inspect_relic_hover_target(a,target)||history_relic_hover_target(a,target)||power_hover_target(a,target)||creature_hover_target(a,target)||collection_hover_target(a,target)||owned_relic_hover_target(a,target)||treasure_hover_target(a,target)||merchant_hover_target(a,target)||reward_hover_target(a,target)||event_hover_target(a,target)||card_hover_target(a,target);}
 static void collect_keyword_hover_tips(const App&a,const CardHoverTarget&owner,HoverTipList&out){
     if(owner.creature>=0)collect_creature_hover_tips(a,owner,out);
     else if(owner.power>=0)collect_power_hover_tips(a,uint16_t(owner.power),out);
@@ -244,6 +285,9 @@ static void collect_keyword_hover_tips(const App&a,const CardHoverTarget&owner,H
     }
 }
 static HoverRect keyword_hover_column(const CardHoverTarget&owner){
+    // The original reward hover set is left-aligned with the focused row.
+    // Keep its readable LCD text inside the actual left gutter.
+    if(owner.reward){const int width=mn(SourceHoverWidth,mx(32,owner.owner.x-7));return {mx(3,owner.owner.x-width-4),24,width,194};}
     if(owner.merchant){const int x=owner.merchant_left?owner.owner.x-SourceHoverWidth:owner.owner.x+owner.owner.w;
         return {mx(3,mn(317-SourceHoverWidth,x)),24,SourceHoverWidth,194};}
     if(owner.power>=0||owner.creature>=0){const int x=owner.power_left?owner.owner.x-SourceHoverWidth-1:owner.owner.x+owner.owner.w+1;

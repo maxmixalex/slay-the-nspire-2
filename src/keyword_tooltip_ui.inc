@@ -271,9 +271,10 @@ static HoverPage hover_page(Canvas&c,const CardHoverTarget&owner,const HoverTipL
     int direction=column.x<owner.owner.x?-1:1;if(owner.relic>=0)direction=owner.owner.x>240?-1:1;
     if(owner.power>=0||owner.creature>=0)direction=owner.power_left?-1:1;
     if(owner.merchant)direction=owner.merchant_left?-1:1;
+    if(owner.reward)direction=-1;
     const int space=direction<0?column.x-3:317-column.x-column.w;
     const bool cards_need_room=card_count&&(hover_compact_event(owner)||(direction>0?owner.owner.x<50:owner.owner.x+owner.owner.w+47>317));
-    const int columns=(event_lane||enchant_lane)?1:details?(card_count?1:2):inspect?1:mn(3,mx(1,1+(space-(cards_need_room?47:0))/(column.w+1)));
+    const int columns=(event_lane||enchant_lane||owner.reward)?1:details?(card_count?1:2):inspect?1:mn(3,mx(1,1+(space-(cards_need_room?47:0))/(column.w+1)));
     const int step=source_hover_step(c),overhead=source_hover_overhead(c),minimum=overhead+step;
     int page=0,lane=0,y=0;HoverPage result{};
     for(unsigned i=0;i<tips.count;++i){
@@ -292,8 +293,8 @@ static HoverPage hover_page(Canvas&c,const CardHoverTarget&owner,const HoverTipL
     int text_height=0;for(unsigned i=0;i<result.count;++i)text_height=mx(text_height,result.pieces[i].box.y+result.pieces[i].box.h-column.y);
     int text_top=column.y;
     if(!details&&!inspect&&!enchant_lane&&text_height){
-        int requested=owner.relic>=0&&!owner.merchant?owner.owner.y+owner.owner.h+2:owner.owner.y;
-        if(owner.relic>=0&&!owner.merchant&&owner.owner.y>180)requested=owner.owner.y-text_height;
+        int requested=owner.relic>=0&&!owner.merchant&&!owner.reward?owner.owner.y+owner.owner.h+2:owner.owner.y;
+        if(owner.relic>=0&&!owner.merchant&&!owner.reward&&owner.owner.y>180)requested=owner.owner.y-text_height;
         text_top=mn(mx(column.y,requested),column.y+column.h-text_height);
         for(unsigned i=0;i<result.count;++i)result.pieces[i].box.y+=text_top-column.y;
     }

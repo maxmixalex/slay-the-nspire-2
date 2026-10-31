@@ -133,7 +133,7 @@ static void settings_back(){
 static void menu_rows(unsigned count){
  a.render();unsigned seen=0;for(int i=0;i<a.hit_count;i++)if(a.hits[i].kind==HitKind::Menu){const auto&hit=a.hits[i];CHECK(hit.value>=0&&unsigned(hit.value)<count);
   if(a.title){const int expected_y=206-int(count)*17+hit.value*17;
-   CHECK(hit.x==24&&hit.y==expected_y&&hit.w==174&&hit.h==17);
+   CHECK(hit.x>=2&&hit.x+hit.w<=318&&hit.x<=title_scene::MenuCenter&&hit.x+hit.w>title_scene::MenuCenter&&hit.y==expected_y&&hit.w>=96&&hit.h==17);
    CHECK(expected_y>=116); // The raised complete logo ends at108.
   }else{const int pause_y[]={65,94,123,152,181};CHECK(a.paused&&count==5);
    CHECK(hit.x==72&&hit.y==pause_y[hit.value]&&hit.w==176&&hit.h==27);
@@ -290,7 +290,7 @@ static void main_menu_and_continue(){
  press(HitKind::Menu,3);confirm_accept();CHECK(a.quit);a.quit=false;unchanged();
 
  start(Character::Silent,2001);put_disk();start(Character::Defect,2002);snapshot();a.return_to_title();CHECK(a.title_menu_count()==5);menu_rows(5);
- a.pointer_move(213,183);CHECK(a.menu==0);a.pointer.visible=false;a.render();a.advance(200);capture("frontend-title-continue");
+ a.pointer_move(319,183);CHECK(a.menu==0);a.pointer.visible=false;a.render();a.advance(200);capture("frontend-title-continue");
  a.menu=0;for(unsigned i=0;i<5;i++)a.input(Key::Down);CHECK(a.menu==0);unchanged();
  press(HitKind::Menu,2);CHECK(a.settings_open);a.input(Key::Back);CHECK(!a.settings_open);unchanged();
  press(HitKind::Menu,3);CHECK(a.compendium_open&&a.title&&!a.library);a.input(Key::Back);CHECK(!a.compendium_open);unchanged();
@@ -301,6 +301,30 @@ static void main_menu_and_continue(){
  player_kill(a.game,true);resolve_pending(a.game);CHECK(a.game.phase==Phase::Dead);put_disk();
  start(Character::Regent,2003);snapshot();a.return_to_title();CHECK(!a.has_save);a.input(Key::Load);CHECK(a.title&&!a.has_save);unchanged();
  disk.bytes[0]^=1;a.input(Key::Load);CHECK(a.title&&!a.has_save);unchanged();disk.bytes[0]^=1;
+}
+static void continue_panel_preserves_menu(){
+ // Compare the real rendered scene at the same instant with/without only
+ // the Continue panel. Every menu hit rectangle must retain its own pixels,
+ // including while focus moves and the panel is still fading away.
+ for(unsigned ascension: {0u,3u})for(bool mouse: {false,true})for(int row=0;row<5;++row){
+  empty_disk();start(Character::Silent,2091,nullptr,ascension);put_disk();a.return_to_title();a.render();
+  auto h=find_hit(HitKind::Menu,0);if(mouse)a.pointer_move(h.x+h.w/2,h.y+h.h/2);else a.pointer.visible=false;
+  a.render();a.advance(250);a.render();
+  if(row){if(mouse){h=find_hit(HitKind::Menu,row);a.pointer_move(h.x+h.w/2,h.y+h.h/2);}
+   else for(int i=0;i<row;++i)a.input(Key::Down);
+   a.render();a.advance(50);a.render();}
+  CHECK(a.menu==row);snapshot();auto&info=a.title_presentation.run_info;const auto retained=info;
+  const auto visual=info.sample(a.map_clock_ms);CHECK(visual.alpha);
+  info.from=visual;info.changed=a.map_clock_ms;info.from.alpha=0;a.render();
+  const std::vector<uint16_t>base(a.pixels,a.pixels+ScreenW*ScreenH);
+  info.from.alpha=visual.alpha;a.render();unsigned painted=0;
+  for(unsigned i=0;i<ScreenW*ScreenH;++i)painted+=base[i]!=a.pixels[i];CHECK(painted>25);
+  for(int i=0;i<a.hit_count;++i){const auto&hit=a.hits[i];if(hit.kind!=HitKind::Menu)continue;
+   for(int y=hit.y;y<hit.y+hit.h;++y)for(int x=hit.x;x<hit.x+hit.w;++x)CHECK(a.pixels[y*ScreenW+x]==base[y*ScreenW+x]);}
+  info=retained;unchanged();disk_unchanged();
+  if(ascension==3&&!row)capture(mouse?"frontend-continue-mouse-clear-menu":"frontend-continue-keyboard-clear-menu",true);
+  if(ascension==3&&row==1)capture(mouse?"frontend-continue-exit-to-abandon-mouse":"frontend-continue-exit-to-abandon-keyboard",true);
+ }
 }
 static void pause_save_failure_and_success(){
  empty_disk();start(Character::Necrobinder,3001);snapshot();a.input(Key::Back);CHECK(a.paused&&!a.title);menu_rows(5);
@@ -593,7 +617,7 @@ static void main_menu_source_blur(){
 int main(int argc,char**argv){
  std::vector<uint8_t>data;if(argc>1){FILE*f=std::fopen(argv[1],"rb");CHECK(f);data.resize(spire_test::pack_size(f));CHECK(std::fread(data.data(),1,data.size(),f)==data.size());CHECK(!std::fclose(f));}else data=synthetic_profile();
  if(argc>2)capture_directory=argv[2];CHECK(a.init(data.data(),data.size(),{store_run,restore_run,erase_run}));CHECK(a.content.current_profile());
- title_glow_curve();title_particle_curves();title_animation_is_bounded_and_repeats();probe_is_read_only();main_menu_and_continue();pause_save_failure_and_success();abandon_saved_with_confirmation();abandon_current_bypasses_prevention();protected_saved_expeditions();
+ title_glow_curve();title_particle_curves();title_animation_is_bounded_and_repeats();probe_is_read_only();main_menu_and_continue();continue_panel_preserves_menu();pause_save_failure_and_success();abandon_saved_with_confirmation();abandon_current_bypasses_prevention();protected_saved_expeditions();
  canonical_identity_and_save_association();refreshed_continue_metadata();title_confirmation_tracks_run_identity();unreadable_save_does_not_abandon();optional_clear_uses_successful_terminal_probe();
  console_edits_preserve_checkpoint_ownership();terminal_file_is_retired();
  ending_clears_only_its_checkpoint();modal_isolation_and_fast_mode();character_click_confirmation();main_menu_source_blur();
