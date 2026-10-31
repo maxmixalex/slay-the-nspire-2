@@ -1,4 +1,4 @@
-# UI21 restored artwork and exact font-stream optimization
+# UI21 restored artwork and font-storage evaluation
 
 Reference remains the owner's StS II v0.111.0 / `41cef1ea` installation.
 Original PCK bytes, skeleton samples, glyphs, screenshots and generated packs
@@ -52,14 +52,14 @@ uses its existing pinned source commit with .NET SDK 8.0.427. Private journals
 `ui21-framed-art-3cf0ffa71bec` dependency failure is retained separately; it
 failed before producing artwork because Python `lz4` was absent.
 
-## Additional font-stream saving
+## Font-stream candidate rejected after ARM measurements
 
 The UI15 font pipeline already removes obsolete glyph tails and identical
 payloads. Its small-label groups remain bounded to 4 KiB for cold access;
 large display groups retain their existing bounds. UI21 does not remove
 characters or fitted-label sizes, change glyph ink/metrics, or merge groups.
 
-`retune_resource_streams.py` adds only two font encoder candidates,
+The private experiment added two font encoder candidates,
 `(lc, lp, pb) = (0, 1, 0)` and `(1, 1, 0)`, to the existing five. A literal
 position context can distinguish the count/alpha bytes of the existing glyph
 RLE representation. The offline selection keeps the prior stream unless a
@@ -81,9 +81,15 @@ sizes, glyph descriptors and cold-access membership are unchanged. The
 private receipt is `font-context-full.json`; journal
 `ui21-font-context-full-9ae9de596f25` passes without source changes.
 
-The 29,614-byte figure is the incremental font-stream saving over the prior
-retuning profiles. It is not the final installation saving or a substitute
-for the complete locale, stream, native-reader and package checks. Final
-installed sizes must include the launcher, all common concern files and the
-selected language files. See the current work-state/release record for that
+The **29,614-byte figure belongs to this private candidate, not the delivered
+installation**. Subsequent linked ARM measurements found that small stream
+savings could increase decoder work. The release therefore keeps the previous
+font/text streams; the two added default font candidates were removed from
+`retune_resource_streams.py`. No glyphs, sizes or native ink were sacrificed to
+recover that space. The candidate's exact-byte proofs remain useful for
+explaining the rejected tradeoff, but do not turn it into an accepted speed or
+storage improvement.
+
+Final installed sizes must include the launcher, all common concern files and
+the selected language files. See the current work-state/release record for the
 integrated result and the continuing platform limits.

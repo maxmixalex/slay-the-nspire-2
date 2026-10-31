@@ -2,9 +2,10 @@
 """NSP2/45: omit exact zero tile pixels before bounded LZMA2 compression.
 
 Every group keeps its complete original records, IDs, cache pages and frame
-references. TGR3 is selected only when smaller and its temporary occupancy /
-alpha planes fit the existing TGR2 reservation. Unhelpful groups retain their
-exact earlier stream. Full-group comparisons cover hidden RGB and padding.
+references. TGR3 is selected only when smaller, occupancy is at most 60%, and
+its temporary planes fit the existing TGR2 reservation. Dense groups retain
+their earlier stream: a smaller file alone does not establish faster decoding.
+Full-group comparisons cover hidden RGB and padding.
 """
 from __future__ import annotations
 
@@ -27,9 +28,12 @@ import split_content as split
 import storage_parts as storage
 
 ENCODER = b'NSP45-TGR3-exact-occupancy-planes-v1-9-273-512'
+MAXIMUM_OCCUPANCY_PERCENT = 60
 
 
-def make_plan(source, work, *, workers=2):
+def make_plan(source, work, *, workers=2, maximum_occupancy=MAXIMUM_OCCUPANCY_PERCENT):
+    t.require(0 <= maximum_occupancy <= MAXIMUM_OCCUPANCY_PERCENT,
+              'Sparse occupancy limit must be between zero and sixty percent')
     reader = t.TileReader(source)
     cache = Path(work)/'sparse-encoded'
     cache.mkdir(parents=True, exist_ok=True)
@@ -55,6 +59,10 @@ def make_plan(source, work, *, workers=2):
             row['preserved_reason']='existing_scratch_bound'
             return group,old,old,row
         t.require(sparse.restore(transformed,items,mode)==raw, 'Sparse tile transform changed an original byte')
+        occupied = sparse.pixel_count(items, len(transformed))
+        if occupied * 100 > items * 256 * maximum_occupancy:
+            row['preserved_reason'] = 'dense_decode_cost'
+            return group,old,old,row
         profiles=tuple(dict.fromkeys((coalesce.source_lzma_profile(old[32:]),(0,1,1),(2,0,1))))
         key=t.sha256(ENCODER+struct.pack('<II',mode,reader.dictionary)+
                      bytes(x for profile in profiles for x in profile)+transformed)
@@ -75,7 +83,6 @@ def make_plan(source, work, *, workers=2):
         candidate=t.GROUP.pack(*header)+encoded
         payload,physical,_=choose_group(old,candidate,len(raw))
         if payload != old:
-            occupied=sparse.pixel_count(items,len(transformed))
             row.update(output_bytes=len(payload),saved_bytes=len(old)-len(physical),
                        decoded_bytes=len(transformed),occupied_pixels=occupied,
                        scratch_bytes=items*34+occupied,previous_scratch_bytes=items*258)
@@ -107,12 +114,55 @@ def make_plan(source, work, *, workers=2):
     last=max(plan,key=lambda g:sum(reader.groups[g][:2]))
     a,b,c=plan[last];plan[last]=a,b,c+bytes(padding)
     return plan,dict(tile_groups=reader.tile_groups,index_groups=reader.index_groups,
+        maximum_occupancy_percent=maximum_occupancy,
         changed_groups=sum(row['saved_bytes']>0 for row in report_rows),
         saved_stream_bytes=delta,alignment_padding_bytes=padding,
         complete_raw_tile_bytes=sum(row['raw_bytes'] for row in report_rows),
         decoded_tile_bytes=sum(row['decoded_bytes'] for row in report_rows),
         group_ids_sizes_pages_and_frame_references_unchanged=True,
         resident_bytes_added=0,scratch_never_exceeds_previous_plane_bytes=True,groups=report_rows)
+
+
+def restore_dense_groups(source, reference, *, maximum_occupancy=MAXIMUM_OCCUPANCY_PERCENT):
+    """Apply the bounded policy to an already converted private package.
+
+    Only the corresponding original dense stream may replace a sparse group;
+    complete decoded records must match, including invisible RGB and padding.
+    This permits a converter-only correction without rerasterizing artwork.
+    """
+    t.require(0 <= maximum_occupancy <= MAXIMUM_OCCUPANCY_PERCENT,
+              'Sparse occupancy limit must be between zero and sixty percent')
+    current, previous = t.TileReader(source), t.TileReader(reference)
+    t.require((current.tile_count, current.tile_groups, current.index_groups,
+               current.frame_count, current.per_group) ==
+              (previous.tile_count, previous.tile_groups, previous.index_groups,
+               previous.frame_count, previous.per_group), 'Dense reference group identity differs')
+    plan, changed, compared = {}, [], 0
+    for group, row in enumerate(current.groups):
+        at, size, raw_size, compact, kind, items = row
+        original = bytes(source.data[at-32:at+size])
+        payload = original
+        if group < current.tile_groups and current.sparse[group]:
+            occupied = sparse.pixel_count(items, compact)
+            if occupied * 100 > items * 256 * maximum_occupancy:
+                before = previous.groups[group]
+                t.require(not previous.sparse[group] and (raw_size, kind, items) ==
+                          (before[2], before[4], before[5]), 'Dense reference shape differs')
+                t.require(current.group(group)[0] == previous.group(group)[0],
+                          'Dense reference changes complete tile records')
+                payload = bytes(reference.data[before[0]-32:before[0]+before[1]])
+                compared += raw_size
+                changed.append(dict(group=group, occupied_pixels=occupied, pixels=items*256,
+                                    stored_bytes_added=len(payload)-len(original)))
+        plan[group] = original, payload, payload + bytes((len(original)-len(payload)) & 1)
+    delta = sum(len(a)-len(c) for a, _b, c in plan.values())
+    padding = delta % 4096
+    last = max(plan, key=lambda g:sum(current.groups[g][:2]))
+    a,b,c = plan[last];plan[last] = a,b,c+bytes(padding)
+    return plan, dict(maximum_occupancy_percent=maximum_occupancy,
+        restored_dense_groups=len(changed), compared_complete_tile_bytes=compared,
+        stored_bytes_added=-delta+padding, alignment_padding_bytes=padding, groups=changed,
+        group_ids_sizes_pages_and_frame_references_unchanged=True, resident_bytes_added=0)
 
 
 def verify(original,result,plan,*,pixels=True):
@@ -129,6 +179,10 @@ def main():
     parser.add_argument('--work',type=Path,required=True)
     parser.add_argument('--workers',type=int,default=2)
     parser.add_argument('--locales',nargs='+',choices=split.LANGUAGES)
+    parser.add_argument('--maximum-occupancy',type=int,default=MAXIMUM_OCCUPANCY_PERCENT,
+                        help='Maximum occupied pixels in percent (0..60)')
+    parser.add_argument('--dense-reference',type=Path,
+                        help='Private logical pack with matching original dense groups; restore over-dense TGR3 groups')
     args=parser.parse_args();t.require(1<=args.workers<=4,'Use one through four bounded workers')
     source=t.private_path(args.input,'Private source');target=t.private_path(args.output,'Private output')
     work=t.private_path(args.work,'Private work')
@@ -140,13 +194,24 @@ def main():
     index=(source/'nSpire2.dat.tns').read_bytes()
     old_common=storage.join_parts(index,{name:(source/name).read_bytes() for name in storage.PART_FILES})
     english=split.reconstruct(old_common,(source/'nSpire2.eng.dat.tns').read_bytes(),'eng')
-    started=time.monotonic();plan,report=make_plan(coalesce.view(english),work,workers=args.workers)
+    started=time.monotonic()
+    if args.dense_reference:
+        reference=t.private_path(args.dense_reference,'Private dense reference').read_bytes()
+        plan,report=restore_dense_groups(coalesce.view(english),coalesce.view(reference),
+                                        maximum_occupancy=args.maximum_occupancy)
+    else:
+        plan,report=make_plan(coalesce.view(english),work,workers=args.workers,
+                              maximum_occupancy=args.maximum_occupancy)
     report.update(schema=1,version=sparse.CONTENT_VERSION,reference='v0.111.0 / 41cef1ea',locales={})
     common=None
     for code in ('eng',*(code for code in codes if code!='eng')):
         before=english if code=='eng' else split.reconstruct(old_common,(source/f'nSpire2.{code}.dat.tns').read_bytes(),code)
         result,_=coalesce.rewrite(before,plan,version=sparse.CONTENT_VERSION)
-        proof=verify(before,result,plan,pixels=code=='eng')
+        # restore_dense_groups already compares every changed complete group;
+        # verification below also proves all unchanged encoded groups and all
+        # directory/slice relocations. Repeating every pixel per locale adds
+        # no distinct coverage for identical shared artwork.
+        proof=verify(before,result,plan,pixels=code=='eng' and not args.dense_reference)
         bounds=split.layout(result,code);artwork=result[bounds['prefix']:bounds['prefix']+bounds['artwork']]
         if common is None:
             common,new_index,parts,partition=partition_like(index,english,result)

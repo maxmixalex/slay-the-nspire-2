@@ -30,6 +30,33 @@ def sparse_fixture():
 
 
 class SparseTileFilterTest(unittest.TestCase):
+    def test_density_policy_preserves_fast_dense_streams_and_rejects_foreign_reference(self):
+        before = sparse_fixture(); source = coalesce.view(before)
+        with tempfile.TemporaryDirectory() as folder:
+            plan, report = compact.make_plan(source, Path(folder), workers=1, maximum_occupancy=49)
+            self.assertEqual(report['changed_groups'], 0)
+            self.assertEqual({r['preserved_reason'] for r in report['groups']}, {'dense_decode_cost'})
+            plan, _ = compact.make_plan(source, Path(folder), workers=1)
+            sparse_pack, _ = coalesce.rewrite(before, plan, version=45)
+            sparse_view = coalesce.view(sparse_pack)
+            restore, receipt = compact.restore_dense_groups(sparse_view, source, maximum_occupancy=49)
+            dense_pack, _ = coalesce.rewrite(sparse_pack, restore, version=45)
+            compact.verify(sparse_pack, dense_pack, restore)
+            self.assertEqual(receipt['restored_dense_groups'], 2)
+            self.assertGreater(receipt['compared_complete_tile_bytes'], 0)
+            old, new = t.TileReader(source), t.TileReader(coalesce.view(dense_pack))
+            for group in range(new.tile_groups):
+                self.assertFalse(new.sparse[group])
+                self.assertEqual(old.group(group), new.group(group))
+            changed = bytearray(before)
+            # The fixture uses an uncompressed LZMA2 chunk. Change one RGB
+            # byte without changing shape, IDs, lengths, or group count.
+            changed[old.groups[0][0]+3+2] ^= 1
+            with self.assertRaisesRegex(ValueError, 'complete tile records'):
+                compact.restore_dense_groups(sparse_view, coalesce.view(changed), maximum_occupancy=49)
+            with self.assertRaises(ValueError):
+                compact.make_plan(source, Path(folder), maximum_occupancy=61)
+
     def test_every_rgb565_word_hidden_color_alpha_and_partial_zero_mask(self):
         records=np.zeros((512,770),dtype='u1');records[:,:2]=16
         values=np.arange(65536,dtype='<u2').reshape(512,128)

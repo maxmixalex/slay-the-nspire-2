@@ -15,10 +15,13 @@ archive matches the pinned v0.111.0 / `41cef1ea` reference.
 - Baseline 158 native suites have actually passed. Independent host processes
   exercise the real Ndless storage implementation through abandon/death and
   reopen, retiring sav/bak/tmp without deleting settings or progress.
-- This source stage adds occupied-pixel sparse restoration and two exact
-  font-stream encoder candidates. Linked final ARM acceptance, complete
-  resource compaction, all-locale readback and the two installer ZIPs remain
-  in progress; this checkpoint is not a completed player release.
+- The runtime adds occupied-pixel sparse restoration. Final linked ARM checks
+  pass 44 sparse vectors and 4,799 memory vectors. Whole-group instruction
+  measurements reject dense low-benefit sparse conversions and new font/text
+  retuning; the release caps sparse occupancy at 60% and preserves the prior
+  font/text streams. The two extra font candidates were evaluated and removed.
+  Complete final all-locale readback and the two installer ZIPs remain in
+  progress; this checkpoint is not a completed player release.
 - No current Firebird BootROM/NAND has been recovered. Host rendering, linked
   ARM instruction measurements and historical emulator results must not be
   relabelled as a new ordinary-OS or physical-device frame-rate measurement.
