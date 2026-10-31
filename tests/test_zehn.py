@@ -92,7 +92,7 @@ class ZehnAllocationTest(unittest.TestCase):
     def test_invalid_encoded_payload_never_replaces_previous_launcher(self):
         previous = self.target.read_bytes()
         with patch('zopfli.zlib.compress', return_value=zlib.compress(b'')):
-            with self.assertRaises(AssertionError), redirect_stdout(StringIO()):
+            with self.assertRaisesRegex(ValueError, 'loaded bytes'), redirect_stdout(StringIO()):
                 build(self.source, self.target, 'zopfli')
         self.assertEqual(self.target.read_bytes(), previous)
 
@@ -112,6 +112,29 @@ class ZehnCompressionTest(unittest.TestCase):
                 encoded = compress_image(raw, 'zopfli')
                 self.assertLessEqual(len(encoded), len(zlib.compress(raw, 9)))
                 self.assertEqual(zlib.decompress(encoded), raw)
+
+
+    @unittest.skipUnless(importlib.util.find_spec('zopfli'), 'optional release encoder not installed')
+    def test_fixed_profiles_keep_earlier_winner_and_never_silently_use_bad_output(self):
+        raw = b'ABC' * 10000
+        fallback, best, larger = (zlib.compress(raw, level) for level in (1, 9, 0))
+        self.assertLess(len(best), len(fallback))
+        for candidates in ((best, larger), (larger, best)):
+            with self.subTest(order=[len(c) for c in candidates]):
+                with patch.object(zehn.zlib, 'compress', return_value=fallback), \
+                     patch('zopfli.zlib.compress', side_effect=candidates) as encoder:
+                    self.assertEqual(compress_image(raw, 'zopfli'), best)
+                    self.assertEqual(encoder.call_count, 2)
+                    self.assertEqual([call.kwargs for call in encoder.call_args_list], [
+                        dict(numiterations=5, blocksplitting=True, blocksplittingmax=15),
+                        dict(numiterations=20, blocksplitting=True, blocksplittingmax=64)])
+        for invalid in (b'bad', best+b'trailing', best[:-1], zlib.compress(b'wrong')):
+            with self.subTest(invalid=invalid[:8]):
+                with patch('zopfli.zlib.compress', return_value=invalid):
+                    # Force selection so the exact independent decoder runs.
+                    with patch.object(zehn.zlib, 'compress', return_value=larger):
+                        with self.assertRaisesRegex(ValueError, 'Release compressor'):
+                            compress_image(raw, 'zopfli')
 
 
 if __name__ == '__main__':
