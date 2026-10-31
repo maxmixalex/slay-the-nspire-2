@@ -28,13 +28,34 @@ class AnimationColorCandidateTest(unittest.TestCase):
             self.assertEqual(actual, expected)
             self.assertEqual((mapped[0], mapped[-1]), (0, 65535))
 
-    def test_every_opacity_and_tile_edge_survive(self):
+    def test_every_opacity_class_and_tile_edge_survive(self):
         raw = bytes((16, 16)) + np.arange(256, dtype='<u2').tobytes() + bytes(range(256))
         for policy in candidate.LEVELS:
             output = candidate.color_tiles(raw, policy)
             self.assertEqual(output[:2], raw[:2])
-            self.assertEqual(output[514:], raw[514:])
+            self.assertEqual(output[514:], candidate.alpha_lut(policy).tobytes())
+            before = np.arange(256, dtype=np.int32)
+            after = np.frombuffer(output[514:], dtype='u1').astype(np.int32)
+            self.assertLessEqual(int(np.max(np.abs(after-before))), candidate.alpha_error(policy))
+            self.assertTrue(np.array_equal(before == 0, after == 0))
+            self.assertTrue(np.array_equal(before == 255, after == 255))
             self.assertEqual(len(output), len(raw))
+
+    def test_adaptive_colors_have_same_premultiplied_error_bound(self):
+        colors = np.arange(65536, dtype='<u2')
+        for opacity in (0, 1, 16, 17, 51, 52, 127, 128, 254, 255):
+            alpha = np.full(65536, opacity, dtype='u1')
+            mapped = candidate.mapped_colors(colors, alpha, '444a8-adaptive').astype(np.int32)
+            for shift, mask, bound in ((11, 31, 1), (5, 63, 2), (0, 31, 1)):
+                delta = np.abs(((mapped >> shift) & mask) -
+                               ((colors.astype(np.int32) >> shift) & mask))
+                self.assertLessEqual(int(delta.max()) * opacity, bound * 255)
+
+    def test_alpha_quantization_keeps_implicit_geometry_byte_exact(self):
+        import implicit_geometry
+        alpha = np.array([list(range(256))], dtype='u1')
+        original = implicit_geometry.alpha_geometry(alpha)
+        self.assertEqual(original, implicit_geometry.alpha_geometry(candidate.alpha_lut('444a6')[alpha]))
 
     def test_complete_pack_keeps_geometry_and_opaque_parameter_words(self):
         with tempfile.TemporaryDirectory() as tmp, redirect_stdout(StringIO()):
@@ -47,7 +68,7 @@ class AnimationColorCandidateTest(unittest.TestCase):
             for policy in candidate.LEVELS:
                 results = candidate.convert(before, policy, workers=1)
                 output = candidate.rewrite(before, {}, results)
-                candidate.verify(before, output, results)
+                candidate.verify(before, output, results, policy)
                 after = retile.view(output)
                 for image in range(len(before.images)):
                     if before.images[image][3] == 6:

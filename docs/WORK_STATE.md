@@ -1,3 +1,40 @@
+# UI23 active development — explicit storage and hardware requirements
+
+Continue on `work/ui23-integration` from UI22 `1fde6dec` and the coherent
+UI23 checkpoints. This work is in progress; no new release or calculator FPS
+acceptance is claimed here. The latest user instruction supersedes UI22's
+lossless-only policy and its description of the storage target as soft.
+
+- Required full-animation English + Simplified Chinese launcher/data target:
+  **65–70 decimal MB installed**, with **70,000,000 bytes** as the upper gate.
+  State files are extra. Report ZIP and installed sizes separately.
+- Preserve sharp 320×240 output and action clocks. Imperceptible bounded
+  color/alpha changes are now permitted; do not reintroduce low-density actor
+  animation. Complete sampled animations remain the default edition.
+- A second no-animation edition retains essential source poses and original
+  action timing. The same launcher detects its NAF1 content profile.
+- Deliver exactly two complete bilingual calculator ZIPs and one optional
+  language ZIP containing the matching language set for each edition.
+- Provide a simple converter entry point from the original game directory.
+  A native C++ implementation is optional; a pack-to-pack reducer alone is
+  not a complete original-game converter.
+- Preserve production memory/cache limits. Do not enlarge hardware RAM or
+  test allocations to manufacture successful execution. Static linked RAM,
+  host tests, instruction emulation, ordinary Firebird and physical hardware
+  measurements must remain explicitly distinct.
+- This environment currently exposes no physical calculator connection and
+  no recovered working Firebird firmware. Historical runs are not UI23 runs.
+
+Recovered UI22 baseline: installed launcher/data **99,526,983 bytes**, formal
+ARM allocation **22,535,324 bytes**. The scratch-reuse candidate at `44c1646`
+builds with **22,305,568 bytes**, down 229,756, while keeping usable cache
+capacities unchanged. This is still 14,552 above historical UI21 and is not a
+physical peak-memory measurement. Bounded color candidates and reduced-pose
+conversion are under actual-resource verification; no candidate is yet
+marked as meeting the storage, appearance and hardware acceptance together.
+
+Historical frozen UI22 details follow unchanged.
+
 # UI22 completed matching calculator release
 
 The current version is **0.1.0-ui22**, with **NSP2/46**, 58,613 images,

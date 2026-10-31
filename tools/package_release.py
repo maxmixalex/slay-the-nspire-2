@@ -6,6 +6,7 @@ import argparse
 import json
 from pathlib import Path
 import re
+import struct
 import zipfile
 
 from build_web import ROOT, package_runtime
@@ -22,6 +23,11 @@ def resource_version(path):
 
 
 def readme(info):
+    profile = info.get('animation_profile', 'animated')
+    animation = ('本包仅保留必要人物/怪物动作姿态，保留原有动作时长。启动器自动识别，无需切换设置。\n'
+                 'This edition keeps essential actor poses and original action durations. The launcher detects it automatically.\n') \
+                if profile == 'no-animations' else \
+                ('本包包含完整采样人物/怪物动画。\nThis edition includes the complete sampled actor animations.\n')
     shared = ('data/nSpire2.dat.tns         公共资源索引 / artwork index\n' +
               ''.join('data/'+name+'\n' for name in PART_FILES)) if info.get('multipart_artwork') else \
              'data/nSpire2.dat.tns         公共图片与动画 / shared artwork and animation\n'
@@ -38,6 +44,7 @@ def readme(info):
 首次安装：将 nSpire2.tns 与 data、state 文件夹一起复制到计算器上的游戏目录，打开 nSpire2.tns。
 Copy nSpire2.tns and the data/state folders into the game's calculator directory.
 Open nSpire2.tns. A color TI-Nspire with Ndless is required.
+{animation}
 
 nSpire2.tns                  程序 / launcher
 {shared.rstrip()}
@@ -146,10 +153,17 @@ def main():
     if resource_version(args.zhs) != version:
         p.error('English and Chinese resources must use the same format version')
     content_validation = None
+    animation_profile = None
     for code,path in (('eng',args.eng),('zhs',args.zhs)):
         logical = reconstruct(common_bytes,path.read_bytes(),code)
+        profile = ('no-animations' if len(logical) >= 40 and
+                   struct.unpack_from('<I', logical, 4)[0] >= 46 and
+                   logical[36:40] == b'NAF1' else 'animated')
         if code == 'eng':
             content_validation = validate_release_content(logical, args.stage)
+            animation_profile = profile
+        elif profile != animation_profile:
+            p.error('English and Chinese animation profiles differ')
         del logical
     base_version = (ROOT/'VERSION').read_text().strip().split('-',1)[0]
     release_version = f'{base_version}-{args.stage}'
@@ -157,6 +171,7 @@ def main():
                 progress_version=9, settings_version=6, calculator_run_storage='NSZ1 or raw NSV1',
                 calculator_history_storage='NSZ1 or raw NSH1-9',
                 stage=args.stage,
+                animation_profile=animation_profile,
                 runtime_checkpoint=args.runtime_checkpoint,
                 resource_checkpoint=args.resource_checkpoint,
                 developer_console=True, installation_layout="data/state",multipart_artwork=multipart,

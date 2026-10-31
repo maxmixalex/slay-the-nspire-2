@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 """Build private, unapproved color-only candidates for LCD visual comparison.
 
-No image is resized, no alpha value changes, and no animation frame is removed.
+No image is resized and no animation frame is removed. Alpha8 policies keep
+every alpha value; alpha6 policies have error <=2 and keep transparent, partial
+and opaque classes exactly, so geometry and implicit geometry remain unchanged.
 The output uses the input's existing tile/retained codecs, bounds and grouping.
 This is an experiment generator, not a claim that a color reduction is invisible.
 Typed opaque parameter images, fonts, text, geometry and clocks remain exact.
@@ -30,32 +32,87 @@ from tile_filter import filter_tiles
 
 
 LEVELS = {'555a8': (31, 31, 31), '454a8': (15, 31, 15),
-          '444a8': (15, 15, 15)}
+          '444a8': (15, 15, 15), '454a6': (15, 31, 15),
+          '444a6': (15, 15, 15), '444a8-adaptive': (15, 15, 15),
+          '444a6-adaptive': (15, 15, 15)}
+
+
+def alpha_error(policy):
+    return 2 if 'a6' in policy else 0
+
+
+@lru_cache(None)
+def alpha_lut(policy):
+    t.require(policy in LEVELS, 'Unknown color policy')
+    alpha = np.arange(256, dtype=np.int32)
+    if not alpha_error(policy):
+        return alpha.astype('u1')
+    levels = (alpha * 63 + 127) // 255
+    result = (levels * 255 + 31) // 63
+    # Sparse geometry distinguishes zero, partial and full opacity. Keep all
+    # three classes even near an endpoint, unlike historical alpha6 mapping.
+    result[1:255] = np.clip(result[1:255], 1, 254)
+    return result.astype('u1')
 
 
 @lru_cache(None)
 def color_lut(policy):
     """One time-independent color map; opacity is deliberately not an input."""
     t.require(policy in LEVELS, 'Unknown color policy')
+    return channel_lut(LEVELS[policy])
+
+
+@lru_cache(None)
+def channel_lut(levels):
     colors = np.arange(65536, dtype=np.int32)
     result = np.zeros(65536, dtype=np.int32)
-    for shift, previous, levels in zip((11, 5, 0), (31, 63, 31), LEVELS[policy]):
+    for shift, previous, level in zip((11, 5, 0), (31, 63, 31), levels):
         channel = (colors >> shift) & previous
-        reduced = (channel * levels + previous // 2) // previous
-        restored = (reduced * previous + levels // 2) // levels
+        reduced = (channel * level + previous // 2) // previous
+        restored = (reduced * previous + level // 2) // level
         result |= restored << shift
     return result.astype('<u2')
 
 
+def mapped_colors(colors, alpha, policy):
+    result = color_lut(policy)[colors]
+    if not policy.endswith('-adaptive') or alpha is None:
+        return result
+    # For source alpha a, these thresholds retain the ordinary 444 maximum
+    # premultiplied RGB565-code error: (1,2,1)*255. Alpha stays independent.
+    # Fully opaque pixels never receive a coarser palette than ordinary444.
+    for ceiling, levels in ((127, 7), (51, 3), (16, 1)):
+        mask = alpha <= ceiling
+        result[mask] = channel_lut((levels, levels, levels))[colors[mask]]
+    result[alpha == 0] = 0
+    return result
+
+
 def color_image(raw, fmt, policy, width=None, height=None):
-    """Only replace color words; preserve palette indices, alpha and geometry."""
+    """Map pixel channels; preserve palette indices and exact sparse geometry."""
     result = bytearray(raw)
     for at, count, stride in _color_ranges(raw, fmt, width, height):
         lo = np.ndarray((count,), dtype='u1', buffer=result, offset=at, strides=(stride,))
         hi = np.ndarray((count,), dtype='u1', buffer=result, offset=at + 1, strides=(stride,))
-        values = color_lut(policy)[lo.astype('u2') | (hi.astype('u2') << 8)]
+        source_alpha = None
+        if fmt == 4 and stride == 3:
+            source_alpha = np.ndarray((count,), dtype='u1', buffer=result,
+                                      offset=at + 2, strides=(stride,))
+        elif fmt == 1:
+            source_alpha = np.frombuffer(raw, dtype='u1', offset=len(raw)//3*2)
+        values = mapped_colors(lo.astype('u2') | (hi.astype('u2') << 8), source_alpha, policy)
         lo[:] = values & 255
         hi[:] = values >> 8
+        if fmt == 4 and stride == 3:
+            alpha = np.ndarray((count,), dtype='u1', buffer=result,
+                               offset=at + 2, strides=(stride,))
+            alpha[:] = alpha_lut(policy)[alpha]
+    if fmt == 1:
+        start = len(raw) // 3 * 2
+        result[start:] = alpha_lut(policy)[np.frombuffer(raw, dtype='u1', offset=start)].tobytes()
+    elif fmt == 3:
+        start = 512 + (len(raw) - 512) // 2
+        result[start:] = alpha_lut(policy)[np.frombuffer(raw, dtype='u1', offset=start)].tobytes()
     return bytes(result)
 
 
@@ -64,10 +121,12 @@ def color_tiles(raw, policy):
     original = np.frombuffer(raw, dtype='u1').reshape(-1, t.TILE_BYTES)
     result = original.copy()
     colors = original[:, 2:514].copy().view('<u2').reshape(-1, 256)
-    result[:, 2:514] = color_lut(policy)[colors].view('u1').reshape(-1, 512)
+    result[:, 2:514] = mapped_colors(colors, original[:, 514:], policy).view('u1').reshape(-1, 512)
+    result[:, 514:] = alpha_lut(policy)[original[:, 514:]]
     t.require(np.array_equal(result[:, :2], original[:, :2]) and
-              np.array_equal(result[:, 514:], original[:, 514:]),
-              'Tile dimensions or alpha changed')
+              np.array_equal(result[:, 514:] == 0, original[:, 514:] == 0) and
+              np.array_equal(result[:, 514:] == 255, original[:, 514:] == 255),
+              'Tile dimensions or alpha classes changed')
     return result.tobytes()
 
 
@@ -160,7 +219,7 @@ def convert(source, policy, *, workers=2, retained=True):
     return results
 
 
-def verify(source, output, results):
+def verify(source, output, results, policy):
     target = view(output)
     before, after = t.TileReader(source), t.TileReader(target)
     t.require(source.counts == target.counts and source.clips == target.clips and
@@ -173,8 +232,9 @@ def verify(source, output, results):
         t.require(t.sha256(raw) == changed_tiles[group]['raw_sha256'], 'Candidate tile pixels differ')
         a = np.frombuffer(before.group(group)[0], dtype='u1').reshape(-1, t.TILE_BYTES)
         b = np.frombuffer(raw, dtype='u1').reshape(-1, t.TILE_BYTES)
-        t.require(np.array_equal(a[:, :2], b[:, :2]) and np.array_equal(a[:, 514:], b[:, 514:]),
-                  'Tile dimensions or source alpha changed')
+        t.require(np.array_equal(a[:, :2], b[:, :2]) and
+                  np.array_equal(alpha_lut(policy)[a[:, 514:]], b[:, 514:]),
+                  'Tile dimensions or declared alpha mapping changed')
     for group in range(before.tile_groups, len(before.groups)):
         a, b = before.groups[group], after.groups[group]
         t.require(source.data[a[0]-32:a[0]+a[1]] == output[b[0]-32:b[0]+b[1]],
@@ -208,7 +268,8 @@ def verify(source, output, results):
     t.require(source.data[old_cost:old_cost+len(source.images)] == output[new_cost:new_cost+len(target.images)],
               'Decoded cache-page costs changed')
     return dict(tile_groups=before.tile_groups, exact_index_groups=before.index_groups,
-                alpha_dimensions_geometry_clocks_cache_costs_exact=True,
+                alpha_maximum_error=alpha_error(policy),
+                alpha_classes_dimensions_geometry_clocks_cache_costs_exact=True,
                 glyphs=len(source.glyphs), strings=len(source.strings),
                 retained_changed_groups=len(changed_retained))
 
@@ -233,14 +294,15 @@ def main(argv=None):
         source = view(data)
         results = convert(source, args.policy, workers=args.workers, retained=not args.tiles_only)
         output = rewrite(source, {}, results)
-        checked = verify(source, output, results)
+        checked = verify(source, output, results, args.policy)
         t.atomic_bytes(args.output, output)
         receipt = dict(schema=1, complete=True, not_release_approved=True, policy=args.policy,
             input_sha256=t.sha256(data), output_sha256=t.sha256(output),
             input_bytes=len(data), output_bytes=len(output), saved_bytes=len(data)-len(output),
             visual_comparison_required=True, complete_decoder_performance_required=True,
             no_runtime_codec_or_buffer_added=True, no_frames_removed_or_resampled=True,
-            alpha_error=0, verification=checked, seconds=time.monotonic()-started,
+            alpha_error=alpha_error(args.policy),
+            verification=checked, seconds=time.monotonic()-started,
             groups=[{k:v for k,v in row.items() if k != 'payload'} for row in results])
         t.atomic_bytes(args.output.with_suffix('.json'), (json.dumps(receipt, indent=2)+'\n').encode())
         emit('color_candidate_complete', **{k:v for k,v in receipt.items() if k != 'groups'})

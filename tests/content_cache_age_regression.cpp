@@ -267,6 +267,53 @@ void retained_quarters_share_and_evict(){
     for(const auto&g:tile_groups)CHECK(!g.pages&&!g.owner);
     CHECK(!reserve_tile_group(0,true)&&!reserve_tile_group(Lzma2LargeRawLimit+1,true));
 }
+void implicit_reservation_lifecycle(){
+    clear_caches(&owner);clear_caches(&second_owner);owner.set_image_cache_profile(false);
+    const unsigned pages_before=image_page_limit,groups_before=tile_page_limit;
+    const unsigned chunk_pages=16,count=pages_before/chunk_pages;
+    std::vector<uint8_t> metadata(40+(count*2+4)*16);
+    const ImageDirectoryView directory{metadata.data()+40,16};
+    const auto word=[&](unsigned at,uint32_t value){for(unsigned b=0;b<4;++b)metadata[at+b]=uint8_t(value>>(b*8));};
+    for(unsigned id=0;id<count*2+4;++id){word(40+id*16,id*65536u);word(44+id*16,0x00010001u);word(52+id*16,2);}
+    for(unsigned id=0;id<count;++id){
+        ImageReservation image(chunk_pages*ImagePageBytes);CHECK(image.bytes());
+        image.publish(&owner,directory,id,0,true);
+    }
+    // The actual production arena is full. Reconstruction may evict old
+    // pictures, but subsequent image demand must never overwrite its lease.
+    unsigned identity=0;CHECK(acquire_implicit_scratch(&identity,implicit_geometry::Pixels));
+    auto*bytes=reinterpret_cast<uint8_t*>(implicit_dense.colors);
+    std::fill_n(bytes,implicit_geometry::DenseBytes,uint8_t(0x5b));
+    for(unsigned id=count;id<count*2;++id){
+        ImageReservation image(chunk_pages*ImagePageBytes);CHECK(image.bytes());
+        std::fill_n(image.bytes(),chunk_pages*ImagePageBytes,uint8_t(id));
+        image.publish(&owner,directory,id,0,true);
+    }
+    for(unsigned i=0;i<implicit_geometry::DenseBytes;++i)CHECK(bytes[i]==0x5b);
+    release_implicit_scratch(&identity);CHECK(!implicit_dense_owner&&!implicit_dense_reservation);
+    CHECK(image_page_limit==pages_before&&tile_page_limit==groups_before);
+    clear_caches(&owner);for(auto page:image_used)CHECK(!page);
+
+    // An arena occupied only by unpublished results is not evictable. A
+    // refused scratch lease must leave neither an owner nor a stranded page.
+    std::vector<ImageCache*> held;
+    for(unsigned i=0;i<count;++i){auto*entry=reserve_image(chunk_pages*ImagePageBytes);CHECK(entry);held.push_back(entry);}
+    CHECK(!acquire_implicit_scratch(&identity,implicit_geometry::Pixels));
+    CHECK(!implicit_dense_owner&&!implicit_dense_reservation);
+    for(auto*entry:held)discard_image(*entry);
+    for(auto page:image_used)CHECK(!page);
+
+    // Shrinking the real room profile cancels a paused implicit preparation
+    // before the former image pages become the relocated tile-group arena.
+    owner.set_image_cache_profile(true);content_preload.owner=&owner;
+    CHECK(acquire_implicit_scratch(&content_preload,implicit_geometry::Pixels));
+    owner.set_image_cache_profile(false);
+    CHECK(!content_preload.owner&&!implicit_dense_owner&&!implicit_dense_reservation);
+    for(auto page:image_used)CHECK(!page);
+    CHECK(acquire_implicit_scratch(&identity,33u*97u));
+    CHECK(implicit_dense.bytes==33u*97u*3u);
+    release_implicit_scratch(&identity);for(auto page:image_used)CHECK(!page);
+}
 }
 int main(){
     collision_and_eviction(12);collision_and_eviction(16);
@@ -288,5 +335,6 @@ int main(){
     CHECK(image_page_limit==ImagePages&&tile_page_limit==48);
     large_room_allocations();
     retained_quarters_share_and_evict();
+    implicit_reservation_lifecycle();
     std::printf("content cache ages: %u checks passed;1151 colliding keys with all five decoded formats, owner/alias eviction, age wrap, bounded frame-pool splits and compact retained quarters\n",checks);
 }

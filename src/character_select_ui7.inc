@@ -115,7 +115,9 @@ static void character_screen(Canvas&c){
     const auto&definition=character_definitions[character];
     const auto clip=a.content.version()>=RoomUi7ContentVersion?a.content.clip(int(FirstClip+character)):Clip{};
     if(random){
-        if(random_character_background(c,a.map_clock_ms,a.map_clock_ms-motion.panel_start,motion.panel_start)){}
+        if(a.content.reduced_animations()&&a.content.version()>=SourceVersion)
+            c.ui(I12_RandomBackground,0,0,320,240);
+        else if(random_character_background(c,a.map_clock_ms,a.map_clock_ms-motion.panel_start,motion.panel_start)){}
         else if(a.content.version()>=SourceVersion)c.ui(I12_RandomBackground,0,0,320,240);
         else{c.picture(A_Title,0,0,320,240);c.dim(0,0,320,240,110);}
     }else if(clip.count&&a.content.reduced_animations()){
