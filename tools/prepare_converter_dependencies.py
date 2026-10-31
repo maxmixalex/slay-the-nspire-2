@@ -20,8 +20,11 @@ def fetch(url,path,expected):
     if path.is_file() and hashlib.sha256(path.read_bytes()).hexdigest()==expected:
         return
     request=urllib.request.Request(url,headers={'User-Agent':'nspire2-converter-dependency-builder'})
-    with urllib.request.urlopen(request,timeout=60) as response:
-        data=response.read(4*1024*1024+1)
+    try:
+        with urllib.request.urlopen(request,timeout=60) as response:
+            data=response.read(4*1024*1024+1)
+    except OSError as exc:
+        raise ValueError(f'Cannot fetch pinned dependency {url}: {exc}') from exc
     if len(data)>4*1024*1024 or hashlib.sha256(data).hexdigest()!=expected:
         raise ValueError('Pinned dependency source differs: '+url)
     path.parent.mkdir(parents=True,exist_ok=True)

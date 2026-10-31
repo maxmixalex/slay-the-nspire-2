@@ -236,11 +236,6 @@
       "path": "Triangulator.cs",
       "bytes": 10583,
       "sha256": "f906bfc88c991641b85642b23f273d0628de418f75bc2bba01f0ceffad15ed05"
-    },
-    {
-      "path": "LICENSE",
-      "bytes": 1469,
-      "sha256": "b9d50158f6c23a704d123fd0200cc00633a693ccf9b0aacb15e5d5b9cf6c0d58"
     }
   ],
   "license_sha256": "b9d50158f6c23a704d123fd0200cc00633a693ccf9b0aacb15e5d5b9cf6c0d58",
