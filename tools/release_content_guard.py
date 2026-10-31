@@ -22,7 +22,7 @@ MAGIC = 0x4652
 UI22_BASE_AUX = 5422
 UI22_CLIPS = 1783
 UI22_ACTOR_AUX = 7206
-UI22_REQUIRED_AUX = 7211
+UI22_REQUIRED_AUX = 7212
 # Pinned UI22 coverage for reference 41cef1ea. Zero-valued clip units were
 # resolved through the model registration when selecting this source pass.
 UI22_CLIP_RANGES = ((0,3),(11,15),(17,20),(22,25),(27,30),(32,36),(43,51),(60,66),
@@ -36,7 +36,7 @@ UI22_SELECTION_COUNTS = (64,140,160,80,96)
 
 
 def validate_ui22(source, image):
-    tiles.require(len(source.aux) >= UI22_REQUIRED_AUX and len(source.clips) == UI22_CLIPS and
+    tiles.require(len(source.aux) >= UI22_ACTOR_AUX+5 and len(source.clips) == UI22_CLIPS and
                   len(source.images) >= 58612,
                   'UI22 requires the complete native actor catalog and five selection markers (7211 auxiliaries)')
     entries=source.aux[UI22_BASE_AUX:UI22_ACTOR_AUX]
@@ -129,7 +129,7 @@ def validate_release_content(data, stage):
     count = auxiliary_count(data)
     if int(match[1])>=22:
         tiles.require(count>=UI22_REQUIRED_AUX,
-                      'UI22 content is missing: native actor registry and five exact selection markers require 7211 auxiliaries')
+                      'UI22 content is missing: complete native actors, selection and guarded legacy retirement require 7212 auxiliaries')
     tiles.require(count >= REQUIRED_AUX,
                   'UI20 content is missing: expected framed actions, Osty dead_loop and reward icons (5422 auxiliaries)')
     source = tiles.PackView(data, count, versions=tuple(range(44, tiles.MAXIMUM_CONTENT_VERSION + 1)))
@@ -206,5 +206,8 @@ def validate_release_content(data, stage):
                   'UI20 reward icons must contain distinct artwork')
     result=dict(complete=True, auxiliary_count=count, framed_tables=tables,
                 checked_frame_images=len(checked_pixels), reward_icons=rewards)
-    if int(match[1])>=22:result['ui22']=validate_ui22(source,image)
+    if int(match[1])>=22:
+        result['ui22']=validate_ui22(source,image)
+        from retired_assets_ui22 import validate_retired_profile
+        result['ui22']['retirement']=validate_retired_profile(source,image)
     return result

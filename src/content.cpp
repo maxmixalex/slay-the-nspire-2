@@ -12,6 +12,7 @@
 #include "framed_animation_ui20.hpp"
 #include "framed_animation_ui22.hpp"
 #include "character_select_delta.hpp"
+#include "retired_assets_ui22.hpp"
 extern "C" void* memcpy(void*,const void*,size_t);
 namespace spire {
 static uint16_t u16(const uint8_t*p){return p[0]|(uint16_t)p[1]<<8;}
@@ -349,7 +350,8 @@ bool Content::open(ResourceSource source){
                                                     MerchantUi14AuxiliaryCount,RoomsUi15AuxiliaryCount,
                                                     CombatUi15AuxiliaryCount,VantomUi15AuxiliaryCount,
                                                     vantom_vfx::AuxiliaryCount,FramedUi20AuxiliaryCount,
-                                                    FramedUi22AuxiliaryCount,character_select_delta::AuxiliaryCount};
+                                                    FramedUi22AuxiliaryCount,character_select_delta::AuxiliaryCount,
+                                                    retired_assets_ui22::AuxiliaryCount};
                                                 for(unsigned end:endpoints){
                                                     if(next==0x314c4954u)break;
                                                     for(unsigned i=auxiliary;i<end;++i){
@@ -422,6 +424,35 @@ bool Content::open(ResourceSource source){
     }
     if(version>=5){
         ui_count_=auxiliary;ui_offset_=image_directory_end()+ng*16+ns*8+nc*16+cards*16;
+    }
+    if(auxiliary==retired_assets_ui22::AuxiliaryCount){
+        using namespace retired_assets_ui22;
+        // The offline release guard proves the fixed retirement plan and all
+        // live roots. Opening additionally rejects a missing/corrupt marker;
+        // an IO failure cannot turn a partial pack into a legacy fallback.
+        if(version<45||images_!=Images||clips_!=1783||ui_image(AuxiliaryFirst)!=int(MarkerImage))return reject();
+        const auto marker=image_directory_[MarkerImage];uint8_t bytes[16];
+        if(marker.width()!=8||marker.height()!=1||marker.format!=0||marker.length!=sizeof bytes||
+           marker.offset<base||!reader_.read(marker.offset,bytes,sizeof bytes)||
+           u32(bytes)!=Magic||u32(bytes+4)!=Revision||u32(bytes+8)!=PlanTag||u32(bytes+12)!=RetiredImages)return reject();
+        // Retirement makes the complete layered merchant a functional
+        // prerequisite. Check its resident identities and boundary shapes;
+        // do not decode animation payloads or scan resource-wide hashes.
+        const auto sized=[&](unsigned id,unsigned w,unsigned h){
+            if(id>=images_)return false;const auto row=image_directory_[id];
+            return row.width()==w&&row.height()==h;
+        };
+        if(ui_image(U_MerchantBackdrop)!=45810||!sized(45810,320,218))return reject();
+        static constexpr uint16_t merchant[][4]={
+            {45811,145,320,218},{45956,145,57,70},{46101,256,84,102},
+            {46357,169,49,103},{46526,256,86,112},{46782,256,70,124},
+            {47038,145,73,103},{47183,145,58,71},{47328,150,11,9},{47478,150,58,130}};
+        for(unsigned i=0;i<10;++i){
+            const auto&row=merchant[i];const auto sequence=clip(AnimMerchantRoomBottom+int(i));
+            if(sequence.first!=row[0]||sequence.count!=row[1]||
+               !sized(sequence.first,row[2],row[3])||!sized(sequence.first+sequence.count-1,row[2],row[3])||
+               ui_image(I14_MerchantFixed+int(i))!=int(54327+i)||!sized(54327+i,row[2],row[3]))return reject();
+        }
     }
     cards_=version>=4?cards:14;reader_.progress(ResourceStage::Ready,1,1);return true;
 }

@@ -1,0 +1,1193 @@
+{
+  "schema": 1,
+  "reference": "v0.111.0 / 41cef1ea",
+  "source_checkpoint": "a37d6ea507f43f7124bd0c898a63be641cb5259c",
+  "input_auxiliary": 7211,
+  "output_auxiliary": 7212,
+  "input_images": 58612,
+  "marker_image": 58612,
+  "retired_images": 1598,
+  "retired_clips": [
+    {
+      "id": 8,
+      "key": "AnimMerchantTop",
+      "tuple": [
+        321,
+        145,
+        41,
+        -257,
+        -91,
+        0
+      ]
+    },
+    {
+      "id": 9,
+      "key": "AnimMerchantBottom",
+      "tuple": [
+        466,
+        145,
+        41,
+        -12,
+        7,
+        0
+      ]
+    },
+    {
+      "id": 166,
+      "key": "Crusher.body/idle_loop@kaiser_left_dead=0,kaiser_right_dead=0,right_arm_state=0",
+      "tuple": [
+        6484,
+        25,
+        120,
+        8,
+        34,
+        0
+      ]
+    },
+    {
+      "id": 167,
+      "key": "Crusher.body/idle_loop@kaiser_left_dead=0,kaiser_right_dead=0,right_arm_state=1",
+      "tuple": [
+        6509,
+        25,
+        120,
+        8,
+        34,
+        0
+      ]
+    },
+    {
+      "id": 168,
+      "key": "Crusher.body/idle_loop@kaiser_left_dead=0,kaiser_right_dead=0,right_arm_state=2",
+      "tuple": [
+        6534,
+        25,
+        120,
+        8,
+        34,
+        0
+      ]
+    },
+    {
+      "id": 169,
+      "key": "Crusher.body/idle_loop@kaiser_left_dead=0,kaiser_right_dead=1,right_arm_state=0",
+      "tuple": [
+        6559,
+        25,
+        120,
+        8,
+        34,
+        0
+      ]
+    },
+    {
+      "id": 170,
+      "key": "Crusher.body/idle_loop@kaiser_left_dead=0,kaiser_right_dead=1,right_arm_state=1",
+      "tuple": [
+        6584,
+        25,
+        120,
+        8,
+        34,
+        0
+      ]
+    },
+    {
+      "id": 171,
+      "key": "Crusher.body/idle_loop@kaiser_left_dead=0,kaiser_right_dead=1,right_arm_state=2",
+      "tuple": [
+        6609,
+        25,
+        120,
+        8,
+        34,
+        0
+      ]
+    },
+    {
+      "id": 172,
+      "key": "Crusher.body/idle_loop@kaiser_left_dead=1,kaiser_right_dead=0,right_arm_state=0",
+      "tuple": [
+        6634,
+        25,
+        120,
+        8,
+        34,
+        0
+      ]
+    },
+    {
+      "id": 173,
+      "key": "Crusher.body/idle_loop@kaiser_left_dead=1,kaiser_right_dead=0,right_arm_state=1",
+      "tuple": [
+        6659,
+        25,
+        120,
+        8,
+        34,
+        0
+      ]
+    },
+    {
+      "id": 174,
+      "key": "Crusher.body/idle_loop@kaiser_left_dead=1,kaiser_right_dead=0,right_arm_state=2",
+      "tuple": [
+        6684,
+        25,
+        120,
+        8,
+        34,
+        0
+      ]
+    },
+    {
+      "id": 175,
+      "key": "Crusher.body/idle_loop@kaiser_left_dead=1,kaiser_right_dead=1,right_arm_state=0",
+      "tuple": [
+        6709,
+        25,
+        120,
+        8,
+        34,
+        0
+      ]
+    },
+    {
+      "id": 176,
+      "key": "Crusher.body/idle_loop@kaiser_left_dead=1,kaiser_right_dead=1,right_arm_state=1",
+      "tuple": [
+        6734,
+        25,
+        120,
+        8,
+        34,
+        0
+      ]
+    },
+    {
+      "id": 177,
+      "key": "Crusher.body/idle_loop@kaiser_left_dead=1,kaiser_right_dead=1,right_arm_state=2",
+      "tuple": [
+        6759,
+        25,
+        120,
+        8,
+        34,
+        0
+      ]
+    },
+    {
+      "id": 322,
+      "key": "Crusher.reactions/attack_left@kaiser_left_dead=0,kaiser_right_dead=0,right_arm_state=0",
+      "tuple": [
+        9892,
+        19,
+        79,
+        8,
+        34,
+        0
+      ]
+    },
+    {
+      "id": 323,
+      "key": "Crusher.reactions/attack_left@kaiser_left_dead=0,kaiser_right_dead=0,right_arm_state=1",
+      "tuple": [
+        9911,
+        19,
+        79,
+        8,
+        34,
+        0
+      ]
+    },
+    {
+      "id": 324,
+      "key": "Crusher.reactions/attack_left@kaiser_left_dead=0,kaiser_right_dead=0,right_arm_state=2",
+      "tuple": [
+        9930,
+        19,
+        79,
+        8,
+        34,
+        0
+      ]
+    },
+    {
+      "id": 325,
+      "key": "Crusher.reactions/attack_left@kaiser_left_dead=0,kaiser_right_dead=1,right_arm_state=0",
+      "tuple": [
+        9949,
+        19,
+        79,
+        8,
+        34,
+        0
+      ]
+    },
+    {
+      "id": 326,
+      "key": "Crusher.reactions/attack_left@kaiser_left_dead=0,kaiser_right_dead=1,right_arm_state=1",
+      "tuple": [
+        9968,
+        19,
+        79,
+        8,
+        34,
+        0
+      ]
+    },
+    {
+      "id": 327,
+      "key": "Crusher.reactions/attack_left@kaiser_left_dead=0,kaiser_right_dead=1,right_arm_state=2",
+      "tuple": [
+        9987,
+        19,
+        79,
+        8,
+        34,
+        0
+      ]
+    },
+    {
+      "id": 328,
+      "key": "Crusher.reactions/attack_left@kaiser_left_dead=1,kaiser_right_dead=0,right_arm_state=0",
+      "tuple": [
+        10006,
+        19,
+        79,
+        8,
+        34,
+        0
+      ]
+    },
+    {
+      "id": 329,
+      "key": "Crusher.reactions/attack_left@kaiser_left_dead=1,kaiser_right_dead=0,right_arm_state=1",
+      "tuple": [
+        10025,
+        19,
+        79,
+        8,
+        34,
+        0
+      ]
+    },
+    {
+      "id": 330,
+      "key": "Crusher.reactions/attack_left@kaiser_left_dead=1,kaiser_right_dead=0,right_arm_state=2",
+      "tuple": [
+        10044,
+        19,
+        79,
+        8,
+        34,
+        0
+      ]
+    },
+    {
+      "id": 331,
+      "key": "Crusher.reactions/attack_left@kaiser_left_dead=1,kaiser_right_dead=1,right_arm_state=0",
+      "tuple": [
+        10063,
+        19,
+        79,
+        8,
+        34,
+        0
+      ]
+    },
+    {
+      "id": 332,
+      "key": "Crusher.reactions/attack_left@kaiser_left_dead=1,kaiser_right_dead=1,right_arm_state=1",
+      "tuple": [
+        10082,
+        19,
+        79,
+        8,
+        34,
+        0
+      ]
+    },
+    {
+      "id": 333,
+      "key": "Crusher.reactions/attack_left@kaiser_left_dead=1,kaiser_right_dead=1,right_arm_state=2",
+      "tuple": [
+        10101,
+        19,
+        79,
+        8,
+        34,
+        0
+      ]
+    },
+    {
+      "id": 334,
+      "key": "Crusher.reactions/hurt_left@kaiser_left_dead=0,kaiser_right_dead=0,right_arm_state=0",
+      "tuple": [
+        10120,
+        10,
+        77,
+        8,
+        34,
+        0
+      ]
+    },
+    {
+      "id": 335,
+      "key": "Crusher.reactions/hurt_left@kaiser_left_dead=0,kaiser_right_dead=0,right_arm_state=1",
+      "tuple": [
+        10130,
+        10,
+        77,
+        8,
+        34,
+        0
+      ]
+    },
+    {
+      "id": 336,
+      "key": "Crusher.reactions/hurt_left@kaiser_left_dead=0,kaiser_right_dead=0,right_arm_state=2",
+      "tuple": [
+        10140,
+        10,
+        77,
+        8,
+        34,
+        0
+      ]
+    },
+    {
+      "id": 337,
+      "key": "Crusher.reactions/hurt_left@kaiser_left_dead=0,kaiser_right_dead=1,right_arm_state=0",
+      "tuple": [
+        10150,
+        10,
+        77,
+        8,
+        34,
+        0
+      ]
+    },
+    {
+      "id": 338,
+      "key": "Crusher.reactions/hurt_left@kaiser_left_dead=0,kaiser_right_dead=1,right_arm_state=1",
+      "tuple": [
+        10160,
+        10,
+        77,
+        8,
+        34,
+        0
+      ]
+    },
+    {
+      "id": 339,
+      "key": "Crusher.reactions/hurt_left@kaiser_left_dead=0,kaiser_right_dead=1,right_arm_state=2",
+      "tuple": [
+        10170,
+        10,
+        77,
+        8,
+        34,
+        0
+      ]
+    },
+    {
+      "id": 340,
+      "key": "Crusher.reactions/hurt_left@kaiser_left_dead=1,kaiser_right_dead=0,right_arm_state=0",
+      "tuple": [
+        10180,
+        10,
+        77,
+        8,
+        34,
+        0
+      ]
+    },
+    {
+      "id": 341,
+      "key": "Crusher.reactions/hurt_left@kaiser_left_dead=1,kaiser_right_dead=0,right_arm_state=1",
+      "tuple": [
+        10190,
+        10,
+        77,
+        8,
+        34,
+        0
+      ]
+    },
+    {
+      "id": 342,
+      "key": "Crusher.reactions/hurt_left@kaiser_left_dead=1,kaiser_right_dead=0,right_arm_state=2",
+      "tuple": [
+        10200,
+        10,
+        77,
+        8,
+        34,
+        0
+      ]
+    },
+    {
+      "id": 343,
+      "key": "Crusher.reactions/hurt_left@kaiser_left_dead=1,kaiser_right_dead=1,right_arm_state=0",
+      "tuple": [
+        10210,
+        10,
+        77,
+        8,
+        34,
+        0
+      ]
+    },
+    {
+      "id": 344,
+      "key": "Crusher.reactions/hurt_left@kaiser_left_dead=1,kaiser_right_dead=1,right_arm_state=1",
+      "tuple": [
+        10220,
+        10,
+        77,
+        8,
+        34,
+        0
+      ]
+    },
+    {
+      "id": 345,
+      "key": "Crusher.reactions/hurt_left@kaiser_left_dead=1,kaiser_right_dead=1,right_arm_state=2",
+      "tuple": [
+        10230,
+        10,
+        77,
+        8,
+        34,
+        0
+      ]
+    },
+    {
+      "id": 805,
+      "key": "Rocket.body/idle_loop@kaiser_left_dead=0,kaiser_right_dead=0,right_arm_state=0",
+      "tuple": [
+        20224,
+        25,
+        120,
+        8,
+        34,
+        0
+      ]
+    },
+    {
+      "id": 806,
+      "key": "Rocket.body/idle_loop@kaiser_left_dead=0,kaiser_right_dead=0,right_arm_state=1",
+      "tuple": [
+        20249,
+        25,
+        120,
+        8,
+        34,
+        0
+      ]
+    },
+    {
+      "id": 807,
+      "key": "Rocket.body/idle_loop@kaiser_left_dead=0,kaiser_right_dead=0,right_arm_state=2",
+      "tuple": [
+        20274,
+        25,
+        120,
+        8,
+        34,
+        0
+      ]
+    },
+    {
+      "id": 808,
+      "key": "Rocket.body/idle_loop@kaiser_left_dead=0,kaiser_right_dead=1,right_arm_state=0",
+      "tuple": [
+        20299,
+        25,
+        120,
+        8,
+        34,
+        0
+      ]
+    },
+    {
+      "id": 809,
+      "key": "Rocket.body/idle_loop@kaiser_left_dead=0,kaiser_right_dead=1,right_arm_state=1",
+      "tuple": [
+        20324,
+        25,
+        120,
+        8,
+        34,
+        0
+      ]
+    },
+    {
+      "id": 810,
+      "key": "Rocket.body/idle_loop@kaiser_left_dead=0,kaiser_right_dead=1,right_arm_state=2",
+      "tuple": [
+        20349,
+        25,
+        120,
+        8,
+        34,
+        0
+      ]
+    },
+    {
+      "id": 811,
+      "key": "Rocket.body/idle_loop@kaiser_left_dead=1,kaiser_right_dead=0,right_arm_state=0",
+      "tuple": [
+        20374,
+        25,
+        120,
+        8,
+        34,
+        0
+      ]
+    },
+    {
+      "id": 812,
+      "key": "Rocket.body/idle_loop@kaiser_left_dead=1,kaiser_right_dead=0,right_arm_state=1",
+      "tuple": [
+        20399,
+        25,
+        120,
+        8,
+        34,
+        0
+      ]
+    },
+    {
+      "id": 813,
+      "key": "Rocket.body/idle_loop@kaiser_left_dead=1,kaiser_right_dead=0,right_arm_state=2",
+      "tuple": [
+        20424,
+        25,
+        120,
+        8,
+        34,
+        0
+      ]
+    },
+    {
+      "id": 814,
+      "key": "Rocket.body/idle_loop@kaiser_left_dead=1,kaiser_right_dead=1,right_arm_state=0",
+      "tuple": [
+        20449,
+        25,
+        120,
+        8,
+        34,
+        0
+      ]
+    },
+    {
+      "id": 815,
+      "key": "Rocket.body/idle_loop@kaiser_left_dead=1,kaiser_right_dead=1,right_arm_state=1",
+      "tuple": [
+        20474,
+        25,
+        120,
+        8,
+        34,
+        0
+      ]
+    },
+    {
+      "id": 816,
+      "key": "Rocket.body/idle_loop@kaiser_left_dead=1,kaiser_right_dead=1,right_arm_state=2",
+      "tuple": [
+        20499,
+        25,
+        120,
+        8,
+        34,
+        0
+      ]
+    },
+    {
+      "id": 817,
+      "key": "Rocket.reactions/attack_right@kaiser_left_dead=0,kaiser_right_dead=0,right_arm_state=0",
+      "tuple": [
+        20524,
+        19,
+        79,
+        8,
+        34,
+        0
+      ]
+    },
+    {
+      "id": 818,
+      "key": "Rocket.reactions/attack_right@kaiser_left_dead=0,kaiser_right_dead=0,right_arm_state=1",
+      "tuple": [
+        20543,
+        19,
+        79,
+        8,
+        34,
+        0
+      ]
+    },
+    {
+      "id": 819,
+      "key": "Rocket.reactions/attack_right@kaiser_left_dead=0,kaiser_right_dead=0,right_arm_state=2",
+      "tuple": [
+        20562,
+        19,
+        79,
+        8,
+        34,
+        0
+      ]
+    },
+    {
+      "id": 820,
+      "key": "Rocket.reactions/attack_right@kaiser_left_dead=0,kaiser_right_dead=1,right_arm_state=0",
+      "tuple": [
+        20581,
+        19,
+        79,
+        8,
+        34,
+        0
+      ]
+    },
+    {
+      "id": 821,
+      "key": "Rocket.reactions/attack_right@kaiser_left_dead=0,kaiser_right_dead=1,right_arm_state=1",
+      "tuple": [
+        20600,
+        19,
+        79,
+        8,
+        34,
+        0
+      ]
+    },
+    {
+      "id": 822,
+      "key": "Rocket.reactions/attack_right@kaiser_left_dead=0,kaiser_right_dead=1,right_arm_state=2",
+      "tuple": [
+        20619,
+        19,
+        79,
+        8,
+        34,
+        0
+      ]
+    },
+    {
+      "id": 823,
+      "key": "Rocket.reactions/attack_right@kaiser_left_dead=1,kaiser_right_dead=0,right_arm_state=0",
+      "tuple": [
+        20638,
+        19,
+        79,
+        8,
+        34,
+        0
+      ]
+    },
+    {
+      "id": 824,
+      "key": "Rocket.reactions/attack_right@kaiser_left_dead=1,kaiser_right_dead=0,right_arm_state=1",
+      "tuple": [
+        20657,
+        19,
+        79,
+        8,
+        34,
+        0
+      ]
+    },
+    {
+      "id": 825,
+      "key": "Rocket.reactions/attack_right@kaiser_left_dead=1,kaiser_right_dead=0,right_arm_state=2",
+      "tuple": [
+        20676,
+        19,
+        79,
+        8,
+        34,
+        0
+      ]
+    },
+    {
+      "id": 826,
+      "key": "Rocket.reactions/attack_right@kaiser_left_dead=1,kaiser_right_dead=1,right_arm_state=0",
+      "tuple": [
+        20695,
+        19,
+        79,
+        8,
+        34,
+        0
+      ]
+    },
+    {
+      "id": 827,
+      "key": "Rocket.reactions/attack_right@kaiser_left_dead=1,kaiser_right_dead=1,right_arm_state=1",
+      "tuple": [
+        20714,
+        19,
+        79,
+        8,
+        34,
+        0
+      ]
+    },
+    {
+      "id": 828,
+      "key": "Rocket.reactions/attack_right@kaiser_left_dead=1,kaiser_right_dead=1,right_arm_state=2",
+      "tuple": [
+        20733,
+        19,
+        79,
+        8,
+        34,
+        0
+      ]
+    },
+    {
+      "id": 829,
+      "key": "Rocket.reactions/hurt_right@kaiser_left_dead=0,kaiser_right_dead=0,right_arm_state=0",
+      "tuple": [
+        20752,
+        11,
+        76,
+        8,
+        34,
+        0
+      ]
+    },
+    {
+      "id": 830,
+      "key": "Rocket.reactions/hurt_right@kaiser_left_dead=0,kaiser_right_dead=0,right_arm_state=1",
+      "tuple": [
+        20763,
+        11,
+        76,
+        8,
+        34,
+        0
+      ]
+    },
+    {
+      "id": 831,
+      "key": "Rocket.reactions/hurt_right@kaiser_left_dead=0,kaiser_right_dead=0,right_arm_state=2",
+      "tuple": [
+        20774,
+        11,
+        76,
+        8,
+        34,
+        0
+      ]
+    },
+    {
+      "id": 832,
+      "key": "Rocket.reactions/hurt_right@kaiser_left_dead=0,kaiser_right_dead=1,right_arm_state=0",
+      "tuple": [
+        20785,
+        11,
+        76,
+        8,
+        34,
+        0
+      ]
+    },
+    {
+      "id": 833,
+      "key": "Rocket.reactions/hurt_right@kaiser_left_dead=0,kaiser_right_dead=1,right_arm_state=1",
+      "tuple": [
+        20796,
+        11,
+        76,
+        8,
+        34,
+        0
+      ]
+    },
+    {
+      "id": 834,
+      "key": "Rocket.reactions/hurt_right@kaiser_left_dead=0,kaiser_right_dead=1,right_arm_state=2",
+      "tuple": [
+        20807,
+        11,
+        76,
+        8,
+        34,
+        0
+      ]
+    },
+    {
+      "id": 835,
+      "key": "Rocket.reactions/hurt_right@kaiser_left_dead=1,kaiser_right_dead=0,right_arm_state=0",
+      "tuple": [
+        20818,
+        11,
+        76,
+        8,
+        34,
+        0
+      ]
+    },
+    {
+      "id": 836,
+      "key": "Rocket.reactions/hurt_right@kaiser_left_dead=1,kaiser_right_dead=0,right_arm_state=1",
+      "tuple": [
+        20829,
+        11,
+        76,
+        8,
+        34,
+        0
+      ]
+    },
+    {
+      "id": 837,
+      "key": "Rocket.reactions/hurt_right@kaiser_left_dead=1,kaiser_right_dead=0,right_arm_state=2",
+      "tuple": [
+        20840,
+        11,
+        76,
+        8,
+        34,
+        0
+      ]
+    },
+    {
+      "id": 838,
+      "key": "Rocket.reactions/hurt_right@kaiser_left_dead=1,kaiser_right_dead=1,right_arm_state=0",
+      "tuple": [
+        20851,
+        11,
+        76,
+        8,
+        34,
+        0
+      ]
+    },
+    {
+      "id": 839,
+      "key": "Rocket.reactions/hurt_right@kaiser_left_dead=1,kaiser_right_dead=1,right_arm_state=1",
+      "tuple": [
+        20862,
+        11,
+        76,
+        8,
+        34,
+        0
+      ]
+    },
+    {
+      "id": 840,
+      "key": "Rocket.reactions/hurt_right@kaiser_left_dead=1,kaiser_right_dead=1,right_arm_state=2",
+      "tuple": [
+        20873,
+        11,
+        76,
+        8,
+        34,
+        0
+      ]
+    }
+  ],
+  "merchant_clips": [
+    {
+      "id": 1695,
+      "tuple": [
+        45811,
+        145,
+        41,
+        0,
+        0,
+        0
+      ],
+      "size": [
+        320,
+        218
+      ]
+    },
+    {
+      "id": 1696,
+      "tuple": [
+        45956,
+        145,
+        41,
+        -207,
+        -93,
+        0
+      ],
+      "size": [
+        57,
+        70
+      ]
+    },
+    {
+      "id": 1697,
+      "tuple": [
+        46101,
+        256,
+        47,
+        -24,
+        -60,
+        0
+      ],
+      "size": [
+        84,
+        102
+      ]
+    },
+    {
+      "id": 1698,
+      "tuple": [
+        46357,
+        169,
+        41,
+        -53,
+        -61,
+        0
+      ],
+      "size": [
+        49,
+        103
+      ]
+    },
+    {
+      "id": 1699,
+      "tuple": [
+        46526,
+        256,
+        47,
+        -34,
+        -57,
+        0
+      ],
+      "size": [
+        86,
+        112
+      ]
+    },
+    {
+      "id": 1700,
+      "tuple": [
+        46782,
+        256,
+        52,
+        -46,
+        -41,
+        0
+      ],
+      "size": [
+        70,
+        124
+      ]
+    },
+    {
+      "id": 1701,
+      "tuple": [
+        47038,
+        145,
+        41,
+        -33,
+        -58,
+        0
+      ],
+      "size": [
+        73,
+        103
+      ]
+    },
+    {
+      "id": 1702,
+      "tuple": [
+        47183,
+        145,
+        41,
+        -206,
+        -93,
+        0
+      ],
+      "size": [
+        58,
+        71
+      ]
+    },
+    {
+      "id": 1703,
+      "tuple": [
+        47328,
+        150,
+        40,
+        -7,
+        -25,
+        0
+      ],
+      "size": [
+        11,
+        9
+      ]
+    },
+    {
+      "id": 1704,
+      "tuple": [
+        47478,
+        150,
+        40,
+        -223,
+        -60,
+        0
+      ],
+      "size": [
+        58,
+        130
+      ]
+    }
+  ],
+  "merchant_auxiliary": [
+    {
+      "id": 1261,
+      "image": 45810,
+      "size": [
+        320,
+        218
+      ]
+    },
+    {
+      "id": 5265,
+      "image": 54327,
+      "size": [
+        320,
+        218
+      ]
+    },
+    {
+      "id": 5266,
+      "image": 54328,
+      "size": [
+        57,
+        70
+      ]
+    },
+    {
+      "id": 5267,
+      "image": 54329,
+      "size": [
+        84,
+        102
+      ]
+    },
+    {
+      "id": 5268,
+      "image": 54330,
+      "size": [
+        49,
+        103
+      ]
+    },
+    {
+      "id": 5269,
+      "image": 54331,
+      "size": [
+        86,
+        112
+      ]
+    },
+    {
+      "id": 5270,
+      "image": 54332,
+      "size": [
+        70,
+        124
+      ]
+    },
+    {
+      "id": 5271,
+      "image": 54333,
+      "size": [
+        73,
+        103
+      ]
+    },
+    {
+      "id": 5272,
+      "image": 54334,
+      "size": [
+        58,
+        71
+      ]
+    },
+    {
+      "id": 5273,
+      "image": 54335,
+      "size": [
+        11,
+        9
+      ]
+    },
+    {
+      "id": 5274,
+      "image": 54336,
+      "size": [
+        58,
+        130
+      ]
+    }
+  ],
+  "preserved_unknown_images": [
+    [
+      840,
+      998
+    ]
+  ],
+  "preserved_ui20_leaves": [
+    58060,
+    58061,
+    58062,
+    58063,
+    58064,
+    58065,
+    58066,
+    58067,
+    58068,
+    58069,
+    58070,
+    58078,
+    58080,
+    58081,
+    58082,
+    58083,
+    58084,
+    58085,
+    58086,
+    58087,
+    58088,
+    58089,
+    58090,
+    58092,
+    58093,
+    58094
+  ],
+  "reason": "Only the full-profile merchant fallback and shared Kaiser states without any initial, resume, transition, next, direct-command or Bestiary entry are retired. Keep all body/die, active arms, Bestiary supplements, Vantom typed layers, and unknown roots.",
+  "runtime_route_sources": {
+    "src/merchant_ui.inc": "d21f8b66433f2664b9d00edad80b3dd0d2363847d4aff87acf71ef58d8ed7776",
+    "src/world_enemy_assets.inc": "4a3ed0b8d60fb90252181cb0a77638eef60ad9aab5c76eaaa04e02faad187303",
+    "src/world_clip_index.inc": "cc8e936e63c38f27c8b7c57b27df865c9b01a214adc36ac37abfbeffb7593d44",
+    "src/world_enemy_ui.inc": "e2273056f7ba1003e49ebce13bdf114abcffc255cc9ea5bf14e241c99ff77106",
+    "src/bestiary_ui7.inc": "98454c4c2e578e5ad7ed3e9b126ddd9950e8bfb0f1f96b30716d9a02cc24a3ff",
+    "src/bestiary_catalog_ui7.inc": "77ec0fc259482084f334e87e3a39ff5b4f6829ab396b56a6bee5badc84562acb",
+    "src/combat_preparation.inc": "2c429e6ccceb21b5e9c67b60f07ec91f25f07adfe2372a07f4feb593ce724957",
+    "src/enemy_command_program_ui.inc": "25bfea114575cbee6af7d5ec25c7b2d738f776f10e84ad4e3e09505ef8086b90",
+    "include/enemy_command_program.hpp": "be9d97b097b1805f971a5c0071964fe8b147d8594781adc1041d176e2979bb44",
+    "src/canvas.inc": "1df7b681242738a82c2d4bae51d24410bbc81329fe193c777b17d0bac8292508",
+    "src/world_content.inc": "70fd191cae886f76a278d712de2a25e1c7de9d819d3afdf976cdd6db3d2f7e97",
+    "src/debug_ui.inc": "5f4a0fd554e481f9d4abafd387438bd6f6d7c9e13f863e7536d21fcfa1dc4b27"
+  },
+  "plan_tag": 1202978334,
+  "plan_sha256": "1efeb3473b061a801b556fe233a4bbc6d5b1a0e6ff4f2b87f3c31434bf5d87b0"
+}

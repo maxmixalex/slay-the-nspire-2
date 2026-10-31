@@ -36,7 +36,8 @@ def weighted_sample(reader, eligible, count):
                    for i in range(count)})
 
 
-def make_plan(source, work, *, workers=2, sample=None):
+def make_plan(source, work, *, workers=2, sample=None, encode_group=None):
+    encode_group=encode_group or coalesce.encode
     reader=t.TileReader(source)
     indices,frames,referenced=coalesce.index_inventory(source,reader,live_only=True)
     cache=Path(work)/'compact-encoded';cache.mkdir(parents=True,exist_ok=True)
@@ -64,7 +65,7 @@ def make_plan(source, work, *, workers=2, sample=None):
         compact=(np.frombuffer(raw,dtype='u1').reshape(items,t.TILE_BYTES)[kept].tobytes()
                  if len(kept) else b'\x01\x01'+bytes(t.TILE_BYTES-2))
         header=list(t.GROUP.unpack_from(original[group]));header[3]=len(compact);header[6]=max(1,len(kept))
-        payload,physical=coalesce.encode(compact,t.GROUP.pack(*header)+original[group][32:],reader,group,cache)
+        payload,physical=encode_group(compact,t.GROUP.pack(*header)+original[group][32:],reader,group,cache)
         # Do not exchange additional disk bytes for a smaller raw group. The
         # complete candidate must also pay for every changed index stream.
         if len(physical)>len(original[group]): return group,None,None,None
@@ -89,7 +90,7 @@ def make_plan(source, work, *, workers=2, sample=None):
         group=reader.tile_groups+local;old=indices[local]
         raw=coalesce.mapped_index(old,reader.groups[group][5],reader.tile_count,mapping)
         if old==raw:return group,original[group],original[group]
-        payload,physical=coalesce.encode(raw,original[group],reader,group,cache)
+        payload,physical=encode_group(raw,original[group],reader,group,cache)
         return group,payload,physical
 
     for _local,_at,active in frames:

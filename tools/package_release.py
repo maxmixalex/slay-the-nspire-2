@@ -32,7 +32,7 @@ def readme(info):
     else:
         sources = (f"Runtime source: https://github.com/maxmixalex/slay-the-nspire-2/tree/{info['runtime_checkpoint']}\n"
                    f"Resource converter: https://github.com/maxmixalex/slay-the-nspire-2/tree/{info['resource_checkpoint']}\n")
-    return f"""Slay the Nspire 2 — nSpire 0.1.0 (StS II v0.111.0) — {info['stage']}
+    return f"""Slay the Nspire 2 — nSpire {info['version']} (StS II v0.111.0)
 
 安装 / Installation
 首次安装：将 nSpire2.tns 与 data、state 文件夹一起复制到计算器上的游戏目录，打开 nSpire2.tns。
@@ -119,7 +119,7 @@ def main():
     p.add_argument('--optional-locales',type=Path,help='Verified language editions directory; package additional locales separately')
     p.add_argument('--runtime-checkpoint', required=True)
     p.add_argument('--resource-checkpoint', required=True)
-    p.add_argument('--stage', default='ui20', help='Release suffix; UI20 and newer require the completed UI20 content')
+    p.add_argument('--stage', default='ui22', help='Release suffix; validated against its complete content profile')
     args = p.parse_args()
     if not re.fullmatch('[A-Za-z0-9][A-Za-z0-9_-]*', args.stage):
         p.error('Stage must contain only letters, digits, underscores or hyphens')
@@ -151,7 +151,9 @@ def main():
         if code == 'eng':
             content_validation = validate_release_content(logical, args.stage)
         del logical
-    info = dict(version='0.1.0', reference='v0.111.0 / 41cef1ea', resource_format=version, save_version=17,
+    base_version = (ROOT/'VERSION').read_text().strip().split('-',1)[0]
+    release_version = f'{base_version}-{args.stage}'
+    info = dict(version=release_version, base_version=base_version, reference='v0.111.0 / 41cef1ea', resource_format=version, save_version=17,
                 progress_version=9, settings_version=6, calculator_run_storage='NSZ1 or raw NSV1',
                 calculator_history_storage='NSZ1 or raw NSH1-9',
                 stage=args.stage,
@@ -163,7 +165,7 @@ def main():
                 files={name: path.stat().st_size for name, path in paths.items()})
     if content_validation is not None:
         info['required_content_validation'] = content_validation
-    stem = f'Slay-the-Nspire-2-0.1.0-{args.stage}-bilingual'
+    stem = f'Slay-the-Nspire-2-{release_version}-bilingual'
     archive = args.output / (stem + '-calculator.zip')
     offline = args.output / (stem + '-offline.html')
     texts = {'data/README.txt': readme(info).encode('utf-8'),
@@ -199,7 +201,7 @@ def main():
                for code in LANGUAGES if code not in ('eng','zhs')}
         if len(extra)!=14 or any(resource_version(path)!=version for path in extra.values()):
             raise ValueError('Expected the fourteen additional matching original locales')
-        optional=args.output/f'Slay-the-Nspire-2-0.1.0-{args.stage}-optional-languages.zip'
+        optional=args.output/f'Slay-the-Nspire-2-{release_version}-optional-languages.zip'
         instructions=('只复制需要的语言包，放入配套程序的 data 文件夹，在主菜单设置切换语言。\n'
                       'Copy only desired language files into the matching installation data folder. Select in main-menu Settings.\n'
                       'English and Simplified Chinese are included in the main calculator archive.\n'+

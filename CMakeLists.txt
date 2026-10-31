@@ -142,6 +142,8 @@ if(BUILD_TESTING)
   spire_test(resource_file_cache_regression)
   add_executable(resource_content_regression tests/resource_content_regression.cpp)
   target_link_libraries(resource_content_regression PRIVATE spire_core)
+  add_executable(legacy_retirement_ui22_regression EXCLUDE_FROM_ALL tests/legacy_retirement_ui22_regression.cpp)
+  target_link_libraries(legacy_retirement_ui22_regression PRIVATE spire_core)
   add_executable(resource_open_benchmark tests/resource_open_benchmark.cpp)
   target_link_libraries(resource_open_benchmark PRIVATE spire_core)
   # Requires paired owner v19/v18 packs; run explicitly with private inputs.
