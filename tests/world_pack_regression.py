@@ -42,6 +42,12 @@ class WorldPack(unittest.TestCase):
             with patch('world_enemy_profile.plan', return_value=data):
                 with self.assertRaisesRegex(ValueError, 'state exceeds int8'):
                     generated_cpp()
+        data = copy.deepcopy(plan())
+        model = next(row for row in data['models'] if row['moves'])
+        model['moves'][0]['node'] = 128
+        with patch('world_enemy_profile.plan', return_value=data):
+            with self.assertRaisesRegex(ValueError, 'move node or action count'):
+                generated_cpp()
 
     def test_reticle_appends_after_all_existing_map_common_and_room_images(self):
         # Pinned public key/index pairs from verified source12, before this

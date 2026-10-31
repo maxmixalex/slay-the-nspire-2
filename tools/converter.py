@@ -60,6 +60,15 @@ def atomic_json(path, value):
     os.replace(temporary, path)
 
 
+def preflight_output(output,codes):
+    """Prevent a new common file from leaving stale optional locale overlays."""
+    stale=[code for code in LANGUAGES if code not in codes and
+           (Path(output)/'data'/f'nSpire2.{code}.dat.tns').is_file()]
+    if stale:
+        raise ValueError('The output contains unrequested language files ('+', '.join(stale)+
+                         '). Choose a new --output directory or include those languages; existing files were preserved.')
+
+
 def locate_game(requested=None):
     candidates = [Path(requested)] if requested else [Path.cwd(), Path(sys.executable).parent
                   if getattr(sys, 'frozen', False) else ROOT]
@@ -97,11 +106,35 @@ def configure_helpers():
             raise ValueError('Incomplete converter bundle: '+path.name+' is missing')
 
 
+def private_helper_inputs(runtime,noise,work):
+    """Keep legacy private-input guards valid inside an executable bundle.
+
+The sampler executable/library can run from the bundle. Legacy stages accept
+their runtime/header identity files only outside ROOT, which is the public
+checkout in source runs but the extraction directory in a frozen executable.
+"""
+    if not getattr(sys,'frozen',False):return runtime,noise
+    directory=Path(work)/'helper-inputs';directory.mkdir(parents=True,exist_ok=True)
+    result=[]
+    for source in (Path(runtime),Path(noise)):
+        target=directory/source.name
+        if not target.is_file() or digest(target)!=digest(source):
+            shutil.copy2(source,target)
+        result.append(target)
+    return tuple(result)
+
+
 def self_test():
     """Check a bundle's dependencies without original game data or SDK tools."""
     import ctypes
     import numpy as np
     configure_helpers()
+    if getattr(sys,'frozen',False):
+        from build_world import private_path
+        with tempfile.TemporaryDirectory(prefix='nspire2-helper-check-') as work:
+            runtime,noise=private_helper_inputs(ROOT/'converter_helpers/OurNotes.Spine.Runtime.dll',
+                                              ROOT/'converter_helpers/FastNoiseLite.h',work)
+            private_path(runtime,'Bundled runtime identity');private_path(noise,'Bundled noise identity')
     for module in ('PIL.Image','numpy','fontTools.ttLib','zstandard','lz4.block','regex'):
         importlib.import_module(module)
     recipe=Recipe('/game','/work','/runtime','dotnet','/noise','-')
@@ -414,7 +447,7 @@ def main(argv=None):
     parser.add_argument('--plan',action='store_true',help='Show every source build stage without converting')
     parser.add_argument('--self-test',action='store_true',help='Check embedded modules and native helpers without game data')
     parser.add_argument('--stop-after',help='Developer checkpoint; never produces a release receipt')
-    args=parser.parse_args(argv)
+    args=parser.parse_args(argv);started_output=None
     try:
         if args.self_test:
             print(json.dumps(self_test(),indent=2));return 0
@@ -423,7 +456,8 @@ def main(argv=None):
         _lock,assembly,reference=verify_release(game)
         if not assembly.is_file():
             raise ValueError('Original sts2.dll is missing from the game installation')
-        output=(args.output or game/'nSpire2-converted').resolve()
+        output=(args.output or game/('nSpire2-converted-no-animations' if args.no_animations
+                                   else 'nSpire2-converted')).resolve()
         work=(args.work or Path(tempfile.gettempdir())/('nspire2-convert-'+hashlib.sha256(str(game).encode()).hexdigest()[:12])).resolve()
         if output==game or output==work or work in output.parents or output in work.parents:
             raise ValueError('Game, output and work directories must be separate')
@@ -443,6 +477,7 @@ def main(argv=None):
             keyfont=Path(supplied).resolve() if supplied else Path('-')
             if supplied and not keyfont.is_file():
                 raise ValueError('Optional calculator key font does not exist: '+str(keyfont))
+            runtime,noise=private_helper_inputs(runtime,noise,work)
         recipe=Recipe(game,work,runtime,args.dotnet,noise,keyfont,args.workers)
         source_editions=recipe.source_stages()
         # The post-catalog recipe is deliberately separate from source baking:
@@ -457,6 +492,10 @@ def main(argv=None):
                 no_animations=args.no_animations,languages=codes,stages=[dict(name=s.name,module=s.module,
                 arguments=s.arguments,outputs=list(map(str,s.outputs))) for s in recipe.stages]),indent=2))
             return 0
+        preflight_output(output,codes)
+        atomic_json(output/'converter-receipt.json',dict(complete=False,status='converting',
+            reference=reference,languages=codes,no_animations=args.no_animations,work=str(work)))
+        started_output=output
         os.environ.update(NSPIRE_SPINE_RUNTIME=str(runtime),NSPIRE_FASTNOISE_HEADER=str(noise),NSPIRE_DOTNET=args.dotnet)
         work.mkdir(parents=True,exist_ok=True)
         # All public recipe/config files and source inputs identify this build.
@@ -469,8 +508,13 @@ def main(argv=None):
         complete=run_stages(recipe.stages,work,identity,args.stop_after)
         if complete:
             print(f'Conversion complete: {output}',flush=True)
+        else:
+            atomic_json(output/'converter-receipt.json',dict(complete=False,status='checkpoint',
+                reference=reference,languages=codes,no_animations=args.no_animations,stopped_after=args.stop_after))
         return 0
     except (ValueError,OSError,subprocess.CalledProcessError) as exc:
+        if started_output is not None:
+            atomic_json(started_output/'converter-receipt.json',dict(complete=False,status='failed',error=str(exc)))
         print('Conversion failed: '+str(exc),file=sys.stderr)
         return 1
 

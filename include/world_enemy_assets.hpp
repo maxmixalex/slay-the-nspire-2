@@ -32,8 +32,8 @@ struct WorldEnemyVisualAction {
 struct WorldEnemyVisualMove {
     const char* key;
     const char* next_clip; // Non-null for direct shared-arm actions.
-    int16_t node;
     uint16_t action_first;
+    int8_t node; // Local node ids are validated before generated table emission.
     uint8_t action_count;
 };
 struct WorldEnemyVisualSkin {

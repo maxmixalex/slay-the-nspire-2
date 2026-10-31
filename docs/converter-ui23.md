@@ -33,6 +33,11 @@ languages reduces the delivered files, not all intermediate conversion work.
 nspire2-convert --no-animations
 ```
 
+The default reduced output is `nSpire2-converted-no-animations`, separate from
+the animated output. An explicit output folder containing language files that
+were not requested is rejected before conversion, so a new common resource
+cannot silently leave incompatible optional languages alongside it.
+
 The reduced profile retains one exact source pose for looping clips and at
 most three exact source poses for action clips. Frame counts, action clocks,
 clip identifiers, registered positions, and final death/transition poses
@@ -50,6 +55,11 @@ Each stage writes a log and a crash-readable receipt under the work directory.
 Successful outputs are checked before reuse. Interrupted or failed stages are
 never marked complete. Re-running the same command resumes verified stages;
 changed recipe inputs or altered stage outputs are rebuilt.
+
+World sampling also has its own verified cache keyed by the actual renderer
+code, model specification, original inputs, and job settings. A later change to
+unrelated packaging or runtime code can require reassembling a stage while
+retaining its unchanged, expensive original-frame samples.
 
 The default work directory is a stable directory under the operating system's
 temporary directory. It contains extracted original fonts, sampled frames, and

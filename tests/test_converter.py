@@ -15,6 +15,15 @@ import converter
 
 
 class ConverterTests(unittest.TestCase):
+    def test_stale_optional_locale_is_rejected_before_mutation(self):
+        with tempfile.TemporaryDirectory() as folder:
+            output=Path(folder);(output/'data').mkdir()
+            old=output/'data/nSpire2.jpn.dat.tns';old.write_bytes(b'previous locale')
+            with self.assertRaisesRegex(ValueError,'unrequested'):
+                converter.preflight_output(output,['eng','zhs'])
+            self.assertEqual(old.read_bytes(),b'previous locale')
+            converter.preflight_output(output,['eng','zhs','jpn'])
+
     def test_find_game_directory_and_pck(self):
         with tempfile.TemporaryDirectory() as folder:
             game=Path(folder)
