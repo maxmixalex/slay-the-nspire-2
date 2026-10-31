@@ -22,6 +22,8 @@ import time
 import numpy as np
 
 import content_tiles as t
+import implicit_geometry
+import selection_bitmap
 from content_version import MAXIMUM_CONTENT_VERSION
 from compact_tile_resources import grouped_slices, SLICE
 from recompress_resources import Relocation
@@ -40,6 +42,11 @@ def view(data):
 
 def active_tiles(geometry, width, height):
     """Return the exact tile mask used by rebuild_tile_frame, with bounds."""
+    if implicit_geometry.marked(geometry):
+        return implicit_geometry.active_mask(geometry, width, height)
+    if selection_bitmap.marked(geometry):
+        mask = selection_bitmap.active_mask(width, height, geometry)
+        return np.unpackbits(np.frombuffer(mask, dtype='u1'), bitorder='little')[:300].astype(np.bool_)
     columns = (width + t.SIDE - 1) // t.SIDE
     result = np.zeros(columns * ((height + t.SIDE - 1) // t.SIDE), dtype=np.bool_)
     at = 0

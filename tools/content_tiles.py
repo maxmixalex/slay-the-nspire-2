@@ -24,6 +24,8 @@ import time
 
 import numpy as np
 from content_version import MAXIMUM_CONTENT_VERSION
+import implicit_geometry
+import selection_bitmap
 from tile_filter import restore_tiles
 from retained_filter import group_layout as retained_group_layout, transform_group as transform_retained_group
 
@@ -882,10 +884,40 @@ class TileReader:
         ids = struct.unpack_from('<' + 'I' * (index_size // 4), group, record_at + FRAME.size)
         geometry = group[record_at + FRAME.size + index_size:record_at + record_size]
         require(len(geometry) == geometry_size, 'Truncated geometry record')
+        alpha_derived = implicit_geometry.marked(geometry)
+        selection_derived = selection_bitmap.marked(geometry)
+        implicit = alpha_derived or selection_derived
+        require(not implicit or self.pack.version >= implicit_geometry.VERSION,
+                'Implicit geometry requires NSP2/46')
+        active = implicit_geometry.active_mask(geometry, width, height) if alpha_derived else None
+        if selection_derived:
+            mask = selection_bitmap.active_mask(width, height, geometry)
+            active = np.unpackbits(np.frombuffer(mask, dtype='u1'), bitorder='little')[:len(ids)].astype(np.bool_)
+        colors, alpha = self.tile_planes(ids, width, height, active)
+        if implicit:
+            restored = (implicit_geometry.alpha_geometry(alpha) if alpha_derived else
+                        selection_bitmap.restore_geometry(width, height, geometry))
+            require(len(restored) == geometry_size, 'Implicit geometry length differs from its record')
+            # A canonical mask cannot introduce pixel groups that its restored
+            # sparse output never reads. Import lazily to avoid a module cycle.
+            from coalesce_tile_resources import active_tiles
+            require(np.array_equal(active_tiles(restored, width, height), active),
+                    'Implicit bitmap differs from reconstructed geometry')
+            geometry = restored
+        return width, height, 4, implicit_geometry.sparse_bytes(geometry, colors, alpha, raw_size)
+
+    def tile_planes(self, ids, width, height, active=None):
+        """Read each required pixel group once, with the runtime's cache order."""
+        across, down = (width + SIDE - 1) // SIDE, (height + SIDE - 1) // SIDE
+        require(len(ids) == across * down and (active is None or len(active) == len(ids)),
+                'Tile plane grid differs')
         colors = np.zeros((height, width), dtype='<u2')
         alpha = np.zeros((height, width), dtype='u1')
         positions = {}
         for position, tile_id in enumerate(ids):
+            if active is not None and not active[position]:
+                continue
+            tile_id = int(tile_id)
             positions.setdefault(tile_id // self.per_group, []).append((position, tile_id))
         needed = sorted(positions)
         cached = [value for value in needed if value in self.cache]
@@ -901,35 +933,7 @@ class TileReader:
                 a = np.frombuffer(tiles, dtype='u1', count=256, offset=at + 514).reshape(SIDE, SIDE)
                 colors[y:y + h, x:x + w] = color[:h, :w]
                 alpha[y:y + h, x:x + w] = a[:h, :w]
-        result = bytearray()
-        at = 0
-        for y in range(height):
-            require(at + 2 <= len(geometry), 'Truncated geometry row')
-            count, = struct.unpack_from('<H', geometry, at)
-            require(count <= width, 'Excessive geometry spans')
-            result.extend(geometry[at:at + 2])
-            at += 2
-            previous = 0
-            for _ in range(count):
-                require(at + 5 <= len(geometry), 'Truncated geometry span')
-                x, size, mode = struct.unpack_from('<HHB', geometry, at)
-                require(mode in (0, 1) and size > 0 and previous <= x and x + size <= width,
-                        'Invalid geometry span')
-                previous = x + size
-                result.extend(geometry[at:at + 5])
-                at += 5
-                if mode:
-                    span = np.empty((size, 3), dtype='u1')
-                    span[:, 0] = colors[y, x:previous] & 255
-                    span[:, 1] = colors[y, x:previous] >> 8
-                    span[:, 2] = alpha[y, x:previous]
-                    result.extend(span.tobytes())
-                else:
-                    require(np.all(alpha[y, x:previous] == 255), 'Opaque span has non-opaque tile alpha')
-                    result.extend(colors[y, x:previous].tobytes())
-                require(len(result) <= raw_size, 'Geometry output exceeds declared size')
-        require(at == len(geometry) and len(result) == raw_size, 'Geometry output byte count mismatch')
-        return width, height, 4, bytes(result)
+        return colors, alpha
 
 
 def verify_pack(source, destination, plan, *, progress=None):

@@ -152,7 +152,8 @@ def convert_bytes(data, cache, *, workers=2, groups=None, minimum_percent=0, ali
     t.require(1 <= workers <= 2 and 0 <= minimum_percent <= 100,
               'Use at most two workers and a bounded minimum saving')
     source = coalesce.view(data)
-    t.require(41 <= source.version <= 45, 'TGI2 requires an existing NSP2/41..45 pack')
+    t.require(41 <= source.version <= t.MAXIMUM_CONTENT_VERSION,
+              'TGI2 requires a supported NSP2/41 or later pack')
     old = t.TileReader(source);cache = Path(cache);cache.mkdir(parents=True, exist_ok=True)
     measured=None
     if arm_gate is not None:
