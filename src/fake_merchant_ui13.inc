@@ -124,6 +124,12 @@ static void lights(Canvas&c,uint32_t clock,uint32_t seed,unsigned mode){
  const auto*list=mode==2?darv:mode?background:candles;const unsigned count=mode==2?4:mode?2:3;
  const auto&scale_keys=mode==2?darv_scale:mode?AmbientScale:CandleScale;
  const auto&color_keys=mode==2?darv_color:mode?AmbientColor:CandleColor;
+ // All three authored ramps are grayscale after the existing RGB8 projection.
+ // Share their identical interpolation; keep colored future ramps explicit.
+ constexpr auto grayscale=[](const ColorKey(&keys)[3]){
+  for(const auto&k:keys)if(k.r!=k.g||k.r!=k.b)return false;return true;
+ };
+ static_assert(grayscale(CandleColor)&&grayscale(AmbientColor)&&grayscale(darv_color),"light ramp must stay grayscale");
  for(unsigned i=0;i<count;++i){const auto&l=list[mode==2?i/2:i];
   // little_light_script: independent integer preprocessing in[0,5] seconds.
   // Darv has no such script/preprocessing or randomized parameters. Its two
@@ -133,10 +139,10 @@ static void lights(Canvas&c,uint32_t clock,uint32_t seed,unsigned mode){
   // Source births use restart_time < time: keep the end pose at an exact
   // cycle boundary; the next cycle begins on the following positive tick.
   const unsigned q=(mode==2?(clock-phase-1)%3000+1:(clock+hash(seed+i+(mode?90:3))%6*1000)%3000)*Q/3000;
-  const auto color=gradient(color_keys,q);
+  const unsigned shade=gradient(color_keys,q).r;
   const int scale=curve(scale_keys,q);
   quad(c,texture,l.x,l.y,l.w*scale/Q,l.h*scale/Q,mode==1?2023:0,
-       div255(l.r*color.r),div255(l.g*color.g),div255(l.b*color.b),l.a,presentation::Add,mode==2?45:0);
+       div255(l.r*shade),div255(l.g*shade),div255(l.b*shade),l.a,presentation::Add,mode==2?45:0);
  }
 }
 static void stars(Canvas&c,uint32_t clock,uint32_t seed,bool ancient=false){
