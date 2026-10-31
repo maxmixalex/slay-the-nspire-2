@@ -38,16 +38,55 @@ static std::vector<uint8_t> picture_bytes(Picture p){
  }
  return {start,start+size};
 }
+static bool matches_original(unsigned width,unsigned height,unsigned actual_format,unsigned expected_format,
+                             const std::vector<uint8_t>&actual,const std::vector<uint8_t>&expected,bool&normalized){
+ normalized=false;
+ if(actual_format==expected_format)return actual==expected;
+ // ImageReservation has always normalized an entirely opaque alpha plane.
+ // Reconstitute that implicit 255 plane logically, without changing the old
+ // reference. Every color/palette/index byte and every original alpha byte
+ // must still compare exactly; no other format substitution is permitted.
+ if(!width||!height||width>320||height>240||
+    !((expected_format==1&&actual_format==0)||(expected_format==3&&actual_format==2)))return false;
+ const size_t area=size_t(width)*height,prefix=expected_format==1?area*2:512+area;
+ if(actual.size()!=prefix||expected.size()!=prefix+area||
+    std::memcmp(actual.data(),expected.data(),prefix))return false;
+ for(size_t at=prefix;at<expected.size();++at)if(expected[at]!=255)return false;
+ normalized=true;return true;
+}
+static void opaque_reference_tests(){
+ for(unsigned format:{1u,3u}){
+  const unsigned area=4,prefix=format==1?area*2:512+area;
+  std::vector<uint8_t>actual(prefix),expected(prefix+area,255);bool normalized=false;
+  for(unsigned i=0;i<prefix;++i)actual[i]=expected[i]=uint8_t(i*37+19);
+  CHECK(matches_original(2,2,format-1,format,actual,expected,normalized)&&normalized);
+  CHECK(matches_original(2,2,format,format,expected,expected,normalized)&&!normalized);
+  for(unsigned i=0;i<area;++i){expected[prefix+i]=254;
+   CHECK(!matches_original(2,2,format-1,format,actual,expected,normalized));expected[prefix+i]=255;}
+  actual[prefix/2]^=1;CHECK(!matches_original(2,2,format-1,format,actual,expected,normalized));actual[prefix/2]^=1;
+  actual.push_back(255);CHECK(!matches_original(2,2,format-1,format,actual,expected,normalized));actual.pop_back();
+  expected.pop_back();CHECK(!matches_original(2,2,format-1,format,actual,expected,normalized));expected.push_back(255);
+  CHECK(!matches_original(2,2,format==1?2:0,format,actual,expected,normalized));
+  CHECK(!matches_original(0,2,format-1,format,actual,expected,normalized));
+ }
+ bool normalized=false;const std::vector<uint8_t>same(8,255);
+ CHECK(!matches_original(2,2,0,4,same,same,normalized));
+ CHECK(!matches_original(2,2,1,0,same,same,normalized));
+}
 int main(int argc,char**argv){
+ opaque_reference_tests();
+ if(argc==2&&!std::strcmp(argv[1],"--self-test")){
+  std::printf("source image oracle: %llu opaque representation checks passed\n",(unsigned long long)checks);return 0;
+ }
  CHECK(argc==3);const auto data=load(argv[1]);Provider provider{&data};
- const unsigned catalog=word(data.data()+16);uint64_t total_bytes=0,steps_total=0;unsigned maximum_steps=0,measured=0,first=0;
+ const unsigned catalog=word(data.data()+16);uint64_t total_bytes=0,steps_total=0;unsigned maximum_steps=0,measured=0,first=0,opaque_normalizations=0;
  for(current_backend=0;current_backend<3;++current_backend){
   auto content=std::make_unique<Content>();
   CHECK(current_backend?content->open({&provider,uint32_t(data.size()),read_at,nullptr}):content->open(data.data(),data.size()));
   if(current_backend==2)content->set_image_cache_profile(false);
   FILE*oracle=std::fopen(argv[2],"rb");CHECK(oracle);uint8_t header[28];CHECK(std::fread(header,1,sizeof header,oracle)==sizeof header);
   CHECK(!std::memcmp(header,"IMGR0022",8)&&word(header+8)==catalog&&word(header+20)==data.size()&&word(header+24)==word(data.data()+36));
-  first=word(header+12);measured=word(header+16);CHECK(first<catalog&&measured&&measured<=catalog-first);uint64_t decoded=0;
+  first=word(header+12);measured=word(header+16);CHECK(first<catalog&&measured&&measured<=catalog-first);uint64_t decoded=0;unsigned normalized_images=0;
   for(current_image=first;current_image<first+measured;++current_image){
    uint8_t row[20];CHECK(std::fread(row,1,sizeof row,oracle)==sizeof row&&word(row)==current_image);
    const unsigned width=word(row+4),height=word(row+8),format=word(row+12),size=word(row+16);
@@ -59,13 +98,17 @@ int main(int argc,char**argv){
     CHECK(result==PreparationResult::Ready&&content->image_cached(int(current_image)));steps_total+=steps;if(steps>maximum_steps)maximum_steps=steps;
    }
    const auto before=content->read_stats();const auto picture=content->image(int(current_image));const auto actual=picture_bytes(picture);
-   CHECK(picture.w==width&&picture.h==height&&picture.format==format&&actual==expected&&content->healthy());
+   bool normalized=false;
+   CHECK(picture.w==width&&picture.h==height&&
+         matches_original(width,height,picture.format,format,actual,expected,normalized)&&content->healthy());
+   normalized_images+=normalized;
    if(current_backend==2){const auto after=content->read_stats();CHECK(before.callbacks==after.callbacks&&before.callback_bytes==after.callback_bytes);}
    decoded+=size;
    if((current_image-first+1)%2000==0){std::printf("source image oracle backend %u: %u/%u images, %llu exact bytes\n",current_backend,current_image-first+1,measured,(unsigned long long)decoded);std::fflush(stdout);}
   }
   CHECK(std::fgetc(oracle)==EOF&&!std::ferror(oracle)&&!std::fclose(oracle));
-  if(current_backend)CHECK(decoded==total_bytes);else total_bytes=decoded;
+  if(current_backend)CHECK(decoded==total_bytes&&normalized_images==opaque_normalizations);
+  else{total_bytes=decoded;opaque_normalizations=normalized_images;}
  }
- std::printf("{\"complete_catalog\":%s,\"images\":%u,\"catalog_images\":%u,\"first_image\":%u,\"backends\":3,\"decoded_bytes_per_backend\":%llu,\"checks\":%llu,\"preload_steps\":%llu,\"max_preload_steps\":%u,\"after_ready_source_reads\":0,\"independent_python_reference\":true}\n",first==0&&measured==catalog?"true":"false",measured,catalog,first,(unsigned long long)total_bytes,(unsigned long long)checks,(unsigned long long)steps_total,maximum_steps);
+ std::printf("{\"complete_catalog\":%s,\"images\":%u,\"catalog_images\":%u,\"first_image\":%u,\"backends\":3,\"decoded_bytes_per_backend\":%llu,\"checks\":%llu,\"preload_steps\":%llu,\"max_preload_steps\":%u,\"after_ready_source_reads\":0,\"lossless_opaque_normalizations_per_backend\":%u,\"independent_python_reference\":true}\n",first==0&&measured==catalog?"true":"false",measured,catalog,first,(unsigned long long)total_bytes,(unsigned long long)checks,(unsigned long long)steps_total,maximum_steps,opaque_normalizations);
 }
