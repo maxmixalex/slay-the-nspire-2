@@ -22,7 +22,7 @@ class AnimationColorCandidateTest(unittest.TestCase):
         original = np.arange(65536, dtype=np.int32)
         for policy, expected in [('555a8', (0, 1, 0)), ('454a8', (1, 1, 1)),
                                  ('444a8', (1, 2, 1)), ('bounded-a6', (1, 2, 1)),
-                                 ('dark-safe-a6', (1, 2, 1))]:
+                                 ('dark-safe-a6', (1, 2, 1)), ('bounded-a5', (1, 2, 1))]:
             mapped = candidate.color_lut(policy).astype(np.int32)
             actual = tuple(int(np.abs(((mapped >> shift) & mask) -
                                      ((original >> shift) & mask)).max())
@@ -65,6 +65,16 @@ class AnimationColorCandidateTest(unittest.TestCase):
         alpha = np.array([list(range(256))], dtype='u1')
         original = implicit_geometry.alpha_geometry(alpha)
         self.assertEqual(original, implicit_geometry.alpha_geometry(candidate.alpha_lut('444a6')[alpha]))
+        self.assertEqual(original, implicit_geometry.alpha_geometry(candidate.alpha_lut('bounded-a5')[alpha]))
+
+    def test_alpha5_changes_no_rgb_and_has_32_partial_levels(self):
+        self.assertTrue(np.array_equal(candidate.color_lut('bounded-a5'),
+                                       candidate.color_lut('bounded-a6')))
+        mapped = candidate.alpha_lut('bounded-a5')
+        self.assertEqual(len(np.unique(mapped[1:255])), 32)
+        self.assertEqual((int(mapped[0]), int(mapped[255])), (0,255))
+        self.assertTrue(np.all((mapped[1:255] > 0) & (mapped[1:255] < 255)))
+        self.assertEqual(int(np.abs(mapped.astype(np.int32)-np.arange(256)).max()), 4)
 
     def test_complete_pack_keeps_geometry_and_opaque_parameter_words(self):
         with tempfile.TemporaryDirectory() as tmp, redirect_stdout(StringIO()):

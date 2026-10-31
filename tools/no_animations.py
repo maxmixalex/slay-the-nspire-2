@@ -59,8 +59,11 @@ def ancient_rows(source, image):
     if len(source.aux)==ANCIENT_AUX:
         require(len(source.images)==58613,'Unexpected images after the complete UI22 catalog')
         return []
-    require(len(source.aux)==ANCIENT_AUX+ANCIENT_COUNT and len(source.images)>58613,
+    expected_images=58613+ANCIENT_COUNT+sum((duration+32)//33 for duration in ANCIENT_DURATIONS)
+    require(len(source.aux)==ANCIENT_AUX+ANCIENT_COUNT and len(source.images)==expected_images,
             'Unknown reduced-pose auxiliary extension')
+    table_ids=set(source.aux[ANCIENT_AUX:ANCIENT_AUX+ANCIENT_COUNT])
+    require(len(table_ids)==ANCIENT_COUNT and min(table_ids)>=58613,'Ancient tables overlap an established resource')
     result=[];seen=set()
     for row,duration in enumerate(ANCIENT_DURATIONS):
         index=source.aux[ANCIENT_AUX+row]
@@ -72,7 +75,7 @@ def ancient_rows(source, image):
                 (words[5]|words[6]<<16)==duration and count==(duration+ms-1)//ms and
                 first>=58613 and first+count<=len(source.images),'Invalid Ancient loop range or source clock')
         frames=set(range(first,first+count))
-        require(not seen.intersection(frames) and index not in frames,'Ancient loop directories overlap')
+        require(not seen.intersection(frames) and not table_ids.intersection(frames),'Ancient loop directories overlap')
         seen.update(frames)
         result.append(dict(table=index,first=first,frames=count,frame_ms=ms,duration_ms=duration))
     return result

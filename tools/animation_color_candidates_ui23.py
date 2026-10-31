@@ -2,8 +2,8 @@
 """Build private, unapproved color-only candidates for LCD visual comparison.
 
 No image is resized and no animation frame is removed. Alpha8 policies keep
-every alpha value; alpha6 policies have error <=2 and keep transparent, partial
-and opaque classes exactly, so geometry and implicit geometry remain unchanged.
+every alpha value; alpha6 policies have error <=2 and alpha5 error <=4. Both keep
+transparent, partial and opaque classes exactly, preserving implicit geometry.
 The output uses the input's existing tile/retained codecs, bounds and grouping.
 This is an experiment generator, not a claim that a color reduction is invisible.
 Typed opaque parameter images, fonts, text, geometry and clocks remain exact.
@@ -35,10 +35,12 @@ LEVELS = {'555a8': (31, 31, 31), '454a8': (15, 31, 15),
           '444a8': (15, 15, 15), '454a6': (15, 31, 15),
           '444a6': (15, 15, 15), '444a8-adaptive': (15, 15, 15),
           '444a6-adaptive': (15, 15, 15), 'bounded-a6': (15, 15, 15),
-          'dark-safe-a6': (15, 15, 15)}
+          'dark-safe-a6': (15, 15, 15), 'bounded-a5': (15, 15, 15)}
 
 
 def alpha_error(policy):
+    if 'a5' in policy:
+        return 4
     return 2 if 'a6' in policy else 0
 
 
@@ -48,6 +50,14 @@ def alpha_lut(policy):
     alpha = np.arange(256, dtype=np.int32)
     if not alpha_error(policy):
         return alpha.astype('u1')
+    if policy == 'bounded-a5':
+        # Exactly 32 partial-opacity values. Rounded uniform intervals are at
+        # most nine codes apart, so nearest mapping differs by at most four.
+        # Keep zero and full opacity out of the partial-opacity candidate set.
+        points = (np.arange(32) * 253 + 15) // 31 + 1
+        result = points[np.abs(alpha[:, None] - points).argmin(axis=1)]
+        result[0], result[255] = 0, 255
+        return result.astype('u1')
     if policy in ('bounded-a6', 'dark-safe-a6'):
         points = np.unique(np.r_[0, np.arange(1, 255, 5), 254, 255])
         result = points[np.abs(alpha[:, None] - points).argmin(axis=1)]
@@ -65,7 +75,7 @@ def alpha_lut(policy):
 def color_lut(policy):
     """One time-independent color map; opacity is deliberately not an input."""
     t.require(policy in LEVELS, 'Unknown color policy')
-    if policy in ('bounded-a6', 'dark-safe-a6'):
+    if policy in ('bounded-a6', 'bounded-a5', 'dark-safe-a6'):
         colors = np.arange(65536, dtype=np.int32)
         result = np.zeros(65536, dtype=np.int32)
         for shift, maximum, step, dark in ((11, 31, 3, 3), (5, 63, 5, 7), (0, 31, 3, 3)):
