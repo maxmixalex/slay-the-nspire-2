@@ -303,6 +303,39 @@ static void borders_and_cache(){
  a.map_clock_ms+=1800;std::memset(a.pixels,0,sizeof a.pixels);begin_card_face_frame();draw_card_face(c,{Rage,0},120,60,65,91);
  CHECK(std::memcmp(original.data(),a.pixels,sizeof a.pixels));unchanged();CHECK(a.content.healthy());
 }
+static void affliction_source_clock(){
+ scenario="rational source affliction phase boundaries do not accumulate drift";
+ const unsigned numerator[]={0,1,7,1,1,7,2,1};
+ const unsigned denominator[]={1,500,5000,1250,2500,5000,625,2500};
+ const auto expected=[&](unsigned kind,uint32_t now){return unsigned(uint64_t(now)*numerator[kind]/denominator[kind])%8u;};
+ for(unsigned kind=1;kind<=7;++kind){
+  for(uint32_t now:{0u,1u,312u,313u,714u,715u,5713u,5714u,5715u,39998u,39999u,40000u,
+                    3600000u,43200000u,86400000u,UINT32_MAX-1,UINT32_MAX})
+   CHECK(card_affliction_frame(kind,now)==expected(kind,now));
+  for(uint64_t phase:{1u,7u,8u,55u,56u,100u,1000u,10000u,1000000u}){
+   const uint64_t edge=(phase*denominator[kind]+numerator[kind]-1)/numerator[kind];
+   if(edge+1>UINT32_MAX)continue;
+   for(int delta:{-1,0,1}){const uint32_t now=uint32_t(edge+delta);CHECK(card_affliction_frame(kind,now)==expected(kind,now));}
+  }
+ }
+ CHECK(card_affliction_frame(0,UINT32_MAX)==0&&card_affliction_frame(8,UINT32_MAX)==0);
+ CHECK(card_affliction_frame(2,5714)==7&&card_affliction_frame(5,39999)==7);
+ if(!original_art)return;
+ scenario="actual entangled and tainted card overlays use the source phase";fresh();hand({Strike});
+ Canvas c{a};const auto region=card_face::region(110,50,96,135,-12,-16,324,454);
+ for(unsigned kind:{2u,5u}){a.game.enemy_world.affliction[0]=uint8_t(kind);a.game.enemy_world.affliction_amount[0]=1;before=a.game;
+  for(uint32_t now:{5714u,5715u,39999u,40000u,43200000u,UINT32_MAX}){
+   a.map_clock_ms=now;const int source=a.content.ui_image(I14_Afflictions+(kind-1)*I14_AfflictionFrames+expected(kind,now));
+   CHECK(card_overlay_image(a,kind)==source&&a.content.image(source).pixels);
+   for(unsigned i=0;i<ScreenW*ScreenH;++i)a.pixels[i]=uint16_t(i*37);
+   c.picture(source,region.x,region.y,region.w,region.h);const std::vector<uint16_t> reference(a.pixels,a.pixels+ScreenW*ScreenH);
+   for(unsigned i=0;i<ScreenW*ScreenH;++i)a.pixels[i]=uint16_t(i*37);
+   card_face_animated_layers(c,{Strike,0},0,110,50,96,135);
+   CHECK(!std::memcmp(reference.data(),a.pixels,reference.size()*sizeof(uint16_t)));unchanged();
+  }
+  a.map_clock_ms=39999;capture(kind==2?"entangled-exact-phase-39999":"tainted-exact-phase-39999");unchanged();
+ }
+}
 static std::vector<uint8_t>read(const std::string&path){FILE*f=std::fopen(path.c_str(),"rb");CHECK(f);CHECK(!std::fseek(f,0,SEEK_END));const long n=std::ftell(f);CHECK(n>0);CHECK(!std::fseek(f,0,SEEK_SET));std::vector<uint8_t>v(size_t(n),0);CHECK(std::fread(v.data(),1,v.size(),f)==v.size());CHECK(!std::fclose(f));return v;}
 static void identical_generated_samples(){
  scenario="five identical generated cards share one raster and retain five resolved samples";
@@ -362,7 +395,7 @@ int main(int argc,char**argv){
    CHECK(split.open(ResourceSource::memory(common.data(),common.size()),ResourceSource::memory(language.data(),language.size()),ResourceLanguage::English));CHECK(a.init(split.source(),{}));}
   original_art=true;}
  if(argc==3){output=argv[2];std::filesystem::create_directories(output);}
- sovereign_hover_clock();scale_equations();clock_icon();actual_shrink();actual_vantom_shrink();actual_default_growth();actual_forge();actual_enchant();borders_and_cache();identical_generated_samples();current_intent_preparation();
+ sovereign_hover_clock();scale_equations();clock_icon();actual_shrink();actual_vantom_shrink();actual_default_growth();actual_forge();actual_enchant();borders_and_cache();affliction_source_clock();identical_generated_samples();current_intent_preparation();
  const char note[]="Controlled UI14 fixtures; earlier room outcomes, cards and resources are supplied. These saves validate and round-trip through the production NSR codec. They are not natural runs.\nui19-sword-forged/enchant: live 40-damage Sovereign Blade, with a matching partial-history file; enchanted variant has Sharp 7.\nui14-card-borders: Neow's Fury, Infection and Bound Strike in hand.\nui14-shrink: Shrinker Beetle before its opening move, Beetle Juice in potion slot1; drink on the enemy, then end turn to shrink the player.\nui14-regent-enchant-forge: choose an Attack for Gnarled Hammer's Sharp enchantment, confirm, then play The Smith in the resumed Regent combat.\n";
  write("README.txt",note,sizeof note-1);std::printf("combat UI14: %u checks passed%s\n",checks,original_art?"; original art decoded and rendered":"");
 }

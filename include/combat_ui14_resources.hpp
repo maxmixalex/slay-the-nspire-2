@@ -14,7 +14,16 @@ enum CombatUi14Image : unsigned {
 // Full original infection sequence is15fps. Shader scenes retain their
 // original time units in eight sampled phases; ringing has a2.5s period.
 inline unsigned card_affliction_frame(unsigned kind,uint32_t now){
- const uint32_t periods[]={4000,5714,10000,20000,5714,2500,20000};
- return kind>=1&&kind<=7?unsigned((uint64_t(now%periods[kind-1])*I14_AfflictionFrames)/periods[kind-1]):0;
+ // Entangled and Tainted repeat in40/7 seconds, not5714 milliseconds.
+ // Reduce their rational clock over40 seconds before multiplying; each
+ // complete window advances56 phases, so long sessions cannot drift.
+ switch(kind){
+ case 1:return (now/500u)%I14_AfflictionFrames;
+ case 2:case 5:return ((now%40000u)*7u/5000u)%I14_AfflictionFrames;
+ case 3:return (now/1250u)%I14_AfflictionFrames;
+ case 4:case 7:return (now/2500u)%I14_AfflictionFrames;
+ case 6:return (now%2500u)*I14_AfflictionFrames/2500u;
+ default:return 0;
+ }
 }
 }
