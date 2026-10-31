@@ -33,6 +33,29 @@ inline bool sparse_tile_scan(const uint8_t*planes,unsigned items,unsigned pixels
     if(count>pixels-prefix)return false;
     prefix+=count;return true;
 }
+// Zero pixels bypass color restoration. Occupancy includes hidden nonzero
+// RGB and rectangle padding; restore every set bit after clearing the body.
+// Dispatch the two color modes once per tile, outside the occupied-pixel loop.
+template<unsigned Mode>
+inline bool restore_sparse_tile_pixels(uint8_t*record,const uint8_t*mask,
+    const uint16_t*colors,const uint8_t*alpha,unsigned count){
+    __builtin_memset(record+2,0,768u);
+    unsigned used=0;
+    for(unsigned byte=0;byte<32;++byte){
+        unsigned bits=mask[byte];
+        while(bits){
+            if(used>=count)return false;
+            const unsigned pixel=byte*8u+unsigned(__builtin_ctz(bits));bits&=bits-1u;
+            const unsigned packed=colors[used],green=packed&63u;
+            unsigned red=(packed>>6)&31u,blue=packed>>11;
+            if(Mode==2){red=(red>>1)^(0u-(red&1u));blue=(blue>>1)^(0u-(blue&1u));}
+            const unsigned rgb=(((red+(green>>1))&31u)<<11)|(green<<5)|((blue+(green>>1))&31u);
+            record[2+pixel*2]=uint8_t(rgb);record[3+pixel*2]=uint8_t(rgb>>8);
+            record[514+pixel]=alpha[used++];
+        }
+    }
+    return used==count;
+}
 // High records move backwards, then the low prefix moves forwards. A single
 // tile's at-most-512-byte colors are copied before expansion: this covers the
 // one record that straddles the source/destination overlap boundary.
@@ -49,20 +72,8 @@ inline bool restore_sparse_tile_step(uint8_t*out,const uint8_t*planes,unsigned i
     uint16_t colors[256];for(unsigned i=0;i<count;++i)colors[i]=uint16_t(source[i*2]|unsigned(source[i*2+1])<<8);
     const uint8_t*mask=planes+items*2u+id*32u,*alpha=planes+items*34u+start;
     uint8_t*record=out+id*770u;record[0]=planes[id*2];record[1]=planes[id*2+1];
-    unsigned used=0;
-    for(unsigned i=0;i<256;++i){
-        unsigned rgb=0,opacity=0;
-        if(mask[i/8]&(1u<<(i&7u))){
-            if(used>=count)return false;
-            const unsigned packed=colors[used],green=packed&63u;
-            unsigned red=(packed>>6)&31u,blue=packed>>11;
-            if(mode==2){red=(red>>1)^(0u-(red&1u));blue=(blue>>1)^(0u-(blue&1u));}
-            rgb=(((red+(green>>1))&31u)<<11)|(green<<5)|((blue+(green>>1))&31u);
-            opacity=alpha[used++];
-        }
-        record[2+i*2]=uint8_t(rgb);record[3+i*2]=uint8_t(rgb>>8);record[514+i]=uint8_t(opacity);
-    }
-    return used==count;
+    return mode==2?restore_sparse_tile_pixels<2>(record,mask,colors,alpha,count):
+                   restore_sparse_tile_pixels<1>(record,mask,colors,alpha,count);
 }
 inline bool restore_sparse_tiles_in_place(uint8_t*out,unsigned bytes,unsigned items,unsigned mode,
     uint8_t*scratch,unsigned capacity){

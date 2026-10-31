@@ -1,4 +1,35 @@
-# UI20 continuation — current source and launcher checkpoint
+# UI21 integration — complete private resources recovered
+
+The active continuation is `work/ui21-integration`, based on UI20
+`f4875c2eee50ecdee4793d7ecb365a20d34857dc`. The owner's supplied conversation
+attachment has been read in full. The accepted UI19 bilingual and optional
+language installers were recovered, and the supplied original four-part game
+archive matches the pinned v0.111.0 / `41cef1ea` reference.
+
+- Recovered UI19 bilingual installation: **74,538,517 bytes** including its
+  1,724,027-byte launcher; all 16 language data files are available.
+- Rebuilt complete UI20 English artwork: **71,028,106 bytes**, SHA-256
+  `d823e669731c75bcf7f62f307f699c0212a211af0f236c36383a4b6777cf66b5`;
+  independently matches the historical repaired artwork. Source sampling and
+  production Canvas acceptance pass 328 frames / 351 pieces.
+- Baseline 158 native suites have actually passed. Independent host processes
+  exercise the real Ndless storage implementation through abandon/death and
+  reopen, retiring sav/bak/tmp without deleting settings or progress.
+- This source stage adds occupied-pixel sparse restoration and two exact
+  font-stream encoder candidates. Linked final ARM acceptance, complete
+  resource compaction, all-locale readback and the two installer ZIPs remain
+  in progress; this checkpoint is not a completed player release.
+- No current Firebird BootROM/NAND has been recovered. Host rendering, linked
+  ARM instruction measurements and historical emulator results must not be
+  relabelled as a new ordinary-OS or physical-device frame-rate measurement.
+
+Next: verify this source checkpoint remotely, build its ordinary ARM launcher,
+finish the exact compaction chain, validate the matched final data and publish
+the bilingual installer and optional-language ZIP. See
+[ui21-art-and-font-storage.md](ui21-art-and-font-storage.md) for current art and
+font evidence. The preceding UI20 handoff is retained below for provenance.
+
+# UI20 continuation — historical source and launcher checkpoint
 
 Use the current `work/ui20-integration` history, not the archived UI19 handoff.
 The source was recovered from remote UI20 `39fc6f1`; no private resource pack,

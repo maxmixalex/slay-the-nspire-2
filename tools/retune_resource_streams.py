@@ -25,7 +25,10 @@ PROFILES = {
     'tile': ((0, 1, 1), (2, 0, 1), (2, 0, 2), (2, 1, 1), (4, 0, 1), (3, 1, 1)),
     'index': ((0, 1, 0), (2, 0, 0), (3, 1, 0), (4, 0, 0), (4, 0, 1)),
     'retained': ((0, 1, 1), (2, 0, 1), (2, 0, 0), (4, 0, 1)),
-    'font': ((0, 0, 0), (2, 0, 0), (3, 0, 0), (4, 0, 0), (4, 0, 1)),
+    # Glyph RLE alternates count/alpha bytes. Position-aware literal contexts
+    # save space without changing the glyphs, cohorts or decoded working set.
+    'font': ((0, 0, 0), (2, 0, 0), (3, 0, 0), (4, 0, 0), (4, 0, 1),
+             (0, 1, 0), (1, 1, 0)),
     'text': ((0, 0, 0), (2, 0, 0), (3, 0, 0), (4, 0, 0)),
 }
 
