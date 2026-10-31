@@ -76,8 +76,16 @@ def main():
         exact_sparse_images=len(selected), reused_tile_references=patch_plan['reused_tile_references'],
         recycled_tile_slots=patch_plan['recycled_slots'],
         removed_only_pixels_outside_all_live_spans=True)
+    # A smaller visible span can break cross-frame sharing of an otherwise
+    # identical complete tile. Measure the resulting stream, rather than
+    # assuming that fewer visible pixels imply fewer installed bytes.
+    patch_report.update(candidate_selected=len(patched) <= len(geometry),
+        candidate_byte_delta=len(patched)-len(geometry),
+        rejection_reason=(None if len(patched) <= len(geometry) else
+                          'Masking unused pixels loses more exact tile sharing than it saves'))
     save(args.work/'eng-selection-retiled7211.nsp', patched, patch_report)
-    output, tile_report = compact_tiles(patched, args.work/'selection-slots', args.workers)
+    selected = patched if patch_report['candidate_selected'] else geometry
+    output, tile_report = compact_tiles(selected, args.work/'selection-slots', args.workers)
     old = coalesce.view(output)
     choices = retained.make_plan(old, args.work/'retained', workers=args.workers, preserve_profile=True)
     compacted = retained.rewrite(old, choices)

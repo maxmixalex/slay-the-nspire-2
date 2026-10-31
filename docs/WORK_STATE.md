@@ -8,12 +8,34 @@ compression while improving storage and frame performance, and still requires
 the complete bilingual and optional-language ZIPs.
 
 The current published checkpoint is
-`5933f5e09599bd07883600eac2090b346ddaf39a`. It includes whole-menu popover
+`88cbc419b80a70e3573a294f58d91930aae66244`. It includes whole-menu popover
 bounds, reward tooltip routing and keyboard reading, native-density actor
 registration, exact selection keyframes/patches, source-provenance recovery
 tools, and lossless conversion defaults. Long conversions and final performance
 gates remain in progress; no UI22 installer is complete yet. Preserve all UI21
 artifacts as controls. Pending fixes must be checkpointed before long runs.
+
+Source fidelity and the requested UI repairs now have actual acceptance:
+all 58,099 input-image provenances are classified; 427 actions / 11,051
+existing sampled frames / 11,134 pieces match fresh official-source sampling.
+The shared actor sampling grid also passes 61,816 views, including real
+noninteger death-room projections, additive blending and Doom grayscale.
+Five real locales pass complete reward text pagination and menu collision
+tests. The two Random particle optimizations were slower in whole-frame ABBA
+measurements and were reverted; do not claim a Random speed improvement.
+
+The remaining release blocker is actual storage capacity. The exact-color
+English logical control is 103,133,990 bytes before the remaining finishing
+decisions; it is not an acceptable installer. Masking unused selection-tile
+colors increased data by 3,561,218 bytes and packed565 delta increased the
+representative groups by 21.465%; both are rejected. Do not ship either or
+report them as savings. Continue with same-codec selection XOR and bounded
+reselection of existing TGR modes/profiles for the newly restored colors,
+subject to exact pixels and actual cold/warm frame-cost gates. Never recover
+space by reintroducing quantization, cutting frames, or hiding install size
+behind ZIP compression. Complete bilingual/optional ZIPs, final memory and
+device-capacity checks, final dataset bindings and the main-branch update are
+still outstanding.
 
 The source-precision audit found a historical distinction that must not be
 hidden: UI11 applied mixed lossy quantization to 48,293 animation frame
