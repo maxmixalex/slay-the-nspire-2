@@ -1,74 +1,135 @@
-# UI22 active: source precision, selection performance, and hover repairs
+# UI22 completed matching calculator release
 
-Continue from `work/ui22-integration`, based on completed UI21 `d02990f`.
-The new user feedback is Continue information overlapping Abandon Run,
-severe character-selection frame drops, missing loot potion/relic tooltips,
-and blurred Necrobinder death. The user explicitly requires avoiding lossy
-compression while improving storage and frame performance, and still requires
-the complete bilingual and optional-language ZIPs.
+The current version is **0.1.0-ui22**, with **NSP2/46**, 58,613 images,
+1,783 clips and 7,212 auxiliary entries. Continue from the verified UI22
+source/data on `work/ui22-integration` and its synchronized `main`, not the
+historical UI21 resources or early UI22 candidate layouts. The pinned original
+reference remains **v0.111.0 / 41cef1ea**. Both complete calculator ZIPs have
+been built and read back with matching artwork and all sixteen original locales.
+Original data, derived packs, private source captures and firmware stay outside
+this public source repository.
 
-The current published checkpoint is
-`88cbc419b80a70e3573a294f58d91930aae66244`. It includes whole-menu popover
-bounds, reward tooltip routing and keyboard reading, native-density actor
-registration, exact selection keyframes/patches, source-provenance recovery
-tools, and lossless conversion defaults. Long conversions and final performance
-gates remain in progress; no UI22 installer is complete yet. Preserve all UI21
-artifacts as controls. Pending fixes must be checkpointed before long runs.
+## Frozen runtime, resources and deliverables
 
-Source fidelity and the requested UI repairs now have actual acceptance:
-all 58,099 input-image provenances are classified; 427 actions / 11,051
-existing sampled frames / 11,134 pieces match fresh official-source sampling.
-The shared actor sampling grid also passes 61,816 views, including real
-noninteger death-room projections, additive blending and Doom grayscale.
-Five real locales pass complete reward text pagination and menu collision
-tests. The two Random particle optimizations were slower in whole-frame ABBA
-measurements and were reverted; do not claim a Random speed improvement.
+- Runtime and final ARM build: `b9425530b24b0d851b57892872fc07865859cea1`.
+- Final accepted data/converter and packager: `1128b795557fee3ee31444e323f58f073bbcd922`.
+- Independent opaque-alpha representation oracle correction (test only):
+  `dc175a9ca060478298e08abdaa9f35a22ca65a33`.
+- Launcher: **1,688,294 bytes**, SHA-256
+  `5d07224f6b5dc92041e9edba3eba7e328dc024deda8e30f9f3ddceefd5d03362`.
+- Final linked ELF: SHA-256
+  `e749c0dd19bb5797186be0d6e5391c11bec1d4790bd8f77d14a07f1c1635202e`;
+  formal allocation **22,535,324 bytes**, 2,630,500 bytes below 24 MiB.
+- Final logical English: **94,924,498 bytes**, SHA-256
+  `e2fc2beb4fe1e4d9ff5e54188f0c134bc9da2ee680ef2acc06ad5f7cd6784147`.
+- Final logical Simplified Chinese: **99,349,212 bytes**, SHA-256
+  `e1add5f33fbbf8f2093fcf3676200518a0550808ad575bf6e9b0071b3ce7b3d6`.
 
-The remaining release blocker is actual storage capacity. The exact-color
-English logical control is 103,133,990 bytes before the remaining finishing
-decisions; it is not an acceptable installer. Masking unused selection-tile
-colors increased data by 3,561,218 bytes and packed565 delta increased the
-representative groups by 21.465%; both are rejected. Do not ship either or
-report them as savings. Continue with same-codec selection XOR and bounded
-reselection of existing TGR modes/profiles for the newly restored colors,
-subject to exact pixels and actual cold/warm frame-cost gates. Never recover
-space by reintroducing quantization, cutting frames, or hiding install size
-behind ZIP compression. Complete bilingual/optional ZIPs, final memory and
-device-capacity checks, final dataset bindings and the main-branch update are
-still outstanding.
+| Private delivery | ZIP bytes | SHA-256 |
+| --- | ---: | --- |
+| Slay-the-Nspire-2-0.1.0-ui22-bilingual-calculator.zip | 98,728,539 | `e75fa7e3c8e4bec3e4bc2f4381b4fb760aead6ab55b3236c5c24daa5196f8e9f` |
+| Slay-the-Nspire-2-0.1.0-ui22-optional-languages.zip | 17,321,125 | `bda9f42a2dcf62f0afa9799ef2b0626d204a11a5c49b3da07facb709bf2defc6` |
 
-The source-precision audit found a historical distinction that must not be
-hidden: UI11 applied mixed lossy quantization to 48,293 animation frame
-references. UI21's exact reader/storage comparisons preserve their inputs,
-but do not establish that those inherited inputs equal the original sampled
-RGB565/alpha8. Player death segments include the lower 444a6 tier, and merchant
-death also magnifies a small raster. UI22 is recovering the prequantization
-UI10 data and original sampled frames, with per-frame provenance checks so
-later geometry and registration repairs cannot be overwritten by old art.
+The complete bilingual launcher and required `.tns` data occupy
+**99,526,983 bytes before saves**. Including README, build information and
+licenses, the extracted bilingual ZIP totals **99,650,627 bytes**. All fourteen
+optional `.tns` locale files add **18,854,842 bytes**; with their README, the
+optional ZIP extracts to **18,855,677 bytes**. Install only the desired additional
+locales, but keep the complete matching index and eight shared artwork parts.
+Exit before upgrading, preserve the whole `state/` directory, and replace the
+launcher, complete `data/`, and any optional locales with the matching UI22 set.
 
-The selection performance baseline identifies repeated background decoding
-when full animation loops exceed the existing image cache. Exact keyframe /
-patch storage and existing-arena reuse are being evaluated against whole-frame
-pixels and resource-read work. Neither smaller files alone nor isolated ARM
-decoder instructions establish a frame-rate improvement. Original assets and
-private measurements remain outside this public repository.
+## Storage and source precision: two distinct comparisons
 
-The first complete selection A/B matches 8,100 old-input frames exactly and
-eliminates warmed five-character resource reads. This is not final acceptance:
-its cold entry is slower and its temporary geometry grows the data. Optimize
-first entry and rapid switching, then repeat with restored original-precision
-resources. Random remains a separate CPU path. Test representative combat
-loops as well: native-density actor resources must not silently trade clarity
-for cache thrashing.
+Against a control with the same sampled RGB565/alpha8 precision, native actor
+density and active content, the required bilingual installation decreases
+**107,729,436 → 99,526,983 bytes**, saving **8,202,453 bytes**. The English logical
+comparison is **103,133,990 → 94,924,498 bytes**. These catalogs differ in added
+selection/retirement metadata and removed unreachable legacy payloads; they
+are not claimed to contain identical unused entries.
 
-UI15 Vantom old clip frame slots were repurposed for mesh/rigid-layer data.
-Do not restore or overwrite those slots by legacy clip tuples. Validate their
-typed parameter/image reference closure; the actor job selector must exclude
-those routes and preserve the existing mesh renderer.
+Historical UI21 occupied **73,295,445 bytes** and inherited UI11's lossy color
+quantization. UI22 is therefore **26,231,538 bytes larger than UI21**, while
+restoring the source's sampled RGB565 words and alpha8. Do not hide this increase
+behind ZIP size, MiB/MB units, or the same-quality control comparison. The earlier
+65–70 MB ambition was a historical soft target, not a newly confirmed amount
+of free space on the user's calculator. Actual required storage is stated above.
+
+Accepted lossless changes include bounded selection key/copy geometry,
+clip-local eight-frame index groups, same-tile span merging, exact legacy and
+retained-stream cleanup, CPU-gated existing TGR/TGI2 stream choices, ordinary
+FFFD geometry, and removal of 988 index records with no image descriptor.
+The last pass really removes those records from 21 groups, retains every live
+record and remaps its raw offset; it saves 249,856 bytes. Complete final-ELF
+LZMA2 plus index inverse work falls 96,820,329 → 11,989,047 instructions across
+those groups, with no group regression.
+
+**Do not adopt FFFC selection bitmaps.** The exact 163,840-byte candidate failed
+to demonstrate an acceptable same-core opening/switching CPU result. The final
+pack has no FFFC records. Its public offline converter now requires explicit
+experimental opt-in and marks outputs not release-approved. Its bounded unused
+runtime support is not a claimed released storage gain. Random optimization,
+XOR residual, lossy quantization, masked re-dicing and the negative temporal,
+atlas, larger-dictionary and retained-image experiments are not shipped wins.
+
+## Completed acceptance and its limits
+
+- **162/162 native CTest targets** execute and pass on the frozen b942 core.
+  Final English/Chinese packs pass **18 actual UI/Osty runs**, alongside the
+  dedicated filesystem, tooltip, input-mode and long-locale regressions.
+- Final **58,613 images × memory/ranged/preload** compare to the independent
+  original-reference spool: **1,065,442,263 exact source bytes per backend**.
+  The final run reports 200,421,907 checks and 28,655,100 preload steps; after
+  Ready, image access adds zero source reads. Thirty-three fully opaque images
+  use the old runtime's equivalent implicit-alpha representation, with exact
+  original colors and explicit-alpha reconstruction checked independently.
+- All sixteen final locales reconstruct exactly and preserve the original
+  font/text payloads: **344,590 glyph entries and 139,264 string entries**.
+- All 58,099 inherited image provenances are classified. Fresh official-source
+  sampling verifies **427 actions / 11,051 retained sampled frames / 11,134
+  pieces**; actor Canvas tests include noninteger projection, additive blending,
+  opacity and grayscale. Late registration fixes and the Vantom typed assets
+  are preserved instead of overwritten with old clip slots.
+- Linked ARM passes **4,945 dense/sparse/LZMA2/memory vectors** with guards and
+  ABI checks. A 33-symbol, 45,556-byte machine-code/constant/relocation closure
+  binds the complete-stream profile measurements to the final ELF.
+- Full-precision whole-App comparisons cover cold selection, opening loops,
+  fast character switching, Random, and seven combat scenes including
+  Necrobinder/Osty/Unleash and Ceremonial Beast/Plow. Every compared LCD
+  fingerprint agrees; independent source/Canvas gates establish pixel identity.
+  In the final same-core ABBA, selection advance performs zero resource reads.
+  Render, advance, initialization, FNV and logging are separated; warm timing
+  scatter is retained instead of reported as a universal speed improvement.
+
+No current physical-calculator FPS, flash-latency, or Firebird run is claimed.
+Existing stream ARM gates cover LZMA and inverses; the new FFFD alpha-to-geometry
+reconstruction is covered by native exact-resource/lifecycle and actual-App
+measurements, not by a complete ARM `Content::image` performance fixture.
+The allocation figure is a formal linked limit, not a physical peak-memory trace.
+Audio, multiplayer and Timeline remain excluded. Other established calculator
+adaptations remain documented; registry/model counts do not establish complete
+original-game parity.
+
+## Rules for the next iteration
+
+Start from the matching UI22 ZIPs and reconstruct their NSP2/46 resources;
+do not repeat the UI10→UI21 recovery or regress to quantized inherited assets.
+Keep source RGB565 words, alpha8, hidden colors, clocks, pivots and registered
+native density exact. Conversion defaults must stay lossless; legacy quantization
+is only an explicit historical-migration operation. Preserve all alias and typed
+references when reclaiming resources, especially Vantom's repurposed frame slots.
+Any smaller compressed candidate needs complete decoder and relevant cold/warm
+scene evidence; size alone is not acceptance. Keep the 24 MiB allocation bound,
+matching-language installation, lazy resource reads and absence of startup-wide
+integrity scans. Checkpoint source before long work and retain negative results.
+
+Detailed evidence is in [storage/performance](ui22-storage-performance.md),
+[selection](ui22-selection.md), [source precision](ui22-source-precision.md) and
+[UI acceptance](ui22-ui-acceptance.md). Historical stages below remain separate.
 
 # UI21 historical completed matched calculator release
 
-The active release is `work/ui21-integration`, based on UI20
+The historical UI21 release used `work/ui21-integration`, based on UI20
 `f4875c2eee50ecdee4793d7ecb365a20d34857dc`. The owner's supplied conversation
 attachment was read in full. The accepted UI19 bilingual and optional-language
 installers were recovered, and the supplied four-part original game archive

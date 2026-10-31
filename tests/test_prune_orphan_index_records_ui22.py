@@ -1,6 +1,8 @@
 from pathlib import Path
 import struct
+import subprocess
 import sys
+import tempfile
 import unittest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]/'tools'))
@@ -45,6 +47,25 @@ def with_middle_orphan(predicted=False):
 
 
 class OrphanRecords(unittest.TestCase):
+    def assert_cli_paths_rejected(self, input_name, output_name):
+        with tempfile.TemporaryDirectory() as temporary:
+            folder = Path(temporary)
+            source, output = folder/input_name, folder/output_name
+            source.write_bytes(b'Original resource bytes must survive')
+            result = subprocess.run([sys.executable, str(Path(prune.__file__)),
+                '--input', str(source), '--output', str(output),
+                '--elf', str(folder/'never-read.elf')], capture_output=True, text=True, check=False)
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn('Input, output and receipt paths must be distinct', result.stderr)
+            self.assertEqual(source.read_bytes(), b'Original resource bytes must survive')
+            self.assertFalse(output.exists())
+
+    def test_receipt_cannot_overwrite_the_input(self):
+        self.assert_cli_paths_rejected('foo.json', 'foo.nsp')
+
+    def test_output_cannot_also_be_its_own_receipt(self):
+        self.assert_cli_paths_rejected('input.nsp', 'output.json')
+
     def test_real_removal_preserves_live_pixels_offsets_and_catalog(self):
         data=with_middle_orphan(); old=coalesce.view(data)
         output,proof=prune.convert_bytes(data,MeasuredFixture(),align_suffix=False)

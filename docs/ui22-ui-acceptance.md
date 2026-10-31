@@ -1,9 +1,24 @@
-# UI22 menu, reward and lifecycle acceptance
+# UI22 menu, reward, lifecycle and final resource acceptance
 
 Reference: owner-supplied Slay the Spire 2 v0.111.0 / `41cef1ea`.
 Private original assets, decompiled reference, locale packs and captures stay
 outside the repository. These are executed native production-renderer checks;
 they do not establish Firebird execution or physical-calculator frame rate.
+
+## Latest feedback and the delivered behavior
+
+| Feedback | Implementation in this iteration | Acceptance on the final resources |
+| --- | --- | --- |
+| Continue metadata covers Abandon Run | Measure the complete localized menu, focused-label padding, logo and profile bounds before placing the popup in the available gutter. | Final English and Chinese mouse/keyboard routes pass the pixel-exclusion and onscreen checks. Both final captures were inspected; the earlier German, French and Russian checks also cover long-label fallback. |
+| Loot potion and relic tooltips disappeared | Route all seven reward families to their actual item tips, preserve card previews, and provide a modal, paginated details reader for long descriptions. | Both final catalogs retain the complete text of all 361 potion/relic models. Mouse, keyboard, claimed-index gaps, modal input, return focus and Load reset pass. Final hover captures remain readable. |
+| Character selection drops frames | Reuse exact selected-character frame changes and fix shared-scene cache lifetime when an App is reconstructed at the same address. | Final five-character/Random transitions and cross-locale cache reopening pass. Actual timing, cold reads and the accepted performance boundary are recorded in [the selection report](ui22-selection.md). The rejected Random experiments are not included. |
+| Character, summon and death animations lose detail or color | Restore original RGB565/alpha8 source values, register source-density actor frames for the actual scale bounds, and use a shared sampling grid across split pieces. | The independent original-source image and actor-Canvas gates cover the restored data. Final English/Chinese death routes and the actual Osty growth, death, dead-loop and revival sequence pass; see [source precision](ui22-source-precision.md). |
+
+The new reward reader, reused-address cache reset, source-density registration
+and exact affliction phase clock close specific interaction, lifecycle,
+representation and timing gaps. Osty's death/dead-loop/revival timing already
+existed before UI22; this iteration supplies corrected source artwork and
+validates that existing sequence. It is not reported as a new timing feature.
 
 ## Continue metadata placement
 
@@ -166,9 +181,121 @@ while rendering: all five merchant characters through focus/open/close input,
 every Crusher/Rocket Bestiary action, eight actual Kaiser combat turns and an
 observed arm death. Twelve full-scene captures were inspected. This retirement
 does not remove a currently reachable animation frame or reduce color fidelity.
-Final per-locale package bindings follow the remaining storage finishing pass.
+The final resource bindings below include this retirement and the later
+lossless storage finishing steps.
 
-## Source and asset validation boundary
+## Final native and actual-resource acceptance
+
+The production runtime is checkpoint
+`b9425530b24b0d851b57892872fc07865859cea1`. Its complete clang 18 Release build
+passed **162 of 162 CTest regressions**, zero failures, in **65.17 seconds**.
+The private build and CTest journals record an unchanged source tree. This
+supersedes the earlier 160-test gate at `d940fec9` without discarding that
+intermediate evidence.
+
+NSP2 version 46 adds exact regeneration of eligible ordinary image geometry.
+It preserves decoded pixels, alpha, sparse output bytes, image IDs, page costs
+and the source pixel-group read order. The dedicated 230,400-byte temporary
+buffer does not reduce the existing image, tile or selected-hand caches.
+Interleaved synchronous reads, paused preloads, cancellation, failed reads,
+reopening and reused Content addresses pass the owner-lifetime regressions.
+An older runtime independently rejects the real version-46 pack at open in
+both memory and ranged modes. Final release validation also rejects the
+experimental selection bitmap form (`FFFC`); the final packs use ordinary
+implicit geometry (`FFFD`) and explicit selection geometry. The rejected
+163,840-byte selection bitmap saving is not part of the delivered result.
+
+The final actual-resource gate is bound to these immutable logical files:
+
+| Locale | Bytes | SHA-256 |
+| --- | ---: | --- |
+| English | 94,924,498 | `e2fc2beb4fe1e4d9ff5e54188f0c134bc9da2ee680ef2acc06ad5f7cd6784147` |
+| Simplified Chinese | 99,349,212 | `e1add5f33fbbf8f2093fcf3676200518a0550808ad575bf6e9b0071b3ce7b3d6` |
+
+Journal `ui22-final-bilingual-actual-ui-097962ba87cc` and its
+`final-ui46/receipt.json` record **18 successful actual-resource target runs**:
+frontend, profiles, rewards, keyword tips, world UI, five-character UI, death
+routing and affliction cards in each language; the cross-locale scene-cache
+check; and ordinary-command Osty gameplay. Both resource hashes are unchanged
+after execution. The final reward checks retain 48,276 English and 21,610
+Chinese non-whitespace rich-text characters across all passive and reader
+pages, including the same 24 and 15 passive multipage entries reported above.
+
+The final English source-pixel oracle also passes all **58,613 images through
+each of the memory, ranged and incremental-preload readers**. Each reader
+reproduces the independent old-format reference's **1,065,442,263 raw bytes**;
+the reference body was exported before the new geometry decoder existed and
+is unchanged. Journal
+`ui22-final46-complete-original-source-proof-f849e4193964` records 200,421,907
+checks, 28,655,100 preload steps, at most 24,172 steps for one image, and no
+source reads after Ready. The 33 existing all-opaque format normalizations per
+reader are accepted only after every color byte and implicit alpha value 255
+matches; no non-opaque difference is allowed. The earlier source-Canvas gate
+covers 427 actions, 11,051 frames and 61,816 projected views, including
+noninteger scales and gray rendering: 5,106,124,800 LCD values match the fresh
+original-source reference. Its active-pixel identity is preserved by the
+final resource transformation and the final raw oracle above.
+
+Each language's death target passes 4,175,314 total assertions, including all
+five players in combat, event, rest and merchant room states. It supplies a
+dead-player fixture to the production `game_over_actor` route and checks the
+actual body clips, source room placement, distinct first/middle frames,
+terminal holds, particle decay and original timer. The supplied Necrobinder
+review PNG is the merchant-room terminal route. Separate existing captures
+cover Necrobinder's combat terminal and event first/middle/terminal poses.
+These tests intentionally isolate the actor layer on black; they do not claim
+to show a complete combat screen or simulate the lethal input itself. The
+ordinary-command Osty route renders complete gameplay scenes and passes 1,989
+checks: Bodyguard growth, Bone Shards death, the full 17-frame death action,
+dead-loop, and the 12-frame revival through terminal idle. Seven scene captures
+are retained. The final dead-loop and completed-revival scenes were visually
+inspected. Rendering and presentation-clock advances leave canonical saves
+unchanged.
+
+The final English/Chinese Continue captures and English potion hover were
+visually inspected at the native 320x240 resolution. The panel does not cover
+Continue, Abandon Run, the logo or profile controls. The hover description and
+its sibling keyword explanation are readable; long titles retain their
+existing scroll and complete reward-row label. Four review PNGs are lossless
+format conversions of the existing PPM captures, with identical RGB bytes;
+they are not rescaled or reconstructed images.
+
+## Final installation archives
+
+An independent boundary audit read both completed ZIPs, checked every CRC and
+path, and compared each of the 25 data files plus the launcher byte for byte
+with the frozen release inputs. It also matched their hashes, sizes and member
+lists to the delivery manifest. The bilingual archive has only the launcher,
+`data/` contents and an empty `state/` at its outer level. There are no packaged
+user saves, temporary saves, backups or test markers. The optional archive
+contains exactly the other fourteen language files and their instructions
+under `data/`.
+
+| Archive | ZIP bytes | All extracted bytes | Runtime `.tns` bytes |
+| --- | ---: | ---: | ---: |
+| Bilingual full installation | 98,728,539 | 99,650,627 | 99,526,983 |
+| Optional fourteen languages | 17,321,125 | 18,855,677 | 18,854,842 |
+
+The bilingual ZIP SHA-256 is
+`e75fa7e3c8e4bec3e4bc2f4381b4fb760aead6ab55b3236c5c24daa5196f8e9f`;
+the optional ZIP SHA-256 is
+`bda9f42a2dcf62f0afa9799ef2b0626d204a11a5c49b3da07facb709bf2defc6`.
+The independent receipt is `delivery/independent-audit.json` in the private
+release evidence. The packages themselves were not changed by this audit.
+
+The actual packaged README directs an upgrade to exit first, preserve the
+entire existing `state/`, replace `nSpire2.tns` and the complete old `data/`
+folder, and install only matching optional languages into `data/`. It warns
+against replacing an existing state folder with the archive's empty one.
+There is no required removal of a particular user-state file. The public
+index and every concern file remain required; optional languages can be omitted.
+First-launch language fallback and the included developer console are described.
+Version 0.1.0-ui22, NSP2/46, save format 17, the pinned original reference and
+the runtime/resource checkpoints match the packaged BUILD-INFO. Licenses and
+notices are present. README and BUILD-INFO make no claim of UI22 Firebird
+execution; NOTICE preserves the separately qualified historical evidence.
+
+## Earlier source and actual-language evidence
 
 The UI/lifecycle runtime and public tests above were executed from published
 checkpoint `701c85a1d270bed2beca20a5481388d22ca79a9d`. The actual-language inputs
@@ -178,27 +305,20 @@ a small synthetic fixture's missing hover text, and the overlay Back shortcut
 that previously entered Pause; the corrected checkpoint passes all five scoped
 synthetic UI/lifecycle targets and all actual-language runs above.
 
-The complete native Release build of published runtime checkpoint
-`d940fec9eeae87d10d4e806d46bdf73e862debd1` passed all 160 CTest regressions with
-clang 18: zero failures in 69.12 seconds. This gate includes the final shared
-actor sampling grid, exact phase clocks, scene-cache lifecycle and restored
-Random implementation. The later capture-helper checkpoint changes tests and
-offline tools/documents only; its production source files are identical.
-
 The first complete 427-action / 11,051-frame actor resource input also passed
 `character_death_ui9_regression`, `world_ui_regression` and
 `five_character_ui_regression` through the production renderer. These checks
 cover all five characters' combat/event/rest/shop death routing, terminal holds,
 particle decay, and actual Osty growth, kill, dead-loop and revival gameplay.
-On the final runtime and complete-color control, an additional ordinary-command
+On the earlier complete-color control, an additional ordinary-command
 Osty flow passed 1,989 checks: Bodyguard growth, Bone Shards death, all 17 death
 frames elapsed, the actual dead-loop route, and the 12-frame revival through
 terminal idle. Seven full-scene captures were inspected, including the corpse
 and the middle/end of revival; canonical saves remained unchanged while the
 presentation clock advanced.
 The native source-pixel oracle and final-resource receipts are separate release
-gates; intermediate artwork acceptance is not a claim that the final installer
-has already been built or tested on a calculator.
+gates. Actual resource acceptance and original-source pixel equality do not
+establish device execution or physical-calculator frame rate.
 
 The accepted audio/multiplayer/Timeline exclusions and static Ancient-scene
 exception remain explicit in the product scope and retained-differences ledger.

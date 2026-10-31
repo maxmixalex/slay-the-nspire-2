@@ -1,6 +1,10 @@
 # Slay the Nspire 2
 
-Native TI-Nspire Ndless adaptation of Slay the Spire 2. Reference: the owner's **v0.111.0 / 41cef1ea** installation. The current development version is **nSpire 0.1.0 (StS II v0.111.0), UI19**. The previous accepted calculator delivery was **0.17 UI18**, with exact tile-slot compaction, a smaller release launcher, incremental combat resource preparation and all sixteen original locale calendars. The default English/Simplified-Chinese program and data occupy **79,681,674 bytes** before saves. The longest preparation interval in the fixed ordinary-OS target fixture falls from 1,129.30 to 192.54 ms; its final warm window remains 0.5737% below the UI17 control, and the earlier 65–70 MB installation target remains unmet. Exact checkpoints, measured results and remaining limits are in the [UI18 delivery record](docs/ui18-delivery-0.17.md) and [WORK_STATE.md](docs/WORK_STATE.md). UI18 was built and validated locally; this delivery does not claim a new public `main` update or a remote CI pass. Earlier results below retain their historical identities.
+Native TI-Nspire Ndless adaptation of Slay the Spire 2. Reference: the owner's **v0.111.0 / 41cef1ea** installation. The current calculator version is **nSpire 0.1.0-ui22**, using matching **NSP2/46** resources. UI22 restores the original sampled RGB565/alpha8 colors, repairs native animation density, and uses exact bounded background patches to reduce character-selection resource work. Continue information and loot tooltip routing are also corrected.
+
+The complete English/Simplified-Chinese launcher and required `.tns` data occupy **99,526,983 bytes before saves**. That is **8,202,453 bytes smaller** than the control with the same restored source precision, native density and active content. It is **26,231,538 bytes larger** than the historical UI21 installation, whose inherited animation resources included earlier lossy color quantization. The fourteen optional language files add **18,854,842 bytes** if all are installed; only desired languages need to be copied. ZIP compression and documentation sizes are reported separately.
+
+Current source, exact resource identities, acceptance and measurement limits are recorded in [WORK_STATE.md](docs/WORK_STATE.md), [UI22 storage and performance](docs/ui22-storage-performance.md), [selection measurements](docs/ui22-selection.md), and [source precision](docs/ui22-source-precision.md). Native process CPU and linked ARM instruction counts do not establish physical calculator FPS. Earlier results below retain their historical identities.
 
 **Audio, multiplayer and Timeline are excluded.** Original UI fidelity, animation and single-player content breadth remain in scope. Original game data, fonts and calculator images are not included in public source.
 
@@ -10,7 +14,7 @@ The original three-act route now drives the playable world: Overgrowth or Underd
 
 ### Current calculator installation
 
-The UI18 calculator release uses the following layout. Only the launcher stays at
+The UI22 calculator release uses the following layout. Only the launcher stays at
 installation root; resources are read from `data` and every mutable file is
 written under `state`. The launcher creates `state` when it is absent.
 
@@ -33,15 +37,17 @@ written under `state`. The launcher creates `state` when it is absent.
 | `state/` | Other profiles, progress, preferences, backups and temporary files |
 
 Install the launcher, index, **all eight artwork parts**, and language files
-from the same UI18 release. The default calculator ZIP contains English and
+from the same UI22 release. The default calculator ZIP contains English and
 Simplified Chinese; the optional-language ZIP provides the other fourteen
 original editions. Add their language files to the same `data` directory.
 All eight artwork parts are required for every language, and English should
 remain installed for fallback. A missing or invalid required part produces a
 built-in English resource error.
 
-When updating an existing installation, replace the launcher and matching
-resource files while **preserving the complete `state` directory**. It contains
+When updating an existing installation, exit the game, replace the launcher
+and the entire `data` directory with the matching UI22 set, and replace any
+previously installed optional locales. **Preserve the complete `state` directory**
+and do not overwrite it with the archive's empty folder. It contains
 the three profiles, current runs, progress, preferences and backups. The
 release archive does not replace those files. Earlier unpublished directory
 layouts are not automatically imported.
@@ -67,8 +73,15 @@ Resources are read and decoded on demand. Startup does not scan full files for
 integrity hashes or CRCs. The runtime retains the bounds and format checks
 needed to load and render the requested content. Original assets remain private.
 
+Resource work must preserve the restored RGB565 words, alpha8 values, source
+frame clocks and registered native density. Do not re-enable historical color
+quantization or count unmeasured compressed candidates as release gains. The
+ordinary implicit-geometry format is accepted; the selection bitmap experiment
+is not used by the final data. Complete decoder and scene measurements govern
+storage choices, with a 24 MiB formal ARM allocation ceiling.
+
 Current verification and exact checkpoints are recorded in the
-[UI18 delivery record](docs/ui18-delivery-0.17.md) and
+[UI22 delivery report](docs/ui22-storage-performance.md) and
 [WORK_STATE.md](docs/WORK_STATE.md). The [UI17 feedback ledger](docs/ui17-feedback-acceptance-0.17.md)
 distinguishes new implementation, retained UI16 fixes, original behavior and
 accepted calculator adaptations. Earlier UI12/UI13 results remain historical
@@ -78,7 +91,7 @@ records in [UI12](docs/validation-ui12-0.17.json) and
 ### Historical UI3 measurements and delivery
 
 This section records UI3 as delivered. Statements about work remaining at that
-checkpoint are historical; use the UI18 reports above for the current status.
+checkpoint are historical; use the UI22 reports above for the current status.
 
 The historical UI3 title-glow hybrid resources total **81,100,703 bytes**, compared with
 93,783,363 bytes for the previous bilingual NSP2/19 split. Common card/UI images
@@ -145,7 +158,7 @@ Source22 [`5d177be7`](https://github.com/maxmixalex/slay-the-nspire-2/commit/5d1
 
 The historical source22 launcher is **885,386 bytes**; the two calculator files total **81,731,444 bytes before saves**. The **30–40 MB target is not achieved**. None of the seven alternative reversible tile representations improved the existing encoding in the declared eight-group sample. Grouped retained images/glyphs show about **8.43 MB** of potential component savings, but require an unimplemented format/reader and still model roughly **69 MiB** before new global metadata. See [resource-budget-0.17.md](docs/resource-budget-0.17.md) and [the exact diagnostic evidence](docs/validation-resource-research-source22.json). The private ZIP and offline HTML are development artifacts, not hardware or 95% visual acceptance. That historical pair requires its matching NSP2/15 resource. Use the current split installation above for this feedback stage.
 
-Those source20–22 resource and launcher sizes describe earlier NSP2/14–15 stages. The later historical UI8 source accepted NSP2/28 and retained old complete-pack readers, including the verified bilingual NSP2/17 and NSP2/18 packs. Its gameplay writer used **v17** with historical v3–v16 readers; resource-storage and save versions are independent. Its browser selected a save key from the actual encoded version and preserved compatible historical keys. These are earlier-stage format descriptions; the current UI17 installation is specified above. Build the current native/ARM sources with the logged commands below. Earlier world resource conversion is described in [enemy-assets-0.17.md](docs/enemy-assets-0.17.md), [feedback-ui-0.17.md](docs/feedback-ui-0.17.md) and [merchant-effects-0.17.md](docs/merchant-effects-0.17.md). Generated packs and embedded-content HTML stay outside this public repository. The older conversion commands and artifact statistics below describe **0.16 only**.
+Those source20–22 resource and launcher sizes describe earlier NSP2/14–15 stages. The later historical UI8 source accepted NSP2/28 and retained old complete-pack readers, including the verified bilingual NSP2/17 and NSP2/18 packs. Its gameplay writer used **v17** with historical v3–v16 readers; resource-storage and save versions are independent. Its browser selected a save key from the actual encoded version and preserved compatible historical keys. These are earlier-stage format descriptions; the current UI22 installation is specified above. Build the current native/ARM sources with the logged commands below. Earlier world resource conversion is described in [enemy-assets-0.17.md](docs/enemy-assets-0.17.md), [feedback-ui-0.17.md](docs/feedback-ui-0.17.md) and [merchant-effects-0.17.md](docs/merchant-effects-0.17.md). Generated packs and embedded-content HTML stay outside this public repository. The older conversion commands and artifact statistics below describe **0.16 only**.
 
 ## Verified 0.16 baseline — historical content
 
@@ -203,7 +216,7 @@ The final **12,910,778-byte NSP2/13** pack contains 2,638 images, 7,215 glyph re
 
 Commit source to a named work branch **before** long compilation or conversion. Record remote publication receipts separately; when publication is unavailable, preserve the local source and history bundle and state that limitation. `tools/run_logged.py` records the supplied checkpoint, input hashes, command, running/completed state, exit code and log hash. It does not itself verify or push a remote commit. A running journal after interruption is not a passed test.
 
-Current execution results belong in WORK_STATE and the UI18 delivery record. Compilation, cross-backend agreement and actual target execution are different evidence levels. Historical incomplete-work statements above describe their stated checkpoints; the current feedback ledger records the remaining implementation and evidence boundaries. Firebird execution does not establish physical-handheld performance or exhaustive original-game parity.
+Current execution results belong in WORK_STATE and the [UI22 delivery report](docs/ui22-storage-performance.md). Compilation, cross-backend agreement and actual target execution are different evidence levels. Historical incomplete-work statements above describe their stated checkpoints; the current feedback ledger records the remaining implementation and evidence boundaries. Firebird execution does not establish physical-handheld performance or exhaustive original-game parity.
 
 ## Controls and license
 

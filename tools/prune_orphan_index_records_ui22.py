@@ -231,12 +231,21 @@ def convert_bytes(data, arm, *, align_suffix=True, progress=None):
         limitation='Complete linked decoder instructions, not physical calculator FPS.')
 
 
+def validate_output_paths(input_path, output_path):
+    receipt_path = output_path.with_suffix('.json')
+    paths = (input_path, output_path, receipt_path)
+    for path in paths:
+        t.private_path(path, 'Private index compaction path')
+    t.require(len({path.resolve() for path in paths}) == len(paths),
+              'Input, output and receipt paths must be distinct')
+    t.require(not output_path.exists(), 'Preserve the original pack')
+
+
 def main():
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument('--input', type=Path, required=True); p.add_argument('--output', type=Path, required=True)
     p.add_argument('--elf', type=Path, required=True); args = p.parse_args()
-    for path in (args.input, args.output): t.private_path(path, 'Private index compaction path')
-    t.require(args.input.resolve() != args.output.resolve() and not args.output.exists(), 'Preserve the original pack')
+    validate_output_paths(args.input, args.output)
     started = time.monotonic(); t.HOST_CACHE_GROUPS = 16
     output, proof = convert_bytes(args.input.read_bytes(), ArmIndices(args.elf),
         progress=lambda row: print(json.dumps(dict(stage='orphan_index_group', **row)), flush=True))
