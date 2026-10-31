@@ -13,6 +13,7 @@
 #include "framed_animation_ui22.hpp"
 #include "character_select_delta.hpp"
 #include "retired_assets_ui22.hpp"
+#include "implicit_geometry.hpp"
 extern "C" void* memcpy(void*,const void*,size_t);
 namespace spire {
 static uint16_t u16(const uint8_t*p){return p[0]|(uint16_t)p[1]<<8;}

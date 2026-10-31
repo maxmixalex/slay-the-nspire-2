@@ -124,7 +124,7 @@ def fixture(auxiliary=5422):
         marker_at=append(retired.marker_bytes())
         tiles.IMAGE.pack_into(out,40+retired.MARKER_IMAGE*16,marker_at,8,1,0,16)
         struct.pack_into('<I',out,aux_at+retired.BASE_AUX*4,retired.MARKER_IMAGE)
-    tiles.HEADER.pack_into(out, 0, b'NSP2', 45, tiles.REFERENCE, len(out), ni, ng, ns, nc, nk, 0)
+    tiles.HEADER.pack_into(out, 0, b'NSP2', 46 if auxiliary>=7212 else 45, tiles.REFERENCE, len(out), ni, ng, ns, nc, nk, 0)
     return out, dict(aux=aux_at, tables=table_offsets, table_ids=table_ids,native=native_offsets,clips=clip_at,
                      marker=marker_at if auxiliary>=7212 else None)
 
@@ -181,6 +181,9 @@ class ReleaseContentGuardTest(unittest.TestCase):
         data,_=fixture(7212);result=guard.validate_release_content(data,'UI22-release')['ui22']
         self.assertTrue(result['complete']);self.assertEqual(result['registered_tables'],427)
         self.assertEqual(result['selection_frames'],540);self.assertEqual(result['vantom_generic_entries'],0)
+        struct.pack_into('<I',data,4,45)
+        with self.assertRaisesRegex(ValueError,'NSP2/46'):
+            guard.validate_release_content(data,'ui22')
 
     def test_ui22_missing_actor_and_wrong_registry_routes_fail(self):
         original,at=fixture(7212)

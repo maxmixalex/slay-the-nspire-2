@@ -6,7 +6,7 @@ constexpr unsigned PredictiveIndexContentVersion=41;
 // NSP42 keeps the direct group divisor/IDs but permits fewer stored tile
 // records after offline compaction of unreferenced local slots.
 constexpr unsigned CompactTileContentVersion=42;
-constexpr unsigned MaximumContentVersion=45;
+constexpr unsigned MaximumContentVersion=46;
 constexpr uint32_t PredictiveIndexGroupMagic=0x32494754u; // TGI2
 
 namespace index_prediction_detail {

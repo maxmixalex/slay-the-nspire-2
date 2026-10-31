@@ -152,6 +152,7 @@ static PreparationResult preload_tile_step(ContentPreload&p){
         return PreparationResult::Pending;
     case PreloadPhase::TilePlan:{
         const auto*record=preload_tile_record(p);if(!record)return PreparationResult::Failed;
+        if(!p.w||p.w>320||!p.h||p.h>240)return PreparationResult::Failed;
         p.tile_columns=uint16_t((p.w+TileSide-1)/TileSide);
         p.tile_count=uint16_t(p.tile_columns*((p.h+TileSide-1)/TileSide));
         if(p.tile_count>MaxFrameTiles||u32(record+4)!=p.tile_count*4u)return PreparationResult::Failed;
@@ -159,7 +160,33 @@ static PreparationResult preload_tile_step(ContentPreload&p){
         if(!preload_reserve_output(p))return PreparationResult::Failed;
         auto&plan=preload_tile_plan(p);for(unsigned i=0;i<MaxFrameTiles;++i){
             plan.active[i]=plan.cached[i]=0;plan.ids[i]=i<p.tile_count?u32(record+12+i*4u):0u;}
-        p.scan=p.position=p.rows=p.tile_copied=0;p.phase=PreloadPhase::TileGeometry;return PreparationResult::Pending;
+        p.scan=p.position=p.rows=p.tile_copied=0;p.phase=PreloadPhase::TileGeometry;
+        const auto*geometry=record+12+p.tile_count*4u;const unsigned marker=u16(geometry);
+        p.tile_geometry_mode=marker==implicit_geometry::Marker?1u:marker==implicit_geometry::BitmapMarker?2u:0u;
+        if(p.tile_geometry_mode){
+            if(p.owner->version()<implicit_geometry::ContentVersion)return PreparationResult::Failed;
+            if(p.tile_geometry_mode==2){
+                if(p.w!=320||p.h!=240||!implicit_geometry::bitmap_mask(geometry,p.tile_geometry,plan.active))
+                    return PreparationResult::Failed;
+            }else{
+                if(!implicit_geometry::mask(geometry,p.tile_geometry,p.tile_count,plan.active)||
+                   implicit_dense_owner)return PreparationResult::Failed;
+                implicit_dense_owner=&p;
+                // All source metadata is now in the bounded plan; releasing
+                // the index retains exactly the old pixel-group read order.
+                p.index->first&=127u;p.index=nullptr;p.phase=PreloadPhase::TileDenseClear;
+            }
+        }
+        return PreparationResult::Pending;
+    }
+    case PreloadPhase::TileDenseClear:{
+        if(implicit_dense_owner!=&p)return PreparationResult::Failed;
+        const unsigned pixels=unsigned(p.w)*p.h,left=pixels-p.position;
+        const unsigned count=left<TilePreloadOutputBytes?left:TilePreloadOutputBytes;
+        for(unsigned i=0;i<count;++i)implicit_dense.alpha[p.position+i]=0;
+        p.position+=count;
+        if(p.position==pixels){p.position=0;p.tile_slot=p.tile_needed=0;p.phase=PreloadPhase::TileNeeds;}
+        return PreparationResult::Pending;
     }
     case PreloadPhase::TileGeometry:{
         if(p.rows==p.h){
@@ -171,15 +198,21 @@ static PreparationResult preload_tile_step(ContentPreload&p){
         }
         const auto*record=preload_tile_record(p);if(!record)return PreparationResult::Failed;
         const auto*geometry=record+12+p.tile_count*4u;auto*out=preload_output(p);auto&plan=preload_tile_plan(p);
+        uint8_t bitmap_row[802];unsigned ga=p.scan,available=p.tile_geometry;
+        if(p.tile_geometry_mode==2){
+            if(!implicit_geometry::bitmap_row(geometry+implicit_geometry::BitmapHeader,p.rows,
+                bitmap_row,sizeof bitmap_row,available))return PreparationResult::Failed;
+            geometry=bitmap_row;ga=0;
+        }
         const unsigned y=p.rows++;plan.row_output[y]=p.position;
-        if(p.tile_geometry-p.scan<2||p.size-p.position<2)return PreparationResult::Failed;
-        const unsigned spans=u16(geometry+p.scan);if(spans>p.w)return PreparationResult::Failed;
-        out[p.position++]=geometry[p.scan++];out[p.position++]=geometry[p.scan++];unsigned last=0;
+        if(available-ga<2||p.size-p.position<2)return PreparationResult::Failed;
+        const unsigned spans=u16(geometry+ga);if(spans>p.w)return PreparationResult::Failed;
+        out[p.position++]=geometry[ga++];out[p.position++]=geometry[ga++];p.scan+=2;unsigned last=0;
         for(unsigned j=0;j<spans;++j){
-            if(p.tile_geometry-p.scan<5||p.size-p.position<5)return PreparationResult::Failed;
-            const unsigned x=u16(geometry+p.scan),count=u16(geometry+p.scan+2),mode=geometry[p.scan+4];
+            if(available-ga<5||p.size-p.position<5)return PreparationResult::Failed;
+            const unsigned x=u16(geometry+ga),count=u16(geometry+ga+2),mode=geometry[ga+4];
             if(!count||mode>1||x<last||x+count>p.w)return PreparationResult::Failed;
-            last=x+count;for(unsigned k=0;k<5;++k)out[p.position++]=geometry[p.scan++];
+            last=x+count;for(unsigned k=0;k<5;++k)out[p.position++]=geometry[ga++];p.scan+=5;
             const unsigned bytes=count*(mode?3u:2u);if(bytes>p.size-p.position)return PreparationResult::Failed;
             p.position+=bytes;for(unsigned tx=x/TileSide;tx<=(last-1)/TileSide;++tx)plan.active[(y/TileSide)*p.tile_columns+tx]=1;
         }
@@ -207,6 +240,9 @@ static PreparationResult preload_tile_step(ContentPreload&p){
             while(p.tile_next<p.tile_needed&&plan.cached[p.tile_next]!=(p.tile_pass?0:1))++p.tile_next;
             if(p.tile_next<p.tile_needed){p.tile_id=plan.needed[p.tile_next];p.tile_slot=0;p.phase=PreloadPhase::TileGroup;break;}
             if(!p.tile_pass){p.tile_pass=1;p.tile_next=0;continue;}
+            if(p.tile_geometry_mode==1){
+                p.position=p.rows=p.tile_copied=0;p.phase=PreloadPhase::TileDenseOutput;break;
+            }
             if(p.tile_copied+p.tile_geometry!=p.size)return PreparationResult::Failed;
             p.scan=p.spans=p.rows=p.previous=0;p.phase=PreloadPhase::Verify;break;
         }
@@ -221,6 +257,10 @@ static PreparationResult preload_tile_step(ContentPreload&p){
         if(id>=p.raw->items)return PreparationResult::Failed;
         const auto*tile=tile_bytes(*p.raw)+id*TileBytes;auto*out=preload_output(p);
         const unsigned tx=(i%p.tile_columns)*TileSide,ty=(i/p.tile_columns)*TileSide;
+        if(p.tile_geometry_mode==1){
+            if(implicit_dense_owner!=&p||!implicit_copy_tile(tile,p.w,p.h,tx,ty))return PreparationResult::Failed;
+            return PreparationResult::Pending;
+        }
         const unsigned tw=p.w-tx<TileSide?p.w-tx:TileSide,th=p.h-ty<TileSide?p.h-ty:TileSide;
         for(unsigned y=ty;y<ty+th;++y){
             unsigned oa=plan.row_output[y];const unsigned spans=u16(out+oa);oa+=2;
@@ -237,6 +277,18 @@ static PreparationResult preload_tile_step(ContentPreload&p){
             }
         }
         return PreparationResult::Pending;
+    }
+    case PreloadPhase::TileDenseOutput:{
+        if(implicit_dense_owner!=&p)return PreparationResult::Failed;
+        if(p.rows==p.h){
+            if(p.position!=p.size||p.tile_copied!=p.tile_geometry)return PreparationResult::Failed;
+            implicit_dense_owner=nullptr;
+            p.scan=p.spans=p.rows=p.previous=0;p.phase=PreloadPhase::Verify;return PreparationResult::Pending;
+        }
+        unsigned written=0,geometry=0;const unsigned offset=p.rows*p.w;
+        if(!implicit_geometry::row(implicit_dense.colors+offset,implicit_dense.alpha+offset,p.w,
+            preload_output(p)+p.position,p.size-p.position,written,geometry))return PreparationResult::Failed;
+        p.position+=written;p.tile_copied+=geometry;++p.rows;return PreparationResult::Pending;
     }
     default:return PreparationResult::Failed;
     }

@@ -8,7 +8,7 @@ static_assert(Lzma2ProbabilityBytes+PreloadInputBytes<=RetainedPageBytes,
 enum class PreloadPhase:uint8_t {Descriptor,Header,Decode,FilterSlice,FilterColors,PlaneCopy,PlaneRestore,
     ReserveCopy,Copy,Literal,Lz4Header,Lz4,Verify,
     TileDescriptor,TileGroup,TileDecode,TilePredict,TileFilter,TileSparseScan,TileSparseRestore,TileReady,
-    TilePlan,TileGeometry,TileNeeds,TileSelect,TileCopy};
+    TilePlan,TileGeometry,TileNeeds,TileSelect,TileCopy,TileDenseClear,TileDenseOutput};
 struct ContentPreload {
     const Content*owner=nullptr;
     const ResourceReader*reader=nullptr;
@@ -27,7 +27,7 @@ struct ContentPreload {
     uint32_t lz4_length=0,lz4_offset=0;
     uint32_t tile_header_offset=0,tile_record_offset=0,tile_record_length=0,tile_id=0,tile_copied=0,tile_geometry=0;
     uint16_t tile_columns=0,tile_count=0,tile_needed=0,tile_next=0,tile_slot=0;
-    uint8_t tile_pass=0;
+    uint8_t tile_pass=0,tile_geometry_mode=0;
     uint16_t input_at=0,input_size=0,w=0,h=0;
     uint8_t format=0,stored_format=0,filter_mode=0,slice_format=0,stride=0,lz4_phase=0,lz4_token=0;
     PreloadPhase phase=PreloadPhase::Descriptor;
@@ -43,6 +43,7 @@ static void cancel_content_preload(const Content*owner){
     if(p.index){if(p.index->owner)p.index->first&=127u;else tile_discard(*p.index);}
     if(p.restored)tile_discard(*p.restored);
     if(p.workspace)tile_discard(*p.workspace);
+    if(implicit_dense_owner==&p)implicit_dense_owner=nullptr;
     p={};
 }
 static uint8_t* preload_output(ContentPreload&p){return p.is_glyph?p.glyph.data:image_buffer(*p.image);}

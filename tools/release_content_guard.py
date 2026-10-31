@@ -133,6 +133,9 @@ def validate_release_content(data, stage):
     tiles.require(count >= REQUIRED_AUX,
                   'UI20 content is missing: expected framed actions, Osty dead_loop and reward icons (5422 auxiliaries)')
     source = tiles.PackView(data, count, versions=tuple(range(44, tiles.MAXIMUM_CONTENT_VERSION + 1)))
+    if int(match[1])>=22:
+        tiles.require(source.version>=46,
+                      'UI22 final content requires NSP2/46 implicit geometry support')
     tiles.require(len(source.clips) >= 1783 and len(source.images) >= 58099,
                   'UI20 complete image/clip catalog is missing')
     table_ids = source.aux[BASE_AUX:BASE_AUX + 10]

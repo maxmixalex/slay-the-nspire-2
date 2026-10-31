@@ -1,11 +1,43 @@
-// NSP2/15 sparse tiles. Included in content.cpp's private namespace so the
-// existing encoded scratch and image tiers remain the only picture buffers.
+// NSP2/15 sparse tiles. Included in content.cpp's private namespace.
 // The ordinary 6 MiB group tier shares the bounded 13 MiB picture arena.
 // Merchant frames use a1 MiB group tier (1.5 MiB for NSP2/44) and retain
 // finished pictures; the total picture arena is identical in both profiles.
 constexpr unsigned TileSide=16,TileBytes=770,TilePageBytes=131072,TilePages=48;
 constexpr unsigned RetainedPageBytes=TilePageBytes/4;
 constexpr unsigned MaxFrameTiles=300,MaxTileGroups=64;
+// NSP2/46 reconstructs canonical sparse geometry from the original alpha.
+// This dedicated buffer preserves the old group order and cache capacities;
+// it never aliases the selected-hand/scene arena or a published picture.
+struct ImplicitDenseScratch {
+    uint16_t colors[implicit_geometry::Pixels];
+    uint8_t alpha[implicit_geometry::Pixels];
+};
+alignas(4) static ImplicitDenseScratch implicit_dense;
+static const void* implicit_dense_owner=nullptr;
+static_assert(sizeof implicit_dense==implicit_geometry::DenseBytes,
+              "Implicit geometry may add only one230400-byte dense picture");
+struct ImplicitScratchLease {
+    const void*token=nullptr;
+    bool acquire(const void*identity){
+        if(implicit_dense_owner)cancel_content_preload();
+        if(implicit_dense_owner)return false;
+        implicit_dense_owner=token=identity;return true;
+    }
+    ~ImplicitScratchLease(){if(token&&implicit_dense_owner==token)implicit_dense_owner=nullptr;}
+};
+static bool implicit_copy_tile(const uint8_t*tile,unsigned w,unsigned height,unsigned tx,unsigned ty){
+    const unsigned tw=w-tx<TileSide?w-tx:TileSide,th=height-ty<TileSide?height-ty:TileSide;
+    if(tile[0]!=tw||tile[1]!=th)return false;
+    unsigned occupied=0;
+    for(unsigned y=0;y<th;++y){
+        const unsigned source=y*TileSide,destination=(ty+y)*w+tx;
+        memcpy(implicit_dense.colors+destination,tile+2+source*2,tw*2);
+        memcpy(implicit_dense.alpha+destination,tile+514+source,tw);
+        for(unsigned x=0;x<tw;++x)occupied|=tile[514+source+x];
+    }
+    // Every set bit must correspond to a span in regenerated geometry.
+    return occupied!=0;
+}
 // The offline access model uses the same contiguous first-fit allocation and
 // oldest-unpinned LRU eviction. Incremental preparation releases its index
 // after copying the bounded tile IDs and geometry into existing reservations.
@@ -323,25 +355,41 @@ static bool rebuild_tile_frame(const Content* owner,const ResourceReader& reader
     uint8_t* output,uint8_t*encoded_pixels){
     unsigned row_geometry[240],row_output[240];
     uint8_t active[MaxFrameTiles]{};
+    const bool dense=u16(frame.geometry)==implicit_geometry::Marker;
+    const bool bitmap=u16(frame.geometry)==implicit_geometry::BitmapMarker;
+    const uint8_t*geometry=frame.geometry;
+    ImplicitScratchLease scratch;
+    if(dense||bitmap){
+        if(owner->version()<implicit_geometry::ContentVersion||!w||w>320||!height||height>240||
+           !scratch.acquire(&frame))return false;
+        if(dense){
+            if(!implicit_geometry::mask(geometry,frame.geometry_size,frame.count,active))return false;
+            for(unsigned i=0;i<w*height;++i)implicit_dense.alpha[i]=0;
+        }else{
+            if(w!=320||height!=240||!implicit_geometry::bitmap_geometry(geometry,frame.geometry_size,
+                reinterpret_cast<uint8_t*>(&implicit_dense),sizeof implicit_dense))return false;
+            geometry=reinterpret_cast<const uint8_t*>(&implicit_dense);
+        }
+    }
     unsigned at=0,out=0;
-    for(unsigned y=0;y<height;++y){
+    if(!dense)for(unsigned y=0;y<height;++y){
         if(frame.geometry_size-at<2||frame.output_size-out<2)return false;
         row_geometry[y]=at;row_output[y]=out;
-        const unsigned spans=u16(frame.geometry+at);if(spans>w)return false;
-        output[out++]=frame.geometry[at++];output[out++]=frame.geometry[at++];unsigned last=0;
+        const unsigned spans=u16(geometry+at);if(spans>w)return false;
+        output[out++]=geometry[at++];output[out++]=geometry[at++];unsigned last=0;
         for(unsigned j=0;j<spans;++j){
             if(frame.geometry_size-at<5||frame.output_size-out<5)return false;
-            const unsigned x=u16(frame.geometry+at),count=u16(frame.geometry+at+2),mode=frame.geometry[at+4];
+            const unsigned x=u16(geometry+at),count=u16(geometry+at+2),mode=geometry[at+4];
             if(!count||mode>1||x<last||x+count>w)return false;
             last=x+count;
-            for(unsigned i=0;i<5;++i)output[out++]=frame.geometry[at++];
+            for(unsigned i=0;i<5;++i)output[out++]=geometry[at++];
             const unsigned bytes=count*(mode?3u:2u);if(bytes>frame.output_size-out)return false;
             out+=bytes;
             for(unsigned tx=x/TileSide;tx<=(last-1)/TileSide;++tx)
                 active[(y/TileSide)*frame.columns+tx]=1;
         }
     }
-    if(at!=frame.geometry_size||out!=frame.output_size)return false;
+    if(!dense&&(at!=frame.geometry_size||out!=frame.output_size))return false;
     unsigned needed[MaxFrameTiles],needed_count=0;uint8_t cached[MaxFrameTiles];
     const unsigned per_group=u32(h+44);
     for(unsigned i=0;i<frame.count;++i)if(active[i]){
@@ -365,11 +413,12 @@ static bool rebuild_tile_frame(const Content* owner,const ResourceReader& reader
             if(id>=group->items)return false;
             const uint8_t* tile=records+id*TileBytes;
             const unsigned tx=(i%frame.columns)*TileSide,ty=(i/frame.columns)*TileSide;
+            if(dense){if(!implicit_copy_tile(tile,w,height,tx,ty))return false;continue;}
             const unsigned tw=w-tx<TileSide?w-tx:TileSide,th=height-ty<TileSide?height-ty:TileSide;
             for(unsigned y=ty;y<ty+th;++y){
-                unsigned ga=row_geometry[y],oa=row_output[y];const unsigned spans=u16(frame.geometry+ga);ga+=2;oa+=2;
+                unsigned ga=row_geometry[y],oa=row_output[y];const unsigned spans=u16(geometry+ga);ga+=2;oa+=2;
                 for(unsigned j=0;j<spans;++j){
-                    const unsigned x=u16(frame.geometry+ga),count=u16(frame.geometry+ga+2),mode=frame.geometry[ga+4];
+                    const unsigned x=u16(geometry+ga),count=u16(geometry+ga+2),mode=geometry[ga+4];
                     const unsigned stride=mode?3:2;ga+=5;oa+=5;
                     const unsigned begin=x>tx?x:tx,end=x+count<tx+tw?x+count:tx+tw;
                     for(unsigned pixel=begin;pixel<end;++pixel){
@@ -381,6 +430,15 @@ static bool rebuild_tile_frame(const Content* owner,const ResourceReader& reader
                 }
             }
         }
+    }
+    if(dense){
+        unsigned geometry_bytes=0;out=0;
+        for(unsigned y=0;y<height;++y){unsigned written=0,shape=0;
+            if(!implicit_geometry::row(implicit_dense.colors+y*w,implicit_dense.alpha+y*w,w,
+                output+out,frame.output_size-out,written,shape))return false;
+            out+=written;geometry_bytes+=shape;
+        }
+        return out==frame.output_size&&geometry_bytes==frame.geometry_size;
     }
     return copied+frame.geometry_size==frame.output_size;
 }

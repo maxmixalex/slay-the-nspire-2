@@ -126,6 +126,48 @@ previous rendering path, with only a zero-alpha early return and its boundary
 check retained. No Random speedup or storage reduction is claimed. The five
 character selection optimization is a separate result.
 
+## Guarded retirement of unreachable legacy artwork
+
+The complete UI22 profile can now reclaim 1,598 old images belonging to the two
+superseded merchant fallback clips and 72 standalone Kaiser states that have no
+entry in the current combat or Bestiary routing. The fixed public retirement
+plan pins the reviewed source routes and exact clip registrations. Conversion
+also checks the actual pack's direct roots and typed actor/mesh/mask references;
+any overlap stops conversion. The live merchant's ten moving layers and eleven
+fixed/background planes remain complete. The 18 Bestiary Kaiser supplements,
+26 earlier registered-frame leaves and 159 unclassified static images are
+retained.
+
+Retired image IDs keep their original dimensions and become empty sparse
+records. All 1,783 clip tuples, pivots, frame counts, sample clocks, card entries
+and prior auxiliary IDs stay unchanged. The 57,014 nonretired images retain
+their exact pixels, alpha and geometry, as do every glyph and string. Physical
+compaction removes only slots with no remaining image descriptor, using the
+same codec, transform and LZMA profile as each affected group. No runtime pixel
+buffer or animation dependency chain is added.
+
+On the complete original-color English input, this step reduces the logical
+pack from **103,797,230 to 102,342,354 bytes**, a net saving of **1,454,876 bytes**
+including the new format marker. It removes 1,094 unused descriptors, nine
+unused index groups and 20,472 tile records. Only 22 pixel streams change, and
+21 groups require fewer decoded pages; this is not a device frame-rate claim.
+The resulting pack has auxiliary endpoint 7212 and one additional 16-byte
+metadata image. Older launchers reject that endpoint. The matching launcher
+checks the marker and the layered merchant's necessary resident directory
+identities, without a resource-wide integrity scan or pixel preloading.
+
+Published checkpoint `0b5e969dff43cee998ab081dfb7af889eaf2bf18` passed the actual
+memory/ranged-reader regression: valid new and old profiles, damaged marker and
+merchant metadata, failed marker reads, and a failed merchant pixel read that
+cannot select the retired fallback. The prior runtime independently rejects
+7212 through both readers. A further **723 complete production frames** match
+the unretired pack byte for byte, including all hit regions and unchanged saves
+while rendering: all five merchant characters through focus/open/close input,
+every Crusher/Rocket Bestiary action, eight actual Kaiser combat turns and an
+observed arm death. Twelve full-scene captures were inspected. This retirement
+does not remove a currently reachable animation frame or reduce color fidelity.
+Final per-locale package bindings follow the remaining storage finishing pass.
+
 ## Source and asset validation boundary
 
 The UI/lifecycle runtime and public tests above were executed from published
