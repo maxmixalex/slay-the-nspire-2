@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
-"""Encode smaller exact selection copy masks in NSP2/46 index records.
+"""Build an explicitly experimental selection-bitmap candidate for NSP2/46.
 
 Every original record offset/length, image decoded cost, tile stream, tile ID,
 clock and locale payload is preserved. Only complete opaque spans with an
 exact inverse are eligible. The original compressed group is always the
-fallback; final release use additionally requires the complete renderer gate.
+fallback. This candidate failed the UI22 whole-frame performance gate and is
+not approved for release. Both the API and CLI require an explicit experimental
+opt-in; the normal UI22 release keeps the original selection span records.
 """
 from __future__ import annotations
 
@@ -66,7 +68,9 @@ def choose_group(original, reader, group, selected):
         exact_original_span_roundtrip=True)
 
 
-def convert(data):
+def convert(data, *, experimental_candidate_only=False):
+    t.require(experimental_candidate_only,
+              'Selection bitmaps are not release approved; explicit experimental candidate-only opt-in required')
     source = coalesce.view(data)
     t.require(source.version == 46 and len(source.aux) >= 7212 and len(source.clips) >= 1710,
               'Selection bitmaps require the complete NSP2/46 UI22 profile')
@@ -122,7 +126,10 @@ def convert(data):
         t.require(bytes(rebuilt) == raw, 'Published bitmap changed a tile ID, cost or original span')
     tail = reader.groups[-1][0] + reader.groups[-1][1]
     t.require(output[relocate(tail):] == data[tail:], 'Retained/font/text tail changed')
-    return output, dict(complete=True, version=46, source_sha256=t.sha256(data),
+    return output, dict(complete=True, version=46,
+        experimental_candidate_only=True, not_release_approved=True,
+        release_approval='not_release_approved',
+        source_sha256=t.sha256(data),
         output_sha256=t.sha256(output), source_bytes=len(data), output_bytes=len(output),
         saved_bytes=len(data) - len(output), source_groups=len(selected), changed_groups=changed,
         converted_frames=sum(r['eligible_frames'] for r in rows if r['accepted']),
@@ -136,11 +143,17 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     for name in ('input', 'output'):
         parser.add_argument('--' + name, type=Path, required=True)
+    parser.add_argument('--experimental-candidate-only', action='store_true',
+                        help='Allow a private experimental candidate; UI22 release use is rejected')
     args = parser.parse_args()
+    if not args.experimental_candidate_only:
+        parser.error('Selection bitmaps are not release approved; use --experimental-candidate-only '
+                     'only for an explicit private experiment')
     t.private_path(args.input, 'Private original selection resources')
     t.private_path(args.output, 'Private bitmap candidate resources')
     t.require(args.input.resolve() != args.output.resolve(), 'Never overwrite original resources')
-    started = time.monotonic(); output, report = convert(args.input.read_bytes())
+    started = time.monotonic()
+    output, report = convert(args.input.read_bytes(), experimental_candidate_only=True)
     report['seconds'] = time.monotonic() - started
     t.atomic_bytes(args.output, output)
     t.atomic_bytes(args.output.with_suffix('.json'), json.dumps(report, indent=2).encode() + b'\n')

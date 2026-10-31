@@ -3,6 +3,7 @@ from pathlib import Path
 import struct
 import sys
 import unittest
+from unittest import mock
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'tools'))
 import content_tiles as tiles
@@ -191,6 +192,27 @@ class ReleaseContentGuardTest(unittest.TestCase):
             data=bytearray(original);struct.pack_into('<I',data,at['aux']+(guard.UI22_BASE_AUX+index)*4,value)
             with self.subTest(index=index),self.assertRaisesRegex(ValueError,'registry|identities'):
                 guard.validate_release_content(data,'ui22')
+
+    def test_ui22_rejects_experimental_selection_bitmap_before_pixels(self):
+        data,at=fixture(7212)
+        first=struct.unpack_from('<I',data,at['clips']+1705*tiles.CLIP.size)[0]
+        # The full profile above uses public literal pixels. Replace only one
+        # selection patch with a checked-record reader to isolate the release
+        # policy; decoding this experimental image must never be requested.
+        geometry=bytearray(240*(2+16*5));geometry[:2]=b'\xfc\xff'
+        geometry[2:40]=b'\xff'*37+b'\x0f'
+        for y in range(240):
+            for x in range(0,320,20):
+                for pixel in range(x,x+8):geometry[40+y*40+pixel//8]|=1<<(pixel%8)
+        record=tiles.FRAME.pack(240*(2+16*5+16*8*2),1200,len(geometry))+bytes(1200)+geometry
+        descriptor=len(data);data.extend(tiles.DESCRIPTOR.pack(0,0,0,len(record)))
+        tiles.IMAGE.pack_into(data,40+(first+1)*tiles.IMAGE.size,descriptor,320,240,6,16)
+        struct.pack_into('<I',data,12,len(data))
+        reader=mock.Mock(tile_groups=0)
+        reader.group.return_value=(record,{0:len(record)})
+        with mock.patch.object(tiles,'TileReader',return_value=reader),self.assertRaisesRegex(ValueError,'experimental selection bitmap'):
+            guard.validate_release_content(data,'ui22')
+        reader.image_raw.assert_not_called()
 
     def test_ui22_clock_bounds_and_selection_contract_fail(self):
         original,at=fixture(7212)

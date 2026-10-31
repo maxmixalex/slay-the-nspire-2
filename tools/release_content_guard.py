@@ -151,6 +151,15 @@ def validate_release_content(data, stage):
         if source.images[image_id][3] == 6:
             if reader is None:
                 reader = tiles.TileReader(source)
+            if int(match[1])>=22:
+                # This index is also needed immediately by image_raw, so the
+                # release decision shares its cache rather than adding a scan.
+                _base,local,at,size=tiles.DESCRIPTOR.unpack_from(source.data,source.images[image_id][0])
+                group,starts=reader.group(reader.tile_groups+local)
+                tiles.require(starts.get(at)==size,'UI22 image names an incomplete index record')
+                ids=struct.unpack_from('<I',group,at+4)[0]
+                tiles.require(struct.unpack_from('<H',group,at+tiles.FRAME.size+ids)[0]!=0xfffc,
+                              'UI22 release rejects experimental selection bitmap geometry (FFFC)')
             return reader.image_raw(image_id)
         return source.image_raw(image_id)
 

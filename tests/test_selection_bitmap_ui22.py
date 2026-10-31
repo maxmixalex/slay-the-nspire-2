@@ -1,10 +1,14 @@
 import struct
+import subprocess
 import sys
+import tempfile
 import unittest
+from unittest import mock
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'tools'))
 import selection_bitmap as bitmap
+import selection_bitmap_ui22 as converter
 
 
 def geometry(rows):
@@ -17,6 +21,32 @@ def geometry(rows):
 
 
 class SelectionBitmapTests(unittest.TestCase):
+    def test_converter_defaults_to_refusing_unapproved_release_data(self):
+        with mock.patch.object(converter.coalesce, 'view') as view:
+            with self.assertRaisesRegex(ValueError, 'not release approved'):
+                converter.convert(b'not parsed')
+            view.assert_not_called()
+
+    def test_cli_without_experimental_opt_in_creates_no_output(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            folder = Path(temporary)
+            output = folder / 'candidate.nsp'
+            result = subprocess.run(
+                [sys.executable, str(Path(converter.__file__)), '--input',
+                 str(folder / 'missing-original.nsp'), '--output', str(output)],
+                capture_output=True, text=True, check=False)
+            self.assertEqual(result.returncode, 2)
+            self.assertIn('--experimental-candidate-only', result.stderr)
+            self.assertFalse(output.exists())
+            self.assertFalse(output.with_suffix('.json').exists())
+
+    def test_opt_in_does_not_bypass_source_validation(self):
+        with mock.patch.object(converter.coalesce, 'view',
+                               side_effect=ValueError('invalid source profile')) as view:
+            with self.assertRaisesRegex(ValueError, 'invalid source profile'):
+                converter.convert(b'invalid source', experimental_candidate_only=True)
+            view.assert_called_once_with(b'invalid source')
+
     def test_exact_sparse_coverage_active_tiles_and_size(self):
         rows = [[(x, 1, 0) for x in range(16, 304, 3)] if 16 <= y < 224 else []
                 for y in range(240)]
