@@ -22,7 +22,8 @@ def compress_image(image:bytes,compression:str='zlib')->bytes:
     """Keep the loader's zlib stream; spend release-build time on encoding.
 
     Zopfli changes neither executable bytes nor the calculator decoder. Use
-    one fixed, bounded profile and retain zlib's result if it is smaller.
+    two fixed, bounded profiles and retain the smallest exact stream. The
+    second profile improves splitting without removing the established one.
     """
     if compression not in ('zlib','zopfli'):
         raise ValueError('Unknown Zehn compression: '+compression)
@@ -32,8 +33,18 @@ def compress_image(image:bytes,compression:str='zlib')->bytes:
             from zopfli.zlib import compress
         except ImportError as error:
             raise RuntimeError('Release compression needs: python3 -m pip install -r requirements-release.txt') from error
-        candidate=compress(bytes(image),numiterations=5,blocksplitting=True,blocksplittingmax=15)
-        if len(candidate)<len(encoded):encoded=candidate
+        raw=bytes(image)
+        for iterations,blocks in ((5,15),(20,64)):
+            candidate=compress(raw,numiterations=iterations,blocksplitting=True,blocksplittingmax=blocks)
+            if len(candidate)>=len(encoded):continue
+            decoder=zlib.decompressobj()
+            try:
+                decoded=decoder.decompress(candidate,len(raw)+1)
+            except zlib.error as error:
+                raise ValueError('Release compressor produced an invalid zlib stream') from error
+            if decoded!=raw or not decoder.eof or decoder.unused_data or decoder.unconsumed_tail:
+                raise ValueError('Release compressor changed loaded bytes or left trailing data')
+            encoded=candidate
     return encoded
 
 def build(source:Path,target:Path,compression:str='zlib')->None:
