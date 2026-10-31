@@ -74,6 +74,28 @@ The five actual-language full frontend and reward runs passed, plus both English
 and Chinese profile runs: twelve successful target invocations. The five-locale
 reader contact sheet and passive potion/relic captures were visually inspected.
 
+## Exact affliction phase clock
+
+The original Entangled material stores `distortion_st=(1,1,0,0.175)` in
+`materials/vfx/ui/card/afflictions/entangled/vfx_ui_card_affliction_entangled_main.tres`.
+Its shader offsets the texture by `TIME * distortion_st.w`; the original
+Tainted scene references that same material. A repeated texture therefore has
+an authored period of exactly 40/7 seconds. Rounding it to 5714 milliseconds
+made each port cycle end 2/7 milliseconds early and accumulated phase drift.
+
+`card_affliction_frame` now selects the existing eight samples using the exact
+rational phase `((now % 40000) * 7 / 5000) % 8`. Other affliction clocks use
+bounded 32-bit constant arithmetic as well. There are no additional resource
+images, tables or allocations. The original complete ten-frame Ancient fire
+sequence and thirty-frame Infection sequence remain unchanged.
+
+`combat_ui14_regression` compares all seven clocks to an independent 64-bit
+rational reference at transitions, long elapsed times and the uint32 boundary.
+For Entangled and Tainted it also compares the actual rendered card overlay to
+the source image selected by that reference. Eight sampled affliction phases
+remain a finite representation; this change resolves the accumulated clock
+error without claiming continuous shader rendering.
+
 ## Reused App address and shared scene memory
 
 An independent review of the selection raster cache found that a newly

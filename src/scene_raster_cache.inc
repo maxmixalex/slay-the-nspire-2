@@ -159,38 +159,6 @@ static_assert(sizeof(RandomLightQuadCache)<=17u*1024u,"Exact light quad bounds s
 static_assert(sizeof(RandomGradientCache)+sizeof(RandomLightQuadCache)<=166u*1024u,
     "Water and light retain the previous combined fixed-memory allowance");
 
-// Alpha bounds include the extra bilinear neighbour around each32x32 tile.
-// The current particle opacity can collapse a whole range to one exact
-// contribution. This replaces repeated four-texel work, never source data.
-struct RandomDotAlphaCache {
-    static constexpr unsigned TileShift=5,TileWidth=256>>TileShift;
-    uint16_t ranges[TileWidth*TileWidth];
-    const Content*owner=nullptr;Picture picture{};uint32_t generation=0;
-    unsigned logical_width=0,logical_height=0;
-    bool observed=false,valid=false;
-    bool bind(const Content&content,const water_reflection::Texture&texture,void(*poll)()=nullptr){
-        const Picture p=texture.storage();
-        if(observed&&owner==&content&&generation==content.generation()&&
-           logical_width==texture.width()&&logical_height==texture.height()&&
-           picture.pixels==p.pixels&&picture.alpha==p.alpha&&picture.palette==p.palette&&
-           picture.w==p.w&&picture.h==p.h&&picture.format==p.format)return valid;
-        owner=&content;generation=content.generation();picture=p;
-        logical_width=texture.width();logical_height=texture.height();observed=true;valid=false;
-        if(!texture.valid()||p.format>3||!p.alpha||logical_width!=256||logical_height!=256)return false;
-        for(unsigned ty=0;ty<TileWidth;++ty){if(!(ty&3u)&&poll)poll();for(unsigned tx=0;tx<TileWidth;++tx){
-            unsigned low=255,high=0;
-            for(unsigned dy=0;dy<=(1u<<TileShift);++dy){const unsigned y=mn(255u,(ty<<TileShift)+dy);
-                for(unsigned dx=0;dx<=(1u<<TileShift);++dx){const unsigned x=mn(255u,(tx<<TileShift)+dx),a=p.alpha[y*256+x];
-                    low=mn(low,a);high=mx(high,a);}}
-            ranges[ty*TileWidth+tx]=uint16_t(low|(high<<8));
-        }}valid=true;return true;
-    }
-    [[gnu::always_inline]] unsigned range(int u,int v)const{
-        return ranges[((unsigned(v)-128)>>(8+TileShift))*TileWidth+((unsigned(u)-128)>>(8+TileShift))];
-    }
-};
-static_assert(sizeof(RandomDotAlphaCache)<3u*1024u,"Dot ranges fit inside the existing scene arena");
-
 struct MerchantRugRaster {
  const Content*owner=nullptr;uint32_t generation=0;bool valid=false;
  uint16_t pixels[ScreenW*ScreenH];uint8_t alpha[ScreenW*ScreenH];
@@ -203,7 +171,7 @@ struct MerchantRugRaster {
 // writes its live entries before publishing valid=true, so a scene change must
 // not clear another 230 KiB on the calculator. Do not add array initializers to
 // the cache types above. Foreground input collection cannot re-enter rendering.
-struct RandomSceneRasters { RandomGradientCache gradient;RandomLightQuadCache light;RandomDotAlphaCache dot; };
+struct RandomSceneRasters { RandomGradientCache gradient;RandomLightQuadCache light; };
 union SceneRasterStorage {
     uint8_t inactive;
     RandomSceneRasters random;
@@ -232,7 +200,6 @@ static RandomSceneRasters& random_scene_rasters(){
 }
 static RandomGradientCache& random_gradient_cache(){return random_scene_rasters().gradient;}
 static RandomLightQuadCache& random_light_quads(){return random_scene_rasters().light;}
-static RandomDotAlphaCache& random_dot_alphas(){return random_scene_rasters().dot;}
 static MerchantRugRaster& merchant_rug_raster(){
     if(scene_raster_owner!=SceneRasterOwner::Merchant){
         ::new(detail::InPlaceAddress{&scene_raster_storage.merchant}) MerchantRugRaster;
