@@ -13,6 +13,7 @@
 #include "framed_animation_ui22.hpp"
 #include "character_select_delta.hpp"
 #include "retired_assets_ui22.hpp"
+#include "ancient_scene_ui23.hpp"
 #include "implicit_geometry.hpp"
 #include "content_animation_profile.hpp"
 extern "C" void* memcpy(void*,const void*,size_t);
@@ -357,7 +358,7 @@ bool Content::open(ResourceSource source){
                                                     CombatUi15AuxiliaryCount,VantomUi15AuxiliaryCount,
                                                     vantom_vfx::AuxiliaryCount,FramedUi20AuxiliaryCount,
                                                     FramedUi22AuxiliaryCount,character_select_delta::AuxiliaryCount,
-                                                    retired_assets_ui22::AuxiliaryCount};
+                                                    retired_assets_ui22::AuxiliaryCount,ancient_scene_ui23::AuxiliaryCount};
                                                 for(unsigned end:endpoints){
                                                     if(next==0x314c4954u)break;
                                                     for(unsigned i=auxiliary;i<end;++i){

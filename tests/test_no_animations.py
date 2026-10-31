@@ -2,12 +2,31 @@ import struct
 import sys
 import unittest
 from pathlib import Path
+from types import SimpleNamespace
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'tools'))
 import no_animations as reduced
 
 
 class ReducedPoseTests(unittest.TestCase):
+    def test_ancient_typed_loops_keep_original_period_and_disjoint_ranges(self):
+        first=58615;tables={};aux=[0]*7214
+        for row,duration in enumerate(reduced.ANCIENT_DURATIONS):
+            count=(duration+32)//33;index=58613+row;aux[7212+row]=index
+            tables[index]=struct.pack('<8H',0x414e,1,first,count,33,duration,0,0)
+            first+=count
+        source=SimpleNamespace(aux=aux,images=[None]*first)
+        image=lambda index:(8,1,0,tables[index])
+        rows=reduced.ancient_rows(source,image)
+        self.assertEqual([row['frames'] for row in rows],[546,506])
+        self.assertEqual([row['duration_ms'] for row in rows],[18000,16667])
+        tables[58614]=struct.pack('<8H',0x414e,1,58615,506,33,16667,0,0)
+        with self.assertRaisesRegex(ValueError,'overlap'):
+            reduced.ancient_rows(source,image)
+        source.aux.append(0)
+        with self.assertRaisesRegex(ValueError,'Unknown'):
+            reduced.ancient_rows(source,image)
+
     def test_action_clocks_and_terminal_not_early(self):
         for count in range(1, 257):
             mapped = reduced.sample_map(count, False)

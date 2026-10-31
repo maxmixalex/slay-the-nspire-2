@@ -40,6 +40,16 @@ static void equal(const delta::Raster& raster,const Source& source,unsigned fram
     CHECK(!std::memcmp(raster.pixels,source.full[frame].data(),sizeof raster.pixels));
 }
 int main(){
+    std::vector<uint8_t> parameters;
+    for(unsigned value:{0x414eu,1u,58613u,546u,33u,18000u,0u,0u})word(parameters,value);
+    ancient_scene_ui23::Timeline timeline;
+    Picture table{parameters.data(),nullptr,nullptr,8,1,0};
+    CHECK(timeline.read(table));CHECK(timeline.first==58613&&timeline.count==546);
+    CHECK(timeline.frame(17999,false)==545&&timeline.frame(18000,false)==0);
+    CHECK(timeline.frame(18033,false)==1&&timeline.frame(17999,true)==0);
+    parameters[6]=0;CHECK(!timeline.read(table));parameters[6]=546&255;
+    parameters[14]=1;CHECK(!timeline.read(table));parameters[14]=0;
+    table.format=4;CHECK(!timeline.read(table));
     auto source=make_source();static delta::Raster raster;
     CHECK(sizeof(SceneRasterStorage)==sizeof(MerchantRugRaster));
     for(unsigned frame=0;frame<32;++frame){

@@ -62,6 +62,16 @@ static void native_event_option(const App&a,int option,bool description,char*out
 }
 #include "ancient_dialogue_input.inc"
 #include "ancient_dialogue_ui.inc"
+static bool native_ancient_background(Canvas&c,OriginalEventId id){
+ const int row=id==OriginalEventId::Neow?0:id==OriginalEventId::Tezcatara?1:-1;
+ if(row<0)return false;
+ const int image=c.a.content.ui_image(ancient_scene_ui23::AuxiliaryFirst+unsigned(row));
+ if(image<0)return false;
+ ancient_scene_ui23::Timeline timeline;
+ if(!timeline.read(c.a.content.image(image)))return false;
+ return scene_delta_background(c,timeline.first,
+     timeline.frame(c.a.map_clock_ms-c.a.ancient_dialogue.entered,c.a.content.reduced_animations()));
+}
 static void native_ancient_screen(Canvas&c){
  auto&a=c.a;const auto&e=a.game.original_events;a.sync_ancient_dialogue();
  auto&d=a.ancient_dialogue;const unsigned count=unsigned(mn(3,original_event_option_count(a.game)));
@@ -69,7 +79,8 @@ static void native_ancient_screen(Canvas&c){
  // The complete Ancient scene is a viewport background. The shared HUD is
  // composited afterwards; reserving its height here squeezed and lowered
  // the scene, leaving an artificial band behind the translucent top bar.
- c.picture(a.content.world_image("events",original_event_key(e.id)),0,0,320,240);
+ if(!native_ancient_background(c,e.id))
+  c.picture(a.content.world_image("events",original_event_key(e.id)),0,0,320,240);
  const int dialogue_height=ancient_measure(c,count),top=d.y(a.map_clock_ms)+d.scroll;
  Canvas clipped=c;clipped.pixels+=ancient_layout::ClipY*clipped.pitch+ancient_layout::ClipX;
  clipped.clip_w=ancient_layout::ClipW;

@@ -23,6 +23,8 @@ VANTOM_AUX, VANTOM_COUNT = 5288, 116
 FRAMED_AUX, FRAMED_COUNT = 5422, 1784
 OLD_FRAMED_CLIPS = (105, 123, 124, 125, 548, 706, 707, 1263, 1626, -2)
 SELECTION_FIRST, SELECTION_END = 1705, 1710
+ANCIENT_AUX, ANCIENT_COUNT = 7212, 2
+ANCIENT_DURATIONS = (18000,16667)
 
 
 def require(condition, message):
@@ -50,6 +52,30 @@ def sample_map(count, loop):
     require(0 < count <= 256, 'Animation sample count is outside the runtime bound')
     samples = [0] if loop else sorted({0, count // 2, count - 1})
     return [max(sample for sample in samples if sample <= frame) for frame in range(count)]
+
+
+def ancient_rows(source, image):
+    """Validate the optional typed Ancient loop extension, not legacy clips."""
+    if len(source.aux)==ANCIENT_AUX:
+        require(len(source.images)==58613,'Unexpected images after the complete UI22 catalog')
+        return []
+    require(len(source.aux)==ANCIENT_AUX+ANCIENT_COUNT and len(source.images)>58613,
+            'Unknown reduced-pose auxiliary extension')
+    result=[];seen=set()
+    for row,duration in enumerate(ANCIENT_DURATIONS):
+        index=source.aux[ANCIENT_AUX+row]
+        width,height,fmt,raw=image(index)
+        require(fmt==0 and width*height==8 and len(raw)==16,'Ancient loop table must contain eight exact words')
+        words=struct.unpack('<8H',raw)
+        first,count,ms=words[2:5]
+        require(words[:2]==(0x414e,1) and words[7]==0 and ms==33 and
+                (words[5]|words[6]<<16)==duration and count==(duration+ms-1)//ms and
+                first>=58613 and first+count<=len(source.images),'Invalid Ancient loop range or source clock')
+        frames=set(range(first,first+count))
+        require(not seen.intersection(frames) and index not in frames,'Ancient loop directories overlap')
+        seen.update(frames)
+        result.append(dict(table=index,first=first,frames=count,frame_ms=ms,duration_ms=duration))
+    return result
 
 
 def clip_policy():
@@ -229,8 +255,16 @@ def validate_profile(source, image):
                 for picture, _x, _y in rows[frame]:
                     decode(picture)
         framed_count += 1
+    ancients=ancient_rows(source,image)
+    for row in ancients:
+        first=row['first']
+        require(all(source.images[index]==source.images[first]
+                    for index in range(first,first+row['frames'])),
+                'Reduced Ancient loop must alias its opaque first source pose')
+        decode(first)
     return dict(complete=True, profile='reduced-poses', checked_clips=checked_clips,
         registered_tables=framed_count, vantom_tables=vantom_count,
+        ancient_loops=len(ancients),
         decoded_representative_images=len(decoded), at_most_three_action_poses=True,
         original_counts_clocks_and_terminal_schedule=True)
 
@@ -243,13 +277,14 @@ def prepare(data, work):
     from retired_assets_ui22 import PLAN
     source = coalesce.view(data)
     require(source.version >= MINIMUM_VERSION and len(source.clips) == 1783 and
-            len(source.images) == 58613 and len(source.aux) == 7212,
+            len(source.images) >= 58613 and len(source.aux) in (7212,7214),
             'Expected the complete matching UI22 resource catalog')
     require(not reduced(data), 'The input already uses the reduced-pose profile')
     work = Path(work); work.mkdir(parents=True, exist_ok=True)
     policy = clip_policy(); reader = t.TileReader(source)
     def image(index):
         return reader.image_raw(index) if source.images[index][3] == 6 else source.image_raw(index)
+    ancients=ancient_rows(source,image)
     replacements = {}; typed_before = set(); typed_after = set(); protected_vantom = set(); tables = []
     def save(index, row):
         w, h, fmt, raw = row
@@ -305,6 +340,11 @@ def prepare(data, work):
             aliases[index] = target
         clips.append(dict(clip=clip, loop=policy[clip], frames=count, frame_ms=ms,
                           kept_samples=sorted(set(mapping))))
+    for row in ancients:
+        for index in range(row['first'],row['first']+row['frames']):
+            require(index not in aliases and index not in static,'Ancient pose overlaps an established resource')
+            aliases[index]=row['first']
+        tables.append(dict(kind='ancient',image=row['table'],poses=1,**row))
     # Only formerly typed resources proved unreachable by both old/new roots
     # are retired. Unknown images and every directly addressed asset stay.
     discarded = typed_before - typed_after - direct

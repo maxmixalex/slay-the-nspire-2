@@ -196,12 +196,20 @@ def add_final_stages(recipe, source_editions, output, codes, no_animations):
                    [target, target.with_suffix('.json')])
         logical = target
     for name, module in (('selection45', 'finish_artwork_ui22'),
-                         ('retirement45', 'retire_legacy_resources_ui22'),
-                         ('implicit46', 'implicit_tile_geometry_ui22')):
+                         ('retirement45', 'retire_legacy_resources_ui22')):
         target = recipe.directory(name)/'eng.nsp'
         recipe.add(name, module, ['--input', logical, '--output', target,
             '--work', recipe.directory('cache')/name, '--workers', workers], [target, target.with_suffix('.json')])
         logical = target
+    target = recipe.directory('ancient-scenes45')/'eng.nsp'
+    recipe.add('ancient-scenes45', 'ancient_scene_ui23', ['--input', logical,
+        '--output', target, '--pck', recipe.pck, '--runtime', recipe.runtime,
+        '--dotnet', recipe.dotnet, '--work', recipe.directory('cache/ancient-scenes45'),
+        '--workers', workers], [target,target.with_suffix('.json')]); logical = target
+    target = recipe.directory('implicit46')/'eng.nsp'
+    recipe.add('implicit46', 'implicit_tile_geometry_ui22', ['--input', logical,
+        '--output', target, '--work', recipe.directory('cache/implicit46'),
+        '--workers', workers], [target,target.with_suffix('.json')]); logical = target
     elf = next((path for path in (ROOT/'converter_helpers/nSpire2.elf', ROOT/'build/ndless/nSpire2.elf')
                 if path.is_file()), None)
     target = recipe.directory('pruned46')/'eng.nsp'
