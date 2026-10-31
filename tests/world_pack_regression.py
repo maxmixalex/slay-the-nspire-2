@@ -16,12 +16,33 @@ from build_world import (ConversionCache, card_description, choose_layout,
     canonical, LEGACY_BUILDER_SHA256, LEGACY_FUNCTIONS, sample_map_clip,
     cached_enemy_clip, render_scope, source_fingerprint, sample_enemy_batched)
 from world_enemy_assets import manifest
-from world_enemy_profile import plan, skins
+from world_enemy_profile import plan, skins, generated_cpp
 from world_ui_profile import (BASE_AUXILIARY, BASE_CLIPS, ENEMY_CLIP_ROWS, MAP_CLIP_ROWS,
     ROOM_CLIP_ROWS, REST_ACTOR_CLIP_ROWS, CLIP_ROWS, AUXILIARY_ROWS, TEXT_KEYS, TEXT_BASE, validate_headers)
 
 
 class WorldPack(unittest.TestCase):
+    def test_compact_enemy_metadata_keeps_every_generated_value(self):
+        self.assertEqual(generated_cpp(), (ROOT / 'src/world_enemy_assets.inc').read_text())
+
+    def test_compact_enemy_metadata_rejects_future_clock_and_state_overflow(self):
+        for field in ('duration', 'original_duration'):
+            data = copy.deepcopy(plan())
+            data['jobs'][0][field] = 65.536
+            with patch('world_enemy_profile.plan', return_value=data):
+                with self.assertRaisesRegex(ValueError, 'milliseconds exceed uint16'):
+                    generated_cpp()
+        # Existing any-state transitions retain their signed -1 sentinel. A
+        # future state outside the compact range must fail before C++ emission.
+        for field in ('from', 'state'):
+            data = copy.deepcopy(plan())
+            model = next(row for row in data['models']
+                         if not row.get('shared_group') and row['transitions'])
+            model['transitions'][0][field] = 128
+            with patch('world_enemy_profile.plan', return_value=data):
+                with self.assertRaisesRegex(ValueError, 'state exceeds int8'):
+                    generated_cpp()
+
     def test_reticle_appends_after_all_existing_map_common_and_room_images(self):
         # Pinned public key/index pairs from verified source12, before this
         # addition. An insertion into the earlier map catalog must fail even
