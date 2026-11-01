@@ -6,14 +6,17 @@ import subprocess
 import argparse
 from zehn import build
 ROOT=Path(__file__).resolve().parents[1]
-# Keep renderers and hot kernels at -O2. Serialization, input dispatch and
-# event rules use the same bounded release size policy in every build entry.
-SIZE_OPTIMIZED_SOURCES=('src/original_events.cpp','src/ui_progress_codec.cpp','src/ui_input.cpp','src/pointer.cpp')
+# Keep renderers and hot kernels at -O2. Event rules and input dispatch use
+# -Oz; the progress codec stays at -Os so its 64-bit shifts remain inline.
+# Every release and decoder-validation entry uses this identical policy.
+SIZE_OPTIMIZATION={'src/original_events.cpp':'-Oz','src/ui_progress_codec.cpp':'-Os',
+                   'src/ui_input.cpp':'-Oz','src/pointer.cpp':'-Oz'}
+SIZE_OPTIMIZED_SOURCES=tuple(SIZE_OPTIMIZATION)
 
 def main()->None:
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--output',type=Path,help='Launcher output path')
-    parser.add_argument('--size-event-rules',action='store_true',default=True,help='Compatibility flag: release builds always use -Os for event rules, progress codec and keyboard/pointer input; renderers remain -O2')
+    parser.add_argument('--size-event-rules',action='store_true',default=True,help='Compatibility flag: release builds use -Oz for event rules/input and -Os for the progress codec; renderers remain -O2')
     parser.add_argument('--profile-neow-layers',action='store_true',help='Developer-only reuse of existing timing slots for Neow layers; not a release build')
     parser.add_argument('--trace-io',action='store_true',help='Developer-only bounded OS I/O trace; not a release/timing acceptance build')
     parser.add_argument('--compression',choices=('zlib','zopfli'),default='zlib',help='Use zopfli for compact release packaging; requires requirements-release.txt')
@@ -28,7 +31,7 @@ def main()->None:
     objects=[]
     for i,source in enumerate(sources):
         out=directory/f'{i}.o';objects.append(str(out))
-        source_flags=['-Os'] if source in SIZE_OPTIMIZED_SOURCES else []
+        source_flags=[SIZE_OPTIMIZATION[source]] if source in SIZE_OPTIMIZATION else []
         if source.endswith('.c'):
             # The unmodified SDK is C. Its tiny compatibility headers must not
             # shadow native/system headers or the game's C++ translation units.

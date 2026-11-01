@@ -10,7 +10,7 @@ import subprocess
 import sys
 import tempfile
 from converter_arm_validation import ROOT,sha256,source_inventory,self_test
-from build_ndless import SIZE_OPTIMIZED_SOURCES
+from build_ndless import SIZE_OPTIMIZED_SOURCES,SIZE_OPTIMIZATION
 
 
 def build(output,clang,linker):
@@ -35,8 +35,9 @@ def build(output,clang,linker):
         compiler_sha256=sha256(clang.read_bytes()),linker_sha256=sha256(linker.read_bytes()),
         linker=subprocess.check_output([str(linker),'--version'],text=True).strip(),
         source_files=before,unicorn_version='2.1.4',calculator_memory_limits_changed=False,
-        original_events_optimization='Os',size_optimized_sources=list(SIZE_OPTIMIZED_SOURCES),
-        command='tools/build_ndless.py; production ARM926 -Os for listed control/codec sources, -O2 elsewhere, no LTO; LLVM18')
+        original_events_optimization=SIZE_OPTIMIZATION['src/original_events.cpp'].lstrip('-'),
+        size_optimized_sources=list(SIZE_OPTIMIZED_SOURCES),source_optimizations=dict(SIZE_OPTIMIZATION),
+        command='tools/build_ndless.py; production ARM926 -Oz for event rules/input, -Os for progress codec, -O2 elsewhere, no LTO; LLVM18')
     (output/'arm-validation.json').write_text(json.dumps(record,indent=2)+'\n',encoding='utf-8')
     proof=self_test(output);record['linked_self_test']=proof
     (output/'arm-validation.json').write_text(json.dumps(record,indent=2)+'\n',encoding='utf-8')
@@ -45,7 +46,7 @@ def build(output,clang,linker):
 
 def main():
     p=argparse.ArgumentParser(description=__doc__);p.add_argument('--output',type=Path,required=True)
-    p.add_argument('--size-event-rules',action='store_true',default=True,help='Compatibility flag; the release ARM helper uses the default control/codec -Os policy by default')
+    p.add_argument('--size-event-rules',action='store_true',default=True,help='Compatibility flag; the release ARM helper uses the same -Oz/-Os control/codec policy as the launcher')
     p.add_argument('--clang',default=shutil.which('clang++-18'));p.add_argument('--linker',default=shutil.which('ld.lld-18'))
     a=p.parse_args()
     if not a.clang or not a.linker:p.error('Install LLVM18 for the build; end users need no compiler')
