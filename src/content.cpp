@@ -481,7 +481,7 @@ bool Content::open(ResourceSource source){
         if(auxiliary>=7226&&!sized(59730,32,1))return reject();
         if(auxiliary>=7227&&!sized(59731,256,9))return reject();
         if(auxiliary>=7228&&!sized(59740,320,217))return reject();
-        if(auxiliary>=7229&&!sized(60293,256,9))return reject();
+        if(auxiliary>=7229&&!sized(60293,256,9)&&!sized(60293,256,26))return reject();
         if(ui_image(U_MerchantBackdrop)!=45810||!sized(45810,320,218))return reject();
         static constexpr uint16_t merchant[][4]={
             {45811,145,320,218},{45956,145,57,70},{46101,256,84,102},

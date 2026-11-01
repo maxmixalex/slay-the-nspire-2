@@ -87,10 +87,11 @@ def spans(support):
 
 
 def parameters(raw):
- t.require(len(raw)==4608 and raw[:4]==b'NWF1','Neow parameter extent/magic')
+ version=struct.unpack_from('<H',raw,4)[0] if len(raw)>=6 else 0;bounded=version==2;length=LENGTH+(PIXELS+1)//2 if bounded else LENGTH
+ t.require(version in (1,2) and len(raw)==(length+511)//512*512 and raw[:4]==b'NWF1','Neow parameter extent/magic')
  h=struct.unpack_from('<16H',raw,4);static=h[1]==2
- t.require(h==(1,2 if static else 1,4,FRAMES,KEY_INTERVAL,PIXELS,BASE_IMAGES,TEXTURE_PAGES,FIRST_MASK,PARAMETER,NODES_AT,MODELS_AT,ROWS_AT,SPANS_AT,SPANS,LENGTH),'Neow parameter header')
- t.require(struct.unpack_from('<2I',raw,36)==(200000,DURATION) and not any(raw[44:64]) and not any(raw[LENGTH:]),'Neow clocks/padding')
+ t.require(h==(version,2 if static else 1,4,FRAMES,KEY_INTERVAL,PIXELS,BASE_IMAGES,TEXTURE_PAGES,FIRST_MASK,PARAMETER,NODES_AT,MODELS_AT,ROWS_AT,SPANS_AT,SPANS,length),'Neow parameter header')
+ t.require(struct.unpack_from('<2I',raw,36)==(200000,DURATION) and (struct.unpack_from('<2I',raw,44)==(LENGTH,(PIXELS+1)//2) if bounded else not any(raw[44:52])) and not any(raw[52:64]) and not any(raw[length:]),'Neow clocks/padding')
  colors=np.zeros(2,dtype='i8')
  for i in range(4):
   node=struct.unpack_from('<6i2H4B',raw,NODES_AT+i*32);q=node[:6]
@@ -101,6 +102,8 @@ def parameters(raw):
  for i in range(2):
   q=struct.unpack_from('<32i',raw,MODELS_AT+i*128)
   t.require(all(abs(x)<=4*16777216 for x in q) and 0<=q[30]<q[31]<=16777216 and q[31]-q[30]>=65536,'Neow model bounds')
+ if bounded:
+  flags=np.frombuffer(raw[LENGTH:length],'u1');t.require(not (flags[-1]&240) and np.all(flags[:-1]&15) and np.all(flags[:-1]>>4) and (flags[-1]&15),'Neow node-support flags')
  span=pixel=0
  for y in range(240):
   t.require(struct.unpack_from('<2H',raw,ROWS_AT+y*4)==(span,pixel),'Neow support row offset')
@@ -109,7 +112,7 @@ def parameters(raw):
    x,count=struct.unpack_from('<2H',raw,SPANS_AT+i*4);t.require(count and x>=right and x+count<=320,'Neow sorted support spans');right=x+count;pixel+=count
   span=end
  t.require(span==SPANS and pixel==PIXELS and struct.unpack_from('<H',raw,ROWS_AT+240*4+2)[0]==PIXELS,'Neow final support extent')
- return dict(source_static=static,frames=FRAMES,key_interval=KEY_INTERVAL,source_shader_period_ms=200000,body_period_ms=DURATION)
+ return dict(source_static=static,frames=FRAMES,key_interval=KEY_INTERVAL,source_shader_period_ms=200000,body_period_ms=DURATION,integer_bounds=bounded)
 
 
 def pack_parameters(records,support,static=False):
@@ -268,7 +271,11 @@ def build_assets(pack,directory,static=False):
   for channel,exact in enumerate((original[index],blue)):
    error=(abs(candidate.astype('i2')-exact.astype('i2'))+.5)/255*upper[:,:,channel+1];maximum[channel]=max(maximum[channel],float(error.max()))
  t.require(maximum[0]<1/63 and maximum[1]<1/31,'Neow all-clock contribution error exceeds one RGB565 step')
- raw=pack_parameters(records,support,static);images.append((256,9,0,raw))
+ raw=pack_parameters(records,support,static)
+ rgba=[np.rint(textures[r[0]]*255).astype('u1') for r in TEXTURES]
+ triangle=fire.half_noise(np.rint(textures[fire.TEXTURES[1][0]]*255).astype('u1'))
+ raw=with_integer_bounds(raw,[rgba[0][:,:,(2,)],triangle[:,:,:3],rgba[1][:,:,:3],rgba[2][:,:,(0,1)]])
+ images.append((256,len(raw)//512,0,raw))
  return images,dict(source_static=static,source_texture_channels=texture_proof,shared_triangle='reviewed250x250RGB',source_order=nodes['order'],mask_frames=FRAMES,
   mask_key_interval=KEY_INTERVAL,mask_state_bytes=PIXELS,source_support_spans=SPANS,mask_bound=0 if static else 8,cyclic_exact_fallback_pixels=fallback,
   maximum_green_blue_source_transmission_error=maximum.tolist(),visible_saturation_pixels=0,mask_sha256=mask_hashes,
@@ -282,7 +289,7 @@ def require_reduced_source(source,image):
 def validate(source,image,final=False):
  from no_animations import reduced
  t.require((len(source.aux),len(source.images))==(AUXILIARY,IMAGES) and source.aux[BASE_AUX]==PARAMETER,'Neow fire exact catalog endpoint')
- w,h,fmt,raw=image(PARAMETER);t.require((w,h,fmt)==(256,9,0),'Neow parameter picture');info=parameters(raw)
+ w,h,fmt,raw=image(PARAMETER);t.require(w==256 and h in (9,26) and fmt==0,'Neow parameter picture');info=parameters(raw)
  if final or reduced(source.data):t.require(info['source_static']==reduced(source.data),'Neow transmission profile does not match final marker')
  at=BASE_IMAGES
  for _,w,h,channels,_ in TEXTURES:
@@ -321,6 +328,60 @@ def append(data,images,proof,work):
  validate(target,target.image_raw)
  return out,dict(proof,complete=True,input_sha256=t.sha256(data),output_sha256=t.sha256(out),added_bytes=len(out)-len(data),grouping=art['report'],append=detail,decoded_bytes=sum(len(r[3])for r in images))
 
+
+def integer_bounds(parameter,fields):
+ """Prove zero output for each static projected pixel at every shader clock.
+
+ All calculations mirror the runtime integer sampler. Bilinear samples lie
+ below the maximum of their four bytes, scaled by the exact native /255
+ rounding. Positive distortion therefore lies in a closed UV rectangle;
+ a range maximum of the original light blue channel bounds every texel the
+ shader could reach. Only strength <= the source outer loweredge is skipped.
+ """
+ Q=1<<20;rows=[struct.unpack_from('<2H',parameter,ROWS_AT+y*4)for y in range(241)];xs=[];ys=[]
+ for y in range(240):
+  for span in range(rows[y][0],rows[y+1][0]):
+   x,count=struct.unpack_from('<2H',parameter,SPANS_AT+span*4);xs.extend(range(x,x+count));ys.extend([y]*count)
+ xs,ys=np.asarray(xs,dtype='i8'),np.asarray(ys,dtype='i8')
+ def normalized(q):return (q*16843009+2147483648)>>32
+ def constant(value):return normalized(np.asarray(value,dtype='i8')*Q)
+ def sample(field,u,v,ch):
+  h,w,_=field.shape;px=np.clip(u,0,Q)*w-Q//2;py=np.clip(v,0,Q)*h-Q//2;x=px>>20;y=py>>20;fx=px&(Q-1);fy=py&(Q-1)
+  x0=np.clip(x,0,w-1);x1=np.clip(x+1,0,w-1);y0=np.clip(y,0,h-1);y1=np.clip(y+1,0,h-1)
+  a=field[y0,x0,ch]*(Q-fx)+field[y0,x1,ch]*fx;b=field[y1,x0,ch]*(Q-fx)+field[y1,x1,ch]*fx
+  return normalized((a*(Q-fy)+b*fy+Q//2)>>20)
+ base=fields[2][:,:,2];levels={(0,0):base}
+ for y in range(9):
+  for x in range(9):
+   if not x and not y:continue
+   if x:a=levels[y,x-1];d=1<<(x-1);out=np.maximum(a,np.pad(a[:,d:],((0,0),(0,d)),mode='edge'))
+   else:a=levels[y-1,0];d=1<<(y-1);out=np.maximum(a,np.pad(a[d:],((0,d),(0,0)),mode='edge'))
+   levels[y,x]=out
+ flags=np.zeros(PIXELS,'u1')
+ for i in range(4):
+  r=struct.unpack_from('<6i2H4B',parameter,NODES_AT+i*32);q=np.asarray(struct.unpack_from('<32i',parameter,MODELS_AT+r[8]*128),dtype='i8')
+  t.require(all(q[j]>=0 for j in (4,9,14,19)),'Neow integer bounds require nonnegative source strengths')
+  u=(r[0]+xs*r[2]+ys*r[4])>>8;v=(r[1]+xs*r[3]+ys*r[5])>>8;inside=(u>=0)&(v>=0)&(u<Q)&(v<Q)
+  mask=Q-sample(fields[2],(u*q[20]>>24)+(q[22]>>4),((v-41943)*q[21]>>24)+41943+(q[23]>>4),2)
+  mu=(u*q[24]>>24)+(q[26]>>4);mv=(v*q[25]>>24)+(q[27]>>4);maximum=[]
+  for channel in (0,1):
+   d=(constant(fields[1][:,:,channel].max())*q[14]>>24)+(constant(fields[2][:,:,channel].max())*q[19]>>24)
+   maximum.append(d*sample(fields[3],mu,mv,channel)>>20)
+  x0=np.clip((np.clip(u,0,Q)*256-Q//2)>>20,0,255);y0=np.clip((np.clip(v,0,Q)*256-Q//2)>>20,0,255)
+  x1=np.clip(((np.clip(u+maximum[0],0,Q)*256-Q//2)>>20)+1,0,255);y1=np.clip(((np.clip(v+maximum[1],0,Q)*256-Q//2)>>20)+1,0,255)
+  kx=np.floor(np.log2(x1-x0+1)).astype('i4');ky=np.floor(np.log2(y1-y0+1)).astype('i4');bound=np.zeros(PIXELS,'i8')
+  for yk,xk in np.unique(np.column_stack([ky,kx]),axis=0):
+   at=(ky==yk)&(kx==xk);tab=levels[int(yk),int(xk)];xx=x1[at]-((1<<xk)-1);yy=y1[at]-((1<<yk)-1)
+   bound[at]=np.maximum.reduce([tab[y0[at],x0[at]],tab[y0[at],xx],tab[yy,x0[at]],tab[yy,xx]])
+  n1=constant(fields[0][:,:,0].max())*q[4]>>24;n2=constant(fields[0][:,:,0].max())*q[9]>>24
+  strength=(((n1*n2>>20)+mask)*constant(bound)>>20)*16
+  flags|=((strength>q[30])&inside).astype('u1')<<i
+ t.require(np.all(flags),'Neow global support has an impossible empty node bound')
+ padded=np.pad(flags,(0,len(flags)%2));return (padded[::2]|padded[1::2]<<4).tobytes()
+
+
+def with_integer_bounds(raw,fields):
+ parameters(raw);flags=integer_bounds(raw,fields);out=bytearray(raw[:LENGTH]+flags);struct.pack_into('<H',out,4,2);struct.pack_into('<H',out,34,LENGTH+len(flags));struct.pack_into('<2I',out,44,LENGTH,len(flags));out+=bytes((-len(out))%512);parameters(out);return bytes(out)
 
 def main():
  import argparse

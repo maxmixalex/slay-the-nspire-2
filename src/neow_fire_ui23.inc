@@ -18,7 +18,7 @@ static bool render(Canvas&c,const Table&table,const Mask&mask,const ancient_fire
     const unsigned x=table.x(span),count=table.count(span);
     int u=u0+int(y)*uy+int(x)*du,v=v0+int(y)*vy+int(x)*dv;
     for(unsigned i=0;i<count;++i,++pixel,u+=du,v+=dv){
-     if(!mask.pixels[pixel]||unsigned(u)>=268435456u||unsigned(v)>=268435456u)continue;
+     if(!mask.pixels[pixel]||!table.active(node,pixel)||unsigned(u)>=268435456u||unsigned(v)>=268435456u)continue;
      const unsigned alpha=(shader.alpha(u>>8,v>>8)*255u+524288u)>>20;
      sum[pixel].green=uint16_t(sum[pixel].green+green*alpha);
      sum[pixel].blue=uint16_t(sum[pixel].blue+blue*alpha);

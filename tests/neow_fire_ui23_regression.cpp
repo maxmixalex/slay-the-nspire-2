@@ -21,6 +21,10 @@ int main(){
  Picture picture{p,nullptr,nullptr,256,9,0};Table table;CHECK(table.read(picture,false));CHECK(!table.read(picture,true));put16(p+6,2);CHECK(table.read(picture,true));put16(p+6,1);
  for(unsigned at:{0u,4u,6u,8u,10u,12u,14u,16u,18u,20u,22u,24u,26u,28u,30u,32u,34u,36u,40u,44u,Length,SpansAt+2,RowsAt+4}){p[at]^=1;CHECK(!table.read(picture,false));p[at]^=1;}
  put32(p+NodesAt+8,0x7fffffffu);CHECK(!table.read(picture,false));put32(p+NodesAt+8,0);CHECK(table.read(picture,false));
+ std::array<uint8_t,13312> v2{};memcpy(v2.data(),p,Length);put16(v2.data()+4,2);put16(v2.data()+34,Length+(MaskBytes+1)/2);put32(v2.data()+44,Length);put32(v2.data()+48,(MaskBytes+1)/2);memset(v2.data()+Length,255,(MaskBytes+1)/2);v2[Length+(MaskBytes+1)/2-1]=15;
+ Picture bound_picture{v2.data(),nullptr,nullptr,256,26,0};CHECK(table.read(bound_picture,false));for(unsigned n=0;n<4;++n)for(unsigned i=0;i<MaskBytes;++i)CHECK(table.active(n,i));
+ v2[Length]=0x21;CHECK(table.read(bound_picture,false));CHECK(table.active(0,0)&&!table.active(1,0)&&!table.active(0,1)&&table.active(1,1));v2[Length]=255;
+ for(unsigned at:{44u,48u,Length+(MaskBytes+1)/2}){v2[at]^=1;CHECK(!table.read(bound_picture,false));v2[at]^=1;}v2[Length+(MaskBytes+1)/2-1]|=16;CHECK(!table.read(bound_picture,false));v2[Length+(MaskBytes+1)/2-1]=15;put16(v2.data()+4,3);CHECK(!table.read(bound_picture,false));CHECK(table.read(picture,false));
  Content content;for(unsigned frame=0;frame<Frames;++frame){auto*r=content.bytes[frame].data();put32(r,13);put16(r+4,frame);put16(r+6,1);put16(r+8,frame%MaskBytes);put16(r+10,0x8001);r[12]=uint8_t(frame+1);}
  Mask mask;auto poll=[](){++polls;};CHECK(mask.restore(content,FirstMask,31,poll));CHECK(content.loads==32&&polls>0);for(unsigned i=0;i<32;++i)CHECK(mask.pixels[i]==uint8_t(i+1));
  CHECK(mask.restore(content,FirstMask,31,poll));CHECK(content.loads==32);CHECK(mask.restore(content,FirstMask,33,poll));CHECK(content.loads==34);CHECK(mask.pixels[0]==0&&mask.pixels[32]==33&&mask.pixels[33]==34);

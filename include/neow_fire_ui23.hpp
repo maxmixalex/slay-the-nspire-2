@@ -60,14 +60,18 @@ struct Mask {
 static_assert(sizeof(Mask)<18000,"Compact Neow transmission must fit the existing cinder-sized scene variant");
 
 struct Table {
- const uint8_t*data=nullptr;
+ const uint8_t*data=nullptr;bool bounded=false;
  template<class Picture>bool read(const Picture&p,bool reduced){
-  data=nullptr;if(!p.pixels||p.format||p.alpha||p.palette||p.w!=256||p.h!=9)return false;
+  data=nullptr;bounded=false;if(!p.pixels||p.format||p.alpha||p.palette||p.w!=256||(p.h!=9&&p.h!=26))return false;
   const auto*r=p.pixels;if(r[0]!='N'||r[1]!='W'||r[2]!='F'||r[3]!='1')return false;
-  const unsigned header[]={1,reduced?2u:1u,4,Frames,KeyInterval,MaskBytes,FirstImage,TexturePages,FirstMask,ParameterImage,NodesAt,ModelsAt,RowsAt,SpansAt,Spans,Length};
+  const unsigned version=word(r+4);bounded=version==2;const unsigned length=Length+(bounded?(MaskBytes+1)/2:0);
+  if((version!=1&&version!=2)||p.h!=(length+511)/512)return false;
+  const unsigned header[]={version,reduced?2u:1u,4,Frames,KeyInterval,MaskBytes,FirstImage,TexturePages,FirstMask,ParameterImage,NodesAt,ModelsAt,RowsAt,SpansAt,Spans,length};
   for(unsigned i=0;i<16;++i)if(word(r+4+i*2)!=header[i])return false;
   if(dword(r+36)!=200000||dword(r+40)!=Duration)return false;
-  for(unsigned i=44;i<64;++i)if(r[i])return false;
+  if(bounded){if(dword(r+44)!=Length||dword(r+48)!=(MaskBytes+1)/2||(r[length-1]&240))return false;}
+  else for(unsigned i=44;i<52;++i)if(r[i])return false;
+  for(unsigned i=52;i<64;++i)if(r[i])return false;
   unsigned green=0,blue=0;
   for(unsigned n=0;n<4;++n){const auto*v=r+NodesAt+n*32;
    if(word(v+24)>255||word(v+26)>255||v[28]>1||v[29]||v[30]||v[31])return false;
@@ -93,9 +97,10 @@ struct Table {
    }
   }
   if(span!=Spans||pixel!=MaskBytes||word(r+RowsAt+Height*4+2)!=MaskBytes)return false;
-  for(unsigned i=Length;i<256*9*2;++i)if(r[i])return false;
+  for(unsigned i=length;i<256*p.h*2;++i)if(r[i])return false;
   data=r;return true;
  }
+ bool active(unsigned node,unsigned pixel)const{return !bounded||((data[Length+(pixel>>1)]>>((pixel&1u)*4+node))&1u);}
  const uint8_t*node(unsigned i)const{return data+NodesAt+i*32;}
  unsigned row_span(unsigned y)const{return word(data+RowsAt+y*4);}
  unsigned row_pixel(unsigned y)const{return word(data+RowsAt+y*4+2);}
