@@ -1,6 +1,15 @@
 // Tanx authored order: painted scene, ash2/ash3, ash4/ash5, dialogue/HUD.
 namespace tanx_scene {
 using namespace tanx_scene_ui23;
+// Force source geometry projection at compile time. In particular, a runtime
+// emitter index must never promote its dimensions to freestanding soft double.
+constexpr int GrainSize=fake_merchant::ancient_size(32);
+constexpr int RiceWidth=fake_merchant::ancient_size(8),RiceHeight=fake_merchant::ancient_size(16);
+constexpr int FogWidth0=fake_merchant::ancient_size(2472*.2),FogHeight0=fake_merchant::ancient_size(3316*.2*2.765);
+constexpr int FogWidth1=fake_merchant::ancient_size(2472*.5),FogHeight1=fake_merchant::ancient_size(3316*.5*2.765);
+static_assert(GrainSize==1560&&RiceWidth==390&&RiceHeight==780&&
+              FogWidth0==24108&&FogHeight0==89416&&FogWidth1==60269&&FogHeight1==223541,
+              "Tanx authored Q8 projected dimensions changed");
 static void fog(Canvas c,const Smoke&smoke,unsigned scroll,int cx,int cy,int w,int h,int angle){
  const int sn=CombatCardMotion::sine(angle),cs=CombatCardMotion::sine(angle+1024);
  const int hw=(CombatCardMotion::magnitude(cs)*w+CombatCardMotion::magnitude(sn)*h)/2048;
@@ -35,7 +44,7 @@ static void draw(Canvas&c,uint32_t elapsed,uint32_t shader_clock,uint32_t entry)
    if(emitter)color.a=uint8_t(div255(unsigned(color.a)*156));
    fake_merchant::quad(c,texture,
     fake_merchant::ancient_x((emitter?225:66)*256+p.x/4),fake_merchant::ancient_y(1163*256+p.y/4),
-    fake_merchant::ancient_size(emitter?8:32)*p.scale/1024,fake_merchant::ancient_size(emitter?16:32)*p.scale/1024,
+    (emitter?RiceWidth:GrainSize)*p.scale/1024,(emitter?RiceHeight:GrainSize)*p.scale/1024,
     p.angular,color.r,color.g,color.b,color.a,presentation::Normal);
   }
  }
@@ -50,8 +59,8 @@ static void draw(Canvas&c,uint32_t elapsed,uint32_t shader_clock,uint32_t entry)
  if(!parameters(table))return;smoke.gradient=table.pixels+32;smoke.lookup=table.pixels+232;
  const unsigned scroll=phase(shader_clock);
  fog(c,smoke,scroll,fake_merchant::ancient_x(1538*256),fake_merchant::ancient_y(628*256),
-     fake_merchant::ancient_size(2472*.2),fake_merchant::ancient_size(3316*.2*2.765),389);
+     FogWidth0,FogHeight0,389);
  fog(c,smoke,scroll,fake_merchant::ancient_x(221*256),fake_merchant::ancient_y(494*256),
-     fake_merchant::ancient_size(2472*.5),fake_merchant::ancient_size(3316*.5*2.765),341);
+     FogWidth1,FogHeight1,341);
 }
 }
