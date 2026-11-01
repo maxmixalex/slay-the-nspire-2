@@ -75,7 +75,7 @@ class TypedCatalogIntegration(unittest.TestCase):
         from converter import Recipe
         from converter_finalize import add_final_stages
         names=['ancient-materials46','ancient-gpu-masks46','tez-cinders46','nonu-fog46','ancient-trajectories46',
-               'neow-post46','vakuu-cinders46','neow-particles46','ancient-fire46','neow-fire46']
+               'neow-post46','vakuu-cinders46','neow-particles46','ancient-fire46','neow-fire46','card-afflictions46']
         for reduced in (False,True):
             recipe=Recipe('/game','/work','/private/runtime','dotnet','/noise','-')
             add_final_stages(recipe,recipe.source_stages(),Path('/output'),['eng','zhs'],reduced)
@@ -98,6 +98,8 @@ class TypedCatalogIntegration(unittest.TestCase):
             self.assertEqual(neow[neow.index('--runtime')+1],'/private/runtime')
             self.assertEqual(neow[neow.index('--light-work')+1],'/work/cache/ancient-scenes45')
             self.assertEqual('--no-animations' in neow,reduced)
+            self.assertEqual(stages['card-afflictions46'].module,'card_affliction_ui23')
+            self.assertNotIn('--no-animations',stages['card-afflictions46'].arguments)
             self.assertNotIn('--sampled',stages['ancient-trajectories46'].arguments)
             self.assertEqual('--no-animations' in stages[names[0]].arguments,reduced)
             self.assertEqual('--no-animations' in stages['neow-post46'].arguments,reduced)

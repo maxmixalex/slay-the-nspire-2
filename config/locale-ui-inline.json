@@ -730,6 +730,47 @@
         "src/ui_preferences.inc"
       ],
       "note": "Original localized startup setting is preferred; caller supplies explicit English/Chinese fallback."
+    },
+    {
+      "source": "历史记录保存失败，请释放存储后重试。",
+      "eng": "Could not save history. Free storage and retry.",
+      "paths": [
+        "src/history_archive_ui.inc",
+        "src/ui_progress.inc"
+      ],
+      "note": "Port-authored history storage diagnostic; caller explicitly selects Simplified Chinese or English. Does not reindex original localization packs."
+    },
+    {
+      "source": "历史记录保存失败，请重试。",
+      "eng": "Could not save history. Please retry.",
+      "paths": [
+        "src/ui_progress_navigation.inc"
+      ],
+      "note": "Port-authored history storage diagnostic; caller explicitly selects Simplified Chinese or English. Does not reindex original localization packs."
+    },
+    {
+      "source": "历史记录已保留，将重试归档。",
+      "eng": "History remains in recent records; archive will retry.",
+      "paths": [
+        "src/ui_progress.inc"
+      ],
+      "note": "Port-authored history storage diagnostic; caller explicitly selects Simplified Chinese or English. Does not reindex original localization packs."
+    },
+    {
+      "source": "无法读取历史记录。",
+      "eng": "Could not load history.",
+      "paths": [
+        "src/history_archive_ui.inc"
+      ],
+      "note": "Port-authored history storage diagnostic; caller explicitly selects Simplified Chinese or English. Does not reindex original localization packs."
+    },
+    {
+      "source": "无法读取历史记录，请重试。",
+      "eng": "Could not read history. Please retry.",
+      "paths": [
+        "src/ui_progress.inc"
+      ],
+      "note": "Port-authored history storage diagnostic; caller explicitly selects Simplified Chinese or English. Does not reindex original localization packs."
     }
   ]
 }
