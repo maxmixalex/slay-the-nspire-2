@@ -2,6 +2,7 @@ import copy
 import struct
 import types
 import unittest
+import numpy as np
 
 import ancient_fire_ui23 as f
 
@@ -77,9 +78,22 @@ class FireSourceContract(unittest.TestCase):
         frames[-1][0]['matrix'][2] += 1000
         with self.assertRaisesRegex(ValueError, 'delta exceeds'): f.pack_parameters(rows, frames)
 
+    def test_only_two_noise_textures_are_half_sampled_and_rounding_is_exact(self):
+        original=list(f.TEXTURES);sampled=list(f.sampled_textures())
+        self.assertEqual([(r[1],r[2]) for r in original],[(1024,1024),(500,500),(500,500),(50,500),(20,500)])
+        self.assertEqual([(r[1],r[2]) for r in sampled],[(512,512),(250,250),(500,500),(50,500),(20,500)])
+        self.assertEqual(sampled[2:],original[2:])
+        for a,b in zip(original,sampled):self.assertEqual((a[0],a[3],a[4]),(b[0],b[3],b[4]))
+        rgba=np.array([[[0,255,1,0],[0,255,2,1]],[[0,255,3,2],[2,255,4,3]]],dtype='u1')
+        before=rgba.copy();out=f.half_noise(rgba)
+        np.testing.assert_array_equal(out,np.array([[[1,255,3,2]]],dtype='u1'))
+        np.testing.assert_array_equal(rgba,before)
+        for bad in (rgba.astype('f4'),rgba[:1],rgba[:,:,:3]):
+            with self.assertRaises(ValueError):f.half_noise(bad)
+
     def test_real_byte_pages_use_supported_geometry_and_exact_endpoint(self):
         rows, frames = self.source(); images = []
-        for _, width, height, channels, _ in f.TEXTURES:
+        for _, width, height, channels, _ in f.sampled_textures():
             count = width * height * len(channels)
             for start in range(0, count, f.PAGE_BYTES):
                 used = min(f.PAGE_BYTES, count - start)
@@ -89,7 +103,10 @@ class FireSourceContract(unittest.TestCase):
         source.aux[f.BASE_AUX] = f.IMAGES - 1
         image = lambda index: images[index - f.BASE_IMAGES]
         f.validate(source, image)
-        self.assertEqual(len(images), 19)
+        self.assertEqual(len(images), 9)
+        self.assertEqual((f.BASE_IMAGES,f.IMAGES),(59732,59741))
+        old=bytearray(raw);struct.pack_into('<H',old,38,18)
+        with self.assertRaises(ValueError):f.parameters(old)
         self.assertTrue(all(row[0] <= 320 and row[1] <= 240 for row in images))
         first = images[0]; images[0] = (256, 256, 0, bytes(131072))
         with self.assertRaisesRegex(ValueError, 'page range'): f.validate(source, image)

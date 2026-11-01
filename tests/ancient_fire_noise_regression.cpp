@@ -13,6 +13,7 @@ static unsigned checks;
 static std::vector<uint8_t> read(const char*path){std::ifstream in(path,std::ios::binary);CHECK(bool(in));return {std::istreambuf_iterator<char>(in),{}};}
 int main(int argc,char**argv){
  using namespace ancient_fire_noise;
+ static_assert(Count==8&&First+Count==59740,"Reviewed half-noise endpoint");
  static Content owner;std::vector<uint8_t> metadata((First+Count)*16);ImageDirectoryView directory{metadata.data(),16};
  auto put=[&](unsigned at,unsigned n){for(unsigned b=0;b<4;++b)metadata[at+b]=uint8_t(n>>(b*8));};
  for(unsigned id=0;id<First+Count;++id){put(id*16,1234);put(id*16+4,205u<<16|320);put(id*16+12,131200);}
@@ -24,8 +25,8 @@ int main(int argc,char**argv){
   for(unsigned j=0;j<i;++j)CHECK(entries[i]!=entries[j]);}
  for(unsigned i=0;i<Count;++i){CHECK(entries[i]->format()==0&&entries[i]->packed_format&Reconstructed);CHECK(find_image(&owner,directory,First+i)==entries[i]);}
  for(unsigned link=0;link<2048;++link){ImageCache e{};e.packed_format=uint8_t(Reconstructed|3);e.link(link);CHECK(e.next()==link&&e.format()==3&&(e.packed_format&Reconstructed));}
- discard_image(*entries[8]);CHECK(!find_image(&owner,directory,First+8));CHECK(!entries[8]->packed_format);
- {ImageReservation r(131200);r.publish(&owner,directory,First+8,0);CHECK(!(find_image(&owner,directory,First+8)->packed_format&Reconstructed));}
+ discard_image(*entries[Count-1]);CHECK(!find_image(&owner,directory,First+Count-1));CHECK(!entries[Count-1]->packed_format);
+ {ImageReservation r(131200);r.publish(&owner,directory,First+Count-1,0);CHECK(!(find_image(&owner,directory,First+Count-1)->packed_format&Reconstructed));}
  clear_caches(&owner);for(const auto&e:image_cache)CHECK(!e.owner&&!e.packed_format);
  double cold=0;
  for(unsigned id=First;id<First+Count;++id){const auto p=layout(id);CHECK(p.used&&p.stride&&p.stride<p.used);
@@ -57,5 +58,5 @@ int main(int argc,char**argv){
   for(const auto&e:image_cache)CHECK(!e.owner&&!e.packed_format);
   const auto first=owner.image(First);char name[4096];std::snprintf(name,sizeof name,"%s/00.bin",argv[2]);auto expected=read(name);CHECK(first.pixels&&std::equal(expected.begin(),expected.end(),first.pixels));
  }
- std::printf("fire noise: %u checks;18 cold page restores %.3f ms host; unchanged cache bytes\n",checks,cold);
+ std::printf("fire noise: %u checks;%u cold page restores %.3f ms host; unchanged cache bytes\n",checks,Count,cold);
 }

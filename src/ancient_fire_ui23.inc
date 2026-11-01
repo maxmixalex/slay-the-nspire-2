@@ -38,7 +38,7 @@ static void node(Canvas&c,const Table&table,unsigned index,unsigned frame,const 
 }
 static bool draw(Canvas&c,uint32_t elapsed,uint32_t seed){
  if(c.a.content.ui_image(Auxiliary)!=int(ParameterImage))return false;
- static constexpr unsigned dimensions[][3]={{1024,1024,1},{500,500,3},{500,500,1},{50,500,1},{20,500,1}};
+ static constexpr unsigned dimensions[][3]={{512,512,1},{250,250,3},{500,500,1},{50,500,1},{20,500,1}};
  Field fields[5];unsigned page=0;
  for(unsigned f=0;f<5;++f){auto&field=fields[f];field.width=dimensions[f][0];field.height=dimensions[f][1];field.channels=dimensions[f][2];
   const unsigned bytes=field.width*field.height*field.channels;

@@ -2,7 +2,7 @@
 #include <stdint.h>
 #include "ancient_fire_noise.hpp"
 namespace spire::ancient_fire_ui23 {
-constexpr unsigned Auxiliary=7227,AuxiliaryCount=7228,FirstImage=59732,PageCount=18,ParameterImage=59750,Images=59751;
+constexpr unsigned Auxiliary=7227,AuxiliaryCount=7228,FirstImage=59732,PageCount=8,ParameterImage=59740,Images=59741;
 constexpr unsigned PageBytes=131072,Nodes=237,Frames=506,Dynamic=21,Models=3,Commands=401,NodeBytes=40;
 constexpr unsigned NodesAt=64,ModelsAt=NodesAt+Nodes*NodeBytes,DeltasAt=ModelsAt+Models*128,OrderAt=DeltasAt+Dynamic*Frames*12,Length=OrderAt+Commands*2;
 inline unsigned word(const uint8_t*p){return p[0]|unsigned(p[1])<<8;}
@@ -17,7 +17,7 @@ struct Field {
   const unsigned at=(y*width+x)*channels+channel;return pages[at>>17][at&(PageBytes-1)];
  }
  // Bilinear normalized sampling, including the original half-texel phase.
- // Returns Q20. Exact byte pixels remain unchanged in the resource.
+ // Returns Q20. Stored8-bit sampled pixels are not re-quantized here.
  int sample(int u,int v,unsigned channel,bool repeat)const{
   if(repeat){u=int(unsigned(u)&1048575u);v=int(unsigned(v)&1048575u);}
   else{u=bound(u,0,1048576);v=bound(v,0,1048576);}

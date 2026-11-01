@@ -45,7 +45,7 @@ class TypedCatalogIntegration(unittest.TestCase):
             self.assertEqual(roots,set(range(59667,e.ENDPOINTS[end])) if end>=7215 else set())
 
     def test_failure_in_an_earlier_prefix_is_not_hidden_by_new_extension(self):
-        source=SimpleNamespace(aux=[0]*7228,images=[0]*59751)
+        source=SimpleNamespace(aux=[0]*7228,images=[0]*59741)
         with patch('tanx_scene_ui23.validate',side_effect=ValueError('corrupt original typed root')):
             with self.assertRaisesRegex(ValueError,'corrupt original'):e.validate(source,lambda i:None)
 

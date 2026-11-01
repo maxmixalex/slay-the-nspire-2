@@ -1,13 +1,13 @@
 #pragma once
 #include <stdint.h>
 namespace spire::ancient_fire_noise {
-constexpr unsigned First=59732,Count=18,PageBytes=131072,Reconstructed=8;
+constexpr unsigned First=59732,Count=8,PageBytes=131072,Reconstructed=8;
 constexpr bool page(unsigned id){return id>=First&&id<First+Count;}
 struct Page {unsigned used=0,stride=0;};
 inline Page layout(unsigned id){
  if(!page(id))return {};
  unsigned index=id-First;
- constexpr unsigned rows[][2]={{1048576,1024},{750000,1500},{250000,500},{25000,50},{10000,20}};
+ constexpr unsigned rows[][2]={{262144,512},{187500,750},{250000,500},{25000,50},{10000,20}};
  for(const auto&row:rows){const unsigned pages=(row[0]+PageBytes-1)/PageBytes;
   if(index<pages){const unsigned left=row[0]-index*PageBytes;return {left<PageBytes?left:PageBytes,row[1]};}index-=pages;
  }

@@ -1,10 +1,13 @@
 #!/usr/bin/env python3
-"""Source-bound237Tez fire nodes and exact-resolution source shader channels.
+"""Source-bound237Tez fire nodes with reviewed half-resolution noise channels.
 
-Noise color quantization is not enabled; a page-local, exactly reversible up
-predictor is restored once in the existing image cache. Raw mode remains valid.
-No actor pixels/geometry/cadence or
-existing source caches change. The original20s shader clock is independent of
+Only the1024-square basic noise and500-square triangle noise use a single2x2
+area mean, rounded to8-bit bytes. Source shapes/masks remain exact-resolution.
+This is a reviewed shader-input approximation, not pixel equality. A page-local,
+exactly reversible up predictor is restored once in the existing image cache.
+Raw mode stores the same sampled pages without that predictor. No actor pixels,
+geometry/cadence, persistent buffers, or existing source caches change.
+The original20s shader clock is independent of
 the16.667s body loop. Source shader blend modes override ShaderMaterial's
 ordinary default. The four behind-body Neow fires are a separate ordered pass.
 """
@@ -17,8 +20,9 @@ import ancient_lights_ui23 as lights
 import tez_effects_ui23 as effects
 import world_room_shaders as shader
 
-BASE_AUX,AUXILIARY,BASE_IMAGES,IMAGES=7227,7228,59732,59751
+BASE_AUX,AUXILIARY,BASE_IMAGES,IMAGES=7227,7228,59732,59741
 NODES,FRAMES,DYNAMIC,MODELS,COMMANDS,PAGE_BYTES=237,506,21,3,401,131072
+NOISE_PAGES=8
 NODES_AT=64;MODELS_AT=NODES_AT+NODES*40;DELTAS_AT=MODELS_AT+MODELS*128
 ORDER_AT=DELTAS_AT+DYNAMIC*FRAMES*12;LENGTH=ORDER_AT+COMMANDS*2
 TEXTURES=(
@@ -52,7 +56,7 @@ def model(uniforms):
 def parameters(raw):
  t.require(len(raw)==(LENGTH+639)//640*640 and raw[:4]==b'AFR1','Fire parameter extent/magic')
  t.require(struct.unpack_from('<6H',raw,4)==(1,NODES,FRAMES,DYNAMIC,MODELS,COMMANDS) and
-  struct.unpack_from('<5I2H2I',raw,16)==(NODES_AT,MODELS_AT,DELTAS_AT,ORDER_AT,LENGTH,BASE_IMAGES,18,20000,16667) and
+  struct.unpack_from('<5I2H2I',raw,16)==(NODES_AT,MODELS_AT,DELTAS_AT,ORDER_AT,LENGTH,BASE_IMAGES,NOISE_PAGES,20000,16667) and
   struct.unpack_from('<I',raw,48)[0] in (0,1) and not any(raw[52:64]) and not any(raw[LENGTH:]),'Fire header/offset/padding differs')
  dynamic=[]
  for i in range(NODES):
@@ -102,7 +106,7 @@ def pack_parameters(rows,frames):
   nodes.append(struct.pack('<6i6H4B',*values[0],*colors,models.index(encoded),blend,slot,0))
  t.require(counts==dict(light=90,cinder=74,fire=NODES) and len(deltas)==DYNAMIC and len(models)==MODELS,'Fire original source cardinality changed')
  header=bytearray(64);header[:4]=b'AFR1';struct.pack_into('<6H',header,4,1,NODES,FRAMES,DYNAMIC,MODELS,COMMANDS)
- struct.pack_into('<5I2H2I',header,16,NODES_AT,MODELS_AT,DELTAS_AT,ORDER_AT,LENGTH,BASE_IMAGES,18,20000,16667)
+ struct.pack_into('<5I2H2I',header,16,NODES_AT,MODELS_AT,DELTAS_AT,ORDER_AT,LENGTH,BASE_IMAGES,NOISE_PAGES,20000,16667)
  raw=bytes(header)+b''.join(nodes)+b''.join(models)+b''.join(deltas)+struct.pack('<401H',*order)
  raw+=bytes((-len(raw))%640);parameters(raw)
  return raw
@@ -115,8 +119,23 @@ def effects_bone(path):
  return None
 
 
+def sampled_textures():
+ for index,(name,width,height,channels,digest) in enumerate(TEXTURES):
+  if index<2:width//=2;height//=2
+  yield name,width,height,channels,digest
+
+
+def half_noise(rgba):
+ """One reviewed2x2 area mean; source identity is checked before this call."""
+ t.require(rgba.dtype==np.uint8 and rgba.ndim==3 and rgba.shape[2]==4 and
+           min(rgba.shape[:2])>0 and not any(n%2 for n in rgba.shape[:2]),'Fire noise requires even original RGBA8 dimensions')
+ h,w=rgba.shape[:2]
+ total=rgba.astype(np.uint16).reshape(h//2,2,w//2,2,4).sum(axis=(1,3),dtype=np.uint16)
+ return ((total+2)//4).astype(np.uint8)
+
+
 def noise_pages():
- for _,width,height,channels,_ in TEXTURES:
+ for _,width,height,channels,_ in sampled_textures():
   total=width*height*len(channels)
   for offset in range(0,total,PAGE_BYTES):
    yield min(PAGE_BYTES,total-offset),width*len(channels)
@@ -133,7 +152,7 @@ def predict_page(raw,used,stride,inverse=False):
 
 
 def predicted_images(images):
- t.require(len(images)==19 and parameters(images[-1][3])['noise_prediction']=='raw','Fire prediction requires original raw source pages')
+ t.require(len(images)==NOISE_PAGES+1 and parameters(images[-1][3])['noise_prediction']=='raw','Fire prediction requires reviewed raw sampled pages')
  out=[];records=[]
  for index,((w,h,fmt,raw),(used,stride)) in enumerate(zip(images[:-1],noise_pages())):
   t.require((w,h,fmt)==(320,(used+639)//640,0),'Fire prediction geometry differs')
@@ -156,19 +175,22 @@ def source_assets(pack,sampler,runtime,light_work,noise_prediction="up"):
  frames=[json.loads((directory/f'{i:04}.json').read_text())['lights']['nodes']for i in range(FRAMES)]
  with effects.source_renderer():_,diagnostics=world.render_scene(pack,effects.SCENE,320,240,viewport=(1680,1260),sampler=sampler)
  raw=pack_parameters(diagnostics['tez_effects'],frames);images=[];proof=[]
- for name,w,h,channels,digest in TEXTURES:
+ for index,(name,w,h,channels,digest) in enumerate(TEXTURES):
   rgba=np.asarray(texture(pack,name).convert('RGBA'),dtype='u1')
   t.require(rgba.shape==(h,w,4) and t.sha256(rgba.tobytes())==digest,'Fire original texture identity differs')
+  if index<2:rgba=half_noise(rgba)
   pixels=rgba[:,:,channels].tobytes();first=len(images)
   for offset in range(0,len(pixels),PAGE_BYTES):
    part=pixels[offset:offset+PAGE_BYTES];part+=bytes((-len(part))%640);images.append((320,len(part)//640,0,part))
   proof.append(dict(source=name,rgba_sha256=digest,width=w,height=h,channels=channels,
+                    sampled_width=rgba.shape[1],sampled_height=rgba.shape[0],sampling=('2x2 area mean, rounded8-bit' if index<2 else 'exact source bytes'),
                     first=BASE_IMAGES+first,pages=len(images)-first,channel_bytes=len(pixels),channel_sha256=t.sha256(pixels)))
- t.require(len(images)==18,'Fire native texture page count differs')
+ t.require(len(images)==NOISE_PAGES,'Fire native texture page count differs')
  images.append((320,len(raw)//640,0,raw))
  result=dict(source_scene_sha256=t.sha256(pack.read(effects.SCENE)),light_source_signature=record['signature'],
    shader_sources={k:v[1]for k,v in shader.SHADERS.items()if k in {r['shader']for r in diagnostics['tez_effects']if r['kind']=='fire'}},
-   textures=proof,source_nodes=237,source_order=401,original_texture_resolution=True,noise_precision='exact source byte channels',
+   textures=proof,source_nodes=237,source_order=401,original_texture_resolution=False,shape_and_mask_resolution='exact source',
+   noise_resolution='one2x2 area mean, rounded to nearest8-bit; no other ratio',noise_precision='8-bit sampled source channels',
    source_shader_clock_ms=20000,body_clock_ms=16667,neow_behind_body_fire_implemented=False)
  t.require(noise_prediction in ('raw','up'),'Unknown fire prediction')
  result['noise_prediction']=noise_prediction
@@ -179,7 +201,7 @@ def source_assets(pack,sampler,runtime,light_work,noise_prediction="up"):
 def validate(source,image):
  t.require((len(source.aux),len(source.images))==(AUXILIARY,IMAGES) and source.aux[BASE_AUX]==IMAGES-1,'Fire exact catalog endpoint differs')
  at=BASE_IMAGES
- for _,w,h,channels,_ in TEXTURES:
+ for _,w,h,channels,_ in sampled_textures():
   count=w*h*len(channels)
   for start in range(0,count,PAGE_BYTES):
    width,height,fmt,raw=image(at);used=min(PAGE_BYTES,count-start)
@@ -216,7 +238,7 @@ def main():
  from world_enemy_assets import SpineSampler
  p=argparse.ArgumentParser(description=__doc__)
  for name in ('pck','runtime','work','light-work'):p.add_argument('--'+name,type=Path,required=True)
- p.add_argument('--input',type=Path);p.add_argument('--output',type=Path);p.add_argument('--sample-only',action='store_true');p.add_argument('--raw-noise',action='store_true',help='Keep exact raw pages without lossless up prediction');a=p.parse_args()
+ p.add_argument('--input',type=Path);p.add_argument('--output',type=Path);p.add_argument('--sample-only',action='store_true');p.add_argument('--raw-noise',action='store_true',help='Keep reviewed sampled pages without lossless up prediction');a=p.parse_args()
  t.require(a.sample_only or a.input and a.output,'Supply input/output or sample-only')
  for path in (a.pck,a.runtime,a.work,a.light_work,a.input,a.output):
   if path is not None:t.private_path(path,'Private original fire input/output')

@@ -2,7 +2,7 @@
 
 Reference: original v0.111.0 / 41cef1ea. This ledger distinguishes implemented
 source from completed release acceptance. The combined implementation through
-auxiliary/image endpoint **7228/59751** still requires its final original-data
+auxiliary/image endpoint **7228/59741** still requires its final original-data
 conversion, whole-scene rendering, allocation, storage and guest gates. It is
 not a claim of complete Godot parity. Earlier closures remain recorded in
 [the UI20 reconciliation](ui20-retained-differences.md).
@@ -71,13 +71,24 @@ execute behind the body in authored order; registering a descriptor or adding
 a generic overlay does not close them. Tezcatara fire geometry follows room
 elapsed time and its16,667 ms body loop; its shader uses the existing global
 visual clock with its own20,000 ms period. Reduced mode fixes both clocks at0.
-The18 exact byte-channel texture pages use explicit raw/up modes. Each up page
-retains its first source row literally and restores later rows once inside its
+The eight texture pages use explicit raw/up modes. Only the basic1024×1024
+noise and triangle500×500 noise use the reviewed2×2 area mean, rounded to8-bit
+channels, yielding512×512 and250×250. Shapes, masks, other noise inputs, all237
+source transforms and the401-command interleave retain their source values.
+Both full and reduced resources use this same reviewed bounded noise change;
+reduced still uses source clock0. The resulting fire pixels and noise bytes
+must not be described as identical to the original full-resolution shader.
+
+Up prediction is separately lossless relative to these sampled pages: each page
+retains its first sampled row literally and restores later rows once inside its
 existing decoded-image cache entry. There is no cross-page dependency, new
-buffer or warm reconstruction. Actual public Content reads of all18 pages,
-preloading, warm reuse, eviction and reopen reproduce every original byte.
-The current up appender adds494,830 bytes versus575,438 for raw pages, a measured
-80,608-byte saving; final physical storage and guest cost are still pending. The two hidden Neow water-post siblings remain hidden.
+buffer or warm reconstruction. The prior18-page raw/up cache proof remains
+historical; the new eight-page contract and actual source-module byte proof
+validate the new layout. Its grouped payload is176,090 bytes versus494,502 for
+the preceding full-resolution up representation, saving318,412 bytes before
+final physical publication. Source geometry and independent shader/body clocks
+are unchanged. Final physical storage and guest cost remain pending. The two
+hidden Neow water-post siblings remain hidden.
 
 The twelve turbulent families retain every authored particle and all45,484
 stored position keys, produced by the original float32 force/curl equations.
@@ -87,12 +98,14 @@ stored as320×205 with128 additional zero-padding bytes; it fits the existing
 240-row decoder bound. All used table bytes are unchanged. The actual12-table
 payload occupies145,062 compressed bytes, not a final installation subtotal.
 
-Materials retain explicit approximation bounds and exact reduced-source paths;
+The separate water/light materials retain their explicit approximation bounds
+and exact reduced-source paths;
 see [materials](ui23-ancient-materials.md), [stationary lights and sparkles](ui23-ancient-gpu-masks.md),
 [Neow particles](ui23-neow-particles.md), [Neow screen post](ui23-neow-screen-post.md),
 [Nonupeipe fog](ui23-nonu-fog.md) and [Vakuu cinders](ui23-vakuu-cinders.md).
-A full-profile approximate texture may not be relabeled as exact reduced data.
-The generic reducer rejects that substitution. Reduced mode caches the complete
+A full-profile water/light approximation may not be relabeled as its exact
+reduced counterpart; the generic reducer rejects that substitution. The Tezcatara
+fire noise exception above is explicitly shared by both profiles. Reduced mode caches the complete
 entry pose after background/effects and before dialogue/HUD; dynamic UI remains
 active. Persistent framebuffer, particle and decoded-cache capacities do not grow.
 
