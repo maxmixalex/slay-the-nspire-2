@@ -121,7 +121,10 @@ static void maximum(){
  for(unsigned category=0;category<4;++category){fixture.current_discoveries.count[category]=10;for(unsigned i=0;i<10;++i)fixture.current_discoveries.first[category][i]=uint16_t(i);}
  const Bytes seven=encode(fixture);CHECK(seven.size()==295347&&seven[3]=='7');fixture.tutorial_flags=FtueFresh|FtueSeenMask;const Bytes eight=encode(fixture);
  CHECK(eight.size()==295349&&eight[3]=='8'&&!std::memcmp(eight.data()+8,seven.data()+8,seven.size()-8));
- CHECK(decode_ui_progress(eight.data(),eight.size(),decoded)&&encode(decoded)==eight);
+ CHECK(decode_ui_progress(eight.data(),eight.size(),decoded)&&decoded.timeline.flags==(TimelineInitialized|TimelineLegacyAccess));
+ // Migration adds explicit compatibility access; the entire historical
+ // payload still re-encodes identically when testing that old format alone.
+ decoded.timeline={};CHECK(encode(decoded)==eight);
  export_bytes("full-profile.nsh",eight);
  std::printf("Maximum NSH8=%zu bytes; UiProgress=%zu; tutorial field=%zu bytes.\n",eight.size(),sizeof(UiProgress),sizeof fixture.tutorial_flags);
  scenario="NSH9 adds only the fixed observed run metadata tail";
@@ -130,7 +133,8 @@ static void maximum(){
  std::memcpy(fixture.current.build_id,UiCurrentBuildId,sizeof UiCurrentBuildId);
  const Bytes nine=encode(fixture);CHECK(nine[3]=='9'&&nine.size()==eight.size()+UiProgressMetadataBytes);
  CHECK(!std::memcmp(nine.data()+8,eight.data()+8,eight.size()-8));
- CHECK(decode_ui_progress(nine.data(),nine.size(),decoded)&&encode(decoded)==nine);
+ CHECK(decode_ui_progress(nine.data(),nine.size(),decoded)&&decoded.timeline.flags==(TimelineInitialized|TimelineLegacyAccess));
+ decoded.timeline={};CHECK(encode(decoded)==nine);
  export_bytes("full-profile-v9.nsh",nine);
  std::printf("Maximum NSH9=%zu bytes; metadata tail=%u bytes.\n",nine.size(),UiProgressMetadataBytes);
 }

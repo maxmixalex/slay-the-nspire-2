@@ -7,6 +7,7 @@ or has different inputs, its dependencies are rebuilt before it is run.
 from __future__ import annotations
 
 import ast
+import errno
 import hashlib
 import json
 import os
@@ -125,25 +126,38 @@ class SpaceMeter:
 
 class WorkLock:
     """An OS-released lock also recovers after a killed converter process."""
-    def __init__(self, work):
+    def __init__(self, work, *, blocking=False):
         self.work = Path(work)
+        self.blocking = blocking
 
     def __enter__(self):
         self.work.mkdir(parents=True, exist_ok=True)
         self.stream = (self.work/'.converter-lock').open('a+b')
         try:
             # Reading the protected byte already raises EACCES on Windows.
-            # Inspect metadata only, then let the nonblocking lock arbitrate.
+            # Inspect metadata only, then let the OS lock arbitrate.
             if not os.fstat(self.stream.fileno()).st_size:
-                self.stream.write(b'\0')
-                self.stream.flush()
+                try:
+                    os.write(self.stream.fileno(), b'\0')
+                except OSError:
+                    # Another initializer may already own the now populated
+                    # byte. Do not read it or flush a stale buffered write.
+                    if not os.fstat(self.stream.fileno()).st_size:
+                        raise
             self.stream.seek(0)
             if os.name == 'nt':
                 import msvcrt
-                msvcrt.locking(self.stream.fileno(), msvcrt.LK_NBLCK, 1)
+                while True:
+                    try:
+                        msvcrt.locking(self.stream.fileno(), msvcrt.LK_NBLCK, 1)
+                        break
+                    except OSError as exc:
+                        if not self.blocking or exc.errno not in (errno.EACCES, errno.EAGAIN, errno.EDEADLK):
+                            raise
+                        time.sleep(.05)
             else:
                 import fcntl
-                fcntl.flock(self.stream.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+                fcntl.flock(self.stream.fileno(), fcntl.LOCK_EX | (0 if self.blocking else fcntl.LOCK_NB))
         except OSError as exc:
             self.stream.close()
             raise ValueError('Another conversion is using this --work directory; choose a separate directory or wait for it to finish') from exc

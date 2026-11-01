@@ -1,3 +1,21 @@
+# UI24 bounded world sampling — validation checkpoint
+
+The shipped entry point now sets one native numerical thread before frozen
+multiprocessing bootstrap; complete enemy and rest-actor jobs use the existing
+validated sampler in at most two spawned processes. Bounds, output directory
+assembly, frame encoding and clocks retain their original order and algorithms.
+The parent releases cached atlas pages before worker samplers start. Cross-platform
+blocking cache locks serialize initialization and duplicated rest jobs, while
+the ordinary workspace lock still rejects concurrent converters immediately.
+
+The asset-free frozen self-test requires two distinct spawned interpreters,
+real NumPy solves, the one-thread environment, serialized shared-lock updates,
+released locks and removed temporary directories. The Windows workflow runs
+this same executable check; its result for this checkpoint is still pending.
+Complete original-job timing, process-tree RSS, temporary bytes and exact frame
+and metadata comparisons are the next acceptance gate. Historical one-frame
+thread experiments are not performance evidence for this change.
+
 # UI24 original Timeline locale tail and static Neow producer integration
 
 The converter now inserts the verified NWFv3 static-field transform after the
@@ -1127,3 +1145,10 @@ Actual firmware shows legacy compatibility with unknown obtain dates, and a new
 profile shows only Neow, locked Custom/Daily and the single initial character.
 The new-profile obtain/reveal/save-resume flow and reduced candidate acceptance
 remain in progress; these observations do not yet close the Timeline scope gate.
+
+The fixture rerun passed eleven of twelve selected targets, including departure
+timing under the same restored discovery facts. It exposed the same migration
+upgrade assumption in the maximum-size NSH8/9 cases. Those now assert the new
+compatibility flag separately and still require byte-identical re-encoding of
+each historical payload with only that new extension removed. The failed run
+is preserved; a fresh published rerun is required before recording a full pass.

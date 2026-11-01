@@ -197,9 +197,23 @@ def self_test():
     verify_runtime_routes()
     from concurrent.futures import ProcessPoolExecutor
     import multiprocessing
-    with ProcessPoolExecutor(max_workers=1,mp_context=multiprocessing.get_context('spawn')) as pool:
-        if pool.submit(digest,Path(__file__)).result(timeout=30)!=digest(Path(__file__)):
-            raise ValueError('Embedded multiprocessing worker could not import its source recipe')
+    from converter_threads import worker_probe, VARIABLES
+    from converter_workspace import WorkLock
+    with tempfile.TemporaryDirectory(prefix='nspire2-spawn-check-') as directory:
+        with ProcessPoolExecutor(max_workers=2,mp_context=multiprocessing.get_context('spawn')) as pool:
+            if pool.submit(digest,Path(__file__)).result(timeout=30)!=digest(Path(__file__)):
+                raise ValueError('Embedded multiprocessing worker could not import its source recipe')
+            checks=[pool.submit(worker_probe,directory,number) for number in range(2)]
+            checked=[check.result(timeout=30) for check in checks]
+        if (len({check.pop('pid') for check in checked})!=2 or
+                any(check!={'environment':{name:'1' for name in VARIABLES},
+                            'numerical_solve':True} for check in checked) or
+                (Path(directory)/'counter').read_text()!='2'):
+            raise ValueError('Frozen workers did not preserve the numeric budget and shared lock')
+        with WorkLock(Path(directory)/'shared'):
+            pass
+    if Path(directory).exists():
+        raise ValueError('Frozen worker scratch did not close and clean up')
     # An unsupported protocol is rejected before attempting to load a skeleton.
     result=subprocess.run([os.environ['NSPIRE_SPINE_ADAPTER']],input='{"schema_version":2}\n',
         text=True,capture_output=True,check=True,timeout=30)
@@ -235,6 +249,8 @@ def self_test():
         raise ValueError('Bundled Neow source noise differs from its float32 oracle')
     return dict(passed=True,mandatory_linked_arm_validation=arm_proof,recipe_modules=len(modules),spawn_worker=True,spine_protocol=True,decim_samples=len(decim),
         original_ascii_seed_encoder=True,streamed_seed_file=True,
+        native_numeric_threads=1,spawned_numeric_workers_verified=True,
+        spawned_distinct_processes=2,spawned_locks_released=True,spawned_temporary_files_removed=True,
         utf8_mode=bool(sys.flags.utf8_mode),unicode_default_io=True,
         retirement_route_sources=len(retirement_plan['runtime_route_sources']),retirement_routes_verified=True,
         vantom_pixels=field.size,vantom_sha256=noise_hash,random_pixels=50,random_sha256=random_hash,
@@ -281,7 +297,8 @@ class Recipe:
         self.add('base', 'build_content', [self.game, '--output', base.parent, '--font', font,'--host-intermediates'], [base])
         world = self.directory('world')/'world.nsp'
         self.add('world', 'build_world', [self.game, base, '--output', world, '--font', font, *native,
-            '--fastnoise-header', self.noise, '--cache', self.directory('cache/world'),'--host-intermediates'], [world])
+            '--fastnoise-header', self.noise, '--cache', self.directory('cache/world'),
+            '--workers',self.workers,'--host-intermediates'], [world])
         tiled = self.directory('tiles')/'tiles.nsp'
         self.add('tiles', 'content_tiles', ['--input', world, '--output', tiled, '--work', self.directory('cache/tiles'),
             '--receipt', tiled.with_suffix('.json'), '--workers', self.workers,
@@ -620,6 +637,8 @@ def run_stages(stages, work, identity, stop_after=None, *, compact=False, keep_i
 
 
 def main(argv=None):
+    from converter_threads import configure
+    configure()
     argv=list(sys.argv[1:] if argv is None else argv)
     if argv[:1]==['--internal-stage']:
         internal(argv[1],argv[2:]);return 0
@@ -704,6 +723,7 @@ def main(argv=None):
         from run_logged import inventory
         from converter_workspace import scoped_identities
         identity=scoped_identities(ROOT,recipe.stages,dict(reference=reference,
+            native_numeric_threads=1,
             pck=recipe.reference['pck_sha256'],assembly=recipe.reference['assembly_sha256'],runtime=digest(runtime),noise=digest(noise),
             arm_elf=digest(arm_elf),arm_source=arm_record['source_files'],
             helpers={key:digest(value) for key in ('NSPIRE_SPINE_ADAPTER','NSPIRE_FASTNOISE_LIBRARY')
@@ -714,6 +734,7 @@ def main(argv=None):
             summary=json.loads((work/'receipts/pipeline.json').read_text(encoding='utf-8'))
             receipt=json.loads((output/'converter-receipt.json').read_text(encoding='utf-8'))
             receipt['pipeline']={key:value for key,value in summary.items() if key!='stages'}
+            receipt['execution']=dict(worker_process_limit=args.workers,native_numeric_threads=1)
             atomic_json(output/'converter-receipt.json',receipt)
             print(f"Pipeline: {summary['total_elapsed_seconds']:.2f} seconds; measured peak temporary bytes {summary['peak_work_bytes']:,}; retained {summary['retained_work_bytes']:,}.",flush=True)
             print(f'Resource conversion complete: {output}/data. Place this data folder beside the matching UI23 nSpire2.tns launcher from the calculator package.',flush=True)

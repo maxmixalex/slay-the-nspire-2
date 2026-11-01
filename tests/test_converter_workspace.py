@@ -7,6 +7,8 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from concurrent.futures import ThreadPoolExecutor
+import time
 from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]/'tools'))
@@ -117,6 +119,19 @@ class WorkspaceTests(unittest.TestCase):
             with WorkLock(directory):
                 with self.assertRaisesRegex(ValueError,'Another conversion'):
                     with WorkLock(directory):pass
+            with WorkLock(directory):pass
+
+    def test_parallel_cache_initializers_wait_then_release_the_shared_lock(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path=Path(directory)/'count'
+            def increment(_):
+                with WorkLock(directory,blocking=True):
+                    old=int(path.read_text()) if path.exists() else 0
+                    time.sleep(.005)
+                    path.write_text(str(old+1))
+            with ThreadPoolExecutor(max_workers=4) as pool:
+                list(pool.map(increment,range(12)))
+            self.assertEqual(path.read_text(),'12')
             with WorkLock(directory):pass
 
     def test_immutable_alias_replacement_does_not_overwrite_previous_input(self):

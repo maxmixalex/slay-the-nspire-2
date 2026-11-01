@@ -12,7 +12,6 @@ import argparse
 import atexit
 from concurrent.futures import ProcessPoolExecutor
 from contextlib import contextmanager
-import fcntl
 import multiprocessing
 import os
 from pathlib import Path
@@ -33,6 +32,7 @@ from prefetch_world_clips import open_cache
 from reference_inventory import sha256, verify_release
 from world_enemy_assets import RUNTIME_SHA256, SpineSampler
 from world_ui_profile import REST_ACTOR_CLIP_ROWS, validate_headers
+from converter_workspace import WorkLock
 
 
 def cached_rest_clip(cache, job, scope):
@@ -48,12 +48,8 @@ def job_lock(cache, job, scope):
     """Let workers share one completed record for the same cache key."""
     directory = cache.directory / 'prefetch-rest-locks'
     directory.mkdir(parents=True, exist_ok=True)
-    with (directory / (cache.key('clip', job, scope) + '.lock')).open('a') as guard:
-        fcntl.flock(guard.fileno(), fcntl.LOCK_EX)
-        try:
-            yield
-        finally:
-            fcntl.flock(guard.fileno(), fcntl.LOCK_UN)
+    with WorkLock(directory/cache.key('clip', job, scope), blocking=True):
+        yield
 
 
 _worker = None
@@ -90,6 +86,30 @@ def prefetch_job(item):
         return number, job['key'], 'baked', len(payload)
 
 
+def prefetch(cache, game, runtime, dotnet, fastnoise, workers=2):
+    """Reuse the checked rest sampler in bounded independent processes."""
+    sources = cache.source_files
+    scope = render_scope('rest-actor-clip', sources)
+    pending = []
+    for number in range(len(REST_ACTOR_CLIP_ROWS)-1, -1, -1):
+        job = REST_ACTOR_CLIP_ROWS[number]
+        if job['kind'] != 'rest-actor-clip':
+            raise ValueError('Rest prefetch received a non-rest job')
+        if cached_rest_clip(cache, job, scope) is None:
+            pending.append((number, job))
+    print(f'Rest prefetch: {len(pending)} missing of {len(REST_ACTOR_CLIP_ROWS)} clips; {workers} workers; cache {cache.identity}', flush=True)
+    report = dict(workers=workers, requested_jobs=len(REST_ACTOR_CLIP_ROWS), missing_jobs=len(pending), baked=0, reused=0)
+    if pending:
+        with ProcessPoolExecutor(max_workers=workers,
+                mp_context=multiprocessing.get_context('spawn'), initializer=initialize_worker,
+                initargs=(str(game), str(cache.directory.parent), cache.dependencies, sources,
+                          str(runtime), dotnet, str(fastnoise))) as pool:
+            for completed, (number, key, status, size) in enumerate(pool.map(prefetch_job, pending), 1):
+                report[status] += 1
+                print(f'Rest prefetch {completed}/{len(pending)} clip {number+1}: {key}: {status}, {size} bytes', flush=True)
+    return report
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('game', type=Path)
@@ -109,27 +129,7 @@ def main(argv=None):
         spine_runtime=sha256(runtime), fastnoise_header=sha256(fastnoise),
         python=sys.version, numpy=np.__version__, pillow=Image.__version__, lz4=lz4.__version__)
     cache = open_cache(args.cache, dependencies, sources)
-    scope = render_scope('rest-actor-clip', sources)
-    pending = []
-    # Reverse the serial converter's order so the two producers usually work
-    # on different jobs. A future profile cannot silently add another kind.
-    for number in range(len(REST_ACTOR_CLIP_ROWS) - 1, -1, -1):
-        job = REST_ACTOR_CLIP_ROWS[number]
-        if job['kind'] != 'rest-actor-clip':
-            raise ValueError('Rest prefetch received a non-rest job')
-        cached = cached_rest_clip(cache, job, scope)
-        if cached is None:
-            pending.append((number, job))
-    print(f'Rest prefetch: {len(pending)} missing of {len(REST_ACTOR_CLIP_ROWS)} clips; '
-          f'{args.workers} workers; cache {cache.identity}', flush=True)
-    if pending:
-        with ProcessPoolExecutor(max_workers=args.workers,
-                mp_context=multiprocessing.get_context('spawn'), initializer=initialize_worker,
-                initargs=(str(game), str(args.cache), dependencies, sources,
-                          str(runtime), args.dotnet, str(fastnoise))) as pool:
-            for completed, (number, key, status, size) in enumerate(pool.map(prefetch_job, pending), 1):
-                print(f'Rest prefetch {completed}/{len(pending)} clip {number + 1}: '
-                      f'{key}: {status}, {size} bytes', flush=True)
+    prefetch(cache, game, runtime, args.dotnet, fastnoise, args.workers)
     print('Complete: rest cache population only; final pack validation still belongs to build_world.', flush=True)
 
 
