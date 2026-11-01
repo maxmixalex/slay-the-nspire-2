@@ -147,6 +147,7 @@ class Content {
     const uint8_t* payload(uint32_t offset,uint32_t count,uint8_t* scratch,uint32_t capacity)const;
     const uint8_t* glyph_record(uint32_t cp,int size,unsigned style=0)const;
     Picture image_payload(int id,const uint8_t* supplied,uint32_t supplied_size)const;
+    Picture fire_image(int id)const;
 public:
     bool open(const uint8_t*,size_t);
     bool open(ResourceSource);

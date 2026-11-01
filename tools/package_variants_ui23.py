@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Build the two matching calculator editions and one optional-language ZIP.
 
-All private resources remain outside the source repository. Installation sizes
-are the launcher plus every required .tns file, in decimal bytes, before saves.
+All private resources remain outside the source repository. The hard installation gate counts every extracted archive member, in decimal
+bytes, before saves; launcher/data and documentation are also reported separately.
 """
 from __future__ import annotations
 
@@ -11,6 +11,7 @@ import hashlib
 import json
 from pathlib import Path
 import subprocess
+import shutil
 import sys
 import tempfile
 import zipfile
@@ -30,7 +31,7 @@ def digest(path):
     return value.hexdigest()
 
 
-def inspect_resources(directory):
+def inspect_resources(directory, expected_profile):
     common = (directory / "nSpire2.dat.tns").read_bytes()
     required = ["nSpire2.dat.tns", "nSpire2.eng.dat.tns", "nSpire2.zhs.dat.tns"]
     if common[:4] == b"NSM1":
@@ -40,6 +41,9 @@ def inspect_resources(directory):
     for code in LANGUAGES:
         path = directory / ("nSpire2." + code + ".dat.tns")
         logical = reconstruct(common, path.read_bytes(), code)
+        profile = 'no-animations' if logical[36:40] == b'NAF1' else 'animated'
+        if profile != expected_profile:
+            raise ValueError('Locale animation profile differs from its package folder: '+code)
         locales[code] = {"bytes": path.stat().st_size, "sha256": digest(path),
                          "logical_bytes": len(logical),
                          "logical_sha256": hashlib.sha256(logical).hexdigest()}
@@ -66,7 +70,7 @@ def build(args):
     directories = {"animated": args.animated, "no-animations": args.no_animations}
     resource_checkpoints = {"animated": args.resource_checkpoint,
                             "no-animations": args.no_animations_resource_checkpoint or args.resource_checkpoint}
-    resources = {name: inspect_resources(path) for name, path in directories.items()}
+    resources = {name: inspect_resources(path, name) for name, path in directories.items()}
     for row in resources.values():
         row["installed_bytes"] = launcher_bytes + row["required_bytes"]
     meets_budget = resources["animated"]["installed_bytes"] <= args.maximum_animated_bytes
@@ -95,6 +99,13 @@ def build(args):
             archive = args.output / (stem + "-" + profile + "-bilingual-calculator.zip")
             candidates[0].replace(archive)
             receipts[profile] = check_archive(archive)
+            reports = list(destination.glob('*-validation.json'))
+            if len(reports) != 1:
+                raise ValueError('Expected exactly one separate complete validation record')
+            proof_path = args.output/(stem+'-'+profile+'-validation.json')
+            shutil.copyfile(reports[0], proof_path)
+            receipts[profile]['validation_file'] = proof_path.name
+            receipts[profile]['validation_sha256'] = digest(proof_path)
             receipts[profile]["installed_bytes"] = resources[profile]["installed_bytes"]
             if profile == "animated" and receipts[profile]["extracted_bytes"] > args.maximum_animated_bytes:
                 meets_budget = False
@@ -109,10 +120,13 @@ def build(args):
         "请选择与你安装的版本对应的文件夹：\n"
         "animated = 完整动画版；no-animations = 无人物/怪物连续动画版。\n"
         "仅将其中所需的 data/nSpire2.<language>.dat.tns 复制到游戏 data 文件夹。\n"
-        "两个版本的语言寻址不同，请勿混用。英语和简体中文已包含在两个完整安装包。\n\n"
+        "本ZIP只配套本轮提供的对应主包；两个动画档的语言寻址不同，请勿混用。英语和简体中文已在两个主包中。\n\n"
         "Choose the directory matching your calculator edition: animated or no-animations.\n"
         "Copy only the desired data/nSpire2.<language>.dat.tns files into the game's data folder.\n"
-        "The editions use different resource addresses. Do not mix their locale files.\n"
+        "This ZIP matches only the two main installers provided with this release; profile resource addresses differ.\n"
+        "Do not mix their locale files or use this ZIP with independently converted data.\n"
+        "自行转换时，可选语言与common/用途包须来自同一次转换，不能混用此预制ZIP，即使版本/动画档相同。\n"
+        "For fresh conversion, common/concern files and optional locales must come from that same conversion, even if version/profile labels match.\n"
         "English and Simplified Chinese are already in both complete installers.\n\n"
         "Available additional locale codes: " + ", ".join(extras) + "\n")
     with zipfile.ZipFile(optional, "w", zipfile.ZIP_DEFLATED, compresslevel=6) as archive:

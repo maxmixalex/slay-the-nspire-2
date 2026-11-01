@@ -40,6 +40,8 @@ static bool draw(Canvas&c,unsigned scene,uint32_t elapsed){
  if(c.a.content.ui_image(AuxiliaryFirst+scene)!=int(FirstImage+1+scene))return false;
  const uint32_t seed=fake_merchant::hash(uint32_t(c.a.game.seed)^unsigned(c.a.game.floor)*0x9e3779b9u^
   c.a.ancient_dialogue.entered^(scene?0x54455a43u:0x4e454f57u));
+ if(scene&&c.a.content.ui_image(ancient_fire_ui23::Auxiliary)==int(ancient_fire_ui23::ParameterImage))
+  return ancient_fire::draw(c,elapsed,seed);
  if(scene&&c.a.content.ui_image(tez_cinders_ui23::AuxiliaryFirst)==int(tez_cinders_ui23::FirstImage+1))
   return tez_cinders::draw(c,elapsed,seed);
  if(!scene){

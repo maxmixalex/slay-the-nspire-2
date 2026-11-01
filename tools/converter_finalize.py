@@ -257,7 +257,7 @@ def add_final_stages(recipe, source_editions, output, codes, no_animations):
     target = recipe.directory('ancient-scenes45')/'eng.nsp'
     exact_scenes = no_animations or getattr(recipe, 'quality_policy', DEFAULT_QUALITY_POLICY) == 'exact'
     scene_options = [] if exact_scenes else ['--bounded-color-hold', '--key-interval', 32, '--retained-planes']
-    recipe.add('ancient-scenes45', 'ancient_scene_ui23', ['--input', logical,
+    recipe.add('ancient-scenes45', 'ancient_scene_compact_ui23', ['--input', logical,
         '--output', target, '--pck', recipe.pck, '--runtime', recipe.runtime,
         '--dotnet', recipe.dotnet, '--work', recipe.directory('cache/ancient-scenes45'),
         '--workers', workers, '--authored-lights', *scene_options], [target,target.with_suffix('.json')]); logical = target
@@ -274,7 +274,7 @@ def add_final_stages(recipe, source_editions, output, codes, no_animations):
     recipe.add('tanx46','tanx_scene_ui23',['--input',logical,'--output',target,'--pck',recipe.pck,
         '--work',recipe.directory('cache/tanx46')],[target,target.with_suffix('.json')]);logical=target
     target=recipe.directory('ancient-lights46')/'eng.nsp'
-    recipe.add('ancient-lights46','ancient_lights_ui23',['--input',logical,'--output',target,'--pck',recipe.pck,
+    recipe.add('ancient-lights46','ancient_lights_compact_ui23',['--input',logical,'--output',target,'--pck',recipe.pck,
         '--runtime',recipe.runtime,'--work',recipe.directory('cache/ancient-scenes45')],
         [target,target.with_suffix('.json')]);logical=target
     target=recipe.directory('ancient-materials46')/'eng.nsp'
@@ -288,11 +288,12 @@ def add_final_stages(recipe, source_editions, output, codes, no_animations):
                         ('ancient-trajectories46','ancient_turbulence_ui23'),
                         ('neow-post46','neow_post_assets_ui23'),
                         ('vakuu-cinders46','vakuu_cinders_ui23'),
-                        ('neow-particles46','neow_particles_ui23')):
+                        ('neow-particles46','neow_particles_ui23'),
+                        ('ancient-fire46','ancient_fire_ui23')):
         target=recipe.directory(name)/'eng.nsp'
         arguments=['--input',logical,'--output',target,'--pck',recipe.pck,
                    '--work',recipe.directory('cache')/name]
-        if module=='tez_cinders_ui23':
+        if module in ('tez_cinders_ui23','ancient_fire_ui23'):
             arguments+=['--runtime',recipe.runtime,'--light-work',recipe.directory('cache/ancient-scenes45')]
         if module=='neow_post_assets_ui23':
             arguments+=['--noise-header',recipe.noise,*(['--no-animations'] if no_animations else [])]

@@ -25,7 +25,7 @@ class TypedCatalogIntegration(unittest.TestCase):
         modules=[('tanx_scene_ui23',7215),('ancient_lights_ui23',7217),
                  ('ancient_materials_ui23',7220),('ancient_gpu_masks_ui23',7221),
                  ('tez_cinders_ui23',7222),('nonu_fog_ui23',7223),('ancient_turbulence_ui23',7224),
-                 ('neow_post_assets_ui23',7225),('vakuu_cinders_ui23',7226),('neow_particles_ui23',7227)]
+                 ('neow_post_assets_ui23',7225),('vakuu_cinders_ui23',7226),('neow_particles_ui23',7227),('ancient_fire_ui23',7228)]
         marker=object();image=lambda i:('actual-final-file',i)
         for end in e.ENDPOINTS:
             source=SimpleNamespace(aux=list(range(end)),images=list(range(e.ENDPOINTS[end])),data=marker,version=46)
@@ -45,7 +45,7 @@ class TypedCatalogIntegration(unittest.TestCase):
             self.assertEqual(roots,set(range(59667,e.ENDPOINTS[end])) if end>=7215 else set())
 
     def test_failure_in_an_earlier_prefix_is_not_hidden_by_new_extension(self):
-        source=SimpleNamespace(aux=[0]*7227,images=[0]*59732)
+        source=SimpleNamespace(aux=[0]*7228,images=[0]*59751)
         with patch('tanx_scene_ui23.validate',side_effect=ValueError('corrupt original typed root')):
             with self.assertRaisesRegex(ValueError,'corrupt original'):e.validate(source,lambda i:None)
 
@@ -53,11 +53,14 @@ class TypedCatalogIntegration(unittest.TestCase):
         from converter import Recipe
         from converter_finalize import add_final_stages
         names=['ancient-materials46','ancient-gpu-masks46','tez-cinders46','nonu-fog46','ancient-trajectories46',
-               'neow-post46','vakuu-cinders46','neow-particles46']
+               'neow-post46','vakuu-cinders46','neow-particles46','ancient-fire46']
         for reduced in (False,True):
             recipe=Recipe('/game','/work','/private/runtime','dotnet','/noise','-')
             add_final_stages(recipe,recipe.source_stages(),Path('/output'),['eng','zhs'],reduced)
             stages={stage.name:stage for stage in recipe.stages}
+            self.assertEqual(stages['ancient-scenes45'].module,'ancient_scene_compact_ui23')
+            self.assertEqual(stages['ancient-lights46'].module,'ancient_lights_compact_ui23')
+            self.assertEqual('--bounded-color-hold' in stages['ancient-scenes45'].arguments,not reduced)
             for before,after in zip(names,names[1:]):
                 stage=stages[after]
                 self.assertEqual(stage.arguments[stage.arguments.index('--input')+1],str(stages[before].outputs[0]))
@@ -66,6 +69,9 @@ class TypedCatalogIntegration(unittest.TestCase):
             cinder=stages['tez-cinders46'].arguments
             self.assertEqual(cinder[cinder.index('--runtime')+1],'/private/runtime')
             self.assertEqual(cinder[cinder.index('--light-work')+1],'/work/cache/ancient-scenes45')
+            fire=stages['ancient-fire46'].arguments
+            self.assertEqual(fire[fire.index('--runtime')+1],'/private/runtime')
+            self.assertEqual(fire[fire.index('--light-work')+1],'/work/cache/ancient-scenes45')
             self.assertNotIn('--sampled',stages['ancient-trajectories46'].arguments)
             self.assertEqual('--no-animations' in stages[names[0]].arguments,reduced)
             self.assertEqual('--no-animations' in stages['neow-post46'].arguments,reduced)

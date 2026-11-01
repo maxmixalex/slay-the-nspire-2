@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 from pathlib import Path
 import re
@@ -43,11 +44,11 @@ def readme(info):
         validation = '''
 验证范围 / Verification scope
 本包没有计算器实机测试记录，不能据此给出实机帧率或实机峰值内存。
-打包校验覆盖文件完整性和资源内容；画质、性能对照和保留差异的记录附在 data/validation。
-先古场景仍有未实现的独立粒子和材质时钟差异，详见附带的 ui23-retained-differences.md。
+文件与资源校验摘要位于 data/BUILD-INFO.json；详细校验记录单独保存，不占计算器安装空间。
+原尺寸画质、原生运行与模拟器证据的范围及保留差异，见上列运行源代码中的 docs/ui23-retained-differences.md。
 No physical-calculator test is recorded for this package. Calculator FPS and physical peak RAM remain unmeasured.
-Packaging checks file integrity and resource content. Quality, performance and remaining-difference records are included in data/validation.
-Independent Ancient particles and material clocks remain incomplete; see the included ui23-retained-differences.md.
+File and resource validation summaries are in data/BUILD-INFO.json; detailed records are kept separately.
+See docs/ui23-retained-differences.md in the runtime source above for visual, native/emulator evidence and remaining differences.
 '''
     return f"""Slay the Nspire 2 — nSpire {info['version']} (StS II v0.111.0)
 
@@ -64,24 +65,27 @@ data/nSpire2.zhs.dat.tns     简体中文
 state/                      局面、历史、设置、语言和档位 / saves and settings
 
 只安装需要的语言文件。设置中可切换已安装语言；语言选择全局保存。
-公共资源索引和全部用途包必须来自同一版本并一起安装，不能按用途删减。
+公共资源索引、全部用途包与语言文件必须来自同一次配套打包/转换，并采用相同动画档，不能按用途删减。
 升级前退出游戏，保留已有 state 文件夹及其中的档案，不要用包内的空 state 覆盖它。
 删除游戏目录中旧的整个 data 文件夹，然后传入本包的完整 data 文件夹并替换 nSpire2.tns。
 可删除新 data 中不需要的语言文件，但必须保留配套的新索引和全部用途包。
 之前安装的可选语言也必须换成本轮对应文件，不能混用旧版。
+自行转换的资源必须使用同一次转换生成的可选语言，不能混用预制语言ZIP，即使版本和动画档相同。
 这同样适用于旧分包版升级，可避免传输时同时暂存旧大文件和新资源。
 等全部配套文件传输完成后再启动。可选语言只传需要的几种，不必安装全部十六种。
 首次启动按系统语言选择；对应语言缺失或无法加载时尝试英语，再选择首个可用语言。
 主菜单左上角可切换三个档案，各自保存局面、历史与游戏设置。
 程序会创建缺失的 state 文件夹。所有保存、临时文件、备份和诊断文件均写入 state。
 Install only the desired language files in data. Settings lists installed languages.
-Install the matching artwork index and every concern file together. They are all required.
+Install the artwork index, every concern file and locales from the same matching packaging/conversion and animation profile. Every concern file is required.
 Exit the game before updating; keep existing files in state.
 Do not overwrite the existing state folder with the archive's empty state folder.
 Replace the entire old data folder with this archive's matching data folder,
 and replace nSpire2.tns. You may omit unwanted locale files, but keep the
 matching index and every concern file.
 Replace previously installed optional languages with this release's matching files too.
+For freshly converted resources, use optional locales from that same conversion;
+do not mix them with the prebuilt locale ZIP, even when version/profile labels match.
 This also applies to updates from an older multipart installation and avoids
 temporarily storing both old large files and their replacements during transfer.
 Start only after the complete matching set is present.
@@ -189,8 +193,17 @@ def main():
                 locale_storage='NSL3' if args.eng.read_bytes()[:4]==b'NSL3' else 'NSL1/NSL2',
                 calculator_only=args.calculator_only,local_checkpoints=args.local_checkpoints,
                 files={name: path.stat().st_size for name, path in paths.items()})
+    validation_bytes = None
     if content_validation is not None:
-        info['required_content_validation'] = content_validation
+        validation_bytes = (json.dumps(content_validation, ensure_ascii=False, sort_keys=True, indent=2)+'\n').encode('utf-8')
+        info['required_content_validation'] = dict(complete=content_validation['complete'],
+            auxiliary_count=content_validation.get('auxiliary_count'),
+            checked_frame_images=content_validation.get('checked_frame_images'),
+            framed_tables=len(content_validation.get('framed_tables', [])),
+            detailed_record_sha256=hashlib.sha256(validation_bytes).hexdigest(),
+            detailed_record_bytes=len(validation_bytes), details_packaged=False)
+    info['program_resource_sha256'] = {name: hashlib.sha256(path.read_bytes()).hexdigest()
+                                      for name, path in paths.items()}
     if args.stage.startswith('ui23'):
         info['physical_device_tested'] = False
         info['calculator_fps_measured'] = False
@@ -198,15 +211,14 @@ def main():
     stem = f'Slay-the-Nspire-2-{release_version}-bilingual'
     archive = args.output / (stem + '-calculator.zip')
     offline = args.output / (stem + '-offline.html')
+    if validation_bytes is not None:
+        (args.output/(stem+'-validation.json')).write_bytes(validation_bytes)
     texts = {'data/README.txt': readme(info).encode('utf-8'),
              'data/BUILD-INFO.json': (json.dumps(info, ensure_ascii=False, indent=2) + '\n').encode('utf-8')}
     for name in ('COPYING', 'NOTICE.md', 'licenses/Go-BSD-3-Clause.txt',
                  'licenses/OkHSV-Godot-MIT.txt', 'licenses/Noto-Boot-OFL.txt','licenses/NotoEmoji-OFL.txt','licenses/NotoSansSymbols2-OFL.txt'):
         paths["data/licenses/" + Path(name).name] = ROOT / name
     paths['data/licenses/Unicode-License.txt'] = ROOT / 'third_party/unicode/LICENSE'
-    if args.stage.startswith('ui23'):
-        for name in ('ui23-color-storage-evidence.md', 'ui23-retained-differences.md'):
-            paths['data/validation/' + name] = ROOT / 'docs' / name
     with zipfile.ZipFile(archive, 'w', zipfile.ZIP_DEFLATED, compresslevel=6) as out:
         out.writestr('state/', b'')
         for name, path in paths.items():

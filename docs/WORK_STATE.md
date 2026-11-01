@@ -1,3 +1,52 @@
+# UI23 Tez fire and bounded temporal storage stage — final acceptance open
+
+The complete 237 Tez fire instances are implemented in source order with the
+90 lights and 74 cinder emitters. Their geometry follows the room/body clock;
+shader TIME uses the global presentation clock and its own 20-second period.
+The full source catalog is now 7228/59751. The remaining functional Ancient
+family is Neow's four fire layers behind its body, including real foreground
+transmission and additive clamping; that work remains in progress.
+
+The Tez shader retains original source texture resolution and eight-bit noise
+in this checkpoint. A reversible per-page vertical predictor reduces the actual
+append from 575,438 to 494,830 bytes. The existing image cache reconstructs each
+page once on a cold access, using its metadata flag and no new buffer. Actual
+Content reads of every byte, preloaded raw entries, warm repeat requests, aliases,
+eviction and reopening pass 6,632 checks for each raw/predicted mode, including
+GCC UBSan on the predicted pack. The largest decoded group remains 250,240 bytes.
+The 18,332-byte prior ARM margin must be remeasured on this new source.
+
+An independently reviewed temporal hold reduces the same-input 1,052-frame
+body append by 449,834 bytes. It retains all source frame times, dimensions and
+R1/G2/B1 RGB565 error bounds, leaves static pixels exact, and preserves original
+wrap endpoints where a common legal end color does not exist. There is no
+additional green quantization, shared spatial palette or runtime operation.
+Retained body groups decrease from 43 to 35, and decoded input from 5,360,643 to
+4,311,827 bytes, with the same 155,280-byte maximum group. Source-free tests and
+all 1,052 accepted frame hashes pass. Separate consumer modules leave every
+original sampler dependency unchanged and run the original full-frame validator.
+
+The previously published 7227 baseline now has actual complete bilingual
+physical data: 68,571,533 bytes, plus its measured 1,716,856-byte launcher,
+70,288,389 bytes before installation documentation. It is over budget and is
+not a final release. New hold, fire, future Neow data and final packaging must
+be measured together. Both editions still enforce 70,000,000 bytes for every
+extracted archive member; no over-budget release override is authorized.
+
+Packaging retains all 64,024 bytes of license notices and complete bilingual
+instructions. Full validation records are retained outside the installation;
+the installed manifest keeps their digest, length and compact result along with
+program/resource hashes. Optional locales must match both the common data from
+the same conversion and the animation profile. Existing state is preserved.
+
+Actual full-App testing of the earlier 7227 data executes 8,160 frames over all
+eight Ancient rooms. Each room's measured 360-frame interval follows 660 warmup
+frames; every interval has healthy content and zero resource reads. These are
+host correctness/I/O results, not physical-calculator FPS. New fire/hold and the
+final physical data still need that full-scene gate and unchanged-64MB firmware
+execution. The standalone Windows converter at d5ae67e passes actual Actions;
+that older result will not be substituted for the final rebuilt converter.
+
 ## First combined production ARM measurement and CI correction
 
 Published 6cdf8ac links at 22,272,684 bytes, 18,332 below the unchanged UI21

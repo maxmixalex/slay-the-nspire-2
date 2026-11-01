@@ -18,6 +18,7 @@
 #include "tanx_scene_ui23.hpp"
 #include "ancient_materials_ui23.hpp"
 #include "ancient_material_residual.hpp"
+#include "ancient_fire_ui23.hpp"
 #include "source_water_reflection.hpp"
 #include "implicit_geometry.hpp"
 #include "content_animation_profile.hpp"
@@ -89,11 +90,16 @@ static uint8_t* image_buffer(const ImageCache& cache){return image_pixels+unsign
 static unsigned image_bucket(const ImageDescriptor& descriptor){
     return ((descriptor.offset>>1)^(descriptor.offset>>9)^(descriptor.shape>>5)^descriptor.shape^descriptor.length)&(ImageBuckets-1);
 }
+static bool transformed_image(unsigned id){return ancient_material_residual::page(id)||ancient_fire_noise::page(id);}
+static bool image_identity(unsigned a,unsigned b,bool reduced){
+    if(a!=b&&(ancient_fire_noise::page(a)||ancient_fire_noise::page(b)))return false;
+    return ancient_material_residual::same_identity(a,b)||reduced;
+}
 static ImageCache* find_image(const Content* owner,ImageDirectoryView directory,unsigned id){
     const auto descriptor=directory[id];
     for(unsigned link=image_buckets[image_bucket(descriptor)];link;){
         auto& cache=image_cache[link-1];link=cache.next();if(cache.owner!=owner)continue;
-        if((ancient_material_residual::same_identity(cache.id(),id)||owner->reduced_animations())&&directory.equal(cache.id(),id))return &cache;
+        if(image_identity(cache.id(),id,owner->reduced_animations())&&directory.equal(cache.id(),id))return &cache;
     }
     return nullptr;
 }
@@ -365,7 +371,7 @@ bool Content::open(ResourceSource source){
                                                     FramedUi22AuxiliaryCount,character_select_delta::AuxiliaryCount,
                                                     retired_assets_ui22::AuxiliaryCount,ancient_scene_ui23::AuxiliaryCount,tanx_scene_ui23::AuxiliaryCount,
                                                     ancient_lights_ui23::AuxiliaryCount,ancient_materials_ui23::AuxiliaryCount,
-                                                    7221,7222,7223,7224,7225,7226,7227};
+                                                    7221,7222,7223,7224,7225,7226,7227,7228};
                                                 for(unsigned end:endpoints){
                                                     if(next==0x314c4954u)break;
                                                     for(unsigned i=auxiliary;i<end;++i){
@@ -444,7 +450,7 @@ bool Content::open(ResourceSource source){
     static constexpr uint16_t ancient_catalog[][2]={
         {7212,58613},{7214,59667},{7215,59674},{7217,59677},
         {7220,59700},{7221,59710},{7222,59712},{7223,59717},{7224,59729},
-        {7225,59730},{7226,59731},{7227,59732}};
+        {7225,59730},{7226,59731},{7227,59732},{7228,59751}};
     unsigned expected_images=0;
     for(const auto&row:ancient_catalog)if(auxiliary==row[0])expected_images=row[1];
     if(expected_images){
@@ -455,7 +461,7 @@ bool Content::open(ResourceSource source){
             {7214,59673},{7215,59675},{7216,59676},
             {7217,59697},{7218,59698},{7219,59699},
             {7220,59709},{7221,59711},{7222,59716},{7223,59717},
-            {7224,59729},{7225,59730},{7226,59731}};
+            {7224,59729},{7225,59730},{7226,59731},{7227,59750}};
         for(const auto&row:roots)
             if(auxiliary>row[0]&&ui_image(row[0])!=row[1])return reject();
         if(version<45||images_!=expected_images||clips_!=1783||ui_image(AuxiliaryFirst)!=int(MarkerImage))return reject();
@@ -474,6 +480,7 @@ bool Content::open(ResourceSource source){
         if(auxiliary>=7225&&!sized(59729,256,reduced_animations()?100:56))return reject();
         if(auxiliary>=7226&&!sized(59730,32,1))return reject();
         if(auxiliary>=7227&&!sized(59731,256,9))return reject();
+        if(auxiliary>=7228&&!sized(59750,320,217))return reject();
         if(ui_image(U_MerchantBackdrop)!=45810||!sized(45810,320,218))return reject();
         static constexpr uint16_t merchant[][4]={
             {45811,145,320,218},{45956,145,57,70},{46101,256,84,102},
@@ -491,7 +498,7 @@ bool Content::open(ResourceSource source){
 bool Content::image_cached(int id)const{
     if(!healthy()||id<0||unsigned(id)>=images_)return false;
     const auto descriptor=image_directory_[unsigned(id)];
-    return (data_&&descriptor.format<5&&!ancient_material_residual::page(unsigned(id)))||find_image(this,image_directory_,unsigned(id));
+    return (data_&&descriptor.format<5&&!transformed_image(unsigned(id)))||find_image(this,image_directory_,unsigned(id));
 }
 bool Content::reduced_animations()const{
     return content_animation_profile::reduced(metadata_,version_);
@@ -517,13 +524,13 @@ void Content::set_image_cache_profile(bool room_frames,bool selection_frames)con
 }
 bool Content::image_alias(int first,int second)const{
     if(!healthy()||first<0||second<0||unsigned(first)>=images_||unsigned(second)>=images_)return false;
-    return (ancient_material_residual::same_identity(unsigned(first),unsigned(second))||reduced_animations())&&
+    return image_identity(unsigned(first),unsigned(second),reduced_animations())&&
         image_directory_.equal(unsigned(first),unsigned(second));
 }
 unsigned Content::image_cache_pages(int id)const{
     if(!healthy()||id<0||unsigned(id)>=images_)return 0;
     const auto descriptor=image_directory_[unsigned(id)];
-    if(data_&&descriptor.format<5&&!ancient_material_residual::page(unsigned(id)))return 0;
+    if(data_&&descriptor.format<5&&!transformed_image(unsigned(id)))return 0;
     if(image_pages_&&image_pages_[id])return image_pages_[id];
     if(const auto* cache=find_image(this,image_directory_,unsigned(id)))return cache->pages;
     if(version_>=RetainedContentVersion){
@@ -537,8 +544,30 @@ ImageCacheUsage Content::image_cache_usage()const{
     return used;
 }
 Picture Content::image(int id)const{
+    if(id>=0&&ancient_fire_noise::page(unsigned(id)))return fire_image(id);
     if(id>=0&&ancient_material_residual::page(unsigned(id)))return material_image(id);
     return image_payload(id,nullptr,0);
+}
+Picture Content::fire_image(int id)const{
+    using namespace ancient_fire_noise;
+    if(!healthy()||id<0||!page(unsigned(id))||images_<ancient_fire_ui23::Images)return {};
+    if(const auto*entry=find_image(this,image_directory_,unsigned(id)))
+        if(entry->packed_format&Reconstructed)return image_payload(id,nullptr,0);
+    ancient_fire_ui23::Table table;
+    if(ui_image(ancient_fire_ui23::Auxiliary)!=int(ancient_fire_ui23::ParameterImage)||
+       !table.read(image_payload(ancient_fire_ui23::ParameterImage,nullptr,0)))return {};
+    const unsigned mode=ancient_fire_ui23::dword(table.data+48);
+    // Read the mode before requesting the page; the parameter view may then
+    // be evicted. Restore only the owned decoded cache, never input/group bytes.
+    const Picture picture=image_payload(id,nullptr,0);
+    auto*entry=find_image(this,image_directory_,unsigned(id));
+    const auto p=layout(unsigned(id));
+    if(!entry||!picture.pixels||picture.w!=320||picture.h!=(p.used+639)/640||picture.format||picture.alpha||picture.palette)return {};
+    if(!(entry->packed_format&Reconstructed)){
+        if(!restore(image_buffer(*entry),unsigned(picture.w)*picture.h*2,unsigned(id),mode)){discard_image(*entry);return {};}
+        entry->packed_format|=Reconstructed;
+    }
+    return picture;
 }
 Picture Content::material_image(int id)const{
     const Picture empty{};using namespace ancient_material_residual;
@@ -727,7 +756,7 @@ Picture Content::image_payload(int id,const uint8_t* supplied,uint32_t supplied_
             // separate header read used to fetch an extra 4 KiB cache page.
             if(fmt==5){fmt=source[0];size=u32(source+1);}
             if(fmt>4||!size||size>MaxImageBytes)return fail();
-            if(stored_format!=5&&data_&&!ancient_material_residual::page(unsigned(id))){p=source;if(!valid_image(p,size,w,h,fmt))return fail();}
+            if(stored_format!=5&&data_&&!transformed_image(unsigned(id))){p=source;if(!valid_image(p,size,w,h,fmt))return fail();}
             else {
                 ImageReservation reservation(size);uint8_t*output=reservation.bytes();if(!output)return fail();
                 if(stored_format==5){if(!decode_lz4(source+5,length-5,output,size))return fail();}
@@ -736,7 +765,7 @@ Picture Content::image_payload(int id,const uint8_t* supplied,uint32_t supplied_
             }
         }
     }
-    if(image_pages_&&!(data_&&stored_format<5&&!ancient_material_residual::page(unsigned(id))))image_pages_[id]=uint8_t((size+ImagePageBytes-1)/ImagePageBytes);
+    if(image_pages_&&!(data_&&stored_format<5&&!transformed_image(unsigned(id))))image_pages_[id]=uint8_t((size+ImagePageBytes-1)/ImagePageBytes);
     if(fmt==4)return {p,nullptr,nullptr,w,h,4};
     if(fmt>=2)return {p+512,fmt==3?p+512+w*h:nullptr,p,w,h,(uint8_t)fmt};
     return {p,fmt?p+w*h*2:nullptr,nullptr,w,h,(uint8_t)fmt};

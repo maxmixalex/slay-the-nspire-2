@@ -2,7 +2,7 @@
 
 Reference: original v0.111.0 / 41cef1ea. This ledger distinguishes implemented
 source from completed release acceptance. The combined implementation through
-auxiliary/image endpoint **7227/59732** still requires its final original-data
+auxiliary/image endpoint **7228/59751** still requires its final original-data
 conversion, whole-scene rendering, allocation, storage and guest gates. It is
 not a claim of complete Godot parity. Earlier closures remain recorded in
 [the UI20 reconciliation](ui20-retained-differences.md).
@@ -26,8 +26,16 @@ checkpoint interval. Patch pointers are consumed before the next image request;
 no framebuffer or usable cache grows.
 
 Full animation uses cyclic RGB565 hold bounded to red/blue±1 and green±2.
-Nonconvergent pixels remain source-exact, including the loop seam. Exact-quality
-and no-animation conversion disable this hold. The historical loop-only append
+The current v2 consumer keeps a color through the longest consecutive source
+interval whose channel-error bounds intersect. Static pixels remain exact;
+loop endpoints share a legal color when possible and otherwise each endpoint
+is source-exact. All1,052 frame hashes reproduce the reviewed v2 candidate,
+which saves449,834 grouped bytes against the preceding same-source hold. This
+is a measured intermediate saving, not final physical-install acceptance.
+Separate body and light-verification consumers use the same policy; the strict
+verifier still reconstructs every frame. The seven original sampler dependency
+files and their source-cache identities remain unchanged. Exact-quality and
+no-animation conversion disable the hold and retain the exact source pose. The historical loop-only append
 added1,852,322 bytes; this is not a size estimate for the newer complete effects.
 Its English/Chinese App tests made zero source reads through warm loops, with
 1,188/665 peak image pages for Neow/Tezcatara below the unchanged1,728-page pool.
@@ -55,12 +63,21 @@ present; combined final-data and performance acceptance remains pending.
 | Orobas |4 CPU,5 GPU |Four CPU lights, two stationary light plates, three turbulence families and independently clocked water material |None identified |
 | Pael |5 CPU,7 GPU |Five CPU lights, four stationary light plates and three turbulence families |None identified |
 | Tanx |4 CPU |Two grain/ash families, two scrolling smoke families and source water material |None identified |
-| Tezcatara |90 CPU,74 GPU |All90 authored light nodes and74×24 cinders, including moving-source-node inheritance and original interleave |79 stepped flat-fire plus158 additive-fire instances |
+| Tezcatara |90 CPU,74 GPU |All90 authored light nodes,74×24 cinders and237 source fire instances (79 flat/158 additive), with original interleave and moving-source inheritance |None identified; final physical/guest gates pending |
 | Vakuu |5 CPU,13 GPU |Five CPU lights, first cinder family, three stationary overlays, four turbulence families and five final sparkle emitters |None identified |
 
-The remaining fire instances must execute in their authored order and on their
-independent clocks; registering a descriptor or adding a generic overlay does
-not close them. The two hidden Neow water-post siblings remain hidden.
+The four Neow fire instances remain the active source-function gap. They must
+execute behind the body in authored order; registering a descriptor or adding
+a generic overlay does not close them. Tezcatara fire geometry follows room
+elapsed time and its16,667 ms body loop; its shader uses the existing global
+visual clock with its own20,000 ms period. Reduced mode fixes both clocks at0.
+The18 exact byte-channel texture pages use explicit raw/up modes. Each up page
+retains its first source row literally and restores later rows once inside its
+existing decoded-image cache entry. There is no cross-page dependency, new
+buffer or warm reconstruction. Actual public Content reads of all18 pages,
+preloading, warm reuse, eviction and reopen reproduce every original byte.
+The current up appender adds494,830 bytes versus575,438 for raw pages, a measured
+80,608-byte saving; final physical storage and guest cost are still pending. The two hidden Neow water-post siblings remain hidden.
 
 The twelve turbulent families retain every authored particle and all45,484
 stored position keys, produced by the original float32 force/curl equations.
