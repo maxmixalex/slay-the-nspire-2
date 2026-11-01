@@ -1056,3 +1056,16 @@ ARM allocation and actual calculator Timeline acceptance remain pending.
 Short syntax checks pass the modified production sources; an incorrect test
 assertion treating the Epoch result as bool was corrected before this commit.
 The previously verified 297-check foundation remains historical evidence only.
+
+## UI24 Timeline allocation correction — formal rebuild pending
+
+The first connected Timeline ARM build was correctly rejected at 22,300,920
+bytes against the unchanged 22,291,016-byte production limit. No arena or
+allocation exception was accepted. Controlled linked-object probes found
+1,432 bytes from three new Timeline-only UI functions using ARM minsize/noinline,
+2,432 from card generation at -Os, and 11,284 from run generation at -Os.
+Those focused source-specific policies are now shared by the launcher and
+actual ARM converter helper. Map generation, renderer and combat kernels stay
+at -O2. The rejected world-card -Oz probe needed an undefined 64-bit shift
+helper and is not adopted. Probes are not a formal release or guest acceptance;
+the complete clean-source ARM rebuild and ordinary calculator tests follow.

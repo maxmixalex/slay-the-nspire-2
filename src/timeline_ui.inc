@@ -1,5 +1,10 @@
+#if defined(__arm__) && defined(__clang__)
+#define SPIRE_TIMELINE_COLD __attribute__((minsize,noinline))
+#else
+#define SPIRE_TIMELINE_COLD
+#endif
 struct TimelineTextContext {const App*a;unsigned id;};
-static LocalizedValue timeline_text_value(const void*data,const char*key){
+static SPIRE_TIMELINE_COLD LocalizedValue timeline_text_value(const void*data,const char*key){
     const auto&v=*static_cast<const TimelineTextContext*>(data);const auto&epoch=timeline_epochs[v.id];
     const auto same=[](const char*a,const char*b){while(*a&&*a==*b){++a;++b;}return *a==*b;};
     if(same(key,"IsRevealed"))return {true,v.a->progress.timeline.states[v.id]==EpochState::Revealed};
@@ -10,8 +15,8 @@ static LocalizedValue timeline_text_value(const void*data,const char*key){
     if(same(key,"Event"))return {true,0,1,v.a->content.world_title("events",original_event_key(OriginalEventId(epoch.models[0])))};
     return {};
 }
-static const char* timeline_text(const App&a,unsigned id,unsigned field){return a.content.string(int(TimelineTextBase+id*4+field));}
-static void timeline_screen(Canvas&c){
+static SPIRE_TIMELINE_COLD const char* timeline_text(const App&a,unsigned id,unsigned field){return a.content.string(int(TimelineTextBase+id*4+field));}
+static SPIRE_TIMELINE_COLD void timeline_screen(Canvas&c){
     auto&a=c.a;const bool zh=a.content.language()==2;const auto&t=a.progress.timeline;
     title_submenu_background(c,195);a.hit_count=0;
     const uint16_t cream=rgb(255,246,226),gold=rgb(239,200,81);
@@ -63,3 +68,4 @@ static void timeline_screen(Canvas&c){
     }
     native_original_back(c,a.progress_page_started);
 }
+#undef SPIRE_TIMELINE_COLD

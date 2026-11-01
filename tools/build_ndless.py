@@ -7,10 +7,12 @@ import argparse
 from zehn import build
 ROOT=Path(__file__).resolve().parents[1]
 # Keep renderers and hot kernels at -O2. Event rules and input dispatch use
-# -Oz; progress and Timeline logic use -Os, keeping codec 64-bit shifts inline.
+# -Oz; progress, Timeline and run/card generation use -Os, keeping 64-bit
+# shifts inline. Map generation, renderers and combat kernels remain -O2.
 # Every release and decoder-validation entry uses this identical policy.
 SIZE_OPTIMIZATION={'src/original_events.cpp':'-Oz','src/ui_progress_codec.cpp':'-Os','src/timeline.cpp':'-Os',
-                   'src/ui_input.cpp':'-Oz','src/pointer.cpp':'-Oz'}
+                   'src/ui_input.cpp':'-Oz','src/pointer.cpp':'-Oz',
+                   'src/run.cpp':'-Os','src/world_card_factory.cpp':'-Os'}
 SIZE_OPTIMIZED_SOURCES=tuple(SIZE_OPTIMIZATION)
 
 def main()->None:

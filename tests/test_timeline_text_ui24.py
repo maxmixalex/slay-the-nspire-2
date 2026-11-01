@@ -29,6 +29,7 @@ class TimelineTextTest(unittest.TestCase):
         self.assertIn((ord('获'), 10, 0), wanted)
         self.assertIn((ord('线'), 12, 0), wanted)
         self.assertIn((ord('线'), 12, 5), wanted)
+        self.assertIn((ord('线'), 10, 5), wanted)
         self.assertIn((ord('揭'), 10, 0), wanted)
         self.assertEqual(len(timeline.PORT_LABELS['zhs']), 9)
 

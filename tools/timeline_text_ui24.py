@@ -110,6 +110,7 @@ def glyph_requirements(texts, language):
     # The port menu heading explicitly selects the bold scene face; the
     # original Epoch heading uses the source locale's substitution rule.
     required.update((ord(c), 12, 5) for c in labels[0])
+    required.update((ord(c), 10, 5) for c in labels[0])
     return {(cp, px, face) for cp, px, face in required if not text_format_control(cp)}
 
 
