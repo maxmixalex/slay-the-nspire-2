@@ -6,7 +6,7 @@ The full-animation English/Simplified-Chinese installation has a hard **70,000,0
 
 Current source, resource identities and acceptance status are recorded in [WORK_STATE.md](docs/WORK_STATE.md), [continuous card materials](docs/ui23-continuous-card-materials.md), and [paged history](docs/ui23-history-archive.md). Native process timings and ARM instruction counts are diagnostic evidence; Firebird guest-clock measurements and physical-handheld measurements are distinct. Earlier results below retain their historical identities.
 
-**Audio, multiplayer and Timeline are excluded.** Original UI fidelity, animation and single-player content breadth remain in scope. Original game data, fonts and calculator images are not included in public source.
+**Audio, multiplayer and Timeline are not implemented.** Original UI fidelity, animation and single-player content breadth remain in scope. Original game data, fonts and calculator images are not included in public source.
 
 ## Active 0.1.0 development
 
@@ -104,10 +104,14 @@ In PowerShell, use `./nspire2-convert.exe`; on Linux, use
 Normal output is `nSpire2-converted`; the reduced-actor edition defaults to
 `nSpire2-converted-no-animations`. `--game`, `--output`, `--work` and `--workers`
 provide explicit locations and worker control when needed.
+The converter writes `data/` and `converter-receipt.json`; it does not produce
+a launcher. Use these resources with the matching UI23 `nSpire2.tns` supplied
+separately. Its embedded ARM ELF validates decoding during conversion.
 
 `--no-animations` keeps essential actor poses and the original action durations.
 The same launcher detects the profile automatically. UI and continuous card
-effects retain their own presentation clocks. All optional language files must
+effects retain their own presentation clocks; Ancient NPC/background effects
+hold their entry pose. All optional language files must
 come from the same conversion as the installed common/artwork set; independently
 converted data must not be mixed with the prebuilt optional-language ZIP.
 

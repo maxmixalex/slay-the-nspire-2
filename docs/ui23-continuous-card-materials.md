@@ -48,8 +48,22 @@ bit-identical full-resolution desktop shaders.
 
 ## Storage and memory
 
-The current private source candidate has the following exact sizes. Final
-edition totals also depend on the matching launcher and publication metadata.
+The table below records the historical private candidate. Its 47,872-byte
+logical increase is not the final producer's result. The official bad0168
+producer's `card-afflictions46-eng` stage changes the logical pack from
+102,799,238 to 102,852,818 bytes: **+53,580 bytes**. After all later storage and
+publication stages, the 11 required English/Chinese data files total
+**68,155,584 bytes**, versus the preceding completed UI23 data's 68,100,890:
+**+54,694 bytes**. Those figures have different transformation boundaries and
+must not be conflated or described as an overall shrink. Final edition totals
+also include the matching launcher, instructions and licenses.
+
+The official `storage-attribution.json` records these boundaries. Its later
+bounded actor color/alpha step is lossy; exact tile coalescing, slot compaction,
+sparse transparent-domain encoding and literal-context retuning are separately
+lossless relative to their inputs. The Entangled blue-displacement field below
+is the same source texture reused by Entangled and Tainted, not two distinct
+resized textures.
 
 | Item | Bytes |
 | --- | ---: |
@@ -62,7 +76,7 @@ edition totals also depend on the matching launcher and publication metadata.
 | New static decorations, sparse decoded | 713,203 |
 | New typed table including padding | 7,168 |
 | New complete packed replacement, including 29 groups/descriptors | 511,254 |
-| Net logical resource increase after retained-block rewrite | 47,872 |
+| Historical private candidate: logical increase after retained-block rewrite | 47,872 |
 
 The bank occupies 26 pages, each at most 131,200 decoded bytes. The largest
 group is 256,264 decoded bytes, below the existing 256 KiB group target and the
@@ -70,7 +84,9 @@ reader's existing limit. There is no new persistent frame or particle pool.
 
 A combat hand containing three or more distinct Affliction families borrows
 the existing 8.5 MiB image /4.25 MiB tile configuration. The total picture arena
-stays 12.75 MiB. Other combats retain the ordinary 6.75 MiB image /6 MiB tile split.
+stays 12.75 MiB. Once selected, this profile remains active until leaving combat,
+so drawing or playing cards across the three-family threshold does not repeatedly
+clear caches. Other combats retain the ordinary 6.75 MiB image /6 MiB tile split.
 Every family requests only its required field/curve/track pages and static
 decorations. All requests finish before the renderer borrows cache pointers;
 it then checks residency and makes no Content request inside the pixel loop.
@@ -79,8 +95,18 @@ The real App range-reader probe exercises all seven families in one hand.
 After 12 seconds covering the idle loops,120 successive frames show 120 changes in the hand region as well as in the full
 framebuffer with zero source calls and zero source bytes, using 1,917 of 2,176
 image pages and 278 entries. A host run measured approximately 5–6.3 ms per frame;
-that is unpaced host CPU timing, not calculator FPS. Firebird and physical
-calculator results must be recorded separately in the final release evidence.
+that is unpaced host CPU timing, not calculator FPS.
+
+The accepted f760 combat renderer, unchanged by the final d935 Ancient-option
+optimization, has actual ordinary 64 MiB Firebird paired measurements with the
+explicit small3 TEST ONLY pack: three families produce 18.3430 FPS / 54.0973 ms
+render over 551 frames; seven produce 9.43565 FPS / 105.6172 ms over 283 frames.
+Both have zero warm source calls and bytes. Exact shared field lookup, opaque
+card-face occlusion and reciprocal smoothstep division improve the earlier
+same-fixture 10.806 / 4.988 FPS results while preserving whole-frame pixels.
+These are emulator stress results, not physical-device performance or a final
+full-package guest claim. Current full/reduced package acceptance belongs to
+the delivery report; see [runtime evidence](ui23-runtime-performance.md).
 
 ## Reproducible entered-game fixture
 

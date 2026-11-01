@@ -1,11 +1,24 @@
 # UI23 retained differences and recovered behavior
 
 Reference: original v0.111.0 / 41cef1ea. This ledger distinguishes implemented
-source from completed release acceptance. The combined implementation through
-auxiliary/image endpoint **7229/60294** still requires its final original-data
-conversion, whole-scene rendering, allocation, storage and guest gates. It is
-not a claim of complete Godot parity. Earlier closures remain recorded in
-[the UI20 reconciliation](ui20-retained-differences.md).
+source, completed runtime/producer checks and final package acceptance. The
+runtime through auxiliary/image endpoint **7229/60294** is accepted as d935,
+with source-equivalent published checkpoint `1298a1b`: Neow measures 11.2930 FPS
+and Nonupeipe 23.0763 FPS on the supplied 64 MiB Firebird, both with zero warm
+resource reads. Linked allocation is 22,290,500 bytes against the unchanged
+22,291,016-byte ceiling. These are emulator results, not physical-device FPS.
+
+Continuous card materials and paged history are implemented; their specific
+precision, capacity and execution boundaries remain explicit below. The actual
+bad0168 producer completed all 83 stages for both default bilingual and all-16-
+locale output. Final full/reduced installation, current-data guest smoke and
+complete extracted package sizes belong to the corresponding delivery report;
+this ledger does not predeclare those unfinished checks. See
+[runtime acceptance](ui23-runtime-performance.md) and its
+[machine-readable receipt](ui23-runtime-validation.json).
+
+This is not a claim of complete Godot parity. Earlier closures remain recorded
+in [the UI20 reconciliation](ui20-retained-differences.md).
 
 ## Ancient skeleton loops
 
@@ -53,12 +66,13 @@ not be described as acceptance of this newer composition.
 The original inventory expands scene instances and excludes authored-hidden
 nodes. Counts below refer to emitter nodes, not simultaneous particles.
 “Implemented” means source producer, typed resources and runtime drawing are
-present; combined final-data and performance acceptance remains pending.
+present. Neow and Nonupeipe have the d935 runtime measurements linked above;
+per-scene final-package acceptance remains a distinct delivery-report gate.
 
 | Ancient | Original active emitters | Current implementation | Still missing active family |
 | --- | --- | --- | --- |
 | Darv |3 CPU |Two source lights and grain stars; source clocks and transforms |None identified |
-| Neow |11 CPU,3 GPU |Ten authored light nodes, CPU grain stars, three cloud nodes, four stepped additive fires behind the body, correct vignette ordering and final screen-reflection post |None identified; combined physical/guest gates pending |
+| Neow |11 CPU,3 GPU |Ten authored light nodes, CPU grain stars, three cloud nodes, four stepped additive fires behind the body, correct vignette ordering and final screen-reflection post |None identified; d935 runtime measured, final-package gates recorded separately |
 | Nonupeipe |13 GPU |Five stationary light overlays, six source fog emitters and two sampled turbulence families |None identified |
 | Orobas |4 CPU,5 GPU |Four CPU lights, two stationary light plates, three turbulence families and independently clocked water material |None identified |
 | Pael |5 CPU,7 GPU |Five CPU lights, four stationary light plates and three turbulence families |None identified |
@@ -174,6 +188,10 @@ ledger audit; that is not an exhaustive equivalence proof of the original game.
 
 ## Actual execution evidence and remaining limits
 
+The current d935 acceptance and paired measurements are recorded in
+[runtime acceptance](ui23-runtime-performance.md). The Pael comparison below
+is historical and is not the final full/reduced installation result.
+
 A supplied CX II firmware image has booted in Firebird. Normal Ndless launch,
 selection, Neow/map, a card/enemy turn, normal save and exit were exercised with
 baseline data. A controlled reduced-Pael test compared the old895 launcher and
@@ -202,11 +220,13 @@ No physical calculator execution has been demonstrated.
   history. Gameplay RNG and canonical save state remain separate.
 - The RTC path has no desktop timezone/DST database and there is no new IME.
   Seed fields, run history, map notes, journals and decoded caches remain finite.
-- Final linked allocation must stay at or below UI21's22,291,016 bytes with
-  unchanged usable capacities. Linked allocation is not measured physical peak
-  memory or a guarantee against every fragmented OS heap.
-- Final cold/warm cost, full/reduced real-data rendering, original-folder CLI
-  execution and the entire extracted 70,000,000-byte installation gate remain
-  mandatory. The default hard cap and both the core-file and complete-archive
+- The accepted d935 linked allocation is 22,290,500 bytes, below the unchanged
+  22,291,016-byte ceiling with 516 bytes remaining and unchanged usable capacities.
+  Linked allocation is not measured physical peak memory or a guarantee against
+  every fragmented OS heap.
+- The actual default-bilingual and all-16-locale original-folder CLI runs each
+  completed all 83 stages. Final full/reduced real-data installation, current
+  guest smoke and the entire extracted 70,000,000-byte installation gate remain
+  mandatory and are recorded by the delivery report. The default hard cap and both the core-file and complete-archive
   checks are in `tools/package_variants_ui23.py`; scope metadata does not enforce
   that limit. Source tests and historical packages do not replace these gates.

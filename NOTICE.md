@@ -147,8 +147,8 @@ No original scene, shader, atlas or installable font is included in public sourc
 The added Silent portraits, character-selection still, card/power/relic/energy
 textures, colored frame materials and six sampled clips are converted from the
 owner's pinned local game installation. Existing payloads remain intact. No
-audio, multiplayer or Timeline progression implementation is included; these
-three areas are excluded by the requested product scope. Reading/skipping binary
+audio, multiplayer or Timeline progression implementation is included.
+Reading/skipping binary
 skeleton event metadata does not provide audio playback.
 
 ## Shared content added in 0.10

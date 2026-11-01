@@ -1,3 +1,56 @@
+# UI23 accepted runtime and completed producer stages
+
+The runtime is frozen at actual build `d9350b94c234f443c29f12f7efb862f3595a6a57`.
+Its published source-equivalent checkpoint is
+`1298a1bbbbb9355e8c87ad02542ff14a6154730e`, tree
+`402461fe462d4ab4c31322f9096ad28c76ef2e94`; all 641 runtime/build inputs and the
+linked ARM helper match. The launcher keeps its actual d935 build provenance.
+
+Ordinary USB installation/hash readback, real scene navigation and matched
+30-second warm intervals on the supplied 64 MiB Firebird measure Neow at
+**11.2930 FPS / 88.0903 ms render** (339 frames, one over 100 ms) and Nonupeipe
+at **23.0763 FPS / 42.9760 ms** (692 frames, none over 50 ms). Both make zero
+resource read calls/bytes. Compared with f760 these improve FPS by 7.77% and
+17.62%, respectively. These are emulator measurements, not physical-device
+performance or a universal 30 FPS claim. The unchanged f760 combat renderer
+measures 18.3430 FPS with three Affliction families and 9.43565 FPS with seven
+on the explicit small3 TEST ONLY fixture; those are not final-full-package
+measurements.
+
+The zopfli launcher is 1,736,356 bytes, SHA-256
+`9a00d1f6e3e795839914c0f65929b60eafe856c27c726157b055423e9e60dfae`.
+Linked allocation is **22,290,500 / 22,291,016 bytes**, leaving 516 bytes;
+no heap, cache or arena capacity grows. The largest individual reported stack
+frame is 5,936 bytes, not a maximum combined call-stack claim. Ordinary build
+entry points enforce the strict limit and keep render/decode hot paths at
+`-O2`, while selected cold control paths use size optimization.
+
+The soft-field comparison covers 1,561 cases / 3,122 complete 320×240 frames.
+Against 2825, 24.2061% of pixels differ, with maximum RGB565 deltas R3/G5/B4;
+this is finite sampling, not an all-clock scene bound. The independent fire-only
+proof covers all 200,000 phases / 6,001,000,000 queries and bounds that component
+at R0/G4/B2. Later exact post and option-image changes introduce zero changed
+pixels across the same 3,122 frames. Final Canvas regression passes 401,774
+cases / 3,094,644 checks. Source geometry, full-resolution masks and clocks
+remain intact; native-size peak witnesses were inspected.
+
+The actual bad0168 producer's default bilingual and all-16-locale runs both
+completed all 83 stages. The 11 required data files occupy **68,155,584 bytes**;
+the 14 additional locale files occupy **17,773,035 bytes**. These are resource
+subtotals, not complete extracted installations. The official continuous-card
+stage adds 53,580 logical bytes, and published English/Chinese data grows by
+54,694 bytes relative to the preceding completed UI23 data. The earlier 47,872
+figure belongs to a private candidate. Final full/reduced installation, current
+real-data guest smoke, complete package sizes and delivery identities are
+recorded by the final delivery report; unfinished checks are not asserted here.
+
+Current details and evidence identities are in [runtime acceptance](ui23-runtime-performance.md),
+[the machine-readable receipt](ui23-runtime-validation.json),
+[continuous card materials](ui23-continuous-card-materials.md), and
+[paged history](ui23-history-archive.md). The candidate and historical entries
+below retain their own identities and are superseded where this section supplies
+accepted runtime or completed producer evidence.
+
 # UI23 exact smoothstep division candidate
 
 ARM relocation inspection shows three fixed-width unsigned64 division calls

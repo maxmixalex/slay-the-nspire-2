@@ -25,8 +25,8 @@ def resource_version(path):
 
 def readme(info):
     profile = info.get('animation_profile', 'animated')
-    animation = ('本包仅保留必要人物/怪物动作姿态，保留原有动作时长。启动器自动识别，无需切换设置。\n'
-                 'This edition keeps essential actor poses and original action durations. The launcher detects it automatically.\n') \
+    animation = ('本包仅保留必要人物/怪物动作姿态，保留原有动作时长；Ancient房间人物及背景效果保持入场姿态，卡牌和UI仍按各自时钟运行。启动器自动识别，无需切换设置。\n'
+                 'This edition keeps essential actor poses and original action durations. Ancient NPC/background effects hold their entry pose; card and UI clocks continue. The launcher detects it automatically.\n') \
                 if profile == 'no-animations' else \
                 ('本包包含完整采样人物/怪物动画。\nThis edition includes the complete sampled actor animations.\n')
     shared = ('data/nSpire2.dat.tns         公共资源索引 / artwork index\n' +
