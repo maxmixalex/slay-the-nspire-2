@@ -131,12 +131,13 @@ class WorkLock:
     def __enter__(self):
         self.work.mkdir(parents=True, exist_ok=True)
         self.stream = (self.work/'.converter-lock').open('a+b')
-        self.stream.seek(0)
-        if not self.stream.read(1):
-            self.stream.write(b'\0')
-            self.stream.flush()
-        self.stream.seek(0)
         try:
+            # Reading the protected byte already raises EACCES on Windows.
+            # Inspect metadata only, then let the nonblocking lock arbitrate.
+            if not os.fstat(self.stream.fileno()).st_size:
+                self.stream.write(b'\0')
+                self.stream.flush()
+            self.stream.seek(0)
             if os.name == 'nt':
                 import msvcrt
                 msvcrt.locking(self.stream.fileno(), msvcrt.LK_NBLCK, 1)
@@ -212,6 +213,10 @@ class Workspace:
     def root(self, path):
         if not path.is_absolute():
             return None
+        # Windows temporary paths can use RUNNER~1 while resolve() expands the
+        # workspace to its long spelling. Canonicalize both sides consistently;
+        # otherwise every dependency silently looks external to the workspace.
+        path = path.resolve()
         try:
             parts = path.relative_to(self.work).parts
         except ValueError:
