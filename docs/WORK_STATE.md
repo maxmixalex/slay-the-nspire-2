@@ -1,3 +1,34 @@
+# UI24 active repair and optimization
+
+The new task starts at merged main `b775b678c596dab04dccd47a143d46593d35fc76`.
+UI23's final official full-animation bilingual installation is 69,968,366 bytes,
+and its reduced-pose installation is 29,912,696 bytes. The complete full package
+must stay at or below 70,000,000 decimal bytes, and formal ARM allocation must
+stay at or below 22,291,016 bytes without expanding pools.
+
+The current user reports that Osty does not animate when Necrobinder dies,
+Necrobinder's slash shows missing texture content, and Ancient rooms remain
+too slow. The user explicitly permits appropriate simplification of Ancient
+effects, and requests faster conversion with substantially less temporary
+storage. Full actor clarity and required action clocks remain constraints.
+The seed question is whether ordinary PC ASCII seeds are accepted and reproduce
+the same locked-version content, not merely whether a string fits an input box.
+The drawing-point and seed-buffer limits must not be called OS limits without
+evidence.
+
+Three isolated work streams own actor animation, Ancient rendering/seed parity,
+and converter scheduling/storage. Coherent source checkpoints will be published
+before long validation. No new fixes or performance results are accepted yet.
+The existing UI23 measurements below keep their original source/resource scope.
+
+The final UI23 official-resource 30-second guest intervals measured ordinary
+seven-card combat at 29.786365 FPS (two reads, 156,125 bytes), three Affliction
+families at 18.387354 FPS, seven at 9.429899 FPS, full Neow at 11.201985 FPS,
+and reduced Neow at 29.992983 FPS. These used normal USB installation/readback
+and the unchanged 64 MiB Firebird OS/Ndless environment; they are not physical
+handheld results. The latter four intervals had zero resource reads. This is
+the accepted baseline, distinct from the older controlled fixtures below.
+
 # UI23 accepted runtime and completed producer stages
 
 The runtime is frozen at actual build `d9350b94c234f443c29f12f7efb862f3595a6a57`.
