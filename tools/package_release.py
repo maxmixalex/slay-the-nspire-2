@@ -39,16 +39,23 @@ def readme(info):
     else:
         sources = (f"Runtime source: https://github.com/maxmixalex/slay-the-nspire-2/tree/{info['runtime_checkpoint']}\n"
                    f"Resource converter: https://github.com/maxmixalex/slay-the-nspire-2/tree/{info['resource_checkpoint']}\n")
+    documentation = info.get('documentation_checkpoint')
+    if documentation:
+        sources += ("Documentation: https://github.com/maxmixalex/slay-the-nspire-2/blob/"
+                    f"{documentation}/docs/ui23-retained-differences.md\n")
+    ledger_zh = '上列独立文档链接' if documentation else '上列运行源代码中的 docs/ui23-retained-differences.md'
+    ledger_en = ('the separately linked documentation above' if documentation else
+                 'docs/ui23-retained-differences.md in the runtime source above')
     validation = ''
     if info.get('stage', '').startswith('ui23'):
-        validation = '''
+        validation = f'''
 验证范围 / Verification scope
 本包没有计算器实机测试记录，不能据此给出实机帧率或实机峰值内存。
 文件与资源校验摘要位于 data/BUILD-INFO.json；详细校验记录单独保存，不占计算器安装空间。
-原尺寸画质、原生运行与模拟器证据的范围及保留差异，见上列运行源代码中的 docs/ui23-retained-differences.md。
+原尺寸画质、原生运行与模拟器证据的范围及保留差异，见{ledger_zh}。
 No physical-calculator test is recorded for this package. Calculator FPS and physical peak RAM remain unmeasured.
 File and resource validation summaries are in data/BUILD-INFO.json; detailed records are kept separately.
-See docs/ui23-retained-differences.md in the runtime source above for visual, native/emulator evidence and remaining differences.
+See {ledger_en} for visual, native/emulator evidence and remaining differences.
 '''
     return f"""Slay the Nspire 2 — nSpire {info['version']} (StS II v0.111.0)
 
@@ -80,7 +87,7 @@ Install only the desired language files in data. Settings lists installed langua
 Install the artwork index, every concern file and locales from the same matching packaging/conversion and animation profile. Every concern file is required.
 Exit the game before updating; keep existing files in state.
 Do not overwrite the existing state folder with the archive's empty state folder.
-Replace the entire old data folder with this archive's matching data folder,
+Delete the entire old data folder first, then copy this archive's matching data folder
 and replace nSpire2.tns. You may omit unwanted locale files, but keep the
 matching index and every concern file.
 Replace previously installed optional languages with this release's matching files too.
@@ -141,11 +148,12 @@ def main():
     p.add_argument('--optional-locales',type=Path,help='Verified language editions directory; package additional locales separately')
     p.add_argument('--runtime-checkpoint', required=True)
     p.add_argument('--resource-checkpoint', required=True)
+    p.add_argument('--documentation-ref', help='Optional independent published documentation commit; does not relabel runtime or resources')
     p.add_argument('--stage', default='ui22', help='Release suffix; validated against its complete content profile')
     args = p.parse_args()
     if not re.fullmatch('[A-Za-z0-9][A-Za-z0-9_-]*', args.stage):
         p.error('Stage must contain only letters, digits, underscores or hyphens')
-    for value in (args.runtime_checkpoint, args.resource_checkpoint):
+    for value in (args.runtime_checkpoint, args.resource_checkpoint, *([args.documentation_ref] if args.documentation_ref else [])):
         if not re.fullmatch('[0-9a-f]{40}', value):
             p.error('Checkpoints must be full Git commit IDs')
     paths = {'nSpire2.tns': args.launcher, 'data/nSpire2.dat.tns': args.common,
@@ -193,6 +201,8 @@ def main():
                 locale_storage='NSL3' if args.eng.read_bytes()[:4]==b'NSL3' else 'NSL1/NSL2',
                 calculator_only=args.calculator_only,local_checkpoints=args.local_checkpoints,
                 files={name: path.stat().st_size for name, path in paths.items()})
+    if args.documentation_ref:
+        info['documentation_checkpoint'] = args.documentation_ref
     validation_bytes = None
     if content_validation is not None:
         validation_bytes = (json.dumps(content_validation, ensure_ascii=False, sort_keys=True, indent=2)+'\n').encode('utf-8')

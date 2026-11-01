@@ -66,6 +66,7 @@ def check_archive(path):
 
 def build(args):
     args.output.mkdir(parents=True, exist_ok=True)
+    documentation_ref = getattr(args, 'documentation_ref', None)
     launcher_bytes = args.launcher.stat().st_size
     directories = {"animated": args.animated, "no-animations": args.no_animations}
     resource_checkpoints = {"animated": args.resource_checkpoint,
@@ -92,6 +93,8 @@ def build(args):
                        "--runtime-checkpoint", args.runtime_checkpoint,
                        "--resource-checkpoint", resource_checkpoints[profile],
                        "--stage", "ui23-" + profile]
+            if documentation_ref:
+                command += ["--documentation-ref", documentation_ref]
             subprocess.run(command, check=True)
             candidates = list(destination.glob("*-calculator.zip"))
             if len(candidates) != 1:
@@ -151,6 +154,8 @@ def build(args):
               "physical_device_note": "Packaging verifies files and does not establish calculator FPS or physical peak RAM.",
               "launcher_bytes": launcher_bytes, "launcher_sha256": digest(args.launcher),
               "resources": resources, "archives": receipts}
+    if documentation_ref:
+        result['documentation_checkpoint'] = documentation_ref
     manifest = args.output / "UI23-delivery-manifest.json"
     manifest.write_text(json.dumps(result, ensure_ascii=False, indent=2) + "\n")
     return result
@@ -162,6 +167,7 @@ def main():
         parser.add_argument("--" + name, type=Path, required=True)
     parser.add_argument("--runtime-checkpoint", required=True)
     parser.add_argument("--resource-checkpoint", required=True)
+    parser.add_argument("--documentation-ref", help="Optional independent documentation commit for both installers")
     parser.add_argument("--no-animations-resource-checkpoint",
                         help="Record a different verified source checkpoint for the reduced resources")
     parser.add_argument("--maximum-animated-bytes", type=int, default=70_000_000)
