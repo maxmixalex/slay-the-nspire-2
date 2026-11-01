@@ -54,6 +54,13 @@ static bool draw(Canvas&c,uint32_t elapsed){
  if(!mask.restore(c.a.content,FirstMask,reduced?0:(elapsed%Duration)/33,c.a.callbacks.foreground_poll))return false;
  Table table;if(!table.read(c.a.content.image(ParameterImage),reduced))return false;
  if(!light.matches(&c.a.content,generation)){
+ if(table.baked){
+  const auto p=c.a.content.image(FirstImage);
+  if(!p.pixels||p.format||p.alpha||p.palette||p.w!=256||p.h!=(MaskBytes*2+511)/512)return false;
+  for(unsigned i=0;i<MaskBytes;++i){if(!(i&2047u))c.poll();light.pixels[i]=uint16_t(word(p.pixels+2*i));}
+  if(!table.read(c.a.content.image(ParameterImage),reduced)||!table.baked||c.a.content.generation()!=generation)return false;
+  light.owner=&c.a.content;light.generation=generation;light.valid=true;
+ }else{
  ancient_fire_ui23::Field fields[4];
  // Source water, shared reviewed triangle, original light RGB and original
  // distortion R/G. Only their actual channels are retained, at source size.
@@ -72,6 +79,7 @@ static bool draw(Canvas&c,uint32_t elapsed){
  for(unsigned id=ancient_fire_ui23::FirstImage+2;id<ancient_fire_ui23::FirstImage+4;++id)if(!c.a.content.image_cached(int(id)))return false;
  if(!c.a.content.image_cached(ParameterImage)||!c.a.content.healthy()||c.a.content.generation()!=generation)return false;
  if(!build(c,table,fields,light))return false;
+ }
  }
  apply(c,table,mask,light);return true;
 }

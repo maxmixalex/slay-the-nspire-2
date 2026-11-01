@@ -88,10 +88,10 @@ def spans(support):
 
 def parameters(raw):
  version=struct.unpack_from('<H',raw,4)[0] if len(raw)>=6 else 0;bounded=version==2;length=LENGTH+(PIXELS+1)//2 if bounded else LENGTH
- t.require(version in (1,2) and len(raw)==(length+511)//512*512 and raw[:4]==b'NWF1','Neow parameter extent/magic')
+ t.require(version in (1,2,3) and len(raw)==(length+511)//512*512 and raw[:4]==b'NWF1','Neow parameter extent/magic')
  h=struct.unpack_from('<16H',raw,4);static=h[1]==2
  t.require(h==(version,2 if static else 1,4,FRAMES,KEY_INTERVAL,PIXELS,BASE_IMAGES,TEXTURE_PAGES,FIRST_MASK,PARAMETER,NODES_AT,MODELS_AT,ROWS_AT,SPANS_AT,SPANS,length),'Neow parameter header')
- t.require(struct.unpack_from('<2I',raw,36)==(200000,DURATION) and (struct.unpack_from('<2I',raw,44)==(LENGTH,(PIXELS+1)//2) if bounded else not any(raw[44:52])) and not any(raw[52:64]) and not any(raw[length:]),'Neow clocks/padding')
+ t.require(struct.unpack_from('<2I',raw,36)==(200000,DURATION) and (struct.unpack_from('<2I',raw,44)==(LENGTH,(PIXELS+1)//2) if bounded else struct.unpack_from('<2I',raw,44)==(BASE_IMAGES,PIXELS*2) if version==3 else not any(raw[44:52])) and not any(raw[52:64]) and not any(raw[length:]),'Neow clocks/padding')
  colors=np.zeros(2,dtype='i8')
  for i in range(4):
   node=struct.unpack_from('<6i2H4B',raw,NODES_AT+i*32);q=node[:6]
@@ -112,7 +112,7 @@ def parameters(raw):
    x,count=struct.unpack_from('<2H',raw,SPANS_AT+i*4);t.require(count and x>=right and x+count<=320,'Neow sorted support spans');right=x+count;pixel+=count
   span=end
  t.require(span==SPANS and pixel==PIXELS and struct.unpack_from('<H',raw,ROWS_AT+240*4+2)[0]==PIXELS,'Neow final support extent')
- return dict(source_static=static,frames=FRAMES,key_interval=KEY_INTERVAL,source_shader_period_ms=200000,body_period_ms=DURATION,integer_bounds=bounded)
+ return dict(source_static=static,frames=FRAMES,key_interval=KEY_INTERVAL,source_shader_period_ms=200000,body_period_ms=DURATION,integer_bounds=bounded,baked_light=version==3)
 
 
 def pack_parameters(records,support,static=False):
@@ -291,12 +291,17 @@ def validate(source,image,final=False):
  t.require((len(source.aux),len(source.images))==(AUXILIARY,IMAGES) and source.aux[BASE_AUX]==PARAMETER,'Neow fire exact catalog endpoint')
  w,h,fmt,raw=image(PARAMETER);t.require(w==256 and h in (9,26) and fmt==0,'Neow parameter picture');info=parameters(raw)
  if final or reduced(source.data):t.require(info['source_static']==reduced(source.data),'Neow transmission profile does not match final marker')
- at=BASE_IMAGES
- for _,w,h,channels,_ in TEXTURES:
-  total=w*h*len(channels)
-  for offset in range(0,total,131072):
-   width,height,fmt,raw=image(at);used=min(131072,total-offset)
-   t.require((width,height,fmt)==(320,(used+639)//640,0) and len(raw)==width*height*2 and not any(raw[used:]),'Neow texture page extent/padding');at+=1
+ if info['baked_light']:
+  width,height,fmt,raw=image(BASE_IMAGES);used=PIXELS*2
+  t.require((width,height,fmt)==(256,(used+511)//512,0) and len(raw)==width*height*2 and not any(raw[used:]),'Neow baked light extent/padding')
+  for index in range(1,TEXTURE_PAGES):t.require(image(BASE_IMAGES+index)==(1,1,0,bytes(2)),'Neow retired material page')
+ else:
+  at=BASE_IMAGES
+  for _,w,h,channels,_ in TEXTURES:
+   total=w*h*len(channels)
+   for offset in range(0,total,131072):
+    width,height,fmt,raw=image(at);used=min(131072,total-offset)
+    t.require((width,height,fmt)==(320,(used+639)//640,0) and len(raw)==width*height*2 and not any(raw[used:]),'Neow texture page extent/padding');at+=1
  previous=bytes(PIXELS)
  for frame in range(FRAMES):
   w,h,fmt,raw=image(FIRST_MASK+frame);t.require(w==256 and 0<h<=240 and fmt==0 and len(raw)==w*h*2,'Neow mask picture')
