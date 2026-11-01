@@ -10,6 +10,7 @@ ROOT=Path(__file__).resolve().parents[1]
 def main()->None:
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--output',type=Path,help='Launcher output path')
+    parser.add_argument('--size-event-rules',action='store_true',help='Optional single-TU experiment: original_events.cpp uses -Os; all other production flags remain unchanged')
     parser.add_argument('--trace-io',action='store_true',help='Developer-only bounded OS I/O trace; not a release/timing acceptance build')
     parser.add_argument('--compression',choices=('zlib','zopfli'),default='zlib',help='Use zopfli for compact release packaging; requires requirements-release.txt')
     args=parser.parse_args()
@@ -22,6 +23,7 @@ def main()->None:
     objects=[]
     for i,source in enumerate(sources):
         out=directory/f'{i}.o';objects.append(str(out))
+        source_flags=['-Os'] if args.size_event_rules and source=='src/original_events.cpp' else []
         if source.endswith('.c'):
             # The unmodified SDK is C. Its tiny compatibility headers must not
             # shadow native/system headers or the game's C++ translation units.
@@ -31,7 +33,7 @@ def main()->None:
             options=['-std=c++17','-I'+str(ROOT/'third_party/lzma2')] if source.endswith('.cpp') else []
             if source=='src/lzma2_block.cpp':options+=['-I'+str(ROOT/'platform/decoder_headers')]
             compile_flags=flags
-        subprocess.run([clang,*compile_flags,*options,'-c',str(ROOT/source),'-o',str(out)],check=True)
+        subprocess.run([clang,*compile_flags,*source_flags,*options,'-c',str(ROOT/source),'-o',str(out)],check=True)
     elf=directory/'nSpire2.elf'
     # Clang emits address-significance metadata. Safe ICF can share identical
     # unobserved function bodies while preserving distinct significant
