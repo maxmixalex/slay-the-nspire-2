@@ -1,6 +1,7 @@
 #pragma once
 #include <stdint.h>
 #include "resource_transfer.hpp"
+#include "presentation_blend.hpp"
 
 namespace spire::neow_post_ui23 {
 constexpr unsigned AuxiliaryFirst=7224,AuxiliaryCount=7225,FirstImage=59729,Images=59730;
@@ -12,7 +13,14 @@ inline int integer(const uint8_t*p){const uint32_t v=word(p)|(uint32_t(word(p+2)
 inline int clamp(int v,int high){return v<0?0:v>high?high:v;}
 inline unsigned lerp(unsigned a,unsigned b,unsigned f){return (a*(256-f)+b*f+128)>>8;}
 inline uint16_t mix(uint16_t a,uint16_t b,unsigned f){
- return uint16_t((lerp(a>>11,b>>11,f)<<11)|(lerp((a>>5)&63,(b>>5)&63,f)<<5)|lerp(a&31,b&31,f));
+ // Red/blue occupy separate16-bit lanes; their weighted sums and rounding
+ // remain below8192, so no lane can carry into its neighbour. This is the
+ // same round-to-nearest Q8 interpolation as three independent channels.
+ const uint32_t ar=((uint32_t(a)&0xf800u)<<5)|(a&31u),br=((uint32_t(b)&0xf800u)<<5)|(b&31u);
+ const uint32_t rb=(((ar<<8)+(br-ar)*f+0x00800080u)>>8)&0x001f001fu;
+ const uint32_t ag=a&0x07e0u,bg=b&0x07e0u;
+ const uint32_t g=(((ag<<8)+(bg-ag)*f+0x1000u)>>8)&0x07e0u;
+ return uint16_t(((rb>>5)&0xf800u)|g|(rb&31u));
 }
 inline uint16_t average4(uint16_t a,uint16_t b,uint16_t c,uint16_t d){
  return uint16_t(((((a>>11)+(b>>11)+(c>>11)+(d>>11)+2)>>2)<<11)|
@@ -20,9 +28,7 @@ inline uint16_t average4(uint16_t a,uint16_t b,uint16_t c,uint16_t d){
   (((a&31)+(b&31)+(c&31)+(d&31)+2)>>2));
 }
 inline uint16_t blend(uint16_t a,uint16_t b,unsigned alpha){
- const unsigned keep=255-alpha;
- return uint16_t(((((a>>11)*keep+(b>>11)*alpha+127)/255)<<11)|
-  (((((a>>5)&63)*keep+((b>>5)&63)*alpha+127)/255)<<5)|(((a&31)*keep+(b&31)*alpha+127)/255));
+ return presentation::source_over_rgb565(a,b,alpha);
 }
 struct Table {
  const uint8_t*data=nullptr;bool still=false;

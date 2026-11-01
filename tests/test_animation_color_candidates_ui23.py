@@ -67,11 +67,15 @@ class AnimationColorCandidateTest(unittest.TestCase):
         self.assertEqual(original, implicit_geometry.alpha_geometry(candidate.alpha_lut('444a6')[alpha]))
         self.assertEqual(original, implicit_geometry.alpha_geometry(candidate.alpha_lut('bounded-a5')[alpha]))
 
-    def test_alpha5_changes_no_rgb_and_has_32_partial_levels(self):
+    def test_alpha5_changes_no_rgb_and_has_29_bounded_partial_levels(self):
         self.assertTrue(np.array_equal(candidate.color_lut('bounded-a5'),
                                        candidate.color_lut('bounded-a6')))
         mapped = candidate.alpha_lut('bounded-a5')
-        self.assertEqual(len(np.unique(mapped[1:255])), 32)
+        self.assertEqual(len(np.unique(mapped[1:255])), 29)
+        self.assertTrue(np.all(np.diff(mapped.astype(np.int32))>=0))
+        # The narrow interval is deliberate; remapping to nearest centers
+        # would change these source values and the accepted fixed policy.
+        self.assertEqual(mapped[171:175].tolist(),[167,172,172,178])
         self.assertEqual((int(mapped[0]), int(mapped[255])), (0,255))
         self.assertTrue(np.all((mapped[1:255] > 0) & (mapped[1:255] < 255)))
         self.assertEqual(int(np.abs(mapped.astype(np.int32)-np.arange(256)).max()), 4)
@@ -87,7 +91,9 @@ class AnimationColorCandidateTest(unittest.TestCase):
             for policy in candidate.LEVELS:
                 results = candidate.convert(before, policy, workers=1)
                 output = candidate.rewrite(before, {}, results)
-                candidate.verify(before, output, results, policy)
+                proof=candidate.verify(before, output, results, policy)
+                self.assertEqual(proof['alpha_mapping_sha256'],tiles.sha256(candidate.alpha_lut(policy).tobytes()))
+                self.assertEqual(proof['alpha_partial_levels'],len(np.unique(candidate.alpha_lut(policy)[1:255])))
                 after = retile.view(output)
                 for image in range(len(before.images)):
                     if before.images[image][3] == 6:

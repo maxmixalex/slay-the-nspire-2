@@ -28,6 +28,17 @@ static std::vector<uint8_t> words(bool still){
 }
 static std::vector<uint8_t> read(const char*path){FILE*f=std::fopen(path,"rb");CHECK(f);CHECK(!std::fseek(f,0,SEEK_END));const auto n=std::ftell(f);CHECK(n>0);std::rewind(f);std::vector<uint8_t>d(size_t(n),0);CHECK(std::fread(d.data(),1,d.size(),f)==d.size());std::fclose(f);return d;}
 int main(int argc,char**argv){
+ // Exhaust each channel pair and all Q8 fractions. Complementary other
+ // channels exercise packed-lane borrow/carry without a shared arithmetic
+ // implementation in the oracle, including f=256 endpoints.
+ for(unsigned a=0;a<64;++a)for(unsigned b=0;b<64;++b)for(unsigned f=0;f<=256;++f){
+  const uint16_t x=uint16_t(((a&31)<<11)|(a<<5)|(31-(a&31)));
+  const uint16_t y=uint16_t(((b&31)<<11)|(b<<5)|(31-(b&31)));
+  const auto channel=[&](unsigned u,unsigned v){return (u*(256-f)+v*f+128)>>8;};
+  const auto expected=uint16_t((channel(x>>11,y>>11)<<11)|(channel((x>>5)&63,(y>>5)&63)<<5)|channel(x&31,y&31));
+  CHECK(mix(x,y,f)==expected);
+ }
+
  for(unsigned a=0;a<=255;++a)for(unsigned c=0;c<64;++c){const uint16_t x=uint16_t(((c&31)<<11)|(c<<5)|(31-(c&31))),y=uint16_t(~x);
   CHECK(blend(x,y,a)==presentation::source_over_rgb565(x,y,a));}
  std::vector<uint16_t> original(320*240),actual,expected;for(unsigned y=0;y<240;++y)for(unsigned x=0;x<320;++x)original[y*320+x]=uint16_t((((x*7+y)&31)<<11)|(((x+y*3)&63)<<5)|((x*3+y*5)&31));

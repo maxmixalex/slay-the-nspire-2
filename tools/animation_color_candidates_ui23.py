@@ -51,11 +51,19 @@ def alpha_lut(policy):
     if not alpha_error(policy):
         return alpha.astype('u1')
     if policy == 'bounded-a5':
-        # Exactly 32 partial-opacity values. Rounded uniform intervals are at
-        # most nine codes apart, so nearest mapping differs by at most four.
-        # Keep zero and full opacity out of the partial-opacity candidate set.
-        points = (np.arange(32) * 253 + 15) // 31 + 1
-        result = points[np.abs(alpha[:, None] - points).argmin(axis=1)]
+        # Minimum29 partial representatives cover all254 source values with
+        # the same maximum error4. These monotone intervals were selected
+        # once from the pinned original-source histogram, excluding static
+        # art and every selection policy; there is no per-frame adaptation.
+        # Each interval is at most9 codes wide. Explicit boundaries matter:
+        # nearest-center reassignment would change the reviewed entropy map.
+        ends = np.array((9,18,27,36,45,54,63,72,81,90,99,108,117,126,
+                         135,144,153,162,171,173,182,191,200,209,218,
+                         227,236,245,254))
+        points = np.array((5,14,23,32,41,50,59,68,77,86,95,104,113,122,
+                           131,140,149,158,167,172,178,187,196,205,214,
+                           223,232,241,250))
+        result = points[np.minimum(np.searchsorted(ends, alpha), len(points)-1)]
         result[0], result[255] = 0, 255
         return result.astype('u1')
     if policy in ('bounded-a6', 'dark-safe-a6'):
@@ -417,6 +425,8 @@ def verify(source, output, results, policy, selection_policy=None, selection_ove
               'Decoded cache-page costs changed')
     return dict(tile_groups=before.tile_groups, exact_index_groups=before.index_groups,
                 alpha_maximum_error=alpha_error(policy),
+                alpha_partial_levels=int(np.unique(alpha_lut(policy)[1:255]).size),
+                alpha_mapping_sha256=t.sha256(alpha_lut(policy).tobytes()),
                 alpha_classes_dimensions_geometry_clocks_cache_costs_exact=True,
                 glyphs=len(source.glyphs), strings=len(source.strings),
                 retained_changed_groups=len(changed_retained))
