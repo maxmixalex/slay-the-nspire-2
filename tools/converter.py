@@ -129,6 +129,9 @@ checkout in source runs but the extraction directory in a frozen executable.
 def self_test():
     """Check a bundle's dependencies without original game data or SDK tools."""
     import ctypes
+    import faulthandler
+    faulthandler.enable(all_threads=True)
+    print("[converter-self-test] begin",file=sys.stderr,flush=True)
     import numpy as np
     configure_helpers()
     # Legacy source tools use the process default for some JSON/text files.

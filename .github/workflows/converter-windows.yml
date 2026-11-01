@@ -84,6 +84,14 @@ jobs:
         with:
           name: converter-arm-validation-${{ github.sha }}
           path: ${{ runner.temp }}/converter-helpers/win-x64/
+      - name: Execute the genuine linked ARM oracle in Windows source mode
+        shell: pwsh
+        run: |
+          $helpers = Join-Path $env:RUNNER_TEMP 'converter-helpers/win-x64'
+          $logs = Join-Path $env:RUNNER_TEMP 'converter-diagnostics'
+          New-Item -ItemType Directory -Force $logs | Out-Null
+          python -X utf8 -u tools/converter_arm_validation.py --helpers $helpers --output "$logs/source-arm-self-test.json" 2>&1 | Tee-Object -FilePath "$logs/source-arm-self-test.log"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - name: Build and check the executable without developer runtime paths
         shell: pwsh
         run: |
@@ -94,6 +102,16 @@ jobs:
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           Copy-Item docs/converter-ui23.md "$output/README.md"
           git rev-parse HEAD | Out-File -Encoding ascii "$output/COMMIT"
+      - name: Preserve source and frozen native diagnostics
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: converter-diagnostics-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/converter-diagnostics/
+            ${{ runner.temp }}/converter-bundle-work/frozen-self-test*
+          if-no-files-found: warn
+          retention-days: 30
       - name: Upload the Windows converter and dependency license notices
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:

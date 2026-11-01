@@ -88,10 +88,16 @@ def build(args):
     try:
         smoke=subprocess.run([str(executable),'--self-test'],check=True,text=True,capture_output=True,env=environment)
     except subprocess.CalledProcessError as exc:
+        (work/'frozen-self-test.stdout.log').write_text(exc.stdout or '',encoding='utf-8')
+        (work/'frozen-self-test.stderr.log').write_text(exc.stderr or '',encoding='utf-8')
+        (work/'frozen-self-test-exit.json').write_text(json.dumps(dict(
+            returncode=exc.returncode,unsigned_hex=f'0x{exc.returncode&0xffffffff:08X}'))+'\n',encoding='utf-8')
         # Preserve the real frozen-interpreter diagnostic in CI build logs.
         if exc.stdout: print(exc.stdout,file=sys.stderr)
         if exc.stderr: print(exc.stderr,file=sys.stderr)
         raise
+    (work/'frozen-self-test.stdout.log').write_text(smoke.stdout,encoding='utf-8')
+    (work/'frozen-self-test.stderr.log').write_text(smoke.stderr,encoding='utf-8')
     helper_test=json.loads(smoke.stdout)
     receipt=dict(schema=1,platform=sys.platform,embedded_python=True,native_cpp_converter=False,
         separately_installed_python_required=False,dotnet_sdk_required=False,cxx_compiler_required=False,
