@@ -57,4 +57,23 @@ static void lifecycle(){
  seek=stream;for(unsigned i=0;i<9;++i)stream.advance(0,27,t.source_curve(0),poll,inherit);
  CHECK(std::memcmp(stream.particles,seek.particles,sizeof stream.particles)==0);
 }
-int main(){table_contract();lifecycle();std::printf("Cinder typed bounds, inheritance, stream/seek/wrap/pause: %u checks passed\n",checks);}
+static void decorative_subset(){
+ auto raw=parameter_fixture();Table t;CHECK(t.read(Picture{raw.data(),256,51,0}));
+ State complete{},sampled{};const auto poll=[]{};
+ const auto inherit=[](unsigned emitter,int32_t born){return Velocity{int32_t((born%127)*(emitter+1)*256),-int32_t((born%43)*256)};};
+ // Changing density invalidates the warm shortcut. Every retained particle
+ // must still equal the original full60Hz simulation, including seek/wrap.
+ for(unsigned stride:{6u,8u,12u,1u})for(uint32_t clock:{0u,33u,66u,363u,401u,999u,1420u,5000u,300000u,42u,100u}){
+  complete.advance(clock,92847,t.source_curve(0),poll,inherit);
+  sampled.advance(clock,92847,t.source_curve(0),poll,inherit,false,stride);
+  CHECK(sampled.density_stride==stride);
+  for(unsigned emitter=0;emitter<Emitters;++emitter){const unsigned step=emitter<2?1:stride;
+   for(unsigned j=emitter<2?0:emitter%stride;j<PerEmitter;j+=step)
+    CHECK(!std::memcmp(&complete.particles[emitter*PerEmitter+j],&sampled.particles[emitter*PerEmitter+j],sizeof(Particle)));
+  }
+ }
+ sampled.advance(100,92847,t.source_curve(0),poll,inherit,false,0);
+ CHECK(sampled.density_stride==1&&!std::memcmp(complete.particles,sampled.particles,sizeof complete.particles));
+ CHECK(sizeof(State)==56844);
+}
+int main(){table_contract();lifecycle();decorative_subset();std::printf("Cinder typed bounds, inheritance, stream/seek/wrap/pause/subset: %u checks passed\n",checks);}

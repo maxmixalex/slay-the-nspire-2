@@ -83,20 +83,17 @@ static bool draw(Canvas&c,uint32_t elapsed,uint32_t seed){
 #ifdef SPIRE_NEOW_LAYER_PROFILE
  RuntimeScopedRenderPart state_timing(c.a.callbacks.profile_render,RuntimeRenderPart::RandomLight);
 #endif
- state.advance(clock,seed,cinder_table.source_curve(0),[&](){c.poll();},[&](unsigned emitter,int32_t born){return cinder_table.inherit(emitter,born);});
+ state.advance(clock,seed,cinder_table.source_curve(0),[&](){c.poll();},[&](unsigned emitter,int32_t born){return cinder_table.inherit(emitter,born);},false,tez_cinders_ui23::CalculatorBackgroundStride);
  }
  const unsigned frame=table.frame(clock);
  for(unsigned i=0;i<Commands;++i){const unsigned command=table.command(i),kind=command>>14,index=command&16383;
-  if(kind==0){
-#ifdef SPIRE_NEOW_LAYER_PROFILE
-   RuntimeScopedRenderPart light_timing(c.a.callbacks.profile_render,RuntimeRenderPart::RandomDots);
-#endif
-   if(!ancient_lights::nodes(c,light_texture,light_table,1,clock,seed,index,1))return false;
-  }else if(kind==1){
+  if(kind==0)continue;
+  if(kind==1){
 #ifdef SPIRE_NEOW_LAYER_PROFILE
    RuntimeScopedRenderPart particle_timing(c.a.callbacks.profile_render,RuntimeRenderPart::CharacterInfo);
 #endif
-   for(unsigned j=0;j<24;++j)tez_cinders::particle(c,texture,state.particles[index*24+j],cinder_table,index,frame);
+   for(unsigned j=tez_cinders_ui23::presentation_first(index);j<24;j+=tez_cinders_ui23::presentation_step(index))
+    tez_cinders::particle(c,texture,state.particles[index*24+j],cinder_table,index,frame);
   }else{
 #ifdef SPIRE_NEOW_LAYER_PROFILE
    RuntimeScopedRenderPart flame_timing(c.a.callbacks.profile_render,RuntimeRenderPart::CharacterPortraits);
@@ -104,6 +101,17 @@ static bool draw(Canvas&c,uint32_t elapsed,uint32_t seed){
    node(c,table,index,frame,shaders,grid);
   }
   if(!(i&31u))c.poll();
+ }
+ // Calculator presentation consolidates decorative glow above the fire
+ // material, rather than preserving its interleaving with79 normal flames.
+ // Smooth contributions share the existing4px field; no body is resampled.
+ {
+#ifdef SPIRE_NEOW_LAYER_PROFILE
+ RuntimeScopedRenderPart light_timing(c.a.callbacks.profile_render,RuntimeRenderPart::RandomDots);
+#endif
+ SoftAddGrid glow(c);
+ if(!ancient_lights::nodes(glow.canvas(),light_texture,light_table,1,clock,seed,0,~0u,&glow))return false;
+ glow.finish();
  }
  return true;
 }

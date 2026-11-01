@@ -24,6 +24,13 @@ int main(){
  {ResourceTransferLease map(ResourceTransferUse::Map);CHECK(bool(map));ForegroundScratch<Texel,Pixels*Models> denied;CHECK(!denied);}
  CHECK(quantize({1048576,1048576}).alpha==32768);
  Canvas c{app};
+ {
+  ForegroundScratch<Texel,Pixels*Models> fire;CHECK(bool(fire));
+  fire[Pixels*Models-1]={12345,23456};
+  {SoftAddGrid glow(c);CHECK(glow.sampled());ResourceTransferLease denied(ResourceTransferUse::Map);CHECK(!denied);}
+  CHECK(fire[Pixels*Models-1].inner==12345&&fire[Pixels*Models-1].alpha==23456);
+ }
+ CHECK(foreground_scratch_top==0);
  for(unsigned i=0;i<ScreenW*ScreenH;++i)app.pixels[i]=uint16_t(i*4793+0x187f);
  {
   SoftAddGrid grid(c);CHECK(grid.sampled());CHECK(grid.canvas().clip_w==81&&grid.canvas().clip_h==61);

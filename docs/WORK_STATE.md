@@ -1103,3 +1103,9 @@ confirmation dialog or another modal cannot be bypassed; a context change after
 press cancels the captured start. This fixes the keyboard reachability bug;
 it does not claim to repair the separate firmware queued-touch exit behavior.
 Focused physical-key regression cases are added and await the published rerun.
+
+## UI24 Tezcatara measured particle and glow candidate
+
+The17×17 diagnostic guest identified the actual remaining costs per warm frame: particle simulation44.389ms, cinder drawing19.013ms, smooth glow16.757ms, flame raster6.691ms and the grid itself only2.122ms. Body/UI/other work was21.734ms. This probe uses optional reused timing slots and is not the final release performance claim. The material-only9×9 comparison showed slight softening without visible blocks at the reviewed320×240 clocks.
+
+The next source candidate therefore retains both24-particle foreground emitters and samples staggered original indices from the72 background emitters (compile-time6/8/12 stride comparison; default12,192 total retained particles). Selected particles retain their exact original60Hz trajectories, seed/index, phase and inheritance; they are neither slowed nor replaced by a new random simulation. The density discriminator reuses particle-state padding, retaining56844-byte State. The90 additive glow planes share the existing4px field after the fire pass; this intentionally simplifies their interleaving with79 normal fire layers. Actor frames, all237 fire geometries and their506-frame timeline remain intact, but final lit body pixels need not match the old composite. Native appearance/subset tests and ordinary formal guest acceptance remain required.

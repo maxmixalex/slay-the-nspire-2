@@ -37,12 +37,16 @@ static bool draw(Canvas&c,uint32_t elapsed,uint32_t seed){
  const water_reflection::Texture texture(sprite,24,24),light_texture(light,256,256);
  if(!table.read(parameters)||!light_table.read(light_parameters,1)||!texture.valid()||!light_texture.valid())return false;
  const uint32_t clock=c.a.content.reduced_animations()?0:elapsed;auto&state=tez_cinder_room(c.a).state;
- state.advance(clock,seed,table.source_curve(0),[&](){c.poll();},[&](unsigned emitter,int32_t born){return table.inherit(emitter,born);});
+ state.advance(clock,seed,table.source_curve(0),[&](){c.poll();},[&](unsigned emitter,int32_t born){return table.inherit(emitter,born);},false,CalculatorBackgroundStride);
  const unsigned frame=table.frame(clock);
  for(unsigned i=0;i<164;++i){const unsigned command=table.command(i);
-  if(command&0x8000){const unsigned emitter=command&0x7fff;for(unsigned j=0;j<24;++j)particle(c,texture,state.particles[emitter*24+j],table,emitter,frame);}
-  else if(!ancient_lights::nodes(c,light_texture,light_table,1,clock,seed,command,1))return false;
+  if(command&0x8000){const unsigned emitter=command&0x7fff;
+   for(unsigned j=presentation_first(emitter);j<24;j+=presentation_step(emitter))particle(c,texture,state.particles[emitter*24+j],table,emitter,frame);}
  }
+ // This older resource path contains additive cinders/lights only.
+ SoftAddGrid glow(c);
+ if(!ancient_lights::nodes(glow.canvas(),light_texture,light_table,1,clock,seed,0,~0u,&glow))return false;
+ glow.finish();
  return true;
 }
 }

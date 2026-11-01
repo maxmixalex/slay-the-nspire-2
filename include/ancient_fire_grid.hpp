@@ -6,10 +6,10 @@ namespace spire::ancient_fire_grid {
 // Q15 channels include both exact endpoints. Q8 interpolation keeps the
 // per-pixel products in 32 bits on ARM926 and uses the existing scratch lease.
 // A 33x33 trial still spent 117.8ms/render on the formal 64MiB guest. The
-// projected flame quads are small; sixteen cells preserve their smooth UV
-// contour while reducing full material evaluations from3267 to867/frame.
+// projected flame quads are small; eight cells preserve a smooth UV contour
+// while reducing full material evaluations from3267 to243/frame.
 #ifndef SPIRE_ANCIENT_FIRE_GRID_BITS
-#define SPIRE_ANCIENT_FIRE_GRID_BITS 4
+#define SPIRE_ANCIENT_FIRE_GRID_BITS 3
 #endif
 constexpr unsigned Bits=SPIRE_ANCIENT_FIRE_GRID_BITS,Shift=20-Bits,Cells=1u<<Bits,Side=Cells+1,Pixels=Side*Side,Models=3;
 struct Texel {uint16_t inner,alpha;};
