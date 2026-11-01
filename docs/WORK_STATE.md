@@ -29,6 +29,34 @@ and the unchanged 64 MiB Firebird OS/Ndless environment; they are not physical
 handheld results. The latter four intervals had zero resource reads. This is
 the accepted baseline, distinct from the older controlled fixtures below.
 
+# UI24 Ancient calculator effects candidate — guest validation pending
+
+The user permits simpler Ancient environmental effects. This candidate keeps
+all source body frames, full-resolution transmission and their 33 ms timeline.
+Neow holds one actual source fire-light pose in the existing mutually exclusive
+Tez/Neow scene slot, omits screen-space refraction, and samples smooth Ancient
+illumination at four-pixel spacing. The full-resolution room, dialogue and HUD
+are never rescaled. No resource conversion or larger memory pool is required.
+
+Formal ARM allocation, same-resource 64 MiB Firebird before/after, private
+same-clock appearance comparison and focused regressions are pending. The
+existing UI23 figures below remain the baseline, not candidate acceptance.
+
+# UI24 converter working-set candidate — original-data validation pending
+
+The candidate carries the requested locale set through all locale writers,
+removes unused complete logical-edition copies, and reclaims owned stage
+outputs/scratch after their last successful consumer. Verified recovery
+boundaries and diagnostics survive; a failed stage retains needed inputs.
+The new dependency planner resumes through already-consumed generations and
+records complete elapsed time plus sampled logical/allocated work-byte peaks.
+Existing legacy directories are preserved unless created/owned by this planner.
+A bounded RGB565 lookup replaces repeated sparse-span color arithmetic, with
+unchanged exhaustive color, geometry and alpha regressions. These are source
+and recovery gates, not a completed original-game conversion or speed claim.
+Original PCK full conversion, exact byte comparisons, peak temporary space and
+updated standalone build acceptance remain pending.
+
 # UI23 accepted runtime and completed producer stages
 
 The runtime is frozen at actual build `d9350b94c234f443c29f12f7efb862f3595a6a57`.
@@ -903,3 +931,29 @@ remain in [ui20-retained-differences.md](ui20-retained-differences.md).
 The prior long handoff is preserved verbatim as
 [WORK_STATE-ui19.md](WORK_STATE-ui19.md), including its older source identities,
 private paths and measurements. Do not treat those paths as currently mounted.
+
+# UI24 Necrobinder/Osty feedback repair — checkpoint, validation pending
+
+The new report exposes two paths not established by the previous merchant death
+screens. Pinned assembly inspection confirms that owner death kills a surviving
+Osty only after death prevention has failed, and the game-over screen retains
+combat creature visuals above its backstop. The port previously left a living
+pet after direct owner HP loss/kill and omitted Osty from the terminal renderer.
+This checkpoint restores the companion kill and shares the ordinary Osty draw
+path with combat game over, retaining the existing death/dead-loop clock.
+
+The official full actor conversion also baked the Necrobinder slash placeholder
+atlas because the actor sampler ignored the authored slash slot ShaderMaterial.
+That source-data fix is in progress and will require regenerated actor resources;
+replacing the launcher alone cannot fix that texture. No actor dimensions, frame
+counts, cache capacity or allocation limit are changed. Public regressions and
+ordinary64MiB firmware action captures are still pending for this checkpoint.
+
+The slash repair now evaluates the original slot shader at each interpolated
+Spine UV after the source clipping geometry. It reads original PCK uniforms and
+textures and follows the pinned attack event's400ms Quad/In step and450ms
+Quad/InOut opacity tweens. The shader's unbound mask sampler is white; its output
+replaces the printed atlas placeholder, rather than multiplying that placeholder
+into the effect. Existing frame counts, timestamps and source rasters remain.
+Four source-free tests pass for event endpoints, channel semantics, fragment UVs
+and slot-only replacement. Real-art and firmware acceptance remain pending.

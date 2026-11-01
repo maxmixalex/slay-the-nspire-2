@@ -599,6 +599,19 @@ static void eidolon_and_persistence(){
  }
 }
 
+static void owner_death_retains_pet_rules(){
+ scenario="Owner direct death kills Osty only after failed revival";
+ for(int prevented=0;prevented<2;++prevented){
+  auto s=fight();s.expansion.osty_hp=s.expansion.osty_max_hp=9;
+  if(prevented)s.potions[0]=Potion::FairyInABottle;
+  const auto deaths=s.necro.creature_deaths;
+  player_kill(s,false);resolve_pending(s);
+  if(prevented)CHECK(s.hp>0&&s.expansion.osty_hp==9&&s.necro.creature_deaths==deaths);
+  else CHECK(s.phase==Phase::Dead&&s.expansion.osty_hp==0&&s.necro.creature_deaths==deaths+1);
+  restore(s);
+ }
+}
+
 static void character_start_and_validation(){
  scenario="Pinned Necrobinder starting deck, HP and BoundPhylactery";
  {State s{};new_run(s,291,false,Character::Necrobinder);CHECK(s.hp==66&&s.max_hp==66&&s.deck_count==10&&(s.relics&BoundPhylactery));
@@ -629,6 +642,6 @@ static void character_start_and_validation(){
  }
 }
 int main(){
- complete_model_matrix();osty_damage_and_life();doom_and_debuffs();temporary_strength_and_misery();damage_listener_order();turns_draws_and_souls();physical_cards_and_choices();eidolon_and_persistence();character_start_and_validation();
+ complete_model_matrix();osty_damage_and_life();doom_and_debuffs();temporary_strength_and_misery();damage_listener_order();turns_draws_and_souls();physical_cards_and_choices();eidolon_and_persistence();character_start_and_validation();owner_death_retains_pet_rules();
  std::printf("Necrobinder completion: %u canonical variants, %u checks passed\n",variants,checks);return 0;
 }

@@ -168,6 +168,7 @@ def main():
     parser.add_argument('--partial-art', action='store_true', help='Named integration gates only; not final delivery')
     parser.add_argument('--reuse-artwork', type=Path)
     parser.add_argument('--languages', default='all')
+    parser.add_argument('--keep-logical', default='eng,zhs')
     args = parser.parse_args()
     tiles.require(args.partial_art or args.vantom_catalog is not None, 'Final artwork requires complete Vantom resources')
     output = tiles.private_path(args.output, 'Private UI15 output');output.mkdir(parents=True, exist_ok=True)
@@ -200,7 +201,7 @@ def main():
         directory = split.compress_language_directory(split.language_file(localized, bounds, code, common[32:64]))
         tiles.require(split.reconstruct(common, directory, code) == localized, 'Split readback differs')
         tiles.atomic_bytes(output/f'nSpire2.{code}.dat.tns', directory)
-        if code in ('eng', 'zhs'):tiles.atomic_bytes(output/f'ui15-{code}.nsp', localized)
+        if code in args.keep_logical.split(','):tiles.atomic_bytes(output/f'ui15-{code}.nsp', localized)
         reports[code] = dict(graft=graft, fonts=fonts, grouping=grouping,
             bytes=len(directory), sha256=tiles.sha256(directory), logical_bytes=len(localized))
         tiles.atomic_bytes(output/f'{code}-receipt.json', json.dumps(reports[code], indent=2).encode()+b'\n')

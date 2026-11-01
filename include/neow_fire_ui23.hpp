@@ -59,6 +59,18 @@ struct Mask {
 };
 static_assert(sizeof(Mask)<18000,"Compact Neow transmission must fit the existing cinder-sized scene variant");
 
+// Calculator presentation: retain one source fire-light pose instead of
+// evaluating four procedural shaders every frame. Only the light is held;
+// Mask still follows all 546 original full-resolution foreground poses.
+// Two 8-bit radiance channels fit alongside Mask in the existing Tez slot.
+struct Illumination {
+ const void*owner=nullptr;
+ uint32_t generation=0;
+ bool valid=false;
+ uint16_t pixels[MaskBytes];
+ bool matches(const void*source,uint32_t epoch)const{return valid&&owner==source&&generation==epoch;}
+};
+
 struct Table {
  const uint8_t*data=nullptr;bool bounded=false;
  template<class Picture>bool read(const Picture&p,bool reduced){

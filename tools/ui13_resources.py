@@ -297,7 +297,9 @@ def pack_editions(args):
     art=view(artwork);common=None;reports={}
     previous_common=(tiles.private_path(args.previous_editions,'Previous UI13 editions')/'nSpire2.dat.tns').read_bytes() if args.previous_editions else None
     keep=set(args.keep_logical.split(',')) if args.keep_logical else set()
-    for language in LANGUAGES:
+    languages=list(LANGUAGES) if args.languages=='all' else args.languages.split(',')
+    tiles.require(languages and set(languages)<=set(LANGUAGES) and len(languages)==len(set(languages)), 'Invalid locales')
+    for language in languages:
         candidates=[Path(folder)/f'nSpire2.{language}.dat.tns' for folder in args.editions]
         candidates=[path for path in candidates if path.is_file()]
         tiles.require(len(candidates)==1,'Expected one previous locale file: '+language)
@@ -363,6 +365,7 @@ def main():
     build.add_argument('--editions',type=Path,action='append',required=True)
     build.add_argument('--fonts',type=Path,required=True);build.add_argument('--output',type=Path,required=True)
     build.add_argument('--keep-logical',default='eng,zhs')
+    build.add_argument('--languages',default='all')
     build.add_argument('--previous-editions',type=Path)
     for command in (sample,extension,retained,no_rug,build):
         command.add_argument('--pck',type=Path,required=True);command.add_argument('--cache',type=Path,required=True)

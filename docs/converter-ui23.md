@@ -63,9 +63,10 @@ nspire2-convert --game "PATH TO ORIGINAL GAME" --output "PATH TO OUTPUT"
 
 English and Simplified Chinese are the default output. Use `--languages all`
 for all sixteen original language editions, or a comma-separated selection
-including `eng`, for example `--languages eng,zhs,jpn`. The converter's early
-catalog stages build a common multilingual source; choosing fewer final
-languages reduces the delivered files, not all intermediate conversion work.
+including `eng`, for example `--languages eng,zhs,jpn`. The requested languages are carried through every locale-writing stage. The
+default English/Chinese conversion therefore avoids generating the other
+fourteen locale directories and their temporary glyph/text packs. Shared
+artwork and all source clips remain identical across language selections.
 
 ## Animated artwork policy
 
@@ -135,12 +136,26 @@ unrelated packaging or runtime code can require reassembling a stage while
 retaining its unchanged, expensive original-frame samples.
 
 The default work directory is a stable directory under the operating system's
-temporary directory. It contains extracted original fonts, sampled frames, and
-intermediate resource packs and can be large. Use `--work PATH` to place it on
-a disk with sufficient space. Animated and reduced runs can reuse the same
+temporary directory. The converter releases owned intermediate packs and
+sampling scratch after their final successful consumer. It keeps diagnostic
+receipts and selected expensive recovery boundaries, including the source
+language catalog and the artwork before profile-specific scene work. An
+interrupted stage keeps its required inputs, and a later run verifies its
+available boundary before rebuilding missing dependencies. Existing legacy
+work directories are preserved; reclamation applies only to directories owned
+by the new lifecycle manifest. Use a new `--work PATH` for the smaller working
+set, or `--keep-intermediates` for developer inspection of every generation.
+Animated and reduced runs can reuse the same
 work directory sequentially; never run two conversions against that directory
 at the same time. Use separate output directories to retain both profiles.
 The converter keeps these inputs separate from the final output and never modifies the original game installation's files.
+
+`receipts/pipeline.json` records complete pipeline elapsed time, converted and
+reused stages, reclaimed bytes, and measured work-directory logical and
+allocated-byte peaks. Space is sampled every half second and at stage
+boundaries, so this is an observed peak rather than a mathematical maximum.
+The final converter receipt includes that summary; an individual stage
+`elapsed_seconds` is not the total conversion time.
 
 `--plan` prints every source, storage, and finalization stage. Developer option
 `--stop-after STAGE` stops at a named checkpoint and explicitly reports that

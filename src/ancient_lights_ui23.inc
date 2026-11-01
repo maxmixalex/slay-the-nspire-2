@@ -87,12 +87,9 @@ static bool draw(Canvas&c,unsigned scene,uint32_t elapsed){
  // Reacquire texture/table views after the vignette request. No image load
  // occurs inside either borrowed-pointer drawing window.
  if(!layer(c,scene,1,elapsed,seed))return false;
- if(!scene&&c.a.content.ui_image(neow_post_ui23::AuxiliaryFirst)==int(neow_post_ui23::FirstImage)){
-#ifdef SPIRE_NEOW_LAYER_PROFILE
-  RuntimeScopedRenderPart post_timing(c.a.callbacks.profile_render,RuntimeRenderPart::CharacterAscension);
-#endif
-  return neow_post::draw(c,c.a.content.reduced_animations()?0u:c.a.map_clock_ms);
- }
+ // Calculator presentation omits Neow's screen-space refraction/chromatic
+ // dispersion. The original room/body, lights, fog and vignette remain at
+ // their authored positions; dialogue and HUD are never resampled.
  return true;
 }
 }

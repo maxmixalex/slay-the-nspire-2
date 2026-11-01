@@ -19,7 +19,8 @@ def _paint_layer(layer, xy, uv, triangles, texture, tint):
     if not len(triangles):
         return
     dst = xy[triangles]
-    src = uv[triangles] * [texture.shape[1] - 1, texture.shape[0] - 1]
+    fragment = texture if callable(texture) else None
+    src = uv[triangles] if fragment else uv[triangles] * [texture.shape[1] - 1, texture.shape[0] - 1]
     lower = np.maximum(0, np.floor(dst.min(axis=1)).astype(int))
     upper = np.minimum([width - 1, height - 1], np.ceil(dst.max(axis=1)).astype(int))
     mats = np.concatenate((dst.transpose(0, 2, 1), np.ones((len(dst), 1, 3))), axis=1)
@@ -48,14 +49,17 @@ def _paint_layer(layer, xy, uv, triangles, texture, tint):
                   (weights.max(axis=1) <= 1.00001) &
                   (pos < counts[begin:end, None]))
         coords = src[begin:end].transpose(0, 2, 1) @ weights
-        sx = np.clip(coords[:, 0], 0, texture.shape[1] - 1)
-        sy = np.clip(coords[:, 1], 0, texture.shape[0] - 1)
-        ix, iy = np.floor(sx).astype(int), np.floor(sy).astype(int)
-        jx = np.minimum(ix + 1, texture.shape[1] - 1)
-        jy = np.minimum(iy + 1, texture.shape[0] - 1)
-        fx, fy = (sx - ix)[:, :, None], (sy - iy)[:, :, None]
-        sample = ((texture[iy, ix] * (1 - fx) + texture[iy, jx] * fx) * (1 - fy) +
-                  (texture[jy, ix] * (1 - fx) + texture[jy, jx] * fx) * fy) * tint
+        if fragment:
+            sample = fragment(coords.transpose(0, 2, 1)) * tint
+        else:
+            sx = np.clip(coords[:, 0], 0, texture.shape[1] - 1)
+            sy = np.clip(coords[:, 1], 0, texture.shape[0] - 1)
+            ix, iy = np.floor(sx).astype(int), np.floor(sy).astype(int)
+            jx = np.minimum(ix + 1, texture.shape[1] - 1)
+            jy = np.minimum(iy + 1, texture.shape[0] - 1)
+            fx, fy = (sx - ix)[:, :, None], (sy - iy)[:, :, None]
+            sample = ((texture[iy, ix] * (1 - fx) + texture[iy, jx] * fx) * (1 - fy) +
+                      (texture[jy, ix] * (1 - fx) + texture[jy, jx] * fx) * fy) * tint
         # Assign each triangle in its original order. Shared-edge/overlapping
         # fragments must not rely on unspecified duplicate advanced indexes.
         for row in range(end - begin):

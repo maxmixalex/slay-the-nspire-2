@@ -10,6 +10,7 @@ candidate is not strictly smaller.
 from __future__ import annotations
 
 import struct
+from functools import lru_cache
 
 MAX_IMAGE_BYTES = 320 * 240 * 8 + 2 * 240
 CONTENT_VERSION = 36
@@ -128,6 +129,29 @@ def _color_ranges(raw, fmt, width, height):
     return ranges
 
 
+@lru_cache(maxsize=4)
+def color_lookup(mode, inverse):
+    """Evaluate each RGB565 word once, including modulo and zigzag semantics."""
+    import numpy as np
+    value = np.arange(65536, dtype=np.int32)
+    if inverse:
+        green, red, blue = value & 63, (value >> 6) & 31, value >> 11
+        if mode == 2:
+            red = (red >> 1) ^ (-(red & 1))
+            blue = (blue >> 1) ^ (-(blue & 1))
+        value = (((red + (green >> 1)) & 31) << 11) | (green << 5) | ((blue + (green >> 1)) & 31)
+    else:
+        green = (value >> 5) & 63
+        red, blue = ((value >> 11) - (green >> 1)) & 31, ((value & 31) - (green >> 1)) & 31
+        if mode == 2:
+            red = np.where(red < 16, red * 2, (32 - red) * 2 - 1)
+            blue = np.where(blue < 16, blue * 2, (32 - blue) * 2 - 1)
+        value = green | (red << 6) | (blue << 11)
+    result = value.astype('<u2')
+    result.flags.writeable = False
+    return result
+
+
 def transform(raw, fmt, mode, inverse=False, *, width=None, height=None):
     """Return an exact-length transformed copy, leaving ``raw`` untouched.
 
@@ -142,24 +166,10 @@ def transform(raw, fmt, mode, inverse=False, *, width=None, height=None):
     _require(isinstance(mode, int) and mode in (1, 2), 'Unsupported retained color transform')
     ranges = _color_ranges(raw, fmt, width, height)
     out = bytearray(raw)
+    lookup = color_lookup(mode, bool(inverse))
     for at, count, stride in ranges:
-        low = np.ndarray((count,), dtype='u1', buffer=out, offset=at, strides=(stride,))
-        high = np.ndarray((count,), dtype='u1', buffer=out, offset=at + 1, strides=(stride,))
-        value = low.astype(np.int32) | (high.astype(np.int32) << 8)
-        if inverse:
-            green, red, blue = value & 63, (value >> 6) & 31, value >> 11
-            if mode == 2:
-                red = (red >> 1) ^ (-(red & 1))
-                blue = (blue >> 1) ^ (-(blue & 1))
-            value = (((red + (green >> 1)) & 31) << 11) | (green << 5) | \
-                    ((blue + (green >> 1)) & 31)
-        else:
-            green = (value >> 5) & 63
-            red, blue = ((value >> 11) - (green >> 1)) & 31, ((value & 31) - (green >> 1)) & 31
-            if mode == 2:
-                red = np.where(red < 16, red * 2, (32 - red) * 2 - 1)
-                blue = np.where(blue < 16, blue * 2, (32 - blue) * 2 - 1)
-            value = green | (red << 6) | (blue << 11)
-        low[:] = value & 255
-        high[:] = (value >> 8) & 255
+        # NumPy's strided unaligned words also cover sparse RGB/alpha spans;
+        # alpha bytes and row/span geometry are never addressed by this view.
+        words = np.ndarray((count,), dtype='<u2', buffer=out, offset=at, strides=(stride,))
+        words[:] = lookup[words]
     return bytes(out)

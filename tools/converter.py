@@ -62,6 +62,22 @@ def atomic_json(path, value):
     os.replace(temporary, path)
 
 
+def link_or_copy(source, target):
+    """Alias immutable edition bytes without duplicating them on the same disk."""
+    source, target = Path(source), Path(target)
+    target.parent.mkdir(parents=True, exist_ok=True)
+    temporary = target.with_name(target.name+'.link-tmp')
+    temporary.unlink(missing_ok=True)
+    try:
+        try:
+            os.link(source, temporary)
+        except OSError:
+            shutil.copy2(source, temporary)
+        os.replace(temporary, target)
+    finally:
+        temporary.unlink(missing_ok=True)
+
+
 def preflight_output(output,codes):
     """Prevent a new common file from leaving stale optional locale overlays."""
     stale=[code for code in LANGUAGES if code not in codes and
@@ -220,11 +236,12 @@ def self_test():
 
 
 class Recipe:
-    def __init__(self, game, work, runtime, dotnet, noise, key_font, workers=2):
+    def __init__(self, game, work, runtime, dotnet, noise, key_font, workers=2, languages=LANGUAGES):
         self.game, self.work = Path(game), Path(work)
         self.pck, self.fonts = self.game/'SlayTheSpire2.pck', self.work/'fonts'
         self.runtime, self.dotnet, self.noise, self.key_font = runtime, dotnet, noise, key_font
         self.workers, self.stages = workers, []
+        self.languages = tuple(languages)
 
     def directory(self, name):
         return self.work/name
@@ -247,6 +264,7 @@ class Recipe:
         """All catalog appends start with extracted PCK data, never a prior pack."""
         font = self.fonts/'NotoSansMonoCJKsc-Regular.otf'
         native = ['--runtime', self.runtime, '--dotnet', self.dotnet]
+        languages = ','.join(self.languages)
         self.add('fonts', '@fonts', [self.pck, self.fonts, self.key_font],
             [self.fonts/'font-extraction.json',*(self.fonts/name for name in ORIGINAL_FONTS),
              self.fonts/'supplement/spectral_bold.ttf',self.fonts/'supplement/bitter_medium_italic.ttf',
@@ -332,22 +350,23 @@ class Recipe:
         pair = paths
         editions=self.directory('editions')
         self.add('editions','build_locale_editions',['--input',pair[0],'--pck',self.pck,
-            '--fonts',self.fonts,'--output',editions,'--languages','all','--keep-logical'],
+            '--fonts',self.fonts,'--output',editions,'--languages',languages],
             self.edition_files(editions)+[editions/'locales-receipt.json'])
         ui12=self.directory('ui12')
         self.add('ui12','ui12_resources',['--editions',editions,'--pck',self.pck,'--fonts',self.fonts,
-            '--output',ui12,'--cache',self.directory('cache/ui12'),'--languages','all'],self.edition_files(ui12))
+            '--output',ui12,'--cache',self.directory('cache/ui12'),'--languages',languages,
+            '--keep-logical',''],self.edition_files(ui12)+[ui12/'locales-receipt.json'])
         legacy=self.directory('startup-input')
-        self.add('startup-input','@rename-editions',[ui12,legacy,'old'],self.edition_files(legacy,old=True))
+        self.add('startup-input','@rename-editions',[ui12,legacy,'old',languages],self.edition_files(legacy,old=True))
         startup=self.directory('startup')
         self.add('startup','startup_logo_resources',['--input-dir',legacy,'--output-dir',startup,
             '--cache-dir',self.directory('cache/startup'),'--pck',self.pck,'--runtime',self.runtime,
-            '--fonts',self.fonts,'--languages','all'],self.edition_files(startup,old=True))
+            '--fonts',self.fonts,'--languages',languages],self.edition_files(startup,old=True))
         swarm=self.directory('swarm')
         self.add('swarm','phobia_swarm_resources',['--pck',self.pck,'--input-dir',startup,
-            '--output-dir',swarm,'--cache-dir',self.directory('cache/swarm')],self.edition_files(swarm,old=True))
+            '--output-dir',swarm,'--cache-dir',self.directory('cache/swarm'),'--languages',languages],self.edition_files(swarm,old=True))
         ready=self.directory('ui13-input')
-        self.add('ui13-input','@rename-editions',[swarm,ready,'new'],
+        self.add('ui13-input','@rename-editions',[swarm,ready,'new',languages],
             self.edition_files(ready)+[ready/'eng.nsp'])
         # UI13 grafts real per-clip source registration into every locale while
         # proving frame IDs/counts/clocks. Vantom's later typed sampler requires
@@ -369,12 +388,13 @@ class Recipe:
         ui13=self.directory('ui13')
         self.add('ui13','ui13_resources',['pack','--artwork',rebaked/'eng.nsp',
             '--base-common',ready/'nSpire2.dat.tns','--editions',ready,'--fonts',self.fonts,
-            '--output',ui13,'--pck',self.pck,'--cache',artcache],
+            '--output',ui13,'--pck',self.pck,'--cache',artcache,'--languages',languages,'--keep-logical','eng'],
             self.edition_files(ui13)+[ui13/'ui13-eng.nsp'])
         ui14=self.directory('ui14')
         self.add('ui14','ui14_resources',['--artwork',ui13/'ui13-eng.nsp',
             '--source-common',ui13/'nSpire2.dat.tns','--source-editions',ui13,'--pck',self.pck,
-            '--cache',self.directory('cache/ui14'),'--output',ui14,'--workers',self.workers],
+            '--cache',self.directory('cache/ui14'),'--output',ui14,'--workers',self.workers,
+            '--languages',languages,'--keep-logical','eng'],
             self.edition_files(ui14)+[ui14/'ui14-eng.nsp'])
         vantom=self.directory('cache/vantom')
         self.add('vantom','vantom_ui15_assets',['--pck',self.pck,*native,'--input',ui14/'ui14-eng.nsp',
@@ -386,14 +406,13 @@ class Recipe:
         self.add('ui15','ui15_resources',['--source-common',ui14/'nSpire2.dat.tns',
             '--source-editions',ui14,'--pck',self.pck,'--fonts',self.fonts,
             '--cache',self.directory('cache/ui15'),'--output',ui15,
-            '--vantom-catalog',vantom/'vantom-assets.json','--extra-catalog',effects,'--languages','all'],
-            self.edition_files(ui15)+[ui15/'ui15-eng.nsp'])
+            '--vantom-catalog',vantom/'vantom-assets.json','--extra-catalog',effects,'--languages',languages,
+            '--keep-logical',''],self.edition_files(ui15)+[ui15/'locales-receipt.json'])
         return ui15
 
-    @staticmethod
-    def edition_files(directory, old=False):
+    def edition_files(self, directory, old=False):
         return [directory/('nSpire2.common.tns' if old else 'nSpire2.dat.tns'),
-                *(directory/(f'nSpire2.{code}.tns' if old else f'nSpire2.{code}.dat.tns') for code in LANGUAGES)]
+                *(directory/(f'nSpire2.{code}.tns' if old else f'nSpire2.{code}.dat.tns') for code in self.languages)]
 
 
 def internal(module, arguments):
@@ -421,10 +440,13 @@ def internal(module, arguments):
         source, output, mode = Path(arguments[0]),Path(arguments[1]),arguments[2]
         old = mode == 'old'
         output.mkdir(parents=True,exist_ok=True)
-        inputs = Recipe.edition_files(source,old=not old)
-        outputs = Recipe.edition_files(output,old=old)
+        codes = arguments[3].split(',') if len(arguments)>3 else LANGUAGES
+        def files(directory, legacy):
+            return [directory/('nSpire2.common.tns' if legacy else 'nSpire2.dat.tns'),
+                    *(directory/(f'nSpire2.{code}.tns' if legacy else f'nSpire2.{code}.dat.tns') for code in codes)]
+        inputs, outputs = files(source,not old), files(output,old)
         for before,after in zip(inputs,outputs):
-            shutil.copy2(before,after)
+            link_or_copy(before,after)
         if not old:
             common=(output/'nSpire2.dat.tns').read_bytes()
             (output/'eng.nsp').write_bytes(split.reconstruct(common,(output/'nSpire2.eng.dat.tns').read_bytes(),'eng'))
@@ -540,7 +562,10 @@ def prepare_tile_generation(stage, work, runner_receipt, log):
     receipt.unlink()
 
 
-def run_stages(stages, work, identity, stop_after=None):
+def run_stages(stages, work, identity, stop_after=None, *, compact=False, keep_intermediates=False):
+    if compact:
+        from converter_workspace import run
+        return run(stages,work,identity,stop_after,keep=keep_intermediates)
     receipts=Path(work)/'receipts';logs=Path(work)/'logs'
     receipts.mkdir(parents=True,exist_ok=True);logs.mkdir(parents=True,exist_ok=True)
     previous=identity
@@ -594,6 +619,7 @@ def main(argv=None):
     parser.add_argument('--game',type=Path,help='Original game folder (default: current or executable folder)')
     parser.add_argument('--output',type=Path,help='Installed data output (default: game/nSpire2-converted)')
     parser.add_argument('--work',type=Path,help='Resumable intermediate directory (default: system temporary directory)')
+    parser.add_argument('--keep-intermediates',action='store_true',help='Developer option: retain every intermediate pack and scratch file')
     parser.add_argument('--no-animations',action='store_true',help='Retain only essential actor poses with original action timing')
     parser.add_argument('--languages',default='eng,zhs',help='Comma-separated original locale codes, or all')
     parser.add_argument('--workers',type=int,choices=(1,2),default=2)
@@ -637,7 +663,7 @@ def main(argv=None):
             if supplied and not keyfont.is_file():
                 raise ValueError('Optional calculator key font does not exist: '+str(keyfont))
             runtime,noise=private_helper_inputs(runtime,noise,work)
-        recipe=Recipe(game,work,runtime,args.dotnet,noise,keyfont,args.workers)
+        recipe=Recipe(game,work,runtime,args.dotnet,noise,keyfont,args.workers,codes)
         recipe.reference=dict(reference,pck_sha256=digest(game/'SlayTheSpire2.pck'),assembly_sha256=digest(assembly)) if not args.plan else reference
         source_editions=recipe.source_stages()
         # The post-catalog recipe is deliberately separate from source baking:
@@ -660,14 +686,20 @@ def main(argv=None):
         work.mkdir(parents=True,exist_ok=True)
         # All public recipe/config files and source inputs identify this build.
         from run_logged import inventory
-        identity=hashlib.sha256(json.dumps(dict(source=inventory(ROOT),reference=reference,
-            pck=digest(game/'SlayTheSpire2.pck'),assembly=digest(assembly),runtime=digest(runtime),noise=digest(noise),
+        from converter_workspace import scoped_identities
+        identity=scoped_identities(ROOT,recipe.stages,dict(reference=reference,
+            pck=recipe.reference['pck_sha256'],assembly=recipe.reference['assembly_sha256'],runtime=digest(runtime),noise=digest(noise),
             arm_elf=digest(arm_elf),arm_source=arm_record['source_files'],
             helpers={key:digest(value) for key in ('NSPIRE_SPINE_ADAPTER','NSPIRE_FASTNOISE_LIBRARY')
                      if (value:=os.environ.get(key))},
-            key_font=digest(keyfont) if str(keyfont)!='-' else 'public-keycaps'),sort_keys=True).encode()).hexdigest()
-        complete=run_stages(recipe.stages,work,identity,args.stop_after)
+            key_font=digest(keyfont) if str(keyfont)!='-' else 'public-keycaps'),inventory(ROOT))
+        complete=run_stages(recipe.stages,work,identity,args.stop_after,compact=True,keep_intermediates=args.keep_intermediates)
         if complete:
+            summary=json.loads((work/'receipts/pipeline.json').read_text(encoding='utf-8'))
+            receipt=json.loads((output/'converter-receipt.json').read_text(encoding='utf-8'))
+            receipt['pipeline']={key:value for key,value in summary.items() if key!='stages'}
+            atomic_json(output/'converter-receipt.json',receipt)
+            print(f"Pipeline: {summary['total_elapsed_seconds']:.2f} seconds; measured peak temporary bytes {summary['peak_work_bytes']:,}; retained {summary['retained_work_bytes']:,}.",flush=True)
             print(f'Resource conversion complete: {output}/data. Place this data folder beside the matching UI23 nSpire2.tns launcher from the calculator package.',flush=True)
         else:
             atomic_json(output/'converter-receipt.json',dict(complete=False,status='checkpoint',
