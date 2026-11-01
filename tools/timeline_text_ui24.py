@@ -28,6 +28,15 @@ BASE_STRINGS = 8704
 ADDED_STRINGS = 257
 CLUSTER_BASE, CLUSTER_END = 0x10e000, 0x10f000
 SUBSTITUTED = frozenset(('zhs', 'zht', 'jpn', 'kor', 'pol', 'rus', 'tha'))
+PORT_LABELS = {
+    'eng': ('Timeline', 'Legacy access: content open; old obtain dates unknown.',
+            'Install the matching Timeline resources.', 'Select an Epoch; Enter to inspect.',
+            'Obtained:', 'Revealed', 'Not obtained', 'Locked',
+            'Reveal the matching Epoch in the Timeline.'),
+    'zhs': ('时间线', '旧版兼容开放，历史获得时间未知。', '请安装配套的时间线资源。',
+            '选择条目，按 Enter 查看。', '获得时间：', '已揭示', '尚未获得', '未解锁',
+            '请在时间线揭示对应条目。'),
+}
 
 
 def contract():
@@ -91,14 +100,16 @@ def shape_texts(texts, existing_codepoints):
 def glyph_requirements(texts, language):
     # Actual Timeline reader: 10px regular list/body/story; source label 12px
     # heading. Rich spans retain their explicit bold/italic roles.
-    menu = '时间线' if language == 'zhs' else 'Timeline'
-    legacy = '旧版兼容开放，历史获得时间未知。' if language == 'zhs' else ''
-    body = styled_alphabet([*texts, menu, legacy])
+    labels = PORT_LABELS['zhs' if language == 'zhs' else 'eng']
+    body = styled_alphabet([*texts, *labels])
     required = {(cp, 10, 0) for cp in set().union(*body)}
     for face in range(1, 4):
         required.update((cp, 10, face) for cp in body[face])
-    title = set().union(*styled_alphabet([*texts[0:57*4:4], menu]))
+    title = set().union(*styled_alphabet([*texts[0:57*4:4], labels[0]]))
     required.update((cp, 12, 0 if language in SUBSTITUTED else 5) for cp in title)
+    # The port menu heading explicitly selects the bold scene face; the
+    # original Epoch heading uses the source locale's substitution rule.
+    required.update((ord(c), 12, 5) for c in labels[0])
     return {(cp, px, face) for cp, px, face in required if not text_format_control(cp)}
 
 

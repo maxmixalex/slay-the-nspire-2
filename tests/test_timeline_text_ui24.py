@@ -28,6 +28,9 @@ class TimelineTextTest(unittest.TestCase):
         wanted = timeline.glyph_requirements(['']*257, 'zhs')
         self.assertIn((ord('获'), 10, 0), wanted)
         self.assertIn((ord('线'), 12, 0), wanted)
+        self.assertIn((ord('线'), 12, 5), wanted)
+        self.assertIn((ord('揭'), 10, 0), wanted)
+        self.assertEqual(len(timeline.PORT_LABELS['zhs']), 9)
 
     def test_new_font_glyph_keeps_the_native_rle_payload_contract(self):
         font = SimpleNamespace(fonts={10: ImageFont.load_default(size=10)}, coverage={ord('A')})
