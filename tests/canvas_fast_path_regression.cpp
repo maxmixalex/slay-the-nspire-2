@@ -31,12 +31,13 @@ static Bytes fixture(){
  constexpr unsigned string_at=40+count*16,clip_at=string_at+strings*8;
  Bytes b(clip_at+clips*16);put(b,0,0x3250534e);put(b,4,3);put(b,8,0x41cef1ea);
  put(b,16,count);put(b,24,strings);put(b,28,clips);
- const unsigned formats[]={0,0,1,2,3,4,1,0,4};
+ const unsigned formats[]={0,0,1,2,3,4,1,0,4,1};
  constexpr unsigned generated=sizeof formats/sizeof formats[0];
  for(unsigned id=0;id<generated;++id){
-  const unsigned w=id>=7?320:7,h=id>=7?240:5,format=formats[id];
+  const unsigned w=id==7||id==8?320:7,h=id==7||id==8?240:5,format=formats[id];
   Image image{w,h,format,std::vector<uint16_t>(w*h),Bytes(w*h,255)};
   for(unsigned i=0;i<w*h;++i){image.colors[i]=color(i%256);if(format==1||format==3)image.alpha[i]=uint8_t((i*67)%256);}
+  if(id==9)for(unsigned i=0;i<w*h;++i)if(image.alpha[i])image.colors[i]=65535;
   if(id==6)std::fill(image.alpha.begin(),image.alpha.end(),0);
   // On-disk offsets must be even. main() also opens this complete pack from
   // an odd host address, which makes every direct RGB565 view unaligned.
@@ -201,6 +202,28 @@ static void masked_pictures(){
  for(Placement p:{Placement{0,0,0,0},Placement{-3,-2,0,0},Placement{3,5,23,19},Placement{-5,-3,41,33}})
  for(unsigned alpha:{127u,255u})for(unsigned mode:{0u,unsigned(presentation::Add)})
   picture_case(surface,style,id,p,alpha,mode,true);
+}
+static void ancient_option_images(){
+ static const int16_t matrix[]={1731,213,-57,81,1219,37,-21,97,1103};
+ for(const auto style:styles)for(unsigned id:{0u,2u,3u,5u,6u,9u})
+ for(Placement p:{Placement{0,0,0,0},Placement{-3,-2,23,19},Placement{3,5,17,13},Placement{27,23,19,11},Placement{0,0,7,-1}})
+ for(unsigned alpha:{0u,1u,128u,191u,255u})for(unsigned mode:{0u,unsigned(presentation::Add),2u})
+ for(unsigned layer=0;layer<3;++layer){
+  Pair pair({31,27,39},style);Bytes occlusion(pair.actual.size());
+  if(layer==1)pair.got.color_matrix=pair.oracle.color_matrix=matrix;
+  if(layer==2){for(unsigned i=0;i<occlusion.size();++i)occlusion[i]=i%3?254:255;
+   pair.got.occlusion=pair.oracle.occlusion=occlusion.data()+Pair::guard;}
+  ancient_option_image(pair.got,int(id),p.x,p.y,p.w,p.h,alpha,mode);
+  pair.oracle.picture(app.content.image(int(id)),p.x,p.y,p.w,p.h,alpha,mode);pair.compare();
+ }
+ // The actual panel/outline sizes also exercise clipped full-width surfaces
+ // and nonpacked pitch without resampling the destination underneath them.
+ for(auto style:{Style{false,255,255,0,26,51},Style{false,255,255,120,255,254},styles[17]})
+ for(unsigned alpha:{128u,191u,255u})for(unsigned mode:{0u,unsigned(presentation::Add)}){
+  Pair pair({320,240,327},style);
+  ancient_option_image(pair.got,9,20,120,280,35,alpha,mode);
+  pair.oracle.picture(app.content.image(9),20,120,280,35,alpha,mode);pair.compare();
+ }
 }
 static void nine_panels(){
  const Style panel_styles[]={styles[0],styles[1],styles[2],styles[3],styles[4],styles[6],styles[16],styles[17],
@@ -762,11 +785,11 @@ int main(){
  blend_reference();covered_paint_contract();dim_backstops();
  const auto data=fixture();CHECK(app.content.open(data.data(),data.size()));
  CHECK((uintptr_t(app.content.image(0).pixels)&1u)==0u);
- rectangles();material_icons();pictures();masked_pictures();nine_panels();opaque_covers();picture_regions();picture_row_views();fake_merchant_atlas();title_particles();scaled_sparse_clipping();CHECK(app.content.healthy());
+ rectangles();material_icons();pictures();masked_pictures();ancient_option_images();nine_panels();opaque_covers();picture_regions();picture_row_views();fake_merchant_atlas();title_particles();scaled_sparse_clipping();CHECK(app.content.healthy());
  Bytes unaligned(data.size()+1);std::copy(data.begin(),data.end(),unaligned.begin()+1);
  CHECK(app.content.open(unaligned.data()+1,data.size()));
  CHECK((uintptr_t(app.content.image(0).pixels)&1u)==1u);
- material_icons();pictures();nine_panels();picture_regions();picture_row_views();map_pictures();CHECK(app.content.healthy());glyphs();hidden_picture_io(data);
+ material_icons();pictures();ancient_option_images();nine_panels();picture_regions();picture_row_views();map_pictures();CHECK(app.content.healthy());glyphs();hidden_picture_io(data);
  const auto text=fitted_glyph_fixture();fitted_clip_pixels(text);fitted_hidden_glyph_io(text);character_name_outlines();
  std::printf("canvas fast path: %u cases, %u checks; production paint oracle, RGB565 alignment, clipping, pitch, coverage, modulation, additive, scaled, atlas regions, sparse, palette and glyph decode bounds\n",cases,checks);
 }

@@ -162,11 +162,12 @@ separately in [UI20 reconciliation](ui20-retained-differences.md),
 | Affliction, Infection and Ancient card-fire materials | New ACU1 packs continuously evaluate all nine materials across the seven Affliction families and render all55 visible authored particles. The former56 phase slots carry fields, curves and particle tracks. Infection's30 PNGs and Ancient fire's10 authored frames remain complete source flipbooks. Historical packs retain their8-phase fallback. See [continuous-card acceptance](ui23-continuous-card-materials.md) for precision, memory and execution evidence. |
 | Arbitrary cross-track Spine composition and unrecorded cosmetic RNG history | Existing authored observers, sampled motion and deterministic cosmetic state cover the declared paths. General desktop composition/process-history parity is not established. |
 | Hosted services and desktop timezone/IME integration | Local daily/custom gameplay and locale formatting exist; hosted leaderboards/cloud, a timezone/DST database and a calculator IME are not supplied. |
-| History, drawing and input capacity | Existing limits remain 32 runs, 96 floors per run, 2,048 map points and 64 UTF-8 seed bytes plus terminator. Overflow/evicted history is not claimed to be preserved. |
-| Audio, multiplayer and Timeline | Explicitly excluded product scope, not completed or silently deferred features. |
+| History capacity | The 32-run, 96-floor and 4,096-notice arrays are bounded working windows backed by the append archive. Older successful archived records remain browsable; migration preserves the existing records but cannot reconstruct facts already erased by earlier versions. Disk space, serial identity and file offsets remain finite. See [paged history](ui23-history-archive.md). |
+| Drawing and seed input capacity | Map drawing remains limited to 2,048 points and seed input to 64 UTF-8 bytes plus terminator. These are existing bounded port capacities, not a newly verified desktop-equivalence claim. |
+| Audio, multiplayer and Timeline | Not implemented. Earlier project/AGENTS scope excluded them, but the recovered original user requests do not establish an explicit user waiver; this ledger does not invent one. |
 
 The general composition and cosmetic-history limits,
-platform/service and capacity differences, and explicit exclusions remain
+platform/service and capacity differences, and unimplemented features remain
 material boundaries even when every inventoried Ancient emitter has a runtime.
 No new source-confirmed missing ordinary UI callback was found by this bounded
 ledger audit; that is not an exhaustive equivalence proof of the original game.
@@ -183,12 +184,20 @@ emulator frames/s (30 cap) and29.835 ms, with zero warm reads in both. This is
 one emulator scene, not physical-handheld FPS or acceptance of the new effects.
 No physical calculator execution has been demonstrated.
 
-- Audio, multiplayer and Timeline are explicitly excluded product scope.
+- Audio, multiplayer and Timeline are not implemented. Earlier project scope
+  excluded them; that classification is not evidence of an original user waiver.
   Hosted leaderboards, cloud services and desktop-service integration are not
   supplied by local daily/custom modes.
-- Output remains320×240 RGB565/LDR with integer rasterization, sampled materials
-  and bounded particle representations. Existing card material sampling remains
-  unchanged at the declared 8/30/10 phases; it is not continuous desktop GPU equivalence.
+- Output remains320×240 RGB565/LDR with integer rasterization, documented
+  sampling/noise approximations and bounded particle representations. New ACU1
+  resources continuously evaluate all seven Affliction families; only older
+  resource packs retain their eight-phase fallback. Infection's30 and Ancient
+  fire's10 frames are complete authored flipbooks. This does not establish
+  full desktop GPU or unrecorded particle-process-history equivalence.
+- The five new history/archive storage diagnostics have Simplified Chinese
+  and English text; the other14 locales display English for those messages.
+  Original-language content coverage is not a claim that every port-authored
+  diagnostic has sixteen translations.
 - Cosmetic source seeds do not recreate an unrecorded process-global random
   history. Gameplay RNG and canonical save state remain separate.
 - The RTC path has no desktop timezone/DST database and there is no new IME.

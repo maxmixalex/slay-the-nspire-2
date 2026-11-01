@@ -79,6 +79,12 @@ def build(args):
     directories = {"animated": args.animated, "no-animations": args.no_animations}
     resource_checkpoints = {"animated": args.resource_checkpoint,
                             "no-animations": args.no_animations_resource_checkpoint or args.resource_checkpoint}
+    runtime_source_ref = getattr(args, 'runtime_source_ref', None) or args.runtime_checkpoint
+    resource_source_refs = {
+        'animated': getattr(args, 'resource_source_ref', None) or resource_checkpoints['animated'],
+        'no-animations': getattr(args, 'no_animations_resource_source_ref', None) or
+            (getattr(args, 'resource_source_ref', None) if resource_checkpoints['no-animations'] == resource_checkpoints['animated'] else None) or
+            resource_checkpoints['no-animations']}
     resources = {name: inspect_resources(path, name) for name, path in directories.items()}
     if resources['animated']['resource_format'] != resources['no-animations']['resource_format']:
         raise ValueError('Animated and reduced editions use different resource format versions')
@@ -102,6 +108,8 @@ def build(args):
                        "--output", str(destination), "--calculator-only",
                        "--runtime-checkpoint", args.runtime_checkpoint,
                        "--resource-checkpoint", resource_checkpoints[profile],
+                       "--runtime-source-ref", runtime_source_ref,
+                       "--resource-source-ref", resource_source_refs[profile],
                        "--stage", "ui23-" + profile]
             if documentation_ref:
                 command += ["--documentation-ref", documentation_ref]
@@ -141,6 +149,8 @@ def build(args):
         "自行转换时，可选语言与common/用途包须来自同一次转换，不能混用此预制ZIP，即使版本/动画档相同。\n"
         "For fresh conversion, common/concern files and optional locales must come from that same conversion, even if version/profile labels match.\n"
         "English and Simplified Chinese are already in both complete installers.\n\n"
+        "原版内容按所选语言提供；本移植新增的五条历史/归档错误提示仅有简体中文和英语，其余语言显示英语。\n"
+        "Original content uses the selected locale. Five port-authored history/archive error messages are available in Simplified Chinese and English; other locales display English for those messages.\n\n"
         "Available additional locale codes: " + ", ".join(extras) + "\n")
     with zipfile.ZipFile(optional, "w", zipfile.ZIP_DEFLATED, compresslevel=6) as archive:
         archive.writestr("README-languages.txt", instructions.encode("utf-8"))
@@ -157,7 +167,10 @@ def build(args):
     receipts["optional-languages"] = check_archive(optional)
     result = {"schema": 1, "stage": "ui23", "runtime_checkpoint": args.runtime_checkpoint,
               "resource_checkpoint": args.resource_checkpoint,
+              "runtime_source_ref": runtime_source_ref,
+              "resource_source_ref": resource_source_refs['animated'],
               "resource_checkpoints": resource_checkpoints,
+              "resource_source_refs": resource_source_refs,
               "maximum_animated_bytes": args.maximum_animated_bytes,
               "animated_storage_target_met": meets_budget,
               "physical_device_tested": False,
@@ -177,9 +190,12 @@ def main():
         parser.add_argument("--" + name, type=Path, required=True)
     parser.add_argument("--runtime-checkpoint", required=True)
     parser.add_argument("--resource-checkpoint", required=True)
+    parser.add_argument('--runtime-source-ref', help='Verified published equivalent runtime source, separate from the actual build checkpoint')
+    parser.add_argument('--resource-source-ref', help='Verified published equivalent converter source, separate from the actual producer checkpoint')
     parser.add_argument("--documentation-ref", help="Optional independent documentation commit for both installers")
     parser.add_argument("--no-animations-resource-checkpoint",
                         help="Record a different verified source checkpoint for the reduced resources")
+    parser.add_argument('--no-animations-resource-source-ref', help='Published equivalent source for a separately built reduced converter')
     parser.add_argument("--maximum-animated-bytes", type=int, default=70_000_000)
     parser.add_argument("--allow-over-budget-candidate", action="store_true",
                         help="Produce explicitly over-budget evaluation artifacts; never marks the target met")

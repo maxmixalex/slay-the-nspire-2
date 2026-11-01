@@ -32,13 +32,21 @@ def readme(info):
     shared = ('data/nSpire2.dat.tns         公共资源索引 / artwork index\n' +
               ''.join('data/'+name+'\n' for name in PART_FILES)) if info.get('multipart_artwork') else \
              'data/nSpire2.dat.tns         公共图片与动画 / shared artwork and animation\n'
-    if info.get('local_checkpoints'):
-        sources = (f"Runtime source checkpoint (local): {info['runtime_checkpoint']}\n"
-                   f"Resource converter checkpoint (local): {info['resource_checkpoint']}\n"
-                   "These source checkpoints have not been published to GitHub.\n")
-    else:
-        sources = (f"Runtime source: https://github.com/maxmixalex/slay-the-nspire-2/tree/{info['runtime_checkpoint']}\n"
-                   f"Resource converter: https://github.com/maxmixalex/slay-the-nspire-2/tree/{info['resource_checkpoint']}\n")
+    sources = ''
+    for key, label in (('runtime', 'Runtime'), ('resource', 'Resource converter')):
+        actual = info[key + '_checkpoint']
+        published = info.get(key + '_source_ref',
+                             None if info.get('local_checkpoints') else actual)
+        if published is None:
+            sources += f'{label} source checkpoint (local): {actual}\n'
+        elif published == actual:
+            sources += f'{label} source: https://github.com/maxmixalex/slay-the-nspire-2/tree/{published}\n'
+        else:
+            sources += (f'Actual {label.lower()} build checkpoint (local): {actual}\n'
+                        f'Published equivalent {label.lower()} source: '
+                        f'https://github.com/maxmixalex/slay-the-nspire-2/tree/{published}\n')
+    if not info.get('runtime_source_ref') and not info.get('resource_source_ref') and info.get('local_checkpoints'):
+        sources += 'These source checkpoints have not been published to GitHub.\n'
     documentation = info.get('documentation_checkpoint')
     if documentation:
         sources += ("Documentation: https://github.com/maxmixalex/slay-the-nspire-2/blob/"
@@ -56,6 +64,16 @@ def readme(info):
 No physical-calculator test is recorded for this package. Calculator FPS and physical peak RAM remain unmeasured.
 File and resource validation summaries are in data/BUILD-INFO.json; detailed records are kept separately.
 See {ledger_en} for visual, native/emulator evidence and remaining differences.
+
+具体边界 / Remaining boundaries
+项目 / Item | 本包状态 / Status
+七种附着与历史 / Afflictions and history | 七种附着使用连续材质与粒子；32场、96层、4096条通知为可归档工作窗口。旧版已经覆盖的数据不能恢复。Continuous materials/particles and disk-backed history pages are implemented; previously erased history cannot be recovered.
+画面与动画 / Rendering | 320×240 RGB565软件绘制，保留已说明的采样/噪声近似；未证明任意Spine混轨或未知原GPU随机历史等价。Software rendering retains documented sampling/noise bounds; arbitrary Spine mixing and unrecorded GPU random history are not established.
+服务与输入 / Services and input | 未提供云存档、在线排行榜、桌面时区/DST数据库或计算器IME。Cloud saves, hosted leaderboards, desktop timezone/DST database and calculator IME are not supplied.
+容量 / Capacity | 地图绘画2048点，种子64个UTF-8字节；历史归档受存储空间、序号和文件偏移范围限制。Map drawing: 2048 points; seed: 64 UTF-8 bytes; history is bounded by disk space, serial and file-offset ranges.
+新增提示语言 / New diagnostic text | 五条历史/归档错误提示提供简体中文与英语；其他语言显示英语。Five port-authored history/archive errors have Simplified Chinese and English text; other locales display English for these errors.
+未实现功能 / Unimplemented features | 音频、多人游戏和Timeline当前未实现；本包不声称桌面功能全等。Audio, multiplayer and Timeline are not implemented; this package does not claim full desktop feature equivalence.
+实测范围 / Measurement | 已记录的模拟器结果不是实机帧率，未测实机峰值内存。Recorded emulator results are not physical-handheld FPS or measured physical peak RAM.
 '''
     return f"""Slay the Nspire 2 — nSpire {info['version']} (StS II v0.111.0)
 
@@ -148,14 +166,24 @@ def main():
     p.add_argument('--optional-locales',type=Path,help='Verified language editions directory; package additional locales separately')
     p.add_argument('--runtime-checkpoint', required=True)
     p.add_argument('--resource-checkpoint', required=True)
+    p.add_argument('--runtime-source-ref', help='Verified published equivalent runtime source; actual build checkpoint is retained (calculator packages only)')
+    p.add_argument('--resource-source-ref', help='Verified published equivalent converter source; actual producer checkpoint is retained (calculator packages only)')
     p.add_argument('--documentation-ref', help='Optional independent published documentation commit; does not relabel runtime or resources')
     p.add_argument('--stage', default='ui22', help='Release suffix; validated against its complete content profile')
     args = p.parse_args()
     if not re.fullmatch('[A-Za-z0-9][A-Za-z0-9_-]*', args.stage):
         p.error('Stage must contain only letters, digits, underscores or hyphens')
-    for value in (args.runtime_checkpoint, args.resource_checkpoint, *([args.documentation_ref] if args.documentation_ref else [])):
+    for value in (args.runtime_checkpoint, args.resource_checkpoint,
+                  *(value for value in (args.documentation_ref, args.runtime_source_ref, args.resource_source_ref) if value)):
         if not re.fullmatch('[0-9a-f]{40}', value):
             p.error('Checkpoints must be full Git commit IDs')
+    if args.runtime_source_ref or args.resource_source_ref:
+        if args.local_checkpoints:
+            p.error('Published source refs cannot be combined with --local-checkpoints')
+        if not args.calculator_only:
+            p.error('Separate build/source identities currently require --calculator-only')
+    runtime_source_ref = args.runtime_source_ref or (None if args.local_checkpoints else args.runtime_checkpoint)
+    resource_source_ref = args.resource_source_ref or (None if args.local_checkpoints else args.resource_checkpoint)
     paths = {'nSpire2.tns': args.launcher, 'data/nSpire2.dat.tns': args.common,
              'data/nSpire2.eng.dat.tns': args.eng, 'data/nSpire2.zhs.dat.tns': args.zhs}
     common_bytes=args.common.read_bytes()
@@ -200,9 +228,11 @@ def main():
                 animation_profile=animation_profile,
                 runtime_checkpoint=args.runtime_checkpoint,
                 resource_checkpoint=args.resource_checkpoint,
+                runtime_source_ref=runtime_source_ref, resource_source_ref=resource_source_ref,
                 developer_console=True, installation_layout="data/state",multipart_artwork=multipart,
                 locale_storage='NSL3' if args.eng.read_bytes()[:4]==b'NSL3' else 'NSL1/NSL2',
-                calculator_only=args.calculator_only,local_checkpoints=args.local_checkpoints,
+                calculator_only=args.calculator_only,
+                local_checkpoints=runtime_source_ref!=args.runtime_checkpoint or resource_source_ref!=args.resource_checkpoint,
                 files={name: path.stat().st_size for name, path in paths.items()})
     if args.documentation_ref:
         info['documentation_checkpoint'] = args.documentation_ref

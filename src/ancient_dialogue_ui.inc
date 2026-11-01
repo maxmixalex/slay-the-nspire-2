@@ -1,3 +1,4 @@
+#include "ancient_option_image.inc"
 // Locked ancient_event_layout / ancient_dialogue_line scenes, projected from
 // NGame's 1680x1260 viewport. Text keeps a declared10px calculator minimum;
 // its full line height grows and the clipped history remains reviewable.
@@ -154,11 +155,11 @@ static void ancient_option(Canvas&c,Canvas&clipped,int option,int y){
  const auto color=native_ancient_button_color(e.id);Canvas button=clipped;
  button.tint_red=uint8_t(div255(button.tint_red*color.red));button.tint_green=uint8_t(div255(button.tint_green*color.green));button.tint_blue=uint8_t(div255(button.tint_blue*color.blue));
  // The ancient Image has no HSV shader; its original RGBA stays intact.
- button.picture(image,left,top,width,height,color.alpha);
+ ancient_option_image(button,image,left,top,width,height,color.alpha);
  if(visual.glow&&enabled){
   image=a.content.world_image("events","ANCIENT_OPTION_OUTLINE");if(image<0)image=a.content.ui_image(U_EventOutline);
   Canvas outline=clipped;outline.tint_red=uint8_t(div255(outline.tint_red*120));outline.tint_blue=uint8_t(div255(outline.tint_blue*254));
-  outline.picture(image,left-3,top-3,width+6,height+6,unsigned(visual.glow)*192/255,presentation::Add);
+  ancient_option_image(outline,image,left-3,top-3,width+6,height+6,unsigned(visual.glow)*192/255,presentation::Add);
  }
  const bool icon=!e.finished&&option<e.offer_count&&e.offers[option]<WorldRelicKinds;
  if(icon)clipped.picture(a.relic_face_image(e.offers[option],int(a.game.character)),x+5-ancient_layout::ClipX,y+(h-18)/2-ancient_layout::ClipY,18,18);

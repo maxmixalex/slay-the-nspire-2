@@ -1,15 +1,15 @@
-void App::open_compendium(){
+SPIRE_COLD_CONTROL void App::open_compendium(){
     history_from_game_over=false;
     const unsigned parent=library?unsigned(library_tab):statistics_open?4:history_open?5:bestiary.open?3:0;
     compendium_open=true;statistics_open=history_open=library=false;bestiary.open=false;
     detail_card=detail_item=-1;compendium_selection=uint8_t(parent);progress_page_started=map_clock_ms;
     pointer_cancel();for(auto&motion:compendium_motion)motion={};
 }
-void App::open_statistics(){
+SPIRE_COLD_CONTROL void App::open_statistics(){
     compendium_open=true;compendium_selection=4;statistics_open=true;history_open=library=false;progress_page_started=map_clock_ms;
     progress_page_scroll.reset();statistics_presentation={};pointer_cancel();
 }
-void App::open_history(){
+SPIRE_COLD_CONTROL void App::open_history(){
     if(!history_available())return;
     if(callbacks.history_archive&&!migrate_history()){message(content.language()==2?"历史记录保存失败，请重试。":"Could not save history. Please retry.");return;}
     history_from_game_over=false;
