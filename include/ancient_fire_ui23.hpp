@@ -26,6 +26,24 @@ struct Field {
   const unsigned row0=y0*width,row1=y1*width;
   return {{(row0+x0)*channels,(row0+x1)*channels,(row1+x0)*channels,(row1+x1)*channels},unsigned(px)&1048575u,unsigned(py)&1048575u};
  }
+ // Pinned field dimensions make the source addressing constants visible to
+ // ARM code generation. Sampling/rounding remains identical to coordinates().
+ template<unsigned W,unsigned H,unsigned Channels,bool Repeat>
+ __attribute__((always_inline)) Coordinates fixed_coordinates(int u,int v)const{
+  if(Repeat){u=int(unsigned(u)&1048575u);v=int(unsigned(v)&1048575u);}
+  else{u=bound(u,0,1048576);v=bound(v,0,1048576);}
+  const int px=u*int(W)-524288,py=v*int(H)-524288,x=px>>20,y=py>>20;
+  unsigned x0,x1,y0,y1;
+  if(Repeat){x0=unsigned(x<0?x+int(W):x);x1=x0+1==W?0:x0+1;y0=unsigned(y<0?y+int(H):y);y1=y0+1==H?0:y0+1;}
+  else{x0=unsigned(bound(x,0,int(W)-1));x1=unsigned(bound(x+1,0,int(W)-1));y0=unsigned(bound(y,0,int(H)-1));y1=unsigned(bound(y+1,0,int(H)-1));}
+  return {{(y0*W+x0)*Channels,(y0*W+x1)*Channels,(y1*W+x0)*Channels,(y1*W+x1)*Channels},unsigned(px)&1048575u,unsigned(py)&1048575u};
+ }
+ template<unsigned W,unsigned H,unsigned Channels,unsigned Channel,bool Repeat>
+ int fixed_lcd(int u,int v)const{return sample_lcd(fixed_coordinates<W,H,Channels,Repeat>(u,v),Channel);}
+ template<unsigned W,unsigned H,unsigned Channels,bool Repeat>
+ void fixed_lcd_rg(int u,int v,int&r,int&g)const{
+  const auto c=fixed_coordinates<W,H,Channels,Repeat>(u,v);r=sample_lcd(c,0);g=sample_lcd(c,1);
+ }
  int sample(const Coordinates&c,unsigned channel)const{
   const int p00=int(texel(c.at[0]+channel)),p10=int(texel(c.at[1]+channel));
   const int p01=int(texel(c.at[2]+channel)),p11=int(texel(c.at[3]+channel));

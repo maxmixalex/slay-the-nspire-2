@@ -120,7 +120,13 @@ void App::input(Key k){
     }
     if(auxiliary.screen!=AuxiliaryScreen::None){if(!pointer.dispatching){pointer_cancel(true);pointer.visible=false;pointer.motion_time=map_clock_ms;}auxiliary_input(k);return;}
     if(bestiary.open){if(!pointer.dispatching){pointer_cancel(true);pointer.visible=false;pointer.motion_time=map_clock_ms;}bestiary_input(k);return;}
-    UiCoreObserver observer(*this);if(!observer)return;
+    UiCoreObserver observer(*this);if(!observer){
+        // A full storage device must not trap the user inside the game.
+        // Keep gameplay blocked, but retain the ordinary exit confirmation.
+        if(frontend_confirm==3)frontend_input(k);
+        else if(k==Key::Back||k==Key::Quit){frontend_confirm=3;frontend_choice=0;pointer_cancel();}
+        return;
+    }
     sync_combat_preparation();
     if(combat_preparation.active&&!paused&&!frontend_confirm&&k!=Key::Back&&k!=Key::Save&&k!=Key::Load&&k!=Key::Quit)return;
     MapReticleInputSync map_focus{*this};

@@ -15,6 +15,7 @@ static App app;
 static UiProgress restored;
 static std::vector<uint8_t> disk;
 static bool storage_ok=true;
+static bool summary_reads_ok=true;
 static unsigned archive_calls;
 static const char* fixture_directory;
 static uint8_t encoded[UiProgressCapacity],before_progress[UiProgressCapacity];
@@ -25,6 +26,7 @@ static bool read(void*,uint32_t at,void*out,unsigned n){if(at>disk.size()||n>dis
 static bool write(void*,uint32_t at,const void*in,unsigned n){if(!storage_ok)return false;if(at+n>disk.size())disk.resize(at+n);std::memcpy(disk.data()+at,in,n);return true;}
 static bool flush(void*){return storage_ok;}
 static UiHistoryArchiveResult archive(UiHistoryArchiveQuery&q,uint8_t*bytes,unsigned&n){
+ if(!summary_reads_ok&&q.action==UiHistoryArchiveAction::Latest)return UiHistoryArchiveResult::Error;
  ++archive_calls;history_archive::IO io{nullptr,length,read,write,flush};return history_archive::access(io,q,bytes,n);
 }
 static void start(unsigned seed){
@@ -32,7 +34,7 @@ static void start(unsigned seed){
  CHECK(app.prepare_history());new_run(app.game,seed,false,Character::Ironclad);
  CHECK(world_begin_run(app.game,reference::ActKind::Overgrowth,0));app.title=false;app.begin_progress();
 }
-static void reset(){clear_ui_progress(app.progress);app.progress_loaded=true;app.progress_dirty=false;app.history_open=app.compendium_open=false;app.history_index=0;disk.clear();storage_ok=true;app.callbacks.history_archive=archive;}
+static void reset(){clear_ui_progress(app.progress);app.progress_loaded=true;app.progress_dirty=false;app.history_open=app.compendium_open=false;app.history_index=0;disk.clear();storage_ok=summary_reads_ok=true;app.callbacks.history_archive=archive;}
 static void export_fixture(const char*label){
  if(!fixture_directory)return;
  const size_t n=encode_ui_progress(app.progress,encoded,sizeof encoded);CHECK(n);
@@ -81,6 +83,13 @@ int main(int argc,char**argv){
    storage_ok=false;{UiCoreObserver observer(app);CHECK(!observer);}CHECK(save(app.game,after_state));
    CHECK(before_state.size==after_state.size&&!std::memcmp(before_state.bytes,after_state.bytes,before_state.size));
    const size_t after=encode_ui_progress(app.progress,encoded,sizeof encoded);CHECK(after==n&&!std::memcmp(encoded,before_progress,n));
+   app.input(Key::Back);CHECK(app.frontend_confirm==3&&!app.quit);
+   app.input(Key::Back);CHECK(!app.frontend_confirm&&!app.quit);
+   app.input(Key::Quit);CHECK(app.frontend_confirm==3);app.ui_action(UiAction::FrontendCancel);CHECK(!app.frontend_confirm&&!app.quit);
+   app.input(Key::Back);app.input(Key::Right);app.input(Key::Confirm);CHECK(app.quit);
+   CHECK(app.progress.current.floor_count==95&&!app.progress.current.outcome&&save(app.game,after_state));
+   CHECK(before_state.size==after_state.size&&!std::memcmp(before_state.bytes,after_state.bytes,before_state.size));
+   CHECK(decode_ui_progress(before_progress,n,app.progress));app.quit=false;
    storage_ok=true;app.game=overflow_game;
   }
   CHECK(app.prepare_history());app.game.world.total_floor=uint16_t(floor);app.game.world.current_point=uint8_t(app.game.world.current_point^1u);
@@ -98,7 +107,11 @@ int main(int argc,char**argv){
  const size_t paged=encode_ui_progress(app.progress,encoded,sizeof encoded);CHECK(paged&&encoded[3]=='A'&&decode_ui_progress(encoded,paged,restored));
  CHECK(ui_run_score(restored.current).floor_points==2000);
  export_fixture("synthetic-200-floors");app.open_history();unsigned total=0,last=200;
+ const unsigned visible_first=app.history_at(app.history_index)->floors[0].floor;
+ summary_reads_ok=false;app.history_select(1);CHECK(app.history_at(app.history_index)->floors[0].floor==visible_first);summary_reads_ok=true;
  for(;;){const auto*r=app.history_at(app.history_index);CHECK(r&&r->serial==1&&r->floor_count);
+  CHECK(r->outcome==1&&r->floor==200&&ui_run_score(*r).floor_points==2000);
+  CHECK(ui_run_badge_rarity(*r,UiRunBadge::MysteryMachine)==1&&ui_run_badge_rarity(*r,UiRunBadge::Restful)==1&&ui_run_badge_rarity(*r,UiRunBadge::Restless)==0);
   for(unsigned i=r->floor_count;i;--i){CHECK(r->floors[i-1].floor==last);--last;++total;}
   const unsigned first=r->floors[0].floor;if(first==1)break;app.history_select(1);
  }

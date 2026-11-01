@@ -38,16 +38,24 @@ def inspect_resources(directory, expected_profile):
         common = join_parts(common, {name: (directory / name).read_bytes() for name in PART_FILES})
         required.extend(PART_FILES)
     locales = {}
+    resource_format = None
     for code in LANGUAGES:
         path = directory / ("nSpire2." + code + ".dat.tns")
         logical = reconstruct(common, path.read_bytes(), code)
+        version = int.from_bytes(logical[4:8], 'little')
+        if resource_format is None:
+            resource_format = version
+        elif version != resource_format:
+            raise ValueError('Locale resource format differs from its bilingual package: '+code)
         profile = 'no-animations' if logical[36:40] == b'NAF1' else 'animated'
         if profile != expected_profile:
             raise ValueError('Locale animation profile differs from its package folder: '+code)
         locales[code] = {"bytes": path.stat().st_size, "sha256": digest(path),
+                         "resource_format": version, "animation_profile": profile,
                          "logical_bytes": len(logical),
                          "logical_sha256": hashlib.sha256(logical).hexdigest()}
-    return {"required_bytes": sum((directory / name).stat().st_size for name in required),
+    return {"resource_format": resource_format,
+            "required_bytes": sum((directory / name).stat().st_size for name in required),
             "required_files": required, "locales": locales}
 
 
@@ -72,6 +80,8 @@ def build(args):
     resource_checkpoints = {"animated": args.resource_checkpoint,
                             "no-animations": args.no_animations_resource_checkpoint or args.resource_checkpoint}
     resources = {name: inspect_resources(path, name) for name, path in directories.items()}
+    if resources['animated']['resource_format'] != resources['no-animations']['resource_format']:
+        raise ValueError('Animated and reduced editions use different resource format versions')
     for row in resources.values():
         row["installed_bytes"] = launcher_bytes + row["required_bytes"]
     meets_budget = resources["animated"]["installed_bytes"] <= args.maximum_animated_bytes

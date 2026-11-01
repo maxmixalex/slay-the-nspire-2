@@ -82,18 +82,21 @@ static void quad(Canvas c,const water_reflection::Texture&tex,int cx,int cy,int 
  }
 
  LightQuadRows rows(left*256+128-cx,top*256+128-cy,sn,cs,w,h,shear);
+ const LightQuadSpan span_u(native_lookup?du:0),span_v(native_lookup?dv:0);
  for(int y=top;y<bottom;++y,rows.next()){
   int u=rows.x(),v=rows.y();
   if(native_lookup){
-   for(int x=left;x<right;++x,u+=du,v+=dv){
-    if(unsigned(u)-unsigned(minimum_u)>=extent_u||unsigned(v)-unsigned(minimum_v)>=extent_v)continue;
+   unsigned first=0,last=unsigned(right-left);
+   span_u.clip(u,unsigned(minimum_u),extent_u,unsigned(right-left),first,last);
+   span_v.clip(v,unsigned(minimum_v),extent_v,unsigned(right-left),first,last);
+   if(first>=last)continue;
+   u=int(int64_t(u)+int64_t(du)*first);v=int(int64_t(v)+int64_t(dv)*first);
+   for(int x=left+int(first),end=left+int(last);x<end;++x,u+=du,v+=dv){
     const unsigned at=(unsigned(v)&0xff00u)|(unsigned(u)>>8);
     const uint8_t*p=storage.pixels+at*2;const unsigned color=p[0]|unsigned(p[1])<<8;
     const unsigned amount=native_contribution[((color>>3)&0xfcu)|(color&3u)];
     if(!amount)continue;
-    const unsigned dest=c.pixels[y*c.pitch+x],r=(dest>>11)+(amount>>11);
-    const unsigned g=((dest>>5)&63)+((amount>>5)&63),b=(dest&31)+(amount&31);
-    c.pixels[y*c.pitch+x]=uint16_t(((r>31?31:r)<<11)|((g>63?63:g)<<5)|(b>31?31:b));
+    c.pixels[y*c.pitch+x]=presentation::add_preweighted(c.pixels[y*c.pitch+x],uint16_t(amount));
    }
    continue;
   }

@@ -93,8 +93,36 @@ bool App::select_history_archive(UiHistoryArchiveAction action,uint32_t serial){
  const auto result=callbacks.history_archive(query,transfer.bytes(),n);
  if(result==UiHistoryArchiveResult::Missing)return false;
  if(result!=UiHistoryArchiveResult::Complete){message(content.language()==2?"无法读取历史记录。":"Could not load history.");return false;}
- auto&page=claim_history_page();page.valid=false;
- if(!decode_ui_history_page(transfer.bytes(),n,page)){message(content.language()==2?"无法读取历史记录。":"Could not load history.");return false;}
- page.cursor=query.cursor;history_index=255;history_selected=-1;history_tooltip={};progress_page_scroll.reset();
+ // Decode before claiming the scene slot, so failed reads leave the current
+ // page visible. Both temporary pages fit the existing foreground scratch.
+ ForegroundScratch<UiHistoryPage> decoded;if(!decoded)return false;auto&candidate=decoded[0];
+ if(!decode_ui_history_page(transfer.bytes(),n,candidate)){message(content.language()==2?"无法读取历史记录。":"Could not load history.");return false;}
+ candidate.cursor=query.cursor;
+ if(!candidate.run.outcome){
+  // Older pages retain their observed rooms and notices, while header,
+  // outcome, deck and badges describe the completed run on every page.
+  ForegroundScratch<UiHistoryPage> completed;if(!completed)return false;
+  UiHistoryArchiveQuery latest{UiHistoryArchiveAction::Latest,candidate.run.serial};n=UiProgressCapacity;
+  if(callbacks.history_archive(latest,transfer.bytes(),n)!=UiHistoryArchiveResult::Complete||
+     !decode_ui_history_page(transfer.bytes(),n,completed[0])||!completed[0].run.outcome||completed[0].run.serial!=candidate.run.serial){
+   message(content.language()==2?"无法读取历史记录。":"Could not load history.");return false;
+  }
+  auto&final=completed[0].run;const auto&selected=candidate.run;
+  unsigned units=final.history_prefix&0x3ffffu,unknown=(final.history_prefix>>18)&15u,selected_units=0,selected_unknown=0;
+  uint32_t rest=final.history_prefix&0x1c00000u;
+  for(unsigned i=0;i<final.floor_count;++i){const auto&f=final.floors[i];units+=unsigned(f.act)+1;
+   if(f.map_type==unsigned(reference::PointType::Unknown)&&unknown<15)++unknown;
+   if(f.room==unsigned(WorldRoom::Rest)){rest|=1u<<22;rest|=1u<<((f.rest_choices&1u)?23:24);}
+  }
+  for(unsigned i=0;i<selected.floor_count;++i){selected_units+=unsigned(selected.floors[i].act)+1;
+   selected_unknown+=selected.floors[i].map_type==unsigned(reference::PointType::Unknown);final.floors[i]=selected.floors[i];
+  }
+  if(units<selected_units){final.partial=1;final.facts.complete=0;units=selected_units;}
+  units-=selected_units;if(unknown<15)unknown=unknown>selected_unknown?unknown-selected_unknown:0;
+  final.history_prefix=rest|(units>0x3ffffu?0x3ffffu:units)|(unknown<<18);final.floor_count=selected.floor_count;
+  candidate.run=final;
+ }
+ auto&page=claim_history_page();page=candidate;
+ history_index=255;history_selected=-1;history_tooltip={};progress_page_scroll.reset();
  history_presentation.open(map_clock_ms);pointer_cancel();return true;
 }

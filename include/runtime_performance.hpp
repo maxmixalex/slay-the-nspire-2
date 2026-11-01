@@ -97,8 +97,13 @@ struct RuntimePerformance {
         for(unsigned i=0;i<(unsigned)ResourceStage::Count;++i){if(i)w.ch(',');w.timing(phase_names[i],startup_phases[i]);}
         w.ch('}');
         w.text(",\"render_parts\":{");
+#ifdef SPIRE_NEOW_LAYER_PROFILE
+        static const char*const render_names[]={"neow_scene","neow_body","neow_fire",
+            "neow_lights","neow_fog","neow_vignette","neow_post"};
+#else
         static const char*const render_names[]={"random_water","random_light","random_dots",
             "character_info","character_portraits","character_controls","character_ascension"};
+#endif
         static_assert(sizeof render_names/sizeof render_names[0]==unsigned(RuntimeRenderPart::Count),"Every render scope needs a report key");
         for(unsigned i=0;i<unsigned(RuntimeRenderPart::Count);++i){if(i)w.ch(',');w.timing(render_names[i],render_parts[i]);}
         w.ch('}');

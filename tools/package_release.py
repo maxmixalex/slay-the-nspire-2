@@ -191,8 +191,11 @@ def main():
     base_version = (ROOT/'VERSION').read_text().strip().split('-',1)[0]
     release_version = f'{base_version}-{args.stage}'
     info = dict(version=release_version, base_version=base_version, reference='v0.111.0 / 41cef1ea', resource_format=version, save_version=17,
-                progress_version=9, settings_version=6, calculator_run_storage='NSZ1 or raw NSV1',
-                calculator_history_storage='NSZ1 or raw NSH1-9',
+                progress_version=10, progress_formats=[f'NSH{i}' for i in range(1,10)]+['NSHA'],
+                settings_version=6, calculator_run_storage='NSZ1 or raw NSV1',
+                calculator_history_storage='NSZ1 or raw NSH1-9/NSHA',
+                calculator_history_archive=dict(file='state/nSpire2.history.tns',container='NHA1',
+                    record='NHR1',page='NHP2',readable_pages=['NHP1','NHP2']),
                 stage=args.stage,
                 animation_profile=animation_profile,
                 runtime_checkpoint=args.runtime_checkpoint,

@@ -7,6 +7,9 @@ static bool card_affliction_required(App&a,unsigned kind,bool*slots){
 }
 static bool card_affliction_cache_profile(const App&a){
     if(a.title||!combat_phase(a.game.phase))return false;
+    // Retain the borrowed tier until this combat ends. Playing a third
+    // material and drawing it again must not repeatedly evict the tile cache.
+    if(a.content.selection_image_cache_profile())return true;
     unsigned kinds=0;const auto hand=a.combat_hand();
     for(unsigned i=0;i<hand.count;++i){const unsigned kind=a.game.enemy_world.affliction[hand.ids[i]];if(kind&&kind<=7)kinds|=1u<<kind;}
     // Two different materials can share most of the source fields. Three or

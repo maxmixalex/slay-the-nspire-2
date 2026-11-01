@@ -27,10 +27,17 @@ and reports a retryable storage error. Ordinary inputs below these boundaries
 perform no archive IO and preserve warm renderer caches. Long journals spill
 their observed rows separately while retaining live scalar totals and pending
 transformations. The current room stays in RAM when older floors are paged out.
+Escape/Quit and the existing exit confirmation remain usable after a storage
+failure, so the user can cancel or leave to free space without advancing play.
+These new storage diagnostics have reviewed direct bilingual locale bindings;
+they do not change the stable indexes in existing original-language packs.
 
 History opens the latest completed run. Previous/Next traverse the run's older
 or newer pages before moving to another run; the existing floor hover and card
-inspection use the selected page. A single decoded page reuses the existing
+inspection use the selected page. Earlier pages keep the completed run's final
+header, deck, outcome, score and badges alongside their observed older rooms.
+Temporary decoding borrows the existing foreground scratch; a failed read does
+not replace the visible page. A single decoded page reuses the existing
 scene union. The two transient progress flags occupy prior alignment padding;
 the persistent run/journal arrays and scene-union allocation are not enlarged.
 Four former tail-padding bytes in each run retain archived floor weights and

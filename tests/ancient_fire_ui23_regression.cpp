@@ -2,6 +2,7 @@
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
+#include <vector>
 #include "ancient_fire_ui23.hpp"
 using namespace spire::ancient_fire_ui23;
 static unsigned checks;
@@ -9,7 +10,22 @@ static unsigned checks;
 static void put16(uint8_t*p,unsigned q){p[0]=uint8_t(q);p[1]=uint8_t(q>>8);}
 static void put32(uint8_t*p,uint32_t q){put16(p,q);put16(p+2,q>>16);}
 struct Picture {const uint8_t*pixels;unsigned w,h,format;};
+template<unsigned W,unsigned H,unsigned Channels,bool Repeat>static void fixed_addressing(){
+ std::vector<uint8_t> raw(W*H*Channels);for(unsigned i=0;i<raw.size();++i)raw[i]=uint8_t(i*173u+(i/71u)*13u);
+ Field f;f.width=W;f.height=H;f.channels=Channels;for(unsigned i=0;i<8&&i*PageBytes<raw.size();++i)f.pages[i]=raw.data()+i*PageBytes;
+ uint32_t random=17;
+ for(unsigned i=0;i<10000;++i){random=random*1664525u+1013904223u;int u=int(random&0xffffff)-8388608;random=random*1664525u+1013904223u;int v=int(random&0xffffff)-8388608;
+  const auto a=f.coordinates(u,v,Repeat),b=f.fixed_coordinates<W,H,Channels,Repeat>(u,v);
+  for(unsigned k=0;k<4;++k){CHECK(a.at[k]==b.at[k]);CHECK(b.at[k]+Channels<=raw.size());}CHECK(a.fx==b.fx&&a.fy==b.fy);
+  CHECK((f.fixed_lcd<W,H,Channels,0,Repeat>(u,v)==f.sample_lcd(u,v,0,Repeat)));
+  if constexpr(Channels>=2){int ar,ag,br,bg;f.sample_lcd_rg(u,v,Repeat,ar,ag);f.fixed_lcd_rg<W,H,Channels,Repeat>(u,v,br,bg);CHECK(ar==br&&ag==bg);}
+ }
+}
 int main(){
+ fixed_addressing<600,636,1,true>();fixed_addressing<600,636,1,false>();
+ fixed_addressing<250,250,3,true>();fixed_addressing<250,250,3,false>();
+ fixed_addressing<256,256,3,true>();fixed_addressing<256,256,3,false>();
+ fixed_addressing<100,100,2,true>();fixed_addressing<100,100,2,false>();
  std::array<uint8_t,((Length+639)/640)*640> raw{};auto*p=raw.data();
  p[0]='A';p[1]='F';p[2]='R';p[3]='1';
  const unsigned half[]={1,Nodes,Frames,Dynamic,Models,Commands};for(unsigned i=0;i<6;++i)put16(p+4+2*i,half[i]);

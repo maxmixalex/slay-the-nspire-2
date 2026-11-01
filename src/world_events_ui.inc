@@ -65,12 +65,20 @@ static void native_event_option(const App&a,int option,bool description,char*out
 static bool native_ancient_background(Canvas&c,OriginalEventId id){
  const int row=id==OriginalEventId::Neow?0:id==OriginalEventId::Tezcatara?1:-1;
  if(row<0)return false;
+#ifdef SPIRE_NEOW_LAYER_PROFILE
+ RuntimeScopedRenderPart scene_timing(c.a.callbacks.profile_render,RuntimeRenderPart::RandomWater,row==0);
+#endif
  const int image=c.a.content.ui_image(ancient_scene_ui23::AuxiliaryFirst+unsigned(row));
  if(image<0)return false;
  ancient_scene_ui23::Timeline timeline;
  if(!timeline.read(c.a.content.image(image)))return false;
  const uint32_t elapsed=c.a.map_clock_ms-c.a.ancient_dialogue.entered;
+ {
+#ifdef SPIRE_NEOW_LAYER_PROFILE
+ RuntimeScopedRenderPart body_timing(c.a.callbacks.profile_render,RuntimeRenderPart::RandomLight,row==0);
+#endif
  if(!scene_delta_background(c,timeline.first,timeline.frame(elapsed,c.a.content.reduced_animations()),timeline.interval))return false;
+ }
  if(c.a.content.ui_image(ancient_lights_ui23::AuxiliaryFirst+unsigned(row))>=0)
   return ancient_lights::draw(c,unsigned(row),elapsed);
  return true;

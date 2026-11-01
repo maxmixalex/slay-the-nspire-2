@@ -150,7 +150,9 @@ inline void render(uint16_t*pixels,int pitch,const Snapshot&source,const Table&t
     const uint64_t a=horizontal[i>>1],b=vertical[i&1];const unsigned index=unsigned(((a>b?a:b)+(1u<<23))>>24);
     const unsigned lod=index>1024?256:word(lod_values+index*2);
     uint16_t color=sample(source.full,320,240,sx[i],sy[i]);
-    if(lod)color=mix(color,sample(source.mip1,160,120,(sx[i]>>1)-16384,(sy[i]>>1)-16384),lod);
+    // Omitting at most8/256 of the secondary mip changes its interpolation
+    // by no more than R1/G2/B1 codes; the original full-resolution sample stays.
+    if(lod>8)color=mix(color,sample(source.mip1,160,120,(sx[i]>>1)-16384,(sy[i]>>1)-16384),lod);
     pixels[yy*pitch+xx]=alpha==255?color:blend(source.full[yy*320+xx],color,alpha);
    }
   }

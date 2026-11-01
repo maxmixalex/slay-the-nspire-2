@@ -1,3 +1,33 @@
+# UI23 measured guest layers — next bounded kernel candidate
+
+The ordinary 64 MiB Firebird path measures the first grid stage at 7.18894 FPS,
+then exact light-support clipping at 8.193739 FPS (121.678816 ms render). Warm
+resource reads remain zero. The actual diagnostic layer means per frame are
+fire 36.858259 ms, lights 24.012725 ms, fog 13.944416 ms, post 18.058434 ms,
+body restoration 3.083147 ms and vignette 3.377486 ms; the rest of App rendering
+uses about 22.3152 ms. These results remain below the desired fluidity.
+
+The next candidate uses exact carry detection for low-saturation light/fog
+addition, exposes pinned field sizes to ARM address generation without changing
+sampling arithmetic, and skips secondary mip weights at most 8/256. That last
+change preserves the full-resolution displacement/sample and bounds each post
+pixel difference by RGB565 R1/G2/B1. The source fire proof independently covers
+all 200,000 integer shader phases (6,001,000,000 queries) and all 546 source
+transmission masks: fire contribution error is bounded by R0/G4/B2 for arbitrary
+body entry phase. This is a conservative all-phase bound; the prior 26 complete
+App/room captures actually differ by at most R0/G2/B1. New complete frames,
+strict ARM allocation and real guest timing remain pending for this candidate.
+
+# UI23 exact light support span candidate
+
+A second runtime checkpoint clips each qualified light row to its proven
+native source support before the pixel loop. Unsigned reciprocal division
+with one correction computes the same integer entry/exit positions for
+positive, zero and negative UV slopes. No texel sampling or channel values
+change. The independent row/span regression passes 9,608,737 checks; complete
+frame equivalence, actual ARM cost and strict linked allocation remain to be
+verified before this candidate can replace the measured baseline.
+
 # UI23 production memory closure — guest timing pending
 
 The production Zehn packer now enforces the unchanged 22,291,016-byte ceiling

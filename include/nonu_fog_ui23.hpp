@@ -1,6 +1,7 @@
 #pragma once
 #include <stdint.h>
 #include "fake_merchant_presentation.hpp"
+#include "presentation_blend.hpp"
 
 namespace spire::nonu_fog_ui23 {
 constexpr unsigned Auxiliary=7222,FirstImage=59712,Images=59717;
@@ -78,9 +79,6 @@ inline unsigned alpha(const uint8_t*data,int u,int v){
 // `amount` is an already alpha-weighted RGB565 contribution. Separating
 // constant source weighting from destination saturation is bit-exact.
 inline uint16_t add_weighted(uint16_t destination,uint16_t amount){
- const unsigned r=(destination>>11)+(amount>>11);
- const unsigned g=((destination>>5)&63)+((amount>>5)&63);
- const unsigned b=(destination&31)+(amount&31);
- return uint16_t(((r>31?31:r)<<11)|((g>63?63:g)<<5)|(b>31?31:b));
+ return presentation::add_preweighted(destination,amount);
 }
 }

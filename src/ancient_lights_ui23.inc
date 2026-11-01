@@ -32,6 +32,9 @@ static bool nodes(Canvas&c,const water_reflection::Texture&texture,const Table&t
  return true;
 }
 static bool layer(Canvas&c,unsigned scene,unsigned layer,uint32_t elapsed,uint32_t seed,unsigned first=0,unsigned count=~0u){
+#ifdef SPIRE_NEOW_LAYER_PROFILE
+ RuntimeScopedRenderPart light_timing(c.a.callbacks.profile_render,RuntimeRenderPart::CharacterInfo,scene==0);
+#endif
  const water_reflection::Texture texture(c.a.content.image(c.a.content.ui_image(I13_RandomLight)),256,256);
  const auto image=c.a.content.image(c.a.content.ui_image(AuxiliaryFirst+scene));
  Table table;if(!texture.valid()||!table.read(image,scene))return false;
@@ -46,20 +49,39 @@ static bool draw(Canvas&c,unsigned scene,uint32_t elapsed){
  if(scene&&c.a.content.ui_image(tez_cinders_ui23::AuxiliaryFirst)==int(tez_cinders_ui23::FirstImage+1))
   return tez_cinders::draw(c,elapsed,seed);
  if(!scene){
+  {
+#ifdef SPIRE_NEOW_LAYER_PROFILE
+  RuntimeScopedRenderPart fire_timing(c.a.callbacks.profile_render,RuntimeRenderPart::RandomDots);
+#endif
   if(c.a.content.ui_image(neow_fire_ui23::Auxiliary)==int(neow_fire_ui23::ParameterImage)&&!neow_fire::draw(c,elapsed))return false;
+  }
   if(!layer(c,scene,0,elapsed,seed,0,3))return false;
+  {
+#ifdef SPIRE_NEOW_LAYER_PROFILE
+  RuntimeScopedRenderPart fog_timing(c.a.callbacks.profile_render,RuntimeRenderPart::CharacterPortraits);
+#endif
   if(c.a.content.ui_image(neow_particles_ui23::Auxiliary)==int(neow_particles_ui23::FirstImage)&&
      !neow_particles::draw(c,c.a.content.reduced_animations()?0:elapsed,seed))return false;
+  }
   if(!layer(c,scene,0,elapsed,seed,3,4))return false;
+  {
+#ifdef SPIRE_NEOW_LAYER_PROFILE
+  RuntimeScopedRenderPart vignette_timing(c.a.callbacks.profile_render,RuntimeRenderPart::CharacterControls);
+#endif
   const auto vignette=c.a.content.image(FirstImage);
   if(!vignette.pixels||vignette.w!=320||vignette.h!=240||vignette.format!=3||!vignette.alpha||!vignette.palette)return false;
   c.picture(vignette,0,0,320,240);
+  }
  }
  // Reacquire texture/table views after the vignette request. No image load
  // occurs inside either borrowed-pointer drawing window.
  if(!layer(c,scene,1,elapsed,seed))return false;
- if(!scene&&c.a.content.ui_image(neow_post_ui23::AuxiliaryFirst)==int(neow_post_ui23::FirstImage))
+ if(!scene&&c.a.content.ui_image(neow_post_ui23::AuxiliaryFirst)==int(neow_post_ui23::FirstImage)){
+#ifdef SPIRE_NEOW_LAYER_PROFILE
+  RuntimeScopedRenderPart post_timing(c.a.callbacks.profile_render,RuntimeRenderPart::CharacterAscension);
+#endif
   return neow_post::draw(c,c.a.content.reduced_animations()?0u:c.a.map_clock_ms);
+ }
  return true;
 }
 }

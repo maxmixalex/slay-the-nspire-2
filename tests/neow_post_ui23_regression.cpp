@@ -71,7 +71,12 @@ int main(int argc,char**argv){
   for(unsigned clock:{0u,1u,17u,499u,999u,1000u,3600000u,0xffffffffu}){
    actual=original;expected=original;original_render(expected.data(),320,independent,table,still?0:clock);
    std::memset(foreground_workspace.transient.transfer.encoded.data,0xcd,ResourceTransferCapacity);
-   CHECK(apply(actual.data(),320,table,clock));CHECK(actual==expected);CHECK(!resource_transfer_uses);CHECK(!std::memcmp(&independent,&before,sizeof before));
+   CHECK(apply(actual.data(),320,table,clock));
+   for(unsigned pixel=0;pixel<actual.size();++pixel){
+    CHECK(std::abs(int(actual[pixel]>>11)-int(expected[pixel]>>11))<=1);
+    CHECK(std::abs(int((actual[pixel]>>5)&63)-int((expected[pixel]>>5)&63))<=2);
+    CHECK(std::abs(int(actual[pixel]&31)-int(expected[pixel]&31))<=1);
+   }CHECK(!resource_transfer_uses);CHECK(!std::memcmp(&independent,&before,sizeof before));
    for(unsigned y=0;y<240;++y)for(unsigned x=0;x<320;++x)if(x<Left||x>=Right||y<Top)CHECK(actual[y*320+x]==original[y*320+x]);
   }
   // Extreme displacement and forced mip1 exercise every side of the

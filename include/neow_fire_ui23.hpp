@@ -134,11 +134,17 @@ struct Shader {
    inverse|=0x80000000u|(scale==8388608?0x40000000u:0u);
  }
  int sample(unsigned index,int u,int v,unsigned channel,bool repeat)const{
-  return lcd_sampling?field[index].sample_lcd(u,v,channel,repeat):field[index].sample(u,v,channel,repeat);
+  if(!lcd_sampling)return field[index].sample(u,v,channel,repeat);
+  if(index==0&&channel==0&&repeat)return field[0].fixed_lcd<600,636,1,0,true>(u,v);
+  if(index==2&&channel==2&&!repeat)return field[2].fixed_lcd<256,256,3,2,false>(u,v);
+  return field[index].sample_lcd(u,v,channel,repeat);
  }
  void sample_rg(unsigned index,int u,int v,bool repeat,int&r,int&g)const{
-  if(lcd_sampling)field[index].sample_lcd_rg(u,v,repeat,r,g);
-  else field[index].sample_rg(u,v,repeat,r,g);
+  if(!lcd_sampling){field[index].sample_rg(u,v,repeat,r,g);return;}
+  if(index==1&&repeat)field[1].fixed_lcd_rg<250,250,3,true>(u,v,r,g);
+  else if(index==2&&repeat)field[2].fixed_lcd_rg<256,256,3,true>(u,v,r,g);
+  else if(index==3&&!repeat)field[3].fixed_lcd_rg<100,100,2,false>(u,v,r,g);
+  else field[index].sample_lcd_rg(u,v,repeat,r,g);
  }
  unsigned alpha_unit(int u,int v)const{
   using namespace ancient_fire_ui23;const auto&q=model.q;

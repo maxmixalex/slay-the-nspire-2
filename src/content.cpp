@@ -504,6 +504,7 @@ bool Content::image_cached(int id)const{
 bool Content::reduced_animations()const{
     return content_animation_profile::reduced(metadata_,version_);
 }
+bool Content::selection_image_cache_profile()const{return image_page_limit==SelectionImagePages;}
 void Content::set_image_cache_profile(bool room_frames,bool selection_frames)const{
     // A large-group room borrows512KiB from its published-image tier. The
     // total picture arena and execution allocation remain exactly unchanged.

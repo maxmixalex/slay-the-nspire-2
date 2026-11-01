@@ -20,5 +20,20 @@ int main(){
    CHECK(rows.x()==u);CHECK(rows.y()==v);
   }
  }
+ for(unsigned trial=0;trial<30000;++trial){
+  const int u=trial&1?int(next()):int(next()%200001)-100000,v=trial&1?int(next()):int(next()%200001)-100000;
+  const int du=trial<10?int(trial)-5:trial&1?int(next()):int(next()%4001)-2000;
+  const int dv=trial<10?5-int(trial):trial&1?int(next()):int(next()%4001)-2000;
+  const unsigned low_u=next()%65536,low_v=next()%65536;
+  const unsigned extent_u=1+next()%(65536-low_u),extent_v=1+next()%(65536-low_v);
+  const unsigned count=1+next()%320;
+  spire::LightQuadSpan su(du),sv(dv);unsigned first=0,last=count;
+  su.clip(u,low_u,extent_u,count,first,last);sv.clip(v,low_v,extent_v,count,first,last);
+  for(unsigned x=0;x<count;++x){
+   const int64_t a=int64_t(u)+int64_t(du)*x,b=int64_t(v)+int64_t(dv)*x;
+   CHECK((first<last&&x>=first&&x<last)==(a>=low_u&&a<int64_t(low_u)+extent_u&&b>=low_v&&b<int64_t(low_v)+extent_v));
+  }
+  if(su.step){const unsigned n=next();CHECK(su.divide(n)==n/su.step);}
+ }
  std::printf("Light UV rows: %u exact checks including both signs and zero crossings\n",checks);
 }
