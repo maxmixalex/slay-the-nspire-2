@@ -5,6 +5,7 @@ using namespace ancient_lights_ui23;
 static bool nodes(Canvas&c,const water_reflection::Texture&texture,const Table&table,unsigned layer,
                   uint32_t elapsed,uint32_t seed,unsigned first=0,unsigned count=~0u){
  const bool reduced=c.a.content.reduced_animations();const uint32_t clock=reduced?0:elapsed;
+ auto&light_cache=character_light_quads();const bool bounded=light_cache.bind(c.a.content,texture,c.a.callbacks.foreground_poll);
  const unsigned frame=table.frame(clock,reduced);
  static constexpr fake_merchant::Key original[]={fake_merchant::key(0,.321019),fake_merchant::key(.502521,.507939),fake_merchant::key(1,.36242)};
  static constexpr auto scale=fake_merchant::light_curve(original);
@@ -25,7 +26,7 @@ static bool nodes(Canvas&c,const water_reflection::Texture&texture,const Table&t
    if(width<=0||height<=0||int64_t(width)+height+(skew+65535)/65536>=2097152)return false;
    const unsigned shade=fake_merchant::gradient(ramp,q).r;
    fake_merchant::quad(c,texture,x,y,width,height,angle,
-    div255(r[24]*shade),div255(r[25]*shade),div255(r[26]*shade),r[27],presentation::Add,shear);
+    div255(r[24]*shade),div255(r[25]*shade),div255(r[26]*shade),r[27],presentation::Add,shear,bounded?&light_cache:nullptr);
   }
  }
  return true;

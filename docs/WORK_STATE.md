@@ -1,59 +1,88 @@
-# UI23 complete-resource candidate — public replay and performance acceptance open
+# UI23 complete-resource candidate — public full replay passed; performance open
 
-As of 2026-11-01, the complete 7229/60294 Ancient resource catalog includes the
-previously missing Tez and Neow fire families. The source-bound bilingual
-candidate, final launcher, licenses, instructions and compact manifest total
-69,890,968 bytes when fully extracted: 109,032 bytes below the 70,000,000-byte
-limit. This is an independently verified installation candidate, not a final
-release or proof that the ongoing public all-language run has finished.
+As of 2026-11-01, the complete 7229/60294 Ancient catalog includes the previously
+missing Tez and Neow fire families. The actual public Linux standalone789 full
+conversion completed all 82 stages for all 16 languages, with source unchanged.
+All 25 physical resource files were independently read back: 85,869,477 bytes.
+The 11 files needed for English and Simplified Chinese total 68,100,890 bytes
+and exactly match the previously inspected private candidate. All 16 logical
+roundtrips and final schema checks pass. Full output and its receipts are
+preserved independently of the next profile writer.
+
+The previously inspected complete installation totals 69,890,968 extracted
+bytes, 109,032 below 70,000,000. That measurement includes the older 78930d5
+launcher, all licenses, instructions and its compact manifest. It is a passing
+candidate measurement, not the size of a newly rebuilt final package. The
+new 35e06b1 launcher is 1,716,916 bytes and final packaging must be measured again.
 
 Actual 64 MiB Firebird execution of runtime 78930d5 with the complete 7229 full
-resources measures Neow at 4.09125 emulated FPS, 243.8275 ms mean render time and
-zero warm resource I/O. This fails the intended performance goal; a faithful
-runtime optimization is in progress. Nonupeipe measures 11.03037 emulated FPS,
-90.1956 ms render time and zero warm I/O. Random selection with runtime 78930d5
-and the older 7227 resources measures 27.4527 emulated FPS with zero warm I/O.
-The completed final-7229 Random interval measures 823 frames in 30 seconds,
-27.420697 emulated FPS and 35.823409 ms render time, again with zero warm I/O;
-its frame rate differs by -0.1166% from the same-runtime older-resource baseline.
-This closes that selection scene's resource-compression comparison, not an
-all-scene performance claim. These are paired emulator measurements on the
-supplied 64 MiB firmware, not physical calculator measurements. No physical-
-device result is available.
+resources measures Neow at 4.09125 emulated FPS, 243.82751 ms mean render time
+and zero warm resource I/O. The exact fire optimization in 35e06b1 improves
+that interval to 4.57953 emulated FPS and 217.7469 ms, still with zero warm I/O.
+Neow remains below the intended performance goal; further faithful hot-path
+work is in progress. The 35e06b1 production allocation is 22,264,384 bytes,
+26,632 below the unchanged 22,291,016-byte limit. Its actual linked ARM decoder
+oracle and formal/native builds pass. The earlier 6,144-output ARM kernel
+comparison and all 26 complete RGB565 images remain exact; their kernel
+instruction reduction is not presented as the whole-scene frame-rate gain.
 
-This source checkpoint adds exact paired fire sampling, validated unit/half UV
-specialization and monotonic alpha early-outs without increasing cache or heap
-capacity. At 13 clocks, all 26 complete RGB565 outputs match the prior runtime
-byte for byte. The ARM926 shader kernel uses 30.84097% fewer instructions over
-6,144 matching outputs; this is not an emulator or physical frame-rate result.
-The new production allocation and paired guest Neow interval remain pending.
+This source checkpoint additionally reduces exact shared Ancient light sampling
+and Neow post-processing work. The light lookup validates the complete logical
+texture before opting in; nonqualifying images retain the existing path. The
+new Character cache occupies existing scene-union slack: the native union
+remains 230,416 bytes. Corrected tests cover 157 legal colors and rejected
+alpha/color/alignment cases; 5,760 complete Ancient frames and 24 raw captures
+match the prior renderer. The post-process uses a proved sampling footprint
+and shared UV work; all 26 complete full-App/room images match at 13 clocks.
+Its measured ARM kernel instruction reduction is 18.2343%, not a whole-scene
+FPS result. Two independent reviews cover light qualification/lifetime and
+post ROI/mip/stride/temporary-workspace bounds. No resource sizes, actor frame
+counts or clocks change. The combined formal ARM allocation and actual guest
+frame-rate comparison remain pending; noisy concurrent host timings do not
+establish the light path performance gain.
 
-A separate final-7229 Vantom guest run reaches the resource-loading failure
-screen after continuing the initial combat idle for 20 seconds, even without
-pressing Menu. Its cumulative resource-failure counter is one; whether that
-increment belongs to this operation is still being checked against the saved
-pre-state. The matching final physical files and a fresh native production
-EndTurn replay pass 910 frames, but this does not close the guest failure.
-The actual saved State, prior locale/scene transitions and four-file deferred
-resource-cache path are under targeted investigation. Gameplay acceptance
-therefore remains blocked as well as Neow performance.
+The 78930d5 Nonupeipe interval measures 11.03037 emulated FPS, 90.1956 ms render
+time and zero warm I/O. Final-7229 Random selection measures 823 frames in
+30 seconds, 27.420697 emulated FPS and 35.823409 ms, with zero warm I/O. Against
+the same runtime with older 7227 data (27.452703 FPS), the frame-rate difference
+is -0.1166%. This closes that selection scene's resource comparison, not
+all-scene performance. These measurements use the supplied 64 MiB emulator
+firmware; no physical-calculator measurement is available.
 
-Runtime, production ELF, Windows/Linux standalone binaries and the running
-public original-folder conversion are bound to 78930d5. Its CI passes all 174
-native suites, 595 conversion tests plus 56 tooling tests, the portable gate,
-and the actual Windows build and clean-environment frozen self-test, including
-the genuine linked ARM decoder oracle. Windows original-folder conversion has
-not been executed. The Linux public full/all16 graph is running; its reduced
-all16 and default-bilingual follow-up runs have not completed. Private-tail and
-self-test results must not be relabeled as those whole-graph completions.
+The stable continuous final-7229 Vantom guest path now passes actual Menu to
+turn two, normal save/exit and byte-exact saved State after Continue. Its
+measured warm interval is 30.0055 emulated FPS, 24.4105 ms render time and zero
+resource I/O. The earlier resource-loading failure after restoring an early
+combat snapshot, including its cumulative failure counter of one, is preserved
+as failed evidence. Continuous controls and the actual save/Continue path pass,
+but the cause of the early-snapshot failure is not proved. Native 910-frame and
+actual saved-State/four-file-cache controls are supporting evidence, not a
+substitute for the completed guest operations or a claim about every battle.
 
-Narrative corrections are separately bound to 920f7c5, and installation/package
-documentation to f4f94c1. Neither checkpoint changes or relabels the tested
-78930d5 executable. Final main and optional locales must come from one matching
-public conversion/common/profile set, followed by whole-archive size, exact
-resource readback and final gameplay/performance acceptance. Existing save data
-must be preserved. The records below describe earlier checkpoints and retain
-their original, narrower evidence scope.
+Execution provenance remains explicit. Public full/all16 output was produced
+by 78930d5. The 35e06b1 standalone is now running the actual original-folder
+reduced/all16 graph with a distinct output; final default-bilingual execution
+is held until the runtime performance version is settled. The observed789 full
+run is not relabeled as 35e, and partial tails or self-tests are not whole CLI
+completion. The preserved matching full common/locale set supplies its own
+optional languages; reduced output must supply a separate matching set.
+
+The 789 CI passes 174 native suites, 595 conversion tests plus 56 tooling tests,
+the portable gate and Windows build/self-test. The 35e Windows artifact is
+independently verified against its exact embedded public source and ARM ELF;
+its actual source-mode and frozen linked decoder self-tests, 66 recipe imports,
+UTF-8 and Unicode path checks pass. Its explicit self-test faulthandler prints
+a nonterminal Unicorn initialization diagnostic before successful real decodes;
+the ordinary conversion path does not explicitly enable that handler. Windows
+original-folder conversion has not been run. Linux resource-profile execution,
+Windows self-tests and emulator measurements retain these distinct scopes.
+
+Narrative corrections are separately bound to 920f7c5, installation/package
+documentation to f4f94c1, and a README assertion-only correction to a0d3695. None
+relabels an earlier executable. Final release still requires the remaining
+public reduced/default completion, whole-archive size/readback and adequate
+runtime performance. Existing save data must be preserved. The records below
+retain their historical checkpoints and narrower evidence scopes.
 
 # Historical checkpoint: UI23 Tez fire and bounded temporal storage stage
 

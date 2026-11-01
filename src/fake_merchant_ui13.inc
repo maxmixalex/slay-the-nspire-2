@@ -26,7 +26,7 @@ static Room room;
 // is .5..1.6px. Keep all300 particles; cull only fragments outside the room.
 // The larger soft masks retain Canvas's usual nearest LCD texture sampling.
 static void quad(Canvas c,const water_reflection::Texture&tex,int cx,int cy,int w,int h,
-                 int angle,unsigned red,unsigned green,unsigned blue,unsigned alpha,unsigned blend_mode,int shear=0){
+                 int angle,unsigned red,unsigned green,unsigned blue,unsigned alpha,unsigned blend_mode,int shear=0,const RandomLightQuadCache*light_cache=nullptr){
  if(w<=0||h<=0||!alpha||!tex.valid()||c.clip_w<=0||c.clip_h<=0)return;
  const int sn=CombatCardMotion::sine(angle),cs=CombatCardMotion::sine(angle+1024);
  const int bound_w=w+int((int64_t(CombatCardMotion::magnitude(shear))*h+65535)/65536);
@@ -51,11 +51,39 @@ static void quad(Canvas c,const water_reflection::Texture&tex,int cx,int cy,int 
   storage.format<=1&&!storage.palette;
  presentation::OpaqueLightContribution contribution;
  if(direct)contribution.reset(c.brightness,c.tint_red,c.tint_green,c.tint_blue,c.opacity);
+ // The cached source proof is over all256² logical texels, not padding:
+ // opaque, R==B and -3<=2R-G<=1. Within that range (G,R mod4) uniquely
+ // identifies RGB565. This exact256-entry draw-local lookup preserves the
+ // original separately rounded tint/opacity, without source quantization.
+ const bool native_lookup=direct&&tex.width()==256&&tex.height()==256&&light_cache&&
+   light_cache->valid&&light_cache->native_lookup&&light_cache->picture.pixels==storage.pixels&&
+   light_cache->picture.alpha==storage.alpha&&light_cache->picture.palette==storage.palette;
+ uint16_t native_contribution[256];
+ if(native_lookup){
+  for(unsigned green=0;green<64;++green)for(unsigned red=green<3?0:(green-2)/2,
+      end=mn(31u,(green+1)/2);red<=end;++red){
+   native_contribution[(green<<2)|(red&3)]=contribution.weighted(uint16_t((red<<11)|(green<<5)|red));
+  }
+ }
+
  for(int y=top;y<bottom;++y){
   const int dx=left*256+128-cx,dy=y*256+128-cy;
   const int64_t vy=-int64_t(dx)*sn+int64_t(dy)*cs;
   int u=32768+int(((int64_t(dx)*cs+int64_t(dy)*sn)*64-vy*shear/1024)/w);
   int v=32768+int(vy*64/h);
+  if(native_lookup){
+   for(int x=left;x<right;++x,u+=du,v+=dv){
+    if(unsigned(u)>=65536u||unsigned(v)>=65536u)continue;
+    const unsigned at=(unsigned(v)&0xff00u)|(unsigned(u)>>8);
+    const uint8_t*p=storage.pixels+at*2;const unsigned color=p[0]|unsigned(p[1])<<8;
+    const unsigned amount=native_contribution[((color>>3)&0xfcu)|(color&3u)];
+    if(!amount)continue;
+    const unsigned dest=c.pixels[y*c.pitch+x],r=(dest>>11)+(amount>>11);
+    const unsigned g=((dest>>5)&63)+((amount>>5)&63),b=(dest&31)+(amount&31);
+    c.pixels[y*c.pitch+x]=uint16_t(((r>31?31:r)<<11)|((g>63?63:g)<<5)|(b>31?31:b));
+   }
+   continue;
+  }
   for(int x=left;x<right;++x,u+=du,v+=dv){
    if(unsigned(u)>=65536u||unsigned(v)>=65536u)continue;
    if(direct){
@@ -172,6 +200,9 @@ static void lights(Canvas&c,uint32_t clock,uint32_t seed,unsigned mode){
  static constexpr auto ancient_scale=light_curve(ancient_keys);
  static constexpr ColorKey ancient_color[]={color_key(0,.34902,.34902,.34902),color_key(.411546,1,1,1),color_key(.994413,.34902,.34902,.34902)};
  const water_reflection::Texture texture(c.a.content.image(c.a.content.ui_image(I13_RandomLight)),256,256);
+ RandomLightQuadCache*light_cache=nullptr;
+ if(ancient){auto&cache=character_light_quads();if(cache.bind(c.a.content,texture,c.a.callbacks.foreground_poll))light_cache=&cache;}
+
  const unsigned first=groups[mode][0],count=groups[mode][1];
  const auto&scale_keys=ancient?ancient_scale:mode?AmbientLightScale:CandleLightScale;
  const auto&color_keys=ancient?ancient_color:mode?AmbientColor:CandleColor;
@@ -190,7 +221,7 @@ static void lights(Canvas&c,uint32_t clock,uint32_t seed,unsigned mode){
    const unsigned q=(ancient?age:(clock+hash(seed+node+(mode?90:3))%6*1000)%3000)*Q/3000;
    const unsigned shade=gradient(color_keys,q).r;const int scale=curve(scale_keys,q);
    quad(c,texture,l.x,l.y,g.w*scale/Q,g.h*scale/Q,g.angle,
-        div255(l.r*shade),div255(l.g*shade),div255(l.b*shade),l.a,presentation::Add,g.shear);
+        div255(l.r*shade),div255(l.g*shade),div255(l.b*shade),l.a,presentation::Add,g.shear,light_cache);
   }
  }
 }

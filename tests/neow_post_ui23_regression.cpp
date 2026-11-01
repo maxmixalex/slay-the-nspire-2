@@ -27,6 +27,27 @@ static std::vector<uint8_t> words(bool still){
  return raw;
 }
 static std::vector<uint8_t> read(const char*path){FILE*f=std::fopen(path,"rb");CHECK(f);CHECK(!std::fseek(f,0,SEEK_END));const auto n=std::ftell(f);CHECK(n>0);std::rewind(f);std::vector<uint8_t>d(size_t(n),0);CHECK(std::fread(d.data(),1,d.size(),f)==d.size());std::fclose(f);return d;}
+static void original_render(uint16_t*pixels,int pitch,const Snapshot&source,const Table&table,uint32_t clock){
+ // speed1.0 and repeat_enable give an exact one-second noise period. Screen
+ // capture is independent of that phase and happens once after every layer.
+ const unsigned phase=unsigned(uint64_t(clock%1000u)*16777216u/1000u);
+ for(unsigned y=Top;y<Bottom;y+=2)for(unsigned x=Left;x<Right;x+=2){
+  int sx[4],sy[4];
+  for(unsigned i=0;i<4;++i){const unsigned xx=x+(i&1),yy=y+(i>>1),n=table.noise(xx,yy,phase);
+   // RoundedQ16 factors encode source strength.015 against320x240 pixels;
+   // the maximum displacement quantization is below0.00004LCDpixels.
+   sx[i]=int(xx*65536)+int((int64_t(n)*315806+32768)>>16)-157286;
+   sy[i]=int(yy*65536)+int((int64_t(n)*236855+32768)>>16)-117965;
+  }
+  for(unsigned i=0;i<4;++i){const unsigned xx=x+(i&1),yy=y+(i>>1),alpha=table.alpha(xx,yy);if(!alpha)continue;
+   const unsigned left=i&2,top=i&1;
+   const unsigned lod=table.lod(sx[left+1]-sx[left],sy[left+1]-sy[left],sx[top+2]-sx[top],sy[top+2]-sy[top]);
+   uint16_t color=sample(source.full,320,240,sx[i],sy[i]);
+   if(lod)color=mix(color,sample(source.mip1,160,120,(sx[i]>>1)-16384,(sy[i]>>1)-16384),lod);
+   pixels[yy*pitch+xx]=alpha==255?color:blend(source.full[yy*320+xx],color,alpha);
+  }
+ }
+}
 int main(int argc,char**argv){
  // Exhaust each channel pair and all Q8 fractions. Complementary other
  // channels exercise packed-lane borrow/carry without a shared arithmetic
@@ -48,9 +69,26 @@ int main(int argc,char**argv){
   auto changed=raw;changed[26]^=1;CHECK(!Table{}.read(Picture{changed.data(),nullptr,nullptr,p.w,p.h,0},still));
   Snapshot independent;snapshot(independent,original.data(),320);const auto before=independent;
   for(unsigned clock:{0u,1u,17u,499u,999u,1000u,3600000u,0xffffffffu}){
-   actual=original;expected=original;render(expected.data(),320,independent,table,still?0:clock);
+   actual=original;expected=original;original_render(expected.data(),320,independent,table,still?0:clock);
+   std::memset(foreground_workspace.transient.transfer.encoded.data,0xcd,ResourceTransferCapacity);
    CHECK(apply(actual.data(),320,table,clock));CHECK(actual==expected);CHECK(!resource_transfer_uses);CHECK(!std::memcmp(&independent,&before,sizeof before));
    for(unsigned y=0;y<240;++y)for(unsigned x=0;x<320;++x)if(x<Left||x>=Right||y<Top)CHECK(actual[y*320+x]==original[y*320+x]);
+  }
+  // Extreme displacement and forced mip1 exercise every side of the
+  // bounded snapshot, including a padded destination stride. Poison unused
+  // arena bytes so a missing source texel cannot pass by retaining old data.
+  for(unsigned extreme:{0u,65280u}){
+   auto edge=raw;const unsigned mask=still?StaticMaskAt:MaskAt,lod=still?StaticMaskAt+10000:LodAt;
+   std::memset(edge.data()+mask,255,10000);
+   if(still)for(unsigned i=0;i<StaticCount;++i){edge[NoiseAt+i*2]=uint8_t(extreme);edge[NoiseAt+i*2+1]=uint8_t(extreme>>8);}
+   else std::memset(edge.data()+NoiseAt,extreme?255:0,128*128);
+   for(unsigned i=0;i<1025;++i){edge[lod+2*i]=0;edge[lod+2*i+1]=1;}
+   Table edge_table;CHECK(edge_table.read(Picture{edge.data(),nullptr,nullptr,p.w,p.h,0},still));
+   std::vector<uint16_t> padded(327*240,0x6b4d);for(unsigned y=0;y<240;++y)for(unsigned x=0;x<320;++x)padded[y*327+x]=original[y*320+x];
+   auto edge_expected=padded;Snapshot edge_source;snapshot(edge_source,padded.data(),327);
+   original_render(edge_expected.data(),327,edge_source,edge_table,0);
+   std::memset(foreground_workspace.transient.transfer.encoded.data,0xa7,ResourceTransferCapacity);
+   CHECK(apply(padded.data(),327,edge_table,0));CHECK(padded==edge_expected);
   }
   for(auto use:{ResourceTransferUse::Bytes,ResourceTransferUse::Save,ResourceTransferUse::Codec,ResourceTransferUse::Map}){
    ResourceTransferLease held(use);CHECK(held);actual=original;CHECK(!apply(actual.data(),320,table,0));CHECK(actual==original);CHECK(resource_transfer_uses==unsigned(use));

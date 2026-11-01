@@ -83,40 +83,80 @@ inline void snapshot(Snapshot&out,const uint16_t*pixels,int pitch){
  for(unsigned y=0;y<120;++y)for(unsigned x=0;x<160;++x){const unsigned at=y*640+x*2;
   out.mip1[y*160+x]=average4(out.full[at],out.full[at+1],out.full[at+320],out.full[at+321]);}
 }
+// The fixed output rectangle and source displacement limits (+/-2.4px,
+// +/-1.8px) can read full pixels only inside x69..276,y142..239.
+// Mip1 additionally needs original x68..277,y140..239. Populate that exact
+// superset before any writes; the Snapshot capacity/layout is unchanged.
+inline void snapshot_region(Snapshot&out,const uint16_t*pixels,int pitch){
+ for(unsigned y=140;y<240;++y)for(unsigned x=68;x<278;++x)out.full[y*320+x]=pixels[y*pitch+x];
+ for(unsigned y=70;y<120;++y)for(unsigned x=34;x<139;++x){const unsigned at=y*640+x*2;
+  out.mip1[y*160+x]=average4(out.full[at],out.full[at+1],out.full[at+320],out.full[at+321]);}
+}
 inline uint16_t sample(const uint16_t*source,unsigned width,unsigned height,int x,int y){
  const unsigned l=unsigned(clamp(x>>16,int(width)-1)),r=unsigned(clamp((x>>16)+1,int(width)-1));
  const unsigned t=unsigned(clamp(y>>16,int(height)-1)),b=unsigned(clamp((y>>16)+1,int(height)-1));
  const unsigned fx=unsigned(x&65535)>>8,fy=unsigned(y&65535)>>8;
  return mix(mix(source[t*width+l],source[t*width+r],fx),mix(source[b*width+l],source[b*width+r],fx),fy);
 }
+struct Axis {uint8_t low,high,fraction;};
+inline Axis noise_axis(int position,unsigned phase){
+ const unsigned uv=(uint32_t(position)-phase)&0xffffffu;
+ const int pixel=int(uv>>1)-32768,index=pixel>>16;
+ return {uint8_t(index&127),uint8_t((index+1)&127),uint8_t(unsigned(pixel)>>8)};
+}
+inline Axis mask_axis(int position){
+ if(unsigned(position)>=16777216u)return {255,255,0};
+ const int pixel=int(unsigned(position)*100u>>8)-32768,index=pixel>>16;
+ return {uint8_t(clamp(index,99)),uint8_t(clamp(index+1,99)),uint8_t(unsigned(pixel)>>8)};
+}
+template<unsigned Size>inline unsigned bilinear_axes(const uint8_t*bytes,Axis x,Axis y){
+ const unsigned top=y.low*Size,bottom=y.high*Size;
+ const unsigned a=bytes[top+x.low]*(256u-x.fraction)+bytes[top+x.high]*x.fraction;
+ const unsigned b=bytes[bottom+x.low]*(256u-x.fraction)+bytes[bottom+x.high]*x.fraction;
+ return (a*(256u-y.fraction)+b*y.fraction+128u)>>8;
+}
 inline void render(uint16_t*pixels,int pitch,const Snapshot&source,const Table&table,uint32_t clock){
- // speed1.0 and repeat_enable give an exact one-second noise period. Screen
- // capture is independent of that phase and happens once after every layer.
  const unsigned phase=unsigned(uint64_t(clock%1000u)*16777216u/1000u);
- for(unsigned y=Top;y<Bottom;y+=2)for(unsigned x=Left;x<Right;x+=2){
-  int sx[4],sy[4];
-  for(unsigned i=0;i<4;++i){const unsigned xx=x+(i&1),yy=y+(i>>1),n=table.noise(xx,yy,phase);
-   // RoundedQ16 factors encode source strength.015 against320x240 pixels;
-   // the maximum displacement quantization is below0.00004LCDpixels.
-   sx[i]=int(xx*65536)+int((int64_t(n)*315806+32768)>>16)-157286;
-   sy[i]=int(yy*65536)+int((int64_t(n)*236855+32768)>>16)-117965;
-  }
-  for(unsigned i=0;i<4;++i){const unsigned xx=x+(i&1),yy=y+(i>>1),alpha=table.alpha(xx,yy);if(!alpha)continue;
-   const unsigned left=i&2,top=i&1;
-   const unsigned lod=table.lod(sx[left+1]-sx[left],sy[left+1]-sy[left],sx[top+2]-sx[top],sy[top+2]-sy[top]);
-   uint16_t color=sample(source.full,320,240,sx[i],sy[i]);
-   if(lod)color=mix(color,sample(source.mip1,160,120,(sx[i]>>1)-16384,(sy[i]>>1)-16384),lod);
-   pixels[yy*pitch+xx]=alpha==255?color:blend(source.full[yy*320+xx],color,alpha);
+ // Source UV is separable. Per-column clamp/wrap, texel indices and weights
+ // are shared by all 96 rows; these 1212 stack bytes are not a persistent cache.
+ Axis noise_x[Right-Left],mask_x[Right-Left];
+ for(unsigned x=Left;x<Right;++x){const int u=-6069744+int(x)*83839;
+  noise_x[x-Left]=noise_axis(u,phase);mask_x[x-Left]=mask_axis(u);}
+ const auto*mask=table.data+(table.still?StaticMaskAt:MaskAt);
+ const auto*lod_values=table.data+(table.still?StaticMaskAt+10000:LodAt);
+ for(unsigned y=Top;y<Bottom;y+=2){
+  const Axis noise_y[]={noise_axis(-21062688+int(y)*145269,phase),noise_axis(-21062688+int(y+1)*145269,phase)};
+  const Axis mask_y[]={mask_axis(-21062688+int(y)*145269),mask_axis(-21062688+int(y+1)*145269)};
+  for(unsigned x=Left;x<Right;x+=2){
+   int sx[4],sy[4];
+   for(unsigned i=0;i<4;++i){const unsigned xx=x+(i&1),yy=y+(i>>1);
+    const unsigned n=table.still?word(table.data+NoiseAt+((yy-Top)*(Right-Left)+xx-Left)*2):bilinear_axes<128>(table.data+NoiseAt,noise_x[xx-Left],noise_y[i>>1]);
+    sx[i]=int(xx*65536)+int((int64_t(n)*315806+32768)>>16)-157286;
+    sy[i]=int(yy*65536)+int((int64_t(n)*236855+32768)>>16)-117965;
+   }
+   uint64_t horizontal[2],vertical[2];
+   for(unsigned row=0;row<2;++row){const unsigned at=row*2;const int dx=sx[at+1]-sx[at],dy=sy[at+1]-sy[at];horizontal[row]=uint64_t(int64_t(dx)*dx+int64_t(dy)*dy);}
+   for(unsigned col=0;col<2;++col){const int dx=sx[col+2]-sx[col],dy=sy[col+2]-sy[col];vertical[col]=uint64_t(int64_t(dx)*dx+int64_t(dy)*dy);}
+   for(unsigned i=0;i<4;++i){const unsigned xx=x+(i&1),yy=y+(i>>1);const Axis mx=mask_x[xx-Left],my=mask_y[i>>1];
+    if(mx.low==255||my.low==255)continue;
+    const unsigned alpha=(bilinear_axes<100>(mask,mx,my)+128)>>8;if(!alpha)continue;
+    const uint64_t a=horizontal[i>>1],b=vertical[i&1];const unsigned index=unsigned(((a>b?a:b)+(1u<<23))>>24);
+    const unsigned lod=index>1024?256:word(lod_values+index*2);
+    uint16_t color=sample(source.full,320,240,sx[i],sy[i]);
+    if(lod)color=mix(color,sample(source.mip1,160,120,(sx[i]>>1)-16384,(sy[i]>>1)-16384),lod);
+    pixels[yy*pitch+xx]=alpha==255?color:blend(source.full[yy*320+xx],color,alpha);
+   }
   }
  }
 }
+
 inline bool apply(uint16_t*pixels,int pitch,const Table&table,uint32_t clock){
  if(!pixels||pitch<320||!table.data)return false;
  // The caller has already fetched every source view and checked its content
  // generation. No callbacks, image requests or cache operations occur here.
  ResourceTransferLease lease(ResourceTransferUse::Bytes);if(!lease)return false;
  auto*copy=::new(detail::InPlaceAddress{lease.bytes()}) Snapshot;
- snapshot(*copy,pixels,pitch);render(pixels,pitch,*copy,table,table.still?0:clock);
+ snapshot_region(*copy,pixels,pitch);render(pixels,pitch,*copy,table,table.still?0:clock);
  return true;
 }
 }

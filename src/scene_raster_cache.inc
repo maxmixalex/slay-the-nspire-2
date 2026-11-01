@@ -120,7 +120,7 @@ struct RandomLightQuadCache {
     Picture picture{};
     uint32_t generation=0;
     unsigned logical_width=0,logical_height=0;
-    bool observed=false,valid=false;
+    bool observed=false,valid=false,native_lookup=false;
     static bool adjacent(uint16_t a,uint16_t b){
         const int red=int(a>>11)-int(b>>11),green=int((a>>5)&63)-int((b>>5)&63);
         return unsigned(red+1)<=2&&unsigned(green+1)<=2;
@@ -134,11 +134,15 @@ struct RandomLightQuadCache {
         owner=&content;generation=content.generation();picture=p;
         logical_width=texture.width();logical_height=texture.height();observed=true;valid=false;
         if(!texture.valid()||p.format>3||logical_width!=256||logical_height!=256)return false;
+        native_lookup=true;
         for(auto&byte:safe)byte=0;
         for(auto&byte:maximum)byte=0;
         for(auto&byte:minimum)byte=255;
         for(unsigned y=0;y<256;++y){if(!(y&15u)&&poll)poll();for(unsigned x=0;x<256;++x){
-            const uint16_t a=texture.at(x,y).color,b=texture.at(x+1,y).color;
+            const auto sample=texture.at(x,y);
+            const uint16_t a=sample.color,b=texture.at(x+1,y).color;
+            const int difference=int(a>>11)*2-int((a>>5)&63);
+            if(sample.alpha!=255||(a>>11)!=(a&31)||difference< -3||difference>1)native_lookup=false;
             const uint16_t c=texture.at(x,y+1).color,d=texture.at(x+1,y+1).color;
             const unsigned red=mx(mx(a>>11,b>>11),mx(c>>11,d>>11));
             const unsigned green=mx(mx((a>>5)&63,(b>>5)&63),mx((c>>5)&63,(d>>5)&63));
@@ -196,7 +200,7 @@ struct TezCinderRoom {
 };
 union CharacterEffects {uint8_t inactive;TezCinderRoom cinders;neow_fire_ui23::Mask neow;};
 enum class CharacterEffectOwner:uint8_t {None,Cinders,NeowFire};
-struct CharacterSceneRasters {character_select_delta::Raster raster;CharacterEffects effects{0};CharacterEffectOwner effect_owner=CharacterEffectOwner::None;};
+struct CharacterSceneRasters {character_select_delta::Raster raster;CharacterEffects effects{0};CharacterEffectOwner effect_owner=CharacterEffectOwner::None;RandomLightQuadCache light;};
 static_assert(sizeof(neow_fire_ui23::Mask)<=sizeof(TezCinderRoom),"Neow transmission reuses the existing cinder-sized variant");
 static_assert(sizeof(CharacterSceneRasters)<=sizeof(MerchantRugRaster),"Character and1776cinders share the existing scene slot");
 static_assert(alignof(CharacterSceneRasters)<=alignof(MerchantRugRaster),"Cinders must not increase scene alignment");
@@ -252,6 +256,7 @@ static character_select_delta::Raster& character_selection_raster(){
     }
     return scene_raster_storage.character.raster;
 }
+static RandomLightQuadCache& character_light_quads(){character_selection_raster();return scene_raster_storage.character.light;}
 static TezCinderRoom& tez_cinder_room(const App&a){
  character_selection_raster();auto&room=scene_raster_storage.character;
  if(room.effect_owner!=CharacterEffectOwner::Cinders){::new(detail::InPlaceAddress{&room.effects.cinders}) TezCinderRoom;room.effect_owner=CharacterEffectOwner::Cinders;}
