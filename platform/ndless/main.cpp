@@ -367,7 +367,8 @@ extern "C" int main(int argc,char**argv){
         if(localized.length&&split.open(common_source,localized,static_cast<spire::ResourceLanguage>(id))){
             resource=split.source();
             device_trace_stage(8);
-            if(app.init(resource,{save_game,load_game,clear_save,seed_entropy,load_preferences,save_preferences,available_languages,request_language,load_progress,save_progress,wall_clock,current_profile,profile_info,request_profile,write_feedback}))return true;
+            spire::Callbacks callbacks{save_game,load_game,clear_save,seed_entropy,load_preferences,save_preferences,available_languages,request_language,load_progress,save_progress,wall_clock,current_profile,profile_info,request_profile,write_feedback};callbacks.history_archive=history_archive_access;
+            if(app.init(resource,callbacks))return true;
         }
         source.close();split.close();resource={};return false;
     };

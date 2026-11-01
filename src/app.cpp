@@ -1,4 +1,5 @@
 #include "app.hpp"
+#include "card_affliction_scene.hpp"
 #include "neow_fire_ui23.hpp"
 #include "ancient_fire_ui23.hpp"
 #include "ui13_assets.hpp"
@@ -110,6 +111,7 @@ static const char* card_type_label(CardType type,const Content*content=nullptr){
     case CardType::Power:return "能力";case CardType::Status:return "状态";case CardType::Curse:return "诅咒";case CardType::Quest:return "任务";}
     return "";
 }
+#include "card_affliction_ui.inc"
 #include "card_face_ui.inc"
 static void small_card(Canvas&c,Card card,int x,int y,bool selected,bool playable,int number,int fee=-2,int stars=-2,int instance=-1,int deck=-1,const EventCardFacts*facts=nullptr){
     if(selected){c.rect(x-2,y-2,51,70,rgb(91,74,47));c.box(x-2,y-2,51,70,Gold);}
@@ -325,7 +327,7 @@ void App::render(){
         character_select_delta::available(content,character,
             content.clip(int(character_select_layout::FirstClip+character)).first);
     content.set_image_cache_profile(((!title||entering_merchant)&&game.phase==Phase::Shop)||
-        title_merchant_stock(*this)||fake_room_frames,selection_patches);
+        title_merchant_stock(*this)||fake_room_frames,selection_patches||card_affliction_cache_profile(*this));
     if(startup_logo.active()){Canvas c{*this};startup_logo_screen(c);return;}
     sync_screen_motion();
     if(debug_open){

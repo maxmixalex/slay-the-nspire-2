@@ -9,6 +9,7 @@ static void invalidate_hud_motion();
 #include "profiles_input.inc"
 #include "ui_progress_navigation.inc"
 #include "frontend_input.inc"
+#include "history_archive_ui.inc"
 #include "world_map_travel.inc"
 #include "world_map_act_intro.inc"
 #include "world_map_drawing_input.inc"
@@ -119,7 +120,7 @@ void App::input(Key k){
     }
     if(auxiliary.screen!=AuxiliaryScreen::None){if(!pointer.dispatching){pointer_cancel(true);pointer.visible=false;pointer.motion_time=map_clock_ms;}auxiliary_input(k);return;}
     if(bestiary.open){if(!pointer.dispatching){pointer_cancel(true);pointer.visible=false;pointer.motion_time=map_clock_ms;}bestiary_input(k);return;}
-    UiCoreObserver observer(*this);
+    UiCoreObserver observer(*this);if(!observer)return;
     sync_combat_preparation();
     if(combat_preparation.active&&!paused&&!frontend_confirm&&k!=Key::Back&&k!=Key::Save&&k!=Key::Load&&k!=Key::Quit)return;
     MapReticleInputSync map_focus{*this};

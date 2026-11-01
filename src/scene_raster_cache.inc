@@ -216,6 +216,8 @@ struct CharacterSceneRasters {character_select_delta::Raster raster;CharacterEff
 static_assert(sizeof(neow_fire_ui23::Mask)<=sizeof(TezCinderRoom),"Neow transmission reuses the existing cinder-sized variant");
 static_assert(sizeof(CharacterSceneRasters)<=sizeof(MerchantRugRaster),"Character and1776cinders share the existing scene slot");
 static_assert(alignof(CharacterSceneRasters)<=alignof(MerchantRugRaster),"Cinders must not increase scene alignment");
+struct HistoryReadRaster {uint8_t bytes[sizeof(UiHistoryPage)+7];};
+static_assert(sizeof(HistoryReadRaster)<=sizeof(MerchantRugRaster),"History page stays in the existing scene union");
 union SceneRasterStorage {
     uint8_t inactive;
     RandomSceneRasters random;
@@ -223,8 +225,9 @@ union SceneRasterStorage {
     SelectedHandRaster selected;
     CharacterSceneRasters character;
     AncientStillRaster ancient;
+    HistoryReadRaster history_read;
 };
-enum class SceneRasterOwner:uint8_t { None,Random,Merchant,SelectedHand,Character,Ancient };
+enum class SceneRasterOwner:uint8_t { None,Random,Merchant,SelectedHand,Character,Ancient,HistoryRead };
 static SceneRasterStorage scene_raster_storage{0};
 static SceneRasterOwner scene_raster_owner=SceneRasterOwner::None;
 // A new App can reuse the same address and the same initial Content generation.
@@ -238,6 +241,19 @@ static_assert(sizeof(SelectedHandRaster)<56u*1024u,
     "Only one selected description may animate");
 static_assert(sizeof(RandomSceneRasters)>=160u*1024u,
     "Scene sharing removes at least 160 KiB of permanently separate tables");
+static UiHistoryPage* archived_history_page(){
+ if(scene_raster_owner!=SceneRasterOwner::HistoryRead)return nullptr;
+ const uintptr_t at=(reinterpret_cast<uintptr_t>(scene_raster_storage.history_read.bytes)+7u)&~uintptr_t(7);
+ return reinterpret_cast<UiHistoryPage*>(at);
+}
+static UiHistoryPage& claim_history_page(){
+ if(scene_raster_owner!=SceneRasterOwner::HistoryRead){
+  ::new(detail::InPlaceAddress{&scene_raster_storage.history_read}) HistoryReadRaster;
+  scene_raster_owner=SceneRasterOwner::HistoryRead;
+  ::new(detail::InPlaceAddress{archived_history_page()}) UiHistoryPage;
+ }
+ return *archived_history_page();
+}
 static RandomSceneRasters& random_scene_rasters(){
     if(scene_raster_owner!=SceneRasterOwner::Random){
         ::new(detail::InPlaceAddress{&scene_raster_storage.random}) RandomSceneRasters;

@@ -14,6 +14,7 @@
 #include "retained_filter.hpp"
 #include "index_prediction.hpp"
 #include "game_over_presentation.hpp"
+#include "ui_history_archive.hpp"
 #include "core.hpp"
 #include "debug_commands.hpp"
 #include "keyword_hover.hpp"
@@ -294,6 +295,7 @@ struct Callbacks {
     // Cooperative foreground boundaries may capture hardware into the host's
     // bounded FIFO. This must not dispatch App input or advance any clock.
     void(*foreground_poll)()=nullptr;
+    UiHistoryArchiveCallback history_archive=nullptr;
 };
 // Run parameters used by Continue/abandon, without re-encoding saved state.
 struct SavedRunIdentity {
@@ -500,6 +502,14 @@ struct App {
     const UiEnemyStatistics& enemy_statistics(unsigned model,int character=-1)const;
     const UiEnemyStatistics& encounter_statistics(unsigned encounter,int character=-1)const;
     const UiRunHistory* history_at(unsigned newest_first)const;
+    bool prepare_history();
+    bool history_available()const;
+    bool archive_history_run(const UiRunHistory&);
+    bool migrate_history();
+    bool page_history_floors();
+    bool page_history_journal();
+    bool select_history_archive(UiHistoryArchiveAction,uint32_t serial=0);
+    const UiHistoryJournal& history_journal()const;
     const UiFloorHistory* current_floor_history(unsigned act,unsigned point)const;
     BestiaryPresentation bestiary{};
     bool open_bestiary(bool force=false);

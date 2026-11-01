@@ -39,8 +39,10 @@ static void card_face_animated_layers(Canvas&c,Card card,int instance,int x,int 
   // AnimatedSprite Fire is(164,-10) inside AncientBanner(-163,-207).
   const int cx=x+card_face::scaled(151,w,300),cy=y-card_face::scaled(6,h,422);
   c.picture(picture,cx-fw/2,cy-fh/2,fw,fh);
- }else if(const int image=card_overlay_image(c.a,card_face_overlay(c.a,card,instance));image>=0){
-  const auto r=card_face::region(x,y,w,h,-12,-16,324,454);c.picture(image,r.x,r.y,r.w,r.h);
+ }else{
+  const unsigned kind=card_face_overlay(c.a,card,instance);const auto r=card_face::region(x,y,w,h,-12,-16,324,454);
+  if(card_affliction_draw(c,kind,r.x+r.w/2,r.y+r.h/2,r.w,r.h))return;
+  if(const int image=card_overlay_image(c.a,kind);image>=0)c.picture(image,r.x,r.y,r.w,r.h);
  }
 }
 static uint32_t card_face_enchantment_key(const App&a,const EventCardFacts*facts,int instance){

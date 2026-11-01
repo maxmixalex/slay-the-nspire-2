@@ -167,6 +167,9 @@ def validate_install(artwork_path, output, codes, no_animations, original_refere
     artwork = Path(artwork_path).read_bytes(); source = coalesce.view(artwork)
     t.require(reduced.reduced(artwork) == no_animations, 'Requested animation profile does not match the artwork')
     guard = validate_release_content(artwork, 'ui23')
+    from card_affliction_ui23 import validate as validate_cards
+    continuous_cards=validate_cards(source,source.image_raw)
+    t.require(continuous_cards is not None,'The final converter requires continuous card materials')
     refresh = json.loads((directory/'artwork-refresh-receipt.json').read_text())
     common = storage.join_parts((directory/'nSpire2.dat.tns').read_bytes(),
         {name: (directory/name).read_bytes() for name in storage.PART_FILES})
@@ -196,9 +199,10 @@ def validate_install(artwork_path, output, codes, no_animations, original_refere
         original_clip_counts_clocks_pivots_unchanged=True, languages=codes,
         installed_data_bytes=sum(path.stat().st_size for path in files),
         files={path.name: dict(bytes=path.stat().st_size, sha256=t.sha256(path.read_bytes())) for path in files},
-        locales=locales, release_content=guard, elapsed_seconds=time.monotonic()-started,
+        locales=locales, release_content=guard,continuous_card_materials=continuous_cards,elapsed_seconds=time.monotonic()-started,
         launcher_included=False, calculator_performance_measured=False,
         shader_precision=dict(source_clock_zero=no_animations,
+            source_clock_zero_scope='Ancient NPC/background presentation only; card/UI clocks continue',
             reviewed_half_noise=len(source.aux)>=7228,
             half_noise_scope='Tez basic/triangle noise; shared triangle also used by Neow fires',
             original_full_resolution_shader_pixels_exact=False) if len(source.aux)>=7228 else None)
@@ -294,7 +298,8 @@ def add_final_stages(recipe, source_editions, output, codes, no_animations):
                         ('vakuu-cinders46','vakuu_cinders_ui23'),
                         ('neow-particles46','neow_particles_ui23'),
                         ('ancient-fire46','ancient_fire_ui23'),
-                        ('neow-fire46','neow_fire_ui23')):
+                        ('neow-fire46','neow_fire_ui23'),
+                        ('card-afflictions46','card_affliction_ui23')):
         target=recipe.directory(name)/'eng.nsp'
         arguments=['--input',logical,'--output',target,'--pck',recipe.pck,
                    '--work',recipe.directory('cache')/name]

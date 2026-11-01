@@ -79,8 +79,13 @@ static void plan_combat_frontend(App&a){
         if(card_rarity(card.kind)==5){ui(type==CardType::Attack?I14_AncientTextAttack:type==CardType::Power?I14_AncientTextPower:I14_AncientTextSkill);
             ui(I14_AncientBanner);for(unsigned j=0;j<I14_AncientFlameCount;++j)ui(I14_AncientFlame+j);
         }else if(const unsigned overlay=card_face_overlay(a,card,instance)){
-            const unsigned count=overlay==8?(a.phobia_mode?1:I14_InfectionCount):I14_AfflictionFrames;
-            for(unsigned j=0;j<count;++j)ui(overlay==8?I14_Infection+j:I14_Afflictions+(overlay-1)*I14_AfflictionFrames+j);
+            bool slots[card_affliction::Slots]{};
+            if(overlay<=7&&card_affliction_required(a,overlay,slots)){
+                for(unsigned j=0;j<card_affliction::Slots;++j)if(slots[j])ui(I14_Afflictions+j);
+            }else{
+                const unsigned count=overlay==8?(a.phobia_mode?1:I14_InfectionCount):I14_AfflictionFrames;
+                for(unsigned j=0;j<count;++j)ui(overlay==8?I14_Infection+j:I14_Afflictions+(overlay-1)*I14_AfflictionFrames+j);
+            }
         }
     }
     if(hand.count&&a.content.has_selection_assets())ui(I9_CardHighlightSdf);

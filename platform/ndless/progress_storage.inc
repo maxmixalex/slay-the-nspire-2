@@ -60,3 +60,9 @@ static bool save_progress(const spire::UiProgress&value){
     // invalidate it. The next successful load/save can clear this stale copy.
     if(old||backup)nd_unlink(progress_backup);return true;
 }
+#include "../shared/history_file_storage.inc"
+static spire::UiHistoryArchiveResult history_archive_access(spire::UiHistoryArchiveQuery&q,uint8_t*bytes,unsigned&n){
+ if(!resource_mutation_allowed())return spire::UiHistoryArchiveResult::Error;
+ char path[512];if(!profile_sibling(path,"nSpire2.history.tns",selected_profile))return spire::UiHistoryArchiveResult::Error;
+ return history_file_access(path,q,bytes,n);
+}

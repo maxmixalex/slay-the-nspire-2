@@ -44,7 +44,7 @@ bool App::physical_key(uint16_t code,bool pressed){
         // Confirm-on-release bypasses input()/ui_action(). Observe these
         // real commits too, so keyboard Smith, event upgrades/enchantments,
         // removals and combat choices retain the same effects as a click.
-        UiCoreObserver observer(*this);
+        UiCoreObserver observer(*this);if(!observer)return true;
         if(released==243&&ftue.active()&&context==input_context())ftue_input(Key::Confirm);
         else if((released==242||released==241)&&deck_selection_active()&&context==input_context()){
             if(released==242&&deck_candidate_valid())confirm_deck_choice();

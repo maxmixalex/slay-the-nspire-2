@@ -97,7 +97,7 @@ static void compendium_screen(Canvas&c){
     constexpr int bottom_width=119,bottom_height=34,bottom_gap=10;
     const int stats_x=51;
     compendium_button(c,4,stats_x,bottom,bottom_width,bottom_height,I7_MenuStatsPanel,I7_MenuStatsIcon,"STATISTICS",UiAction::OpenStatistics,true);
-    if(a.progress.count)compendium_button(c,5,right-bottom_width,bottom,bottom_width,bottom_height,I7_MenuHistoryPanel,I7_MenuHistoryIcon,"RUN_HISTORY",UiAction::OpenHistory,true);
+    if(a.history_available())compendium_button(c,5,right-bottom_width,bottom,bottom_width,bottom_height,I7_MenuHistoryPanel,I7_MenuHistoryIcon,"RUN_HISTORY",UiAction::OpenHistory,true);
     native_original_back(c,a.progress_page_started);
 }
 static Canvas progress_content_canvas(Canvas&c){Canvas layer=c;layer.pixels+=40*layer.pitch;if(layer.coverage)layer.coverage+=40*layer.pitch;layer.clip_h=174;return layer;}
@@ -489,7 +489,7 @@ static void history_screen(Canvas&c){
     // Keep both navigation controls above the scrollbar's track/hit column.
     // A right arrow at y111 was visually covered and its pointer hit was
     // overwritten when progress_page_chrome registered the scrollbar last.
-    if(a.history_index+1<a.progress.count){c.ui(I7_SettingsArrowLeft,7,10,12,24);c.action(0,6,26,32,UiAction::HistoryPrevious);}
+    if(a.history_index==255||a.history_index+1<a.progress.count){c.ui(I7_SettingsArrowLeft,7,10,12,24);c.action(0,6,26,32,UiAction::HistoryPrevious);}
     if(a.history_index){c.ui(I7_SettingsArrowRight,304,10,12,24);c.action(294,6,26,32,UiAction::HistoryNext);}
     progress_page_chrome(c);history_tooltip(c,r,focused,layout,dx,offset);
 }

@@ -174,8 +174,11 @@ static void hand_card_animated_layers(Canvas&c,const HandTile&t,HandPose p,unsig
         const int cx=p.cx+int((int64_t(dx)*p.cosine-int64_t(dy)*p.sine)*p.scale/(1024ll*1024*1024));
         const int cy=p.cy+int((int64_t(dx)*p.sine+int64_t(dy)*p.cosine)*p.scale/(1024ll*1024*1024));
         ui_picture_transform(layer,art,cx,cy,int(art.w)*HandFaceW*p.scale/(96*1024),int(art.h)*HandFaceW*p.scale/(96*1024),p.sine,p.cosine);
-    }else if(const int image=card_overlay_image(c.a,t.overlay);image>=0)
-        ui_picture_transform(layer,image,p.cx,p.cy,324*HandFaceW*p.scale/(300*1024),454*HandFaceH*p.scale/(422*1024),p.sine,p.cosine);
+    }else{
+        const int width=324*HandFaceW*p.scale/(300*1024),height=454*HandFaceH*p.scale/(422*1024);
+        if(card_affliction_draw(layer,t.overlay,p.cx,p.cy,width,height,p.sine,p.cosine))return;
+        if(const int image=card_overlay_image(c.a,t.overlay);image>=0)ui_picture_transform(layer,image,p.cx,p.cy,width,height,p.sine,p.cosine);
+    }
 }
 static void draw_hand_tile(Canvas&c,const HandTile&t,HandPose p,bool focused,unsigned brightness=255,unsigned erosion=0,bool highlight=false){
     if(p.scale<=0)return;

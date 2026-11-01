@@ -21,13 +21,13 @@ static bool progress_file_read(void*file,uint8_t*bytes,unsigned&size,storage_cod
     if(nd_seek(file,0,0)!=0)return false;
     return storage_codec::read(file,bytes,spire::UiProgressCapacity,size,storage_codec::HeaderBytes,false,&status,unsigned(physical));
 }
-static constexpr unsigned ProfileFileCount=9;
+static constexpr unsigned ProfileFileCount=10;
 static const char*const profile_files[]={"nSpire2.sav.tns","nSpire2.tmp.tns","nSpire2.bak.tns",
     "nSpire2.progress.tns","nSpire2.progress.tmp.tns","nSpire2.progress.bak.tns",
-    "nSpire2.settings.tns","nSpire2.settings.tmp.tns","nSpire2.settings.bak.tns"};
+    "nSpire2.settings.tns","nSpire2.settings.tmp.tns","nSpire2.settings.bak.tns","nSpire2.history.tns"};
 static const char*const profile_removed_files[]={"nSpire2.sav.deleted.tns","nSpire2.tmp.deleted.tns","nSpire2.bak.deleted.tns",
     "nSpire2.progress.deleted.tns","nSpire2.progress.tmp.deleted.tns","nSpire2.progress.bak.deleted.tns",
-    "nSpire2.settings.deleted.tns","nSpire2.settings.tmp.deleted.tns","nSpire2.settings.bak.deleted.tns"};
+    "nSpire2.settings.deleted.tns","nSpire2.settings.tmp.deleted.tns","nSpire2.settings.bak.deleted.tns","nSpire2.history.deleted.tns"};
 static_assert(sizeof profile_files/sizeof profile_files[0]==ProfileFileCount&&sizeof profile_removed_files/sizeof profile_removed_files[0]==ProfileFileCount,"Every profile-owned file has an isolated delete path");
 static bool profile_sibling(char*out,const char*name,unsigned profile){
     char base[512];return spire::installation_path(base,sizeof base,profile_launcher,spire::InstallationDirectory::State,name)&&spire::profile_scoped_path(out,512,base,profile);
@@ -38,7 +38,7 @@ static bool profile_paths(unsigned profile,char(&paths)[ProfileFileCount][512],b
 }
 static void install_profile_paths(const char(&paths)[ProfileFileCount][512]){
     char*const destinations[]={save_path,temp_path,backup_path,progress_path,progress_temp,progress_backup,settings_path,settings_temp,settings_backup};
-    for(unsigned i=0;i<ProfileFileCount;++i)for(unsigned at=0;;++at){destinations[i][at]=paths[i][at];if(!paths[i][at])break;}
+    for(unsigned i=0;i<sizeof destinations/sizeof destinations[0];++i)for(unsigned at=0;;++at){destinations[i][at]=paths[i][at];if(!paths[i][at])break;}
     progress_recovery=ProgressRecovery::Unknown;
 }
 static bool configure_profile_paths(unsigned profile){
@@ -105,7 +105,7 @@ static bool erase_profile_files(unsigned profile){
     auto&paths=paths_storage.array();auto&removed=removed_storage.array();if(!profile_paths(profile,paths)||!profile_paths(profile,removed,true))return false;
     unsigned present=0,moved=0;
     for(unsigned i=0;i<ProfileFileCount;++i){const int exists=profile_file_present(paths[i]);if(exists<0||!remove_profile_file(removed[i]))return false;if(exists)present|=1u<<i;}
-    // Quarantine all nine names before making deletion visible to the App.
+    // Quarantine all profile-owned names before making deletion visible to the App.
     // A failed rename restores every earlier file. Once all names moved,
     // unlink is cleanup: stale quarantined bytes can never become Continue.
     for(unsigned i=0;i<ProfileFileCount;++i)if(present&(1u<<i)){

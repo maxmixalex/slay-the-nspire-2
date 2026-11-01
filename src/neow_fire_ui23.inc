@@ -1,25 +1,59 @@
 namespace neow_fire {
 using namespace neow_fire_ui23;
 struct Contribution {uint16_t green,blue;};
+struct RenderWorkspace {
+ Contribution sum[MaskBytes];
+ uint16_t grid[161*121];
+};
+static_assert(sizeof(RenderWorkspace)<=ForegroundScratchCapacity,"Fire grid reuses the existing foreground scratch capacity");
+struct Grid {
+ uint16_t*values;const Shader&shader;
+ int u0,v0,du,dv,uy,vy;
+ unsigned at(unsigned x,unsigned y){
+  auto&value=values[(y>>1)*161+(x>>1)];if(value!=65535u)return unsigned(value)<<8;
+  const int u=u0+int(y)*uy+int(x)*du,v=v0+int(y)*vy+int(x)*dv;
+  value=uint16_t(unsigned(u)<268435456u&&unsigned(v)<268435456u?(shader.alpha(u>>8,v>>8)+128u)>>8:0);return unsigned(value)<<8;
+ }
+ unsigned sample(unsigned x,unsigned y,int u,int v){
+  const unsigned margin_u=CombatCardMotion::magnitude(du)+CombatCardMotion::magnitude(uy);
+  const unsigned margin_v=CombatCardMotion::magnitude(dv)+CombatCardMotion::magnitude(vy);
+  if(unsigned(u)<margin_u||unsigned(u)>268435455u-margin_u||
+     unsigned(v)<margin_v||unsigned(v)>268435455u-margin_v)return shader.alpha(u>>8,v>>8);
+  const unsigned xx=x&~1u,yy=y&~1u,a=at(xx,yy);
+  const unsigned b=x&1u?at(xx+2,yy):a;
+  const unsigned c=y&1u?at(xx,yy+2):a;
+  const unsigned d=(x&1u)&&(y&1u)?at(xx+2,yy+2):(x&1u?b:c);
+  const unsigned low=mn(mn(a,b),mn(c,d)),high=mx(mx(a,b),mx(c,d));
+  // Keep sharp transitions fully sampled. Only the separate soft fire light
+  // is interpolated; the source body, full-size foreground mask and clocks
+  // are unchanged. Grid values keep Q12 alpha, below one final alpha8 step.
+  if(((x|y)&1u)&&high-low>32768u)return shader.alpha(u>>8,v>>8);
+  return (a+b+c+d+2u)>>2;
+ }
+};
 
 static bool render(Canvas&c,const Table&table,const Mask&mask,const ancient_fire_ui23::Field*fields,uint32_t clock){
  // Compact support, fixed Q28 projection and the source alpha equation share
  // the original fields. No body image is rescaled or drawn a second time.
- ForegroundScratch<Contribution,MaskBytes> temporary;if(!temporary)return false;
- auto&sum=temporary.array();__builtin_memset(sum,0,sizeof sum);
+ ForegroundScratch<RenderWorkspace> temporary;if(!temporary)return false;
+ auto&sum=temporary[0].sum;__builtin_memset(sum,0,sizeof sum);
  Shader shaders[2];for(unsigned i=0;i<2;++i)shaders[i].bind(fields,table.data+ModelsAt+i*128,clock);
  for(unsigned node=0;node<4;++node){const auto*r=table.node(node);
   const int u0=ancient_fire_ui23::integer(r),v0=ancient_fire_ui23::integer(r+4);
   const int du=ancient_fire_ui23::integer(r+8),dv=ancient_fire_ui23::integer(r+12);
   const int uy=ancient_fire_ui23::integer(r+16),vy=ancient_fire_ui23::integer(r+20);
   const unsigned green=word(r+24),blue=word(r+26);const auto&shader=shaders[r[28]];
+  const bool spatial=shader.lcd_sampling&&(shader.inverse&0x80000000u);
+  Grid grid{temporary[0].grid,shader,u0,v0,du,dv,uy,vy};
+  if(spatial)__builtin_memset(grid.values,255,sizeof temporary[0].grid);
   for(unsigned y=0;y<Height;++y){if(!(y&15u))c.poll();unsigned pixel=table.row_pixel(y);
    for(unsigned span=table.row_span(y);span<table.row_span(y+1);++span){
     const unsigned x=table.x(span),count=table.count(span);
     int u=u0+int(y)*uy+int(x)*du,v=v0+int(y)*vy+int(x)*dv;
     for(unsigned i=0;i<count;++i,++pixel,u+=du,v+=dv){
      if(!mask.pixels[pixel]||!table.active(node,pixel)||unsigned(u)>=268435456u||unsigned(v)>=268435456u)continue;
-     const unsigned alpha=(shader.alpha(u>>8,v>>8)*255u+524288u)>>20;
+     const unsigned sampled=spatial?grid.sample(x+i,y,u,v):shader.alpha(u>>8,v>>8);
+     const unsigned alpha=(sampled*255u+524288u)>>20;
      sum[pixel].green=uint16_t(sum[pixel].green+green*alpha);
      sum[pixel].blue=uint16_t(sum[pixel].blue+blue*alpha);
     }

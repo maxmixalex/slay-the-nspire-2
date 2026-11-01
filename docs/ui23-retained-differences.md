@@ -159,13 +159,13 @@ separately in [UI20 reconciliation](ui20-retained-differences.md),
 | Low-density charge/action frames and missing Osty death loop | Source-density replacements and typed action/death selection are implemented. No Ancient storage exception applies to ordinary actors. |
 | Ancient top gap, tooltip/reward icons, card/label placement and defeat/title transitions | The prior production UI fixes remain present. The new effects preserve their foreground ordering. |
 | Abandon/save association, ended no-node map state and terminal checkpoint removal | Prior lifecycle implementations remain present. Current ordinary exit/relaunch verification remains a distinct gate; historical success does not resolve a newly observed guest exit issue. |
-| Affliction, Infection and Ancient card-fire materials | Implemented with 8, 30 and 10 sampled phases respectively, as declared in `include/combat_ui14_resources.hpp`; continuous desktop shader motion is still not implemented. |
+| Affliction, Infection and Ancient card-fire materials | New ACU1 packs continuously evaluate all nine materials across the seven Affliction families and render all55 visible authored particles. The former56 phase slots carry fields, curves and particle tracks. Infection's30 PNGs and Ancient fire's10 authored frames remain complete source flipbooks. Historical packs retain their8-phase fallback. See [continuous-card acceptance](ui23-continuous-card-materials.md) for precision, memory and execution evidence. |
 | Arbitrary cross-track Spine composition and unrecorded cosmetic RNG history | Existing authored observers, sampled motion and deterministic cosmetic state cover the declared paths. General desktop composition/process-history parity is not established. |
 | Hosted services and desktop timezone/IME integration | Local daily/custom gameplay and locale formatting exist; hosted leaderboards/cloud, a timezone/DST database and a calculator IME are not supplied. |
 | History, drawing and input capacity | Existing limits remain 32 runs, 96 floors per run, 2,048 map points and 64 UTF-8 seed bytes plus terminator. Overflow/evicted history is not claimed to be preserved. |
 | Audio, multiplayer and Timeline | Explicitly excluded product scope, not completed or silently deferred features. |
 
-The sampled card materials, general composition and cosmetic-history limits,
+The general composition and cosmetic-history limits,
 platform/service and capacity differences, and explicit exclusions remain
 material boundaries even when every inventoried Ancient emitter has a runtime.
 No new source-confirmed missing ordinary UI callback was found by this bounded

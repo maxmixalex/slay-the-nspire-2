@@ -61,7 +61,9 @@ struct UiRunHistory {
     UiRunFacts facts{};
     // Observed at the start of a new run. Old records stay explicitly unknown.
     char build_id[UiBuildIdBytes]{};
+    uint32_t history_prefix=0; // archived floor totals in the original four tail-padding bytes
 };
+static_assert(sizeof(UiRunHistory)==7576,"Archived totals must reuse the original run allocation");
 struct UiProgress {
     uint32_t next_serial=1;
     uint8_t count=0,next_history=0,discovered_acts=0,characters_started=0;
@@ -85,6 +87,7 @@ struct UiProgress {
     // New profiles use FtueFresh; ordinary tutorial preference and popup
     // completion remain distinct, matching EnableFtues / SeenPopup.
     uint16_t tutorial_flags=0;
+    uint8_t history_oldest_archived=0,history_storage_failed=0; // existing alignment padding; transient
     // Successful canonical-run writes, independent of profile/settings saves.
     // The current run identity and canonical revision bind this timestamp.
     uint32_t current_saved_at=0,current_saved_revision=0;

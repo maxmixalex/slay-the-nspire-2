@@ -63,7 +63,7 @@ static void setup(){
  files["/documents/games/state/nSpire2.profile.tns"]={7};files["/documents/games/state/nSpire2.settings.tns"]={8};files["/documents/games/state/nSpire2.lang.tns"]={9};
 }
 static void routing(){setup();CHECK(load_profile_selector()==1);
- CHECK(ProfileFileCount==9&&std::string(save_path)=="/documents/games/state/nSpire2.sav.tns");
+ CHECK(ProfileFileCount==10&&std::string(save_path)=="/documents/games/state/nSpire2.sav.tns");
  CHECK(std::string(settings_path)=="/documents/games/state/nSpire2.settings.tns");
  files[selector_path]=selector(3);CHECK(load_profile_selector()==3);files[selector_path].push_back(0);files[selector_backup]=selector(2);CHECK(load_profile_selector()==2);
  files.erase(selector_path);files.erase(selector_backup);
@@ -141,7 +141,7 @@ static void removal(){setup();files[selector_path]=selector(1);
  CHECK(request_profile(1,true));service_profile();CHECK(app.success&&current_profile()==1);
  for(unsigned i=0;i<ProfileFileCount;++i)CHECK(!files.count(path(1,i))&&files.count(path(3,i)));
  CHECK(files.at(selector_path)==selector(1)&&files.at("/documents/games/state/nSpire2.profile.tns")==Bytes{7});
- // Cleanup failure after all nine names moved does not falsely report a
+ // Cleanup failure after all profile-owned names moved does not falsely report a
  // rollback. The profile is absent; quarantined bytes are never loaded.
  fail_unlink=path(3,0,true);CHECK(request_profile(3,true));service_profile();CHECK(app.success&&!profile_info(3,summary));
  CHECK(files.count(path(3,0,true))&&!files.count(path(3,0)));

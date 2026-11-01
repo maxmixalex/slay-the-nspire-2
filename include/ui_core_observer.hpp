@@ -4,7 +4,7 @@ namespace spire {
 // UI observation is scoped to this exact State and restores the previous
 // binding when nested input handlers finish. It cannot alter save bytes/RNG.
 struct UiCoreObserver {
- App& app;CoreObserver previous;bool was_combat;
+ App& app;CoreObserver previous;bool was_combat;bool history_ready;
  uint64_t room_seed;uint32_t window_generation;uint8_t room_act,room_point,room_open;
  RewardAcquisitionSnapshot acquisition;
  static void receive(void* context,const State&s,Log log){auto*a=static_cast<App*>(context);if(&s==&a->game)a->observe_core(s,log);}
@@ -32,10 +32,10 @@ struct UiCoreObserver {
   if(s.world.room_type==unsigned(WorldRoom::Event)||s.world.room_type==unsigned(WorldRoom::Shop))
    a->reward_presentation.heal.begin(amount,unsigned(s.max_hp),a->map_clock_ms+delay_ms);
  }
- explicit UiCoreObserver(App&a):app(a),previous(set_core_observer({&a,receive,receive_animation,receive_effect,before_effect,receive_damage,receive_power_flash,receive_deck_removing,receive_enemy_spawned,receive_run_fact,receive_history,receive_orb,receive_enchantment,receive_upgrade,receive_enemy_command,receive_player_heal})),was_combat(combat_phase(a.game.phase)),
-  room_seed(a.game.world.run_seed),window_generation(a.map_window_generation),room_act(a.game.world.act_index),room_point(a.game.world.current_point),room_open(a.game.world.room_open),acquisition(a.reward_acquisition_snapshot()){app.sync_combat_feedback();app.sync_enemy_feedback();app.sync_orb_presentation();}
+ explicit UiCoreObserver(App&a):app(a),previous(set_core_observer({&a,receive,receive_animation,receive_effect,before_effect,receive_damage,receive_power_flash,receive_deck_removing,receive_enemy_spawned,receive_run_fact,receive_history,receive_orb,receive_enchantment,receive_upgrade,receive_enemy_command,receive_player_heal})),was_combat(combat_phase(a.game.phase)),history_ready(a.prepare_history()),
+  room_seed(a.game.world.run_seed),window_generation(a.map_window_generation),room_act(a.game.world.act_index),room_point(a.game.world.current_point),room_open(a.game.world.room_open),acquisition(a.reward_acquisition_snapshot()){if(history_ready){app.sync_combat_feedback();app.sync_enemy_feedback();app.sync_orb_presentation();}}
  ~UiCoreObserver(){
-  set_core_observer(previous);app.finish_combat_feedback();app.sync_combat_feedback();app.sync_enemy_feedback();app.sync_turn_banner();app.sync_treasure_presentation();app.sync_camp_presentation();
+  set_core_observer(previous);if(!history_ready)return;app.finish_combat_feedback();app.sync_combat_feedback();app.sync_enemy_feedback();app.sync_turn_banner();app.sync_treasure_presentation();app.sync_camp_presentation();
   app.finish_reward_acquisition(acquisition);
   if(app.game.enemy_world.active&&combat_phase(app.game.phase)&&int32_t(app.enemy_visual_clock-app.animation)>app.busy)app.busy=int(app.enemy_visual_clock-app.animation);
   if(app.combat_feedback.active&&combat_phase(app.game.phase)&&int32_t(app.combat_feedback.end_at-app.animation)>app.busy)app.busy=int(app.combat_feedback.end_at-app.animation);
@@ -48,6 +48,7 @@ struct UiCoreObserver {
    app.open_map_window();
   app.sync_map_window();app.sync_progress();
  }
+ explicit operator bool()const{return history_ready;}
  UiCoreObserver(const UiCoreObserver&)=delete;
  UiCoreObserver& operator=(const UiCoreObserver&)=delete;
 };

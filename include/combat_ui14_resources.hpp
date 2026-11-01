@@ -11,8 +11,9 @@ enum CombatUi14Image : unsigned {
  I14_SovereignBladeCount=3,I14_SmithHammer=I14_SovereignBlade+I14_SovereignBladeCount,
  I14_SmithImpact,I14_SmithSpark,I14_EnchantSpark,CombatUi14AuxiliaryCount
 };
-// Full original infection sequence is15fps. Shader scenes retain their
-// original time units in eight sampled phases; ringing has a2.5s period.
+// Full original infection sequence is15fps. These eight-phase clocks are
+// compatibility for historical packs; ACU1 UI23 packs replace the same56
+// slots with continuously evaluated fields, curves and source particle tracks.
 inline unsigned card_affliction_frame(unsigned kind,uint32_t now){
  // Entangled and Tainted repeat in40/7 seconds, not5714 milliseconds.
  // Reduce their rational clock over40 seconds before multiplying; each
