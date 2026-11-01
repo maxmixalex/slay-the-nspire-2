@@ -35,6 +35,28 @@ def source(language='eng', glyphs=1, group_bytes=128 * 1024):
 
 
 class RetainedColorPackTest(unittest.TestCase):
+    def test_unchanged_tile_proof_checks_streams_geometry_and_codec_parameters(self):
+        old=colors.view(source())
+        with tempfile.TemporaryDirectory() as folder:
+            result=colors.rewrite(old,colors.plan(old,Path(folder),jobs=1))
+        with mock.patch.object(tiles.TileReader,'image_raw',side_effect=AssertionError('Redundant tile restore')):
+            proof=colors.verify(old,result,all_tiles=False)
+        self.assertEqual(proof['unchanged_tile_images_proved_by_exact_streams'],1)
+        self.assertTrue(proof['tile_geometry_descriptors_and_codec_parameters_exact'])
+        reader=tiles.TileReader(colors.view(result))
+        changed=bytearray(result);changed[reader.groups[0][0]+3]^=1
+        with self.assertRaisesRegex(ValueError,'compressed stream changed'):
+            colors.verify(old,changed,all_tiles=False)
+        changed=bytearray(result)
+        struct.pack_into('<H',changed,40+5*16+4,2)
+        with self.assertRaisesRegex(ValueError,'geometry changed'):
+            colors.verify(old,changed,all_tiles=False)
+        changed=bytearray(result)
+        fields=list(tiles.GLOBAL.unpack_from(changed,old.base_end));fields[11]=2
+        tiles.GLOBAL.pack_into(changed,old.base_end,*fields)
+        with self.assertRaisesRegex(ValueError,'Tile catalog changed'):
+            colors.verify(old,changed,all_tiles=False)
+
     def test_appended_groups_preserve_v41_predictive_indices_and_exact_pixels(self):
         original=source()
         indexed,_=indices.rewrite(original,indices.make_plan(indices.view(original),workers=1))

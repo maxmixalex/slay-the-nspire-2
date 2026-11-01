@@ -1,3 +1,12 @@
+# UI24 retained conversion exact-stream proof candidate
+
+The retained-color writer now proves untouched tiled artwork through exact
+compressed tile/index bytes, image descriptors/geometry, and codec parameters,
+avoiding duplicate reconstruction of unchanged frames in each locale. Modified
+retained images, glyphs and strings still decode and compare; final linked ARM
+validation is unchanged. Corruption checks cover changed streams, geometry and
+codec parameters. Original-data SHA and measured timing acceptance are pending.
+
 # UI24 active repair and optimization
 
 The new task starts at merged main `b775b678c596dab04dccd47a143d46593d35fc76`.

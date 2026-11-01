@@ -307,7 +307,9 @@ def verify(source, data, *, all_tiles=True):
     tiles.require(source.counts == target.counts and source.clips == target.clips and
                   source.cards == target.cards and source.aux == target.aux, 'Stable catalog changed')
     old_tiles, new_tiles = tiles.TileReader(source), tiles.TileReader(target)
-    tiles.require(old_tiles.frame_count == new_tiles.frame_count and
+    tile_fields = ('frame_count', 'tile_count', 'tile_groups', 'index_groups',
+                   'per_group', 'dictionary', 'filters', 'predictors', 'sparse')
+    tiles.require(all(getattr(old_tiles, key) == getattr(new_tiles, key) for key in tile_fields) and
                   len(old_tiles.groups) == len(new_tiles.groups), 'Tile catalog changed')
     for before, after in zip(old_tiles.groups, new_tiles.groups):
         a, n = before[:2]; b, m = after[:2]
@@ -335,7 +337,9 @@ def verify(source, data, *, all_tiles=True):
                       'Localized string bytes changed')
     return dict(decoded_images=decoded, unchanged_images=len(source.images), unchanged_glyphs=len(source.glyphs),
         unchanged_strings=len(source.strings), unchanged_clips=len(source.clips),
-        unchanged_compressed_tile_groups=len(old_tiles.groups), all_images_decoded=all_tiles)
+        unchanged_compressed_tile_groups=len(old_tiles.groups), all_images_decoded=all_tiles,
+        unchanged_tile_images_proved_by_exact_streams=sum(row[3] == 6 for row in source.images),
+        tile_geometry_descriptors_and_codec_parameters_exact=True)
 
 
 def main():
@@ -360,7 +364,12 @@ def main():
     packs, receipts = {}, {}
     for language, source in sources.items():
         data = rewrite(source, choices)
-        proof = verify(source, data)
+        # Tile payloads are outside this transform. The proof above compares
+        # every encoded tile/index byte (including its full header), codec
+        # parameter, image geometry and descriptor. Their decoded bytes are
+        # consequently identical without rebuilding all untouched frames twice
+        # per locale. Changed retained images, glyphs and text still decode.
+        proof = verify(source, data, all_tiles=False)
         packs[language] = data
         receipts[language] = dict(input_bytes=len(source.data), output_bytes=len(data),
             saved_bytes=len(source.data) - len(data), input_sha256=tiles.sha256(source.data),
