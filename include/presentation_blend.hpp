@@ -104,6 +104,29 @@ constexpr uint16_t add_opaque(uint16_t destination,uint16_t source,unsigned alph
         add_channel(destination&31,source&31,alpha,31));
 }
 
+// Large opaque light texels have only128 possible RGB565 channel values.
+// Retain Canvas's separate brightness, tint and opacity rounding; do not
+// collapse their products. This256-byte draw-local table is not a cache.
+struct OpaqueLightContribution {
+    uint16_t channels[128];
+    void reset(unsigned brightness,unsigned red,unsigned green,unsigned blue,unsigned opacity){
+        for(unsigned i=0;i<32;++i){const unsigned value=divide255(i*brightness);
+            channels[i]=uint16_t(divide255(divide255(value*red)*opacity)<<11);
+            channels[96+i]=uint16_t(divide255(divide255(value*blue)*opacity));}
+        for(unsigned i=0;i<64;++i)
+            channels[32+i]=uint16_t(divide255(divide255(divide255(i*brightness)*green)*opacity)<<5);
+    }
+    uint16_t weighted(uint16_t source)const{
+        return uint16_t(channels[source>>11]|channels[32+((source>>5)&63)]|channels[96+(source&31)]);
+    }
+    uint16_t add(uint16_t destination,uint16_t source)const{
+        const unsigned amount=weighted(source),r=(destination>>11)+(amount>>11);
+        const unsigned g=((destination>>5)&63)+((amount>>5)&63),b=(destination&31)+(amount&31);
+        return uint16_t(((r>31?31:r)<<11)|((g>63?63:g)<<5)|(b>31?31:b));
+    }
+};
+static_assert(sizeof(OpaqueLightContribution)==256,"Light contribution table must stay draw-local and bounded");
+
 // Cached cards currently use normal blending exclusively. Preserve sensible
 // source-over coverage if a future bounded intermediate canvas uses a plane:
 // blend premultiplied contributions, then recover its straight-alpha color.

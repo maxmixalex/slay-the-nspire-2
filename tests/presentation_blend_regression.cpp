@@ -109,6 +109,21 @@ int main(){
                 const unsigned expected=total?rounded((source*a+destination*b)/total,maximum):0;
                 check(add_covered_channel(destination,source,alpha,previous,maximum)==expected);
             }
+    // All source colors, all opacity levels and separately varied modulation
+    // values. The oracle follows the old Canvas sequence and checks addition
+    // after each stage's independent rounding, including saturation.
+    OpaqueLightContribution light;
+    for(unsigned opacity=0;opacity<=255;++opacity){
+        const unsigned brightness=(opacity*71)&255,red=(opacity*11)&255;
+        const unsigned green=(opacity*53)&255,blue=(opacity*193)&255;
+        light.reset(brightness,red,green,blue,opacity);
+        for(unsigned source=0;source<=65535;++source){
+            const uint16_t modulated=tint_rgb(modulate_rgb(uint16_t(source),brightness),red,green,blue);
+            const uint16_t destination=uint16_t(source*7919u+opacity*199u);
+            check(light.weighted(uint16_t(source))==add_opaque(0,modulated,opacity));
+            check(light.add(destination,uint16_t(source))==add_opaque(destination,modulated,opacity));
+        }
+    }
     check(add_opaque(0xf800,0x07e0,255)==0xffe0);
     check(add_opaque(0xffff,0xffff,255)==0xffff);
     check(add_opaque(0x1234,0xffff,0)==0x1234);

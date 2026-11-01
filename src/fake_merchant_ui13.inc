@@ -42,6 +42,15 @@ static void quad(Canvas c,const water_reflection::Texture&tex,int cx,int cy,int 
  // Black contributes exactly zero to opaque additive destinations. Covered
  // intermediates still need paint() to preserve their alpha bookkeeping.
  const bool skip_black=blend_mode==presentation::Add&&!c.coverage;
+ // Large opaque RGB565 light planes share three independently rounded
+ // modulation stages. Compute each of the128 possible channel contributions
+ // once per draw, then use exact saturating addition. Partial-alpha texels,
+ // sparse/palette, coverage, occlusion, color-matrix and subpixel planes retain paint().
+ const auto storage=tex.storage();
+ const bool direct=skip_black&&!linear&&!c.occlusion&&!c.color_matrix&&
+  storage.format<=1&&!storage.palette;
+ presentation::OpaqueLightContribution contribution;
+ if(direct)contribution.reset(c.brightness,c.tint_red,c.tint_green,c.tint_blue,c.opacity);
  for(int y=top;y<bottom;++y){
   const int dx=left*256+128-cx,dy=y*256+128-cy;
   const int64_t vy=-int64_t(dx)*sn+int64_t(dy)*cs;
@@ -49,8 +58,16 @@ static void quad(Canvas c,const water_reflection::Texture&tex,int cx,int cy,int 
   int v=32768+int(vy*64/h);
   for(int x=left;x<right;++x,u+=du,v+=dv){
    if(unsigned(u)>=65536u||unsigned(v)>=65536u)continue;
-   const auto sample=linear?tex.bilinear(u,v):tex.at(int(int64_t(u)*tex.width()>>16),int(int64_t(v)*tex.height()>>16));
-   if(sample.alpha&&(!skip_black||sample.color))c.paint(y*c.pitch+x,sample.color,sample.alpha,blend_mode);
+   if(direct){
+    const unsigned at=((unsigned(v)*tex.height())>>16)*tex.width()+((unsigned(u)*tex.width())>>16);
+    const unsigned alpha=storage.alpha?storage.alpha[at]:255u;if(!alpha)continue;
+    const uint8_t*p=storage.pixels+at*2;const unsigned color=p[0]|unsigned(p[1])<<8;
+    if(alpha!=255){c.paint(y*c.pitch+x,uint16_t(color),alpha,blend_mode);continue;}
+    if(color)c.pixels[y*c.pitch+x]=contribution.add(c.pixels[y*c.pitch+x],uint16_t(color));
+   }else{
+    const auto sample=linear?tex.bilinear(u,v):tex.at(int(int64_t(u)*tex.width()>>16),int(int64_t(v)*tex.height()>>16));
+    if(sample.alpha&&(!skip_black||sample.color))c.paint(y*c.pitch+x,sample.color,sample.alpha,blend_mode);
+   }
   }
  }
 }
