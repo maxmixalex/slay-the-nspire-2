@@ -13,7 +13,7 @@ struct Table {
  unsigned width=0,height=0,texture=0,ramps=0,directory=0,palette=0,extent_x=0,extent_y=0;
  bool range(unsigned offset,unsigned size)const{return offset<=bytes&&size<=bytes-offset;}
  bool read(const uint8_t*p,unsigned size){
-  data=nullptr;if(!p||size<HeaderBytes||p[0]!='A'||p[1]!='T'||p[2]!='P'||p[3]!='1'||word(p+4)!=1)return false;
+  data=nullptr;if(!p||size<HeaderBytes||p[0]!='A'||p[1]!='T'||p[2]!='P'||p[3]!='1'||word(p+4)!=2)return false;
   bytes=dword(p+36);if(bytes>size||bytes<HeaderBytes||dword(p+60))return false;
   count=word(p+6);life=dword(p+8);preprocess=dword(p+12);fps=word(p+16);blend=word(p+18);
   width=word(p+20);height=word(p+22);texture=dword(p+24);ramps=dword(p+28);directory=dword(p+32);
@@ -24,6 +24,11 @@ struct Table {
   data=p;return true;
  }
  unsigned tint(unsigned channel)const{return word(data+48+channel*2);}
+ // Six byte planes retain the exact same quantized keys. Their slowly varying
+ // high bytes compress better without a predictor, extra buffer or warm work.
+ static unsigned key(const uint8_t*p,unsigned count,unsigned index,unsigned channel){
+  p+=channel*2*count+index;return p[0]|unsigned(p[count])<<8;
+ }
  // Source normalized texture-center interpolation; ramps retain color bytes,
  // alpha16 and scaleQ12 separately. No per-frame resource-wide validation.
  unsigned ramp(unsigned channel,unsigned phase)const{
@@ -43,18 +48,18 @@ struct Table {
   const uint8_t*record=data+directory+track*DirectoryBytes;
   const unsigned offset=dword(record),keys=word(record+4),ticks=life*fps/1000;
   if(keys<2||keys>ticks+1||!range(offset,keys*6)||word(record+10))return false;
-  const uint8_t*points=data+offset;if(word(points)||word(points+(keys-1)*6)!=ticks)return false;
+  const uint8_t*points=data+offset;if(key(points,keys,0,0)||key(points,keys,keys-1,0)!=ticks)return false;
   const unsigned time=unsigned(uint64_t(age)*fps*256/1000);
   unsigned lo=0,hi=keys-1;while(hi-lo>1){const unsigned middle=(lo+hi)/2;
-   if(word(points+middle*6)*256<=time)lo=middle;else hi=middle;}
-  const uint8_t*a=points+lo*6,*b=points+hi*6;const unsigned start=word(a)*256,end=word(b)*256;
+   if(key(points,keys,middle,0)*256<=time)lo=middle;else hi=middle;}
+  const unsigned start=key(points,keys,lo,0)*256,end=key(points,keys,hi,0)*256;
   if(end<=start||time<start||time>end)return false;
   const unsigned passed=time-start,span=end-start;
   // The Q4 stored keys are interpolated into Q8 LCD coordinates. Offline
   // validation includes a sqrt(2)/256px bound for this signed truncation.
-  const int ax=signed_word(a+2),ay=signed_word(a+4);
-  out.x=ax*16+int(int64_t(signed_word(b+2)-ax)*16*passed/span);
-  out.y=ay*16+int(int64_t(signed_word(b+4)-ay)*16*passed/span);
+  const int ax=int16_t(key(points,keys,lo,1)),ay=int16_t(key(points,keys,lo,2));
+  out.x=ax*16+int(int64_t(int16_t(key(points,keys,hi,1))-ax)*16*passed/span);
+  out.y=ay*16+int(int64_t(int16_t(key(points,keys,hi,2))-ay)*16*passed/span);
   out.scale=word(record+6);out.phase=unsigned(uint64_t(age)*65536/life);
   out.angle=-int(int64_t(signed_word(record+8))*age*4096/(128LL*360000));
   return true;

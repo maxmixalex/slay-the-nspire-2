@@ -293,10 +293,11 @@ def pack_table(pack,emitter,tracks,constants):
         if not 0<scale<=65535 or not -32768<=angular<32768:raise ValueError('Source particle display constants exceed table')
         records.append(struct.pack('<IHHhH',offset,len(raw)//6,scale,angular,0));offset+=len(raw)
     ex=round(width*PROJECTION*emitter['node_scale'][0]*256);ey=round(height*PROJECTION*emitter['node_scale'][1]*256)
-    head=struct.pack('<4sHHII4H6I4HII',b'ATP1',1,count,emitter['lifetime_ms'],emitter['preprocess_ms'],emitter['fps'],emitter['blend'],width,height,
+    head=struct.pack('<4sHHII4H6I4HII',b'ATP1',2,count,emitter['lifetime_ms'],emitter['preprocess_ms'],emitter['fps'],emitter['blend'],width,height,
       texture_offset,ramp_offset,directory,offset,ex,ey,*map(int,emitter['tint']),palette,0)
     if len(head)!=HEADER_BYTES:raise ValueError('Particle table header size')
-    raw=head+b'\xff'*512+rgba[:,:,3].tobytes()+emitter['ramp']+b''.join(records)+b''.join(tracks)
+    planes=[np.frombuffer(track,dtype='u1').reshape(-1,6).T.copy().tobytes() for track in tracks]
+    raw=head+b'\xff'*512+rgba[:,:,3].tobytes()+emitter['ramp']+b''.join(records)+b''.join(planes)
     if len(raw)!=offset:raise ValueError('Particle table size differs')
     raw+=bytes((-len(raw))%512)
     if len(raw)>256*1024:raise ValueError('Particle view exceeds existing retained-group bound')
@@ -307,7 +308,7 @@ def validate_table(raw):
     if len(raw)<HEADER_BYTES:raise ValueError('Truncated trajectory header')
     fields=struct.unpack_from('<4sHHII4H6I4HII',raw)
     magic,version,count,life,pre,fps,blend,width,height,tex,ramp,directory,total,ex,ey,*tail=fields
-    if magic!=b'ATP1' or version!=1 or not 0<count<=100 or fps!=30 or not 0<life<=30000 or pre>100000 or blend not in (0,1):raise ValueError('Invalid trajectory identity')
+    if magic!=b'ATP1' or version!=2 or not 0<count<=100 or fps!=30 or not 0<life<=30000 or pre>100000 or blend not in (0,1):raise ValueError('Invalid trajectory identity')
     palette,reserved=tail[4:]
     if reserved or palette!=HEADER_BYTES or tex!=palette+512 or ramp!=tex+width*height or directory!=ramp+RAMP_BYTES or total>len(raw) or any(raw[total:]):raise ValueError('Invalid trajectory regions')
     if raw[palette:tex]!=b'\xff'*512 or not 0<ex<=65535 or not 0<ey<=65535:raise ValueError('Invalid source mask palette or extent')
@@ -315,7 +316,8 @@ def validate_table(raw):
     for i in range(count):
         start,n,scale,angular,reserved=struct.unpack_from('<IHHhH',raw,directory+i*DIRECTORY_BYTES)
         if start!=end or not 2<=n<=ticks+1 or start+n*6>total or not scale or reserved:raise ValueError('Invalid trajectory record')
-        keys=np.frombuffer(raw[start:start+n*6],dtype=np.dtype([('tick','<u2'),('x','<i2'),('y','<i2')]))
+        interleaved=np.frombuffer(raw[start:start+n*6],dtype='u1').reshape(6,n).T.copy().tobytes()
+        keys=np.frombuffer(interleaved,dtype=np.dtype([('tick','<u2'),('x','<i2'),('y','<i2')]))
         if keys['tick'][0]!=0 or keys['tick'][-1]!=ticks or np.any(np.diff(keys['tick'].astype(int))<=0):raise ValueError('Invalid source trajectory ticks')
         end=start+n*6
     if end!=total:raise ValueError('Unreferenced trajectory bytes')

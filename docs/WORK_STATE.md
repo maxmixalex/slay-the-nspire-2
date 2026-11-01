@@ -1,3 +1,15 @@
+## Actual trajectory samples and lossless layout follow-up
+
+All12original-scene emitters sampled successfully:490particles and329,890
+source position samples,392,192decoded bytes in99existing-cache pages. The
+first grouped representation stored180,264bytes. A byte-plane layout of the
+identical six bytes per key reduces this to145,016bytes (35,248bytes saved),
+with no coordinate/color/alpha/frame change, no predictor and no new buffer.
+The two groups retain their211,968-byte maximum decoded bound. Block-delta
+alternatives stored151,848–170,150bytes and were rejected. Table version2
+records the byte-plane layout. Actual final physical-pack append, warm Canvas
+cost and guest/ARM allocation remain release gates.
+
 # UI23 bounded source turbulence — source checkpoint, release gates open
 
 An isolated source stage adds the original Godot4.5.1 four-dimensional gradient
