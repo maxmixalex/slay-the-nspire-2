@@ -155,6 +155,8 @@ def self_test():
             runtime,noise=private_helper_inputs(ROOT/'converter_helpers/OurNotes.Spine.Runtime.dll',
                                               ROOT/'converter_helpers/FastNoiseLite.h',work)
             private_path(runtime,'Bundled runtime identity');private_path(noise,'Bundled noise identity')
+    from converter_arm_validation import self_test as arm_self_test
+    arm_proof=arm_self_test()
     for module in ('PIL.Image','numpy','fontTools.ttLib','zstandard','lz4.block','regex'):
         importlib.import_module(module)
     recipe=Recipe('/game','/work','/runtime','dotnet','/noise','-')
@@ -198,7 +200,7 @@ def self_test():
     random_hash=hashlib.sha256(random_noise.tobytes()).hexdigest()
     if random_hash!='02fdff4eefbbd073fd014ae4c0b4d237afbd64e0e272050e7b0fc5b808069700':
         raise ValueError('Bundled Random seamless noise differs from its source oracle')
-    return dict(passed=True,recipe_modules=len(modules),spawn_worker=True,spine_protocol=True,decim_samples=len(decim),
+    return dict(passed=True,mandatory_linked_arm_validation=arm_proof,recipe_modules=len(modules),spawn_worker=True,spine_protocol=True,decim_samples=len(decim),
         utf8_mode=bool(sys.flags.utf8_mode),unicode_default_io=True,
         retirement_route_sources=len(retirement_plan['runtime_route_sources']),retirement_routes_verified=True,
         vantom_pixels=field.size,vantom_sha256=noise_hash,random_pixels=50,random_sha256=random_hash,
@@ -611,9 +613,11 @@ def main(argv=None):
             runtime=args.runtime or Path('<bundled-runtime>');noise=args.fastnoise_header or Path('<bundled-noise-header>');keyfont=args.key_font or Path('<bundled-key-font>')
         else:
             configure_helpers()
-            for module in ('PIL','numpy','fontTools','zstandard','lz4'):
+            for module in ('PIL','numpy','fontTools','zstandard','lz4','unicorn'):
                 if importlib.util.find_spec(module) is None:
                     raise ValueError(f'Missing converter dependency {module}; use the executable bundle or install requirements.txt')
+            from converter_arm_validation import verify as verify_arm
+            arm_elf,arm_record=verify_arm()
             runtime=file_option(args.runtime,'NSPIRE_SPINE_RUNTIME','OurNotes.Spine.Runtime.dll','Spine runtime identity')
             noise=file_option(args.fastnoise_header,'NSPIRE_FASTNOISE_HEADER','FastNoiseLite.h','Pinned noise source')
             supplied=args.key_font or os.environ.get('NSPIRE_KEY_FONT')
@@ -622,6 +626,7 @@ def main(argv=None):
                 raise ValueError('Optional calculator key font does not exist: '+str(keyfont))
             runtime,noise=private_helper_inputs(runtime,noise,work)
         recipe=Recipe(game,work,runtime,args.dotnet,noise,keyfont,args.workers)
+        recipe.reference=dict(reference,pck_sha256=digest(game/'SlayTheSpire2.pck'),assembly_sha256=digest(assembly)) if not args.plan else reference
         source_editions=recipe.source_stages()
         # The post-catalog recipe is deliberately separate from source baking:
         # it performs only verified resource/font/storage transforms.
@@ -645,12 +650,13 @@ def main(argv=None):
         from run_logged import inventory
         identity=hashlib.sha256(json.dumps(dict(source=inventory(ROOT),reference=reference,
             pck=digest(game/'SlayTheSpire2.pck'),assembly=digest(assembly),runtime=digest(runtime),noise=digest(noise),
+            arm_elf=digest(arm_elf),arm_source=arm_record['source_files'],
             helpers={key:digest(value) for key in ('NSPIRE_SPINE_ADAPTER','NSPIRE_FASTNOISE_LIBRARY')
                      if (value:=os.environ.get(key))},
             key_font=digest(keyfont) if str(keyfont)!='-' else 'public-keycaps'),sort_keys=True).encode()).hexdigest()
         complete=run_stages(recipe.stages,work,identity,args.stop_after)
         if complete:
-            print(f'Conversion complete: {output}',flush=True)
+            print(f'Resource conversion complete: {output}/data. Place this data folder beside the matching UI23 nSpire2.tns launcher from the calculator package.',flush=True)
         else:
             atomic_json(output/'converter-receipt.json',dict(complete=False,status='checkpoint',
                 reference=reference,languages=codes,no_animations=args.no_animations,stopped_after=args.stop_after))

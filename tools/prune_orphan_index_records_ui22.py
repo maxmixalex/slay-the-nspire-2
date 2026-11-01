@@ -220,6 +220,10 @@ def convert_bytes(data, arm, *, align_suffix=True, progress=None):
         output = bytes(output)
     else:
         output = data
+    from no_animations import reduced, mark
+    if reduced(data):
+        output = mark(output)
+    t.require(reduced(output) == reduced(data), 'Index pruning changed the animation profile')
     proof = verify(data, output, plan, mappings)
     t.require(len(output) <= len(data), 'Accepted compaction grew the pack')
     return output, dict(schema=1, complete=True, input_sha256=t.sha256(data), output_sha256=t.sha256(output),

@@ -90,6 +90,17 @@ class OrphanRecords(unittest.TestCase):
         self.assertEqual(proof['orphan_records_removed'],1);self.assertTrue(b.predictors[-1])
         for i in range(len(old.images)):self.assertEqual(a.image_raw(i),b.image_raw(i))
 
+    def test_reduced_profile_survives_a_real_predicted_record_removal(self):
+        from no_animations import mark, reduced
+        data=mark(with_middle_orphan(True)); old=coalesce.view(data)
+        output,proof=prune.convert_bytes(data,MeasuredFixture(),align_suffix=False)
+        self.assertTrue(reduced(output));self.assertEqual(output[36:40],data[36:40])
+        self.assertEqual(proof['orphan_records_removed'],1)
+        self.assertEqual(proof['output_sha256'],t.sha256(output))
+        self.assertLess(len(output),len(data))
+        for i in range(len(old.images)):
+            self.assertEqual(t.TileReader(old).image_raw(i),t.TileReader(coalesce.view(output)).image_raw(i))
+
     def test_no_orphan_is_identity_and_default_requires_measurement(self):
         data=fixture();output,proof=prune.convert_bytes(data,MeasuredFixture())
         self.assertEqual(output,data);self.assertEqual(proof['groups_considered'],0)

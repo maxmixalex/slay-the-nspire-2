@@ -18,17 +18,18 @@ and an animated edition with all sixteen languages, respectively:
 以下三条命令分别生成中英双语完整动画版、保留必要动作姿势的无动画版、
 以及包含全部 16 种语言的完整动画版：
 
-```text
-nspire2-convert
-nspire2-convert --no-animations
-nspire2-convert --languages all
+```powershell
+.\nspire2-convert.exe
+.\nspire2-convert.exe --no-animations --output .\nSpire2-converted-no-animations
+.\nspire2-convert.exe --languages all --output .\nSpire2-converted-all-languages
 ```
 
 The calculator detects the animation profile from the generated data. Both
 profiles use the same launcher. The desktop converter is a separate download
 from the three calculator installation ZIPs; run it on your computer and copy
 its complete generated `data/` directory as a matching set beside the calculator's
-`nSpire2.tns` launcher. Optional locale files must come from that same conversion
+`nSpire2.tns` launcher from the corresponding calculator package. The converter
+generates data only; it does not generate or download the launcher. Optional locale files must come from that same conversion
 and common-data output. Do not add languages from the prebuilt release's
 optional-language ZIP or from another conversion: the UI23 version and animation
 profile alone do not guarantee matching resource addresses. The provided
@@ -36,7 +37,8 @@ prebuilt optional-language folders match the provided prebuilt game packages.
 
 计算器会从数据文件自动识别动画模式，两种模式共用同一个启动程序，无需在
 设置中切换。转换器与三个计算器安装 ZIP 分开提供：转换器在电脑上运行，
-生成的 `data/` 目录应整套放在计算器的 `nSpire2.tns` 旁边。额外语言文件也必须
+转换器只生成数据，不生成或下载启动程序；应将生成的 `data/` 目录整套放在
+对应计算器安装包提供的 `nSpire2.tns` 旁边。额外语言文件也必须
 来自同一次转换、与这套公共数据匹配；不要混用预构建发行包的可选语言或另一次
 转换的语言文件。版本号和动画模式相同并不保证资源地址相同。
 
@@ -83,8 +85,13 @@ original first poses instead of applying this temporal color policy.
 After color selection, the converter performs exact tile deduplication, bounded
 sparse-tile encoding, and literal-context retuning. These steps preserve the
 selected pixels and use the existing calculator cache and decoder bounds.
-Receipts record each conversion and its verification; they do not imply that
-physical-calculator performance has been measured.
+The final index cleanup executes the real linked ARM decoder before and after
+each proposed removal. It requires both exact restored bytes and no increase
+in decoder instruction count; the bundled ELF is tied to the converter's
+frozen public runtime source. Lossless font storage then preserves every
+coverage byte, glyph metric, text string, and common artwork byte. Receipts
+record these checks; they do not imply that physical-calculator performance
+has been measured.
 
 ## Reduced actor animation profile
 
@@ -124,8 +131,10 @@ retaining its unchanged, expensive original-frame samples.
 The default work directory is a stable directory under the operating system's
 temporary directory. It contains extracted original fonts, sampled frames, and
 intermediate resource packs and can be large. Use `--work PATH` to place it on
-a disk with sufficient space. The converter keeps these inputs separate from
-the final output and never modifies the original game installation's files.
+a disk with sufficient space. Animated and reduced runs can reuse the same
+work directory sequentially; never run two conversions against that directory
+at the same time. Use separate output directories to retain both profiles.
+The converter keeps these inputs separate from the final output and never modifies the original game installation's files.
 
 `--plan` prints every source, storage, and finalization stage. Developer option
 `--stop-after STAGE` stops at a named checkpoint and explicitly reports that
@@ -146,24 +155,43 @@ select its exact historical shapes using `--key-font PATH`.
 
 ## Building from source
 
-Install the pinned Python packages in `requirements.txt`. A developer can
-supply the Spine runtime, .NET executable, and pinned FastNoiseLite header
-through `NSPIRE_SPINE_RUNTIME`, `NSPIRE_DOTNET`, and
-`NSPIRE_FASTNOISE_HEADER`, then run:
+Install the pinned Python packages in `requirements.txt`, including the desktop
+Unicorn 2.1.4 dependency. A source developer also needs LLVM 18 to build the
+real ARM validation helper from the same checkout. This build step uses the
+normal production decoder and does not change calculator memory limits:
+
+```text
+python tools/build_converter_validation.py --output converter_helpers
+```
+
+The generated `nSpire2.elf` and `arm-validation.json` are mandatory. A missing,
+modified, or source-mismatched helper is rejected; there is no unchecked
+fallback. Rebuild them after changing their recorded runtime source inputs.
+Then supply the Spine runtime, .NET executable, and pinned FastNoiseLite
+header through `NSPIRE_SPINE_RUNTIME`, `NSPIRE_DOTNET`, and
+`NSPIRE_FASTNOISE_HEADER`, and run:
 
 ```text
 python convert.py --game "PATH TO ORIGINAL GAME"
 ```
 
-For an executable bundle, first run `tools/build_converter_helpers.py` to
-produce the self-contained Spine sampler and the native noise library.
+For an executable bundle, run `tools/build_converter_helpers.py` to produce
+the self-contained Spine sampler and native noise library. Add the matching
+`nSpire2.elf` and `arm-validation.json` to that target's helper directory.
 `NSPIRE_SPINE_ADAPTER` and `NSPIRE_FASTNOISE_LIBRARY` can select precompiled
-helpers during source development. Build the final executable on the target
+sampling helpers during source development. Build the executable on the target
 operating system with PyInstaller and `tools/build_converter_bundle.py`:
 
 ```text
 python tools/build_converter_bundle.py --helpers PATH --output PATH --work PATH
 ```
+
+The Windows workflow builds the public ARM helper on Linux, transfers its
+source-bound ELF and receipt to the matching Windows job, and embeds Unicorn
+with it. The executable's self-test actually executes literal and predicted
+index streams through that linked decoder; it does not accept a cached test
+result. End users need neither this toolchain nor separately installed Python,
+.NET, or Unicorn.
 
 The bundle builder includes public conversion recipes, metadata, and helper
 binaries. It excludes game PCKs, original game fonts, prior release packs, and
@@ -172,6 +200,6 @@ with that runtime's license. A Linux executable is not a Windows executable;
 Windows requires a Windows Python/PyInstaller build and Windows helpers.
 
 The bundle receipt records the platform, embedded Python, helper requirements,
-binary hash, and `--help` smoke test. Original-data conversion and physical
+binary hash, Unicode/module/native-helper checks, and real linked-ARM self-test. Original-data conversion and physical
 calculator validation require their own results and are not implied by that
 receipt.

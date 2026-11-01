@@ -21,7 +21,7 @@ import storage_parts as storage
 from ui14_resources import graft_locale
 
 
-def convert(artwork_path, source, target, work, *, locales=None):
+def convert(artwork_path, source, target, work, *, locales=None, exact_glyph_storage=False):
     artwork_path=t.private_path(artwork_path,'Private updated artwork')
     source=t.private_path(source,'Private original resources')
     target=t.private_path(target,'Private updated resources')
@@ -49,6 +49,10 @@ def convert(artwork_path, source, target, work, *, locales=None):
     for code in ('eng',*(code for code in codes if code!='eng')):
         previous=split.reconstruct(old_common,(source/f'nSpire2.{code}.dat.tns').read_bytes(),code)
         logical,proof=graft_locale(artwork,previous,code)
+        glyph_proof=None
+        if exact_glyph_storage:
+            from final_glyph_storage_ui23 import convert as encode_glyphs
+            logical,glyph_proof=encode_glyphs(logical,work/'glyph-storage'/code,workers=2)
         bounds=split.layout(logical,code)
         t.require(common[64:]==logical[bounds['prefix']:bounds['prefix']+bounds['artwork']],
                   'Updated locales no longer share identical artwork')
@@ -58,7 +62,7 @@ def convert(artwork_path, source, target, work, *, locales=None):
         t.atomic_bytes(target/f'nSpire2.{code}.dat.tns',language)
         if code in ('eng','zhs'):t.atomic_bytes(work/f'{code}-complete{view.version}.nsp',logical)
         report['locales'][code]=dict(stored_bytes=len(language),logical_sha256=t.sha256(logical),
-                                    proof=proof,storage=stored)
+                                    proof=proof,storage=stored,glyph_storage=glyph_proof)
         print(json.dumps(dict(stage='refreshed_artwork',locale=code,stored_bytes=len(language),**proof)),flush=True)
     names=('nSpire2.dat.tns',*storage.PART_FILES,*(f'nSpire2.{code}.dat.tns' for code in codes))
     report.update(complete=True,elapsed_seconds=time.monotonic()-started,
@@ -71,8 +75,9 @@ def main():
     parser=argparse.ArgumentParser(description=__doc__)
     for name in ('artwork','input','output','work'):parser.add_argument('--'+name,type=Path,required=True)
     parser.add_argument('--locales',nargs='+',choices=split.LANGUAGES)
+    parser.add_argument('--exact-glyph-storage',action='store_true',help='Losslessly encode native glyph coverage after locale grafting')
     args=parser.parse_args()
-    report=convert(args.artwork,args.input,args.output,args.work,locales=args.locales)
+    report=convert(args.artwork,args.input,args.output,args.work,locales=args.locales,exact_glyph_storage=args.exact_glyph_storage)
     print(json.dumps({key:value for key,value in report.items() if key not in ('partition','locales')}),flush=True)
 
 

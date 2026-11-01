@@ -10,6 +10,11 @@ on:
       - 'tools/**'
       - 'include/**'
       - 'src/**'
+      - 'platform/**'
+      - 'third_party/lzma2/**'
+      - 'tests/arm_division_regression.py'
+      - 'tests/arm_sparse_tile_regression.py'
+      - 'CMakeLists.txt'
       - 'docs/converter-ui23.md'
       - 'requirements*.txt'
       - 'VERSION'
@@ -23,7 +28,29 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  arm-validation:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Build and execute the exact public linked ARM validation helper
+        run: |
+          sudo apt-get update && sudo apt-get install -y clang-18 lld-18
+          python -m pip install -r requirements.txt
+          python tools/build_converter_validation.py --output "$RUNNER_TEMP/arm-validation"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: converter-arm-validation-${{ github.sha }}
+          path: ${{ runner.temp }}/arm-validation/
+          if-no-files-found: error
+          retention-days: 30
   windows-converter:
+    needs: arm-validation
     runs-on: windows-2022
     timeout-minutes: 35
     steps:
@@ -53,6 +80,10 @@ jobs:
           if (-not $compiler) { $compiler = (Get-Command g++.exe -ErrorAction Stop).Source }
           python tools/build_converter_helpers.py --rid win-x64 --dotnet (Get-Command dotnet).Source --cxx $compiler --spine-runtime "$deps/spine-runtime/OurNotes.Spine.Runtime.dll" --fastnoise-header "$deps/FastNoiseLite.h" --output $helpers
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          name: converter-arm-validation-${{ github.sha }}
+          path: ${{ runner.temp }}/converter-helpers/win-x64/
       - name: Build and check the executable without developer runtime paths
         shell: pwsh
         run: |
