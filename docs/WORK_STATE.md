@@ -1,3 +1,24 @@
+## First combined production ARM measurement and CI correction
+
+Published 6cdf8ac links at 22,272,684 bytes, 18,332 below the unchanged UI21
+allocation ceiling. The genuine linked ARM literal and predicted streams pass.
+This measures the implemented 7227 source stage; the final two fire families
+still require another linked allocation and actual scene test. Its source is
+frozen independently for native/full-App verification. Follow-up d5ae67e
+restores the exact published 346f8ad light sampler and its strict 7217 validator;
+the cumulative validator already supplies that exact prefix. All seven sampler
+dependencies match, so the 1,052 real source poses are reused without signature
+bypasses or resampling. All eight new producers have now executed from the real
+7217 input, adding 360,222 bytes before the final physical-pack tail.
+
+The first combined conversion CI ran 578 tests and found one stale Tanx recipe
+assertion: it assumed quality followed lights immediately. The recipe now has
+eight intervening completed producers. The regression follows and verifies every
+input link from quality back to lights while retaining the Tanx and mandatory
+final-prune checks. Its focused four-test suite passes; the subsequent full CI
+result is still required. The cancelled older Windows job was superseded by a
+new source push, and is not reported as a passing Windows build.
+
 # UI23 cumulative Ancient integration — source stage, final acceptance open
 
 The combined source includes the original projected additive light plates,
