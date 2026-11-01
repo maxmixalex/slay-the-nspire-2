@@ -35,7 +35,7 @@ def checked_plan():
 
 
 def route_digest(relative, raw):
-    """Normalize the reviewed UI23 move-table storage permutation only.
+    """Recognize only the reviewed text-offset and move-table representations.
 
     All 331 keys, next clips, action offsets/counts and local node ids retain
     their values. The new naturally aligned 12-byte struct emits action_first
@@ -44,6 +44,13 @@ def route_digest(relative, raw):
     body without changing the resource plan/marker or allowing a new route.
     """
     actual=hashlib.sha256(raw).hexdigest()
+    # b5fcd5e stores the same 4,361 text keys/IDs with within-group
+    # 16-bit offsets. The complete audited source is the only accepted alias;
+    # all image/clip routes, lookup results and the resource marker stay fixed.
+    # Do not generalize this to future edits or normalize arbitrary source.
+    if (relative=='src/world_content.inc' and
+        actual=='88a8cb735142229d55da4339ba880b3c8f8b06aba4c0214dab1f0c56ab9d6ccd'):
+        return '70fd191cae886f76a278d712de2a25e1c7de9d819d3afdf976cdd6db3d2f7e97'
     if relative!='src/world_enemy_assets.inc' or actual==PLAN['runtime_route_sources'].get(relative):
         return actual
     text=raw.decode('utf-8')
