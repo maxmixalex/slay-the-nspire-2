@@ -23,9 +23,12 @@ static void plane(Canvas c,const uint8_t*alpha,int cx,int cy,int ax,int ay,int b
  uint16_t contributions[256];
  if(direct)for(unsigned i=0;i<256;++i)
   contributions[i]=presentation::add_opaque(0,color,div255(i*c.opacity));
- for(int y=top;y<bottom;++y){const int dx=left*256+128-cx,dy=y*256+128-cy;
-  int u=8388608+int((int64_t(dx)*by-int64_t(dy)*bx)*16777216/determinant);
-  int v=8388608+int((int64_t(dy)*ax-int64_t(dx)*ay)*16777216/determinant);
+ const int dx=left*256+128-cx,dy=top*256+128-cy;
+ AffineRows row_u((int64_t(dx)*by-int64_t(dy)*bx)*16777216,-int64_t(bx)*4294967296ll,determinant);
+ AffineRows row_v((int64_t(dy)*ax-int64_t(dx)*ay)*16777216,int64_t(ax)*4294967296ll,determinant);
+ for(int y=top;y<bottom;++y,row_u.next(),row_v.next()){
+  if(!(y&15))c.poll();
+  int u=8388608+row_u.value(),v=8388608+row_v.value();
   for(int x=left;x<right;++x,u+=du,v+=dv){
    if(unsigned(u)>=16777216u||unsigned(v)>=16777216u)continue;
    const unsigned coverage=nonu_fog_ui23::alpha(alpha,u,v);

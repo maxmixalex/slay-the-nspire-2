@@ -49,8 +49,25 @@ inline Particle particle(const Parameters&p,uint32_t elapsed,uint32_t seed,unsig
 }
 // Exact source alpha8 with clamped bilinear filtering. u/v use24fractional
 // bits so affine step rounding stays below1/256 source texel across theLCD.
+// Exact C++ truncating division of a linear row numerator. Euclidean
+// remainders stay nonnegative, so crossing zero preserves the old rounding.
+// Source scene geometry bounds the numerator, step and twice the positive
+// determinant within int64; no persistent storage or capacity changes.
+struct AffineRows {
+ int64_t quotient,remainder,step_quotient,step_remainder,denominator;
+ AffineRows(int64_t numerator,int64_t step,int64_t divisor):denominator(divisor){
+  if(denominator<0){denominator=-denominator;numerator=-numerator;step=-step;}
+  quotient=numerator/denominator;remainder=numerator%denominator;
+  if(remainder<0){--quotient;remainder+=denominator;}
+  step_quotient=step/denominator;step_remainder=step%denominator;
+  if(step_remainder<0){--step_quotient;step_remainder+=denominator;}
+ }
+ int value()const{return int(quotient+(quotient<0&&remainder!=0));}
+ void next(){quotient+=step_quotient;remainder+=step_remainder;if(remainder>=denominator){++quotient;remainder-=denominator;}}
+};
 inline unsigned alpha(const uint8_t*data,int u,int v){
- const int x=int((int64_t(u)*200)>>16)-128,y=int((int64_t(v)*200)>>16)-128;
+ // Caller has proved0 <= u,v <2^24; the unsigned products fit32bits.
+ const int x=int((uint32_t(u)*200u)>>16)-128,y=int((uint32_t(v)*200u)>>16)-128;
  const int ix=x>>8,iy=y>>8;const unsigned fx=unsigned(x)&255u,fy=unsigned(y)&255u;
  const unsigned a=ix<0?0:ix>199?199:unsigned(ix),b=ix+1<0?0:ix+1>199?199:unsigned(ix+1);
  const unsigned c=iy<0?0:iy>199?199:unsigned(iy),d=iy+1<0?0:iy+1>199?199:unsigned(iy+1);
