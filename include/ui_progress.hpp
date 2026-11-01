@@ -54,6 +54,7 @@ struct UiRunHistory {
     uint8_t floor_count=0,partial=0,event=0,abandoned=0,potion_count=0;
     uint8_t potions[MaxPotionSlots]{};
     char seed_text[65]{};
+    uint8_t seed_imported=0; // Uses former alignment byte; partial header bit 1 on disk.
     uint16_t battle_seen[EnemyKinds]{};
     EventDeckSnapshot deck[MaxDeck]{};
     uint16_t relics[WorldRelicCapacity]{};

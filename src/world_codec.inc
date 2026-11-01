@@ -12,7 +12,9 @@
   for(unsigned f=0;f<=MaxAutoFrames;++f){H(v.strangle_before[f][t]);H(n.oblivion_before[f][t]);}
  }
  auto&w=s.world;
- B(w.active);B(w.rng_ready);B(w.act_index);B(w.ascension);
+ B(w.active);uint8_t seed_flags=uint8_t(w.rng_ready|(w.seed_imported<<1));B(seed_flags);
+ if(c.in){w.rng_ready=seed_flags&1;w.seed_imported=(seed_flags>>1)&1;if(seed_flags&~3u)c.good=false;}
+ B(w.act_index);B(w.ascension);
  H(w.total_floor);H(w.rooms_completed);H(w.combat_count);H(w.map_column);H(w.map_row);
  field64(w.run_seed,c);for(auto&ch:w.seed_text)B(ch);
  for(auto&r:w.rng){for(auto&word:r.words)field64(word,c);F(r.calls);B(r.good);}

@@ -29,9 +29,9 @@ static class AsciiOracle {
   string State(object r){var m=rngField.GetValue(r)!;return string.Join(',',words.Select(f=>((ulong)f.GetValue(m)!).ToString("X16")));}
   var alphabet=(string)helper.GetField("_characters",All)!.GetRawConstantValue()!;
   var defaultLength=(int)helper.GetField("seedDefaultLength",All)!.GetRawConstantValue()!;
-  var inputs=new List<string>{""," "," \t\r\n ","A","a","0","O","I","0123456789AB","nspire-i-o","  mixED-Case_123  ","oldA","olda","OLDa","old","!@#$%^&*()_+-=[]{};:'\",.<>/?\\|`~"};
+  var inputs=new List<string>{""," "," \t\r\n ","A","a","0","O","I","0123456789AB","raw:123","RAW:123","raw:oldA","SEED64:123","SEED64-0000000000000000","1234567890","0000012345","  Oi iO  ","nspire-i-o","  mixED-Case_123  ","oldA","olda","OLDa","old","!@#$%^&*()_+-=[]{};:'\",.<>/?\\|`~"};
   for(int c=32;c<=126;c++)inputs.Add(((char)c).ToString());
-  foreach(int n in new[]{1,11,12,13,31,32,33,63,64,65,127,128,255,256,1024})inputs.Add(new string('a',n));
+  foreach(int n in new[]{1,11,12,13,31,32,33,63,64,65,127,128,255,256,1024,65537})inputs.Add(new string('a',n));
   foreach(char c in alphabet)for(int at=0;at<defaultLength;at++){var text=new string('0',defaultLength).ToCharArray();text[at]=c;inputs.Add(new string(text));}
   var originalGenerator=randomType.GetConstructor(new[]{typeof(ulong)})!.Invoke(new object[]{0x24a5c11UL});
   for(int i=0;i<128;i++)inputs.Add((string)generate.Invoke(null,new object[]{originalGenerator,defaultLength})!);
@@ -60,7 +60,6 @@ static class AsciiOracle {
    }
    // Same explicit solo region and ascension flags in both implementations.
    // This does not execute RunState/Timeline/encounter-pool initialization.
-   if(Encoding.UTF8.GetByteCount(normal)>64)continue;
    for(int region=0;region<4;region++)for(int elite=0;elite<2;elite++){
     var r=namedCtor.Invoke(new object[]{seed,"act_"+(region<2?1:region)+"_map"});
     var act=RuntimeHelpers.GetUninitializedObject(assembly.GetType("MegaCrit.Sts2.Core.Models.Acts."+regions[region],true)!);

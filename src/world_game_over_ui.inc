@@ -96,7 +96,7 @@ static void game_over_format(const App&a,const char*raw,char*out,unsigned capaci
 void App::game_over_quote(char*out,unsigned capacity)const{
  if(capacity)out[0]=0;const auto&s=game;const char*table="run_history";char key[128]{};
  reference::Random random;unsigned length=0;while(s.world.seed_text[length])++length;
- random.reset(reference::hash64(s.world.seed_text,length));
+ random.reset(s.world.seed_imported?s.world.run_seed:reference::hash64(s.world.seed_text,length));
  TextBuffer k{key,sizeof key,0};
  if(s.phase==Phase::Complete){k.text("MAP_POINT_HISTORY.falseVictory.");k.number(random.below(2));}
  else if(const auto*r=game_over_run();r&&r->abandoned){k.text("MAP_POINT_HISTORY.abandon.");k.number(random.below(3));}

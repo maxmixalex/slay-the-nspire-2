@@ -39,7 +39,9 @@ int main(int argc,char**argv){
    uint64_t raw=0;check(reference::seed_hash(input.c_str(),raw)&&raw==number(f[4]),"original raw ASCII hash");
    check(reference::seed_hash(canonical.data(),seed)&&seed==number(f[5]),"original normalized ASCII hash");
    new_run(state,73,false,Character::Ironclad);check(world_set_seed(state,input.c_str())==(normal.size()<=64),"explicit port UTF-8 capacity boundary");
-   if(normal.size()<=64){check(state.world.run_seed==seed&&!std::strcmp(state.world.seed_text,normal.c_str()),"world stores exact canonical seed");
+   if(normal.size()<=64)check(state.world.run_seed==seed&&!std::strcmp(state.world.seed_text,normal.c_str()),"world stores exact canonical seed");
+   else{char code[24]{};reference::format_seed_code(seed,code);check(world_import_seed(state,code)&&state.world.seed_imported&&state.world.run_seed==seed,"complete long seed import");}
+   {
     check(save(state,saved)&&load(loaded,saved.bytes,saved.size)&&save(loaded,again),"seed save/load");
     check(saved.size==again.size&&!std::memcmp(saved.bytes,again.bytes,saved.size),"seed and all RNG states survive save byte-exactly");++saves;
    }++seeds;

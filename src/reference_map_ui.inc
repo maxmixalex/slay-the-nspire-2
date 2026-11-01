@@ -4,7 +4,8 @@ static void seed_editor(Canvas& c) {
     c.rect(0,0,320,240,Panel);c.centered("输入种子",0,3,320,16,Gold);c.close_button(294,3);
     c.rect(8,29,304,39,Ink);c.box(8,29,304,39,Gold);
     c.text(view.draft,14,32,10,White,290,2);
-    c.text(*view.error?view.error:a.run_seed_editing?"留空使用新种子；I / O 自动转为 1 / 0":"输入后选择生成；I / O 自动转为 1 / 0",9,71,10,*view.error?Red:Muted,302);
+    c.text(*view.error?view.error:view.importing?"SEED64- + 16 HEX":a.run_seed_editing?"留空随机；I/O 转为 1/0":"I/O 转为 1/0",9,71,10,*view.error?Red:Muted,194);
+    if(a.run_seed_editing){c.button(view.importing?"普通文本":"导入种子码",207,70,105,false,20);c.action(207,70,105,20,UiAction::RunSeedImport);}
     for(int i=0;i<40;++i) {
         int x=8+(i%10)*31,y=93+(i/10)*26;
         int code=i<SeedKeyCount?SeedKeys[i]:i==SeedKeyCount?8:-1;

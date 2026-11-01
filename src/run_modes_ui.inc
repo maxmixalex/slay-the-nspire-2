@@ -126,11 +126,14 @@ static void custom_run_screen(Canvas&c){
  const int seed_left=seed_input_left(english),seed_width=SeedRight-seed_left,seed_height=SeedBottom-SeedTop;
  profile_text_box(c,label("CUSTOM_RUN_SCREEN.SEED_LABEL","Seed:"),9,SeedTop,40,seed_height,{8,bold,gold,128},false,true);
  c.dim(seed_left,SeedTop,seed_width,seed_height,140);c.rect(seed_left,SeedBottom-1,seed_width,1,editing?gold:Muted);
+ const bool importing=editing?a.map_preview.importing:a.selected_seed_imported;
  const char*seed=editing?a.map_preview.draft:a.selected_seed;const bool has_seed=*seed;Canvas seed_font=c;seed_font.sparse_scene_sizes=true;
  while(*seed&&seed_font.width(seed,8)>seed_width-4){++seed;while((uint8_t(*seed)&0xc0)==0x80)++seed;}
  profile_text_box(c,has_seed?seed:label("CUSTOM_RUN_SCREEN.SEED_RANDOM_PLACEHOLDER","Random"),seed_left+2,SeedTop,seed_width-4,seed_height,{8,0,has_seed?cream:rgb(128,128,128),0},false,false,{},true);
  if(editing)c.rect(seed_left+2+mn(seed_width-4,seed_font.width(seed,8)),SeedTop+5,1,10,cream);
  else c.action(seed_left,SeedTop,seed_width,seed_height,UiAction::RunSeed);
+ profile_text_box(c,importing?(english?"Code (up/down: text)":"导入码（上下切换文本）"):(english?"Import code (up/down)":"导入种子码（上下切换）"),9,110,144,14,{8,0,gold,0},false,false);
+ if(editing&&*a.map_preview.error)profile_text_box(c,a.map_preview.error,9,51,143,33,{8,0,Red,0},false,true);
  constexpr int left=ModifiersLeft,top=ModifiersTop,width=ModifiersWidth,view_height=ModifiersHeight;
  if(mode.layout_generation!=a.content.generation()){unsigned y=0;for(unsigned i=0;i<RunModifierKinds;++i){mode.row_offsets[i]=uint16_t(y);modifier_text(a,RunModifier(i),text,sizeof text);
    const auto plan=setup_text_plan(c,text,ModifierTextWidth);y+=unsigned(mx(project(56),plan.rows*plan.step+1)+project(8));}
@@ -153,6 +156,7 @@ static void custom_run_screen(Canvas&c){
    native_scrollbar_grabber(c,308,scroller.thumb_y(45,153)-7,12,14);c.hit(307,37,13,170,HitKind::ProgressThumb);}
   native_original_back(c,mode.started);native_original_confirm(c,UiAction::StartConfiguredRun,mode.started);
  }else{a.hit_count=0;c.hit(seed_left,SeedTop,seed_width,seed_height,HitKind::None);}
+ c.action(9,110,144,14,UiAction::RunSeedImport);
 }
 static void daily_run_screen(Canvas&c){
  auto&a=c.a;a.refresh_daily_run();const auto&mode=a.run_mode;title_submenu_background(c,185);a.hit_count=0;

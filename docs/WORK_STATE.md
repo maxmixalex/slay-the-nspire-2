@@ -966,3 +966,23 @@ replaces the printed atlas placeholder, rather than multiplying that placeholder
 into the effect. Existing frame counts, timestamps and source rasters remain.
 Four source-free tests pass for event endpoints, channel semantics, fragment UVs
 and slot-only replacement. Real-art and firmware acceptance remain pending.
+
+# UI24 Necrobinder/Osty actual-action acceptance
+
+Normal full-resource Strike now shows the authored blue slash instead of the
+printed placeholder, confirmed in 33 ms ordinary Firebird captures. Normal
+Offering kills a living Osty after owner death and retains both death/corpse
+tracks above the game-over backstop. Full and reduced guest sequences include
+first/intermediate/terminal poses and corpses through10.1s. Fairy prevention,
+an already dead Osty, and a non-combat merchant death were also exercised.
+Launcher plus all11 resources matched ordinary USB readback in both editions.
+
+The tested release launcher is actualb690/public0e7 with22,286,408B allocation;
+its resources are explicit private attack-only test candidates. Final converter
+resources and the complete70,000,000B package gate remain separate. Native
+world/core/player-death/reduced-clock checks pass after the synthetic test-only
+fixture correctiona5a/public52daf. Details and preserved failure attempts are in
+[the animation acceptance record](ui24-necrobinder-osty.md).
+## UI24 explicit long ASCII seed import — source checkpoint
+
+Normal text retains the original canonicalization and hash, including strings beginning with `raw:` or `SEED64-`. A separate Import seed code mode in Custom Run accepts the same 64-bit seed identity encoded by the converter. World and history records reuse alignment bytes and existing serialized flag bits; their allocation and encoded length do not increase. The entire long ASCII input is streamed through original uppercase/O-I/trim plus xxHash64 on the PC. No source text is truncated, and no code is sent through legacy `old` hashing. New original-DLL vectors include import-looking literals and long-input standard maps. Initial UI24 original comparison passed 386,703 checks / 918 inputs / 13,770 named stream cases / 7,296 standard maps / 912 saves; final updated import/UI/codec validation remains pending. No whole-run/Timeline/Windows-math parity is claimed.

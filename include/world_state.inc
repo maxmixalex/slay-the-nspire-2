@@ -18,6 +18,7 @@ struct WorldState {
     int16_t map_column=0,map_row=0;
     uint64_t run_seed=0;
     char seed_text[65]{};
+    uint8_t seed_imported=0; // Uses existing padding; serialized in RNG header bit 1.
     reference::Random rng[WorldRngCount]{};
     uint8_t room_type=0,current_point=reference::NoPoint;
     uint8_t map_ready[3]{};

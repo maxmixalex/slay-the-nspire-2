@@ -314,7 +314,7 @@ static void history_summary_text(const App&a,const UiRunHistory&r,bool relics,ch
     TextBuffer text{out,capacity,0};text.text("[gold][b]");text.text(heading);text.text("[/b][/gold]");text.text(start);
 }
 static void history_death_quote(const App&a,const UiRunHistory&r,char*out,unsigned capacity){
-    reference::Random random;unsigned length=0;while(r.seed_text[length])++length;random.reset(reference::hash64(r.seed_text,length));
+    reference::Random random;unsigned length=0;while(r.seed_text[length])++length;random.reset(r.seed_imported?r.run_seed:reference::hash64(r.seed_text,length));
     char key[128]{};TextBuffer k{key,sizeof key,0};const char*table="run_history";
     if(r.outcome==1){k.text("MAP_POINT_HISTORY.falseVictory.");k.number(random.below(2));}
     else if(r.abandoned||r.outcome==3){k.text("MAP_POINT_HISTORY.abandon.");k.number(random.below(3));}

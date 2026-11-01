@@ -36,7 +36,7 @@ void MapPreview::change_act() {
     settings.act = reference::ActKind((unsigned(settings.act) + 1) % 4); generate();
 }
 void MapPreview::begin_edit() {
-    copy(draft, seed); editing = true; editor_selection = SeedButtonCount - 1; error = "";
+    copy(draft, seed); importing=false; editing = true; editor_selection = SeedButtonCount - 1; error = "";
 }
 void MapPreview::edit(int ch) {
     if (!editing) return;

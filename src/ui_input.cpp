@@ -158,9 +158,13 @@ void App::ui_action(UiAction action){
     case UiAction::RunAscensionDown:if(character_select&&selected_ascension)selected_ascension--;break;
     case UiAction::RunAscensionUp:if(character_select&&selected_ascension<10)selected_ascension++;break;
     case UiAction::RunRegion:if(character_select)selected_region=selected_region==reference::ActKind::Overgrowth?reference::ActKind::Underdocks:reference::ActKind::Overgrowth;break;
-    case UiAction::RunSeed:
-        if(character_select){map_preview.open=true;run_seed_editing=true;map_preview.begin_edit();unsigned n=0;do{map_preview.draft[n]=selected_seed[n];}while(selected_seed[n++]);}break;
-    case UiAction::RunSeedClear:if(character_select)selected_seed[0]=0;break;
+    case UiAction::RunSeed:case UiAction::RunSeedImport:
+        if(character_select){
+            if(action==UiAction::RunSeedImport&&run_seed_editing){map_preview.importing=!map_preview.importing;map_preview.draft[0]=0;map_preview.error="";break;}
+            map_preview.open=true;run_seed_editing=true;map_preview.begin_edit();map_preview.importing=action==UiAction::RunSeedImport||selected_seed_imported;
+            unsigned n=0;do{map_preview.draft[n]=selected_seed[n];}while(selected_seed[n++]);if(map_preview.importing&&!selected_seed_imported)map_preview.draft[0]=0;
+        }break;
+    case UiAction::RunSeedClear:if(character_select){selected_seed[0]=0;selected_seed_imported=false;}break;
     case UiAction::ToggleMapLegend:
         if(!title&&!paused&&!help&&!library&&game.world.active&&(panel==3||(!panel&&game.phase==Phase::Map)))map_legend=!map_legend;break;
     case UiAction::MapLegendUnknown:case UiAction::MapLegendShop:case UiAction::MapLegendTreasure:

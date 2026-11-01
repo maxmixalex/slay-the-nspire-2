@@ -221,4 +221,21 @@ int32_t Random::range(int32_t low, int32_t high) {
     uint32_t width = static_cast<uint32_t>(int64_t(high) - low);
     return static_cast<int32_t>(int64_t(low) + below(width));
 }
+bool parse_seed_code(const char*text,uint64_t&out){
+    if(!text)return false;
+    const char*prefix="SEED64-";unsigned p=0;
+    while(prefix[p]&&text[p]&&((text[p]>='a'&&text[p]<='z')?text[p]-32:text[p])==prefix[p])++p;
+    if(!prefix[p])text+=p;
+    uint64_t value=0;for(unsigned i=0;i<16;++i){
+        const unsigned c=uint8_t(text[i]);unsigned digit;
+        if(c>='0'&&c<='9')digit=c-'0';else if(c>='A'&&c<='F')digit=c-'A'+10;
+        else if(c>='a'&&c<='f')digit=c-'a'+10;else return false;
+        value=(value<<4)|digit;
+    }
+    if(text[16])return false;out=value;return true;
+}
+void format_seed_code(uint64_t value,char*out){
+    const char*prefix="SEED64-";unsigned i=0;while(prefix[i]){out[i]=prefix[i];++i;}
+    const char*hex="0123456789ABCDEF";for(unsigned n=0;n<16;++n)out[i+n]=hex[(value>>((15-n)*4))&15];out[i+16]=0;
+}
 } // namespace spire::reference

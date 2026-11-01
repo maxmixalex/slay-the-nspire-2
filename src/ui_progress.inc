@@ -130,7 +130,7 @@ void App::begin_progress(bool resumed){
     r.seed=game.seed;r.run_seed=game.world.run_seed;r.character=unsigned(game.character);r.ascension=game.world.ascension;
     r.mode=unsigned(game.run_options.mode);r.modifiers=game.run_options.modifiers;r.daily_day=game.run_options.daily_day;r.modifier_order=game.run_options.setup_flags&2;
     r.start_region=game.world.rooms[0].region;r.partial=resumed;r.started_at=callbacks.wall_clock?callbacks.wall_clock():0;
-    for(unsigned i=0;i<65;++i)r.seed_text[i]=game.world.seed_text[i];
+    for(unsigned i=0;i<65;++i)r.seed_text[i]=game.world.seed_text[i];r.seed_imported=game.world.seed_imported;
     // Earlier fights in an old save have no observed per-enemy outcome.
     // Start counting from the resumed battle, never backfill invented wins.
     if(resumed&&!combat_phase(game.phase)&&!game.world.combat_ending)r.finished_battle=game.world.combat_count;

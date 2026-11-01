@@ -40,11 +40,14 @@ template<class Codec>void run(Codec&c,UiRunHistory&v,unsigned version){
     c.integer(v.last_battle);c.integer(v.finished_battle);c.integer(v.encounter);c.integer(v.last_enemy_identity);
     c.integer(v.character);c.integer(v.ascension);c.integer(v.outcome);c.integer(v.start_region);
     for(auto&r:v.regions)c.integer(r);
-    c.integer(v.floor_count);c.integer(v.partial);c.integer(v.event);c.integer(v.abandoned);c.integer(v.potion_count);
+    c.integer(v.floor_count);uint8_t seed_flags=uint8_t(v.partial|(v.seed_imported<<1));c.integer(seed_flags);
+    if constexpr(Codec::reading){v.partial=seed_flags&1;v.seed_imported=(seed_flags>>1)&1;}
+    if(seed_flags&~3u)c.good=false;c.integer(v.event);c.integer(v.abandoned);c.integer(v.potion_count);
     if(v.character>=CharacterKinds||v.ascension>10||v.outcome>3||v.deck_count>MaxDeck||v.relic_count>WorldRelicCapacity||v.floor_count>UiHistoryFloors||v.potion_count>MaxPotionSlots){c.good=false;return;}
     for(auto&potion:v.potions){c.integer(potion);if(potion>PotionKinds)c.good=false;}
     for(auto&ch:v.seed_text)c.integer(ch);
     if(v.seed_text[64])c.good=false;
+    if(v.seed_imported){uint64_t value;if(!reference::parse_seed_code(v.seed_text,value)||value!=v.run_seed)c.good=false;}
     for(auto&seen:v.battle_seen)c.integer(seen);
     for(unsigned i=0;i<v.deck_count&&c.good;++i)card(c,v.deck[i]);
     for(unsigned i=0;i<v.relic_count&&c.good;++i){c.integer(v.relics[i]);if(v.relics[i]>=WorldRelicKinds)c.good=false;}

@@ -4,7 +4,7 @@ void App::open_run_menu(RunMenu screen){
     character_select=false;character_random=false;practice_entry=false;progress_page_scroll.reset();pointer_cancel();character_select_presentation.reset();
     if(screen==RunMenu::Singleplayer){compendium_selection=0;for(auto&motion:compendium_motion)motion={};return;}
     run_mode.pending={};selected_character=Character::Ironclad;selected_ascension=0;
-    selected_region=reference::ActKind::Overgrowth;selected_seed[0]=0;
+    selected_region=reference::ActKind::Overgrowth;selected_seed[0]=0;selected_seed_imported=false;
     if(screen==RunMenu::Custom)run_mode.pending.mode=RunMode::Custom;
     else if(screen==RunMenu::Daily)refresh_daily_run();
 }
@@ -14,7 +14,7 @@ void App::refresh_daily_run(){
     if(!now)return;
     const uint32_t day=now/86400;
     if(run_mode.pending.mode==RunMode::Daily&&run_mode.pending.daily_day==day)return;
-    prepare_daily_run(day,selected_character,run_mode.pending,selected_character,selected_ascension,selected_seed);
+    selected_seed_imported=false;prepare_daily_run(day,selected_character,run_mode.pending,selected_character,selected_ascension,selected_seed);
 }
 void App::run_modifier_select(unsigned index){
     if(run_mode.screen!=RunMenu::Custom||index>=RunModifierKinds)return;
@@ -24,14 +24,15 @@ bool App::start_selected_run(const RunOptions&options,bool animated){
     if(character_departure.active()||!valid_run_options(options))return false;
     if(!practice_entry&&!seen_ftue(FtueId::AcceptTutorials)&&open_ftue(FtueId::AcceptTutorials)){ftue.embark=options;character_departure.animated_ftue=animated;return false;}
     uint32_t seed=0;char canonical[65]{};bool string_seed=!practice_entry&&*selected_seed;
+    const bool imported=string_seed&&selected_seed_imported;
     if(string_seed){
-        if(!reference::canonicalize_seed(selected_seed,canonical,sizeof canonical)){message("种子无效");return false;}++run_number;
+        if(!imported&&!reference::canonicalize_seed(selected_seed,canonical,sizeof canonical)){message("种子无效");return false;}++run_number;
     }else{
         bool randomized=false;seed=next_run_seed(&randomized);
         if(randomized&&!practice_entry){static const char digits[]="0123456789ABCDEF";for(unsigned i=0;i<8;++i)canonical[i]=digits[(seed>>((7-i)*4))&15];string_seed=true;}
     }
     uint64_t run_hash=seed;
-    if(string_seed){if(!reference::seed_hash(canonical,run_hash)){message("种子无效");return false;}seed=uint32_t(run_hash)^uint32_t(run_hash>>32);if(!seed)seed=1;}
+    if(string_seed){if(!(imported?reference::parse_seed_code(selected_seed,run_hash):reference::seed_hash(canonical,run_hash))){message("种子无效");return false;}seed=uint32_t(run_hash)^uint32_t(run_hash>>32);if(!seed)seed=1;}
     const bool random=character_random;
     if(random){
         // StartRunLobby resolves Random after the three ActModel choices,
@@ -44,7 +45,7 @@ bool App::start_selected_run(const RunOptions&options,bool animated){
     forget_run_checkpoint();new_run(game,seed,practice_entry,selected_character);
     if(!practice_entry){
         game.run_options=options;
-        if(string_seed&&!world_set_seed_raw(game,canonical)){message("种子无效");return false;}
+        if(string_seed&&!(imported?world_import_seed(game,selected_seed):world_set_seed_raw(game,canonical))){message("种子无效");return false;}
         if(!world_begin_run(game,selected_region,selected_ascension)){message("Could not start the run.");return false;}
     }
     if(animated){
@@ -81,7 +82,7 @@ void App::advance_character_departure(){
 }
 bool App::run_modes_action(UiAction action){
     if(action==UiAction::OpenStandardRun){
-        if(title&&run_mode.screen==RunMenu::Singleplayer){run_mode.screen=RunMenu::Closed;run_mode.pending={};practice_entry=false;character_select=true;selected_seed[0]=0;selected_region=reference::ActKind::Overgrowth;}return true;
+        if(title&&run_mode.screen==RunMenu::Singleplayer){run_mode.screen=RunMenu::Closed;run_mode.pending={};practice_entry=false;character_select=true;selected_seed[0]=0;selected_seed_imported=false;selected_region=reference::ActKind::Overgrowth;}return true;
     }
     if(action==UiAction::OpenCustomRun||action==UiAction::OpenDailyRun){
         if(title&&run_mode.screen==RunMenu::Singleplayer)open_run_menu(action==UiAction::OpenCustomRun?RunMenu::Custom:RunMenu::Daily);return true;
@@ -97,10 +98,13 @@ bool App::run_modes_action(UiAction action){
     if(run_mode.screen!=RunMenu::Custom)return false;
     if(action==UiAction::RunAscensionDown){if(selected_ascension)--selected_ascension;return true;}
     if(action==UiAction::RunAscensionUp){if(selected_ascension<10)++selected_ascension;return true;}
-    if(action==UiAction::RunSeed){
-        map_preview.open=true;run_seed_editing=true;map_preview.begin_edit();unsigned n=0;do{map_preview.draft[n]=selected_seed[n];}while(selected_seed[n++]);return true;
+    if(action==UiAction::RunSeed||action==UiAction::RunSeedImport){
+        if(action==UiAction::RunSeedImport&&run_seed_editing){map_preview.importing=!map_preview.importing;map_preview.draft[0]=0;map_preview.error="";return true;}
+        map_preview.open=true;run_seed_editing=true;map_preview.begin_edit();map_preview.importing=action==UiAction::RunSeedImport||selected_seed_imported;
+        unsigned n=0;do{map_preview.draft[n]=selected_seed[n];}while(selected_seed[n++]);
+        if(map_preview.importing&&!selected_seed_imported)map_preview.draft[0]=0;return true;
     }
-    if(action==UiAction::RunSeedClear){selected_seed[0]=0;return true;}
+    if(action==UiAction::RunSeedClear){selected_seed[0]=0;selected_seed_imported=false;return true;}
     switch(action){
     case UiAction::SelectIronclad:selected_character=Character::Ironclad;return true;
     case UiAction::SelectSilent:selected_character=Character::Silent;return true;

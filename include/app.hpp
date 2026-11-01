@@ -550,7 +550,7 @@ struct App {
     void accept_frontend_confirm();
     int title_menu_count()const{return has_save?5:4;}
     bool practice_entry=false;
-    bool run_settings=false,run_seed_editing=false;
+    bool run_settings=false,run_seed_editing=false,selected_seed_imported=false;
     uint8_t character_control=0;
     bool game_over_summary=false,history_from_game_over=false;
     GameOverPresentation game_over_presentation{};

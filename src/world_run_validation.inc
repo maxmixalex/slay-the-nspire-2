@@ -1,8 +1,9 @@
 bool world_valid_run(const State&s){
     const auto&w=s.world;
-    if(w.active>1||w.rng_ready>1||w.act_index>=WorldActCount||w.ascension>10||w.room_type>uint8_t(WorldRoom::Map)||
+    if(w.active>1||w.rng_ready>1||w.seed_imported>1||w.act_index>=WorldActCount||w.ascension>10||w.room_type>uint8_t(WorldRoom::Map)||
        w.room_open>2||w.event_combat_parent>1||w.parent_room_type>uint8_t(WorldRoom::Map)||w.final_event>1||w.finished>1||w.point_had_shop>1||w.finish_pending>1||
        w.combat_ending>1||w.reward_rerolled>1||w.reward_can_reroll>1||(w.reward_rerolled&&w.reward_can_reroll)||w.combat_bonus_gold>9999)return false;
+    if(w.seed_imported){uint64_t value;if(!w.rng_ready||!reference::parse_seed_code(w.seed_text,value)||value!=w.run_seed)return false;}
     if(w.rng_ready){for(const auto&r:w.rng)if(!r.good||!(r.words[0]|r.words[1]|r.words[2]|r.words[3]))return false;}
     if(!w.active)return true;
     if(!w.rng_ready||s.practice||w.total_floor>64||w.rooms_completed>w.total_floor||w.combat_count>255||s.floor!=w.total_floor)return false;
