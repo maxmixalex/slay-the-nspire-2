@@ -52,8 +52,7 @@ class ZehnAllocationTest(unittest.TestCase):
             build(self.source, self.target)
 
     def test_total_allocation_at_limit_is_accepted(self):
-        # Isolate the total-allocation guard. The ordinary production
-        # contiguous-execution limit is deliberately stricter than this one.
+        # Exercise the exact production boundary, including loader metadata.
         with patch.object(zehn, 'EXECUTION_MEMORY_LIMIT', ALLOCATION_LIMIT):
             self.make(ALLOCATION_LIMIT - self.prefix)
         self.assertEqual(struct.unpack_from('<I', self.target.read_bytes(), 24)[0], ALLOCATION_LIMIT)
@@ -63,17 +62,20 @@ class ZehnAllocationTest(unittest.TestCase):
         memory_end = ALLOCATION_LIMIT - self.prefix + 1
         self.assertLess(memory_end, ALLOCATION_LIMIT)
         with patch.object(zehn, 'EXECUTION_MEMORY_LIMIT', ALLOCATION_LIMIT):
-            with self.assertRaisesRegex(ValueError, 'Zehn allocation exceeds 24 MiB'):
+            with self.assertRaisesRegex(ValueError, 'Zehn allocation exceeds production budget'):
                 self.make(memory_end)
         self.assertEqual(self.target.read_bytes(), previous)
 
     def test_contiguous_execution_limit_is_independently_enforced(self):
-        self.make(EXECUTION_MEMORY_LIMIT)
-        previous = self.target.read_bytes()
-        self.assertEqual(struct.unpack_from('<I', previous, 24)[0], EXECUTION_MEMORY_LIMIT + self.prefix)
-        with self.assertRaisesRegex(ValueError, 'contiguous-memory budget'):
-            self.make(EXECUTION_MEMORY_LIMIT + 1)
-        self.assertEqual(self.target.read_bytes(), previous)
+        # The stricter production ceiling normally fires first; isolate the
+        # older contiguous-block guard without changing production constants.
+        with patch.object(zehn, 'ALLOCATION_LIMIT', EXECUTION_MEMORY_LIMIT + self.prefix + 1):
+            self.make(EXECUTION_MEMORY_LIMIT)
+            previous = self.target.read_bytes()
+            self.assertEqual(struct.unpack_from('<I', previous, 24)[0], EXECUTION_MEMORY_LIMIT + self.prefix)
+            with self.assertRaisesRegex(ValueError, 'contiguous-memory budget'):
+                self.make(EXECUTION_MEMORY_LIMIT + 1)
+            self.assertEqual(self.target.read_bytes(), previous)
 
     @unittest.skipUnless(importlib.util.find_spec('zopfli'), 'optional release encoder not installed')
     def test_release_compression_preserves_all_loaded_bytes_and_headers(self):

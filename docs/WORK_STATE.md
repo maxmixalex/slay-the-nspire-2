@@ -1,3 +1,22 @@
+# UI23 production memory closure — guest timing pending
+
+The production Zehn packer now enforces the unchanged 22,291,016-byte ceiling
+including loader metadata. Every build entry applies `-Os` to event rules,
+progress serialization and UI input dispatch; renderers and shader kernels
+remain `-O2`. A diagnostic linked build measures 22,285,880 bytes; the clean
+checkpoint build and actual guest timing remain pending. No arena, heap or
+cache capacity has been increased. History decoding clears its existing
+output in place instead of creating a 33 KiB temporary stack object.
+
+The bounded Neow fire grid retains the full-resolution transmission mask and
+uses exact samples on sharp transitions and quad edges. Actual source packs
+at 13 clocks produce 26 full 320×240 App/room images: 0.223% of pixels differ,
+with maximum RGB565 channel deltas R=0, G=2, B=1 and mean channel-code error
+0.0008013. This verifies bounded visual differences, not guest frame rate.
+The baseline remains the historical 5.595 FPS scene until a new ordinary
+64 MiB Firebird measurement completes. Failed initial ARM allocation and
+missing-Unicorn validation receipts remain preserved; neither is acceptance.
+
 # UI23 current continuation — Neow renderer checkpoint, acceptance pending
 
 The recovered active source is `2825d65`; the older local `5ad3be4` checkout

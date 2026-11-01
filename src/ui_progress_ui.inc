@@ -442,8 +442,8 @@ static void history_screen(Canvas&c){
     using reference_viewport::project;
     history_quote_band(page,r,layout,dx,offset,focused);
     char text[2048]{};
-    uint32_t quests[3]{};const int journal_owner=a.progress.journal.owner(r.serial);
-    for(unsigned i=0;i<a.progress.journal.count;++i){const auto&e=a.progress.journal.at(i);if(e.owner==journal_owner&&e.floor<UiHistoryFloors&&(e.kind==RunHistoryEvent::QuestCompleted||e.kind==RunHistoryEvent::FurCoat))quests[e.floor/32]|=uint32_t(1)<<(e.floor%32);}
+    const auto&journal=a.history_journal();uint32_t quests[3]{};const int journal_owner=journal.owner(r.serial);
+    for(unsigned i=0;i<journal.count;++i){const auto&e=journal.at(i);if(e.owner==journal_owner&&e.floor<UiHistoryFloors&&(e.kind==RunHistoryEvent::QuestCompleted||e.kind==RunHistoryEvent::FurCoat))quests[e.floor/32]|=uint32_t(1)<<(e.floor%32);}
     for(unsigned i=0;i<r.floor_count;++i){const auto&f=r.floors[i];const auto point=layout.floor(r,i);const int x=point.x+dx,y=point.y-offset;
         if(y+point.h<=0||y>=page.clip_h)continue;
         if(!i||r.floors[i-1].act!=f.act){const char*act=a.content.world_title("acts",map_colors(f.region).region);const ProfileTextStyle style{10,0,rgb(255,246,226),96};

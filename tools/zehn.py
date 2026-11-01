@@ -5,11 +5,12 @@ No inferred relocations: every absolute word requires an ELF relocation.
 Unknown relocation kinds, TLS, constructors and undefined symbols fail closed.
 Format follows the Ndless r2022 zehn.h and genzehn.cpp allocation convention.
 """
-ALLOCATION_LIMIT = 24 * 1024 * 1024
+# Production no-growth ceiling includes every loader-prefix byte.
+ALLOCATION_LIMIT = 22_291_016
 # Normal CX II CAS OS 6.4/r2022 also needs a sufficiently large *contiguous*
 # block after loader metadata has been allocated. Keep headroom below the
-# observed limit; the total 24 MiB guard alone did not prevent UI15 reopens
-# from failing. This build budget is not a guarantee for arbitrary OS heaps.
+# observed limit. The stricter total production ceiling below includes
+# relocation metadata as well. Neither guard guarantees arbitrary OS heaps.
 EXECUTION_MEMORY_LIMIT = 22_450_000
 RELOCATION_ADDRESS_LIMIT = 1 << 24
 
@@ -101,10 +102,10 @@ def build(source:Path,target:Path,compression:str='zlib')->None:
     prefix=32+len(reloc_data)+len(flag_data)+len(extra)
     allocation=prefix+memory_end
     # Ndless allocates the Zehn prefix as well as the loaded image/BSS. An
-    # image below 24 MiB can still exceed the budget once relocations and
+    # image within the limit can still exceed it once relocations and
     # flags are included. Relocation *locations* remain separately limited
     # to 24 bits by Zehn; values may point into the larger zeroed BSS.
-    if allocation>ALLOCATION_LIMIT:raise ValueError(f'Zehn allocation exceeds 24 MiB: {allocation}')
+    if allocation>ALLOCATION_LIMIT:raise ValueError(f'Zehn allocation exceeds production budget: {allocation} > {ALLOCATION_LIMIT}')
     compressed=compress_image(image,compression)
     result=struct.pack('<8I',0x6e68655A,1,prefix+len(compressed),len(relocs)+1,len(flag_pairs),len(extra),allocation,entry)+reloc_data+flag_data+extra+compressed
     # Independent round trip validates bytes, allocation and every rebase word.

@@ -231,7 +231,10 @@ bool decode_ui_history_page(const uint8_t*data,size_t size,UiHistoryPage&out){
  out.valid=false;
  if(!data||size<8||size>UiProgressCapacity||data[0]!='N'||data[1]!='H'||data[2]!='P'||(data[3]!='1'&&data[3]!='2'))return false;
  uint32_t stored=0;for(unsigned i=0;i<4;++i)stored|=uint32_t(data[4+i])<<(8*i);if(stored!=size)return false;
- out.run={};out.journal={};Decoder c{data,size,8};run(c,out.run,3);history_facts(c,out.run);
+ // Reset the selected view in place: aggregate assignment materializes the
+ // 33 KiB journal on the calculator stack before copying it into this view.
+ auto*clear=reinterpret_cast<uint8_t*>(&out);for(size_t i=0;i<sizeof out;++i)clear[i]=0;
+ Decoder c{data,size,8};run(c,out.run,3);history_facts(c,out.run);
  bool ended=false;for(auto&ch:out.run.build_id){c.integer(ch);const unsigned v=uint8_t(ch);if(!v)ended=true;else if(ended||v<32||v>126)c.good=false;}
  if(data[3]=='2')c.integer(out.run.history_prefix);
  if(!ended||!out.run.serial||(out.run.history_prefix&~0x1ffffffu))c.good=false;

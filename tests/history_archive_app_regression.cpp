@@ -19,6 +19,7 @@ static unsigned archive_calls;
 static const char* fixture_directory;
 static uint8_t encoded[UiProgressCapacity],before_progress[UiProgressCapacity];
 static SaveData before_state,after_state;
+static State valid_game,overflow_game;
 static bool length(void*,uint32_t&n){n=unsigned(disk.size());return true;}
 static bool read(void*,uint32_t at,void*out,unsigned n){if(at>disk.size()||n>disk.size()-at)return false;std::memcpy(out,disk.data()+at,n);return true;}
 static bool write(void*,uint32_t at,const void*in,unsigned n){if(!storage_ok)return false;if(at+n>disk.size())disk.resize(at+n);std::memcpy(disk.data()+at,in,n);return true;}
@@ -45,7 +46,7 @@ int main(int argc,char**argv){
  fixture_directory=argc>1?argv[1]:nullptr;
  reset();
  // Real observed runs pass through production finish/statistics/ring paths.
- for(unsigned i=1;i<=70;++i){start(1000+i);app.finish_progress(true);}
+ for(unsigned i=1;i<=70;++i){start(1000+i);std::snprintf(app.progress.current.seed_text,sizeof app.progress.current.seed_text,"HISTORY-TEST-RUN-%04u",i);app.finish_progress(true);}
  CHECK(app.progress.count==UiHistoryCapacity&&app.progress.characters[0].losses==70);export_fixture("synthetic-70-runs");
  const size_t size=encode_ui_progress(app.progress,encoded,sizeof encoded);CHECK(size&&decode_ui_progress(encoded,size,restored));
  CHECK(restored.count==UiHistoryCapacity&&restored.history_oldest_archived==0);
@@ -62,7 +63,9 @@ int main(int argc,char**argv){
  const size_t migrated=encode_ui_progress(app.progress,encoded,sizeof encoded);CHECK(migrated==legacy&&!std::memcmp(encoded,before_progress,legacy));
  for(unsigned i=32;i;--i){CHECK(app.history_at(app.history_index)->serial==i);if(i>1)app.history_select(1);}
  // No archive scan/write occurs for ordinary input below a window threshold.
- reset();start(3001);app.game.world.total_floor=1;app.progress.current.floors[0].floor=1;const unsigned ordinary=archive_calls;
+ reset();start(3001);valid_game=app.game;CHECK(save(valid_game,before_state));
+ std::snprintf(app.progress.current.seed_text,sizeof app.progress.current.seed_text,"HISTORY-TEST-200-FLOORS");
+ app.game.world.total_floor=1;app.progress.current.floors[0].floor=1;const unsigned ordinary=archive_calls;
  for(unsigned i=0;i<100;++i)CHECK(app.prepare_history());CHECK(archive_calls==ordinary);
  // Observe 200 distinct points through the production recording path. At the
  // first boundary, inject a failed archive and prove preflight retains both
@@ -70,11 +73,15 @@ int main(int argc,char**argv){
  for(unsigned floor=2;floor<=200;++floor){
   if(floor==96){
    CHECK(app.progress.current.floor_count==95);
+   // The long history is an explicit stress fixture: production world runs
+   // cap at 64 visited points. Keep that save validation intact, and compare
+   // a legal canonical State while the history window reaches its boundary.
+   overflow_game=app.game;app.game=valid_game;
    const size_t n=encode_ui_progress(app.progress,before_progress,sizeof before_progress);CHECK(n&&save(app.game,before_state));
    storage_ok=false;{UiCoreObserver observer(app);CHECK(!observer);}CHECK(save(app.game,after_state));
    CHECK(before_state.size==after_state.size&&!std::memcmp(before_state.bytes,after_state.bytes,before_state.size));
    const size_t after=encode_ui_progress(app.progress,encoded,sizeof encoded);CHECK(after==n&&!std::memcmp(encoded,before_progress,n));
-   storage_ok=true;
+   storage_ok=true;app.game=overflow_game;
   }
   CHECK(app.prepare_history());app.game.world.total_floor=uint16_t(floor);app.game.world.current_point=uint8_t(app.game.world.current_point^1u);
   ++app.game.revision;app.sync_progress();

@@ -6,11 +6,14 @@ import subprocess
 import argparse
 from zehn import build
 ROOT=Path(__file__).resolve().parents[1]
+# Keep renderers and hot kernels at -O2. Serialization, input dispatch and
+# event rules use the same bounded release size policy in every build entry.
+SIZE_OPTIMIZED_SOURCES=('src/original_events.cpp','src/ui_progress_codec.cpp','src/ui_input.cpp')
 
 def main()->None:
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--output',type=Path,help='Launcher output path')
-    parser.add_argument('--size-event-rules',action='store_true',default=True,help='Compatibility flag: release builds always use -Os only for original_events.cpp; all other production flags remain -O2')
+    parser.add_argument('--size-event-rules',action='store_true',default=True,help='Compatibility flag: release builds always use -Os for event rules, progress codec and UI input; renderers remain -O2')
     parser.add_argument('--trace-io',action='store_true',help='Developer-only bounded OS I/O trace; not a release/timing acceptance build')
     parser.add_argument('--compression',choices=('zlib','zopfli'),default='zlib',help='Use zopfli for compact release packaging; requires requirements-release.txt')
     args=parser.parse_args()
@@ -23,7 +26,7 @@ def main()->None:
     objects=[]
     for i,source in enumerate(sources):
         out=directory/f'{i}.o';objects.append(str(out))
-        source_flags=['-Os'] if source=='src/original_events.cpp' else []
+        source_flags=['-Os'] if source in SIZE_OPTIMIZED_SOURCES else []
         if source.endswith('.c'):
             # The unmodified SDK is C. Its tiny compatibility headers must not
             # shadow native/system headers or the game's C++ translation units.
