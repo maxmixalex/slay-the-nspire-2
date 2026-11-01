@@ -1109,3 +1109,21 @@ Focused physical-key regression cases are added and await the published rerun.
 The17×17 diagnostic guest identified the actual remaining costs per warm frame: particle simulation44.389ms, cinder drawing19.013ms, smooth glow16.757ms, flame raster6.691ms and the grid itself only2.122ms. Body/UI/other work was21.734ms. This probe uses optional reused timing slots and is not the final release performance claim. The material-only9×9 comparison showed slight softening without visible blocks at the reviewed320×240 clocks.
 
 The next source candidate therefore retains both24-particle foreground emitters and samples staggered original indices from the72 background emitters (compile-time6/8/12 stride comparison; default12,192 total retained particles). Selected particles retain their exact original60Hz trajectories, seed/index, phase and inheritance; they are neither slowed nor replaced by a new random simulation. The density discriminator reuses particle-state padding, retaining56844-byte State. The90 additive glow planes share the existing4px field after the fire pass; this intentionally simplifies their interleaving with79 normal fire layers. Actor frames, all237 fire geometries and their506-frame timeline remain intact, but final lit body pixels need not match the old composite. Native appearance/subset tests and ordinary formal guest acceptance remain required.
+
+## UI24 Timeline follow-up native evidence and fixture corrections
+
+The published physical Confirm tests and expanded Timeline integration now pass,
+as do the 297-check foundation and all 483 checks against 40 original-DLL startup
+vectors. The optional published reference tool reproduced its fixture byte for
+byte. Ten of twelve selected native targets passed in the follow-up run. Two
+remaining old fixture assumptions failed: a real newly initialized profile now
+uses NSHB rather than the synthetic NSH8 layout, and the departure timing test
+must restore the profile before fixing its discovered-act set. This checkpoint
+corrects those fixtures while retaining explicit old-format migration tests and
+canonical-state comparisons; their rerun remains pending.
+
+Ordinary USB installation/readback of the full unified candidate is complete.
+Actual firmware shows legacy compatibility with unknown obtain dates, and a new
+profile shows only Neow, locked Custom/Daily and the single initial character.
+The new-profile obtain/reveal/save-resume flow and reduced candidate acceptance
+remain in progress; these observations do not yet close the Timeline scope gate.

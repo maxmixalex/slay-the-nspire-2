@@ -12,6 +12,7 @@ static unsigned checks;
 #define CHECK(x) do{++checks;if(!(x)){std::fprintf(stderr,"character_departure_ui12:%d %s\n",__LINE__,#x);std::exit(1);}}while(0)
 static void step(unsigned ms){while(ms){const unsigned dt=ms>50?50:ms;app.advance(dt);ms-=dt;}app.render();}
 static void select(const char*seed){
+    app.restore_progress();
     app.reset_presentation();app.title=app.character_select=true;app.practice_entry=false;
     app.run_mode={};app.progress.tutorial_flags=FtueFresh|FtueSeenMask;
     // Compare transition timing under the same already-discovered act set.
