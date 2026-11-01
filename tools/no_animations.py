@@ -65,7 +65,12 @@ def ancient_rows(source, image):
         require(len(source.images)==58613,'Unexpected images after the complete UI22 catalog')
         return []
     expected_images=58613+ANCIENT_COUNT+sum((duration+32)//33 for duration in ANCIENT_DURATIONS)
-    require(len(source.aux)==ANCIENT_AUX+ANCIENT_COUNT and len(source.images)==expected_images,
+    tanx=len(source.aux)==7215
+    if tanx:
+        from tanx_scene_ui23 import validate as validate_tanx
+        validate_tanx(source,image)
+    require((len(source.aux)==ANCIENT_AUX+ANCIENT_COUNT and len(source.images)==expected_images) or
+            (tanx and len(source.images)==expected_images+7),
             'Unknown reduced-pose auxiliary extension')
     table_ids=set(source.aux[ANCIENT_AUX:ANCIENT_AUX+ANCIENT_COUNT])
     require(len(table_ids)==ANCIENT_COUNT and min(table_ids)>=58613,'Ancient tables overlap an established resource')
@@ -286,7 +291,7 @@ def prepare(data, work):
     from retired_assets_ui22 import PLAN
     source = coalesce.view(data)
     require(source.version >= MINIMUM_VERSION and len(source.clips) == 1783 and
-            len(source.images) >= 58613 and len(source.aux) in (7212,7214),
+            len(source.images) >= 58613 and len(source.aux) in (7212,7214,7215),
             'Expected the complete matching UI22 resource catalog')
     require(not reduced(data), 'The input already uses the reduced-pose profile')
     work = Path(work); work.mkdir(parents=True, exist_ok=True)

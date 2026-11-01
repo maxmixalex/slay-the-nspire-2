@@ -34,6 +34,9 @@ class ReducedPoseTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError,'overlap'):
             reduced.ancient_rows(source,image)
         source.aux.append(0)
+        with self.assertRaisesRegex(ValueError,'Tanx requires'):
+            reduced.ancient_rows(source,image)
+        source.aux.append(0)
         with self.assertRaisesRegex(ValueError,'Unknown'):
             reduced.ancient_rows(source,image)
 

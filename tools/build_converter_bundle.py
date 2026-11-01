@@ -56,7 +56,8 @@ def build(args):
         path=ROOT/relative
         if str(path) not in existing:
             datas.append((str(path),str(path.parent.relative_to(ROOT))))
-    modules += ['converter_arm_validation','unicorn','unicorn.arm_const','final_glyph_storage_ui23']
+    modules += ['converter_arm_validation','unicorn','unicorn.arm_const',
+                'unicorn.unicorn_py3.arch.arm','final_glyph_storage_ui23']
     # Native .NET binaries are already stripped and signed as appropriate for
     # their build; UPX must not rewrite their embedded bundles.
     # Analyze all stage imports to collect third-party dependencies, then keep
@@ -84,7 +85,13 @@ def build(args):
     for key in ('PYTHONPATH','PYTHONHOME','PYTHONUTF8','NSPIRE_SPINE_ADAPTER','NSPIRE_FASTNOISE_LIBRARY',
                 'NSPIRE_SPINE_RUNTIME','NSPIRE_FASTNOISE_HEADER','NSPIRE_DOTNET'):
         environment.pop(key,None)
-    smoke=subprocess.run([str(executable),'--self-test'],check=True,text=True,capture_output=True,env=environment)
+    try:
+        smoke=subprocess.run([str(executable),'--self-test'],check=True,text=True,capture_output=True,env=environment)
+    except subprocess.CalledProcessError as exc:
+        # Preserve the real frozen-interpreter diagnostic in CI build logs.
+        if exc.stdout: print(exc.stdout,file=sys.stderr)
+        if exc.stderr: print(exc.stderr,file=sys.stderr)
+        raise
     helper_test=json.loads(smoke.stdout)
     receipt=dict(schema=1,platform=sys.platform,embedded_python=True,native_cpp_converter=False,
         separately_installed_python_required=False,dotnet_sdk_required=False,cxx_compiler_required=False,

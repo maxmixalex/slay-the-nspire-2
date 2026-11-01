@@ -270,6 +270,9 @@ def add_final_stages(recipe, source_editions, output, codes, no_animations):
     target = recipe.directory('pruned46')/'eng.nsp'
     recipe.add('pruned46', '@optional-orphan-prune', [logical, target, str(elf) if elf else ''],
                [target, target.with_suffix('.json')]); logical = target
+    target = recipe.directory('tanx46')/'eng.nsp'
+    recipe.add('tanx46','tanx_scene_ui23',['--input',logical,'--output',target,'--pck',recipe.pck,
+        '--work',recipe.directory('cache/tanx46')],[target,target.with_suffix('.json')]);logical=target
     target = recipe.directory('quality46')/'eng.nsp'
     selection_policy = None if no_animations else getattr(recipe, 'selection_policy', DEFAULT_SELECTION_POLICY)
     selection_overrides = {} if no_animations else getattr(recipe, 'selection_overrides', DEFAULT_SELECTION_OVERRIDES)

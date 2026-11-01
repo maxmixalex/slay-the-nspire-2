@@ -4,6 +4,8 @@
 #include "doom_assets.hpp"
 #include "fake_merchant_assets_ui13.hpp"
 #include "fake_merchant_presentation.hpp"
+#include "tanx_particles_ui23.hpp"
+#include "tanx_scene_ui23.hpp"
 #include "random_character_assets.hpp"
 #include "source_water_reflection.hpp"
 #include "phobia_swarm.hpp"

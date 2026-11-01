@@ -97,6 +97,8 @@ static void native_ancient_screen(Canvas&c){
   if(darv)fake_merchant::stars(c,clock,
       fake_merchant::hash(uint32_t(a.game.seed)^uint32_t(a.game.floor)*0x9e3779b9u^0x44415256u),true);
  }
+ if(e.id==OriginalEventId::Tanx)tanx_scene::draw(
+   c,reduced?0u:a.map_clock_ms-d.entered,reduced?0u:a.map_clock_ms,d.entered);
  if(reduced)ancient_still_store(c,background,d.entered);
  }
  const int dialogue_height=ancient_measure(c,count),top=d.y(a.map_clock_ms)+d.scroll;

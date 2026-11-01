@@ -29,6 +29,7 @@ static void map_screen(Canvas&c,bool inspect=false){
 }
 #include "merchant_ui.inc"
 #include "fake_merchant_ui13.inc"
+#include "tanx_scene_ui23.inc"
 #include "events_ui.inc"
 
 static void deck_select(Canvas&c){
