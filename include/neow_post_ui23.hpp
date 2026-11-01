@@ -128,6 +128,14 @@ inline void render(uint16_t*pixels,int pitch,const Snapshot&source,const Table&t
   const Axis noise_y[]={noise_axis(-21062688+int(y)*145269,phase),noise_axis(-21062688+int(y+1)*145269,phase)};
   const Axis mask_y[]={mask_axis(-21062688+int(y)*145269),mask_axis(-21062688+int(y+1)*145269)};
   for(unsigned x=Left;x<Right;x+=2){
+   // Mask coverage is independent of time and displacement. A zero quad
+   // cannot affect the framebuffer or its neighbours; skip its noise/LOD.
+   unsigned coverage[4],visible=0;
+   for(unsigned i=0;i<4;++i){const Axis mx=mask_x[x+(i&1)-Left],my=mask_y[i>>1];
+    coverage[i]=mx.low==255||my.low==255?0:(bilinear_axes<100>(mask,mx,my)+128)>>8;
+    visible|=coverage[i];
+   }
+   if(!visible)continue;
    int sx[4],sy[4];
    for(unsigned i=0;i<4;++i){const unsigned xx=x+(i&1),yy=y+(i>>1);
     const unsigned n=table.still?word(table.data+NoiseAt+((yy-Top)*(Right-Left)+xx-Left)*2):bilinear_axes<128>(table.data+NoiseAt,noise_x[xx-Left],noise_y[i>>1]);
@@ -137,9 +145,8 @@ inline void render(uint16_t*pixels,int pitch,const Snapshot&source,const Table&t
    uint64_t horizontal[2],vertical[2];
    for(unsigned row=0;row<2;++row){const unsigned at=row*2;const int dx=sx[at+1]-sx[at],dy=sy[at+1]-sy[at];horizontal[row]=uint64_t(int64_t(dx)*dx+int64_t(dy)*dy);}
    for(unsigned col=0;col<2;++col){const int dx=sx[col+2]-sx[col],dy=sy[col+2]-sy[col];vertical[col]=uint64_t(int64_t(dx)*dx+int64_t(dy)*dy);}
-   for(unsigned i=0;i<4;++i){const unsigned xx=x+(i&1),yy=y+(i>>1);const Axis mx=mask_x[xx-Left],my=mask_y[i>>1];
-    if(mx.low==255||my.low==255)continue;
-    const unsigned alpha=(bilinear_axes<100>(mask,mx,my)+128)>>8;if(!alpha)continue;
+   for(unsigned i=0;i<4;++i){const unsigned xx=x+(i&1),yy=y+(i>>1),alpha=coverage[i];
+    if(!alpha)continue;
     const uint64_t a=horizontal[i>>1],b=vertical[i&1];const unsigned index=unsigned(((a>b?a:b)+(1u<<23))>>24);
     const unsigned lod=index>1024?256:word(lod_values+index*2);
     uint16_t color=sample(source.full,320,240,sx[i],sy[i]);

@@ -37,6 +37,7 @@ int main(){
   auto pixel=[&](int px,int py){if(repeat){px=(px+int(field.width))%int(field.width);py=(py+int(field.height))%int(field.height);}else{px=bound(px,0,field.width-1);py=bound(py,0,field.height-1);}return bytes[py*field.width+px];};
   const double exact=((pixel(ix,iy)*(1-fx)+pixel(ix+1,iy)*fx)*(1-fy)+(pixel(ix,iy+1)*(1-fx)+pixel(ix+1,iy+1)*fx)*fy)/255*1048576;
   CHECK(std::abs(field.sample(u,v,0,repeat)-exact)<.51);
+  CHECK(std::abs(field.sample_lcd(u,v,0,repeat)-exact)<=513.0);
  }
  for(unsigned value=0;value<=255;++value){uint8_t byte=uint8_t(value);Field constant;constant.width=constant.height=constant.channels=1;constant.pages[0]=&byte;CHECK(std::abs(constant.sample(-100,200,0,true)-double(value)*1048576/255)<.51);}
  // Exact pre-optimization integer oracle, separate from the floating source

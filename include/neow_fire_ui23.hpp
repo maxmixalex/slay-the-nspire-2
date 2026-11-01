@@ -114,9 +114,15 @@ struct Table {
 struct Shader {
  const ancient_fire_ui23::Field*field=nullptr;
  ancient_fire_ui23::Model model;
- int pan[4][2]{};unsigned inverse=0;
+ int pan[4][2]{};unsigned inverse=0;bool lcd_sampling=false;
  void bind(const ancient_fire_ui23::Field*f,const uint8_t*parameters,uint32_t clock){
   field=f;model.read(parameters);const unsigned time=clock%200000;
+  // Only the pinned Neow field layout uses the measured LCD interpolation.
+  // Other valid material layouts retain the original Q20 source equation.
+  lcd_sampling=f[0].width==600&&f[0].height==636&&f[0].channels==1&&
+      f[1].width==250&&f[1].height==250&&f[1].channels==3&&
+      f[2].width==256&&f[2].height==256&&f[2].channels==3&&
+      f[3].width==100&&f[3].height==100&&f[3].channels==2;
   for(unsigned i=0;i<4;++i)for(unsigned j=0;j<2;++j)pan[i][j]=int(int64_t(model.q[i*5+2+j])*time/16000);
   inverse=unsigned((uint64_t(1048576)<<24)/unsigned(model.q[31]-model.q[30]));
   // The two authored models share unit/half-unit UV scales. Validate that
@@ -127,22 +133,29 @@ struct Shader {
      q[15]==16777216&&q[16]==16777216&&q[20]==16777216&&q[21]==33554432&&q[24]==16777216)
    inverse|=0x80000000u|(scale==8388608?0x40000000u:0u);
  }
+ int sample(unsigned index,int u,int v,unsigned channel,bool repeat)const{
+  return lcd_sampling?field[index].sample_lcd(u,v,channel,repeat):field[index].sample(u,v,channel,repeat);
+ }
+ void sample_rg(unsigned index,int u,int v,bool repeat,int&r,int&g)const{
+  if(lcd_sampling)field[index].sample_lcd_rg(u,v,repeat,r,g);
+  else field[index].sample_rg(u,v,repeat,r,g);
+ }
  unsigned alpha_unit(int u,int v)const{
   using namespace ancient_fire_ui23;const auto&q=model.q;
-  int ar,ag,br,bg;field[1].sample_rg(u+pan[2][0],v+pan[2][1],true,ar,ag);field[2].sample_rg(u+pan[3][0],v+pan[3][1],true,br,bg);
+  int ar,ag,br,bg;sample_rg(1,u+pan[2][0],v+pan[2][1],true,ar,ag);sample_rg(2,u+pan[3][0],v+pan[3][1],true,br,bg);
   int dx=scaled(ar,q[14])+scaled(br,q[19]),dy=scaled(ag,q[14])+scaled(bg,q[19]);
-  int mr,mg;field[3].sample_rg(u+(q[26]>>4),scaled(v,q[25])+(q[27]>>4),false,mr,mg);dx=product(dx,mr);dy=product(dy,mg);
-  const int base=field[2].sample(u+dx,v+dy,2,false);
+  int mr,mg;sample_rg(3,u+(q[26]>>4),scaled(v,q[25])+(q[27]>>4),false,mr,mg);dx=product(dx,mr);dy=product(dy,mg);
+  const int base=sample(2,u+dx,v+dy,2,false);
   // Unit-strength noise and the mask each lie in [0,Q20]. Monotonic
   // bounds can prove the final smoothstep endpoint before remaining samples.
   if(base*32<=q[30])return 0;
-  const int mask=1048576-field[2].sample(u+(q[22]>>4),2*(v-41943)+41943+(q[23]>>4),2,false);
+  const int mask=1048576-sample(2,u+(q[22]>>4),2*(v-41943)+41943+(q[23]>>4),2,false);
   if(product(1048576+mask,base)*16<=q[30])return 0;
   if(product(mask,base)*16>=q[31])return 1048576;
   const int nu=inverse&0x40000000u?u>>1:u,nv=inverse&0x40000000u?v>>1:v;
-  const int n1=field[0].sample(nu+pan[0][0],nv+pan[0][1],0,true);
+  const int n1=sample(0,nu+pan[0][0],nv+pan[0][1],0,true);
   if(product(n1+mask,base)*16<=q[30])return 0;
-  const int n2=field[0].sample(nu+pan[1][0],nv+pan[1][1],0,true);
+  const int n2=sample(0,nu+pan[1][0],nv+pan[1][1],0,true);
   const int strength=product(product(n1,n2)+mask,base)*16;
   return smooth(strength,q[30],q[31],inverse&0x3fffffffu);
  }

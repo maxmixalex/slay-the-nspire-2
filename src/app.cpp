@@ -8,6 +8,7 @@
 #include "fake_merchant_presentation.hpp"
 #include "ancient_gpu_masks_ui23.hpp"
 #include "nonu_fog_ui23.hpp"
+#include "light_quad_rows.hpp"
 #include "neow_particles_ui23.hpp"
 #include "neow_post_ui23.hpp"
 #include "tanx_particles_ui23.hpp"

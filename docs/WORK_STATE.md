@@ -1,3 +1,31 @@
+# UI23 current continuation — Neow renderer checkpoint, acceptance pending
+
+The recovered active source is `2825d65`; the older local `5ad3be4` checkout
+and its dirty edits are preserved separately and are not the current baseline.
+The ordinary 64 MiB Firebird path remains available. The latest historical
+Neow result is 5.595 FPS / 178.360 ms; that is an open performance failure.
+The linked allocation limit remains 22,291,016 bytes, without a heap increase.
+
+This source checkpoint advances light UV row quotients without per-row wide
+division, restores exact source support rejection for qualified light textures,
+and skips fully transparent Neow post-process quads. A pinned-field Neow fire
+path uses twelve fractional bits per bilinear weight while retaining source
+texture bytes, dimensions, Q20 UV coordinates, geometry and clocks. Each field
+sample differs from the original normalized filter by at most 513/Q20; complete
+shader/frame error and guest performance still require actual-source validation.
+Other valid field layouts retain the original equation. Actor raster quality
+and action frames are unchanged. No resource/cache/heap capacity is increased.
+
+Focused checks pass 4,800,000 exact light-row comparisons, 250,240 fire table/
+sampling checks, 95,492 Neow shader/mask checks and 1,987,948 exact post checks.
+The recovered light-support probe historically matched all pixels and reduced
+its native thread-CPU interval 8.6%; this is not a new device measurement. Native
+real-pack layer profiling identifies fire (~50%), lights (~22%), post (~15%) and
+fog (~10%) as the current hot paths. Actual-source visual comparison, production
+ARM size, full native gates and measured Firebird improvement remain pending.
+Final resource conversion, continuous affliction materials, history storage,
+and three matching release ZIPs remain open and are owned by parallel tasks.
+
 # UI23 complete-resource candidate — public full replay passed; performance open
 
 As of 2026-11-01, the complete 7229/60294 Ancient catalog includes the previously

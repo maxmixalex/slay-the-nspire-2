@@ -54,6 +54,25 @@ struct Field {
   const unsigned q=unsigned((uint64_t(a)*(1048576-fy)+uint64_t(b)*fy+524288)>>20);
   return int((uint64_t(q)*16843009u+2147483648u)>>32); // Exact byte/255 to nearest Q20.
  }
+ // LCD shader sampling retains the original Q20 UV and source bytes, using
+ // twelve fractional bits for each bilinear weight. Its normalized error is
+ // at most 513/Q20 (under 0.00049), before the authored shader equation. The
+ // complete weighted sum fits uint32: 255*4096*4096 < UINT32_MAX. This avoids
+ // repeated 64-bit interpolation products on ARM926 without resizing a field.
+ int sample_lcd(const Coordinates&c,unsigned channel)const{
+  const int p00=int(texel(c.at[0]+channel)),p10=int(texel(c.at[1]+channel));
+  const int p01=int(texel(c.at[2]+channel)),p11=int(texel(c.at[3]+channel));
+  const unsigned fx=c.fx>>8,fy=c.fy>>8;
+  const int a=p00*4096+(p10-p00)*int(fx),b=p01*4096+(p11-p01)*int(fx);
+  const uint32_t weighted=(uint32_t(a)<<12)+uint32_t(b-a)*fy;
+  return int((weighted+2040u)/4080u);
+ }
+ int sample_lcd(int u,int v,unsigned channel,bool repeat)const{
+  return sample_lcd(coordinates(u,v,repeat),channel);
+ }
+ void sample_lcd_rg(int u,int v,bool repeat,int&r,int&g)const{
+  const auto c=coordinates(u,v,repeat);r=sample_lcd(c,0);g=sample_lcd(c,1);
+ }
  void sample_rg(int u,int v,bool repeat,int&r,int&g)const{
   const auto c=coordinates(u,v,repeat);r=sample(c,0);g=sample(c,1);
  }

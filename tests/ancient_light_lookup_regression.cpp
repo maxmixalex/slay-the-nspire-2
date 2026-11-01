@@ -18,6 +18,16 @@ int main(){
  RandomLightQuadCache cache;CHECK(cache.bind(app.content,texture));CHECK(cache.native_lookup);
  std::vector<uint16_t> first(320*240),second(first.size());
  struct Pose{int x,y,w,h,angle,shear;};const Pose poses[]={{40960,30720,65536,65536,0,0},{-1000,20000,40000,18000,273,-12738},{50000,40000,90000,80000,731,22000},{40960,30720,128,256,0,0},{20000,20000,30000,40000,-271,-14000}};
+ for(unsigned bordered=0;bordered<2;++bordered){
+  if(bordered){for(unsigned i=0;i<65536;++i){const bool inside=(i&255)>=64&&(i&255)<192&&(i>>8)>=48&&(i>>8)<208;if(!inside)raw[1+i*2]=raw[2+i*2]=0;}cache.observed=false;CHECK(cache.bind(app.content,texture));CHECK(cache.native_lookup);CHECK(cache.native_bounds[1][0]==64&&cache.native_bounds[1][1]==191&&cache.native_bounds[1][2]==48&&cache.native_bounds[1][3]==207);}
+ // Independently scan each threshold, including empty and 255-edge support.
+ for(unsigned level=1;level<64;++level){unsigned xmin=255,xmax=0,ymin=255,ymax=0;
+  for(unsigned at=0;at<65536;++at){const unsigned color=raw[1+at*2]|unsigned(raw[2+at*2])<<8;
+   const unsigned q=mx((color>>11)*2,(color>>5)&63u);if(q<level)continue;
+   xmin=mn(xmin,at&255);xmax=mx(xmax,at&255);ymin=mn(ymin,at>>8);ymax=mx(ymax,at>>8);
+  }
+  const auto&box=cache.native_bounds[level];CHECK(box[0]==xmin&&box[1]==xmax&&box[2]==ymin&&box[3]==ymax);
+ }
  for(auto pose:poses)for(unsigned opacity:{0u,1u,91u,255u})for(unsigned mod:{0u,127u,255u}){
   for(unsigned i=0;i<first.size();++i)first[i]=second[i]=uint16_t(i*4793+0x187f);
   Canvas a{app,first.data()},b{app,second.data()};a.brightness=b.brightness=mod;
@@ -25,6 +35,19 @@ int main(){
   fake_merchant::quad(b,texture,pose.x,pose.y,pose.w,pose.h,pose.angle,234,181,91,opacity,presentation::Add,pose.shear,&cache);
   CHECK(first==second);
  }
+ }
+ // Empty support and the final texel use inclusive uint8 endpoints safely.
+ for(auto&byte:raw)byte=0;
+ cache.observed=false;CHECK(cache.bind(app.content,texture));CHECK(cache.native_lookup);
+ for(unsigned q=1;q<64;++q)CHECK(cache.native_bounds[q][0]>cache.native_bounds[q][1]);
+ raw[1+65535*2]=raw[2+65535*2]=255;
+ cache.observed=false;CHECK(cache.bind(app.content,texture));CHECK(cache.native_lookup);
+ for(unsigned q=1;q<64;++q){const auto&box=cache.native_bounds[q];CHECK(box[0]==255&&box[1]==255&&box[2]==255&&box[3]==255);}
+ for(unsigned i=0;i<first.size();++i)first[i]=second[i]=0x187f;
+ Canvas edge_a{app,first.data()},edge_b{app,second.data()};
+ fake_merchant::quad(edge_a,texture,120*256,110*256,256*256,256*256,0,255,255,255,255,presentation::Add);
+ fake_merchant::quad(edge_b,texture,120*256,110*256,256*256,256*256,0,255,255,255,255,presentation::Add,0,&cache);
+ CHECK(first==second);
  // Reject every proof premise independently; never infer it from dimensions.
  const uint8_t saved=alpha[65535];alpha[65535]=254;cache.observed=false;CHECK(cache.bind(app.content,texture));CHECK(!cache.native_lookup);alpha[65535]=saved;
  const auto lo=raw[1],hi=raw[2];raw[1]=1;raw[2]=0;cache.observed=false;CHECK(cache.bind(app.content,texture));CHECK(!cache.native_lookup);

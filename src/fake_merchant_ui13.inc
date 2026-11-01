@@ -58,6 +58,21 @@ static void quad(Canvas c,const water_reflection::Texture&tex,int cx,int cy,int 
  const bool native_lookup=direct&&tex.width()==256&&tex.height()==256&&light_cache&&
    light_cache->valid&&light_cache->native_lookup&&light_cache->picture.pixels==storage.pixels&&
    light_cache->picture.alpha==storage.alpha&&light_cache->picture.palette==storage.palette;
+
+ int minimum_u=0,minimum_v=0;unsigned extent_u=65536,extent_v=65536;
+ if(native_lookup){
+  // Channel modulation is monotone. The greatest q whose upper bound
+  // (R=B=floor(q/2),G=q) adds zero proves every lower source texel invisible.
+  unsigned limit=0;
+  while(limit<63){const unsigned q=limit+1;
+   if(contribution.weighted(uint16_t(((q>>1)<<11)|(q<<5)|(q>>1))))break;++limit;
+  }
+  if(limit==63)return;
+  const auto&box=light_cache->native_bounds[limit+1];
+  if(box[0]>box[1]||box[2]>box[3])return;
+  minimum_u=int(box[0])*256;minimum_v=int(box[2])*256;
+  extent_u=(unsigned(box[1])-box[0]+1)*256;extent_v=(unsigned(box[3])-box[2]+1)*256;
+ }
  uint16_t native_contribution[256];
  if(native_lookup){
   for(unsigned green=0;green<64;++green)for(unsigned red=green<3?0:(green-2)/2,
@@ -66,14 +81,12 @@ static void quad(Canvas c,const water_reflection::Texture&tex,int cx,int cy,int 
   }
  }
 
- for(int y=top;y<bottom;++y){
-  const int dx=left*256+128-cx,dy=y*256+128-cy;
-  const int64_t vy=-int64_t(dx)*sn+int64_t(dy)*cs;
-  int u=32768+int(((int64_t(dx)*cs+int64_t(dy)*sn)*64-vy*shear/1024)/w);
-  int v=32768+int(vy*64/h);
+ LightQuadRows rows(left*256+128-cx,top*256+128-cy,sn,cs,w,h,shear);
+ for(int y=top;y<bottom;++y,rows.next()){
+  int u=rows.x(),v=rows.y();
   if(native_lookup){
    for(int x=left;x<right;++x,u+=du,v+=dv){
-    if(unsigned(u)>=65536u||unsigned(v)>=65536u)continue;
+    if(unsigned(u)-unsigned(minimum_u)>=extent_u||unsigned(v)-unsigned(minimum_v)>=extent_v)continue;
     const unsigned at=(unsigned(v)&0xff00u)|(unsigned(u)>>8);
     const uint8_t*p=storage.pixels+at*2;const unsigned color=p[0]|unsigned(p[1])<<8;
     const unsigned amount=native_contribution[((color>>3)&0xfcu)|(color&3u)];

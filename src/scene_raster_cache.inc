@@ -116,6 +116,9 @@ struct RandomLightQuadCache {
     uint8_t safe[256*256/8];
     uint8_t maximum[TileWidth*TileWidth];
     uint8_t minimum[TileWidth*TileWidth];
+    // Inclusive source support for channel bound q>=level. Zero contributions
+    // may tighten nearest-sample UV rejection without moving a sample.
+    uint8_t native_bounds[64][4];
     const Content*owner=nullptr;
     Picture picture{};
     uint32_t generation=0;
@@ -135,6 +138,7 @@ struct RandomLightQuadCache {
         logical_width=texture.width();logical_height=texture.height();observed=true;valid=false;
         if(!texture.valid()||p.format>3||logical_width!=256||logical_height!=256)return false;
         native_lookup=true;
+        for(auto&box:native_bounds){box[0]=box[2]=255;box[1]=box[3]=0;}
         for(auto&byte:safe)byte=0;
         for(auto&byte:maximum)byte=0;
         for(auto&byte:minimum)byte=255;
@@ -143,6 +147,9 @@ struct RandomLightQuadCache {
             const uint16_t a=sample.color,b=texture.at(x+1,y).color;
             const int difference=int(a>>11)*2-int((a>>5)&63);
             if(sample.alpha!=255||(a>>11)!=(a&31)||difference< -3||difference>1)native_lookup=false;
+            const unsigned q=mx(unsigned(a>>11)*2,unsigned((a>>5)&63));auto&box=native_bounds[q];
+            box[0]=uint8_t(mn(unsigned(box[0]),x));box[1]=uint8_t(mx(unsigned(box[1]),x));
+            box[2]=uint8_t(mn(unsigned(box[2]),y));box[3]=uint8_t(mx(unsigned(box[3]),y));
             const uint16_t c=texture.at(x,y+1).color,d=texture.at(x+1,y+1).color;
             const unsigned red=mx(mx(a>>11,b>>11),mx(c>>11,d>>11));
             const unsigned green=mx(mx((a>>5)&63,(b>>5)&63),mx((c>>5)&63,(d>>5)&63));
@@ -156,6 +163,11 @@ struct RandomLightQuadCache {
                 const unsigned at=y*256+x;safe[at>>3]|=uint8_t(1u<<(at&7));
             }
         }}
+        for(int q=62;q>=0;--q){auto&box=native_bounds[q];const auto&next=native_bounds[q+1];
+            if(next[0]>next[1]||next[2]>next[3])continue;
+            box[0]=uint8_t(mn(unsigned(box[0]),unsigned(next[0])));box[1]=uint8_t(mx(unsigned(box[1]),unsigned(next[1])));
+            box[2]=uint8_t(mn(unsigned(box[2]),unsigned(next[2])));box[3]=uint8_t(mx(unsigned(box[3]),unsigned(next[3])));
+        }
         valid=true;return true;
     }
 };
