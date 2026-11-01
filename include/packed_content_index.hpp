@@ -10,6 +10,9 @@
 namespace packed_content_index {
 struct Entry {const char* key;unsigned short index;};
 static_assert(sizeof(unsigned)==4&&sizeof(unsigned short)==2,"Content index word sizes");
+constexpr int compare_strings(const char*a,const char*b){
+ while(*a&&*a==*b){++a;++b;}return static_cast<unsigned char>(*a)-static_cast<unsigned char>(*b);
+}
 constexpr unsigned prefix_length(const char*key){unsigned n=0;while(key[n]&&key[n]!='.')++n;return n;}
 constexpr bool same_group(const char*a,const char*b){
  unsigned n=0;while(a[n]&&a[n]!='.'&&a[n]==b[n])++n;
@@ -35,6 +38,7 @@ template<> struct OffsetType<true> {using type=unsigned short;};
 template<bool Relative,unsigned Groups> struct KeyBases {};
 template<unsigned Groups> struct KeyBases<true,Groups> {unsigned key_bases[Groups]{};};
 template<unsigned N,unsigned Bytes,unsigned GroupBytes,unsigned Groups,bool Relative=false> struct Table:KeyBases<Relative,Groups> {
+ static constexpr unsigned GroupCount=Groups;
  static_assert(N<=65535&&Groups>0&&Groups<=N&&GroupBytes<=65536,"Bounded content index groups");
  using Offset=typename OffsetType<(Bytes<=65536||Relative)>::type;
  Offset offsets[N]{};
@@ -52,6 +56,26 @@ template<unsigned N,unsigned Bytes,unsigned GroupBytes,unsigned Groups,bool Rela
   }else return key(i,0);
  }
  constexpr const char*group(unsigned i)const{return group_keys+group_offsets[i];}
+ constexpr int compare_key(unsigned i,unsigned base,const char*query)const{return compare_strings(key(i,base),query);}
+};
+// Generated text keys share their first local component and remaining suffix.
+// Both fragments stay literal strings. Lookup compares them directly without
+// expansion, an auxiliary buffer, hashing, allocation or a startup scan.
+template<unsigned N,unsigned PrefixBytes,unsigned SuffixBytes,unsigned GroupBytes,unsigned Groups> struct Fragments {
+ static_assert(N<=65535&&PrefixBytes<=65536&&SuffixBytes<=65536&&GroupBytes<=65536,
+               "Fragment offsets and values remain exact 16-bit quantities");
+ static constexpr unsigned GroupCount=Groups;
+ unsigned short prefix_offsets[N],suffix_offsets[N],values[N],group_offsets[Groups],first[Groups],end[Groups];
+ char prefixes[PrefixBytes],suffixes[SuffixBytes],group_keys[GroupBytes];
+ constexpr const char*prefix(unsigned i)const{return prefixes+prefix_offsets[i];}
+ constexpr const char*suffix(unsigned i)const{return suffixes+suffix_offsets[i];}
+ constexpr const char*group(unsigned i)const{return group_keys+group_offsets[i];}
+ constexpr unsigned group_base(unsigned)const{return 0;}
+ constexpr int compare_key(unsigned i,unsigned,const char*query)const{
+  const char*p=prefix(i);while(*p&&*p==*query){++p;++query;}
+  if(*p)return static_cast<unsigned char>(*p)-static_cast<unsigned char>(*query);
+  return compare_strings(suffix(i),query);
+ }
 };
 template<unsigned Bytes,unsigned GroupBytes,unsigned Groups,bool Relative=false,unsigned N>
 constexpr Table<N,Bytes,GroupBytes,Groups,Relative> make(const Entry(&rows)[N]){

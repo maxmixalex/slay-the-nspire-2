@@ -34,6 +34,10 @@ def checked_plan():
     return PLAN
 
 
+FRAGMENT_WORLD_SOURCE_SHA='38a7a94cdb7f5e372fde42bce0c5cb0d8d2f8d25e71080b07e1ca318e4ab3297'
+FRAGMENT_TEXT_TABLE_SHA='9a6fc6a83493c3d29996fbd44b6d22b0d3bfccbfd88cb96b770cdfd64a7c24d3'
+
+
 def route_digest(relative, raw):
     """Recognize only the reviewed text-offset and move-table representations.
 
@@ -44,12 +48,13 @@ def route_digest(relative, raw):
     body without changing the resource plan/marker or allowing a new route.
     """
     actual=hashlib.sha256(raw).hexdigest()
-    # b5fcd5e stores the same 4,361 text keys/IDs with within-group
-    # 16-bit offsets. The complete audited source is the only accepted alias;
-    # all image/clip routes, lookup results and the resource marker stay fixed.
+    # These complete audited sources keep all4,361 text keys/IDs: the first
+    # uses relative16-bit offsets, the second shares literal key fragments.
+    # The generated fragment table is separately pinned below. Image/clip
+    # routes, lookup results and the resource marker stay fixed.
     # Do not generalize this to future edits or normalize arbitrary source.
     if (relative=='src/world_content.inc' and
-        actual=='88a8cb735142229d55da4339ba880b3c8f8b06aba4c0214dab1f0c56ab9d6ccd'):
+        actual in ('88a8cb735142229d55da4339ba880b3c8f8b06aba4c0214dab1f0c56ab9d6ccd',FRAGMENT_WORLD_SOURCE_SHA)):
         return '70fd191cae886f76a278d712de2a25e1c7de9d819d3afdf976cdd6db3d2f7e97'
     if relative!='src/world_enemy_assets.inc' or actual==PLAN['runtime_route_sources'].get(relative):
         return actual
@@ -71,6 +76,9 @@ def verify_runtime_routes():
     for relative,expected in PLAN['runtime_route_sources'].items():
         t.require(route_digest(relative,(ROOT/relative).read_bytes())==expected,
                   'Retirement routing must be reviewed again: '+relative)
+    if t.sha256((ROOT/'src/world_content.inc').read_bytes())==FRAGMENT_WORLD_SOURCE_SHA:
+        t.require(t.sha256((ROOT/'src/world_text_fragments.inc').read_bytes())==FRAGMENT_TEXT_TABLE_SHA,
+                  'Generated text routes must match the complete reviewed table')
     # Also reject a newly introduced literal consumer in another translation
     # unit. Dynamic world selection remains bounded by the pinned model graph.
     names=('body/idle_loop','reactions/attack_left','reactions/hurt_left',

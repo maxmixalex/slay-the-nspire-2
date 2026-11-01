@@ -55,21 +55,37 @@ static constexpr auto large_relative=packed_content_index::make<large_layout.key
 static_assert(large_relative.offsets[1]==65535&&large_relative.offsets[2]==0,"Exact relative offset endpoint and group reset");
 static_assert(large_relative.group_base(1)==65537&&large_relative.key(1)[0]=='z'&&large_relative.key(2)[0]==0,"Large absolute pool reconstruction");
 static_assert(world_text_layout.groups==25&&world_text_layout.max_group_bytes==36572,"Current grouped source bounds");
-static_assert(sizeof(decltype(world_text_index)::Offset)==2,"Relative text offsets stay 16-bit");
 static constexpr auto absolute_text=packed_content_index::make<world_text_layout.key_bytes,world_text_layout.group_bytes,world_text_layout.groups>(world_text_source);
-static_assert(sizeof(absolute_text)-sizeof(world_text_index)==8624,"Measured aligned readonly saving");
+static constexpr auto relative_text=packed_content_index::make<world_text_layout.key_bytes,world_text_layout.group_bytes,world_text_layout.groups,true>(world_text_source);
+static_assert(sizeof(decltype(relative_text)::Offset)==2,"Relative text offsets stay 16-bit");
+static_assert(sizeof(absolute_text)-sizeof(relative_text)==8624,"Previous aligned readonly saving");
+static_assert(sizeof(relative_text)-sizeof(world_text_index)>=69000,"Shared literal fragments recover at least69KB without a runtime pool");
 int main(){
  for(unsigned g=0;g<world_text_layout.groups;++g){
-  const unsigned base=world_text_index.group_base(g);
-  CHECK(base==absolute_text.offsets[world_text_index.first[g]]);
-  for(unsigned i=world_text_index.first[g];i<world_text_index.end[g];++i){
-   CHECK(base+world_text_index.offsets[i]==absolute_text.offsets[i]);
-   CHECK(!std::strcmp(world_text_index.key(i,base),absolute_text.key(i)));
+  const unsigned base=relative_text.group_base(g);
+  CHECK(base==absolute_text.offsets[relative_text.first[g]]);
+  CHECK(world_text_index.first[g]==relative_text.first[g]&&world_text_index.end[g]==relative_text.end[g]);
+  CHECK(!std::strcmp(world_text_index.group(g),relative_text.group(g)));
+  for(unsigned i=relative_text.first[g];i<relative_text.end[g];++i){
+   CHECK(base+relative_text.offsets[i]==absolute_text.offsets[i]);
+   CHECK(!std::strcmp(relative_text.key(i,base),absolute_text.key(i)));
+   CHECK(world_text_index.prefix_offsets[i]<sizeof world_text_index.prefixes&&world_text_index.suffix_offsets[i]<sizeof world_text_index.suffixes);
+   const std::string key=std::string(world_text_index.prefix(i))+world_text_index.suffix(i);
+   CHECK(key==relative_text.key(i,base)&&world_text_index.values[i]==relative_text.values[i]);
+   const char*group=world_text_index.group(g);CHECK(wc_find(world_text_index,group,key.c_str())==wc_find(relative_text,group,key.c_str()));
+   const auto absent=key+"~missing";CHECK(wc_find(world_text_index,group,absent.c_str())==wc_find(relative_text,group,absent.c_str()));
+   const auto boundary=std::strlen(world_text_index.prefix(i));
+   for(size_t at:{size_t(0),boundary?boundary-1:0,boundary,key.size()}){
+    auto changed=key;if(at<changed.size())changed[at]='\1';else changed+='\1';
+    CHECK(wc_find(world_text_index,group,changed.c_str())==wc_find(relative_text,group,changed.c_str()));
+   }
+   const char*last=std::strrchr(world_text_source[i].key,'.');const std::string nested(world_text_source[i].key,last-world_text_source[i].key);
+   CHECK(wc_find(world_text_index,nested.c_str(),last+1)==wc_find(relative_text,nested.c_str(),last+1));
   }
  }
  compare(world_text_source,absolute_text);
  compare(large_boundary,large_relative);
- compare(world_text_source,world_text_index);compare(world_image_source,world_image_index);
+ compare(world_text_source,relative_text);compare(world_image_source,world_image_index);
  compare(world_clip_source,world_clip_index);compare(boundary,packed);
  Content content;
  for(const auto&row:world_text_source){
@@ -79,6 +95,8 @@ int main(){
   CHECK(content.world_string_id(group.c_str(),key)==(native>=0?native:row.index));
  }
  CHECK(content.world_string_id(nullptr,"x")==-1&&content.world_string_id("x",nullptr)==-1);
+ const std::string long_text(256,'x');
+ CHECK(wc_find(world_text_index,long_text.c_str(),"x")==-1&&wc_find(world_text_index,"x",long_text.c_str())==-1);
  const unsigned entries=sizeof(world_text_source)/sizeof(world_text_source[0])+sizeof(world_image_source)/sizeof(world_image_source[0])+sizeof(world_clip_source)/sizeof(world_clip_source[0]);
- std::printf("packed content index: %u checks; %u source entries; exact production lookup and IDs; no resource input\n",checks,entries);
+ std::printf("packed content index: %u checks; %u source entries; %zu exact readonly bytes saved; no resource input\n",checks,entries,sizeof(relative_text)-sizeof(world_text_index));
 }

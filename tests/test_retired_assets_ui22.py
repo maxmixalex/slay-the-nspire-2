@@ -21,15 +21,23 @@ from test_release_content_guard import fixture
 
 
 class RetirementGuardTest(unittest.TestCase):
-    def test_reviewed_relative_text_offsets_have_one_exact_source_alias(self):
+    def test_reviewed_text_fragments_have_an_exact_source_alias(self):
         relative='src/world_content.inc';raw=(retired.ROOT/relative).read_bytes()
-        self.assertEqual(t.sha256(raw),'88a8cb735142229d55da4339ba880b3c8f8b06aba4c0214dab1f0c56ab9d6ccd')
+        self.assertEqual(t.sha256(raw),retired.FRAGMENT_WORLD_SOURCE_SHA)
         self.assertEqual(retired.route_digest(relative,raw),retired.PLAN['runtime_route_sources'][relative])
         self.assertEqual(retired.route_digest('src/not-a-reviewed-route.inc',raw),t.sha256(raw))
         for at in (0,raw.index(b'group_base(lo)'),len(raw)-1):
             changed=bytearray(raw);changed[at]^=1
             with self.subTest(byte=at):
                 self.assertNotEqual(retired.route_digest(relative,changed),retired.PLAN['runtime_route_sources'][relative])
+
+    def test_generated_text_routes_remain_pinned(self):
+        path=retired.ROOT/'src/world_text_fragments.inc';raw=path.read_bytes()
+        self.assertEqual(t.sha256(raw),retired.FRAGMENT_TEXT_TABLE_SHA)
+        retired.verify_runtime_routes()
+        changed=bytearray(raw);changed[len(changed)//2]^=1;read=Path.read_bytes
+        with patch.object(Path,'read_bytes',lambda p:bytes(changed) if p==path else read(p)):
+            with self.assertRaises(ValueError):retired.verify_runtime_routes()
 
     def test_reviewed_storage_permutation_still_pins_every_routing_value(self):
         relative='src/world_enemy_assets.inc';raw=(retired.ROOT/relative).read_bytes()
