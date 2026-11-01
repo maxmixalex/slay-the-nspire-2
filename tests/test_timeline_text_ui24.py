@@ -5,6 +5,8 @@ import struct
 import sys
 import unittest
 from unittest.mock import patch
+from types import SimpleNamespace
+from PIL import ImageFont
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]/'tools'))
 import timeline_text_ui24 as timeline
@@ -26,6 +28,16 @@ class TimelineTextTest(unittest.TestCase):
         wanted = timeline.glyph_requirements(['']*257, 'zhs')
         self.assertIn((ord('获'), 10, 0), wanted)
         self.assertIn((ord('线'), 12, 0), wanted)
+
+    def test_new_font_glyph_keeps_the_native_rle_payload_contract(self):
+        font = SimpleNamespace(fonts={10: ImageFont.load_default(size=10)}, coverage={ord('A')})
+        cp, band, width, height, advance, encoded, raw = timeline.original_glyph(font, ord('A'), 'A', 10, 0)
+        self.assertEqual((cp, band), (ord('A'), 10))
+        self.assertIsInstance(raw, bytes)
+        self.assertIsInstance(encoded, int)
+        alpha = bytes(byte for i in range(0, len(raw), 2) for byte in [raw[i+1]]*raw[i]) if encoded else raw
+        self.assertEqual(len(alpha), width*height)
+        self.assertEqual(advance & 4095, round(font.fonts[10].getlength('A')*64))
 
     def test_grouped_tail_old_payloads_and_common_survive_added_directory(self):
         common = None

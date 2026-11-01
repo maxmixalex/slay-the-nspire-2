@@ -118,10 +118,9 @@ def original_glyph(font, cp, text, px, face):
         ImageDraw.Draw(image).text((-left, px+1), value, font=measured, fill=255, anchor='ls')
     raw = image.tobytes()
     from ui12_resources import rle
-    encoded = rle(raw)
-    payload = encoded if len(encoded) < len(raw) else raw
+    payload, encoded = rle(raw)
     band = px | ((face & 3) << 6) | ((face & 4) << 3)
-    return cp, band, width, height, 0x8000 | ((-left) << 12) | q, len(payload) if payload != raw else 0, payload
+    return cp, band, width, height, 0x8000 | ((-left) << 12) | q, encoded, payload
 
 
 def missing_glyphs(source, texts, clusters, language, fonts):
