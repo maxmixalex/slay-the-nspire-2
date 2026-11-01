@@ -181,12 +181,28 @@ static_assert(sizeof(AncientStillRaster)<=sizeof(MerchantRugRaster),
 // not clear another 230 KiB on the calculator. Do not add array initializers to
 // the cache types above. Foreground input collection cannot re-enter rendering.
 struct RandomSceneRasters { RandomGradientCache gradient;RandomLightQuadCache light; };
+struct TezCinderRoom {
+ tez_cinders_ui23::State state;
+ const Content*owner=nullptr;uint32_t generation=0,seed=0,run_low=0,run_high=0,entered=0;
+ unsigned floor=0,event=0;
+ void bind(const App&a){
+  if(owner!=&a.content||generation!=a.content.generation()||seed!=a.game.seed||
+     run_low!=uint32_t(a.game.world.run_seed)||run_high!=uint32_t(a.game.world.run_seed>>32)||
+     entered!=a.ancient_dialogue.entered||floor!=unsigned(a.game.floor)||event!=unsigned(a.game.original_events.id))state.valid=false;
+  owner=&a.content;generation=a.content.generation();seed=a.game.seed;
+  run_low=uint32_t(a.game.world.run_seed);run_high=uint32_t(a.game.world.run_seed>>32);
+  entered=a.ancient_dialogue.entered;floor=unsigned(a.game.floor);event=unsigned(a.game.original_events.id);
+ }
+};
+struct CharacterSceneRasters {character_select_delta::Raster raster;TezCinderRoom cinders;};
+static_assert(sizeof(CharacterSceneRasters)<=sizeof(MerchantRugRaster),"Character and1776cinders share the existing scene slot");
+static_assert(alignof(CharacterSceneRasters)<=alignof(MerchantRugRaster),"Cinders must not increase scene alignment");
 union SceneRasterStorage {
     uint8_t inactive;
     RandomSceneRasters random;
     MerchantRugRaster merchant;
     SelectedHandRaster selected;
-    character_select_delta::Raster character;
+    CharacterSceneRasters character;
     AncientStillRaster ancient;
 };
 enum class SceneRasterOwner:uint8_t { None,Random,Merchant,SelectedHand,Character,Ancient };
@@ -197,6 +213,8 @@ static SceneRasterOwner scene_raster_owner=SceneRasterOwner::None;
 static void scene_raster_reset(){scene_raster_owner=SceneRasterOwner::None;}
 static_assert(sizeof(SceneRasterStorage)==sizeof(MerchantRugRaster),
     "Random, merchant, selection and selected-hand rasters share one fixed scene allocation");
+static_assert(alignof(SceneRasterStorage)==alignof(MerchantRugRaster),
+    "Scene owner variants preserve the original union alignment");
 static_assert(sizeof(SelectedHandRaster)<56u*1024u,
     "Only one selected description may animate");
 static_assert(sizeof(RandomSceneRasters)>=160u*1024u,
@@ -226,10 +244,13 @@ static SelectedHandRaster& selected_hand_raster(){
 }
 static character_select_delta::Raster& character_selection_raster(){
     if(scene_raster_owner!=SceneRasterOwner::Character){
-        ::new(detail::InPlaceAddress{&scene_raster_storage.character}) character_select_delta::Raster;
+        ::new(detail::InPlaceAddress{&scene_raster_storage.character}) CharacterSceneRasters;
         scene_raster_owner=SceneRasterOwner::Character;
     }
-    return scene_raster_storage.character;
+    return scene_raster_storage.character.raster;
+}
+static TezCinderRoom& tez_cinder_room(const App&a){
+ character_selection_raster();auto&r=scene_raster_storage.character.cinders;r.bind(a);return r;
 }
 static bool scene_opaque_canvas(const Canvas&c){
     return !c.coverage&&!c.occlusion&&c.opacity==255&&c.brightness==255&&
@@ -240,6 +261,28 @@ static void scene_opaque_blit(Canvas&c,const uint16_t*pixels){
     for(unsigned y=0;y<ScreenH;y+=16){
         c.poll();__builtin_memcpy(c.pixels+y*ScreenW,pixels+y*ScreenW,16*ScreenW*2);
     }
+}
+// Static Ancient plates use the same opaque320x240 raster as sampled rooms.
+// interval0 is disjoint from the existing8/32-frame replay identities. A hit
+// restores only the plate; every dynamic layer still draws at its own clock.
+// The only caller enters directly after App::render clears the scene to Ink;
+// dialogue and HUD follow. Original alpha margins are composed over that same
+// Ink on the cold path, rather than silently treating their RGB as opaque.
+static bool ancient_static_plate_over_ink(Canvas&c,int image){
+ if(image<0||c.pixels!=c.a.pixels||!scene_opaque_canvas(c)||!c.a.content.healthy())return false;
+ auto&r=character_selection_raster();
+ if(!(r.valid&&r.owner==&c.a.content&&r.generation==c.a.content.generation()&&
+      r.first==unsigned(image)&&r.interval==0)){
+  r.valid=false;
+  const auto p=c.a.content.image(image);
+  if(p.pixels&&p.w==ScreenW&&p.h==ScreenH&&p.format==1&&p.alpha&&!p.palette){
+   Canvas plate=c;plate.pixels=r.pixels;plate.rect(0,0,ScreenW,ScreenH,Ink);
+   plate.picture(p,0,0,ScreenW,ScreenH);
+  }else if(!r.apply(p,true,c.a.callbacks.foreground_poll))return false;
+  r.owner=&c.a.content;r.generation=c.a.content.generation();r.first=unsigned(image);
+  r.index=0;r.interval=0;r.valid=true;
+ }
+ scene_opaque_blit(c,r.pixels);return true;
 }
 // The caller selects the reduced profile. Only the original opaque scene is
 // retained: dialogue, hover, banners and HUD are drawn after this cache.

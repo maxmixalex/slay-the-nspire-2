@@ -53,7 +53,7 @@ def parameters(raw,image_count):
 
 
 def validate(source,image):
-    t.require((len(source.aux),len(source.images)) in ((AUXILIARY,IMAGES),(7217,59677)) and
+    t.require((len(source.aux),len(source.images)) in ((AUXILIARY,IMAGES),(7217,59677),(7220,59700)) and
               source.aux[BASE_AUX]==BASE_IMAGES+6,'Tanx requires the exact complete typed extension')
     w,h,fmt,raw=image(BASE_IMAGES+6)
     t.require((w,h,fmt)==(256,129,0),'Tanx parameters must remain literal words')

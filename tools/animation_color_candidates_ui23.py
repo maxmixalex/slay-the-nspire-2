@@ -184,6 +184,12 @@ def protected_images(source, preserve_selection=False):
             t.require(fmt == 0, 'Vantom frame table must remain opaque words')
             animated.update(vantom_references(raw))
     protected = (set(range(len(source.images))) - animated) | set(source.aux) | {r[0] for r in source.cards}
+    if len(source.aux)>=7214:
+        from ancient_extensions_ui23 import catalog
+        catalog(source)
+        # Authored typed effects, parameters, masks and existing Ancient body
+        # frames have their own source policy. Never quantize them as actors.
+        protected.update(range(58613,len(source.images)))
     if len(source.aux) >= 1505:
         if not preserve_selection:
             protected.difference_update(source.aux[1500:1505])

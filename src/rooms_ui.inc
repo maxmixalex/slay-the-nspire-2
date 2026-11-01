@@ -30,8 +30,17 @@ static void map_screen(Canvas&c,bool inspect=false){
 #include "merchant_ui.inc"
 #include "fake_merchant_ui13.inc"
 #include "tanx_scene_ui23.inc"
+#include "ancient_materials_ui23.inc"
+namespace tez_cinders {static bool draw(Canvas&,uint32_t,uint32_t);}
+namespace neow_particles {static bool draw(Canvas&,uint32_t,uint32_t);}
+#include "neow_post_ui23.inc"
 #include "ancient_lights_ui23.inc"
+#include "tez_cinders_ui23.inc"
+#include "vakuu_cinders_ui23.inc"
 #include "ancient_turbulence_ui23.inc"
+#include "ancient_gpu_masks_ui23.inc"
+#include "nonu_fog_ui23.inc"
+#include "neow_particles_ui23.inc"
 #include "events_ui.inc"
 
 static void deck_select(Canvas&c){

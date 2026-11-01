@@ -154,6 +154,7 @@ public:
     uint32_t generation()const{return generation_;}
     ResourceReadStats read_stats()const{return reader_.stats();}
     Picture image(int id)const;
+    Picture material_image(int id)const;
     // One bounded foreground preparation step. Pending never publishes a
     // partial picture/glyph or marks healthy content as corrupt. Images and
     // glyphs share one cancellable task in the existing cache arenas.

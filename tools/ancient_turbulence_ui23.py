@@ -299,9 +299,7 @@ def pack_table(pack,emitter,tracks,constants):
     planes=[np.frombuffer(track,dtype='u1').reshape(-1,6).T.copy().tobytes() for track in tracks]
     raw=head+b'\xff'*512+rgba[:,:,3].tobytes()+emitter['ramp']+b''.join(records)+b''.join(planes)
     if len(raw)!=offset:raise ValueError('Particle table size differs')
-    raw+=bytes((-len(raw))%512)
-    if len(raw)>256*1024:raise ValueError('Particle view exceeds existing retained-group bound')
-    return (256,len(raw)//512,0,raw)
+    return table_image(raw)
 
 
 def validate_table(raw):
@@ -324,6 +322,28 @@ def validate_table(raw):
     return dict(count=count,life_ms=life,preprocess_ms=pre,fps=fps,blend=blend,texture_size=[width,height],used_bytes=total)
 
 
+
+def table_image(raw):
+    """Keep source table bytes intact inside a decoder-supported image view.
+
+    The one 100-particle Orobas table exceeds the existing240-row bound at
+    width256. Only that reviewed131072-byte padded table uses320x205; all
+    offsets and source trajectory bytes are unchanged. No decoder bound grows.
+    """
+    report=validate_table(raw);used=report['used_bytes']
+    padded=(used+511)//512*512
+    if padded<=256*240*2:
+        width,height=256,padded//512
+    elif padded==131072 and report['count']==100:
+        width,height=320,205
+    else:raise ValueError('Source trajectory exceeds reviewed image geometry')
+    return width,height,0,raw[:used]+bytes(width*height*2-used)
+
+
+def view_geometry(index,width,height):
+    return (width,height)==(320,205) if index==5 else width==256 and 0<height<=240
+
+
 def sample_assets(pack,cache):
     import json
     from content_tiles import atomic_bytes
@@ -333,7 +353,7 @@ def sample_assets(pack,cache):
         image=pack_table(pack,emitter,tracks,constants);validate_table(image[3])
         filename=f'turbulence-{index:02d}.bin';atomic_bytes(directory/filename,image[3]);rows.append(image)
         proof.append(dict(scene=emitter['scene'],node=emitter['node'],count=emitter['count'],source_fixed_fps=emitter['source_fixed_fps'],
-          source_texture=emitter['texture'],texture_rgba_sha256=TEXTURES[emitter['texture']],image_bytes=len(image[3]),image_sha256=hashlib.sha256(image[3]).hexdigest(),
+          source_texture=emitter['texture'],texture_rgba_sha256=TEXTURES[emitter['texture']],image_width=image[0],image_height=image[1],image_bytes=len(image[3]),image_sha256=hashlib.sha256(image[3]).hexdigest(),
           keys=sum(r['keys'] for r in reports),source_samples=sum(r['source_samples'] for r in reports),maximum_lcd_error_bound=max(r['maximum_lcd_error_bound'] for r in reports),file=filename))
     atomic_bytes(directory/'trajectories.json',(json.dumps(dict(schema=1,source_scenes=SCENES,source_equations='Godot4.5.1 ParticleProcessMaterial float32, FMA disabled',
       recorded_gpu_random_history=False,source_seed_bank=True,source_fixed_fps_zero_portable_step=30,
@@ -345,7 +365,8 @@ def validate(source,image):
     if (len(source.aux),len(source.images))!=(AUXILIARY,IMAGES) or source.aux[BASE_AUX]!=BASE_IMAGES:raise ValueError('Ancient trajectories require their exact typed endpoint')
     for i,count in enumerate(EXPECTED_COUNTS):
         w,h,fmt,raw=image(BASE_IMAGES+i)
-        if w!=256 or fmt or len(raw)!=w*h*2:raise ValueError('Invalid trajectory data view')
+        if not view_geometry(i,w,h) or fmt or len(raw)!=w*h*2:raise ValueError('Invalid trajectory data view')
+        if table_image(raw)!=(w,h,fmt,raw):raise ValueError('Noncanonical trajectory image padding')
         report=validate_table(raw)
         if report['count']!=count:raise ValueError('Original particle count differs')
     return dict(images=tuple(range(BASE_IMAGES,IMAGES)),auxiliary=(BASE_AUX,),particle_count=sum(EXPECTED_COUNTS))
@@ -371,7 +392,7 @@ def append(data,pack,work,sampled=None):
             raw=(sampled/row['file']).read_bytes();info=validate_table(raw)
             t.require((row['scene'],row['node'],info['count'])==(scene,node,count) and t.sha256(raw)==row['image_sha256'],
                       'Sampled source trajectory bytes differ')
-            images.append((256,len(raw)//512,0,raw))
+            images.append(table_image(raw))
     rows=[]
     for i,(w,h,fmt,raw) in enumerate(images):
         filename=f'{i}.bin';t.atomic_bytes(directory/filename,raw)

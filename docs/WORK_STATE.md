@@ -1,3 +1,71 @@
+# UI23 cumulative Ancient integration — source stage, final acceptance open
+
+The combined source includes the original projected additive light plates,
+Orobas and Tanx water materials, stationary GPU sparkle emitters, all 74 Tez
+cinder emitters, the Vakuu cinder emitter, six Nonu cloud nodes, twelve turbulent
+particle nodes, and Neow clouds, CPU grain stars and screen-texture post effect.
+The typed converter/runtime catalog admits exactly the complete prefixes
+through 7227/59732, including full/reduced material and post-effect modes.
+The remaining 237 Tez fire nodes and four Neow fire nodes behind the body are
+still implementation gates; this checkpoint does not label their probes or
+unimplemented source descriptors as finished features.
+
+Original actor image dimensions, action clocks and sampled frame cadence are
+unchanged. The existing scene union now also holds the cinder state and exact
+static-plate cache, without increasing its 230,416-byte host size. Neow screen
+capture borrows the existing transfer arena only after loading its source view.
+No production image cache, transfer arena or particle pool capacity was raised.
+Neow's shader uses the global presentation clock; particle births retain their
+room-relative clock. The reduced profile uses its explicit source clock zero.
+The final ARM allocation must still be at most 22,291,016 bytes; the combined
+source has not yet completed that linked measurement or guest performance gate.
+
+Actual original-source conversion has reproduced the historical 69-stage
+bilingual data set. Mandatory real-ARM index/glyph validation then reduced its
+physical data from 68,849,266 to 68,047,223 bytes. All six ENG/ZHS label/card/shop
+Canvas comparisons match the original and previous accepted pixels exactly.
+Adding the measured earlier 1,686,552-byte launcher gives 69,733,775 bytes,
+before licenses, instructions and this checkpoint's new art. This is a budget
+baseline, not the final complete-install size. The source-derived 1,052 Neow/Tez
+body poses add 118,682 bytes over the corresponding same-input older stage;
+there is no assumed body-size saving from separating the vignette.
+
+The final trajectory layout stores 145,062 grouped bytes for 392,320 decoded
+bytes. One 131,072-byte table is carried in a 320x205 word view with exactly
+128 zero padding bytes; its used bytes and every position key are unchanged.
+This keeps Content's existing 240-row limit. The earlier 256x256 view was
+correctly rejected by the full decoder boundary during source integration. All 45,484 retained position keys invert exactly to the first layout,
+and 2,647,470 actual runtime particle queries agree across the two layouts.
+Its deterministic source seed bank bounds position interpolation at one eighth
+of an LCD pixel without reducing actor art. Projected materials add 119,948
+full-profile grouped bytes; stationary masks add 25,692; Nonu clouds add 44,006.
+These are component costs, not a physical final-pack sum.
+
+Focused source checks pass: 63 earlier central tests through 7224, then 50
+focused tests through 7227 including the final trajectory geometry; 138
+native UBSan format/clock checks; three Neow particle format tests; 282,462 independent gravity/gradient/
+clock checks with GCC UBSan, 616,971 Vakuu lifecycle/untouched-state checks,
+and 1,376,256 exact cloud additive-blend comparisons. Clang's installed UBSan
+runtime archive was absent; GCC supplied that sanitizer run. A new test first
+missed an initializer-list include, then compiled and passed after correction.
+A transient full temporary filesystem interrupted copies/compilation; the one
+new zero-byte producer was rewritten atomically and source hashes rechecked.
+No failed/interrupted run is counted as passed. Full App syntax is checked
+again after all central catalog edits settle.
+
+The cloud fast path uses a 512-byte local table for constant-color source
+contributions; its final saturation is exactly the ordinary Canvas equation.
+Canvas states with coverage, tint, occlusion or color transforms keep the
+ordinary path. This is not a persistent cache enlargement or an FPS claim.
+The Neow post comparison retains sharp 320x240 output; the checked kernel
+has at most one RGB565 code of difference per channel on the three tested
+source body views. The complete fire/fog/light composition remains to verify.
+
+All new original-derived data, comparisons, firmware and recovery receipts stay
+private. Final full/reduced all-language conversion, complete scene correctness,
+ARM allocation, unchanged-64MB supplied-firmware performance, 70,000,000-byte
+whole-install gate and the three matching release ZIPs are still open.
+
 ## Actual trajectory samples and lossless layout follow-up
 
 All12original-scene emitters sampled successfully:490particles and329,890

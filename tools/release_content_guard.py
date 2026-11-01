@@ -191,6 +191,10 @@ def _validate_content(data, stage, *, retirement_intermediate):
             return reader.image_raw(image_id)
         return source.image_raw(image_id)
 
+    if count>=7212:
+        from ancient_extensions_ui23 import validate as validate_extensions
+        validate_extensions(source,image,final=True)
+
     tables = []
     for row, image_id in enumerate(table_ids):
         width, height, fmt, raw = image(image_id)

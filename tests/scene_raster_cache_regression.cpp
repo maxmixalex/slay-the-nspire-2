@@ -81,6 +81,56 @@ static void ancient_lifecycle(){
  CHECK(a.content.open(data.data(),data.size()));CHECK(a.content.generation()!=generation);CHECK(!ancient_still_restore(c,0,81));
  ancient_still_store(c,0,81);CHECK(a.init(data.data(),data.size(),{}));CHECK(scene_raster_owner==SceneRasterOwner::None);
 }
+static void cinder_lifecycle(){
+ auto data=lifecycle_pack(0x27bd);CHECK(a.init(data.data(),data.size(),{}));
+ new_run(a.game,73,false);a.game.floor=2;a.game.original_events.id=OriginalEventId::Tezcatara;a.ancient_dialogue.entered=100;
+ auto&character=character_selection_raster();CHECK(character.restore(a.content,0,0));
+ auto&room=tez_cinder_room(a);CHECK(!room.state.valid);room.state.valid=true;room.state.tick=123;
+ CHECK(character_selection_raster().valid);CHECK(tez_cinder_room(a).state.valid&&tez_cinder_room(a).state.tick==123);
+ CHECK(&character_selection_raster()==&character);
+ // Dialogue/HUD time and cursor changes cannot restart the room simulation.
+ a.map_clock_ms=6000;++a.cursor;CHECK(tez_cinder_room(a).state.valid);
+ ++a.game.seed;CHECK(!tez_cinder_room(a).state.valid);room.state.valid=true;--a.game.seed;CHECK(!tez_cinder_room(a).state.valid);
+ room.state.valid=true;a.game.world.run_seed^=uint64_t(1)<<32;CHECK(!tez_cinder_room(a).state.valid);
+ room.state.valid=true;++a.game.floor;CHECK(!tez_cinder_room(a).state.valid);
+ room.state.valid=true;a.game.original_events.id=OriginalEventId::Neow;CHECK(!tez_cinder_room(a).state.valid);
+ room.state.valid=true;++a.ancient_dialogue.entered;CHECK(!tez_cinder_room(a).state.valid);
+ room.state.valid=true;CHECK(a.content.open(data.data(),data.size()));CHECK(!tez_cinder_room(a).state.valid);
+ room.state.valid=true;(void)merchant_rug_raster();CHECK(!tez_cinder_room(a).state.valid);CHECK(!character_selection_raster().valid);
+ // Reduced first-frame particles are disposable once the entire opaque scene
+ // is stored. A later full/background request must establish a new lifetime.
+ Canvas c{a};clear();const auto expected=pixels();ancient_still_store(c,0,81);
+ CHECK(scene_raster_owner==SceneRasterOwner::Ancient);CHECK(ancient_still_restore(c,0,81));CHECK(pixels()==expected);
+ CHECK(!tez_cinder_room(a).state.valid);CHECK(!character_selection_raster().valid);
+ CHECK(a.init(data.data(),data.size(),{}));CHECK(scene_raster_owner==SceneRasterOwner::None);
+ CHECK(!tez_cinder_room(a).state.valid);
+}
+static void static_plate_lifecycle(){
+ auto data=lifecycle_pack(0x27bd);CHECK(a.init(data.data(),data.size(),{}));
+ Canvas c{a};clear();c.picture(0,0,0,320,240);const auto expected=pixels();
+ CHECK(ancient_static_plate_over_ink(c,0));CHECK(pixels()==expected);CHECK(character_selection_raster().interval==0);
+ auto&room=tez_cinder_room(a);room.state.valid=true;room.state.tick=123;
+ c.rect(0,0,320,240,0xffff);CHECK(ancient_static_plate_over_ink(c,0));CHECK(pixels()==expected);
+ CHECK(room.state.valid&&room.state.tick==123); // background hit preserves live effects
+ Canvas tinted=c;tinted.tint_red=254;CHECK(!ancient_static_plate_over_ink(tinted,0));CHECK(room.state.valid);
+ Canvas shifted=c;++shifted.pixels;CHECK(!ancient_static_plate_over_ink(shifted,0));CHECK(room.state.valid);
+ CHECK(!ancient_static_plate_over_ink(c,-1));CHECK(!ancient_static_plate_over_ink(c,1)); //1x1 fallback
+ CHECK(character_selection_raster().restore(a.content,0,0));CHECK(character_selection_raster().interval==8);
+ CHECK(ancient_static_plate_over_ink(c,0));CHECK(character_selection_raster().interval==0);CHECK(pixels()==expected);
+ data=lifecycle_pack(0xd361);CHECK(a.content.open(data.data(),data.size()));
+ CHECK(ancient_static_plate_over_ink(c,0));for(auto pixel:a.pixels)CHECK(pixel==0xd361);
+ (void)merchant_rug_raster();CHECK(ancient_static_plate_over_ink(c,0));CHECK(!tez_cinder_room(a).state.valid);
+ // The actual source plates contain transparent margins. Preserve their
+ // source-over rounding against App::render's fixed Ink underlay.
+ data=lifecycle_pack(0xd361);data[48]=1;
+ const unsigned old=data.size();data.resize(old+ScreenW*ScreenH);
+ for(unsigned i=0;i<ScreenW*ScreenH;++i)data[old+i]=uint8_t(i%256);
+ const auto put=[&](unsigned at,unsigned value){for(unsigned i=0;i<4;++i)data[at+i]=uint8_t(value>>(i*8));};
+ put(12,data.size());put(52,ScreenW*ScreenH*3);CHECK(a.content.open(data.data(),data.size()));
+ c.rect(0,0,320,240,Ink);c.picture(0,0,0,320,240);const auto transparent=pixels();
+ CHECK(ancient_static_plate_over_ink(c,0));CHECK(pixels()==transparent);
+ c.rect(0,0,320,240,0xffff);CHECK(ancient_static_plate_over_ink(c,0));CHECK(pixels()==transparent);
+}
 #endif
 static void synthetic(){
  static uint16_t gradient[64*64],noise_pixels[50],light_pixels[256*256];static uint8_t noise_alpha[50],dot_alpha[256*256];
@@ -162,6 +212,8 @@ int main(int argc,char**argv){synthetic();
 #ifndef SPIRE_TEST_ORIGINAL_RASTERS
  reused_app_address();
  ancient_lifecycle();
+ cinder_lifecycle();
+ static_plate_lifecycle();
 #endif
  CHECK(argc==1||argc==3||argc==4);if(argc>1){actual(argv[1],argv[2],argc>3?argv[3]:nullptr);
 #ifndef SPIRE_TEST_ORIGINAL_RASTERS

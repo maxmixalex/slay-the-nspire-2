@@ -3,6 +3,9 @@
 namespace spire::ancient_turbulence_ui23 {
 constexpr unsigned AuxiliaryFirst=7223,AuxiliaryCount=7224,FirstImage=59717,Images=59729;
 constexpr unsigned EmitterCount=12,HeaderBytes=64,RampBytes=2048,DirectoryBytes=12;
+inline bool view_geometry(unsigned node,unsigned width,unsigned height){
+ return node<EmitterCount&&(node==5?(width==320&&height==205):(width==256&&height>0&&height<=240));
+}
 inline unsigned word(const uint8_t*p){return p[0]|unsigned(p[1])<<8;}
 inline uint32_t dword(const uint8_t*p){return word(p)|uint32_t(word(p+2))<<16;}
 inline int signed_word(const uint8_t*p){return int16_t(word(p));}

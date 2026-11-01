@@ -8,7 +8,7 @@ static void draw(Canvas&c,unsigned first,unsigned count,uint32_t elapsed,uint32_
  if(root!=int(FirstImage)||first>EmitterCount||count>EmitterCount-first)return;
  for(unsigned node=first;node<first+count;++node){
   const auto image=c.a.content.image(root+int(node));Table table;
-  if(!image.pixels||image.format||image.alpha||image.palette||image.w!=256||!table.read(image.pixels,unsigned(image.w)*image.h*2))return;
+  if(!image.pixels||image.format||image.alpha||image.palette||!view_geometry(node,image.w,image.h)||!table.read(image.pixels,unsigned(image.w)*image.h*2))return;
   const auto*alpha=table.data+table.texture;
   const Picture mask{alpha,alpha,table.data+table.palette,uint16_t(table.width),uint16_t(table.height),3};
   const water_reflection::Texture texture(mask);

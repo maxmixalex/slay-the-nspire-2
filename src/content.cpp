@@ -16,6 +16,9 @@
 #include "ancient_scene_ui23.hpp"
 #include "ancient_lights_ui23.hpp"
 #include "tanx_scene_ui23.hpp"
+#include "ancient_materials_ui23.hpp"
+#include "ancient_material_residual.hpp"
+#include "source_water_reflection.hpp"
 #include "implicit_geometry.hpp"
 #include "content_animation_profile.hpp"
 extern "C" void* memcpy(void*,const void*,size_t);
@@ -90,7 +93,7 @@ static ImageCache* find_image(const Content* owner,ImageDirectoryView directory,
     const auto descriptor=directory[id];
     for(unsigned link=image_buckets[image_bucket(descriptor)];link;){
         auto& cache=image_cache[link-1];link=cache.next();if(cache.owner!=owner)continue;
-        if(directory.equal(cache.id(),id))return &cache;
+        if((ancient_material_residual::same_identity(cache.id(),id)||owner->reduced_animations())&&directory.equal(cache.id(),id))return &cache;
     }
     return nullptr;
 }
@@ -361,7 +364,8 @@ bool Content::open(ResourceSource source){
                                                     vantom_vfx::AuxiliaryCount,FramedUi20AuxiliaryCount,
                                                     FramedUi22AuxiliaryCount,character_select_delta::AuxiliaryCount,
                                                     retired_assets_ui22::AuxiliaryCount,ancient_scene_ui23::AuxiliaryCount,tanx_scene_ui23::AuxiliaryCount,
-                                                    ancient_lights_ui23::AuxiliaryCount};
+                                                    ancient_lights_ui23::AuxiliaryCount,ancient_materials_ui23::AuxiliaryCount,
+                                                    7221,7222,7223,7224,7225,7226,7227};
                                                 for(unsigned end:endpoints){
                                                     if(next==0x314c4954u)break;
                                                     for(unsigned i=auxiliary;i<end;++i){
@@ -435,19 +439,25 @@ bool Content::open(ResourceSource source){
     if(version>=5){
         ui_count_=auxiliary;ui_offset_=image_directory_end()+ng*16+ns*8+nc*16+cards*16;
     }
-    if(auxiliary==retired_assets_ui22::AuxiliaryCount||auxiliary==ancient_scene_ui23::AuxiliaryCount||auxiliary==tanx_scene_ui23::AuxiliaryCount||auxiliary==ancient_lights_ui23::AuxiliaryCount){
+    // Only complete, named typed prefixes are accepted. The directory parser
+    // above rejects counts between these boundaries before reaching this gate.
+    static constexpr uint16_t ancient_catalog[][2]={
+        {7212,58613},{7214,59667},{7215,59674},{7217,59677},
+        {7220,59700},{7221,59710},{7222,59712},{7223,59717},{7224,59729},
+        {7225,59730},{7226,59731},{7227,59732}};
+    unsigned expected_images=0;
+    for(const auto&row:ancient_catalog)if(auxiliary==row[0])expected_images=row[1];
+    if(expected_images){
         using namespace retired_assets_ui22;
-        // The offline release guard proves the fixed retirement plan and all
-        // live roots. Opening additionally rejects a missing/corrupt marker;
-        // an IO failure cannot turn a partial pack into a legacy fallback.
-        const unsigned expected_images=auxiliary==ancient_lights_ui23::AuxiliaryCount?ancient_lights_ui23::Images:
-            auxiliary==tanx_scene_ui23::AuxiliaryCount?tanx_scene_ui23::Images:
-            auxiliary==ancient_scene_ui23::AuxiliaryCount?ancient_scene_ui23::Images:Images;
-        if((auxiliary==tanx_scene_ui23::AuxiliaryCount||auxiliary==ancient_lights_ui23::AuxiliaryCount)&&
-           ui_image(tanx_scene_ui23::AuxiliaryFirst)!=int(tanx_scene_ui23::FirstImage+6))return reject();
-        if(auxiliary==ancient_lights_ui23::AuxiliaryCount&&
-           (ui_image(ancient_lights_ui23::AuxiliaryFirst)!=int(ancient_lights_ui23::FirstImage+1)||
-            ui_image(ancient_lights_ui23::AuxiliaryFirst+1)!=int(ancient_lights_ui23::FirstImage+2)))return reject();
+        // The offline guard proves payloads and all source roots. Opening
+        // checks each prefix identity plus the mandatory retirement marker.
+        static constexpr uint16_t roots[][2]={
+            {7214,59673},{7215,59675},{7216,59676},
+            {7217,59697},{7218,59698},{7219,59699},
+            {7220,59709},{7221,59711},{7222,59716},{7223,59717},
+            {7224,59729},{7225,59730},{7226,59731}};
+        for(const auto&row:roots)
+            if(auxiliary>row[0]&&ui_image(row[0])!=row[1])return reject();
         if(version<45||images_!=expected_images||clips_!=1783||ui_image(AuxiliaryFirst)!=int(MarkerImage))return reject();
         const auto marker=image_directory_[MarkerImage];uint8_t bytes[16];
         if(marker.width()!=8||marker.height()!=1||marker.format!=0||marker.length!=sizeof bytes||
@@ -460,6 +470,10 @@ bool Content::open(ResourceSource source){
             if(id>=images_)return false;const auto row=image_directory_[id];
             return row.width()==w&&row.height()==h;
         };
+        if(auxiliary>=7224&&!sized(59722,320,205))return reject();
+        if(auxiliary>=7225&&!sized(59729,256,reduced_animations()?100:56))return reject();
+        if(auxiliary>=7226&&!sized(59730,32,1))return reject();
+        if(auxiliary>=7227&&!sized(59731,256,9))return reject();
         if(ui_image(U_MerchantBackdrop)!=45810||!sized(45810,320,218))return reject();
         static constexpr uint16_t merchant[][4]={
             {45811,145,320,218},{45956,145,57,70},{46101,256,84,102},
@@ -477,7 +491,7 @@ bool Content::open(ResourceSource source){
 bool Content::image_cached(int id)const{
     if(!healthy()||id<0||unsigned(id)>=images_)return false;
     const auto descriptor=image_directory_[unsigned(id)];
-    return (data_&&descriptor.format<5)||find_image(this,image_directory_,unsigned(id));
+    return (data_&&descriptor.format<5&&!ancient_material_residual::page(unsigned(id)))||find_image(this,image_directory_,unsigned(id));
 }
 bool Content::reduced_animations()const{
     return content_animation_profile::reduced(metadata_,version_);
@@ -503,12 +517,13 @@ void Content::set_image_cache_profile(bool room_frames,bool selection_frames)con
 }
 bool Content::image_alias(int first,int second)const{
     if(!healthy()||first<0||second<0||unsigned(first)>=images_||unsigned(second)>=images_)return false;
-    return image_directory_.equal(unsigned(first),unsigned(second));
+    return (ancient_material_residual::same_identity(unsigned(first),unsigned(second))||reduced_animations())&&
+        image_directory_.equal(unsigned(first),unsigned(second));
 }
 unsigned Content::image_cache_pages(int id)const{
     if(!healthy()||id<0||unsigned(id)>=images_)return 0;
     const auto descriptor=image_directory_[unsigned(id)];
-    if(data_&&descriptor.format<5)return 0;
+    if(data_&&descriptor.format<5&&!ancient_material_residual::page(unsigned(id)))return 0;
     if(image_pages_&&image_pages_[id])return image_pages_[id];
     if(const auto* cache=find_image(this,image_directory_,unsigned(id)))return cache->pages;
     if(version_>=RetainedContentVersion){
@@ -522,7 +537,47 @@ ImageCacheUsage Content::image_cache_usage()const{
     return used;
 }
 Picture Content::image(int id)const{
+    if(id>=0&&ancient_material_residual::page(unsigned(id)))return material_image(id);
     return image_payload(id,nullptr,0);
+}
+Picture Content::material_image(int id)const{
+    const Picture empty{};using namespace ancient_material_residual;
+    if(!healthy()||id<0||!page(unsigned(id))||images_<ancient_materials_ui23::Images)return empty;
+    if(const auto*entry=find_image(this,image_directory_,unsigned(id)))
+        if(entry->packed_format&Reconstructed)return image_payload(id,nullptr,0);
+    const unsigned scene=(unsigned(id)-First)/9+1;
+    ancient_materials_ui23::Table table;
+    if(ui_image(ancient_materials_ui23::AuxiliaryFirst+scene)!=int(ancient_materials_ui23::FirstImage+20+scene)||
+       !table.read(image(int(ancient_materials_ui23::FirstImage+20+scene)),scene))return empty;
+    const bool static_pose=ancient_materials_ui23::word(table.data+442)==0x5350;
+    if(static_pose!=reduced_animations())return empty;
+    if(static_pose){
+        const Picture picture=image_payload(id,nullptr,0);auto*entry=find_image(this,image_directory_,unsigned(id));
+        if(!entry||picture.w!=320||picture.h!=240||picture.format>1||picture.palette)return empty;
+        entry->packed_format|=Reconstructed;return picture;
+    }
+    Mapping mapping;mapping.x=ancient_materials_ui23::integer(table.data+424);
+    mapping.y=ancient_materials_ui23::integer(table.data+428);
+    mapping.dx=ancient_materials_ui23::integer(table.data+432);
+    mapping.dy=ancient_materials_ui23::integer(table.data+436);
+    const int base_id=int(ancient_materials_ui23::word(table.data+440));
+    if(base_id!=ui_image(scene==1?366:385)||!mapping.valid())return empty;
+    // Two freshly requested bounded views fit together in the unchanged pool.
+    // No image lookup occurs while restoring; all arithmetic is cold-only.
+    Picture left{},right{};
+    if(scene==1||unsigned(id)==First+9||unsigned(id)==First+13)left=right=image(base_id);
+    else{
+        const unsigned phase=unsigned(id)-First-9,gap=phase==2?2:1;
+        left=material_image(int(First+9+phase-gap));right=material_image(int(First+9+phase+gap));
+    }
+    const water_reflection::Texture base(left),other(right);
+    const Picture picture=image_payload(id,nullptr,0);auto*entry=find_image(this,image_directory_,unsigned(id));
+    if(!entry||picture.w!=320||picture.h!=240||picture.format||picture.alpha||picture.palette)return empty;
+    if(!(entry->packed_format&Reconstructed)){
+        if(!(scene==1?mapping.restore(image_buffer(*entry),unsigned(id),base):restore_response(image_buffer(*entry),base,other)))return empty;
+        entry->packed_format|=Reconstructed;
+    }
+    return picture;
 }
 void Content::cancel_preload()const{cancel_content_preload(this);}
 PreparationResult Content::preload_image_step(int id)const{
@@ -672,7 +727,7 @@ Picture Content::image_payload(int id,const uint8_t* supplied,uint32_t supplied_
             // separate header read used to fetch an extra 4 KiB cache page.
             if(fmt==5){fmt=source[0];size=u32(source+1);}
             if(fmt>4||!size||size>MaxImageBytes)return fail();
-            if(stored_format!=5&&data_){p=source;if(!valid_image(p,size,w,h,fmt))return fail();}
+            if(stored_format!=5&&data_&&!ancient_material_residual::page(unsigned(id))){p=source;if(!valid_image(p,size,w,h,fmt))return fail();}
             else {
                 ImageReservation reservation(size);uint8_t*output=reservation.bytes();if(!output)return fail();
                 if(stored_format==5){if(!decode_lz4(source+5,length-5,output,size))return fail();}
@@ -681,7 +736,7 @@ Picture Content::image_payload(int id,const uint8_t* supplied,uint32_t supplied_
             }
         }
     }
-    if(image_pages_&&!(data_&&stored_format<5))image_pages_[id]=uint8_t((size+ImagePageBytes-1)/ImagePageBytes);
+    if(image_pages_&&!(data_&&stored_format<5&&!ancient_material_residual::page(unsigned(id))))image_pages_[id]=uint8_t((size+ImagePageBytes-1)/ImagePageBytes);
     if(fmt==4)return {p,nullptr,nullptr,w,h,4};
     if(fmt>=2)return {p+512,fmt==3?p+512+w*h:nullptr,p,w,h,(uint8_t)fmt};
     return {p,fmt?p+w*h*2:nullptr,nullptr,w,h,(uint8_t)fmt};

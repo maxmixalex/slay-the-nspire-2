@@ -277,6 +277,30 @@ def add_final_stages(recipe, source_editions, output, codes, no_animations):
     recipe.add('ancient-lights46','ancient_lights_ui23',['--input',logical,'--output',target,'--pck',recipe.pck,
         '--runtime',recipe.runtime,'--work',recipe.directory('cache/ancient-scenes45')],
         [target,target.with_suffix('.json')]);logical=target
+    target=recipe.directory('ancient-materials46')/'eng.nsp'
+    recipe.add('ancient-materials46','ancient_materials_ui23',['--input',logical,'--output',target,'--pck',recipe.pck,
+        '--noise-header',recipe.noise,'--work',recipe.directory('cache/ancient-materials46'),
+        *(['--no-animations'] if no_animations else [])],
+        [target,target.with_suffix('.json')]);logical=target
+    for name,module in (('ancient-gpu-masks46','ancient_gpu_masks_ui23'),
+                        ('tez-cinders46','tez_cinders_ui23'),
+                        ('nonu-fog46','nonu_fog_ui23'),
+                        ('ancient-trajectories46','ancient_turbulence_ui23'),
+                        ('neow-post46','neow_post_assets_ui23'),
+                        ('vakuu-cinders46','vakuu_cinders_ui23'),
+                        ('neow-particles46','neow_particles_ui23')):
+        target=recipe.directory(name)/'eng.nsp'
+        arguments=['--input',logical,'--output',target,'--pck',recipe.pck,
+                   '--work',recipe.directory('cache')/name]
+        if module=='tez_cinders_ui23':
+            arguments+=['--runtime',recipe.runtime,'--light-work',recipe.directory('cache/ancient-scenes45')]
+        if module=='neow_post_assets_ui23':
+            arguments+=['--noise-header',recipe.noise,*(['--no-animations'] if no_animations else [])]
+        if module=='ancient_turbulence_ui23' and getattr(recipe,'trajectory_samples',None):
+            # Optional verified source sampling cache; the default standalone
+            # graph produces these tables directly from the original PCK.
+            arguments+=['--sampled',recipe.trajectory_samples]
+        recipe.add(name,module,arguments,[target,target.with_suffix('.json')]);logical=target
     target = recipe.directory('quality46')/'eng.nsp'
     selection_policy = None if no_animations else getattr(recipe, 'selection_policy', DEFAULT_SELECTION_POLICY)
     selection_overrides = {} if no_animations else getattr(recipe, 'selection_overrides', DEFAULT_SELECTION_OVERRIDES)

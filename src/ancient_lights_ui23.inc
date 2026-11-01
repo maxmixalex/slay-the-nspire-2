@@ -2,17 +2,15 @@
 // one intervening vignette is deferred; ordinary scene frame IDs stay stable.
 namespace ancient_lights {
 using namespace ancient_lights_ui23;
-static bool layer(Canvas&c,unsigned scene,unsigned layer,uint32_t elapsed,uint32_t seed){
- const water_reflection::Texture texture(c.a.content.image(c.a.content.ui_image(I13_RandomLight)),256,256);
- const auto image=c.a.content.image(c.a.content.ui_image(AuxiliaryFirst+scene));
- Table table;if(!texture.valid()||!table.read(image,scene))return false;
+static bool nodes(Canvas&c,const water_reflection::Texture&texture,const Table&table,unsigned layer,
+                  uint32_t elapsed,uint32_t seed,unsigned first=0,unsigned count=~0u){
  const bool reduced=c.a.content.reduced_animations();const uint32_t clock=reduced?0:elapsed;
  const unsigned frame=table.frame(clock,reduced);
  static constexpr fake_merchant::Key original[]={fake_merchant::key(0,.321019),fake_merchant::key(.502521,.507939),fake_merchant::key(1,.36242)};
  static constexpr auto scale=fake_merchant::light_curve(original);
  static constexpr fake_merchant::ColorKey ramp[]={fake_merchant::color_key(0,.34902,.34902,.34902),
   fake_merchant::color_key(.411546,1,1,1),fake_merchant::color_key(.994413,.34902,.34902,.34902)};
- for(unsigned i=0;i<table.nodes;++i){const auto*r=table.node(i);if(r[30]!=layer)continue;
+ for(unsigned i=first;i<table.nodes&&i-first<count;++i){const auto*r=table.node(i);if(r[30]!=layer)continue;
   const int x=table.coordinate(r,0,frame),y=table.coordinate(r,1,frame);
   const int w=table.coordinate(r,2,frame),h=table.coordinate(r,3,frame);
   const int angle=table.coordinate(r,4,frame),shear=table.coordinate(r,5,frame);
@@ -32,18 +30,32 @@ static bool layer(Canvas&c,unsigned scene,unsigned layer,uint32_t elapsed,uint32
  }
  return true;
 }
+static bool layer(Canvas&c,unsigned scene,unsigned layer,uint32_t elapsed,uint32_t seed,unsigned first=0,unsigned count=~0u){
+ const water_reflection::Texture texture(c.a.content.image(c.a.content.ui_image(I13_RandomLight)),256,256);
+ const auto image=c.a.content.image(c.a.content.ui_image(AuxiliaryFirst+scene));
+ Table table;if(!texture.valid()||!table.read(image,scene))return false;
+ return nodes(c,texture,table,layer,elapsed,seed,first,count);
+}
 static bool draw(Canvas&c,unsigned scene,uint32_t elapsed){
  if(c.a.content.ui_image(AuxiliaryFirst+scene)!=int(FirstImage+1+scene))return false;
  const uint32_t seed=fake_merchant::hash(uint32_t(c.a.game.seed)^unsigned(c.a.game.floor)*0x9e3779b9u^
   c.a.ancient_dialogue.entered^(scene?0x54455a43u:0x4e454f57u));
+ if(scene&&c.a.content.ui_image(tez_cinders_ui23::AuxiliaryFirst)==int(tez_cinders_ui23::FirstImage+1))
+  return tez_cinders::draw(c,elapsed,seed);
  if(!scene){
-  if(!layer(c,scene,0,elapsed,seed))return false;
+  if(!layer(c,scene,0,elapsed,seed,0,3))return false;
+  if(c.a.content.ui_image(neow_particles_ui23::Auxiliary)==int(neow_particles_ui23::FirstImage)&&
+     !neow_particles::draw(c,c.a.content.reduced_animations()?0:elapsed,seed))return false;
+  if(!layer(c,scene,0,elapsed,seed,3,4))return false;
   const auto vignette=c.a.content.image(FirstImage);
   if(!vignette.pixels||vignette.w!=320||vignette.h!=240||vignette.format!=3||!vignette.alpha||!vignette.palette)return false;
   c.picture(vignette,0,0,320,240);
  }
  // Reacquire texture/table views after the vignette request. No image load
  // occurs inside either borrowed-pointer drawing window.
- return layer(c,scene,1,elapsed,seed);
+ if(!layer(c,scene,1,elapsed,seed))return false;
+ if(!scene&&c.a.content.ui_image(neow_post_ui23::AuxiliaryFirst)==int(neow_post_ui23::FirstImage))
+  return neow_post::draw(c,c.a.content.reduced_animations()?0u:c.a.map_clock_ms);
+ return true;
 }
 }

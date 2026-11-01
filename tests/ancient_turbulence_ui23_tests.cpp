@@ -11,6 +11,11 @@ static void point(std::vector<uint8_t>&b,unsigned p,unsigned n,unsigned index,un
 }
 static void u32(std::vector<uint8_t>&b,unsigned p,unsigned v){u16(b,p,v);u16(b,p+2,v>>16);}
 int main(){
+ for(unsigned node=0;node<EmitterCount;++node){
+  check(view_geometry(node,node==5?320:256,node==5?205:240));
+  check(!view_geometry(node,256,256));check(!view_geometry(node,320,node==5?204:205));
+ }
+ check(!view_geometry(12,256,1));
  const unsigned tex=576,ramp=580,dir=2628,track=2652,total=2676;
  std::vector<uint8_t>b(3072,0);b[0]='A';b[1]='T';b[2]='P';b[3]='1';u16(b,4,2);u16(b,6,2);
  u32(b,8,1000);u32(b,12,2000);u16(b,16,30);u16(b,20,2);u16(b,22,2);

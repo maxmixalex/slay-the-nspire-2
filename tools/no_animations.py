@@ -65,19 +65,10 @@ def ancient_rows(source, image):
         require(len(source.images)==58613,'Unexpected images after the complete UI22 catalog')
         return []
     expected_images=58613+ANCIENT_COUNT+sum((duration+32)//33 for duration in ANCIENT_DURATIONS)
-    tanx=len(source.aux) in (7215,7217)
-    if tanx:
-        from tanx_scene_ui23 import validate as validate_tanx
-        validate_tanx(source,image)
-    if len(source.aux)==7217:
-        from ancient_lights_ui23 import validate as validate_lights
-        validate_lights(source,image)
-    require((len(source.aux)==ANCIENT_AUX+ANCIENT_COUNT and len(source.images)==expected_images) or
-            (len(source.aux)==7215 and len(source.images)==expected_images+7) or
-            (len(source.aux)==7217 and len(source.images)==expected_images+10),
-            'Unknown reduced-pose auxiliary extension')
+    from ancient_extensions_ui23 import catalog,validate as validate_extensions
+    catalog(source);validate_extensions(source,image)
     table_ids=set(source.aux[ANCIENT_AUX:ANCIENT_AUX+ANCIENT_COUNT])
-    require(len(table_ids)==ANCIENT_COUNT and min(table_ids)>=58613,'Ancient tables overlap an established resource')
+    require(len(table_ids)==ANCIENT_COUNT and min(table_ids)>=58613 and max(table_ids)<expected_images,'Ancient tables overlap an established resource')
     result=[];seen=set()
     for row,duration in enumerate(ANCIENT_DURATIONS):
         index=source.aux[ANCIENT_AUX+row]
@@ -87,7 +78,7 @@ def ancient_rows(source, image):
         first,count,ms=words[2:5]
         require(words[:2]==(0x414e,1) and words[7] in (0,32) and ms==33 and
                 (words[5]|words[6]<<16)==duration and count==(duration+ms-1)//ms and
-                first>=58613 and first+count<=len(source.images),'Invalid Ancient loop range or source clock')
+                first>=58613 and first+count<=expected_images,'Invalid Ancient loop range or source clock')
         frames=set(range(first,first+count))
         require(not seen.intersection(frames) and not table_ids.intersection(frames),'Ancient loop directories overlap')
         seen.update(frames)
@@ -294,8 +285,10 @@ def prepare(data, work):
     from ui12_resources import replace_images
     from retired_assets_ui22 import PLAN
     source = coalesce.view(data)
+    from ancient_extensions_ui23 import ENDPOINTS,catalog,Prefix
+    catalog(source)
     require(source.version >= MINIMUM_VERSION and len(source.clips) == 1783 and
-            len(source.images) >= 58613 and len(source.aux) in (7212,7214,7215,7217),
+            len(source.images) >= 58613 and len(source.aux) in ENDPOINTS,
             'Expected the complete matching UI22 resource catalog')
     require(not reduced(data), 'The input already uses the reduced-pose profile')
     work = Path(work); work.mkdir(parents=True, exist_ok=True)
@@ -303,6 +296,12 @@ def prepare(data, work):
     def image(index):
         return reader.image_raw(index) if source.images[index][3] == 6 else source.image_raw(index)
     ancients=ancient_rows(source,image)
+    if len(source.aux)>=7220:
+        from ancient_materials_ui23 import require_reduced_source
+        require_reduced_source(Prefix(source,7220),image)
+    if len(source.aux)>=7225:
+        from neow_post_assets_ui23 import require_reduced_source
+        require_reduced_source(Prefix(source,7225),image)
     replacements = {}; typed_before = set(); typed_after = set(); protected_vantom = set(); tables = []
     def save(index, row):
         w, h, fmt, raw = row

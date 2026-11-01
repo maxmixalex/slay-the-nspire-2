@@ -1,5 +1,6 @@
 """Independent source-equation and complete interpolation-bound checks."""
-import ctypes,math,sys,tempfile,unittest
+import ctypes,math,struct,sys,tempfile,unittest
+from types import SimpleNamespace
 from pathlib import Path
 import numpy as np
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'tools'))
@@ -87,5 +88,46 @@ class SourceTurbulence(unittest.TestCase):
                 self.assertLessEqual(float(np.linalg.norm(actual-reference)),a.ERROR_PIXELS+1e-9)
             self.assertLessEqual(proof['maximum_lcd_error_bound'],.125)
         with self.assertRaises(ValueError):a.compress_track([[0,0],[3000,3000]])
+
+class ImageGeometry(unittest.TestCase):
+    @staticmethod
+    def table(count,keys):
+        texture=576;ramp=texture+32*32;directory=ramp+2048
+        offset=directory+count*12;records=[];tracks=[]
+        ticks=np.r_[np.arange(keys-1),210].astype('<u2')
+        points=np.zeros((keys,3),dtype='<u2');points[:,0]=ticks
+        track=points.view('u1').reshape(keys,6).T.copy().tobytes()
+        for i in range(count):
+            records.append(struct.pack('<IHHhH',offset,len(track)//6,4096,0,0))
+            tracks.append(track);offset+=len(track)
+        header=struct.pack('<4sHHII4H6I4HII',b'ATP1',2,count,7000,0,30,0,32,32,
+            texture,ramp,directory,offset,1024,1024,65535,65535,65535,65535,64,0)
+        return header+b'\xff'*512+bytes(1024+2048)+b''.join(records)+b''.join(tracks)
+
+    def test_actual_oversized_table_reshapes_only_padding(self):
+        raw=self.table(100,210)
+        self.assertEqual(len(raw),130848)
+        old=raw+bytes((-len(raw))%512)
+        self.assertEqual(len(old),131072)
+        image=a.table_image(old)
+        self.assertEqual(image[:3],(320,205,0))
+        self.assertEqual(len(image[3]),131200)
+        self.assertEqual(image[3][:len(old)],old)
+        self.assertEqual(image[3][len(old):],bytes(128))
+        self.assertEqual(a.table_image(image[3]),image)
+        self.assertEqual(a.validate_table(old),a.validate_table(image[3]))
+        damaged=old[:-1]+b'\1'
+        with self.assertRaises(ValueError):a.table_image(damaged)
+
+    def test_typed_geometry_rejects_old_256_high_and_wrong_leaf(self):
+        rows=[a.table_image(self.table(n,210 if i==5 else 2)) for i,n in enumerate(a.EXPECTED_COUNTS)]
+        source=SimpleNamespace(aux=[0]*a.AUXILIARY,images=[0]*a.IMAGES)
+        source.aux[a.BASE_AUX]=a.BASE_IMAGES
+        image=lambda i:rows[i-a.BASE_IMAGES]
+        self.assertEqual(a.validate(source,image)['particle_count'],sum(a.EXPECTED_COUNTS))
+        old=rows[5];rows[5]=(256,256,0,old[3][:131072])
+        with self.assertRaises(ValueError):a.validate(source,image)
+        rows[5]=old;rows[0]=(320,rows[0][1],0,rows[0][3])
+        with self.assertRaises(ValueError):a.validate(source,image)
 
 if __name__=='__main__':unittest.main()
