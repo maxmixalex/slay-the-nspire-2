@@ -69,8 +69,11 @@ static bool native_ancient_background(Canvas&c,OriginalEventId id){
  if(image<0)return false;
  ancient_scene_ui23::Timeline timeline;
  if(!timeline.read(c.a.content.image(image)))return false;
- return scene_delta_background(c,timeline.first,
-     timeline.frame(c.a.map_clock_ms-c.a.ancient_dialogue.entered,c.a.content.reduced_animations()),timeline.interval);
+ const uint32_t elapsed=c.a.map_clock_ms-c.a.ancient_dialogue.entered;
+ if(!scene_delta_background(c,timeline.first,timeline.frame(elapsed,c.a.content.reduced_animations()),timeline.interval))return false;
+ if(c.a.content.ui_image(ancient_lights_ui23::AuxiliaryFirst+unsigned(row))>=0)
+  return ancient_lights::draw(c,unsigned(row),elapsed);
+ return true;
 }
 static void native_ancient_screen(Canvas&c){
  auto&a=c.a;const auto&e=a.game.original_events;a.sync_ancient_dialogue();

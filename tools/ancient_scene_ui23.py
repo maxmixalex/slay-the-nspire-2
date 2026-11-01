@@ -303,6 +303,7 @@ def main():
     parser.add_argument('--bounded-color-hold',action='store_true',help='Cyclic RGB565 hold within R/B±1,G±2; exact fallback at nonconvergent pixels')
     parser.add_argument('--key-interval',type=int,choices=(8,32),default=8)
     parser.add_argument('--retained-planes',action='store_true',help='Keep neighboring copy patches in existing bounded RGR1/RGR3 groups')
+    parser.add_argument('--authored-lights',action='store_true',help='Defer only Neow vignette and sample original CPU light bone projections')
     args = parser.parse_args()
     t.require(args.sample_only or args.input and args.output,'Supply input/output or --sample-only')
     for path in (args.input,args.output,args.pck,args.runtime,args.work):
@@ -311,7 +312,10 @@ def main():
     pack = Pack(args.pck); started=time.monotonic()
     try:
         with SpineSampler(pack,runtime=args.runtime,dotnet=args.dotnet,work_dir=args.work/'adapter') as sampler:
-            sampled=[sample_scene(pack,sampler,args.runtime,scene,args.work/'sampled') for scene in SCENES]
+            sample=sample_scene
+            if args.authored_lights:
+                from ancient_lights_ui23 import sample_scene as sample
+            sampled=[sample(pack,sampler,args.runtime,scene,args.work/'sampled') for scene in SCENES]
         if not args.sample_only:
             output,report=append(args.input.read_bytes(),sampled,args.work,args.workers,
                 bounded_color_hold=args.bounded_color_hold,key_interval=args.key_interval,retained_planes=args.retained_planes)

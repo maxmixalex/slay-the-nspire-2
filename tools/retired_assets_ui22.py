@@ -94,7 +94,7 @@ def verify_runtime_routes():
 def retired_images(source):
     checked_plan();ids=set()
     t.require(len(source.clips)==1783 and (len(source.images) in (BASE_IMAGES,BASE_IMAGES+1) or
-              (len(source.aux),len(source.images)) in ((7214,59667),(7215,59674))),
+              (len(source.aux),len(source.images)) in ((7214,59667),(7215,59674),(7217,59677))),
               'Retirement requires the pinned complete image/clip catalog')
     for row in PLAN['retired_clips']:
         expected=tuple(row['tuple'])
@@ -139,7 +139,7 @@ def vantom_references(raw):
 
 def validate_roots(source,image):
     ids=retired_images(source)
-    t.require(len(source.aux) in (BASE_AUX,AUXILIARY,7214,7215),'Retirement requires the complete selection profile')
+    t.require(len(source.aux) in (BASE_AUX,AUXILIARY,7214,7215,7217),'Retirement requires the complete selection profile')
     direct=set(range(66))|set(source.aux[:BASE_AUX])|{row[0] for row in source.cards}
     selected={row['id'] for row in PLAN['retired_clips']}
     for clip,row in enumerate(source.clips):
@@ -147,7 +147,7 @@ def validate_roots(source,image):
             direct.update(range(row[0],row[0]+row[1]))
     t.require(not ids&direct,'Retired image is still a direct clip/card/auxiliary root')
     typed=set()
-    if len(source.aux) in (7214,7215):
+    if len(source.aux) in (7214,7215,7217):
         from no_animations import ancient_rows
         for row in ancient_rows(source,image):
             typed.add(row['table'])
@@ -155,9 +155,12 @@ def validate_roots(source,image):
             t.require(all(entry[1:3]==(320,240) for entry in
                           source.images[row['first']:row['first']+row['frames']]),
                       'Ancient scene frames must retain their native 320x240 dimensions')
-    if len(source.aux)==7215:
+    if len(source.aux) in (7215,7217):
         from tanx_scene_ui23 import validate as validate_tanx
         tanx=validate_tanx(source,image);typed.add(tanx['table']);typed.update(tanx['images'])
+    if len(source.aux)==7217:
+        from ancient_lights_ui23 import validate as validate_lights
+        validate_lights(source,image);typed.update(range(59674,59677))
     for auxiliary in [*range(5409,5419),*range(5422,7206)]:
         value=source.aux[auxiliary]
         if not value:continue
@@ -187,7 +190,7 @@ def validate_roots(source,image):
 
 
 def validate_retired_profile(source,image):
-    t.require((len(source.aux),len(source.images)) in ((AUXILIARY,BASE_IMAGES+1),(7214,59667),(7215,59674)) and
+    t.require((len(source.aux),len(source.images)) in ((AUXILIARY,BASE_IMAGES+1),(7214,59667),(7215,59674),(7217,59677)) and
               source.aux[BASE_AUX]==MARKER_IMAGE,'UI22 retirement marker/catalog is missing')
     w,h,fmt,raw=image(MARKER_IMAGE)
     t.require((w,h,fmt,raw)==(8,1,0,marker_bytes()),'UI22 retirement plan marker differs')

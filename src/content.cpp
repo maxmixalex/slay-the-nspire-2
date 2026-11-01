@@ -14,6 +14,7 @@
 #include "character_select_delta.hpp"
 #include "retired_assets_ui22.hpp"
 #include "ancient_scene_ui23.hpp"
+#include "ancient_lights_ui23.hpp"
 #include "tanx_scene_ui23.hpp"
 #include "implicit_geometry.hpp"
 #include "content_animation_profile.hpp"
@@ -359,7 +360,8 @@ bool Content::open(ResourceSource source){
                                                     CombatUi15AuxiliaryCount,VantomUi15AuxiliaryCount,
                                                     vantom_vfx::AuxiliaryCount,FramedUi20AuxiliaryCount,
                                                     FramedUi22AuxiliaryCount,character_select_delta::AuxiliaryCount,
-                                                    retired_assets_ui22::AuxiliaryCount,ancient_scene_ui23::AuxiliaryCount,tanx_scene_ui23::AuxiliaryCount};
+                                                    retired_assets_ui22::AuxiliaryCount,ancient_scene_ui23::AuxiliaryCount,tanx_scene_ui23::AuxiliaryCount,
+                                                    ancient_lights_ui23::AuxiliaryCount};
                                                 for(unsigned end:endpoints){
                                                     if(next==0x314c4954u)break;
                                                     for(unsigned i=auxiliary;i<end;++i){
@@ -433,14 +435,19 @@ bool Content::open(ResourceSource source){
     if(version>=5){
         ui_count_=auxiliary;ui_offset_=image_directory_end()+ng*16+ns*8+nc*16+cards*16;
     }
-    if(auxiliary==retired_assets_ui22::AuxiliaryCount||auxiliary==ancient_scene_ui23::AuxiliaryCount||auxiliary==tanx_scene_ui23::AuxiliaryCount){
+    if(auxiliary==retired_assets_ui22::AuxiliaryCount||auxiliary==ancient_scene_ui23::AuxiliaryCount||auxiliary==tanx_scene_ui23::AuxiliaryCount||auxiliary==ancient_lights_ui23::AuxiliaryCount){
         using namespace retired_assets_ui22;
         // The offline release guard proves the fixed retirement plan and all
         // live roots. Opening additionally rejects a missing/corrupt marker;
         // an IO failure cannot turn a partial pack into a legacy fallback.
-        const unsigned expected_images=auxiliary==tanx_scene_ui23::AuxiliaryCount?tanx_scene_ui23::Images:
+        const unsigned expected_images=auxiliary==ancient_lights_ui23::AuxiliaryCount?ancient_lights_ui23::Images:
+            auxiliary==tanx_scene_ui23::AuxiliaryCount?tanx_scene_ui23::Images:
             auxiliary==ancient_scene_ui23::AuxiliaryCount?ancient_scene_ui23::Images:Images;
-        if(auxiliary==tanx_scene_ui23::AuxiliaryCount&&ui_image(tanx_scene_ui23::AuxiliaryFirst)!=int(tanx_scene_ui23::FirstImage+6))return reject();
+        if((auxiliary==tanx_scene_ui23::AuxiliaryCount||auxiliary==ancient_lights_ui23::AuxiliaryCount)&&
+           ui_image(tanx_scene_ui23::AuxiliaryFirst)!=int(tanx_scene_ui23::FirstImage+6))return reject();
+        if(auxiliary==ancient_lights_ui23::AuxiliaryCount&&
+           (ui_image(ancient_lights_ui23::AuxiliaryFirst)!=int(ancient_lights_ui23::FirstImage+1)||
+            ui_image(ancient_lights_ui23::AuxiliaryFirst+1)!=int(ancient_lights_ui23::FirstImage+2)))return reject();
         if(version<45||images_!=expected_images||clips_!=1783||ui_image(AuxiliaryFirst)!=int(MarkerImage))return reject();
         const auto marker=image_directory_[MarkerImage];uint8_t bytes[16];
         if(marker.width()!=8||marker.height()!=1||marker.format!=0||marker.length!=sizeof bytes||

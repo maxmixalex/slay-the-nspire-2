@@ -260,7 +260,7 @@ def add_final_stages(recipe, source_editions, output, codes, no_animations):
     recipe.add('ancient-scenes45', 'ancient_scene_ui23', ['--input', logical,
         '--output', target, '--pck', recipe.pck, '--runtime', recipe.runtime,
         '--dotnet', recipe.dotnet, '--work', recipe.directory('cache/ancient-scenes45'),
-        '--workers', workers, *scene_options], [target,target.with_suffix('.json')]); logical = target
+        '--workers', workers, '--authored-lights', *scene_options], [target,target.with_suffix('.json')]); logical = target
     target = recipe.directory('implicit46')/'eng.nsp'
     recipe.add('implicit46', 'implicit_tile_geometry_ui22', ['--input', logical,
         '--output', target, '--work', recipe.directory('cache/implicit46'),
@@ -273,6 +273,10 @@ def add_final_stages(recipe, source_editions, output, codes, no_animations):
     target = recipe.directory('tanx46')/'eng.nsp'
     recipe.add('tanx46','tanx_scene_ui23',['--input',logical,'--output',target,'--pck',recipe.pck,
         '--work',recipe.directory('cache/tanx46')],[target,target.with_suffix('.json')]);logical=target
+    target=recipe.directory('ancient-lights46')/'eng.nsp'
+    recipe.add('ancient-lights46','ancient_lights_ui23',['--input',logical,'--output',target,'--pck',recipe.pck,
+        '--runtime',recipe.runtime,'--work',recipe.directory('cache/ancient-scenes45')],
+        [target,target.with_suffix('.json')]);logical=target
     target = recipe.directory('quality46')/'eng.nsp'
     selection_policy = None if no_animations else getattr(recipe, 'selection_policy', DEFAULT_SELECTION_POLICY)
     selection_overrides = {} if no_animations else getattr(recipe, 'selection_overrides', DEFAULT_SELECTION_OVERRIDES)

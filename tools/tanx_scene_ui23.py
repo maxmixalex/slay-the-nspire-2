@@ -43,7 +43,7 @@ def parameter_bytes(gradient):
 
 
 def parameters(raw,image_count):
-    t.require(image_count==IMAGES and len(raw)==PARAMETER_BYTES,
+    t.require(image_count in (IMAGES,59677) and len(raw)==PARAMETER_BYTES,
               'Tanx parameter size/catalog differs')
     t.require(struct.unpack_from('<16H',raw)==HEADER,'Tanx typed references or geometry differs')
     t.require(raw[232:232+65536]==smooth_lut() and not any(raw[232+65536:]),
@@ -53,7 +53,7 @@ def parameters(raw,image_count):
 
 
 def validate(source,image):
-    t.require((len(source.aux),len(source.images))==(AUXILIARY,IMAGES) and
+    t.require((len(source.aux),len(source.images)) in ((AUXILIARY,IMAGES),(7217,59677)) and
               source.aux[BASE_AUX]==BASE_IMAGES+6,'Tanx requires the exact complete typed extension')
     w,h,fmt,raw=image(BASE_IMAGES+6)
     t.require((w,h,fmt)==(256,129,0),'Tanx parameters must remain literal words')
@@ -86,12 +86,13 @@ def source_images(pack):
     return result
 
 
-def group_images(rows,cache):
+def group_images(rows,cache,group_bytes=128*1024):
     from group_ui7_hands import RowImages
     from repack_retained import DESCRIPTOR,plan_images
     payloads=[(cache/row['file']).read_bytes() for row in rows]
     source=RowImages(rows,payloads)
-    batches=plan_images(source,group_bytes=128*1024,fast_images='none')
+    t.require(group_bytes in (128*1024,256*1024),'Reviewed retained group target must remain128/256KiB')
+    batches=plan_images(source,group_bytes=group_bytes,fast_images='none')
     payload=bytearray();entries=[None]*len(rows);maximum=groups=0
     def add(raw):
         payload.extend(bytes(len(payload)&1));at=len(payload);payload.extend(raw);return at
@@ -109,7 +110,7 @@ def group_images(rows,cache):
             raw_at+=len(record.raw)
         groups+=1;maximum=max(maximum,batch.raw_size)
     payload.extend(bytes(len(payload)&1))
-    t.require(all(row is not None for row in entries) and maximum<=128*1024,'Tanx retained group exceeds its existing bound')
+    t.require(all(row is not None for row in entries) and maximum<=group_bytes,'Retained group exceeds its reviewed bound')
     return dict(payload=bytes(payload),entries=entries,decoded_sizes=[len(raw) for raw in payloads],
                 report=dict(groups=groups,maximum_group_bytes=maximum,stored_bytes=len(payload)))
 

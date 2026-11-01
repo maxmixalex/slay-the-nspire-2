@@ -20,7 +20,11 @@ class TanxCatalog(unittest.TestCase):
             self.assertEqual(stage.module,'tanx_scene_ui23')
             self.assertEqual(args[args.index('--input')+1],str(stages['pruned46'].outputs[0]))
             self.assertEqual(args[args.index('--pck')+1],str(recipe.pck))
-            self.assertEqual(stages['quality46'].arguments[0],str(stage.outputs[0]))
+            lights=stages['ancient-lights46'];light_args=lights.arguments
+            self.assertEqual(light_args[light_args.index('--input')+1],str(stage.outputs[0]))
+            self.assertEqual(light_args[light_args.index('--runtime')+1],str(recipe.runtime))
+            self.assertEqual(stages['quality46'].arguments[0],str(lights.outputs[0]))
+            self.assertIn('--authored-lights',stages['ancient-scenes45'].arguments)
             self.assertLess(names.index('tanx46'),names.index('final-index46'))
             self.assertEqual(stages['final-index46'].module,'@mandatory-orphan-prune')
 
