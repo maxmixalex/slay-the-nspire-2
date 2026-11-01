@@ -203,10 +203,13 @@ def self_test():
     random_hash=hashlib.sha256(random_noise.tobytes()).hexdigest()
     if random_hash!='02fdff4eefbbd073fd014ae4c0b4d237afbd64e0e272050e7b0fc5b808069700':
         raise ValueError('Bundled Random seamless noise differs from its source oracle')
+    from ancient_turbulence_ui23 import helper_self_test
+    turbulence_proof=helper_self_test(library)
     return dict(passed=True,mandatory_linked_arm_validation=arm_proof,recipe_modules=len(modules),spawn_worker=True,spine_protocol=True,decim_samples=len(decim),
         utf8_mode=bool(sys.flags.utf8_mode),unicode_default_io=True,
         retirement_route_sources=len(retirement_plan['runtime_route_sources']),retirement_routes_verified=True,
         vantom_pixels=field.size,vantom_sha256=noise_hash,random_pixels=50,random_sha256=random_hash,
+        original_gpu_turbulence=turbulence_proof,
         original_game_conversion_tested=False)
 
 

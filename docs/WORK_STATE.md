@@ -1,3 +1,30 @@
+# UI23 bounded source turbulence — source checkpoint, release gates open
+
+An isolated source stage adds the original Godot4.5.1 four-dimensional gradient
+and curl equations to the desktop converter helper. It samples all12remaining
+Pael/Orobas/Nonu/Vakuu turbulent emitter definitions, preserving their original
+490particles, texture alpha, lifetime/preprocess, force/display curves and node
+identity. Source sampled motion is compressed to a proved maximum1/8LCDpixel
+position error, including integer interpolation, without changing actor images
+or actor frames. The calculator uses one existing decoded image view per emitter
+for its mask, display ramps and tracks; it adds no persistent simulation pool.
+
+This is a deterministic source seed bank, not an unknown original GPU random
+history. Godot's fixed_fps0 preprocess uses30Hz; its unrecorded variable-frame
+history is represented at that same30Hz and interpolated on the display clock.
+The source Orobas orbit value.0090001 takes the original abs(value)<.01 early
+return. Nonu's28.849997 term is radial acceleration, not radial velocity.
+
+Three focused Python source/continuous-error tests,101native format/clock/bounds
+checks and Clang18 full-App syntax pass. An initial malformed-record test selected
+another valid bank track; the test now corrupts both records and passes. Actual
+original-data trajectory sizes, full Canvas visual/cost checks, ARM allocation,
+final typed Content/converter/no-animation integration, and the70,000,000-byte
+complete installation gate remain open. Planned extension is7224/59729, with
+exactly12real emitter data leaves after the revised7223/59717fog predecessor.
+Pael/Orobas rendering hooks are included; Nonu/Vakuu source-order insertion is
+part of the pending combined integration. No final release claim is made here.
+
 # UI23 integration checkpoint — 2026-11-01, acceptance still open
 
 The active branch remains `work/ui23-integration`; PR #3 is not merged. The
@@ -35,11 +62,21 @@ actual converted outputs are release gates, not exclusions.
   startup. Controlled before/after timings and final-build gameplay are open.
   No physical calculator connection is available; host, Unicorn and emulator
   results must remain explicitly distinguished from physical-device evidence.
-- Published `7b093fc` localizes a real Windows frozen-converter failure: the
-  source-mode same-ELF ARM oracle passes both streams with CFG flags zero;
-  the frozen process has CFG flags one and aborts at the first decode with
-  0xC0000409. A pinned upstream-compatible bootloader build and actual Windows
-  frozen-oracle rerun are required. Linux helper success does not close this.
+- Published `31d3ff1` fixes the confirmed Windows frozen-converter failure
+  with a source-pinned private PyInstaller bootloader. Actual Windows Actions
+  run 41270461958 passes source and frozen execution of both same-ELF ARM
+  streams, plus all 56 recipe-module/dependency/helper checks. ASLR, NX and
+  high-entropy addressing remain enabled; system policy is unchanged. A full
+  original-game conversion on Windows has not been run.
+- Actual supplied-firmware warm Pael comparison on identical older reduced
+  data and the same saved run: `895ecca` averaged 21.094 emulated frames/s and
+  46.995 ms rendering; `460fae8` averaged 29.991 frames/s (30 fps cap) and
+  29.835 ms rendering. Each interval is 30 seconds, derived by subtracting
+  ordinary-exit counters from matching per-source NAND/RAM snapshots. Both
+  have zero warm reads. This is a 36.5% render-time reduction for this one
+  reduced-room case, not a physical-device or all-scenes performance claim.
+  Normal new-run entry, save-and-return, exit and continue have executed on
+  this controlled baseline; final-source/data gameplay remains open.
 
 Original game assets, source-derived packs, private captures, firmware,
 conversation attachments and private storage identifiers remain outside Git.

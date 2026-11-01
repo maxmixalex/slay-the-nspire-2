@@ -120,6 +120,7 @@ def build(args):
     (output/'converter-bundle.json').write_text(json.dumps(receipt,indent=2)+'\n')
     (output/'Spine-Runtimes-LICENSE').write_bytes((helpers/'Spine-Runtimes-LICENSE').read_bytes())
     (output/'FastNoiseLite-LICENSE.txt').write_text((helpers/'FastNoiseLite.h').read_text().split('#ifndef',1)[0])
+    (output/'Godot-MIT.txt').write_bytes((ROOT/'licenses/OkHSV-Godot-MIT.txt').read_bytes())
     return receipt
 
 

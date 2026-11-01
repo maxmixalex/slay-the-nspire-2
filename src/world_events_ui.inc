@@ -91,6 +91,11 @@ static void native_ancient_screen(Canvas&c){
  // Orobas/Pael CPU lights follow their earlier independent GPU layers.
  // Vakuu's visible CPU lights precede its still-outstanding final sparkles.
  // Reduced resources hold each source entry/preprocessing pose, not time.
+ if(e.id==OriginalEventId::Pael||e.id==OriginalEventId::Orobas){
+  const unsigned first=e.id==OriginalEventId::Pael?0u:3u;
+  ancient_turbulence::draw(c,first,3,reduced?0u:a.map_clock_ms-d.entered,
+      fake_merchant::hash(uint32_t(a.game.seed)^uint32_t(a.game.floor)*0x9e3779b9u^uint32_t(e.id)));
+ }
  const bool darv=e.id==OriginalEventId::Darv;
  const unsigned light_mode=darv?2:e.id==OriginalEventId::Orobas?3:e.id==OriginalEventId::Pael?4:e.id==OriginalEventId::Vakuu?5:0;
  if(light_mode){
