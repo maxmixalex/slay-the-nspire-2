@@ -62,6 +62,27 @@ static void native_event_option(const App&a,int option,bool description,char*out
 }
 #include "ancient_dialogue_input.inc"
 #include "ancient_dialogue_ui.inc"
+static bool native_ancient_background(Canvas&c,OriginalEventId id){
+ const int row=id==OriginalEventId::Neow?0:id==OriginalEventId::Tezcatara?1:-1;
+ if(row<0)return false;
+#ifdef SPIRE_NEOW_LAYER_PROFILE
+ RuntimeScopedRenderPart scene_timing(c.a.callbacks.profile_render,RuntimeRenderPart::RandomWater,row==0);
+#endif
+ const int image=c.a.content.ui_image(ancient_scene_ui23::AuxiliaryFirst+unsigned(row));
+ if(image<0)return false;
+ ancient_scene_ui23::Timeline timeline;
+ if(!timeline.read(c.a.content.image(image)))return false;
+ const uint32_t elapsed=c.a.map_clock_ms-c.a.ancient_dialogue.entered;
+ {
+#ifdef SPIRE_NEOW_LAYER_PROFILE
+ RuntimeScopedRenderPart body_timing(c.a.callbacks.profile_render,RuntimeRenderPart::RandomLight,row==0);
+#endif
+ if(!scene_delta_background(c,timeline.first,timeline.frame(elapsed,c.a.content.reduced_animations()),timeline.interval))return false;
+ }
+ if(c.a.content.ui_image(ancient_lights_ui23::AuxiliaryFirst+unsigned(row))>=0)
+  return ancient_lights::draw(c,unsigned(row),elapsed);
+ return true;
+}
 static void native_ancient_screen(Canvas&c){
  auto&a=c.a;const auto&e=a.game.original_events;a.sync_ancient_dialogue();
  auto&d=a.ancient_dialogue;const unsigned count=unsigned(mn(3,original_event_option_count(a.game)));
@@ -69,7 +90,61 @@ static void native_ancient_screen(Canvas&c){
  // The complete Ancient scene is a viewport background. The shared HUD is
  // composited afterwards; reserving its height here squeezed and lowered
  // the scene, leaving an artificial band behind the translucent top bar.
- c.picture(a.content.world_image("events",original_event_key(e.id)),0,0,320,240);
+ const bool reduced=a.content.reduced_animations();
+ const int background=reduced?a.content.world_image("events",original_event_key(e.id)):-1;
+ if(!reduced||!ancient_still_restore(c,background,d.entered)){
+ if(!native_ancient_background(c,e.id)){
+  const int plate=reduced?background:a.content.world_image("events",original_event_key(e.id));
+  if(!ancient_static_plate_over_ink(c,plate))c.picture(plate,0,0,320,240);
+ }
+ // Authored Darv order: room, light7/light8, stars, then dialogue/HUD.
+ // Orobas/Pael CPU lights follow their earlier independent GPU layers.
+ // Vakuu's visible CPU lights precede its final stationary sparkles.
+ // Reduced resources hold each source entry/preprocessing pose, not time.
+ const unsigned material_scene=e.id==OriginalEventId::Pael?0:e.id==OriginalEventId::Orobas?1:e.id==OriginalEventId::Tanx?2:3;
+ if(material_scene<3){
+  if(material_scene)ancient_materials::water(c,material_scene,reduced?0u:a.map_clock_ms);
+  if(material_scene<2)ancient_materials::lights(c,material_scene,reduced?0u:a.map_clock_ms-d.entered);
+ }
+ if(e.id==OriginalEventId::Pael||e.id==OriginalEventId::Orobas){
+  const unsigned first=e.id==OriginalEventId::Pael?0u:3u;
+  ancient_turbulence::draw(c,first,3,reduced?0u:a.map_clock_ms-d.entered,
+      fake_merchant::hash(uint32_t(a.game.world.run_seed)^uint32_t(a.game.world.run_seed>>32)^uint32_t(a.game.floor)*0x9e3779b9u^uint32_t(e.id)));
+ }
+ const uint32_t gpu_clock=reduced?0u:a.map_clock_ms-d.entered;
+ const unsigned gpu_aux=ancient_gpu_masks_ui23::AuxiliaryFirst;
+ if(e.id==OriginalEventId::Nonupeipe){
+  nonu_fog::draw(c,gpu_clock,fake_merchant::hash(uint32_t(a.game.world.run_seed)^
+    uint32_t(a.game.world.run_seed>>32)^unsigned(a.game.floor)*0x9e3779b9u^d.entered^0x4e464731u));
+  ancient_gpu_masks::lights(c,gpu_aux,gpu_clock,false,0,5);
+  ancient_turbulence::draw(c,6,2,gpu_clock,fake_merchant::hash(uint32_t(a.game.world.run_seed)^
+    uint32_t(a.game.world.run_seed>>32)^unsigned(a.game.floor)*0x9e3779b9u^uint32_t(e.id)));
+ }
+ if(e.id==OriginalEventId::Vakuu){
+  // Source order: cinders, light3/light4, speck families, light5, CPU
+  // lights, sparkles. The remaining cinder is integrated at this first slot.
+  vakuu_cinders::draw(c,gpu_clock,fake_merchant::hash(uint32_t(a.game.world.run_seed)^
+    uint32_t(a.game.world.run_seed>>32)^unsigned(a.game.floor)*0x9e3779b9u^d.entered^0x564b4331u));
+  ancient_gpu_masks::lights(c,gpu_aux,gpu_clock,true,5,2);
+  ancient_turbulence::draw(c,8,4,gpu_clock,fake_merchant::hash(uint32_t(a.game.world.run_seed)^
+    uint32_t(a.game.world.run_seed>>32)^unsigned(a.game.floor)*0x9e3779b9u^uint32_t(e.id)));
+  ancient_gpu_masks::lights(c,gpu_aux,gpu_clock,true,7,1);
+ }
+ const bool darv=e.id==OriginalEventId::Darv;
+ const unsigned light_mode=darv?2:e.id==OriginalEventId::Orobas?3:e.id==OriginalEventId::Pael?4:e.id==OriginalEventId::Vakuu?5:0;
+ if(light_mode){
+  const uint32_t clock=reduced?0u:a.map_clock_ms-d.entered;
+  const auto seed=fake_merchant::hash(uint32_t(a.game.seed)^uint32_t(a.game.floor)*0x9e3779b9u^uint32_t(e.id));
+  fake_merchant::lights(c,clock,seed,light_mode);
+  if(darv)fake_merchant::stars(c,clock,
+      fake_merchant::hash(uint32_t(a.game.seed)^uint32_t(a.game.floor)*0x9e3779b9u^0x44415256u),true);
+ }
+ if(e.id==OriginalEventId::Vakuu)ancient_gpu_masks::sparkles(c,gpu_aux,gpu_clock,
+   fake_merchant::hash(uint32_t(a.game.seed)^unsigned(a.game.floor)*0x9e3779b9u^d.entered^0x56414b55u));
+ if(e.id==OriginalEventId::Tanx)tanx_scene::draw(
+   c,reduced?0u:a.map_clock_ms-d.entered,reduced?0u:a.map_clock_ms,d.entered);
+ if(reduced)ancient_still_store(c,background,d.entered);
+ }
  const int dialogue_height=ancient_measure(c,count),top=d.y(a.map_clock_ms)+d.scroll;
  Canvas clipped=c;clipped.pixels+=ancient_layout::ClipY*clipped.pitch+ancient_layout::ClipX;
  clipped.clip_w=ancient_layout::ClipW;

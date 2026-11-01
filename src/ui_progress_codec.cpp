@@ -1,4 +1,5 @@
 #include "ui_progress.hpp"
+#include "ui_history_archive.hpp"
 #include "ui7_assets.hpp"
 namespace spire {
 namespace {
@@ -58,9 +59,8 @@ static const UiRunHistory* journal_run(const UiProgress&v,uint32_t serial){
     if(!serial)return nullptr;if(v.current.serial==serial)return &v.current;
     for(unsigned i=0;i<v.count;++i)if(v.history[i].serial==serial)return &v.history[i];return nullptr;
 }
-static bool journal_entry_valid(const UiProgress&v,const UiHistoryJournalEntry&e){
+static bool page_entry_valid(const UiRunHistory*r,const UiHistoryJournalOwner&owner,const UiHistoryJournalEntry&e){
     if(e.owner>=UiJournalOwners||e.floor>=UiHistoryFloors||e.kind==RunHistoryEvent::None||e.kind>=RunHistoryEvent::Count)return false;
-    const auto&owner=v.journal.owners[e.owner];const auto*r=journal_run(v,owner.serial);
     if(!r||e.floor>=r->floor_count||!owner.observed(e.floor))return false;
     const auto valid_card=[](unsigned token){return card_from_token(int(token)).kind<CardKinds;};
     using K=RunHistoryEvent;
@@ -85,6 +85,18 @@ static bool journal_entry_valid(const UiProgress&v,const UiHistoryJournalEntry&e
     case K::CombatStarted:return e.model>0&&e.model<EncounterKinds&&e.detail>0&&e.flags>=1&&e.flags<=3;
     default:return !e.flags;
     }
+}
+static bool journal_entry_valid(const UiProgress&v,const UiHistoryJournalEntry&e){
+ if(e.owner>=UiJournalOwners)return false;
+ const auto&owner=v.journal.owners[e.owner];return page_entry_valid(journal_run(v,owner.serial),owner,e);
+}
+template<class Codec>void history_facts(Codec&c,UiRunHistory&r){
+ if(!r.serial)return;auto&f=r.facts;c.integer(f.version);
+ if(f.version>1){c.good=false;return;}if(!f.version)return;
+ c.integer(f.complete);c.integer(f.shop_spent);c.integer(f.elite_rooms);c.integer(f.boss_rooms);c.integer(f.perfect_bosses);
+ c.integer(f.last_room);c.integer(f.last_battle_room);c.integer(f.combo);
+ if(f.complete>1||f.combo>1||f.last_room>8||f.last_battle_room>8||f.perfect_bosses>f.boss_rooms){c.good=false;return;}
+ for(unsigned i=0;i<r.floor_count&&c.good;++i){auto&p=r.floors[i];c.integer(p.map_type);c.integer(p.rest_choices);c.integer(p.facts);if(p.map_type>8)c.good=false;}
 }
 template<class Codec>void journal(Codec&c,UiProgress&v){
     auto&j=v.journal;
@@ -124,16 +136,7 @@ template<class Codec>void progress(Codec&c,UiProgress&v,unsigned version){
     }
     if(version>=5)c.integer(v.test_subject_kills);
     if(version>=6){
-        const auto facts=[&](UiRunHistory&r){
-            if(!r.serial)return;auto&f=r.facts;c.integer(f.version);
-            if(f.version>1){c.good=false;return;}if(!f.version)return;
-            c.integer(f.complete);c.integer(f.shop_spent);c.integer(f.elite_rooms);c.integer(f.boss_rooms);c.integer(f.perfect_bosses);
-            c.integer(f.last_room);c.integer(f.last_battle_room);c.integer(f.combo);
-            if(f.complete>1||f.combo>1||f.last_room>8||f.last_battle_room>8||f.perfect_bosses>f.boss_rooms){c.good=false;return;}
-            for(unsigned i=0;i<r.floor_count&&c.good;++i){auto&p=r.floors[i];c.integer(p.map_type);c.integer(p.rest_choices);c.integer(p.facts);
-                if(p.map_type>8)c.good=false;}
-        };
-        facts(v.current);for(unsigned i=0;i<v.count&&c.good;++i)facts(v.history[i]);
+        history_facts(c,v.current);for(unsigned i=0;i<v.count&&c.good;++i)history_facts(c,v.history[i]);
         auto&d=v.current_discoveries;const unsigned kinds[]={CardKinds,WorldRelicKinds,PotionKinds,EnemyKinds};
         for(unsigned category=0;category<4&&c.good;++category){c.integer(d.count[category]);if(d.count[category]>kinds[category]){c.good=false;return;}
             const unsigned n=d.count[category]<10?d.count[category]:10;
@@ -155,6 +158,9 @@ template<class Codec>void progress(Codec&c,UiProgress&v,unsigned version){
         build(v.current);for(auto&r:v.history)build(r);
         if(!v.current.serial&&(v.current_saved_at||v.current_saved_revision))c.good=false;
     }
+    if(version>=10){const auto prefix=[&](UiRunHistory&r){c.integer(r.history_prefix);if(r.history_prefix&~0x1ffffffu)c.good=false;};
+        prefix(v.current);for(auto&r:v.history)prefix(r);
+    }
 }
 }
 void clear_ui_progress(UiProgress&out){auto*bytes=reinterpret_cast<uint8_t*>(&out);for(size_t i=0;i<sizeof out;++i)bytes[i]=0;out.next_serial=1;}
@@ -172,7 +178,8 @@ size_t encode_ui_progress(const UiProgress&value,uint8_t*out,size_t capacity){
     if(value.tutorial_flags)version=8;
     if(value.current_saved_at||value.current_saved_revision||value.current.build_id[0])version=9;
     for(const auto&r:value.history)if(r.build_id[0])version=9;
-    out[0]='N';out[1]='S';out[2]='H';out[3]=char('0'+version);for(unsigned i=4;i<8;++i)out[i]=0;
+    if(value.current.history_prefix)version=10;for(const auto&r:value.history)if(r.history_prefix)version=10;
+    out[0]='N';out[1]='S';out[2]='H';out[3]=version==10?'A':char('0'+version);for(unsigned i=4;i<8;++i)out[i]=0;
     // Encoder never changes a field. The shared schema keeps its reader and
     // writer in the same order without depending on C++ padding/endianness.
     Encoder c{out,capacity,8};progress(c,const_cast<UiProgress&>(value),version);
@@ -180,13 +187,13 @@ size_t encode_ui_progress(const UiProgress&value,uint8_t*out,size_t capacity){
     for(unsigned i=0;i<4;++i)out[4+i]=uint8_t(c.at>>(i*8));return c.at;
 }
 bool decode_ui_progress(const uint8_t*data,size_t size,UiProgress&out){
-    if(!data||size<8||size>UiProgressCapacity||data[0]!='N'||data[1]!='S'||data[2]!='H'||data[3]<'1'||data[3]>'9')return false;
+    if(!data||size<8||size>UiProgressCapacity||data[0]!='N'||data[1]!='S'||data[2]!='H'||((data[3]<'1'||data[3]>'9')&&data[3]!='A'))return false;
     uint32_t stored=0;for(unsigned i=0;i<4;++i)stored|=uint32_t(data[4+i])<<(i*8);if(stored!=size)return false;
-    clear_ui_progress(out);Decoder c{data,size,8};progress(c,out,unsigned(data[3]-'0'));return c.good&&c.at==size;
+    clear_ui_progress(out);Decoder c{data,size,8};progress(c,out,data[3]=='A'?10:unsigned(data[3]-'0'));return c.good&&c.at==size;
 }
 bool decode_ui_progress_summary(const uint8_t*data,size_t size,UiProgressSummary&out){
     out={};
-    if(!data||size<8||size>UiProgressCapacity||data[0]!='N'||data[1]!='S'||data[2]!='H'||data[3]<'1'||data[3]>'9')return false;
+    if(!data||size<8||size>UiProgressCapacity||data[0]!='N'||data[1]!='S'||data[2]!='H'||((data[3]<'1'||data[3]>'9')&&data[3]!='A'))return false;
     uint32_t stored=0;for(unsigned i=0;i<4;++i)stored|=uint32_t(data[4+i])<<(i*8);if(stored!=size)return false;
     Decoder c{data,size,8};uint32_t serial=0,ignored=0;uint8_t count=0,next=0,byte=0;
     c.integer(serial);c.integer(count);c.integer(next);c.integer(byte);c.integer(byte);c.integer(ignored);c.integer(ignored);
@@ -203,5 +210,42 @@ bool decode_ui_progress_summary(const uint8_t*data,size_t size,UiProgressSummary
     // This intentionally does not validate or allocate the history tail.
     // Selecting the profile still uses the complete schema decoder.
     out.exists=true;return true;
+}
+size_t encode_ui_history_page(const UiRunHistory&value,const UiHistoryJournal&journal,uint8_t*out,size_t capacity){
+ if(!value.serial||!out||capacity<8)return 0;
+ out[0]='N';out[1]='H';out[2]='P';out[3]='2';
+ Encoder c{out,capacity,8};auto&r=const_cast<UiRunHistory&>(value);run(c,r,3);history_facts(c,r);
+ for(auto&ch:r.build_id)c.integer(ch);c.integer(r.history_prefix);
+ const int index=journal.owner(r.serial);UiHistoryJournalOwner owner{};
+ if(index>=0)owner=journal.owners[index];owner.serial=r.serial;
+ for(unsigned floor=r.floor_count;floor<UiJournalFloors;++floor){const uint32_t bit=1u<<(floor%32);owner.known[floor/32]&=~bit;owner.partial[floor/32]&=~bit;}
+ for(auto&bits:owner.known)c.integer(bits);for(auto&bits:owner.partial)c.integer(bits);
+ uint16_t count=0;for(unsigned i=0;i<journal.count;++i)count+=journal.at(i).owner==index&&journal.at(i).floor<r.floor_count;c.integer(count);
+ for(unsigned i=0;i<journal.count&&c.good;++i){auto e=journal.at(i);if(e.owner!=index||e.floor>=r.floor_count)continue;
+  if(!page_entry_valid(&r,owner,e)){c.good=false;break;}
+  c.integer(e.model);c.integer(e.detail);c.integer(e.floor);uint8_t kind=uint8_t(e.kind);c.integer(kind);c.integer(e.flags);
+ }
+ if(!c.good||c.at>UiProgressCapacity)return 0;for(unsigned i=0;i<4;++i)out[4+i]=uint8_t(c.at>>(8*i));return c.at;
+}
+bool decode_ui_history_page(const uint8_t*data,size_t size,UiHistoryPage&out){
+ out.valid=false;
+ if(!data||size<8||size>UiProgressCapacity||data[0]!='N'||data[1]!='H'||data[2]!='P'||(data[3]!='1'&&data[3]!='2'))return false;
+ uint32_t stored=0;for(unsigned i=0;i<4;++i)stored|=uint32_t(data[4+i])<<(8*i);if(stored!=size)return false;
+ // Reset the selected view in place: aggregate assignment materializes the
+ // 33 KiB journal on the calculator stack before copying it into this view.
+ auto*clear=reinterpret_cast<uint8_t*>(&out);for(size_t i=0;i<sizeof out;++i)clear[i]=0;
+ Decoder c{data,size,8};run(c,out.run,3);history_facts(c,out.run);
+ bool ended=false;for(auto&ch:out.run.build_id){c.integer(ch);const unsigned v=uint8_t(ch);if(!v)ended=true;else if(ended||v<32||v>126)c.good=false;}
+ if(data[3]=='2')c.integer(out.run.history_prefix);
+ if(!ended||!out.run.serial||(out.run.history_prefix&~0x1ffffffu))c.good=false;
+ auto&owner=out.journal.owners[0];owner.serial=out.run.serial;
+ for(auto&bits:owner.known)c.integer(bits);for(auto&bits:owner.partial)c.integer(bits);
+ for(unsigned f=out.run.floor_count;f<UiJournalFloors;++f)if((owner.known[f/32]|owner.partial[f/32])&(1u<<(f%32)))c.good=false;
+ c.integer(out.journal.count);if(out.journal.count>UiJournalEntries)return false;
+ for(unsigned i=0;i<out.journal.count&&c.good;++i){auto&e=out.journal.entries[i];e.owner=0;
+  c.integer(e.model);c.integer(e.detail);c.integer(e.floor);uint8_t kind=0;c.integer(kind);e.kind=RunHistoryEvent(kind);c.integer(e.flags);
+  if(!page_entry_valid(&out.run,owner,e))c.good=false;
+ }
+ out.valid=c.good&&c.at==size;return out.valid;
 }
 } // namespace spire

@@ -87,6 +87,37 @@ static void particle_schedule(){
  const auto once=jumped;jumped.advance(Squares::Preprocess+2345,0x61eac39u);
  CHECK(jumped.tick==once.tick);for(unsigned i=0;i<Squares::Count;++i)CHECK(jumped.particles[i].x==once.particles[i].x&&jumped.particles[i].y==once.particles[i].y);
  CHECK(curve(SquareScale,0)==0&&curve(SquareScale,Q)==0);CHECK(curve(SquareAlpha,0)==Q&&curve(SquareAlpha,Q)==0);
+ // Compact light curves retain every fixed-point Hermite rounding step,
+ // including the decreasing portions of the three original source ramps.
+ constexpr fake_merchant::Key ancient[]={key(0,.321019),key(.502521,.507939),key(1,.36242)};
+ static_assert(light_curve_compatible(ancient),"source Ancient light curve");
+ constexpr auto compact=light_curve(ancient);
+ for(unsigned q=0;q<=Q;++q){
+  CHECK(curve(CandleLightScale,q)==curve(CandleScale,q));
+  CHECK(curve(AmbientLightScale,q)==curve(AmbientScale,q));
+  CHECK(curve(compact,q)==curve(ancient,q));
+ }
+ struct Birth {uint32_t clock;unsigned first,second;};
+ constexpr Birth births[]={{0,0,0},{1,1,0},{1499,1499,0},{1500,1500,0},
+  {1501,1501,1},{2999,2999,1499},{3000,3000,1500},{3001,1,1501},
+  {4500,1500,3000},{4501,1501,1},{6000,3000,1500},{6001,1,1501},
+  {UINT32_MAX,2295,795}};
+ for(const auto&b:births)for(unsigned node=0;node<4;++node){
+  CHECK(light_age(b.clock,node*2)==b.first);CHECK(light_age(b.clock,node*2+1)==b.second);
+ }
+ // Independent wide-clock oracle covers each authored preprocessing value,
+ // strict births/restarts and elapsed times near the uint32 clock wrap.
+ for(unsigned seconds=0;seconds<=5;++seconds){
+  for(unsigned elapsed=0;elapsed<=9000;++elapsed)for(unsigned particle=0;particle<2;++particle){
+   const uint64_t clock=uint64_t(elapsed)+seconds*1000u,phase=particle*1500u;
+   const unsigned expected=clock<=phase?0:unsigned((clock-phase-1)%3000+1);
+   CHECK(preprocessed_light_age(elapsed,particle,seconds)==expected);
+  }
+  for(unsigned back:{0u,1u,1499u,1500u,2999u,3000u,5000u})for(unsigned particle=0;particle<2;++particle){
+   const uint32_t elapsed=UINT32_MAX-back;const uint64_t clock=uint64_t(elapsed)+seconds*1000u,phase=particle*1500u;
+   CHECK(preprocessed_light_age(elapsed,particle,seconds)==unsigned((clock-phase-1)%3000+1));
+  }
+ }
 }
 static void event(unsigned character){
  new_run(app.game,0x71351u+character,false,Character(character));CHECK(world_begin_run(app.game,reference::ActKind::Overgrowth,0));

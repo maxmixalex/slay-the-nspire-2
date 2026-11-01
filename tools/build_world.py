@@ -891,6 +891,8 @@ if __name__ == '__main__':
     parser.add_argument('--dotnet')
     parser.add_argument('--fastnoise-header', type=Path)
     parser.add_argument('--cache', type=Path)
+    parser.add_argument('--host-intermediates',action='store_true',
+                        help='Read host-only legacy input with larger file extent; all directory limits remain')
     parser.add_argument('--plan', action='store_true', help='Print public directory counts without reading private inputs')
     args = parser.parse_args()
     if args.plan:
@@ -898,5 +900,7 @@ if __name__ == '__main__':
     else:
         if args.game is None or args.source is None or args.output is None:
             parser.error('game, source and --output are required unless --plan is selected')
-        build(args.game, args.source, args.output, choose_font(args.font), runtime=args.runtime,
-              dotnet=args.dotnet, fastnoise_header=args.fastnoise_header, cache_dir=args.cache)
+        from conversion_context import host_intermediate_files
+        with host_intermediate_files(args.host_intermediates):
+            build(args.game, args.source, args.output, choose_font(args.font), runtime=args.runtime,
+                  dotnet=args.dotnet, fastnoise_header=args.fastnoise_header, cache_dir=args.cache)

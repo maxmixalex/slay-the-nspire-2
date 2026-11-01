@@ -151,7 +151,9 @@ static void game_over_backdrop(Canvas&c){
  const bool event_room=(s.phase==Phase::Complete&&s.original_events.id==OriginalEventId::TheArchitect)||
   (s.original_events.active&&!s.original_events.combat_pending&&!s.world.event_combat_parent);
  const int event=event_room?a.content.world_image("events",original_event_key(s.original_events.id)):-1;
- if(event>=0){if(ui_ancient_event(s.original_events.id))c.picture(event,0,0,320,240);else c.picture(event,0,22,320,218);}
+ if(event>=0){if(ui_ancient_event(s.original_events.id)){
+  if(!native_ancient_background(c,s.original_events.id))c.picture(event,0,0,320,240);
+ }else c.picture(event,0,22,320,218);}
  else c.picture(a.combat_background(),0,22,320,218);
  const auto&m=a.game_over_presentation;const unsigned age=m.initial_age(a.map_clock_ms);
  // FullBlackBackstop is true black, not the general UI's green-black Ink.

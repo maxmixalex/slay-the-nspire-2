@@ -11,7 +11,7 @@ inline bool ui_run_facts_complete(const UiRunHistory&r){return r.serial&&!r.part
 inline unsigned ui_run_elites(const UiRunHistory&r){return r.facts.elite_rooms-unsigned(r.facts.elite_rooms&&r.facts.last_room==unsigned(WorldRoom::Elite));}
 inline unsigned ui_run_bosses(const UiRunHistory&r){return r.facts.boss_rooms-unsigned(r.facts.boss_rooms&&r.outcome!=1&&r.facts.last_room==unsigned(WorldRoom::Boss));}
 inline UiRunScore ui_run_score(const UiRunHistory&r,bool victorious=false){
-    UiRunScore score;score.complete=ui_run_facts_complete(r);
+    UiRunScore score;score.complete=ui_run_facts_complete(r);score.floor_points=(r.history_prefix&0x3ffffu)*10u;
     for(unsigned i=0;i<r.floor_count;++i)score.floor_points+=10u*(r.floors[i].act+1u);
     score.gold_points=r.gold_gained/100u;
     // ScoreUtility excludes the final Elite room unconditionally. A final
@@ -52,12 +52,12 @@ inline unsigned ui_run_badge_rarity(const UiRunHistory&r,UiRunBadge badge){
     case UiRunBadge::ILikeShiny:return r.relic_count>=25;
     case UiRunBadge::KaChing:return r.facts.shop_spent>=1000;
     case UiRunBadge::MoneyMoney:return won?ui_badge_tier(r.gold,200,400,600):0;
-    case UiRunBadge::MysteryMachine:{if(!known)return 0;unsigned n=0;for(unsigned i=0;i<r.floor_count;++i)n+=r.floors[i].map_type==unsigned(reference::PointType::Unknown);return n>=15;}
+    case UiRunBadge::MysteryMachine:{if(!known)return 0;unsigned n=(r.history_prefix>>18)&15u;for(unsigned i=0;i<r.floor_count;++i)n+=r.floors[i].map_type==unsigned(reference::PointType::Unknown);return n>=15;}
     case UiRunBadge::Perfect:return known?ui_badge_tier(r.facts.perfect_bosses,1,2,3):0;
     case UiRunBadge::Restful:case UiRunBadge::Restless:{
-        if(!won||!known)return 0;unsigned rooms=0,heals=0;
-        for(unsigned i=0;i<r.floor_count;++i)if(r.floors[i].room==unsigned(WorldRoom::Rest)){++rooms;heals+=(r.floors[i].rest_choices&1u)!=0;}
-        return rooms&&(badge==UiRunBadge::Restful?heals==rooms:!heals);
+        if(!won||!known)return 0;bool rooms=r.history_prefix&(1u<<22),heals=r.history_prefix&(1u<<23),missed=r.history_prefix&(1u<<24);
+        for(unsigned i=0;i<r.floor_count;++i)if(r.floors[i].room==unsigned(WorldRoom::Rest)){rooms=true;if(r.floors[i].rest_choices&1u)heals=true;else missed=true;}
+        return rooms&&(badge==UiRunBadge::Restful?!missed:!heals);
     }
     case UiRunBadge::Speedy:return won&&!r.partial?(r.seconds<=1800?3:r.seconds<=2400?2:r.seconds<=3000?1:0):0;
     case UiRunBadge::Tablet:return won&&r.max_hp==1;

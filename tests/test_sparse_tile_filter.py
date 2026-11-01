@@ -111,5 +111,29 @@ class SparseTileFilterTest(unittest.TestCase):
             cached=next((Path(folder)/'sparse-encoded').glob('*.lzma2'));cached.write_bytes(b'bad')
             with self.assertRaises(ValueError):compact.make_plan(source,Path(folder),workers=1)
 
+    def test_mixed_sparse_dense_input_preserves_existing_streams_and_is_idempotent(self):
+        before = sparse_fixture()
+        source = coalesce.view(before)
+        with tempfile.TemporaryDirectory() as folder:
+            plan, _ = compact.make_plan(source, Path(folder), workers=1)
+            # Keep one ordinary group, as when an appender adds new animation
+            # groups to a previously optimized logical resource pack.
+            old = plan[1][0]
+            plan[1] = (old, old, old)
+            mixed, _ = coalesce.rewrite(before, plan, version=46)
+            reader = t.TileReader(coalesce.view(mixed))
+            self.assertTrue(reader.sparse[0])
+            self.assertFalse(reader.sparse[1])
+            converted, report = compact.make_plan(coalesce.view(mixed), Path(folder), workers=1)
+            self.assertEqual(converted[0][0], converted[0][1])
+            self.assertEqual(report['groups'][0]['preserved_reason'], 'already_sparse')
+            self.assertEqual(report['changed_groups'], 1)
+            after, _ = coalesce.rewrite(mixed, converted, version=46)
+            compact.verify(mixed, after, converted)
+            repeated, again = compact.make_plan(coalesce.view(after), Path(folder), workers=1)
+            self.assertEqual(again['changed_groups'], 0)
+            final, _ = coalesce.rewrite(after, repeated, version=46)
+            self.assertEqual(final, after)
+
 
 if __name__=='__main__':unittest.main()

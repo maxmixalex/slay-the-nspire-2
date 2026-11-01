@@ -146,7 +146,12 @@ def main():
     parser.add_argument('--dotnet', required=True)
     parser.add_argument('--fastnoise-header', type=Path, required=True)
     parser.add_argument('--workers', type=int, choices=range(1, 5), default=2)
+    parser.add_argument('--clip-range', type=int, nargs=2, metavar=('FIRST','LAST'),
+                        help='Populate only these inclusive one-based enemy job rows; renderer/layout identities stay unchanged')
     args = parser.parse_args()
+    first,last=args.clip_range or (1,len(ENEMY_CLIP_ROWS))
+    if not 1<=first<=last<=len(ENEMY_CLIP_ROWS):
+        parser.error('--clip-range must be ordered enemy job rows within 1..'+str(len(ENEMY_CLIP_ROWS)))
     game = private_path(args.game, 'Original game')
     runtime = private_path(args.runtime, 'Spine runtime')
     fastnoise = args.fastnoise_header.resolve(strict=True)
@@ -161,12 +166,14 @@ def main():
     layouts = measured_layouts(cache, sources, models)
     pending = []
     for number in range(len(ENEMY_CLIP_ROWS) - 1, -1, -1):
+        if not first<=number+1<=last:
+            continue
         job = ENEMY_CLIP_ROWS[number]
         scope = render_scope('clip', sources, model=models[job['model']])
         settings = dict(job=job, visual_state=job_state(job, layouts[job['model']]))
         if cached_enemy_clip(cache, settings, sources, models[job['model']]) is None:
             pending.append((number, job, layouts[job['model']]))
-    print(f'Prefetch: {len(pending)} missing clips; {args.workers} workers; cache {cache.identity}', flush=True)
+    print(f'Prefetch: {len(pending)} missing clips in rows {first}..{last}; {args.workers} workers; cache {cache.identity}', flush=True)
     with ProcessPoolExecutor(max_workers=args.workers,
             mp_context=multiprocessing.get_context('spawn'), initializer=initialize_worker,
             initargs=(str(game), str(args.cache), dependencies, sources,

@@ -2,7 +2,7 @@ unsigned App::current_profile()const{
     const unsigned value=callbacks.current_profile?callbacks.current_profile():1;
     return value>=1&&value<=UiProfileCount?value:1;
 }
-void App::refresh_profiles(){
+SPIRE_COLD_CONTROL void App::refresh_profiles(){
     for(unsigned i=0;i<UiProfileCount;++i){profile_summaries[i]={};
         if(callbacks.profile_info)callbacks.profile_info(i+1,profile_summaries[i]);
         if(i+1==current_profile()&&progress_loaded&&(progress.next_serial>1||progress.characters_started||progress.last_saved_at)){
@@ -11,7 +11,7 @@ void App::refresh_profiles(){
         }
     }
 }
-void App::open_profiles(){
+SPIRE_COLD_CONTROL void App::open_profiles(){
     if(!title||!callbacks.request_profile||!callbacks.profile_info||profile_pending)return;
     if(!persist_progress()){message("Could not save history.");return;}
     profiles_open=true;profile_selection=uint8_t(current_profile()-1);profiles_started=map_clock_ms;
@@ -20,7 +20,7 @@ void App::open_profiles(){
     for(auto&motion:profile_motion)motion={};
     for(auto&label:profile_labels)label={};
 }
-bool App::request_profile_change(unsigned target,bool erase){
+SPIRE_COLD_CONTROL bool App::request_profile_change(unsigned target,bool erase){
     if(!title||!profiles_open||profile_pending||target<1||target>UiProfileCount)return false;
     if(!erase&&target==current_profile()){profiles_open=false;pointer_cancel();return true;}
     if(!persist_progress())return false;
@@ -29,7 +29,7 @@ bool App::request_profile_change(unsigned target,bool erase){
     }
     profile_target=uint8_t(target);profile_delete=erase;profile_pending=true;pointer_cancel();return true;
 }
-void App::finish_profile_change(bool success){
+SPIRE_COLD_CONTROL void App::finish_profile_change(bool success){
     if(!profile_pending)return;
     const bool erased=profile_delete,active=profile_target==current_profile();profile_pending=false;
     if(!success){message("Could not update save profile.");refresh_profiles();return;}

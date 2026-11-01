@@ -64,7 +64,13 @@ void App::ui_action(UiAction action){
     }
     if(auxiliary.screen!=AuxiliaryScreen::None){if(action==UiAction::Back)close_auxiliary();return;}
     if(map_transition_blocks_pointer())return;
-    UiCoreObserver observer(*this);
+    UiCoreObserver observer(*this);if(!observer){
+        if(frontend_confirm==3){
+            if(action==UiAction::FrontendAccept)accept_frontend_confirm();
+            else if(action==UiAction::FrontendCancel||action==UiAction::Back){frontend_confirm=frontend_choice=0;pointer_cancel();}
+        }
+        return;
+    }
     pointer_cancel();
     // Opaque frontend modals own all actions until explicitly dismissed.
     if(frontend_confirm&&action!=UiAction::FrontendAccept&&action!=UiAction::FrontendCancel&&action!=UiAction::Back)return;

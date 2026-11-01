@@ -72,6 +72,18 @@ static bool save_progress(const spire::UiProgress&value){
     bool ok=fwrite(progress_bytes,1,n,f)==n;ok=(fclose(f)==0)&&ok;
     if(ok)ok=rename(temp.c_str(),progress_path.c_str())==0;if(!ok)remove(temp.c_str());return ok;
 }
+static void*nd_open(const char*p,const char*m){return std::fopen(p,m);}
+static unsigned nd_read(void*p,unsigned s,unsigned n,void*f){return unsigned(std::fread(p,s,n,static_cast<FILE*>(f)));}
+static unsigned nd_write(const void*p,unsigned s,unsigned n,void*f){return unsigned(std::fwrite(p,s,n,static_cast<FILE*>(f)));}
+static int nd_seek(void*f,long at,int origin){return std::fseek(static_cast<FILE*>(f),at,origin);}
+static long nd_tell(void*f){return std::ftell(static_cast<FILE*>(f));}
+static int nd_close(void*f){return std::fclose(static_cast<FILE*>(f));}
+static int nd_unlink(const char*p){return std::remove(p);}
+#include "../platform/shared/history_file_storage.inc"
+static spire::UiHistoryArchiveResult history_archive_access(spire::UiHistoryArchiveQuery&q,uint8_t*bytes,unsigned&n){
+ if(progress_path.empty())return spire::UiHistoryArchiveResult::Error;
+ return history_file_access((progress_path+".history").c_str(),q,bytes,n);
+}
 static bool profile_info(unsigned profile,spire::UiProgressSummary&out){
     out={};if(profile<1||profile>spire::UiProfileCount||base_progress_path.empty())return false;
     const std::string path=scoped_profile_path(base_progress_path,profile);FILE*f=fopen(path.c_str(),"rb");
@@ -88,8 +100,8 @@ static bool request_profile(unsigned profile,bool erase){
 }
 static void configure_profile_paths(){save_path=scoped_profile_path(base_save_path,selected_profile);progress_path=scoped_profile_path(base_progress_path,selected_profile);settings_path=scoped_profile_path(base_settings_path,selected_profile);}
 static bool erase_profile_files(unsigned target){
-    const std::string bases[]={scoped_profile_path(base_save_path,target),scoped_profile_path(base_progress_path,target),scoped_profile_path(base_settings_path,target)};
-    std::string originals[9],removed[9];unsigned count=0,present=0,moved=0;
+    const std::string bases[]={scoped_profile_path(base_save_path,target),scoped_profile_path(base_progress_path,target),scoped_profile_path(base_settings_path,target),scoped_profile_path(base_progress_path,target)+".history"};
+    std::string originals[12],removed[12];unsigned count=0,present=0,moved=0;
     for(const auto&base:bases)if(!base.empty())for(const char*suffix:{"",".tmp",".bak"}){
         originals[count]=base+suffix;removed[count]=originals[count]+".deleted";
         FILE*f=fopen(originals[count].c_str(),"rb");
@@ -237,7 +249,8 @@ int main(int argc,char**argv){
     if(!headless){profile_selector_path=directory(base_save_path)+"/nSpire2.slots.tns";
         if(FILE*f=fopen(profile_selector_path.c_str(),"rb")){uint8_t bytes[spire::UiProfileSelectorBytes+1];const size_t n=fread(bytes,1,sizeof bytes,f);fclose(f);selected_profile=spire::decode_profile_selector(bytes,n);}
         configure_profile_paths();}
-    if(!source.length||!app.init(source,{save_game,load_game,clear_save,headless?nullptr:seed_entropy,load_preferences,save_preferences,available_languages,request_language,load_progress,save_progress,headless?nullptr:wall_clock,current_profile,headless?nullptr:profile_info,headless?nullptr:request_profile,write_feedback}))return error(spire::BootText::InvalidResources);
+    spire::Callbacks callbacks{save_game,load_game,clear_save,headless?nullptr:seed_entropy,load_preferences,save_preferences,available_languages,request_language,load_progress,save_progress,headless?nullptr:wall_clock,current_profile,headless?nullptr:profile_info,headless?nullptr:request_profile,write_feedback};callbacks.history_archive=progress_path.empty()?nullptr:history_archive_access;
+    if(!source.length||!app.init(source,callbacks))return error(spire::BootText::InvalidResources);
     auto persist_language=[&](){
         if(headless)return;
         FILE*f=fopen(preference.c_str(),"wb");if(f){bool ok=fwrite(spire::boot_preference_bytes(language),1,8,f)==8;ok=(fclose(f)==0)&&ok;if(!ok)remove(preference.c_str());}

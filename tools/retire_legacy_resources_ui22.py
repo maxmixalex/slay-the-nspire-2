@@ -18,7 +18,7 @@ import coalesce_tile_resources as coalesce
 import compact_tile_slots as compact
 from patch_frontend_assets import patch_pack
 from prune_tile_directory_ui13 import live_directory,prune,verify as verify_prune
-from release_content_guard import validate_release_content,validate_ui22
+from release_content_guard import validate_release_content,validate_retirement_intermediate,validate_ui22
 import retired_assets_ui22 as contract
 from sparse_tile_filter import transform as sparse_transform,restore as sparse_restore
 from tile_filter import filter_tiles,restore_tiles
@@ -159,7 +159,7 @@ def convert(data,work,workers=2):
     result,extension=patch_pack(converted,manifest,work,base_aux=contract.BASE_AUX,
         auxiliary=contract.AUXILIARY,input_version=45,version=45,texts=[],base_clips=1783,
         base_strings=len(source.strings))
-    complete=validate_release_content(result,'ui22')
+    complete=validate_retirement_intermediate(result)
     target=coalesce.view(result)
     prior_marker,current=t.TileReader(coalesce.view(converted)),t.TileReader(target)
     t.require(len(prior_marker.groups)==len(current.groups) and all(a[1:]==b[1:] and
@@ -178,7 +178,7 @@ def convert(data,work,workers=2):
         active_pixels_alpha_geometry_and_clip_clocks_unchanged=True,
         codec_and_source_lzma_profiles_preserved=True,roots=roots,
         directory=directory,compaction=compacted,changed_groups=changed,
-        extension=extension,release_guard=complete)
+        extension=extension,intermediate_guard=complete,final_release_ready=False)
     return result,receipt
 
 

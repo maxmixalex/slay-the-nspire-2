@@ -1,8 +1,12 @@
-Godot 4.5.1 rainbow phase and OkHSV color mathematics
+Godot 4.5.1 rainbow, OkHSV and particle process mathematics
 
 OkHSV sampling derives from Godot 4.5.1-stable's ok_color.h.
 Copyright(c) 2021 Björn Ottosson
-Rainbow phase follows Godot Engine rich_text_label.cpp:
+Rainbow phase follows Godot Engine rich_text_label.cpp.
+Offline Ancient and card-Affliction particle sampling adapts ParticleProcessMaterial from
+scene/resources/particle_process_material.cpp; its curl construction credits
+Isaac Cohen, as acknowledged in the Godot source:
+
 Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md).
 Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.
 

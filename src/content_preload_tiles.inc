@@ -170,8 +170,7 @@ static PreparationResult preload_tile_step(ContentPreload&p){
                     return PreparationResult::Failed;
             }else{
                 if(!implicit_geometry::mask(geometry,p.tile_geometry,p.tile_count,plan.active)||
-                   implicit_dense_owner)return PreparationResult::Failed;
-                implicit_dense_owner=&p;
+                   !acquire_implicit_scratch(&p,unsigned(p.w)*p.h))return PreparationResult::Failed;
                 // All source metadata is now in the bounded plan; releasing
                 // the index retains exactly the old pixel-group read order.
                 p.index->first&=127u;p.index=nullptr;p.phase=PreloadPhase::TileDenseClear;
@@ -282,7 +281,7 @@ static PreparationResult preload_tile_step(ContentPreload&p){
         if(implicit_dense_owner!=&p)return PreparationResult::Failed;
         if(p.rows==p.h){
             if(p.position!=p.size||p.tile_copied!=p.tile_geometry)return PreparationResult::Failed;
-            implicit_dense_owner=nullptr;
+            release_implicit_scratch(&p);
             p.scan=p.spans=p.rows=p.previous=0;p.phase=PreloadPhase::Verify;return PreparationResult::Pending;
         }
         unsigned written=0,geometry=0;const unsigned offset=p.rows*p.w;

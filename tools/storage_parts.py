@@ -181,6 +181,25 @@ def fold_small_concern_spans(spans):
             output[-3:]=[(left[0],right[1],left[2])]
     return output
 
+
+def bound_concern_spans(spans, limit=MAX_SPANS):
+    """Fit heavily pruned artwork into the unchanged runtime mapping budget.
+
+    Moving an entire smallest span to an adjacent concern only changes the
+    physical filename. It preserves every compressed stream, byte, order and
+    request boundary, and removes boundaries rather than adding OS reads.
+    """
+    tiles.require(1 <= limit <= MAX_SPANS, 'Invalid concern mapping limit')
+    output = fold_small_concern_spans(spans)
+    while len(output) > limit:
+        index = min(range(len(output)), key=lambda i: (output[i][1]-output[i][0], i))
+        neighbors = [i for i in (index-1, index+1) if 0 <= i < len(output)]
+        neighbor = max(neighbors, key=lambda i: (output[i][1]-output[i][0], -i))
+        first, last, _category = output[index]
+        output[index] = (first, last, output[neighbor][2])
+        output = fold_small_concern_spans(output)
+    return output
+
 def partition(common,logical):
     source=view(logical);language=source.string_payload(split.MARKER)[:-1].decode('ascii');bounds=split.layout(logical,language)
     prefix,end=bounds['prefix'],bounds['prefix']+bounds['artwork']
@@ -202,6 +221,8 @@ def partition(common,logical):
             merged[-1]=(merged[-1][0],last,cat)
         else:merged.append((first,last,cat))
     merged=fold_small_concern_spans(merged)
+    original_span_count=len(merged)
+    merged=bound_concern_spans(merged)
     tiles.require(0<len(merged)<=MAX_SPANS,'Too many concern mappings')
     files=[bytearray(32) for _ in NAMES];rows=[]
     for first,last,cat in merged:
@@ -212,7 +233,8 @@ def partition(common,logical):
     index+=b''.join(struct.pack('<4I',*row) for row in rows)
     files={name:bytes(data) for name,data in zip(PART_FILES,files)}
     tiles.require(join_parts(index,files)==common,'Concern split changed artwork bytes')
-    return index,files,dict(spans=len(rows),virtual_bytes=len(common),index_bytes=len(index),
+    return index,files,dict(spans=len(rows),original_concern_spans=original_span_count,
+        runtime_mapping_capacity=MAX_SPANS,virtual_bytes=len(common),index_bytes=len(index),
         installed_bytes=len(index)+sum(len(data) for data in files.values()),
         complete_byte_identical_roundtrip=True,
         files={name:dict(bytes=len(data),sha256=tiles.sha256(data)) for name,data in files.items()})

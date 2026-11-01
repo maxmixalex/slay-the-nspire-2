@@ -14,6 +14,7 @@
 #include "retained_filter.hpp"
 #include "index_prediction.hpp"
 #include "game_over_presentation.hpp"
+#include "ui_history_archive.hpp"
 #include "core.hpp"
 #include "debug_commands.hpp"
 #include "keyword_hover.hpp"
@@ -147,6 +148,7 @@ class Content {
     const uint8_t* payload(uint32_t offset,uint32_t count,uint8_t* scratch,uint32_t capacity)const;
     const uint8_t* glyph_record(uint32_t cp,int size,unsigned style=0)const;
     Picture image_payload(int id,const uint8_t* supplied,uint32_t supplied_size)const;
+    Picture fire_image(int id)const;
 public:
     bool open(const uint8_t*,size_t);
     bool open(ResourceSource);
@@ -154,6 +156,7 @@ public:
     uint32_t generation()const{return generation_;}
     ResourceReadStats read_stats()const{return reader_.stats();}
     Picture image(int id)const;
+    Picture material_image(int id)const;
     // One bounded foreground preparation step. Pending never publishes a
     // partial picture/glyph or marks healthy content as corrupt. Images and
     // glyphs share one cancellable task in the existing cache arenas.
@@ -177,6 +180,7 @@ public:
     // Frame-boundary operation: invalidate picture views and redistribute
     // the existing11 MiB arena between decoded images and tile groups.
     void set_image_cache_profile(bool room_frames,bool selection_frames=false)const;
+    bool selection_image_cache_profile()const;
     // Select a real resident font band before layout. This never loads a
     // glyph or scans the resource payload; sparse legacy faces fall back.
     int font_size(int preferred,unsigned style=0,bool at_most=false,bool sparse_scene_sizes=false)const;
@@ -196,6 +200,9 @@ public:
     Clip clip(int id)const;
     unsigned card_count()const{return cards_;}
     unsigned version()const{return version_;}
+    // Detected from the resident resource header. No extra file, setting,
+    // payload scan, allocation or alteration to gameplay clocks is needed.
+    bool reduced_animations()const;
     bool has_ftue_assets()const{return version_>=FtueContentVersion&&(ui_count_==FtueAuxiliaryCount||has_selection_assets());}
     bool has_selection_assets()const{return version_>=SelectionContentVersion&&(ui_count_==SelectionAuxiliaryCount||has_inspection_assets());}
     bool has_inspection_assets()const{return version_>=SelectionContentVersion&&(ui_count_==InspectionAuxiliaryCount||has_speech_bubble_assets());}
@@ -289,6 +296,7 @@ struct Callbacks {
     // Cooperative foreground boundaries may capture hardware into the host's
     // bounded FIFO. This must not dispatch App input or advance any clock.
     void(*foreground_poll)()=nullptr;
+    UiHistoryArchiveCallback history_archive=nullptr;
 };
 // Run parameters used by Continue/abandon, without re-encoding saved state.
 struct SavedRunIdentity {
@@ -495,6 +503,14 @@ struct App {
     const UiEnemyStatistics& enemy_statistics(unsigned model,int character=-1)const;
     const UiEnemyStatistics& encounter_statistics(unsigned encounter,int character=-1)const;
     const UiRunHistory* history_at(unsigned newest_first)const;
+    bool prepare_history();
+    bool history_available()const;
+    bool archive_history_run(const UiRunHistory&);
+    bool migrate_history();
+    bool page_history_floors();
+    bool page_history_journal();
+    bool select_history_archive(UiHistoryArchiveAction,uint32_t serial=0);
+    const UiHistoryJournal& history_journal()const;
     const UiFloorHistory* current_floor_history(unsigned act,unsigned point)const;
     BestiaryPresentation bestiary{};
     bool open_bestiary(bool force=false);

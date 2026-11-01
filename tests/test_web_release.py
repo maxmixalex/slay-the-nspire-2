@@ -1,6 +1,6 @@
 """Small public delivery fixtures for multipart resources and source receipts."""
 import base64
-from contextlib import redirect_stdout
+from contextlib import redirect_stderr, redirect_stdout
 import io
 import json
 from pathlib import Path
@@ -38,6 +38,44 @@ def resources(root):
 
 
 class WebReleaseTest(unittest.TestCase):
+    def test_calculator_preserves_local_build_and_links_equivalent_published_source(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root=Path(folder);resources(root)
+            (root/'launcher.tns').write_bytes(b'public synthetic launcher')
+            argv=['package_release','--launcher',str(root/'launcher.tns'),
+                '--common',str(root/'nSpire2.dat.tns'),'--eng',str(root/'nSpire2.eng.dat.tns'),
+                '--zhs',str(root/'nSpire2.zhs.dat.tns'),'--calculator-only',
+                '--output',str(root/'release'),'--runtime-checkpoint','a'*40,
+                '--resource-checkpoint','b'*40,'--runtime-source-ref','c'*40,
+                '--resource-source-ref','d'*40,'--stage','public-web']
+            with mock.patch.object(sys,'argv',argv),redirect_stdout(io.StringIO()):package_release.main()
+            with zipfile.ZipFile(next((root/'release').glob('*.zip'))) as archive:
+                info=json.loads(archive.read('data/BUILD-INFO.json'))
+                readme=archive.read('data/README.txt').decode()
+                self.assertEqual(info['runtime_checkpoint'],'a'*40)
+                self.assertEqual(info['resource_checkpoint'],'b'*40)
+                self.assertEqual(info['runtime_source_ref'],'c'*40)
+                self.assertEqual(info['resource_source_ref'],'d'*40)
+                self.assertTrue(info['local_checkpoints'])
+                self.assertIn('Actual runtime build checkpoint (local): '+'a'*40,readme)
+                self.assertIn('Actual resource converter build checkpoint (local): '+'b'*40,readme)
+                self.assertIn('/tree/'+'c'*40,readme)
+                self.assertIn('/tree/'+'d'*40,readme)
+                self.assertNotIn('/tree/'+'a'*40,readme)
+                self.assertNotIn('/tree/'+'b'*40,readme)
+
+    def test_conflicting_publication_declarations_fail_before_creating_files(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root=Path(folder)
+            argv=['package_release','--launcher','unused','--common','unused','--eng','unused',
+                '--zhs','unused','--output',str(root/'release'),'--runtime-checkpoint','a'*40,
+                '--resource-checkpoint','b'*40,'--runtime-source-ref','c'*40,
+                '--calculator-only','--local-checkpoints']
+            with mock.patch.object(sys,'argv',argv),redirect_stderr(io.StringIO()),self.assertRaises(SystemExit) as error:
+                package_release.main()
+            self.assertEqual(error.exception.code,2)
+            self.assertFalse((root/'release').exists())
+
     def test_multipart_is_joined_in_memory_and_bad_parts_are_rejected(self):
         with tempfile.TemporaryDirectory() as folder:
             root=Path(folder);original,common=resources(root)
@@ -109,8 +147,8 @@ class WebReleaseTest(unittest.TestCase):
                 self.assertFalse(info['calculator_only'])
                 readme=archive.read('data/README.txt').decode()
                 self.assertIn('Exit the game before updating; keep existing files in state.',readme)
-                self.assertIn('Replace the entire old data folder',readme)
-                self.assertIn("Do not overwrite the existing state folder",readme)
+                self.assertIn("Delete the entire old data folder first, then copy this archive's matching data folder",readme)
+                self.assertIn("Do not overwrite the existing state folder with the archive's empty state folder.",readme)
                 self.assertIn('older multipart installation',readme)
                 self.assertNotIn('/tree/'+'a'*40,readme)
                 for name in ('nSpire2.dat.tns',*storage.PART_FILES):

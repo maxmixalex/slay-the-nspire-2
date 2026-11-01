@@ -5,6 +5,7 @@ Only the supported v0.111.0 installation is read. Old image, glyph and clip
 payloads are retained; new original art is downsampled offline, never downloaded.
 """
 from __future__ import annotations
+from conversion_context import file_limit
 import argparse
 import hashlib
 import json
@@ -30,7 +31,7 @@ ART=['abyssal_baths','dense_vegetation','morphic_grove','aroma_of_chaos','doors_
 class PackData:
     """Bounded directory reader/writer shared by conversion regression tests."""
     def __init__(self,data:bytes):
-        if not 40<=len(data)<=LIMIT:raise ValueError('Pack size outside resident limit')
+        if not 40<=len(data)<=file_limit(LIMIT):raise ValueError('Pack size outside conversion file bound')
         data=bytes(data)
         magic,self.version,commit,n,ni,ng,ns,nc,nk,digest=struct.unpack_from('<4s9I',data)
         if (magic!=b'NSP2' or self.version not in (9,10) or commit!=0x41cef1ea or
@@ -84,7 +85,7 @@ class PackData:
         strings=b''.join(struct.pack('<II',add(t.encode()+b'\0'),len(t.encode())) for t in self.strings)
         body=images+glyphs+strings+self.clips+b''.join(struct.pack('<4I',*r) for r in self.cards)+struct.pack('<'+'I'*nu,*self.aux)+payload
         output=struct.pack('<4s9I',b'NSP2',10,0x41cef1ea,40+len(body),ni,ng,ns,17,nk,0)+body
-        if len(output)>LIMIT:raise ValueError(f'Pack exceeds resident buffer: {len(output)}')
+        if len(output)>file_limit(LIMIT):raise ValueError(f'Pack exceeds conversion file bound: {len(output)}')
         return output
 
 def build(game:Path,source:Path,output:Path,font_path:Path)->dict:

@@ -202,23 +202,23 @@ def precise_glyphs(source,font_dir,language,cache):
             tiles.require(-2048<=value<2048,'Kerning outside signed range')
             cp=PAIR_BASE+(left-32)*95+right-32
             rows[(band,cp)]=(cp,band,1,1,0x4000|(value+2048),0,b'\0');pairs+=1
-    # Real TI key shapes: crop to their ink, then preserve aspect in a native
-    # 8/10/12/...px label cell. Font source remains a caller-supplied input.
+    # An owner-supplied TI key font preserves the historical exact shapes.
+    # A clean game-folder build can instead draw our labelled calculator
+    # keycaps, without requiring a font outside the original installation.
+    from calculator_key_glyphs import key_image
     key_font=font_dir/'TINspireKeysCX.ttf'
     for px in (6,8,10,12,14,16,18,20):
-        font=ImageFont.truetype(str(key_font),px*3)
         for symbol in KEY_SYMBOLS:
-            char=chr(symbol);box=font.getbbox(char);image=Image.new('L',(max(1,box[2]-box[0]),max(1,box[3]-box[1])))
-            ImageDraw.Draw(image).text((-box[0],-box[1]),char,font=font,fill=255)
-            height=px+1;width=max(1,min(38,round(image.width*height/image.height)))
-            image=image.resize((width,height),Image.Resampling.LANCZOS)
+            image=key_image(font_dir,symbol,px);width,height=image.size
             cell=Image.new('L',(width+2,px+5));cell.paste(image,(1,1))
             raw,encoded=rle(cell.tobytes());cp=0xe100+symbol
             rows[(px,cp)]=(cp,px,width+2,px+5,width+2,encoded,raw)
     result=[rows[key] for key in sorted(rows)]
     tiles.require(len(result)<=65535,'Glyph directory count exceeded')
     return result,dict(fractional_metrics=changed,restored_negative_bearings=bearings,
-        kerning_pairs=pairs,kerning_em_units=2048,completed_ascii_glyphs=completed_ascii,key_font_glyphs=len(KEY_SYMBOLS)*8,glyphs=len(result))
+        kerning_pairs=pairs,kerning_em_units=2048,completed_ascii_glyphs=completed_ascii,
+        key_font_glyphs=len(KEY_SYMBOLS)*8,key_glyph_source='owner TI key font' if key_font.is_file()
+        else 'public calculator keycaps with original Source Code Pro labels',glyphs=len(result))
 
 
 def main():

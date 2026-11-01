@@ -6,10 +6,15 @@ import subprocess
 import argparse
 from zehn import build
 ROOT=Path(__file__).resolve().parents[1]
+# Keep renderers and hot kernels at -O2. Serialization, input dispatch and
+# event rules use the same bounded release size policy in every build entry.
+SIZE_OPTIMIZED_SOURCES=('src/original_events.cpp','src/ui_progress_codec.cpp','src/ui_input.cpp','src/pointer.cpp')
 
 def main()->None:
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--output',type=Path,help='Launcher output path')
+    parser.add_argument('--size-event-rules',action='store_true',default=True,help='Compatibility flag: release builds always use -Os for event rules, progress codec and keyboard/pointer input; renderers remain -O2')
+    parser.add_argument('--profile-neow-layers',action='store_true',help='Developer-only reuse of existing timing slots for Neow layers; not a release build')
     parser.add_argument('--trace-io',action='store_true',help='Developer-only bounded OS I/O trace; not a release/timing acceptance build')
     parser.add_argument('--compression',choices=('zlib','zopfli'),default='zlib',help='Use zopfli for compact release packaging; requires requirements-release.txt')
     args=parser.parse_args()
@@ -19,9 +24,11 @@ def main()->None:
     sources=['src/characters.cpp','src/core.cpp','src/potions_extra.cpp','src/potions.cpp','src/ui_input.cpp','src/relics.cpp','src/run.cpp','src/resource_source.cpp','src/storage_source.cpp','src/ui_progress_codec.cpp','src/content.cpp','src/app.cpp','src/pointer.cpp','src/world_card_factory.cpp', 'src/original_events.cpp', 'src/world_relics.cpp', 'src/world_rng.cpp','src/reference_rng.cpp','src/reference_map.cpp','src/map_preview.cpp','src/reference_math.cpp','src/reference_act.cpp','src/map_preview_input.cpp','src/freestanding.cpp','platform/ndless/main.cpp','platform/ndless/entry.S','src/lzma2_block.cpp','third_party/lzma2/LzmaDec.c','third_party/lzma2/Lzma2Dec.c']
     flags=['--target=arm-none-eabi','-mcpu=arm926ej-s','-marm','-mfloat-abi=soft','-mno-unaligned-access','-O2','-ffreestanding','-fno-builtin','-fno-exceptions','-fno-rtti','-fno-threadsafe-statics','-fno-stack-protector','-fno-unwind-tables','-fno-asynchronous-unwind-tables','-ffunction-sections','-fdata-sections','-fstack-usage','-Wframe-larger-than=8192','-I'+str(ROOT/'include')]
     if args.trace_io:flags.append('-DSPIRE_DEVICE_IO_TRACE=1')
+    if args.profile_neow_layers:flags.append('-DSPIRE_NEOW_LAYER_PROFILE=1')
     objects=[]
     for i,source in enumerate(sources):
         out=directory/f'{i}.o';objects.append(str(out))
+        source_flags=['-Os'] if source in SIZE_OPTIMIZED_SOURCES else []
         if source.endswith('.c'):
             # The unmodified SDK is C. Its tiny compatibility headers must not
             # shadow native/system headers or the game's C++ translation units.
@@ -31,7 +38,7 @@ def main()->None:
             options=['-std=c++17','-I'+str(ROOT/'third_party/lzma2')] if source.endswith('.cpp') else []
             if source=='src/lzma2_block.cpp':options+=['-I'+str(ROOT/'platform/decoder_headers')]
             compile_flags=flags
-        subprocess.run([clang,*compile_flags,*options,'-c',str(ROOT/source),'-o',str(out)],check=True)
+        subprocess.run([clang,*compile_flags,*source_flags,*options,'-c',str(ROOT/source),'-o',str(out)],check=True)
     elf=directory/'nSpire2.elf'
     # Clang emits address-significance metadata. Safe ICF can share identical
     # unobserved function bodies while preserving distinct significant

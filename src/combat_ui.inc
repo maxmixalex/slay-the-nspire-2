@@ -164,7 +164,7 @@ static const HandTile& selected_hand_tile(Canvas&c,int instance){
     card_description_window(tile,source.description,rect,size,skip);
     return t;
 }
-static void hand_card_animated_layers(Canvas&c,const HandTile&t,HandPose p,unsigned brightness,unsigned erosion){
+static void hand_card_animated_layers(Canvas&c,const HandTile&t,HandPose p,unsigned brightness,unsigned erosion,const CardOpaqueMask*hidden=nullptr){
     Canvas layer=c;layer.brightness=uint8_t(div255(unsigned(layer.brightness)*brightness));
     if(erosion)layer.opacity=uint8_t(unsigned(layer.opacity)*(1024-mn(1024u,erosion))/1024);
     if(card_rarity(t.card.kind)==5){
@@ -174,10 +174,36 @@ static void hand_card_animated_layers(Canvas&c,const HandTile&t,HandPose p,unsig
         const int cx=p.cx+int((int64_t(dx)*p.cosine-int64_t(dy)*p.sine)*p.scale/(1024ll*1024*1024));
         const int cy=p.cy+int((int64_t(dx)*p.sine+int64_t(dy)*p.cosine)*p.scale/(1024ll*1024*1024));
         ui_picture_transform(layer,art,cx,cy,int(art.w)*HandFaceW*p.scale/(96*1024),int(art.h)*HandFaceW*p.scale/(96*1024),p.sine,p.cosine);
-    }else if(const int image=card_overlay_image(c.a,t.overlay);image>=0)
-        ui_picture_transform(layer,image,p.cx,p.cy,324*HandFaceW*p.scale/(300*1024),454*HandFaceH*p.scale/(422*1024),p.sine,p.cosine);
+    }else{
+        const int width=324*HandFaceW*p.scale/(300*1024),height=454*HandFaceH*p.scale/(422*1024);
+        if(card_affliction_draw(layer,t.overlay,p.cx,p.cy,width,height,p.sine,p.cosine,hidden))return;
+        if(const int image=card_overlay_image(c.a,t.overlay);image>=0)ui_picture_transform(layer,image,p.cx,p.cy,width,height,p.sine,p.cosine);
+    }
 }
-static void draw_hand_tile(Canvas&c,const HandTile&t,HandPose p,bool focused,unsigned brightness=255,unsigned erosion=0,bool highlight=false){
+
+static_assert(MaxHand<=10,"Opaque card ranks must fit four bits");
+// A later ordinary hand face replaces earlier pixels only at exact alpha255.
+// The native axis-aligned shortcut has different integer origin rounding;
+// retain the ordinary path for it instead of guessing an opaque extent.
+static void hand_opaque_mask(uint8_t*bits,const HandTile&t,HandPose p,unsigned rank){
+    if(rank>15||p.scale<=0||(p.scale==1024&&p.sine==0&&p.cosine==1024))return;
+    const int sn=p.sine<0?-p.sine:p.sine,cs=p.cosine<0?-p.cosine:p.cosine;
+    constexpr int radius_x=(HandPivotX+1023)/1024,radius_y=(HandTileH*1024-HandPivotY+1023)/1024;
+    const int half_w=((cs*radius_x+sn*radius_y)*p.scale)/(1024*1024)+2;
+    const int half_h=((sn*radius_x+cs*radius_y)*p.scale)/(1024*1024)+2;
+    const int left=mx(0,p.cx-half_w),right=mn(320,p.cx+half_w),top=mx(0,p.cy-half_h),bottom=mn(240,p.cy+half_h);
+    const int du=p.cosine*1024/p.scale,dv=-p.sine*1024/p.scale;
+    for(int y=top;y<bottom;++y){
+        int u=HandPivotX+((left-p.cx)*p.cosine+(y-p.cy)*p.sine)*1024/p.scale;
+        int v=HandPivotY+(-(left-p.cx)*p.sine+(y-p.cy)*p.cosine)*1024/p.scale;
+        for(int x=left;x<right;++x,u+=du,v+=dv){
+            if(unsigned(u)<HandTileW*1024u&&unsigned(v)<HandTileH*1024u&&t.alpha[unsigned(v>>10)*HandTileW+unsigned(u>>10)]==255)
+                {const unsigned at=unsigned(y*320+x),shift=(at&1)*4;bits[at>>1]=uint8_t((bits[at>>1]&~(15u<<shift))|(rank<<shift));}
+        }
+    }
+}
+
+static void draw_hand_tile(Canvas&c,const HandTile&t,HandPose p,bool focused,unsigned brightness=255,unsigned erosion=0,bool highlight=false,const CardOpaqueMask*hidden=nullptr){
     if(p.scale<=0)return;
     int sn=p.sine<0?-p.sine:p.sine,cs=p.cosine<0?-p.cosine:p.cosine;
     constexpr int radius_x=(HandPivotX+1023)/1024,radius_y=(HandTileH*1024-HandPivotY+1023)/1024;
@@ -224,7 +250,7 @@ static void draw_hand_tile(Canvas&c,const HandTile&t,HandPose p,bool focused,uns
         Canvas layer=c;layer.brightness=uint8_t(div255(unsigned(layer.brightness)*brightness));
         layer.picture(Picture{reinterpret_cast<const uint8_t*>(t.pixels),t.alpha,nullptr,HandTileW,HandTileH,1},
             p.cx-HandPivotX/1024,p.cy-HandPivotY/1024,HandTileW,HandTileH);
-        hand_card_animated_layers(c,t,p,brightness,erosion);return;
+        hand_card_animated_layers(c,t,p,brightness,erosion,hidden);return;
     }
     // Flying/generated cards often have an affine pose but no shader or
     // Canvas modulation. Resolve that state once, preserving the original
@@ -237,17 +263,19 @@ static void draw_hand_tile(Canvas&c,const HandTile&t,HandPose p,bool focused,uns
             int v=HandPivotY+(-(left-p.cx)*p.sine+(y-p.cy)*p.cosine)*1024/p.scale;
             auto*out=c.pixels+y*c.pitch+left;
             for(int x=left;x<right;++x,++out,u+=du,v+=dv){
+                if(hidden&&hidden->covers(unsigned(y*320+x)))continue;
                 if(unsigned(u)>=HandTileW*1024u||unsigned(v)>=HandTileH*1024u)continue;
                 const unsigned at=unsigned(v>>10)*HandTileW+unsigned(u>>10),alpha=t.alpha[at];
                 if(alpha)*out=alpha==255?t.pixels[at]:blend(*out,t.pixels[at],alpha);
             }
         }
-        hand_card_animated_layers(c,t,p,brightness,erosion);return;
+        hand_card_animated_layers(c,t,p,brightness,erosion,hidden);return;
     }
     for(int y=top;y<bottom;y++){
         int u=HandPivotX+((left-p.cx)*p.cosine+(y-p.cy)*p.sine)*1024/p.scale;
         int v=HandPivotY+(-(left-p.cx)*p.sine+(y-p.cy)*p.cosine)*1024/p.scale;
         for(int x=left;x<right;x++,u+=du,v+=dv){
+            if(hidden&&hidden->covers(unsigned(y*320+x)))continue;
             if(u<0||v<0||u>=HandTileW*1024||v>=HandTileH*1024)continue;
             // The original distance field/ripple follows the same affine
             // holder transform. Opaque interiors need no shader evaluation.
@@ -269,7 +297,7 @@ static void draw_hand_tile(Canvas&c,const HandTile&t,HandPose p,bool focused,uns
             c.paint(y*c.pitch+x,color,t.alpha[at]);
         }
     }
-    hand_card_animated_layers(c,t,p,brightness,erosion);
+    hand_card_animated_layers(c,t,p,brightness,erosion,hidden);
 }
 #include "combat_sovereign_ui.inc"
 static void combat_pile(Canvas&c,int image,int count,int x,int y,int tab){
@@ -568,10 +596,30 @@ static void combat_screen(Canvas&c){
     const auto hand_hit=[&](HandPose pose,int id,bool enabled){if(dragging)return;
         const auto r=hand_bounds(pose);c.hit(r.x,r.y,r.w,r.h,choosing_hand?HitKind::InstanceCard:HitKind::Hand,id,enabled);};
     const auto visible_hand_pose=[&](unsigned i,bool focus){return choosing_hand?hand_pose(int(hand.count),int(i),false):a.combat_hand_pose(i,focus);};
+    bool use_owners=false;
+    if(hand.count<=MaxHand&&c.opacity==255&&c.pixels==a.pixels&&c.pitch==320)
+        for(unsigned i=0;i<hand.count;++i)if(a.game.enemy_world.affliction[hand.ids[i]])use_owners=true;
+    // Cold base-face rebuilding finishes before the owner-map lease. All
+    // later nested draw work borrows disjoint slices of existing scratch.
+    if(use_owners)for(unsigned i=0;i<hand.count;++i)(void)hand_tile(c,hand.ids[i]);
+    ForegroundScratch<uint8_t,320u*240u/2u> owner_storage;
+    uint8_t*owners=use_owners&&owner_storage?&owner_storage[0]:nullptr;
+    if(owners){
+        for(unsigned i=0;i<320u*240u/2u;++i)owners[i]=0;
+        for(unsigned i=0;i<hand.count;++i)if((!focused||int(i)!=selected)&&hand.ids[i]!=held_card)
+            hand_opaque_mask(owners,hand_tile(c,hand.ids[i]),visible_hand_pose(i,false),i+1);
+        // Focused/held cards are drawn after all ordinary holders, even when
+        // their original hand index is smaller. Their rank stays above ten.
+        if(focused&&hand.count&&hand.ids[selected]!=held_card)
+            hand_opaque_mask(owners,held_card<0?selected_hand_tile(c,hand.ids[selected]):hand_tile(c,hand.ids[selected]),visible_hand_pose(unsigned(selected),true),11);
+        if(held_card>=0)for(unsigned i=0;i<hand.count;++i)if(hand.ids[i]==held_card){
+            hand_opaque_mask(owners,selected_hand_tile(c,held_card),visible_hand_pose(i,false),12);break;}
+    }
     for(int i=0;i<hand.count;i++){
         if((focused&&i==selected)||hand.ids[i]==held_card)continue;
         const auto pose=visible_hand_pose(unsigned(i),false);
-        draw_hand_tile(c,hand_tile(c,hand.ids[i]),pose,false,255,0,true);
+        const CardOpaqueMask hidden{owners,unsigned(i+1)};
+        draw_hand_tile(c,hand_tile(c,hand.ids[i]),pose,false,255,0,true,owners?&hidden:nullptr);
         combat_hand_index(c,unsigned(i),pose);
         hand_hit(pose,hand.ids[i],!a.combat_actions_locked());
     }

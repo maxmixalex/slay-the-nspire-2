@@ -1,3 +1,11 @@
+// These selected save/archive/navigation functions execute on user actions,
+// not on ordinary frame rendering. Keep their LLVM bodies compact while the
+// render and input readiness fast paths retain normal speed optimization.
+#if defined(__clang__)
+#define SPIRE_COLD_CONTROL __attribute__((minsize,noinline))
+#else
+#define SPIRE_COLD_CONTROL
+#endif
 #include "hand_focus.inc"
 #include "combat_peek.inc"
 #include "auxiliary_input.inc"
@@ -9,6 +17,7 @@ static void invalidate_hud_motion();
 #include "profiles_input.inc"
 #include "ui_progress_navigation.inc"
 #include "frontend_input.inc"
+#include "history_archive_ui.inc"
 #include "world_map_travel.inc"
 #include "world_map_act_intro.inc"
 #include "world_map_drawing_input.inc"
@@ -119,7 +128,13 @@ void App::input(Key k){
     }
     if(auxiliary.screen!=AuxiliaryScreen::None){if(!pointer.dispatching){pointer_cancel(true);pointer.visible=false;pointer.motion_time=map_clock_ms;}auxiliary_input(k);return;}
     if(bestiary.open){if(!pointer.dispatching){pointer_cancel(true);pointer.visible=false;pointer.motion_time=map_clock_ms;}bestiary_input(k);return;}
-    UiCoreObserver observer(*this);
+    UiCoreObserver observer(*this);if(!observer){
+        // A full storage device must not trap the user inside the game.
+        // Keep gameplay blocked, but retain the ordinary exit confirmation.
+        if(frontend_confirm==3)frontend_input(k);
+        else if(k==Key::Back||k==Key::Quit){frontend_confirm=3;frontend_choice=0;pointer_cancel();}
+        return;
+    }
     sync_combat_preparation();
     if(combat_preparation.active&&!paused&&!frontend_confirm&&k!=Key::Back&&k!=Key::Save&&k!=Key::Load&&k!=Key::Quit)return;
     MapReticleInputSync map_focus{*this};
@@ -341,3 +356,5 @@ void App::input(Key k){
         if(before==Phase::Event&&game.world.active&&game.world.room_open==2&&world_can_travel(game))proceed_map_window();
     }
 }
+
+#undef SPIRE_COLD_CONTROL

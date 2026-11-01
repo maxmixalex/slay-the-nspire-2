@@ -186,6 +186,43 @@ class ReleaseContentGuardTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError,'NSP2/46'):
             guard.validate_release_content(data,'ui22')
 
+    def test_retirement_intermediate_is_complete_but_never_publishable(self):
+        data,_=fixture(7212)
+        with self.assertRaisesRegex(ValueError,'exact NSP2/45'):
+            guard.validate_retirement_intermediate(data)
+        struct.pack_into('<I',data,4,45)
+        result=guard.validate_retirement_intermediate(data)
+        self.assertTrue(result['complete'])
+        self.assertTrue(result['ui22']['retirement']['complete'])
+        self.assertEqual(result['ui22']['registered_tables'],427)
+        self.assertEqual(result['ui22']['selection_frames'],540)
+        self.assertFalse(result['final_release_ready'])
+        self.assertEqual(result['required_next_content_version'],46)
+        for stage in ('ui22','ui23','ui23-retirement-intermediate'):
+            with self.subTest(stage=stage),self.assertRaisesRegex(ValueError,'NSP2/46'):
+                guard.validate_release_content(data,stage)
+        other,_=fixture(7213);struct.pack_into('<I',other,4,45)
+        with self.assertRaisesRegex(ValueError,'exact NSP2/45'):
+            guard.validate_retirement_intermediate(other)
+
+    def test_retirement_intermediate_keeps_artwork_and_liveness_guards(self):
+        original,at=fixture(7212);struct.pack_into('<I',original,4,45)
+        cases=(
+            ('framed clock',at['tables'][0]+6,'H',1,'frame clock'),
+            ('native actor',at['aux']+guard.UI22_BASE_AUX*4,'I',0,'registry'),
+            ('death clock',at['native'][1757]+6,'H',31,'frame clock'),
+            ('selection',at['aux']+guard.UI22_ACTOR_AUX*4,'I',40001,'selection marker'),
+            ('marker',at['marker']+8,'I',retired.PLAN['plan_tag']^1,'plan marker'),
+            ('active root',at['aux']+123*4,'I',321,'direct clip/card/auxiliary root'),
+            ('typed root',at['tables'][9]+16*2,'H',321,'typed actor/mesh/mask root'),
+            ('unretired pixels',40+321*16+8,'I',0,'empty sparse'),
+            ('premature profile',36,'I',0x3146414e,'profile selection'),
+        )
+        for label,offset,fmt,value,error in cases:
+            data=bytearray(original);struct.pack_into('<'+fmt,data,offset,value)
+            with self.subTest(label=label),self.assertRaisesRegex(ValueError,error):
+                guard.validate_retirement_intermediate(data)
+
     def test_ui22_missing_actor_and_wrong_registry_routes_fail(self):
         original,at=fixture(7212)
         for index,value in ((1757,0),(1383,58099),(0,58100)):
@@ -210,8 +247,11 @@ class ReleaseContentGuardTest(unittest.TestCase):
         struct.pack_into('<I',data,12,len(data))
         reader=mock.Mock(tile_groups=0)
         reader.group.return_value=(record,{0:len(record)})
-        with mock.patch.object(tiles,'TileReader',return_value=reader),self.assertRaisesRegex(ValueError,'experimental selection bitmap'):
-            guard.validate_release_content(data,'ui22')
+        for version,validate in ((46,lambda raw:guard.validate_release_content(raw,'ui22')),
+                                 (45,guard.validate_retirement_intermediate)):
+            struct.pack_into('<I',data,4,version)
+            with self.subTest(version=version),mock.patch.object(tiles,'TileReader',return_value=reader),self.assertRaisesRegex(ValueError,'experimental selection bitmap'):
+                validate(data)
         reader.image_raw.assert_not_called()
 
     def test_ui22_clock_bounds_and_selection_contract_fail(self):

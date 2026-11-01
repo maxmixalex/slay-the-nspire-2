@@ -97,7 +97,7 @@ static void compendium_screen(Canvas&c){
     constexpr int bottom_width=119,bottom_height=34,bottom_gap=10;
     const int stats_x=51;
     compendium_button(c,4,stats_x,bottom,bottom_width,bottom_height,I7_MenuStatsPanel,I7_MenuStatsIcon,"STATISTICS",UiAction::OpenStatistics,true);
-    if(a.progress.count)compendium_button(c,5,right-bottom_width,bottom,bottom_width,bottom_height,I7_MenuHistoryPanel,I7_MenuHistoryIcon,"RUN_HISTORY",UiAction::OpenHistory,true);
+    if(a.history_available())compendium_button(c,5,right-bottom_width,bottom,bottom_width,bottom_height,I7_MenuHistoryPanel,I7_MenuHistoryIcon,"RUN_HISTORY",UiAction::OpenHistory,true);
     native_original_back(c,a.progress_page_started);
 }
 static Canvas progress_content_canvas(Canvas&c){Canvas layer=c;layer.pixels+=40*layer.pitch;if(layer.coverage)layer.coverage+=40*layer.pitch;layer.clip_h=174;return layer;}
@@ -442,8 +442,8 @@ static void history_screen(Canvas&c){
     using reference_viewport::project;
     history_quote_band(page,r,layout,dx,offset,focused);
     char text[2048]{};
-    uint32_t quests[3]{};const int journal_owner=a.progress.journal.owner(r.serial);
-    for(unsigned i=0;i<a.progress.journal.count;++i){const auto&e=a.progress.journal.at(i);if(e.owner==journal_owner&&e.floor<UiHistoryFloors&&(e.kind==RunHistoryEvent::QuestCompleted||e.kind==RunHistoryEvent::FurCoat))quests[e.floor/32]|=uint32_t(1)<<(e.floor%32);}
+    const auto&journal=a.history_journal();uint32_t quests[3]{};const int journal_owner=journal.owner(r.serial);
+    for(unsigned i=0;i<journal.count;++i){const auto&e=journal.at(i);if(e.owner==journal_owner&&e.floor<UiHistoryFloors&&(e.kind==RunHistoryEvent::QuestCompleted||e.kind==RunHistoryEvent::FurCoat))quests[e.floor/32]|=uint32_t(1)<<(e.floor%32);}
     for(unsigned i=0;i<r.floor_count;++i){const auto&f=r.floors[i];const auto point=layout.floor(r,i);const int x=point.x+dx,y=point.y-offset;
         if(y+point.h<=0||y>=page.clip_h)continue;
         if(!i||r.floors[i-1].act!=f.act){const char*act=a.content.world_title("acts",map_colors(f.region).region);const ProfileTextStyle style{10,0,rgb(255,246,226),96};
@@ -489,7 +489,7 @@ static void history_screen(Canvas&c){
     // Keep both navigation controls above the scrollbar's track/hit column.
     // A right arrow at y111 was visually covered and its pointer hit was
     // overwritten when progress_page_chrome registered the scrollbar last.
-    if(a.history_index+1<a.progress.count){c.ui(I7_SettingsArrowLeft,7,10,12,24);c.action(0,6,26,32,UiAction::HistoryPrevious);}
+    if(a.history_index==255||a.history_index+1<a.progress.count){c.ui(I7_SettingsArrowLeft,7,10,12,24);c.action(0,6,26,32,UiAction::HistoryPrevious);}
     if(a.history_index){c.ui(I7_SettingsArrowRight,304,10,12,24);c.action(294,6,26,32,UiAction::HistoryNext);}
     progress_page_chrome(c);history_tooltip(c,r,focused,layout,dx,offset);
 }

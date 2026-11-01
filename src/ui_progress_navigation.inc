@@ -1,22 +1,29 @@
-void App::open_compendium(){
+SPIRE_COLD_CONTROL void App::open_compendium(){
     history_from_game_over=false;
     const unsigned parent=library?unsigned(library_tab):statistics_open?4:history_open?5:bestiary.open?3:0;
     compendium_open=true;statistics_open=history_open=library=false;bestiary.open=false;
     detail_card=detail_item=-1;compendium_selection=uint8_t(parent);progress_page_started=map_clock_ms;
     pointer_cancel();for(auto&motion:compendium_motion)motion={};
 }
-void App::open_statistics(){
+SPIRE_COLD_CONTROL void App::open_statistics(){
     compendium_open=true;compendium_selection=4;statistics_open=true;history_open=library=false;progress_page_started=map_clock_ms;
     progress_page_scroll.reset();statistics_presentation={};pointer_cancel();
 }
-void App::open_history(){
-    if(!progress.count)return;
+SPIRE_COLD_CONTROL void App::open_history(){
+    if(!history_available())return;
+    if(callbacks.history_archive&&!migrate_history()){message(content.language()==2?"历史记录保存失败，请重试。":"Could not save history. Please retry.");return;}
     history_from_game_over=false;
     compendium_open=true;compendium_selection=5;history_open=true;statistics_open=library=false;history_index=0;history_selected=-1;
     progress_page_started=map_clock_ms;progress_page_scroll.reset();history_presentation.open(map_clock_ms);history_tooltip={};pointer_cancel();
+    if(callbacks.history_archive)select_history_archive(UiHistoryArchiveAction::OlderRun,UINT32_MAX);
 }
-void App::history_select(int direction){
-    if(!history_open||!progress.count)return;
+SPIRE_COLD_CONTROL void App::history_select(int direction){
+    if(!history_open||!history_available())return;
+    if(history_index==255){
+        if(!select_history_archive(direction>0?UiHistoryArchiveAction::OlderPage:UiHistoryArchiveAction::NewerPage))
+            select_history_archive(direction>0?UiHistoryArchiveAction::OlderRun:UiHistoryArchiveAction::NewerRun);
+        return;
+    }
     const int next=int(history_index)+direction;
     if(next<0||next>=int(progress.count))return;
     history_index=uint8_t(next);history_selected=-1;progress_page_scroll.reset();history_presentation.open(map_clock_ms,direction>0?-1:1);history_tooltip={};pointer_cancel();
@@ -79,8 +86,8 @@ bool App::progress_navigation_input(Key key){
     if(key==Key::Back||key==Key::Collection){compendium_open=false;pointer_cancel();return true;}
     const int top=bestiary_available()?4:3;
     if(key==Key::Left){if(compendium_selection&1)--compendium_selection;}
-    else if(key==Key::Right){if(!(compendium_selection&1)&&((compendium_selection<4&&compendium_selection+1<top)||(compendium_selection==4&&progress.count)))++compendium_selection;}
-    else if(key==Key::Down&&compendium_selection<4){const unsigned next=compendium_selection+2;compendium_selection=uint8_t(next<top?next:next==5&&progress.count?5:4);}
+    else if(key==Key::Right){if(!(compendium_selection&1)&&((compendium_selection<4&&compendium_selection+1<top)||(compendium_selection==4&&history_available())))++compendium_selection;}
+    else if(key==Key::Down&&compendium_selection<4){const unsigned next=compendium_selection+2;compendium_selection=uint8_t(next<top?next:next==5&&history_available()?5:4);}
     else if(key==Key::Up&&compendium_selection>=2){const unsigned next=compendium_selection-2;compendium_selection=uint8_t(next<top?next:2);}
     else if(key==Key::Confirm){
         if(compendium_selection<3)ui_action(UiAction(int(UiAction::LibraryCards)+compendium_selection));
@@ -102,7 +109,7 @@ bool App::progress_pointer_button(bool down,const HitRegion&hit){
     if(scroller.dragging){const bool dragged=scroller.thumb||pointer.dragging||pointer.captured.kind==HitKind::ProgressScroll;scroller.dragging=scroller.thumb=false;if(dragged){pointer_cancel();return true;}}
     return false;
 }
-void App::history_pointer(const HitRegion&hit){
+SPIRE_COLD_CONTROL void App::history_pointer(const HitRegion&hit){
     if(!history_open)return;const auto*record=history_at(history_index);if(!record)return;
     if(hit.kind==HitKind::HistoryCard&&hit.value>=0&&hit.value<record->deck_count){
         const auto&card=record->deck[hit.value];history_selected=hit.value;open_card_offer(card.card,card.facts,card.genetic,card.scythe);

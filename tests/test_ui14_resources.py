@@ -32,6 +32,22 @@ def current(language='eng', glyphs=1):
 
 
 class Ui14ResourceTests(unittest.TestCase):
+    def test_graft_preserves_reduced_profile_for_each_locale(self):
+        from no_animations import mark, reduced
+        english=bytearray(current());struct.pack_into('<I',english,4,46)
+        artwork=mark(english)
+        for code,glyphs in (('eng',1),('zhs',3),('jpn',2)):
+            previous=bytearray(current(code,glyphs));struct.pack_into('<I',previous,4,46)
+            localized,_=graft_locale(artwork,bytes(previous),code)
+            self.assertTrue(reduced(localized))
+            before,after=view(previous),view(localized)
+            for i in range(len(before.strings)):
+                self.assertEqual(before.string_payload(i),after.string_payload(i))
+        # A historical checksum must not become a functional presentation mode.
+        struct.pack_into('<I',english,36,0x12345678)
+        full,_=graft_locale(bytes(english),bytes(english),'eng')
+        self.assertEqual(struct.unpack_from('<I',full,36)[0],0)
+
     def test_replaced_frames_reclaim_only_unreferenced_tiles(self):
         from test_retile_appended_resources import source
         import retile_appended_resources as retile

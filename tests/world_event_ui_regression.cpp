@@ -264,16 +264,16 @@ static void ancient_conversation(bool synthetic){
  // The locked Darv model's visit 4 is an Ancient / Character / Ancient
  // sequence. Dialogue clicks must not choose a relic or consume saved RNG.
  begin(OriginalEventId::Darv,0x8ac412,1);recorded_ancient_visits(4,Character::Ironclad,true);
- auto&d=a.ancient_dialogue;CHECK(d.history_complete&&d.count==3&&d.current==0&&!d.last());
+ auto&d=a.ancient_dialogue;const auto entered=d.entered;CHECK(d.history_complete&&d.count==3&&d.current==0&&!d.last());
  CHECK(!std::strcmp(d.keys[0],"DARV.talk.IRONCLAD.2-0.ancient"));
  CHECK(!std::strcmp(d.keys[1],"DARV.talk.IRONCLAD.2-1.char")&&(d.character_lines&2));
  CHECK(!choice_count());snapshot();advance_ms(1600);capture("ancient-dialogue-visit4-first");unchanged();
- a.input(Key::Confirm);a.render();CHECK(d.current==1&&!choice_count());advance_ms(1000);
+ a.input(Key::Confirm);a.render();CHECK(d.entered==entered);CHECK(d.current==1&&!choice_count());advance_ms(1000);
  char response[1024]{};a.ancient_dialogue_text(1,response,sizeof response);RichReader response_reader(response);RichChar response_char{};unsigned response_count=0;
  while(response_reader.next(response_char)){CHECK(response_char.codepoint!='['&&response_char.codepoint!=']'&&response_char.style.italic);++response_count;}CHECK(response_count);
  capture("ancient-dialogue-character-response");unchanged();reader(false);
  a.pointer_move(305,170);const auto*next=a.hit_at(305,170);CHECK(next&&next->kind==HitKind::AncientDialogueNext);
- a.pointer_button(true);a.pointer_button(false);a.pointer.visible=false;a.render();CHECK(d.current==2&&d.last());
+ a.pointer_button(true);a.pointer_button(false);a.pointer.visible=false;a.render();CHECK(d.entered==entered);CHECK(d.current==2&&d.last());
  a.input(Key::Confirm);unchanged();advance_ms(1000);CHECK(choice_count()==3);
  a.cursor=0;a.input(Key::Up);CHECK(a.cursor==2);a.input(Key::Down);CHECK(!a.cursor);
  a.input(Key::Right);CHECK(!a.cursor);unchanged();
@@ -302,6 +302,29 @@ static void ancient_conversation(bool synthetic){
  auto&e=a.game.original_events;e.finished=1;e.option_count=1;e.options[0]=0;
  std::strcpy(e.page_key,"DONE");std::strcpy(e.option_keys[0],"LEAVE");a.render();advance_ms(1000);
  CHECK(!d.count&&choice_count()==1);capture("ancient-dialogue-cleared-on-finish");
+}
+static void ancient_ambient(){
+ // Actual source textures are required here. The ordinary synthetic fixture
+ // separately covers dialogue clock continuity without pretending to be art.
+ for(auto id:{OriginalEventId::Darv,OriginalEventId::Orobas,OriginalEventId::Pael,OriginalEventId::Vakuu}){
+ begin(id,53,id==OriginalEventId::Vakuu?2:1);a.pointer_move(319,23);a.reset_presentation();a.render();
+ CHECK(a.ancient_dialogue.entered==a.map_clock_ms);
+ // Entry-time HUD/banner easing reaches y48; this source-room strip excludes it.
+ const auto entry_pixels=image_hash(0,50,320,25);
+ // Orobas has only these newly restored lights in the runtime, so its first
+ // positive source tick exercises actual texture birth without a star clock.
+ advance_ms(1);
+ if(id==OriginalEventId::Orobas)CHECK((image_hash(0,50,320,25)!=entry_pixels)!=a.content.reduced_animations());
+ advance_ms(17999);
+ const auto entered=a.ancient_dialogue.entered;const auto initial=image_hash(0,30,320,45);
+ snapshot();bool moved=false;
+ for(unsigned frame=0;frame<100;++frame){advance_ms(33);CHECK(a.ancient_dialogue.entered==entered);
+  moved|=image_hash(0,30,320,45)!=initial;unchanged();}
+ CHECK(moved!=a.content.reduced_animations());
+ // The ordinary offer action refreshes the conversation, not the room clock.
+ a.cursor=0;a.input(Key::Confirm);a.render();CHECK(a.ancient_dialogue.entered==entered);
+ CHECK(validate(a.game)&&a.content.healthy());
+ }
 }
 static void ordinary_events(bool synthetic){
  const OriginalEventId ids[]={OriginalEventId::Wellspring,OriginalEventId::ColorfulPhilosophers,OriginalEventId::RelicTrader};
@@ -399,5 +422,5 @@ int main(int argc,char**argv){
  // Only an explicit caller-selected private directory receives captures.
  if(argc>asset_argument+1)capture_directory=argv[asset_argument+1];CHECK(a.init(data.data(),data.size(),{}));CHECK(a.content.current_profile());
  if(reading_only){reading_focus();std::printf("World inline reading focus and canonical pointer choice: %u checks; %s profile\n",checks,actual?"actual":"synthetic");return 0;}
- if(argc==1)ancient_original_modulation();merchant_welcome();merchant();ancients();ancient_conversation(argc==1);ordinary_events(argc==1);reported_event_geometry();std::printf("world event UI: %u checks passed; %s profile; merchant welcome/inventory, eight ancients, revealed dialogue/history and centered ordinary events\n",checks,argc>1?"actual":"synthetic");
+ if(argc==1)ancient_original_modulation();merchant_welcome();merchant();ancients();ancient_conversation(argc==1);if(actual)ancient_ambient();ordinary_events(argc==1);reported_event_geometry();std::printf("world event UI: %u checks passed; %s profile; merchant welcome/inventory, eight ancients, revealed dialogue/history and centered ordinary events\n",checks,argc>1?"actual":"synthetic");
 }

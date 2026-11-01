@@ -203,8 +203,13 @@ def build(game:Path,source:Path,output:Path,font_path:Path)->dict:
             if row['id']!=len(pack.cards):raise ValueError('Character card directory order drift')
             pack.cards.append((add_image(image),first,first+1,first+2))
         header=(ROOT/'include/ui_assets.hpp').read_text()
-        count_match=re.search(r'\bU_Count\s*=\s*([0-9]+)\b',header)
-        if not count_match or int(count_match[1])<AUXILIARY:raise ValueError('Character auxiliary count drift')
+        count_match=re.search(r'\bU_Count\s*=\s*([A-Za-z_][A-Za-z_0-9]*|[0-9]+)\b',header)
+        count_value=count_match[1] if count_match else ''
+        if count_value and not count_value.isdecimal():
+            world_header=(ROOT/'include/world_assets.hpp').read_text()
+            declared=re.search(r'\b'+re.escape(count_value)+r'\s*=\s*([0-9]+)\b',world_header)
+            count_value=declared[1] if declared else ''
+        if not count_value or int(count_value)<AUXILIARY:raise ValueError('Character auxiliary count drift')
         for i,(key,name,size,fit) in enumerate(CHARACTER_UI,BASE_AUXILIARY):
             if not re.search(r'\bU_'+key+r'\s*=\s*'+str(i)+r'\b',header):raise ValueError(f'Character UI index drift: {key}')
             if name=='@curse_frame':

@@ -3,9 +3,11 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 from pathlib import Path
 import re
+import struct
 import zipfile
 
 from build_web import ROOT, package_runtime
@@ -22,22 +24,64 @@ def resource_version(path):
 
 
 def readme(info):
+    profile = info.get('animation_profile', 'animated')
+    animation = ('本包仅保留必要人物/怪物动作姿态，保留原有动作时长；Ancient房间人物及背景效果保持入场姿态，卡牌和UI仍按各自时钟运行。启动器自动识别，无需切换设置。\n'
+                 'This edition keeps essential actor poses and original action durations. Ancient NPC/background effects hold their entry pose; card and UI clocks continue. The launcher detects it automatically.\n') \
+                if profile == 'no-animations' else \
+                ('本包包含完整采样人物/怪物动画。\nThis edition includes the complete sampled actor animations.\n')
     shared = ('data/nSpire2.dat.tns         公共资源索引 / artwork index\n' +
               ''.join('data/'+name+'\n' for name in PART_FILES)) if info.get('multipart_artwork') else \
              'data/nSpire2.dat.tns         公共图片与动画 / shared artwork and animation\n'
-    if info.get('local_checkpoints'):
-        sources = (f"Runtime source checkpoint (local): {info['runtime_checkpoint']}\n"
-                   f"Resource converter checkpoint (local): {info['resource_checkpoint']}\n"
-                   "These source checkpoints have not been published to GitHub.\n")
-    else:
-        sources = (f"Runtime source: https://github.com/maxmixalex/slay-the-nspire-2/tree/{info['runtime_checkpoint']}\n"
-                   f"Resource converter: https://github.com/maxmixalex/slay-the-nspire-2/tree/{info['resource_checkpoint']}\n")
+    sources = ''
+    for key, label in (('runtime', 'Runtime'), ('resource', 'Resource converter')):
+        actual = info[key + '_checkpoint']
+        published = info.get(key + '_source_ref',
+                             None if info.get('local_checkpoints') else actual)
+        if published is None:
+            sources += f'{label} source checkpoint (local): {actual}\n'
+        elif published == actual:
+            sources += f'{label} source: https://github.com/maxmixalex/slay-the-nspire-2/tree/{published}\n'
+        else:
+            sources += (f'Actual {label.lower()} build checkpoint (local): {actual}\n'
+                        f'Published equivalent {label.lower()} source: '
+                        f'https://github.com/maxmixalex/slay-the-nspire-2/tree/{published}\n')
+    if not info.get('runtime_source_ref') and not info.get('resource_source_ref') and info.get('local_checkpoints'):
+        sources += 'These source checkpoints have not been published to GitHub.\n'
+    documentation = info.get('documentation_checkpoint')
+    if documentation:
+        sources += ("Documentation: https://github.com/maxmixalex/slay-the-nspire-2/blob/"
+                    f"{documentation}/docs/ui23-retained-differences.md\n")
+    ledger_zh = '上列独立文档链接' if documentation else '上列运行源代码中的 docs/ui23-retained-differences.md'
+    ledger_en = ('the separately linked documentation above' if documentation else
+                 'docs/ui23-retained-differences.md in the runtime source above')
+    validation = ''
+    if info.get('stage', '').startswith('ui23'):
+        validation = f'''
+验证范围 / Verification scope
+本包没有计算器实机测试记录，不能据此给出实机帧率或实机峰值内存。
+文件与资源校验摘要位于 data/BUILD-INFO.json；详细校验记录单独保存，不占计算器安装空间。
+原尺寸画质、原生运行与模拟器证据的范围及保留差异，见{ledger_zh}。
+No physical-calculator test is recorded for this package. Calculator FPS and physical peak RAM remain unmeasured.
+File and resource validation summaries are in data/BUILD-INFO.json; detailed records are kept separately.
+See {ledger_en} for visual, native/emulator evidence and remaining differences.
+
+具体边界 / Remaining boundaries
+项目 / Item | 本包状态 / Status
+七种附着与历史 / Afflictions and history | 七种附着使用连续材质与粒子；32场、96层、4096条通知为可归档工作窗口。旧版已经覆盖的数据不能恢复。Continuous materials/particles and disk-backed history pages are implemented; previously erased history cannot be recovered.
+画面与动画 / Rendering | 320×240 RGB565软件绘制，保留已说明的采样/噪声近似；未证明任意Spine混轨或未知原GPU随机历史等价。Software rendering retains documented sampling/noise bounds; arbitrary Spine mixing and unrecorded GPU random history are not established.
+服务与输入 / Services and input | 未提供云存档、在线排行榜、桌面时区/DST数据库或计算器IME。Cloud saves, hosted leaderboards, desktop timezone/DST database and calculator IME are not supplied.
+容量 / Capacity | 地图绘画2048点，种子64个UTF-8字节；历史归档受存储空间、序号和文件偏移范围限制。Map drawing: 2048 points; seed: 64 UTF-8 bytes; history is bounded by disk space, serial and file-offset ranges.
+新增提示语言 / New diagnostic text | 五条历史/归档错误提示提供简体中文与英语；其他语言显示英语。Five port-authored history/archive errors have Simplified Chinese and English text; other locales display English for these errors.
+未实现功能 / Unimplemented features | 音频、多人游戏和Timeline当前未实现；本包不声称桌面功能全等。Audio, multiplayer and Timeline are not implemented; this package does not claim full desktop feature equivalence.
+实测范围 / Measurement | 已记录的模拟器结果不是实机帧率，未测实机峰值内存。Recorded emulator results are not physical-handheld FPS or measured physical peak RAM.
+'''
     return f"""Slay the Nspire 2 — nSpire {info['version']} (StS II v0.111.0)
 
 安装 / Installation
 首次安装：将 nSpire2.tns 与 data、state 文件夹一起复制到计算器上的游戏目录，打开 nSpire2.tns。
 Copy nSpire2.tns and the data/state folders into the game's calculator directory.
 Open nSpire2.tns. A color TI-Nspire with Ndless is required.
+{animation}
 
 nSpire2.tns                  程序 / launcher
 {shared.rstrip()}
@@ -46,24 +90,27 @@ data/nSpire2.zhs.dat.tns     简体中文
 state/                      局面、历史、设置、语言和档位 / saves and settings
 
 只安装需要的语言文件。设置中可切换已安装语言；语言选择全局保存。
-公共资源索引和全部用途包必须来自同一版本并一起安装，不能按用途删减。
+公共资源索引、全部用途包与语言文件必须来自同一次配套打包/转换，并采用相同动画档，不能按用途删减。
 升级前退出游戏，保留已有 state 文件夹及其中的档案，不要用包内的空 state 覆盖它。
 删除游戏目录中旧的整个 data 文件夹，然后传入本包的完整 data 文件夹并替换 nSpire2.tns。
 可删除新 data 中不需要的语言文件，但必须保留配套的新索引和全部用途包。
 之前安装的可选语言也必须换成本轮对应文件，不能混用旧版。
+自行转换的资源必须使用同一次转换生成的可选语言，不能混用预制语言ZIP，即使版本和动画档相同。
 这同样适用于旧分包版升级，可避免传输时同时暂存旧大文件和新资源。
 等全部配套文件传输完成后再启动。可选语言只传需要的几种，不必安装全部十六种。
 首次启动按系统语言选择；对应语言缺失或无法加载时尝试英语，再选择首个可用语言。
 主菜单左上角可切换三个档案，各自保存局面、历史与游戏设置。
 程序会创建缺失的 state 文件夹。所有保存、临时文件、备份和诊断文件均写入 state。
 Install only the desired language files in data. Settings lists installed languages.
-Install the matching artwork index and every concern file together. They are all required.
+Install the artwork index, every concern file and locales from the same matching packaging/conversion and animation profile. Every concern file is required.
 Exit the game before updating; keep existing files in state.
 Do not overwrite the existing state folder with the archive's empty state folder.
-Replace the entire old data folder with this archive's matching data folder,
+Delete the entire old data folder first, then copy this archive's matching data folder
 and replace nSpire2.tns. You may omit unwanted locale files, but keep the
 matching index and every concern file.
 Replace previously installed optional languages with this release's matching files too.
+For freshly converted resources, use optional locales from that same conversion;
+do not mix them with the prebuilt locale ZIP, even when version/profile labels match.
 This also applies to updates from an older multipart installation and avoids
 temporarily storing both old large files and their replacements during transfer.
 Start only after the complete matching set is present.
@@ -103,7 +150,7 @@ Reference: v0.111.0 / 41cef1ea
 Resource format: NSP2/{info['resource_format']}; save format: v{info['save_version']}
 Installed program/resources: {sum(info['files'].values()):,} bytes before saves
 {sources.rstrip()}
-See the release notes for validation coverage and remaining calculator timing limits.
+{validation.rstrip()}
 Source and third-party notices are included under data/licenses. Original game assets belong
  to Mega Crit and the respective rights holders.
 """
@@ -119,13 +166,24 @@ def main():
     p.add_argument('--optional-locales',type=Path,help='Verified language editions directory; package additional locales separately')
     p.add_argument('--runtime-checkpoint', required=True)
     p.add_argument('--resource-checkpoint', required=True)
+    p.add_argument('--runtime-source-ref', help='Verified published equivalent runtime source; actual build checkpoint is retained (calculator packages only)')
+    p.add_argument('--resource-source-ref', help='Verified published equivalent converter source; actual producer checkpoint is retained (calculator packages only)')
+    p.add_argument('--documentation-ref', help='Optional independent published documentation commit; does not relabel runtime or resources')
     p.add_argument('--stage', default='ui22', help='Release suffix; validated against its complete content profile')
     args = p.parse_args()
     if not re.fullmatch('[A-Za-z0-9][A-Za-z0-9_-]*', args.stage):
         p.error('Stage must contain only letters, digits, underscores or hyphens')
-    for value in (args.runtime_checkpoint, args.resource_checkpoint):
+    for value in (args.runtime_checkpoint, args.resource_checkpoint,
+                  *(value for value in (args.documentation_ref, args.runtime_source_ref, args.resource_source_ref) if value)):
         if not re.fullmatch('[0-9a-f]{40}', value):
             p.error('Checkpoints must be full Git commit IDs')
+    if args.runtime_source_ref or args.resource_source_ref:
+        if args.local_checkpoints:
+            p.error('Published source refs cannot be combined with --local-checkpoints')
+        if not args.calculator_only:
+            p.error('Separate build/source identities currently require --calculator-only')
+    runtime_source_ref = args.runtime_source_ref or (None if args.local_checkpoints else args.runtime_checkpoint)
+    resource_source_ref = args.resource_source_ref or (None if args.local_checkpoints else args.resource_checkpoint)
     paths = {'nSpire2.tns': args.launcher, 'data/nSpire2.dat.tns': args.common,
              'data/nSpire2.eng.dat.tns': args.eng, 'data/nSpire2.zhs.dat.tns': args.zhs}
     common_bytes=args.common.read_bytes()
@@ -146,28 +204,58 @@ def main():
     if resource_version(args.zhs) != version:
         p.error('English and Chinese resources must use the same format version')
     content_validation = None
+    animation_profile = None
     for code,path in (('eng',args.eng),('zhs',args.zhs)):
         logical = reconstruct(common_bytes,path.read_bytes(),code)
+        profile = ('no-animations' if len(logical) >= 40 and
+                   struct.unpack_from('<I', logical, 4)[0] >= 46 and
+                   logical[36:40] == b'NAF1' else 'animated')
         if code == 'eng':
             content_validation = validate_release_content(logical, args.stage)
+            animation_profile = profile
+        elif profile != animation_profile:
+            p.error('English and Chinese animation profiles differ')
         del logical
     base_version = (ROOT/'VERSION').read_text().strip().split('-',1)[0]
     release_version = f'{base_version}-{args.stage}'
     info = dict(version=release_version, base_version=base_version, reference='v0.111.0 / 41cef1ea', resource_format=version, save_version=17,
-                progress_version=9, settings_version=6, calculator_run_storage='NSZ1 or raw NSV1',
-                calculator_history_storage='NSZ1 or raw NSH1-9',
+                progress_version=10, progress_formats=[f'NSH{i}' for i in range(1,10)]+['NSHA'],
+                settings_version=6, calculator_run_storage='NSZ1 or raw NSV1',
+                calculator_history_storage='NSZ1 or raw NSH1-9/NSHA',
+                calculator_history_archive=dict(file='state/nSpire2.history.tns',container='NHA1',
+                    record='NHR1',page='NHP2',readable_pages=['NHP1','NHP2']),
                 stage=args.stage,
+                animation_profile=animation_profile,
                 runtime_checkpoint=args.runtime_checkpoint,
                 resource_checkpoint=args.resource_checkpoint,
+                runtime_source_ref=runtime_source_ref, resource_source_ref=resource_source_ref,
                 developer_console=True, installation_layout="data/state",multipart_artwork=multipart,
                 locale_storage='NSL3' if args.eng.read_bytes()[:4]==b'NSL3' else 'NSL1/NSL2',
-                calculator_only=args.calculator_only,local_checkpoints=args.local_checkpoints,
+                calculator_only=args.calculator_only,
+                local_checkpoints=runtime_source_ref!=args.runtime_checkpoint or resource_source_ref!=args.resource_checkpoint,
                 files={name: path.stat().st_size for name, path in paths.items()})
+    if args.documentation_ref:
+        info['documentation_checkpoint'] = args.documentation_ref
+    validation_bytes = None
     if content_validation is not None:
-        info['required_content_validation'] = content_validation
+        validation_bytes = (json.dumps(content_validation, ensure_ascii=False, sort_keys=True, indent=2)+'\n').encode('utf-8')
+        info['required_content_validation'] = dict(complete=content_validation['complete'],
+            auxiliary_count=content_validation.get('auxiliary_count'),
+            checked_frame_images=content_validation.get('checked_frame_images'),
+            framed_tables=len(content_validation.get('framed_tables', [])),
+            detailed_record_sha256=hashlib.sha256(validation_bytes).hexdigest(),
+            detailed_record_bytes=len(validation_bytes), details_packaged=False)
+    info['program_resource_sha256'] = {name: hashlib.sha256(path.read_bytes()).hexdigest()
+                                      for name, path in paths.items()}
+    if args.stage.startswith('ui23'):
+        info['physical_device_tested'] = False
+        info['calculator_fps_measured'] = False
+        info['physical_peak_ram_measured'] = False
     stem = f'Slay-the-Nspire-2-{release_version}-bilingual'
     archive = args.output / (stem + '-calculator.zip')
     offline = args.output / (stem + '-offline.html')
+    if validation_bytes is not None:
+        (args.output/(stem+'-validation.json')).write_bytes(validation_bytes)
     texts = {'data/README.txt': readme(info).encode('utf-8'),
              'data/BUILD-INFO.json': (json.dumps(info, ensure_ascii=False, indent=2) + '\n').encode('utf-8')}
     for name in ('COPYING', 'NOTICE.md', 'licenses/Go-BSD-3-Clause.txt',

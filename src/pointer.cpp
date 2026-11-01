@@ -297,7 +297,7 @@ void App::pointer_button(bool down){
             if(same&&hit.enabled&&hit.kind==HitKind::AuxiliaryControl)auxiliary_control(hit.value);
         }return;
     }
-    UiCoreObserver observer(*this);
+    UiCoreObserver observer(*this);if(!observer&&frontend_confirm!=3)return;
     if(down)keyboard_card=-1;
     // Mouse buttons always restore mouse mode in the original, including
     // when KeyboardMode is enabled in preferences.

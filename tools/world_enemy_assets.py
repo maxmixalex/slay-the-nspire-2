@@ -53,14 +53,19 @@ class SpineSampler:
     skeleton basename. ``sample`` returns JSON-compatible frames; ``draw`` maps
     them to the six-tuples accepted by animation.raster without flattening blends.
     """
-    def __init__(self, pack, *, runtime=None, dotnet=None, work_dir=None, texture=None, fastnoise_header=None):
+    def __init__(self, pack, *, runtime=None, dotnet=None, work_dir=None, texture=None, fastnoise_header=None,
+                 adapter=None):
         self.pack = pack
+        self.adapter = Path(adapter or os.environ['NSPIRE_SPINE_ADAPTER']).resolve() \
+            if adapter or os.environ.get('NSPIRE_SPINE_ADAPTER') else None
         self.runtime = Path(runtime or os.environ.get('NSPIRE_SPINE_RUNTIME', ''))
-        if not self.runtime.is_file():
+        if self.adapter is not None and not self.adapter.is_file():
+            raise ValueError('The bundled Spine sampling adapter is missing: ' + str(self.adapter))
+        if self.adapter is None and not self.runtime.is_file():
             raise ValueError('Supply the reviewed local Spine 4.2 runtime with runtime= or NSPIRE_SPINE_RUNTIME')
         # This identity keys compiled adapters and rendered-image caches; it is
         # not compared against a fixed allow-list or used as an integrity gate.
-        self.runtime_identity = hashlib.sha256(self.runtime.read_bytes()).hexdigest()
+        self.runtime_identity = hashlib.sha256((self.adapter or self.runtime).read_bytes()).hexdigest()
         self.dotnet = str(dotnet or os.environ.get('NSPIRE_DOTNET', 'dotnet'))
         self._temporary = TemporaryDirectory(prefix='nspire-spine-') if work_dir is None else None
         self.work_dir = Path(self._temporary.name if self._temporary else work_dir)
@@ -75,6 +80,17 @@ class SpineSampler:
         self._prepare()
 
     def _prepare(self):
+        if self.adapter is not None:
+            # A self-contained published executable carries its own .NET
+            # runtime. No SDK, compiler, PATH lookup or first-run build is
+            # needed on the player's machine. Managed DLLs remain usable by
+            # developers who explicitly supply an installed dotnet runtime.
+            command = ([self.dotnet, str(self.adapter)] if self.adapter.suffix.lower() == '.dll'
+                       else [str(self.adapter)])
+            self._process = subprocess.Popen(command, stdin=subprocess.PIPE,
+                                             stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                                             text=True, bufsize=1)
+            return
         source = ROOT / 'tools/SpineSampleAdapter.cs'
         identity = hashlib.sha256(source.read_bytes() + self.runtime_identity.encode()).hexdigest()[:20]
         directory = self.work_dir / ('adapter-' + identity)
@@ -335,7 +351,12 @@ static fastnoiselite::FastNoiseLite configure() {
     value.SetFractalWeightedStrength(0.0f);
     return value;
 }
-extern "C" float nspire_decim_noise(float x) {
+#if defined(_WIN32)
+#define NSPIRE_NOISE_EXPORT __declspec(dllexport)
+#else
+#define NSPIRE_NOISE_EXPORT
+#endif
+extern "C" NSPIRE_NOISE_EXPORT float nspire_decim_noise(float x) {
     static const auto noise = configure();
     return noise.GetNoise(x, 0.0f);
 }
@@ -347,6 +368,16 @@ class _DecimillipedeNoise:
     def __init__(self, header, work_dir):
         import ctypes
         import sys
+        bundled = os.environ.get('NSPIRE_FASTNOISE_LIBRARY')
+        if bundled:
+            library = Path(bundled).resolve()
+            if not library.is_file():
+                raise ValueError('The bundled noise sampling library is missing: ' + str(library))
+            self.library = ctypes.CDLL(str(library))
+            self.call = self.library.nspire_decim_noise
+            self.call.argtypes = [ctypes.c_float]
+            self.call.restype = ctypes.c_float
+            return
         header = Path(header or os.environ.get('NSPIRE_FASTNOISE_HEADER', ''))
         if not header.is_file():
             raise ValueError('Decimillipede sampling requires the reviewed Godot 4.5.1 FastNoiseLite header; set NSPIRE_FASTNOISE_HEADER')

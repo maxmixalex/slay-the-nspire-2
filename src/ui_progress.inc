@@ -27,7 +27,10 @@ void App::run_timer_label(char*out,size_t capacity)const{
 static UiFloorHistory* progress_observe_floor(App&a,const State&s){
     auto&r=a.progress.current;if(!progress_matches(r,s)||r.outcome||!s.world.room_open)return nullptr;
     if(r.floor_count){auto&last=r.floors[r.floor_count-1];if(last.act==s.world.act_index&&last.point==s.world.current_point)return &last;}
-    if(r.floor_count==UiHistoryFloors){r.partial=1;r.facts.complete=0;return nullptr;}
+    if(r.floor_count==UiHistoryFloors){
+        if(!a.callbacks.history_archive){r.partial=1;r.facts.complete=0;return nullptr;}
+        if(!a.page_history_floors()){a.progress.history_storage_failed=1;r.partial=1;r.facts.complete=0;a.message(a.content.language()==2?"历史记录保存失败，请释放存储后重试。":"Could not save history. Free storage and retry.");return nullptr;}
+    }
     const bool complete=r.floor_count||!r.partial;
     auto&f=r.floors[r.floor_count++];f={};f.floor=s.world.total_floor;f.act=s.world.act_index;
     f.region=s.world.rooms[s.world.act_index].region;f.point=s.world.current_point;f.room=s.world.event_combat_parent?s.world.parent_room_type:s.world.room_type;
@@ -110,6 +113,14 @@ void App::begin_progress(bool resumed){
         if(!progress.current.facts.version){progress.current.facts.version=1;progress.current.facts.complete=0;}
         progress_seen_phase=255;progress_seen_revision=0;sync_progress();return;
     }
+    if(callbacks.history_archive){UiHistoryArchiveQuery query{UiHistoryArchiveAction::HighestSerial};unsigned n=0;
+        const auto result=callbacks.history_archive(query,nullptr,n);
+        if(result==UiHistoryArchiveResult::Error||(result==UiHistoryArchiveResult::Complete&&query.serial==UINT32_MAX)){
+            progress.history_storage_failed=uint8_t(2u|(resumed?4u:0u));message(content.language()==2?"无法读取历史记录，请重试。":"Could not read history. Please retry.");return;
+        }
+        if(result==UiHistoryArchiveResult::Complete&&query.serial>=progress.next_serial)progress.next_serial=query.serial+1;
+    }
+    progress.history_storage_failed=0;
     auto&r=progress.current;progress_clear_run(r);
     progress.current_saved_at=progress.current_saved_revision=0;
     if(!resumed)for(unsigned i=0;i<sizeof UiCurrentBuildId;++i)r.build_id[i]=UiCurrentBuildId[i];
@@ -191,6 +202,7 @@ void App::observe_run_fact(const State&s,unsigned kind,unsigned value){
 }
 void App::observe_history(const State&s,const RunHistoryNotice&notice){
  if(&s!=&game||!progress_matches(progress.current,s)||progress.current.outcome||notice.kind==RunHistoryEvent::None||notice.kind>=RunHistoryEvent::Count)return;
+ if(callbacks.history_archive&&progress.journal.count==UiJournalEntries&&!page_history_journal()){progress.history_storage_failed=1;progress.current.partial=1;progress.current.facts.complete=0;message(content.language()==2?"历史记录保存失败，请释放存储后重试。":"Could not save history. Free storage and retry.");return;}
  auto*f=progress_observe_floor(*this,s);if(!f)return;auto&journal=progress.journal;const int owner=bind_history_journal();if(owner<0)return;
  const unsigned floor=unsigned(f-progress.current.floors);auto&observed=journal.owners[owner];
  // A legacy NSH1–6 floor may already exist before this observer is installed.
@@ -321,6 +333,8 @@ void App::finish_progress(bool abandoned,const State*source){
     const State&s=source?*source:game;
     if(!progress_matches(progress.current,s)||progress.current.outcome)return;
     auto&r=progress.current;if(!abandoned&&s.phase!=Phase::Dead&&s.phase!=Phase::Complete)return;
+    if(callbacks.history_archive&&progress.count==UiHistoryCapacity&&!progress.history_oldest_archived&&
+       !archive_history_run(progress.history[progress.next_history])){progress.history_storage_failed=1;message(content.language()==2?"历史记录保存失败，请释放存储后重试。":"Could not save history. Free storage and retry.");return;}
     if(s.enemy_world.active&&r.last_battle==s.world.combat_count)
         progress_end_battle(*this,s,s.world.combat_ending||s.phase==Phase::Complete);
     progress_snapshot(r,s);r.outcome=abandoned?3:s.phase==Phase::Complete?1:2;r.abandoned=abandoned;
@@ -343,6 +357,8 @@ void App::finish_progress(bool abandoned,const State*source){
     }else if(r.mode==unsigned(RunMode::Standard)){stats.losses=progress_add(stats.losses,1);stats.current_streak=0;progress.current_streak=0;}
     stats.play_seconds=progress_add(stats.play_seconds,r.seconds);stats.gold_gained=progress_add(stats.gold_gained,r.gold_gained);
     stats.floors_climbed=progress_add(stats.floors_climbed,r.floor);
+    if(callbacks.history_archive&&!archive_history_run(r))message(content.language()==2?"历史记录已保留，将重试归档。":"History remains in recent records; archive will retry.");
+    progress.history_oldest_archived=0;
     progress.history[progress.next_history]=r;progress.next_history=uint8_t((progress.next_history+1)%UiHistoryCapacity);
     if(progress.count<UiHistoryCapacity)++progress.count;
     uint32_t live[UiHistoryCapacity+1]{};live[0]=r.serial;
@@ -364,6 +380,7 @@ const UiEnemyStatistics& App::encounter_statistics(unsigned encounter,int charac
     return encounter<EncounterKinds&&character>=-1&&character<CharacterKinds?progress.encounters[encounter][character+1]:none;
 }
 const UiRunHistory* App::history_at(unsigned newest_first)const{
+    if(newest_first==255){const auto*p=archived_history_page();return p&&p->valid?&p->run:nullptr;}
     return newest_first<progress.count?&progress.history[(progress.next_history+UiHistoryCapacity-1-newest_first)%UiHistoryCapacity]:nullptr;
 }
 const UiFloorHistory* App::current_floor_history(unsigned act,unsigned point)const{

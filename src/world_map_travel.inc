@@ -74,6 +74,7 @@ void App::update_map_travel(){
     }
     if(uint32_t(map_clock_ms-map_travel.start)<world_map_transition::fade_out_duration_ms(map_travel.speed))return;
     const unsigned destination=map_travel.to;const auto speed=map_travel.speed;
+    UiCoreObserver observer(*this);if(!observer)return;
     // Clear first: callbacks, failure, death on entry and repeated updates
     // cannot submit the same route again or consume another travel charge.
     map_travel.pending=false;
@@ -84,7 +85,6 @@ void App::update_map_travel(){
     confirmed_run={};
     reset_presentation(true);
     {
-        UiCoreObserver observer(*this);
         const bool entered=world_choose_point(game,destination);
         if(entered){
             map_visuals.committed(game,map_clock_ms);choice_revision=game.revision;

@@ -1,9 +1,20 @@
 #include "app.hpp"
+#include "card_affliction_scene.hpp"
+#include "neow_fire_ui23.hpp"
+#include "ancient_fire_ui23.hpp"
 #include "ui13_assets.hpp"
 #include "architect_attack_assets.hpp"
 #include "doom_assets.hpp"
 #include "fake_merchant_assets_ui13.hpp"
 #include "fake_merchant_presentation.hpp"
+#include "ancient_gpu_masks_ui23.hpp"
+#include "nonu_fog_ui23.hpp"
+#include "light_quad_rows.hpp"
+#include "neow_particles_ui23.hpp"
+#include "neow_post_ui23.hpp"
+#include "tanx_particles_ui23.hpp"
+#include "tanx_scene_ui23.hpp"
+#include "ancient_materials_ui23.hpp"
 #include "random_character_assets.hpp"
 #include "source_water_reflection.hpp"
 #include "phobia_swarm.hpp"
@@ -33,6 +44,11 @@
 #include "frontend_ui7_assets.hpp"
 #include "character_select_layout.hpp"
 #include "character_select_delta.hpp"
+#include "ancient_scene_ui23.hpp"
+#include "ancient_lights_ui23.hpp"
+#include "ancient_turbulence_ui23.hpp"
+#include "tez_cinders_ui23.hpp"
+#include "vakuu_cinders_ui23.hpp"
 #include "random_character_assets.hpp"
 #include "source_water_reflection.hpp"
 #include "card_face_layout.hpp"
@@ -95,6 +111,7 @@ static const char* card_type_label(CardType type,const Content*content=nullptr){
     case CardType::Power:return "能力";case CardType::Status:return "状态";case CardType::Curse:return "诅咒";case CardType::Quest:return "任务";}
     return "";
 }
+#include "card_affliction_ui.inc"
 #include "card_face_ui.inc"
 static void small_card(Canvas&c,Card card,int x,int y,bool selected,bool playable,int number,int fee=-2,int stars=-2,int instance=-1,int deck=-1,const EventCardFacts*facts=nullptr){
     if(selected){c.rect(x-2,y-2,51,70,rgb(91,74,47));c.box(x-2,y-2,51,70,Gold);}
@@ -310,7 +327,7 @@ void App::render(){
         character_select_delta::available(content,character,
             content.clip(int(character_select_layout::FirstClip+character)).first);
     content.set_image_cache_profile(((!title||entering_merchant)&&game.phase==Phase::Shop)||
-        title_merchant_stock(*this)||fake_room_frames,selection_patches);
+        title_merchant_stock(*this)||fake_room_frames,selection_patches||card_affliction_cache_profile(*this));
     if(startup_logo.active()){Canvas c{*this};startup_logo_screen(c);return;}
     sync_screen_motion();
     if(debug_open){

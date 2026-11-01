@@ -114,7 +114,7 @@ static UiHistoryJournalEntry journal_display_entry(const UiHistoryJournal&journa
 static void journal_floor_tooltip(Canvas&c,const UiRunHistory&run,unsigned floor,int node_x,int node_y,unsigned source){
  if(floor>=run.floor_count)return;auto&a=c.a;auto&motion=a.history_tooltip;const auto&point=run.floors[floor];
  motion.bind(run.serial,floor,source);motion.node_x=int16_t(node_x);motion.node_y=int16_t(node_y);
- const auto&journal=a.progress.journal;const int owner=journal.owner(run.serial);
+ const auto&journal=a.history_journal();const int owner=journal.owner(run.serial);
  const bool partial=owner<0||journal.owners[owner].incomplete(floor);
  const auto room=WorldRoom(point.room);const bool combat_room=room==WorldRoom::Monster||room==WorldRoom::Elite||room==WorldRoom::Boss;
  // Each consumed order slot is written by its rank below. Clearing all

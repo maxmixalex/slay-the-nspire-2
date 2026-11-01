@@ -52,7 +52,7 @@ struct ResourceReadStats {
 // Fixed storage: sixty-four 4 KiB pages, no allocation or retained caller buffers.
 // Observed Neow text misses span 44 pages: the former eight-page reader
 // refetched glyph/string pages each frame even with no animation group reads.
-// Small reads use a round-robin page cache. Reads of at least one full page
+// Small reads use a second-chance page cache. Reads of at least one full page
 // bypass it, so decoding a large picture does not evict directory/string data.
 // A small range crossing two cold pages fills both with one source call. The
 // same sixty-four pages are contiguous; this adds no read-ahead or pixel pool.
@@ -83,7 +83,8 @@ public:
         if(source_.progress)source_.progress(source_.context,stage,completed,total);
     }
 private:
-    struct Page {uint32_t offset{};uint16_t used{};bool valid{};};
+    struct Page {uint32_t offset{};uint16_t used{};bool valid{},referenced{};};
+    static_assert(sizeof(Page)==8,"Page reference bits reuse existing tag alignment padding");
     ResourceSource source_{};
     bool valid_{};
     mutable Page pages_[PageCount]{};
@@ -92,8 +93,9 @@ private:
     mutable ResourceReadStats stats_{};
     bool fetch(uint32_t offset,void* dst,uint32_t count)const;
     const Page* cached_page(uint32_t offset)const;
+    uint32_t replacement_page(uint32_t exclude=PageCount)const;
     const Page* page(uint32_t offset)const;
-    bool read_cold_pair(uint32_t slot,uint32_t offset,void* dst,uint32_t count)const;
+    bool read_cold_pair(uint32_t first,uint32_t second,uint32_t offset,void* dst,uint32_t count)const;
 };
 static_assert(sizeof(ResourceReader)<=257*1024,"Resource reader must stay within its fixed 257 KiB budget");
 } // namespace spire

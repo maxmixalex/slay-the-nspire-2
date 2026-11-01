@@ -108,7 +108,10 @@ def exact_tile_inventory(source, reader, path):
     """Build a private checked spool. Hashes locate matches; bytes prove them."""
     path.parent.mkdir(parents=True, exist_ok=True)
     raw_tiles = np.memmap(path, dtype='u1', mode='w+', shape=(reader.tile_count, t.TILE_BYTES))
-    canonical = np.empty(reader.tile_count, dtype='<u4')
+    # Modern compacted groups have holes in their fixed-divisor ID space.
+    # A hole is never a candidate record and must retain its own valid map
+    # entry rather than uninitialized host memory.
+    canonical = np.arange(reader.tile_count, dtype='<u4')
     seen = defaultdict(list)
     for group in range(reader.tile_groups):
         raw = reader.group(group)[0]
@@ -262,13 +265,18 @@ def encode(raw, original, reader, group, cache):
     return candidate, candidate + bytes((len(original) - len(candidate)) & 1)
 
 
-def make_plan(source, work, *, workers=2):
-    t.require(source.version<=41,'Coalesce before NSP42 slot compaction')
+def make_plan(source, work, *, workers=2, allow_compacted=False, encode_group=None):
+    t.require(source.version<=41 or allow_compacted,'Coalesce before NSP42 slot compaction')
+    encode_group = encode_group or encode
     work = Path(work); cache = work / 'encoded'; cache.mkdir(parents=True, exist_ok=True)
     reader = t.TileReader(source)
     indices, frames, referenced = index_inventory(source, reader)
     raw_tiles, canonical = exact_tile_inventory(source, reader, work / 'original-tiles.raw')
     mapping, report = constrained_mapping(canonical, frames, reader.per_group)
+    capacities = np.asarray([g[5] for g in reader.groups[:reader.tile_groups]], dtype='<u4')
+    destinations = mapping[referenced]
+    t.require(np.all(destinations % reader.per_group < capacities[destinations // reader.per_group]),
+              'Coalescing destination names a compacted slot hole')
     for tile in np.flatnonzero(mapping != np.arange(reader.tile_count)):
         t.require(np.array_equal(raw_tiles[tile], raw_tiles[mapping[tile]]), 'Mapped tiles differ')
     keep = np.zeros(reader.tile_count, dtype=np.bool_); keep[mapping[referenced]] = True
@@ -293,7 +301,7 @@ def make_plan(source, work, *, workers=2):
             raw = mapped_index(old_raw, count, reader.tile_count, mapping)
         if raw == old_raw:
             return group, original, original, original
-        payload, physical = encode(raw, original, reader, group, cache)
+        payload, physical = encode_group(raw, original, reader, group, cache)
         # Pixel bytes in unreferenced slots can stay when zeroing costs more.
         # Changed indices, however, must be encoded even when locally larger.
         if group < reader.tile_groups and len(physical) >= len(original):

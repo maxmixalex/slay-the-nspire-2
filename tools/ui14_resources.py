@@ -65,7 +65,10 @@ def graft_locale(artwork, previous, language):
         at = tiled.descriptors+i*16;global_at, group, raw_at, size = tiles.DESCRIPTOR.unpack_from(artwork, at)
         tiles.DESCRIPTOR.pack_into(out, at+delta, global_at+delta, group, raw_at, size)
     struct.pack_into('<I', out, 12, len(out));struct.pack_into('<I', out, 20, len(old.glyphs))
-    struct.pack_into('<I', out, 36, 0)
+    # The old checksum is no longer used, but NAF1 identifies a functional
+    # presentation profile. Preserve that marker in every locale's header.
+    from no_animations import reduced, MAGIC as REDUCED_POSES
+    struct.pack_into('<I', out, 36, REDUCED_POSES if reduced(artwork) else 0)
     target = view(out);bounds = split.layout(out, language)
     tiles.require(bytes(out[bounds['prefix']:bounds['prefix']+bounds['artwork']]) ==
                   artwork[after['prefix']:after['prefix']+after['artwork']], 'Shared art changed by locale graft')

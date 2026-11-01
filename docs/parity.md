@@ -6,12 +6,22 @@ Reflow, larger targets, scrolling, detail overlays and keyboard/touchpad adaptat
 
 ## Current coverage and evidence
 
-The selected local **UI18** runtime is
+Use the [UI23 retained-differences ledger](ui23-retained-differences.md) and
+[UI23 color, storage and native-render evidence](ui23-color-storage-evidence.md)
+for the current scope and measured results. UI23 restores source-derived
+sampled Neow and Tezcatara skeleton loops. Their independent particle emitters
+and material clocks remain incomplete; the other six Ancient backgrounds
+remain painted scenes with omitted ambient effects. This is not complete
+Ancient or original-game parity. The older checkpoint records below retain
+their historical scope and do not establish current device performance.
+
+### Historical UI18 and earlier evidence
+
+The historical **UI18** runtime was
 `44d7fb79f7d87d522038a074fa80d25e2bdeff31`, with NSP2/42 resource conversion
-`3acb5b310d2d2cb42dbf98f21a79f0b45d8b42ed`. Use
-[the UI18 delivery record](ui18-delivery-0.17.md), the current
-[README](../README.md), and [WORK_STATE.md](WORK_STATE.md) for installation,
-final acceptance, package identities and measured performance. The complete
+`3acb5b310d2d2cb42dbf98f21a79f0b45d8b42ed`.
+[The UI18 delivery record](ui18-delivery-0.17.md) retains that checkpoint's
+acceptance, package identities and measured performance. The complete
 UI18 suites contain **157 native tests and 345 Python tests**. The final native
 run at `44d7fb79f7d87d522038a074fa80d25e2bdeff31` passes 157/157, and the full
 Python run at `299ee0085097cc281e1745a67dedcf36f395482c` passes 345/345. Both
@@ -31,10 +41,10 @@ paragraphs do not supersede those implementations.
 `4f3c7abfb1c580d37f63a158385ff79a47e87874` and its 147/147 native result remain
 in [the UI16 ledger](ui16-delivery-0.17.md), with the
 [UI14 reconciliation](ui14-retained-differences-0.17.md) preserving its older
-scope. These are not UI18 measurements. The latest source has not been
-published to GitHub: automatic approval review rejected outbound source
-publication, so the local source archive and all-ref Git bundle are the recovery
-path. No new remote ref or CI success is claimed.
+scope. These are not UI18 measurements. At that historical checkpoint,
+automatic approval review rejected outbound source publication; its local
+source archive and all-ref Git bundle were the recovery path. That historical
+publication status does not describe UI23 or establish its CI result.
 
 Earlier versions of this file described the 0.12 two-character subset; that
 is historical. The complete **0.16** card/potion foundation is retained, and
@@ -83,10 +93,12 @@ allowance:
   screen-by-screen desktop acceptance. See the newer per-family ledgers for
   actual retained frame counts and timings; the old generic bake rate is not
   a description of every current actor and effect family.
-- Complete Ancient actor animation remains the previously accepted storage
-  exception. Its current event scene is static; gameplay, dialogue, options,
-  healing, and Ancient card materials are implemented. Audio, multiplayer,
-  and Timeline remain outside the agreed single-player scope.
+- Complete Ancient scene parity remains incomplete. UI23 restores Neow and
+  Tezcatara's sampled skeleton loops, while independent particle emitters and
+  material clocks remain omitted; the other six backgrounds remain painted
+  scenes. Gameplay, dialogue, options, healing, and Ancient card materials are
+  implemented. See the [current omission inventory](ui23-retained-differences.md).
+  Audio, multiplayer, and Timeline remain outside the agreed single-player scope.
 
 The **95%+** goal is therefore still an acceptance target, not a reported result.
 Do not relabel unsupported effects, phase differences or resource omissions as

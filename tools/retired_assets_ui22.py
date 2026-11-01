@@ -7,6 +7,7 @@ from __future__ import annotations
 import hashlib
 import json
 from pathlib import Path
+import re
 import struct
 
 import content_tiles as t
@@ -33,11 +34,51 @@ def checked_plan():
     return PLAN
 
 
+FRAGMENT_WORLD_SOURCE_SHA='38a7a94cdb7f5e372fde42bce0c5cb0d8d2f8d25e71080b07e1ca318e4ab3297'
+FRAGMENT_TEXT_TABLE_SHA='9a6fc6a83493c3d29996fbd44b6d22b0d3bfccbfd88cb96b770cdfd64a7c24d3'
+
+
+def route_digest(relative, raw):
+    """Recognize only the reviewed text-offset and move-table representations.
+
+    All 331 keys, next clips, action offsets/counts and local node ids retain
+    their values. The new naturally aligned 12-byte struct emits action_first
+    before its int8 node. Returning to the old initializer order lets the
+    original complete source hash still guard every routing value and lookup
+    body without changing the resource plan/marker or allowing a new route.
+    """
+    actual=hashlib.sha256(raw).hexdigest()
+    # These complete audited sources keep all4,361 text keys/IDs: the first
+    # uses relative16-bit offsets, the second shares literal key fragments.
+    # The generated fragment table is separately pinned below. Image/clip
+    # routes, lookup results and the resource marker stay fixed.
+    # Do not generalize this to future edits or normalize arbitrary source.
+    if (relative=='src/world_content.inc' and
+        actual in ('88a8cb735142229d55da4339ba880b3c8f8b06aba4c0214dab1f0c56ab9d6ccd',FRAGMENT_WORLD_SOURCE_SHA)):
+        return '70fd191cae886f76a278d712de2a25e1c7de9d819d3afdf976cdd6db3d2f7e97'
+    if relative!='src/world_enemy_assets.inc' or actual==PLAN['runtime_route_sources'].get(relative):
+        return actual
+    text=raw.decode('utf-8')
+    match=re.search(r'(static const WorldEnemyVisualMove we_moves\[\]=\{\n)(.*?)(\};)',text,re.S)
+    if match is None:return actual
+    rows=match[2].splitlines(keepends=True);normalized=[]
+    for row in rows:
+        fields=re.fullmatch(r'(.*),(\d+),(-?\d+),(\d+)(\},\n)',row)
+        if fields is None:return actual
+        normalized.append(f'{fields[1]},{fields[3]},{fields[2]},{fields[4]}{fields[5]}')
+    if len(rows)!=331:return actual
+    original=text[:match.start(2)]+''.join(normalized)+text[match.end(2):]
+    return hashlib.sha256(original.encode()).hexdigest()
+
+
 def verify_runtime_routes():
     checked_plan()
     for relative,expected in PLAN['runtime_route_sources'].items():
-        t.require(hashlib.sha256((ROOT/relative).read_bytes()).hexdigest()==expected,
+        t.require(route_digest(relative,(ROOT/relative).read_bytes())==expected,
                   'Retirement routing must be reviewed again: '+relative)
+    if t.sha256((ROOT/'src/world_content.inc').read_bytes())==FRAGMENT_WORLD_SOURCE_SHA:
+        t.require(t.sha256((ROOT/'src/world_text_fragments.inc').read_bytes())==FRAGMENT_TEXT_TABLE_SHA,
+                  'Generated text routes must match the complete reviewed table')
     # Also reject a newly introduced literal consumer in another translation
     # unit. Dynamic world selection remains bounded by the pinned model graph.
     names=('body/idle_loop','reactions/attack_left','reactions/hurt_left',
@@ -51,8 +92,10 @@ def verify_runtime_routes():
 
 
 def retired_images(source):
+    from ancient_extensions_ui23 import ENDPOINTS
     checked_plan();ids=set()
-    t.require(len(source.clips)==1783 and len(source.images) in (BASE_IMAGES,BASE_IMAGES+1),
+    t.require(len(source.clips)==1783 and (len(source.images) in (BASE_IMAGES,BASE_IMAGES+1) or
+              (len(source.aux),len(source.images)) in tuple((a,n) for a,n in ENDPOINTS.items() if a!=7212)),
               'Retirement requires the pinned complete image/clip catalog')
     for row in PLAN['retired_clips']:
         expected=tuple(row['tuple'])
@@ -96,8 +139,9 @@ def vantom_references(raw):
 
 
 def validate_roots(source,image):
+    from ancient_extensions_ui23 import ENDPOINTS,validate as validate_extensions
     ids=retired_images(source)
-    t.require(len(source.aux) in (BASE_AUX,AUXILIARY),'Retirement requires the complete selection profile')
+    t.require(len(source.aux) in (BASE_AUX,*ENDPOINTS),'Retirement requires the complete selection profile')
     direct=set(range(66))|set(source.aux[:BASE_AUX])|{row[0] for row in source.cards}
     selected={row['id'] for row in PLAN['retired_clips']}
     for clip,row in enumerate(source.clips):
@@ -105,6 +149,16 @@ def validate_roots(source,image):
             direct.update(range(row[0],row[0]+row[1]))
     t.require(not ids&direct,'Retired image is still a direct clip/card/auxiliary root')
     typed=set()
+    if len(source.aux) in ENDPOINTS and len(source.aux)!=AUXILIARY:
+        from no_animations import ancient_rows
+        for row in ancient_rows(source,image):
+            typed.add(row['table'])
+            typed.update(range(row['first'],row['first']+row['frames']))
+            t.require(all(entry[1:3]==(320,240) for entry in
+                          source.images[row['first']:row['first']+row['frames']]),
+                      'Ancient scene frames must retain their native 320x240 dimensions')
+    if len(source.aux) in ENDPOINTS:
+        typed.update(validate_extensions(source,image))
     for auxiliary in [*range(5409,5419),*range(5422,7206)]:
         value=source.aux[auxiliary]
         if not value:continue
@@ -134,7 +188,8 @@ def validate_roots(source,image):
 
 
 def validate_retired_profile(source,image):
-    t.require(len(source.aux)==AUXILIARY and len(source.images)==BASE_IMAGES+1 and
+    from ancient_extensions_ui23 import ENDPOINTS
+    t.require((len(source.aux),len(source.images)) in tuple(ENDPOINTS.items()) and
               source.aux[BASE_AUX]==MARKER_IMAGE,'UI22 retirement marker/catalog is missing')
     w,h,fmt,raw=image(MARKER_IMAGE)
     t.require((w,h,fmt,raw)==(8,1,0,marker_bytes()),'UI22 retirement plan marker differs')

@@ -15,7 +15,7 @@ import content_tiles as tiles
 from compact_tile_resources import grouped_slices
 from recompress_resources import Relocation, choose_group
 from retained_filter import group_layout
-from coalesce_tile_resources import view
+from coalesce_tile_resources import view, source_lzma_profile
 
 ENCODER = b'UI14-exact-LZMA2-extreme-depth1024-v1'
 
@@ -48,7 +48,8 @@ def entries(source):
     return sorted(result.items())
 
 
-def tighten(data, cache, workers=4, artwork_only=False, *, profiles=None, preserve_suffix_phase=False):
+def tighten(data, cache, workers=4, artwork_only=False, *, profiles=None, preserve_suffix_phase=False,
+            bounded_literal_contexts=False):
     source = view(data);cache = Path(cache);cache.mkdir(parents=True, exist_ok=True)
     old_entries = entries(source)
     tile_reader = tiles.TileReader(source)
@@ -77,6 +78,11 @@ def tighten(data, cache, workers=4, artwork_only=False, *, profiles=None, preser
         selected_profiles = selected_profiles or ((4, 0, 0), (4, 0, 1), (3, 1, 1))
         tiles.require(all(0 <= lc <= 4 and 0 <= lp <= 4 and lc+lp <= 4 and 0 <= pb <= 4
                           for lc, lp, pb in selected_profiles), 'Invalid bounded LZMA2 profile')
+        if bounded_literal_contexts:
+            previous_profile = source_lzma_profile(old[start:])
+            previous_context = sum(previous_profile[:2])
+            selected_profiles = tuple(profile for profile in selected_profiles
+                                      if sum(profile[:2]) <= previous_context)
         raw = tiles.decode_lzma2(old[start:], raw_size, dictionary)
         key = hashlib.sha256(ENCODER+struct.pack('<I',dictionary)+
                              bytes(x for profile in selected_profiles for x in profile)+old).hexdigest()
@@ -148,7 +154,8 @@ def tighten(data, cache, workers=4, artwork_only=False, *, profiles=None, preser
         target = at+relative
         struct.pack_into('<iIII', out, relocate(at), relocate(target)-relocate(at),
                          sizes.get(target, size), raw_at, shape)
-    struct.pack_into('<I', out, 12, len(out));struct.pack_into('<I', out, 36, 0)
+    struct.pack_into('<I', out, 12, len(out))
+    out[36:40] = data[36:40] if source.version >= 46 and data[36:40] == b'NAF1' else bytes(4)
     final = view(out)
     tiles.require(source.counts == final.counts and source.cards == final.cards and
                   source.aux == final.aux and source.clips == final.clips, 'Stable model/clock metadata changed')
@@ -187,5 +194,6 @@ def tighten(data, cache, workers=4, artwork_only=False, *, profiles=None, preser
         unchanged_pixels_geometry_clocks=True, runtime_memory_added=0,
         alignment_padding_bytes=padding, decoded_group_bytes=sum(row[4] for row in plan),
         compressed_group_boundaries_unchanged=True, version=source.version,
+        literal_contexts_not_increased=bool(bounded_literal_contexts),
         glyph_groups_considered=sum(at in font_offsets for at,_size in selected_entries),
         text_groups_considered=sum(at in text_offsets for at,_size in selected_entries))

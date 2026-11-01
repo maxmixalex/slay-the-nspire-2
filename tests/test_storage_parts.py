@@ -64,5 +64,29 @@ class ConcernLocalityTest(unittest.TestCase):
                       [(64,100,0),(101,200,5)],[(64,100,0),(99,200,5)]):
             with self.assertRaises(ValueError):storage.fold_small_concern_spans(spans)
 
+    def test_reduced_catalog_fits_without_splitting_any_source_stream(self):
+        # Pruning actor frames leaves hundreds of alternating whole groups;
+        # every group here exceeds the old 4KiB-island folding threshold.
+        source=[];at=64
+        for i in range(513):
+            end=at+5000+(i*199)%7000
+            source.append((at,end,i%8));at=end
+        boundaries={a for a,_,_ in source[1:]}
+        for limit in (1,2,17,storage.MAX_SPANS):
+            result=storage.bound_concern_spans(source,limit)
+            self.assertLessEqual(len(result),limit)
+            self.assertEqual((result[0][0],result[-1][1]),(64,at))
+            self.assertEqual(sum(b-a for a,b,_ in result),at-64)
+            self.assertTrue({a for a,_,_ in result[1:]}<=boundaries)
+            for first,last,_ in source:
+                self.assertTrue(any(a<=first and last<=b for a,b,_ in result))
+            self.assertEqual(storage.bound_concern_spans(result,limit),result)
+
+    def test_bounded_mapping_preserves_already_accepted_layout(self):
+        source=[(64,20000,0),(20000,40000,5),(40000,60000,7)]
+        self.assertEqual(storage.bound_concern_spans(source),source)
+        for limit in (0,storage.MAX_SPANS+1):
+            with self.assertRaises(ValueError):storage.bound_concern_spans(source,limit)
+
 
 if __name__=='__main__':unittest.main()
