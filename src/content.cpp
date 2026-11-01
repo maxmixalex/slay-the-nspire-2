@@ -371,7 +371,7 @@ bool Content::open(ResourceSource source){
                                                     FramedUi22AuxiliaryCount,character_select_delta::AuxiliaryCount,
                                                     retired_assets_ui22::AuxiliaryCount,ancient_scene_ui23::AuxiliaryCount,tanx_scene_ui23::AuxiliaryCount,
                                                     ancient_lights_ui23::AuxiliaryCount,ancient_materials_ui23::AuxiliaryCount,
-                                                    7221,7222,7223,7224,7225,7226,7227,7228};
+                                                    7221,7222,7223,7224,7225,7226,7227,7228,7229};
                                                 for(unsigned end:endpoints){
                                                     if(next==0x314c4954u)break;
                                                     for(unsigned i=auxiliary;i<end;++i){
@@ -450,7 +450,7 @@ bool Content::open(ResourceSource source){
     static constexpr uint16_t ancient_catalog[][2]={
         {7212,58613},{7214,59667},{7215,59674},{7217,59677},
         {7220,59700},{7221,59710},{7222,59712},{7223,59717},{7224,59729},
-        {7225,59730},{7226,59731},{7227,59732},{7228,59741}};
+        {7225,59730},{7226,59731},{7227,59732},{7228,59741},{7229,60294}};
     unsigned expected_images=0;
     for(const auto&row:ancient_catalog)if(auxiliary==row[0])expected_images=row[1];
     if(expected_images){
@@ -461,7 +461,7 @@ bool Content::open(ResourceSource source){
             {7214,59673},{7215,59675},{7216,59676},
             {7217,59697},{7218,59698},{7219,59699},
             {7220,59709},{7221,59711},{7222,59716},{7223,59717},
-            {7224,59729},{7225,59730},{7226,59731},{7227,59740}};
+            {7224,59729},{7225,59730},{7226,59731},{7227,59740},{7228,60293}};
         for(const auto&row:roots)
             if(auxiliary>row[0]&&ui_image(row[0])!=row[1])return reject();
         if(version<45||images_!=expected_images||clips_!=1783||ui_image(AuxiliaryFirst)!=int(MarkerImage))return reject();
@@ -481,6 +481,7 @@ bool Content::open(ResourceSource source){
         if(auxiliary>=7226&&!sized(59730,32,1))return reject();
         if(auxiliary>=7227&&!sized(59731,256,9))return reject();
         if(auxiliary>=7228&&!sized(59740,320,217))return reject();
+        if(auxiliary>=7229&&!sized(60293,256,9))return reject();
         if(ui_image(U_MerchantBackdrop)!=45810||!sized(45810,320,218))return reject();
         static constexpr uint16_t merchant[][4]={
             {45811,145,320,218},{45956,145,57,70},{46101,256,84,102},

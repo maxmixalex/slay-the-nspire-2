@@ -25,7 +25,7 @@ class TypedCatalogIntegration(unittest.TestCase):
         modules=[('tanx_scene_ui23',7215),('ancient_lights_ui23',7217),
                  ('ancient_materials_ui23',7220),('ancient_gpu_masks_ui23',7221),
                  ('tez_cinders_ui23',7222),('nonu_fog_ui23',7223),('ancient_turbulence_ui23',7224),
-                 ('neow_post_assets_ui23',7225),('vakuu_cinders_ui23',7226),('neow_particles_ui23',7227),('ancient_fire_ui23',7228)]
+                 ('neow_post_assets_ui23',7225),('vakuu_cinders_ui23',7226),('neow_particles_ui23',7227),('ancient_fire_ui23',7228),('neow_fire_ui23',7229)]
         marker=object();image=lambda i:('actual-final-file',i)
         for end in e.ENDPOINTS:
             source=SimpleNamespace(aux=list(range(end)),images=list(range(e.ENDPOINTS[end])),data=marker,version=46)
@@ -35,7 +35,7 @@ class TypedCatalogIntegration(unittest.TestCase):
                     self.assertEqual((len(prefix.aux),len(prefix.images)),(expected,e.ENDPOINTS[expected]))
                     self.assertIs(prefix.data,marker);self.assertIs(callback,image)
                     self.assertEqual(callback(len(prefix.images)-1),('actual-final-file',len(prefix.images)-1))
-                    self.assertEqual(kwargs,{'final':True} if expected in (7220,7225) else {})
+                    self.assertEqual(kwargs,{'final':True} if expected in (7220,7225,7229) else {})
                     calls.append(expected)
                 return check
             with contextlib.ExitStack() as stack:
@@ -45,15 +45,37 @@ class TypedCatalogIntegration(unittest.TestCase):
             self.assertEqual(roots,set(range(59667,e.ENDPOINTS[end])) if end>=7215 else set())
 
     def test_failure_in_an_earlier_prefix_is_not_hidden_by_new_extension(self):
-        source=SimpleNamespace(aux=[0]*7228,images=[0]*59741)
+        source=SimpleNamespace(aux=[0]*7229,images=[0]*60294)
         with patch('tanx_scene_ui23.validate',side_effect=ValueError('corrupt original typed root')):
             with self.assertRaisesRegex(ValueError,'corrupt original'):e.validate(source,lambda i:None)
+
+    def test_neow_static_source_cannot_be_published_as_full_or_dynamic_as_reduced(self):
+        import neow_fire_ui23 as n
+        import no_animations
+        data=bytearray(40);data[:4]=b'NSP2';data[4]=46
+        for marked,static in ((False,True),(True,False)):
+            source=SimpleNamespace(aux=[0]*7229,images=[0]*60294,
+                data=no_animations.mark(data) if marked else bytes(data))
+            source.aux[7228]=60293
+            image=lambda index:(256,9,0,b'parameter-parser-covered-by-owner-tests')
+            with patch.object(n,'parameters',return_value={'source_static':static}):
+                with self.assertRaisesRegex(ValueError,'profile does not match final marker'):
+                    n.validate(source,image,final=True)
+        # A static intermediate is permitted before the reducer writes NAF1;
+        # it still must continue into every page/mask payload check.
+        source.data=bytes(data)
+        def image(index):
+            if index==60293:return (256,9,0,b'parameter-parser-covered-by-owner-tests')
+            raise RuntimeError('actual source page validation reached')
+        with patch.object(n,'parameters',return_value={'source_static':True}):
+            with self.assertRaisesRegex(RuntimeError,'source page validation reached'):
+                n.validate(source,image,final=False)
 
     def test_source_recipe_chains_every_real_producer_before_quality_and_reduction(self):
         from converter import Recipe
         from converter_finalize import add_final_stages
         names=['ancient-materials46','ancient-gpu-masks46','tez-cinders46','nonu-fog46','ancient-trajectories46',
-               'neow-post46','vakuu-cinders46','neow-particles46','ancient-fire46']
+               'neow-post46','vakuu-cinders46','neow-particles46','ancient-fire46','neow-fire46']
         for reduced in (False,True):
             recipe=Recipe('/game','/work','/private/runtime','dotnet','/noise','-')
             add_final_stages(recipe,recipe.source_stages(),Path('/output'),['eng','zhs'],reduced)
@@ -72,6 +94,10 @@ class TypedCatalogIntegration(unittest.TestCase):
             fire=stages['ancient-fire46'].arguments
             self.assertEqual(fire[fire.index('--runtime')+1],'/private/runtime')
             self.assertEqual(fire[fire.index('--light-work')+1],'/work/cache/ancient-scenes45')
+            neow=stages['neow-fire46'].arguments
+            self.assertEqual(neow[neow.index('--runtime')+1],'/private/runtime')
+            self.assertEqual(neow[neow.index('--light-work')+1],'/work/cache/ancient-scenes45')
+            self.assertEqual('--no-animations' in neow,reduced)
             self.assertNotIn('--sampled',stages['ancient-trajectories46'].arguments)
             self.assertEqual('--no-animations' in stages[names[0]].arguments,reduced)
             self.assertEqual('--no-animations' in stages['neow-post46'].arguments,reduced)

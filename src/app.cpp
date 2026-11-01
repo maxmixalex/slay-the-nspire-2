@@ -1,4 +1,5 @@
 #include "app.hpp"
+#include "neow_fire_ui23.hpp"
 #include "ancient_fire_ui23.hpp"
 #include "ui13_assets.hpp"
 #include "architect_attack_assets.hpp"

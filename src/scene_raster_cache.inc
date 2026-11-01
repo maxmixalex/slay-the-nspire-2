@@ -194,7 +194,10 @@ struct TezCinderRoom {
   entered=a.ancient_dialogue.entered;floor=unsigned(a.game.floor);event=unsigned(a.game.original_events.id);
  }
 };
-struct CharacterSceneRasters {character_select_delta::Raster raster;TezCinderRoom cinders;};
+union CharacterEffects {uint8_t inactive;TezCinderRoom cinders;neow_fire_ui23::Mask neow;};
+enum class CharacterEffectOwner:uint8_t {None,Cinders,NeowFire};
+struct CharacterSceneRasters {character_select_delta::Raster raster;CharacterEffects effects{0};CharacterEffectOwner effect_owner=CharacterEffectOwner::None;};
+static_assert(sizeof(neow_fire_ui23::Mask)<=sizeof(TezCinderRoom),"Neow transmission reuses the existing cinder-sized variant");
 static_assert(sizeof(CharacterSceneRasters)<=sizeof(MerchantRugRaster),"Character and1776cinders share the existing scene slot");
 static_assert(alignof(CharacterSceneRasters)<=alignof(MerchantRugRaster),"Cinders must not increase scene alignment");
 union SceneRasterStorage {
@@ -250,7 +253,14 @@ static character_select_delta::Raster& character_selection_raster(){
     return scene_raster_storage.character.raster;
 }
 static TezCinderRoom& tez_cinder_room(const App&a){
- character_selection_raster();auto&r=scene_raster_storage.character.cinders;r.bind(a);return r;
+ character_selection_raster();auto&room=scene_raster_storage.character;
+ if(room.effect_owner!=CharacterEffectOwner::Cinders){::new(detail::InPlaceAddress{&room.effects.cinders}) TezCinderRoom;room.effect_owner=CharacterEffectOwner::Cinders;}
+ auto&r=room.effects.cinders;r.bind(a);return r;
+}
+static neow_fire_ui23::Mask& neow_fire_mask(const App&){
+ character_selection_raster();auto&room=scene_raster_storage.character;
+ if(room.effect_owner!=CharacterEffectOwner::NeowFire){::new(detail::InPlaceAddress{&room.effects.neow}) neow_fire_ui23::Mask;room.effect_owner=CharacterEffectOwner::NeowFire;}
+ return room.effects.neow;
 }
 static bool scene_opaque_canvas(const Canvas&c){
     return !c.coverage&&!c.occlusion&&c.opacity==255&&c.brightness==255&&

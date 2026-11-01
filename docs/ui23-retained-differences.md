@@ -2,7 +2,7 @@
 
 Reference: original v0.111.0 / 41cef1ea. This ledger distinguishes implemented
 source from completed release acceptance. The combined implementation through
-auxiliary/image endpoint **7228/59741** still requires its final original-data
+auxiliary/image endpoint **7229/60294** still requires its final original-data
 conversion, whole-scene rendering, allocation, storage and guest gates. It is
 not a claim of complete Godot parity. Earlier closures remain recorded in
 [the UI20 reconciliation](ui20-retained-differences.md).
@@ -58,7 +58,7 @@ present; combined final-data and performance acceptance remains pending.
 | Ancient | Original active emitters | Current implementation | Still missing active family |
 | --- | --- | --- | --- |
 | Darv |3 CPU |Two source lights and grain stars; source clocks and transforms |None identified |
-| Neow |11 CPU,3 GPU |Ten authored light nodes, CPU grain stars, three cloud nodes, correct vignette ordering and final screen-reflection post |Four stepped additive-fire instances behind the body |
+| Neow |11 CPU,3 GPU |Ten authored light nodes, CPU grain stars, three cloud nodes, four stepped additive fires behind the body, correct vignette ordering and final screen-reflection post |None identified; combined physical/guest gates pending |
 | Nonupeipe |13 GPU |Five stationary light overlays, six source fog emitters and two sampled turbulence families |None identified |
 | Orobas |4 CPU,5 GPU |Four CPU lights, two stationary light plates, three turbulence families and independently clocked water material |None identified |
 | Pael |5 CPU,7 GPU |Five CPU lights, four stationary light plates and three turbulence families |None identified |
@@ -66,9 +66,23 @@ present; combined final-data and performance acceptance remains pending.
 | Tezcatara |90 CPU,74 GPU |All90 authored light nodes,74×24 cinders and237 source fire instances (79 flat/158 additive), with original interleave and moving-source inheritance |None identified; final physical/guest gates pending |
 | Vakuu |5 CPU,13 GPU |Five CPU lights, first cinder family, three stationary overlays, four turbulence families and five final sparkle emitters |None identified |
 
-The four Neow fire instances remain the active source-function gap. They must
-execute behind the body in authored order; registering a descriptor or adding
-a generic overlay does not close them. Tezcatara fire geometry follows room
+The four Neow fire instances now have a source-bound producer and runtime.
+All546 foreground poses retain their original cadence. A compact transmission
+mask places their additive contribution behind the original animated foreground;
+source saturation is permitted only where that foreground is fully opaque.
+The mask occupies17,485 bytes inside the existing mutually exclusive cinder
+state; the transient contribution uses the existing foreground transfer lease.
+Full mode holds transmission within8/255 while the source-bound all-clock
+contribution error remains below one green/blue RGB565 code. Reduced mode uses
+the source clock0 transmission, with all546 descriptors sharing its real payload.
+Both modes reuse the reviewed250×250 triangle field rather than claiming
+original full-resolution shader pixels. The actual full append adds358,828
+bytes, including six source channel pages,546 mask leaves and one parameter
+image. This is an intermediate size; final quality/storage and guest performance
+are still required. Its shader uses global presentation time with a200-second
+period, independently of the18-second body loop.
+
+Tezcatara fire geometry follows room
 elapsed time and its16,667 ms body loop; its shader uses the existing global
 visual clock with its own20,000 ms period. Reduced mode fixes both clocks at0.
 The eight texture pages use explicit raw/up modes. Only the basic1024×1024
@@ -105,7 +119,8 @@ see [materials](ui23-ancient-materials.md), [stationary lights and sparkles](ui2
 [Nonupeipe fog](ui23-nonu-fog.md) and [Vakuu cinders](ui23-vakuu-cinders.md).
 A full-profile water/light approximation may not be relabeled as its exact
 reduced counterpart; the generic reducer rejects that substitution. The Tezcatara
-fire noise exception above is explicitly shared by both profiles. Reduced mode caches the complete
+fire noise exception above, including the triangle reused by Neow fires, is
+explicitly shared by both profiles. Reduced mode caches the complete
 entry pose after background/effects and before dialogue/HUD; dynamic UI remains
 active. Persistent framebuffer, particle and decoded-cache capacities do not grow.
 

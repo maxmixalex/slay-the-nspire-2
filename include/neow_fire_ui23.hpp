@@ -1,0 +1,132 @@
+#pragma once
+#include <stdint.h>
+#include "ancient_fire_ui23.hpp"
+
+namespace spire::neow_fire_ui23 {
+constexpr unsigned Auxiliary=7228,AuxiliaryCount=7229,FirstImage=59741,TexturePages=6;
+constexpr unsigned FirstMask=FirstImage+TexturePages,ParameterImage=FirstMask+546,Images=ParameterImage+1;
+constexpr unsigned Width=320,Height=240,MaskBytes=17485,Spans=705;
+constexpr unsigned Frames=546,KeyInterval=32,Duration=18000;
+constexpr unsigned NodesAt=64,ModelsAt=192,RowsAt=448,SpansAt=1412,Length=4232;
+inline unsigned word(const uint8_t*p){return unsigned(p[0])|unsigned(p[1])<<8;}
+inline uint32_t dword(const uint8_t*p){return word(p)|uint32_t(word(p+2))<<16;}
+
+// Source foreground transmission. This lives beside Character's opaque
+// raster, in a variant mutually exclusive with Tez/Vakuu particle state.
+// No extra global/heap pool, and no pointer survives a Content image request.
+struct Mask {
+ const void* owner=nullptr;
+ uint32_t generation=0;
+ unsigned first=0,index=0;
+ bool valid=false;
+ uint8_t pixels[MaskBytes];
+
+ template<class Picture>bool apply(const Picture&p,unsigned frame,void(*poll)()){
+  if(!p.pixels||p.format||p.alpha||p.palette||p.w!=256||!p.h||p.h>240)return false;
+  const auto*raw=p.pixels;const unsigned bytes=unsigned(p.w)*p.h*2;
+  const unsigned length=dword(raw),records=word(raw+6);
+  if(length<8||length>bytes||word(raw+4)!=frame||frame>=Frames||records>(length-8)/4)return false;
+  if(!(frame&(KeyInterval-1))){
+   for(unsigned at=0;at<MaskBytes;at+=5120){if(poll)poll();const unsigned count=MaskBytes-at<5120?MaskBytes-at:5120;__builtin_memset(pixels+at,0,count);}
+  }
+  unsigned at=8,cursor=0;
+  for(unsigned record=0;record<records;++record){
+   if(!(record&63u)&&poll)poll();
+   if(length-at<4)return false;
+   const unsigned skip=word(raw+at),code=word(raw+at+2),count=code&32767;at+=4;
+   if(skip>MaskBytes-cursor)return false;cursor+=skip;
+   if(count>MaskBytes-cursor||(!count&&(!skip||(code&32768))))return false;
+   const unsigned used=code&32768?1:count;if(used>length-at)return false;
+   if(code&32768)__builtin_memset(pixels+cursor,raw[at],count);
+   else __builtin_memcpy(pixels+cursor,raw+at,count);
+   cursor+=count;at+=used;
+  }
+  if(at!=length)return false;
+  for(;at<bytes;++at)if(raw[at])return false;
+  return true;
+ }
+ template<class Content>bool restore(Content&content,unsigned first_image,unsigned target,void(*poll)()=nullptr){
+  if(target>=Frames){valid=false;return false;}
+  const unsigned key=target&~(KeyInterval-1);unsigned next=key;
+  if(valid&&owner==&content&&generation==content.generation()&&first==first_image&&index>=key&&index<=target){
+   if(index==target)return true;next=index+1;
+  }else valid=false;
+  for(unsigned frame=next;frame<=target;++frame){
+   if(!apply(content.image(int(first_image+frame)),frame,poll)){valid=false;return false;}
+  }
+  owner=&content;generation=content.generation();first=first_image;index=target;valid=true;return true;
+ }
+};
+static_assert(sizeof(Mask)<18000,"Compact Neow transmission must fit the existing cinder-sized scene variant");
+
+struct Table {
+ const uint8_t*data=nullptr;
+ template<class Picture>bool read(const Picture&p,bool reduced){
+  data=nullptr;if(!p.pixels||p.format||p.alpha||p.palette||p.w!=256||p.h!=9)return false;
+  const auto*r=p.pixels;if(r[0]!='N'||r[1]!='W'||r[2]!='F'||r[3]!='1')return false;
+  const unsigned header[]={1,reduced?2u:1u,4,Frames,KeyInterval,MaskBytes,FirstImage,TexturePages,FirstMask,ParameterImage,NodesAt,ModelsAt,RowsAt,SpansAt,Spans,Length};
+  for(unsigned i=0;i<16;++i)if(word(r+4+i*2)!=header[i])return false;
+  if(dword(r+36)!=200000||dword(r+40)!=Duration)return false;
+  for(unsigned i=44;i<64;++i)if(r[i])return false;
+  unsigned green=0,blue=0;
+  for(unsigned n=0;n<4;++n){const auto*v=r+NodesAt+n*32;
+   if(word(v+24)>255||word(v+26)>255||v[28]>1||v[29]||v[30]||v[31])return false;
+   green+=word(v+24);blue+=word(v+26);
+   for(unsigned channel=0;channel<2;++channel){
+    const int64_t origin=ancient_fire_ui23::integer(v+channel*4),dx=ancient_fire_ui23::integer(v+8+channel*4),dy=ancient_fire_ui23::integer(v+16+channel*4);
+    const int64_t bound=(origin<0?-origin:origin)+Width*(dx<0?-dx:dx)+Height*(dy<0?-dy:dy);
+    if(bound>2147483647)return false;
+   }
+  }
+  if(green>255||blue>255)return false; // four premultiplied contributions fit uint16
+  for(unsigned m=0;m<2;++m){const auto*v=r+ModelsAt+m*128;
+   for(unsigned i=0;i<32;++i){const int q=ancient_fire_ui23::integer(v+4*i);if(q<-67108864||q>67108864)return false;}
+   const int lo=ancient_fire_ui23::integer(v+120),hi=ancient_fire_ui23::integer(v+124);
+   if(lo<0||hi>16777216||hi-lo<65536)return false;
+  }
+  unsigned span=0,pixel=0;
+  for(unsigned y=0;y<Height;++y){
+   if(word(r+RowsAt+y*4)!=span||word(r+RowsAt+y*4+2)!=pixel)return false;
+   const unsigned end=word(r+RowsAt+(y+1)*4);if(end<span||end>Spans)return false;
+   unsigned right=0;for(;span<end;++span){const unsigned x=word(r+SpansAt+span*4),count=word(r+SpansAt+span*4+2);
+    if(!count||x<right||x+count>Width)return false;right=x+count;pixel+=count;if(pixel>MaskBytes)return false;
+   }
+  }
+  if(span!=Spans||pixel!=MaskBytes||word(r+RowsAt+Height*4+2)!=MaskBytes)return false;
+  for(unsigned i=Length;i<256*9*2;++i)if(r[i])return false;
+  data=r;return true;
+ }
+ const uint8_t*node(unsigned i)const{return data+NodesAt+i*32;}
+ unsigned row_span(unsigned y)const{return word(data+RowsAt+y*4);}
+ unsigned row_pixel(unsigned y)const{return word(data+RowsAt+y*4+2);}
+ unsigned x(unsigned span)const{return word(data+SpansAt+span*4);}
+ unsigned count(unsigned span)const{return word(data+SpansAt+span*4+2);}
+};
+
+// The authored Neow fire has zero inner RGB. Reuse the Tez field/filter and
+// fixed-point primitives, evaluating only its source outer-alpha equation.
+// Distortion light and distortion mask retain distinct original R/G values.
+struct Shader {
+ const ancient_fire_ui23::Field*field=nullptr;
+ ancient_fire_ui23::Model model;
+ int pan[4][2]{};unsigned inverse=0;
+ void bind(const ancient_fire_ui23::Field*f,const uint8_t*parameters,uint32_t clock){
+  field=f;model.read(parameters);const unsigned time=clock%200000;
+  for(unsigned i=0;i<4;++i)for(unsigned j=0;j<2;++j)pan[i][j]=int(int64_t(model.q[i*5+2+j])*time/16000);
+  inverse=unsigned((uint64_t(1048576)<<24)/unsigned(model.q[31]-model.q[30]));
+ }
+ unsigned alpha(int u,int v)const{
+  using namespace ancient_fire_ui23;const auto&q=model.q;
+  const int n1=scaled(field[0].sample(scaled(u,q[0])+pan[0][0],scaled(v,q[1])+pan[0][1],0,true),q[4]);
+  const int n2=scaled(field[0].sample(scaled(u,q[5])+pan[1][0],scaled(v,q[6])+pan[1][1],0,true),q[9]);
+  const int ax=scaled(u,q[10])+pan[2][0],ay=scaled(v,q[11])+pan[2][1],bx=scaled(u,q[15])+pan[3][0],by=scaled(v,q[16])+pan[3][1];
+  int dx=scaled(field[1].sample(ax,ay,0,true),q[14])+scaled(field[2].sample(bx,by,0,true),q[19]);
+  int dy=scaled(field[1].sample(ax,ay,1,true),q[14])+scaled(field[2].sample(bx,by,1,true),q[19]);
+  const int mask=1048576-field[2].sample(scaled(u,q[20])+(q[22]>>4),scaled(v-41943,q[21])+41943+(q[23]>>4),2,false);
+  const int mu=scaled(u,q[24])+(q[26]>>4),mv=scaled(v,q[25])+(q[27]>>4);
+  dx=product(dx,field[3].sample(mu,mv,0,false));dy=product(dy,field[3].sample(mu,mv,1,false));
+  const int base=field[2].sample(u+dx,v+dy,2,false),strength=product(product(n1,n2)+mask,base)*16;
+  return smooth(strength,q[30],q[31],inverse);
+ }
+};
+}

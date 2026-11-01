@@ -302,6 +302,9 @@ def prepare(data, work):
     if len(source.aux)>=7225:
         from neow_post_assets_ui23 import require_reduced_source
         require_reduced_source(Prefix(source,7225),image)
+    if len(source.aux)>=7229:
+        from neow_fire_ui23 import require_reduced_source
+        require_reduced_source(Prefix(source,7229),image)
     replacements = {}; typed_before = set(); typed_after = set(); protected_vantom = set(); tables = []
     def save(index, row):
         w, h, fmt, raw = row
@@ -380,6 +383,8 @@ def prepare(data, work):
         retired_typed_images=sorted(discarded), replacements=sorted(replacements),
         clips=clips, tables=tables, replacement=replacement,
         original_clip_counts_clocks_pivots_unchanged=True, exact_retained_source_pixels=True,
+        exact_pixel_scope="Retained pixels equal this input; does not imply original full-resolution shader equivalence",
+        reviewed_half_noise=len(source.aux)>=7228, shader_clock_zero=True,
         loops_keep_one_pose=True, actions_keep_at_most_three_poses=True,
         terminal_pose_not_shown_before_original_terminal_sample=True)
     return output, report

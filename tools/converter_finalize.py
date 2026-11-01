@@ -197,7 +197,11 @@ def validate_install(artwork_path, output, codes, no_animations, original_refere
         installed_data_bytes=sum(path.stat().st_size for path in files),
         files={path.name: dict(bytes=path.stat().st_size, sha256=t.sha256(path.read_bytes())) for path in files},
         locales=locales, release_content=guard, elapsed_seconds=time.monotonic()-started,
-        launcher_included=False, calculator_performance_measured=False)
+        launcher_included=False, calculator_performance_measured=False,
+        shader_precision=dict(source_clock_zero=no_animations,
+            reviewed_half_noise=len(source.aux)>=7228,
+            half_noise_scope='Tez basic/triangle noise; shared triangle also used by Neow fires',
+            original_full_resolution_shader_pixels_exact=False) if len(source.aux)>=7228 else None)
     t.atomic_bytes(output/'converter-receipt.json', (json.dumps(report, indent=2)+'\n').encode())
     print(json.dumps({key: report[key] for key in ('status', 'content_version', 'animation_profile',
                                                   'languages', 'installed_data_bytes')}), flush=True)
@@ -289,12 +293,14 @@ def add_final_stages(recipe, source_editions, output, codes, no_animations):
                         ('neow-post46','neow_post_assets_ui23'),
                         ('vakuu-cinders46','vakuu_cinders_ui23'),
                         ('neow-particles46','neow_particles_ui23'),
-                        ('ancient-fire46','ancient_fire_ui23')):
+                        ('ancient-fire46','ancient_fire_ui23'),
+                        ('neow-fire46','neow_fire_ui23')):
         target=recipe.directory(name)/'eng.nsp'
         arguments=['--input',logical,'--output',target,'--pck',recipe.pck,
                    '--work',recipe.directory('cache')/name]
-        if module in ('tez_cinders_ui23','ancient_fire_ui23'):
+        if module in ('tez_cinders_ui23','ancient_fire_ui23','neow_fire_ui23'):
             arguments+=['--runtime',recipe.runtime,'--light-work',recipe.directory('cache/ancient-scenes45')]
+        if module=='neow_fire_ui23' and no_animations:arguments+=['--no-animations']
         if module=='neow_post_assets_ui23':
             arguments+=['--noise-header',recipe.noise,*(['--no-animations'] if no_animations else [])]
         if module=='ancient_turbulence_ui23' and getattr(recipe,'trajectory_samples',None):

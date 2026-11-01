@@ -79,8 +79,11 @@ tables remain exact. Neow/Tezcatara scene loops keep all 1,052 samples at the
 original 33 ms cadence and 320×240 resolution, holding a color only while its
 red/blue channel error stays within one RGB565 code and green within two.
 Existing retained-plane encoding uses full checkpoints every 32 samples.
-The reduced edition takes the exact source-scene path and retains its exact
-original first poses instead of applying this temporal color policy.
+The reduced edition takes the exact source-body path and retains its original
+first poses instead of applying this temporal color policy. Scene shader clocks
+are held at zero. Both profiles share the reviewed half-resolution basic/triangle
+noise used by Tezcatara fire; Neow fire reuses that triangle. This bounded shader
+change is separate from actor/body colors and is not original-noise pixel equality.
 
 After color selection, the converter performs exact tile deduplication, bounded
 sparse-tile encoding, and literal-context retuning. These steps preserve the
@@ -110,8 +113,11 @@ clip identifiers, registered positions, and final death/transition poses
 remain intact. Aliased frames share cached image data. The calculator detects
 the profile from a reserved metadata word; no separate launcher or settings
 toggle is required. Character selection and its Random background are static
-in this profile. The reduced edition skips color quantization entirely and
-retains the original RGB565 and alpha values in every representative pose.
+in this profile. The reduced edition skips actor/body color quantization and
+retains the original RGB565 and alpha values in every representative actor/body
+pose. Its scene shader effects use clock zero with the shared reviewed noise
+exception above. Neow foreground transmission is generated from the original
+first pose, rather than reducing the full profile's held transmission.
 
 The reducer runs after the complete source catalog has been generated. It does
 not currently save the original-source sampling time of the first conversion.

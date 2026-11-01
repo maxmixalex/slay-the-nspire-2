@@ -45,6 +45,7 @@ static bool draw(Canvas&c,unsigned scene,uint32_t elapsed){
  if(scene&&c.a.content.ui_image(tez_cinders_ui23::AuxiliaryFirst)==int(tez_cinders_ui23::FirstImage+1))
   return tez_cinders::draw(c,elapsed,seed);
  if(!scene){
+  if(c.a.content.ui_image(neow_fire_ui23::Auxiliary)==int(neow_fire_ui23::ParameterImage)&&!neow_fire::draw(c,elapsed))return false;
   if(!layer(c,scene,0,elapsed,seed,0,3))return false;
   if(c.a.content.ui_image(neow_particles_ui23::Auxiliary)==int(neow_particles_ui23::FirstImage)&&
      !neow_particles::draw(c,c.a.content.reduced_animations()?0:elapsed,seed))return false;
