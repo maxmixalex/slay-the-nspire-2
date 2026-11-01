@@ -1152,3 +1152,19 @@ upgrade assumption in the maximum-size NSH8/9 cases. Those now assert the new
 compatibility flag separately and still require byte-identical re-encoding of
 each historical payload with only that new extension removed. The failed run
 is preserved; a fresh published rerun is required before recording a full pass.
+
+## UI24 Timeline native gate and final packaging preparation
+
+The published follow-up now passes all twelve selected native suites with an
+unchanged source snapshot, including foundation297, integration275 (physical
+configured-run key release and modal boundaries), startup483/40 original-DLL
+vectors, maximum legacy profile migration, departure and the existing seed,
+world, profile, relic and menu regressions. The original optional reference tool
+also reproduces the numeric startup fixture byte for byte.
+
+Packaging accepts an explicit UI24 delivery label, records v18/NSHB metadata,
+requires the 8961-string Timeline catalog in all sixteen editions and keeps
+separate full/reduced optional-language directories. Bilingual instructions name
+the actual state/profile files, preserve the entire state directory, explain
+old-reader rollback limits and require a matching conversion family. This is
+packaging preparation, not a final ZIP/resource-production acceptance claim.

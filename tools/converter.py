@@ -737,7 +737,7 @@ def main(argv=None):
             receipt['execution']=dict(worker_process_limit=args.workers,native_numeric_threads=1)
             atomic_json(output/'converter-receipt.json',receipt)
             print(f"Pipeline: {summary['total_elapsed_seconds']:.2f} seconds; measured peak temporary bytes {summary['peak_work_bytes']:,}; retained {summary['retained_work_bytes']:,}.",flush=True)
-            print(f'Resource conversion complete: {output}/data. Place this data folder beside the matching UI23 nSpire2.tns launcher from the calculator package.',flush=True)
+            print(f'Resource conversion complete: {output}/data. Place this data folder beside the matching UI24 nSpire2.tns launcher from the calculator package.',flush=True)
         else:
             atomic_json(output/'converter-receipt.json',dict(complete=False,status='checkpoint',
                 reference=reference,languages=codes,no_animations=args.no_animations,stopped_after=args.stop_after))

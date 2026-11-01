@@ -55,7 +55,21 @@ def readme(info):
     ledger_en = ('the separately linked documentation above' if documentation else
                  'docs/ui23-retained-differences.md in the runtime source above')
     validation = ''
-    if info.get('stage', '').startswith('ui23'):
+    ui24 = bool(re.match(r'ui(?:2[4-9]|[3-9][0-9])(?:$|[-_])', info.get('stage', ''), re.IGNORECASE))
+    timeline = ('时间线 / Timeline | 57个原版节点的获得、揭示、分数与解锁链已接入正常界面和存档；原版Early Access占位仍不可用。旧档保留兼容开放，不伪造历史日期。57 source Epochs, obtain/reveal state, score and unlock chains are connected to normal UI and saves. Source Early Access placeholders remain unavailable. Legacy profiles retain compatibility access without invented dates.\n' if ui24 else '')
+    missing = '音频和多人游戏当前未实现。Audio and multiplayer are not implemented.' if ui24 else '音频、多人游戏和Timeline当前未实现。Audio, multiplayer and Timeline are not implemented.'
+    seed = ('种子输入64个UTF-8字节；更长ASCII文本可经配套转换器编码后，用自定义模式的导入种子码功能完整导入。Seed text accepts 64 UTF-8 bytes; the matching converter can encode complete longer ASCII input for the explicit Import seed code mode.' if ui24 else '种子64个UTF-8字节。Seed text accepts 64 UTF-8 bytes.')
+    compatibility = ('''升级兼容 / Save compatibility
+保留整个 state 文件夹。第一档局面为 state/nSpire2.sav.tns，进度为 state/nSpire2.progress.tns；第二/三档分别使用 nSpire2.sav.p2.tns、nSpire2.progress.p2.tns 与 p3 文件。设置、历史、语言、备份也在 state。
+UI24可读取旧版v17及更早局面、NSHA及更早进度；保存后写v18/NSHB，旧启动器不能保证读取新格式。需要回退时，使用升级前完整备份的 state 与其配套旧程序/资源。
+Preserve the entire state folder. Profile one uses state/nSpire2.sav.tns and state/nSpire2.progress.tns. Profiles two/three insert .p2/.p3 before .tns, such as nSpire2.sav.p2.tns and nSpire2.progress.p2.tns. Settings, history, language and backups also live there.
+UI24 reads v17 and older runs and NSHA and older progress. New saves use v18/NSHB; older launchers may not read them. To roll back, restore the complete pre-upgrade state backup together with its matching old launcher/resources.
+
+时间线 / Timeline
+从主菜单打开时间线，选择节点按 Enter 查看，再按 Enter 揭示已获得的节点。新档按原版解锁；旧档兼容保留已开放内容，不补造过去的获得时间。
+Open Timeline from the title menu. Select an Epoch and press Enter to inspect, then Enter again to reveal an obtained Epoch. Fresh profiles follow source unlocks; legacy profiles retain existing content access without invented obtain dates.
+''' if ui24 else '')
+    if info.get('stage', '').startswith(('ui23', 'ui24')):
         validation = f'''
 验证范围 / Verification scope
 本包没有计算器实机测试记录，不能据此给出实机帧率或实机峰值内存。
@@ -70,9 +84,9 @@ See {ledger_en} for visual, native/emulator evidence and remaining differences.
 七种附着与历史 / Afflictions and history | 七种附着使用连续材质与粒子；32场、96层、4096条通知为可归档工作窗口。旧版已经覆盖的数据不能恢复。Continuous materials/particles and disk-backed history pages are implemented; previously erased history cannot be recovered.
 画面与动画 / Rendering | 320×240 RGB565软件绘制，保留已说明的采样/噪声近似；未证明任意Spine混轨或未知原GPU随机历史等价。Software rendering retains documented sampling/noise bounds; arbitrary Spine mixing and unrecorded GPU random history are not established.
 服务与输入 / Services and input | 未提供云存档、在线排行榜、桌面时区/DST数据库或计算器IME。Cloud saves, hosted leaderboards, desktop timezone/DST database and calculator IME are not supplied.
-容量 / Capacity | 地图绘画2048点，种子64个UTF-8字节；历史归档受存储空间、序号和文件偏移范围限制。Map drawing: 2048 points; seed: 64 UTF-8 bytes; history is bounded by disk space, serial and file-offset ranges.
-新增提示语言 / New diagnostic text | 五条历史/归档错误提示提供简体中文与英语；其他语言显示英语。Five port-authored history/archive errors have Simplified Chinese and English text; other locales display English for these errors.
-未实现功能 / Unimplemented features | 音频、多人游戏和Timeline当前未实现；本包不声称桌面功能全等。Audio, multiplayer and Timeline are not implemented; this package does not claim full desktop feature equivalence.
+容量 / Capacity | 地图绘画2048点，达到容量时保留已有笔画并显示提示；这不是地图生成节点上限。{seed} 历史归档受存储空间、序号和文件偏移范围限制。Map annotations retain existing strokes and report a full 2048-point buffer; this does not limit generated map nodes. History is bounded by disk space, serial and file-offset ranges.
+新增提示语言 / New diagnostic text | 历史/归档错误与时间线状态提示提供简体中文和英语，其余语言显示英语；节点原文使用对应原版语言，缺失键回退英语。Port-authored history/archive errors and Timeline status labels use Simplified Chinese or English; original Epoch text uses the selected original locale, with English fallback for missing source keys.
+{timeline}未实现功能 / Unimplemented features | {missing} 本包不声称桌面功能全等。This package does not claim full desktop feature equivalence.
 实测范围 / Measurement | 已记录的模拟器结果不是实机帧率，未测实机峰值内存。Recorded emulator results are not physical-handheld FPS or measured physical peak RAM.
 '''
     return f"""Slay the Nspire 2 — nSpire {info['version']} (StS II v0.111.0)
@@ -119,18 +133,19 @@ First launch follows the system language, then English, then the first usable la
 Missing or unusable language resources fall back through the same sequence. Startup errors are English.
 The top-left profile button selects one of three independent run/history/settings profiles.
 Language is shared. The launcher creates state if necessary; all mutable files stay there.
+{compatibility}
 
 操作 / Controls
 触摸板四边导航，中心点击；数字 1–9、0 选择第 1–10 张手牌。
 Enter 指向/确认；左右选择目标；Esc 返回/暂停。
 Tab 地图；Doc 牌组；Home/On 抽牌堆；Del 弃牌堆；Var 消耗牌堆。
-Menu 结束回合；Shift 按住查看选牌界面下方的战场；Ctrl 在纯键盘模式下聚焦顶部栏。
+Menu 结束回合；自定义/每日挑战表单中用 Menu 开始；Shift 按住查看选牌界面下方的战场；Ctrl 在纯键盘模式下聚焦顶部栏。
 I 详情/地图图例，C 百科，V 状态，P 药水，R 遗物，O 读取。
 暂停菜单可保存或退出；两套键位可在设置中分别修改。
 制作人员名单中按住空格键加速滚动。
 Touchpad edges navigate; its centre clicks. Digits 1–9 and 0 select hand slots 1–10.
 Enter aims/confirms; arrows choose targets; Esc returns or pauses.
-Tab map; Doc deck; Home/On draw pile; Del discard; Var exhaust; Menu ends the turn.
+Tab map; Doc deck; Home/On draw pile; Del discard; Var exhaust; Menu ends the turn or starts the Custom/Daily form.
 Hold Shift to peek below a card selection. Ctrl focuses the top bar in keyboard-only mode.
 I details/map legend; C compendium; V statuses; P potions; R relics; O load.
 Use the pause menu to save or exit. Settings has two separately remappable key banks.
@@ -218,10 +233,12 @@ def main():
         del logical
     base_version = (ROOT/'VERSION').read_text().strip().split('-',1)[0]
     release_version = f'{base_version}-{args.stage}'
-    info = dict(version=release_version, base_version=base_version, reference='v0.111.0 / 41cef1ea', resource_format=version, save_version=17,
-                progress_version=10, progress_formats=[f'NSH{i}' for i in range(1,10)]+['NSHA'],
+    stage_number = re.match(r'ui([0-9]+)(?:$|[-_])', args.stage, re.IGNORECASE)
+    timeline_schema = bool(stage_number and int(stage_number[1]) >= 24)
+    info = dict(version=release_version, base_version=base_version, reference='v0.111.0 / 41cef1ea', resource_format=version, save_version=18 if timeline_schema else 17,
+                progress_version=11 if timeline_schema else 10, progress_formats=[f'NSH{i}' for i in range(1,10)]+(['NSHA','NSHB'] if timeline_schema else ['NSHA']),
                 settings_version=6, calculator_run_storage='NSZ1 or raw NSV1',
-                calculator_history_storage='NSZ1 or raw NSH1-9/NSHA',
+                calculator_history_storage='NSZ1 or raw NSH1-9/NSHA'+('/NSHB' if timeline_schema else ''),
                 calculator_history_archive=dict(file='state/nSpire2.history.tns',container='NHA1',
                     record='NHR1',page='NHP2',readable_pages=['NHP1','NHP2']),
                 stage=args.stage,
@@ -247,7 +264,7 @@ def main():
             detailed_record_bytes=len(validation_bytes), details_packaged=False)
     info['program_resource_sha256'] = {name: hashlib.sha256(path.read_bytes()).hexdigest()
                                       for name, path in paths.items()}
-    if args.stage.startswith('ui23'):
+    if args.stage.startswith(('ui23','ui24')):
         info['physical_device_tested'] = False
         info['calculator_fps_measured'] = False
         info['physical_peak_ram_measured'] = False

@@ -1,4 +1,4 @@
-# Original-install converter
+# UI24 original-install converter / UI24 原版资源转换器
 
 `convert.py` is the source entry point for the same converter that can be
 packaged as `nspire2-convert` (`nspire2-convert.exe` on Windows). The executable
@@ -31,7 +31,7 @@ its complete generated `data/` directory as a matching set beside the calculator
 `nSpire2.tns` launcher from the corresponding calculator package. The converter
 generates data only; it does not generate or download the launcher. Optional locale files must come from that same conversion
 and common-data output. Do not add languages from the prebuilt release's
-optional-language ZIP or from another conversion: the UI23 version and animation
+optional-language ZIP or from another conversion: the UI24 version and animation
 profile alone do not guarantee matching resource addresses. The provided
 prebuilt optional-language folders match the provided prebuilt game packages.
 
@@ -96,7 +96,7 @@ normal gameplay rules.
 ## Animated artwork policy
 
 The full animated edition keeps every source sample, frame size and action
-clock. Its UI23 color policy uses bounded RGB565 reduction and at most four
+clock. Its inherited actor color policy uses bounded RGB565 reduction and at most four
 alpha units of error for animated actors. Character-selection artwork uses a
 separate policy that preserves dark channel values; Ironclad, Defect and
 Regent selection art retains exact alpha and only reduces the green
@@ -108,8 +108,12 @@ Existing retained-plane encoding uses full checkpoints every 32 samples.
 The reduced edition takes the exact source-body path and retains its original
 first poses instead of applying this temporal color policy. Scene shader clocks
 are held at zero. Both profiles share the reviewed half-resolution basic/triangle
-noise used by Tezcatara fire; Neow fire reuses that triangle. This bounded shader
-change is separate from actor/body colors and is not original-noise pixel equality.
+noise used by Tezcatara fire. Neow's static held-clock light field is now baked
+once on the computer as NWF3 data, replacing its six former procedural input
+pages while preserving image IDs and all transmission/body frames. The baked
+field is exact to the port's former held-clock field. Tezcatara's calculator
+material interpolation is an explicit approximation, separate from actor/body
+colors; it does not claim original-noise pixel equality.
 
 After color selection, the converter performs exact tile deduplication, bounded
 sparse-tile encoding, and literal-context retuning. These steps preserve the
@@ -148,6 +152,15 @@ first pose, rather than reducing the full profile's held transmission.
 The reducer runs after the complete source catalog has been generated. It does
 not currently save the original-source sampling time of the first conversion.
 
+## Original Timeline text
+
+Every requested locale receives the same 257 Timeline string slots, from the
+original Epoch and Timeline tables, with required original-font glyphs. Missing
+source translations use the original English fallback; optional absent unlock
+text stays empty. The locked Thai source lacks 185 of these translations, and
+all locales have 37 absent optional values. These source omissions are retained
+explicitly rather than advertised as fully translated content.
+
 ## Progress and resuming
 
 Each stage writes a log and a crash-readable receipt under the work directory.
@@ -174,6 +187,20 @@ Animated and reduced runs can reuse the same
 work directory sequentially; never run two conversions against that directory
 at the same time. Use separate output directories to retain both profiles.
 The converter keeps these inputs separate from the final output and never modifies the original game installation's files.
+
+Conversion uses at most two worker processes for independent sampling jobs and
+one native numerical thread inside each worker. `--workers 1` selects one
+worker when memory is more limited. This setting does not reduce frame counts,
+resolution, action clocks or language coverage. The packaged `--self-test`
+starts two actual interpreter workers, checks their numerical environment and
+shared locks, and verifies that their temporary files can be removed.
+
+默认工作目录位于系统临时目录，名称与原版安装路径绑定。同一命令再次运行时，
+程序会核对并复用已完成的阶段；失败或中断的阶段不会被标记为完成。已被后续
+阶段用完的大型临时包会自动清理，保留诊断记录和部分较昂贵的恢复边界。若系统
+已清空临时目录，下次会重新转换。完整动画版和精简版可顺序复用同一工作目录，
+但应写入不同输出目录。可用 `--work PATH` 指定其他磁盘的工作目录；
+`--workers 1` 可降低并发内存占用。默认无需手动清理每个阶段的文件。
 
 `receipts/pipeline.json` records complete pipeline elapsed time, converted and
 reused stages, reclaimed bytes, and measured work-directory logical and
