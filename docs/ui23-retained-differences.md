@@ -76,11 +76,24 @@ Full mode holds transmission within8/255 while the source-bound all-clock
 contribution error remains below one green/blue RGB565 code. Reduced mode uses
 the source clock0 transmission, with all546 descriptors sharing its real payload.
 Both modes reuse the reviewed250×250 triangle field rather than claiming
-original full-resolution shader pixels. The actual full append adds358,828
-bytes, including six source channel pages,546 mask leaves and one parameter
+original full-resolution shader pixels. The actual v2 full append adds 359,382
+bytes, including six source channel pages, 546 mask leaves and one parameter
 image. This is an intermediate size; final quality/storage and guest performance
-are still required. Its shader uses global presentation time with a200-second
-period, independently of the18-second body loop.
+are still required. Its shader uses global presentation time with a 200-second
+period, independently of the 18-second body loop. The v2 parameter adds compact
+all-clock zero-contribution flags. Those flags skip only source-bound integer
+shader results that are always zero; they do not discard an animation frame.
+
+The final runtime 789 source was compared at 13 clocks, including entry, the
+18-second body seam and 200-second shader wrap. The candidate reads the actual
+v2-held body and transmission/shared-noise fire resources; the control uses the
+original source body and original-resolution fire shader. Both receive the same
+current native foreground particles, lights, vignette, screen post and UI.
+The maximum cumulative difference was red/green/blue **[1, 3, 2] RGB565 codes**;
+original-size review found no new contour blur, block-like water or visible
+loop-seam jump. This bound belongs to those 13 combined comparisons. It is not
+the smaller fire-only bound, a universal pixel bound for every independent
+material, or reproduction of an unrecorded Godot GPU random history.
 
 Tezcatara fire geometry follows room
 elapsed time and its16,667 ms body loop; its shader uses the existing global
@@ -133,6 +146,31 @@ Their runtime modules remain present. Full-screen Ancient projection, localized
 UI placement and save retirement are also preserved. Registry/model counts do
 not establish arbitrary cross-track Spine composition or full GPU equivalence.
 
+## Explicit non-Ancient reconciliation
+
+The earlier user-requested omissions are not inferred complete from the new
+Ancient effects. Their existing implementation and prior acceptance are tracked
+separately in [UI20 reconciliation](ui20-retained-differences.md),
+[UI19 UI fixes](ui19-ui-feedback.md) and [UI15 reconciliation](ui15-retained-differences-0.17.md).
+
+| Earlier retained item | Current status |
+| --- | --- |
+| Monster command waits, Vantom independent root/tail and death effects | Source command observers and compound runtime paths are implemented; current original-data actor acceptance is a separate final gate. |
+| Low-density charge/action frames and missing Osty death loop | Source-density replacements and typed action/death selection are implemented. No Ancient storage exception applies to ordinary actors. |
+| Ancient top gap, tooltip/reward icons, card/label placement and defeat/title transitions | The prior production UI fixes remain present. The new effects preserve their foreground ordering. |
+| Abandon/save association, ended no-node map state and terminal checkpoint removal | Prior lifecycle implementations remain present. Current ordinary exit/relaunch verification remains a distinct gate; historical success does not resolve a newly observed guest exit issue. |
+| Affliction, Infection and Ancient card-fire materials | Implemented with 8, 30 and 10 sampled phases respectively, as declared in `include/combat_ui14_resources.hpp`; continuous desktop shader motion is still not implemented. |
+| Arbitrary cross-track Spine composition and unrecorded cosmetic RNG history | Existing authored observers, sampled motion and deterministic cosmetic state cover the declared paths. General desktop composition/process-history parity is not established. |
+| Hosted services and desktop timezone/IME integration | Local daily/custom gameplay and locale formatting exist; hosted leaderboards/cloud, a timezone/DST database and a calculator IME are not supplied. |
+| History, drawing and input capacity | Existing limits remain 32 runs, 96 floors per run, 2,048 map points and 64 UTF-8 seed bytes plus terminator. Overflow/evicted history is not claimed to be preserved. |
+| Audio, multiplayer and Timeline | Explicitly excluded product scope, not completed or silently deferred features. |
+
+The sampled card materials, general composition and cosmetic-history limits,
+platform/service and capacity differences, and explicit exclusions remain
+material boundaries even when every inventoried Ancient emitter has a runtime.
+No new source-confirmed missing ordinary UI callback was found by this bounded
+ledger audit; that is not an exhaustive equivalence proof of the original game.
+
 ## Actual execution evidence and remaining limits
 
 A supplied CX II firmware image has booted in Firebird. Normal Ndless launch,
@@ -150,7 +188,7 @@ No physical calculator execution has been demonstrated.
   supplied by local daily/custom modes.
 - Output remains320×240 RGB565/LDR with integer rasterization, sampled materials
   and bounded particle representations. Existing card material sampling remains
-  unchanged; it is not continuous desktop GPU equivalence.
+  unchanged at the declared 8/30/10 phases; it is not continuous desktop GPU equivalence.
 - Cosmetic source seeds do not recreate an unrecorded process-global random
   history. Gameplay RNG and canonical save state remain separate.
 - The RTC path has no desktop timezone/DST database and there is no new IME.
@@ -159,5 +197,7 @@ No physical calculator execution has been demonstrated.
   unchanged usable capacities. Linked allocation is not measured physical peak
   memory or a guarantee against every fragmented OS heap.
 - Final cold/warm cost, full/reduced real-data rendering, original-folder CLI
-  execution and the entire extracted70,000,000-byte installation gate remain
-  mandatory. Source tests and historical packages do not replace these gates.
+  execution and the entire extracted 70,000,000-byte installation gate remain
+  mandatory. The default hard cap and both the core-file and complete-archive
+  checks are in `tools/package_variants_ui23.py`; scope metadata does not enforce
+  that limit. Source tests and historical packages do not replace these gates.
