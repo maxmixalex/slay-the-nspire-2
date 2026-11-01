@@ -7,16 +7,16 @@ import argparse
 from zehn import build
 ROOT=Path(__file__).resolve().parents[1]
 # Keep renderers and hot kernels at -O2. Event rules and input dispatch use
-# -Oz; the progress codec stays at -Os so its 64-bit shifts remain inline.
+# -Oz; progress and Timeline logic use -Os, keeping codec 64-bit shifts inline.
 # Every release and decoder-validation entry uses this identical policy.
-SIZE_OPTIMIZATION={'src/original_events.cpp':'-Oz','src/ui_progress_codec.cpp':'-Os',
+SIZE_OPTIMIZATION={'src/original_events.cpp':'-Oz','src/ui_progress_codec.cpp':'-Os','src/timeline.cpp':'-Os',
                    'src/ui_input.cpp':'-Oz','src/pointer.cpp':'-Oz'}
 SIZE_OPTIMIZED_SOURCES=tuple(SIZE_OPTIMIZATION)
 
 def main()->None:
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--output',type=Path,help='Launcher output path')
-    parser.add_argument('--size-event-rules',action='store_true',default=True,help='Compatibility flag: release builds use -Oz for event rules/input and -Os for the progress codec; renderers remain -O2')
+    parser.add_argument('--size-event-rules',action='store_true',default=True,help='Compatibility flag: release builds use the source-specific -Oz/-Os policy for event/input/progress code; renderers remain -O2')
     parser.add_argument('--profile-neow-layers',action='store_true',help='Developer-only reuse of existing timing slots for Neow layers; not a release build')
     parser.add_argument('--trace-io',action='store_true',help='Developer-only bounded OS I/O trace; not a release/timing acceptance build')
     parser.add_argument('--compression',choices=('zlib','zopfli'),default='zlib',help='Use zopfli for compact release packaging; requires requirements-release.txt')
@@ -24,7 +24,7 @@ def main()->None:
     clang=shutil.which('clang++') or shutil.which('clang++-18');link=shutil.which('ld.lld') or shutil.which('ld.lld-18')
     if not clang or not link:raise SystemExit('Install LLVM with clang++ and ld.lld, and put both on PATH.')
     directory=ROOT/'build'/'ndless';directory.mkdir(parents=True,exist_ok=True);(ROOT/'dist').mkdir(exist_ok=True)
-    sources=['src/characters.cpp','src/core.cpp','src/potions_extra.cpp','src/potions.cpp','src/ui_input.cpp','src/relics.cpp','src/run.cpp','src/resource_source.cpp','src/storage_source.cpp','src/ui_progress_codec.cpp','src/content.cpp','src/app.cpp','src/pointer.cpp','src/world_card_factory.cpp', 'src/original_events.cpp', 'src/world_relics.cpp', 'src/world_rng.cpp','src/reference_rng.cpp','src/reference_map.cpp','src/map_preview.cpp','src/reference_math.cpp','src/reference_act.cpp','src/map_preview_input.cpp','src/freestanding.cpp','platform/ndless/main.cpp','platform/ndless/entry.S','src/lzma2_block.cpp','third_party/lzma2/LzmaDec.c','third_party/lzma2/Lzma2Dec.c']
+    sources=['src/characters.cpp','src/core.cpp','src/potions_extra.cpp','src/potions.cpp','src/ui_input.cpp','src/relics.cpp','src/run.cpp','src/resource_source.cpp','src/storage_source.cpp','src/ui_progress_codec.cpp','src/timeline.cpp','src/content.cpp','src/app.cpp','src/pointer.cpp','src/world_card_factory.cpp', 'src/original_events.cpp', 'src/world_relics.cpp', 'src/world_rng.cpp','src/reference_rng.cpp','src/reference_map.cpp','src/map_preview.cpp','src/reference_math.cpp','src/reference_act.cpp','src/map_preview_input.cpp','src/freestanding.cpp','platform/ndless/main.cpp','platform/ndless/entry.S','src/lzma2_block.cpp','third_party/lzma2/LzmaDec.c','third_party/lzma2/Lzma2Dec.c']
     flags=['--target=arm-none-eabi','-mcpu=arm926ej-s','-marm','-mfloat-abi=soft','-mno-unaligned-access','-O2','-ffreestanding','-fno-builtin','-fno-exceptions','-fno-rtti','-fno-threadsafe-statics','-fno-stack-protector','-fno-unwind-tables','-fno-asynchronous-unwind-tables','-ffunction-sections','-fdata-sections','-fstack-usage','-Wframe-larger-than=8192','-I'+str(ROOT/'include')]
     if args.trace_io:flags.append('-DSPIRE_DEVICE_IO_TRACE=1')
     if args.profile_neow_layers:flags.append('-DSPIRE_NEOW_LAYER_PROFILE=1')

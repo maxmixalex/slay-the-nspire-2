@@ -1000,3 +1000,14 @@ Normal text retains the original canonicalization and hash, including strings be
 ## UI24 baked Neow field — source checkpoint
 
 The optional NWF3 conversion replaces six Neow-only procedural material inputs with the exact existing held-clock0 light field and five empty slots, while retaining every image ID, all 546 transmission frames and all body frames. Shared Tez textures stay intact. NWF1/2 resources retain the current runtime cold build fallback. The new offline integer sampler has an optional direct production-Shader C++ oracle; field equivalence, actual retained-payload reclamation and formal guest cold/warm acceptance are pending at this checkpoint. No installation-size or cold-speed claim is made before those checks.
+## UI24 Timeline source foundation — integration pending
+
+The 57 pinned Epoch models now have public numeric metadata, exact EpochState
+values, expansion edges, 18 score thresholds and card/relic/potion/event
+entitlements. The compact state machine separates obtain dates, reveal state
+and legacy content access; score grants are limited to one per run with the
+source overflow clamp. A frozen two-word reveal mask supplies pool policy.
+The appended localization contract reserves 257 source strings at8704..8960
+for all16 locales. This checkpoint does not yet connect normal UI, profile
+codec or run creation; those are the next implementation stage. No completion
+or calculator allocation/performance claim is made for this foundation.

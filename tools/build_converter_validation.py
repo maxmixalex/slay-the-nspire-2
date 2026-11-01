@@ -37,7 +37,7 @@ def build(output,clang,linker):
         source_files=before,unicorn_version='2.1.4',calculator_memory_limits_changed=False,
         original_events_optimization=SIZE_OPTIMIZATION['src/original_events.cpp'].lstrip('-'),
         size_optimized_sources=list(SIZE_OPTIMIZED_SOURCES),source_optimizations=dict(SIZE_OPTIMIZATION),
-        command='tools/build_ndless.py; production ARM926 -Oz for event rules/input, -Os for progress codec, -O2 elsewhere, no LTO; LLVM18')
+        command='tools/build_ndless.py; production ARM926 source_optimizations map, -O2 elsewhere, no LTO; LLVM18')
     (output/'arm-validation.json').write_text(json.dumps(record,indent=2)+'\n',encoding='utf-8')
     proof=self_test(output);record['linked_self_test']=proof
     (output/'arm-validation.json').write_text(json.dumps(record,indent=2)+'\n',encoding='utf-8')
