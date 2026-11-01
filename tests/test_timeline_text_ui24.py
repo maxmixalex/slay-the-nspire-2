@@ -23,6 +23,9 @@ class TimelineTextTest(unittest.TestCase):
         self.assertEqual(len(spec['strings']), 257)
         self.assertEqual(spec['strings'][0]['key'], spec['epoch_order'][0]+'.title')
         self.assertEqual(spec['strings'][228]['key'], 'STORY_DEFECT')
+        wanted = timeline.glyph_requirements(['']*257, 'zhs')
+        self.assertIn((ord('获'), 10, 0), wanted)
+        self.assertIn((ord('线'), 12, 0), wanted)
 
     def test_grouped_tail_old_payloads_and_common_survive_added_directory(self):
         common = None

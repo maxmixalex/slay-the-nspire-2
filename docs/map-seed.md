@@ -1,6 +1,12 @@
-# Map and seed scope — 0.9 (0.6 subsystem evidence retained)
+# Map and seed scope — current behavior and retained subsystem history
 
 Reference: **v0.111.0 / 41cef1ea**, pinned in `config/reference-release.json`. The assembly/PCK hashes are checked before reference inspection or conversion. Assemblies, disassembly and private reference runners are not distributed.
+
+## Current UI24 input and verification
+
+See [ASCII seed compatibility and portable import](seed-ascii-ui24.md) for the current user-facing rules and the executed 927-input / 7,416-original-map comparison. The port's 64-byte text field is a representation choice, not an OS restriction; complete longer ASCII seeds can be encoded by the same desktop converter and imported through an explicit normal-run UI mode. The 2,048-point annotation buffer is unrelated to generated maps.
+
+The original standard-map subsystem now drives the playable world. The historical 12×3 expedition is a separate legacy/practice path. Save files include the 64-bit seed, named RNG states and generated world maps. Claims below labeled 0.5/0.6/0.9 remain historical evidence for those stages.
 
 ## Implemented pipeline
 
@@ -44,10 +50,8 @@ The math adapters use the Linux host's libm, not the original Windows executable
 
 Version 0.5's ten explicit-quota original-CIL topology comparisons remain the earlier constructor evidence; they were not expanded into a full original-run suite here. In Firebird, six stable 0.6 preview frames matched native RGB565 output exactly, covering the default seed, a touchpad-entered seed, all four regions and the elevated elite quota.
 
-## Still separate from the playable game
+## Remaining parity boundaries
 
-The preview now generates its quotas rather than accepting fixed demonstration counts. It still does not resolve the original run's region/modifier decisions, fill original encounter/event pools, or drive the playable expedition. Other region backgrounds and actual Boss artwork have not been ported into this diagnostic view. The playable 12×3 expedition still uses its own map. The current runtime writes version-6 project saves and imports versions 3–5; map preview state is not a playable campaign save.
+The current playable world uses the regional map generator and original-content encounter/event pools. This supersedes the historical statement that the preview was disconnected from play. The preview remains a diagnostic UI with only region/elite controls, rather than a replacement for complete original run setup.
 
-Next acceptance is comparison against actual unmodified reference-game run/map captures across supported single-player region and difficulty configurations, then original room/encounter binding and full-run random call order. The current result is a seeded regional map subsystem, **not yet certified full PC-seed or full-game parity**.
-
-Audio, multiplayer and Timeline progression are outside the current product scope. Reference-run setup must supply supported single-player configuration directly rather than recreating Timeline progression.
+A matching seed and explicit map configuration do not establish an identical whole campaign. The original player's progression/unlocks, mode/modifiers, act choices, character, and action sequence also matter. UI24's separate Timeline implementation and whole-run encounter/reward ordering require their own verification. The direct original-method comparison ran on Linux .NET; it is not a proof of every Windows math-library rounding result. See the current report for exact scope and counts.

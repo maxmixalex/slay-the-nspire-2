@@ -91,11 +91,13 @@ def shape_texts(texts, existing_codepoints):
 def glyph_requirements(texts, language):
     # Actual Timeline reader: 10px regular list/body/story; source label 12px
     # heading. Rich spans retain their explicit bold/italic roles.
-    body = styled_alphabet(texts)
+    menu = '时间线' if language == 'zhs' else 'Timeline'
+    legacy = '旧版兼容开放，历史获得时间未知。' if language == 'zhs' else ''
+    body = styled_alphabet([*texts, menu, legacy])
     required = {(cp, 10, 0) for cp in set().union(*body)}
     for face in range(1, 4):
         required.update((cp, 10, face) for cp in body[face])
-    title = set().union(*styled_alphabet(texts[0:57*4:4]))
+    title = set().union(*styled_alphabet([*texts[0:57*4:4], menu]))
     required.update((cp, 12, 0 if language in SUBSTITUTED else 5) for cp in title)
     return {(cp, px, face) for cp, px, face in required if not text_format_control(cp)}
 
