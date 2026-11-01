@@ -1,4 +1,51 @@
-# UI23 current snapshot — packages verified, conversion and device gates open
+# UI23 integration checkpoint — 2026-11-01, acceptance still open
+
+The active branch remains `work/ui23-integration`; PR #3 is not merged. The
+package table below records an earlier fallback and is **not the acceptance
+record for the current source**. The current work includes the previously
+omitted Ancient particles and materials; their remaining implementations and
+actual converted outputs are release gates, not exclusions.
+
+- The user requires the entire extracted full-animation English/Chinese
+  installation, including launcher, notices and instructions, to fit within
+  **70,000,000 decimal bytes**. Preserve the existing sampled actor dimensions,
+  frame cadence and action clocks. Final matching three-ZIP packaging is open.
+- The compiled allocation ceiling is **22,291,016 bytes** (UI21), superseding
+  the older 24 MiB allowance. Runtime `346f8ad` links at **22,224,488 bytes**,
+  leaving 66,528 bytes without increasing production cache capacities. This is
+  linked allocation, not measured physical peak RAM.
+- Published `29e83e4` adds a reduced-profile Ancient raster cache inside the
+  existing scene union. Published `460fae8` losslessly factors text-index
+  prefixes and suffixes: all 4,361 text keys and 6,855 registry entries retain
+  their mappings, with 69,284 fewer read-only table bytes. The 460 launcher is
+  1,686,552 bytes; its physical-device performance remains unmeasured.
+- Published `2a9d55b` provides the ARM-compatible Tanx ash/fog stage.
+  Published `346f8ad` restores source-ordered Neow/Tezcatara CPU lights. All
+  546 Neow and 506 Tezcatara source poses have completed fresh sampling;
+  matching final data append, remaining materials and particle systems, and
+  full-scene acceptance are still in progress.
+- Fresh original-directory conversion is being reproduced from the pinned
+  v0.111.0 / 41cef1ea inputs. Historical lossless index retirement and glyph
+  savings must be replayed on the physical final outputs before size or
+  converter completion is claimed. The same launcher must detect both the
+  full and NAF1 reduced profiles; reduced action timing remains unchanged.
+- Supplied-firmware Firebird now works at unchanged 64 MB DRAM and normal
+  396/198/99 MHz CPU/AHB/APB clocks. Ordinary USB installation and hash-equal
+  readback of all 13 baseline files succeeded, followed by ordinary launcher
+  startup. Controlled before/after timings and final-build gameplay are open.
+  No physical calculator connection is available; host, Unicorn and emulator
+  results must remain explicitly distinguished from physical-device evidence.
+- Published `7b093fc` localizes a real Windows frozen-converter failure: the
+  source-mode same-ELF ARM oracle passes both streams with CFG flags zero;
+  the frozen process has CFG flags one and aborts at the first decode with
+  0xC0000409. A pinned upstream-compatible bootloader build and actual Windows
+  frozen-oracle rerun are required. Linux helper success does not close this.
+
+Original game assets, source-derived packs, private captures, firmware,
+conversation attachments and private storage identifiers remain outside Git.
+The sections below are historical until replaced by final matching receipts.
+
+# Historical UI23 fallback snapshot — not the current acceptance record
 
 Continue on `work/ui23-integration`; this source has **not yet been merged to
 `main`**. UI23 supersedes the historical UI22 lossless-only policy and soft

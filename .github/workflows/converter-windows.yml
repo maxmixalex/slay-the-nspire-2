@@ -92,14 +92,23 @@ jobs:
           New-Item -ItemType Directory -Force $logs | Out-Null
           python -X utf8 -u tools/converter_arm_validation.py --helpers $helpers --output "$logs/source-arm-self-test.json" 2>&1 | Tee-Object -FilePath "$logs/source-arm-self-test.log"
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Build the pinned Unicorn-compatible Windows bootloader
+        shell: pwsh
+        run: |
+          $work = Join-Path $env:RUNNER_TEMP 'converter-bootloader'
+          python tools/build_converter_bootloader.py --work $work
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - name: Build and check the executable without developer runtime paths
         shell: pwsh
         run: |
           $helpers = Join-Path $env:RUNNER_TEMP 'converter-helpers/win-x64'
           $output = Join-Path $env:RUNNER_TEMP 'converter-delivery'
           $work = Join-Path $env:RUNNER_TEMP 'converter-bundle-work'
+          $bootloader = Join-Path $env:RUNNER_TEMP 'converter-bootloader'
+          $env:PYTHONPATH = Join-Path $bootloader 'vendor'
           python tools/build_converter_bundle.py --helpers $helpers --output $output --work $work
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          Copy-Item "$bootloader/bootloader-compatibility.json" "$output/bootloader-compatibility.json"
           Copy-Item docs/converter-ui23.md "$output/README.md"
           git rev-parse HEAD | Out-File -Encoding ascii "$output/COMMIT"
       - name: Preserve source and frozen native diagnostics
@@ -110,6 +119,8 @@ jobs:
           path: |
             ${{ runner.temp }}/converter-diagnostics/
             ${{ runner.temp }}/converter-bundle-work/frozen-self-test*
+            ${{ runner.temp }}/converter-bootloader/bootloader-build.log
+            ${{ runner.temp }}/converter-bootloader/bootloader-compatibility.json
           if-no-files-found: warn
           retention-days: 30
       - name: Upload the Windows converter and dependency license notices

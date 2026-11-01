@@ -36,6 +36,18 @@ def build(args):
         raise ValueError('Helper directory is incomplete or targets a different OS')
     from converter_arm_validation import verify as verify_arm
     _elf,arm_manifest=verify_arm(helpers)
+    import PyInstaller
+    bootloader_provenance=None
+    if os.name=='nt':
+        from build_converter_bootloader import pe_properties
+        bootloader=Path(PyInstaller.__file__).resolve().parent/'bootloader/Windows-64bit-intel/run.exe'
+        properties=pe_properties(bootloader.read_bytes())
+        if properties['control_flow_guard']:
+            raise ValueError('Unicorn2.1.4 requires the reviewed compatible bootloader; run build_converter_bootloader.py first')
+        manifest=Path(PyInstaller.__file__).resolve().parents[2]/'bootloader-compatibility.json'
+        bootloader_provenance=json.loads(manifest.read_text(encoding='utf-8'))
+        if bootloader_provenance['compatible_bootloader_sha256']!=hashlib.sha256(bootloader.read_bytes()).hexdigest():
+            raise ValueError('Private compatible bootloader differs from its source/build proof')
     recipe=Recipe('/game','/work','/runtime','dotnet','/noise','-')
     editions=recipe.source_stages();add_final_stages(recipe,editions,Path('/output'),['eng','zhs'],True)
     modules=sorted({stage.module for stage in recipe.stages if not stage.module.startswith('@')})
@@ -101,7 +113,7 @@ def build(args):
     helper_test=json.loads(smoke.stdout)
     receipt=dict(schema=1,platform=sys.platform,embedded_python=True,native_cpp_converter=False,
         separately_installed_python_required=False,dotnet_sdk_required=False,cxx_compiler_required=False,
-        original_assets_included=False,mandatory_arm_validation=arm_manifest,bytes=executable.stat().st_size,
+        original_assets_included=False,bootloader_compatibility=bootloader_provenance,mandatory_arm_validation=arm_manifest,bytes=executable.stat().st_size,
         sha256=hashlib.sha256(executable.read_bytes()).hexdigest(),
         smoke_test='--help and embedded dependency/native helper self-test passed',helper_self_test=helper_test,
         original_game_conversion_tested=False)
