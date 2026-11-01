@@ -163,6 +163,15 @@ struct MerchantRugRaster {
  const Content*owner=nullptr;uint32_t generation=0;bool valid=false;
  uint16_t pixels[ScreenW*ScreenH];uint8_t alpha[ScreenW*ScreenH];
 };
+struct AncientStillRaster {
+ const Content*owner=nullptr;
+ // Two words retain the full run identity without increasing ARM alignment.
+ uint32_t run_seed_low=0,run_seed_high=0,generation=0,seed=0,entered=0;
+ unsigned floor=0,event=0;int image=-1;bool valid=false;
+ uint16_t pixels[ScreenW*ScreenH];
+};
+static_assert(sizeof(AncientStillRaster)<=sizeof(MerchantRugRaster),
+    "Reduced Ancient scenes reuse the existing scene allocation");
 
 // Character selection, the shop and the selected combat description never
 // draw each other's sampled raster in one frame. The selected description's
@@ -178,8 +187,9 @@ union SceneRasterStorage {
     MerchantRugRaster merchant;
     SelectedHandRaster selected;
     character_select_delta::Raster character;
+    AncientStillRaster ancient;
 };
-enum class SceneRasterOwner:uint8_t { None,Random,Merchant,SelectedHand,Character };
+enum class SceneRasterOwner:uint8_t { None,Random,Merchant,SelectedHand,Character,Ancient };
 static SceneRasterStorage scene_raster_storage{0};
 static SceneRasterOwner scene_raster_owner=SceneRasterOwner::None;
 // A new App can reuse the same address and the same initial Content generation.
@@ -221,16 +231,48 @@ static character_select_delta::Raster& character_selection_raster(){
     }
     return scene_raster_storage.character;
 }
+static bool scene_opaque_canvas(const Canvas&c){
+    return !c.coverage&&!c.occlusion&&c.opacity==255&&c.brightness==255&&
+       c.tint_red==255&&c.tint_green==255&&c.tint_blue==255&&!c.color_matrix&&
+       c.pitch==ScreenW&&c.clip_w==ScreenW&&c.clip_h==ScreenH;
+}
+static void scene_opaque_blit(Canvas&c,const uint16_t*pixels){
+    for(unsigned y=0;y<ScreenH;y+=16){
+        c.poll();__builtin_memcpy(c.pixels+y*ScreenW,pixels+y*ScreenW,16*ScreenW*2);
+    }
+}
+// The caller selects the reduced profile. Only the original opaque scene is
+// retained: dialogue, hover, banners and HUD are drawn after this cache.
+static bool ancient_still_restore(Canvas&c,int image,uint32_t entered){
+    if(c.pixels!=c.a.pixels||!scene_opaque_canvas(c)||!c.a.content.healthy()||
+       scene_raster_owner!=SceneRasterOwner::Ancient)return false;
+    const auto&r=scene_raster_storage.ancient;const auto&a=c.a;
+    if(!r.valid||r.owner!=&a.content||r.generation!=a.content.generation()||
+       r.run_seed_low!=uint32_t(a.game.world.run_seed)||r.run_seed_high!=uint32_t(a.game.world.run_seed>>32)||
+       r.seed!=a.game.seed||r.floor!=unsigned(a.game.floor)||
+       r.event!=unsigned(a.game.original_events.id)||r.image!=image||r.entered!=entered)return false;
+    scene_opaque_blit(c,r.pixels);return true;
+}
+static void ancient_still_store(Canvas&c,int image,uint32_t entered){
+    if(c.pixels!=c.a.pixels||!scene_opaque_canvas(c)||!c.a.content.healthy())return;
+    // Claim only after the complete scene has been rendered. Restoring a
+    // sampled background uses the Character member of this same union.
+    ::new(detail::InPlaceAddress{&scene_raster_storage.ancient}) AncientStillRaster;
+    scene_raster_owner=SceneRasterOwner::Ancient;
+    auto&r=scene_raster_storage.ancient;const auto&a=c.a;
+    r.owner=&a.content;r.generation=a.content.generation();r.seed=a.game.seed;
+    r.run_seed_low=uint32_t(a.game.world.run_seed);r.run_seed_high=uint32_t(a.game.world.run_seed>>32);
+    r.floor=unsigned(a.game.floor);r.event=unsigned(a.game.original_events.id);r.image=image;r.entered=entered;
+    for(unsigned y=0;y<ScreenH;y+=16){
+        c.poll();__builtin_memcpy(r.pixels+y*ScreenW,c.pixels+y*ScreenW,16*ScreenW*2);
+    }
+    r.valid=true;
+}
 static bool scene_delta_background(Canvas&c,unsigned first,unsigned frame,unsigned interval=character_select_delta::KeyInterval){
     auto& raster=character_selection_raster();
     if(!raster.restore(c.a.content,first,frame,c.a.callbacks.foreground_poll,interval))return false;
-    if(!c.coverage&&!c.occlusion&&c.opacity==255&&c.brightness==255&&
-       c.tint_red==255&&c.tint_green==255&&c.tint_blue==255&&!c.color_matrix&&
-       c.pitch==ScreenW&&c.clip_w==ScreenW&&c.clip_h==ScreenH){
-        for(unsigned y=0;y<ScreenH;y+=16){
-            c.poll();__builtin_memcpy(c.pixels+y*ScreenW,raster.pixels+y*ScreenW,16*ScreenW*2);
-        }
-    }else c.picture(Picture{reinterpret_cast<const uint8_t*>(raster.pixels),nullptr,nullptr,
+    if(scene_opaque_canvas(c))scene_opaque_blit(c,raster.pixels);
+    else c.picture(Picture{reinterpret_cast<const uint8_t*>(raster.pixels),nullptr,nullptr,
                             ScreenW,ScreenH,0},0,0);
     return true;
 }

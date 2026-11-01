@@ -79,8 +79,11 @@ static void native_ancient_screen(Canvas&c){
  // The complete Ancient scene is a viewport background. The shared HUD is
  // composited afterwards; reserving its height here squeezed and lowered
  // the scene, leaving an artificial band behind the translucent top bar.
+ const bool reduced=a.content.reduced_animations();
+ const int background=reduced?a.content.world_image("events",original_event_key(e.id)):-1;
+ if(!reduced||!ancient_still_restore(c,background,d.entered)){
  if(!native_ancient_background(c,e.id))
-  c.picture(a.content.world_image("events",original_event_key(e.id)),0,0,320,240);
+  c.picture(reduced?background:a.content.world_image("events",original_event_key(e.id)),0,0,320,240);
  // Authored Darv order: room, light7/light8, stars, then dialogue/HUD.
  // Orobas/Pael CPU lights follow their earlier independent GPU layers.
  // Vakuu's visible CPU lights precede its still-outstanding final sparkles.
@@ -88,11 +91,13 @@ static void native_ancient_screen(Canvas&c){
  const bool darv=e.id==OriginalEventId::Darv;
  const unsigned light_mode=darv?2:e.id==OriginalEventId::Orobas?3:e.id==OriginalEventId::Pael?4:e.id==OriginalEventId::Vakuu?5:0;
  if(light_mode){
-  const uint32_t clock=a.content.reduced_animations()?0u:a.map_clock_ms-d.entered;
+  const uint32_t clock=reduced?0u:a.map_clock_ms-d.entered;
   const auto seed=fake_merchant::hash(uint32_t(a.game.seed)^uint32_t(a.game.floor)*0x9e3779b9u^uint32_t(e.id));
   fake_merchant::lights(c,clock,seed,light_mode);
   if(darv)fake_merchant::stars(c,clock,
       fake_merchant::hash(uint32_t(a.game.seed)^uint32_t(a.game.floor)*0x9e3779b9u^0x44415256u),true);
+ }
+ if(reduced)ancient_still_store(c,background,d.entered);
  }
  const int dialogue_height=ancient_measure(c,count),top=d.y(a.map_clock_ms)+d.scroll;
  Canvas clipped=c;clipped.pixels+=ancient_layout::ClipY*clipped.pitch+ancient_layout::ClipX;

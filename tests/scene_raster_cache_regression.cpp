@@ -48,8 +48,38 @@ static void reused_app_address(){
   CHECK(instance->content.generation()==1&&scene_raster_owner==SceneRasterOwner::None);
   auto&raster=character_selection_raster();CHECK(!raster.valid);
   CHECK(raster.restore(instance->content,0,0));for(auto pixel:raster.pixels)CHECK(pixel==color);
+  Canvas canvas{*instance};canvas.rect(0,0,ScreenW,ScreenH,color);ancient_still_store(canvas,0,1);
+  CHECK(scene_raster_owner==SceneRasterOwner::Ancient);
   instance->~App();
  }
+}
+static void ancient_lifecycle(){
+ auto data=lifecycle_pack(0x27bd);CHECK(a.init(data.data(),data.size(),{}));
+ new_run(a.game,73,false);a.game.floor=2;a.game.original_events.id=OriginalEventId::Pael;
+ Canvas c{a};clear();const auto expected=pixels();
+ CHECK(!ancient_still_restore(c,0,81));
+ // Claiming the still scene must follow a sampled-background restore: both
+ // representations deliberately occupy the same fixed union.
+ CHECK(character_selection_raster().restore(a.content,0,0));
+ ancient_still_store(c,0,81);CHECK(scene_raster_owner==SceneRasterOwner::Ancient);
+ std::fill(std::begin(a.pixels),std::end(a.pixels),0);CHECK(ancient_still_restore(c,0,81));CHECK(pixels()==expected);
+ // UI changes remain outside the cached scene and cannot be captured on hit.
+ c.rect(0,0,15,15,0xffff);CHECK(ancient_still_restore(c,0,81));CHECK(pixels()==expected);
+ CHECK(!ancient_still_restore(c,1,81));CHECK(!ancient_still_restore(c,0,82));
+ ++a.game.seed;CHECK(!ancient_still_restore(c,0,81));--a.game.seed;
+ a.game.world.run_seed^=uint64_t(1)<<32;CHECK(!ancient_still_restore(c,0,81));a.game.world.run_seed^=uint64_t(1)<<32;
+ ++a.game.floor;CHECK(!ancient_still_restore(c,0,81));--a.game.floor;
+ a.game.original_events.id=OriginalEventId::Vakuu;CHECK(!ancient_still_restore(c,0,81));a.game.original_events.id=OriginalEventId::Pael;
+ CHECK(ancient_still_restore(c,0,81));
+ Canvas changed=c;changed.opacity=128;CHECK(!ancient_still_restore(changed,0,81));ancient_still_store(changed,0,90);
+ CHECK(ancient_still_restore(c,0,81));
+ Canvas shifted=c;shifted.pixels++;CHECK(!ancient_still_restore(shifted,0,81));
+ Canvas covered=c;covered.coverage=reinterpret_cast<uint8_t*>(a.pixels);CHECK(!ancient_still_restore(covered,0,81));
+ Canvas clipped=c;clipped.clip_w--;CHECK(!ancient_still_restore(clipped,0,81));
+ (void)merchant_rug_raster();CHECK(!ancient_still_restore(c,0,81));
+ ancient_still_store(c,0,81);const auto generation=a.content.generation();
+ CHECK(a.content.open(data.data(),data.size()));CHECK(a.content.generation()!=generation);CHECK(!ancient_still_restore(c,0,81));
+ ancient_still_store(c,0,81);CHECK(a.init(data.data(),data.size(),{}));CHECK(scene_raster_owner==SceneRasterOwner::None);
 }
 #endif
 static void synthetic(){
@@ -106,8 +136,35 @@ static void actual(const char*english,const char*chinese,const char*captures){
   }
  }
 }
+#ifndef SPIRE_TEST_ORIGINAL_RASTERS
+static void actual_ancients(const char*english,const char*chinese,const char*captures){
+ const auto eng=file(english),zhs=file(chinese);
+ for(unsigned pass=0;pass<2;++pass){const auto&data=pass?zhs:eng;CHECK(a.init(data.data(),data.size(),{}));
+  for(auto id:{OriginalEventId::Neow,OriginalEventId::Tezcatara,OriginalEventId::Nonupeipe,
+              OriginalEventId::Darv,OriginalEventId::Orobas,OriginalEventId::Pael,OriginalEventId::Vakuu,OriginalEventId::Tanx}){
+   new_run(a.game,73,false);CHECK(world_begin_run(a.game,reference::ActKind::Overgrowth,0));
+   if(id!=OriginalEventId::Neow){a.game.original_events=OriginalEventState{};CHECK(original_event_begin(a.game,id,73,1));}
+   a.title=a.library=a.paused=a.help=a.character_select=a.settings_open=a.run_settings=false;
+   a.map_preview.open=false;a.frontend_confirm=0;a.progress.tutorial_flags=0;a.reset_presentation();a.pointer.visible=false;
+   a.map_clock_ms=100;a.render();CHECK(save(a.game,before));
+   for(unsigned clock:{100u,800u,1700u,4000u}){
+    a.map_clock_ms=clock;a.cursor=int(clock%3);scene_raster_reset();a.render();
+    const auto expected=pixels();
+    a.render();CHECK(pixels()==expected);CHECK(a.content.healthy());unchanged();
+    CHECK((scene_raster_owner==SceneRasterOwner::Ancient)==a.content.reduced_animations());
+    record(captures,original_event_key(id),pass,clock);
+   }
+  }
+ }
+}
+#endif
 int main(int argc,char**argv){synthetic();
 #ifndef SPIRE_TEST_ORIGINAL_RASTERS
  reused_app_address();
+ ancient_lifecycle();
 #endif
- CHECK(argc==1||argc==3||argc==4);if(argc>1)actual(argv[1],argv[2],argc>3?argv[3]:nullptr);std::printf("scene rasters: %u checks, %u actual frames\n",checks,frames);}
+ CHECK(argc==1||argc==3||argc==4);if(argc>1){actual(argv[1],argv[2],argc>3?argv[3]:nullptr);
+#ifndef SPIRE_TEST_ORIGINAL_RASTERS
+ actual_ancients(argv[1],argv[2],argc>3?argv[3]:nullptr);
+#endif
+ }std::printf("scene rasters: %u checks, %u actual frames\n",checks,frames);}
