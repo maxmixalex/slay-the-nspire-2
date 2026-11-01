@@ -37,6 +37,9 @@ static void node(Canvas&c,const Table&table,unsigned index,unsigned frame,const 
  }
 }
 static bool draw(Canvas&c,uint32_t elapsed,uint32_t seed){
+#ifdef SPIRE_NEOW_LAYER_PROFILE
+ RuntimeScopedRenderPart all_timing(c.a.callbacks.profile_render,RuntimeRenderPart::CharacterControls);
+#endif
  if(c.a.content.ui_image(Auxiliary)!=int(ParameterImage))return false;
  static constexpr unsigned dimensions[][3]={{512,512,1},{250,250,3},{500,500,1},{50,500,1},{20,500,1}};
  Field fields[5];unsigned page=0;
@@ -66,17 +69,40 @@ static bool draw(Canvas&c,uint32_t elapsed,uint32_t seed){
  // complete source shader remains the explicit fallback.
  ForegroundScratch<ancient_fire_grid::Texel,ancient_fire_grid::Pixels*ancient_fire_grid::Models> lookup;
  const auto*grid=lookup?lookup.array():nullptr;
+ {
+#ifdef SPIRE_NEOW_LAYER_PROFILE
+ RuntimeScopedRenderPart grid_timing(c.a.callbacks.profile_render,RuntimeRenderPart::RandomWater);
+#endif
  if(lookup)for(unsigned model=0;model<3;++model)for(unsigned y=0;y<ancient_fire_grid::Side;++y){
   c.poll();for(unsigned x=0;x<ancient_fire_grid::Side;++x)
-   lookup[model*ancient_fire_grid::Pixels+y*ancient_fire_grid::Side+x]=ancient_fire_grid::quantize(shaders[model].sample(x<<15,y<<15));
+   lookup[model*ancient_fire_grid::Pixels+y*ancient_fire_grid::Side+x]=ancient_fire_grid::quantize(shaders[model].sample(x<<ancient_fire_grid::Shift,y<<ancient_fire_grid::Shift));
+ }
  }
  auto&state=tez_cinder_room(c.a).state;
+ {
+#ifdef SPIRE_NEOW_LAYER_PROFILE
+ RuntimeScopedRenderPart state_timing(c.a.callbacks.profile_render,RuntimeRenderPart::RandomLight);
+#endif
  state.advance(clock,seed,cinder_table.source_curve(0),[&](){c.poll();},[&](unsigned emitter,int32_t born){return cinder_table.inherit(emitter,born);});
+ }
  const unsigned frame=table.frame(clock);
  for(unsigned i=0;i<Commands;++i){const unsigned command=table.command(i),kind=command>>14,index=command&16383;
-  if(kind==0){if(!ancient_lights::nodes(c,light_texture,light_table,1,clock,seed,index,1))return false;}
-  else if(kind==1){for(unsigned j=0;j<24;++j)tez_cinders::particle(c,texture,state.particles[index*24+j],cinder_table,index,frame);}
-  else node(c,table,index,frame,shaders,grid);
+  if(kind==0){
+#ifdef SPIRE_NEOW_LAYER_PROFILE
+   RuntimeScopedRenderPart light_timing(c.a.callbacks.profile_render,RuntimeRenderPart::RandomDots);
+#endif
+   if(!ancient_lights::nodes(c,light_texture,light_table,1,clock,seed,index,1))return false;
+  }else if(kind==1){
+#ifdef SPIRE_NEOW_LAYER_PROFILE
+   RuntimeScopedRenderPart particle_timing(c.a.callbacks.profile_render,RuntimeRenderPart::CharacterInfo);
+#endif
+   for(unsigned j=0;j<24;++j)tez_cinders::particle(c,texture,state.particles[index*24+j],cinder_table,index,frame);
+  }else{
+#ifdef SPIRE_NEOW_LAYER_PROFILE
+   RuntimeScopedRenderPart flame_timing(c.a.callbacks.profile_render,RuntimeRenderPart::CharacterPortraits);
+#endif
+   node(c,table,index,frame,shaders,grid);
+  }
   if(!(i&31u))c.poll();
  }
  return true;

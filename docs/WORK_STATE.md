@@ -1069,3 +1069,7 @@ actual ARM converter helper. Map generation, renderer and combat kernels stay
 at -O2. The rejected world-card -Oz probe needed an undefined 64-bit shift
 helper and is not adopted. Probes are not a formal release or guest acceptance;
 the complete clean-source ARM rebuild and ordinary calculator tests follow.
+
+## UI24 Tezcatara density candidate — measurement still required
+
+The 33×33 candidate subsequently passed the image/lease checks but measured only **8.454016 FPS / 117.790643 ms render** on the actual formal full-resource 64MiB guest. All 254 warm frames remained over100ms, with no I/O. This is insufficient to describe the room as fluent. The next candidate uses17×17 UV samples (867 full material evaluations per frame,3,468 existing-scratch bytes), keeps live-clock interpolation and all body/node/particle geometry, and requires a new same-clock image review plus formal guest pair before acceptance.
