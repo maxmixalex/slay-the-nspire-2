@@ -9,6 +9,20 @@ static App app;
 static unsigned checks=0;
 #define CHECK(x) do{++checks;if(!(x)){std::fprintf(stderr,"ancient effects:%d %s\n",__LINE__,#x);std::exit(1);}}while(0)
 int main(){
+ using namespace ancient_fire_grid;
+ {
+  ForegroundScratch<Texel,Pixels*Models> grid;CHECK(bool(grid));
+  for(unsigned i=0;i<Pixels*Models;++i)grid[i]={32768,0};
+  for(unsigned u:{0u,127u,32767u,524288u,1048575u})for(unsigned v:{0u,131072u,1048575u}){
+   const auto p=sample(grid.array(),u,v);CHECK(p.inner==1048576u&&p.alpha==0);}
+  {ResourceTransferLease denied(ResourceTransferUse::Map);CHECK(!denied);}
+  grid[Pixels*Models-1]={12345,23456};
+  {ForegroundScratch<Texel,17> nested;CHECK(bool(nested));nested[0]={7,9};}
+  CHECK(grid[Pixels*Models-1].inner==12345&&grid[Pixels*Models-1].alpha==23456);
+ }
+ CHECK(foreground_scratch_top==0);
+ {ResourceTransferLease map(ResourceTransferUse::Map);CHECK(bool(map));ForegroundScratch<Texel,Pixels*Models> denied;CHECK(!denied);}
+ CHECK(quantize({1048576,1048576}).alpha==32768);
  Canvas c{app};
  for(unsigned i=0;i<ScreenW*ScreenH;++i)app.pixels[i]=uint16_t(i*4793+0x187f);
  {

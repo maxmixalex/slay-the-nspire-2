@@ -2,6 +2,7 @@
 #include "card_affliction_scene.hpp"
 #include "neow_fire_ui23.hpp"
 #include "ancient_fire_ui23.hpp"
+#include "ancient_fire_grid.hpp"
 #include "ui13_assets.hpp"
 #include "architect_attack_assets.hpp"
 #include "doom_assets.hpp"

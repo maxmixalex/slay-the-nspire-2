@@ -201,6 +201,10 @@ class ConverterTests(unittest.TestCase):
             names=list(stages)
             self.assertLess(names.index('ancient-scenes45'),names.index('implicit46'))
             self.assertLess(names.index('implicit46'),names.index('quality46'))
+            self.assertLess(names.index('neow-fire46'),names.index('neow-static-field46'))
+            self.assertLess(names.index('neow-static-field46'),names.index('card-afflictions46'))
+            self.assertIn('--timeline-pck',stages['publish-locales'].arguments)
+            self.assertIn('--timeline-fonts',stages['publish-locales'].arguments)
         exact=converter.Recipe('/game','/tmp/converter-exact-test','/runtime','dotnet','/noise','-')
         exact.quality_policy='exact'
         add_final_stages(exact,exact.source_stages(),Path('/tmp/converter-exact-output'),['eng','zhs'],False)

@@ -184,6 +184,13 @@ def validate_install(artwork_path, output, codes, no_animations, original_refere
                   'Published locale image catalog differs')
         t.require(view.cards == source.cards and view.clips == source.clips and view.aux == source.aux,
                   'Published locale has mismatched gameplay or animation identities')
+        if refresh.get('timeline_original_text'):
+            from timeline_text_ui24 import BASE_STRINGS, ADDED_STRINGS
+            timeline=refresh['locales'][code]['timeline']
+            t.require(len(view.strings)==BASE_STRINGS+ADDED_STRINGS and timeline['complete'] and
+                      timeline['verification']['missing_required_glyphs']==0 and
+                      timeline['original_utf8_recovered_from_graphemes'],
+                      'Published Timeline text or font coverage is incomplete')
         t.require(reduced.reduced(logical) == no_animations, 'Published locale lost its presentation profile')
         locales[code] = dict(logical_bytes=len(logical), logical_sha256=t.sha256(logical),
             stored_bytes=(directory/f'nSpire2.{code}.dat.tns').stat().st_size,
@@ -313,6 +320,11 @@ def add_final_stages(recipe, source_editions, output, codes, no_animations):
             # graph produces these tables directly from the original PCK.
             arguments+=['--sampled',recipe.trajectory_samples]
         recipe.add(name,module,arguments,[target,target.with_suffix('.json')]);logical=target
+        if name=='neow-fire46':
+            target=recipe.directory('neow-static-field46')/'eng.nsp'
+            recipe.add('neow-static-field46','neow_static_field_ui24',
+                ['--input',logical,'--output',target,'--work',recipe.directory('cache/neow-static-field46'),
+                 '--workers',workers],[target,target.with_suffix('.json')]);logical=target
     target = recipe.directory('quality46')/'eng.nsp'
     selection_policy = None if no_animations else getattr(recipe, 'selection_policy', DEFAULT_SELECTION_POLICY)
     selection_overrides = {} if no_animations else getattr(recipe, 'selection_overrides', DEFAULT_SELECTION_OVERRIDES)
@@ -337,6 +349,7 @@ def add_final_stages(recipe, source_editions, output, codes, no_animations):
                [target,target.with_suffix('.json')]);logical=target
     recipe.add('publish-locales', 'refresh_artwork_resources', ['--artwork', logical,
         '--input', physical, '--output', output/'data', '--work', recipe.directory('verified-locales'),
-        '--locales', *codes,'--exact-glyph-storage'], edition_files(output/'data', codes)+[output/'data/artwork-refresh-receipt.json'])
+        '--locales', *codes,'--exact-glyph-storage','--timeline-pck',recipe.pck,
+        '--timeline-fonts',recipe.fonts], edition_files(output/'data', codes)+[output/'data/artwork-refresh-receipt.json'])
     recipe.add('validate-install', '@validate-install', [logical, output, ','.join(codes),
         'true' if no_animations else 'false',json.dumps(getattr(recipe,'reference',None),sort_keys=True)], [output/'converter-receipt.json'])

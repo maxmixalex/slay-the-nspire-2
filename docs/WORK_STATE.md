@@ -1,3 +1,22 @@
+# UI24 original Timeline locale tail and static Neow producer integration
+
+The converter now inserts the verified NWFv3 static-field transform after the
+original Neow fire stage, before card materials and all final compaction/ARM
+gates. Its module comes from Ancient checkpoint bde4ce45; that task measured
+117,114 bytes saved on the actual Neow stage and exact equality for all 17,485
+production-shader GB words. The final combined installation is still pending.
+
+Timeline localization is appended during final locale publication, after the
+existing locale graft and before exact glyph storage. The shared art is not
+changed. The fixed contract adds 257 original strings at 8704..8960 in every
+requested language, following the original English fallback only when a key
+is missing. New combining graphemes have disjoint private display keys and
+expand to the exact original UTF-8. Only missing 10px body/rich and 12px title
+glyphs are rendered from the original locale font chain. Existing glyphs,
+strings, compressed art, IDs, clocks and the reduced-pose marker are verified.
+Twenty-eight focused converter/locale/workspace tests pass. Actual original
+ENG/ZHS and all-16 publication/font proofs are the next acceptance step.
+
 # UI24 retained conversion exact-stream proof candidate
 
 The retained-color writer now proves untouched tiled artwork through exact
@@ -1011,3 +1030,7 @@ The appended localization contract reserves 257 source strings at8704..8960
 for all16 locales. This checkpoint does not yet connect normal UI, profile
 codec or run creation; those are the next implementation stage. No completion
 or calculator allocation/performance claim is made for this foundation.
+
+## UI24 Tezcatara material sampling — source checkpoint
+
+The first formal full-resource guest check found Tezcatara still at 6.372 FPS / 156.408 ms mean render, with all 192 measured frames over 100 ms and zero I/O. Neow's improvements must not be generalized to this different procedural-fire route. This stage shares a 33×33 UV material grid per three source shaders, recomputed at the live shader clock, across all 237 source fire nodes. It interpolates only flame inner color/alpha, keeps all 506 geometry frames and particles, and borrows 13,068 bytes from the existing lexically scoped foreground scratch. Map/renderer lease and nesting regression cases are included. Appearance and formal guest improvement are pending; no frame-equivalence claim applies to this approximation.
