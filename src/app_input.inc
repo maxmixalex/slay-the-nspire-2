@@ -1,3 +1,11 @@
+// These selected save/archive/navigation functions execute on user actions,
+// not on ordinary frame rendering. Keep their LLVM bodies compact while the
+// render and input readiness fast paths retain normal speed optimization.
+#if defined(__clang__)
+#define SPIRE_COLD_CONTROL __attribute__((minsize,noinline))
+#else
+#define SPIRE_COLD_CONTROL
+#endif
 #include "hand_focus.inc"
 #include "combat_peek.inc"
 #include "auxiliary_input.inc"
@@ -348,3 +356,5 @@ void App::input(Key k){
         if(before==Phase::Event&&game.world.active&&game.world.room_open==2&&world_can_travel(game))proceed_map_window();
     }
 }
+
+#undef SPIRE_COLD_CONTROL

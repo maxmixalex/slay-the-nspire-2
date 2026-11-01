@@ -76,6 +76,19 @@ struct Table {
   return word(data+(still?StaticMaskAt+10000:LodAt)+index*2);
  }
 };
+// The source post mask has no time dependency. Its exact LCD samples live
+// only in the spare space of the existing mutually exclusive Ancient scene
+// variant; Content/scene identity changes discard them with that variant.
+struct CoverageCache {
+ const void*owner=nullptr;uint32_t generation=0;bool still=false,valid=false;
+ uint8_t pixels[StaticCount];
+ bool prepare(const void*source,uint32_t epoch,const Table&table){
+  if(valid&&owner==source&&generation==epoch&&still==table.still)return false;
+  for(unsigned y=Top;y<Bottom;++y)for(unsigned x=Left;x<Right;++x)
+   pixels[(y-Top)*(Right-Left)+x-Left]=uint8_t(table.alpha(x,y));
+  owner=source;generation=epoch;still=table.still;valid=true;return true;
+ }
+};
 struct Snapshot {uint16_t full[320*240],mip1[160*120];};
 static_assert(sizeof(Snapshot)==192000&&sizeof(Snapshot)<=ResourceTransferCapacity,"Post snapshots reuse the existing transfer arena");
 inline void snapshot(Snapshot&out,const uint16_t*pixels,int pitch){
@@ -115,24 +128,26 @@ template<unsigned Size>inline unsigned bilinear_axes(const uint8_t*bytes,Axis x,
  const unsigned b=bytes[bottom+x.low]*(256u-x.fraction)+bytes[bottom+x.high]*x.fraction;
  return (a*(256u-y.fraction)+b*y.fraction+128u)>>8;
 }
-inline void render(uint16_t*pixels,int pitch,const Snapshot&source,const Table&table,uint32_t clock){
+template<bool Cached=false>inline void render(uint16_t*pixels,int pitch,const Snapshot&source,const Table&table,uint32_t clock,const uint8_t*cached_coverage=nullptr){
  const unsigned phase=unsigned(uint64_t(clock%1000u)*16777216u/1000u);
  // Source UV is separable. Per-column clamp/wrap, texel indices and weights
  // are shared by all 96 rows; these 1212 stack bytes are not a persistent cache.
  Axis noise_x[Right-Left],mask_x[Right-Left];
  for(unsigned x=Left;x<Right;++x){const int u=-6069744+int(x)*83839;
-  noise_x[x-Left]=noise_axis(u,phase);mask_x[x-Left]=mask_axis(u);}
+  noise_x[x-Left]=noise_axis(u,phase);if constexpr(!Cached)mask_x[x-Left]=mask_axis(u);}
  const auto*mask=table.data+(table.still?StaticMaskAt:MaskAt);
  const auto*lod_values=table.data+(table.still?StaticMaskAt+10000:LodAt);
  for(unsigned y=Top;y<Bottom;y+=2){
   const Axis noise_y[]={noise_axis(-21062688+int(y)*145269,phase),noise_axis(-21062688+int(y+1)*145269,phase)};
-  const Axis mask_y[]={mask_axis(-21062688+int(y)*145269),mask_axis(-21062688+int(y+1)*145269)};
+  Axis mask_y[2];if constexpr(!Cached){mask_y[0]=mask_axis(-21062688+int(y)*145269);mask_y[1]=mask_axis(-21062688+int(y+1)*145269);}
   for(unsigned x=Left;x<Right;x+=2){
    // Mask coverage is independent of time and displacement. A zero quad
    // cannot affect the framebuffer or its neighbours; skip its noise/LOD.
    unsigned coverage[4],visible=0;
-   for(unsigned i=0;i<4;++i){const Axis mx=mask_x[x+(i&1)-Left],my=mask_y[i>>1];
-    coverage[i]=mx.low==255||my.low==255?0:(bilinear_axes<100>(mask,mx,my)+128)>>8;
+   for(unsigned i=0;i<4;++i){
+    if constexpr(Cached)coverage[i]=cached_coverage[(y+(i>>1)-Top)*(Right-Left)+x+(i&1)-Left];
+    else{const Axis mx=mask_x[x+(i&1)-Left],my=mask_y[i>>1];
+     coverage[i]=mx.low==255||my.low==255?0:(bilinear_axes<100>(mask,mx,my)+128)>>8;}
     visible|=coverage[i];
    }
    if(!visible)continue;
@@ -159,13 +174,14 @@ inline void render(uint16_t*pixels,int pitch,const Snapshot&source,const Table&t
  }
 }
 
-inline bool apply(uint16_t*pixels,int pitch,const Table&table,uint32_t clock){
+template<bool Cached=false>inline bool apply(uint16_t*pixels,int pitch,const Table&table,uint32_t clock,const uint8_t*cached_coverage=nullptr){
  if(!pixels||pitch<320||!table.data)return false;
+ if constexpr(Cached)if(!cached_coverage)return false;
  // The caller has already fetched every source view and checked its content
  // generation. No callbacks, image requests or cache operations occur here.
  ResourceTransferLease lease(ResourceTransferUse::Bytes);if(!lease)return false;
  auto*copy=::new(detail::InPlaceAddress{lease.bytes()}) Snapshot;
- snapshot_region(*copy,pixels,pitch);render(pixels,pitch,*copy,table,table.still?0:clock);
+ snapshot_region(*copy,pixels,pitch);render<Cached>(pixels,pitch,*copy,table,table.still?0:clock,cached_coverage);
  return true;
 }
 }

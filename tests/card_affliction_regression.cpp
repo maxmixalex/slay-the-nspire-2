@@ -34,7 +34,37 @@ int main(){
  uint32_t rng=47;for(unsigned i=0;i<30000;++i){rng=rng*1664525u+1013904223u;int u=int(rng&4194303)-1048576;rng=rng*1664525u+1013904223u;int v=int(rng&4194303)-1048576;
   for(bool repeat:{false,true})CHECK(std::abs(f.sample(u,v,i%4,repeat)-original(f,u,v,i%4,repeat))<1.1);
  }
+ // Independent four-corner reference across sparse tile and physical page
+ // boundaries. Guard bytes separate pages so a cross-page pointer shortcut
+ // cannot accidentally pass merely because the host allocation is contiguous.
+ const unsigned shapes[][3]={{1,1,1},{31,33,2},{65,47,4},{1024,33,4}};
+ for(const auto&shape:shapes)for(unsigned offset:{0u,131039u,131071u}){
+  auto pixels=field(shape[0],shape[1],shape[2]);
+  const unsigned count=word(pixels.data()+12)*word(pixels.data()+14);
+  for(unsigned tile=0;tile<count;++tile)if(tile%3==1)put(pixels.data()+32+tile*2,0,2);
+  if(count>1)put(pixels.data()+32+(count-1)*2,count+1,2);
+  std::vector<uint8_t> bank(offset+pixels.size());std::memcpy(bank.data()+offset,pixels.data(),pixels.size());
+  std::vector<std::array<uint8_t,PageBytes+64>> storage((bank.size()+PageBytes-1)/PageBytes);
+  std::vector<const uint8_t*> pointers;
+  for(unsigned i=0;i<storage.size();++i){storage[i].fill(205);const unsigned n=unsigned(std::min(size_t(PageBytes),bank.size()-size_t(i)*PageBytes));
+   std::memcpy(storage[i].data()+32,bank.data()+size_t(i)*PageBytes,n);pointers.push_back(storage[i].data()+32);}
+  Field paged;CHECK(paged.bind({pointers.data(),unsigned(bank.size())},offset));
+  for(unsigned i=0;i<10000;++i){rng=rng*1664525u+1013904223u;int u=int(rng&4194303)-1048576;rng=rng*1664525u+1013904223u;int v=int(rng&4194303)-1048576;
+   if(i<5){u=int(i)*int(Q)/2-int(Q/2);v=int(Q)-u;}
+   for(bool repeat:{false,true})CHECK(std::abs(paged.sample(u,v,i%(shape[2]+1),repeat)-original(paged,u,v,i%(shape[2]+1),repeat))<1.1);
+  }
+ }
  const auto saved=raw;for(unsigned at:{0u,4u,6u,8u,10u,12u,14u,16u,20u,24u,28u}){raw=saved;raw[at]^=128;pages[0]=raw.data();CHECK(!f.bind({pages,unsigned(raw.size())},0));}raw=saved;pages[0]=raw.data();CHECK(f.bind({pages,unsigned(raw.size())},0));
+ // Prepared dynamic widths and constant-width shader calls must retain
+ // the exact Q20 quotient, including both ends and the conservative fallback.
+ for(int width:{256,257,511,65536,104858,209715,314573,629146,1048575,1048576,1048577}){
+  const auto reciprocal=smooth_reciprocal(width);
+  for(int n=-1;n<=width+1;++n){
+   const int q=n<=0?0:n>=width?int(Q):int(int64_t(n)*Q/width);
+   const int expected=product(product(q,q),3*int(Q)-2*q);
+   CHECK(smooth(n,0,width,reciprocal)==expected);CHECK(smooth(n,0,width)==expected);
+  }
+ }
  double angle_error=0,radius_error=0;
  for(int y=0;y<=128;++y)for(int x=0;x<=128;++x){int r,t;polar(x*8192,y*8192,r,t);
   const double dx=x/128.-.5,dy=y/128.-.5;

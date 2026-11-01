@@ -23,6 +23,7 @@ static void plane(Canvas c,const uint8_t*alpha,int cx,int cy,int ax,int ay,int b
  uint16_t contributions[256];
  if(direct)for(unsigned i=0;i<256;++i)
   contributions[i]=presentation::add_opaque(0,color,div255(i*c.opacity));
+ if(direct&&!contributions[255])return;
  const int dx=left*256+128-cx,dy=top*256+128-cy;
  AffineRows row_u((int64_t(dx)*by-int64_t(dy)*bx)*16777216,-int64_t(bx)*4294967296ll,determinant);
  AffineRows row_v((int64_t(dy)*ax-int64_t(dx)*ay)*16777216,int64_t(ax)*4294967296ll,determinant);
@@ -33,7 +34,8 @@ static void plane(Canvas c,const uint8_t*alpha,int cx,int cy,int ax,int ay,int b
    if(unsigned(u)>=16777216u||unsigned(v)>=16777216u)continue;
    const unsigned coverage=nonu_fog_ui23::alpha(alpha,u,v);
    if(coverage){const int at=y*c.pitch+x;
-    if(direct)c.pixels[at]=nonu_fog_ui23::add_weighted(c.pixels[at],contributions[coverage]);
+    if(direct){const uint16_t amount=contributions[coverage];
+     if(amount)c.pixels[at]=nonu_fog_ui23::add_weighted(c.pixels[at],amount);}
     else c.paint(at,color,coverage,presentation::Add);
    }
   }
@@ -41,6 +43,7 @@ static void plane(Canvas c,const uint8_t*alpha,int cx,int cy,int ax,int ay,int b
 }
 static void draw(Canvas&c,uint32_t elapsed,uint32_t seed){
  using namespace fake_merchant;
+ SoftAddGrid grid(c);Canvas&fog_canvas=grid.canvas();
  struct Node {int x,y;int16_t sx,sy;uint8_t count;};
  static constexpr Node nodes[]={
   {source(1540),source(1246.0001),fixed(-1.595),fixed(.96),5},
@@ -62,8 +65,10 @@ static void draw(Canvas&c,uint32_t elapsed,uint32_t seed){
    const int side=ancient_size(200)*p.scale/Q;
    const int ax=int(int64_t(side)*cs*n.sx/(1024*Q)),ay=int(int64_t(side)*sn*n.sy/(1024*Q));
    const int bx=int(-int64_t(side)*sn*n.sx/(1024*Q)),by=int(int64_t(side)*cs*n.sy/(1024*Q));
-   plane(c,image.pixels,ancient_x(n.x+int(int64_t(p.x)*n.sx/Q)),ancient_y(n.y),ax,ay,bx,by,p.gray);
+   plane(fog_canvas,image.pixels,grid.position(ancient_x(n.x+int(int64_t(p.x)*n.sx/Q))),
+    grid.position(ancient_y(n.y)),grid.size(ax),grid.size(ay),grid.size(bx),grid.size(by),p.gray);
   }
  }
+ grid.finish();
 }
 }

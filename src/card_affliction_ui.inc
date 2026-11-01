@@ -1,3 +1,7 @@
+struct CardOpaqueMask {
+    const uint8_t*owners;unsigned rank;
+    bool covers(unsigned at)const{return ((owners[at>>1]>>((at&1)*4))&15u)>rank;}
+};
 // Continuous source materials borrow the existing image cache. The producer
 // replaces the old56 sampled-phase pictures; this path allocates no frame or
 // particle pool, and never asks Content for another picture while drawing.
@@ -18,7 +22,7 @@ static bool card_affliction_cache_profile(const App&a){
     kinds&=kinds-1;return kinds&&(kinds&(kinds-1));
 }
 static void card_affliction_raster(Canvas&c,card_affliction::Shader*shader,const card_affliction::Field*clip,
-    Picture picture,const int*inverse,const int*box,int cx,int cy,int width,int height,int sine,int cosine,unsigned mode){
+    Picture picture,const int*inverse,const int*box,int cx,int cy,int width,int height,int sine,int cosine,unsigned mode,const CardOpaqueMask*hidden){
     using namespace card_affliction;
     if(width<=0||height<=0||c.clip_w<=0||c.clip_h<=0)return;
     const int x0=clamp(box[0],0,156),y0=clamp(box[1],0,218),x1=clamp(box[2],0,156),y1=clamp(box[3],0,218);
@@ -51,6 +55,7 @@ static void card_affliction_raster(Canvas&c,card_affliction::Shader*shader,const
         int64_t a=shader?(int64_t(inverse[0])*u+int64_t(inverse[1])*v)/Q+int64_t(inverse[2])*16:0;
         int64_t b=shader?(int64_t(inverse[3])*u+int64_t(inverse[4])*v)/Q+int64_t(inverse[5])*16:0;
         for(int x=left;x<right;++x,u+=du,v+=dv,a+=su,b+=sv){
+            if(hidden&&hidden->covers(unsigned(y*320+x)))continue;
             if(unsigned(u)>=AQ||unsigned(v)>=AQ)continue;
             if(shader){
                 if(a<0||b<0||a>=AQ||b>=AQ)continue;
@@ -72,7 +77,7 @@ static void card_affliction_raster(Canvas&c,card_affliction::Shader*shader,const
         }
     }
 }
-static bool card_affliction_draw(Canvas&c,unsigned kind,int cx,int cy,int width,int height,int sine=0,int cosine=1024){
+static bool card_affliction_draw(Canvas&c,unsigned kind,int cx,int cy,int width,int height,int sine=0,int cosine=1024,const CardOpaqueMask*hidden=nullptr){
     using namespace card_affliction;
     if(kind<1||kind>7)return false;
     bool slots[Slots]{};if(!card_affliction_required(c.a,kind,slots))return false;
@@ -93,7 +98,7 @@ static bool card_affliction_draw(Canvas&c,unsigned kind,int cx,int cy,int width,
     unsigned first,count;if(!table.family(kind,first,count))return true;
     for(unsigned n=first;n<first+count;++n){const auto*command=table.command(n);Shader shader;int parameters[13],inverse[6],box[4];
         if(command[0]==0){for(unsigned i=0;i<4;++i)box[i]=int16_t(word(command+112+i*2));
-            card_affliction_raster(c,nullptr,nullptr,pictures[1+table.pages+word(command+6)],nullptr,box,cx,cy,width,height,sine,cosine,command[2]);continue;}
+            card_affliction_raster(c,nullptr,nullptr,pictures[1+table.pages+word(command+6)],nullptr,box,cx,cy,width,height,sine,cosine,command[2],hidden);continue;}
         for(unsigned i=0;i<5;++i){const int id=int16_t(word(command+(i?6+i*2:4)));if(id<0)continue;
             if(!bound[id]){const auto*f=table.data+table.field_at+unsigned(id)*8;const unsigned at=dword(f);
                 if(bytes.u32(at+28)!=dword(f+4)||!fields[id].bind(bytes,at))return true;bound[id]=true;}
@@ -107,7 +112,7 @@ static bool card_affliction_draw(Canvas&c,unsigned kind,int cx,int cy,int width,
         if(command[0]==1){
             for(unsigned i=0;i<4;++i){shader.tint[i]=int32_t(dword(command+72+i*4));box[i]=int16_t(word(command+112+i*2));}
             for(unsigned i=0;i<6;++i)inverse[i]=int32_t(dword(command+88+i*4));shader.prepare(c.a.map_clock_ms);
-            card_affliction_raster(c,&shader,clip,{},inverse,box,cx,cy,width,height,sine,cosine,command[2]);
+            card_affliction_raster(c,&shader,clip,{},inverse,box,cx,cy,width,height,sine,cosine,command[2],hidden);
         }else{const unsigned at=dword(command+120),num=word(command+124);
             for(unsigned i=at;i<at+num;++i){const auto*t=table.track(i);const unsigned life=dword(t),delay=dword(t+4),fps=word(t+8),frames=word(t+10);
                 const unsigned age=(c.a.map_clock_ms%life+life-delay)%life,frame=mn(int(frames)-1,int(uint64_t(age)*fps/1000));
@@ -115,7 +120,7 @@ static bool card_affliction_draw(Canvas&c,unsigned kind,int cx,int cy,int width,
                 for(unsigned j=0;j<4;++j){box[j]=int16_t(bytes.u16(start+j*2));shader.tint[j]=int(bytes.byte(start+32+j)*Q/255);}
                 for(unsigned j=0;j<6;++j)inverse[j]=int32_t(bytes.u32(start+8+j*4));
                 shader.custom=unsigned(uint64_t(bytes.u16(start+36))*Q/65535);shader.prepare(c.a.map_clock_ms);
-                card_affliction_raster(c,&shader,clip,{},inverse,box,cx,cy,width,height,sine,cosine,command[2]);}
+                card_affliction_raster(c,&shader,clip,{},inverse,box,cx,cy,width,height,sine,cosine,command[2],hidden);}
         }
     }return true;
 }

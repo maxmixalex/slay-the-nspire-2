@@ -17,7 +17,7 @@ void App::open_history(){
     progress_page_started=map_clock_ms;progress_page_scroll.reset();history_presentation.open(map_clock_ms);history_tooltip={};pointer_cancel();
     if(callbacks.history_archive)select_history_archive(UiHistoryArchiveAction::OlderRun,UINT32_MAX);
 }
-void App::history_select(int direction){
+SPIRE_COLD_CONTROL void App::history_select(int direction){
     if(!history_open||!history_available())return;
     if(history_index==255){
         if(!select_history_archive(direction>0?UiHistoryArchiveAction::OlderPage:UiHistoryArchiveAction::NewerPage))
@@ -109,7 +109,7 @@ bool App::progress_pointer_button(bool down,const HitRegion&hit){
     if(scroller.dragging){const bool dragged=scroller.thumb||pointer.dragging||pointer.captured.kind==HitKind::ProgressScroll;scroller.dragging=scroller.thumb=false;if(dragged){pointer_cancel();return true;}}
     return false;
 }
-void App::history_pointer(const HitRegion&hit){
+SPIRE_COLD_CONTROL void App::history_pointer(const HitRegion&hit){
     if(!history_open)return;const auto*record=history_at(history_index);if(!record)return;
     if(hit.kind==HitKind::HistoryCard&&hit.value>=0&&hit.value<record->deck_count){
         const auto&card=record->deck[hit.value];history_selected=hit.value;open_card_offer(card.card,card.facts,card.genetic,card.scythe);

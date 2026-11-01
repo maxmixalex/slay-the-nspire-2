@@ -1,14 +1,14 @@
 // Persistent history is paged separately from canonical game saves. The old
 // 32-run/96-floor arrays remain bounded working windows; archive reads borrow
 // an existing scene-union slot only while the History screen is visible.
-bool App::archive_history_run(const UiRunHistory&run){
+SPIRE_COLD_CONTROL bool App::archive_history_run(const UiRunHistory&run){
  if(!callbacks.history_archive||!run.serial)return false;
  ResourceTransferLease transfer(ResourceTransferUse::Bytes);if(!transfer)return false;
  unsigned n=unsigned(encode_ui_history_page(run,progress.journal,transfer.bytes(),UiProgressCapacity));
  UiHistoryArchiveQuery query{UiHistoryArchiveAction::Append};query.completed=run.outcome!=0;
  return n&&callbacks.history_archive(query,transfer.bytes(),n)==UiHistoryArchiveResult::Complete;
 }
-bool App::migrate_history(){
+SPIRE_COLD_CONTROL bool App::migrate_history(){
  if(!callbacks.history_archive)return true;
  // Old NSH1--9 profiles remain readable and retain their recent records. A
  // completed serial is immutable in the archive, so interrupted migration
@@ -17,7 +17,7 @@ bool App::migrate_history(){
  if(progress.count==UiHistoryCapacity)progress.history_oldest_archived=1;
  return true;
 }
-bool App::page_history_floors(){
+SPIRE_COLD_CONTROL bool App::page_history_floors(){
  auto&r=progress.current;if(r.floor_count<2)return true;
  const unsigned last=r.floor_count-1;const uint8_t count=r.floor_count;
  // Keep the current room live: its totals and pending transformations can
@@ -40,7 +40,7 @@ bool App::page_history_floors(){
  r.history_prefix=(prefix&0x1c00000u)|(units>0x3ffffu?0x3ffffu:units)|(unknown<<18);
  r.floors[0]=r.floors[last];r.floor_count=1;progress_dirty=true;return true;
 }
-bool App::page_history_journal(){
+SPIRE_COLD_CONTROL bool App::page_history_journal(){
  if(!migrate_history())return false;
  auto&journal=progress.journal;const auto serial=progress.current.serial;
  // Completed runs already have durable copies. Retire their journal owners
@@ -85,7 +85,7 @@ const UiHistoryJournal&App::history_journal()const{
  if(history_open&&history_index==255)if(const auto*p=archived_history_page();p&&p->valid)return p->journal;
  return progress.journal;
 }
-bool App::select_history_archive(UiHistoryArchiveAction action,uint32_t serial){
+SPIRE_COLD_CONTROL bool App::select_history_archive(UiHistoryArchiveAction action,uint32_t serial){
  if(!callbacks.history_archive)return false;
  auto*old=history_index==255?archived_history_page():nullptr;
  UiHistoryArchiveQuery query{action,serial?serial:old&&old->valid?old->run.serial:UINT32_MAX,old&&old->valid?old->cursor:0};

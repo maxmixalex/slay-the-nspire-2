@@ -42,7 +42,18 @@ struct Field {
  int fixed_lcd(int u,int v)const{return sample_lcd(fixed_coordinates<W,H,Channels,Repeat>(u,v),Channel);}
  template<unsigned W,unsigned H,unsigned Channels,bool Repeat>
  void fixed_lcd_rg(int u,int v,int&r,int&g)const{
-  const auto c=fixed_coordinates<W,H,Channels,Repeat>(u,v);r=sample_lcd(c,0);g=sample_lcd(c,1);
+  const auto c=fixed_coordinates<W,H,Channels,Repeat>(u,v);
+  if constexpr(Channels==2||(Channels==3&&W*H*Channels<=2*PageBytes)){
+   // RGB starts are multiples of3. The sole page boundary is2 mod3,
+   // so its R/G pair cannot straddle it; two-channel pairs are aligned.
+   // Share each corner's page lookup, retaining byte loads on ARM926.
+   unsigned colors[4];for(unsigned i=0;i<4;++i){const unsigned at=c.at[i];const auto*p=pages[at>>17]+(at&(PageBytes-1));colors[i]=unsigned(p[0])|unsigned(p[1])<<8;}
+   const unsigned fx=c.fx>>8,fy=c.fy>>8;
+   const auto channel=[&](unsigned shift){const int p00=int((colors[0]>>shift)&255u),p10=int((colors[1]>>shift)&255u),p01=int((colors[2]>>shift)&255u),p11=int((colors[3]>>shift)&255u);
+    const int a=p00*4096+(p10-p00)*int(fx),b=p01*4096+(p11-p01)*int(fx);
+    const uint32_t weighted=(uint32_t(a)<<12)+uint32_t(b-a)*fy;return int((weighted+2040u)/4080u);};
+   r=channel(0);g=channel(8);
+  }else{r=sample_lcd(c,0);g=sample_lcd(c,1);}
  }
  int sample(const Coordinates&c,unsigned channel)const{
   const int p00=int(texel(c.at[0]+channel)),p10=int(texel(c.at[1]+channel));

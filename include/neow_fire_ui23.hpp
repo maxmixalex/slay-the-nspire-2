@@ -114,7 +114,7 @@ struct Table {
 struct Shader {
  const ancient_fire_ui23::Field*field=nullptr;
  ancient_fire_ui23::Model model;
- int pan[4][2]{};unsigned inverse=0;bool lcd_sampling=false;
+ int pan[4][2]{};unsigned inverse=0;bool lcd_sampling=false,empty_light_border=false;
  void bind(const ancient_fire_ui23::Field*f,const uint8_t*parameters,uint32_t clock){
   field=f;model.read(parameters);const unsigned time=clock%200000;
   // Only the pinned Neow field layout uses the measured LCD interpolation.
@@ -123,6 +123,13 @@ struct Shader {
       f[1].width==250&&f[1].height==250&&f[1].channels==3&&
       f[2].width==256&&f[2].height==256&&f[2].channels==3&&
       f[3].width==100&&f[3].height==100&&f[3].channels==2;
+  // A clamped sample outside the source square reads only its outer edge.
+  // Prove that edge is zero before skipping its address/interpolation work;
+  // altered textures retain the complete sampler without an assumed border.
+  empty_light_border=lcd_sampling;
+  if(empty_light_border)for(unsigned i=0;i<256;++i)
+   if(f[2].texel(i*3+2)|f[2].texel((255*256+i)*3+2)|
+      f[2].texel(i*256*3+2)|f[2].texel((i*256+255)*3+2)){empty_light_border=false;break;}
   for(unsigned i=0;i<4;++i)for(unsigned j=0;j<2;++j)pan[i][j]=int(int64_t(model.q[i*5+2+j])*time/16000);
   inverse=unsigned((uint64_t(1048576)<<24)/unsigned(model.q[31]-model.q[30]));
   // The two authored models share unit/half-unit UV scales. Validate that
@@ -136,7 +143,10 @@ struct Shader {
  int sample(unsigned index,int u,int v,unsigned channel,bool repeat)const{
   if(!lcd_sampling)return field[index].sample(u,v,channel,repeat);
   if(index==0&&channel==0&&repeat)return field[0].fixed_lcd<600,636,1,0,true>(u,v);
-  if(index==2&&channel==2&&!repeat)return field[2].fixed_lcd<256,256,3,2,false>(u,v);
+  if(index==2&&channel==2&&!repeat){
+   if(empty_light_border&&((unsigned(u)-1u)>=1048575u||(unsigned(v)-1u)>=1048575u))return 0;
+   return field[2].fixed_lcd<256,256,3,2,false>(u,v);
+  }
   return field[index].sample_lcd(u,v,channel,repeat);
  }
  void sample_rg(unsigned index,int u,int v,bool repeat,int&r,int&g)const{

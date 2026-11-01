@@ -67,11 +67,22 @@ int main(int argc,char**argv){
  for(bool still:{false,true}){
   auto raw=argc>2?read(argv[still?2:1]):words(still);Table table;Picture p{raw.data(),nullptr,nullptr,Width,still?StaticHeight:FullHeight,0};CHECK(table.read(p,still));CHECK(!Table{}.read(p,!still));
   auto changed=raw;changed[26]^=1;CHECK(!Table{}.read(Picture{changed.data(),nullptr,nullptr,p.w,p.h,0},still));
+  CoverageCache coverage;CHECK(coverage.prepare(&table,1,table));CHECK(!coverage.prepare(&table,1,table));
+  for(unsigned y=Top;y<Bottom;++y)for(unsigned x=Left;x<Right;++x)
+   CHECK(coverage.pixels[(y-Top)*(Right-Left)+x-Left]==table.alpha(x,y));
+  auto empty=raw;std::memset(empty.data()+(still?StaticMaskAt:MaskAt),0,10000);
+  Table empty_table;CHECK(empty_table.read(Picture{empty.data(),nullptr,nullptr,p.w,p.h,0},still));
+  CHECK(coverage.prepare(&table,2,empty_table));for(unsigned value:coverage.pixels)CHECK(value==0);
+  CHECK(coverage.prepare(&empty_table,2,table));CHECK(!coverage.prepare(&empty_table,2,table));
+  const auto alternate=words(!still);Table alternate_table;
+  CHECK(alternate_table.read(Picture{alternate.data(),nullptr,nullptr,Width,still?FullHeight:StaticHeight,0},!still));
+  CHECK(coverage.prepare(&empty_table,2,alternate_table));CHECK(coverage.prepare(&empty_table,2,table));
   Snapshot independent;snapshot(independent,original.data(),320);const auto before=independent;
   for(unsigned clock:{0u,1u,17u,499u,999u,1000u,3600000u,0xffffffffu}){
    actual=original;expected=original;original_render(expected.data(),320,independent,table,still?0:clock);
    std::memset(foreground_workspace.transient.transfer.encoded.data,0xcd,ResourceTransferCapacity);
    CHECK(apply(actual.data(),320,table,clock));
+   auto cached=original;CHECK(apply<true>(cached.data(),320,table,clock,coverage.pixels));CHECK(cached==actual);
    for(unsigned pixel=0;pixel<actual.size();++pixel){
     CHECK(std::abs(int(actual[pixel]>>11)-int(expected[pixel]>>11))<=1);
     CHECK(std::abs(int((actual[pixel]>>5)&63)-int((expected[pixel]>>5)&63))<=2);
@@ -100,6 +111,7 @@ int main(int argc,char**argv){
   }
   CHECK(!resource_transfer_uses);Table invalid;CHECK(!apply(actual.data(),320,invalid,0));CHECK(!resource_transfer_uses);
   CHECK(!apply(nullptr,320,table,0));CHECK(!apply(actual.data(),319,table,0));
+  CHECK(!apply<true>(actual.data(),320,table,0));CHECK(!resource_transfer_uses);
   const auto start=std::chrono::steady_clock::now();for(unsigned n=0;n<120;++n){actual=original;CHECK(apply(actual.data(),320,table,n*33));}
   const auto ms=std::chrono::duration<double,std::milli>(std::chrono::steady_clock::now()-start).count()/120;
   std::printf("Neow post %s: %.3f ms host kernel including snapshot+mip; %zu snapshot bytes\n",still?"static":"animated",ms,sizeof(Snapshot));

@@ -67,7 +67,7 @@ bool App::refresh_save(){
  }
  return existing&&has_save;
 }
-bool App::load_saved_run(){
+SPIRE_COLD_CONTROL bool App::load_saved_run(){
  const State*probe=read_saved(*this);if(!probe||!has_save)return false;
  game=*probe;run_save_linked=true;linked_run=saved_run_identity(game);reset_presentation();reset_map_act_intro(true);begin_progress(true);return true;
 }
@@ -81,7 +81,7 @@ static bool frontend_continue_saved_run(App&a){
  const int mask=a.content.ui_image(I12_CharacterTransitionFirst+(a.game.character==Character::Silent?1:a.game.character==Character::Necrobinder?2:0));
  a.content.prepare_images(&mask,1);a.pointer_cancel();a.hit_count=0;return true;
 }
-bool App::save_current_run(){
+SPIRE_COLD_CONTROL bool App::save_current_run(){
  // The terminal screen must never recreate a run checkpoint after its
  // ordinary end handler retired it (including the keyboard Save command).
  if(!resumable_run(game))return finish_saved_run();
@@ -92,7 +92,7 @@ bool App::save_current_run(){
  }
  remember_saved(*this,game);run_save_linked=has_save;linked_run=saved_run_identity(game);sync_progress();return persist_progress();
 }
-bool App::finish_saved_run(){
+SPIRE_COLD_CONTROL bool App::finish_saved_run(){
  // Starting a run does not associate it with another run already on disk.
  // Only Continue or a successful save establishes that ordinary lifecycle.
  if(!run_save_linked)return true;

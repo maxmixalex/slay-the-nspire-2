@@ -53,5 +53,18 @@ int main(){
  // Every condition of the fast-path proof is checked once at bind, and an
  // otherwise valid different scale must fall back instead of being rounded.
  for(unsigned i:{0u,1u,4u,5u,6u,9u,10u,11u,15u,16u,20u,21u,24u}){const unsigned old=spire::ancient_fire_ui23::dword(m+i*4);put32(m+i*4,old+1);shader.bind(fields,m,0);CHECK(!(shader.inverse&0x80000000u));put32(m+i*4,old);}
+ // Clamped zero-edge elision must prove all four edges, then preserve every
+ // interior/border sample. A changed source edge disables it immediately.
+ std::vector<uint8_t> pinned(600*636*3,127);
+ const unsigned dimensions[][3]={{600,636,1},{250,250,3},{256,256,3},{100,100,2}};
+ for(unsigned i=0;i<4;++i){fields[i].width=dimensions[i][0];fields[i].height=dimensions[i][1];fields[i].channels=dimensions[i][2];
+  for(unsigned page=0;page<8;++page)fields[i].pages[page]=pinned.data()+page*131072;}
+ for(unsigned i=0;i<256;++i)for(unsigned at:{i*3+2,(255*256+i)*3+2,i*256*3+2,(i*256+255)*3+2})pinned[at]=0;
+ shader.bind(fields,m,0);CHECK(shader.lcd_sampling&&shader.empty_light_border);
+ for(int v=-524288;v<1572864;v+=15683)for(int u=-524288;u<1572864;u+=7919)
+  CHECK(shader.sample(2,u,v,2,false)==fields[2].sample_lcd(u,v,2,false));
+ for(unsigned at:{128*3+2,(255*256+128)*3+2,128*256*3+2,(128*256+255)*3+2}){
+  pinned[at]=1;shader.bind(fields,m,0);CHECK(!shader.empty_light_border);pinned[at]=0;
+ }
  std::printf("Neow fire: %u checks, mask=%zu bytes, poll=%u\n",checks,sizeof(Mask),polls);
 }

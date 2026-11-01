@@ -42,8 +42,19 @@ struct Field {
   unsigned x0,x1,y0,y1;
   if(repeat){x0=unsigned(x<0?x+int(width):x);x1=x0+1==width?0:x0+1;y0=unsigned(y<0?y+int(height):y);y1=y0+1==height?0:y0+1;}
   else{x0=unsigned(clamp(x,0,int(width)-1));x1=unsigned(clamp(x+1,0,int(width)-1));y0=unsigned(clamp(y,0,int(height)-1));y1=unsigned(clamp(y+1,0,int(height)-1));}
-  const int a=int(texel(x0,y0,channel))*int(Q)+(int(texel(x1,y0,channel))-int(texel(x0,y0,channel)))*int(fx);
-  const int b=int(texel(x0,y1,channel))*int(Q)+(int(texel(x1,y1,channel))-int(texel(x0,y1,channel)))*int(fx);
+  unsigned aa,ab,ba,bb;
+  if(((x0^x1)|(y0^y1))<32){
+   const unsigned tile=bytes.u16(base+32+((y0>>5)*cols+(x0>>5))*2);
+   if(!tile||tile>tiles||channel>=channels)return 0;
+   const unsigned first=base+data+(channel*tiles+tile-1)*1024;
+   const unsigned a0=first+(y0&31)*32+(x0&31),a1=first+(y0&31)*32+(x1&31);
+   const unsigned b0=first+(y1&31)*32+(x0&31),b1=first+(y1&31)*32+(x1&31);
+   if(((a0^a1)|(a0^b0)|(a0^b1))<PageBytes){
+    const auto*p=bytes.pages[a0>>17];aa=p[a0&(PageBytes-1)];ab=p[a1&(PageBytes-1)];ba=p[b0&(PageBytes-1)];bb=p[b1&(PageBytes-1)];
+   }else{aa=bytes.byte(a0);ab=bytes.byte(a1);ba=bytes.byte(b0);bb=bytes.byte(b1);}
+  }else{aa=texel(x0,y0,channel);ab=texel(x1,y0,channel);ba=texel(x0,y1,channel);bb=texel(x1,y1,channel);}
+  const int a=int(aa)*int(Q)+(int(ab)-int(aa))*int(fx);
+  const int b=int(ba)*int(Q)+(int(bb)-int(ba))*int(fx);
   const unsigned q=unsigned(a+((int64_t(b-a)*fy+Q/2)>>20));
   return int((uint64_t(q)*16843009u+2147483648u)>>32);
  }

@@ -23,12 +23,26 @@ inline void polar(int u,int v,int&radius,int&turn,int zoom=int(Q)){
  radius=product(int(root(unsigned(sx*sx)+unsigned(sy*sy)))*32,zoom)&int(Q-1);
  turn=angle(y,x)&int(Q-1);
 }
-inline int smooth(int n,int lo,int width){
+inline unsigned smooth_reciprocal(int width){
+ const unsigned w=unsigned(width);
+ return w>256&&w<=Q?unsigned(((uint64_t(1)<<40)+w-1)/w):0;
+}
+inline int smooth(int n,int lo,int width,unsigned reciprocal){
  if(n<=lo)return 0;
  if(n>=lo+width)return Q;
- const int q=int(int64_t(n-lo)*Q/width),square=product(q,q);
- return product(square,3*int(Q)-2*q);
+ unsigned q;
+ if(reciprocal){
+  // With0<n-lo<width<=Q, ceil(2^40/width) overestimates the
+  // Q20 quotient by at most one. Both products are32x32->64;
+  // one exact remainder comparison restores the original division.
+  const unsigned value=unsigned(n-lo);
+  q=unsigned(uint64_t(value)*reciprocal>>20);
+  if(uint64_t(q)*unsigned(width)>(uint64_t(value)<<20))--q;
+ }else q=unsigned(int64_t(n-lo)*Q/width);
+ const int square=product(int(q),int(q));
+ return product(square,3*int(Q)-2*int(q));
 }
+inline int smooth(int n,int lo,int width){return smooth(n,lo,width,smooth_reciprocal(width));}
 struct Curve {
  const uint8_t*values=nullptr;unsigned count=0,channels=0;Bytes bytes{};unsigned base=0;
  int sample(int phase,unsigned channel)const{
@@ -73,7 +87,8 @@ struct Shader {
   else if(kind==Ringing){const int phase=int(uint64_t(milliseconds%2500u)*Q/2500);
    for(unsigned i=0;i<3;++i)constant[i]=curve[1].sample(phase,i);
    pan[0]=curve[0].sample(phase,0);pan[1]=curve[0].sample(phase,1);
-  }else if(kind==Smog){pan[0]=moving(parameters[11],100);pan[1]=moving(parameters[12],100);}
+  }else if(kind==Smog){pan[0]=moving(parameters[11],100);pan[1]=moving(parameters[12],100);
+   constant[0]=int(smooth_reciprocal(parameters[10]));}
   else if(kind==Leaf){
    const int noise=field[0]->sample(int(custom),int(custom)+moving(1,10),1,true);
    const int rotation=product(noise-int(Q/2),183501); // .35*(2*n-1)/4 turns.
@@ -117,7 +132,7 @@ struct Shader {
    const int mask=field[2]->sample(u,v,0),solid=field[2]->sample(u,v,1);if(!mask&&!solid)return out;
    const int a=main.sample(product(int(Q)-u,parameters[0])+pan[0],product(int(Q)-v,parameters[1])+parameters[3],0,repeat);
    const int b=main.sample(product(int(Q)-u,parameters[4])+pan[1],product(int(Q)-v,parameters[5])+parameters[7],0,repeat);
-   const int smoke=smooth(product(mix(a,b,parameters[8]),mask),parameters[9],parameters[10]);
+   const int smoke=smooth(product(mix(a,b,parameters[8]),mask),parameters[9],parameters[10],unsigned(constant[0]));
    out.a=product(smoke,tint[3])+solid;
    out.r=product(curve[0].sample(smoke,0),tint[0]);out.g=product(curve[0].sample(smoke,1),tint[1]);out.b=product(curve[0].sample(smoke,2),tint[2]);
   }else if(kind>=Leaf&&kind<=10){

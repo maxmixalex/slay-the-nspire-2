@@ -1,19 +1,20 @@
 namespace neow_particles {
 using namespace neow_particles_ui23;
-static bool draw(Canvas&c,uint32_t elapsed,uint32_t seed){
+static bool draw(Canvas&c,uint32_t elapsed,uint32_t seed,SoftAddGrid&grid){
  using namespace fake_merchant;
  const int root=c.a.content.ui_image(Auxiliary);if(root!=int(FirstImage))return false;
  // Compute the small per-node array before loading another image; all borrowed
  // source-curve pointers expire before the cloud mask request can evict them.
  static constexpr int origin[][2]={{1088*256,1302*256},{36*256,1311*256},{1088*256,1302*256}};
+ Canvas&fog_canvas=grid.canvas();
  for(unsigned node=0;node<3;++node){Parameters parameters;if(!parameters.read(c.a.content.image(root)))return false;
   Fog particles[5];for(unsigned i=0;i<5;++i)particles[i]=fog(parameters,elapsed,seed,node,i);
   for(unsigned i=0;i<5;++i){const auto&p=particles[i];if(!p.gray)continue;
    const auto image=c.a.content.image(AtlasFirst+p.atlas);
    if(!image.pixels||image.w!=100||image.h!=200||image.format||image.alpha||image.palette)return false;
    const int sn=CombatCardMotion::sine(p.angle),cs=CombatCardMotion::sine(p.angle+1024),side=ancient_size(200)*p.scale/Q;
-   nonu_fog::plane(c,image.pixels,ancient_x(origin[node][0]+p.x),ancient_y(origin[node][1]),
-       side*cs/1024,side*sn/1024,-side*sn/1024,side*cs/1024,p.gray,255);
+   nonu_fog::plane(fog_canvas,image.pixels,grid.position(ancient_x(origin[node][0]+p.x)),grid.position(ancient_y(origin[node][1])),
+       grid.size(side*cs/1024),grid.size(side*sn/1024),grid.size(-side*sn/1024),grid.size(side*cs/1024),p.gray,255);
   }
  }
  Parameters parameters;if(!parameters.read(c.a.content.image(root)))return false;

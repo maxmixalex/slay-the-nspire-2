@@ -11,16 +11,24 @@ static void lights(Canvas&c,unsigned auxiliary,uint32_t elapsed,bool vakuu,unsig
  if(!alpha)return;
  const uint16_t color=vakuu?uint16_t((247>>3)<<11|(199>>2)<<5|(196>>3)):
                           uint16_t((89>>3)<<11|(239>>2)<<5|(255>>3));
- for(unsigned i=first;i<first+count;++i){const auto m=parameters.mask(i);
+ // Copy the tiny descriptors before the first image request can invalidate
+ // the borrowed parameter bytes. Each mask keeps its authored order.
+ Mask masks[MaskCount];for(unsigned i=0;i<MaskCount;++i)masks[i]=parameters.mask(i);
+ const bool direct=scene_opaque_canvas(c);uint16_t contributions[256];unsigned previous=~0u;
+ for(unsigned i=first;i<first+count;++i){const auto m=masks[i];
   const auto image=c.a.content.image(m.image);
   if(!image.pixels||image.format||image.w*2!=m.stride||image.h!=m.h||image.alpha||image.palette)return;
   // Original Vakuu light_overlay4 alone has node modulate alpha140/255.
   const unsigned a=i==6?div255(alpha*140):alpha;
+  if(direct&&previous!=a){for(unsigned k=0;k<256;++k)
+    contributions[k]=presentation::add_opaque(0,color,div255(k*a));previous=a;}
   if(m.x>=unsigned(c.clip_w)||m.y>=unsigned(c.clip_h))continue;
   const unsigned width=mn(m.w,unsigned(c.clip_w)-m.x),height=mn(m.h,unsigned(c.clip_h)-m.y);
   for(unsigned y=0;y<height;++y){const auto*row=image.pixels+y*m.stride;
    const unsigned at=(m.y+y)*c.pitch+m.x;
-   for(unsigned x=0;x<width;++x)if(row[x])c.paint(at+x,color,div255(row[x]*a),presentation::Add);
+   for(unsigned x=0;x<width;++x){if(direct){const uint16_t amount=contributions[row[x]];
+     if(amount)c.pixels[at+x]=presentation::add_preweighted(c.pixels[at+x],amount);}
+    else if(row[x])c.paint(at+x,color,div255(row[x]*a),presentation::Add);}
   }
  }
 }

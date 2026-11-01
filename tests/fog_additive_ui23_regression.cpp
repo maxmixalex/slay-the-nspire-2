@@ -40,5 +40,11 @@ int main(){
   unsigned bottom=pixels[clip(iy+1)*200+clip(ix)]*(256-fx)+pixels[clip(iy+1)*200+clip(ix+1)]*fx;
   assert(spire::nonu_fog_ui23::alpha(pixels.data(),int(u),int(v))==(top*(256-fy)+bottom*fy+32768)>>16);++checks;
  }
+ // Empty atlas support and its clamped borders must stay exactly zero.
+ pixels.fill(0);
+ for(unsigned v:{0u,1u,32768u,8388608u,16777215u})
+  for(unsigned u:{0u,1u,32768u,8388608u,16777215u}){
+   assert(spire::nonu_fog_ui23::alpha(pixels.data(),int(u),int(v))==0);++checks;
+  }
  printf("Exact constant-color fog additive comparisons: %u\n",checks);
 }

@@ -3,7 +3,7 @@
 namespace ancient_lights {
 using namespace ancient_lights_ui23;
 static bool nodes(Canvas&c,const water_reflection::Texture&texture,const Table&table,unsigned layer,
-                  uint32_t elapsed,uint32_t seed,unsigned first=0,unsigned count=~0u){
+                  uint32_t elapsed,uint32_t seed,unsigned first=0,unsigned count=~0u,const SoftAddGrid*grid=nullptr){
  const bool reduced=c.a.content.reduced_animations();const uint32_t clock=reduced?0:elapsed;
  auto&light_cache=character_light_quads();const bool bounded=light_cache.bind(c.a.content,texture,c.a.callbacks.foreground_poll);
  const unsigned frame=table.frame(clock,reduced);
@@ -25,20 +25,24 @@ static bool nodes(Canvas&c,const water_reflection::Texture&texture,const Table&t
    const int64_t skew=int64_t(CombatCardMotion::magnitude(shear))*height;
    if(width<=0||height<=0||int64_t(width)+height+(skew+65535)/65536>=2097152)return false;
    const unsigned shade=fake_merchant::gradient(ramp,q).r;
-   fake_merchant::quad(c,texture,x,y,width,height,angle,
+   fake_merchant::quad(c,texture,grid?grid->position(x):x,grid?grid->position(y):y,
+    grid?grid->size(width):width,grid?grid->size(height):height,angle,
     div255(r[24]*shade),div255(r[25]*shade),div255(r[26]*shade),r[27],presentation::Add,shear,bounded?&light_cache:nullptr);
   }
  }
  return true;
 }
-static bool layer(Canvas&c,unsigned scene,unsigned layer,uint32_t elapsed,uint32_t seed,unsigned first=0,unsigned count=~0u){
+static bool layer(Canvas&c,unsigned scene,unsigned layer,uint32_t elapsed,uint32_t seed,unsigned first=0,unsigned count=~0u,SoftAddGrid*shared=nullptr){
 #ifdef SPIRE_NEOW_LAYER_PROFILE
  RuntimeScopedRenderPart light_timing(c.a.callbacks.profile_render,RuntimeRenderPart::CharacterInfo,scene==0);
 #endif
  const water_reflection::Texture texture(c.a.content.image(c.a.content.ui_image(I13_RandomLight)),256,256);
  const auto image=c.a.content.image(c.a.content.ui_image(AuxiliaryFirst+scene));
  Table table;if(!texture.valid()||!table.read(image,scene))return false;
- return nodes(c,texture,table,layer,elapsed,seed,first,count);
+ if(shared)return nodes(shared->canvas(),texture,table,layer,elapsed,seed,first,count,shared);
+ SoftAddGrid grid(c,scene==0);
+ const bool result=nodes(grid.canvas(),texture,table,layer,elapsed,seed,first,count,&grid);
+ grid.finish();return result;
 }
 static bool draw(Canvas&c,unsigned scene,uint32_t elapsed){
  if(c.a.content.ui_image(AuxiliaryFirst+scene)!=int(FirstImage+1+scene))return false;
@@ -55,15 +59,22 @@ static bool draw(Canvas&c,unsigned scene,uint32_t elapsed){
 #endif
   if(c.a.content.ui_image(neow_fire_ui23::Auxiliary)==int(neow_fire_ui23::ParameterImage)&&!neow_fire::draw(c,elapsed))return false;
   }
-  if(!layer(c,scene,0,elapsed,seed,0,3))return false;
+  {
+  // These lights, fog and stars are all nonnegative additive planes. Their
+  // saturated sums commute; share the soft field until the normal vignette.
+  // Stars themselves keep their original full-resolution raster.
+  SoftAddGrid grid(c);
+  if(!layer(c,scene,0,elapsed,seed,0,3,&grid))return false;
   {
 #ifdef SPIRE_NEOW_LAYER_PROFILE
   RuntimeScopedRenderPart fog_timing(c.a.callbacks.profile_render,RuntimeRenderPart::CharacterPortraits);
 #endif
   if(c.a.content.ui_image(neow_particles_ui23::Auxiliary)==int(neow_particles_ui23::FirstImage)&&
-     !neow_particles::draw(c,c.a.content.reduced_animations()?0:elapsed,seed))return false;
+     !neow_particles::draw(c,c.a.content.reduced_animations()?0:elapsed,seed,grid))return false;
   }
-  if(!layer(c,scene,0,elapsed,seed,3,4))return false;
+  if(!layer(c,scene,0,elapsed,seed,3,4,&grid))return false;
+  grid.finish();
+  }
   {
 #ifdef SPIRE_NEOW_LAYER_PROFILE
   RuntimeScopedRenderPart vignette_timing(c.a.callbacks.profile_render,RuntimeRenderPart::CharacterControls);

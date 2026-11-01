@@ -31,10 +31,11 @@ static void map_screen(Canvas&c,bool inspect=false){
 #include "fake_merchant_ui13.inc"
 #include "tanx_scene_ui23.inc"
 #include "ancient_materials_ui23.inc"
+#include "soft_add_grid.inc"
 namespace neow_fire {static bool draw(Canvas&,uint32_t);}
 namespace ancient_fire {static bool draw(Canvas&,uint32_t,uint32_t);}
 namespace tez_cinders {static bool draw(Canvas&,uint32_t,uint32_t);}
-namespace neow_particles {static bool draw(Canvas&,uint32_t,uint32_t);}
+namespace neow_particles {static bool draw(Canvas&,uint32_t,uint32_t,SoftAddGrid&);}
 #include "neow_post_ui23.inc"
 #include "ancient_lights_ui23.inc"
 #include "tez_cinders_ui23.inc"

@@ -210,10 +210,11 @@ struct TezCinderRoom {
   entered=a.ancient_dialogue.entered;floor=unsigned(a.game.floor);event=unsigned(a.game.original_events.id);
  }
 };
-union CharacterEffects {uint8_t inactive;TezCinderRoom cinders;neow_fire_ui23::Mask neow;};
+struct NeowRoom {neow_fire_ui23::Mask transmission;neow_post_ui23::CoverageCache post;};
+union CharacterEffects {uint8_t inactive;TezCinderRoom cinders;NeowRoom neow;};
 enum class CharacterEffectOwner:uint8_t {None,Cinders,NeowFire};
 struct CharacterSceneRasters {character_select_delta::Raster raster;CharacterEffects effects{0};CharacterEffectOwner effect_owner=CharacterEffectOwner::None;RandomLightQuadCache light;};
-static_assert(sizeof(neow_fire_ui23::Mask)<=sizeof(TezCinderRoom),"Neow transmission reuses the existing cinder-sized variant");
+static_assert(sizeof(NeowRoom)<=sizeof(TezCinderRoom),"Neow transmission/post masks reuse the existing cinder-sized variant");
 static_assert(sizeof(CharacterSceneRasters)<=sizeof(MerchantRugRaster),"Character and1776cinders share the existing scene slot");
 static_assert(alignof(CharacterSceneRasters)<=alignof(MerchantRugRaster),"Cinders must not increase scene alignment");
 struct HistoryReadRaster {uint8_t bytes[sizeof(UiHistoryPage)+7];};
@@ -290,11 +291,12 @@ static TezCinderRoom& tez_cinder_room(const App&a){
  if(room.effect_owner!=CharacterEffectOwner::Cinders){::new(detail::InPlaceAddress{&room.effects.cinders}) TezCinderRoom;room.effect_owner=CharacterEffectOwner::Cinders;}
  auto&r=room.effects.cinders;r.bind(a);return r;
 }
-static neow_fire_ui23::Mask& neow_fire_mask(const App&){
+static NeowRoom& neow_room(){
  character_selection_raster();auto&room=scene_raster_storage.character;
- if(room.effect_owner!=CharacterEffectOwner::NeowFire){::new(detail::InPlaceAddress{&room.effects.neow}) neow_fire_ui23::Mask;room.effect_owner=CharacterEffectOwner::NeowFire;}
+ if(room.effect_owner!=CharacterEffectOwner::NeowFire){::new(detail::InPlaceAddress{&room.effects.neow}) NeowRoom;room.effect_owner=CharacterEffectOwner::NeowFire;}
  return room.effects.neow;
 }
+static neow_fire_ui23::Mask& neow_fire_mask(const App&){return neow_room().transmission;}
 static bool scene_opaque_canvas(const Canvas&c){
     return !c.coverage&&!c.occlusion&&c.opacity==255&&c.brightness==255&&
        c.tint_red==255&&c.tint_green==255&&c.tint_blue==255&&!c.color_matrix&&

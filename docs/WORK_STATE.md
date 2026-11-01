@@ -1,3 +1,40 @@
+# UI23 exact smoothstep division candidate
+
+ARM relocation inspection shows three fixed-width unsigned64 division calls
+and one dynamic signed64 division call in the continuous material sampler.
+This candidate uses a bounded32-bit reciprocal and at most one correction
+for exactly the same Q20 quotient. Constant widths fold their reciprocal at
+compile time; Smog computes its dynamic reciprocal once per layer preparation
+in an existing constant slot. Other widths retain the original division. No
+uint128 helper, persistent memory, resource format or source image changes.
+Private whole-frame comparison passes460 RGB565 frames and zero warm reads;
+actual guest net benefit and the strict ARM allocation gate remain pending.
+
+# UI23 Affliction CPU candidate — guest confirmation pending
+
+The real 64 MiB Firebird seven-card fixture with the continuous ACU1 pack
+measures 29.784 FPS without attachments, 10.806 FPS with three families and
+4.996 FPS with all seven. The three/seven intervals have zero resource reads;
+the remaining failure is CPU work, not decompression or cache misses. These
+are runtime 438 measurements with the explicitly test-only small3 pack.
+
+This candidate resolves bilinear corners through one sparse tile/page lookup
+when possible and skips pixels covered by later exact-alpha255 hand faces.
+The owner map borrows 38,400 bytes from the existing foreground scratch and
+adds no persistent pool. Normal hand ranks are 1–10, focus 11 and held 12;
+unsupported ranks/counts retain unmasked rendering. Other flying/ghost cards
+are conservatively excluded as occluders. The cached base face stays intact;
+only its final screen blit and the continuous overlay use the map. Native
+axis-aligned origin rounding retains the ordinary draw path.
+
+Private paired comparison passes 460 complete RGB565 frames including hover,
+held order and 70 cold-cache rebuilds; all pixels match and scratch leases
+balance. Field tests pass 345,660 checks, including separate physical pages,
+sparse/invalid tiles, clamp/repeat and channel bounds. Host timing is not a
+calculator FPS claim. Production ARM size and actual guest net improvement
+remain required before adopting this performance candidate. The frozen
+bad0168 resource producer is unchanged; its real zero-argument CLI is running.
+
 # UI23 measured guest layers — next bounded kernel candidate
 
 The ordinary 64 MiB Firebird path measures the first grid stage at 7.18894 FPS,

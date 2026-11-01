@@ -72,8 +72,10 @@ inline unsigned alpha(const uint8_t*data,int u,int v){
  const int ix=x>>8,iy=y>>8;const unsigned fx=unsigned(x)&255u,fy=unsigned(y)&255u;
  const unsigned a=ix<0?0:ix>199?199:unsigned(ix),b=ix+1<0?0:ix+1>199?199:unsigned(ix+1);
  const unsigned c=iy<0?0:iy>199?199:unsigned(iy),d=iy+1<0?0:iy+1>199?199:unsigned(iy+1);
- const unsigned top=data[c*200+a]*(256-fx)+data[c*200+b]*fx;
- const unsigned bottom=data[d*200+a]*(256-fx)+data[d*200+b]*fx;
+ const unsigned aa=data[c*200+a],ab=data[c*200+b],ba=data[d*200+a],bb=data[d*200+b];
+ if(!(aa|ab|ba|bb))return 0;
+ const unsigned top=aa*(256-fx)+ab*fx;
+ const unsigned bottom=ba*(256-fx)+bb*fx;
  return (top*(256-fy)+bottom*fy+32768)>>16;
 }
 // `amount` is an already alpha-weighted RGB565 contribution. Separating
