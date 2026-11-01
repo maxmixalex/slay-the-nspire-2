@@ -1,5 +1,11 @@
 // NInputManager keeps independent mouse/keyboard and keyboard-only maps.
 // Physical keys enter here once; semantic UI buttons keep the existing API.
+static bool configured_run_confirm(const App&a){
+    return a.title&&(a.run_mode.screen==RunMenu::Custom||a.run_mode.screen==RunMenu::Daily)&&
+        !a.character_departure.active()&&!a.map_preview.open&&!a.run_seed_editing&&!a.frontend_confirm&&
+        !a.settings_open&&!a.profiles_open&&!a.timeline_open&&!a.compendium_open&&!a.library&&!a.help&&
+        a.detail_card<0&&a.detail_item<0&&a.auxiliary.screen==AuxiliaryScreen::None&&!a.ftue.active();
+}
 const char* App::input_command_title(unsigned command)const{
     char key[72]{};TextBuffer text{key,sizeof key,0};text.text("INPUT_SETTINGS.INPUT_TITLE.");text.text(input_command_key(command));
     const char*localized=content.world_string("settings_ui",key);if(*localized)return localized;
@@ -59,6 +65,7 @@ bool App::physical_key(uint16_t code,bool pressed){
         else if(released<=unsigned(Key::Debug))map_drawing_key_release(Key(released));
         else if(released==254)toggle_combat_peek();
         else if(released==253&&run_mode.screen==RunMenu::Custom)ui_action(UiAction::RandomizeRun);
+        else if(released==252&&configured_run_confirm(*this)&&context==input_context())ui_action(UiAction::StartConfiguredRun);
         else if(released==246&&auxiliary.screen!=AuxiliaryScreen::None)auxiliary_input(Key::Back);
         else if((released==245||released==244)&&game_over_available()&&game_over_button_ready()&&context==input_context()){
             if(released==245){if(game_over_ui::ViewRunEnabled)open_game_over_history();}
@@ -167,6 +174,7 @@ bool App::physical_key(uint16_t code,bool pressed){
         if(card_reward_interactive()){sync_card_reward_presentation();held->key=250;held->context=reward_presentation.cards.key;return true;}
         return dispatch(Key::ExhaustPile);
     case InputCommand::Confirm:
+        if(configured_run_confirm(*this)){held->key=252;held->context=input_context();return true;}
         if(combat_selection_interactive()){
             if(combat_selection_kind()==CombatSelectionKind::Offer)return dispatch(Key::Detail);
             sync_combat_selection();if(combat_selection_confirmable()){held->key=240;held->context=combat_selection.row.key;}return true;
@@ -182,7 +190,9 @@ bool App::physical_key(uint16_t code,bool pressed){
             if(bank&&game.phase==Phase::Combat&&hud_focus<0)return true;
         }
         return dispatch(Key::Confirm);
-    case InputCommand::EndTurn:if(combat_selection_interactive()||world_selection_active())return true;return dispatch(Key::EndTurn);
+    case InputCommand::EndTurn:
+        if(configured_run_confirm(*this)){held->key=252;held->context=input_context();return true;}
+        if(combat_selection_interactive()||world_selection_active())return true;return dispatch(Key::EndTurn);
     case InputCommand::Peek:
         if(auxiliary.screen!=AuxiliaryScreen::None)return true;
         held->key=run_mode.screen==RunMenu::Custom?253:254;

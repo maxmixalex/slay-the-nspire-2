@@ -133,6 +133,25 @@ static void entered_act_persists_before_boss(){
     // its first bucket draw and chooses Overgrowth. A boss is not required.
     CHECK(app.game.world.rooms[0].region==0&&app.progress.discovered_acts==3);
 }
-int main(){profile_roundtrip();fresh_run();frozen_and_legacy_run();source_obtain_boundaries();entered_act_persists_before_boss();
+static void configured_keyboard_confirm(){
+    const auto setup=[](RunMenu menu,bool keyboard){fresh();timeline_initialize(app.progress.timeline,true);
+        new_run(app.game,42,false);app.calculator_keyboard=true;app.input_bindings=default_input_bindings(true);
+        app.keyboard_only=keyboard;app.open_run_menu(menu);};
+    for(bool keyboard:{false,true})for(auto screen:{RunMenu::Custom,RunMenu::Daily}){
+        setup(screen,keyboard);const auto serial=app.run_number;
+        CHECK(app.physical_key(InputMenu,true)&&app.title&&app.run_number==serial);
+        CHECK(app.physical_key(InputMenu,true)&&app.run_number==serial); // OS repeat is not another start.
+        CHECK(app.physical_key(InputMenu,false)&&app.run_number==serial+1&&app.character_departure.phase==1);
+        app.physical_key(InputMenu,false);CHECK(app.run_number==serial+1);
+    }
+    setup(RunMenu::Custom,false);const auto serial=app.run_number;app.run_mode.focus=1;
+    app.physical_key(13,true);app.physical_key(13,false);CHECK(app.selected_character==Character::Silent&&app.run_number==serial);
+    app.physical_key(InputMenu,true);app.ui_action(UiAction::RunSeed);CHECK(app.map_preview.open);
+    app.physical_key(InputMenu,false);CHECK(app.run_number==serial&&!app.character_departure.active());
+    app.physical_key(InputMenu,true);app.physical_key(InputMenu,false);CHECK(app.run_number==serial);
+    setup(RunMenu::Custom,false);app.physical_key(InputMenu,true);app.frontend_confirm=3;
+    app.physical_key(InputMenu,false);CHECK(app.title&&!app.character_departure.active()&&!app.quit);
+}
+int main(){profile_roundtrip();fresh_run();frozen_and_legacy_run();source_obtain_boundaries();entered_act_persists_before_boss();configured_keyboard_confirm();
     std::printf("Timeline integration: %u checks; profile migration, normal reveal, frozen pools, first run and idempotent settlement.\n",checks);
 }

@@ -1091,3 +1091,15 @@ A reproducible optional reference tool and numeric fixture accompany this
 checkpoint; the new native vector comparison remains pending. Calculator
 Timeline/full/reduced acceptance is the next step with root's strictly passing
 22,285,772B formal allocation and the new NWFv3/8961-string candidates.
+
+
+## UI24 configured-run physical Confirm boundary
+
+Custom/Daily's displayed native Confirm/Menu action now captures a release with
+the current form context and starts exactly once on matching release. Pointer
+mode's shared Confirm/End Turn binding and keyboard-only Menu both use it.
+Select/Enter keeps its current field/character meaning. An open seed editor,
+confirmation dialog or another modal cannot be bypassed; a context change after
+press cancels the captured start. This fixes the keyboard reachability bug;
+it does not claim to repair the separate firmware queued-touch exit behavior.
+Focused physical-key regression cases are added and await the published rerun.
