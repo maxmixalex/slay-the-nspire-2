@@ -1,7 +1,8 @@
 // Original scene textures and interaction flow, reflowed for 320x240.
 static const char* frontend_text(const App&a,const char*table,const char*key,const char*fallback){const char*text=a.content.world_string(table,key);return *text?text:fallback;}
 static const char* frontend_label(const App&a,FrontMenu item){
- if(item==FrontTimeline)return a.content.language()==2?"时间线":"Timeline";
+ if(item==FrontTimeline){bool pending=false;for(unsigned i=0;i<EpochCount;++i)if(timeline_revealable(a.progress.timeline,Epoch(i))){pending=true;break;}
+  return a.content.language()==2?(pending?"时间线 !":"时间线"):(pending?"Timeline !":"Timeline");}
  static const char*keys[]={"SINGLE_PLAYER","CONTINUE","ABANDON_RUN","COMPENDIUM","SETTINGS","QUIT"};
  static const char*fallback[]={"单人游戏","继续游戏","放弃游戏","图鉴","设置","退出游戏"};
  return frontend_text(a,"main_menu_ui",keys[item],fallback[item]);

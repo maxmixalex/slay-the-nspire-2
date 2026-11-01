@@ -96,7 +96,8 @@ bool App::run_modes_action(UiAction action){
         if(run_mode.screen==RunMenu::Custom||run_mode.screen==RunMenu::Daily)start_selected_run(run_mode.pending,true);return true;
     }
     if(action==UiAction::RandomizeRun){
-        if(run_mode.screen==RunMenu::Custom){reference::Random rng;rng.reset(next_run_seed());selected_character=RunModeCharacters[rng.below(CharacterKinds)];pick_run_modifiers(rng,selected_character,run_mode.pending);}
+        if(run_mode.screen==RunMenu::Custom){reference::Random rng;rng.reset(next_run_seed());Character allowed[CharacterKinds];unsigned count=0;for(auto c:RunModeCharacters)if(timeline_character_available(unsigned(c)))allowed[count++]=c;
+            timeline_choose_character(allowed[rng.below(count)]);pick_run_modifiers(rng,selected_character,run_mode.pending);}
         return true;
     }
     if(run_mode.screen!=RunMenu::Custom)return false;
@@ -110,11 +111,11 @@ bool App::run_modes_action(UiAction action){
     }
     if(action==UiAction::RunSeedClear){selected_seed[0]=0;selected_seed_imported=false;return true;}
     switch(action){
-    case UiAction::SelectIronclad:selected_character=Character::Ironclad;return true;
-    case UiAction::SelectSilent:selected_character=Character::Silent;return true;
-    case UiAction::SelectRegent:selected_character=Character::Regent;return true;
-    case UiAction::SelectNecrobinder:selected_character=Character::Necrobinder;return true;
-    case UiAction::SelectDefect:selected_character=Character::Defect;return true;
+    case UiAction::SelectIronclad:timeline_choose_character(Character::Ironclad);return true;
+    case UiAction::SelectSilent:timeline_choose_character(Character::Silent);return true;
+    case UiAction::SelectRegent:timeline_choose_character(Character::Regent);return true;
+    case UiAction::SelectNecrobinder:timeline_choose_character(Character::Necrobinder);return true;
+    case UiAction::SelectDefect:timeline_choose_character(Character::Defect);return true;
     default:return false;
     }
 }
@@ -144,6 +145,6 @@ bool App::run_modes_input(Key key){
     }
     // NCharacterSelectButton connects FocusEntered to Select; navigating the
     // custom portrait row immediately changes the selected character.
-    if(focus!=previous&&focus>=0&&focus<int(CharacterKinds))selected_character=RunModeCharacters[unsigned(focus)];
+    if(focus!=previous&&focus>=0&&focus<int(CharacterKinds))timeline_choose_character(RunModeCharacters[unsigned(focus)]);
     return true;
 }

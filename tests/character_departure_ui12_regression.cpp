@@ -14,6 +14,8 @@ static void step(unsigned ms){while(ms){const unsigned dt=ms>50?50:ms;app.advanc
 static void select(const char*seed){
     app.reset_presentation();app.title=app.character_select=true;app.practice_entry=false;
     app.run_mode={};app.progress.tutorial_flags=FtueFresh|FtueSeenMask;
+    // Compare transition timing under the same already-discovered act set.
+    app.progress.discovered_acts=15;
     app.selected_character=Character::Ironclad;std::strcpy(app.selected_seed,seed);
 }
 static void black_blend_contract(){

@@ -1073,3 +1073,21 @@ the complete clean-source ARM rebuild and ordinary calculator tests follow.
 ## UI24 Tezcatara density candidate — measurement still required
 
 The 33×33 candidate subsequently passed the image/lease checks but measured only **8.454016 FPS / 117.790643 ms render** on the actual formal full-resource 64MiB guest. All 254 warm frames remained over100ms, with no I/O. This is insufficient to describe the room as fluent. The next candidate uses17×17 UV samples (867 full material evaluations per frame,3,468 existing-scratch bytes), keeps live-clock interpolation and all body/node/particle geometry, and requires a new same-clock image review plus formal guest pair before acceptance.
+
+## UI24 Timeline integration regressions and original startup vectors
+
+The first integrated native build completed; foundation297 and new integration230
+checks passed, as did existing profile/world-map/relic targets. Six old fixture
+assumptions failed and remain recorded: menu row count, old profile re-encoding,
+v17 tail location, manually fixed first region and same-seed starts after an act
+became discovered. The follow-up corrects those fixtures without removing their
+migration/immutability assertions, adds normal entry-before-boss persistence and
+original obtain-condition boundaries, and closes Custom portrait/randomize lock
+bypasses. Uninitialized headless callers retain the historical all-open contract.
+
+The original assembly executed40 startup vectors across8 ASCII seeds and5
+unlock/discovery cases, covering both first acts and all5 Random characters.
+A reproducible optional reference tool and numeric fixture accompany this
+checkpoint; the new native vector comparison remains pending. Calculator
+Timeline/full/reduced acceptance is the next step with root's strictly passing
+22,285,772B formal allocation and the new NWFv3/8961-string candidates.

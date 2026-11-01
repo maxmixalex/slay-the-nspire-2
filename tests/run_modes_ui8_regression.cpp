@@ -81,7 +81,7 @@ int main(int argc,char**argv){
     history.current.facts={};history.current.build_id[0]=0;
     for(auto&r:history.history){r.facts={};std::memset(r.build_id,0,sizeof r.build_id);}
     std::memset(history.current.build_id,0,sizeof history.current.build_id);history.current_saved_at=history.current_saved_revision=0;
-    history.current_discoveries={};history.architect_damage=0;history.journal=UiHistoryJournal{};
+    history.current_discoveries={};history.architect_damage=0;history.journal=UiHistoryJournal{};history.timeline={};
     const size_t legacy_size=encode_ui_progress(history,history_bytes,sizeof history_bytes);CHECK(legacy_size&&history_bytes[3]=='3');
     CHECK(decode_ui_progress(history_bytes,legacy_size,history)&&history.history[0].mode==unsigned(RunMode::Custom)&&history.history[0].modifiers==run_modifier_bit(RunModifier::Flight)&&!history.current.facts.version);
     std::printf("Singleplayer hierarchy, custom/daily seed/modifiers, drag, save/resume and unranked statistics: %u checks\n",checks);

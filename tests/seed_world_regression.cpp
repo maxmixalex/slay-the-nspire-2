@@ -80,6 +80,8 @@ static void editor_and_legacy_console(){
 }
 static void imported_run_and_continue(){
     app.character_departure={};app.title=true;app.has_save=false;app.open_run_menu(RunMenu::Custom);
+    // Normal UI chooses the original unlocked, unseen non-default act.
+    app.progress.discovered_acts&=uint8_t(~2u);
     app.selected_character=Character::Necrobinder;app.selected_ascension=4;app.selected_region=reference::ActKind::Underdocks;
     app.ui_action(UiAction::RunSeed);CHECK(app.run_seed_editing&&!app.map_preview.importing);
     app.reference_input(Key::Down);CHECK(app.map_preview.importing&&!app.map_preview.draft[0]);

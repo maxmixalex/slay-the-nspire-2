@@ -50,6 +50,7 @@ add_executable(seed_ascii_original_regression EXCLUDE_FROM_ALL tests/seed_ascii_
   spire_test(ui_progress_regression)
   spire_test(timeline_regression)
   spire_test(timeline_integration_regression)
+  spire_test(timeline_startup_regression "${CMAKE_CURRENT_SOURCE_DIR}/tests/fixtures/timeline-startup-original-ui24.tsv")
   spire_test(run_metadata_regression)
   spire_test(ftue_progress_regression)
   spire_test(ftue_ui9_regression)

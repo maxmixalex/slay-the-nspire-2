@@ -2,7 +2,7 @@
 void App::timeline_prepare_run(State&s){
     restore_progress();s.world.unlocks=s.run_options.mode==RunMode::Daily?TimelineUnlocks{}:timeline_unlocks(progress.timeline);
     uint32_t runs=0;for(const auto&c:progress.characters)runs=progress_add(runs,progress_add(c.wins,c.losses));
-    s.world.first_run=uint8_t(s.run_options.mode==RunMode::Standard&&!runs&&!(progress.timeline.flags&TimelineLegacyAccess));
+    s.world.first_run=uint8_t(s.run_options.mode==RunMode::Standard&&!runs&&(progress.timeline.flags&TimelineInitialized)&&!(progress.timeline.flags&TimelineLegacyAccess));
 }
 void App::timeline_win_battle(const State&s){
     if(s.run_options.mode!=RunMode::Standard)return;

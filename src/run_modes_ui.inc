@@ -111,8 +111,9 @@ static void custom_run_screen(Canvas&c){
   const int w=(28*scale+512)/1024,h=(33*scale+512)/1024,ow=(26*scale+512)/1024,oh=(35*scale+512)/1024;
   const int portrait=a.content.ui_image(character_portrait(RunModeCharacters[i]));Canvas shadow=c;shadow.tint_red=shadow.tint_green=shadow.tint_blue=0;shadow.picture(portrait,center-w/2+2,cy-h/2+2,w,h,64);
   if(i==selected){const int outline=a.content.world_image("character","OUTLINE");if(outline>=0)c.picture(outline,center-ow/2,cy-oh/2,ow,oh,portraits.outline_alpha(a.map_clock_ms),presentation::Add);}
-  small_material_icon(c,portrait,center-w/2,cy-h/2,w,h,portraits.saturation(i,a.map_clock_ms),portraits.value(i,a.map_clock_ms));
-  if(!editing)c.action(portrait_left(i),CustomPortraitTop,CustomPortraitWidth,CustomPortraitHeight,actions[i]);
+  const bool unlocked=a.timeline_character_available(unsigned(RunModeCharacters[i]));
+  small_material_icon(c,portrait,center-w/2,cy-h/2,w,h,unlocked?portraits.saturation(i,a.map_clock_ms):0,unlocked?portraits.value(i,a.map_clock_ms):350);
+  if(!editing)c.action(portrait_left(i),CustomPortraitTop,CustomPortraitWidth,CustomPortraitHeight,actions[i],unlocked);
  }
  // AscensionPanel's six children impose844px minimum width on its764px
  // HBox. Native container layout places the description at(229,791).

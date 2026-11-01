@@ -46,7 +46,8 @@ static void migration(){
  for(unsigned version=2;version<=7;++version){legacy_fixture(version);Bytes old=encode(fixture);CHECK(old[3]=='0'+version);
   CHECK(decode_ui_progress(old.data(),old.size(),decoded)&&!decoded.tutorial_flags);
   app.progress=decoded;for(unsigned id=0;id<FtueCount;++id){CHECK(app.seen_ftue(FtueId(id))&&app.seen_popup(FtueId(id)));CHECK(!(app.progress.tutorial_flags&ftue_bit(FtueId(id))));}
-  CHECK(encode(decoded)==old);
+  CHECK(decoded.timeline.flags==(TimelineInitialized|TimelineLegacyAccess));
+  const auto compatibility=decoded.timeline;decoded.timeline={};CHECK(encode(decoded)==old);decoded.timeline=compatibility;
   if(version==2){constexpr size_t discoveries=(CardKinds+7)/8+(WorldRelicKinds+7)/8+(PotionKinds+7)/8+(OriginalEventKinds+7)/8;
    const size_t tail=28+discoveries+CardKinds*4,n=old.size()-4-CardKinds*4;std::memmove(old.data()+24,old.data()+28,discoveries);std::memmove(old.data()+24+discoveries,old.data()+tail,old.size()-tail);
    old.resize(n);old[3]='1';for(unsigned i=0;i<4;++i)old[4+i]=uint8_t(n>>(i*8));

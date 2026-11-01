@@ -4,7 +4,7 @@ void App::timeline_choose_character(Character value){
     if(!practice_entry&&!(progress.timeline.characters_known&(1u<<unsigned(value)))){
         progress.timeline.characters_known|=uint8_t(1u<<unsigned(value));progress_dirty=true;persist_progress();
     }
-    if(selected_ascension>timeline_max_ascension())selected_ascension=uint8_t(timeline_max_ascension());
+    if(character_select&&selected_ascension>timeline_max_ascension())selected_ascension=uint8_t(timeline_max_ascension());
 }
 bool App::timeline_character_available(unsigned character)const{
     if(practice_entry)return true;
@@ -14,7 +14,7 @@ bool App::timeline_character_available(unsigned character)const{
     return true;
 }
 unsigned App::timeline_max_ascension()const{
-    if(practice_entry||(progress.timeline.flags&TimelineLegacyAccess))return 10;
+    if(practice_entry||!(progress.timeline.flags&TimelineInitialized)||(progress.timeline.flags&TimelineLegacyAccess))return 10;
     if(character_random){unsigned n=0;for(const auto&c:progress.characters)if(c.highest_ascension>n)n=c.highest_ascension;return n;}
     return timeline_unlocks(progress.timeline).has(timeline_character_epoch(unsigned(selected_character),4))?progress.characters[unsigned(selected_character)].highest_ascension:0;
 }
