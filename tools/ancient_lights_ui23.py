@@ -329,8 +329,8 @@ def sample_scene(pack, sampler, runtime, scene, work):
 
 
 def validate(source, image):
-    t.require((len(source.aux), len(source.images)) in ((AUXILIARY, IMAGES),(7220,59700)) and
-              source.aux[BASE_AUX:AUXILIARY] == [BASE_IMAGES+1, BASE_IMAGES+2], 'Ancient light extension catalog differs')
+    t.require((len(source.aux), len(source.images)) == (AUXILIARY, IMAGES) and
+              source.aux[BASE_AUX:] == [BASE_IMAGES+1, BASE_IMAGES+2], 'Ancient light extension catalog differs')
     w, h, fmt, raw = image(BASE_IMAGES)
     t.require((w, h, fmt) == (320, 240, 3) and len(raw) == 512+320*240*2,
               'Deferred Neow vignette geometry/alpha changed')
