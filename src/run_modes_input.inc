@@ -99,7 +99,7 @@ bool App::run_modes_action(UiAction action){
     if(action==UiAction::RunAscensionDown){if(selected_ascension)--selected_ascension;return true;}
     if(action==UiAction::RunAscensionUp){if(selected_ascension<10)++selected_ascension;return true;}
     if(action==UiAction::RunSeed||action==UiAction::RunSeedImport){
-        if(action==UiAction::RunSeedImport&&run_seed_editing){map_preview.importing=!map_preview.importing;map_preview.draft[0]=0;map_preview.error="";return true;}
+        if(action==UiAction::RunSeedImport&&run_seed_editing){map_preview.importing=!map_preview.importing;map_preview.draft[0]=0;map_preview.overflow=false;map_preview.error="";return true;}
         map_preview.open=true;run_seed_editing=true;map_preview.begin_edit();map_preview.importing=action==UiAction::RunSeedImport||selected_seed_imported;
         unsigned n=0;do{map_preview.draft[n]=selected_seed[n];}while(selected_seed[n++]);
         if(map_preview.importing&&!selected_seed_imported)map_preview.draft[0]=0;return true;

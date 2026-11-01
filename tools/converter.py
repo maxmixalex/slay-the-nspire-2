@@ -149,6 +149,13 @@ def self_test():
     faulthandler.enable(all_threads=True)
     print("[converter-self-test] begin",file=sys.stderr,flush=True)
     import numpy as np
+    from seed_codec import encode_seed, encode_seed_file
+    if encode_seed('oldA') != 'SEED64-EC8011CFFF0DFCC3':
+        raise ValueError('Embedded seed encoder differs from the pinned original-DLL vector')
+    with tempfile.TemporaryDirectory(prefix='nspire2-seed-check-') as directory:
+        seed_file=Path(directory)/'seed.txt';seed_file.write_bytes(b' \toldA\r\n')
+        if encode_seed_file(seed_file) != 'SEED64-EC8011CFFF0DFCC3':
+            raise ValueError('Embedded streaming seed encoder changed original ASCII trim semantics')
     configure_helpers()
     # Legacy source tools use the process default for some JSON/text files.
     # The frozen app must select UTF-8 before interpreter initialization, even
@@ -227,6 +234,7 @@ def self_test():
     if neow_hash!='e0f5a0b552e9597c2899f14aea37b40adee8a75594c18c743f64608b2c878885':
         raise ValueError('Bundled Neow source noise differs from its float32 oracle')
     return dict(passed=True,mandatory_linked_arm_validation=arm_proof,recipe_modules=len(modules),spawn_worker=True,spine_protocol=True,decim_samples=len(decim),
+        original_ascii_seed_encoder=True,streamed_seed_file=True,
         utf8_mode=bool(sys.flags.utf8_mode),unicode_default_io=True,
         retirement_route_sources=len(retirement_plan['runtime_route_sources']),retirement_routes_verified=True,
         vantom_pixels=field.size,vantom_sha256=noise_hash,random_pixels=50,random_sha256=random_hash,
@@ -629,11 +637,19 @@ def main(argv=None):
     parser.add_argument('--key-font',type=Path,help='Optional owner-supplied TINspireKeysCX.ttf; default: public calculator keycaps')
     parser.add_argument('--plan',action='store_true',help='Show every source build stage without converting')
     parser.add_argument('--self-test',action='store_true',help='Check embedded modules and native helpers without game data')
+    seed=parser.add_mutually_exclusive_group()
+    seed.add_argument('--encode-seed',help='Encode complete original ASCII seed text for explicit calculator seed-code import')
+    seed.add_argument('--encode-seed-file',type=Path,help='Stream an ASCII seed text file into a calculator import code; no game files required')
     parser.add_argument('--stop-after',help='Developer checkpoint; never produces a release receipt')
     args=parser.parse_args(argv);started_output=None
     try:
         if args.self_test:
             print(json.dumps(self_test(),indent=2));return 0
+        if args.encode_seed is not None or args.encode_seed_file is not None:
+            from seed_codec import encode_seed, encode_seed_file
+            print(encode_seed(args.encode_seed) if args.encode_seed is not None else
+                  encode_seed_file(args.encode_seed_file),flush=True)
+            return 0
         game=locate_game(args.game)
         from reference_inventory import verify_release
         _lock,assembly,reference=verify_release(game)

@@ -50,6 +50,16 @@ are never rescaled. No resource conversion or larger memory pool is required.
 Formal ARM allocation, same-resource 64 MiB Firebird before/after, private
 same-clock appearance comparison and focused regressions are pending. The
 existing UI23 figures below remain the baseline, not candidate acceptance.
+# UI24 standalone seed-code entry candidate
+
+The same converter now accepts --encode-seed and --encode-seed-file before
+game discovery, helper loading or resource conversion. The streaming module is
+byte-identical to Ancient seed commit a14f7aa and has 918 original-DLL ASCII
+vector comparisons reported by that task. CLI tests check the actual oldA and
+whitespace vectors, file chunk/trim boundaries, literal prefixes and rejection
+of non-ASCII input. Bundle self-test now executes both text and file entry
+using the verified oldA oracle. The final frozen executable and Windows CI
+still need rebuilding after integration with the current runtime/Timeline work.
 
 # UI24 converter working-set candidate — original-data validation pending
 

@@ -36,14 +36,14 @@ void MapPreview::change_act() {
     settings.act = reference::ActKind((unsigned(settings.act) + 1) % 4); generate();
 }
 void MapPreview::begin_edit() {
-    copy(draft, seed); importing=false; editing = true; editor_selection = SeedButtonCount - 1; error = "";
+    copy(draft, seed); importing=overflow=false; editing = true; editor_selection = SeedButtonCount - 1; error = "";
 }
 void MapPreview::edit(int ch) {
     if (!editing) return;
     if (ch == 27) { editing = false; error = ""; }
-    else if (ch == 13) { if (set_seed(draft)) editing = false; }
-    else if (ch == 8) { reference::seed_backspace(draft); error = ""; }
-    else if (ch == -1) { draft[0] = 0; error = ""; }
-    else if (ch >= 32) error = reference::seed_append(draft,sizeof draft,uint32_t(ch)) ? "" : "Seed must fit in 64 UTF-8 bytes.";
+    else if (ch == 13) { if (!overflow&&set_seed(draft)) editing = false; }
+    else if (ch == 8) { reference::seed_backspace(draft); overflow=false; error = ""; }
+    else if (ch == -1) { draft[0] = 0; overflow=false; error = ""; }
+    else if (ch >= 32) { if(!reference::seed_append(draft,sizeof draft,uint32_t(ch)))overflow=true;error=overflow?"Seed must fit in 64 UTF-8 bytes.":""; }
 }
 }

@@ -105,6 +105,14 @@ static void imported_run_and_continue(){
     app.ui_action(UiAction::RunSeedImport);CHECK(app.map_preview.importing);app.reference_text('1');app.reference_text(13);
     CHECK(app.map_preview.open&&*app.map_preview.error);app.reference_text(27);CHECK(!app.selected_seed_imported);
     app.ui_action(UiAction::RunSeedImport);app.reference_input(Key::Up);CHECK(!app.map_preview.importing);
+    const std::string over(65,'a');host_text_utf8(over.data(),over.size(),[](int cp){app.reference_text(cp);});app.reference_text(13);
+    CHECK(app.map_preview.open&&app.map_preview.overflow&&!app.selected_seed[0]);
+    app.reference_text('b');app.reference_text(13);CHECK(app.map_preview.open&&app.map_preview.overflow);
+    app.reference_text(8);CHECK(!app.map_preview.overflow);app.reference_text(13);CHECK(!app.map_preview.open&&std::strlen(app.selected_seed)==63);
+    app.ui_action(UiAction::RunSeed);app.reference_text(-1);
+    for(unsigned i=0;i<21;++i)app.reference_text(0x4e2d);app.reference_text(0x4e2d);app.reference_text(13);
+    CHECK(app.map_preview.open&&app.map_preview.overflow&&std::strlen(app.map_preview.draft)==63);
+    app.reference_text(-1);CHECK(!app.map_preview.overflow);
     host_text_utf8(code,std::strlen(code),[](int cp){app.reference_text(cp);});app.reference_text(13);CHECK(!app.selected_seed_imported);
     uint64_t literal=0;CHECK(reference::seed_hash(code,literal));CHECK(app.start_selected_run({},false)&&app.game.world.run_seed==literal&&!app.game.world.seed_imported);
 }

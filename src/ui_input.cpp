@@ -160,7 +160,7 @@ void App::ui_action(UiAction action){
     case UiAction::RunRegion:if(character_select)selected_region=selected_region==reference::ActKind::Overgrowth?reference::ActKind::Underdocks:reference::ActKind::Overgrowth;break;
     case UiAction::RunSeed:case UiAction::RunSeedImport:
         if(character_select){
-            if(action==UiAction::RunSeedImport&&run_seed_editing){map_preview.importing=!map_preview.importing;map_preview.draft[0]=0;map_preview.error="";break;}
+            if(action==UiAction::RunSeedImport&&run_seed_editing){map_preview.importing=!map_preview.importing;map_preview.draft[0]=0;map_preview.overflow=false;map_preview.error="";break;}
             map_preview.open=true;run_seed_editing=true;map_preview.begin_edit();map_preview.importing=action==UiAction::RunSeedImport||selected_seed_imported;
             unsigned n=0;do{map_preview.draft[n]=selected_seed[n];}while(selected_seed[n++]);if(map_preview.importing&&!selected_seed_imported)map_preview.draft[0]=0;
         }break;

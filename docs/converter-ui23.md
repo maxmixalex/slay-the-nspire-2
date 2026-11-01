@@ -68,6 +68,31 @@ default English/Chinese conversion therefore avoids generating the other
 fourteen locale directories and their temporary glyph/text packs. Shared
 artwork and all source clips remain identical across language selections.
 
+## Long ASCII seed import codes
+
+The same executable can encode a complete original-game ASCII seed without
+converting resources or requiring the game files:
+
+```text
+nspire2-convert --encode-seed "the complete original seed"
+nspire2-convert --encode-seed-file seed.txt
+```
+
+The second form streams a text file and keeps its complete seed identity even
+when the text is longer than the calculator entry field. Both commands print
+`SEED64-` followed by sixteen hexadecimal digits. Enter that code through the
+calculator's explicit seed-code import mode. Ordinary seed entry continues to
+treat prefixes such as `raw:` and `SEED64:` as ordinary text. The encoder uses
+the pinned original game's ASCII casing, O/I normalization, whitespace trimming
+and xxHash64 rules; non-ASCII input is rejected explicitly. The code identifies
+the root seed; character, act, Ascension and unlock settings still select their
+normal gameplay rules.
+
+同一个转换器也能在没有原版文件的情况下，把完整 ASCII 种子或种子文本文件
+转换为 `SEED64-` 导入码。计算器端使用明确的种子码导入模式；普通种子输入
+仍按普通文字处理 `raw:`、`SEED64:` 等前缀。文件方式采用流式处理，保留
+完整长种子，非 ASCII 输入会明确报错。
+
 ## Animated artwork policy
 
 The full animated edition keeps every source sample, frame size and action

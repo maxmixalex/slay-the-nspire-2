@@ -8,7 +8,7 @@ struct MapPreview {
     reference::ReferenceMap map{};
     reference::ActSettings settings{};
     reference::QuotaTrace quota{};
-    bool open = false, generated = false, editing = false, importing = false;
+    bool open = false, generated = false, editing = false, importing = false, overflow = false;
     uint32_t seed_number = 1;
     int first_row = 0, selected = -1, editor_selection = SeedButtonCount - 1;
     // Preserve the existing bounded UTF-8 storage, including the terminator.

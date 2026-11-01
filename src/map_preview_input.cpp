@@ -3,13 +3,14 @@ namespace spire {
 void App::reference_text(int code) {
     pointer_cancel();
     if (map_preview.open && map_preview.editing) {
+        if(code==13&&map_preview.overflow){map_preview.error=content.language()==2?"输入过长。退格修改，或转换后导入种子码。":"Too long. Backspace to edit, or import a code.";return;}
         if(run_seed_editing&&code==13){
             char canonical[65]{};uint64_t imported=0;
             if(map_preview.importing&&!reference::parse_seed_code(map_preview.draft,imported)){
-                map_preview.error="Use SEED64- plus 16 hex digits.";return;
+                map_preview.error=content.language()==2?"输入 SEED64- 和 16 位十六进制数字。":"Use SEED64- plus 16 hex digits.";return;
             }
             if(!map_preview.importing&&!reference::canonicalize_seed(map_preview.draft,canonical,sizeof canonical)){
-                map_preview.error="Seed must fit in 64 UTF-8 bytes.";return;
+                map_preview.error=content.language()==2?"种子文本最多 64 字节；长种子请导入。":"Text: at most 64 UTF-8 bytes. Import long seeds.";return;
             }
             // NCustomRunScreen stores the entered text; StartRunLobby applies
             // SeedHelper only at departure. Whitespace-only is therefore an
@@ -20,6 +21,7 @@ void App::reference_text(int code) {
             map_preview.editing=map_preview.open=run_seed_editing=false;return;
         }
         map_preview.edit(code);
+        if(map_preview.overflow)map_preview.error=content.language()==2?"输入过长。退格修改，或转换后导入种子码。":"Too long. Backspace to edit, or import a code.";
         if(run_seed_editing&&!map_preview.editing){if(code==13){unsigned n=0;do{selected_seed[n]=map_preview.seed[n];}while(map_preview.seed[n++]);}run_seed_editing=false;map_preview.open=false;}
     }
 }
