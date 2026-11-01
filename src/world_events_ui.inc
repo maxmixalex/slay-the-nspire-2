@@ -88,6 +88,15 @@ static void native_ancient_screen(Canvas&c){
  // Orobas/Pael CPU lights follow their earlier independent GPU layers.
  // Vakuu's visible CPU lights precede its still-outstanding final sparkles.
  // Reduced resources hold each source entry/preprocessing pose, not time.
+ const uint32_t gpu_clock=reduced?0u:a.map_clock_ms-d.entered;
+ const unsigned gpu_aux=ancient_gpu_masks_ui23::AuxiliaryFirst;
+ if(e.id==OriginalEventId::Nonupeipe)ancient_gpu_masks::lights(c,gpu_aux,gpu_clock,false,0,5);
+ if(e.id==OriginalEventId::Vakuu){
+  // Source order: cinders, light3/light4, speck families, light5, CPU
+  // lights, sparkles. The still-pending moving families keep these slots.
+  ancient_gpu_masks::lights(c,gpu_aux,gpu_clock,true,5,2);
+  ancient_gpu_masks::lights(c,gpu_aux,gpu_clock,true,7,1);
+ }
  const bool darv=e.id==OriginalEventId::Darv;
  const unsigned light_mode=darv?2:e.id==OriginalEventId::Orobas?3:e.id==OriginalEventId::Pael?4:e.id==OriginalEventId::Vakuu?5:0;
  if(light_mode){
@@ -97,6 +106,8 @@ static void native_ancient_screen(Canvas&c){
   if(darv)fake_merchant::stars(c,clock,
       fake_merchant::hash(uint32_t(a.game.seed)^uint32_t(a.game.floor)*0x9e3779b9u^0x44415256u),true);
  }
+ if(e.id==OriginalEventId::Vakuu)ancient_gpu_masks::sparkles(c,gpu_aux,gpu_clock,
+   fake_merchant::hash(uint32_t(a.game.seed)^unsigned(a.game.floor)*0x9e3779b9u^d.entered^0x56414b55u));
  if(e.id==OriginalEventId::Tanx)tanx_scene::draw(
    c,reduced?0u:a.map_clock_ms-d.entered,reduced?0u:a.map_clock_ms,d.entered);
  if(reduced)ancient_still_store(c,background,d.entered);
