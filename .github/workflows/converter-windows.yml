@@ -18,7 +18,7 @@ on:
       - 'docs/converter-ui23.md'
       - 'requirements*.txt'
       - 'VERSION'
-      - 'config/converter-dependencies.json'
+      - 'config/**'
 
 permissions:
   contents: read
