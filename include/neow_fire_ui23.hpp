@@ -119,19 +119,47 @@ struct Shader {
   field=f;model.read(parameters);const unsigned time=clock%200000;
   for(unsigned i=0;i<4;++i)for(unsigned j=0;j<2;++j)pan[i][j]=int(int64_t(model.q[i*5+2+j])*time/16000);
   inverse=unsigned((uint64_t(1048576)<<24)/unsigned(model.q[31]-model.q[30]));
+  // The two authored models share unit/half-unit UV scales. Validate that
+  // pattern once; legacy/different valid tables retain the general equation.
+  const auto&q=model.q;const int scale=q[0];
+  if((scale==8388608||scale==16777216)&&q[1]==scale&&q[5]==scale&&q[6]==scale&&
+     q[4]==16777216&&q[9]==16777216&&q[10]==16777216&&q[11]==16777216&&
+     q[15]==16777216&&q[16]==16777216&&q[20]==16777216&&q[21]==33554432&&q[24]==16777216)
+   inverse|=0x80000000u|(scale==8388608?0x40000000u:0u);
+ }
+ unsigned alpha_unit(int u,int v)const{
+  using namespace ancient_fire_ui23;const auto&q=model.q;
+  int ar,ag,br,bg;field[1].sample_rg(u+pan[2][0],v+pan[2][1],true,ar,ag);field[2].sample_rg(u+pan[3][0],v+pan[3][1],true,br,bg);
+  int dx=scaled(ar,q[14])+scaled(br,q[19]),dy=scaled(ag,q[14])+scaled(bg,q[19]);
+  int mr,mg;field[3].sample_rg(u+(q[26]>>4),scaled(v,q[25])+(q[27]>>4),false,mr,mg);dx=product(dx,mr);dy=product(dy,mg);
+  const int base=field[2].sample(u+dx,v+dy,2,false);
+  // Unit-strength noise and the mask each lie in [0,Q20]. Monotonic
+  // bounds can prove the final smoothstep endpoint before remaining samples.
+  if(base*32<=q[30])return 0;
+  const int mask=1048576-field[2].sample(u+(q[22]>>4),2*(v-41943)+41943+(q[23]>>4),2,false);
+  if(product(1048576+mask,base)*16<=q[30])return 0;
+  if(product(mask,base)*16>=q[31])return 1048576;
+  const int nu=inverse&0x40000000u?u>>1:u,nv=inverse&0x40000000u?v>>1:v;
+  const int n1=field[0].sample(nu+pan[0][0],nv+pan[0][1],0,true);
+  if(product(n1+mask,base)*16<=q[30])return 0;
+  const int n2=field[0].sample(nu+pan[1][0],nv+pan[1][1],0,true);
+  const int strength=product(product(n1,n2)+mask,base)*16;
+  return smooth(strength,q[30],q[31],inverse&0x3fffffffu);
  }
  unsigned alpha(int u,int v)const{
+  if((inverse&0x80000000u)&&unsigned(u)<1048576u&&unsigned(v)<1048576u)return alpha_unit(u,v);
   using namespace ancient_fire_ui23;const auto&q=model.q;
   const int n1=scaled(field[0].sample(scaled(u,q[0])+pan[0][0],scaled(v,q[1])+pan[0][1],0,true),q[4]);
   const int n2=scaled(field[0].sample(scaled(u,q[5])+pan[1][0],scaled(v,q[6])+pan[1][1],0,true),q[9]);
   const int ax=scaled(u,q[10])+pan[2][0],ay=scaled(v,q[11])+pan[2][1],bx=scaled(u,q[15])+pan[3][0],by=scaled(v,q[16])+pan[3][1];
-  int dx=scaled(field[1].sample(ax,ay,0,true),q[14])+scaled(field[2].sample(bx,by,0,true),q[19]);
-  int dy=scaled(field[1].sample(ax,ay,1,true),q[14])+scaled(field[2].sample(bx,by,1,true),q[19]);
+  int ar,ag,br,bg;field[1].sample_rg(ax,ay,true,ar,ag);field[2].sample_rg(bx,by,true,br,bg);
+  int dx=scaled(ar,q[14])+scaled(br,q[19]);
+  int dy=scaled(ag,q[14])+scaled(bg,q[19]);
   const int mask=1048576-field[2].sample(scaled(u,q[20])+(q[22]>>4),scaled(v-41943,q[21])+41943+(q[23]>>4),2,false);
   const int mu=scaled(u,q[24])+(q[26]>>4),mv=scaled(v,q[25])+(q[27]>>4);
-  dx=product(dx,field[3].sample(mu,mv,0,false));dy=product(dy,field[3].sample(mu,mv,1,false));
+  int mr,mg;field[3].sample_rg(mu,mv,false,mr,mg);dx=product(dx,mr);dy=product(dy,mg);
   const int base=field[2].sample(u+dx,v+dy,2,false),strength=product(product(n1,n2)+mask,base)*16;
-  return smooth(strength,q[30],q[31],inverse);
+  return smooth(strength,q[30],q[31],inverse&0x3fffffffu);
  }
 };
 }

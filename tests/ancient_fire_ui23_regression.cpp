@@ -39,6 +39,23 @@ int main(){
   CHECK(std::abs(field.sample(u,v,0,repeat)-exact)<.51);
  }
  for(unsigned value=0;value<=255;++value){uint8_t byte=uint8_t(value);Field constant;constant.width=constant.height=constant.channels=1;constant.pages[0]=&byte;CHECK(std::abs(constant.sample(-100,200,0,true)-double(value)*1048576/255)<.51);}
+ // Exact pre-optimization integer oracle, separate from the floating source
+ // filter check. RGB texels deliberately straddle 128KiB cache pages.
+ Field rgb;rgb.width=257;rgb.height=300;rgb.channels=3;
+ std::array<uint8_t,2*PageBytes> colors{};
+ for(unsigned i=0;i<colors.size();++i)colors[i]=uint8_t((i*193u+(i>>7)*71u)&255);
+ rgb.pages[0]=colors.data();rgb.pages[1]=colors.data()+PageBytes;
+ auto original=[&](int u,int v,unsigned channel,bool repeat){
+  if(repeat){u=int(unsigned(u)&1048575u);v=int(unsigned(v)&1048575u);}else{u=bound(u,0,1048576);v=bound(v,0,1048576);}
+  const int px=u*int(rgb.width)-524288,py=v*int(rgb.height)-524288;
+  const int x=px>>20,y=py>>20;const unsigned fx=unsigned(px)&1048575u,fy=unsigned(py)&1048575u;
+  auto value=[&](int x,int y){if(repeat){x=(x+int(rgb.width))%int(rgb.width);y=(y+int(rgb.height))%int(rgb.height);}else{x=bound(x,0,int(rgb.width)-1);y=bound(y,0,int(rgb.height)-1);}return unsigned(colors[(y*rgb.width+x)*3+channel]);};
+  const unsigned a=value(x,y)*(1048576-fx)+value(x+1,y)*fx;
+  const unsigned b=value(x,y+1)*(1048576-fx)+value(x+1,y+1)*fx;
+  const unsigned q=unsigned((uint64_t(a)*(1048576-fy)+uint64_t(b)*fy+524288)>>20);
+  return int((uint64_t(q)*16843009u+2147483648u)>>32);
+ };
+ for(unsigned i=0;i<30000;++i){random=random*1664525u+1013904223u;const int u=int(random&0xffffff)-8388608;random=random*1664525u+1013904223u;const int v=int(random&0xffffff)-8388608;const bool repeat=i&1;int r,g;rgb.sample_rg(u,v,repeat,r,g);CHECK(r==original(u,v,0,repeat));CHECK(g==original(u,v,1,repeat));CHECK(rgb.sample(u,v,2,repeat)==original(u,v,2,repeat));}
  // Shader clock wraps independently of the body and remains defined at the
  // full uint32 clock boundary. Synthetic noise avoids source texture copies.
  uint8_t byte=127;Field fields[5];for(auto&f:fields){f.width=f.height=1;f.channels=3;static const uint8_t rgb[]={127,127,127};f.pages[0]=rgb;}

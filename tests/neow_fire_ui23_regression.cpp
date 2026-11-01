@@ -36,5 +36,22 @@ int main(){
  uint8_t rgb[]={127,127,127};spire::ancient_fire_ui23::Field fields[4];for(auto&f:fields){f.width=f.height=1;f.channels=3;f.pages[0]=rgb;}
  auto*m=p+ModelsAt;for(unsigned i=0;i<4;++i){put32(m+i*20,1<<24);put32(m+i*20+4,1<<24);put32(m+i*20+16,1<<24);}for(unsigned i:{20u,21u,24u,25u})put32(m+i*4,1<<24);
  Shader shader;for(uint32_t clock:{0u,33u,17999u,18000u,199999u,200000u,0xffffffffu}){shader.bind(fields,m,clock);for(int u=-100000;u<=1100000;u+=33333)for(int v=-50000;v<=1100000;v+=55555)CHECK(shader.alpha(u,v)<=1048576);}
+ // Eligible unit/half-unit models must exactly match the general equation,
+ // including zero/saturated bounds and UVs outside the specialized domain.
+ std::array<uint8_t,257*300*3> texture{};uint32_t rng=73;
+ for(auto&v:texture){rng=rng*1664525u+1013904223u;v=uint8_t(rng>>24);}
+ for(auto&f:fields){f.width=257;f.height=300;f.channels=3;f.pages[0]=texture.data();f.pages[1]=texture.data()+131072;}
+ for(unsigned half=0;half<2;++half){
+  for(unsigned i:{0u,1u,5u,6u})put32(m+i*4,half?8388608:16777216);
+  put32(m+21*4,33554432);put32(m+14*4,1593836);put32(m+19*4,1677722);put32(m+25*4,20132659);
+  put32(m+30*4,4781507);put32(m+31*4,16609444);
+  for(uint32_t clock:{0u,33u,199999u,200000u,0xffffffffu}){
+   shader.bind(fields,m,clock);CHECK(shader.inverse&0x80000000u);Shader general=shader;general.inverse&=0x3fffffffu;
+   for(unsigned i=0;i<2000;++i){rng=rng*1664525u+1013904223u;int u=int(rng&2097151u)-524288;rng=rng*1664525u+1013904223u;int v=int(rng&2097151u)-524288;CHECK(shader.alpha(u,v)==general.alpha(u,v));}
+  }
+ }
+ // Every condition of the fast-path proof is checked once at bind, and an
+ // otherwise valid different scale must fall back instead of being rounded.
+ for(unsigned i:{0u,1u,4u,5u,6u,9u,10u,11u,15u,16u,20u,21u,24u}){const unsigned old=spire::ancient_fire_ui23::dword(m+i*4);put32(m+i*4,old+1);shader.bind(fields,m,0);CHECK(!(shader.inverse&0x80000000u));put32(m+i*4,old);}
  std::printf("Neow fire: %u checks, mask=%zu bytes, poll=%u\n",checks,sizeof(Mask),polls);
 }

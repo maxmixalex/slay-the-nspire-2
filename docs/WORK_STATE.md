@@ -1,4 +1,61 @@
-# UI23 Tez fire and bounded temporal storage stage — final acceptance open
+# UI23 complete-resource candidate — public replay and performance acceptance open
+
+As of 2026-11-01, the complete 7229/60294 Ancient resource catalog includes the
+previously missing Tez and Neow fire families. The source-bound bilingual
+candidate, final launcher, licenses, instructions and compact manifest total
+69,890,968 bytes when fully extracted: 109,032 bytes below the 70,000,000-byte
+limit. This is an independently verified installation candidate, not a final
+release or proof that the ongoing public all-language run has finished.
+
+Actual 64 MiB Firebird execution of runtime 78930d5 with the complete 7229 full
+resources measures Neow at 4.09125 emulated FPS, 243.8275 ms mean render time and
+zero warm resource I/O. This fails the intended performance goal; a faithful
+runtime optimization is in progress. Nonupeipe measures 11.03037 emulated FPS,
+90.1956 ms render time and zero warm I/O. Random selection with runtime 78930d5
+and the older 7227 resources measures 27.4527 emulated FPS with zero warm I/O.
+The completed final-7229 Random interval measures 823 frames in 30 seconds,
+27.420697 emulated FPS and 35.823409 ms render time, again with zero warm I/O;
+its frame rate differs by -0.1166% from the same-runtime older-resource baseline.
+This closes that selection scene's resource-compression comparison, not an
+all-scene performance claim. These are paired emulator measurements on the
+supplied 64 MiB firmware, not physical calculator measurements. No physical-
+device result is available.
+
+This source checkpoint adds exact paired fire sampling, validated unit/half UV
+specialization and monotonic alpha early-outs without increasing cache or heap
+capacity. At 13 clocks, all 26 complete RGB565 outputs match the prior runtime
+byte for byte. The ARM926 shader kernel uses 30.84097% fewer instructions over
+6,144 matching outputs; this is not an emulator or physical frame-rate result.
+The new production allocation and paired guest Neow interval remain pending.
+
+A separate final-7229 Vantom guest run reaches the resource-loading failure
+screen after continuing the initial combat idle for 20 seconds, even without
+pressing Menu. Its cumulative resource-failure counter is one; whether that
+increment belongs to this operation is still being checked against the saved
+pre-state. The matching final physical files and a fresh native production
+EndTurn replay pass 910 frames, but this does not close the guest failure.
+The actual saved State, prior locale/scene transitions and four-file deferred
+resource-cache path are under targeted investigation. Gameplay acceptance
+therefore remains blocked as well as Neow performance.
+
+Runtime, production ELF, Windows/Linux standalone binaries and the running
+public original-folder conversion are bound to 78930d5. Its CI passes all 174
+native suites, 595 conversion tests plus 56 tooling tests, the portable gate,
+and the actual Windows build and clean-environment frozen self-test, including
+the genuine linked ARM decoder oracle. Windows original-folder conversion has
+not been executed. The Linux public full/all16 graph is running; its reduced
+all16 and default-bilingual follow-up runs have not completed. Private-tail and
+self-test results must not be relabeled as those whole-graph completions.
+
+Narrative corrections are separately bound to 920f7c5, and installation/package
+documentation to f4f94c1. Neither checkpoint changes or relabels the tested
+78930d5 executable. Final main and optional locales must come from one matching
+public conversion/common/profile set, followed by whole-archive size, exact
+resource readback and final gameplay/performance acceptance. Existing save data
+must be preserved. The records below describe earlier checkpoints and retain
+their original, narrower evidence scope.
+
+# Historical checkpoint: UI23 Tez fire and bounded temporal storage stage
 
 The complete 237 Tez fire instances are implemented in source order with the
 90 lights and 74 cinder emitters. Their geometry follows the room/body clock;
