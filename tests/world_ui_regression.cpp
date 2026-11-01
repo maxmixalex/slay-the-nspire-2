@@ -733,7 +733,8 @@ static void deferred_enemy_values(){
   // still kills the living companion and starts its actual visible track.
   enemy_visual_fight(EncounterId::NibbitsWeak,Character::Necrobinder);a.fast_mode=fast!=0;
   a.game.expansion.osty_hp=a.game.expansion.osty_max_hp=9;a.last_osty_hp=9;
-  CHECK(a.debug_command("die"));CHECK(a.game.phase==Phase::Dead&&a.game.expansion.osty_hp==0);
+  {UiCoreObserver observer(a);player_kill(a.game,true);resolve_pending(a.game);}
+  CHECK(a.game.phase==Phase::Dead&&a.game.expansion.osty_hp==0);
   a.animation=a.combat_feedback.end_at+1;a.render();
   CHECK(a.osty_motion.clip==AnimOstyDie);
   const uint32_t owner_death_start=a.osty_motion.start;
