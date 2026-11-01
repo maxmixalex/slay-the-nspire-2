@@ -52,7 +52,7 @@ struct Continue {
 };
 }
 struct TitleMenuPresentation {
- title_menu_motion::Label labels[6]{};
+ title_menu_motion::Label labels[7]{};
  title_menu_motion::Reticle reticle{};
  title_menu_motion::Continue run_info{};
  uint8_t rows=0;

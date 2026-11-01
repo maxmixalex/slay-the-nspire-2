@@ -1,14 +1,15 @@
 #include "timeline.hpp"
+#include "reference_rng.hpp"
 #include "core.hpp"
 namespace spire {
 #include "timeline_data.inc"
 void timeline_initialize(TimelineProgress&p,bool legacy){
     for(unsigned i=0;i<EpochCount;++i){p.states[i]=EpochState::None;p.obtained_at[i]=0;}
-    p.score=0;p.ancients_seen=p.characters_finished=0;
+    p.score=0;p.ancients_seen=p.characters_known=0;
     p.flags=TimelineInitialized|(legacy?TimelineLegacyAccess:0);
 }
 bool timeline_valid(const TimelineProgress&p){
-    if(p.flags&~3u||p.characters_finished&~31u)return false;
+    if(p.flags&~3u||p.characters_known&~31u)return false;
     for(unsigned i=0;i<EpochCount;++i)if(unsigned(p.states[i])>5||(unsigned(p.states[i])<3&&p.obtained_at[i]))return false;
     return true;
 }
@@ -79,4 +80,12 @@ Epoch timeline_character_epoch(unsigned character,unsigned chapter){
 bool timeline_character_allowed(const TimelineUnlocks&u,unsigned character){
     return character<5&&(character==0||u.has(timeline_character_epoch(character,1)));
 }
+uint8_t timeline_first_act(const TimelineUnlocks&unlocks,uint8_t seen,reference::Random&rng){
+    // ActModel.GetRandomList forces an unlocked, undiscovered non-default
+    // act without drawing. The two other pinned act buckets have one item.
+    const bool underdocks=unlocks.has(Epoch::Underdocks);
+    const uint8_t first=underdocks&&!(seen&2)?1:uint8_t(rng.below(underdocks?2:1));
+    (void)rng.below(1);(void)rng.below(1);return first;
+}
+
 } // namespace spire

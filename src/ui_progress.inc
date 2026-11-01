@@ -59,7 +59,7 @@ void App::restore_progress(){
     if(progress_loaded)return;
     clear_ui_progress(progress);
     const bool loaded=callbacks.load_progress&&callbacks.load_progress(progress);
-    if(!loaded)clear_ui_progress(progress);
+    if(!loaded){clear_ui_progress(progress);timeline_initialize(progress.timeline,true);}
     // A browser profile_info callback is asynchronously cached. Reuse the
     // ordinary current-run read below instead of scanning profiles at boot.
     // Existing metadata, including NSH1-7, always retains its decoded flags.
@@ -280,6 +280,7 @@ static bool progress_end_battle(App&a,const State&s,bool won){
         auto&stat=a.progress.encounters[encounter][index];
         if(won)stat.wins=progress_add(stat.wins,1);else stat.losses=progress_add(stat.losses,1);
     }
+    if(won)a.timeline_win_battle(s);
     r.finished_battle=r.last_battle;a.progress_dirty=true;return true;
 }
 void App::sync_progress(){
@@ -357,6 +358,7 @@ void App::finish_progress(bool abandoned,const State*source){
     }else if(r.mode==unsigned(RunMode::Standard)){stats.losses=progress_add(stats.losses,1);stats.current_streak=0;progress.current_streak=0;}
     stats.play_seconds=progress_add(stats.play_seconds,r.seconds);stats.gold_gained=progress_add(stats.gold_gained,r.gold_gained);
     stats.floors_climbed=progress_add(stats.floors_climbed,r.floor);
+    timeline_finish_run(s);
     if(callbacks.history_archive&&!archive_history_run(r))message(content.language()==2?"历史记录已保留，将重试归档。":"History remains in recent records; archive will retry.");
     progress.history_oldest_archived=0;
     progress.history[progress.next_history]=r;progress.next_history=uint8_t((progress.next_history+1)%UiHistoryCapacity);
@@ -387,3 +389,5 @@ const UiFloorHistory* App::current_floor_history(unsigned act,unsigned point)con
     const auto&r=progress.current;if(!progress_matches(r,game))return nullptr;
     for(unsigned i=0;i<r.floor_count;++i)if(r.floors[i].act==act&&r.floors[i].point==point)return &r.floors[i];return nullptr;
 }
+
+#include "timeline_progress.inc"

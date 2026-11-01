@@ -11,10 +11,10 @@ enum class WorldRestOption : uint8_t { Heal,Smith,Hatch,Dig,Lift,Kindle,Cook,Clo
 
 // The caller creates the character/deck first. A seed set with world_set_seed
 // is retained; otherwise the run's numeric seed initializes named streams.
-// first_region accepts only Overgrowth or Underdocks. Timeline/unlock state is
-// outside the supported single-player scope, so all pinned solo pools are open.
+// first_region accepts only Overgrowth or Underdocks. Normal UI creation freezes
+// the revealed Timeline mask before this function prepares all content pools.
 bool world_begin_run(State&, reference::ActKind first_region=reference::ActKind::Overgrowth,
-                     unsigned ascension=0);
+                     unsigned ascension=0,const uint8_t*seen_encounters=nullptr);
 // Route availability is independent of opening the map. An eligible current
 // room remains active until an actual destination is submitted.
 bool world_can_travel(const State&);

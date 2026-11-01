@@ -30,7 +30,7 @@ bool w_before_treasure(RelicId id){switch(id){
  case WorldRelicWhiteBeastStatue:case WorldRelicWhiteStar:return true;
  default:return false;}}
 bool w_allowed(const State& s,RelicId id,bool shop){
- return id<WorldRelicKinds&&(!w_before_treasure(id)||world_total_floor(s)<41)
+ return id<WorldRelicKinds&&timeline_model_allowed(s.world.unlocks,TimelineKind::Relic,id)&&(!w_before_treasure(id)||world_total_floor(s)<41)
   &&(!shop||!(world_relic_definitions[id].flags&2));
 }
 bool w_used(const WorldRelicInstance& r){switch(r.id){
@@ -57,6 +57,7 @@ void w_bags(State& s){auto& w=s.world_relics;if(w.bags_ready)return;
   unsigned total=w_count(WSharedRelicPool)+(b?cpn:0);
   for(unsigned i=0;i<total;i++){
    RelicId id=i<w_count(WSharedRelicPool)?WSharedRelicPool[i]:cp[i-w_count(WSharedRelicPool)];
+   if(!timeline_model_allowed(s.world.unlocks,TimelineKind::Relic,id))continue;
    unsigned rarity=world_relic_definitions[id].rarity;if(rarity<2||rarity>5)continue;
    unsigned r=rarity-2;auto& n=w.bag_sizes[b][r];if(!n)order[used++]=r;
    if(n>=WorldRelicBagSize){w_error(s);return;}w.bags[b][r][n++]=id;

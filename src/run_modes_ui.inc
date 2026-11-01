@@ -83,7 +83,9 @@ static void singleplayer_screen(Canvas&c){
   // This source paragraph has extra glyph tracking, unlike modifier prose.
   const char*description=frontend_text(a,"main_menu_ui",key,"");
   profile_text_box(c,description,x+8,MenuTop+102,76,70,{8,0,rgb(255,246,226),64},true,true,transform);
-  c.action(x,MenuTop,MenuWidth,MenuHeight,actions[i]);
+  const bool enabled=a.timeline_mode_available(i==1?RunMode::Daily:i==2?RunMode::Custom:RunMode::Standard);
+  if(!enabled){c.dim(left,MenuTop,width,MenuHeight,150);profile_text_box(c,a.content.language()==2?"未解锁":"Locked",x+4,MenuTop+85,84,20,{10,0,rgb(239,200,81),64},true,false);}
+  c.action(x,MenuTop,MenuWidth,MenuHeight,actions[i],enabled);
  }
  native_original_back(c,a.run_mode.started);
 }

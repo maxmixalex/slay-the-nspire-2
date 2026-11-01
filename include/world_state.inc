@@ -14,6 +14,8 @@ struct WorldActRooms {
 };
 struct WorldState {
     uint8_t active=0,rng_ready=0,act_index=0,ascension=0;
+    TimelineUnlocks unlocks{};
+    uint8_t first_run=0; // frozen NumberOfRuns == 0 for original tutorial routing
     uint16_t total_floor=0,rooms_completed=0,combat_count=0;
     int16_t map_column=0,map_row=0;
     uint64_t run_seed=0;

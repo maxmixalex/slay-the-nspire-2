@@ -5,6 +5,7 @@
 #include "world_relics.hpp"
 #include "run_options_state.hpp"
 #include "run_history_event.hpp"
+#include "timeline.hpp"
 
 namespace spire {
 using CardKind=uint16_t;
@@ -189,7 +190,7 @@ struct State {
     PowerOrderState power_sequence{};
     uint16_t test_subject_kills=0;
 };
-constexpr unsigned LegacySaveVersion=15,CustomSaveVersion=16,SaveVersion=17,SaveCapacity=262144;
+constexpr unsigned LegacySaveVersion=15,CustomSaveVersion=16,SaveVersion=18,SaveCapacity=262144;
 void power_order_set(State&,unsigned actor,unsigned id,bool present,unsigned instance=0);
 void power_order_clear_actor(State&,unsigned actor);
 void power_order_prune(State&);

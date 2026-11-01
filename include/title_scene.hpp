@@ -37,12 +37,12 @@ inline GlowSample glow_sample(uint32_t milliseconds){
 // LCD adaptation: keep the source menu under the logo, with readable rows.
 constexpr int MenuCenter=111,MenuMinimumHitWidth=96,MenuVisualPadding=12;
 constexpr int MenuFont=10,MenuRowHeight=17;
-constexpr int menu_y(int rows,int row){return 206-rows*MenuRowHeight+row*MenuRowHeight;}
+constexpr int menu_height(int rows,int=0){return rows>5?15:MenuRowHeight;}
+constexpr int menu_y(int rows,int row){return 206-rows*menu_height(rows)+row*menu_height(rows);}
 constexpr int menu_top(int rows){return menu_y(rows,0);}
-constexpr int menu_height(int,int){return MenuRowHeight;}
-constexpr int menu_center_y(int rows,int row){return menu_y(rows,row)+MenuRowHeight/2;}
+constexpr int menu_center_y(int rows,int row){return menu_y(rows,row)+menu_height(rows)/2;}
 constexpr int menu_source_y(int rows,int row=0){return menu_y(rows,row)*21/4;}
-static_assert(TextY+TextHeight+8<=menu_top(5),"The saved-run menu clears the complete logo");
+static_assert(TextY+TextHeight+8<=menu_top(6),"The saved-run menu clears the complete logo");
 struct Rect {int x,y,w,h;};
 inline Rect menu_bounds(int rows,int widest_label){
     // Reserve the largest focused label and both moving source reticles,
@@ -51,7 +51,7 @@ inline Rect menu_bounds(int rows,int widest_label){
     const int width=visual>MenuMinimumHitWidth?visual:MenuMinimumHitWidth;
     const int left=MenuCenter-width/2>2?MenuCenter-width/2:2;
     const int right=MenuCenter+(width+1)/2<318?MenuCenter+(width+1)/2:318;
-    return {left,menu_top(rows),right-left,rows*MenuRowHeight};
+    return {left,menu_top(rows),right-left,rows*menu_height(rows)};
 }
 constexpr int ContinueWidth=120,ContinueMinimumWidth=108,ContinueGap=4;
 constexpr int continue_y(int rows){return menu_y(rows,0)-24;}

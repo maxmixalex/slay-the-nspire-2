@@ -1034,3 +1034,25 @@ or calculator allocation/performance claim is made for this foundation.
 ## UI24 Tezcatara material sampling — source checkpoint
 
 The first formal full-resource guest check found Tezcatara still at 6.372 FPS / 156.408 ms mean render, with all 192 measured frames over 100 ms and zero I/O. Neow's improvements must not be generalized to this different procedural-fire route. This stage shares a 33×33 UV material grid per three source shaders, recomputed at the live shader clock, across all 237 source fire nodes. It interpolates only flame inner color/alpha, keeps all 506 geometry frames and particles, and borrows 13,068 bytes from the existing lexically scoped foreground scratch. Map/renderer lease and nesting regression cases are included. Appearance and formal guest improvement are pending; no frame-equivalence claim applies to this approximation.
+
+## UI24 Timeline normal-flow integration — validation checkpoint
+
+Normal title navigation now opens the chronological Epoch list, inspection,
+localized source conditions/story/unlocks and explicit reveal. New profiles
+start from the original empty state. NSHB appends actual obtain timestamps,
+score and independent observed character/Ancient facts; old profiles retain
+an explicit compatibility access flag without invented Epoch dates or scores.
+Canonical v18 freezes two reveal-mask words and the original first-run rule;
+older saves retain their historical all-open pools. New UI runs gate characters,
+Random, Custom/Daily, cards, relics, potions, events and Ancients. Daily keeps the
+source all-unlocked policy. Standard first-room/discovery ordering is applied
+after randomized room generation and before the A10 second boss draw.
+
+The pinned source also shows that Random is hidden until every character is
+available, uses ModelDb's five-character order, and is drawn after the three
+act choices. Unseen unlocked Underdocks skips its bucket's random draw.
+Private source-derived startup vectors, full integration regressions, strict
+ARM allocation and actual calculator Timeline acceptance remain pending.
+Short syntax checks pass the modified production sources; an incorrect test
+assertion treating the Epoch result as bool was corrected before this commit.
+The previously verified 297-check foundation remains historical evidence only.

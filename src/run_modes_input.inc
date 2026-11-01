@@ -1,5 +1,7 @@
 void App::open_run_menu(RunMenu screen){
     if(!title||has_save)return;
+    restore_progress();
+    if((screen==RunMenu::Daily&&!timeline_mode_available(RunMode::Daily))||(screen==RunMenu::Custom&&!timeline_mode_available(RunMode::Custom)))return;
     run_mode.screen=screen;run_mode.started=map_clock_ms;run_mode.focus=-1;
     character_select=false;character_random=false;practice_entry=false;progress_page_scroll.reset();pointer_cancel();character_select_presentation.reset();
     if(screen==RunMenu::Singleplayer){compendium_selection=0;for(auto&motion:compendium_motion)motion={};return;}
@@ -22,6 +24,8 @@ void App::run_modifier_select(unsigned index){
 }
 bool App::start_selected_run(const RunOptions&options,bool animated){
     if(character_departure.active()||!valid_run_options(options))return false;
+    restore_progress();
+    if(!practice_entry&&(!timeline_mode_available(options.mode)||!timeline_character_available(character_random?CharacterKinds:unsigned(selected_character))))return false;
     if(!practice_entry&&!seen_ftue(FtueId::AcceptTutorials)&&open_ftue(FtueId::AcceptTutorials)){ftue.embark=options;character_departure.animated_ftue=animated;return false;}
     uint32_t seed=0;char canonical[65]{};bool string_seed=!practice_entry&&*selected_seed;
     const bool imported=string_seed&&selected_seed_imported;
@@ -34,19 +38,19 @@ bool App::start_selected_run(const RunOptions&options,bool animated){
     uint64_t run_hash=seed;
     if(string_seed){if(!(imported?reference::parse_seed_code(selected_seed,run_hash):reference::seed_hash(canonical,run_hash))){message("种子无效");return false;}seed=uint32_t(run_hash)^uint32_t(run_hash>>32);if(!seed)seed=1;}
     const bool random=character_random;
-    if(random){
-        // StartRunLobby resolves Random after the three ActModel choices,
-        // from the independent act_selection stream and ModelDb order.
-        // This port exposes both first acts and all five characters.
+    if(!practice_entry){
         reference::Random rng;rng.named(run_hash,"act_selection");
-        (void)rng.below(2);(void)rng.below(1);(void)rng.below(1);
-        selected_character=RunModeCharacters[rng.below(CharacterKinds)];character_random=false;
+        const auto unlocks=options.mode==RunMode::Daily?TimelineUnlocks{}:timeline_unlocks(progress.timeline);
+        selected_region=reference::ActKind(timeline_first_act(unlocks,progress.discovered_acts,rng));
+        if(random){selected_character=RunModeCharacters[rng.below(CharacterKinds)];character_random=false;}
+        if(options.mode==RunMode::Standard&&selected_ascension>timeline_max_ascension())selected_ascension=uint8_t(timeline_max_ascension());
     }
     forget_run_checkpoint();new_run(game,seed,practice_entry,selected_character);
     if(!practice_entry){
-        game.run_options=options;
+        game.run_options=options;timeline_prepare_run(game);
         if(string_seed&&!(imported?world_import_seed(game,selected_seed):world_set_seed_raw(game,canonical))){message("种子无效");return false;}
-        if(!world_begin_run(game,selected_region,selected_ascension)){message("Could not start the run.");return false;}
+        uint8_t seen[(EncounterKinds+7)/8]{};for(unsigned i=0;i<EncounterKinds;++i)if(progress.encounters[i][0].seen)seen[i/8]|=uint8_t(1u<<(i%8));
+        if(!world_begin_run(game,selected_region,selected_ascension,options.mode==RunMode::Standard?seen:nullptr)){message("Could not start the run.");return false;}
     }
     if(animated){
         character_departure.phase=1;character_departure.character=uint8_t(selected_character);
@@ -82,7 +86,7 @@ void App::advance_character_departure(){
 }
 bool App::run_modes_action(UiAction action){
     if(action==UiAction::OpenStandardRun){
-        if(title&&run_mode.screen==RunMenu::Singleplayer){run_mode.screen=RunMenu::Closed;run_mode.pending={};practice_entry=false;character_select=true;selected_seed[0]=0;selected_seed_imported=false;selected_region=reference::ActKind::Overgrowth;}return true;
+        if(title&&run_mode.screen==RunMenu::Singleplayer){run_mode.screen=RunMenu::Closed;run_mode.pending={};practice_entry=false;character_select=true;selected_character=Character::Ironclad;selected_ascension=0;selected_seed[0]=0;selected_seed_imported=false;selected_region=reference::ActKind::Overgrowth;}return true;
     }
     if(action==UiAction::OpenCustomRun||action==UiAction::OpenDailyRun){
         if(title&&run_mode.screen==RunMenu::Singleplayer)open_run_menu(action==UiAction::OpenCustomRun?RunMenu::Custom:RunMenu::Daily);return true;

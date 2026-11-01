@@ -2,6 +2,7 @@
 #include <stdint.h>
 
 namespace spire {
+namespace reference {struct Random;}
 // Source EpochState, not the unrelated four-value NEpochSlot visual state.
 enum class EpochState:uint8_t {None,NoSlot,NotObtained,ObtainedNoSlot,Obtained,Revealed};
 enum class Epoch:uint8_t {
@@ -23,7 +24,7 @@ struct TimelineProgress {
     uint32_t score=0;
     EpochState states[EpochCount]{};
     // Compatibility access does not assert any historic obtain/reveal date.
-    uint8_t flags=0,ancients_seen=0,characters_finished=0;
+    uint8_t flags=0,ancients_seen=0,characters_known=0;
 };
 static_assert(EpochCount==57&&sizeof(TimelineProgress)==292,"Bounded source epoch progress");
 enum class TimelineKind:uint8_t {None,Card,Relic,Potion,Event};
@@ -47,6 +48,7 @@ unsigned timeline_next_threshold(const TimelineProgress&);
 // Original score bar grants at most one epoch per completed standard run.
 Epoch timeline_add_score(TimelineProgress&,uint32_t score,uint32_t now);
 bool timeline_model_allowed(const TimelineUnlocks&,TimelineKind,unsigned model);
+uint8_t timeline_first_act(const TimelineUnlocks&,uint8_t discovered_acts,reference::Random&);
 bool timeline_character_allowed(const TimelineUnlocks&,unsigned character);
 Epoch timeline_character_epoch(unsigned character,unsigned chapter);
 } // namespace spire
