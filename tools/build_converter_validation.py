@@ -14,7 +14,10 @@ from converter_arm_validation import ROOT,sha256,source_inventory,self_test
 
 def build(output,clang,linker):
     output=Path(output).resolve();output.mkdir(parents=True,exist_ok=True)
-    clang=Path(clang).resolve(strict=True);linker=Path(linker).resolve(strict=True)
+    # LLVM's multicall linker selects its flavor from argv[0]. Preserve
+    # ld.lld's invocation name while resolving only to verify the target.
+    clang=Path(clang).absolute();linker=Path(linker).absolute()
+    clang.resolve(strict=True);linker.resolve(strict=True)
     before=source_inventory();compiler=subprocess.check_output([str(clang),'--version'],text=True).strip()
     if 'clang version 18.' not in compiler and 'clang version 18.' not in compiler.lower():
         raise ValueError('The production ARM validation helper requires LLVM18')
