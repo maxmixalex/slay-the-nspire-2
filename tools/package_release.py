@@ -42,8 +42,11 @@ def readme(info):
         elif published == actual:
             sources += f'{label} source: https://github.com/maxmixalex/slay-the-nspire-2/tree/{published}\n'
         else:
+            relation = info.get(key + '_source_relation', 'equivalent_tree')
+            source_label = (f'Published equivalent {label.lower()} source' if relation == 'equivalent_tree'
+                            else 'Published converter implementation/source reference (not an equivalent whole source tree)')
             sources += (f'Actual {label.lower()} build checkpoint (local): {actual}\n'
-                        f'Published equivalent {label.lower()} source: '
+                        f'{source_label}: '
                         f'https://github.com/maxmixalex/slay-the-nspire-2/tree/{published}\n')
     if not info.get('runtime_source_ref') and not info.get('resource_source_ref') and info.get('local_checkpoints'):
         sources += 'These source checkpoints have not been published to GitHub.\n'
@@ -98,8 +101,12 @@ See {ledger_en} for visual, native/emulator evidence and remaining differences.
     return f"""Slay the Nspire 2 — nSpire {info['version']} (StS II v0.111.0)
 
 安装 / Installation
-首次安装：将 nSpire2.tns 与 data、state 文件夹一起复制到计算器上的游戏目录，打开 nSpire2.tns。
-Copy nSpire2.tns and the data/state folders into the game's calculator directory.
+完整动画版（animated）与精简版（no-animations）两个主包任选其一，不要叠加安装。
+解压所选ZIP后，将根目录中的 nSpire2.tns 与 data 文件夹复制到计算器上同一个自选游戏目录；首次安装也可复制空 state 文件夹，随后打开该目录中的 nSpire2.tns。
+可选语言包中，从 animated/data 或 no-animations/data 取与主包对应的语言文件，放入游戏目录的 data；不要把可选包的两个顶层目录整体复制进去。
+Choose one main archive, animated or no-animations. Do not combine the two editions.
+Extract it and copy the root nSpire2.tns and data directory into the same calculator game directory of your choice. For a fresh installation, the empty state directory may also be copied.
+From the optional-language archive, take only the desired files from the matching animated/data or no-animations/data directory and place them in the game's data directory.
 Open nSpire2.tns. A color TI-Nspire with Ndless is required.
 {animation}
 
@@ -188,7 +195,8 @@ def main():
     p.add_argument('--runtime-checkpoint', required=True)
     p.add_argument('--resource-checkpoint', required=True)
     p.add_argument('--runtime-source-ref', help='Verified published equivalent runtime source; actual build checkpoint is retained (calculator packages only)')
-    p.add_argument('--resource-source-ref', help='Verified published equivalent converter source; actual producer checkpoint is retained (calculator packages only)')
+    p.add_argument('--resource-source-ref', help='Published converter source reference; actual producer checkpoint is retained (calculator packages only)')
+    p.add_argument('--resource-source-relation', choices=('equivalent_tree','published_implementation_reference'), default='equivalent_tree', help='Whether the published converter reference is an exact whole-tree equivalent')
     p.add_argument('--documentation-ref', help='Optional independent published documentation commit; does not relabel runtime or resources')
     p.add_argument('--stage', default='ui22', help='Release suffix; validated against its complete content profile')
     args = p.parse_args()
@@ -252,6 +260,7 @@ def main():
                 runtime_checkpoint=args.runtime_checkpoint,
                 resource_checkpoint=args.resource_checkpoint,
                 runtime_source_ref=runtime_source_ref, resource_source_ref=resource_source_ref,
+                resource_source_relation=args.resource_source_relation,
                 developer_console=True, installation_layout="data/state",multipart_artwork=multipart,
                 locale_storage='NSL3' if args.eng.read_bytes()[:4]==b'NSL3' else 'NSL1/NSL2',
                 calculator_only=args.calculator_only,

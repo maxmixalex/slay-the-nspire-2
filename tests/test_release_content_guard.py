@@ -272,6 +272,41 @@ class ReleaseContentGuardTest(unittest.TestCase):
         struct.pack_into('<I',data,12,len(data))
         with self.assertRaisesRegex(ValueError,'exact opaque copy'):guard.validate_release_content(data,'ui22')
 
+    def test_reduced_actor_allows_only_exact_retained_primary_alias(self):
+        original, at = fixture(7212)
+        # The71-frame death keeps its first pose through frame33. A table
+        # may name image0 directly when stable image1 aliases that image.
+        start = struct.unpack_from('<H', original, at['native'][1757] + 24)[0]
+        picture_at = at['native'][1757] + 2 * start
+        def validate(data):
+            source = tiles.PackView(data, 7212, versions=(46,))
+            return guard.validate_ui22(source, source.image_raw)
+
+        self.assertTrue(validate(original)['complete'])
+        stable_reduced = bytearray(original)
+        struct.pack_into('<I', stable_reduced, 36, 0x3146414e)
+        self.assertTrue(validate(stable_reduced)['complete'])
+        struct.pack_into('<H', original, picture_at, 0)
+        with self.assertRaisesRegex(ValueError, 'primary frame identity'):
+            validate(original)
+        struct.pack_into('<I', original, 36, 0x3146414e)
+        self.assertTrue(validate(original)['complete'])
+        # Identical pixels do not authorize another pose or another slot.
+        for picture in (2, 34, 70, 99):
+            data = bytearray(original)
+            struct.pack_into('<H', data, picture_at, picture)
+            with self.subTest(picture=picture), self.assertRaisesRegex(ValueError, 'primary frame identity'):
+                validate(data)
+        data = bytearray(original)
+        struct.pack_into('<H', data, picture_at, 65535)
+        with self.assertRaisesRegex(ValueError, 'outside its pixel catalog'):
+            validate(data)
+        # Even the correct retained ID must alias the stable frame exactly.
+        data = bytearray(original)
+        data[56:72] = data[40 + 40000 * 16:56 + 40000 * 16]
+        with self.assertRaisesRegex(ValueError, 'primary frame identity'):
+            validate(data)
+
 
 if __name__ == '__main__':
     unittest.main()

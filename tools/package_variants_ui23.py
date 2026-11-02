@@ -92,6 +92,10 @@ def build(args):
         'no-animations': getattr(args, 'no_animations_resource_source_ref', None) or
             (getattr(args, 'resource_source_ref', None) if resource_checkpoints['no-animations'] == resource_checkpoints['animated'] else None) or
             resource_checkpoints['no-animations']}
+    resource_source_relations = {
+        'animated': getattr(args, 'resource_source_relation', 'equivalent_tree'),
+        'no-animations': getattr(args, 'no_animations_resource_source_relation', None) or
+            getattr(args, 'resource_source_relation', 'equivalent_tree')}
     resources = {name: inspect_resources(path, name, require_timeline=int(stage[2:]) >= 24)
                  for name, path in directories.items()}
     if resources['animated']['resource_format'] != resources['no-animations']['resource_format']:
@@ -118,6 +122,7 @@ def build(args):
                        "--resource-checkpoint", resource_checkpoints[profile],
                        "--runtime-source-ref", runtime_source_ref,
                        "--resource-source-ref", resource_source_refs[profile],
+                       "--resource-source-relation", resource_source_relations[profile],
                        "--stage", stage + "-" + profile]
             if documentation_ref:
                 command += ["--documentation-ref", documentation_ref]
@@ -179,6 +184,7 @@ def build(args):
               "resource_source_ref": resource_source_refs['animated'],
               "resource_checkpoints": resource_checkpoints,
               "resource_source_refs": resource_source_refs,
+              "resource_source_relations": resource_source_relations,
               "maximum_animated_bytes": args.maximum_animated_bytes,
               "animated_storage_target_met": meets_budget,
               "physical_device_tested": False,
@@ -200,11 +206,13 @@ def main():
     parser.add_argument("--resource-checkpoint", required=True)
     parser.add_argument('--stage', default='ui23', help='Delivery label, for example ui24; defaults to the historical ui23 label')
     parser.add_argument('--runtime-source-ref', help='Verified published equivalent runtime source, separate from the actual build checkpoint')
-    parser.add_argument('--resource-source-ref', help='Verified published equivalent converter source, separate from the actual producer checkpoint')
+    parser.add_argument('--resource-source-ref', help='Published converter reference, separate from the actual producer checkpoint')
+    parser.add_argument('--resource-source-relation', choices=('equivalent_tree','published_implementation_reference'), default='equivalent_tree')
     parser.add_argument("--documentation-ref", help="Optional independent documentation commit for both installers")
     parser.add_argument("--no-animations-resource-checkpoint",
                         help="Record a different verified source checkpoint for the reduced resources")
-    parser.add_argument('--no-animations-resource-source-ref', help='Published equivalent source for a separately built reduced converter')
+    parser.add_argument('--no-animations-resource-source-ref', help='Published source for a separately built reduced converter')
+    parser.add_argument('--no-animations-resource-source-relation', choices=('equivalent_tree','published_implementation_reference'))
     parser.add_argument("--maximum-animated-bytes", type=int, default=70_000_000)
     parser.add_argument("--allow-over-budget-candidate", action="store_true",
                         help="Produce explicitly over-budget evaluation artifacts; never marks the target met")

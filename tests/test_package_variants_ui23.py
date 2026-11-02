@@ -60,7 +60,7 @@ class LocaleEditionGate(unittest.TestCase):
 
 
 class ThreeArchiveDelivery(unittest.TestCase):
-    def assemble(self, root, maximum=70_000_000):
+    def assemble(self, root, maximum=70_000_000, relation="equivalent_tree"):
         launcher = root / 'launcher.tns'
         launcher.write_bytes(b'launcher fixture')
         for profile in package.PROFILES:
@@ -73,7 +73,8 @@ class ThreeArchiveDelivery(unittest.TestCase):
             output=root / 'output', stage='ui24', launcher=launcher,
             animated=root / 'animated', no_animations=root / 'no-animations',
             runtime_checkpoint='a' * 40, resource_checkpoint='b' * 40,
-            no_animations_resource_checkpoint=None,
+            no_animations_resource_checkpoint=None, resource_source_relation=relation,
+            no_animations_resource_source_relation='equivalent_tree',
             maximum_animated_bytes=maximum, allow_over_budget_candidate=False)
         invocations = []
 
@@ -81,6 +82,8 @@ class ThreeArchiveDelivery(unittest.TestCase):
             self.assertTrue(check)
             stage = command[command.index('--stage') + 1]
             invocations.append(stage)
+            recorded_relation = command[command.index('--resource-source-relation') + 1]
+            self.assertEqual(recorded_relation, relation if stage == 'ui24-animated' else 'equivalent_tree')
             destination = Path(command[command.index('--output') + 1])
             destination.mkdir()
             with zipfile.ZipFile(destination / 'fixture-calculator.zip', 'w') as archive:
@@ -115,6 +118,12 @@ class ThreeArchiveDelivery(unittest.TestCase):
                         if code not in ('eng', 'zhs'):
                             self.assertEqual(archive.read(f'{profile}/data/nSpire2.{code}.dat.tns'),
                                              (profile + ':' + code).encode())
+
+    def test_published_reference_does_not_become_whole_tree_equivalence(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            result, _ = self.assemble(Path(temporary), relation='published_implementation_reference')
+            self.assertEqual(result['resource_source_relations'], {
+                'animated': 'published_implementation_reference', 'no-animations': 'equivalent_tree'})
 
     def test_complete_archive_budget_counts_documentation(self):
         with tempfile.TemporaryDirectory() as temporary:

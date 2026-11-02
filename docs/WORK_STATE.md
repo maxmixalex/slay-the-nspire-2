@@ -1377,3 +1377,29 @@ The complete source recipe assertion includes `neow-static-field46` between
 `neow-fire46` and `card-afflictions46`, including its module/cache binding. All
 five Ancient catalog/recipe tests pass; no production converter/runtime change
 is included in this fixture-only correction.
+
+## UI24 final reduced validation and archive alias gate
+
+The corrected NAF1 reduced family has now passed ordinary USB readback for all
+11 resource files plus the final c814 launcher, followed by continuous ordinary
+ZHS and English Timeline/detail, Silent70HP Continue, NWFv3 Neow, save/exit and
+OS return. A separate declared console-prepared combat session closes the
+console before the actual Strike and Offering controls: retained Strike poses
+show no broken/placeholder texture, owner death animates Osty and both corpses
+remain at10.1s, then normal statistics/title/OS navigation succeeds. Reduced
+continuous blue-arc animation is not claimed; the full c814 arc is independently
+visible. Original failed NAF1 startup and two incorrect navigation attempts are
+retained and excluded. A100-frame exact decoded bridge covers clips28,35,1757;
+all1783 clip metadata records remain identical through the corrected tail build.
+
+The first actual three-archive execution passed full content but rejected the
+reduced slash table's valid retained-source ID representation. The standard
+reducer uses stable frame IDs with aliased descriptors; the private slash repair
+uses the selected source ID directly for nine non-retained frames. The release
+guard now admits only explicit NAF1, the same clip's exact sample_map selection,
+and an identical complete descriptor. Full and retained-frame identity rules
+remain unchanged; whole-pose registration and timing checks still run in the
+complete reduced validate_profile. Ten release-guard tests and seven packaging
+tests pass, including both legal representations and rejection of full remaps,
+wrong/early samples, out-of-range and cross-clip IDs, and mismatched geometry.
+No runtime, producer pixel algorithm, resource, pool or schema changes here.
