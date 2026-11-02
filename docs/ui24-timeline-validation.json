@@ -52,8 +52,8 @@
   "full_guest": {
     "status": "passed_with_named_scope",
     "resource_producer_actual": "39d28d60273a62a722a2f1b0efeaf3083d8b7272",
-    "resource_producer_public": "6ea8bdfc504fdceb2363ce66854ec1990ad0ece4",
-    "resource_kind": "unified candidate, not final standalone producer release",
+    "resource_producer_public": "0e31aea16cec96fc9ed9480efe6ee5cd64477abe",
+    "resource_kind": "Accepted original-derived ALL16 tail; separate from a standalone cold converter output",
     "main11_bytes": 68052158,
     "usb_readback_equal": true,
     "resource_files": [
@@ -279,20 +279,203 @@
         ],
         "timeline_window": "After actual second Standard run abandonment and actual Silent selection/start; earlier initial-chain receipt records score10 before that abandonment."
       }
-    }
+    },
+    "historical_recorded_resource_public": "6ea8bdfc504fdceb2363ce66854ec1990ad0ece4",
+    "published_source_relation": "published_implementation_reference"
   },
   "reduced_guest": {
-    "status": "failed_candidate_producer_correction_pending",
-    "observed_error": "RESOURCE LOADING FAILED",
-    "cause": "NWF rewrite cleared NAF1 before locale publication. The reduced Neow image dimensions require that profile marker.",
-    "eng_zhs_native_direct_and_stream_open": false,
-    "private_four_byte_diagnostic_restores_all_four_opens": true,
-    "diagnostic_copy_installed": false
+    "status": "passed_corrected_original_derived_tail_with_ordinary_usb_and_continuous_guest",
+    "receipt": {
+      "name": "corrected-reduced-acceptance.json",
+      "bytes": 34573,
+      "sha256": "cb480a0ce64aac78b4ed28e813e8a17b12be44f7fe2d60e6fae433b43cffcd10"
+    },
+    "runtime_actual": "c8142bd99423a19e82da7aae9b4e33de4ad7c939",
+    "runtime_public": "73e1213810bc28672202a3ca83d87fe32aad149c",
+    "resource_producer_actual": "cd0d5a7dfbef4238abe1da701c82b7874f9a7b14",
+    "resource_producer_public": "4d75c55f7561711ced681806d924f24c65ca4959",
+    "published_source_relation": "equivalent_tree",
+    "production_route": "Actual corrected all16 tail production from original-derived unbaked NAF1 slash input. Not a standalone cold CLI run and not a hand-patched failed baked output.",
+    "bilingual_data_files": 11,
+    "bilingual_data_bytes": 27878523,
+    "all16_data_files": 25,
+    "all16_data_bytes": 42163250,
+    "ordinary_usb_files": [
+      {
+        "name": "nSpire2.bosses.dat.tns",
+        "bytes": 2223872,
+        "sha256": "fc2c8df36ae0ee6e69bbae7104f5c137e65f44a6a3e8506aa4ad27526ab85b3e",
+        "ordinary_usb_readback_equal": true
+      },
+      {
+        "name": "nSpire2.cards.dat.tns",
+        "bytes": 2684854,
+        "sha256": "e335cb34a694d829dd7a436a38af51dd06a69109eaba0cfadf18c6ef339fc1f3",
+        "ordinary_usb_readback_equal": true
+      },
+      {
+        "name": "nSpire2.characters.dat.tns",
+        "bytes": 259498,
+        "sha256": "b1393bb7eea6594f2ac1fcca4a0aba2c0f84f2d65e7833cea3c45e8c0af78ab1",
+        "ordinary_usb_readback_equal": true
+      },
+      {
+        "name": "nSpire2.dat.tns",
+        "bytes": 2128,
+        "sha256": "e91f9f7fae23b06c3ef25c56d24ebf494569b63c91f12dca6744e176d07d7d1c",
+        "ordinary_usb_readback_equal": true
+      },
+      {
+        "name": "nSpire2.effects.dat.tns",
+        "bytes": 882188,
+        "sha256": "d1b811d6e616857c0437235ee7dd944944a615d965b635ecf6c6228d51fadb1b",
+        "ordinary_usb_readback_equal": true
+      },
+      {
+        "name": "nSpire2.enemies.dat.tns",
+        "bytes": 6689820,
+        "sha256": "4d95095f2dbcbe5c3f238064942373764da732f3d370701c3d71375fdf783f44",
+        "ordinary_usb_readback_equal": true
+      },
+      {
+        "name": "nSpire2.eng.dat.tns",
+        "bytes": 506626,
+        "sha256": "0ad90b8890cd429b68640c200a0c79559db52afeabc53b4ab5e5f2ea2efe1439",
+        "ordinary_usb_readback_equal": true
+      },
+      {
+        "name": "nSpire2.interface.dat.tns",
+        "bytes": 8761692,
+        "sha256": "afa900891cc1dd9e5de2e280c10cf4aaed04d227621d128b77bca2ba89b4740f",
+        "ordinary_usb_readback_equal": true
+      },
+      {
+        "name": "nSpire2.rooms.dat.tns",
+        "bytes": 1779784,
+        "sha256": "700417d82ff30ce5cee8e33f966dfafb29d7e747f0f25438a5bf51c14cdd373f",
+        "ordinary_usb_readback_equal": true
+      },
+      {
+        "name": "nSpire2.shared.dat.tns",
+        "bytes": 105906,
+        "sha256": "bf42f994bd071865aae4ec1802c65e4bd2d51b9a471d11e3fd6c896249560245",
+        "ordinary_usb_readback_equal": true
+      },
+      {
+        "name": "nSpire2.zhs.dat.tns",
+        "bytes": 3982155,
+        "sha256": "90191c9a0715b4f6a2a16cfc524cf6bce48438c0f430cf4a4c10428efd6b5afc",
+        "ordinary_usb_readback_equal": true
+      },
+      {
+        "name": "nSpire2.tns",
+        "bytes": 1736530,
+        "sha256": "1c455b5f630dee02750f0b54767850770d05e6643ec670427bf535312447eeb1",
+        "ordinary_usb_readback_equal": true
+      }
+    ],
+    "scenarios": [
+      {
+        "name": "Simplified Chinese Timeline and continuation",
+        "passed": true,
+        "journal": "ui24-corrected-reduced-zhs-9e731fc768e4",
+        "actions": [
+          "LaunchUI24; use profile2 normal Timeline menu",
+          "Read list2/57 score20, actual Neow detail and scroll",
+          "ContinueSilent70HP into stable NWFv3 Neow",
+          "Save to title and quit to OS"
+        ],
+        "console_used": false
+      },
+      {
+        "name": "English Timeline and continuation",
+        "passed": true,
+        "journal": "ui24-corrected-reduced-eng-bcefd43aa685",
+        "actions": [
+          "Switch language through normal Settings",
+          "Open visible Timeline row with ordinary touchpad; read English list/detail/unlock text/scroll",
+          "ContinueSilent70HP at Neow",
+          "Save to title and quit to OS"
+        ],
+        "console_used": false
+      },
+      {
+        "name": "Reduced essential Strike and owner/Osty death",
+        "passed": true,
+        "journal": "ui24-corrected-reduced-actions-227d2d1413f8",
+        "normal_start": "From OS, choose legacy profile, abandon previous run, Standard Necrobinder then Neow66HP.",
+        "fixture": "Built-in console: fight NIBBITS_NORMAL, add STRIKE_NECROBINDER; close console and play slot6 normally. Then add OFFERING and damage65 target0, close console and play normally at1HP.",
+        "observed": [
+          "OrdinaryStrike applies6damage; retained essential body poses visibly progress.",
+          "No white SLASH placeholder, broken texture or missing-block artifact is observed in the captured Strike sequence.",
+          "Offering kills1HP owner; previously livingOsty plays death; both bodies persist inGameOver at10.1s capture.",
+          "Normal Confirm reaches run statistics, then title and Quit returns toOS."
+        ],
+        "blue_arc_scope": "Transient continuous blue arc is not observed/claimed for reduced three-pose sampling [0,5,11]. This is distinct from a broken-texture finding. Actual full c814 blue arc is separately visible in final-c814-fine-strike-0462.ppm.",
+        "console_closed_during_actions": true
+      }
+    ],
+    "save_persistence": {
+      "character": 1,
+      "hp": 70,
+      "mode": 0,
+      "frozen_mask": [
+        "00000000",
+        "00020002"
+      ],
+      "profile_score": 20,
+      "obtained_epochs": [
+        {
+          "id": 33,
+          "state": 5,
+          "obtained_at": 1793555828
+        },
+        {
+          "id": 49,
+          "state": 5,
+          "obtained_at": 1793555872
+        }
+      ],
+      "files": [
+        {
+          "name": "corrected-reduced-silent-save.p2.tns",
+          "bytes": 6923,
+          "sha256": "ccc5028a60fc0d030d543737deba0477f05a0494232920e53b2e4ef57dbaf067"
+        },
+        {
+          "name": "corrected-reduced-silent-progress.p2.tns",
+          "bytes": 724,
+          "sha256": "6b70419a419b95f54402321d036b6382d6e4554246ffdce83963ae1b58168843"
+        },
+        {
+          "name": "corrected-reduced-language.tns",
+          "bytes": 8,
+          "sha256": "92548d7c08d72ad8d5f89897b1f1dcf172a86fde51a0caf9335ad469ae8ddafa"
+        }
+      ]
+    },
+    "actor_resource_bridge": {
+      "name": "corrected-reduced-action-resource-bridge.json",
+      "bytes": 27723,
+      "sha256": "7113e90e83f8d06c0210e6636c0082019a35e699d2ca8d3a932fe8afeecb2a3a"
+    },
+    "entire_first_defeat_chain_replayed_in_reduced": false,
+    "recovered_from_persisted_timeline_evidence_archive": true
   },
   "release_gates": {
     "final_standalone_resources_accepted": false,
-    "final_three_zip_assembled": false,
-    "complete_animated_installation_limit_bytes": 70000000
+    "final_three_zip_assembled": true,
+    "complete_animated_installation_limit_bytes": 70000000,
+    "prebuilt_full_and_reduced_families_accepted": true,
+    "complete_animated_zip_extracted_bytes": 69869324,
+    "complete_animated_zip_headroom_bytes": 130676,
+    "matching_optional_locales_per_family": 14,
+    "independent_zip_audit": {
+      "name": "final-three-zip-independent-audit.json",
+      "bytes": 17398,
+      "sha256": "839bfaf131b3a3c78eaf70eecf7664860c9588cf0896045682cbb18e81a7930e"
+    },
+    "standalone_scope": "New complete cold/warm conversions and final output bridges remain pending; prebuilt acceptance does not substitute for them"
   },
   "retained_limits": [
     "LCD chronological list/scrolling text instead of spatial board and portrait reveal staging",
@@ -334,5 +517,13 @@
       }
     ],
     "active_snapshot_restore_failure_excluded": true
+  },
+  "historical_failed_reduced_candidate": {
+    "status": "historical_failed_candidate_not_used_as_corrected_output",
+    "observed_error": "RESOURCE LOADING FAILED",
+    "cause": "NWF rewrite cleared NAF1 before locale publication. The reduced Neow image dimensions require that profile marker.",
+    "eng_zhs_native_direct_and_stream_open": false,
+    "private_four_byte_diagnostic_restores_all_four_opens": true,
+    "diagnostic_copy_installed": false
   }
 }

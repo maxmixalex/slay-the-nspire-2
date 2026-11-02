@@ -8,21 +8,50 @@ installed Python, .NET SDK, or C++ compiler on the player's computer.
 
 ## Quick start / 快速使用
 
-Run the desktop converter in your original game folder. These three commands
-create the default bilingual animated edition, the exact-color reduced edition,
-and an animated edition with all sixteen languages, respectively:
+The supported original release is **v0.111.0 / 41cef1ea**. Put the downloaded
+desktop converter in the original game directory and open a terminal there.
+That directory must contain `SlayTheSpire2.pck`, `release_info.json`, and the
+original `sts2.dll` either directly or in its `data_sts2_*` directory. The game
+executable is never run.
 
-将桌面转换器放在原版游戏目录中运行。Windows 可直接双击 EXE 执行默认
-转换；在 PowerShell 中将下方程序名写成 `./nspire2-convert.exe`，Linux
-则写成 `./nspire2-convert`。
-以下三条命令分别生成中英双语完整动画版、保留必要动作姿势的无动画版、
-以及包含全部 16 种语言的完整动画版：
+Choose the command for the edition you want. The examples create bilingual
+animated, bilingual reduced, all-language animated and all-language reduced
+output, respectively. If producing several editions, run them sequentially;
+these examples keep their output directories separate.
+
+将下载的桌面转换器放在上述原版游戏目录中，并在该目录打开终端。Windows
+可直接双击 `nspire2-convert-ui24.exe` 执行默认中英双语转换。
+以下每组转换命令分别生成中英双语完整动画版、中英双语精简版、全部 16 种语言
+的完整动画版和全部 16 种语言的精简版。按需选择；若要生成多种版本，请依次
+运行，等待前一条完成。这些示例分别写入不同的输出目录。
+
+Windows PowerShell:
 
 ```powershell
-.\nspire2-convert.exe
-.\nspire2-convert.exe --no-animations --output .\nSpire2-converted-no-animations
-.\nspire2-convert.exe --languages all --output .\nSpire2-converted-all-languages
+.\nspire2-convert-ui24.exe
+.\nspire2-convert-ui24.exe --no-animations
+.\nspire2-convert-ui24.exe --languages all --output .\nSpire2-converted-all-languages
+.\nspire2-convert-ui24.exe --no-animations --languages all --output .\nSpire2-converted-no-animations-all-languages
 ```
+
+Linux: run `chmod` once after downloading, then choose a conversion command.
+Linux 下载后先执行一次 `chmod`，再选择所需转换命令：
+
+```bash
+chmod +x ./nspire2-convert-ui24-linux
+./nspire2-convert-ui24-linux
+./nspire2-convert-ui24-linux --no-animations
+./nspire2-convert-ui24-linux --languages all --output ./nSpire2-converted-all-languages
+./nspire2-convert-ui24-linux --no-animations --languages all --output ./nSpire2-converted-no-animations-all-languages
+```
+
+Without `--output`, results are written inside the original game directory:
+`nSpire2-converted/data` for animated and
+`nSpire2-converted-no-animations/data` for reduced. Source-built bundles use
+the upstream names `nspire2-convert.exe` and `nspire2-convert`; substitute the
+appropriate filename if using one of those builds.
+未指定 `--output` 时，默认输出位于原版目录中的上述文件夹。自行从源码打包的
+上游文件名为 `nspire2-convert.exe` 和 `nspire2-convert`，使用时相应替换命令中的文件名。
 
 The calculator detects the animation profile from the generated data. Both
 profiles use the same launcher. The desktop converter is a separate download
@@ -46,19 +75,16 @@ prebuilt optional-language folders match the provided prebuilt game packages.
 Python、.NET SDK 或 C++ 编译器。这是打包后的完整转换流程，**并非 C++
 重写版**。原版游戏素材不包含在转换器中，需读取你本机的原版安装。
 
-The supported original release is **v0.111.0 / 41cef1ea**. Put the executable in
-the original game directory and run:
+A different game location can be selected explicitly. In PowerShell:
 
-```text
-nspire2-convert
+```powershell
+.\nspire2-convert-ui24.exe --game "PATH TO ORIGINAL GAME" --output "PATH TO OUTPUT"
 ```
 
-The directory must contain `SlayTheSpire2.pck`, `release_info.json`, and the
-original `sts2.dll` either directly or in its `data_sts2_*` directory. The game
-executable is never run. A different game location can be selected explicitly:
+On Linux:
 
-```text
-nspire2-convert --game "PATH TO ORIGINAL GAME" --output "PATH TO OUTPUT"
+```bash
+./nspire2-convert-ui24-linux --game "PATH TO ORIGINAL GAME" --output "PATH TO OUTPUT"
 ```
 
 English and Simplified Chinese are the default output. Use `--languages all`
@@ -73,10 +99,13 @@ artwork and all source clips remain identical across language selections.
 The same executable can encode a complete original-game ASCII seed without
 converting resources or requiring the game files:
 
-```text
-nspire2-convert --encode-seed "the complete original seed"
-nspire2-convert --encode-seed-file seed.txt
+```powershell
+.\nspire2-convert-ui24.exe --encode-seed "the complete original seed"
+.\nspire2-convert-ui24.exe --encode-seed-file .\seed.txt
 ```
+
+On Linux, use `./nspire2-convert-ui24-linux` with the same options, for example
+`./nspire2-convert-ui24-linux --encode-seed-file seed.txt`.
 
 The second form streams a text file and keeps its complete seed identity even
 when the text is longer than the calculator entry field. Both commands print
@@ -95,8 +124,13 @@ normal gameplay rules.
 
 ## Animated artwork policy
 
-The full animated edition keeps every source sample, frame size and action
-clock. Its inherited actor color policy uses bounded RGB565 reduction and at most four
+The full animated edition keeps the port's established source sample counts,
+individual frame sizes and action clocks. Actors are rasterized at their
+displayed density, then stored as cropped registered pieces, rather than fitted
+into one fixed small sprite size. The UI24 material and Ancient-effect repairs
+do not further downscale those actor rasters or remove their samples. This does
+not imply that the sampled calculator animation contains every frame rendered
+by the original PC engine. Its inherited actor color policy uses bounded RGB565 reduction and at most four
 alpha units of error for animated actors. Character-selection artwork uses a
 separate policy that preserves dark channel values; Ironclad, Defect and
 Regent selection art retains exact alpha and only reduces the green
@@ -128,9 +162,11 @@ has been measured.
 
 ## Reduced actor animation profile
 
-```text
-nspire2-convert --no-animations
+```powershell
+.\nspire2-convert-ui24.exe --no-animations
 ```
+
+On Linux, use `./nspire2-convert-ui24-linux --no-animations`.
 
 The default reduced output is `nSpire2-converted-no-animations`, separate from
 the animated output. An explicit output folder containing language files that
@@ -174,19 +210,44 @@ unrelated packaging or runtime code can require reassembling a stage while
 retaining its unchanged, expensive original-frame samples.
 
 The default work directory is a stable directory under the operating system's
-temporary directory. The converter releases owned intermediate packs and
-sampling scratch after their final successful consumer. It keeps diagnostic
+temporary directory, named from the resolved original-game directory path.
+Changing `--languages` or `--no-animations` does not select a different work
+directory. The same game path and temporary root therefore find the same
+available cache automatically; `--work` is optional for normal sequential
+reuse. Matching receipts and inputs still determine which stages are reusable.
+Moving the game, changing the temporary root or having the system remove it
+can require conversion again. The converter releases owned intermediate packs and
+sampling scratch after their final successful or verified consumer. This includes
+the positional work directories of fresh actor dicing, codec45, final quality,
+sparse conversion and literal-context retuning. Shared light-sampling data stays
+available until its last reader. It keeps diagnostic
 receipts and selected expensive recovery boundaries, including the source
 language catalog and the artwork before profile-specific scene work. An
 interrupted stage keeps its required inputs, and a later run verifies its
 available boundary before rebuilding missing dependencies. Existing legacy
 work directories are preserved; reclamation applies only to directories owned
-by the new lifecycle manifest. Use a new `--work PATH` for the smaller working
-set, or `--keep-intermediates` for developer inspection of every generation.
+by the lifecycle manifest. The collector does not retroactively claim a
+pre-existing directory that an older version failed to register. Use a new
+`--work PATH` to apply the corrected ownership tracking from the beginning,
+or `--keep-intermediates` for developer inspection of every generation. A later
+default run can reclaim previously registered scratch after verifying its
+consumers, without rerunning the resource transformations.
+The success summary prints the actual workspace path and sampled retained
+logical and allocated bytes. Recovery boundaries can be large; this is not a
+promise that the directory contains only small receipts.
 Animated and reduced runs can reuse the same
 work directory sequentially; never run two conversions against that directory
 at the same time. Use separate output directories to retain both profiles.
 The converter keeps these inputs separate from the final output and never modifies the original game installation's files.
+
+After the converter has exited and you have preserved the final output and its
+`converter-receipt.json`, you may manually remove the dedicated work directory
+printed in the success summary if you no longer need its resume/reuse data.
+If you supplied `--work`, that directory must be dedicated to this conversion
+and contain no unrelated user files. Remove only that work directory, not the
+system temporary directory, original game directory or final output. There is
+no cleanup command-line flag. A later conversion rebuilds any required stages
+whose retained data was removed.
 
 Conversion uses at most two worker processes for independent sampling jobs and
 one native numerical thread inside each worker. `--workers 1` selects one
@@ -195,17 +256,36 @@ resolution, action clocks or language coverage. The packaged `--self-test`
 starts two actual interpreter workers, checks their numerical environment and
 shared locks, and verifies that their temporary files can be removed.
 
-默认工作目录位于系统临时目录，名称与原版安装路径绑定。同一命令再次运行时，
+默认工作目录位于系统临时目录，名称与解析后的原版安装路径绑定，切换
+`--languages` 或 `--no-animations` 不会改变该目录。原版位置和临时目录不变时，
+可自动找到保留的缓存，无须额外指定 `--work`；具体阶段仍须通过身份和内容核对。
+同一命令再次运行时，
 程序会核对并复用已完成的阶段；失败或中断的阶段不会被标记为完成。已被后续
-阶段用完的大型临时包会自动清理，保留诊断记录和部分较昂贵的恢复边界。若系统
+阶段用完且已登记为本程序所有的临时包和采样目录会自动清理，保留诊断记录和
+部分较昂贵的恢复边界。这些恢复数据仍可能较大。旧版本未登记的既存目录不会
+被事后认领并删除；可用新的 `--work PATH` 从头启用修正后的登记和回收。
+成功摘要会打印实际工作目录以及采样到的保留字节数，便于复用和管理。若系统
 已清空临时目录，下次会重新转换。完整动画版和精简版可顺序复用同一工作目录，
 但应写入不同输出目录。可用 `--work PATH` 指定其他磁盘的工作目录；
-`--workers 1` 可降低并发内存占用。默认无需手动清理每个阶段的文件。
+`--workers 1` 可降低并发内存占用。
+
+转换器进程退出、最终输出与其中的 `converter-receipt.json` 已保留后，若不再
+需要续跑或复用缓存，可手动删除成功摘要中显示的专用工作目录。若自行指定了
+`--work`，该目录应专门用于转换，不能包含其他用户文件。仅删除该工作目录，
+不要删除整个系统临时目录、原版游戏目录或最终输出。程序没有清理命令行参数；
+下次转换会重新构建所需但已删除的阶段数据。
 
 `receipts/pipeline.json` records complete pipeline elapsed time, converted and
 reused stages, reclaimed bytes, and measured work-directory logical and
 allocated-byte peaks. Space is sampled every half second and at stage
 boundaries, so this is an observed peak rather than a mathematical maximum.
+Allocated bytes use filesystem `st_blocks` when available. Without that field,
+including on Windows, the compatible counter estimates by rounding each unique
+file's logical size to 512 bytes. `allocation_bytes_estimated`,
+`allocation_measurement` and the printed `estimated allocated bytes` label make
+that distinction explicit; this fallback does not measure filesystem allocation
+granularity. These counters cover the workspace, not frozen-executable extraction
+or every other temporary directory on the computer.
 The final converter receipt includes that summary; an individual stage
 `elapsed_seconds` is not the total conversion time.
 

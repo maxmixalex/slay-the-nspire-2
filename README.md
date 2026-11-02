@@ -6,6 +6,13 @@ The full-animation English/Simplified-Chinese installation has a hard **70,000,0
 
 Current source, resource identities and acceptance status are recorded in [WORK_STATE.md](docs/WORK_STATE.md), [Timeline](docs/ui24-timeline.md), [Necrobinder/Osty repairs](docs/ui24-necrobinder-osty.md), [Ancient performance](docs/ui24-ancient-performance.md), [ASCII seeds](docs/seed-ascii-ui24.md), [continuous card materials](docs/ui23-continuous-card-materials.md), and [paged history](docs/ui23-history-archive.md). Native process timings and ARM instruction counts are diagnostic evidence; Firebird guest-clock measurements and physical-handheld measurements are distinct. Earlier results below retain their historical identities.
 
+The accepted full bilingual ZIP expands to **69,869,324 bytes including instructions
+and licenses**, leaving 130,676 bytes below the installation limit. Its ordinary
+launcher allocates **22,287,844 bytes**, leaving 3,172 bytes below the unchanged
+formal cap. The [UI24 release record](docs/ui24-release-validation.md) distinguishes
+these verified calculator packages from the separately measured standalone
+converter, source checkpoints and remaining validation work.
+
 **Audio, multiplayer and hosted services are not implemented.** This is an unfinished-feature statement, not a user waiver. Timeline obtain/reveal state, score and unlocks are connected to normal UI and saves; source Early Access placeholders remain unavailable. Original UI fidelity, animation and single-player content breadth remain in scope.
 
 ## Active 0.1.0 development
@@ -102,25 +109,42 @@ formal ARM allocation ceiling remains 22,291,016 bytes.
 
 ### Convert your own game installation
 
-Place the matching standalone `nspire2-convert.exe` (Windows) or
-`nspire2-convert` (Linux) in the original Slay the Spire 2 game directory and run
-it. It locates the PCK, release information and managed game assembly itself.
+Place the downloaded standalone `nspire2-convert-ui24.exe` (Windows) or
+`nspire2-convert-ui24-linux` (Linux) in the original Slay the Spire 2 game
+directory and open a terminal there. It locates the PCK, release information
+and managed game assembly itself.
 The standalone builds contain their required Python, .NET and sampling tools;
 users do not need to install those runtimes separately.
 The converter still uses Python internally; no native C++ rewrite has been completed.
 
-```text
-nspire2-convert
-nspire2-convert --no-animations
-nspire2-convert --languages all
-nspire2-convert --no-animations --languages all
+Run the command for the desired edition. If producing several editions, run
+them sequentially; these examples keep each output in a separate directory.
+Windows PowerShell:
+
+```powershell
+.\nspire2-convert-ui24.exe
+.\nspire2-convert-ui24.exe --no-animations
+.\nspire2-convert-ui24.exe --languages all --output .\nSpire2-converted-all-languages
+.\nspire2-convert-ui24.exe --no-animations --languages all --output .\nSpire2-converted-no-animations-all-languages
 ```
 
-In PowerShell, use `./nspire2-convert.exe`; on Linux, use
-`./nspire2-convert`. The default languages are English and Simplified Chinese.
-Normal output is `nSpire2-converted`; the reduced-actor edition defaults to
-`nSpire2-converted-no-animations`. `--game`, `--output`, `--work` and `--workers`
-provide explicit locations and worker control when needed.
+Linux (make the downloaded file executable once, then choose a conversion):
+
+```bash
+chmod +x ./nspire2-convert-ui24-linux
+./nspire2-convert-ui24-linux
+./nspire2-convert-ui24-linux --no-animations
+./nspire2-convert-ui24-linux --languages all --output ./nSpire2-converted-all-languages
+./nspire2-convert-ui24-linux --no-animations --languages all --output ./nSpire2-converted-no-animations-all-languages
+```
+
+Windows users can also double-click the EXE for the default bilingual
+conversion. Self-built bundles use the upstream filenames `nspire2-convert.exe`
+and `nspire2-convert`; substitute that filename when using a source build.
+The default languages are English and Simplified Chinese. Normal output is
+`nSpire2-converted` inside the original game directory; the reduced-actor edition
+defaults to `nSpire2-converted-no-animations` there. `--game`, `--output`, `--work`
+and `--workers` provide explicit locations and worker control when needed.
 The converter writes `data/` and `converter-receipt.json`; it does not produce
 a launcher. Use these resources with the matching UI24 `nSpire2.tns` supplied
 separately. Its embedded ARM ELF validates decoding during conversion.
@@ -132,13 +156,17 @@ hold their entry pose. All optional language files must
 come from the same conversion as the installed common/artwork set; independently
 converted data must not be mixed with the prebuilt optional-language ZIP.
 
-For an ASCII seed longer than the calculator's64-byte text field, run
-`nspire2-convert --encode-seed-file seed.txt` (or `--encode-seed "complete text"`).
+For an ASCII seed longer than the calculator's 64-byte text field, run
+`.\nspire2-convert-ui24.exe --encode-seed-file .\seed.txt` in PowerShell, or
+`./nspire2-convert-ui24-linux --encode-seed-file seed.txt` on Linux.
+Either executable also accepts `--encode-seed "complete text"`.
 In Custom Run, open the seed field, use Up/Down to select **Import seed code**,
 and enter the resulting `SEED64-` code. The complete input identity is preserved;
 ordinary text mode keeps the original text/hash semantics. This is a port field
 capacity, not an OS seed limit. See [ASCII seed handling](docs/seed-ascii-ui24.md)
 for original-reference coverage and exact import behavior.
+The separate 2,048-point capacity limits optional hand-drawn map annotations;
+it does not limit generated map rooms and is not an operating-system limit.
 
 Current verification and exact checkpoints are recorded in the
 [historical UI22 delivery report](docs/ui22-storage-performance.md) and
@@ -274,7 +302,15 @@ Fresh X11 host processes loaded and identically re-saved v14 ordinary **88,764-b
 
 The final **12,910,778-byte NSP2/13** pack contains 2,638 images, 7,215 glyph records and 38 clips. All 1,622 old image payloads, 6,265 old glyph payloads and earlier card/string/auxiliary/clip records are preserved. It fits the **13 MiB** resource buffer with 720,710 bytes remaining. ARM produces a **284,458-byte** launcher with **16,174,284-byte** static allocation, below the unchanged 16 MiB packer ceiling. WASM is **817,288 bytes**, links with fixed **16 MiB** memory and is embedded with the identical pack in the **18,319,349-byte** offline HTML. No new Firebird or physical-device execution is established. All **19 final journals** passed with unchanged frozen source; the two canonical release files are `Slay-the-Nspire-2-calculator.zip` and `Slay-the-Nspire-2-offline.html`.
 
-Commit source to a named work branch **before** long compilation or conversion. Record remote publication receipts separately; when publication is unavailable, preserve the local source and history bundle and state that limitation. `tools/run_logged.py` records the supplied checkpoint, input hashes, command, running/completed state, exit code and log hash. It does not itself verify or push a remote commit. A running journal after interruption is not a passed test.
+Commit source to a named work branch and publish/read back its checkpoint
+**before** long compilation or conversion, as required by AGENTS.md. During
+the recorded UI24 GitHub write outage, an explicit session-specific recovery
+instruction allowed committed frozen local validation while publication was
+restored; its actual chronology is retained, and public readback was required
+before delivery. That exception does not replace the default workflow.
+`tools/run_logged.py` records the supplied checkpoint, input hashes, command,
+running/completed state, exit code and log hash. It does not itself verify or
+push a remote commit. A running journal after interruption is not a passed test.
 
 Current execution results belong in WORK_STATE and the matching delivery manifest and validation reports. The [UI22 delivery report](docs/ui22-storage-performance.md) retains its historical measurements. Compilation, cross-backend agreement and actual target execution are different evidence levels. Historical incomplete-work statements above describe their stated checkpoints; the current feedback ledger records the remaining implementation and evidence boundaries. Firebird execution does not establish physical-handheld performance or exhaustive original-game parity.
 

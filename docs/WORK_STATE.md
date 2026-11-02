@@ -1,3 +1,50 @@
+# UI24 recovered delivery status
+
+The current [release record](ui24-release-validation.md) and its numeric/hash
+companion separate accepted calculator packages from standalone conversion.
+All three persisted ZIPs and the Timeline/animation evidence archive were
+restored with their original hashes. Full bilingual installation expands to
+69,869,324 bytes including instructions/licenses; reduced expands to 29,695,944.
+The unchanged ordinary c814 launcher allocates 22,287,844 / 22,291,016 bytes.
+Full and corrected-reduced ordinary USB, Timeline/Continue/save/exit, action
+checks and independent ZIP member auditing are recorded as passed. The reduced
+NAF1 writer defect was corrected in an actual pre-NWF3 rebuild, actual cd0d5a7 /
+whole-tree public equivalent 4d75c55; its main eleven files total 27,878,523 bytes.
+Earlier pending checkpoint entries below retain their historical stage scope.
+
+The old execution environment was lost during the actual 94b3ae/public 25c166
+standalone run at stage 63/84. Its 3,062,857,728-byte observed whole-TMP peak is
+partial; no completed cold receipt, warm runs or final output bridges were
+obtained. The separate Ancient/seed raw archive and uncommitted final document
+draft were not recovered. Published reports and recorded measurements retain
+their historical source/window identities; missing files are not recreated or
+described as recovered.
+
+The real scratch-ownership omission is fixed in public 5a21f147, equivalent to
+reviewed local 6c26a0/tree 2ccefdc. Its clean, frozen Linux executable is
+90,671,856 bytes, SHA-256
+`2f549cb9fcf08b12d827d880f5992e082fc778f3c96256bf3e87fc989ec1208c`.
+Source/frozen gates pass; the new empty-work original-data run began at
+12:01:31.539836 UTC on 2 November 2026. Complete cold, two all-language warm
+commands and independent output bridges remain pending at this checkpoint.
+
+Complete CI at public e679005f passes 183 native suites with sanitizers,
+646 discovered conversion tests and portable builds. The later Windows dc8b300
+workflow passes all 17 workspace tests with no skips, both locale gates and
+two-process/native-thread/UTF-8/lock/temp/actual-linked-ARM self-tests. Its exe
+is 70,296,205 bytes, SHA-256
+`ae7b9e37d1bfb6fc2df4407f38bf4510e7bd1fc1089a0b774d049b90d9f01f8c`.
+Windows original-game conversion is not claimed. Workflow and canonical-path
+test corrections after 5a21 do not change production converter inputs.
+
+Timeline is implemented and connected to normal progression. The 2,048-point
+capacity is optional pen sampling, not map rooms. The 64-byte direct seed field
+is a port representation; explicit normal-UI import handles the converter's
+complete ASCII seed code. Warm Ancient improvements do not remove cold stalls;
+the seven-Affliction extreme was not newly optimized or finally remeasured.
+Audio, multiplayer and hosted services remain unimplemented, without a user
+waiver. Firebird results remain distinct from physical-handheld measurements.
+
 # UI24 builtin workspace reclamation — recovery correction
 
 The five final builtins use positional `(input, output, work, ...)` arguments.
@@ -194,9 +241,13 @@ The drawing-point and seed-buffer limits must not be called OS limits without
 evidence.
 
 Three isolated work streams own actor animation, Ancient rendering/seed parity,
-and converter scheduling/storage. Validation runs use committed, frozen local source identities. Public checkpoint
-publication proceeds in parallel and is reconciled before release; a stalled
-network write does not block local verification. No new fixes or performance results are accepted yet.
+and converter scheduling/storage. During the recorded GitHub write outage, an
+explicit session-specific recovery instruction allowed validation of committed,
+frozen local sources while publication was restored. Those runs retain that
+chronology, and public readback was required before delivery. This temporary
+recovery measure did not replace AGENTS.md's default requirement to publish and
+read back a checkpoint before long validation. At this historical task-start
+entry, no new fixes or performance results were accepted yet.
 The existing UI23 measurements below keep their original source/resource scope.
 
 The final UI23 official-resource 30-second guest intervals measured ordinary

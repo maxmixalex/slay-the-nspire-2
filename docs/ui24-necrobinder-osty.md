@@ -1,5 +1,19 @@
 # UI24 Necrobinder and Osty animation repair
 
+The candidate-specific tests below retain their original build identities.
+Final ordinary c814 acceptance subsequently used the unified full family and
+the corrected NAF1 reduced family. In the full edition, normal startup reached
+stable Neow at 66 HP, and a declared combat fixture showed the blue slash without
+the printed placeholder, ordinary Strike damage, and both owner/Osty corpses
+10.1 seconds after Offering. The console was closed while playing the cards.
+The reduced edition separately passed its essential-pose and persistent-corpse
+checks; a continuous blue arc is not claimed from its three held attack poses.
+The final three ZIPs and their exact ordinary USB identities passed independent
+package auditing. See [final release acceptance](ui24-release-validation.md)
+and [corrected reduced evidence](ui24-timeline.md#corrected-reduced-edition).
+This later acceptance does not relabel every earlier revival or shop-death
+scenario as rerun on c814.
+
 ## Two source-confirmed defects
 
 The actual full-resource calculator run reproduced the white printed slash

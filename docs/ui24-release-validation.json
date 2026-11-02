@@ -1,0 +1,878 @@
+{
+  "schema": 1,
+  "reference_game": {
+    "version": "v0.111.0",
+    "commit": "41cef1ea"
+  },
+  "status": "prebuilt calculator families and ZIPs accepted; replacement converter complete cold/warm and final output bridges pending",
+  "source": {
+    "cleanup_actual": "6c26a0b904ae1de12f501b53ffdac2366aa3abf8",
+    "cleanup_public": "5a21f14752dba19e4ceaa43d1b41639dd27d4826",
+    "cleanup_tree": "2ccefdcc30d66f693590bbab6eda1c519e457205",
+    "windows_selector_public": "e679005fc507fa03fbe732a39bec13f62ae74ba6",
+    "windows_path_fixture_public": "b18b10b7376d7cd6f19bd1c998b71841215cd068",
+    "windows_followup_production_inputs_changed": false,
+    "facts_base_public": "dc8b300dccdaa77da3e1853d9f7c744ca7db34f5",
+    "facts_base_tree": "a6167f840cdfd0b3b7447f5dc05eff5d42a565a4",
+    "windows_trigger_public": "dc8b300dccdaa77da3e1853d9f7c744ca7db34f5"
+  },
+  "runtime": {
+    "actual": "c8142bd99423a19e82da7aae9b4e33de4ad7c939",
+    "public": "73e1213810bc28672202a3ca83d87fe32aad149c",
+    "source_relation": "equivalent_tree",
+    "file": "nSpire2.tns",
+    "bytes": 1736530,
+    "sha256": "1c455b5f630dee02750f0b54767850770d05e6643ec670427bf535312447eeb1",
+    "formal_allocation_bytes": 22287844,
+    "formal_cap_bytes": 22291016,
+    "headroom_bytes": 3172,
+    "diagnostic_launcher": false,
+    "linked_arm_elf_bytes": 8134396,
+    "linked_arm_elf_sha256": "dc46a7a03660ffe358971f4ecdcbeb0a7e1cc6d6d745c4930c33e7b0ddaa9199"
+  },
+  "machine": {
+    "emulator": "Firebird",
+    "supplied_checkpoint_model": "TI-Nspire CX II CAS",
+    "os": "6.4.0.74",
+    "guest_ram_bytes": 67108864,
+    "normal_boot_clock_report_mhz": {
+      "cpu": 396,
+      "ahb": 198,
+      "apb": 99
+    },
+    "guest_timer": "foreground SP804",
+    "guest_timer_hz": 32768,
+    "physical_calculator_tested": false,
+    "new_cpu_overclock_setting_applied": false,
+    "factory_clock_independently_verified": false,
+    "host_turbo": true,
+    "fps_uses_host_wall_time": false,
+    "cold_boot_serial_sha256": "1d13b33c48a93eb8d64e8e01b0067a68c1db9a7869b8f95bd8e06ec67eb9d1a2",
+    "clock_lines": [
+      "Clocks: CPU = 396 MHz AHB = 198 MHz APB = 99 MHz",
+      "Clocks: CPU = 396 MHz AHB = 198 MHz APB = 99 MHz",
+      "Clocks: CPU = 396 MHz AHB = 198 MHz APB = 99 MHz",
+      "Clocks: CPU = 396 MHz AHB = 198 MHz APB = 99 MHz"
+    ],
+    "model_metadata_source_sha256": "545587e7208e830ecc0861bad16d1ac69b0ae9199ba3cb24e680ceadcf7db1d8",
+    "guest_memory_or_snapshot_headers_modified": false
+  },
+  "resource_families": {
+    "animated": {
+      "actual_producer": "39d28d60273a62a722a2f1b0efeaf3083d8b7272",
+      "public_source": "0e31aea16cec96fc9ed9480efe6ee5cd64477abe",
+      "source_relation": "published_implementation_reference",
+      "production_route": "verified original-derived tail; separate from new standalone cold output",
+      "bilingual_data_bytes": 68052158,
+      "all16_data_bytes": 86019153,
+      "files": {
+        "nSpire2.bosses.dat.tns": {
+          "bytes": 7664338,
+          "sha256": "066a90be5b05d23eea864304804351a668e1093ecbdd1127251d915933707ace"
+        },
+        "nSpire2.cards.dat.tns": {
+          "bytes": 2667702,
+          "sha256": "4fe1efc364e5a13e0553bd78acca00a7450750d1cef3207cfa6f53b16d1f086f"
+        },
+        "nSpire2.characters.dat.tns": {
+          "bytes": 1048276,
+          "sha256": "1d2625ba5e56cd650f129d2d42497ba3b77f9557acbc20f45f5c0c022b66b243"
+        },
+        "nSpire2.dat.tns": {
+          "bytes": 1744,
+          "sha256": "9067c03edc60713e251827db06f7d9efeccaa128d41749136641d2611a6d0ffc"
+        },
+        "nSpire2.effects.dat.tns": {
+          "bytes": 11176522,
+          "sha256": "76f6cd4848e3438a57f63fcb8c5068fb73d761727a6e5b21a688a9bae86858a8"
+        },
+        "nSpire2.enemies.dat.tns": {
+          "bytes": 26322884,
+          "sha256": "6a3a6de3f03b72831e1703d8466a1ced4c50f11809512af2e562435df1a0d9fa"
+        },
+        "nSpire2.eng.dat.tns": {
+          "bytes": 769372,
+          "sha256": "6af787edcd8a7a0053697d1b234e55ab5503339956d460d3c7469fda328f6c51"
+        },
+        "nSpire2.interface.dat.tns": {
+          "bytes": 10481776,
+          "sha256": "8a322e99214a7a555715f29fac07b6d77f593210ceb7850785e20ccdfbade9bf"
+        },
+        "nSpire2.rooms.dat.tns": {
+          "bytes": 3576490,
+          "sha256": "4659d84f62b1dbfd879d2d0a0dab9fb62c92d1db88be52756615bdacedcbad8d"
+        },
+        "nSpire2.shared.dat.tns": {
+          "bytes": 96642,
+          "sha256": "7978d5524b2ae4e31cefddff9d4a4c0426eb338cd56d1c45c1bc7d630c089f4f"
+        },
+        "nSpire2.zhs.dat.tns": {
+          "bytes": 4246412,
+          "sha256": "7dc7f76f782a4c0f50428071db4064cbcdaac937bb2d8a927d9371cc4a3cbd3d"
+        },
+        "nSpire2.zht.dat.tns": {
+          "bytes": 4446985,
+          "sha256": "70ba4960c6958a8a858c8154033269b63de48d66589b94060c9bc6b02a2a5e54"
+        },
+        "nSpire2.deu.dat.tns": {
+          "bytes": 790381,
+          "sha256": "0b024f508acffc7a22dcbe52853e1b00370ad65b08e293faf99c68141a96e2e1"
+        },
+        "nSpire2.esp.dat.tns": {
+          "bytes": 790551,
+          "sha256": "49c43b3e063cd38cb1da97f05cd5e54132920f46528d70c6e2e46e0ff0b3545c"
+        },
+        "nSpire2.fra.dat.tns": {
+          "bytes": 803447,
+          "sha256": "eb8175f8092f62d7c8ab1ff69570524e1d03f4995f79badda611db6bc60afb78"
+        },
+        "nSpire2.ind.dat.tns": {
+          "bytes": 767134,
+          "sha256": "becf6d229d03b1c5b435f6cb4a1388eace1ce27c3b1a64978aef2d0ec9c10e9e"
+        },
+        "nSpire2.ita.dat.tns": {
+          "bytes": 785276,
+          "sha256": "834821c5f6f58e8eabdcf34d853a5d1c4ec70fa2965915fc1debf576752c7151"
+        },
+        "nSpire2.jpn.dat.tns": {
+          "bytes": 3253946,
+          "sha256": "59e0495a53081a2672974e2a7340e533fd5334065d69123d4343fb15d775b61e"
+        },
+        "nSpire2.kor.dat.tns": {
+          "bytes": 1520147,
+          "sha256": "2b908bdbd7a835324a85f93abb376d194e3beb22f93df08f4dc6eebc1b34dfb5"
+        },
+        "nSpire2.pol.dat.tns": {
+          "bytes": 758868,
+          "sha256": "ed2fe73e2826c85b0dcca796f40ed642560375d3edc18592f7f1fa4c4956d3e5"
+        },
+        "nSpire2.ptb.dat.tns": {
+          "bytes": 793240,
+          "sha256": "8a9cc88632204100949ca3a62cf3c320e7dd1df19e25aee4923f03ddff1c8573"
+        },
+        "nSpire2.rus.dat.tns": {
+          "bytes": 816127,
+          "sha256": "c54ac403397751d05b794371a2da4a58681f74a6504f04bc391c48a8ee46951f"
+        },
+        "nSpire2.spa.dat.tns": {
+          "bytes": 791183,
+          "sha256": "8312fa249d0e9162c7b66841c5f5f68e3ec7bcd7440927bb7c5328194fee7f6b"
+        },
+        "nSpire2.tha.dat.tns": {
+          "bytes": 858193,
+          "sha256": "be553f1cf24ac780897fe2827f79be3273af268e15bbe533deb97b5bd5119d69"
+        },
+        "nSpire2.tur.dat.tns": {
+          "bytes": 791517,
+          "sha256": "2c920a2955c62f57c658f1f05f2a544049c33287a3be8abc26695e7cfa8be96d"
+        }
+      }
+    },
+    "no-animations": {
+      "actual_producer": "cd0d5a7dfbef4238abe1da701c82b7874f9a7b14",
+      "public_source": "4d75c55f7561711ced681806d924f24c65ca4959",
+      "source_relation": "equivalent_tree",
+      "production_route": "verified original-derived tail; separate from new standalone cold output",
+      "bilingual_data_bytes": 27878523,
+      "all16_data_bytes": 42163250,
+      "files": {
+        "nSpire2.bosses.dat.tns": {
+          "bytes": 2223872,
+          "sha256": "fc2c8df36ae0ee6e69bbae7104f5c137e65f44a6a3e8506aa4ad27526ab85b3e"
+        },
+        "nSpire2.cards.dat.tns": {
+          "bytes": 2684854,
+          "sha256": "e335cb34a694d829dd7a436a38af51dd06a69109eaba0cfadf18c6ef339fc1f3"
+        },
+        "nSpire2.characters.dat.tns": {
+          "bytes": 259498,
+          "sha256": "b1393bb7eea6594f2ac1fcca4a0aba2c0f84f2d65e7833cea3c45e8c0af78ab1"
+        },
+        "nSpire2.dat.tns": {
+          "bytes": 2128,
+          "sha256": "e91f9f7fae23b06c3ef25c56d24ebf494569b63c91f12dca6744e176d07d7d1c"
+        },
+        "nSpire2.effects.dat.tns": {
+          "bytes": 882188,
+          "sha256": "d1b811d6e616857c0437235ee7dd944944a615d965b635ecf6c6228d51fadb1b"
+        },
+        "nSpire2.enemies.dat.tns": {
+          "bytes": 6689820,
+          "sha256": "4d95095f2dbcbe5c3f238064942373764da732f3d370701c3d71375fdf783f44"
+        },
+        "nSpire2.eng.dat.tns": {
+          "bytes": 506626,
+          "sha256": "0ad90b8890cd429b68640c200a0c79559db52afeabc53b4ab5e5f2ea2efe1439"
+        },
+        "nSpire2.interface.dat.tns": {
+          "bytes": 8761692,
+          "sha256": "afa900891cc1dd9e5de2e280c10cf4aaed04d227621d128b77bca2ba89b4740f"
+        },
+        "nSpire2.rooms.dat.tns": {
+          "bytes": 1779784,
+          "sha256": "700417d82ff30ce5cee8e33f966dfafb29d7e747f0f25438a5bf51c14cdd373f"
+        },
+        "nSpire2.shared.dat.tns": {
+          "bytes": 105906,
+          "sha256": "bf42f994bd071865aae4ec1802c65e4bd2d51b9a471d11e3fd6c896249560245"
+        },
+        "nSpire2.zhs.dat.tns": {
+          "bytes": 3982155,
+          "sha256": "90191c9a0715b4f6a2a16cfc524cf6bce48438c0f430cf4a4c10428efd6b5afc"
+        },
+        "nSpire2.zht.dat.tns": {
+          "bytes": 4184560,
+          "sha256": "90f5711b866920632c9b25052940d34e2551f8f641b179af67e116e74721d54a"
+        },
+        "nSpire2.deu.dat.tns": {
+          "bytes": 526914,
+          "sha256": "452121e30f4501666d3e195362793483af521621ac1ef031d58315b66652d381"
+        },
+        "nSpire2.esp.dat.tns": {
+          "bytes": 527896,
+          "sha256": "588ac9f3b91fd945a9ef40229c0003b15780b95da76d9bec959a398d0d4d05dc"
+        },
+        "nSpire2.fra.dat.tns": {
+          "bytes": 540445,
+          "sha256": "3813a44c932d3013f59fecb5e5d2c2aebfb40cb277a346a647ca87f89ff7c14f"
+        },
+        "nSpire2.ind.dat.tns": {
+          "bytes": 504272,
+          "sha256": "f7627922f0b6a55751aff052a4c6217ec910cc48f7c530a1e9e8fecb5621004f"
+        },
+        "nSpire2.ita.dat.tns": {
+          "bytes": 522151,
+          "sha256": "28f9105e5fc636bde982f10576ef1f3efb34af626b5c1c01595462ebf57900f7"
+        },
+        "nSpire2.jpn.dat.tns": {
+          "bytes": 2990738,
+          "sha256": "c28d25d7e7cdcf99e0e83ef1791c2c8e235a214c11dc6c562e875e88b061ef6f"
+        },
+        "nSpire2.kor.dat.tns": {
+          "bytes": 1255453,
+          "sha256": "4a2a730cba81ab698b22b976ccf9687509c11296e18067c36e74d876eda04e9b"
+        },
+        "nSpire2.pol.dat.tns": {
+          "bytes": 496609,
+          "sha256": "aa3c97ea3a8acfb9ddfa5a94513644d76d59eb0c7ed4953b5922ddd1ae2fa843"
+        },
+        "nSpire2.ptb.dat.tns": {
+          "bytes": 530640,
+          "sha256": "bb8056da3013f57695923c884b2ba8eb88079a52ae24aa4e8a16014970e5198d"
+        },
+        "nSpire2.rus.dat.tns": {
+          "bytes": 552137,
+          "sha256": "2cf824814a60aba06f5569a71e6e8aa368417e5dcdf4475096682eaaaa2db1b1"
+        },
+        "nSpire2.spa.dat.tns": {
+          "bytes": 528643,
+          "sha256": "f243422676825e9fbb14d51a1553273667410131b7a4d21a5b01d7481670fe9e"
+        },
+        "nSpire2.tha.dat.tns": {
+          "bytes": 595793,
+          "sha256": "57986a1b60628c216ce3cc51c13eb424839c27ac8fe40afc86ae095c0496bd2d"
+        },
+        "nSpire2.tur.dat.tns": {
+          "bytes": 528476,
+          "sha256": "4d5a8c6c79d931493236ff17a715478496f5c715270993eebeedb9cf963ec0b9"
+        }
+      }
+    }
+  },
+  "packages": {
+    "status": "passed",
+    "manifest": {
+      "name": "UI24-delivery-manifest.json",
+      "bytes": 15923,
+      "sha256": "4f21656077be8d59c9ee44363e5e6fa8e0758ceaf1999918917c7b2160a2406a"
+    },
+    "independent_audit": {
+      "name": "final-three-zip-independent-audit.json",
+      "bytes": 17398,
+      "sha256": "839bfaf131b3a3c78eaf70eecf7664860c9588cf0896045682cbb18e81a7930e"
+    },
+    "packaging_receipt": {
+      "name": "final-three-installer-acceptance.json",
+      "bytes": 3745,
+      "sha256": "3366700489da08bd85029f21b8870cafeacc246fd5b64104a0687066d73a4eef"
+    },
+    "archives": {
+      "animated": {
+        "file": "Slay-the-Nspire-2-0.1.0-ui24-animated-bilingual-calculator.zip",
+        "zip_bytes": 69000814,
+        "extracted_bytes": 69869324,
+        "sha256": "e15cef0081899b78cd23628987ae36bf5256c57619afcb825f82bc290faa11ab",
+        "members": 23,
+        "validation_file": "Slay-the-Nspire-2-0.1.0-ui24-animated-validation.json",
+        "validation_sha256": "763672a150a7e6461ca9d58b73c766378c455188bd978b1b97d6d4cbdc92688d",
+        "installed_bytes": 69788688
+      },
+      "no-animations": {
+        "file": "Slay-the-Nspire-2-0.1.0-ui24-no-animations-bilingual-calculator.zip",
+        "zip_bytes": 27997343,
+        "extracted_bytes": 29695944,
+        "sha256": "a5f149f97e261676d0a465dbbd4303b9c4cdf50fb8f03ff3beb40ad3d787f3a7",
+        "members": 23,
+        "validation_file": "Slay-the-Nspire-2-0.1.0-ui24-no-animations-validation.json",
+        "validation_sha256": "b4ea2618c1a7b20238f0dc8bce357853f5c41c26ee5cafb52cf22905242debb6",
+        "installed_bytes": 29615053
+      },
+      "optional-languages": {
+        "file": "Slay-the-Nspire-2-0.1.0-ui24-optional-languages.zip",
+        "zip_bytes": 29468976,
+        "extracted_bytes": 32253401,
+        "sha256": "e72e7b6348cef8615efc2c953474789cafed90476319fb2652784577d7e4cd4e",
+        "members": 29
+      }
+    },
+    "complete_animated_limit_bytes": 70000000,
+    "complete_animated_extracted_bytes": 69869324,
+    "complete_animated_headroom_bytes": 130676,
+    "required_files_per_main_equal_guest_readback": 12,
+    "optional_locales_per_family": 14,
+    "test_saves_firmware_pck_or_original_dll_included": false
+  },
+  "corrected_reduced_guest": {
+    "status": "passed",
+    "receipt": {
+      "name": "corrected-reduced-acceptance.json",
+      "bytes": 34573,
+      "sha256": "cb480a0ce64aac78b4ed28e813e8a17b12be44f7fe2d60e6fae433b43cffcd10"
+    },
+    "ordinary_usb_files_equal": 12,
+    "chinese_and_english_timeline_continue_save_exit": true,
+    "saved_character": 1,
+    "saved_hp": 70,
+    "saved_mode": 0,
+    "profile_score": 20,
+    "frozen_mask": [
+      "00000000",
+      "00020002"
+    ],
+    "entire_first_defeat_chain_replayed_in_reduced": false,
+    "continuous_blue_arc_claimed_for_reduced": false,
+    "actor_bridge": {
+      "name": "corrected-reduced-action-resource-bridge.json",
+      "bytes": 27723,
+      "sha256": "7113e90e83f8d06c0210e6636c0082019a35e699d2ca8d3a932fe8afeecb2a3a"
+    }
+  },
+  "historical_ancient": {
+    "basis": "Existing published Ancient report and contemporaneous recorded runs; separate raw Ancient archive was not recovered",
+    "warm_pairs": [
+      {
+        "label": "Neow UI23 formal",
+        "checkpoint": "d9350b94c234f443c29f12f7efb862f3595a6a57",
+        "profile": "official-producer-bad0168-full-all16",
+        "warm_frames": 337,
+        "emulated_frame_rate": 11.201985004935123,
+        "mean_ms": {
+          "interval": 89.2698927519937,
+          "update": 0.08729657362759644,
+          "render": 88.81720025037092,
+          "present": 0.2696775894844214,
+          "resource": 0.0
+        },
+        "read_calls_delta": 0,
+        "read_bytes_delta": 0,
+        "over50_delta": 337,
+        "over100_delta": 1,
+        "over250_delta": 0
+      },
+      {
+        "label": "Neow UI24 b690",
+        "checkpoint": "b690c582430eb77a97089eeb336dfabf939f30e4",
+        "profile": "official-producer-bad0168-full-all16",
+        "warm_frames": 880,
+        "emulated_frame_rate": 29.31207325416034,
+        "mean_ms": {
+          "interval": 34.115635265003554,
+          "update": 0.07990056818181818,
+          "render": 33.73676646839488,
+          "present": 0.26945634321732953,
+          "resource": 0.0
+        },
+        "read_calls_delta": 0,
+        "read_bytes_delta": 0,
+        "over50_delta": 0,
+        "over100_delta": 0,
+        "over250_delta": 0
+      },
+      {
+        "label": "Nonupeipe UI23 formal",
+        "checkpoint": "d9350b94c234f443c29f12f7efb862f3595a6a57",
+        "profile": "official-producer-bad0168-full-all16",
+        "warm_frames": 684,
+        "emulated_frame_rate": 22.79775046611001,
+        "mean_ms": {
+          "interval": 43.86397690800896,
+          "update": 0.08334332739400585,
+          "render": 43.505350748697914,
+          "present": 0.26983963815789475,
+          "resource": 0.0
+        },
+        "read_calls_delta": 0,
+        "read_bytes_delta": 0,
+        "over50_delta": 0,
+        "over100_delta": 0,
+        "over250_delta": 0
+      },
+      {
+        "label": "Nonupeipe UI24 b690",
+        "checkpoint": "b690c582430eb77a97089eeb336dfabf939f30e4",
+        "profile": "official-producer-bad0168-full-all16",
+        "warm_frames": 848,
+        "emulated_frame_rate": 28.2835555492222,
+        "mean_ms": {
+          "interval": 35.35623370476489,
+          "update": 0.0822319174712559,
+          "render": 34.98109781517173,
+          "present": 0.26940399745725235,
+          "resource": 0.0
+        },
+        "read_calls_delta": 0,
+        "read_bytes_delta": 0,
+        "over50_delta": 0,
+        "over100_delta": 0,
+        "over250_delta": 0
+      },
+      {
+        "label": "Tezcatara UI23 formal",
+        "checkpoint": "d9350b94c234f443c29f12f7efb862f3595a6a57",
+        "profile": "official-producer-bad0168-full-all16",
+        "warm_frames": 192,
+        "emulated_frame_rate": 6.388652966228196,
+        "mean_ms": {
+          "interval": 156.52751922607422,
+          "update": 0.09409586588541667,
+          "render": 155.98503748575845,
+          "present": 0.2702077229817708,
+          "resource": 0.0
+        },
+        "read_calls_delta": 0,
+        "read_bytes_delta": 0,
+        "over50_delta": 192,
+        "over100_delta": 192,
+        "over250_delta": 0
+      },
+      {
+        "label": "Tezcatara UI24 c814",
+        "checkpoint": "c8142bd99423a19e82da7aae9b4e33de4ad7c939",
+        "profile": "official-producer-bad0168-full-all16",
+        "warm_frames": 717,
+        "emulated_frame_rate": 23.915010133109668,
+        "mean_ms": {
+          "interval": 41.81474289302214,
+          "update": 0.08278478305875174,
+          "render": 41.45674658952232,
+          "present": 0.26921015570519524,
+          "resource": 0.0
+        },
+        "read_calls_delta": 0,
+        "read_bytes_delta": 0,
+        "over50_delta": 0,
+        "over100_delta": 0,
+        "over250_delta": 0
+      }
+    ],
+    "final_neow_first_cycle": {
+      "runtime_actual": "c8142bd99423a19e82da7aae9b4e33de4ad7c939",
+      "runtime_public": "73e1213810bc28672202a3ca83d87fe32aad149c",
+      "scene": "actual Neow after normal fresh-profile reveal and saved v18 Continue",
+      "format": "NWFv3 full unified candidate",
+      "clock_hz": 32768,
+      "ram_mib": 64,
+      "cpu_mhz": 396,
+      "warm_window_ms": 30000,
+      "warm_frames": 872,
+      "emulated_fps": 29.055080574966038,
+      "mean_ms": {
+        "interval": 34.41738863603784,
+        "update": 0.062470042377436925,
+        "render": 33.22842799195456,
+        "present": 0.269233633618836,
+        "resource": 0.41398214637686354
+      },
+      "raw_tick_deltas": {
+        "interval": 983432,
+        "update": 1785,
+        "render": 949459,
+        "present": 7693,
+        "resource": 11829
+      },
+      "read_calls_delta": 24,
+      "read_bytes_delta": 511552,
+      "room_lifetime_cold_and_warm_A": {
+        "scene": "room",
+        "interval": {
+          "count": 297,
+          "total": 439298,
+          "min": 546,
+          "max": 55265
+        },
+        "update": {
+          "count": 297,
+          "total": 3303,
+          "min": 2,
+          "max": 2676
+        },
+        "render": {
+          "count": 297,
+          "total": 425212,
+          "min": 499,
+          "max": 52562
+        },
+        "present": {
+          "count": 297,
+          "total": 2604,
+          "min": 0,
+          "max": 9
+        },
+        "resource": {
+          "count": 297,
+          "total": 69184,
+          "min": 0,
+          "max": 41173
+        },
+        "over_50ms": 20,
+        "over_100ms": 11,
+        "over_250ms": 3,
+        "read_calls": 113,
+        "read_bytes_requested": 1480195,
+        "read_seeks": 111
+      },
+      "cold_max_render_ms": 1604.06494140625,
+      "performance_receipts": [
+        {
+          "name": "full-final-neow-A.perf.json",
+          "sha256": "c843111682c2439e3cf9b5f0f61dc9ebe4c438313551d2988b20109f4ab32b25"
+        },
+        {
+          "name": "full-final-neow-B.perf.json",
+          "sha256": "3314223dd1647a18a6159922466accf61126a807402f82fbc076eb17fe95273e"
+        }
+      ],
+      "limitations": "A is a complete scene lifetime including cold Continue; the maximum is the largest recorded frame, not an isolated causal loading timer. B-A is a matched snapshot warm window. No physical-handheld FPS claim.",
+      "over_threshold_deltas": {
+        "over_50ms": 12,
+        "over_100ms": 5,
+        "over_250ms": 0
+      }
+    },
+    "report": "ui24-ancient-validation.json"
+  },
+  "historical_seed": {
+    "basis": "Published seed report and contemporaneous original-DLL/guest results; missing independent raw archive not recreated",
+    "original_ascii_inputs": 927,
+    "named_rng_cases": 13905,
+    "global_streams": 12,
+    "named_constructors": 3,
+    "configured_maps": 7416,
+    "save_roundtrips": 927,
+    "assertions": 391191,
+    "ui_codec_checks": 1369,
+    "default_generated_seed_characters": 12,
+    "default_alphabet_size": 34,
+    "direct_text_field_utf8_bytes": 64,
+    "field_limit_is_os_limit": false,
+    "long_ascii_supported_through_explicit_import": true,
+    "input_prefixes_are_ordinary_text": true,
+    "map_pen_points": 2048,
+    "map_pen_limit_is_generated_room_limit": false,
+    "ordinary_guest_save_bytes": 7074,
+    "ordinary_guest_save_sha256": "9e76229d07cc4f6d3dd7cd32802a79462ed96e7f7b12dfca7480531977ed4d0a",
+    "ordinary_guest_saved_rng_states_and_counts": 15,
+    "ordinary_guest_suite_runtime": "2fbe141 / 809c9058",
+    "later_keyboard_start_save_exit_runtime": "c8142bd",
+    "first_touch_start_exit_relaunch_root_cause_resolved": false,
+    "whole_run_equivalence_across_versions_unlocks_and_choices_claimed": false,
+    "report": "seed-ascii-ui24.md"
+  },
+  "cleanup": {
+    "registered_positional_builtins": [
+      "@fresh-actor-dicing",
+      "@fresh-codec45",
+      "@final-quality",
+      "@final-sparse",
+      "@final-retune"
+    ],
+    "scratch_argument_zero_based_index": 2,
+    "verified_boundaries_reclaim_after_last_consumer": true,
+    "preexisting_unowned_directories_adopted": false,
+    "keep_and_failed_input_recovery_preserved": true,
+    "new_recursive_clean_option": false,
+    "successful_summary_reports_workspace_path": true,
+    "allocation_fallback_labelled_estimated": true,
+    "frozen_extraction_in_workspace_meter": false,
+    "focused_local_test_methods_passed": 17,
+    "acceptance": {
+      "name": "cleanup-acceptance-final.json",
+      "bytes": 2883,
+      "sha256": "17b4b9ebb56f79762dd146436cad1523db35f784d58375786a9f8c5eec7791c5"
+    },
+    "independent_review": {
+      "name": "cleanup-independent-review.json",
+      "bytes": 7468,
+      "sha256": "7ddeb3f80d301d94fcae3f922f169b187a092b9ef934e94b7f8247a877db984c"
+    },
+    "default_work": {
+      "basis": "resolved original-game absolute directory path, SHA-256 first 12 hex, under operating-system temporary directory",
+      "language_and_animation_flags_select_different_work": false,
+      "implicit_sequential_reuse": true,
+      "receipt_and_input_identity_verification_required": true,
+      "retained_data_may_be_large": true,
+      "moved_game_or_tmp_cleanup_can_require_rebuild": true
+    }
+  },
+  "historical_converter": {
+    "linux94": {
+      "source_actual": "94b3aeacd4a99fd485442d7793fdb643ed73ee60",
+      "public_equivalent": "25c1660980a6d40c5e0febb023f6af93a05624c0",
+      "sha256": "97512e3d81332278b315f22d58660f9b5c3c844421440d60a257dd78e9c58c32",
+      "bytes": 96643560,
+      "last_observed_stage": 63,
+      "total_stages": 84,
+      "last_observed_progress": "implicit46 512/711",
+      "last_observed_utc": "2026-11-02 03:36 UTC",
+      "partial_whole_tmp_peak_observed_bytes": 3062857728,
+      "completed_receipt_obtained": false,
+      "warm_all16_runs_started": false,
+      "final_output_bridges_executed": false,
+      "final_exit_code_known": false
+    },
+    "linux431": {
+      "source_actual": "43179019352e87cc236ac4b1b1206ec7c144234f",
+      "status": "deliberately aborted after missing reviewed locale bindings were found",
+      "elapsed_seconds_partial": 1609.917503,
+      "partial_tmp_peak_bytes": 634494976,
+      "deliverable": false
+    }
+  },
+  "replacement_converter": {
+    "linux": {
+      "source_public_and_actual": "5a21f14752dba19e4ceaa43d1b41639dd27d4826",
+      "file": "nspire2-convert",
+      "bytes": 90671856,
+      "sha256": "2f549cb9fcf08b12d827d880f5992e082fc778f3c96256bf3e87fc989ec1208c",
+      "source_and_frozen_gates_passed": true,
+      "cold_start_utc": "2026-11-02T12:01:31.539836Z",
+      "cold_status": "running; no complete receipt yet",
+      "download_name": "nspire2-convert-ui24-linux",
+      "source_freeze": {
+        "name": "producer-5a21-freeze.json",
+        "bytes": 1396,
+        "sha256": "7f617253138cca19e1cc4c8009ab8529b080a5adb47960df37e6a06fb135171d"
+      }
+    },
+    "windows": {
+      "source_public_and_actual": "dc8b300dccdaa77da3e1853d9f7c744ca7db34f5",
+      "source_tree": "a6167f840cdfd0b3b7447f5dc05eff5d42a565a4",
+      "file": "nspire2-convert.exe",
+      "download_name": "nspire2-convert-ui24.exe",
+      "bytes": 70296205,
+      "sha256": "ae7b9e37d1bfb6fc2df4407f38bf4510e7bd1fc1089a0b774d049b90d9f01f8c",
+      "actual_17_test_and_frozen_gates_status": "passed",
+      "run": {
+        "id": 41442997775,
+        "job": 125269804951,
+        "conclusion": "success",
+        "updated_at": "2026-11-02T12:18:26Z"
+      },
+      "workspace_tests": {
+        "methods": 17,
+        "seconds": 1.478,
+        "failures": 0,
+        "skips": 0,
+        "actual_command": "python -m unittest discover -s tests -p 'test_converter_*workspace.py'"
+      },
+      "locale": {
+        "source_gate": "reviewed UI bindings and generated indexes passed before freezing",
+        "frozen_gate": true,
+        "ui_bindings": 935,
+        "extra_original_keys": 142
+      },
+      "helper": {
+        "passed": true,
+        "spawned_distinct_processes": 2,
+        "native_numeric_threads": 1,
+        "locks_released": true,
+        "tempfiles_removed": true,
+        "utf8_mode": true,
+        "unicode_default_io": true,
+        "arm_elf_bytes": 8134396,
+        "arm_elf_sha256": "dc46a7a03660ffe358971f4ecdcbeb0a7e1cc6d6d745c4930c33e7b0ddaa9199",
+        "arm_real_linked_decoder_executed": true,
+        "arm_source_inventory_sha256": "08e352b4a03a9b77da48f862337874c4708a28ae9ca3f47e9255dd96932cae71"
+      },
+      "original_game_conversion_tested": false,
+      "acceptance": {
+        "name": "windows-dc8-gate-success.json",
+        "bytes": 2418,
+        "sha256": "bdd00ffa79ed06a3b7301472105a4b45d068cc11e3a8e8e29a5f26280c2832ea"
+      }
+    },
+    "full_all16_warm": "pending",
+    "reduced_all16_warm": "pending",
+    "final_output_bridge_full11_full25_reduced25": "pending",
+    "combined_notices": {
+      "name": "converter-notices-ui24.txt",
+      "bytes": 365662,
+      "sha256": "a20e6f044227e3ebeadd28466bec7838d0cf52ff3ee08df8571cbf881e6a162c",
+      "verification": {
+        "name": "combined-notices-verification.json",
+        "bytes": 6032,
+        "sha256": "bfcaf706e6f7a57e6e4ca43d217502b937c879d4cbf0d5d7fd42e120203e5acd"
+      },
+      "original_license_sections_byte_identical": 24,
+      "updated_provenance_section": "07 / Windows / bootloader-compatibility.json"
+    },
+    "linux_host": {
+      "scope": "Read-only current execution-environment constraints, observed separately during the unchanged real CLI run; no claim of exclusive host.",
+      "platform": {
+        "system": "Linux",
+        "release": "6.18.57",
+        "machine": "x86_64"
+      },
+      "logical_cpu_count": 9,
+      "allowed_cpus": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8
+      ],
+      "cpu_max": "800000 100000",
+      "memory_max": "8589934592",
+      "actual_frozen_python": "3.12.14 (main, Aug 25 2026, 14:00:49) [Clang 22.1.3 ]",
+      "actual_numeric_dependencies": {
+        "numpy": "2.3.5",
+        "pillow": "12.3.0",
+        "lz4": "4.4.5"
+      },
+      "timing_caveats": [
+        "One shared-environment run, not an exclusive-machine benchmark.",
+        "Wall time includes any overlapping private checkpoint export or artifact upload; no backup time is subtracted.",
+        "Earlier interrupted runs took place in a different execution environment and are not same-environment whole-pipeline comparisons."
+      ],
+      "receipt": {
+        "name": "host-constraints.json",
+        "bytes": 1145,
+        "sha256": "de5f9e6a3d0bf1048df05725f6ba66eb133df8ca73c9ee2c9740c458fcc47617"
+      }
+    }
+  },
+  "evidence_recovery": {
+    "persisted_three_zips_restored_with_original_hashes": true,
+    "persisted_timeline_animation_archive_restored": true,
+    "manifest_restored": true,
+    "separate_ancient_seed_tar_recovered": false,
+    "lost_final_11_file_document_draft_recovered": false,
+    "missing_raw_oracle_logs_images_or_saves_recreated": false,
+    "historical_published_numbers_relabelled_as_new_execution": false,
+    "new_original_assets_or_private_screenshots_published": false
+  },
+  "retained_limits": [
+    "Physical-handheld performance untested",
+    "Cold scene entry stalls remain",
+    "Seven-family Affliction stress not newly optimized or finally remeasured in UI24",
+    "No complete-run parity claim across versions/progression/choices",
+    "Timeline LCD list adapts original spatial presentation",
+    "Act2B/Act3B remain original Early Access placeholders",
+    "Audio, multiplayer and hosted services unimplemented; no inferred user waiver"
+  ],
+  "source_validation": {
+    "full_ci": {
+      "run": 41440911143,
+      "source_public": "e679005fc507fa03fbe732a39bec13f62ae74ba6",
+      "source_tree": "c2b1d7c3200142c4ce2ec71c006966053a3cf368",
+      "status": "passed",
+      "updated_at": "2026-11-02T12:24:11Z",
+      "native": {
+        "passed": 183,
+        "failed": 0,
+        "real_seconds": 179.69,
+        "sanitizers": [
+          "ASan",
+          "UBSan"
+        ]
+      },
+      "conversion": {
+        "discovery_passed": 646,
+        "discovery_seconds": 65.668,
+        "explicit_group": {
+          "passed": 56,
+          "seconds": 1.544,
+          "not_added_to_discovery_total": true
+        }
+      },
+      "portable": {
+        "status": "success",
+        "scope": "Calculator launcher and compile-only WebAssembly without private resources"
+      },
+      "receipt": {
+        "name": "formal-ci-e679.json",
+        "bytes": 23719,
+        "sha256": "cf8856b051a51dd347f41e1a9d0a97ccd629dbdebe8ab4e32ed99ba51d0c524d"
+      }
+    },
+    "scope": "Complete CI remains labelled e679. Later dc8 actual Windows17 and frozen checks are separate. Production inputs are unchanged through those workflow/test-only followups.",
+    "historical_windows_e679_fixture_failure": {
+      "methods": 17,
+      "failures": 1,
+      "seconds": 1.424,
+      "reason": "Test expected a short temporary path while Workspace correctly displayed the resolved long path. b18 fixes the independent expectation with work.resolve(); no production behavior changed."
+    },
+    "windows_test_only_trigger_repair": "dc8 adds exactly both workspace test paths to push.paths; selector already discovers those two modules."
+  },
+  "artwork_contract": {
+    "full": "Established port actor sample counts, individual raster sizes, registered positions and action clocks retained; not every original PC renderer frame.",
+    "raster": "Displayed-density per actor, cropped into registered pieces; no common forced small sprite size or moving-union shrink.",
+    "full_alpha_max_error_0_to_255": 4,
+    "full_color_policy": "bounded RGB565, with separate dark-safe character-selection policies",
+    "reduced_loop_poses": 1,
+    "reduced_action_max_poses": 3,
+    "reduced_duration_and_terminal_pose_preserved": true,
+    "neow_offline_field_exact_to": "already held clock-zero production C++ integer field",
+    "neow_words_compared": 17485,
+    "neow_unique_input_pages_replaced": 6,
+    "neow_transmission_frames_preserved": 546,
+    "verified_original_derived_tail_stage_saved_bytes": {
+      "full": 162740,
+      "reduced": 113558
+    },
+    "tez_material_grid_per_axis": 9,
+    "smooth_light_step_pixels": 4,
+    "tez_selected_particles": 192,
+    "tez_original_particles": 1776,
+    "final_scene_composite_pixel_identity_claimed": false,
+    "all_possible_clocks_or_human_invisibility_claimed": false,
+    "scratch_ownership_changes_output_artwork": false,
+    "sources": [
+      "docs/converter-ui23.md",
+      "docs/ui24-ancient-performance.md",
+      "tools/actor_animation_ui22.py",
+      "tools/animation_color_candidates_ui23.py",
+      "tools/no_animations.py",
+      "tools/neow_static_field_ui24.py",
+      "tools/converter_finalize.py",
+      "tools/converter_workspace.py"
+    ]
+  },
+  "final_full_animation_guest": {
+    "runtime_actual": "c8142bd99423a19e82da7aae9b4e33de4ad7c939",
+    "receipt": {
+      "name": "final-c814-animation-acceptance.json",
+      "bytes": 17161,
+      "sha256": "b8da2b85793e13e157215fc5a1e77712a3888e02881ba30cf11d5c9afc07a054"
+    },
+    "normal_start_reaches_necrobinder_neow_66hp": true,
+    "fixture": "Built-in console setup, then closed console and ordinary Strike/Offering card actions; no RAM or snapshot-header edits",
+    "blue_slash_visible_without_placeholder": true,
+    "owner_osty_corpses_visible_after_10_1_seconds": true,
+    "all_earlier_shop_and_revival_scenarios_rerun_on_c814": false
+  }
+}

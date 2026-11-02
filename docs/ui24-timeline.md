@@ -45,7 +45,7 @@ Random character selection then uses the same independent act_selection stream.
 Low-level explicit-region map APIs remain available for isolated seed tests.
 
 The [machine-readable acceptance record](ui24-timeline-validation.json) keeps
-source identities, readback hashes and the separate pending release gates.
+source identities, readback hashes and the separate converter and package gates.
 
 ## Executed native and original-reference evidence
 
@@ -63,11 +63,11 @@ integration tree: the latter also includes subsequent Ancient rendering work.
 The exact c814 production runtime identity is recorded separately below.
 
 An additional final-c814 continuous firmware session starts a normal legacy
-Standard run as Necrobinder and reaches stable Neow at66HP, then verifies the
+Standard run as Necrobinder and reaches stable Neow at 66 HP, then verifies the
 repaired Strike slash and Offering/Osty death through ordinary card play.
 Only the combat fixture uses the built-in console; it is closed during every
-action sequence. The blue slash is visible, Offering kills the1HP owner and
-living Osty, and both corpses remain on GameOver after10.1 seconds. This is
+action sequence. The blue slash is visible, Offering kills the 1 HP owner and
+living Osty, and both corpses remain on GameOver after 10.1 seconds. This is
 separate from the console-free fresh Timeline obtain/reveal evidence.
 
 A failed active-character-selection snapshot restore is retained as an excluded
@@ -130,8 +130,8 @@ into a claim that every capture was rerun on the last launcher.
 | Normal combat defeat and return | Ten ordinary end turns cause the first loss; the summary awards 10 points. Neow becomes obtained with the actual clock time. |
 | Inspect and reveal Neow, then Silent1 | Original localized story/condition/unlock text appears. Neow expands the source graph and obtains Silent1; revealing Silent1 unlocks Silent. |
 | Normal save, OS exit, relaunch and Continue | NSHB keeps score 10 and the two real dates/states. The v18 saved run resumes at its Neow room. |
-| Unlocked Silent portrait and Menu start | Actual selection shows Silent 70HP and the started run retains 70HP. USB save readback loads and validates as character1, Standard mode, with only Neow/Silent1 frozen into its unlock mask. |
-| Legacy Custom and Daily physical Menu | A 100ms press remains on the form; release starts the actual Neow room. Daily save readback is mode2 with the dated challenge and all 57 unlock bits. |
+| Unlocked Silent portrait and Menu start | Actual selection shows Silent 70 HP and the started run retains 70 HP. USB save readback loads and validates as character 1, Standard mode, with only Neow/Silent1 frozen into its unlock mask. |
+| Legacy Custom and Daily physical Menu | A 100 ms press remains on the form; release starts the actual Neow room. Daily save readback is mode 2 with the dated challenge and all 57 unlock bits. |
 | Final save/title/quit | Ordinary OS file list returns. The earlier specific touch-start/first-exit relaunch observation is retained separately; these keyboard passes do not claim to identify or fix it. |
 
 The ordinary fresh-profile progress readback contains Neow and Silent1 as
@@ -141,30 +141,66 @@ The final Silent run mask is `00000000/00020002`; the separate Daily mask is
 normal USB-readback files. The private captures include first/intermediate/final
 screens, original performance counters, command logs and readback receipts.
 Normal Settings switching also verifies English Timeline list/detail text and
-actual-date display, then Continue to the same Silent70HP run and normal OS exit.
+actual-date display, then Continue to the same Silent 70 HP run and normal OS exit.
 Those later captures follow the actual abandonment of the second Standard run:
-score is20, while the same two dates/reveal states are unchanged. The earlier
+score is 20, while the same two dates/reveal states are unchanged. The earlier
 initial-chain readback's10 points and this later state are separate observations;
 no save/reload is counted as an additional finished run.
 
 The full resources are the explicit unified new-slash/NWFv3/Timeline candidate,
-actual producer `39d28d60273a62a722a2f1b0efeaf3083d8b7272`, public equivalent
-`6ea8bdfc504fdceb2363ce66854ec1990ad0ece4`: eleven bilingual data files total
-68,052,158 bytes. This is a tested candidate identity, not a statement that the
-final standalone converter and three-ZIP delivery have passed.
+actual producer `39d28d60273a62a722a2f1b0efeaf3083d8b7272`: eleven bilingual data
+files total 68,052,158 bytes. The final package records public
+`0e31aea16cec96fc9ed9480efe6ee5cd64477abe` as an implementation reference,
+not a whole-tree equivalent of that producer. The earlier resource receipt's
+`6ea8bdfc504fdceb2363ce66854ec1990ad0ece4` reference remains historical.
+This family passed final three-ZIP packaging and its independent member audit.
+It was produced through the recorded original-derived tail, separately from
+the standalone empty-work converter execution.
+
+### Corrected reduced edition
 
 The first reduced unified candidate failed ordinary startup with
 `RESOURCE LOADING FAILED`. Its NWF rewrite had cleared the NAF1 animation-profile
 marker before locale publication; runtime correctly rejected the reduced-only
 Neow dimensions when interpreting it as full mode. ENG/ZHS direct and streamed
 production-content probes isolate those four bytes. The private diagnostic
-copies were not installed. Producer correction and a rebuilt same-family reduced
-installation remain pending at this checkpoint, so this failure is not counted
-as a reduced Timeline pass.
+copies were not installed. That failed candidate remains historical evidence.
+
+The corrected reduced family was then rebuilt from the original-derived
+pre-NWF3 NAF1 inputs, using actual producer
+`cd0d5a7dfbef4238abe1da701c82b7874f9a7b14` and verified whole-tree public
+equivalent `4d75c55f7561711ced681806d924f24c65ca4959`. It was not made by
+patching the failed baked output. Its eleven bilingual data files total
+27,878,523 bytes; all twenty-five files total 42,163,250 bytes. Both generic
+writer boundaries preserve the profile marker, and all sixteen reconstructed
+locales retain NAF1 and 8,961 strings.
+
+Ordinary USB transfer and readback matched all twelve reduced program/data
+files. Continuous final-c814 Chinese and English sessions verified Timeline
+list/detail/scroll, the same Silent 70 HP Continue at NWF3 Neow, save and normal
+OS exit. Save decoding retained score 20, the two real reveal dates and frozen
+mask `00000000/00020002`. This continues the already played fresh profile;
+it does not replay the entire first-defeat/reveal chain in reduced mode.
+
+A separate declared combat fixture verified essential reduced Strike poses,
+no broken white slash placeholder, normal six damage, and owner/Osty corpses
+still present 10.1 seconds after Offering. The console was closed while cards
+were played. The transient continuous blue arc was not observed or claimed
+for reduced sampling at poses 0,5,11; the full c814 arc is separately visible.
+A 100-frame decoded comparison preserves the tested actor geometry/timing and
+all 1,783 clip records. This does not turn reduced sampling into full animation.
+
+Packaging found a separate primary-ID representation difference in nine
+non-retained rows of reduced clip 28. The guard accepts either the stable frame
+ID with the selected pose's complete descriptor, or that exact selected ID.
+It requires NAF1, the same clip's exact sample_map target and full descriptor
+equality; full-profile and retained-frame identities remain strict. The
+existing geometry/pose validator still runs. This validator is also called
+by the standalone converter, not only the ZIP packager.
 
 ## Presentation and remaining limits
 
-All57 source nodes are implemented; actual firmware gameplay above exercises
+All 57 source nodes are implemented; actual firmware gameplay above exercises
 the initial normal chain and legacy/Daily boundaries, not 57 complete campaigns.
 Native/source comparisons cover the remaining trigger/state and entitlement
 cases. Act2B and Act3B remain the original Early Access placeholders, with no
@@ -183,9 +219,12 @@ unimplemented, without an inferred user waiver.
 Actual NWFv3 Neow timing is recorded separately in
 [Ancient performance](ui24-ancient-performance.md). Its first 30s window after
 Continue includes 24 reads and long frames; it is not a fully preheated zero-read
-or physical-handheld result. Final converter identity, both final resource
-families, the complete70,000,000-byte ZIP gate and all optional-language pairing
-remain independent release gates.
+or physical-handheld result. Both prebuilt families and the three ZIPs have
+passed their recorded gates; the complete full ZIP expands to 69,869,324 bytes,
+including documentation/licenses, with matching optional language families.
+The standalone converter's complete cold/warm runs and final data comparison
+remain separate from those prebuilt results. See the
+[release and recovery record](ui24-release-validation.md).
 
 The initial six outdated fixture assumptions, subsequent maximum-size legacy
 fixture failures, the initial over-budget ARM and the reduced resource marker

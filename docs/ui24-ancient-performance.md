@@ -95,10 +95,12 @@ reads totaling 1,480,195 bytes. Cold animation/resource access therefore
 remains a source of occasional stalls even though the steady rendering cost
 is much lower.
 
-The complete final full/reduced installation smoke and standalone converter
-completion belong to their own release receipts. This report identifies the
-already tested unified resource candidate without claiming that a later
-converter artifact was the producer of this earlier guest run.
+The complete full/reduced installation and ZIP gates subsequently passed,
+as recorded in [UI24 release acceptance](ui24-release-validation.md) and the
+recovered Timeline/animation receipts. Complete standalone converter execution
+is a separate gate. This report identifies the resource candidate actually
+measured without claiming that a later converter artifact produced that earlier
+guest run.
 
 ## What changed in the rendered rooms
 
@@ -135,9 +137,15 @@ open: its correctly transferred files had lost the required `NAF1` profile
 header word in generic storage writers. The NWF3 adapter now preserves that
 word at replacement and compaction boundaries, with a real-writer synthetic
 regression. The earlier reduced subtotal above identifies that historical
-conversion tail; corrected all-locale publication and USB acceptance must be
-recorded separately before that reduced package is accepted. Full-resource
-Neow/Tez performance and their image comparisons are unaffected.
+conversion tail. Corrected reduced was subsequently rebuilt from the proper
+pre-NWF3 input with actual producer `cd0d5a7dfbef4238abe1da701c82b7874f9a7b14`,
+published whole-tree equivalent `4d75c55f7561711ced681806d924f24c65ca4959`.
+Its eleven bilingual files total **27,878,523 bytes**; all 25 files total
+**42,163,250 bytes**. All sixteen locales retain the required profile marker.
+The ordinary final c814 launcher and eleven required data files passed exact
+USB readback, Chinese/English Timeline/Continue/save and normal OS exit.
+See [corrected reduced acceptance](ui24-timeline.md#corrected-reduced-edition).
+Full-resource Neow/Tez performance and their image comparisons are unaffected.
 
 ### Tezcatara's flame, glow and cinders
 
