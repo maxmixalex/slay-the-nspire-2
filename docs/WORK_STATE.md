@@ -1358,6 +1358,17 @@ validation passes with all generated C++ indices unchanged. The six focused
 native targets and ordinary WebAssembly link rerun remain pending at this
 coherent checkpoint. No production C++/schema/pool or sampled resource changed.
 
+
+The first complete-CI follow-up builds all six native targets and successfully
+links the ordinary WebAssembly runtime (7,629,771 bytes). Five native targets
+pass. The history-storage test advances past its original maximum fixture and
+finds the same old H8 equality assumption in later rollback/recovery/profile
+cases. Those now use a strict legacy-payload comparison: compatibility flag,
+zero invented score/states/dates, and exact old bytes after removing only the
+new extension. Existing physical-file preservation assertions remain intact,
+and a recovered successful write explicitly requires NSHB. The failed execution
+is retained; this follow-up awaits its real rerun.
+
 ## UI24 Ancient conversion CI fixtures
 
 The original-profile test fixtures now explicitly distinguish baked and unbaked
