@@ -37,6 +37,7 @@ def checked_plan():
 FRAGMENT_WORLD_SOURCE_SHA='38a7a94cdb7f5e372fde42bce0c5cb0d8d2f8d25e71080b07e1ca318e4ab3297'
 FRAGMENT_TEXT_TABLE_SHA='9a6fc6a83493c3d29996fbd44b6d22b0d3bfccbfd88cb96b770cdfd64a7c24d3'
 ATTACK_PREFETCH_SOURCE_SHA='26a80aa2982002509cff6e278150c2264076bd105d4f47f64b6dab9959a6de18'
+HIT_PREFETCH_SOURCE_SHA='0ea4ac07599820cc59887b2c34aca65c59d8f32abc3fb1f315e7526546ce94b2'
 
 
 def route_digest(relative, raw):
@@ -63,7 +64,12 @@ def route_digest(relative, raw):
     # overlap with the fixed 1,598 retired images or 74 retired clips. It adds
     # no renderer root, Vantom route, model selection or fallback range.
     # Pin the complete reviewed source; unknown edits still fail closed.
-    if relative=='src/combat_preparation.inc' and actual==ATTACK_PREFETCH_SOURCE_SHA:
+    # The second reviewed source also prefetches current living enemies' Hit
+    # reactions through the existing ordinary Hit resolver. Its conservative
+    # closure covers 172 transitions / 218 clips across all 109 models,
+    # prefixes and skins: no retired clip or direct/typed image root is added.
+    if (relative=='src/combat_preparation.inc' and
+        actual in (ATTACK_PREFETCH_SOURCE_SHA,HIT_PREFETCH_SOURCE_SHA)):
         return '2c429e6ccceb21b5e9c67b60f07ec91f25f07adfe2372a07f4feb593ce724957'
     if relative!='src/world_enemy_assets.inc' or actual==PLAN['runtime_route_sources'].get(relative):
         return actual

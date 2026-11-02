@@ -157,6 +157,37 @@ void run_attack_budget(){
     CHECK(!std::memcmp(added.images,existing.images,sizeof added.images)&&!std::memcmp(added.first,existing.first,sizeof added.first));
     CHECK(added.pages<=CombatPreparation::PageBudget);same_game();app.reset_presentation();
 }
+void run_hit_reactions(){
+    constexpr unsigned hit_clip=725,idle_clip=726; // Current Nibbit animator.
+    for(bool reduced:{false,true}){
+        label=reduced?"current enemy Hit aliases retain their clocks":"current enemy Hit frames use the remaining preparation budget";
+        Package p=native_pack(163,InspectionAuxiliaryCount,46);
+        for(unsigned id=160;id<163;++id){Bytes pixels;for(unsigned i=0;i<16;++i)append(pixels,id*193+i,2);literal(p,id,pixels,4,4);}
+        set_clip(p,hit_clip,160,3);put(p.bytes,clip_row(p,hit_clip)+6,77,2);
+        if(reduced){put(p.bytes,36,content_animation_profile::ReducedPoses);
+            for(unsigned id=161;id<163;++id)std::memcpy(p.bytes.data()+p.image_entry(id),p.bytes.data()+p.image_entry(160),16);}
+        seal(p.bytes);Provider provider{&p.bytes};battle(provider,false);
+        CHECK(encounter_setup(app.game,EncounterId::NibbitsNormal));app.reset_presentation();CHECK(save(app.game,initial));app.render();
+        const auto animation=app.animation;unsigned steps=0;
+        while(app.combat_preparation.active){app.advance(33);CHECK(++steps<2000&&app.animation==animation);same_game();}
+        app.render();const auto clip=app.content.clip(hit_clip);CHECK(clip.count==3&&clip.frame_ms==77);
+        const auto before=app.content.read_stats();for(unsigned id=160;id<163;++id){CHECK(app.content.image_cached(id));CHECK(app.content.image(id).pixels);}
+        const auto after=app.content.read_stats();CHECK(before.callbacks==after.callbacks&&before.callback_bytes==after.callback_bytes);
+        CHECK(app.content.healthy()&&!resource_transfer_uses&&!provider.bad_range&&!saves);same_game();
+    }
+    // Existing enemy windows and the player attack fill the unchanged budget.
+    // Turning on a distinct Hit clip must leave that entire plan untouched.
+    label="optional enemy Hit does not displace current windows or the player attack";
+    Package p=native_pack(449);for(unsigned id=160;id<449;++id){Bytes pixels;append(pixels,id,2);literal(p,id,pixels,1);}
+    set_clip(p,idle_clip,160,283);set_clip(p,AnimHeroAttack,443,3);set_clip(p,hit_clip,446,0);seal(p.bytes);Provider provider{&p.bytes};
+    auto plan=[&](){battle(provider,false);CHECK(encounter_setup(app.game,EncounterId::NibbitsNormal));app.reset_presentation();CHECK(save(app.game,initial));app.render();};
+    plan();const auto existing=app.combat_preparation;CHECK(existing.count==CombatPreparation::Capacity);
+    for(unsigned id=443;id<446;++id){bool found=false;for(unsigned i=0;i<existing.count;++i)found|=existing.images[i]==id;CHECK(found);}
+    set_clip(p,hit_clip,446,3);plan();const auto&added=app.combat_preparation;
+    CHECK(added.bounded&&added.count==existing.count&&added.pages==existing.pages&&added.first_count==existing.first_count);
+    CHECK(!std::memcmp(added.images,existing.images,sizeof added.images)&&!std::memcmp(added.first,existing.first,sizeof added.first));
+    CHECK(added.pages<=CombatPreparation::PageBudget);same_game();app.reset_presentation();
+}
 void run_first_action_art(){
     constexpr unsigned controls[]={I6_TargetArrowHead,I6_TargetArrowSegment,1170, // map.SELECTION_RETICLE
         I7_GlowSpeck,I7_Speck,I7_Glow,I7_BlockRing,I7_HitStreak};
@@ -182,4 +213,4 @@ void run_first_action_art(){
     }
 }
 }
-int main(){run_preparation();run_transition_art();run_player_attacks();run_attack_budget();run_first_action_art();std::printf("combat preparation: %u checks; time/work budgets, unchanged game/labels, cancellation, announced art, five-character attacks, reduced aliases, saturated priorities, first-action materials/digits and resource faults\n",checks);}
+int main(){run_preparation();run_transition_art();run_player_attacks();run_attack_budget();run_hit_reactions();run_first_action_art();std::printf("combat preparation: %u checks; time/work budgets, unchanged game/labels, cancellation, announced art, five-character attacks, current Hit reactions, reduced aliases, saturated priorities, first-action materials/digits and resource faults\n",checks);}

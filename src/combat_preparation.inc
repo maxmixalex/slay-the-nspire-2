@@ -107,6 +107,18 @@ void App::sync_combat_preparation(){
     const Track attack{content.clip(attack_id),0,attack_id};
     if(attack.clip.frame_ms)for(unsigned frame=0;frame<attack.clip.count;++frame)
         if(!frame_images(attack,frame,false))break;
+    // A normal strike also shows the target's current Hit reaction. Append
+    // it after existing windows and the player attack; resolve only current
+    // displayed state/facts, never a future move or gameplay RNG branch.
+    if(game.enemy_world.active)for(int i=0;i<game.enemy_count;++i)if(game.enemies[i].hp>0){
+        const auto&m=enemy_presentation[i];auto*facts=const_cast<EnemyVisualFacts*>(&m.facts);
+        const int state=world_enemy_transition(m.model,m.state,"Hit",ui_enemy_fact,facts);
+        const auto*node=world_enemy_state(m.model,state);if(!node)continue;
+        const int id=world_enemy_resolve_clip(m.model,node->clip,m.skin,-1,ui_enemy_fact,facts);
+        const Track reaction{content.clip(id),0,id};
+        if(reaction.clip.frame_ms)for(unsigned frame=0;frame<reaction.clip.count;++frame)
+            if(!frame_images(reaction,frame,false))break;
+    }
     for(unsigned i=1;i<p.count;++i){uint32_t id=p.images[i];unsigned j=i;while(j&&p.images[j-1]>id){p.images[j]=p.images[j-1];--j;}p.images[j]=id;}
     // Planning only reads resident directory/game metadata. Preserve the
     // immediate warm path when all pictures are already resident, while a
