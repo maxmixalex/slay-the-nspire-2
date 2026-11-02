@@ -25,6 +25,16 @@ def resource_version(path):
 
 def readme(info):
     profile = info.get('animation_profile', 'animated')
+    stage_match = re.match(r'(ui[0-9]+)(?:$|[-_])', info.get('stage', ''), re.IGNORECASE)
+    delivery_stage = stage_match[1].lower() if stage_match else ''
+    ui25 = bool(delivery_stage and int(delivery_stage[2:]) >= 25)
+    converter_windows = f'nspire2-convert-{delivery_stage}.exe' if ui25 else 'nspire2-convert.exe'
+    converter_linux = f'nspire2-convert-{delivery_stage}-linux' if ui25 else 'nspire2-convert'
+    edition_names = ('''三个ZIP / Three ZIPs
+full-animated-bilingual = 完整动画中英主包 / full-animation English and Simplified Chinese installer
+no-character-animation-bilingual = 无人物/怪物连续动画中英主包 / reduced-actor English and Simplified Chinese installer
+optional-languages = 两种模式各14种额外语言 / fourteen extra languages for each edition
+\n''' if ui25 else '')
     animation = ('本包仅保留必要人物/怪物动作姿态，保留原有动作时长；Ancient房间人物及背景效果保持入场姿态，卡牌和UI仍按各自时钟运行。启动器自动识别，无需切换设置。\n'
                  'This edition keeps essential actor poses and original action durations. Ancient NPC/background effects hold their entry pose; card and UI clocks continue. The launcher detects it automatically.\n') \
                 if profile == 'no-animations' else \
@@ -62,22 +72,48 @@ def readme(info):
     timeline = ('时间线 / Timeline | 57个原版节点的获得、揭示、分数与解锁链已接入正常界面和存档；原版Early Access占位仍不可用。旧档保留兼容开放，不伪造历史日期。57 source Epochs, obtain/reveal state, score and unlock chains are connected to normal UI and saves. Source Early Access placeholders remain unavailable. Legacy profiles retain compatibility access without invented dates.\n' if ui24 else '')
     missing = '音频和多人游戏当前未实现。Audio and multiplayer are not implemented.' if ui24 else '音频、多人游戏和Timeline当前未实现。Audio, multiplayer and Timeline are not implemented.'
     seed = ('种子输入64个UTF-8字节；更长ASCII文本可经配套转换器编码后，用自定义模式的导入种子码功能完整导入。Seed text accepts 64 UTF-8 bytes; the matching converter can encode complete longer ASCII input for the explicit Import seed code mode.' if ui24 else '种子64个UTF-8字节。Seed text accepts 64 UTF-8 bytes.')
-    compatibility = ('''升级兼容 / Save compatibility
+    compatibility = (f'''升级兼容 / Save compatibility
 保留整个 state 文件夹。第一档局面为 state/nSpire2.sav.tns，进度为 state/nSpire2.progress.tns；第二/三档分别使用 nSpire2.sav.p2.tns、nSpire2.progress.p2.tns 与 p3 文件。设置、历史、语言、备份也在 state。
-UI24可读取旧版v3–v17局面、NSHA及更早进度；保存后写v18/NSHB，旧启动器不能保证读取新格式。需要回退时，使用升级前完整备份的 state 与其配套旧程序/资源。
+{delivery_stage.upper()}可读取旧版v3–v17局面、NSHA及更早进度；保存后写v18/NSHB，旧启动器不能保证读取新格式。需要回退时，使用升级前完整备份的 state 与其配套旧程序/资源。
 Preserve the entire state folder. Profile one uses state/nSpire2.sav.tns and state/nSpire2.progress.tns. Profiles two/three insert .p2/.p3 before .tns, such as nSpire2.sav.p2.tns and nSpire2.progress.p2.tns. Settings, history, language and backups also live there.
-UI24 reads v3–v17 runs and NSHA and older progress. New saves use v18/NSHB; older launchers may not read them. To roll back, restore the complete pre-upgrade state backup together with its matching old launcher/resources.
+{delivery_stage.upper()} reads v3–v17 runs and NSHA and older progress. New saves use v18/NSHB; older launchers may not read them. To roll back, restore the complete pre-upgrade state backup together with its matching old launcher/resources.
 
 时间线 / Timeline
 从主菜单打开时间线，选择节点按 Enter 查看，再按 Enter 揭示已获得的节点。新档按原版解锁；旧档兼容保留已开放内容，不补造过去的获得时间。
 Open Timeline from the title menu. Select an Epoch and press Enter to inspect, then Enter again to reveal an obtained Epoch. Fresh profiles follow source unlocks; legacy profiles retain existing content access without invented obtain dates.
 
 长 ASCII 种子 / Longer ASCII seeds
-电脑端运行 nspire2-convert --encode-seed-file seed.txt，或 nspire2-convert --encode-seed "完整ASCII种子"。PowerShell 使用 ./nspire2-convert.exe。
+普通ASCII种子可以直接输入；64是直接输入框的UTF-8字节容量，不是游戏或操作系统的种子上限。
+PowerShell运行 ./{converter_windows} --encode-seed-file ./seed.txt；Linux运行 ./{converter_linux} --encode-seed-file seed.txt。也可使用 --encode-seed "完整ASCII种子"。
 计算器自定义模式中打开种子输入框，按上下切换到“导入种子码”，输入输出的 SEED64- 加16位十六进制码，再确认。不要在普通文本模式输入此码；普通文本始终按原版文本规则哈希。
-On the computer, run nspire2-convert --encode-seed-file seed.txt, or nspire2-convert --encode-seed "complete ASCII seed". Use ./nspire2-convert.exe in PowerShell.
+Ordinary ASCII seeds can be entered directly. The 64-byte value is the direct text field's UTF-8 capacity, not a game or operating-system seed limit.
+In PowerShell, run ./{converter_windows} --encode-seed-file ./seed.txt; on Linux, run ./{converter_linux} --encode-seed-file seed.txt. Either also accepts --encode-seed "complete ASCII seed".
 In Custom Run, open the seed field and use Up/Down to select Import seed code. Enter the generated SEED64- plus16 hexadecimal digits and confirm. Ordinary text mode always hashes the text using the original rules; it does not auto-detect import codes.
 ''' if ui24 else '')
+    conversion = (f'''自行转换原版数据 / Convert your own original installation
+将单独下载的 {converter_windows} 或 {converter_linux} 放入你拥有的 v0.111.0 / 41cef1ea 原版游戏目录，在该目录打开终端。
+零参数运行默认生成英语和简体中文；Windows也可双击EXE。各次转换依次运行，语言与资源必须来自同一次转换。
+Place the separately downloaded {converter_windows} or {converter_linux} in your own v0.111.0 / 41cef1ea game directory and open a terminal there.
+Running without arguments produces English and Simplified Chinese. Windows users may also double-click the EXE. Run conversions sequentially and keep each output family together.
+
+PowerShell:
+./{converter_windows}
+./{converter_windows} --no-animations
+./{converter_windows} --languages all --output ./nSpire2-converted-all-languages
+./{converter_windows} --no-animations --languages all --output ./nSpire2-converted-no-animations-all-languages
+
+Linux:
+chmod +x ./{converter_linux}
+./{converter_linux}
+./{converter_linux} --no-animations
+./{converter_linux} --languages all --output ./nSpire2-converted-all-languages
+./{converter_linux} --no-animations --languages all --output ./nSpire2-converted-no-animations-all-languages
+
+无需另外安装Python或.NET；工具内置所需运行时，内部仍使用Python，并非纯C++转换器。
+默认输出 nSpire2-converted；--no-animations 默认输出 nSpire2-converted-no-animations。输出中的data须配套本发布的启动器；转换器不生成启动器。
+No separate Python or .NET installation is required. The standalone tool bundles its runtimes and still uses Python internally; it is not a pure C++ converter.
+Default output is nSpire2-converted, or nSpire2-converted-no-animations with --no-animations. Use its data directory with this release's matching launcher; the converter does not generate a launcher.
+\n''' if ui25 else '')
     if ui24 or info.get('stage', '').startswith('ui23'):
         validation = f'''
 验证范围 / Verification scope
@@ -101,7 +137,7 @@ See {ledger_en} for visual, native/emulator evidence and remaining differences.
     return f"""Slay the Nspire 2 — nSpire {info['version']} (StS II v0.111.0)
 
 安装 / Installation
-完整动画版（animated）与精简版（no-animations）两个主包任选其一，不要叠加安装。
+{edition_names}完整动画版（animated）与精简版（no-animations）两个主包任选其一，不要叠加安装。
 解压所选ZIP后，将根目录中的 nSpire2.tns 与 data 文件夹复制到计算器上同一个自选游戏目录；首次安装也可复制空 state 文件夹，随后打开该目录中的 nSpire2.tns。
 可选语言包中，从 animated/data 或 no-animations/data 取与主包对应的语言文件，放入游戏目录的 data；不要把可选包的两个顶层目录整体复制进去。
 Choose one main archive, animated or no-animations. Do not combine the two editions.
@@ -147,6 +183,7 @@ Missing or unusable language resources fall back through the same sequence. Star
 The top-left profile button selects one of three independent run/history/settings profiles.
 Language is shared. The launcher creates state if necessary; all mutable files stay there.
 {compatibility}
+{conversion}
 
 操作 / Controls
 触摸板四边导航，中心点击；数字 1–9、0 选择第 1–10 张手牌。

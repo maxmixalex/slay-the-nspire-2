@@ -108,6 +108,10 @@ def build(args):
                          (resources["animated"]["installed_bytes"], args.maximum_animated_bytes))
     base_version = (ROOT / "VERSION").read_text().strip().split("-", 1)[0]
     stem = "Slay-the-Nspire-2-" + base_version + "-" + stage
+    archive_suffixes = ({"animated": "full-animated-bilingual",
+                         "no-animations": "no-character-animation-bilingual"}
+                        if int(stage[2:]) >= 25 else
+                        {profile: profile + "-bilingual-calculator" for profile in PROFILES})
     receipts = {}
     with tempfile.TemporaryDirectory(prefix="nspire-package-variants-") as temporary:
         staging_root = Path(temporary)
@@ -130,7 +134,7 @@ def build(args):
             candidates = list(destination.glob("*-calculator.zip"))
             if len(candidates) != 1:
                 raise ValueError("Expected exactly one calculator archive")
-            archive = args.output / (stem + "-" + profile + "-bilingual-calculator.zip")
+            archive = args.output / (stem + "-" + archive_suffixes[profile] + ".zip")
             candidates[0].replace(archive)
             receipts[profile] = check_archive(archive)
             reports = list(destination.glob('*-validation.json'))
@@ -149,10 +153,15 @@ def build(args):
 
     extras = [code for code in LANGUAGES if code not in ("eng", "zhs")]
     optional = args.output / (stem + "-optional-languages.zip")
+    edition_mapping = ((stage.upper() + "主包文件名 / Installer mapping:\n"
+                        "full-animated-bilingual → animated\n"
+                        "no-character-animation-bilingual → no-animations\n\n")
+                       if int(stage[2:]) >= 25 else "")
     instructions = (
         "Slay the Nspire 2 " + stage.upper() + " — optional original languages\n\n"
         "请选择与你安装的版本对应的文件夹：\n"
         "animated = 完整动画版；no-animations = 无人物/怪物连续动画版。\n"
+        f"{edition_mapping}"
         "仅将其中所需的 data/nSpire2.<language>.dat.tns 复制到游戏 data 文件夹。\n"
         "本ZIP只配套本轮提供的对应主包；两个动画档的语言寻址不同，请勿混用。英语和简体中文已在两个主包中。\n\n"
         "Choose the directory matching your calculator edition: animated or no-animations.\n"

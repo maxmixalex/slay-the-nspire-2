@@ -1,0 +1,269 @@
+{
+  "schema": 1,
+  "stage": "ui25",
+  "reference_game": {
+    "version": "v0.111.0",
+    "commit": "41cef1ea"
+  },
+  "status": "corrected data and runtime candidate pending final independent, ordinary guest and package acceptance",
+  "runtime": {
+    "status": "candidate; final ordinary guest acceptance pending",
+    "actual": "f37d38ea6adbcd01065705b66bfdf7fac60e3f3d",
+    "public": "f37d38ea6adbcd01065705b66bfdf7fac60e3f3d",
+    "source_relation": "same_commit",
+    "test_fix_checkpoint": "73bf452e1c8b82855ab464a892f671af0258fb36",
+    "test_fix_runtime_changed": false,
+    "file": "nSpire2.tns",
+    "bytes": 1736666,
+    "sha256": "9b50a50eb15d5c8f22dcc8984464517df6d76a29ed53fa351476df1b7bc47aca",
+    "formal_allocation_bytes": 22288328,
+    "formal_cap_bytes": 22291016,
+    "headroom_bytes": 2688,
+    "allocation_change_from_c814_bytes": 484,
+    "data_bss_pools_changed": false,
+    "diagnostic_launcher": false,
+    "linked_arm_elf_bytes": 8135228,
+    "linked_arm_elf_sha256": "862c94f1ac5849ee81b5b8a49cee86fd4c7a924268db2d20872b696f29c41371",
+    "allocation_readback": {
+      "loader_prefix_bytes": 125200,
+      "elf_initialized_and_bss_bytes": 22163128,
+      "sum_bytes": 22288328,
+      "physical_peak_memory_measurement": false
+    }
+  },
+  "machine": {
+    "emulator": "Firebird",
+    "supplied_checkpoint_model": "TI-Nspire CX II CAS",
+    "os": "6.4.0.74",
+    "guest_ram_bytes": 67108864,
+    "normal_boot_clock_report_mhz": {
+      "cpu": 396,
+      "ahb": 198,
+      "apb": 99
+    },
+    "guest_timer": "foreground SP804",
+    "guest_timer_hz": 32768,
+    "physical_calculator_tested": false,
+    "new_cpu_overclock_setting_applied": false,
+    "factory_clock_independently_verified": false,
+    "guest_memory_or_snapshot_headers_modified": false
+  },
+  "original_completed_cold_run": {
+    "source_actual": "5a21f14752dba19e4ceaa43d1b41639dd27d4826",
+    "source_public": "5a21f14752dba19e4ceaa43d1b41639dd27d4826",
+    "execution_status": "passed",
+    "output_acceptance": "rejected after independent image comparison",
+    "fresh_work": true,
+    "stages_completed": 84,
+    "languages": [
+      "eng",
+      "zhs"
+    ],
+    "animation_profile": "full",
+    "executable_bytes": 90671856,
+    "executable_sha256": "2f549cb9fcf08b12d827d880f5992e082fc778f3c96256bf3e87fc989ec1208c",
+    "started_at": "2026-11-02T12:01:31.539836+00:00",
+    "ended_at": "2026-11-02T15:39:38.718749+00:00",
+    "actual_cli_wall_seconds": 13087.111952852,
+    "peak_process_tree_rss_bytes": 2441826304,
+    "pipeline_elapsed_seconds": 13079.16874849,
+    "entire_dedicated_tmp_peak_allocated_bytes": 2279501824,
+    "entire_dedicated_tmp_peak_logical_bytes": 2259566656,
+    "temporary_measurement": "Linux file blocks st_blocks*512, inode-deduplicated across the entire dedicated TMP, sampled every0.5s; excludes directory/inode metadata. Onefile/runtime/sampler extraction is included. Original inputs, executable, build environment, final outputs and private recovery checkpoint exports are outside TMP. RSS sums process resident pages, including shared-page double counting. This is one shared-environment real run; checkpoint export overlap is recorded separately.",
+    "evidence": {
+      "file": "cold-default.json",
+      "bytes": 3956,
+      "sha256": "77e4974bca123909b97748c245f94ae7be0f825a6ff25b85a3637c8a6bbdefa4"
+    },
+    "does_not_measure_corrected_producer": true
+  },
+  "diagnosed_production_difference": {
+    "images_compared": 60294,
+    "different_image_ids": [
+      2418,
+      2419,
+      2420,
+      2421,
+      2422,
+      2423,
+      2424,
+      2425,
+      2426,
+      2427,
+      2428,
+      2429
+    ],
+    "other_images_exact": 60282,
+    "clip_id": 28,
+    "clip_name": "necrobinder.attack",
+    "frame_ms": 83,
+    "difference": "second bounded-a5 color/alpha reduction and retained-to-tiled storage change",
+    "accepted_group_decoded_bytes": 83585,
+    "rejected_group_decoded_bytes": 1044120,
+    "geometry_equal": true,
+    "nonzero_alpha_masks_equal": true,
+    "clip_records_equal": true,
+    "english_glyphs_checked": 12902,
+    "simplified_chinese_glyphs_checked": 53351,
+    "strings_checked_per_locale": 8961,
+    "bilingual_glyph_and_string_differences": [],
+    "evidence": [
+      {
+        "file": "all-decoded-comparison.json",
+        "bytes": 6549,
+        "sha256": "b7d3ebb299179bb080e81eb51b97138b96f218f06bd4f6e584a677a51495cf93"
+      },
+      {
+        "file": "first12-bounded-a5-causality.json",
+        "bytes": 4215,
+        "sha256": "96eb72a1847980ad046ebfe6578fa3f0a3fb88fda12f6c3027375d9bb2eff432"
+      },
+      {
+        "file": "alias-and-clip28-cache-shape.json",
+        "bytes": 7489,
+        "sha256": "1710456dce4fcc282638daef02f304f07dd899218212694c8ba9656bf05627bb"
+      }
+    ]
+  },
+  "corrected_producer": {
+    "source_actual": "e89d8e7b8cc0c4bfa17b6584c52e3af768de426a",
+    "source_public": "e98a6cb4ed29cd4e3bcaa597cff9ad089c6854f7",
+    "source_relation": "equivalent_tree",
+    "tree": "ad517844fd666fd32c94cb5246b779b19ea510ff",
+    "source_archive_sha256": "17acaaf887bcbe43b91380120e91175eef4844e2e9a2177e5daf7322e1d56d4a",
+    "scope": "protect all clip 28 main and registered FR1 attack pieces from dicing and color/storage reduction",
+    "runtime_changed": false,
+    "production_route": "verified-prefix conversion tail, not an empty-work cold run",
+    "upstream_source_public": "5a21f14752dba19e4ceaa43d1b41639dd27d4826",
+    "first_tail_stage": "native-framed20",
+    "prefix_manifest": {
+      "file": "upstream-copy.json",
+      "bytes": 12783,
+      "sha256": "8b4194f57183c5077987bbd7ccad5ec2183bed6b0e3e7ca1126a7653acc2e4d9"
+    },
+    "full_tail_status": "pending",
+    "reduced_tail_status": "pending",
+    "all16_locales_status": "pending",
+    "frozen_linux": {
+      "bytes": 90673448,
+      "sha256": "35bc284f38a221eb6dad7ff5b0285b3327f41f78dafa88232dbd600422db42c7",
+      "build_journal_checkpoint": "e98a6cb4ed29cd4e3bcaa597cff9ad089c6854f7",
+      "actual_source_archive_checkpoint": "e89d8e7b8cc0c4bfa17b6584c52e3af768de426a"
+    },
+    "runtime_change_scope": "The e98 resource correction does not change runtime; the separately identified f37 launcher does."
+  },
+  "corrected_resource_independent_validation": {
+    "status": "pending"
+  },
+  "corrected_ordinary_guest_acceptance": {
+    "status": "pending"
+  },
+  "packages": {
+    "status": "pending",
+    "required_zip_count": 3,
+    "maximum_full_bilingual_extracted_bytes": 70000000,
+    "ceiling_counts": "every extracted member, including launcher, default languages, instructions, BUILD-INFO and licenses",
+    "standalone_converter_binaries_separate": true,
+    "archives": {},
+    "planned_filename_suffixes": [
+      "full-animated-bilingual.zip",
+      "no-character-animation-bilingual.zip",
+      "optional-languages.zip"
+    ],
+    "optional_locale_directories": {
+      "full-animated-bilingual": "animated/data",
+      "no-character-animation-bilingual": "no-animations/data"
+    }
+  },
+  "retained_historical_evidence": {
+    "ui24_release_record": "ui24-release-validation.json",
+    "ui24_full_extracted_bytes": 69869324,
+    "ui24_reduced_extracted_bytes": 29695944,
+    "ui24_ancient_record": "ui24-ancient-validation.json",
+    "ui24_final_tezcatara_warm_fps": 23.91501,
+    "ui24_final_neow_first_cycle_fps": 29.055081,
+    "is_new_corrected_guest_measurement": false
+  },
+  "limitations": [
+    "Audio, multiplayer, cloud saves and hosted leaderboards are unimplemented; no user waiver is established.",
+    "Desktop timezone/DST data and calculator IME are not supplied.",
+    "Source Early Access Timeline placeholders remain unavailable; legacy profiles do not gain invented acquisition dates.",
+    "Port-authored history/archive errors and Timeline status labels use English or Simplified Chinese; other locales use English for those labels.",
+    "The seven-Affliction extreme has no new optimization or final performance measurement in UI25.",
+    "Warm scene results do not remove cold loading stalls or establish universal frame rate.",
+    "No physical-calculator FPS or physical peak-memory measurement, exhaustive original-game parity, or arbitrary Spine/GPU-history equivalence is established.",
+    "Attack preparation uses remaining capacity after previous actor/enemy priorities; full Regent plus Nibbits leaves the attack cold within the unchanged 640-page ceiling."
+  ],
+  "baseline_runtime": {
+    "actual": "c8142bd99423a19e82da7aae9b4e33de4ad7c939",
+    "public": "73e1213810bc28672202a3ca83d87fe32aad149c",
+    "source_relation": "equivalent_tree",
+    "file": "nSpire2.tns",
+    "bytes": 1736530,
+    "sha256": "1c455b5f630dee02750f0b54767850770d05e6643ec670427bf535312447eeb1",
+    "formal_allocation_bytes": 22287844,
+    "formal_cap_bytes": 22291016,
+    "headroom_bytes": 3172,
+    "diagnostic_launcher": false,
+    "linked_arm_elf_bytes": 8134396,
+    "linked_arm_elf_sha256": "dc46a7a03660ffe358971f4ecdcbeb0a7e1cc6d6d745c4930c33e7b0ddaa9199"
+  },
+  "baseline_runtime_independent_review": {
+    "status": "passed",
+    "runtime_build_inputs_checked": 650,
+    "differences": [],
+    "allocation_readback": {
+      "loader_prefix_bytes": 125188,
+      "elf_initialized_and_bss_bytes": 22162656,
+      "sum_bytes": 22287844,
+      "ceiling_bytes": 22291016,
+      "physical_peak_memory_measurement": false
+    },
+    "evidence": [
+      {
+        "file": "runtime-source-and-binaries.json",
+        "bytes": 806,
+        "sha256": "06aa77377b3b12c20ca2130a7ad83a8c5240ce5247c79e88a1deba4ff1d23bbb"
+      },
+      {
+        "file": "launcher-allocation-readback.json",
+        "bytes": 651,
+        "sha256": "fa3c8b26ce878d326fbf0bbdab5f78266f8b54480b5c94e309534e6246267b01"
+      }
+    ]
+  },
+  "runtime_source_validation": {
+    "native_checks": 971633,
+    "native_action_fixture": "accepted UI24 full and reduced, normal card select + Confirm",
+    "native_action_result": {
+      "enemy_hp_before": 44,
+      "enemy_hp_after": 38,
+      "energy_before": 3,
+      "energy_after": 2,
+      "reads_each": 1,
+      "bytes_each": 4096,
+      "remaining_read_kind": "frame descriptor page",
+      "attack_targeting_hit_damage_payload_reads": 0
+    },
+    "arm_command_returncode": 0,
+    "arm_journal_status": "source_changed",
+    "arm_input_bridge": {
+      "compiled_inputs_checked": 650,
+      "compiled_input_differences": [],
+      "build_scripts_changed": false,
+      "changed_path": "tests/combat_preparation_regression.cpp"
+    },
+    "evidence": [
+      {
+        "file": "impact-source-native-receipt.json",
+        "bytes": 74308,
+        "sha256": "903ebca722b98e9b1dee69a9169c744b7d21f79070d5f7052497c0b2a232f142"
+      },
+      {
+        "file": "impact-arm-input-bridge.json",
+        "bytes": 880,
+        "sha256": "8802816dda446a0b6a9795be09dad566d7d8524dc24454788aa3b1f9486bfa53"
+      }
+    ]
+  }
+}
