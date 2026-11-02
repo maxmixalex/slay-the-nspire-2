@@ -14,6 +14,8 @@ on:
       - 'third_party/lzma2/**'
       - 'tests/arm_division_regression.py'
       - 'tests/arm_sparse_tile_regression.py'
+      - 'tests/test_converter_workspace.py'
+      - 'tests/test_converter_builtin_workspace.py'
       - 'CMakeLists.txt'
       - 'docs/converter-ui23.md'
       - 'requirements*.txt'
