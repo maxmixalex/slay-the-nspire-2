@@ -89,6 +89,13 @@ static void plan_combat_frontend(App&a){
         }
     }
     if(hand.count&&a.content.has_selection_assets())ui(I9_CardHighlightSdf);
+    // Selecting and hitting with the first card must not decode these shared
+    // controls/materials during the short attack. Keep them after every old
+    // HUD/card priority and inside the same bounded incremental image queue.
+    if(s.card_count){
+        ui(I6_TargetArrowHead);ui(I6_TargetArrowSegment);add(a.content.world_image("map","SELECTION_RETICLE"));
+        ui(I7_GlowSpeck);ui(I7_Speck);ui(I7_Glow);ui(I7_BlockRing);ui(I7_HitStreak);
+    }
     for(unsigned i=1;i<p.ui_count;++i){const auto id=p.ui_images[i];unsigned j=i;
         while(j&&p.ui_images[j-1]>id){p.ui_images[j]=p.ui_images[j-1];--j;}p.ui_images[j]=id;}
     p.ui_stage=1;
@@ -131,6 +138,9 @@ static void prepare_combat_labels(Canvas&c){
         if(!s.world_relics.active&&id<RelicKinds){const auto legacy=relic_definitions[id].id;counter=relic_counter_limit(legacy)&&(!relic_counter_is_turn_scoped(legacy)||combat_phase(s.phase));value=int(relic_counter(s,legacy));}
         if(counter)number(value,8);}
     if(a.show_card_indices){const auto hand=a.combat_hand();for(unsigned i=0;i<hand.count;++i)number(int(i+1),10);}
+    // NDamageNumVfx uses regular16px digits, distinct from the current HUD
+    // sizes. Warm only this fixed alphabet through the existing glyph budget.
+    c.text("0123456789",0,0,16);
 }
 static PreparationResult prepare_combat_frontend(App&a,GlyphPreparationBudget&budget){
     auto&p=a.combat_preparation;

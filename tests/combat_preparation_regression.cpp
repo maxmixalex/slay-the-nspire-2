@@ -3,6 +3,7 @@
 #undef main
 #include "resource_transfer.hpp"
 #include "ui7_assets.hpp"
+#include "ui6_assets.hpp"
 #include "framed_animation_ui22.hpp"
 #include "content_animation_profile.hpp"
 
@@ -14,8 +15,8 @@ uint32_t clock_value=0,clock_step=0;
 uint32_t preparation_clock(){const auto now=clock_value;clock_value+=clock_step;return now;}
 void poll_input(){++polls;}
 bool save_run(const State&){++saves;return true;}
-Package native_pack(unsigned images=160,unsigned auxiliary=InspectionAuxiliaryCount,unsigned version=PredictiveIndexContentVersion){
-    Package p=basic(2);p.images=images;p.encode(false,auxiliary,version,Ui7StringCount,BestiaryKaiserAnimationKinds);
+Package native_pack(unsigned images=160,unsigned auxiliary=InspectionAuxiliaryCount,unsigned version=PredictiveIndexContentVersion,unsigned glyphs=1){
+    Package p=basic(2);p.images=images;p.glyphs=glyphs;p.encode(false,auxiliary,version,Ui7StringCount,BestiaryKaiserAnimationKinds);
     const unsigned strings=40+p.images*16+p.glyphs*16,clips=strings+Ui7StringCount*8;
     put(p.bytes,strings+LocaleMarkerString*8,unsigned(p.bytes.size()));put(p.bytes,strings+LocaleMarkerString*8+4,3);
     p.bytes.insert(p.bytes.end(),{'e','n','g',0});seal(p.bytes);
@@ -156,5 +157,27 @@ void run_attack_budget(){
     CHECK(!std::memcmp(added.images,existing.images,sizeof added.images)&&!std::memcmp(added.first,existing.first,sizeof added.first));
     CHECK(added.pages<=CombatPreparation::PageBudget);same_game();app.reset_presentation();
 }
+void run_first_action_art(){
+    constexpr unsigned controls[]={I6_TargetArrowHead,I6_TargetArrowSegment,1170, // map.SELECTION_RETICLE
+        I7_GlowSpeck,I7_Speck,I7_Glow,I7_BlockRing,I7_HitStreak};
+    for(bool reduced:{false,true}){
+        label=reduced?"reduced first-card targeting, hit materials and damage digits":"full first-card targeting, hit materials and damage digits";
+        Package p=native_pack(168,InspectionAuxiliaryCount,46,11);const unsigned auxiliary=p.base-InspectionAuxiliaryCount*4;
+        for(unsigned i=0;i<8;++i){Bytes pixels;for(unsigned j=0;j<16;++j)append(pixels,0x1234+i*317+j,2);
+            literal(p,160+i,pixels,4,4);put(p.bytes,auxiliary+controls[i]*4,160+i);}
+        for(unsigned i=0;i<10;++i){const unsigned at=unsigned(p.bytes.size()),row=40+p.images*16+i*16;
+            p.bytes.insert(p.bytes.end(),16,uint8_t(17+i*19));put(p.bytes,row,'0'+i);put(p.bytes,row+4,at);
+            put(p.bytes,row+8,16,2);put(p.bytes,row+10,4,1);put(p.bytes,row+11,4,1);put(p.bytes,row+12,5,2);put(p.bytes,row+14,0,2);}
+        put(p.bytes,40+p.images*16+10*16,'?');if(reduced)put(p.bytes,36,content_animation_profile::ReducedPoses);seal(p.bytes);
+        Provider provider{&p.bytes};battle(provider,true);clock_step=100;const unsigned animation=app.animation;unsigned steps=0;
+        while(app.combat_preparation.active){const auto cold=app.combat_preparation.cold_images;app.advance(33);
+            CHECK(++steps<2000&&app.animation==animation&&app.combat_preparation.cold_images-cold<=CombatPreparation::ImagesPerUpdate);same_game();}
+        app.render();const auto before=app.content.read_stats();
+        for(unsigned i=0;i<8;++i){CHECK(app.content.image_cached(160+i));CHECK(app.content.image(160+i).pixels);}
+        for(unsigned digit='0';digit<='9';++digit){CHECK(app.content.glyph_cached(digit,16));const auto glyph=app.content.glyph(digit,16);CHECK(glyph.pixels&&glyph.w==4&&glyph.h==4);}
+        const auto after=app.content.read_stats();CHECK(before.callbacks==after.callbacks&&before.callback_bytes==after.callback_bytes);
+        CHECK(app.combat_preparation.ui_count<=CombatPreparation::UiCapacity&&app.content.healthy()&&!resource_transfer_uses&&!provider.bad_range&&!saves);same_game();
+    }
 }
-int main(){run_preparation();run_transition_art();run_player_attacks();run_attack_budget();std::printf("combat preparation: %u checks; time/work budgets, unchanged game/labels, cancellation, announced art, five-character attacks, reduced aliases, saturated priorities and resource faults\n",checks);}
+}
+int main(){run_preparation();run_transition_art();run_player_attacks();run_attack_budget();run_first_action_art();std::printf("combat preparation: %u checks; time/work budgets, unchanged game/labels, cancellation, announced art, five-character attacks, reduced aliases, saturated priorities, first-action materials/digits and resource faults\n",checks);}
