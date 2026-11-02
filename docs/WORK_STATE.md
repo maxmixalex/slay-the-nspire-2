@@ -1421,3 +1421,22 @@ dependency gate. The normal catalog validation remains935 bindings/142 extra
 source keys. This changes only build validation, tests and documentation. The
 already-running corrected94 producer, resource algorithms, formal launcher and
 three frozen installer archives are untouched and do not need to restart.
+
+## UI24 Windows source-preflight UTF-8 invocation
+
+The real Windows run41367670709 at public019ae786 failed in its new source
+locale preflight with a `charmap` decoding error before PyInstaller began.
+Its ARM helper/source oracle and compatible bootloader steps passed; no new
+frozen converter or frozen-locale success is claimed for that failed run.
+The Windows bundle command and documented source build command now use
+`python -X utf8`, matching the existing Windows source ARM invocation.
+
+A focused local reproduction with an ASCII host locale and PYTHONUTF8=0
+rejects the former plain invocation, while the exact revised invocation
+passes real source validation and reaches the deliberately absent PyInstaller
+dependency gate without creating outputs. The real catalog validates935
+bindings/142 extra source keys, and all three source-preflight tests pass
+under the same forced non-UTF-8 host environment with -X utf8. This is local
+encoding-boundary evidence; the corrected actual Windows CI remains pending.
+The production locale module, source94/public25 cold producer, accepted
+calculator runtime and frozen installer bytes are unchanged.

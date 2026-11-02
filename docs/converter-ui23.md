@@ -256,7 +256,7 @@ sampling helpers during source development. Build the executable on the target
 operating system with PyInstaller and `tools/build_converter_bundle.py`:
 
 ```text
-python tools/build_converter_bundle.py --helpers PATH --output PATH --work PATH
+python -X utf8 tools/build_converter_bundle.py --helpers PATH --output PATH --work PATH
 ```
 
 The bundle builder first checks every reviewed UI locale binding and generated

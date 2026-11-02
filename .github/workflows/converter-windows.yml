@@ -111,7 +111,7 @@ jobs:
           $work = Join-Path $env:RUNNER_TEMP 'converter-bundle-work'
           $bootloader = Join-Path $env:RUNNER_TEMP 'converter-bootloader'
           $env:PYTHONPATH = Join-Path $bootloader 'vendor'
-          python tools/build_converter_bundle.py --helpers $helpers --output $output --work $work
+          python -X utf8 tools/build_converter_bundle.py --helpers $helpers --output $output --work $work
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           Copy-Item "$bootloader/bootloader-compatibility.json" "$output/bootloader-compatibility.json"
           Copy-Item docs/converter-ui23.md "$output/README.md"
