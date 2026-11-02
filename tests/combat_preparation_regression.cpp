@@ -165,10 +165,12 @@ void run_first_action_art(){
         Package p=native_pack(168,InspectionAuxiliaryCount,46,11);const unsigned auxiliary=p.base-InspectionAuxiliaryCount*4;
         for(unsigned i=0;i<8;++i){Bytes pixels;for(unsigned j=0;j<16;++j)append(pixels,0x1234+i*317+j,2);
             literal(p,160+i,pixels,4,4);put(p.bytes,auxiliary+controls[i]*4,160+i);}
-        for(unsigned i=0;i<10;++i){const unsigned at=unsigned(p.bytes.size()),row=40+p.images*16+i*16;
+        for(unsigned i=0;i<10;++i){const unsigned at=unsigned(p.bytes.size()),row=40+p.images*16+(i+1)*16;
             p.bytes.insert(p.bytes.end(),16,uint8_t(17+i*19));put(p.bytes,row,'0'+i);put(p.bytes,row+4,at);
             put(p.bytes,row+8,16,2);put(p.bytes,row+10,4,1);put(p.bytes,row+11,4,1);put(p.bytes,row+12,5,2);put(p.bytes,row+14,0,2);}
-        put(p.bytes,40+p.images*16+10*16,'?');if(reduced)put(p.bytes,36,content_animation_profile::ReducedPoses);seal(p.bytes);
+        // Glyph lookup is sorted by size/style before codepoint; keep the
+        // original10px fallback first, then the ten16px digits.
+        if(reduced)put(p.bytes,36,content_animation_profile::ReducedPoses);seal(p.bytes);
         Provider provider{&p.bytes};battle(provider,true);clock_step=100;const unsigned animation=app.animation;unsigned steps=0;
         while(app.combat_preparation.active){const auto cold=app.combat_preparation.cold_images;app.advance(33);
             CHECK(++steps<2000&&app.animation==animation&&app.combat_preparation.cold_images-cold<=CombatPreparation::ImagesPerUpdate);same_game();}
