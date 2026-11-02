@@ -78,7 +78,7 @@ Open Timeline from the title menu. Select an Epoch and press Enter to inspect, t
 On the computer, run nspire2-convert --encode-seed-file seed.txt, or nspire2-convert --encode-seed "complete ASCII seed". Use ./nspire2-convert.exe in PowerShell.
 In Custom Run, open the seed field and use Up/Down to select Import seed code. Enter the generated SEED64- plus16 hexadecimal digits and confirm. Ordinary text mode always hashes the text using the original rules; it does not auto-detect import codes.
 ''' if ui24 else '')
-    if info.get('stage', '').startswith(('ui23', 'ui24')):
+    if ui24 or info.get('stage', '').startswith('ui23'):
         validation = f'''
 验证范围 / Verification scope
 本包没有计算器实机测试记录，不能据此给出实机帧率或实机峰值内存。
@@ -279,7 +279,7 @@ def main():
             detailed_record_bytes=len(validation_bytes), details_packaged=False)
     info['program_resource_sha256'] = {name: hashlib.sha256(path.read_bytes()).hexdigest()
                                       for name, path in paths.items()}
-    if args.stage.startswith(('ui23','ui24')):
+    if timeline_schema or args.stage.startswith('ui23'):
         info['physical_device_tested'] = False
         info['calculator_fps_measured'] = False
         info['physical_peak_ram_measured'] = False

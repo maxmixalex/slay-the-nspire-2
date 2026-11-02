@@ -18,6 +18,13 @@ DEFAULT_SELECTION_POLICY = 'dark-safe-a6'
 DEFAULT_SELECTION_OVERRIDES = {0: '555a8', 2: '555a8', 3: '555a8'}
 
 
+def fresh_sparse_images(source):
+    from actor_storage_policy import exact_material_images
+    protected = exact_material_images(source)
+    return {image for image, descriptor in enumerate(source.images)
+            if image not in protected and descriptor[3] != 6 and source.image_raw(image)[2] == 4}
+
+
 def save_result(path, data, receipt):
     import content_tiles as t
     path = Path(path)
@@ -40,10 +47,9 @@ def retile_fresh(input_path, output_path, work, workers):
     work = Path(work); work.mkdir(parents=True, exist_ok=True)
     # Registered overflow pieces are auxiliary roots, not ordinary clip
     # samples. Inspect every retained sparse image so those pieces are included.
-    selected = set()
-    for image, descriptor in enumerate(source.images):
-        if descriptor[3] != 6 and source.image_raw(image)[2] == 4:
-            selected.add(image)
+    from actor_storage_policy import exact_material_images, verify_exact_materials
+    protected = exact_material_images(source)
+    selected = fresh_sparse_images(source)
     if selected:
         plan = dice.make_plan(source, work, selected, precision=8)
         plan['compact_replaced_directory'] = True
@@ -52,9 +58,11 @@ def retile_fresh(input_path, output_path, work, workers):
         proof = dice.verify(source, output, plan, work)
     else:
         output, details, proof = data, {}, {'exact_sparse_images': 0}
+    material_proof = verify_exact_materials(source, coalesce.view(output), protected)
     save_result(output_path, output, dict(stage='fresh_actor_dicing', input_sha256=t.sha256(data),
         selected_sparse_images=len(selected), precision='RGB565/alpha8 exact',
-        historical_recovery_inputs=False, details=details, verification=proof))
+        historical_recovery_inputs=False, details=details, verification=proof,
+        exact_actor_materials=material_proof))
 
 
 def codec45(input_path, output_path, work, workers):
@@ -114,6 +122,7 @@ def quality(input_path, output_path, work, workers, policy, preserve_selection,
         return
     import animation_color_candidates_ui23 as colors
     import coalesce_color_candidates_ui23 as coalescer
+    from actor_storage_policy import exact_material_images, verify_exact_materials
     source = colors.view(data)
     results = colors.convert(source, policy, workers=workers, preserve_static=True,
                              preserve_selection=preserve_selection, selection_policy=selection_policy,
@@ -121,11 +130,12 @@ def quality(input_path, output_path, work, workers, policy, preserve_selection,
     quantized = colors.rewrite(source, {}, results)
     proof = colors.verify(source, quantized, results, policy, selection_policy, selection_overrides)
     output, compaction = coalescer.convert(quantized, Path(work), workers=workers)
+    material_proof = verify_exact_materials(source, colors.view(output), exact_material_images(source))
     save_result(output_path, output, dict(stage='quality', policy=policy,
         input_sha256=t.sha256(data), static_art_preserved=True,
         selection_art_preserved=preserve_selection, selection_policy=selection_policy,
         selection_overrides=selection_overrides or {},
-        color_verification=proof,
+        color_verification=proof, exact_actor_materials=material_proof,
         exact_tile_coalescing=compaction))
 
 

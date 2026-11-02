@@ -1,3 +1,25 @@
+# UI25 continuation — original-input conversion discrepancy
+
+Continue from the verified UI24 runtime and full/reduced installation, not
+the older UI23 `main`. The complete original-input Linux cold run finished
+all 84 stages successfully. Its receipts remain evidence for that exact
+producer; a subsequent independent comparison exposed a production defect.
+
+Independent decoding checked all 60,294 images. Exactly twelve frames in
+`necrobinder.attack` were unnecessarily passed through bounded-a5 again and
+placed in a 1,044,120-byte decoded tile group. The accepted authored slash
+uses an 83,585-byte decoded retained group. Dimensions, frame clocks,
+nonzero-alpha masks, all other 60,282 images, and the checked bilingual
+strings/glyphs match. Do not call this output pixel- or performance-equivalent
+until the corrected production policy and regenerated output pass.
+
+Keep the accepted ordinary launcher, 22,291,016-byte program ceiling and
+supplied 64 MiB guest unchanged. This continuation fixes the converter path,
+checks full/reduced output independently, repeats ordinary Firebird acceptance,
+and completes the three matching ZIPs and public integration. Labels after
+UI24 must retain the completed Timeline/import instructions and factual
+measurement scope. These are source-checkpoint goals, not completed results.
+
 # UI24 recovered delivery status
 
 The current [release record](ui24-release-validation.md) and its numeric/hash
