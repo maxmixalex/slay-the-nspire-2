@@ -642,14 +642,27 @@ def main(argv=None):
     argv=list(sys.argv[1:] if argv is None else argv)
     if argv[:1]==['--internal-stage']:
         internal(argv[1],argv[2:]);return 0
-    parser=argparse.ArgumentParser(description=__doc__)
+    parser=argparse.ArgumentParser(
+        description=(
+            'Convert Slay the Spire 2 into TI-Nspire game data.\n'
+            'Run in your original game folder for full animation, English and\n'
+            'Simplified Chinese. The standalone executable requires no separate\n'
+            'Python or .NET installation.'),
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog=(
+            'Examples:\n'
+            '  %(prog)s                         Full animation, English + Simplified Chinese\n'
+            '  %(prog)s --no-animations         Essential actor poses\n'
+            '  %(prog)s --languages all         Include every original language\n'
+            '  %(prog)s --no-animations --languages all\n'
+            '\nThe output is game data; install it with the matching nSpire2.tns launcher.'))
     parser.add_argument('--game',type=Path,help='Original game folder (default: current or executable folder)')
     parser.add_argument('--output',type=Path,help='Installed data output (default: game/nSpire2-converted)')
     parser.add_argument('--work',type=Path,help='Resumable intermediate directory (default: system temporary directory)')
     parser.add_argument('--keep-intermediates',action='store_true',help='Developer option: retain every intermediate pack and scratch file')
     parser.add_argument('--no-animations',action='store_true',help='Retain only essential actor poses with original action timing')
-    parser.add_argument('--languages',default='eng,zhs',help='Comma-separated original locale codes, or all')
-    parser.add_argument('--workers',type=int,choices=(1,2),default=2)
+    parser.add_argument('--languages',default='eng,zhs',help='Comma-separated locale codes (default: eng,zhs), or all')
+    parser.add_argument('--workers',type=int,choices=(1,2),default=2,help='Parallel workers (default: 2; use 1 for lower computer CPU/RAM use)')
     parser.add_argument('--runtime',type=Path,help=argparse.SUPPRESS)
     parser.add_argument('--dotnet',default=os.environ.get('NSPIRE_DOTNET','dotnet'),help=argparse.SUPPRESS)
     parser.add_argument('--fastnoise-header',type=Path,help=argparse.SUPPRESS)

@@ -99,6 +99,14 @@ void App::sync_combat_preparation(){
             if(!frame_images(t,(t.start+frame)%t.clip.count,false)){full=true;break;}}
         if(!more||full)break;
     }
+    // A first attack must not spend its visible animation clock decoding
+    // the player's cold frames. Use only the budget left by the existing
+    // actor/announced-enemy windows, including registered off-canvas pieces.
+    // The same resolver preserves reduced-profile aliases and frame clocks.
+    const int attack_id=character_animation(game.character,AnimHeroAttack);
+    const Track attack{content.clip(attack_id),0,attack_id};
+    if(attack.clip.frame_ms)for(unsigned frame=0;frame<attack.clip.count;++frame)
+        if(!frame_images(attack,frame,false))break;
     for(unsigned i=1;i<p.count;++i){uint32_t id=p.images[i];unsigned j=i;while(j&&p.images[j-1]>id){p.images[j]=p.images[j-1];--j;}p.images[j]=id;}
     // Planning only reads resident directory/game metadata. Preserve the
     // immediate warm path when all pictures are already resident, while a

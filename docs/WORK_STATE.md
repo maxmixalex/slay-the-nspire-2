@@ -13,10 +13,19 @@ nonzero-alpha masks, all other 60,282 images, and the checked bilingual
 strings/glyphs match. Do not call this output pixel- or performance-equivalent
 until the corrected production policy and regenerated output pass.
 
-Keep the accepted ordinary launcher, 22,291,016-byte program ceiling and
-supplied 64 MiB guest unchanged. This continuation fixes the converter path,
-checks full/reduced output independently, repeats ordinary Firebird acceptance,
-and completes the three matching ZIPs and public integration. Labels after
+Keep the 22,291,016-byte program ceiling and supplied 64 MiB guest unchanged.
+A new matched ordinary Firebird control reproduced cold first-Strike loading:
+the action adds 11 reads / 83,676 bytes / about 567 ms of resource time, and
+raises maximum combat render from 60.486 to 376.740 ms. Combat preparation
+omitted the player's attack while preparing idle and announced enemy tracks.
+The new bounded candidate appends that attack only after the complete old
+window and within the existing 288-image / 640-page limits. It changes no
+action clock or buffer. Compilation, linked allocation and paired ordinary
+guest confirmation remain required before adopting its launcher.
+
+This continuation fixes the converter path, checks full/reduced output
+independently, repeats ordinary Firebird acceptance, and completes the three
+matching ZIPs and public integration. Labels after
 UI24 must retain the completed Timeline/import instructions and factual
 measurement scope. These are source-checkpoint goals, not completed results.
 
