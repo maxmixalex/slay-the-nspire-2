@@ -36,10 +36,11 @@ def checked_plan():
 
 FRAGMENT_WORLD_SOURCE_SHA='38a7a94cdb7f5e372fde42bce0c5cb0d8d2f8d25e71080b07e1ca318e4ab3297'
 FRAGMENT_TEXT_TABLE_SHA='9a6fc6a83493c3d29996fbd44b6d22b0d3bfccbfd88cb96b770cdfd64a7c24d3'
+ATTACK_PREFETCH_SOURCE_SHA='26a80aa2982002509cff6e278150c2264076bd105d4f47f64b6dab9959a6de18'
 
 
 def route_digest(relative, raw):
-    """Recognize only the reviewed text-offset and move-table representations.
+    """Recognize only complete reviewed routing-preserving source changes.
 
     All 331 keys, next clips, action offsets/counts and local node ids retain
     their values. The new naturally aligned 12-byte struct emits action_first
@@ -56,6 +57,14 @@ def route_digest(relative, raw):
     if (relative=='src/world_content.inc' and
         actual in ('88a8cb735142229d55da4339ba880b3c8f8b06aba4c0214dab1f0c56ab9d6ccd',FRAGMENT_WORLD_SOURCE_SHA)):
         return '70fd191cae886f76a278d712de2a25e1c7de9d819d3afdf976cdd6db3d2f7e97'
+    # The added bounded prefetch uses character attack clips 1/12/18/23/28,
+    # already rendered by normal play_card -> Canvas::actor and Architect.
+    # Reviewed main frames, FR1 parameters and every registered piece have no
+    # overlap with the fixed 1,598 retired images or 74 retired clips. It adds
+    # no renderer root, Vantom route, model selection or fallback range.
+    # Pin the complete reviewed source; unknown edits still fail closed.
+    if relative=='src/combat_preparation.inc' and actual==ATTACK_PREFETCH_SOURCE_SHA:
+        return '2c429e6ccceb21b5e9c67b60f07ec91f25f07adfe2372a07f4feb593ce724957'
     if relative!='src/world_enemy_assets.inc' or actual==PLAN['runtime_route_sources'].get(relative):
         return actual
     text=raw.decode('utf-8')
