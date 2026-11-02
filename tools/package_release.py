@@ -61,13 +61,19 @@ def readme(info):
     seed = ('种子输入64个UTF-8字节；更长ASCII文本可经配套转换器编码后，用自定义模式的导入种子码功能完整导入。Seed text accepts 64 UTF-8 bytes; the matching converter can encode complete longer ASCII input for the explicit Import seed code mode.' if ui24 else '种子64个UTF-8字节。Seed text accepts 64 UTF-8 bytes.')
     compatibility = ('''升级兼容 / Save compatibility
 保留整个 state 文件夹。第一档局面为 state/nSpire2.sav.tns，进度为 state/nSpire2.progress.tns；第二/三档分别使用 nSpire2.sav.p2.tns、nSpire2.progress.p2.tns 与 p3 文件。设置、历史、语言、备份也在 state。
-UI24可读取旧版v17及更早局面、NSHA及更早进度；保存后写v18/NSHB，旧启动器不能保证读取新格式。需要回退时，使用升级前完整备份的 state 与其配套旧程序/资源。
+UI24可读取旧版v3–v17局面、NSHA及更早进度；保存后写v18/NSHB，旧启动器不能保证读取新格式。需要回退时，使用升级前完整备份的 state 与其配套旧程序/资源。
 Preserve the entire state folder. Profile one uses state/nSpire2.sav.tns and state/nSpire2.progress.tns. Profiles two/three insert .p2/.p3 before .tns, such as nSpire2.sav.p2.tns and nSpire2.progress.p2.tns. Settings, history, language and backups also live there.
-UI24 reads v17 and older runs and NSHA and older progress. New saves use v18/NSHB; older launchers may not read them. To roll back, restore the complete pre-upgrade state backup together with its matching old launcher/resources.
+UI24 reads v3–v17 runs and NSHA and older progress. New saves use v18/NSHB; older launchers may not read them. To roll back, restore the complete pre-upgrade state backup together with its matching old launcher/resources.
 
 时间线 / Timeline
 从主菜单打开时间线，选择节点按 Enter 查看，再按 Enter 揭示已获得的节点。新档按原版解锁；旧档兼容保留已开放内容，不补造过去的获得时间。
 Open Timeline from the title menu. Select an Epoch and press Enter to inspect, then Enter again to reveal an obtained Epoch. Fresh profiles follow source unlocks; legacy profiles retain existing content access without invented obtain dates.
+
+长 ASCII 种子 / Longer ASCII seeds
+电脑端运行 nspire2-convert --encode-seed-file seed.txt，或 nspire2-convert --encode-seed "完整ASCII种子"。PowerShell 使用 ./nspire2-convert.exe。
+计算器自定义模式中打开种子输入框，按上下切换到“导入种子码”，输入输出的 SEED64- 加16位十六进制码，再确认。不要在普通文本模式输入此码；普通文本始终按原版文本规则哈希。
+On the computer, run nspire2-convert --encode-seed-file seed.txt, or nspire2-convert --encode-seed "complete ASCII seed". Use ./nspire2-convert.exe in PowerShell.
+In Custom Run, open the seed field and use Up/Down to select Import seed code. Enter the generated SEED64- plus16 hexadecimal digits and confirm. Ordinary text mode always hashes the text using the original rules; it does not auto-detect import codes.
 ''' if ui24 else '')
     if info.get('stage', '').startswith(('ui23', 'ui24')):
         validation = f'''

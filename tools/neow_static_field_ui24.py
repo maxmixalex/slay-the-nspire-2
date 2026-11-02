@@ -100,6 +100,7 @@ def convert(data, work, workers=2):
     from tanx_scene_ui23 import group_images
     import compact_retained_slices as compact
     source=view(data);work=Path(work);work.mkdir(parents=True,exist_ok=True)
+    animation_profile=data[36:40]
     t.require(source.version==46 and len(source.images)>=fire.IMAGES and source.aux[fire.BASE_AUX]==fire.PARAMETER,
               'Complete UI23 Neow catalog required')
     width,height,fmt,parameter=source.image_raw(fire.PARAMETER)
@@ -124,8 +125,15 @@ def convert(data, work, workers=2):
         rows.append(row);raw_replacements[image]=dict(row,file=str(path))
     grouped=group_images(rows,work,group_bytes=128*1024);grouped['image_ids']=sorted(replacements)
     replaced,details=replace_images(data,{},raw_replacements=raw_replacements,replacement_art=grouped)
+    # Both generic writers clear the legacy header word. NAF1 in that word
+    # is the runtime's reduced-animation contract, not an integrity checksum.
+    # compact's preserve_profile option concerns LZMA properties only.
+    replaced=replaced[:36]+animation_profile+replaced[40:]
     before=view(replaced);choices=compact.make_plan(before,work/'compact',workers=workers,preserve_profile=True)
-    output=compact.rewrite(before,choices);proof=compact.verify(before,output,choices);target=view(output)
+    output=compact.rewrite(before,choices)
+    output=output[:36]+animation_profile+output[40:]
+    proof=compact.verify(before,output,choices);target=view(output)
+    t.require(output[36:40]==source.data[36:40], 'Neow animation profile changed')
     t.require(len(output)<len(data), 'Baked field must reclaim physical bytes')
     t.require(source.clips==target.clips and source.cards==target.cards and source.aux==target.aux,'Neow stable identities changed')
     for i in range(fire.FIRST_MASK,fire.PARAMETER):
@@ -134,6 +142,7 @@ def convert(data, work, workers=2):
     result=dict(complete=True,input_sha256=t.sha256(data),output_sha256=t.sha256(output),input_bytes=len(data),output_bytes=len(output),saved_bytes=len(data)-len(output),
                 radiance_sha256=t.sha256(radiance),radiance_bytes=len(radiance),source_clock_ms=0,transmission_frames_unchanged=fire.FRAMES,
                 body_frames_unchanged=True,shared_tez_fields_unchanged=True,old_material_pages_replaced=fire.TEXTURE_PAGES,
+                animation_profile_unchanged=True,animation_profile_hex=animation_profile.hex(),
                 replacement=details,compaction=proof,choices=[x.receipt for x in choices])
     return output,result
 

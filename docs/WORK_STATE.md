@@ -1,3 +1,100 @@
+# UI24 NWF3 reduced-profile correction — source checkpoint
+
+The first unified reduced NWF3 candidate failed ordinary guest resource open
+despite exact USB transfer. Its input's `NAF1` animation-profile header word
+was cleared by both generic replacement and retained-compaction writers.
+Compaction's `preserve_profile` flag controls LZMA properties, not this header.
+The NWF3 adapter now restores the original four bytes at both boundaries and
+asserts final equality. No C++, image, shader clock or allocation changes.
+The public synthetic regression executes the real replacement/group/compact
+writers for full and reduced profiles, checks the intermediate and final
+markers, exact unaffected bytes, and idempotent already-baked input. Original
+reduced failure artifacts remain historical; corrected published-producer
+all-locale output and ordinary USB guest acceptance are still required.
+
+# UI24 Ancient and ASCII seed acceptance — completed evidence
+
+The accepted Ancient presentation is frozen at the final 9×9 flame grid,
+192 retained Tez cinders and consolidated smooth glow. Actual ordinary
+`c8142bd99423a19e82da7aae9b4e33de4ad7c939` / published
+`73e1213810bc28672202a3ca83d87fe32aad149c` runs at **23.915010 FPS** in the
+formal full-resource Tezcatara fixture, versus **6.388653 FPS** for UI23 d935.
+Its 717 warm frames contain no interval over 50 ms, with zero resource I/O;
+mean render is 41.456747 ms versus 155.985037 ms. The normal zopfli launcher is
+1,736,530 bytes, SHA-256
+`1c455b5f630dee02750f0b54767850770d05e6643ec670427bf535312447eeb1`, and
+allocates **22,287,844 / 22,291,016 bytes**. Do not enlarge the cap or pools.
+
+Same formal full-pack paired checks also measure Neow **11.201985→29.312073
+FPS** and Nonupeipe **22.797750→28.283556 FPS** with the earlier b690 candidate.
+All use the supplied Firebird CX II CAS / OS 6.4.0.74 checkpoint at recorded
+396/198/99 MHz, 64 MiB, with 32,768 Hz guest counters. They are not physical
+hardware or older CX frame rates. Cold-containing final Tez extrema still
+reach about 2.0 seconds; stable warm counters do not erase that limitation.
+
+The latest c814 NWF3 full candidate also ran actual Neow after a normal fresh
+profile death, Timeline reveal, save and Continue. Its following paired 30 s
+window measures **29.055081 FPS / 33.228428 ms render**, with 24 reads / 511,552
+bytes, 12 intervals over 50 ms and five over 100 ms. It is a first-cycle window,
+not the prior fully warmed zero-read interval. Its cold-containing maximum
+render is 1,604.065 ms. Final whole-package full/reduced installation and the
+standalone cold converter remain separate release receipts.
+
+The 17,485-word NWF3 field is exact against the production integer C++ shader.
+It removes six Neow-only material inputs while retaining all 546 transmission
+frames, actor animation and shared Tez textures. Real retained compaction saves
+162,740 bytes for full and 113,558 for reduced in the unified candidate tail.
+Every one of the 520 Tez decoded images/parameter records, totaling 2,288,957
+payload bytes, compares directly equal between the measured old formal full
+family and this unified new family. This bridges the Tez inputs without
+claiming equal unrelated pack data or physical I/O.
+
+Native final checks pass 28,414 particle-trajectory, 76,843 scratch/room-lease
+and 616,971 unrelated Vakuu default-particle assertions. Thirteen matched
+actor-input frames are exact; the full lit composite intentionally differs.
+The complete 320×240 192/264/336-particle witnesses were reviewed and the
+192-particle candidate accepted. Actual App scratch observations confirm the
+sampled glow path and a zero scratch top after the draw. No further exploratory
+material/density changes are needed for this accepted result.
+
+Seed acceptance now covers **927 actual original-DLL ASCII vectors, 13,905
+named RNG cases (12 global streams plus three named constructors), 7,416
+configured standard maps, 927 save round trips and 391,191 assertions**.
+The separate UI/codec regression passes 1,369 checks. Ordinary ASCII retains
+original canonicalization/hash, including internal-looking prefixes. Longer
+ASCII is streamed by the same converter's `--encode-seed` / `--encode-seed-file`
+commands and entered through explicit normal Custom Run import mode. No text
+is silently truncated; the 64-byte field is a port representation, not an OS
+limit. The 2,048-point capacity is optional pen annotation sampling, not map
+generation. The default original alphabet has 34 characters, not 32.
+
+Actual **2fbe / 809c9058** ordinary seed candidate checks cover English and
+Simplified Chinese overflow/error/import UI and normal save/restart/Continue.
+The two USB-read saves are each 7,074 bytes and byte-identical, SHA-256
+`9e76229d07cc4f6d3dd7cd32802a79462ed96e7f7b12dfca7480531977ed4d0a`;
+all 15 RNG states/counts, imported 64-bit identity and current history fields
+are retained. These tests are not mislabeled as having run the full suite on
+every later launcher. The first touchpad Custom Run exit relaunched once;
+subsequent normal keyboard exit and the verified Continue/save returned to
+OS. Plain title exit and an old UI23 touchpad-Continue control pass. The exact
+first-exit trigger is unresolved, not established as a seed/save defect.
+
+A subsequent narrow c814 control typed ordinary ASCII `a` in normal Custom
+Run, started with Menu release, reached Neow, saved and quit to the OS using
+only keys. The OS file list remained visible 20 and 30 seconds after the
+confirmation. This verifies the new normal keyboard Start/exit path; it does
+not establish a cause or fix for the earlier touch-start relaunch.
+
+See [Ancient acceptance](ui24-ancient-performance.md),
+[numeric/hash receipt](ui24-ancient-validation.json), and
+[ASCII seed acceptance](seed-ascii-ui24.md). Failed preliminary helper builds,
+an oracle run dirtied by internal `obj` output and unsuccessful USB attempts
+before reaching OS remain failed historical journals; final unchanged-source
+reruns and successful ordinary reads supply the claims above. The earlier
+source-checkpoint entries below are superseded where this section reports
+completed acceptance.
+
+
 # UI24 bounded world sampling — validation checkpoint
 
 The shipped entry point now sets one native numerical thread before frozen
@@ -63,8 +160,9 @@ The drawing-point and seed-buffer limits must not be called OS limits without
 evidence.
 
 Three isolated work streams own actor animation, Ancient rendering/seed parity,
-and converter scheduling/storage. Coherent source checkpoints will be published
-before long validation. No new fixes or performance results are accepted yet.
+and converter scheduling/storage. Validation runs use committed, frozen local source identities. Public checkpoint
+publication proceeds in parallel and is reconciled before release; a stalled
+network write does not block local verification. No new fixes or performance results are accepted yet.
 The existing UI23 measurements below keep their original source/resource scope.
 
 The final UI23 official-resource 30-second guest intervals measured ordinary
@@ -75,7 +173,8 @@ and the unchanged 64 MiB Firebird OS/Ndless environment; they are not physical
 handheld results. The latter four intervals had zero resource reads. This is
 the accepted baseline, distinct from the older controlled fixtures below.
 
-# UI24 Ancient calculator effects candidate — guest validation pending
+
+# UI24 Ancient calculator effects candidate — historical pre-validation checkpoint
 
 The user permits simpler Ancient environmental effects. This candidate keeps
 all source body frames, full-resolution transmission and their 33 ms timeline.
@@ -1168,3 +1267,72 @@ separate full/reduced optional-language directories. Bilingual instructions name
 the actual state/profile files, preserve the entire state directory, explain
 old-reader rollback limits and require a matching conversion family. This is
 packaging preparation, not a final ZIP/resource-production acceptance claim.
+
+The packaging follow-up exercises the complete three-archive orchestration with
+small independent fixtures. It fixes a stage-label/temporary-directory name
+collision that the four resource-only tests did not reach, verifies the UI24
+manifest and both optional-language families, and rejects an archive whose
+documentation crosses the total installation cap. All six focused tests pass;
+the final private resources still require their own complete assembly gate.
+
+## UI24 Timeline actual full-firmware acceptance and scope reconciliation
+
+Normal fresh-profile combat defeat obtains Neow with an actual timestamp and
+10 points. Normal inspection/reveal expands the graph, obtains Silent1 and
+unlocks Silent after that reveal. Ordinary save/exit/relaunch preserves both
+NSHB dates/states and the v18 run. Final c814 ordinary firmware actually selects
+and starts Silent at70HP, then saves and exits to the OS. The separate legacy
+profile keeps labelled compatibility access with no fabricated Epoch history.
+Custom and Daily both remain on their forms during a100ms Menu press and start
+on release; ordinary Daily save readback validates mode2 and all57 unlock bits,
+while the Standard Silent save validates only the two revealed Epoch bits.
+
+The final launcher is1,736,530B, SHA1c455b5f630dee02750f0b54767850770d05e6643ec670427bf535312447eeb1,
+formal allocation22,287,844B under22,291,016B. The full eleven-file unified
+candidate and launcher match ordinary USB readback. Existing64MiB/396MHz and
+guest32768Hz settings are unchanged; no memory/header edits or Timeline console
+commands were used. Actual first-death/reveal captures on the earlier fit build
+are distinguished from final c814 persistence, Silent and configured-mode runs.
+
+The first reduced unified candidate fails startup. Its NWF rewrite cleared
+NAF1 before locale publication; ENG/ZHS direct and streamed production-content
+probes isolate that marker. No hand-patched diagnostic copy was installed.
+The converter owner is correcting and rebuilding the same-family reduced data;
+ordinary reduced acceptance and final standalone/three-ZIP gates remain open.
+
+README, AGENTS, product scope and parity/retained-difference ledgers now describe
+the implemented Timeline and the exact evidence instead of retaining a blanket
+unimplemented claim. They keep source Early Access placeholders, LCD staging,
+legacy unknown dates and the still-unimplemented audio/multiplayer/hosted-service
+boundaries explicit. See ui24-timeline.md and its source-only JSON receipt.
+
+
+Final c814 full acceptance additionally switches languages through normal
+Settings, displays English Timeline list/detail/source unlock text and the same
+actual dates, resumes Silent70HP and exits to the OS. The later profile has20
+points after an actual intervening Standard abandonment; the initial-chain10
+point receipt and later state are identified separately. Shipped instructions
+now name the exact v3–v17 legacy run readers and give the matching converter's
+long-ASCII encode command plus explicit Import seed code UI steps.
+
+The twelve-suite native journal used actual task commit7aa74d5. Its recorded
+public73e integration contains those tested changes, but the whole trees are
+not identical because integration also includes later Ancient rendering work.
+The Timeline evidence now states that relationship explicitly instead of
+calling the native task tree published-equivalent. Exact c814 formal/runtime
+source equivalence and its ordinary firmware results remain separate evidence.
+
+Final c814 ordinary firmware additionally starts a legacy Standard Necrobinder
+run continuously from the OS and reaches stable NWF3 Neow at66HP. The same
+session uses the built-in console only to prepare the declared combat fixture,
+closes it, then captures the actual blue Strike arc, Offering's1HP-to-death
+transition, Osty's death and both corpses still present at10.1 seconds. Confirm
+then reaches the normal run statistics page. This does not replace the separate
+console-free Timeline obtain/reveal/persistence evidence.
+
+The earlier apparent new-start failure was already visible before the Menu
+press, after restoring an active selection snapshot. Both continuous OS-launch
+controls passed. The failed restore is preserved and excluded, without asserting
+an emulator root cause or marking the still-failed reduced resource candidate
+as accepted. Private receipt final-c814-animation-acceptance.json records the
+complete frame hashes and source/launcher/resource identities.

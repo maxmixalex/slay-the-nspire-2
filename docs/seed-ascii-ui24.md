@@ -19,8 +19,8 @@ The normal Custom Run seed editor offers a distinct **Import seed code** mode. O
 The same desktop converter provides these independent operations before any game-file discovery:
 
 ```
-nspire2-converter --encode-seed "the complete ASCII seed"
-nspire2-converter --encode-seed-file seed.txt
+nspire2-convert --encode-seed "the complete ASCII seed"
+nspire2-convert --encode-seed-file seed.txt
 ```
 
 The file path streams the complete ASCII content in 64 KiB chunks. It applies original ASCII uppercase/O-I/trim and xxHash64, with constant-sized hash snapshots to discard trailing whitespace without buffering it. It has no arbitrary 64-byte or 65,537-byte limit. The file must contain the intended seed text; internal newlines and spaces are significant. This import encoder currently rejects non-ASCII text explicitly. Short Unicode seed input retains the previous UI17 behavior.
@@ -71,8 +71,26 @@ Selected original normalized seed values are:
 
 The complete private TSV SHA-256 is `75d95d4e998a3859878e8a160cf6edd513bd5d28d290092a26e70ac2d567051c`. The final oracle and comparison journals both completed with unchanged source. An earlier first-run oracle journal was invalidated by .NET generating `obj` files inside its source inventory; the final run moved all intermediate/build files outside the frozen source tree and reran the expanded set.
 
+## Executed calculator UI and persistence
+
+These checks used the ordinary **2fbe141c0fd447bdafa212b0bcc622732f3534fc** candidate, published as `e513342da7404cd85c1c334038cfdcdaff3cf3db`, with launcher SHA-256 `809c905858dee6e4eaa62c1b84d8b6f5cbaa0aab02da85ecee35fb3601a9fd44`. It was a normal LLVM18.1.3/zopfli build without profiling flags. This identifies the exact tested seed candidate; it does not claim that every later UI24 launcher was rerun through this entire suite.
+
+On the supplied 64 MiB Firebird calculator, normal key/touch input opened Custom Run, rejected a 65-byte ordinary edit, rejected a non-hex import code, selected `SEED64-B1E5A6467A3F54D6`, and started the run. This code represents the entire 65-character lowercase-`a` original-DLL vector. The same overflow, invalid-code and selected-code screens were checked in Simplified Chinese and in English after changing language through normal Settings. Neither language displayed the other language's hardcoded error message.
+
+The run was saved, the program was restarted, Continue loaded it, and it was saved again. Both files were obtained through ordinary guest USB and decoded by the production storage envelope and canonical `load`/`validate` implementation. Each was **7,074 bytes**, with the same SHA-256:
+
+```
+9e76229d07cc4f6d3dd7cd32802a79462ed96e7f7b12dfca7480531977ed4d0a
+```
+
+Both retained `run_seed = B1E5A6467A3F54D6`, `seed_imported = 1`, and the full portable display code. All 15 saved RNG states and draw counts were unchanged by this Continue/save cycle. The current history record also retained its 64-bit identity, import flag and display code; elapsed/profile bookkeeping was allowed to change. The save file itself was byte-identical.
+
+A separate exit limitation was observed on the initial touchpad Custom Run path: its first confirmed exit immediately started the program again. A subsequent ordinary keyboard exit reached the OS, after which the recorded restart/Continue/save sequence exited normally. The unsuccessful USB reads attempted before reaching the OS were retained as failed attempts, not counted as successful persistence tests. A plain title exit on the same seed candidate and an old UI23 touchpad-Continue/save/exit control both reached the OS. The precise trigger remains a separate platform/input investigation; these observations do not establish a hashing or save-corruption defect. No guest memory or snapshot header was edited to obtain the successful round trip.
+
+A later narrow control used the final ordinary `c8142bd99423a19e82da7aae9b4e33de4ad7c939` launcher, SHA-256 `1c455b5f630dee02750f0b54767850770d05e6643ec670427bf535312447eeb1`. Normal keyboard input selected Custom Run, entered ordinary ASCII `a`, and used the restored Menu-release Start action. The run reached Neow, saved to the title, and exited to the OS. The OS file list remained visible at both 20 and 30 seconds after exit confirmation. No touch commands were used. This verifies the current keyboard path without claiming that the old touch-start trigger was identified or that the entire earlier import suite was repeated on c814.
+
 ## Scope of the result
 
-A PC seed can be reused directly when its ordinary canonical text fits the input field, and any complete ASCII seed can use the explicit portable code. For the tested pinned-version configurations, normalized seed identity, the stated RNG calls and standard map results match the original methods.
+A PC seed can be reused directly when its entered text and canonical result fit the 64-byte input representation and its characters can be entered with the calculator's physical text keys. The explicit portable code supports complete ASCII seeds of arbitrary practical length, including punctuation/control characters unavailable on those physical keys. For the tested pinned-version configurations, normalized seed identity, the stated RNG calls and standard map results match the original methods.
 
 That statement is narrower than “the whole run will always be the same.” Original version, solo configuration, selected character, ascension, modifiers, act choices, unlocked card/relic/event/boss/ancient pools, initial progression and subsequent player choices can affect what happens. The earlier port opened all pinned solo pools instead of reproducing Timeline/unlock history. UI24's separate Timeline work must document its own evidence; these map tests do not certify that integration or full encounter/reward call order. The arithmetic test runtime is Linux .NET, not the shipped Windows math library, and the existing explicit half-integer rounding guard remains relevant.

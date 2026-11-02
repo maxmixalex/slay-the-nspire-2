@@ -177,8 +177,9 @@ separately in [UI20 reconciliation](ui20-retained-differences.md),
 | Arbitrary cross-track Spine composition and unrecorded cosmetic RNG history | Existing authored observers, sampled motion and deterministic cosmetic state cover the declared paths. General desktop composition/process-history parity is not established. |
 | Hosted services and desktop timezone/IME integration | Local daily/custom gameplay and locale formatting exist; hosted leaderboards/cloud, a timezone/DST database and a calculator IME are not supplied. |
 | History capacity | The 32-run, 96-floor and 4,096-notice arrays are bounded working windows backed by the append archive. Older successful archived records remain browsable; migration preserves the existing records but cannot reconstruct facts already erased by earlier versions. Disk space, serial identity and file offsets remain finite. See [paged history](ui23-history-archive.md). |
-| Drawing and seed input capacity | Map drawing remains limited to 2,048 points and seed input to 64 UTF-8 bytes plus terminator. These are existing bounded port capacities, not a newly verified desktop-equivalence claim. |
-| Audio, multiplayer and Timeline | Not implemented. Earlier project/AGENTS scope excluded them, but the recovered original user requests do not establish an explicit user waiver; this ledger does not invent one. |
+| Drawing and seed input capacity | Map annotations use a 2,048-point buffer, preserving existing strokes with a visible full-buffer result; this does not limit generated map nodes. The 64 UTF-8 byte seed field is a port representation. UI24 adds explicit converter-generated import codes for complete longer ASCII identities. See [map capacity](map-seed.md) and [ASCII seed comparison](seed-ascii-ui24.md). |
+| Timeline and unlock progression | UI24 implements all57 source Epoch states, obtain dates, score, reveal edges, profile persistence and frozen run entitlements through normal UI. Old profiles retain explicit compatibility access without invented history. Original Early Access act placeholders remain unavailable; the PC spatial/reveal presentation is adapted to an LCD list. Exact tests and actual firmware flows are in [Timeline acceptance](ui24-timeline.md). |
+| Audio and multiplayer | Not implemented. Earlier project/AGENTS scope excluded them, but the recovered original user requests do not establish an explicit user waiver; this ledger does not invent one. Hosted services remain separate unfinished features. |
 
 The general composition and cosmetic-history limits,
 platform/service and capacity differences, and unimplemented features remain
@@ -202,10 +203,12 @@ emulator frames/s (30 cap) and29.835 ms, with zero warm reads in both. This is
 one emulator scene, not physical-handheld FPS or acceptance of the new effects.
 No physical calculator execution has been demonstrated.
 
-- Audio, multiplayer and Timeline are not implemented. Earlier project scope
+- Audio and multiplayer are not implemented. Earlier project scope
   excluded them; that classification is not evidence of an original user waiver.
   Hosted leaderboards, cloud services and desktop-service integration are not
-  supplied by local daily/custom modes.
+  supplied by local daily/custom modes. The earlier Timeline omission is
+  superseded by [UI24 progression](ui24-timeline.md), with its specific tested
+  flows and retained presentation/source-placeholder boundaries.
 - Output remains320×240 RGB565/LDR with integer rasterization, documented
   sampling/noise approximations and bounded particle representations. New ACU1
   resources continuously evaluate all seven Affliction families; only older

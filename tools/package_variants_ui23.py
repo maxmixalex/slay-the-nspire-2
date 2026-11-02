@@ -106,9 +106,9 @@ def build(args):
     stem = "Slay-the-Nspire-2-" + base_version + "-" + stage
     receipts = {}
     with tempfile.TemporaryDirectory(prefix="nspire-package-variants-") as temporary:
-        stage = Path(temporary)
+        staging_root = Path(temporary)
         for profile, directory in directories.items():
-            destination = stage / profile
+            destination = staging_root / profile
             command = [sys.executable, str(ROOT / "tools" / "package_release.py"),
                        "--launcher", str(args.launcher), "--common", str(directory / "nSpire2.dat.tns"),
                        "--eng", str(directory / "nSpire2.eng.dat.tns"),
@@ -173,7 +173,7 @@ def build(args):
                 if archive.read(profile + "/data/" + name) != (directory / name).read_bytes():
                     raise ValueError("Optional locale readback differs")
     receipts["optional-languages"] = check_archive(optional)
-    result = {"schema": 1, "stage": "ui23", "runtime_checkpoint": args.runtime_checkpoint,
+    result = {"schema": 1, "stage": stage, "runtime_checkpoint": args.runtime_checkpoint,
               "resource_checkpoint": args.resource_checkpoint,
               "runtime_source_ref": runtime_source_ref,
               "resource_source_ref": resource_source_refs['animated'],
