@@ -1336,3 +1336,33 @@ controls passed. The failed restore is preserved and excluded, without asserting
 an emulator root cause or marking the still-failed reduced resource candidate
 as accepted. Private receipt final-c814-animation-acceptance.json records the
 complete frame hashes and source/launcher/resource identities.
+
+
+## UI24 complete-CI follow-up
+
+The complete public native run exposed six older fixture assumptions after the
+Timeline schema/startup change, rather than sanitizer findings. This checkpoint
+updates the explicit NS18 size (+12 bytes), five-entry no-save title menu, and
+NSHB metadata expectations. Legacy H8/H9 tests still strip only the compatibility
+extension and require exact historical payload equality; reading alone must
+leave the stored file unchanged. The device-feedback seed replay now constructs
+the same initial legacy profile for each fresh run: the first actual entry
+observes Underdocks, so retaining that fact between replays correctly changes
+the original GetRandomList draw path. Canonical run equality is still required.
+
+The portable build source list now includes timeline.cpp. All18 newly reported
+Chinese literals already have explicit caller-selected English counterparts;
+they are recorded with their exact source paths in direct_bindings, without
+changing compiled fallback tables or stable original catalog indices. Locale
+validation passes with all generated C++ indices unchanged. The six focused
+native targets and ordinary WebAssembly link rerun remain pending at this
+coherent checkpoint. No production C++/schema/pool or sampled resource changed.
+
+## UI24 Ancient conversion CI fixtures
+
+The original-profile test fixtures now explicitly distinguish baked and unbaked
+Neow metadata and verify that both paths continue into real payload validation.
+The complete source recipe assertion includes `neow-static-field46` between
+`neow-fire46` and `card-afflictions46`, including its module/cache binding. All
+five Ancient catalog/recipe tests pass; no production converter/runtime change
+is included in this fixture-only correction.

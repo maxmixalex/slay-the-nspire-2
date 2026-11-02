@@ -75,7 +75,7 @@ static int phase(const std::string&mode,const std::filesystem::path&root){
   app.input(Key::Confirm);CHECK(app.character_departure.phase==3&&!app.title);advance(1600);
   CHECK(app.title&&!app.has_save&&!app.character_departure.active());removed();markers(root,false);
  }else if(mode=="reopen"){
-  CHECK(app.title&&!app.has_save&&app.title_menu_count()==4);removed();markers(root,false);
+  CHECK(app.title&&!app.has_save&&app.title_menu_count()==5);removed();markers(root,false);
  }else CHECK(false);
  std::printf("Ndless filesystem lifecycle %s: %u checks passed\n",mode.c_str(),checks);return 0;
 }

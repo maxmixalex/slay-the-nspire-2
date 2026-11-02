@@ -117,7 +117,7 @@ static void versions(){
   UiProgressSummary summary,original;CHECK(decode_ui_progress_summary(raw.data(),raw.size(),original));
   reenter=true;CHECK(profile_info(1,summary)&&!resource_transfer_uses);reenter=false;
   CHECK(summary.exists==original.exists&&summary.play_seconds==42&&summary.last_saved_at==original.last_saved_at);
-  // NSH1's established canonical upgrade to NSH2 remains owned by the codec.
+  // The codec owns legacy decoding and the explicit NSHB compatibility grant.
   CHECK(save_progress(loaded)&&!resource_transfer_uses);CHECK(unpack_file(files.at(progress_path))==expected);
   CHECK(!files.count(progress_temp)&&!files.count(progress_backup));CHECK(load_progress(loaded)&&canonical(loaded)==expected);
  }
@@ -134,7 +134,12 @@ static void maximum(){
  value.tutorial_flags=FtueFresh|FtueSeenMask;const Bytes raw=canonical(value);CHECK(raw.size()==295349&&raw[3]=='8');
  reenter=true;CHECK(save_progress(value)&&!resource_transfer_uses);reenter=false;const Bytes stored=files.at(progress_path);
  CHECK(stored.size()==74001&&max_write==storage_codec::BlockBytes&&unpack_file(stored)==raw);
- CHECK(load_progress(loaded)&&canonical(loaded)==raw);UiProgressSummary summary;CHECK(profile_info(1,summary)&&summary.exists);
+ CHECK(load_progress(loaded)&&loaded.timeline.flags==(TimelineInitialized|TimelineLegacyAccess));
+ // Loading H8 grants explicit compatibility access without writing the file.
+ // Remove only that new extension to verify every historical field exactly.
+ CHECK(files.at(progress_path)==stored);const auto compatibility=loaded.timeline;
+ loaded.timeline={};CHECK(canonical(loaded)==raw);loaded.timeline=compatibility;
+ CHECK(canonical(loaded)[3]=='B');UiProgressSummary summary;CHECK(profile_info(1,summary)&&summary.exists);
  export_bytes("full-profile.nsh",raw);export_bytes("full-profile-storage.tns",stored);
  CHECK(4*stored.size()+6*121503+340==1025362);
  CHECK(4*stored.size()+3*121503+3*252928+340==1419637);
@@ -232,5 +237,5 @@ int main(int argc,char**argv){
  if(argc==3&&!std::strcmp(argv[1],"--export"))export_directory=argv[2];
  else if(argc!=1){std::fprintf(stderr,"usage: ndless_history_storage_regression [--export EXISTING_DIRECTORY]\n");return 2;}
  versions();maximum();bounds();failures();recovery();profiles();
- CHECK(!resource_transfer_uses);std::printf("Ndless history: %u checks passed, raw NSH1-8 and NSZ1, unchanged canonical bytes.\n",checks);
+ CHECK(!resource_transfer_uses);std::printf("Ndless history: %u checks passed, raw NSH1-8 and NSZ1, historical bytes retained with explicit NSHB migration.\n",checks);
 }
