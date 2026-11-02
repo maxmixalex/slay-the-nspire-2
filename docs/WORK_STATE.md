@@ -1440,3 +1440,28 @@ under the same forced non-UTF-8 host environment with -X utf8. This is local
 encoding-boundary evidence; the corrected actual Windows CI remains pending.
 The production locale module, source94/public25 cold producer, accepted
 calculator runtime and frozen installer bytes are unchanged.
+
+## UI24 Windows reviewed-locale source paths
+
+The actual UTF-8 Windows run41368340213 at publice97fb320 passed decoding but
+failed the source locale gate on the existing directly localized `午前` label.
+Source discovery used Windows backslashes while reviewed configuration paths
+use forward slashes. This also affects the production localization validator;
+it is not a documentation-only difference or limited to the18 new bindings.
+Source discovery now records relative paths with as_posix while retaining the
+same exact reviewed-path comparison and generated-index checks.
+
+The regression reads the real source/configuration and supplies actual
+PureWindowsPath relative values. It reproduces the old `午前` failure and the
+corrected implementation passes complete validate_generated. This regression,
+the three bundle-preflight regressions and the real935/142 catalog validation
+pass with the explicit UTF-8 interpreter command. Actual Windows source and
+frozen-locale gates remain pending for the corrected published checkpoint.
+
+The local Linux source94 comparison covers610 source paths and all916 literal
+keys: str(relative_path) and as_posix are equal, complete source-literal maps,
+direct bindings and generated files are identical. No change to the ongoing
+Linux94/public25 frozen conversion is required. The older Windows25 executable
+is withheld from final delivery until a corrected Windows build passes both
+actual locale gates. C++, pixel generation and frozen calculator archives are
+unchanged.
