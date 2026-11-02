@@ -126,7 +126,7 @@ class BuiltinWorkspaceTests(unittest.TestCase):
             self.assertGreaterEqual(summary['reclaimed_bytes'], 5 * 4096)
             self.assertEqual(summary['work'], str(work.resolve()))
             label = 'estimated allocated bytes' if summary['allocation_bytes_estimated'] else 'allocated bytes'
-            self.assertIn(f"Workspace: {work}; retained {summary['retained_work_bytes']:,} logical bytes / "
+            self.assertIn(f"Workspace: {work.resolve()}; retained {summary['retained_work_bytes']:,} logical bytes / "
                           f"{summary['retained_work_allocated_bytes']:,} {label}.", output_log.getvalue())
 
     def test_keep_then_boundary_only_resume_reclaims_without_rerunning_workers(self):
