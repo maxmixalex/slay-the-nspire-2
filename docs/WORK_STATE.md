@@ -1403,3 +1403,21 @@ complete reduced validate_profile. Ten release-guard tests and seven packaging
 tests pass, including both legal representations and rejection of full remaps,
 wrong/early samples, out-of-range and cross-clip IDs, and mismatched geometry.
 No runtime, producer pixel algorithm, resource, pool or schema changes here.
+
+## UI24 source locale gate before converter freezing
+
+The earlier431 bundle omitted the18 reviewed direct-binding metadata entries,
+which its real localization stage would reject after expensive source baking.
+The bundle builder now calls the existing source-only validate_generated at
+the very beginning, before PyInstaller/helper checks or output directory
+creation. It also checks locale_profile through the frozen executable after
+packaging, with developer paths removed, so bundled-source omissions cannot
+hide behind a valid host tree. Neither check requires original game assets.
+
+Three focused tests exercise the real source/profile: removing the reviewed
+Timeline binding fails before any build subprocess or dependency probe;
+generated-index drift fails equally early; valid source passes to the next
+dependency gate. The normal catalog validation remains935 bindings/142 extra
+source keys. This changes only build validation, tests and documentation. The
+already-running corrected94 producer, resource algorithms, formal launcher and
+three frozen installer archives are untouched and do not need to restart.

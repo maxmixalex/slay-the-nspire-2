@@ -259,6 +259,14 @@ operating system with PyInstaller and `tools/build_converter_bundle.py`:
 python tools/build_converter_bundle.py --helpers PATH --output PATH --work PATH
 ```
 
+The bundle builder first checks every reviewed UI locale binding and generated
+locale index using only public source/configuration. Missing bindings or stale
+indexes stop the build before PyInstaller, helper loading or output creation,
+instead of waiting for the later original-game localization stage. After
+freezing, it also runs `--internal-stage locale_profile` against the executable's
+embedded source/configuration with developer search paths removed. These checks
+need no original game assets and do not substitute for an actual conversion.
+
 The Windows workflow builds the public ARM helper on Linux, transfers its
 source-bound ELF and receipt to the matching Windows job, and embeds Unicorn
 with it. The executable's self-test actually executes literal and predicted
