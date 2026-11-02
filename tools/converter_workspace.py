@@ -78,10 +78,11 @@ and final validation stages; rebuilding the helper does not resample artwork.
 
 
 class SpaceMeter:
-    """Sample actual allocated/logical work bytes, including in-stage scratch."""
+    """Sample logical work bytes and allocated bytes, labelling any estimate."""
     def __init__(self, work):
         self.work = Path(work)
         self.peak_bytes = self.peak_allocated_bytes = 0
+        self.allocation_bytes_estimated = False
         self.samples = 0
         self.done = threading.Event()
         self.thread = threading.Thread(target=self._run, daemon=True)
@@ -97,7 +98,11 @@ class SpaceMeter:
                     size += info.st_size
                     inode = (info.st_dev, info.st_ino)
                     if not info.st_ino or inode not in seen:
-                        allocated += getattr(info, 'st_blocks', (info.st_size+511)//512)*512
+                        blocks = getattr(info, 'st_blocks', None)
+                        if blocks is None:
+                            blocks = (info.st_size+511)//512
+                            self.allocation_bytes_estimated = True
+                        allocated += blocks*512
                         seen.add(inode)
                 except FileNotFoundError:
                     pass
@@ -120,7 +125,10 @@ class SpaceMeter:
         current, allocated = self.sample()
         return dict(peak_work_bytes=self.peak_bytes, peak_work_allocated_bytes=self.peak_allocated_bytes,
                     retained_work_bytes=current, retained_work_allocated_bytes=allocated,
-                    measurement='recursive actual-file samples every 0.5 seconds and at stage boundaries',
+                    measurement='recursive file-stat samples every 0.5 seconds and at stage boundaries',
+                    allocation_bytes_estimated=self.allocation_bytes_estimated,
+                    allocation_measurement=('includes logical sizes rounded to 512 bytes where st_blocks is unavailable; filesystem allocation granularity not measured'
+                        if self.allocation_bytes_estimated else 'filesystem st_blocks in 512-byte units'),
                     samples=self.samples)
 
 
@@ -177,6 +185,16 @@ class Workspace:
     KEEP = frozenset(('fonts', 'scene-fonts', 'ui15', 'paired44', 'cache/paired44',
                       'retirement45', 'cache/retirement45', 'final-index46'))
     SCRATCH_FLAGS = frozenset(('--cache', '--cache-dir', '--work', '--sample-work'))
+    # These builtins take (input, output, work, ...), without a --work flag.
+    # Other positional paths are inputs: notably the third pruning argument is
+    # the linked ARM helper, which must never become disposable scratch.
+    POSITIONAL_SCRATCH = {
+        '@fresh-actor-dicing': 2,
+        '@fresh-codec45': 2,
+        '@final-quality': 2,
+        '@final-sparse': 2,
+        '@final-retune': 2,
+    }
 
     def __init__(self, stages, work, identities, digest, atomic_json, *, keep=False):
         self.stages, self.work = stages, Path(work).resolve()
@@ -198,6 +216,11 @@ class Workspace:
                     scope = self.root(Path(stage.arguments[at+1]))
                     if scope:
                         writes.add(scope)
+            position = self.POSITIONAL_SCRATCH.get(stage.module)
+            if position is not None:
+                scope = self.root(Path(stage.arguments[position]))
+                if scope:
+                    writes.add(scope)
             dependencies = {}
             for scope in roots:
                 self.last_use[scope] = index
@@ -333,12 +356,17 @@ def _run(stages, work, identities, stop_after=None, *, keep=False):
     started = time.monotonic()
     meter = SpaceMeter(work)
     meter.start()
-    summary = dict(schema=1, complete=False, stages=[], started_at=time.time())
+    summary = dict(schema=1, complete=False, stages=[], started_at=time.time(), work=str(workspace.work))
     try:
         for index, stage in enumerate(stages):
             if index not in workspace.required:
                 print(f'[{index+1}/{len(stages)}] {stage.name}: verified downstream boundary', flush=True)
                 summary['stages'].append(dict(stage=stage.name, action='boundary'))
+                # A prior success can have stopped before reclamation, or have
+                # used --keep-intermediates. The verified descendant already
+                # consumed these roots; last_use still protects later readers.
+                workspace.reclaim(index)
+                meter.sample()
                 continue
             receipt = workspace.receipts/(stage.name+'.json')
             key = workspace.key(index)
@@ -383,3 +411,7 @@ def _run(stages, work, identities, stop_after=None, *, keep=False):
         summary.update(total_elapsed_seconds=time.monotonic()-started, reclaimed_bytes=workspace.reclaimed_bytes,
                        **meter.stop())
         converter.atomic_json(workspace.receipts/'pipeline.json', summary)
+        if summary['complete']:
+            allocation_label = 'estimated allocated bytes' if summary['allocation_bytes_estimated'] else 'allocated bytes'
+            print(f"Workspace: {workspace.work}; retained {summary['retained_work_bytes']:,} logical bytes / "
+                  f"{summary['retained_work_allocated_bytes']:,} {allocation_label}.", flush=True)

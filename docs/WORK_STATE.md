@@ -1,3 +1,37 @@
+# UI24 builtin workspace reclamation — recovery correction
+
+The five final builtins use positional `(input, output, work, ...)` arguments.
+Workspace ownership previously recognized only declared outputs and named
+scratch flags, leaving fresh actor dicing, codec45, quality46, sparse46 and
+retuned46 scratch outside the collector. Explicit builtin-to-argument mappings
+now register those roots through the existing workspace containment and
+pre-existing-directory checks. Pruning's third argument remains a read-only
+ELF/helper input. Shared Ancient light work still lives through its actual last
+consumer, and all existing KEEP boundaries remain unchanged.
+
+Verified downstream boundaries now also run the same last-consumer collector.
+This reclaims registered scratch left by an interruption immediately before
+cleanup or by a previous `--keep-intermediates` run, without rerunning verified
+resource stages. Failed stages retain their required input and partial scratch
+for recovery; external, pre-existing unowned and symbolic-link inputs are not
+recursively deleted. Successful compact runs print the actual workspace path
+and sampled retained logical/allocated bytes, also recorded in `pipeline.json`.
+These are workspace samples, not a complete frozen executable's TMP peak.
+Allocation uses filesystem `st_blocks` where available. The existing fallback
+rounds logical sizes to 512 bytes; receipts and the success line explicitly
+label that value estimated, including on Windows, rather than claiming actual
+filesystem allocation granularity.
+
+Eight new filesystem/lifecycle regressions plus the nine existing workspace
+tests pass. They exercise actual full/reduced recipe declarations and production
+workspace/receipt/reclamation code, with small deterministic workers replacing
+private resource conversion. The unchanged cd005 workspace fails the new
+ownership and boundary cases; this is distinct from original-asset conversion
+acceptance. No resource conversion algorithm, C++, sampling clock or pool
+changes. A new frozen converter and complete original cold/warm measurements
+remain required. The old environment became unavailable during stage 63/84;
+its last partial peak and stage observations are not completed pipeline results.
+
 # UI24 NWF3 reduced-profile correction — source checkpoint
 
 The first unified reduced NWF3 candidate failed ordinary guest resource open
