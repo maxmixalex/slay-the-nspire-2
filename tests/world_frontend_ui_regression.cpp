@@ -1,4 +1,5 @@
 #include "app.hpp"
+#include "settings_layout.hpp"
 #include "content_fixture.hpp"
 #include "original_events.hpp"
 #include "world_run.hpp"

@@ -78,10 +78,13 @@ void dispatch_calculator_sample(CalculatorPadInput&keys,TouchpadCursor&cursor,
     // Collection classifies only side switches. Resolve the center in replay
     // order, after any earlier keyboard sample, and retain that owner to up.
     const bool mouse_before=app.pointer.visible;
-    const bool center=sample.valid&&sample.width&&sample.height&&sample.x<=sample.width&&sample.y<=sample.height&&sample.pressed&&(!pad||pad==InputPad);
+    if(!sample.valid)keys.blocked|=keys.pressed;
+    else if(!sample.pressed)keys.blocked=false;
+    const bool center=!keys.blocked&&sample.valid&&sample.width&&sample.height&&sample.x<=sample.width&&sample.y<=sample.height&&sample.pressed&&(!pad||pad==InputPad);
     if(center&&!keys.pressed)keys.center_key=!app.pointer.visible;
     keys.pressed=sample.valid&&sample.pressed;
     if(center)pad=keys.center_key?InputPad:0;
+    if(keys.blocked)pad=0; // A failed read is cancellation, never a new press.
     const bool navigation=keys.dispatched||pad;
     if(navigation){
         app.pointer_cancel(true);cursor.reset(app.pointer.x,app.pointer.y);
@@ -90,6 +93,9 @@ void dispatch_calculator_sample(CalculatorPadInput&keys,TouchpadCursor&cursor,
     }else{
         const auto pointer=cursor.sample(sample,milliseconds,tap_to_click,speed,app.pointer.visible);
         if(pointer.cancelled)app.pointer_cancel();
+        // This motion already passed the calculator's explicit intent gate;
+        // the desktop velocity heuristic must not reject it after a long idle.
+        if(pointer.moved)app.pointer.visible=true;
         if(pointer.moved||pointer.down||pointer.up||pointer.tap)app.pointer_move(pointer.x,pointer.y);
         if(pointer.down||pointer.tap)app.pointer_button(true);
         if(pointer.up||pointer.tap)app.pointer_button(false);

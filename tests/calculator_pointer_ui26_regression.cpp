@@ -98,6 +98,12 @@ static void drag_and_invalid(){
     setup();touch.contact=true;sample();touch.pressed=true;sample();const int x=app.pointer.x;
     touch.x+=300;sample();CHECK(app.pointer.held&&app.pointer.dragging&&app.pointer.x>x);
     touch.valid=false;sample();CHECK(!app.pointer.held&&!app.tap_to_click);touch.valid=true;touch.contact=touch.pressed=false;sample();CHECK(!ups);
+    setup();app.pointer.visible=false;cursor.reset(app.pointer.x,app.pointer.y);cursor.sample(touch,now,false,2,false);
+    touch.contact=touch.pressed=true;sample();CHECK(keys==1&&app.tap_to_click);
+    touch.valid=false;sample();touch.valid=true;sample();CHECK(keys==1&&app.tap_to_click&&!downs);
+    touch.pressed=false;sample();touch.pressed=true;sample();CHECK(keys==2&&!app.tap_to_click);
+    setup(true);app.pointer.visible=false;cursor.reset(app.pointer.x,app.pointer.y);cursor.sample(touch,now,false,2,false);
+    now=90000;touch.contact=true;sample();touch.x+=200;sample();CHECK(app.pointer.visible&&!downs);
 }
 static void settings(){
     setup();app.callbacks.save_preferences=write_preferences;app.callbacks.load_preferences=read_preferences;writes=0;
