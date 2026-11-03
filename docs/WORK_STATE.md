@@ -1,33 +1,98 @@
-# UI25 continuation — original-input conversion discrepancy
+# UI25 final verified release — fixed packages, ordinary guest and complete CI
 
-Continue from the verified UI24 runtime and full/reduced installation, not
-the older UI23 `main`. The complete original-input Linux cold run finished
-all 84 stages successfully. Its receipts remain evidence for that exact
-producer; a subsequent independent comparison exposed a production defect.
+The final ordinary runtime is published **ed5dd2564625779313aa2c71046079dee7506e76**.
+Its immutable 1,732-file source archive, clean ARM build, linked image audit and
+**1,059,848 native checks** pass. The final launcher is **1,737,025 bytes**, SHA-256
+`9c578a2cb0ca079a3aea523e8fcfadf0aecef3e4aee5ca557423c9c238932b1f`.
+Allocation is **22,288,920 / 22,291,016 bytes**, leaving 2,096 bytes. Compared with
+c814, code/alignment/relocations add 1,076 bytes; `.data`, `.bss` and all pools
+remain unchanged. The bounded preparation now includes the player's attack,
+first-card targeting/impact/text and current living enemies' Hit tracks after
+prior actor/enemy priorities, within the existing 288-image / 640-page bounds.
+Saturated-room optional actions may remain cold. No clock or pool is enlarged.
 
-Independent decoding checked all 60,294 images. Exactly twelve frames in
-`necrobinder.attack` were unnecessarily passed through bounded-a5 again and
-placed in a 1,044,120-byte decoded tile group. The accepted authored slash
-uses an 83,585-byte decoded retained group. Dimensions, frame clocks,
-nonzero-alpha masks, all other 60,282 images, and the checked bilingual
-strings/glyphs match. Do not call this output pixel- or performance-equivalent
-until the corrected production policy and regenerated output pass.
+The actual corrected resource producer is **e98a6cb4ed29cd4e3bcaa597cff9ad089c6854f7**.
+Its local source archive e89d8e7 and public e98 share the exact ad517844 tree;
+executed build/tail/publication receipts and the final packages name e98.
+Both full and reduced verified-prefix tails and all16 publications pass.
+They are not a new empty-work cold run. Bilingual data totals **68,019,411** and
+**27,990,788 bytes**; all16 data totals **85,979,742** and **42,273,212 bytes**.
+Every one of the 11 bilingual files is unchanged after all16 publication.
 
-Keep the 22,291,016-byte program ceiling and supplied 64 MiB guest unchanged.
-A new matched ordinary Firebird control reproduced cold first-Strike loading:
-the action adds 11 reads / 83,676 bytes / about 567 ms of resource time, and
-raises maximum combat render from 60.486 to 376.740 ms. Combat preparation
-omitted the player's attack while preparing idle and announced enemy tracks.
-The new bounded candidate appends that attack only after the complete old
-window and within the existing 288-image / 640-page limits. It changes no
-action clock or buffer. Compilation, linked allocation and paired ordinary
-guest confirmation remain required before adopting its launcher.
+Independent actual published-data reconstruction checks full **60,294 exact
+image entries** and reduced **60,293 exact entries plus one equivalent FR1
+parameter table** (58117, exact referenced pixels/clocks/geometry/aliases).
+All 1,783 clip records, 8,961 strings per bilingual locale and English/Chinese
+12,902/53,351 glyph metrics and alpha planes match the accepted family.
+The corrected full slash retains its 12 × 83 ms schedule and exact pixels in
+an **83,445-byte decoded / 36,438-byte stored group**; its 140-byte parameter
+table is separate. The older rejected 5a21 output's re-quantized twelve frames
+and 1,044,120-byte tile group are not accepted or silently substituted.
 
-This continuation fixes the converter path, checks full/reduced output
-independently, repeats ordinary Firebird acceptance, and completes the three
-matching ZIPs and public integration. Labels after
-UI24 must retain the completed Timeline/import instructions and factual
-measurement scope. These are source-checkpoint goals, not completed results.
+The final three ZIPs are fixed and independently audited across all **75 members**
+and all **32 locale/profile reconstructions**. Full animation expands to
+**69,839,495 bytes**, including launcher, all required data, README, BUILD-INFO
+and licenses, leaving **160,505 bytes** below 70,000,000 decimal bytes. Reduced
+expands to **29,811,189 bytes**; optional languages to **32,244,564 bytes**.
+No user saves, desktop tools/notices, diagnostic JSON or original source-game
+files are included. The first packaging journal retains its EXDEV failure;
+the unchanged published source passed with a TMPDIR on the output filesystem.
+Do not rebuild these ZIPs for documentation-only follow-ups. See
+[UI25 release record](ui25-release-validation.md) and
+[numeric/hash record](ui25-release-validation.json) for all identities.
+
+Final ed5 full/reduced USB readback verifies all 12 launcher/data files in each
+edition, followed by fresh ordinary OS launch. Both matched Necrobinder/Nibbits
+first-Strike pairs add **zero combat reads, bytes or resource time**. Full
+cumulative max render/interval is **60.272217/70.037842 ms**, reduced
+**61.340332/71.228027 ms**, each equal to its idle control. The fixed console
+fixture uses normal card 6 + Enter; this is not every attack/encounter or physical
+handheld FPS. Full/reduced Strike, Osty, joint death with 10.1-second corpse
+persistence, save/exit/relaunch/Continue and OS 20/30 s checks pass. Dense full
+death poses show actual rotation/fall/landing. Both normal Settings language
+switches pass English title/Ironclad/OS visual review and exact NSL1eng readback.
+
+Final zero-I/O scene windows: full Ironclad **30.000153**, Random **27.754131**,
+Neow **29.752381**, Tez **26.927660 FPS**; reduced Ironclad **30.002197**, Random
+**30.006227**, Neow/Tez **30.007326 FPS**. Full Random/Neow/Tez each have one
+interval >50 ms and none >100 ms; other rows have none >50 ms. Full Ironclad's
+warm row follows an additional 60 s settling period. Its original 5 s settle / 30 s
+first-cycle result remains **28.204384 FPS, 17 reads / 1,199,150 B, five intervals
+>250 ms**, not overwritten by the longer-settled result. Reduced Random has a
+static background; full retains water/light/dots. Random uses an explicit
+production-codec legacy-compatible fixture with zero obtained Epochs/timestamps,
+not invented natural progression. Actual Timeline obtain/reveal evidence retains
+its separate historical UI24 source/window identity.
+
+Final guest report release-acceptance.json is complete with remaining=[]; SHA
+`68d3ef18e4195418303699f4b61ee5ec31610063a2819822314dc06d48e2ee39`.
+Earlier f37 controls and failed USB/host-ENOSPC attempts stay separate. Recovery
+verified and removed only incomplete synchronization copies, retained normal
+originals, and reran the final short stages under distinct passing journals.
+This host incident is not a converter peak-space measurement. No guest RAM,
+clock, header, allocation or resource-cap edit was used.
+
+The complete ed5 native/conversion/portable workflow **41495670719** passes all
+three jobs: **183/183 native suites**, zero failures, actual ASan+UBSan enabled,
+CTest **345.87s**; Python discovery **652 tests** and a separate **56-test**
+supplemental command each pass. Do not add those commands into an independent
+test total. Final Windows workflow **41495670730** passes both jobs. Portable
+WebAssembly compilation is not new interactive browser validation. Prior
+cancelled 73bf/f37 native jobs are not used as complete-green evidence. Final
+source review finds only README/docs changes relative to tested ed5; code,
+tools, tests, configuration and workflow subtrees remain exact. Desktop
+Python/.NET/runtime notices stay separate from the three calculator ZIPs;
+Windows original-game conversion remains unclaimed.
+
+The verified source is ready for final documentation publication/readback and
+branch integration; private delivery uses the fixed artifacts and one JSON
+evidence report. Those publication/download receipts belong to the final
+delivery handoff, without relabelling the tested ed5 code as a later docs build. Keep the supplied
+64 MiB ordinary Firebird/OS/Ndless path and cap unchanged. Audio, multiplayer,
+cloud/hosted services, timezone database and calculator IME remain unimplemented;
+source Early Access placeholders and physical-device evidence limits remain.
+The Timeline, explicit long-ASCII seed import and paged-history instructions
+are retained. These remaining limits are not a user waiver.
 
 # UI24 recovered delivery status
 

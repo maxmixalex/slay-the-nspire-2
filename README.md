@@ -1,17 +1,20 @@
 # Slay the Nspire 2
 
-Native TI-Nspire Ndless adaptation of Slay the Spire 2. Reference: the owner's **v0.111.0 / 41cef1ea** installation. Current development is **nSpire 0.1.0-ui24**, using matching **NSP2/46** resources with the 8961-string catalog. It includes full-animation and reduced-actor editions, the 57-Epoch Timeline and unlock chain, continuous card materials, paged run history, and calculator rendering optimizations. Original game data, fonts and calculator firmware are not included in this public repository.
+Native TI-Nspire Ndless adaptation of Slay the Spire 2. Reference: the owner's **v0.111.0 / 41cef1ea** installation. Current delivery is **nSpire 0.1.0-ui25**, using matching **NSP2/46** resources with the 8961-string catalog. It includes full-animation and reduced-actor editions, the 57-Epoch Timeline and unlock chain, continuous card materials, paged run history, and calculator rendering optimizations. Original game data, fonts and calculator firmware are not included in this public repository.
 
 The full-animation English/Simplified-Chinese installation has a hard **70,000,000-byte extracted-size limit**, including the launcher, resources, instructions and licenses, before user saves. The unchanged formal ARM allocation limit is **22,291,016 bytes**. An intermediate build that exceeds either limit is not an accepted release. Exact final package sizes, source identities and calculator-emulator measurements belong to the corresponding delivery manifest; historical UI22 measurements are retained in their original report.
 
 Current source, resource identities and acceptance status are recorded in [WORK_STATE.md](docs/WORK_STATE.md), [Timeline](docs/ui24-timeline.md), [Necrobinder/Osty repairs](docs/ui24-necrobinder-osty.md), [Ancient performance](docs/ui24-ancient-performance.md), [ASCII seeds](docs/seed-ascii-ui24.md), [continuous card materials](docs/ui23-continuous-card-materials.md), and [paged history](docs/ui23-history-archive.md). Native process timings and ARM instruction counts are diagnostic evidence; Firebird guest-clock measurements and physical-handheld measurements are distinct. Earlier results below retain their historical identities.
 
-The accepted full bilingual ZIP expands to **69,869,324 bytes including instructions
-and licenses**, leaving 130,676 bytes below the installation limit. Its ordinary
-launcher allocates **22,287,844 bytes**, leaving 3,172 bytes below the unchanged
-formal cap. The [UI24 release record](docs/ui24-release-validation.md) distinguishes
-these verified calculator packages from the separately measured standalone
-converter, source checkpoints and remaining validation work.
+The current full bilingual ZIP expands to **69,839,495 bytes including instructions
+and licenses**, leaving 160,505 bytes below the installation limit. Its ordinary
+launcher allocates **22,288,920 bytes**, leaving 2,096 bytes below the unchanged
+formal cap. The [UI25 release record](docs/ui25-release-validation.md) identifies
+the three checked ZIPs, corrected resource comparison, final full/reduced
+Firebird acceptance, complete source CI and standalone conversion measurements.
+Both editions pass normal save/Continue/OS and English/Simplified-Chinese checks.
+The scoped first-Strike pair adds no resource reads; first-cycle loading stalls
+and the scene-specific frame rates remain explicit in that record.
 
 **Audio, multiplayer and hosted services are not implemented.** This is an unfinished-feature statement, not a user waiver. Timeline obtain/reveal state, score and unlocks are connected to normal UI and saves; source Early Access placeholders remain unavailable. Original UI fidelity, animation and single-player content breadth remain in scope.
 
@@ -21,7 +24,7 @@ The original three-act route now drives the playable world: Overgrowth or Underd
 
 ### Current calculator installation
 
-The UI24 calculator editions use the following layout. Only the launcher stays at
+The UI25 calculator editions use the following layout. Only the launcher stays at
 installation root; resources are read from `data` and every mutable file is
 written under `state`. The launcher creates `state` when it is absent.
 
@@ -46,16 +49,17 @@ written under `state`. The launcher creates `state` when it is absent.
 | `state/` | Other profiles, progress, preferences, backups and temporary files |
 
 Install the launcher, index, **all eight artwork parts**, and language files
-from the same UI24 release and animation profile. Both complete calculator ZIPs
-contain English and Simplified Chinese. The third ZIP supplies the other fourteen
-original languages, with separate `animated` and `no-animations` folders. Copy
+from the same UI25 release and animation profile. Both complete calculator ZIPs
+contain English and Simplified Chinese. The `full-animated-bilingual` and `no-character-animation-bilingual` filenames
+identify the two main editions. The third `optional-languages` ZIP supplies the
+other fourteen original languages, with separate `animated` and `no-animations` folders. Copy
 only the desired languages from the folder matching the installed edition.
 All eight artwork parts are required for every language, and English should
 remain installed for fallback. A missing or invalid required part produces a
 built-in English resource error.
 
 When updating an existing installation, exit the game, preserve `state`, delete
-the old `data` directory, and then copy the matching UI24 launcher and complete
+the old `data` directory, and then copy the matching UI25 launcher and complete
 new `data` directory. Replace previously installed optional locales with the
 matching new files as well. **Preserve the complete `state` directory**
 and do not overwrite it with the archive's empty folder. It contains
@@ -65,7 +69,7 @@ layouts are not automatically imported.
 
 Profile two and three insert `.p2` and `.p3` before `.tns`, for example
 `state/nSpire2.sav.p2.tns` and `state/nSpire2.progress.p2.tns`.
-UI24 reads v3–v17 run saves and NSHA and earlier progress; new writes
+UI25 reads v3–v17 run saves and NSHA and earlier progress; new writes
 use **v18 / NSHB**. Older launchers may not read the new format. Keep a complete
 pre-upgrade `state` backup if rollback is needed, and restore it together with
 its matching old launcher and resources.
@@ -109,8 +113,8 @@ formal ARM allocation ceiling remains 22,291,016 bytes.
 
 ### Convert your own game installation
 
-Place the downloaded standalone `nspire2-convert-ui24.exe` (Windows) or
-`nspire2-convert-ui24-linux` (Linux) in the original Slay the Spire 2 game
+Place the downloaded standalone `nspire2-convert-ui25.exe` (Windows) or
+`nspire2-convert-ui25-linux` (Linux) in the original Slay the Spire 2 game
 directory and open a terminal there. It locates the PCK, release information
 and managed game assembly itself.
 The standalone builds contain their required Python, .NET and sampling tools;
@@ -122,20 +126,20 @@ them sequentially; these examples keep each output in a separate directory.
 Windows PowerShell:
 
 ```powershell
-.\nspire2-convert-ui24.exe
-.\nspire2-convert-ui24.exe --no-animations
-.\nspire2-convert-ui24.exe --languages all --output .\nSpire2-converted-all-languages
-.\nspire2-convert-ui24.exe --no-animations --languages all --output .\nSpire2-converted-no-animations-all-languages
+.\nspire2-convert-ui25.exe
+.\nspire2-convert-ui25.exe --no-animations
+.\nspire2-convert-ui25.exe --languages all --output .\nSpire2-converted-all-languages
+.\nspire2-convert-ui25.exe --no-animations --languages all --output .\nSpire2-converted-no-animations-all-languages
 ```
 
 Linux (make the downloaded file executable once, then choose a conversion):
 
 ```bash
-chmod +x ./nspire2-convert-ui24-linux
-./nspire2-convert-ui24-linux
-./nspire2-convert-ui24-linux --no-animations
-./nspire2-convert-ui24-linux --languages all --output ./nSpire2-converted-all-languages
-./nspire2-convert-ui24-linux --no-animations --languages all --output ./nSpire2-converted-no-animations-all-languages
+chmod +x ./nspire2-convert-ui25-linux
+./nspire2-convert-ui25-linux
+./nspire2-convert-ui25-linux --no-animations
+./nspire2-convert-ui25-linux --languages all --output ./nSpire2-converted-all-languages
+./nspire2-convert-ui25-linux --no-animations --languages all --output ./nSpire2-converted-no-animations-all-languages
 ```
 
 Windows users can also double-click the EXE for the default bilingual
@@ -146,19 +150,19 @@ The default languages are English and Simplified Chinese. Normal output is
 defaults to `nSpire2-converted-no-animations` there. `--game`, `--output`, `--work`
 and `--workers` provide explicit locations and worker control when needed.
 The converter writes `data/` and `converter-receipt.json`; it does not produce
-a launcher. Use these resources with the matching UI24 `nSpire2.tns` supplied
+a launcher. Use these resources with the matching UI25 `nSpire2.tns` supplied
 separately. Its embedded ARM ELF validates decoding during conversion.
 
 `--no-animations` keeps essential actor poses and the original action durations.
 The same launcher detects the profile automatically. UI and continuous card
 effects retain their own presentation clocks; Ancient NPC/background effects
-hold their entry pose. All optional language files must
+hold their entry pose, and the reduced Random-selection background is static. All optional language files must
 come from the same conversion as the installed common/artwork set; independently
 converted data must not be mixed with the prebuilt optional-language ZIP.
 
 For an ASCII seed longer than the calculator's 64-byte text field, run
-`.\nspire2-convert-ui24.exe --encode-seed-file .\seed.txt` in PowerShell, or
-`./nspire2-convert-ui24-linux --encode-seed-file seed.txt` on Linux.
+`.\nspire2-convert-ui25.exe --encode-seed-file .\seed.txt` in PowerShell, or
+`./nspire2-convert-ui25-linux --encode-seed-file seed.txt` on Linux.
 Either executable also accepts `--encode-seed "complete text"`.
 In Custom Run, open the seed field, use Up/Down to select **Import seed code**,
 and enter the resulting `SEED64-` code. The complete input identity is preserved;
@@ -246,7 +250,7 @@ Source22 [`5d177be7`](https://github.com/maxmixalex/slay-the-nspire-2/commit/5d1
 
 The historical source22 launcher is **885,386 bytes**; the two calculator files total **81,731,444 bytes before saves**. The **30–40 MB target is not achieved**. None of the seven alternative reversible tile representations improved the existing encoding in the declared eight-group sample. Grouped retained images/glyphs show about **8.43 MB** of potential component savings, but require an unimplemented format/reader and still model roughly **69 MiB** before new global metadata. See [resource-budget-0.17.md](docs/resource-budget-0.17.md) and [the exact diagnostic evidence](docs/validation-resource-research-source22.json). The private ZIP and offline HTML are development artifacts, not hardware or 95% visual acceptance. That historical pair requires its matching NSP2/15 resource. Use the current split installation above for this feedback stage.
 
-Those source20–22 resource and launcher sizes describe earlier NSP2/14–15 stages. The later historical UI8 source accepted NSP2/28 and retained old complete-pack readers, including the verified bilingual NSP2/17 and NSP2/18 packs. Its gameplay writer used **v17** with historical v3–v16 readers; resource-storage and save versions are independent. Its browser selected a save key from the actual encoded version and preserved compatible historical keys. These are earlier-stage format descriptions; the current UI24 installation is specified above. Build the current native/ARM sources with the logged commands below. Earlier world resource conversion is described in [enemy-assets-0.17.md](docs/enemy-assets-0.17.md), [feedback-ui-0.17.md](docs/feedback-ui-0.17.md) and [merchant-effects-0.17.md](docs/merchant-effects-0.17.md). Generated packs and embedded-content HTML stay outside this public repository. The older conversion commands and artifact statistics below describe **0.16 only**.
+Those source20–22 resource and launcher sizes describe earlier NSP2/14–15 stages. The later historical UI8 source accepted NSP2/28 and retained old complete-pack readers, including the verified bilingual NSP2/17 and NSP2/18 packs. Its gameplay writer used **v17** with historical v3–v16 readers; resource-storage and save versions are independent. Its browser selected a save key from the actual encoded version and preserved compatible historical keys. These are earlier-stage format descriptions; the current UI25 installation is specified above. Build the current native/ARM sources with the logged commands below. Earlier world resource conversion is described in [enemy-assets-0.17.md](docs/enemy-assets-0.17.md), [feedback-ui-0.17.md](docs/feedback-ui-0.17.md) and [merchant-effects-0.17.md](docs/merchant-effects-0.17.md). Generated packs and embedded-content HTML stay outside this public repository. The older conversion commands and artifact statistics below describe **0.16 only**.
 
 ## Verified 0.16 baseline — historical content
 
@@ -266,8 +270,11 @@ The workflow in [`.github/workflows/ci.yml`](.github/workflows/ci.yml) defines
 native ASan/UBSan regressions, converter tests and ARM/WASM builds without
 private original assets. Historical remote results are listed in the
 [workflow runs](https://github.com/maxmixalex/slay-the-nspire-2/actions).
-Current UI17 validation uses the local checkpoint receipts in the delivery
-record; the presence of this workflow is not a current remote CI result.
+The final UI25 ed5 workflow passes all 183 native ASan/UBSan suites, 652 discovered
+Python tests and a separate command of 56 supplemental tests, plus portable builds.
+The exact current results and their scope are in the
+[UI25 release record](docs/ui25-release-validation.md); historical results retain
+their original source identities.
 
 ```sh
 # Set this to the exact full source commit being tested.
