@@ -296,7 +296,6 @@ int App::detail_stars()const{
 #include "startup_logo_ui.inc"
 #include "bestiary_ui7.inc"
 #include "ui_progress_ui.inc"
-#include "timeline_ui.inc"
 #include "run_modes_ui.inc"
 #include "card_choice_ui.inc"
 #include "combat_peek_ui.inc"
@@ -366,7 +365,6 @@ void App::render(){
     if(run_mode.screen!=RunMenu::Closed){const bool mouse=pointer.visible;if(frontend_confirm||ftue.active())pointer.visible=false;run_modes_screen(c);pointer.visible=mouse;if(frontend_confirm)frontend_confirm_screen(c);ftue_screen(c);character_departure_screen(c);pointer_overlay(c);return;}
     if(map_preview.open){reference_map_screen(c);pointer_overlay(c);return;}
     if(library){const bool mouse=pointer.visible;if(frontend_confirm)pointer.visible=false;library_screen(c);if(detail_card>=0||card_inspect.closing(map_clock_ms))detail_screen(c);if(detail_item>=0||relic_inspect.closing(map_clock_ms))item_detail_screen(c);keyword_tooltips(c);pointer.visible=mouse;if(frontend_confirm)frontend_confirm_screen(c);pointer_overlay(c);return;}
-    if(timeline_open){const bool mouse=pointer.visible;if(frontend_confirm)pointer.visible=false;timeline_screen(c);pointer.visible=mouse;if(frontend_confirm)frontend_confirm_screen(c);pointer_overlay(c);return;}
     if(statistics_open||history_open){const bool mouse=pointer.visible;if(frontend_confirm)pointer.visible=false;if(statistics_open)statistics_screen(c);else history_screen(c);screen_scene_shake(c);if(detail_card>=0||card_inspect.closing(map_clock_ms))detail_screen(c);if(detail_item>=0||relic_inspect.closing(map_clock_ms))item_detail_screen(c);keyword_tooltips(c);pointer.visible=mouse;if(frontend_confirm)frontend_confirm_screen(c);pointer_overlay(c);return;}
     if(compendium_open){const bool mouse=pointer.visible;if(frontend_confirm)pointer.visible=false;compendium_screen(c);pointer.visible=mouse;if(frontend_confirm)frontend_confirm_screen(c);pointer_overlay(c);return;}
     if(character_select){const bool mouse=pointer.visible;if(ftue.active())pointer.visible=false;character_screen(c);screen_scene_shake(c);pointer.visible=mouse;ftue_screen(c);character_departure_screen(c);pointer_overlay(c);return;}

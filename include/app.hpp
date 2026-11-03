@@ -89,6 +89,7 @@
 #include "ui_preferences.hpp"
 #include "ui_progress.hpp"
 #include "timeline_text.hpp"
+#include "character_unlock_assets.hpp"
 #include "ui_calendar.hpp"
 #include "ui_profiles.hpp"
 #include "ui_statistics.hpp"
@@ -223,12 +224,14 @@ public:
     bool has_startup_logo_assets()const{return version_>=Ui12ContentVersion&&(ui_count_==IntroLogoAuxiliaryCount||has_phobia_swarm_assets());}
     bool has_history_body_assets()const{return version_>=HistoryBodyContentVersion&&(ui_count_==SettingsUi10AuxiliaryCount||(version_>=Ui12ContentVersion&&ui_count_==Ui12AuxiliaryCount)||has_startup_logo_assets());}
     bool has_settings_ui10_assets()const{return has_history_body_assets();}
+    bool has_character_unlock_assets()const{return ui_count_==character_unlock_assets::AuxiliaryCount;}
+    bool has_character_unlock_text()const{return strings_==character_unlock_assets::StringCount;}
     bool has_timeline_text()const{return strings_==TimelineStringCount;}
     bool current_profile()const{
         if(version_<ContentVersion||version_>MaximumContentVersion||cards_!=CardKinds)return false;
         const unsigned auxiliary=version_>=GameOverTransitionContentVersion?unsigned(GameOverTransitionAuxiliaryCount):version_>=HistoryJournalContentVersion?unsigned(HistoryJournalAuxiliaryCount):version_>=CharacterDeathContentVersion?unsigned(CharacterDeathAuxiliaryCount):version_>=HistoryUi8ContentVersion?unsigned(HistoryUi8AuxiliaryCount):version_>=HudUi7ContentVersion?unsigned(HudUi7AuxiliaryCount):version_>=ProfileContentVersion?unsigned(ProfileAuxiliaryCount):version_>=PhobiaContentVersion?unsigned(PhobiaAuxiliaryCount):version_>=Ui7ContentVersion?unsigned(Ui7AuxiliaryCount):version_>=Ui6ContentVersion?unsigned(Ui6AuxiliaryCount):version_>=FrontendContentVersion?unsigned(FrontendAuxiliaryCount):version_>=TitleEffectsContentVersion?unsigned(TitleEffectsAuxiliaryCount):version_>=MerchantEffectsContentVersion?unsigned(MerchantEffectsAuxiliaryCount):version_==FeedbackContentVersion?unsigned(FeedbackAuxiliaryCount):version_==LocaleContentVersion?unsigned(LocaleAuxiliaryCount):version_==NativeUiContentVersion?unsigned(NativeUiAuxiliaryCount):unsigned(U_Count);
         const unsigned animations=version_>=BestiaryKaiserContentVersion?unsigned(BestiaryKaiserAnimationKinds):version_>=CharacterDeathContentVersion?unsigned(CharacterDeathAnimationKinds):version_>=PhobiaContentVersion?unsigned(PhobiaAnimationKinds):version_>=Ui7ContentVersion?unsigned(Ui7AnimationKinds):version_>=MerchantEffectsContentVersion?unsigned(MerchantEffectsAnimationKinds):version_==FeedbackContentVersion?unsigned(FeedbackAnimationKinds):unsigned(AnimationKinds);
-        const bool text=version_>=Ui7ContentVersion?(strings_==Ui7StringCount||has_timeline_text()):version_>=LocaleContentVersion?strings_==LocaleStringCount:strings_==ContentStrings||(version_==NativeUiContentVersion&&strings_==NativeUiStringCount);
+        const bool text=version_>=Ui7ContentVersion?(strings_==Ui7StringCount||has_timeline_text()||has_character_unlock_text()):version_>=LocaleContentVersion?strings_==LocaleStringCount:strings_==ContentStrings||(version_==NativeUiContentVersion&&strings_==NativeUiStringCount);
         const bool ui=ui_count_==auxiliary||(version_>=CardResourceContentVersion&&ui_count_==CardResourceAuxiliaryCount)||has_ftue_assets();
         return ui&&text&&clips_==animations;
     }
@@ -457,16 +460,12 @@ struct App {
     bool request_profile_change(unsigned,bool erase=false);
     void finish_profile_change(bool success);
     bool compendium_open=false,statistics_open=false,history_open=false;
-    bool timeline_open=false,timeline_detail=false;
-    uint8_t timeline_selected=0;
-    void timeline_choose_character(Character);
-    bool timeline_character_available(unsigned)const;
-    unsigned timeline_max_ascension()const;
-    bool timeline_mode_available(RunMode)const;
-    void open_timeline();
-    unsigned timeline_items(uint8_t*)const;
-    void timeline_activate(unsigned);
-    bool timeline_input(Key);
+    void choose_character(Character);
+    bool character_available(unsigned)const;
+    bool first_standard_run()const;
+    void character_unlock_text(unsigned,char*,size_t)const;
+    unsigned character_max_ascension()const;
+    bool run_mode_available(RunMode)const;
     uint8_t compendium_selection=0,history_index=0;
     int history_selected=-1;
     UiHistoryPresentation history_presentation{};
@@ -490,9 +489,8 @@ struct App {
     uint8_t progress_seen_phase=255;
     bool progress_seen_ending=false;
     void restore_progress();
-    void timeline_finish_run(const State&);
-    void timeline_win_battle(const State&);
-    void timeline_prepare_run(State&);
+    void finish_character_progress(const State&);
+    void prepare_profile_run(State&);
     bool persist_progress();
     bool seen_ftue(FtueId)const;
     bool seen_popup(FtueId)const;
@@ -564,7 +562,7 @@ struct App {
     const char* run_modifier_text(RunModifier,bool description=false)const;
     uint16_t localized_card_rank(CardKind)const;
     void accept_frontend_confirm();
-    int title_menu_count()const{return has_save?6:5;}
+    int title_menu_count()const{return has_save?5:4;}
     bool practice_entry=false;
     bool run_settings=false,run_seed_editing=false,selected_seed_imported=false;
     uint8_t character_control=0;

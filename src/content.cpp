@@ -287,7 +287,7 @@ bool Content::open(ResourceSource source){
     if(ni<A_Count||ni>(version>=14?65535u:8192u)||ng>(version>=14?scene_font_glyph_limit(version):version==13?16384u:8192u)||ns<66||ns>(version>=14?16384u:2048u)||nc!=(version>=BestiaryKaiserContentVersion?BestiaryKaiserAnimationKinds:version>=CharacterDeathContentVersion?CharacterDeathAnimationKinds:version>=PhobiaContentVersion?PhobiaAnimationKinds:version>=Ui7ContentVersion?Ui7AnimationKinds:version>=MerchantEffectsContentVersion?MerchantEffectsAnimationKinds:version==FeedbackContentVersion?FeedbackAnimationKinds:version>=14?AnimationKinds:version==13?38:version>=6?17:11))return false;
     if((version==11&&ns!=407)||(version==12&&ns!=749)||(version==13&&ns!=1556)||
        (version>=14&&version<LocaleContentVersion&&ns!=ContentStrings&&!(version==NativeUiContentVersion&&ns==NativeUiStringCount))||
-       (version>=LocaleContentVersion&&ns!=(version>=Ui7ContentVersion?Ui7StringCount:LocaleStringCount)&&!(version>=Ui7ContentVersion&&ns==TimelineStringCount)))return false;
+       (version>=LocaleContentVersion&&ns!=(version>=Ui7ContentVersion?Ui7StringCount:LocaleStringCount)&&!(version>=Ui7ContentVersion&&(ns==TimelineStringCount||ns==character_unlock_assets::StringCount))))return false;
     unsigned auxiliary=version>=GameOverTransitionContentVersion?unsigned(GameOverTransitionAuxiliaryCount):version>=HistoryJournalContentVersion?unsigned(HistoryJournalAuxiliaryCount):version>=CharacterDeathContentVersion?unsigned(CharacterDeathAuxiliaryCount):version>=HistoryUi8ContentVersion?unsigned(HistoryUi8AuxiliaryCount):version>=HudUi7ContentVersion?unsigned(HudUi7AuxiliaryCount):version>=ProfileContentVersion?unsigned(ProfileAuxiliaryCount):version>=PhobiaContentVersion?unsigned(PhobiaAuxiliaryCount):version>=Ui7ContentVersion?unsigned(Ui7AuxiliaryCount):version>=Ui6ContentVersion?unsigned(Ui6AuxiliaryCount):version>=FrontendContentVersion?unsigned(FrontendAuxiliaryCount):version>=TitleEffectsContentVersion?unsigned(TitleEffectsAuxiliaryCount):version>=MerchantEffectsContentVersion?unsigned(MerchantEffectsAuxiliaryCount):version==FeedbackContentVersion?unsigned(FeedbackAuxiliaryCount):version==LocaleContentVersion?unsigned(LocaleAuxiliaryCount):version==NativeUiContentVersion?unsigned(NativeUiAuxiliaryCount):version>=14?unsigned(U_Count):version==13?339:version==12?233:version==11?185:version==10?105:version==9?95:version==8?90:version==7?83:version==6?74:version==5?56:0;
     uint32_t base=40+ni*16+ng*16+ns*8+nc*16+cards*16+auxiliary*4;
     if(version>=CardResourceContentVersion){
@@ -371,7 +371,7 @@ bool Content::open(ResourceSource source){
                                                     FramedUi22AuxiliaryCount,character_select_delta::AuxiliaryCount,
                                                     retired_assets_ui22::AuxiliaryCount,ancient_scene_ui23::AuxiliaryCount,tanx_scene_ui23::AuxiliaryCount,
                                                     ancient_lights_ui23::AuxiliaryCount,ancient_materials_ui23::AuxiliaryCount,
-                                                    7221,7222,7223,7224,7225,7226,7227,7228,7229};
+                                                    7221,7222,7223,7224,7225,7226,7227,7228,7229,character_unlock_assets::AuxiliaryCount};
                                                 for(unsigned end:endpoints){
                                                     if(next==0x314c4954u)break;
                                                     for(unsigned i=auxiliary;i<end;++i){
@@ -450,7 +450,7 @@ bool Content::open(ResourceSource source){
     static constexpr uint16_t ancient_catalog[][2]={
         {7212,58613},{7214,59667},{7215,59674},{7217,59677},
         {7220,59700},{7221,59710},{7222,59712},{7223,59717},{7224,59729},
-        {7225,59730},{7226,59731},{7227,59732},{7228,59741},{7229,60294}};
+        {7225,59730},{7226,59731},{7227,59732},{7228,59741},{7229,60294},{character_unlock_assets::AuxiliaryCount,character_unlock_assets::Images}};
     unsigned expected_images=0;
     for(const auto&row:ancient_catalog)if(auxiliary==row[0])expected_images=row[1];
     if(expected_images){

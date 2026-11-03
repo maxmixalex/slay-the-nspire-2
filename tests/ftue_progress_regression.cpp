@@ -77,7 +77,7 @@ static void profiles_and_preference(){
  for(unsigned i=0;i<FtueCount;++i)CHECK(!app.seen_ftue(FtueId(i))&&!app.seen_popup(FtueId(i)));
  CHECK(app.seen_ftue(FtueId::Count)&&app.seen_popup(FtueId::Count));check_simulation();
  scenario="No disables ordinary FTUE while an unseen Ascension popup remains available";
- app.mark_ftue(FtueId::AcceptTutorials);CHECK(writes==1&&profiles[0][3]=='B'&&app.seen_ftue(FtueId::AcceptTutorials));
+ app.mark_ftue(FtueId::AcceptTutorials);CHECK(writes==1&&profiles[0][3]=='C'&&app.seen_ftue(FtueId::AcceptTutorials));
  app.mark_ftue(FtueId::AcceptTutorials);CHECK(writes==1);
  app.set_ftues_enabled(false);CHECK(writes==2&&app.progress.tutorial_flags==(FtueInitialized|ftue_bit(FtueId::AcceptTutorials)));
  export_bytes("declined-profile.nsh",profiles[0]);

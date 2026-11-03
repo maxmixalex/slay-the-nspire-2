@@ -32,7 +32,7 @@ def digest(path):
     return value.hexdigest()
 
 
-def inspect_resources(directory, expected_profile, *, require_timeline=False):
+def inspect_resources(directory, expected_profile, *, require_timeline=False, require_character_unlock=False):
     common = (directory / "nSpire2.dat.tns").read_bytes()
     required = ["nSpire2.dat.tns", "nSpire2.eng.dat.tns", "nSpire2.zhs.dat.tns"]
     if common[:4] == b"NSM1":
@@ -47,6 +47,12 @@ def inspect_resources(directory, expected_profile, *, require_timeline=False):
         string_count = int.from_bytes(logical[24:28], 'little')
         if require_timeline and string_count != 8961:
             raise ValueError('UI24 requires the complete 8961-string Timeline catalog: '+code)
+        if require_character_unlock:
+            from coalesce_tile_resources import view
+            from character_unlock_assets import validate as validate_character_locks
+            if string_count != 8707:
+                raise ValueError('UI26 requires the complete 8707-string character catalog: '+code)
+            source=view(logical);validate_character_locks(source,source.image_raw)
         if resource_format is None:
             resource_format = version
         elif version != resource_format:
@@ -96,7 +102,9 @@ def build(args):
         'animated': getattr(args, 'resource_source_relation', 'equivalent_tree'),
         'no-animations': getattr(args, 'no_animations_resource_source_relation', None) or
             getattr(args, 'resource_source_relation', 'equivalent_tree')}
-    resources = {name: inspect_resources(path, name, require_timeline=int(stage[2:]) >= 24)
+    resource_gate = ({'require_character_unlock':True} if int(stage[2:])>=26 else
+                     {'require_timeline':int(stage[2:])>=24})
+    resources = {name: inspect_resources(path, name, **resource_gate)
                  for name, path in directories.items()}
     if resources['animated']['resource_format'] != resources['no-animations']['resource_format']:
         raise ValueError('Animated and reduced editions use different resource format versions')
@@ -108,7 +116,9 @@ def build(args):
                          (resources["animated"]["installed_bytes"], args.maximum_animated_bytes))
     base_version = (ROOT / "VERSION").read_text().strip().split("-", 1)[0]
     stem = "Slay-the-Nspire-2-" + base_version + "-" + stage
-    archive_suffixes = ({"animated": "full-animated-bilingual",
+    if int(stage[2:])>=26:stem="Slay-the-Nspire-2-"+base_version
+    archive_suffixes = ({"animated":"full","no-animations":"reduced"} if int(stage[2:])>=26 else
+                        {"animated": "full-animated-bilingual",
                          "no-animations": "no-character-animation-bilingual"}
                         if int(stage[2:]) >= 25 else
                         {profile: profile + "-bilingual-calculator" for profile in PROFILES})
@@ -152,8 +162,9 @@ def build(args):
                                      (receipts[profile]["extracted_bytes"], args.maximum_animated_bytes))
 
     extras = [code for code in LANGUAGES if code not in ("eng", "zhs")]
-    optional = args.output / (stem + "-optional-languages.zip")
-    edition_mapping = ((stage.upper() + "主包文件名 / Installer mapping:\n"
+    optional = args.output / (stem + ("-languages.zip" if int(stage[2:])>=26 else "-optional-languages.zip"))
+    edition_mapping = ("主包文件名 / Installer mapping:\nfull → animated\nreduced → no-animations\n\n" if int(stage[2:])>=26 else
+                      (stage.upper() + "主包文件名 / Installer mapping:\n"
                         "full-animated-bilingual → animated\n"
                         "no-character-animation-bilingual → no-animations\n\n")
                        if int(stage[2:]) >= 25 else "")
@@ -174,6 +185,9 @@ def build(args):
         "原版内容按所选语言提供；原文缺失处按原版英语回退。本移植新增的历史/归档错误与时间线状态提示提供简体中文和英语，其余语言显示英语。\n"
         "Original content uses the selected locale, with English fallback where the original table lacks a key. Port-authored history/archive errors and Timeline status labels use Simplified Chinese or English; other locales display English for these labels.\n\n"
         "Available additional locale codes: " + ", ".join(extras) + "\n")
+    if int(stage[2:])>=26:
+        instructions=instructions.replace('历史/归档错误与时间线状态提示','历史/归档错误提示').replace(
+            'history/archive errors and Timeline status labels','history/archive errors')
     with zipfile.ZipFile(optional, "w", zipfile.ZIP_DEFLATED, compresslevel=6) as archive:
         archive.writestr("README-languages.txt", instructions.encode("utf-8"))
         for profile, directory in directories.items():

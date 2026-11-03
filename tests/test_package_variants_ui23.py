@@ -12,7 +12,7 @@ import package_variants_ui23 as package
 
 
 class LocaleEditionGate(unittest.TestCase):
-    def inspect(self, versions=None, reduced=(), strings=None, require_timeline=False):
+    def inspect(self, versions=None, reduced=(), strings=None, require_timeline=False, require_character_unlock=False):
         versions = versions or {}
         strings = strings or {}
         with tempfile.TemporaryDirectory() as temporary:
@@ -33,8 +33,10 @@ class LocaleEditionGate(unittest.TestCase):
                     header[36:40] = b'NAF1'
                 return bytes(header)
 
-            with patch.object(package, 'reconstruct', side_effect=reconstructed):
-                return package.inspect_resources(root, 'animated', require_timeline=require_timeline)
+            with patch.object(package, 'reconstruct', side_effect=reconstructed), \
+                 patch('coalesce_tile_resources.view'), patch('character_unlock_assets.validate'):
+                return package.inspect_resources(root, 'animated', require_timeline=require_timeline,
+                                                 require_character_unlock=require_character_unlock)
 
     def test_matching_all_sixteen_locales_are_reported(self):
         result = self.inspect()
@@ -57,6 +59,14 @@ class LocaleEditionGate(unittest.TestCase):
         self.assertTrue(all(row['string_count'] == 8961 for row in result['locales'].values()))
         with self.assertRaisesRegex(ValueError, '8961-string Timeline catalog: fra'):
             self.inspect(strings={'fra': 8704}, require_timeline=True)
+
+    def test_ui26_requires_new_tail_for_every_optional_locale(self):
+        counts={code:8707 for code in package.LANGUAGES}
+        result=self.inspect(strings=counts,require_character_unlock=True)
+        self.assertTrue(all(row['string_count']==8707 for row in result['locales'].values()))
+        for old_count in (8704,8961):
+            with self.assertRaisesRegex(ValueError,'8707-string character catalog: fra'):
+                self.inspect(strings={**counts,'fra':old_count},require_character_unlock=True)
 
 
 class ThreeArchiveDelivery(unittest.TestCase):

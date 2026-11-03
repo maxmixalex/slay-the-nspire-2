@@ -37,10 +37,11 @@ bool App::map_node_on_screen(unsigned point)const{
 bool App::map_intro_at_entry()const{
     const auto*m=world_current_map(game);if(!m)return false;
     unsigned visited=0;for(unsigned i=0;i<m->count;++i)visited+=game.world.visited[game.world.act_index][i]!=0;
-    // Original runs here always start with Neow. Later acts first enter the
-    // standalone MapRoom at ActFloor zero, before choosing their Ancient.
-    return game.world.act_index==0?visited==1&&game.world.current_point==m->root:
-        visited==0&&game.world.current_point==reference::NoPoint;
+    // The first tutorial run and migrated saves can enter the first map
+    // without an Ancient. The ordinary route starts after Neow. Both must
+    // run the map lesson; otherwise its route-input guard never opens.
+    const bool before_root=visited==0&&game.world.current_point==reference::NoPoint;
+    return game.world.act_index==0?before_root||(visited==1&&game.world.current_point==m->root):before_root;
 }
 void App::reset_map_act_intro(bool restored){
     map_act_intro.reset(fast_mode);map_act_clock_ms=map_clock_ms;

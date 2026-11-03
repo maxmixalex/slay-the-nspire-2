@@ -204,6 +204,11 @@ def _validate_content(data, stage, *, retirement_intermediate):
     if count>=7212:
         from ancient_extensions_ui23 import validate as validate_extensions
         validate_extensions(source,image,final=True)
+    if int(match[1])>=26:
+        from character_unlock_assets import AUXILIARY, IMAGES, validate as validate_character_locks
+        tiles.require((count,len(source.images))==(AUXILIARY,IMAGES),
+                      'UI26 requires the original character lock textures')
+        validate_character_locks(source,image)
 
     tables = []
     for row, image_id in enumerate(table_ids):

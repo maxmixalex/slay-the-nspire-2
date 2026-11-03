@@ -170,7 +170,23 @@ template<class Codec>void progress(Codec&c,UiProgress&v,unsigned version){
         for(unsigned i=0;i<EpochCount;++i){uint8_t state=unsigned(t.states[i]);c.integer(state);if constexpr(Codec::reading)t.states[i]=EpochState(state);c.integer(t.obtained_at[i]);}
         if(!timeline_valid(t))c.good=false;
     }
+    if(version>=12){c.integer(v.character_unlocks);if(!(v.character_unlocks&1)||v.character_unlocks&~31u)c.good=false;}
 }
+}
+uint8_t profile_character_unlocks(const UiProgress&p){
+    if(p.character_unlocks)return p.character_unlocks;
+    if(!(p.timeline.flags&TimelineInitialized)||(p.timeline.flags&TimelineLegacyAccess))return 31;
+    uint8_t mask=1|p.characters_started|p.timeline.characters_known;
+    static constexpr unsigned order[]={0,1,3,4,2};
+    static constexpr Epoch legacy[]={Epoch::Count,Epoch::Silent1,Epoch::Regent1,Epoch::Necrobinder1,Epoch::Defect1};
+    bool completed=false;
+    for(unsigned i=0;i<CharacterKinds;++i)completed|=p.characters[i].wins||p.characters[i].losses;
+    if(completed)mask|=1u<<unsigned(Character::Silent);
+    for(unsigned i=1;i<CharacterKinds;++i){
+        if(unsigned(p.timeline.states[unsigned(legacy[i])])>=unsigned(EpochState::ObtainedNoSlot))mask|=uint8_t(1u<<order[i]);
+        if(i>1&&(p.characters[order[i-1]].wins||p.characters[order[i-1]].losses))mask|=uint8_t(1u<<order[i]);
+    }
+    return mask&31u;
 }
 void clear_ui_progress(UiProgress&out){auto*bytes=reinterpret_cast<uint8_t*>(&out);for(size_t i=0;i<sizeof out;++i)bytes[i]=0;out.next_serial=1;}
 size_t encode_ui_progress(const UiProgress&value,uint8_t*out,size_t capacity){
@@ -189,6 +205,7 @@ size_t encode_ui_progress(const UiProgress&value,uint8_t*out,size_t capacity){
     for(const auto&r:value.history)if(r.build_id[0])version=9;
     if(value.current.history_prefix)version=10;for(const auto&r:value.history)if(r.history_prefix)version=10;
     if(value.timeline.flags)version=11;
+    if(value.character_unlocks)version=12;
     out[0]='N';out[1]='S';out[2]='H';out[3]=version>=10?char('A'+version-10):char('0'+version);for(unsigned i=4;i<8;++i)out[i]=0;
     // Encoder never changes a field. The shared schema keeps its reader and
     // writer in the same order without depending on C++ padding/endianness.
@@ -197,7 +214,7 @@ size_t encode_ui_progress(const UiProgress&value,uint8_t*out,size_t capacity){
     for(unsigned i=0;i<4;++i)out[4+i]=uint8_t(c.at>>(i*8));return c.at;
 }
 bool decode_ui_progress(const uint8_t*data,size_t size,UiProgress&out){
-    if(!data||size<8||size>UiProgressCapacity||data[0]!='N'||data[1]!='S'||data[2]!='H'||((data[3]<'1'||data[3]>'9')&&(data[3]<'A'||data[3]>'B')))return false;
+    if(!data||size<8||size>UiProgressCapacity||data[0]!='N'||data[1]!='S'||data[2]!='H'||((data[3]<'1'||data[3]>'9')&&(data[3]<'A'||data[3]>'C')))return false;
     uint32_t stored=0;for(unsigned i=0;i<4;++i)stored|=uint32_t(data[4+i])<<(i*8);if(stored!=size)return false;
     clear_ui_progress(out);const unsigned version=data[3]>='A'?10+unsigned(data[3]-'A'):unsigned(data[3]-'0');
     Decoder c{data,size,8};progress(c,out,version);if(c.good&&version<11){timeline_initialize(out.timeline,true);out.timeline.characters_known=out.characters_started;
@@ -205,7 +222,7 @@ bool decode_ui_progress(const uint8_t*data,size_t size,UiProgress&out){
 }
 bool decode_ui_progress_summary(const uint8_t*data,size_t size,UiProgressSummary&out){
     out={};
-    if(!data||size<8||size>UiProgressCapacity||data[0]!='N'||data[1]!='S'||data[2]!='H'||((data[3]<'1'||data[3]>'9')&&(data[3]<'A'||data[3]>'B')))return false;
+    if(!data||size<8||size>UiProgressCapacity||data[0]!='N'||data[1]!='S'||data[2]!='H'||((data[3]<'1'||data[3]>'9')&&(data[3]<'A'||data[3]>'C')))return false;
     uint32_t stored=0;for(unsigned i=0;i<4;++i)stored|=uint32_t(data[4+i])<<(i*8);if(stored!=size)return false;
     Decoder c{data,size,8};uint32_t serial=0,ignored=0;uint8_t count=0,next=0,byte=0;
     c.integer(serial);c.integer(count);c.integer(next);c.integer(byte);c.integer(byte);c.integer(ignored);c.integer(ignored);

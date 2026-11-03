@@ -23,7 +23,7 @@ int main(int argc,char**argv){
         uint64_t root=0;CHECK(reference::seed_hash(canonical,root));CHECK(root==std::stoull(f[3],nullptr,16));
         reference::Random rng;rng.named(root,"act_selection");
         const unsigned region=timeline_first_act(unlocked,seen?15:0,rng);CHECK(region==unsigned(std::stoul(f[4])));regions|=1u<<region;
-        bool random_allowed=true;for(unsigned i=0;i<CharacterKinds;++i)random_allowed&=timeline_character_allowed(unlocked,i);
+        bool random_allowed=true;for(unsigned i=0;i<CharacterKinds;++i)random_allowed&=(i==0||unlocked.has(i==1?Epoch::Silent1:i==2?Epoch::Defect1:i==3?Epoch::Regent1:Epoch::Necrobinder1));
         int character=-1;if(random_allowed){character=int(RunModeCharacters[rng.below(CharacterKinds)]);characters|=1u<<character;}
         CHECK(character==std::stoi(f[5]));CHECK(rng.calls==std::stoul(f[6]));
         for(unsigned i=0;i<4;++i)CHECK(rng.words[i]==std::stoull(f[7+i],nullptr,16));

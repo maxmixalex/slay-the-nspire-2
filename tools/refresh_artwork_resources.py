@@ -22,7 +22,7 @@ from ui14_resources import graft_locale
 
 
 def convert(artwork_path, source, target, work, *, locales=None, exact_glyph_storage=False,
-            timeline_pck=None, timeline_fonts=None):
+            timeline_pck=None, timeline_fonts=None, character_unlock_pck=None, character_unlock_fonts=None):
     artwork_path=t.private_path(artwork_path,'Private updated artwork')
     source=t.private_path(source,'Private original resources')
     target=t.private_path(target,'Private updated resources')
@@ -36,6 +36,9 @@ def convert(artwork_path, source, target, work, *, locales=None, exact_glyph_sto
               'A requested original locale is missing')
     t.require(bool(timeline_pck) == bool(timeline_fonts),
               'Timeline text requires both the original PCK and its extracted fonts')
+    t.require(bool(character_unlock_pck) == bool(character_unlock_fonts),
+              'Character lock text requires the original PCK and its extracted fonts')
+    t.require(not (timeline_pck and character_unlock_pck), 'Select one locale-tail contract')
     target.mkdir(parents=True,exist_ok=True);work.mkdir(parents=True,exist_ok=True)
     artwork=artwork_path.read_bytes();view=coalesce.view(artwork)
     old_common=storage.join_parts((source/'nSpire2.dat.tns').read_bytes(),
@@ -47,7 +50,8 @@ def convert(artwork_path, source, target, work, *, locales=None, exact_glyph_sto
     for name,payload in parts.items():t.atomic_bytes(target/name,payload)
     report=dict(schema=1,version=view.version,artwork_sha256=t.sha256(artwork),
         images=len(view.images),clips=len(view.clips),auxiliaries=len(view.aux),
-        partition=partition,locales={},timeline_original_text=bool(timeline_pck))
+        partition=partition,locales={},timeline_original_text=bool(timeline_pck),
+        character_unlock_original_text=bool(character_unlock_pck))
     started=time.monotonic()
     for code in ('eng',*(code for code in codes if code!='eng')):
         previous=split.reconstruct(old_common,(source/f'nSpire2.{code}.dat.tns').read_bytes(),code)
@@ -59,6 +63,15 @@ def convert(artwork_path, source, target, work, *, locales=None, exact_glyph_sto
             pack=Pack(timeline_pck)
             try:
                 logical,timeline_proof=append_timeline(logical,pack,timeline_fonts)
+            finally:
+                pack.close()
+        character_proof=None
+        if character_unlock_pck:
+            from character_unlock_text import patch as character_text
+            from pck import Pack
+            pack=Pack(character_unlock_pck)
+            try:
+                logical,character_proof=character_text(logical,pack,character_unlock_fonts)
             finally:
                 pack.close()
         glyph_proof=None
@@ -75,7 +88,7 @@ def convert(artwork_path, source, target, work, *, locales=None, exact_glyph_sto
         if code in ('eng','zhs'):t.atomic_bytes(work/f'{code}-complete{view.version}.nsp',logical)
         report['locales'][code]=dict(stored_bytes=len(language),logical_sha256=t.sha256(logical),
                                     proof=proof,storage=stored,glyph_storage=glyph_proof,
-                                    timeline=timeline_proof)
+                                    timeline=timeline_proof,character_unlock=character_proof)
         print(json.dumps(dict(stage='refreshed_artwork',locale=code,stored_bytes=len(language),**proof)),flush=True)
     names=('nSpire2.dat.tns',*storage.PART_FILES,*(f'nSpire2.{code}.dat.tns' for code in codes))
     report.update(complete=True,elapsed_seconds=time.monotonic()-started,
@@ -91,10 +104,13 @@ def main():
     parser.add_argument('--exact-glyph-storage',action='store_true',help='Losslessly encode native glyph coverage after locale grafting')
     parser.add_argument('--timeline-pck',type=Path,help='Append original Timeline localization from this PCK')
     parser.add_argument('--timeline-fonts',type=Path,help='Extracted original fonts for missing Timeline glyphs')
+    parser.add_argument('--character-unlock-pck',type=Path)
+    parser.add_argument('--character-unlock-fonts',type=Path)
     args=parser.parse_args()
     report=convert(args.artwork,args.input,args.output,args.work,locales=args.locales,
                    exact_glyph_storage=args.exact_glyph_storage,
-                   timeline_pck=args.timeline_pck,timeline_fonts=args.timeline_fonts)
+                   timeline_pck=args.timeline_pck,timeline_fonts=args.timeline_fonts,
+                   character_unlock_pck=args.character_unlock_pck,character_unlock_fonts=args.character_unlock_fonts)
     print(json.dumps({key:value for key,value in report.items() if key not in ('partition','locales')}),flush=True)
 
 

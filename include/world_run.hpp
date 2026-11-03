@@ -11,8 +11,8 @@ enum class WorldRestOption : uint8_t { Heal,Smith,Hatch,Dig,Lift,Kindle,Cook,Clo
 
 // The caller creates the character/deck first. A seed set with world_set_seed
 // is retained; otherwise the run's numeric seed initializes named streams.
-// first_region accepts only Overgrowth or Underdocks. Normal UI creation freezes
-// the revealed Timeline mask before this function prepares all content pools.
+// first_region accepts only Overgrowth or Underdocks. The normal UI applies
+// first-run tutorial/discovery order without locking playable model pools.
 bool world_begin_run(State&, reference::ActKind first_region=reference::ActKind::Overgrowth,
                      unsigned ascension=0,const uint8_t*seen_encounters=nullptr);
 // Route availability is independent of opening the map. An eligible current

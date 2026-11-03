@@ -410,7 +410,8 @@ bool ReferenceMap::valid() const {
     for (unsigned row = 0; row <= config.rows + 1u; ++row) for (unsigned id = 0; id < count; ++id) {
         const auto& p = points[id]; if (!p.active || p.row != row) continue;
         if (!seen[id]) return false;
-        if (p.type != PointType::Start && p.type != PointType::Boss && (p.col >= Columns || p.row >= config.rows || grid[p.col][p.row] != id)) return false;
+        const bool tutorial_start=id==root&&p.type==PointType::Monster&&p.row==0&&p.col==Columns/2;
+        if (!tutorial_start && p.type != PointType::Start && p.type != PointType::Boss && (p.col >= Columns || p.row >= config.rows || grid[p.col][p.row] != id)) return false;
         if (p.children.count() == 0 && id != (second_boss != NoPoint ? second_boss : boss)) return false;
         for (unsigned j = 0; j < p.children.used; ++j) {
             uint8_t child = p.children.slots[j]; if (child == NoPoint) continue;

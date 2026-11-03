@@ -176,7 +176,7 @@ def validate_install(artwork_path, output, codes, no_animations, original_refere
     output = Path(output); directory = output/'data'; started = time.monotonic()
     artwork = Path(artwork_path).read_bytes(); source = coalesce.view(artwork)
     t.require(reduced.reduced(artwork) == no_animations, 'Requested animation profile does not match the artwork')
-    guard = validate_release_content(artwork, 'ui23')
+    guard = validate_release_content(artwork, 'ui26')
     from card_affliction_ui23 import validate as validate_cards
     continuous_cards=validate_cards(source,source.image_raw)
     t.require(continuous_cards is not None,'The final converter requires continuous card materials')
@@ -194,13 +194,13 @@ def validate_install(artwork_path, output, codes, no_animations, original_refere
                   'Published locale image catalog differs')
         t.require(view.cards == source.cards and view.clips == source.clips and view.aux == source.aux,
                   'Published locale has mismatched gameplay or animation identities')
-        if refresh.get('timeline_original_text'):
-            from timeline_text_ui24 import BASE_STRINGS, ADDED_STRINGS
-            timeline=refresh['locales'][code]['timeline']
-            t.require(len(view.strings)==BASE_STRINGS+ADDED_STRINGS and timeline['complete'] and
-                      timeline['verification']['missing_required_glyphs']==0 and
-                      timeline['original_utf8_recovered_from_graphemes'],
-                      'Published Timeline text or font coverage is incomplete')
+        if refresh.get('character_unlock_original_text'):
+            from character_unlock_text import STRINGS
+            labels=refresh['locales'][code]['character_unlock']
+            t.require(len(view.strings)==STRINGS and labels['complete'] and
+                      labels['verification']['missing_required_glyphs']==0 and
+                      labels['original_utf8_recovered_from_graphemes'],
+                      'Published character lock text or font coverage is incomplete')
         t.require(reduced.reduced(logical) == no_animations, 'Published locale lost its presentation profile')
         locales[code] = dict(logical_bytes=len(logical), logical_sha256=t.sha256(logical),
             stored_bytes=(directory/f'nSpire2.{code}.dat.tns').stat().st_size,
@@ -357,9 +357,13 @@ def add_final_stages(recipe, source_editions, output, codes, no_animations):
     target=recipe.directory('final-index46')/'eng.nsp'
     recipe.add('final-index46','@mandatory-orphan-prune',[logical,target,ROOT/'converter_helpers'],
                [target,target.with_suffix('.json')]);logical=target
+    target=recipe.directory('character-locks46')/'eng.nsp'
+    recipe.add('character-locks46','character_unlock_assets',
+        ['--input',logical,'--output',target,'--pck',recipe.pck,
+         '--work',recipe.directory('cache/character-locks46')],[target,target.with_suffix('.json')]);logical=target
     recipe.add('publish-locales', 'refresh_artwork_resources', ['--artwork', logical,
         '--input', physical, '--output', output/'data', '--work', recipe.directory('verified-locales'),
-        '--locales', *codes,'--exact-glyph-storage','--timeline-pck',recipe.pck,
-        '--timeline-fonts',recipe.fonts], edition_files(output/'data', codes)+[output/'data/artwork-refresh-receipt.json'])
+        '--locales', *codes,'--exact-glyph-storage','--character-unlock-pck',recipe.pck,
+        '--character-unlock-fonts',recipe.fonts], edition_files(output/'data', codes)+[output/'data/artwork-refresh-receipt.json'])
     recipe.add('validate-install', '@validate-install', [logical, output, ','.join(codes),
         'true' if no_animations else 'false',json.dumps(getattr(recipe,'reference',None),sort_keys=True)], [output/'converter-receipt.json'])

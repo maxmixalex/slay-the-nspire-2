@@ -9,7 +9,7 @@ from __future__ import annotations
 
 ENDPOINTS={7212:58613,7214:59667,7215:59674,7217:59677,
            7220:59700,7221:59710,7222:59712,7223:59717,7224:59729,
-           7225:59730,7226:59731,7227:59732,7228:59741,7229:60294}
+           7225:59730,7226:59731,7227:59732,7228:59741,7229:60294,7237:60302}
 
 
 def catalog(source):
@@ -42,6 +42,7 @@ def validate(source,image,*,final=False):
     from neow_particles_ui23 import validate as neow_particles
     from ancient_fire_ui23 import validate as fire
     from neow_fire_ui23 import validate as neow_fire
+    from character_unlock_assets import validate as character_locks
     roots=set()
     for first,end,validator in ((59667,7215,tanx),(59674,7217,lights),
             (59677,7220,materials),(59700,7221,masks),(59710,7222,cinders),
@@ -52,4 +53,6 @@ def validate(source,image,*,final=False):
         if end in (7220,7225,7229):validator(prefix,image,final=final)
         else:validator(prefix,image)
         roots.update(range(first,ENDPOINTS[end]))
+    if count == 7237:
+        roots.update(character_locks(source,image))
     return roots

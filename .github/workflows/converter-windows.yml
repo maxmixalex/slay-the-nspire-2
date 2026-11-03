@@ -17,7 +17,7 @@ on:
       - 'tests/test_converter_workspace.py'
       - 'tests/test_converter_builtin_workspace.py'
       - 'CMakeLists.txt'
-      - 'docs/converter-ui23.md'
+      - 'docs/converter.md'
       - 'requirements*.txt'
       - 'VERSION'
       - 'config/**'
@@ -116,7 +116,7 @@ jobs:
           python -X utf8 tools/build_converter_bundle.py --helpers $helpers --output $output --work $work
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           Copy-Item "$bootloader/bootloader-compatibility.json" "$output/bootloader-compatibility.json"
-          Copy-Item docs/converter-ui23.md "$output/README.md"
+          Copy-Item docs/converter.md "$output/README.md"
           git rev-parse HEAD | Out-File -Encoding ascii "$output/COMMIT"
       - name: Preserve source and frozen native diagnostics
         if: always()

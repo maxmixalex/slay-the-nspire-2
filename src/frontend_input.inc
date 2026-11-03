@@ -1,7 +1,7 @@
-enum FrontMenu {FrontStart,FrontContinue,FrontAbandon,FrontCompendium,FrontSettings,FrontQuit,FrontTimeline};
+enum FrontMenu {FrontStart,FrontContinue,FrontAbandon,FrontCompendium,FrontSettings,FrontQuit};
 static FrontMenu front_item(const App&a,int row){
- static const FrontMenu fresh[]={FrontStart,FrontSettings,FrontCompendium,FrontTimeline,FrontQuit};
- static const FrontMenu saved[]={FrontContinue,FrontAbandon,FrontSettings,FrontCompendium,FrontTimeline,FrontQuit};
+ static const FrontMenu fresh[]={FrontStart,FrontSettings,FrontCompendium,FrontQuit};
+ static const FrontMenu saved[]={FrontContinue,FrontAbandon,FrontSettings,FrontCompendium,FrontQuit};
  return row>=0&&row<a.title_menu_count()?(a.has_save?saved[row]:fresh[row]):FrontQuit;
 }
 static bool resumable_run(const State&s){return s.phase!=Phase::Dead&&s.phase!=Phase::Complete&&s.phase!=Phase::Error;}
@@ -11,7 +11,7 @@ static bool resumable_run(const State&s){return s.phase!=Phase::Dead&&s.phase!=P
 static const State* title_merchant_stock(const App&a){
  if(!a.title||!a.has_save||a.debug_open||a.character_departure.active()||
   a.character_select||a.profiles_open||a.library||a.compendium_open||
-  a.statistics_open||a.history_open||a.timeline_open||a.settings_open||a.help||
+  a.statistics_open||a.history_open||a.settings_open||a.help||
   a.frontend_confirm||a.run_mode.screen!=RunMenu::Closed||
   a.auxiliary.screen!=AuxiliaryScreen::None)return nullptr;
  const State*probe=state_workspace::saved_probe(&a);
@@ -63,7 +63,7 @@ bool App::refresh_save(){
   ftue_profile_pending=false;
   // A valid old run is an existing profile even without UI history. Only
   // the new empty profile gets the source default EnableFtues=true.
-  if(!existing){progress.tutorial_flags=FtueFresh;timeline_initialize(progress.timeline);progress_dirty=true;}
+  if(!existing){progress.tutorial_flags=FtueFresh;timeline_initialize(progress.timeline);progress.character_unlocks=1;progress_dirty=true;}
  }
  return existing&&has_save;
 }
@@ -120,7 +120,7 @@ SPIRE_COLD_CONTROL bool App::finish_saved_run(){
 }
 void App::return_to_title(){
  persist_progress();
- title=true;paused=library=character_select=help=settings_open=compendium_open=statistics_open=history_open=timeline_open=false;frontend_confirm=frontend_choice=0;confirmed_run={};menu=0;
+ title=true;paused=library=character_select=help=settings_open=compendium_open=statistics_open=history_open=false;frontend_confirm=frontend_choice=0;confirmed_run={};menu=0;
  map_preview.open=false;reset_presentation();refresh_save();
  profiles_open=profile_pending=false;bestiary.open=false;
  run_mode={};
@@ -169,7 +169,6 @@ bool App::frontend_input(Key key){
  if(help){if(key==Key::Back||key==Key::Confirm)help=false;return true;}
  if(settings_input(key))return true;
  if(profiles_input(key))return true;
- if(timeline_input(key))return true;
  if(progress_navigation_input(key))return true;
  if(run_modes_input(key))return true;
  if(library||character_select||map_preview.open||detail_card>=0||detail_item>=0||status_actor>=0)return false;
@@ -187,7 +186,6 @@ bool App::frontend_input(Key key){
    case FrontAbandon:
     if(refresh_save()){confirmed_run=saved_run_identity(*state_workspace::saved_probe(this));frontend_confirm=1;frontend_choice=0;}
     else{menu=0;message("Could not load the saved run. Please try again.");}break;
-   case FrontTimeline:open_timeline();break;
    case FrontCompendium:open_compendium();break;
    case FrontSettings:settings_open=true;settings_language_open=false;settings_top=settings_tab=settings_item=0;break;
    case FrontQuit:frontend_confirm=3;frontend_choice=0;break;

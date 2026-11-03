@@ -12,7 +12,7 @@ int compare_keys(const char*a,const char*b){
 using reference::math::Real;
 bool at_most(Real a,Real b){return !(b<a);}
 bool accepts(const State&s,const WorldCardOptions&o,CardKind k,bool combat){
- if(k>=CardKinds||!timeline_model_allowed(s.world.unlocks,TimelineKind::Card,k))return false;
+ if(k>=CardKinds)return false;
  if(o.rarity_mask&&!(o.rarity_mask&world_rarity_mask(card_rarity(k))))return false;
  if(o.type_mask&&!(o.type_mask&world_type_mask(definitions[k].type)))return false;
  if(o.zero_energy&&cost({k,0})!=0)return false;
@@ -170,7 +170,7 @@ bool world_transform_card(State&s,reference::Random&rng,Card original,bool comba
 }
 unsigned world_random_potions(const State&s,reference::Random&rng,unsigned count,Potion*out,unsigned rarity,bool combat,const Potion*blacklist,unsigned blacklisted){
  Potion pool[PotionKinds];unsigned n=0;
- for(unsigned part=0;part<2;++part){const auto&v=world_potion_pools[part?5:unsigned(s.character)];for(unsigned i=0;i<v.count;++i){Potion p=Potion(v.ids[i]);bool skip=!timeline_model_allowed(s.world.unlocks,TimelineKind::Potion,unsigned(p));
+ for(unsigned part=0;part<2;++part){const auto&v=world_potion_pools[part?5:unsigned(s.character)];for(unsigned i=0;i<v.count;++i){Potion p=Potion(v.ids[i]);bool skip=false;
    for(unsigned j=0;j<blacklisted;++j)if(blacklist[j]==p)skip=true;
    if(combat&&(p==Potion::FairyInABottle||p==Potion::Fruit||p==Potion::RegenPotion))skip=true;
    if(!skip)pool[n++]=p;}}
