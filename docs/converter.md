@@ -166,8 +166,9 @@ python3 tools/build_converter_bundle.py --helpers PATH --output PATH --work PATH
 
 The helper folder must also contain the matching ARM ELF and validation
 receipt. Build on the target operating system: Linux and Windows executables
-are separate outputs. The complete Windows recipe is
-[converters.yml](../.github/workflows/converters.yml).
+are separate outputs. The complete recipes for both platforms are in
+[converters.yml](../.github/workflows/converters.yml), which publishes
+`nspire2-converter-windows` and `nspire2-converter-linux`.
 
 The bundle builder checks public locale bindings and indexes before freezing.
 Its self-test exercises embedded imports, worker processes, locks, locale

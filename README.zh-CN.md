@@ -8,11 +8,31 @@
 将 **Slay the Spire 2（杀戮尖塔 2）**移植到运行 Ndless 的 TI-Nspire 计算器上。
 在 320×240 的屏幕上构筑牌组、选择路线，向尖塔进发。
 
-<p align="center">
-  <img src="docs/media/gameplay.gif" alt="亡灵契约师与 Osty 战斗演示" width="320">
-</p>
+<table width="100%">
+  <tr>
+    <td width="33%" align="center"><strong>角色选择</strong></td>
+    <td width="33%" align="center"><strong>从涅奥进入路线地图</strong></td>
+    <td width="33%" align="center"><strong>首战获胜与奖励</strong></td>
+  </tr>
+  <tr>
+    <td align="center"><img src="docs/media/characters.gif" alt="浏览锁定角色及其解锁条件" width="100%"></td>
+    <td align="center"><img src="docs/media/journey.gif" alt="离开涅奥并打开路线地图教学" width="100%"></td>
+    <td align="center"><img src="docs/media/battle.gif" alt="赢下第一场 Nibbits 战斗并进入奖励界面" width="100%"></td>
+  </tr>
+</table>
 
-*亡灵契约师与 Osty 的战斗演示。[使用 Firebird 录制](docs/media/README.md)。*
+<table width="100%">
+  <tr>
+    <td width="50%" align="center"><strong>触摸板设置</strong></td>
+    <td width="50%" align="center"><strong>亡灵契约师与 Osty</strong></td>
+  </tr>
+  <tr>
+    <td align="center"><img src="docs/media/controls.gif" alt="使用触摸板调整轻触点击与鼠标速度" width="100%"></td>
+    <td align="center"><img src="docs/media/gameplay.gif" alt="亡灵契约师与 Osty 战斗演示" width="100%"></td>
+  </tr>
+</table>
+
+*画面录自 Firebird。[录制说明](docs/media/README.md)。*
 
 ## 主要特性
 
@@ -26,6 +46,9 @@
 目前不含音频和多人游戏。
 
 ## 快速开始
+
+已有启动器和完整 `data/` 时，可[直接传入计算器](#传入计算器)，升级时保留 `state/`；
+需要从自己的 PC 原版游戏生成数据时，再按下面的转换步骤操作。
 
 你需要一台已安装 [Ndless](https://github.com/ndless-nspire/Ndless) 的彩屏 TI-Nspire，
 以及自己拥有的受支持版本《杀戮尖塔 2》。游戏版本和设备准备请见
@@ -45,11 +68,11 @@
 
 ### 转换游戏
 
-将 `nspire2-convert.exe` 放入原版游戏目录，双击运行。
+将转换器放入原版游戏目录。Windows 下双击 `nspire2-convert.exe`；
+Linux 下先运行一次 `chmod +x nspire2-convert`，再运行 `./nspire2-convert`。
 默认生成中英双语数据，输出位于 `nSpire2-converted/data/`。
 
-需要精简动画版时，运行 `nspire2-convert.exe --no-animations`；
-加上 `--languages all` 可生成全部语言。转换需要一些时间，
+加上 `--no-animations` 可生成精简动画版，`--languages all` 可生成全部语言。转换需要一些时间，
 中断后重新运行相同命令即可复用已完成的步骤。
 
 指定其他目录、Linux 用法和转换器源码构建方法请见[转换器指南](docs/converter.md)。
@@ -65,8 +88,8 @@ Slay the Nspire 2/
 ```
 
 打开 `nSpire2.tns` 即可游玩。游戏会创建 `state/` 文件夹保存进度和设置。
-更新前请备份并保留这个文件夹，将启动器和游戏数据一起替换。
-语言可以在设置中切换。
+更新或切换动画版本前请备份并保留这个文件夹，将启动器和完整游戏数据一起替换。
+旧档案的进度会保留，语言可以在设置中切换。
 
 ## 操作
 

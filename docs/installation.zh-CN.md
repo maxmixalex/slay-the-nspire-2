@@ -2,6 +2,9 @@
 
 [English](installation.md) | **简体中文** · [README](../README.zh-CN.md)
 
+已有启动器和完整 `data/` 时，可[直接传入计算器](#传入计算器)，升级时保留 `state/`；
+下面的转换步骤用于从自己的 PC 原版游戏生成数据。
+
 ## 准备
 
 - 已安装 [Ndless](https://github.com/ndless-nspire/Ndless) 的彩屏 TI-Nspire。
@@ -21,17 +24,26 @@
 | Windows 转换器 | [Desktop converters](https://github.com/maxmixalex/slay-the-nspire-2/actions/workflows/converters.yml) | `nspire2-converter-windows` |
 | Linux 转换器 | [Desktop converters](https://github.com/maxmixalex/slay-the-nspire-2/actions/workflows/converters.yml) | `nspire2-converter-linux` |
 
-解压后使用 `nSpire2.tns` 和 `nspire2-convert.exe`，并保留附带的许可证。
+解压后使用 `nSpire2.tns`，以及适合电脑系统的转换器：
+Windows 为 `nspire2-convert.exe`，Linux 为 `nspire2-convert`。保留附带的许可证。
 启动器需要配合转换器生成的数据。构建附件过期时，可参照
 [源码构建说明](../DEVELOPMENT.md)。
 
 ## 转换游戏
 
 原版目录需要包含 `SlayTheSpire2.pck`、`release_info.json`，以及直接位于该目录
-或 `data_sts2_*` 子目录中的 `sts2.dll`。将转换器放在这里，双击运行，或执行：
+或 `data_sts2_*` 子目录中的 `sts2.dll`。将转换器放在这里。
+Windows 下双击运行，或执行：
 
 ```powershell
 .\nspire2-convert.exe
+```
+
+Linux 下执行：
+
+```bash
+chmod +x ./nspire2-convert
+./nspire2-convert
 ```
 
 默认输出为 `nSpire2-converted/data/`，包含完整动画、英语和简体中文。
@@ -86,14 +98,28 @@
 ## 存档与更新
 
 游戏在启动器旁创建 `state/`，保存三个档案、对局、设置、历史和备份。
+无论更新哪种版本，或在完整动画和精简动画之间切换，都应保留这个文件夹。
 
 1. 退出游戏，将整个 `state/` 备份到电脑。
 2. 保留计算器中的 `state/`，一起替换启动器和完整 `data/`。
 3. 额外语言也要换成这次转换的配套文件。
 4. 启动游戏，选择原档案并继续对局。
 
-回退时，请恢复更新前备份的 `state/` 及其配套的旧启动器和数据。
-旧启动器可能无法读取新版写入的存档。
+旧存档会在读取时迁移，保留已有角色与历史进度。回退时，请恢复更新前备份的
+`state/` 及其配套的旧启动器和数据；旧启动器可能无法读取新版写入的存档。
+
+## 开始游戏与角色解锁
+
+新档从铁甲战士开始。完成一局普通对局即可解锁静默猎手，之后依次用静默猎手、
+储君、亡灵契约师完成对局，解锁储君、亡灵契约师和故障机器人。无需获胜，
+战败或主动放弃也算完成；中途保存并返回标题不算。自定义和每日挑战不累计
+角色解锁，五名角色全部可用后才出现随机选择。
+
+锁定角色仍可浏览，查看解锁条件。解锁直接生效，无需时间线界面。
+旧档案保留已经开放或使用过的角色。
+
+新档接受教程后，会先遇见涅奥，再学习选择地图路线，在第一场 Nibbits 战斗中
+学习出牌，随后领取奖励并继续前进。
 
 ## 导入较长的 ASCII 种子
 

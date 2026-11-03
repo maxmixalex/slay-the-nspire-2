@@ -2,6 +2,10 @@
 
 **English** | [简体中文](installation.zh-CN.md) · [README](../README.md)
 
+If you already have `nSpire2.tns` and a complete `data/` folder, [transfer them
+together](#transfer-and-launch) and keep `state/` when updating. The conversion
+steps below are for creating data from your own PC game installation.
+
 ## Requirements
 
 - A color-screen TI-Nspire with a working [Ndless](https://github.com/ndless-nspire/Ndless) installation.
@@ -21,18 +25,27 @@ Open a successful workflow run and download from its **Artifacts** section:
 | Windows converter | [Desktop converters](https://github.com/maxmixalex/slay-the-nspire-2/actions/workflows/converters.yml) | `nspire2-converter-windows` |
 | Linux converter | [Desktop converters](https://github.com/maxmixalex/slay-the-nspire-2/actions/workflows/converters.yml) | `nspire2-converter-linux` |
 
-Extract `nSpire2.tns` and `nspire2-convert.exe`, keeping their license notices.
+Extract `nSpire2.tns` and the converter for your computer:
+`nspire2-convert.exe` on Windows or `nspire2-convert` on Linux. Keep their
+license notices.
 The launcher needs the data produced by the converter. For an expired
 build artifact, follow the [source build instructions](../DEVELOPMENT.md).
 
 ## Convert your game
 
 The original game directory must contain `SlayTheSpire2.pck`, `release_info.json`
-and `sts2.dll` (directly or inside `data_sts2_*`). Put the converter there and
-double-click it, or run:
+and `sts2.dll` (directly or inside `data_sts2_*`). Put the converter there.
+On Windows, double-click it or run:
 
 ```powershell
 .\nspire2-convert.exe
+```
+
+On Linux:
+
+```bash
+chmod +x ./nspire2-convert
+./nspire2-convert
 ```
 
 The default output is `nSpire2-converted/data/`, with full animation, English
@@ -92,15 +105,34 @@ the English and Simplified Chinese interfaces.
 ## Saves and updates
 
 The game creates `state/` beside the launcher. It contains all three profiles,
-runs, settings, history and backups.
+runs, settings, history and backups. Keep it when updating either edition or
+switching between full and reduced animation.
 
 1. Exit the game and back up the entire `state/` folder to your computer.
 2. Keep `state/` on the calculator and replace the launcher and complete `data/` together.
 3. Replace optional languages with files from the new conversion too.
 4. Open the game, choose your profile and select Continue.
 
-For a rollback, restore your pre-update `state/` backup with its old launcher
-and data. Older launchers may not read saves written by newer versions.
+Older saves are migrated when loaded, retaining character access and recorded
+progress. For a rollback, restore your pre-update `state/` backup with its old
+launcher and data; an older launcher may not read a newly written save.
+
+## Starting and unlocking characters
+
+A new profile starts with Ironclad. Complete a standard run to unlock Silent,
+then complete a run with Silent to unlock Regent, Regent to unlock Necrobinder,
+and Necrobinder to unlock Defect. Winning is not required: defeat or abandoning
+a run also counts. Saving and returning to the title does not count, and
+Custom/Daily runs do not advance character unlocks. Random appears after all
+five characters are available.
+
+Locked characters can be browsed to see their requirements. Unlocks apply
+directly; there is no Timeline screen. Existing profiles keep characters that
+were already available or played.
+
+When a new profile accepts the tutorial, it starts with Neow, teaches map
+selection and introduces combat in the first Nibbits encounter. The run then
+continues through rewards to the map.
 
 ## Long ASCII seeds
 

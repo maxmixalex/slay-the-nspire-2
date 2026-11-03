@@ -8,11 +8,31 @@
 An unofficial port of **Slay the Spire 2** to TI-Nspire calculators running
 Ndless. Build a deck, choose your route and climb the Spire on a 320×240 screen.
 
-<p align="center">
-  <img src="docs/media/gameplay.gif" alt="Necrobinder and Osty in combat" width="320">
-</p>
+<table width="100%">
+  <tr>
+    <td width="33%" align="center"><strong>Characters</strong></td>
+    <td width="33%" align="center"><strong>From Neow to the route map</strong></td>
+    <td width="33%" align="center"><strong>First battle victory</strong></td>
+  </tr>
+  <tr>
+    <td align="center"><img src="docs/media/characters.gif" alt="Browsing locked characters and their unlock requirements" width="100%"></td>
+    <td align="center"><img src="docs/media/journey.gif" alt="Leaving Neow and opening the route map tutorial" width="100%"></td>
+    <td align="center"><img src="docs/media/battle.gif" alt="Winning the first Nibbits battle and reaching its rewards" width="100%"></td>
+  </tr>
+</table>
 
-*Necrobinder and Osty in combat. [Recorded in Firebird](docs/media/README.md).*
+<table width="100%">
+  <tr>
+    <td width="50%" align="center"><strong>Touchpad settings</strong></td>
+    <td width="50%" align="center"><strong>Necrobinder &amp; Osty</strong></td>
+  </tr>
+  <tr>
+    <td align="center"><img src="docs/media/controls.gif" alt="Changing Tap to Click and pointer speed with the touchpad" width="100%"></td>
+    <td align="center"><img src="docs/media/gameplay.gif" alt="Necrobinder and Osty in combat" width="100%"></td>
+  </tr>
+</table>
+
+*Recorded in Firebird. [About the recordings](docs/media/README.md).*
 
 ## Features
 
@@ -26,6 +46,10 @@ Ndless. Build a deck, choose your route and climb the Spire on a 320×240 screen
 Audio and multiplayer are not implemented.
 
 ## Quick start
+
+If you already have `nSpire2.tns` and a complete `data/` folder, [transfer them
+together](#transfer-and-play) and keep `state/` when updating. To create data
+from your own PC game installation, follow the steps below.
 
 You need a color-screen TI-Nspire with [Ndless](https://github.com/ndless-nspire/Ndless)
 and your own supported Slay the Spire 2 installation. See the
@@ -46,12 +70,13 @@ from your game installation.
 
 ### Convert the game
 
-Put `nspire2-convert.exe` in the original game directory and double-click it.
-The default conversion creates English and Simplified Chinese data in
-`nSpire2-converted/data/`.
+Put the converter in the original game directory. On Windows, double-click
+`nspire2-convert.exe`. On Linux, run `chmod +x nspire2-convert` once, then
+`./nspire2-convert`. The default conversion creates English and Simplified Chinese
+data in `nSpire2-converted/data/`.
 
-For reduced animation, run `nspire2-convert.exe --no-animations`. Use
-`--languages all` to include every language. Conversion can take a while;
+Add `--no-animations` for reduced actor animation or `--languages all` to
+include every language. Conversion can take a while;
 running the same command again resumes completed stages.
 
 The [converter guide](docs/converter.md) covers other folders, Linux and building
@@ -69,8 +94,9 @@ Slay the Nspire 2/
 ```
 
 Open `nSpire2.tns` to play. The game creates a `state/` folder for saves and
-settings. Back up and keep that folder when updating; replace the launcher and
-data together. Choose your language in Settings.
+settings. Back up and keep that folder when updating or switching animation
+editions; replace the launcher and the complete data folder together. Existing
+profiles retain their progress. Choose your language in Settings.
 
 ## Controls
 
