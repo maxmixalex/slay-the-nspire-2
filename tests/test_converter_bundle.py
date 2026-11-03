@@ -22,7 +22,7 @@ class ConverterBundlePreflight(unittest.TestCase):
         target = locale_profile.ROOT/'config/locale-ui-inline.json'
         original_read = Path.read_text
         config = json.loads(original_read(target))
-        removed = next(row for row in config['direct_bindings'] if row['source'] == '时间线')
+        removed = next(row for row in config['direct_bindings'] if row['source'] == '鼠标速度')
         config['direct_bindings'].remove(removed)
 
         def read(path, *args, **kwargs):
@@ -31,7 +31,7 @@ class ConverterBundlePreflight(unittest.TestCase):
         with tempfile.TemporaryDirectory() as folder, patch.object(Path, 'read_text', read), \
                 patch.object(bundle.importlib.util, 'find_spec') as dependency, \
                 patch.object(bundle.subprocess, 'run') as process:
-            with self.assertRaisesRegex(ValueError, 'New UI literals need reviewed locale bindings:.*时间线'):
+            with self.assertRaisesRegex(ValueError, 'New UI literals need reviewed locale bindings:.*鼠标速度'):
                 bundle.build(self.arguments(folder))
             dependency.assert_not_called()
             process.assert_not_called()

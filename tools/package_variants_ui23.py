@@ -130,6 +130,8 @@ def build(args):
                        "--stage", stage + "-" + profile]
             if documentation_ref:
                 command += ["--documentation-ref", documentation_ref]
+            if getattr(args,'resource_provenance',None):
+                command += ['--resource-provenance',str(args.resource_provenance)]
             subprocess.run(command, check=True)
             candidates = list(destination.glob("*-calculator.zip"))
             if len(candidates) != 1:
@@ -214,6 +216,7 @@ def main():
     parser.add_argument('--runtime-source-ref', help='Verified published equivalent runtime source, separate from the actual build checkpoint')
     parser.add_argument('--resource-source-ref', help='Published converter reference, separate from the actual producer checkpoint')
     parser.add_argument('--resource-source-relation', choices=('equivalent_tree','published_implementation_reference'), default='equivalent_tree')
+    parser.add_argument('--resource-provenance',type=Path,help='Shared private lineage for both editions in BUILD-INFO.json')
     parser.add_argument("--documentation-ref", help="Optional independent documentation commit for both installers")
     parser.add_argument("--no-animations-resource-checkpoint",
                         help="Record a different verified source checkpoint for the reduced resources")

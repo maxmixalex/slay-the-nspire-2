@@ -90,6 +90,7 @@ def main():
     p.add_argument('--runtime-source-ref', help='Verified published equivalent runtime source; actual build checkpoint is retained (calculator packages only)')
     p.add_argument('--resource-source-ref', help='Published converter source reference; actual producer checkpoint is retained (calculator packages only)')
     p.add_argument('--resource-source-relation', choices=('equivalent_tree','published_implementation_reference'), default='equivalent_tree', help='Whether the published converter reference is an exact whole-tree equivalent')
+    p.add_argument('--resource-provenance',type=Path,help='Private resource lineage to include in BUILD-INFO.json')
     p.add_argument('--documentation-ref', help='Optional independent published documentation commit; does not relabel runtime or resources')
     p.add_argument('--stage', default='ui26', help='Release suffix; validated against its complete content profile')
     args = p.parse_args()
@@ -161,6 +162,15 @@ def main():
                 files={name: path.stat().st_size for name, path in paths.items()})
     if args.documentation_ref:
         info['documentation_checkpoint'] = args.documentation_ref
+    if args.resource_provenance:
+        lineage=json.loads(args.resource_provenance.read_text(encoding='utf-8'))
+        if not isinstance(lineage,dict) or not isinstance(lineage.get('full_cold_conversion'),bool):
+            p.error('Resource provenance must explicitly state whether a full cold conversion was executed')
+        stage_source=lineage.get('new_stage_source',{})
+        if (stage_source.get('actual_checkpoint')!=args.resource_checkpoint or
+                stage_source.get('published_checkpoint')!=resource_source_ref):
+            p.error('Resource provenance does not match the actual and published producer checkpoints')
+        info['resource_provenance']=lineage
     validation_bytes = None
     if content_validation is not None:
         validation_bytes = (json.dumps(content_validation, ensure_ascii=False, sort_keys=True, indent=2)+'\n').encode('utf-8')

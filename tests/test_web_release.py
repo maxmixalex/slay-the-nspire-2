@@ -42,12 +42,16 @@ class WebReleaseTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as folder:
             root=Path(folder);resources(root)
             (root/'launcher.tns').write_bytes(b'public synthetic launcher')
+            provenance={'full_cold_conversion':False,'accepted_prefix':{'resource_checkpoint':'e'*40},
+                        'new_stage_source':{'actual_checkpoint':'b'*40,'published_checkpoint':'d'*40}}
+            (root/'provenance.json').write_text(json.dumps(provenance))
             argv=['package_release','--launcher',str(root/'launcher.tns'),
                 '--common',str(root/'nSpire2.dat.tns'),'--eng',str(root/'nSpire2.eng.dat.tns'),
                 '--zhs',str(root/'nSpire2.zhs.dat.tns'),'--calculator-only',
                 '--output',str(root/'release'),'--runtime-checkpoint','a'*40,
                 '--resource-checkpoint','b'*40,'--runtime-source-ref','c'*40,
-                '--resource-source-ref','d'*40,'--stage','public-web']
+                '--resource-source-ref','d'*40,'--stage','public-web',
+                '--resource-provenance',str(root/'provenance.json')]
             with mock.patch.object(sys,'argv',argv),redirect_stdout(io.StringIO()):package_release.main()
             with zipfile.ZipFile(next((root/'release').glob('*.zip'))) as archive:
                 info=json.loads(archive.read('data/BUILD-INFO.json'))
@@ -56,6 +60,7 @@ class WebReleaseTest(unittest.TestCase):
                 self.assertEqual(info['resource_checkpoint'],'b'*40)
                 self.assertEqual(info['runtime_source_ref'],'c'*40)
                 self.assertEqual(info['resource_source_ref'],'d'*40)
+                self.assertEqual(info['resource_provenance'],provenance)
                 self.assertTrue(info['local_checkpoints'])
                 self.assertIn('BUILD-INFO.json',readme)
                 self.assertNotIn('Runtime checkpoint:',readme)
