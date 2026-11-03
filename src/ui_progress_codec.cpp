@@ -168,7 +168,7 @@ template<class Codec>void progress(Codec&c,UiProgress&v,unsigned version){
     if(version>=11){
         auto&t=v.timeline;c.integer(t.flags);c.integer(t.ancients_seen);c.integer(t.characters_known);c.integer(t.score);
         for(unsigned i=0;i<EpochCount;++i){uint8_t state=unsigned(t.states[i]);c.integer(state);if constexpr(Codec::reading)t.states[i]=EpochState(state);c.integer(t.obtained_at[i]);}
-        if(!timeline_valid(t))c.good=false;
+        if(!legacy_progress_valid(t))c.good=false;
     }
     if(version>=12){c.integer(v.character_unlocks);if(!(v.character_unlocks&1)||v.character_unlocks&~31u)c.good=false;}
 }
@@ -217,7 +217,7 @@ bool decode_ui_progress(const uint8_t*data,size_t size,UiProgress&out){
     if(!data||size<8||size>UiProgressCapacity||data[0]!='N'||data[1]!='S'||data[2]!='H'||((data[3]<'1'||data[3]>'9')&&(data[3]<'A'||data[3]>'C')))return false;
     uint32_t stored=0;for(unsigned i=0;i<4;++i)stored|=uint32_t(data[4+i])<<(i*8);if(stored!=size)return false;
     clear_ui_progress(out);const unsigned version=data[3]>='A'?10+unsigned(data[3]-'A'):unsigned(data[3]-'0');
-    Decoder c{data,size,8};progress(c,out,version);if(c.good&&version<11){timeline_initialize(out.timeline,true);out.timeline.characters_known=out.characters_started;
+    Decoder c{data,size,8};progress(c,out,version);if(c.good&&version<11){legacy_progress_initialize(out.timeline,true);out.timeline.characters_known=out.characters_started;
         for(unsigned i=0;i<CharacterKinds;++i)if(out.characters[i].wins||out.characters[i].losses)out.timeline.characters_known|=uint8_t(1u<<i);}return c.good&&c.at==size;
 }
 bool decode_ui_progress_summary(const uint8_t*data,size_t size,UiProgressSummary&out){

@@ -60,6 +60,7 @@ int main(int argc,char**argv){
  // before exposing disk-backed history. No destructive save-version upgrade.
  reset();app.callbacks.history_archive=nullptr;
  for(unsigned i=1;i<=32;++i){start(2000+i);app.finish_progress(true);}
+ app.progress.character_unlocks=0; // Explicit pre-character-mask fixture.
  const size_t legacy=encode_ui_progress(app.progress,before_progress,sizeof before_progress);CHECK(legacy&&before_progress[3]=='9');
  app.callbacks.history_archive=archive;app.open_history();CHECK(app.history_index==255&&app.history_at(255)->serial==32);
  const size_t migrated=encode_ui_progress(app.progress,encoded,sizeof encoded);CHECK(migrated==legacy&&!std::memcmp(encoded,before_progress,legacy));
@@ -104,8 +105,8 @@ int main(int argc,char**argv){
  CHECK(ui_run_badge_rarity(app.progress.current,UiRunBadge::MysteryMachine)==1);
  CHECK(ui_run_badge_rarity(app.progress.current,UiRunBadge::Restful)==1);
  CHECK(ui_run_badge_rarity(app.progress.current,UiRunBadge::Restless)==0);
- const size_t paged=encode_ui_progress(app.progress,encoded,sizeof encoded);CHECK(paged&&encoded[3]=='B'&&decode_ui_progress(encoded,paged,restored));
- CHECK(restored.timeline.flags==(TimelineInitialized|TimelineLegacyAccess));
+ const size_t paged=encode_ui_progress(app.progress,encoded,sizeof encoded);CHECK(paged&&encoded[3]=='C'&&decode_ui_progress(encoded,paged,restored));
+ CHECK(restored.character_unlocks==31);
  CHECK(ui_run_score(restored.current).floor_points==2000);
  export_fixture("synthetic-200-floors");app.open_history();unsigned total=0,last=200;
  const unsigned visible_first=app.history_at(app.history_index)->floors[0].floor;

@@ -7,23 +7,45 @@ and rasterize only absent glyphs from the original font family.
 from __future__ import annotations
 
 import json
+import math
 from pathlib import Path
 import struct
 import unicodedata
 
 import regex
+from PIL import Image, ImageDraw
 import content_tiles as t
 from build_locale_editions import face_set
 from coalesce_tile_resources import view
 import group_strings
 from replace_original_glyphs import styled_alphabet, text_format_control
 import split_content as split
-from timeline_text_ui24 import original_glyph
 
 BASE_STRINGS, STRINGS, LEGACY_STRINGS = 8704, 8707, 8961
 KEYS = ('CHARACTER_SELECT.locked.title', 'CHARACTER_SELECT.lockedRelic.title',
         'CHARACTER_SELECT.lockedRelic.description')
 SUBSTITUTED = frozenset(('zhs', 'zht', 'jpn', 'kor', 'pol', 'rus', 'tha'))
+
+
+def original_glyph(font, cp, text, px, face):
+    """Use the existing fractional advance/bearing encoding at native size."""
+    measured = font.fonts[px]
+    missing_space = len(text) == 1 and unicodedata.category(text) == 'Zs' and cp not in font.coverage
+    value = ' ' if missing_space else text
+    q = round(measured.getlength(value)*64*(.5 if missing_space and cp == 0x202f else 1))
+    left = 0 if missing_space else min(0, measured.getbbox(value)[0])
+    width = max(1, math.ceil(q/64), measured.getbbox(value)[2])-left
+    height = px+5
+    t.require(-7 <= left <= 0 and 0 <= q <= 2560 and width <= 40 and height <= 40,
+              'Original character label glyph exceeds existing font bounds')
+    image = Image.new('L', (width, height))
+    if not missing_space:
+        ImageDraw.Draw(image).text((-left, px+1), value, font=measured, fill=255, anchor='ls')
+    raw = image.tobytes()
+    from ui12_resources import rle
+    payload, encoded = rle(raw)
+    band = px | ((face & 3) << 6) | ((face & 4) << 3)
+    return cp, band, width, height, 0x8000 | ((-left) << 12) | q, encoded, payload
 
 
 def original_texts(pack, code):
@@ -106,7 +128,7 @@ def replace_records(data, texts, additions=()):
         t.DESCRIPTOR.pack_into(out, at+delta, global_at+delta, group, raw_at, length)
     def append(raw):
         out.extend(bytes(len(out) & 1)); at = len(out); out.extend(raw); return at
-    copied = {}; rows = []
+    copied = {}; descriptors = {}; rows = []
     def copy(at, length):
         key = at, length
         if key not in copied: copied[key] = append(source.block(at, length))
@@ -114,9 +136,11 @@ def replace_records(data, texts, additions=()):
     # Copy cohorts in their original physical order to retain cold locality.
     for cp, off, band, w, h, advance, encoded in sorted(source.glyphs, key=lambda row: row[1]):
         if encoded & t.GLYPH_GROUP_FLAG:
-            relative, size, raw_at, length = struct.unpack_from('<iIII', data, off)
-            group_at = copy(off+relative, size); at = (len(out)+1) & ~1
-            at = append(struct.pack('<iIII', group_at-at, size, raw_at, length))
+            if off not in descriptors:
+                relative, size, raw_at, length = struct.unpack_from('<iIII', data, off)
+                group_at = copy(off+relative, size); at = (len(out)+1) & ~1
+                descriptors[off] = append(struct.pack('<iIII', group_at-at, size, raw_at, length))
+            at = descriptors[off]
         else: at = copy(off, encoded or w*h)
         rows.append((cp, at, band, w, h, advance, encoded))
     for cp, band, w, h, advance, encoded, raw in additions:

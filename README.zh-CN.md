@@ -39,6 +39,7 @@
 | --- | --- |
 | [计算器启动器](https://github.com/maxmixalex/slay-the-nspire-2/actions/workflows/ci.yml) | `nSpire2.tns` |
 | [Windows 转换器](https://github.com/maxmixalex/slay-the-nspire-2/actions/workflows/converters.yml) | `nspire2-convert.exe` |
+| [Linux 转换器](https://github.com/maxmixalex/slay-the-nspire-2/actions/workflows/converters.yml) | `nspire2-convert` |
 
 转换器已包含所需依赖。游戏数据由你本机的原版安装转换得到。
 

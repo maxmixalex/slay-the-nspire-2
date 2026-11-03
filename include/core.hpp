@@ -5,7 +5,7 @@
 #include "world_relics.hpp"
 #include "run_options_state.hpp"
 #include "run_history_event.hpp"
-#include "timeline.hpp"
+#include "legacy_progress.hpp"
 
 namespace spire {
 using CardKind=uint16_t;

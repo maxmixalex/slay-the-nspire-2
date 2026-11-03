@@ -9,7 +9,7 @@
 #include <string>
 #include <vector>
 using namespace spire;using Bytes=std::vector<uint8_t>;
-static App a;static SaveData disk;static Bytes profile,content;static unsigned checks;static bool exists;static const char*scenario="setup",*captures=nullptr;
+static App a;static SaveData disk;static Bytes profile,content;static unsigned checks;static bool exists;static const char*scenario="setup",*captures=nullptr,*capture_prefix="";
 #define CHECK(x) do{++checks;if(!(x)){std::fprintf(stderr,"Campaign [%s]:%d %s phase=%u modal=%u point=%u clock=%u\n",scenario,__LINE__,#x,unsigned(a.game.phase),unsigned(a.ftue.id),a.game.world.current_point,a.map_clock_ms);std::exit(1);}}while(0)
 #include "ftue_fixture.hpp"
 static bool load_run(State&s){return exists&&load(s,disk.bytes,disk.size);}
@@ -27,7 +27,7 @@ static void init(){
 }
 static void step(unsigned ms=100){a.advance(ms);a.render();CHECK(a.content.healthy());}
 static void wait(unsigned ms=2200){for(unsigned left=ms;left;){unsigned d=left>100?100:left;step(d);left-=d;}}
-static void capture(const char*name){if(!captures)return;const auto path=std::string(captures)+"/"+name+".ppm";FILE*f=std::fopen(path.c_str(),"wb");CHECK(f);std::fprintf(f,"P6\n320 240\n255\n");for(auto p:a.pixels){const unsigned char rgb[]={uint8_t((p>>11)*255/31),uint8_t(((p>>5)&63)*255/63),uint8_t((p&31)*255/31)};CHECK(std::fwrite(rgb,1,3,f)==3);}CHECK(!std::fclose(f));}
+static void capture(const char*name){if(!captures)return;const auto path=std::string(captures)+"/"+capture_prefix+name+".ppm";FILE*f=std::fopen(path.c_str(),"wb");CHECK(f);std::fprintf(f,"P6\n320 240\n255\n");for(auto p:a.pixels){const unsigned char rgb[]={uint8_t((p>>11)*255/31),uint8_t(((p>>5)&63)*255/63),uint8_t((p&31)*255/31)};CHECK(std::fwrite(rgb,1,3,f)==3);}CHECK(!std::fclose(f));}
 static void close_lesson(){
  for(unsigned i=0;i<8&&a.ftue.active();++i){if(a.ftue.id==FtueId::CombatRules)a.input(Key::Right);else a.input(Key::Confirm);step();}
  CHECK(!a.ftue.active());
@@ -39,7 +39,7 @@ static void go_map(){
 }
 static void fight(){
  scenario="ordinary first combat and three-page lesson";CHECK(a.game.phase==Phase::Combat);CHECK(a.game.enemy_world.encounter==EncounterId::NibbitsWeak);
- for(unsigned i=0;i<200&&(!a.ftue.active());++i)step();CHECK(a.ftue.id==FtueId::CombatRules);capture("combat-lesson");close_lesson();wait(6000);
+ for(unsigned i=0;i<200&&(!a.ftue.active());++i)step();CHECK(a.ftue.id==FtueId::CombatRules);capture("combat-lesson");close_lesson();wait(6000);capture("combat-play");
  for(unsigned actions=0;actions<120&&a.game.phase==Phase::Combat;++actions){
   if(a.ftue.active()){close_lesson();wait();continue;}
   if(a.combat_actions_locked()){wait();continue;}
@@ -82,8 +82,16 @@ static void fresh_flow(){
 }
 static void legacy_flow(const char*run,const char*progress){
  scenario="baseline-produced no-Neow save resumes through normal map tutorial";
- const auto raw=read_file(run);CHECK(raw.size()<=sizeof disk.bytes);disk.size=raw.size();std::memcpy(disk.bytes,raw.data(),raw.size());exists=true;profile=read_file(progress);init();CHECK(a.has_save);a.input(Key::Load);wait(2600);
+ capture_prefix="legacy-";const auto raw=read_file(run);CHECK(raw.size()<=sizeof disk.bytes);
+ CHECK(load(a.game,raw.data(),raw.size()));CHECK(save(a.game,disk));CHECK(disk.size==raw.size());
+ unsigned changed=0;for(unsigned i=0;i<raw.size();++i)if(raw[i]!=disk.bytes[i]){++changed;CHECK(raw[i]==unsigned(reference::PointType::Start)&&disk.bytes[i]==unsigned(reference::PointType::Monster));}
+ CHECK(changed==1); // Every seed/RNG/room/map/progress byte is preserved.
+ disk.size=raw.size();std::memcpy(disk.bytes,raw.data(),raw.size());exists=true;profile=read_file(progress);init();CHECK(a.has_save);a.input(Key::Load);wait(2600);
  CHECK(a.game.world.rooms[0].ancient==0&&a.game.phase==Phase::Map&&a.game.world.current_point==reference::NoPoint);CHECK(a.map_intro_at_entry());
- const auto seed=a.game.world.run_seed;go_map();CHECK(a.game.world.run_seed==seed);fight();leave_rewards();CHECK(validate(a.game));capture("legacy-recovered-map");
+ const auto seed=a.game.world.run_seed;const auto root=a.game.world.maps[0].root;
+ CHECK(a.game.world.maps[0].points[root].type==reference::PointType::Monster);
+ go_map();CHECK(a.game.world.run_seed==seed&&a.game.world.current_point==root);CHECK(a.game.enemy_world.active);fight();leave_rewards();CHECK(validate(a.game));capture("recovered-map");
+ scenario="recovered root battle proceeds to its original next route";go_map();
+ CHECK(a.game.phase==Phase::Combat&&a.game.world.current_point!=root&&a.game.enemy_world.active&&validate(a.game));capture("next-battle");
 }
 int main(int argc,char**argv){content=argc>1?read_file(argv[1]):fixture();if(argc>2)captures=argv[2];fresh_flow();if(argc>4)legacy_flow(argv[3],argv[4]);std::printf("Campaign normal input: %u checks; opt-in, actual Neow, map tutorial, normal Nibbits card play, rewards, save and Continue%s.\n",checks,argc>4?", plus baseline old-save recovery":"");}

@@ -191,7 +191,7 @@ static void daily_run_screen(Canvas&c){
  // Online identities and empty leaderboards have no usable action on this
  // offline platform. The original daily seed, modifiers and scoring remain.
  setup_disclaimer(c,label("DAILY_RUN_MENU.disclaimer",""));native_original_back(c,mode.started);
- if(mode.pending.mode==RunMode::Daily)native_original_confirm(c,UiAction::StartConfiguredRun,mode.started,a.character_available(unsigned(a.selected_character)));
+ if(mode.pending.mode==RunMode::Daily)native_original_confirm(c,UiAction::StartConfiguredRun,mode.started);
 }
 static void run_modes_screen(Canvas&c){
  if(c.a.run_mode.screen==RunMenu::Singleplayer)singleplayer_screen(c);

@@ -294,7 +294,8 @@ bool load(State&s,const uint8_t*data,size_t len){
     // UI24 omitted the original no-Neow root -> Monster conversion. Repair
     // that typed point when reading its real saved map, without rerolling
     // rooms, seeds, edges, discoveries or any already visited room.
-    if(tmp.world.active&&tmp.world.map_ready[0]&&!tmp.world.rooms[0].ancient){
+    if(tmp.world.active&&tmp.world.act_index==0&&tmp.world.current_point==reference::NoPoint&&
+       tmp.world.map_ready[0]&&!tmp.world.rooms[0].ancient){
         auto&m=tmp.world.maps[0];
         if(m.root<m.count&&m.root<reference::MaxPoints&&!tmp.world.visited[0][m.root]&&m.points[m.root].type==reference::PointType::Start)
             m.points[m.root].type=reference::PointType::Monster;

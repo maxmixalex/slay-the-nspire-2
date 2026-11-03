@@ -32,7 +32,7 @@ def digest(path):
     return value.hexdigest()
 
 
-def inspect_resources(directory, expected_profile, *, require_timeline=False, require_character_unlock=False):
+def inspect_resources(directory, expected_profile):
     common = (directory / "nSpire2.dat.tns").read_bytes()
     required = ["nSpire2.dat.tns", "nSpire2.eng.dat.tns", "nSpire2.zhs.dat.tns"]
     if common[:4] == b"NSM1":
@@ -45,14 +45,11 @@ def inspect_resources(directory, expected_profile, *, require_timeline=False, re
         logical = reconstruct(common, path.read_bytes(), code)
         version = int.from_bytes(logical[4:8], 'little')
         string_count = int.from_bytes(logical[24:28], 'little')
-        if require_timeline and string_count != 8961:
-            raise ValueError('UI24 requires the complete 8961-string Timeline catalog: '+code)
-        if require_character_unlock:
-            from coalesce_tile_resources import view
-            from character_unlock_assets import validate as validate_character_locks
-            if string_count != 8707:
-                raise ValueError('UI26 requires the complete 8707-string character catalog: '+code)
-            source=view(logical);validate_character_locks(source,source.image_raw)
+        from coalesce_tile_resources import view
+        from character_unlock_assets import validate as validate_character_locks
+        if string_count != 8707:
+            raise ValueError('The release requires the complete 8707-string character catalog: '+code)
+        source=view(logical);validate_character_locks(source,source.image_raw)
         if resource_format is None:
             resource_format = version
         elif version != resource_format:
@@ -84,7 +81,7 @@ def check_archive(path):
 
 def build(args):
     args.output.mkdir(parents=True, exist_ok=True)
-    stage = getattr(args, 'stage', 'ui23')
+    stage = getattr(args, 'stage', 'ui26')
     if not re.fullmatch(r'ui[0-9]+', stage):
         raise ValueError('The delivery stage must be ui followed by its number')
     documentation_ref = getattr(args, 'documentation_ref', None)
@@ -102,9 +99,7 @@ def build(args):
         'animated': getattr(args, 'resource_source_relation', 'equivalent_tree'),
         'no-animations': getattr(args, 'no_animations_resource_source_relation', None) or
             getattr(args, 'resource_source_relation', 'equivalent_tree')}
-    resource_gate = ({'require_character_unlock':True} if int(stage[2:])>=26 else
-                     {'require_timeline':int(stage[2:])>=24})
-    resources = {name: inspect_resources(path, name, **resource_gate)
+    resources = {name: inspect_resources(path, name)
                  for name, path in directories.items()}
     if resources['animated']['resource_format'] != resources['no-animations']['resource_format']:
         raise ValueError('Animated and reduced editions use different resource format versions')
@@ -115,13 +110,8 @@ def build(args):
         raise ValueError("Animated installation is %d bytes, above the %d-byte limit" %
                          (resources["animated"]["installed_bytes"], args.maximum_animated_bytes))
     base_version = (ROOT / "VERSION").read_text().strip().split("-", 1)[0]
-    stem = "Slay-the-Nspire-2-" + base_version + "-" + stage
-    if int(stage[2:])>=26:stem="Slay-the-Nspire-2-"+base_version
-    archive_suffixes = ({"animated":"full","no-animations":"reduced"} if int(stage[2:])>=26 else
-                        {"animated": "full-animated-bilingual",
-                         "no-animations": "no-character-animation-bilingual"}
-                        if int(stage[2:]) >= 25 else
-                        {profile: profile + "-bilingual-calculator" for profile in PROFILES})
+    stem = "Slay-the-Nspire-2-" + base_version
+    archive_suffixes = {"animated":"full","no-animations":"reduced"}
     receipts = {}
     with tempfile.TemporaryDirectory(prefix="nspire-package-variants-") as temporary:
         staging_root = Path(temporary)
@@ -162,12 +152,8 @@ def build(args):
                                      (receipts[profile]["extracted_bytes"], args.maximum_animated_bytes))
 
     extras = [code for code in LANGUAGES if code not in ("eng", "zhs")]
-    optional = args.output / (stem + ("-languages.zip" if int(stage[2:])>=26 else "-optional-languages.zip"))
-    edition_mapping = ("主包文件名 / Installer mapping:\nfull → animated\nreduced → no-animations\n\n" if int(stage[2:])>=26 else
-                      (stage.upper() + "主包文件名 / Installer mapping:\n"
-                        "full-animated-bilingual → animated\n"
-                        "no-character-animation-bilingual → no-animations\n\n")
-                       if int(stage[2:]) >= 25 else "")
+    optional = args.output / (stem + "-languages.zip")
+    edition_mapping = "主包文件名 / Installer mapping:\nfull → animated\nreduced → no-animations\n\n"
     instructions = (
         "Slay the Nspire 2 " + stage.upper() + " — optional original languages\n\n"
         "请选择与你安装的版本对应的文件夹：\n"
@@ -182,12 +168,9 @@ def build(args):
         "自行转换时，可选语言与common/用途包须来自同一次转换，不能混用此预制ZIP，即使版本/动画档相同。\n"
         "For fresh conversion, common/concern files and optional locales must come from that same conversion, even if version/profile labels match.\n"
         "English and Simplified Chinese are already in both complete installers.\n\n"
-        "原版内容按所选语言提供；原文缺失处按原版英语回退。本移植新增的历史/归档错误与时间线状态提示提供简体中文和英语，其余语言显示英语。\n"
-        "Original content uses the selected locale, with English fallback where the original table lacks a key. Port-authored history/archive errors and Timeline status labels use Simplified Chinese or English; other locales display English for these labels.\n\n"
+        "原版内容按所选语言提供；原文缺失处按原版英语回退。本移植新增的历史/归档错误提示提供简体中文和英语，其余语言显示英语。\n"
+        "Original content uses the selected locale, with English fallback where the original table lacks a key. Port-authored history/archive errors use Simplified Chinese or English; other locales display English for these labels.\n\n"
         "Available additional locale codes: " + ", ".join(extras) + "\n")
-    if int(stage[2:])>=26:
-        instructions=instructions.replace('历史/归档错误与时间线状态提示','历史/归档错误提示').replace(
-            'history/archive errors and Timeline status labels','history/archive errors')
     with zipfile.ZipFile(optional, "w", zipfile.ZIP_DEFLATED, compresslevel=6) as archive:
         archive.writestr("README-languages.txt", instructions.encode("utf-8"))
         for profile, directory in directories.items():
@@ -227,7 +210,7 @@ def main():
         parser.add_argument("--" + name, type=Path, required=True)
     parser.add_argument("--runtime-checkpoint", required=True)
     parser.add_argument("--resource-checkpoint", required=True)
-    parser.add_argument('--stage', default='ui23', help='Delivery label, for example ui24; defaults to the historical ui23 label')
+    parser.add_argument('--stage', default='ui26', help='Source delivery stage')
     parser.add_argument('--runtime-source-ref', help='Verified published equivalent runtime source, separate from the actual build checkpoint')
     parser.add_argument('--resource-source-ref', help='Published converter reference, separate from the actual producer checkpoint')
     parser.add_argument('--resource-source-relation', choices=('equivalent_tree','published_implementation_reference'), default='equivalent_tree')

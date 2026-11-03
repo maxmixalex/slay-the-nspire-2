@@ -39,6 +39,7 @@ Download the artifacts from a successful GitHub Actions run:
 | --- | --- |
 | [Calculator launcher](https://github.com/maxmixalex/slay-the-nspire-2/actions/workflows/ci.yml) | `nSpire2.tns` |
 | [Windows converter](https://github.com/maxmixalex/slay-the-nspire-2/actions/workflows/converters.yml) | `nspire2-convert.exe` |
+| [Linux converter](https://github.com/maxmixalex/slay-the-nspire-2/actions/workflows/converters.yml) | `nspire2-convert` |
 
 The converter includes its dependencies. Original game data is created locally
 from your game installation.

@@ -12,7 +12,7 @@ import package_variants_ui23 as package
 
 
 class LocaleEditionGate(unittest.TestCase):
-    def inspect(self, versions=None, reduced=(), strings=None, require_timeline=False, require_character_unlock=False):
+    def inspect(self, versions=None, reduced=(), strings=None):
         versions = versions or {}
         strings = strings or {}
         with tempfile.TemporaryDirectory() as temporary:
@@ -28,15 +28,14 @@ class LocaleEditionGate(unittest.TestCase):
                 header = bytearray(40)
                 header[:4] = b'NSP2'
                 header[4:8] = versions.get(code, 46).to_bytes(4, 'little')
-                header[24:28] = strings.get(code, 8961).to_bytes(4, 'little')
+                header[24:28] = strings.get(code, 8707).to_bytes(4, 'little')
                 if code in reduced:
                     header[36:40] = b'NAF1'
                 return bytes(header)
 
             with patch.object(package, 'reconstruct', side_effect=reconstructed), \
                  patch('coalesce_tile_resources.view'), patch('character_unlock_assets.validate'):
-                return package.inspect_resources(root, 'animated', require_timeline=require_timeline,
-                                                 require_character_unlock=require_character_unlock)
+                return package.inspect_resources(root, 'animated')
 
     def test_matching_all_sixteen_locales_are_reported(self):
         result = self.inspect()
@@ -54,19 +53,13 @@ class LocaleEditionGate(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'animation profile.*fra'):
             self.inspect(reduced=('fra',))
 
-    def test_ui24_checks_timeline_catalog_in_optional_locales(self):
-        result = self.inspect(require_timeline=True)
-        self.assertTrue(all(row['string_count'] == 8961 for row in result['locales'].values()))
-        with self.assertRaisesRegex(ValueError, '8961-string Timeline catalog: fra'):
-            self.inspect(strings={'fra': 8704}, require_timeline=True)
-
     def test_ui26_requires_new_tail_for_every_optional_locale(self):
         counts={code:8707 for code in package.LANGUAGES}
-        result=self.inspect(strings=counts,require_character_unlock=True)
+        result=self.inspect(strings=counts)
         self.assertTrue(all(row['string_count']==8707 for row in result['locales'].values()))
         for old_count in (8704,8961):
             with self.assertRaisesRegex(ValueError,'8707-string character catalog: fra'):
-                self.inspect(strings={**counts,'fra':old_count},require_character_unlock=True)
+                self.inspect(strings={**counts,'fra':old_count})
 
 
 class ThreeArchiveDelivery(unittest.TestCase):
@@ -80,7 +73,7 @@ class ThreeArchiveDelivery(unittest.TestCase):
             for code in package.LANGUAGES:
                 (directory / f'nSpire2.{code}.dat.tns').write_bytes((profile + ':' + code).encode())
         args = argparse.Namespace(
-            output=root / 'output', stage='ui24', launcher=launcher,
+            output=root / 'output', stage='ui26', launcher=launcher,
             animated=root / 'animated', no_animations=root / 'no-animations',
             runtime_checkpoint='a' * 40, resource_checkpoint='b' * 40,
             no_animations_resource_checkpoint=None, resource_source_relation=relation,
@@ -93,7 +86,7 @@ class ThreeArchiveDelivery(unittest.TestCase):
             stage = command[command.index('--stage') + 1]
             invocations.append(stage)
             recorded_relation = command[command.index('--resource-source-relation') + 1]
-            self.assertEqual(recorded_relation, relation if stage == 'ui24-animated' else 'equivalent_tree')
+            self.assertEqual(recorded_relation, relation if stage == 'ui26-animated' else 'equivalent_tree')
             destination = Path(command[command.index('--output') + 1])
             destination.mkdir()
             with zipfile.ZipFile(destination / 'fixture-calculator.zip', 'w') as archive:
@@ -101,8 +94,7 @@ class ThreeArchiveDelivery(unittest.TestCase):
                 archive.writestr('README.txt', b'documentation counts against installation budget')
             (destination / 'fixture-validation.json').write_text('{}\n')
 
-        def resource_info(directory, expected_profile, require_timeline):
-            self.assertTrue(require_timeline)
+        def resource_info(directory, expected_profile):
             self.assertEqual(directory.name, expected_profile)
             return {'resource_format': 46, 'required_bytes': 1, 'locales': {}}
 
@@ -115,14 +107,14 @@ class ThreeArchiveDelivery(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             result, stages = self.assemble(root)
-            self.assertEqual(stages, ['ui24-animated', 'ui24-no-animations'])
-            self.assertEqual(result['stage'], 'ui24')
-            self.assertEqual(json.loads((root / 'output/UI24-delivery-manifest.json').read_text()), result)
+            self.assertEqual(stages, ['ui26-animated', 'ui26-no-animations'])
+            self.assertEqual(result['stage'], 'ui26')
+            self.assertEqual(json.loads((root / 'output/UI26-delivery-manifest.json').read_text()), result)
             self.assertEqual(len(list((root / 'output').glob('*.zip'))), 3)
             optional = root / 'output' / result['archives']['optional-languages']['file']
             with zipfile.ZipFile(optional) as archive:
                 self.assertEqual(len(archive.namelist()), 29)
-                self.assertIn(b'UI24', archive.read('README-languages.txt'))
+                self.assertIn(b'UI26', archive.read('README-languages.txt'))
                 for profile in package.PROFILES:
                     for code in package.LANGUAGES:
                         if code not in ('eng', 'zhs'):

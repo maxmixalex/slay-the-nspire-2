@@ -163,7 +163,8 @@ static void character_screen(Canvas&c){
     character_info_text(bold,gold,gold_x+StatsIcon+StatsLabelGap,stats_y,30,character_info_plan(bold,gold,30),rgb(239,200,81));
     const int body_y=top+NameHeight+StatsHeight;
     const int body_height=InfoPanelY+InfoPanelHeight-14-body_y;
-    const auto relic_title_plan=character_info_plan(bold,relic?a.relic_title(relic_id):"",RelicTextWidth);
+    const char*relic_name=!relic?"":available?a.relic_title(relic_id):a.content.has_character_unlock_text()?a.content.string(character_unlock_assets::LockedRelicTitle):a.content.language()==2?"未知遗物":"Unknown Relic";
+    const auto relic_title_plan=character_info_plan(bold,relic_name,RelicTextWidth);
     const int total_height=description_height+(relic?6+mx(RelicIcon,relic_title_plan.rows*relic_title_plan.step+2+relic_plan.rows*relic_plan.step):0);
     const int overflow=mx(0,total_height-body_height);
     const int offset=native_room_marquee_offset(overflow,a.map_clock_ms-motion.panel_start);
@@ -181,7 +182,6 @@ static void character_screen(Canvas&c){
         Canvas relic_icon=article;
         if(!available){const int outline=collection_assets::RelicOutline[relic_id];if(outline>=0)relic_icon.ui(outline,text_x,relic_y+RelicIconY,RelicIcon,RelicIcon,128);relic_icon.tint_red=relic_icon.tint_green=relic_icon.tint_blue=26;}
         relic_icon.picture(a.relic_face_image(relic_id),text_x,relic_y+RelicIconY,RelicIcon,RelicIcon);
-        const char*relic_name=available?a.relic_title(relic_id):a.content.has_character_unlock_text()?a.content.string(character_unlock_assets::LockedRelicTitle):a.content.language()==2?"未知遗物":"Unknown Relic";
         const auto title_plan=character_info_plan(bold,relic_name,RelicTextWidth);
         character_info_text(article_bold,relic_name,text_x+RelicTextX,relic_y+RelicTitleY,RelicTextWidth,title_plan,rgb(239,200,81));
         character_info_text(article,relic_text,text_x+RelicTextX,relic_y+title_plan.rows*title_plan.step+2,RelicTextWidth,relic_plan,rgb(255,246,226));

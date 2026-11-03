@@ -133,7 +133,7 @@ jobs:
       - name: Upload the Windows converter and dependency license notices
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
-          name: nspire2-converter-windows-${{ github.sha }}
+          name: nspire2-converter-windows
           path: ${{ runner.temp }}/converter-delivery/
           if-no-files-found: error
           retention-days: 30
@@ -175,7 +175,7 @@ jobs:
       - name: Upload the Linux converter and its notices
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
-          name: nspire2-converter-linux-${{ github.sha }}
+          name: nspire2-converter-linux
           path: ${{ runner.temp }}/converter-delivery/
           if-no-files-found: error
           retention-days: 30

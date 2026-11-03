@@ -85,7 +85,6 @@ void App::ui_action(UiAction action){
     default:break;
     }
     switch(action){
-    case UiAction::OpenTimeline:case UiAction::TimelineReveal:break; // Retired input ABI.
     case UiAction::OpenCompendium:open_compendium();break;
     case UiAction::OpenProfiles:open_profiles();break;
     case UiAction::SelectProfile1:case UiAction::SelectProfile2:case UiAction::SelectProfile3:

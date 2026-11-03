@@ -17,11 +17,12 @@ Open a successful workflow run and download from its **Artifacts** section:
 
 | Program | Workflow | Artifact |
 | --- | --- | --- |
-| Calculator launcher | [Native tests and portable builds](https://github.com/maxmixalex/slay-the-nspire-2/actions/workflows/ci.yml) | `nspire2-launcher-<commit>` |
-| Windows converter | [Desktop converters](https://github.com/maxmixalex/slay-the-nspire-2/actions/workflows/converters.yml) | `nspire2-converter-windows-<commit>` |
+| Calculator launcher | [Native tests and portable builds](https://github.com/maxmixalex/slay-the-nspire-2/actions/workflows/ci.yml) | `nspire2-launcher` |
+| Windows converter | [Desktop converters](https://github.com/maxmixalex/slay-the-nspire-2/actions/workflows/converters.yml) | `nspire2-converter-windows` |
+| Linux converter | [Desktop converters](https://github.com/maxmixalex/slay-the-nspire-2/actions/workflows/converters.yml) | `nspire2-converter-linux` |
 
 Extract `nSpire2.tns` and `nspire2-convert.exe`, keeping their license notices.
-The launcher needs the data produced by the converter. For Linux or an expired
+The launcher needs the data produced by the converter. For an expired
 build artifact, follow the [source build instructions](../DEVELOPMENT.md).
 
 ## Convert your game

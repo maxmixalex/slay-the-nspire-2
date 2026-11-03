@@ -15,7 +15,7 @@ import character_unlock_assets as art
 import character_unlock_text as labels
 import group_strings
 import split_content as split
-import timeline_text_ui24 as timeline
+from patch_ui7_assets import grow_string_directory
 from test_ftue_assets import fixture
 
 
@@ -23,13 +23,25 @@ class CharacterUnlockResources(unittest.TestCase):
     def test_replaces_legacy_tail_and_copies_pixels_glyphs_and_prefix_for_both_profiles(self):
         for code, reduced in (('eng', False), ('zhs', True)):
             data = bytearray(group_strings.repack(fixture(code))[0]); struct.pack_into('<I', data, 4, 46)
+            alias_source=labels.view(data)
+            struct.pack_into('<I',data,alias_source.glyph_at+16+4,alias_source.glyphs[0][1])
             data[36:40] = b'NAF1' if reduced else bytes(4); data = bytes(data)
             original = labels.view(data)
             for legacy in (False, True):
                 before = data
                 if legacy:
-                    with patch.object(timeline, 'BASE_STRINGS', 8192):
-                        before, _ = timeline.append_records(data, ['RETIRED TIMELINE '+str(i) for i in range(257)], [])
+                    raw=bytearray(fixture(code));struct.pack_into('<I',raw,4,46)
+                    source=labels.view(raw)
+                    raw=bytearray(grow_string_directory(raw,8449,len(source.aux),len(source.clips),46))
+                    source=labels.view(raw)
+                    for i in range(8192,8449):
+                        value=('RETIRED TIMELINE '+str(i)).encode()+b'\0'
+                        struct.pack_into('<II',raw,source.string_at+i*8,len(raw),len(value)-1);raw.extend(value)
+                    struct.pack_into('<I',raw,12,len(raw))
+                    source=labels.view(raw)
+                    before,_=group_strings.write(source,group_strings.plan(source),
+                        group_strings.nonstring_end(source,split.layout(raw,code)))
+                    before=bytearray(before);struct.pack_into('<I',before,4,46);before[36:40]=data[36:40];before=bytes(before)
                 additions = [(0x10d000, 10, 2, 2, 0x8000 | 128, 0, b'\0\x40\x80\xff')]
                 texts = ['Locked', 'Unknown Relic', 'Undiscovered \U0010d000']
                 with patch.object(labels, 'BASE_STRINGS', 8192), patch.object(labels, 'LEGACY_STRINGS', 8449):
@@ -37,6 +49,8 @@ class CharacterUnlockResources(unittest.TestCase):
                     proof = labels.verify(before, output, texts, {(0x10d000, 10, 0)})
                 target = labels.view(output)
                 self.assertEqual(len(target.strings), 8195)
+                self.assertEqual(len({row[1] for row in target.glyphs}),
+                                 len({row[1] for row in labels.view(before).glyphs})+len(additions))
                 self.assertEqual(proof['removed_timeline_strings'], 257 if legacy else 0)
                 self.assertNotIn(b'RETIRED TIMELINE', output)
                 self.assertEqual(output[36:40], data[36:40])

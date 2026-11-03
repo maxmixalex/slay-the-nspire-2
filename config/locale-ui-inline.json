@@ -853,69 +853,53 @@
       "note": "Reviewed UI24 caller-selected Simplified Chinese/English status or seed-editor text. Each listed caller explicitly chooses the English literal above for non-ZHS languages; no generic fallback entry or stable pack index is added."
     },
     {
-      "source": "时间线",
-      "eng": "Timeline",
+      "source": "锁定",
+      "eng": "Locked",
       "paths": [
-        "src/timeline_ui.inc",
-        "src/ui_frontend.inc"
-      ],
-      "note": "Reviewed UI24 caller-selected Simplified Chinese/English status or seed-editor text. Each listed caller explicitly chooses the English literal above for non-ZHS languages; no generic fallback entry or stable pack index is added."
+        "src/character_select_ui7.inc"
+      ]
     },
     {
-      "source": "时间线 !",
-      "eng": "Timeline !",
+      "source": "未知遗物",
+      "eng": "Unknown Relic",
       "paths": [
-        "src/ui_frontend.inc"
-      ],
-      "note": "Reviewed UI24 caller-selected Simplified Chinese/English status or seed-editor text. Each listed caller explicitly chooses the English literal above for non-ZHS languages; no generic fallback entry or stable pack index is added."
+        "src/character_select_ui7.inc"
+      ]
     },
     {
-      "source": "请安装配套的时间线资源。",
-      "eng": "Install the matching Timeline resources.",
+      "source": "这个角色的遗物还尚未被发现。",
+      "eng": "This character's relic is yet to be discovered.",
       "paths": [
-        "src/timeline_ui.inc"
-      ],
-      "note": "Reviewed UI24 caller-selected Simplified Chinese/English status or seed-editor text. Each listed caller explicitly chooses the English literal above for non-ZHS languages; no generic fallback entry or stable pack index is added."
+        "src/character_select_ui7.inc"
+      ]
     },
     {
-      "source": "旧版兼容开放，历史获得时间未知。",
-      "eng": "Legacy access: content open; old obtain dates unknown.",
+      "source": "轻触点击",
+      "eng": "Tap to Click",
       "paths": [
-        "src/timeline_ui.inc"
-      ],
-      "note": "Reviewed UI24 caller-selected Simplified Chinese/English status or seed-editor text. Each listed caller explicitly chooses the English literal above for non-ZHS languages; no generic fallback entry or stable pack index is added."
+        "src/settings_ui10.inc"
+      ]
     },
     {
-      "source": "选择条目，按 Enter 查看。",
-      "eng": "Select an Epoch; Enter to inspect.",
+      "source": "鼠标速度",
+      "eng": "Mouse Speed",
       "paths": [
-        "src/timeline_ui.inc"
-      ],
-      "note": "Reviewed UI24 caller-selected Simplified Chinese/English status or seed-editor text. Each listed caller explicitly chooses the English literal above for non-ZHS languages; no generic fallback entry or stable pack index is added."
+        "src/settings_ui10.inc"
+      ]
     },
     {
-      "source": "获得时间：",
-      "eng": "Obtained: ",
+      "source": "轻触可点击光标位置。始终可按下点击。",
+      "eng": "Tap to click at the visible cursor. Physical clicks always work.",
       "paths": [
-        "src/timeline_ui.inc"
-      ],
-      "note": "Reviewed UI24 caller-selected Simplified Chinese/English status or seed-editor text. Each listed caller explicitly chooses the English literal above for non-ZHS languages; no generic fallback entry or stable pack index is added."
+        "src/settings_ui10.inc"
+      ]
     },
     {
-      "source": "已揭示",
-      "eng": "Revealed",
+      "source": "调整触摸板光标速度。方向键可调整。",
+      "eng": "Adjust touchpad cursor speed. Arrows change this value.",
       "paths": [
-        "src/timeline_ui.inc"
-      ],
-      "note": "Reviewed UI24 caller-selected Simplified Chinese/English status or seed-editor text. Each listed caller explicitly chooses the English literal above for non-ZHS languages; no generic fallback entry or stable pack index is added."
-    },
-    {
-      "source": "尚未获得",
-      "eng": "Not obtained",
-      "paths": [
-        "src/timeline_ui.inc"
-      ],
-      "note": "Reviewed UI24 caller-selected Simplified Chinese/English status or seed-editor text. Each listed caller explicitly chooses the English literal above for non-ZHS languages; no generic fallback entry or stable pack index is added."
+        "src/settings_ui10.inc"
+      ]
     }
   ]
 }

@@ -59,7 +59,7 @@ void App::restore_progress(){
     if(progress_loaded)return;
     clear_ui_progress(progress);
     const bool loaded=callbacks.load_progress&&callbacks.load_progress(progress);
-    if(!loaded){clear_ui_progress(progress);timeline_initialize(progress.timeline,true);}
+    if(!loaded){clear_ui_progress(progress);legacy_progress_initialize(progress.timeline,true);}
     // A browser profile_info callback is asynchronously cached. Reuse the
     // ordinary current-run read below instead of scanning profiles at boot.
     // Existing metadata, including NSH1-7, always retains its decoded flags.
@@ -106,9 +106,12 @@ void App::reset_ftues(){
 }
 void App::begin_progress(bool resumed){
     if(!game.world.active||game.practice)return;
-    restore_progress();progress.characters_started|=uint8_t(1u<<unsigned(game.character));
-    // Continuing a previously playable character can never relock it.
-    progress.character_unlocks=uint8_t(profile_character_unlocks(progress)|(1u<<unsigned(game.character)));
+    restore_progress();unsigned unlocked=profile_character_unlocks(progress);
+    // Only old profiles need to recover access from a previously playable
+    // save. A Daily's prescribed character does not grant permanent access.
+    if(resumed&&!progress.character_unlocks)unlocked|=1u<<unsigned(game.character);
+    progress.characters_started|=uint8_t(1u<<unsigned(game.character));
+    progress.character_unlocks=uint8_t(unlocked);
     if(resumed&&progress_matches(progress.current,game)){
         // NSH1–5 did not observe these facts. Continue collecting forward,
         // while the old prefix stays explicitly unknown for score/badges.

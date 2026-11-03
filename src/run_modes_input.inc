@@ -25,7 +25,7 @@ void App::run_modifier_select(unsigned index){
 bool App::start_selected_run(const RunOptions&options,bool animated){
     if(character_departure.active()||!valid_run_options(options))return false;
     restore_progress();
-    if(!practice_entry&&(!run_mode_available(options.mode)||!character_available(character_random?CharacterKinds:unsigned(selected_character))))return false;
+    if(!practice_entry&&(!run_mode_available(options.mode)||(options.mode!=RunMode::Daily&&!character_available(character_random?CharacterKinds:unsigned(selected_character)))))return false;
     if(!practice_entry&&!seen_ftue(FtueId::AcceptTutorials)&&open_ftue(FtueId::AcceptTutorials)){ftue.embark=options;character_departure.animated_ftue=animated;return false;}
     uint32_t seed=0;char canonical[65]{};bool string_seed=!practice_entry&&*selected_seed;
     const bool imported=string_seed&&selected_seed_imported;
@@ -40,11 +40,7 @@ bool App::start_selected_run(const RunOptions&options,bool animated){
     const bool random=character_random;
     if(!practice_entry){
         reference::Random rng;rng.named(run_hash,"act_selection");
-        TimelineUnlocks unlocks;
-        // The original first-run encounter sequence belongs to Overgrowth.
-        // It remains a tutorial rule, independent of retired content nodes.
-        if(options.mode==RunMode::Standard&&first_standard_run())unlocks.words[0]=unlocks.words[1]=0;
-        selected_region=reference::ActKind(timeline_first_act(unlocks,progress.discovered_acts,rng));
+        selected_region=reference::ActKind(select_start_region(options.mode==RunMode::Standard&&first_standard_run(),progress.discovered_acts,rng));
         if(random){selected_character=RunModeCharacters[rng.below(CharacterKinds)];character_random=false;}
         if(options.mode==RunMode::Standard&&selected_ascension>character_max_ascension())selected_ascension=uint8_t(character_max_ascension());
     }

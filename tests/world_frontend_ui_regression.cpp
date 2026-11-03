@@ -287,7 +287,6 @@ static void main_menu_and_continue(){
  press(HitKind::Menu,1);CHECK(a.settings_open);settings_back();CHECK(!a.settings_open);unchanged();
  press(HitKind::Menu,2);CHECK(a.compendium_open&&a.title&&!a.library);action(UiAction::LibraryCards);CHECK(a.library&&a.title);
  a.input(Key::Back);CHECK(a.compendium_open&&!a.library);a.input(Key::Back);CHECK(!a.compendium_open&&a.title);unchanged();
- a.ui_action(UiAction::OpenTimeline);CHECK(a.title);unchanged();
  press(HitKind::Menu,3);CHECK(a.frontend_confirm==3&&!a.quit);capture("frontend-quit-confirm");a.input(Key::Confirm);CHECK(!a.frontend_confirm&&!a.quit);unchanged();
  press(HitKind::Menu,3);confirm_accept();CHECK(a.quit);a.quit=false;unchanged();
 
@@ -332,7 +331,7 @@ static void continue_panel_preserves_menu(){
  }
 }
 static void pause_save_failure_and_success(){
- empty_disk();start(Character::Necrobinder,3001);snapshot();a.input(Key::Back);CHECK(a.paused&&!a.title);menu_rows(4);
+ empty_disk();start(Character::Necrobinder,3001);snapshot();a.input(Key::Back);CHECK(a.paused&&!a.title);menu_rows(5);
  const int source_rows[]={65,94,123,152,181};
  for(int i=0;i<5;++i){const auto h=find_hit(HitKind::Menu,i);CHECK(h.x==72&&h.y==source_rows[i]&&h.w==176&&h.h==27);}
  a.advance(500);a.render();capture("frontend-pause");unchanged();

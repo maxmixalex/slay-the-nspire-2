@@ -7,9 +7,9 @@
 using namespace spire;
 static App a;static UiProgress old,decoded;static SaveData save_data;static uint8_t bytes[UiProgressCapacity];static unsigned checks;
 #define CHECK(x) do{++checks;if(!(x)){std::fprintf(stderr,"Character progress:%d %s\n",__LINE__,#x);std::exit(1);}}while(0)
-static void fresh(){a=App{};a.progress_loaded=true;timeline_initialize(a.progress.timeline);a.progress.character_unlocks=1;}
+static void fresh(){a=App{};a.progress_loaded=true;legacy_progress_initialize(a.progress.timeline);a.progress.character_unlocks=1;}
 static void migration(){
- clear_ui_progress(old);timeline_initialize(old.timeline);old.timeline.score=137;old.timeline.ancients_seen=7;
+ clear_ui_progress(old);legacy_progress_initialize(old.timeline);old.timeline.score=137;old.timeline.ancients_seen=7;
  old.timeline.states[unsigned(Epoch::Neow)]=EpochState::ObtainedNoSlot;old.timeline.obtained_at[unsigned(Epoch::Neow)]=1793552400;
  old.timeline.states[unsigned(Epoch::Silent1)]=EpochState::Obtained;old.timeline.obtained_at[unsigned(Epoch::Silent1)]=1793552500;
  old.characters[unsigned(Character::Silent)].losses=1;old.characters_started=3;
@@ -21,7 +21,7 @@ static void migration(){
  UiProgressSummary summary;CHECK(decode_ui_progress_summary(bytes,m,summary));
  bytes[m-1]=0;CHECK(!decode_ui_progress(bytes,m,old));bytes[m-1]=32;CHECK(!decode_ui_progress(bytes,m,old));
  clear_ui_progress(old);const size_t legacy=encode_ui_progress(old,bytes,sizeof bytes);CHECK(decode_ui_progress(bytes,legacy,decoded));CHECK(profile_character_unlocks(decoded)==31);
- clear_ui_progress(old);timeline_initialize(old.timeline);old.characters_started=1u<<unsigned(Character::Defect);CHECK(profile_character_unlocks(old)&(1u<<unsigned(Character::Defect)));
+ clear_ui_progress(old);legacy_progress_initialize(old.timeline);old.characters_started=1u<<unsigned(Character::Defect);CHECK(profile_character_unlocks(old)&(1u<<unsigned(Character::Defect)));
 }
 static void independent_unlocks(){
  fresh();CHECK(a.title_menu_count()==4);CHECK(a.character_available(0));for(unsigned i=1;i<=5;++i)CHECK(!a.character_available(i));
@@ -41,6 +41,17 @@ static void independent_unlocks(){
  }
  CHECK(a.character_available(CharacterKinds)&&a.progress.character_unlocks==31);
 }
+static void special_modes_do_not_unlock(){
+ fresh();RunOptions custom;custom.mode=RunMode::Custom;
+ a.choose_character(Character::Silent);CHECK(!a.start_selected_run(custom,false));
+ a.choose_character(Character::Ironclad);CHECK(a.start_selected_run(custom,false));
+ a.finish_progress(true);CHECK(a.progress.character_unlocks==1&&a.first_standard_run());
+ fresh();RunOptions daily;daily.mode=RunMode::Daily;daily.daily_day=20759;
+ a.choose_character(Character::Defect);CHECK(a.start_selected_run(daily,false));
+ CHECK(a.game.character==Character::Defect&&a.progress.character_unlocks==1);
+ CHECK(save(a.game,save_data));a.begin_progress(true);CHECK(a.progress.character_unlocks==1);
+ a.finish_progress(true);CHECK(a.progress.character_unlocks==1&&a.first_standard_run());
+}
 static void pools_ignore_retired_nodes(){
  fresh();a.selected_character=Character::Ironclad;CHECK(a.start_selected_run({},false));
  CardKind full[CardKinds],former[CardKinds];WorldCardOptions opts;const unsigned n=world_card_candidates(a.game,opts,full,CardKinds);
@@ -49,4 +60,4 @@ static void pools_ignore_retired_nodes(){
  bool molten=false;for(unsigned i=0;i<m;++i)molten|=former[i]==MoltenFist;CHECK(molten);
  CHECK(a.game.world.rooms[0].ancient==unsigned(OriginalEventId::Neow));CHECK(a.game.world.maps[0].count>1);
 }
-int main(){migration();independent_unlocks();pools_ignore_retired_nodes();std::printf("Independent character progress: %u checks; lossless NSHB/NSHC migration, playable masks, settlement and unrestricted model pools.\n",checks);}
+int main(){migration();independent_unlocks();special_modes_do_not_unlock();pools_ignore_retired_nodes();std::printf("Independent character progress: %u checks; lossless NSHB/NSHC migration, playable masks, settlement and unrestricted model pools.\n",checks);}

@@ -17,11 +17,12 @@
 
 | 程序 | 构建入口 | 文件名 |
 | --- | --- | --- |
-| 计算器启动器 | [Native tests and portable builds](https://github.com/maxmixalex/slay-the-nspire-2/actions/workflows/ci.yml) | `nspire2-launcher-<commit>` |
-| Windows 转换器 | [Desktop converters](https://github.com/maxmixalex/slay-the-nspire-2/actions/workflows/converters.yml) | `nspire2-converter-windows-<commit>` |
+| 计算器启动器 | [Native tests and portable builds](https://github.com/maxmixalex/slay-the-nspire-2/actions/workflows/ci.yml) | `nspire2-launcher` |
+| Windows 转换器 | [Desktop converters](https://github.com/maxmixalex/slay-the-nspire-2/actions/workflows/converters.yml) | `nspire2-converter-windows` |
+| Linux 转换器 | [Desktop converters](https://github.com/maxmixalex/slay-the-nspire-2/actions/workflows/converters.yml) | `nspire2-converter-linux` |
 
 解压后使用 `nSpire2.tns` 和 `nspire2-convert.exe`，并保留附带的许可证。
-启动器需要配合转换器生成的数据。Linux 构建或构建附件过期时，可参照
+启动器需要配合转换器生成的数据。构建附件过期时，可参照
 [源码构建说明](../DEVELOPMENT.md)。
 
 ## 转换游戏

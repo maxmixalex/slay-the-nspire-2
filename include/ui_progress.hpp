@@ -3,7 +3,7 @@
 #include "map_drawing.hpp"
 #include "ui_history_journal.hpp"
 #include "ftue.hpp"
-#include "timeline.hpp"
+#include "legacy_progress.hpp"
 
 namespace spire {
 // Separate optional UI history. Never inserted into a simulation save or RNG

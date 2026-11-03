@@ -63,7 +63,7 @@ bool App::refresh_save(){
   ftue_profile_pending=false;
   // A valid old run is an existing profile even without UI history. Only
   // the new empty profile gets the source default EnableFtues=true.
-  if(!existing){progress.tutorial_flags=FtueFresh;timeline_initialize(progress.timeline);progress.character_unlocks=1;progress_dirty=true;}
+  if(!existing){progress.tutorial_flags=FtueFresh;legacy_progress_initialize(progress.timeline);progress.character_unlocks=1;progress_dirty=true;}
  }
  return existing&&has_save;
 }

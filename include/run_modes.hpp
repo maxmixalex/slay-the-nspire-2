@@ -17,6 +17,12 @@ struct RunModeFrontend {
 };
 constexpr Character RunModeCharacters[]={Character::Ironclad,Character::Silent,
     Character::Regent,Character::Necrobinder,Character::Defect};
+// Original act-selection RNG order, with the introductory run in Overgrowth.
+// Later runs offer both first acts; discovery order prefers unseen Underdocks.
+inline uint8_t select_start_region(bool first_run,uint8_t discovered,reference::Random&rng){
+    const uint8_t first=!first_run&&!(discovered&2)?1:uint8_t(rng.below(first_run?1:2));
+    (void)rng.below(1);(void)rng.below(1);return first;
+}
 inline const char* run_modifier_key(RunModifier modifier){
     static const char*keys[]={"DRAFT","SEALED_DECK","HOARDER","SPECIALIZED","INSANITY","ALL_STAR","FLIGHT","VINTAGE",
         "IRONCLAD","SILENT","REGENT","NECROBINDER","DEFECT","DEADLY_EVENTS","CURSED_RUN","BIG_GAME_HUNTER","MIDAS","MURDEROUS","NIGHT_TERRORS","TERMINAL"};
