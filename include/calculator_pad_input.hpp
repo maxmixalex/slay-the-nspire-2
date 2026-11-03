@@ -5,7 +5,7 @@ namespace spire {
 // A mechanical edge click is a direction; a central click remains the mouse.
 // Classify only at press-down, so dragging a slider to an edge stays a drag.
 struct CalculatorPadInput {
- uint16_t captured=0,dispatched=0;uint32_t repeated_at=0,started_at=0;bool pressed=false;
+ uint16_t captured=0,dispatched=0;uint32_t repeated_at=0,started_at=0;bool pressed=false,center_key=false;
  // Pure classification is safe while a resource read owns the foreground.
  // A central press stays central even when its held finger reaches an edge.
  uint16_t capture(TouchSample s,bool keyboard_only){

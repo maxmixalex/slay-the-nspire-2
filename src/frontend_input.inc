@@ -139,6 +139,7 @@ void App::accept_frontend_confirm(){
  if(action==5){if(profiles_open)request_profile_change(profile_target,true);return;}
  if(action==4){
   UiPreferences defaults{};fast_mode=defaults.fast_mode;show_card_indices=defaults.show_card_indices;show_run_timer=defaults.show_run_timer;long_press=defaults.long_press;skip_intro_logo=defaults.skip_intro_logo;end_turn_hold={};
+  tap_to_click=defaults.tap_to_click;mouse_speed=defaults.mouse_speed;
   text_effects=defaults.text_effects;keyboard_only=defaults.keyboard_only;phobia_mode=defaults.phobia_mode;screen_shake=defaults.screen_shake;bestiary_actions_preferred=defaults.bestiary_actions_preferred;
   settings_language_open=false;invalidate_hand_tiles();persist_preferences();return;
  }

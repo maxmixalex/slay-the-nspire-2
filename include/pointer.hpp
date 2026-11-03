@@ -19,7 +19,7 @@ struct PointerState {
     int x = 160, y = 120;
     bool visible{}, held{}, dragging{}, dispatching{};
     int down_x{}, down_y{}, armed_card = -1;
-    uint32_t context{}, revision{}, motion_time{};
+    uint32_t context{}, revision{}, motion_time{}, click_until{};
     HitRegion captured{};
 };
 } // namespace spire

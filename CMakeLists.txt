@@ -98,6 +98,7 @@ add_executable(seed_ascii_original_regression EXCLUDE_FROM_ALL tests/seed_ascii_
     target_link_libraries(inplace_reset_regression PRIVATE Threads::Threads)
   endif()
   spire_test(input_regression)
+  spire_test(calculator_pointer_ui26_regression)
   spire_test(foreground_input_regression)
   spire_test(foreground_pointer_regression)
   spire_test(device_feedback_regression)

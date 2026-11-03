@@ -4,6 +4,7 @@ void App::restore_preferences(){
         if(callbacks.load_preferences(loaded))value=loaded;
     }
     fast_mode=value.fast_mode;long_press=value.long_press;skip_intro_logo=value.skip_intro_logo;end_turn_hold={};
+    tap_to_click=value.tap_to_click;mouse_speed=value.mouse_speed;
     show_card_indices=value.show_card_indices;text_effects=value.text_effects;show_run_timer=value.show_run_timer;
     keyboard_only=value.keyboard_only;phobia_mode=value.phobia_mode;screen_shake=value.screen_shake;bestiary_actions_preferred=value.bestiary_actions_preferred;
     input_bindings=value.bindings_saved?value.bindings:default_input_bindings(calculator_keyboard);
@@ -22,6 +23,7 @@ void App::restore_preferences(){
 void App::persist_preferences(){
     UiPreferences value{fast_mode,show_card_indices,text_effects,keyboard_only,phobia_mode,screen_shake,bestiary_actions_preferred};
     value.bindings=input_bindings;value.bindings_saved=true;value.show_run_timer=show_run_timer;value.long_press=long_press;value.skip_intro_logo=skip_intro_logo;
+    value.tap_to_click=tap_to_click;value.mouse_speed=mouse_speed;
     if(callbacks.save_preferences&&!callbacks.save_preferences(value))
         message("Could not save settings.");
 }
@@ -81,6 +83,9 @@ void App::settings_action(UiAction action){
     case UiAction::SettingsCardIndices:show_card_indices=!show_card_indices;persist_preferences();break;
     case UiAction::SettingsRunTimer:show_run_timer=!show_run_timer;persist_preferences();break;
     case UiAction::SettingsLongPress:long_press=!long_press;end_turn_hold={};persist_preferences();break;
+    case UiAction::SettingsTapToClick:tap_to_click=!tap_to_click;persist_preferences();break;
+    case UiAction::SettingsMouseSlower:if(mouse_speed){--mouse_speed;persist_preferences();}break;
+    case UiAction::SettingsMouseFaster:if(mouse_speed<4){++mouse_speed;persist_preferences();}break;
     case UiAction::SettingsTextEffects:text_effects=!text_effects;invalidate_hand_tiles();persist_preferences();break;
     case UiAction::SettingsSkipIntroLogo:{
         skip_intro_logo=!skip_intro_logo;
@@ -125,12 +130,13 @@ bool App::settings_input(Key key){
             if(row<settings_top)settings_top=row;else if(row>=settings_top+settings_layout::InputVisible)settings_top=row+1-settings_layout::InputVisible;}
     }else if(key==Key::Left||key==Key::Right){
         if(!settings_tab&&settings_item==1)settings_action(key==Key::Left?UiAction::SettingsShakeDown:UiAction::SettingsShakeUp);
+        if(!settings_tab&&settings_item==settings_layout::MouseSpeedRow)settings_action(key==Key::Left?UiAction::SettingsMouseSlower:UiAction::SettingsMouseFaster);
         // NSettingsPanel assigns left/right to the current control. Inspect
         // remains the host's separate tab shortcut; arrows do not change tabs.
     }else if(key==Key::Confirm){
         static const UiAction general[]={UiAction::SettingsLanguage,UiAction::SettingsShakeUp,UiAction::SettingsFastMode,
             UiAction::SettingsPhobia,UiAction::SettingsRunTimer,UiAction::SettingsCardIndices,UiAction::SettingsLongPress,UiAction::SettingsTextEffects,
-            UiAction::SettingsSkipIntroLogo,UiAction::SettingsCredits,UiAction::SettingsReset,UiAction::SettingsBack};
+            UiAction::SettingsSkipIntroLogo,UiAction::SettingsTapToClick,UiAction::SettingsMouseFaster,UiAction::SettingsCredits,UiAction::SettingsReset,UiAction::SettingsBack};
         if(!settings_tab)settings_action(general[settings_item%(settings_layout::GeneralRows+1)]);
         else if(!settings_item)settings_action(UiAction::SettingsKeyboardOnly);
         else if(settings_item<=InputCommandCount)begin_key_rebind(settings_item-1);

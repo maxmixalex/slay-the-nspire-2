@@ -63,7 +63,7 @@ static void replay(){
         dispatch_calculator_sample(dispatched,cursor,touch,pad,ms,host,false,[&](bool repeat){
             calculator_physical_edges(matrix,previous,repeats,false,[&](uint16_t key,bool down){app.physical_key(key,down);},repeat);
             std::memcpy(previous,matrix,sizeof previous);
-        });
+        },true);
     }
     CHECK(!latch.count&&!app.pointer.held&&!dispatched.dispatched&&!directions);
     if(gesture==Click||gesture==Tap){CHECK(!app.paused&&downs==1&&ups==1);CHECK(app.pointer.x==target_x&&app.pointer.y==target_y);}

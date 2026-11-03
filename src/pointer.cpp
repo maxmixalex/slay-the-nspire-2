@@ -254,6 +254,7 @@ void App::pointer_scroll(int rows){
 void App::pointer_button(bool down){
     if(startup_logo.active()){if(down)startup_logo.cancel(map_clock_ms);pointer_cancel();return;}
     if(character_departure.active()){pointer_cancel();return;}
+    if(down&&!pointer.held){pointer.click_until=map_clock_ms+180;pointer.down_x=pointer.x;pointer.down_y=pointer.y;}
     if(debug_open){
         render();const auto*h=hit_at(pointer.x,pointer.y);
         if(down){pointer.held=true;pointer.captured=h?*h:HitRegion{};}

@@ -39,11 +39,11 @@ static void legacy(){
     CHECK(decode_ui_preferences(old1,sizeof old1,loaded)&&loaded.fast_mode&&!loaded.bindings_saved&&!loaded.skip_intro_logo);
     CHECK(decode_ui_preferences(old2,sizeof old2,loaded)&&loaded.keyboard_only&&!loaded.bindings_saved&&!loaded.skip_intro_logo);
     UiPreferences custom{};custom.show_run_timer=false;CHECK(rebind_input(custom.bindings,0,unsigned(InputCommand::Map),'Y'));CHECK(rebind_input(custom.bindings,1,unsigned(InputCommand::Select),'Q'));
-    for(unsigned version=3;version<=5;++version){encode_ui_preferences(custom,disk);disk[4]=uint8_t(version);
+    for(unsigned version=3;version<=5;++version){encode_ui_preferences(custom,disk);disk[4]=uint8_t(version);disk[6]&=15;
         CHECK(decode_ui_preferences(disk,sizeof disk,loaded)&&loaded.bindings_saved&&!loaded.skip_intro_logo);
         CHECK(!std::memcmp(&loaded.bindings,&custom.bindings,sizeof custom.bindings));}
     present=false;app.calculator_keyboard=true;app.restore_preferences();CHECK(app.input_bindings.keys[0][unsigned(InputCommand::Up)]==InputUp);
-    app.persist_preferences();CHECK(disk[4]==6);app.calculator_keyboard=false;app.restore_preferences();
+    app.persist_preferences();CHECK(disk[4]==7);app.calculator_keyboard=false;app.restore_preferences();
     CHECK(app.input_bindings.keys[0][unsigned(InputCommand::Map)]==9); // Saved calculator map survives a host/language change.
     app.reset_input_bindings();CHECK(app.input_bindings.keys[0][unsigned(InputCommand::Up)]==InputUp);
     std::memcpy(&loaded.bindings,&app.input_bindings,sizeof loaded.bindings);
