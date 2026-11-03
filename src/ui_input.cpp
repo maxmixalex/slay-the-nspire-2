@@ -27,7 +27,7 @@ uint32_t App::next_run_seed(bool* randomized){
 #include "card_library_input.inc"
 #include "collection_input.inc"
 #include "run_modes_input.inc"
-#include "timeline_input.inc"
+#include "character_progress_input.inc"
 void App::sync_selection(){
     if(choice_revision!=game.revision){choice_selected_count=0;choice_revision=game.revision;}
     if(!game.world.active||game.practice||!combat_choice_ready()||(catalog_choice_revision==game.revision&&catalog_choice_phase==unsigned(game.phase)))return;
@@ -76,7 +76,6 @@ void App::ui_action(UiAction action){
     // Opaque frontend modals own all actions until explicitly dismissed.
     if(frontend_confirm&&action!=UiAction::FrontendAccept&&action!=UiAction::FrontendCancel&&action!=UiAction::Back)return;
     if(settings_open&&!frontend_confirm){settings_action(action);return;}
-    if(timeline_open&&!frontend_confirm){if(action==UiAction::Back)timeline_input(Key::Back);else if(action==UiAction::TimelineReveal)timeline_activate(timeline_selected);return;}
     if(run_modes_action(action))return;
     if(choice_peeking||!combat_choice_ready())switch(action){
     case UiAction::ConfirmChoice:case UiAction::ClearChoice:case UiAction::PreviousChoicePage:case UiAction::NextChoicePage:
@@ -86,7 +85,6 @@ void App::ui_action(UiAction action){
     default:break;
     }
     switch(action){
-    case UiAction::OpenTimeline:open_timeline();break;
     case UiAction::OpenCompendium:open_compendium();break;
     case UiAction::OpenProfiles:open_profiles();break;
     case UiAction::SelectProfile1:case UiAction::SelectProfile2:case UiAction::SelectProfile3:
@@ -156,10 +154,10 @@ void App::ui_action(UiAction action){
            (game.phase==Phase::OriginalEventChoice&&game.original_events.selection==OriginalEventSelection::Crystal))){event_reader=true;event_reader_scroll=0;}break;
     case UiAction::CloseEventReader:event_reader=false;break;
     case UiAction::StartCharacter:if(character_select)start_selected_run({},true);break;
-    case UiAction::SelectRandomCharacter:if(character_select&&timeline_character_available(CharacterKinds))character_random=true;break;
+    case UiAction::SelectRandomCharacter:if(character_select&&character_available(CharacterKinds))character_random=true;break;
     case UiAction::RunSettings:break; // Retired port-only overlay; keep enum ABI.
     case UiAction::RunAscensionDown:if(character_select&&selected_ascension)selected_ascension--;break;
-    case UiAction::RunAscensionUp:if(character_select&&selected_ascension<timeline_max_ascension())selected_ascension++;break;
+    case UiAction::RunAscensionUp:if(character_select&&selected_ascension<character_max_ascension())selected_ascension++;break;
     case UiAction::RunRegion:if(character_select)selected_region=selected_region==reference::ActKind::Overgrowth?reference::ActKind::Underdocks:reference::ActKind::Overgrowth;break;
     case UiAction::RunSeed:case UiAction::RunSeedImport:
         if(character_select){
@@ -213,7 +211,7 @@ void App::ui_action(UiAction action){
     case UiAction::SelectIronclad:case UiAction::SelectSilent:case UiAction::SelectDefect:case UiAction::SelectRegent:case UiAction::SelectNecrobinder:
         if(character_select){const Character chosen=action==UiAction::SelectIronclad?Character::Ironclad:action==UiAction::SelectSilent?Character::Silent:
             action==UiAction::SelectDefect?Character::Defect:action==UiAction::SelectRegent?Character::Regent:Character::Necrobinder;
-            timeline_choose_character(chosen);}break;
+            choose_character(chosen);}break;
     case UiAction::FilterAll:case UiAction::FilterIronclad:case UiAction::FilterSilent:case UiAction::FilterColorless:
     case UiAction::FilterDefect:case UiAction::FilterRegent:case UiAction::FilterNecrobinder:
     case UiAction::CycleSort:break; // Replaced by original sidebar controls.
@@ -286,10 +284,10 @@ bool App::screen_input(Key key){
         else if(key==Key::Left||key==Key::Right||key==Key::Up||key==Key::Down){
             unsigned current=CharacterKinds;
             if(!character_random)for(unsigned i=0;i<CharacterKinds;++i)if(RunModeCharacters[i]==selected_character){current=i;break;}
-            unsigned next=current;do{next=(next+(key==Key::Left||key==Key::Up?CharacterKinds:1))%(CharacterKinds+1);}
-            while(!timeline_character_available(next==CharacterKinds?CharacterKinds:unsigned(RunModeCharacters[next]))&&next!=current);
-            character_random=next==CharacterKinds;if(!character_random)timeline_choose_character(RunModeCharacters[next]);
-            if(selected_ascension>timeline_max_ascension())selected_ascension=uint8_t(timeline_max_ascension());
+            const unsigned count=CharacterKinds+unsigned(character_available(CharacterKinds));
+            const unsigned next=(current+(key==Key::Left||key==Key::Up?count-1:1))%count;
+            character_random=next==CharacterKinds;if(!character_random)choose_character(RunModeCharacters[next]);
+            if(selected_ascension>character_max_ascension())selected_ascension=uint8_t(character_max_ascension());
         }
         else if(key==Key::Back){if(practice_entry)character_select=false;else open_run_menu(RunMenu::Singleplayer);}
         else if(key==Key::Quit){cancel_map_travel();quit=true;}

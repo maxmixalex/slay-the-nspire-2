@@ -68,13 +68,14 @@ int main(){
     new_run(app.game,999,false);CHECK(world_begin_run(app.game,reference::ActKind::Overgrowth,0));app.begin_progress();
     app.game.deck[0]={Strike,0};app.game.deck[1]={Strike,1};app.game.phase=Phase::Complete;app.finish_progress();
     CHECK(app.progress.card_wins[Strike]==1);app.finish_progress();CHECK(app.progress.card_wins[Strike]==1);
-    CHECK(decode_ui_progress(bytes,saved_size,restored)&&restored.card_wins[Strike]==1);
+    CHECK(bytes[3]=='C'&&decode_ui_progress(bytes,saved_size,restored)&&restored.card_wins[Strike]==1);
     CHECK(decode_ui_progress_summary(bytes,saved_size,summary)&&summary.last_saved_at==now_seconds);
     // NSH1 used the same remaining schema but had neither the timestamp nor
     // per-card wins. Preserve its real history/discoveries, with new fields 0.
     restored=app.progress;restored.current.facts={};for(auto&r:restored.history)r.facts={};
     restored.current_discoveries={};restored.architect_damage=0;restored.journal={};
     restored.current_saved_at=restored.current_saved_revision=0;
+    restored.timeline={};restored.character_unlocks=0; // Absent from the explicit NSH2 fixture.
     for(auto&ch:restored.current.build_id)ch=0;for(auto&r:restored.history)for(auto&ch:r.build_id)ch=0;
     saved_size=encode_ui_progress(restored,bytes,UiProgressCapacity);CHECK(saved_size&&bytes[3]=='2');
     constexpr size_t discovery_bytes=(CardKinds+7)/8+(WorldRelicKinds+7)/8+(PotionKinds+7)/8+(OriginalEventKinds+7)/8;

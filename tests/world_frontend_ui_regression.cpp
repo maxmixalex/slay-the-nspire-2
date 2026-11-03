@@ -1,4 +1,5 @@
 #include "app.hpp"
+#include "settings_layout.hpp"
 #include "content_fixture.hpp"
 #include "original_events.hpp"
 #include "world_run.hpp"
@@ -272,13 +273,13 @@ static void probe_is_read_only(){
  empty_disk();start(Character::Silent,1001);const uint32_t saved_seed=a.game.seed;const int hp=a.game.hp,max_hp=a.game.max_hp,floor=a.game.world.total_floor,gold=a.game.gold;put_disk();
  start(Character::Regent,1002);snapshot();unsigned r=reads;
  CHECK(a.refresh_save()&&a.has_save&&reads==r+1);CHECK(a.saved_character==Character::Silent&&a.saved_seed==saved_seed&&a.saved_hp==hp&&a.saved_max_hp==max_hp&&a.saved_floor==floor&&a.saved_gold==gold&&a.saved_world&&!a.saved_practice&&a.saved_ascension==3);unchanged();
- a.return_to_title();CHECK(a.title&&a.has_save&&a.title_menu_count()==6);unchanged();
+ a.return_to_title();CHECK(a.title&&a.has_save&&a.title_menu_count()==5);unchanged();
  read_ok=false;CHECK(!a.refresh_save()&&!a.has_save);unchanged();read_ok=true;
  disk.bytes[0]^=1;CHECK(!a.refresh_save()&&!a.has_save);unchanged();disk.bytes[0]^=1;CHECK(a.refresh_save());unchanged();
 }
 static void main_menu_and_continue(){
- empty_disk();start();snapshot();a.return_to_title();CHECK(a.title_menu_count()==5);menu_rows(5);capture("frontend-title-new");
- a.menu=0;for(unsigned i=0;i<5;i++)a.input(Key::Down);CHECK(a.menu==0);unchanged();
+ empty_disk();start();snapshot();a.return_to_title();CHECK(a.title_menu_count()==4);menu_rows(4);capture("frontend-title-new");
+ a.menu=0;for(unsigned i=0;i<4;i++)a.input(Key::Down);CHECK(a.menu==0);unchanged();
  press(HitKind::Menu,0);CHECK(a.run_mode.screen==RunMenu::Singleplayer&&!a.character_select);unchanged();capture("frontend-singleplayer");
  action(UiAction::OpenStandardRun);CHECK(a.character_select&&a.title&&!a.practice_entry);a.render();a.advance(500);capture("frontend-character-select");
  a.input(Key::Back);CHECK(!a.character_select&&a.title&&a.run_mode.screen==RunMenu::Singleplayer);unchanged();
@@ -286,16 +287,15 @@ static void main_menu_and_continue(){
  press(HitKind::Menu,1);CHECK(a.settings_open);settings_back();CHECK(!a.settings_open);unchanged();
  press(HitKind::Menu,2);CHECK(a.compendium_open&&a.title&&!a.library);action(UiAction::LibraryCards);CHECK(a.library&&a.title);
  a.input(Key::Back);CHECK(a.compendium_open&&!a.library);a.input(Key::Back);CHECK(!a.compendium_open&&a.title);unchanged();
- press(HitKind::Menu,3);CHECK(a.timeline_open);a.input(Key::Back);CHECK(!a.timeline_open);unchanged();
- press(HitKind::Menu,4);CHECK(a.frontend_confirm==3&&!a.quit);capture("frontend-quit-confirm");a.input(Key::Confirm);CHECK(!a.frontend_confirm&&!a.quit);unchanged();
- press(HitKind::Menu,4);confirm_accept();CHECK(a.quit);a.quit=false;unchanged();
+ press(HitKind::Menu,3);CHECK(a.frontend_confirm==3&&!a.quit);capture("frontend-quit-confirm");a.input(Key::Confirm);CHECK(!a.frontend_confirm&&!a.quit);unchanged();
+ press(HitKind::Menu,3);confirm_accept();CHECK(a.quit);a.quit=false;unchanged();
 
- start(Character::Silent,2001);put_disk();start(Character::Defect,2002);snapshot();a.return_to_title();CHECK(a.title_menu_count()==6);menu_rows(6);
+ start(Character::Silent,2001);put_disk();start(Character::Defect,2002);snapshot();a.return_to_title();CHECK(a.title_menu_count()==5);menu_rows(5);
  a.pointer_move(319,183);CHECK(a.menu==0);a.pointer.visible=false;a.render();a.advance(200);capture("frontend-title-continue");
- a.menu=0;for(unsigned i=0;i<6;i++)a.input(Key::Down);CHECK(a.menu==0);unchanged();
+ a.menu=0;for(unsigned i=0;i<5;i++)a.input(Key::Down);CHECK(a.menu==0);unchanged();
  press(HitKind::Menu,2);CHECK(a.settings_open);a.input(Key::Back);CHECK(!a.settings_open);unchanged();
  press(HitKind::Menu,3);CHECK(a.compendium_open&&a.title&&!a.library);a.input(Key::Back);CHECK(!a.compendium_open);unchanged();
- press(HitKind::Menu,5);CHECK(a.frontend_confirm==3);a.input(Key::Back);CHECK(!a.frontend_confirm&&!a.quit);unchanged();
+ press(HitKind::Menu,4);CHECK(a.frontend_confirm==3);a.input(Key::Back);CHECK(!a.frontend_confirm&&!a.quit);unchanged();
  press(HitKind::Menu,0);settle_departure();CHECK(!a.title&&!a.character_select&&a.game.character==Character::Silent);same_saved(expected);
  // A decodable terminal save is not resumable. The shortcut must not replace
  // the visible run before this admission check has succeeded.
@@ -365,7 +365,7 @@ static void abandon_saved_with_confirmation(){
  // Cancel is initially selected; one Enter cannot destroy the saved game.
  a.input(Key::Confirm);CHECK(!a.frontend_confirm&&a.has_save&&disk_exists&&deletes==d);unchanged();
  press(HitKind::Menu,1);delete_ok=false;confirm_accept();CHECK(a.title&&a.has_save&&disk_exists&&deletes==d+1&&a.notice_ticks);unchanged();
- delete_ok=true;press(HitKind::Menu,1);action(UiAction::FrontendAccept);CHECK(a.title&&!a.has_save&&!disk_exists&&deletes==d+2&&a.title_menu_count()==5);unchanged();menu_rows(5);
+ delete_ok=true;press(HitKind::Menu,1);action(UiAction::FrontendAccept);CHECK(a.title&&!a.has_save&&!disk_exists&&deletes==d+2&&a.title_menu_count()==4);unchanged();menu_rows(4);
 }
 static void abandon_current_bypasses_prevention(){
  empty_disk();start(Character::Ironclad,5001);a.game.potion_slots=8;for(auto&p:a.game.potions)p=Potion::Empty;a.game.potions[7]=Potion::FairyInABottle;
@@ -556,7 +556,7 @@ static void modal_isolation_and_fast_mode(){
  const auto hold_checkbox=find_hit(HitKind::UiAction,int(UiAction::SettingsLongPress));CHECK(hold_checkbox.x==135&&hold_checkbox.y==180&&hold_checkbox.w==58&&hold_checkbox.h==21);
  const bool held=a.long_press;action(UiAction::SettingsLongPress);CHECK(a.long_press!=held);action(UiAction::SettingsLongPress);CHECK(a.long_press==held);unchanged();
  a.input(Key::Up);CHECK(a.settings_item==0);a.input(Key::Left);CHECK(!a.settings_tab&&a.settings_item==0);
- for(unsigned i=0;i<30;++i)a.input(Key::Down);CHECK(a.settings_item==11);a.input(Key::Down);CHECK(a.settings_item==11);
+ for(unsigned i=0;i<30;++i)a.input(Key::Down);CHECK(a.settings_item==settings_layout::GeneralRows);a.input(Key::Down);CHECK(a.settings_item==settings_layout::GeneralRows);
  for(unsigned i=0;i<30;++i)a.input(Key::Up);CHECK(a.settings_item==0&&a.settings_top==0);
  // OpenDropdown initially focuses the current locale, clamps its endpoints
  // and ignores lateral arrows. Choosing the current locale leaves it open.

@@ -291,6 +291,15 @@ bool load(State&s,const uint8_t*data,size_t len){
     if(version>=CustomSaveVersion){code_run_options(tmp.run_options,c);if(version==CustomSaveVersion&&tmp.run_options.mode==RunMode::Standard)return false;}
     if(version>=17)code_power_order(tmp,c);else if(c.good)power_order_migrate(tmp);
     if(version>=18){for(auto&word:tmp.world.unlocks.words)field(word,c);field(tmp.world.first_run,c);}
+    // UI24 omitted the original no-Neow root -> Monster conversion. Repair
+    // that typed point when reading its real saved map, without rerolling
+    // rooms, seeds, edges, discoveries or any already visited room.
+    if(tmp.world.active&&tmp.world.act_index==0&&tmp.world.current_point==reference::NoPoint&&
+       tmp.world.map_ready[0]&&!tmp.world.rooms[0].ancient){
+        auto&m=tmp.world.maps[0];
+        if(m.root<m.count&&m.root<reference::MaxPoints&&!tmp.world.visited[0][m.root]&&m.points[m.root].type==reference::PointType::Start)
+            m.points[m.root].type=reference::PointType::Monster;
+    }
     if(!c.good||c.at!=len-4||!validate(tmp)||tmp.phase==Phase::Error)return false;
     // Older v3-v15 files carry a checksum here; it is intentionally ignored.
     s=tmp;return true;

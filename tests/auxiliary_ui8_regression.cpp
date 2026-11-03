@@ -59,9 +59,10 @@ static void retired_services(){
 static void settings_entries(){
  app.has_save=false;app.menu=1;app.input(Key::Confirm);CHECK(app.settings_open);
  CHECK(!exists(HitKind::UiAction,int(UiAction::SettingsFeedback)));
- // Traverse to a row below the first seven visible settings with real keys.
- app.pointer.visible=false;for(unsigned i=0;i<9;++i)app.input(Key::Down);
- CHECK(app.settings_item==9&&app.settings_top>0);const unsigned top=app.settings_top;
+ // Credits precedes Reset; reach it with real keys after all General options.
+ constexpr unsigned credits_row=settings_layout::GeneralRows-2;
+ app.pointer.visible=false;for(unsigned i=0;i<credits_row;++i)app.input(Key::Down);
+ CHECK(app.settings_item==credits_row&&app.settings_top>0);const unsigned top=app.settings_top;
  app.input(Key::Confirm);CHECK(app.auxiliary.screen==AuxiliaryScreen::Credits);snapshot();
  app.input(Key::Back);CHECK(!app.auxiliary.closing);advance(2000);CHECK(app.auxiliary.credits_position>0);capture("credits-start");
  // Held Space advances the original eased target five times as fast; key
@@ -86,9 +87,9 @@ static void settings_entries(){
  CHECK(app.auxiliary.screen==AuxiliaryScreen::Credits&&!app.auxiliary.closing);unchanged();
  if(captures){Canvas component{app};component.rect(0,0,320,240,0);int y=60;auxiliary_port_credit(component,y);capture("credits-port-major-section",false);}
  app.input(Key::Back);CHECK(app.auxiliary.closing);advance(999);CHECK(app.auxiliary.screen==AuxiliaryScreen::Credits);advance(1);
- CHECK(app.auxiliary.screen==AuxiliaryScreen::None&&app.settings_open&&app.settings_top==top&&app.settings_item==9);unchanged();
+ CHECK(app.auxiliary.screen==AuxiliaryScreen::None&&app.settings_open&&app.settings_top==top&&app.settings_item==credits_row);unchanged();
  app.settings_action(UiAction::SettingsFeedback);CHECK(app.auxiliary.screen==AuxiliaryScreen::None&&!exports);
- app.input(Key::Down);CHECK(app.settings_item==10);app.input(Key::Confirm);CHECK(app.frontend_confirm==4);app.input(Key::Back);
+ app.input(Key::Down);CHECK(app.settings_item==credits_row+1);app.input(Key::Confirm);CHECK(app.frontend_confirm==4);app.input(Key::Back);
 }
 
 }

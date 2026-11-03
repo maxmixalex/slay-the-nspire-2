@@ -28,7 +28,7 @@ namespace spire {
 struct RichRainbow { int16_t frequency=1000,speed=1000;uint16_t saturation=800,value=800; };
 struct RichRainbowColor {uint8_t red,green,blue;};
 namespace rich_rainbow_detail {
-// Godot 4.5.1 OkHSV samples; see docs/rich-rainbow-0.17.md.
+// Godot 4.5.1 OkHSV samples; see docs/porting.md#rainbow-text-provenance.
 struct RichRainbowNode { uint32_t hue; uint16_t linear[6][4]; };
 static constexpr RichRainbowNode RichRainbowNodes[]={
  {0,{{65535,65535,65535,65535},{65535,40790,46917,60416},{65535,24965,34995,55567},{65535,14020,26735,50968},{65535,6039,20697,46601},{65535,0,16115,42447}}},

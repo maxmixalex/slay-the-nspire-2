@@ -20,19 +20,22 @@ int main(){
         else CHECK(!decode_ui_preferences(encoded,UiPreferencesBytes,result));encoded[i]=old;}
     // All eight v5 flag bits are assigned; old records must still reject the
     // formerly reserved bit instead of silently enabling a new preference.
-    for(unsigned version=1;version<=4;++version){encode_ui_preferences({},encoded);encoded[4]=uint8_t(version);encoded[5]=128;
+    for(unsigned version=1;version<=4;++version){encode_ui_preferences({},encoded);encoded[4]=uint8_t(version);encoded[5]=128;encoded[6]&=15;
         CHECK(!decode_ui_preferences(encoded,version<=2?8:UiPreferencesBytes,result));}
     // The skip-logo bit belongs to v6; it cannot reinterpret a reserved bit
     // in any previous record, including the two eight-byte formats.
-    for(unsigned version=1;version<=5;++version){encode_ui_preferences({},encoded);encoded[4]=uint8_t(version);encoded[6]|=8;
+    for(unsigned version=1;version<=5;++version){encode_ui_preferences({},encoded);encoded[4]=uint8_t(version);encoded[6]=(encoded[6]&15)|8;
         CHECK(!decode_ui_preferences(encoded,version<=2?8:UiPreferencesBytes,result));}
-    encode_ui_preferences({},encoded);encoded[4]=7;CHECK(!decode_ui_preferences(encoded,UiPreferencesBytes,result));
+    encode_ui_preferences({},encoded);encoded[4]=8;CHECK(!decode_ui_preferences(encoded,UiPreferencesBytes,result));
+    for(unsigned version=2;version<=6;++version){encode_ui_preferences({},encoded);encoded[4]=uint8_t(version);encoded[6]&=15;if(version<4)encoded[5]&=~64;
+        CHECK(decode_ui_preferences(encoded,version==2?8:UiPreferencesBytes,result)&&!result.tap_to_click&&result.mouse_speed==2);
+        encoded[6]|=16;CHECK(!decode_ui_preferences(encoded,version==2?8:UiPreferencesBytes,result));}
     UiPreferences timer{};timer.show_run_timer=true;timer.long_press=true;timer.bindings.keys[0][unsigned(InputCommand::Map)]='Y';
-    encode_ui_preferences(timer,encoded);CHECK(encoded[4]==6&&UiPreferencesBytes==108);
+    encode_ui_preferences(timer,encoded);CHECK(encoded[4]==7&&UiPreferencesBytes==108);
     CHECK(decode_ui_preferences(encoded,UiPreferencesBytes,result)&&result.show_run_timer&&result.long_press&&result.bindings.keys[0][unsigned(InputCommand::Map)]=='Y');
     UiPreferences hidden=timer;hidden.show_run_timer=false;encode_ui_preferences(hidden,encoded);
     CHECK(decode_ui_preferences(encoded,UiPreferencesBytes,result)&&!result.show_run_timer);encode_ui_preferences(timer,encoded);
-    encoded[4]=5;CHECK(decode_ui_preferences(encoded,UiPreferencesBytes,result)&&result.long_press&&!result.skip_intro_logo);
+    encoded[4]=5;encoded[6]&=15;CHECK(decode_ui_preferences(encoded,UiPreferencesBytes,result)&&result.long_press&&!result.skip_intro_logo);
     encoded[4]=4;encoded[5]&=~128;CHECK(decode_ui_preferences(encoded,UiPreferencesBytes,result)&&result.show_run_timer&&!result.long_press);
     encoded[4]=3;encoded[5]&=~64;CHECK(decode_ui_preferences(encoded,UiPreferencesBytes,result)&&!result.show_run_timer&&!result.long_press&&result.bindings.keys[0][unsigned(InputCommand::Map)]=='Y');
     encoded[5]|=64;CHECK(!decode_ui_preferences(encoded,UiPreferencesBytes,result)); // v3 never assigned this bit.

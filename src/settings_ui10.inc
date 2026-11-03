@@ -79,15 +79,15 @@ static void frontend_settings_screen(Canvas&c){
   if(a.settings_top>GeneralMaximum)a.settings_top=GeneralMaximum;
   if(!a.pointer.visible){if(a.settings_item<a.settings_top)a.settings_top=a.settings_item;else if(a.settings_item>=a.settings_top+GeneralVisible)a.settings_top=uint8_t(a.settings_item-GeneralVisible+1);}
   if(a.settings_top>GeneralMaximum)a.settings_top=GeneralMaximum;
-  const char*keys[]={a.title?"LANGUAGE":"LANGUAGE_IN_RUN","SCREENSHAKE","FASTMODE","PHOBIA_MODE","SHOW_RUN_TIMER_HEADER","SHOW_HAND_CARD_COUNT_HEADER","LONG_PRESS_CONFIRMATION_HEADER","TEXT_EFFECTS","SKIP_INTRO_LOGO_HEADER","CREDITS","INPUT_SETTINGS.RESET_TO_DEFAULT"};
-  const char*eng[]={a.title?"Language":"Language (main menu only)","Screenshake","Fast Mode","Phobia Mode","Show Run Timer","Show Hand Card Count","Long Press Confirmations","Text Effects","Skip Intro Logo","Credits","Reset to Default"};
-  const char*zhs[]={a.title?"语言选项":"语言选项（仅可在主菜单调整）","屏幕抖动","加速模式","恐惧症模式","显示计时器","显示手牌计数","长按确认","文字特效","跳过开场Logo动画","制作名单","恢复默认设置"};
-  const UiAction actions[]={UiAction::SettingsLanguage,UiAction::SettingsShakeUp,UiAction::SettingsFastMode,UiAction::SettingsPhobia,UiAction::SettingsRunTimer,UiAction::SettingsCardIndices,UiAction::SettingsLongPress,UiAction::SettingsTextEffects,UiAction::SettingsSkipIntroLogo,UiAction::SettingsCredits,UiAction::SettingsReset};
-  const bool checked[]={false,false,a.fast_mode,a.phobia_mode,a.show_run_timer,a.show_card_indices,a.long_press,a.text_effects,a.skip_intro_logo};
+  const char*keys[]={a.title?"LANGUAGE":"LANGUAGE_IN_RUN","SCREENSHAKE","FASTMODE","PHOBIA_MODE","SHOW_RUN_TIMER_HEADER","SHOW_HAND_CARD_COUNT_HEADER","LONG_PRESS_CONFIRMATION_HEADER","TEXT_EFFECTS","SKIP_INTRO_LOGO_HEADER","HOST_TAP_TO_CLICK","HOST_MOUSE_SPEED","CREDITS","INPUT_SETTINGS.RESET_TO_DEFAULT"};
+  const char*eng[]={a.title?"Language":"Language (main menu only)","Screenshake","Fast Mode","Phobia Mode","Show Run Timer","Show Hand Card Count","Long Press Confirmations","Text Effects","Skip Intro Logo","Tap to Click","Mouse Speed","Credits","Reset to Default"};
+  const char*zhs[]={a.title?"语言选项":"语言选项（仅可在主菜单调整）","屏幕抖动","加速模式","恐惧症模式","显示计时器","显示手牌计数","长按确认","文字特效","跳过开场Logo动画","轻触点击","鼠标速度","制作名单","恢复默认设置"};
+  const UiAction actions[]={UiAction::SettingsLanguage,UiAction::SettingsShakeUp,UiAction::SettingsFastMode,UiAction::SettingsPhobia,UiAction::SettingsRunTimer,UiAction::SettingsCardIndices,UiAction::SettingsLongPress,UiAction::SettingsTextEffects,UiAction::SettingsSkipIntroLogo,UiAction::SettingsTapToClick,UiAction::SettingsMouseFaster,UiAction::SettingsCredits,UiAction::SettingsReset};
+  const bool checked[]={false,false,a.fast_mode,a.phobia_mode,a.show_run_timer,a.show_card_indices,a.long_press,a.text_effects,a.skip_intro_logo,a.tap_to_click};
   for(unsigned i=a.settings_top;i<GeneralRows&&i<a.settings_top+GeneralVisible;++i){const int row_index=int(i-a.settings_top),y=general_row(unsigned(row_index));const bool enabled=i!=0||a.title;
    const bool focus=!a.pointer.visible&&a.settings_item==i;Canvas row=c;if(!enabled)row.opacity=uint8_t(div255(unsigned(row.opacity)*115));
    text(row,label(keys[i],eng[i],zhs[i]),LabelLeft,y,ControlLeft-LabelLeft-3,RowHeight);
-   if(pointed(GeneralLeft,y,GeneralWidth,RowHeight)&&i<9){hover=int(i);hover_y=y;}
+   if(pointed(GeneralLeft,y,GeneralWidth,RowHeight)&&i<=MouseSpeedRow){hover=int(i);hover_y=y;}
    if(i==0){row.rect(ControlLeft,y,ControlWidth,RowHeight,rgb(44,67,79));
     text(row,locale_language_info(a.content.language()).name,ControlLeft+1,y,ControlWidth-11,RowHeight,bold,gold,true);
     if(a.content.version()>=RoomUi7ContentVersion)row.ui(source_art?I10_SettingsArrowDown:I7_SettingsArrowDown,ControlLeft+ControlWidth-8,y+(RowHeight-5)/2,5,5);
@@ -101,8 +101,15 @@ static void frontend_settings_screen(Canvas&c){
      row.ui(source_art?I10_SettingsArrowRight:I7_SettingsArrowRight,ControlLeft+ControlWidth-11,y+5,10,10,a.screen_shake<4?255:64);}
     if(focus)settings_reticle(c,ControlLeft,y,ControlWidth,RowHeight);
     c.action(ControlLeft,y,12,RowHeight,UiAction::SettingsShakeDown,a.screen_shake>0);c.action(ControlLeft+ControlWidth-12,y,12,RowHeight,UiAction::SettingsShakeUp,a.screen_shake<4);
-   }else if(i<9)tick(checked[i],i,ControlLeft,y,actions[i]);
-   else button(i==9?label("CREDITS_BUTTON_LABEL","View","查看"):label("RESET_SETTINGS_BUTTON","Reset","重置"),i,ControlLeft,y,i==9?I10_SettingsCredits:I10_SettingsReset,actions[i]);
+   }else if(i==MouseSpeedRow){
+    static const char*speeds[]={"50%","75%","100%","125%","150%"};
+    text(row,speeds[a.mouse_speed],ControlLeft+11,y,ControlWidth-22,RowHeight,bold,cream,true);
+    if(a.content.version()>=RoomUi7ContentVersion){row.ui(source_art?I10_SettingsArrowLeft:I7_SettingsArrowLeft,ControlLeft+1,y+5,10,10,a.mouse_speed?255:64);
+     row.ui(source_art?I10_SettingsArrowRight:I7_SettingsArrowRight,ControlLeft+ControlWidth-11,y+5,10,10,a.mouse_speed<4?255:64);}
+    if(focus)settings_reticle(c,ControlLeft,y,ControlWidth,RowHeight);
+    c.action(ControlLeft,y,12,RowHeight,UiAction::SettingsMouseSlower,a.mouse_speed>0);c.action(ControlLeft+ControlWidth-12,y,12,RowHeight,UiAction::SettingsMouseFaster,a.mouse_speed<4);
+   }else if(i<=TapRow)tick(checked[i],i,ControlLeft,y,actions[i]);
+   else button(i==MouseSpeedRow+1?label("CREDITS_BUTTON_LABEL","View","查看"):label("RESET_SETTINGS_BUTTON","Reset","重置"),i,ControlLeft,y,i==MouseSpeedRow+1?I10_SettingsCredits:I10_SettingsReset,actions[i]);
    if(i+1<GeneralRows)divider.rect(GeneralLeft,general_divider(unsigned(row_index)),GeneralWidth,1,rgb(232,220,190));
   }
   const int track_y=scroll_top(false),track_h=scroll_height(false);
@@ -159,7 +166,11 @@ static void frontend_settings_screen(Canvas&c){
  }
  const bool back_pointer=a.pointer.visible;if(a.settings_language_open)a.pointer.visible=false;
  native_original_back(c);a.pointer.visible=back_pointer;
- if(hover>=1&&!a.settings_language_open&&!a.frontend_confirm){
+ if(hover>=int(TapRow)&&hover<=int(MouseSpeedRow)&&!a.settings_language_open&&!a.frontend_confirm){
+  source_hover_box(c,hover==int(TapRow)?(english?"Tap to Click":"轻触点击"):(english?"Mouse Speed":"鼠标速度"),
+   hover==int(TapRow)?(english?"Tap to click at the visible cursor. Physical clicks always work.":"轻触可点击光标位置。始终可按下点击。"):
+    (english?"Adjust touchpad cursor speed. Arrows change this value.":"调整触摸板光标速度。方向键可调整。"),TooltipLeft,hover_y);
+ }else if(hover>=1&&!a.settings_language_open&&!a.frontend_confirm){
   const char*titles[]={"","SCREENSHAKE_HEADER","FASTMODE","PHOBIA_MODE","SHOW_RUN_TIMER_HEADER","SHOW_HAND_CARD_COUNT_HEADER","LONG_PRESS_CONFIRMATION_HEADER","TEXT_EFFECTS","SKIP_INTRO_LOGO_HEADER","KEYBOARD_ONLY_MODE_HEADER"};
   const char*descriptions[]={"","SCREENSHAKE_DESCRIPTION","FASTMODE_DESCRIPTION","PHOBIA_MODE_DESCRIPTION","SHOW_RUN_TIMER_DESCRIPTION","SHOW_HAND_CARD_COUNT_DESCRIPTION","LONG_PRESS_CONFIRMATION_DESCRIPTION","TEXT_EFFECTS_DESCRIPTION","SKIP_INTRO_LOGO_DESCRIPTION","KEYBOARD_ONLY_MODE_DESCRIPTION"};
   const char*body=hover==8?label(descriptions[hover],"Go directly to the main menu when the game starts.","在游戏启动后直接进入主菜单。"):a.content.world_string("settings_ui",descriptions[hover]);

@@ -84,7 +84,8 @@ static void character_screen(Canvas&c){
     if(a.pointer.visible&&a.pointer.y>=PortraitTop-2&&a.pointer.y<PortraitTop+PortraitHeight+2)
         for(unsigned i=0;i<=CharacterKinds;++i)if(a.pointer.x>=portrait_x(i)-1&&a.pointer.x<portrait_x(i)+PortraitWidth+1)hover=int(i);
     const bool random=a.character_random;
-    if(a.content.version()>=Ui12ContentVersion&&!a.character_departure.active()){
+    const bool available=a.character_available(random?CharacterKinds:unsigned(a.selected_character));
+    if(available&&a.content.version()>=Ui12ContentVersion&&!a.character_departure.active()){
         // These shared source masks belong to the currently offered action.
         // Prepare them while selection is visible, before the timed wipe.
         int masks[3];unsigned count=random?3:1;
@@ -101,7 +102,8 @@ static void character_screen(Canvas&c){
     const unsigned character=unsigned(a.selected_character);const int dx=motion.panel_offset(a.map_clock_ms);
     const auto&definition=character_definitions[character];
     const auto clip=a.content.version()>=RoomUi7ContentVersion?a.content.clip(int(FirstClip+character)):Clip{};
-    if(random){
+    if(!available)title_submenu_background(c,185);
+    else if(random){
         if(a.content.reduced_animations()&&a.content.version()>=SourceVersion)
             c.ui(I12_RandomBackground,0,0,320,240);
         else if(random_character_background(c,a.map_clock_ms,a.map_clock_ms-motion.panel_start,motion.panel_start)){}
@@ -124,17 +126,19 @@ static void character_screen(Canvas&c){
         c.picture(int(clip.first)+int(frame(character,a.map_clock_ms-motion.panel_start,clip.count)),0,0,320,240);
     }
     else c.ui(character_background(a.selected_character),0,0);
-    if(!random){motion.random_background.active=false;character_atmosphere(c,character,
+    if(!random&&available){motion.random_background.active=false;character_atmosphere(c,character,
         a.content.reduced_animations()?0:a.map_clock_ms-motion.panel_start,motion.panel_start);}
     const auto profile=a.callbacks.profile_render;
     if(profile)profile(RuntimeRenderPart::CharacterInfo,true);
     char description_key[96]{},description[1024]{},relic_text[1024]{};
     const char*character_key=random?"RANDOM_CHARACTER":definition.key;
     TextBuffer key{description_key,sizeof description_key,0};key.text(character_key);key.text(".description");
-    a.localized_text("characters",description_key,description,sizeof description);
+    if(available)a.localized_text("characters",description_key,description,sizeof description);
+    else a.character_unlock_text(random?CharacterKinds:unsigned(a.selected_character),description,sizeof description);
     const char*body=*description?description:random?(a.content.language()==2?"以随机角色开始爬塔之旅。":"Embark as a randomly chosen character."):character_summary(a.selected_character);
     const auto*relic=random?nullptr:relic_definition(definition.starting_relic);const RelicId relic_id=relic?RelicId(relic-relic_definitions):RelicId(0);
-    if(relic)a.relic_description(relic_id,relic_text,sizeof relic_text);
+    if(relic){if(available)a.relic_description(relic_id,relic_text,sizeof relic_text);
+        else{TextBuffer locked{relic_text,sizeof relic_text,0};locked.text(a.content.has_character_unlock_text()?a.content.string(character_unlock_assets::LockedRelicDescription):a.content.language()==2?"这个角色的遗物还尚未被发现。":"This character's relic is yet to be discovered.");}}
     Canvas body_font=c;body_font.bold_face=5;
     Canvas bold=c;bold.font_face=uint8_t(source_label_face(a.content.original_label_fonts(),5));
     Canvas name=c;name.font_face=uint8_t(source_label_face(a.content.original_label_fonts(),4));
@@ -145,21 +149,22 @@ static void character_screen(Canvas&c){
     if(a.content.version()>=RoomUi7ContentVersion){Canvas shade=c;shade.tint_red=shade.tint_green=shade.tint_blue=0;
         shade.nine_ui(I7_CharacterInfoPanel,dx+InfoPanelX,InfoPanelY,InfoPanelWidth,InfoPanelHeight,8,8,8,8,128);
     }else{const int skin=a.content.world_image("character","INFO_PANEL");if(skin>=0)c.nine_image(skin,dx+InfoPanelX,InfoPanelY,InfoPanelWidth,InfoPanelHeight,7,7,7,7);}
-    const char*title=a.content.world_title("characters",character_key);if(!*title)title=random?(a.content.language()==2?"随机":"Random"):definition.name;
+    const char*title=available?a.content.world_title("characters",character_key):a.content.has_character_unlock_text()?a.content.string(character_unlock_assets::LockedTitle):a.content.language()==2?"锁定":"Locked";if(!*title)title=random?(a.content.language()==2?"随机":"Random"):definition.name;
     const int title_size=character_name_size(name,title);
     character_info_name(name,title,dx+InfoX,top+(NameHeight-title_size-3)/2,title_size);
     const int stats_y=top+NameHeight+StatsOffset;
     c.picture(A_Heart,dx+InfoX,stats_y,StatsIcon,StatsIcon);
-    char hp[32]{};TextBuffer health{hp,sizeof hp,0};if(random)health.text("?" "?/??");else{health.number(definition.starting_hp);health.ch('/');health.number(definition.starting_hp);}
+    char hp[32]{};TextBuffer health{hp,sizeof hp,0};if(random||!available)health.text("?" "?/??");else{health.number(definition.starting_hp);health.ch('/');health.number(definition.starting_hp);}
     const int hp_x=dx+InfoX+StatsIcon+StatsLabelGap;
     character_info_text(bold,hp,hp_x,stats_y,InfoWidth,character_info_plan(bold,hp,InfoWidth),rgb(255,100,100));
     const int gold_x=hp_x+bold.width(hp,10)+StatsGap;
     c.picture(A_Coin,gold_x,stats_y,StatsIcon,StatsIcon);
-    const char*gold=random?"???":"99";
+    const char*gold=random||!available?"???":"99";
     character_info_text(bold,gold,gold_x+StatsIcon+StatsLabelGap,stats_y,30,character_info_plan(bold,gold,30),rgb(239,200,81));
     const int body_y=top+NameHeight+StatsHeight;
     const int body_height=InfoPanelY+InfoPanelHeight-14-body_y;
-    const auto relic_title_plan=character_info_plan(bold,relic?a.relic_title(relic_id):"",RelicTextWidth);
+    const char*relic_name=!relic?"":available?a.relic_title(relic_id):a.content.has_character_unlock_text()?a.content.string(character_unlock_assets::LockedRelicTitle):a.content.language()==2?"未知遗物":"Unknown Relic";
+    const auto relic_title_plan=character_info_plan(bold,relic_name,RelicTextWidth);
     const int total_height=description_height+(relic?6+mx(RelicIcon,relic_title_plan.rows*relic_title_plan.step+2+relic_plan.rows*relic_plan.step):0);
     const int overflow=mx(0,total_height-body_height);
     const int offset=native_room_marquee_offset(overflow,a.map_clock_ms-motion.panel_start);
@@ -174,8 +179,9 @@ static void character_screen(Canvas&c){
         const int relic_y=description_height+4-offset;
         Canvas relic_shadow=article;relic_shadow.tint_red=relic_shadow.tint_green=relic_shadow.tint_blue=0;
         relic_shadow.picture(a.relic_face_image(relic_id),text_x,relic_y+RelicIconY,RelicIcon,RelicIcon,128);
-        article.picture(a.relic_face_image(relic_id),text_x,relic_y+RelicIconY,RelicIcon,RelicIcon);
-        const char*relic_name=a.relic_title(relic_id);
+        Canvas relic_icon=article;
+        if(!available){const int outline=collection_assets::RelicOutline[relic_id];if(outline>=0)relic_icon.ui(outline,text_x,relic_y+RelicIconY,RelicIcon,RelicIcon,128);relic_icon.tint_red=relic_icon.tint_green=relic_icon.tint_blue=26;}
+        relic_icon.picture(a.relic_face_image(relic_id),text_x,relic_y+RelicIconY,RelicIcon,RelicIcon);
         const auto title_plan=character_info_plan(bold,relic_name,RelicTextWidth);
         character_info_text(article_bold,relic_name,text_x+RelicTextX,relic_y+RelicTitleY,RelicTextWidth,title_plan,rgb(239,200,81));
         character_info_text(article,relic_text,text_x+RelicTextX,relic_y+title_plan.rows*title_plan.step+2,RelicTextWidth,relic_plan,rgb(255,246,226));
@@ -190,28 +196,29 @@ static void character_screen(Canvas&c){
     const UiAction actions[]={UiAction::SelectIronclad,UiAction::SelectSilent,UiAction::SelectDefect,UiAction::SelectRegent,UiAction::SelectNecrobinder,UiAction::SelectRandomCharacter};
     const int portrait_outline=a.content.world_image("character","OUTLINE");
     for(unsigned i=0;i<=CharacterKinds;++i){
-        if(i==CharacterKinds&&!a.timeline_character_available(CharacterKinds))continue;
-        const bool unlocked=a.timeline_character_available(i==CharacterKinds?CharacterKinds:unsigned(RunModeCharacters[i]));
+        if(i==CharacterKinds&&!a.character_available(CharacterKinds))continue;
+        const bool unlocked=a.character_available(i==CharacterKinds?CharacterKinds:unsigned(RunModeCharacters[i]));
         const int center=portrait_center(i);const bool selected=i==selection;
         const int scale=int(motion.portrait_scale(i,a.map_clock_ms));
         // The existing portrait payload contains its original 132:195 image
         // inside a 36x40 transparent canvas. Preserve those margins here.
         const int ph=(34*scale+512)/1024,pw=i==CharacterKinds?(ph*132+98)/196:(30*scale+512)/1024,ow=(28*scale+512)/1024,oh=(35*scale+512)/1024;
         const unsigned model=i==CharacterKinds?CharacterKinds:unsigned(RunModeCharacters[i]);
-        const int y=PortraitTop+PortraitHeight/2;const int portrait=a.content.ui_image(i==CharacterKinds?unsigned(I12_RandomCharacter):character_portrait(Character(model)));
+        const int y=PortraitTop+PortraitHeight/2;const int portrait=a.content.ui_image(!unlocked&&a.content.has_character_unlock_assets()?character_unlock_assets::LockedPortraitFirst+model:i==CharacterKinds?unsigned(I12_RandomCharacter):character_portrait(Character(model)));
         Canvas shade=c;shade.tint_red=shade.tint_green=shade.tint_blue=0;shade.picture(portrait,center-pw/2+2,y-ph/2+2,pw,ph,64);
         if(selected&&portrait_outline>=0)c.picture(portrait_outline,center-ow/2,y-oh/2,ow,oh,motion.outline_alpha(a.map_clock_ms),presentation::Add);
-        small_material_icon(c,portrait,center-pw/2,y-ph/2,pw,ph,unlocked?motion.saturation(i,a.map_clock_ms):0,unlocked?motion.value(i,a.map_clock_ms):350);
-        c.action(portrait_x(i)-1,PortraitTop-2,PortraitWidth+2,PortraitHeight+4,actions[model],unlocked);
+        small_material_icon(c,portrait,center-pw/2,y-ph/2,pw,ph,unlocked?motion.saturation(i,a.map_clock_ms):1000,unlocked?motion.value(i,a.map_clock_ms):1000);
+        if(!unlocked)c.ui(a.content.has_character_unlock_assets()?character_unlock_assets::Lock:unsigned(I7_MenuLock),center-14,y-18,28,36,102);
+        c.action(portrait_x(i)-1,PortraitTop-2,PortraitWidth+2,PortraitHeight+4,actions[model]);
     }
     if(profile)profile(RuntimeRenderPart::CharacterPortraits,false);
     // Back and Confirm keep their original positions around the portraits
     // in draw order. This part has two samples per character-screen frame.
     if(profile)profile(RuntimeRenderPart::CharacterControls,true);
-    native_original_confirm(c,UiAction::StartCharacter,motion.opened);
+    native_original_confirm(c,UiAction::StartCharacter,motion.opened,available);
     if(profile)profile(RuntimeRenderPart::CharacterControls,false);
     if(profile)profile(RuntimeRenderPart::CharacterAscension,true);
-    if(!a.practice_entry){
+    if(!a.practice_entry&&available){
         const uint32_t elapsed=a.map_clock_ms-motion.panel_start;
         const unsigned alpha=elapsed>=200?255:unsigned(elapsed)*255/200;
         const int rise=elapsed>=300?0:int((7*(4096-int(room_curve::back_out(room_curve::linear(elapsed,300))))+2048)/4096);
@@ -220,7 +227,7 @@ static void character_screen(Canvas&c){
         if(a.content.version()>=RoomUi7ContentVersion)panel.nine_ui(I7_TinyPanel,AscensionX,AscensionY+rise,AscensionWidth,AscensionHeight,3,3,3,3,128);
         else panel.dim(AscensionX,AscensionY+rise,AscensionWidth,AscensionHeight,128);
         if(a.selected_ascension){band.ui(I7_SettingsArrowLeft,AscensionX-12,AscensionY+rise,12,22);c.action(AscensionX-14,AscensionY-2,16,26,UiAction::RunAscensionDown);}
-        if(a.selected_ascension<10){band.ui(I7_SettingsArrowRight,AscensionX+AscensionWidth,AscensionY+rise,12,22);c.action(AscensionX+AscensionWidth-2,AscensionY-2,16,26,UiAction::RunAscensionUp);}
+        if(a.selected_ascension<a.character_max_ascension()){band.ui(I7_SettingsArrowRight,AscensionX+AscensionWidth,AscensionY+rise,12,22);c.action(AscensionX+AscensionWidth-2,AscensionY-2,16,26,UiAction::RunAscensionUp);}
         band.ui(U_TopBarAscension,AscensionX+2,AscensionY+rise,16,25);
         char number[8]{};TextBuffer count{number,sizeof number,0};count.number(a.selected_ascension);
         band.text_fitted(number,AscensionX+2,AscensionY+9+rise,16,10,White,10,true,true,Ink);

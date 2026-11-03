@@ -74,20 +74,37 @@ struct CalculatorForegroundPoll {
 template<class App,class Matrix>
 void dispatch_calculator_sample(CalculatorPadInput&keys,TouchpadCursor&cursor,
         TouchSample sample,uint16_t pad,uint32_t milliseconds,App&app,
-        bool allow_repeat,Matrix dispatch_matrix){
+        bool allow_repeat,Matrix dispatch_matrix,bool tap_to_click=false,unsigned speed=2){
+    // Collection classifies only side switches. Resolve the center in replay
+    // order, after any earlier keyboard sample, and retain that owner to up.
+    const bool mouse_before=app.pointer.visible;
+    if(!sample.valid)keys.blocked|=keys.pressed;
+    else if(!sample.pressed)keys.blocked=false;
+    const bool center=!keys.blocked&&sample.valid&&sample.width&&sample.height&&sample.x<=sample.width&&sample.y<=sample.height&&sample.pressed&&(!pad||pad==InputPad);
+    if(center&&!keys.pressed)keys.center_key=!app.pointer.visible;
+    keys.pressed=sample.valid&&sample.pressed;
+    if(center)pad=keys.center_key?InputPad:0;
+    if(keys.blocked)pad=0; // A failed read is cancellation, never a new press.
     const bool navigation=keys.dispatched||pad;
     if(navigation){
         app.pointer_cancel(true);cursor.reset(app.pointer.x,app.pointer.y);
         // Prime the actual release baseline before a later queued contact.
-        cursor.sample(sample,milliseconds);
+        cursor.sample(sample,milliseconds,tap_to_click,speed,app.pointer.visible);
     }else{
-        const auto pointer=cursor.sample(sample,milliseconds);
+        const auto pointer=cursor.sample(sample,milliseconds,tap_to_click,speed,app.pointer.visible);
         if(pointer.cancelled)app.pointer_cancel();
+        // This motion already passed the calculator's explicit intent gate;
+        // the desktop velocity heuristic must not reject it after a long idle.
+        if(pointer.moved)app.pointer.visible=true;
         if(pointer.moved||pointer.down||pointer.up||pointer.tap)app.pointer_move(pointer.x,pointer.y);
         if(pointer.down||pointer.tap)app.pointer_button(true);
         if(pointer.up||pointer.tap)app.pointer_button(false);
     }
     keys.dispatch_key(pad,milliseconds,app,allow_repeat);dispatch_matrix(allow_repeat);
+    // Rebase in the same sample as a keyboard takeover, before a later fresh
+    // contact can be mistaken for the tail of the preceding gesture.
+    if(mouse_before&&!app.pointer.visible){cursor.reset(app.pointer.x,app.pointer.y);
+        cursor.sample(sample,milliseconds,tap_to_click,speed,false);}
 }
 
 // Raw motion can keep the FIFO busy while a key remains held. Repeat once

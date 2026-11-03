@@ -266,9 +266,7 @@ struct Touchpad {
     spire::TouchSample read(){
         uint8_t b[12]={};
         if(!w||!h||!nd_touch_read(0,10,b))return {};
-        return {(uint16_t)(((unsigned)b[2]<<8)|b[3]),
-                (uint16_t)(((unsigned)b[4]<<8)|b[5]),(uint16_t)w,(uint16_t)h,
-                b[0]!=0,b[10]!=0,true};
+        return spire::decode_touchpad_report(b,w,h);
     }
 };
 static void capture_key_matrix(){
@@ -277,7 +275,7 @@ static void capture_key_matrix(){
     // Filesystem, decoder and coarse rendering boundaries all collect into
     // one FIFO. No IRQ, App input dispatch or animation update occurs here.
     const auto touch=resource_pad?resource_pad->read():spire::TouchSample{};
-    resource_pad_capture.capture(touch,app.keyboard_only);
+    resource_pad_capture.capture(touch,false);
     foreground_input_poll.mark(timer_ticks());
     input_latch.sample(matrix,resource_pad_capture.captured,touch,foreground_input_poll.milliseconds);
 }
@@ -456,7 +454,7 @@ extern "C" int main(int argc,char**argv){
         // dispatch even the first queued Save/Quit after a failed update.
         if(!runtime_call([&](){app.advance(elapsed);}))break;
         auto sample=pad.read();
-        resource_pad_capture.capture(sample,app.keyboard_only);
+        resource_pad_capture.capture(sample,false);
         uint16_t text_keys[8];read_key_matrix(text_keys);
         foreground_input_poll.mark(timer_ticks());
         input_clock=foreground_input_poll.milliseconds;
@@ -468,7 +466,7 @@ extern "C" int main(int argc,char**argv){
             if(quiet_ms>=100)input_ready=true;
             input_latch.reset(text_keys,input_ready,resource_pad_capture.captured,sample);
             for(unsigned row=0;row<8;++row)text_previous[row]=text_keys[row];pad_cursor.reset();
-            if(input_ready)pad_cursor.sample(sample,input_clock);
+            if(input_ready)pad_cursor.sample(sample,input_clock,app.tap_to_click,app.mouse_speed,app.pointer.visible);
             render_frame(update_start,resources_before,update_scene);continue;
         }
         input_latch.sample(text_keys,resource_pad_capture.captured,sample,input_clock);
@@ -496,11 +494,11 @@ extern "C" int main(int argc,char**argv){
         for(unsigned i=0;i<pending;++i){uint16_t pad_key=0;spire::TouchSample touch;uint32_t captured_at=0;
             input_latch.pop(text_keys,&pad_key,&touch,&captured_at);
             pad_changed|=pad_key!=pad_keys.dispatched;
-            if(!runtime_call([&](){spire::dispatch_calculator_sample(pad_keys,pad_cursor,touch,pad_key,captured_at,app,false,dispatch_matrix);}))break;
+            if(!runtime_call([&](){spire::dispatch_calculator_sample(pad_keys,pad_cursor,touch,pad_key,captured_at,app,false,dispatch_matrix,app.tap_to_click,app.mouse_speed);}))break;
             if(app.quit)break;}
         if(app.quit)break;
         if(!pending){pad_changed|=resource_pad_capture.captured!=pad_keys.dispatched;
-            if(!runtime_call([&](){spire::dispatch_calculator_sample(pad_keys,pad_cursor,sample,resource_pad_capture.captured,input_clock,app,false,dispatch_matrix);}))break;}
+            if(!runtime_call([&](){spire::dispatch_calculator_sample(pad_keys,pad_cursor,sample,resource_pad_capture.captured,input_clock,app,false,dispatch_matrix,app.tap_to_click,app.mouse_speed);}))break;}
         if(app.quit)break;
         if(!runtime_call([&](){spire::repeat_calculator_frame(input_latch,pad_keys,input_clock,app,pad_changed,matrix_changed,dispatch_matrix);}))break;
         if(app.quit)break;

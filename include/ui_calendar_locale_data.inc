@@ -1,6 +1,6 @@
 // Generated culture facts for the v0.111.0 language map.
 // .NET 9.0.22 / ICU 74.2; see tools/calendar_reference_oracle and
-// docs/calendar-locales-ui18-0.17.md. Unicode License V3: third_party/unicode/LICENSE.
+// docs/porting.md#calendar-localization. Unicode License V3: third_party/unicode/LICENSE.
 // Month strings are NUL-separated to avoid 12 pointers per language.
 static constexpr char Months0[]=
     "January\0"

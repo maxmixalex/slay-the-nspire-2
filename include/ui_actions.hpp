@@ -33,7 +33,7 @@ enum class UiAction {
     SettingsLanguagePrevious, SettingsLanguageNext,
     SelectRandomCharacter,
     SettingsSkipIntroLogo, RunSeedImport,
-    OpenTimeline, TimelineReveal,
+    SettingsTapToClick,SettingsMouseSlower,SettingsMouseFaster,
     SettingsLanguageFirst=256,SettingsLanguageLast=271
 };
 }

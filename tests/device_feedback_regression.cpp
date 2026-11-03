@@ -33,7 +33,7 @@ static void capture(const char* name){
 static void fresh(uint32_t sample,const char*seed=""){
     // Seed replay compares the same initial profile. The first run observes
     // Underdocks; keeping that fact would change the original act-selection draw.
-    clear_ui_progress(a.progress);timeline_initialize(a.progress.timeline,true);
+    clear_ui_progress(a.progress);legacy_progress_initialize(a.progress.timeline,true);
     a.progress_loaded=true;a.progress_dirty=false;a.ftue_profile_pending=false;
     a.game=State{};a.callbacks={store,restore,nullptr,entropy};a.run_number=a.map_clock_ms=0;entropy_value=sample;
     a.title=a.character_select=true;a.paused=a.help=a.library=a.settings_open=a.practice_entry=false;

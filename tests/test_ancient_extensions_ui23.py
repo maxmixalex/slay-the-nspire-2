@@ -14,6 +14,8 @@ class TypedCatalogIntegration(unittest.TestCase):
     def test_only_complete_endpoints_and_runtime_catalog_agree(self):
         source=Path(__file__).resolve().parents[1]/'src/content.cpp'
         text=source.read_text().split('ancient_catalog[][2]={',1)[1].split('};',1)[0]
+        self.assertIn('{character_unlock_assets::AuxiliaryCount,character_unlock_assets::Images}',text)
+        text=text.replace('{character_unlock_assets::AuxiliaryCount,character_unlock_assets::Images}','{7237,60302}')
         self.assertEqual(dict((int(a),int(b)) for a,b in re.findall(r'\{(\d+),(\d+)\}',text)),e.ENDPOINTS)
         for aux,images in e.ENDPOINTS.items():
             self.assertEqual(e.catalog(SimpleNamespace(aux=[0]*aux,images=[0]*images)),aux)
@@ -25,7 +27,7 @@ class TypedCatalogIntegration(unittest.TestCase):
         modules=[('tanx_scene_ui23',7215),('ancient_lights_ui23',7217),
                  ('ancient_materials_ui23',7220),('ancient_gpu_masks_ui23',7221),
                  ('tez_cinders_ui23',7222),('nonu_fog_ui23',7223),('ancient_turbulence_ui23',7224),
-                 ('neow_post_assets_ui23',7225),('vakuu_cinders_ui23',7226),('neow_particles_ui23',7227),('ancient_fire_ui23',7228),('neow_fire_ui23',7229)]
+                 ('neow_post_assets_ui23',7225),('vakuu_cinders_ui23',7226),('neow_particles_ui23',7227),('ancient_fire_ui23',7228),('neow_fire_ui23',7229),('character_unlock_assets',7237)]
         marker=object();image=lambda i:('actual-final-file',i)
         for end in e.ENDPOINTS:
             source=SimpleNamespace(aux=list(range(end)),images=list(range(e.ENDPOINTS[end])),data=marker,version=46)
@@ -37,6 +39,7 @@ class TypedCatalogIntegration(unittest.TestCase):
                     self.assertEqual(callback(len(prefix.images)-1),('actual-final-file',len(prefix.images)-1))
                     self.assertEqual(kwargs,{'final':True} if expected in (7220,7225,7229) else {})
                     calls.append(expected)
+                    if expected==7237:return set(range(60294,60302))
                 return check
             with contextlib.ExitStack() as stack:
                 for module,count in modules:stack.enter_context(patch(module+'.validate',validator(count)))

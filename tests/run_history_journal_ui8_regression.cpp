@@ -156,14 +156,16 @@ static void terminal_rewards(){
 }
 static bool load_profile(UiProgress&value){if(decode_ui_progress(bytes,bad_size,value))return true;return load_mode==2&&decode_ui_progress(backup,backup_size,value);}
 static void persistence(){
- scenario="NSH9 observed journal, corrupt late journal fields and application fallback publication";
- const size_t size=encode_ui_progress(a.progress,bytes,sizeof bytes);CHECK(size&&bytes[3]=='9'&&decode_ui_progress(bytes,size,restored));
+ scenario="NSHC observed journal, corrupt late journal fields and application fallback publication";
+ const size_t size=encode_ui_progress(a.progress,bytes,sizeof bytes);CHECK(size&&bytes[3]=='C'&&decode_ui_progress(bytes,size,restored));
  CHECK(restored.journal.count==a.progress.journal.count);for(unsigned i=0;i<restored.journal.count;++i)CHECK(!std::memcmp(&restored.journal.at(i),&a.progress.journal.at(i),sizeof(UiHistoryJournalEntry)));
  UiProgressSummary summary;CHECK(decode_ui_progress_summary(bytes,size,summary)&&summary.exists);
  // Keep corrupting the journal's final used field, before the NSH8 tutorial
- // flags and NSH9 metadata, rather than weakening this to a trailer test.
- CHECK(size>UiProgressMetadataBytes+3);
- std::memcpy(backup,bytes,size);backup_size=size;bytes[size-UiProgressMetadataBytes-3]=255;bad_size=size;
+ // flags, run metadata, legacy slots and character mask; this must remain
+ // a journal validation check, rather than corrupting a new trailer field.
+ constexpr unsigned suffix=UiProgressMetadataBytes+4*(UiHistoryCapacity+1)+7+5*EpochCount+1;
+ CHECK(size>suffix+3);
+ std::memcpy(backup,bytes,size);backup_size=size;bytes[size-suffix-3]=255;bad_size=size;
  CHECK(!decode_ui_progress(bytes,size,restored));
  // Profile cards intentionally read only the small statistics prefix; that
  // preview never publishes a history tail as a loaded profile.
@@ -188,6 +190,7 @@ static void persistence(){
  }
  scenario="legacy live floor continues forward while its earlier observations remain unknown";
  start();a.progress.journal={};a.progress.current_saved_at=a.progress.current_saved_revision=0;
+ a.progress.timeline={};a.progress.character_unlocks=0; // Explicit NSH6 fixture.
  for(auto&ch:a.progress.current.build_id)ch=0;for(auto&r:a.progress.history)for(auto&ch:r.build_id)ch=0;
  CHECK(encode_ui_progress(a.progress,bytes,sizeof bytes)&&bytes[3]=='6');
  {UiCoreObserver observer(a);CHECK(event_add_deck_card(a.game,{Bash,1})>=0);}

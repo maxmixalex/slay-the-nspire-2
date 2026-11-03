@@ -24,201 +24,57 @@ def resource_version(path):
 
 
 def readme(info):
-    profile = info.get('animation_profile', 'animated')
-    stage_match = re.match(r'(ui[0-9]+)(?:$|[-_])', info.get('stage', ''), re.IGNORECASE)
-    delivery_stage = stage_match[1].lower() if stage_match else ''
-    ui25 = bool(delivery_stage and int(delivery_stage[2:]) >= 25)
-    converter_windows = f'nspire2-convert-{delivery_stage}.exe' if ui25 else 'nspire2-convert.exe'
-    converter_linux = f'nspire2-convert-{delivery_stage}-linux' if ui25 else 'nspire2-convert'
-    edition_names = ('''三个ZIP / Three ZIPs
-full-animated-bilingual = 完整动画中英主包 / full-animation English and Simplified Chinese installer
-no-character-animation-bilingual = 无人物/怪物连续动画中英主包 / reduced-actor English and Simplified Chinese installer
-optional-languages = 两种模式各14种额外语言 / fourteen extra languages for each edition
-\n''' if ui25 else '')
-    animation = ('本包仅保留必要人物/怪物动作姿态，保留原有动作时长；Ancient房间人物及背景效果保持入场姿态，卡牌和UI仍按各自时钟运行。启动器自动识别，无需切换设置。\n'
-                 'This edition keeps essential actor poses and original action durations. Ancient NPC/background effects hold their entry pose; card and UI clocks continue. The launcher detects it automatically.\n') \
-                if profile == 'no-animations' else \
-                ('本包包含完整采样人物/怪物动画。\nThis edition includes the complete sampled actor animations.\n')
-    shared = ('data/nSpire2.dat.tns         公共资源索引 / artwork index\n' +
-              ''.join('data/'+name+'\n' for name in PART_FILES)) if info.get('multipart_artwork') else \
-             'data/nSpire2.dat.tns         公共图片与动画 / shared artwork and animation\n'
-    sources = ''
-    for key, label in (('runtime', 'Runtime'), ('resource', 'Resource converter')):
-        actual = info[key + '_checkpoint']
-        published = info.get(key + '_source_ref',
-                             None if info.get('local_checkpoints') else actual)
-        if published is None:
-            sources += f'{label} source checkpoint (local): {actual}\n'
-        elif published == actual:
-            sources += f'{label} source: https://github.com/maxmixalex/slay-the-nspire-2/tree/{published}\n'
-        else:
-            relation = info.get(key + '_source_relation', 'equivalent_tree')
-            source_label = (f'Published equivalent {label.lower()} source' if relation == 'equivalent_tree'
-                            else 'Published converter implementation/source reference (not an equivalent whole source tree)')
-            sources += (f'Actual {label.lower()} build checkpoint (local): {actual}\n'
-                        f'{source_label}: '
-                        f'https://github.com/maxmixalex/slay-the-nspire-2/tree/{published}\n')
-    if not info.get('runtime_source_ref') and not info.get('resource_source_ref') and info.get('local_checkpoints'):
-        sources += 'These source checkpoints have not been published to GitHub.\n'
-    documentation = info.get('documentation_checkpoint')
-    if documentation:
-        sources += ("Documentation: https://github.com/maxmixalex/slay-the-nspire-2/blob/"
-                    f"{documentation}/docs/ui23-retained-differences.md\n")
-    ledger_zh = '上列独立文档链接' if documentation else '上列运行源代码中的 docs/ui23-retained-differences.md'
-    ledger_en = ('the separately linked documentation above' if documentation else
-                 'docs/ui23-retained-differences.md in the runtime source above')
-    validation = ''
-    ui24 = bool(re.match(r'ui(?:2[4-9]|[3-9][0-9])(?:$|[-_])', info.get('stage', ''), re.IGNORECASE))
-    timeline = ('时间线 / Timeline | 57个原版节点的获得、揭示、分数与解锁链已接入正常界面和存档；原版Early Access占位仍不可用。旧档保留兼容开放，不伪造历史日期。57 source Epochs, obtain/reveal state, score and unlock chains are connected to normal UI and saves. Source Early Access placeholders remain unavailable. Legacy profiles retain compatibility access without invented dates.\n' if ui24 else '')
-    missing = '音频和多人游戏当前未实现。Audio and multiplayer are not implemented.' if ui24 else '音频、多人游戏和Timeline当前未实现。Audio, multiplayer and Timeline are not implemented.'
-    seed = ('种子输入64个UTF-8字节；更长ASCII文本可经配套转换器编码后，用自定义模式的导入种子码功能完整导入。Seed text accepts 64 UTF-8 bytes; the matching converter can encode complete longer ASCII input for the explicit Import seed code mode.' if ui24 else '种子64个UTF-8字节。Seed text accepts 64 UTF-8 bytes.')
-    compatibility = (f'''升级兼容 / Save compatibility
-保留整个 state 文件夹。第一档局面为 state/nSpire2.sav.tns，进度为 state/nSpire2.progress.tns；第二/三档分别使用 nSpire2.sav.p2.tns、nSpire2.progress.p2.tns 与 p3 文件。设置、历史、语言、备份也在 state。
-{delivery_stage.upper()}可读取旧版v3–v17局面、NSHA及更早进度；保存后写v18/NSHB，旧启动器不能保证读取新格式。需要回退时，使用升级前完整备份的 state 与其配套旧程序/资源。
-Preserve the entire state folder. Profile one uses state/nSpire2.sav.tns and state/nSpire2.progress.tns. Profiles two/three insert .p2/.p3 before .tns, such as nSpire2.sav.p2.tns and nSpire2.progress.p2.tns. Settings, history, language and backups also live there.
-{delivery_stage.upper()} reads v3–v17 runs and NSHA and older progress. New saves use v18/NSHB; older launchers may not read them. To roll back, restore the complete pre-upgrade state backup together with its matching old launcher/resources.
+    version=info.get('base_version',info['version'])
+    edition='精简动画 / reduced animation' if info['animation_profile']=='no-animations' else '完整动画 / full animation'
+    return f'''Slay the Nspire 2 {version} — {edition}
+Reference: Slay the Spire 2 v0.111.0 / 41cef1ea
 
-时间线 / Timeline
-从主菜单打开时间线，选择节点按 Enter 查看，再按 Enter 揭示已获得的节点。新档按原版解锁；旧档兼容保留已开放内容，不补造过去的获得时间。
-Open Timeline from the title menu. Select an Epoch and press Enter to inspect, then Enter again to reveal an obtained Epoch. Fresh profiles follow source unlocks; legacy profiles retain existing content access without invented obtain dates.
+安装 / Install
+full.zip 与 reduced.zip 任选其一，两个主包均含英语和简体中文。
+将 nSpire2.tns 和完整 data 文件夹放在计算器同一目录，使用 Ndless 打开 nSpire2.tns。
+Choose either full.zip or reduced.zip. Both include English and Simplified Chinese.
+Copy nSpire2.tns and the complete data folder into one directory on a color TI-Nspire with Ndless, then open nSpire2.tns.
 
-长 ASCII 种子 / Longer ASCII seeds
-普通ASCII种子可以直接输入；64是直接输入框的UTF-8字节容量，不是游戏或操作系统的种子上限。
-PowerShell运行 ./{converter_windows} --encode-seed-file ./seed.txt；Linux运行 ./{converter_linux} --encode-seed-file seed.txt。也可使用 --encode-seed "完整ASCII种子"。
-计算器自定义模式中打开种子输入框，按上下切换到“导入种子码”，输入输出的 SEED64- 加16位十六进制码，再确认。不要在普通文本模式输入此码；普通文本始终按原版文本规则哈希。
-Ordinary ASCII seeds can be entered directly. The 64-byte value is the direct text field's UTF-8 capacity, not a game or operating-system seed limit.
-In PowerShell, run ./{converter_windows} --encode-seed-file ./seed.txt; on Linux, run ./{converter_linux} --encode-seed-file seed.txt. Either also accepts --encode-seed "complete ASCII seed".
-In Custom Run, open the seed field and use Up/Down to select Import seed code. Enter the generated SEED64- plus16 hexadecimal digits and confirm. Ordinary text mode always hashes the text using the original rules; it does not auto-detect import codes.
-''' if ui24 else '')
-    conversion = (f'''自行转换原版数据 / Convert your own original installation
-将单独下载的 {converter_windows} 或 {converter_linux} 放入你拥有的 v0.111.0 / 41cef1ea 原版游戏目录，在该目录打开终端。
-零参数运行默认生成英语和简体中文；Windows也可双击EXE。各次转换依次运行，语言与资源必须来自同一次转换。
-Place the separately downloaded {converter_windows} or {converter_linux} in your own v0.111.0 / 41cef1ea game directory and open a terminal there.
-Running without arguments produces English and Simplified Chinese. Windows users may also double-click the EXE. Run conversions sequentially and keep each output family together.
+升级前退出游戏并备份整个 state 文件夹。删除旧 data，复制新 data 并替换 nSpire2.tns；保留原 state，不用空文件夹覆盖存档。
+语言、资源索引及所有用途文件须来自同一配套版本和动画档；可删除不需要的语言，但不能删除用途包。
+Exit and back up the entire state folder before updating. Replace the old data folder and nSpire2.tns; preserve your existing state folder.
+Keep the index, all artwork files and languages from the same matching conversion and animation edition.
+You may remove unwanted language files. Keep every artwork file.
 
-PowerShell:
-./{converter_windows}
-./{converter_windows} --no-animations
-./{converter_windows} --languages all --output ./nSpire2-converted-all-languages
-./{converter_windows} --no-animations --languages all --output ./nSpire2-converted-no-animations-all-languages
+额外语言 / Additional languages
+languages.zip 的 animated/data 配 full.zip，no-animations/data 配 reduced.zip。
+仅复制需要的 nSpire2.<language>.dat.tns 到游戏 data；在设置中选择语言。自行转换的数据只能使用同次转换的语言。
+Use animated/data with full.zip or no-animations/data with reduced.zip. Copy only the desired locale files into the game's data folder, then select a language in Settings.
+Independently converted data needs its own matching locale files.
 
-Linux:
-chmod +x ./{converter_linux}
-./{converter_linux}
-./{converter_linux} --no-animations
-./{converter_linux} --languages all --output ./nSpire2-converted-all-languages
-./{converter_linux} --no-animations --languages all --output ./nSpire2-converted-no-animations-all-languages
-
-无需另外安装Python或.NET；工具内置所需运行时，内部仍使用Python，并非纯C++转换器。
-默认输出 nSpire2-converted；--no-animations 默认输出 nSpire2-converted-no-animations。输出中的data须配套本发布的启动器；转换器不生成启动器。
-No separate Python or .NET installation is required. The standalone tool bundles its runtimes and still uses Python internally; it is not a pure C++ converter.
-Default output is nSpire2-converted, or nSpire2-converted-no-animations with --no-animations. Use its data directory with this release's matching launcher; the converter does not generate a launcher.
-\n''' if ui25 else '')
-    if ui24 or info.get('stage', '').startswith('ui23'):
-        validation = f'''
-验证范围 / Verification scope
-本包没有计算器实机测试记录，不能据此给出实机帧率或实机峰值内存。
-文件与资源校验摘要位于 data/BUILD-INFO.json；详细校验记录单独保存，不占计算器安装空间。
-原尺寸画质、原生运行与模拟器证据的范围及保留差异，见{ledger_zh}。
-No physical-calculator test is recorded for this package. Calculator FPS and physical peak RAM remain unmeasured.
-File and resource validation summaries are in data/BUILD-INFO.json; detailed records are kept separately.
-See {ledger_en} for visual, native/emulator evidence and remaining differences.
-
-具体边界 / Remaining boundaries
-项目 / Item | 本包状态 / Status
-七种附着与历史 / Afflictions and history | 七种附着使用连续材质与粒子；32场、96层、4096条通知为可归档工作窗口。旧版已经覆盖的数据不能恢复。Continuous materials/particles and disk-backed history pages are implemented; previously erased history cannot be recovered.
-画面与动画 / Rendering | 320×240 RGB565软件绘制，保留已说明的采样/噪声近似；未证明任意Spine混轨或未知原GPU随机历史等价。Software rendering retains documented sampling/noise bounds; arbitrary Spine mixing and unrecorded GPU random history are not established.
-服务与输入 / Services and input | 未提供云存档、在线排行榜、桌面时区/DST数据库或计算器IME。Cloud saves, hosted leaderboards, desktop timezone/DST database and calculator IME are not supplied.
-容量 / Capacity | 地图绘画2048点，达到容量时保留已有笔画并显示提示；这不是地图生成节点上限。{seed} 历史归档受存储空间、序号和文件偏移范围限制。Map annotations retain existing strokes and report a full 2048-point buffer; this does not limit generated map nodes. History is bounded by disk space, serial and file-offset ranges.
-新增提示语言 / New diagnostic text | 历史/归档错误与时间线状态提示提供简体中文和英语，其余语言显示英语；节点原文使用对应原版语言，缺失键回退英语。Port-authored history/archive errors and Timeline status labels use Simplified Chinese or English; original Epoch text uses the selected original locale, with English fallback for missing source keys.
-{timeline}未实现功能 / Unimplemented features | {missing} 本包不声称桌面功能全等。This package does not claim full desktop feature equivalence.
-实测范围 / Measurement | 已记录的模拟器结果不是实机帧率，未测实机峰值内存。Recorded emulator results are not physical-handheld FPS or measured physical peak RAM.
-'''
-    return f"""Slay the Nspire 2 — nSpire {info['version']} (StS II v0.111.0)
-
-安装 / Installation
-{edition_names}完整动画版（animated）与精简版（no-animations）两个主包任选其一，不要叠加安装。
-解压所选ZIP后，将根目录中的 nSpire2.tns 与 data 文件夹复制到计算器上同一个自选游戏目录；首次安装也可复制空 state 文件夹，随后打开该目录中的 nSpire2.tns。
-可选语言包中，从 animated/data 或 no-animations/data 取与主包对应的语言文件，放入游戏目录的 data；不要把可选包的两个顶层目录整体复制进去。
-Choose one main archive, animated or no-animations. Do not combine the two editions.
-Extract it and copy the root nSpire2.tns and data directory into the same calculator game directory of your choice. For a fresh installation, the empty state directory may also be copied.
-From the optional-language archive, take only the desired files from the matching animated/data or no-animations/data directory and place them in the game's data directory.
-Open nSpire2.tns. A color TI-Nspire with Ndless is required.
-{animation}
-
-nSpire2.tns                  程序 / launcher
-{shared.rstrip()}
-data/nSpire2.eng.dat.tns     English
-data/nSpire2.zhs.dat.tns     简体中文
-state/                      局面、历史、设置、语言和档位 / saves and settings
-
-只安装需要的语言文件。设置中可切换已安装语言；语言选择全局保存。
-公共资源索引、全部用途包与语言文件必须来自同一次配套打包/转换，并采用相同动画档，不能按用途删减。
-升级前退出游戏，保留已有 state 文件夹及其中的档案，不要用包内的空 state 覆盖它。
-删除游戏目录中旧的整个 data 文件夹，然后传入本包的完整 data 文件夹并替换 nSpire2.tns。
-可删除新 data 中不需要的语言文件，但必须保留配套的新索引和全部用途包。
-之前安装的可选语言也必须换成本轮对应文件，不能混用旧版。
-自行转换的资源必须使用同一次转换生成的可选语言，不能混用预制语言ZIP，即使版本和动画档相同。
-这同样适用于旧分包版升级，可避免传输时同时暂存旧大文件和新资源。
-等全部配套文件传输完成后再启动。可选语言只传需要的几种，不必安装全部十六种。
-首次启动按系统语言选择；对应语言缺失或无法加载时尝试英语，再选择首个可用语言。
-主菜单左上角可切换三个档案，各自保存局面、历史与游戏设置。
-程序会创建缺失的 state 文件夹。所有保存、临时文件、备份和诊断文件均写入 state。
-Install only the desired language files in data. Settings lists installed languages.
-Install the artwork index, every concern file and locales from the same matching packaging/conversion and animation profile. Every concern file is required.
-Exit the game before updating; keep existing files in state.
-Do not overwrite the existing state folder with the archive's empty state folder.
-Delete the entire old data folder first, then copy this archive's matching data folder
-and replace nSpire2.tns. You may omit unwanted locale files, but keep the
-matching index and every concern file.
-Replace previously installed optional languages with this release's matching files too.
-For freshly converted resources, use optional locales from that same conversion;
-do not mix them with the prebuilt locale ZIP, even when version/profile labels match.
-This also applies to updates from an older multipart installation and avoids
-temporarily storing both old large files and their replacements during transfer.
-Start only after the complete matching set is present.
-Install only the additional languages you need; all sixteen are not required.
-First launch follows the system language, then English, then the first usable language.
-Missing or unusable language resources fall back through the same sequence. Startup errors are English.
-The top-left profile button selects one of three independent run/history/settings profiles.
-Language is shared. The launcher creates state if necessary; all mutable files stay there.
-{compatibility}
-{conversion}
+本版 / This version
+已移除时间线界面和内容门槛；角色按各自前置角色的游玩进度解锁。新档教程从正常开局进入。
+Timeline screens and content gates are removed. Character availability follows independent prerequisite-character play progress. New profiles enter the tutorial through normal play.
+精简版保留人物/怪物必要姿态及动作时长；Ancient人物/背景保持入场姿态，卡牌和界面时钟继续运行。
+The reduced edition keeps essential actor poses and action durations. Ancient NPC/background effects hold their entry pose; card and UI clocks continue.
 
 操作 / Controls
-触摸板四边导航，中心点击；数字 1–9、0 选择第 1–10 张手牌。
-Enter 指向/确认；左右选择目标；Esc 返回/暂停。
-Tab 地图；Doc 牌组；Home/On 抽牌堆；Del 弃牌堆；Var 消耗牌堆。
-Menu 结束回合；自定义/每日挑战表单中用 Menu 开始；Shift 按住查看选牌界面下方的战场；Ctrl 在纯键盘模式下聚焦顶部栏。
-I 详情/地图图例，C 百科，V 状态，P 药水，R 遗物，O 读取。
-暂停菜单可保存或退出；两套键位可在设置中分别修改。
-制作人员名单中按住空格键加速滚动。
-Touchpad edges navigate; its centre clicks. Digits 1–9 and 0 select hand slots 1–10.
-Enter aims/confirms; arrows choose targets; Esc returns or pauses.
-Tab map; Doc deck; Home/On draw pile; Del discard; Var exhaust; Menu ends the turn or starts the Custom/Daily form.
-Hold Shift to peek below a card selection. Ctrl focuses the top bar in keyboard-only mode.
-I details/map legend; C compendium; V statuses; P potions; R relics; O load.
-Use the pause menu to save or exit. Settings has two separately remappable key banks.
-Hold Space to speed up the credits.
+方向键导航，触摸板移动指针并点击，Enter确认，Esc返回或暂停。数字1–9、0选择手牌，Menu结束回合。
+Tab地图，Doc牌组，Home/On抽牌堆，Del弃牌堆，Var消耗牌堆。Shift按住查看选择界面后的战场。
+设置中可调整触摸轻点、指针速度及两套按键。暂停菜单可保存或退出。
+Use arrows to navigate, the touchpad to move/click, Enter to confirm and Esc to go back or pause. Digits 1–9 and 0 select cards; Menu ends the turn.
+Tab opens the map, Doc the deck, Home/On the draw pile, Del the discard pile and Var the exhaust pile. Hold Shift to peek behind a selection.
+Settings includes Tap to Click, pointer speed and two remappable key banks. The pause menu saves or exits.
 
-原版控制台 / Developer console
-每个构建均包含控制台，不需要另一个启动器或编译开关。
-Flag 打开/关闭；输入命令后 Enter 执行；Tab 补全；方向键编辑/浏览历史；Esc 关闭。
-help 查看命令，help card 查看语法，例如 gold 10、card STRIKE_IRONCLAD、room Shop。
-调试命令本身不自动保存，主动保存会写入修改后的局面。
-Every build includes the console. Flag toggles it; Enter executes; Tab completes;
-arrows edit or browse history; Esc closes. Use help for available commands.
-Commands modify the current game without autosaving; an explicit Save persists the change.
+存档与转换 / Saves and conversion
+保留整个 state；三个档案各自保存局面、进度和设置，语言全局共享。旧存档可读取，回退时使用升级前整套备份。
+Preserve all of state. The three profiles have separate runs, progress and settings; language is shared. Older saves remain readable. Restore the complete pre-upgrade backup when rolling back.
+原版目录中运行配套转换器，默认生成中英完整数据；--no-animations 生成精简版，--languages all 生成全部16种语言。
+Run the matching converter in your owned original game directory. Its default produces full bilingual data; --no-animations selects reduced animation and --languages all includes all 16 original locales.
 
-版本 / Build
-Reference: v0.111.0 / 41cef1ea
-Resource format: NSP2/{info['resource_format']}; save format: v{info['save_version']}
-Installed program/resources: {sum(info['files'].values()):,} bytes before saves
-{sources.rstrip()}
-{validation.rstrip()}
-Source and third-party notices are included under data/licenses. Original game assets belong
- to Mega Crit and the respective rights holders.
-"""
+说明 / Notes
+320×240软件绘制及采样动画。音频、多人和在线服务未实现；未进行实体计算器测试。
+320×240 software rendering with sampled animation. Audio, multiplayer and online services are not implemented. Physical-calculator performance has not been measured.
+Source: https://github.com/maxmixalex/slay-the-nspire-2
+Program and resources: {sum(info['files'].values()):,} bytes before instructions, licenses and saves.
+详细文件记录见 BUILD-INFO.json；许可见 licenses。原版素材属于 Mega Crit 及各权利人。
+See BUILD-INFO.json for file details and licenses for notices. Original game assets belong to Mega Crit and their respective rights holders.
+'''
 
 
 def main():
@@ -234,8 +90,9 @@ def main():
     p.add_argument('--runtime-source-ref', help='Verified published equivalent runtime source; actual build checkpoint is retained (calculator packages only)')
     p.add_argument('--resource-source-ref', help='Published converter source reference; actual producer checkpoint is retained (calculator packages only)')
     p.add_argument('--resource-source-relation', choices=('equivalent_tree','published_implementation_reference'), default='equivalent_tree', help='Whether the published converter reference is an exact whole-tree equivalent')
+    p.add_argument('--resource-provenance',type=Path,help='Private resource lineage to include in BUILD-INFO.json')
     p.add_argument('--documentation-ref', help='Optional independent published documentation commit; does not relabel runtime or resources')
-    p.add_argument('--stage', default='ui22', help='Release suffix; validated against its complete content profile')
+    p.add_argument('--stage', default='ui26', help='Release suffix; validated against its complete content profile')
     args = p.parse_args()
     if not re.fullmatch('[A-Za-z0-9][A-Za-z0-9_-]*', args.stage):
         p.error('Stage must contain only letters, digits, underscores or hyphens')
@@ -285,11 +142,11 @@ def main():
     base_version = (ROOT/'VERSION').read_text().strip().split('-',1)[0]
     release_version = f'{base_version}-{args.stage}'
     stage_number = re.match(r'ui([0-9]+)(?:$|[-_])', args.stage, re.IGNORECASE)
-    timeline_schema = bool(stage_number and int(stage_number[1]) >= 24)
-    info = dict(version=release_version, base_version=base_version, reference='v0.111.0 / 41cef1ea', resource_format=version, save_version=18 if timeline_schema else 17,
-                progress_version=11 if timeline_schema else 10, progress_formats=[f'NSH{i}' for i in range(1,10)]+(['NSHA','NSHB'] if timeline_schema else ['NSHA']),
-                settings_version=6, calculator_run_storage='NSZ1 or raw NSV1',
-                calculator_history_storage='NSZ1 or raw NSH1-9/NSHA'+('/NSHB' if timeline_schema else ''),
+    info = dict(version=release_version, base_version=base_version, reference='v0.111.0 / 41cef1ea', resource_format=version, save_version=18,
+                progress_version=12,
+                progress_formats=[f'NSH{i}' for i in range(1,10)]+['NSHA','NSHB','NSHC'],
+                settings_version=7, calculator_run_storage='NSZ1 or raw NSV1',
+                calculator_history_storage='NSZ1 or raw NSH1-9/NSHA/NSHB/NSHC',
                 calculator_history_archive=dict(file='state/nSpire2.history.tns',container='NHA1',
                     record='NHR1',page='NHP2',readable_pages=['NHP1','NHP2']),
                 stage=args.stage,
@@ -305,6 +162,15 @@ def main():
                 files={name: path.stat().st_size for name, path in paths.items()})
     if args.documentation_ref:
         info['documentation_checkpoint'] = args.documentation_ref
+    if args.resource_provenance:
+        lineage=json.loads(args.resource_provenance.read_text(encoding='utf-8'))
+        if not isinstance(lineage,dict) or not isinstance(lineage.get('full_cold_conversion'),bool):
+            p.error('Resource provenance must explicitly state whether a full cold conversion was executed')
+        stage_source=lineage.get('new_stage_source',{})
+        if (stage_source.get('actual_checkpoint')!=args.resource_checkpoint or
+                stage_source.get('published_checkpoint')!=resource_source_ref):
+            p.error('Resource provenance does not match the actual and published producer checkpoints')
+        info['resource_provenance']=lineage
     validation_bytes = None
     if content_validation is not None:
         validation_bytes = (json.dumps(content_validation, ensure_ascii=False, sort_keys=True, indent=2)+'\n').encode('utf-8')
@@ -316,10 +182,9 @@ def main():
             detailed_record_bytes=len(validation_bytes), details_packaged=False)
     info['program_resource_sha256'] = {name: hashlib.sha256(path.read_bytes()).hexdigest()
                                       for name, path in paths.items()}
-    if timeline_schema or args.stage.startswith('ui23'):
-        info['physical_device_tested'] = False
-        info['calculator_fps_measured'] = False
-        info['physical_peak_ram_measured'] = False
+    info['physical_device_tested'] = False
+    info['calculator_fps_measured'] = False
+    info['physical_peak_ram_measured'] = False
     stem = f'Slay-the-Nspire-2-{release_version}-bilingual'
     archive = args.output / (stem + '-calculator.zip')
     offline = args.output / (stem + '-offline.html')

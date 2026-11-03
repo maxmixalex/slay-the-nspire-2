@@ -8,13 +8,13 @@ from zehn import build
 
 ROOT = Path(__file__).resolve().parents[1]
 # Keep renderers and hot kernels at -O2. Event rules and input dispatch use
-# -Oz; progress, Timeline and run/card generation use -Os, keeping 64-bit
+# -Oz; progress and run/card generation use -Os, keeping 64-bit
 # shifts inline. Map generation, renderers and combat kernels remain -O2.
 # Every release and decoder-validation entry uses this identical policy.
 SIZE_OPTIMIZATION = {
     'src/original_events.cpp': '-Oz',
     'src/ui_progress_codec.cpp': '-Os',
-    'src/timeline.cpp': '-Os',
+    'src/legacy_progress.cpp': '-Os',
     'src/ui_input.cpp': '-Oz',
     'src/pointer.cpp': '-Oz',
     'src/run.cpp': '-Os',
@@ -79,7 +79,7 @@ def main() -> None:
         'src/resource_source.cpp',
         'src/storage_source.cpp',
         'src/ui_progress_codec.cpp',
-        'src/timeline.cpp',
+        'src/legacy_progress.cpp',
         'src/content.cpp',
         'src/app.cpp',
         'src/pointer.cpp',

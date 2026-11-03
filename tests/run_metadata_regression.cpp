@@ -27,7 +27,7 @@ int main(){
     start(1041);CHECK(!std::strcmp(app.progress.current.build_id,UiCurrentBuildId));CHECK(!app.progress.current_saved_at);
     CHECK(save(app.game,canonical));CHECK(app.save_current_run());CHECK(app.saved_at==now&&app.progress.current_saved_at==now);
     CHECK(disk.size==canonical.size&&!std::memcmp(disk.bytes,canonical.bytes,disk.size));
-    CHECK(history[3]=='B'&&read_history(loaded)&&loaded.current_saved_at==now);
+    CHECK(history[3]=='C'&&read_history(loaded)&&loaded.current_saved_at==now);
     CHECK(loaded.timeline.flags==(TimelineInitialized|TimelineLegacyAccess));
     CHECK(!std::strcmp(loaded.current.build_id,UiCurrentBuildId));
     const auto first=history;const uint32_t actual_saved=now;
@@ -76,5 +76,5 @@ int main(){
     const auto leap=ui_calendar(951825600);CHECK(leap.year==2000&&leap.month==2&&leap.day==29&&leap.weekday==2&&leap.hour==12);
     const auto century=ui_calendar(4107542400u);CHECK(century.year==2100&&century.month==3&&century.day==1);
     const auto limit=ui_calendar(UINT32_MAX);CHECK(limit.year==2106&&limit.month==2&&limit.day==7&&limit.hour==6&&limit.minute==28);
-    std::printf("Run metadata: %u checks passed; canonical v18 unchanged by metadata, NSH8/9 compatibility migration to NSHB, actual save/revision binding, unknown legacy build and calendar boundaries.\n",checks);
+    std::printf("Run metadata: %u checks passed; canonical v18 unchanged by metadata, NSH8/9 compatibility and NSHC observed progress, actual save/revision binding, unknown legacy build and calendar boundaries.\n",checks);
 }

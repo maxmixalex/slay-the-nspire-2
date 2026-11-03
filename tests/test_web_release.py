@@ -42,12 +42,16 @@ class WebReleaseTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as folder:
             root=Path(folder);resources(root)
             (root/'launcher.tns').write_bytes(b'public synthetic launcher')
+            provenance={'full_cold_conversion':False,'accepted_prefix':{'resource_checkpoint':'e'*40},
+                        'new_stage_source':{'actual_checkpoint':'b'*40,'published_checkpoint':'d'*40}}
+            (root/'provenance.json').write_text(json.dumps(provenance))
             argv=['package_release','--launcher',str(root/'launcher.tns'),
                 '--common',str(root/'nSpire2.dat.tns'),'--eng',str(root/'nSpire2.eng.dat.tns'),
                 '--zhs',str(root/'nSpire2.zhs.dat.tns'),'--calculator-only',
                 '--output',str(root/'release'),'--runtime-checkpoint','a'*40,
                 '--resource-checkpoint','b'*40,'--runtime-source-ref','c'*40,
-                '--resource-source-ref','d'*40,'--stage','public-web']
+                '--resource-source-ref','d'*40,'--stage','public-web',
+                '--resource-provenance',str(root/'provenance.json')]
             with mock.patch.object(sys,'argv',argv),redirect_stdout(io.StringIO()):package_release.main()
             with zipfile.ZipFile(next((root/'release').glob('*.zip'))) as archive:
                 info=json.loads(archive.read('data/BUILD-INFO.json'))
@@ -56,11 +60,10 @@ class WebReleaseTest(unittest.TestCase):
                 self.assertEqual(info['resource_checkpoint'],'b'*40)
                 self.assertEqual(info['runtime_source_ref'],'c'*40)
                 self.assertEqual(info['resource_source_ref'],'d'*40)
+                self.assertEqual(info['resource_provenance'],provenance)
                 self.assertTrue(info['local_checkpoints'])
-                self.assertIn('Actual runtime build checkpoint (local): '+'a'*40,readme)
-                self.assertIn('Actual resource converter build checkpoint (local): '+'b'*40,readme)
-                self.assertIn('/tree/'+'c'*40,readme)
-                self.assertIn('/tree/'+'d'*40,readme)
+                self.assertIn('BUILD-INFO.json',readme)
+                self.assertNotIn('Runtime checkpoint:',readme)
                 self.assertNotIn('/tree/'+'a'*40,readme)
                 self.assertNotIn('/tree/'+'b'*40,readme)
 
@@ -146,10 +149,10 @@ class WebReleaseTest(unittest.TestCase):
                 self.assertTrue(info['local_checkpoints']);self.assertTrue(info['multipart_artwork'])
                 self.assertFalse(info['calculator_only'])
                 readme=archive.read('data/README.txt').decode()
-                self.assertIn('Exit the game before updating; keep existing files in state.',readme)
-                self.assertIn("Delete the entire old data folder first, then copy this archive's matching data folder",readme)
-                self.assertIn("Do not overwrite the existing state folder with the archive's empty state folder.",readme)
-                self.assertIn('older multipart installation',readme)
+                self.assertIn('preserve your existing state folder.',readme)
+                self.assertIn("Replace the old data folder and nSpire2.tns",readme)
+                self.assertIn('back up the entire state folder',readme)
+                self.assertIn('Keep every artwork file.',readme)
                 self.assertNotIn('/tree/'+'a'*40,readme)
                 for name in ('nSpire2.dat.tns',*storage.PART_FILES):
                     self.assertEqual(archive.read('data/'+name),(root/name).read_bytes())

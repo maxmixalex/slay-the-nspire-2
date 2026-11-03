@@ -3,7 +3,7 @@
 #include "map_drawing.hpp"
 #include "ui_history_journal.hpp"
 #include "ftue.hpp"
-#include "timeline.hpp"
+#include "legacy_progress.hpp"
 
 namespace spire {
 // Separate optional UI history. Never inserted into a simulation save or RNG
@@ -12,8 +12,8 @@ namespace spire {
 constexpr unsigned UiHistoryCapacity=32,UiHistoryFloors=96;
 constexpr unsigned UiProgressCapacity=512*1024;
 constexpr unsigned UiBuildIdBytes=16;
-constexpr char UiCurrentBuildId[]="0.1.0-ui24";
-constexpr char UiCurrentVersionLabel[]="nSpire 0.1.0-ui24 (StS II v0.111.0)";
+constexpr char UiCurrentBuildId[]="0.1.1";
+constexpr char UiCurrentVersionLabel[]="nSpire 0.1.1";
 static_assert(sizeof UiCurrentBuildId<=UiBuildIdBytes,"Recorded build identifier must fit");
 constexpr unsigned UiProgressMetadataBytes=8+(UiHistoryCapacity+1)*UiBuildIdBytes;
 struct UiEnemyStatistics {uint32_t seen=0,wins=0,losses=0;};
@@ -93,8 +93,12 @@ struct UiProgress {
     // Successful canonical-run writes, independent of profile/settings saves.
     // The current run identity and canonical revision bind this timestamp.
     uint32_t current_saved_at=0,current_saved_revision=0;
+    // Retired NSHB data is retained solely for lossless profile migration.
     TimelineProgress timeline{};
+    // Independent playable-character bits. Zero denotes unmigrated legacy data.
+    uint8_t character_unlocks=0;
 };
+uint8_t profile_character_unlocks(const UiProgress&);
 size_t encode_ui_progress(const UiProgress&,uint8_t*,size_t);
 void clear_ui_progress(UiProgress&);
 // Decoding is used only on initial load into cleared UI storage. Failure does

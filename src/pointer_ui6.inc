@@ -80,11 +80,18 @@ static void pointer_overlay(Canvas&c){
     if(map_drawing_cursor(c))return;
     // NTargetingArrow hides the normal cursor while following a mouse target.
     if(!p.visible||targeting)return;
+    const int click_left=int32_t(p.click_until-a.map_clock_ms);
+    if(click_left>0&&click_left<=180){
+        Canvas pulse=c;pulse.opacity=uint8_t(div255(unsigned(pulse.opacity)*unsigned(click_left)*255/180));
+        const int radius=3+(180-click_left)/24;const uint16_t color=rgb(255,234,166);
+        pulse.rect(p.down_x-radius,p.down_y-radius,2*radius+1,1,color);pulse.rect(p.down_x-radius,p.down_y+radius,2*radius+1,1,color);
+        pulse.rect(p.down_x-radius,p.down_y-radius+1,1,2*radius-1,color);pulse.rect(p.down_x+radius,p.down_y-radius+1,1,2*radius-1,color);
+    }
     const auto*h=a.hit_at(p.x,p.y);bool inspect=false;
     if(a.library&&!a.library_tab&&h&&h->kind==HitKind::LibraryItem&&h->value>=0){
         CardKind ids[CardKinds];const unsigned count=a.library_items(ids);
         inspect=unsigned(h->value)<count&&a.card_library.was_seen(ids[h->value]);
     }
-    const int image=a.content.ui_image(inspect?I6_CursorInspect:p.held?I6_CursorTilted:I6_CursorDefault);
+    const int image=a.content.ui_image(inspect?I6_CursorInspect:(p.held||click_left>0)?I6_CursorTilted:I6_CursorDefault);
     if(image>=0)c.picture(image,p.x-3,p.y-(inspect?3:1),16,16);
 }

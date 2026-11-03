@@ -3,7 +3,7 @@
 static bool configured_run_confirm(const App&a){
     return a.title&&(a.run_mode.screen==RunMenu::Custom||a.run_mode.screen==RunMenu::Daily)&&
         !a.character_departure.active()&&!a.map_preview.open&&!a.run_seed_editing&&!a.frontend_confirm&&
-        !a.settings_open&&!a.profiles_open&&!a.timeline_open&&!a.compendium_open&&!a.library&&!a.help&&
+        !a.settings_open&&!a.profiles_open&&!a.compendium_open&&!a.library&&!a.help&&
         a.detail_card<0&&a.detail_item<0&&a.auxiliary.screen==AuxiliaryScreen::None&&!a.ftue.active();
 }
 const char* App::input_command_title(unsigned command)const{

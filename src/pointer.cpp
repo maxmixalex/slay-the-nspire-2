@@ -35,7 +35,6 @@ uint32_t App::input_context()const{
     if(game_over_available())return 0x474f0000u^uint32_t(game.world.run_seed)^uint32_t(game.world.run_seed>>32)^unsigned(game_over_summary);
     if(auxiliary.screen!=AuxiliaryScreen::None)return 0x41555800u|unsigned(auxiliary.screen)|(uint32_t(auxiliary.category_open)<<4)|(uint32_t(auxiliary.closing)<<5);
     if(settings_open&&binding_listening>=0)return 0x4b455900u|unsigned(binding_listening);
-    if(timeline_open)return 0x544c0000u|timeline_selected|(uint32_t(timeline_detail)<<8)|(uint32_t(frontend_confirm!=0)<<9);
     if(bestiary.open)return 0x42535400u|unsigned(bestiary.actions);
     if(run_mode.screen!=RunMenu::Closed)return 0x52554e00u|unsigned(run_mode.screen)|(uint32_t(map_preview.open)<<4)|(uint32_t(frontend_confirm!=0)<<5);
     return (uint32_t)game.phase|((uint32_t)shop_open<<6)|((uint32_t)event_reader<<7)|((uint32_t)title<<8)|((uint32_t)paused<<9)|
@@ -170,7 +169,6 @@ void App::pointer_move(int x,int y){
         if(!pointer.held&&game.phase==Phase::Reward&&!reward_cards&&!grimoire_select){
             UiAction actions[6];unsigned count=ui_reward_actions(game,actions);for(unsigned i=0;i<count;i++)if(actions[i]==(UiAction)h->value)cursor=i;
         }break;
-    case HitKind::TimelineEpoch:if(!pointer.held)timeline_selected=uint8_t(h->value);break;
     case HitKind::Menu:if(!pointer.held)menu=h->value;break;
     case HitKind::Choice:if(!pointer.held)cursor=h->value;break;
     case HitKind::LibraryItem:if(!pointer.held){library_selected=h->value;card_library.control=-1;}break;
@@ -212,7 +210,7 @@ void App::pointer_scroll(int rows){
     }
     if(game_over_available()&&game_over_summary){auto&m=game_over_presentation;m.scroll=uint16_t(clamp(int(m.scroll)+rows*26,0,m.scroll_maximum));game_over_focus=-1;pointer_cancel();return;}
     if(keyword_hover_scroll(*this,rows))return;
-    if((statistics_open||history_open||timeline_open||run_mode.screen==RunMenu::Custom||run_mode.screen==RunMenu::Daily)&&detail_card<0&&detail_item<0){pointer_cancel();progress_page_scroll.wheel(rows);return;}
+    if((statistics_open||history_open||run_mode.screen==RunMenu::Custom||run_mode.screen==RunMenu::Daily)&&detail_card<0&&detail_item<0){pointer_cancel();progress_page_scroll.wheel(rows);return;}
     sync_map_window();
     map_directional=false;sync_map_reticles();
     // A release after scrolling must not activate the control now underneath.
@@ -254,6 +252,7 @@ void App::pointer_scroll(int rows){
 void App::pointer_button(bool down){
     if(startup_logo.active()){if(down)startup_logo.cancel(map_clock_ms);pointer_cancel();return;}
     if(character_departure.active()){pointer_cancel();return;}
+    if(down&&!pointer.held){pointer.click_until=map_clock_ms+180;pointer.down_x=pointer.x;pointer.down_y=pointer.y;}
     if(debug_open){
         render();const auto*h=hit_at(pointer.x,pointer.y);
         if(down){pointer.held=true;pointer.captured=h?*h:HitRegion{};}
@@ -417,7 +416,6 @@ void App::pointer_button(bool down){
     }
     pointer.armed_card=-1;
     switch(hit.kind){
-    case HitKind::TimelineEpoch:timeline_activate(unsigned(hit.value));break;
     case HitKind::Menu:menu=hit.value;pointer_key(Key::Confirm);break;
     case HitKind::Choice:cursor=hit.value;if(game.phase==Phase::Map)map_scroll=0;pointer_key(Key::Confirm);break;
     case HitKind::Hand:

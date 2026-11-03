@@ -83,7 +83,7 @@ static void singleplayer_screen(Canvas&c){
   // This source paragraph has extra glyph tracking, unlike modifier prose.
   const char*description=frontend_text(a,"main_menu_ui",key,"");
   profile_text_box(c,description,x+8,MenuTop+102,76,70,{8,0,rgb(255,246,226),64},true,true,transform);
-  const bool enabled=a.timeline_mode_available(i==1?RunMode::Daily:i==2?RunMode::Custom:RunMode::Standard);
+  const bool enabled=a.run_mode_available(i==1?RunMode::Daily:i==2?RunMode::Custom:RunMode::Standard);
   if(!enabled){c.dim(left,MenuTop,width,MenuHeight,150);profile_text_box(c,a.content.language()==2?"未解锁":"Locked",x+4,MenuTop+85,84,20,{10,0,rgb(239,200,81),64},true,false);}
   c.action(x,MenuTop,MenuWidth,MenuHeight,actions[i],enabled);
  }
@@ -109,11 +109,12 @@ static void custom_run_screen(Canvas&c){
  for(unsigned i=0;i<CharacterKinds;++i){const int center=portrait_center(i),cy=CustomPortraitTop+CustomPortraitHeight/2,scale=portraits.portrait_scale(i,a.map_clock_ms);
   // The retained portrait has transparent margins around its132:195 image.
   const int w=(28*scale+512)/1024,h=(33*scale+512)/1024,ow=(26*scale+512)/1024,oh=(35*scale+512)/1024;
-  const int portrait=a.content.ui_image(character_portrait(RunModeCharacters[i]));Canvas shadow=c;shadow.tint_red=shadow.tint_green=shadow.tint_blue=0;shadow.picture(portrait,center-w/2+2,cy-h/2+2,w,h,64);
+  const bool unlocked=a.character_available(unsigned(RunModeCharacters[i]));
+  const int portrait=a.content.ui_image(!unlocked&&a.content.has_character_unlock_assets()?character_unlock_assets::LockedPortraitFirst+unsigned(RunModeCharacters[i]):character_portrait(RunModeCharacters[i]));Canvas shadow=c;shadow.tint_red=shadow.tint_green=shadow.tint_blue=0;shadow.picture(portrait,center-w/2+2,cy-h/2+2,w,h,64);
   if(i==selected){const int outline=a.content.world_image("character","OUTLINE");if(outline>=0)c.picture(outline,center-ow/2,cy-oh/2,ow,oh,portraits.outline_alpha(a.map_clock_ms),presentation::Add);}
-  const bool unlocked=a.timeline_character_available(unsigned(RunModeCharacters[i]));
-  small_material_icon(c,portrait,center-w/2,cy-h/2,w,h,unlocked?portraits.saturation(i,a.map_clock_ms):0,unlocked?portraits.value(i,a.map_clock_ms):350);
-  if(!editing)c.action(portrait_left(i),CustomPortraitTop,CustomPortraitWidth,CustomPortraitHeight,actions[i],unlocked);
+  small_material_icon(c,portrait,center-w/2,cy-h/2,w,h,unlocked?portraits.saturation(i,a.map_clock_ms):1000,unlocked?portraits.value(i,a.map_clock_ms):1000);
+  if(!unlocked)c.ui(a.content.has_character_unlock_assets()?character_unlock_assets::Lock:unsigned(I7_MenuLock),center-13,cy-17,26,34,102);
+  if(!editing)c.action(portrait_left(i),CustomPortraitTop,CustomPortraitWidth,CustomPortraitHeight,actions[i]);
  }
  // AscensionPanel's six children impose844px minimum width on its764px
  // HBox. Native container layout places the description at(229,791).
@@ -154,10 +155,11 @@ static void custom_run_screen(Canvas&c){
   modifier_text(a,RunModifier(i),text,sizeof text);setup_rich_text(list,text,left+18,y,ModifierTextWidth,height);
   if(!editing)c.hit(left,hit_top,ModifierContentWidth,hit_bottom-hit_top,HitKind::RunModifier,int(i));
  }
- setup_disclaimer(c,label("CUSTOM_RUN_SCREEN.disclaimer",""));
+ if(a.character_available(unsigned(a.selected_character)))setup_disclaimer(c,label("CUSTOM_RUN_SCREEN.disclaimer",""));
+ else{char locked[512]{};a.character_unlock_text(unsigned(a.selected_character),locked,sizeof locked);profile_text_box(c,locked,7,171,146,39,{8,0,gold,32},true,true);}
  if(!editing){if(scroller.maximum){c.ui(I6_ScrollbarTrack,311,45,6,153);c.ui(I6_ScrollbarEdge,311,37,6,8);ui_picture_transform(c,a.content.ui_image(I6_ScrollbarEdge),314,202,6,8,0,-1024);
    native_scrollbar_grabber(c,308,scroller.thumb_y(45,153)-7,12,14);c.hit(307,37,13,170,HitKind::ProgressThumb);}
-  native_original_back(c,mode.started);native_original_confirm(c,UiAction::StartConfiguredRun,mode.started);
+  native_original_back(c,mode.started);native_original_confirm(c,UiAction::StartConfiguredRun,mode.started,a.character_available(unsigned(a.selected_character)));
  }else{a.hit_count=0;c.hit(seed_left,SeedTop,seed_width,seed_height,HitKind::None);}
  c.action(9,110,144,14,UiAction::RunSeedImport);
 }

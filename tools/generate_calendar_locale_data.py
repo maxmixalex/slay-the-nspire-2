@@ -39,7 +39,7 @@ def generate(cultures):
         rows.append('    {'+', '.join(fields)+'}, // '+row['code']+' / '+row['culture'])
     text = ('// Generated culture facts for the v0.111.0 language map.\n'
             '// .NET 9.0.22 / ICU 74.2; see tools/calendar_reference_oracle and\n'
-            '// docs/calendar-locales-ui18-0.17.md. Unicode License V3: third_party/unicode/LICENSE.\n'
+            '// docs/porting.md#calendar-localization. Unicode License V3: third_party/unicode/LICENSE.\n'
             '// Month strings are NUL-separated to avoid 12 pointers per language.\n')
     for values, name in sets.items():
         text += 'static constexpr char '+name+'[]=\n    '+'\n    '.join(literal(value+'\0') for value in values)+';\n'

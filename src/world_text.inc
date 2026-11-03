@@ -260,6 +260,18 @@ void App::localized_text(const char*table,const char*key,char*out,size_t cap,int
  const char*raw=content.world_string(table,key);auto&source=storage.array();source[0]=0;TextBuffer b{source,sizeof source,0};b.text(raw);
  wt_formatter(out,cap,&x).format(source);
 }
+static LocalizedValue character_unlock_value(const void*opaque,const char*key){
+ return wt_equal(key,"Prerequisite")?LocalizedValue{true,0,1,static_cast<const char*>(opaque)}:LocalizedValue{};
+}
+void App::character_unlock_text(unsigned character,char*out,size_t capacity)const{
+ if(!capacity)return;out[0]=0;if(character>CharacterKinds)return;
+ const char*key=character==CharacterKinds?"RANDOM_CHARACTER":character_definitions[character].key;
+ char field[96]{},prerequisite[128]{};TextBuffer name{field,sizeof field,0};name.text(key);name.text(".unlockText");
+ const unsigned predecessor=character==unsigned(Character::Regent)?unsigned(Character::Silent):
+     character==unsigned(Character::Necrobinder)?unsigned(Character::Regent):unsigned(Character::Necrobinder);
+ TextBuffer title{prerequisite,sizeof prerequisite,0};title.text(content.world_title("characters",character_definitions[predecessor].key));
+ LocalizedTemplate format(out,capacity,character_unlock_value,prerequisite);format.for_language(content.language()).format(content.world_string("characters",field));
+}
 const char* App::monster_title(EnemyId id)const{
  const auto*d=enemy_definition(id);if(!d)return "";
  char key[128]{};TextBuffer b{key,sizeof key,0};b.text(d->key);b.text(".name");

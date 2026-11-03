@@ -28,7 +28,7 @@ class MandatoryArmContract(unittest.TestCase):
                 (root/'nSpire2.elf').write_bytes(raw+b'bad')
                 with self.assertRaisesRegex(ValueError,'ELF hash'):arm.verify(root)
 
-    def test_both_profiles_execute_mandatory_final_oracle_after_pixels(self):
+    def test_both_profiles_validate_packed_art_before_appending_raw_lock_sprites(self):
         for reduced in (False,True):
             recipe=Recipe('/game','/work','/runtime','dotnet','/noise','-')
             recipe.reference={'version':'test-only-reference','pck_sha256':'pinned'}
@@ -38,7 +38,13 @@ class MandatoryArmContract(unittest.TestCase):
             self.assertGreater(names.index('final-index46'),names.index(tail))
             self.assertEqual(rows['final-index46'].module,'@mandatory-orphan-prune')
             self.assertEqual(rows['final-index46'].arguments[0],str(rows[tail].outputs[0]))
-            publish=rows['publish-locales'];self.assertEqual(publish.arguments[publish.arguments.index('--artwork')+1],str(rows['final-index46'].outputs[0]))
+            locks=rows['character-locks46']
+            self.assertEqual(locks.module,'character_unlock_assets')
+            self.assertLess(names.index('final-index46'),names.index(locks.name))
+            self.assertEqual(locks.arguments[locks.arguments.index('--input')+1],str(rows['final-index46'].outputs[0]))
+            publish=rows['publish-locales']
+            self.assertLess(names.index(locks.name),names.index(publish.name))
+            self.assertEqual(publish.arguments[publish.arguments.index('--artwork')+1],str(locks.outputs[0]))
             self.assertIn('--exact-glyph-storage',publish.arguments)
             self.assertEqual(json.loads(rows['validate-install'].arguments[-1]),recipe.reference)
 

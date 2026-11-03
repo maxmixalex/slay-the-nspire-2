@@ -3,7 +3,7 @@
 The input is an existing privately built pack, never an original game archive.
 Every selected format-4 byte is recovered from exact RGB565/alpha tiles and its
 original scanline geometry before the new file is published. See
-docs/content-tiles-0.17.md for the on-disk contract and validation boundaries.
+docs/resource-format.md for the on-disk contract and validation boundaries.
 """
 from __future__ import annotations
 

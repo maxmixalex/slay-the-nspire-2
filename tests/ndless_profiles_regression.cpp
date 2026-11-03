@@ -115,7 +115,7 @@ static void preferences(){setup();spire::UiPreferences first{},second{},loaded{}
  CHECK(save_preferences(first)&&load_preferences(loaded)&&spire::ui_preference_flags(loaded)==spire::ui_preference_flags(first));
  CHECK(loaded.bindings_saved&&!std::memcmp(&loaded.bindings,&first.bindings,sizeof first.bindings));
  const auto slot_one=files.at(path(1,6));
- CHECK(slot_one.size()==spire::UiPreferencesBytes&&slot_one[4]==6);
+ CHECK(slot_one.size()==spire::UiPreferencesBytes&&slot_one[4]==7);
  CHECK(request_profile(2,false));service_profile();CHECK(app.success&&!load_preferences(loaded));
  CHECK(save_preferences(second)&&load_preferences(loaded)&&spire::ui_preference_flags(loaded)==spire::ui_preference_flags(second));
  CHECK(!std::memcmp(&loaded.bindings,&second.bindings,sizeof second.bindings));
