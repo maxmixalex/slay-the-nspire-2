@@ -1,4 +1,8 @@
-# UI24 original-install converter / UI24 原版资源转换器
+# Original-install converter / 原版资源转换器
+
+Player installation: [English](installation.md) · [简体中文](installation.zh-CN.md).
+This guide retains its existing filename so earlier technical references remain valid.
+当前玩家安装步骤见上述双语指南；保留原文件名，确保已有技术文档的链接继续有效。
 
 `convert.py` is the source entry point for the same converter that can be
 packaged as `nspire2-convert` (`nspire2-convert.exe` on Windows). The executable
@@ -20,7 +24,7 @@ output, respectively. If producing several editions, run them sequentially;
 these examples keep their output directories separate.
 
 将下载的桌面转换器放在上述原版游戏目录中，并在该目录打开终端。Windows
-可直接双击 `nspire2-convert-ui24.exe` 执行默认中英双语转换。
+可直接双击 `nspire2-convert.exe` 执行默认中英双语转换。
 以下每组转换命令分别生成中英双语完整动画版、中英双语精简版、全部 16 种语言
 的完整动画版和全部 16 种语言的精简版。按需选择；若要生成多种版本，请依次
 运行，等待前一条完成。这些示例分别写入不同的输出目录。
@@ -28,46 +32,47 @@ these examples keep their output directories separate.
 Windows PowerShell:
 
 ```powershell
-.\nspire2-convert-ui24.exe
-.\nspire2-convert-ui24.exe --no-animations
-.\nspire2-convert-ui24.exe --languages all --output .\nSpire2-converted-all-languages
-.\nspire2-convert-ui24.exe --no-animations --languages all --output .\nSpire2-converted-no-animations-all-languages
+.\nspire2-convert.exe
+.\nspire2-convert.exe --no-animations
+.\nspire2-convert.exe --languages all --output .\nSpire2-converted-all-languages
+.\nspire2-convert.exe --no-animations --languages all --output .\nSpire2-converted-no-animations-all-languages
 ```
 
 Linux: run `chmod` once after downloading, then choose a conversion command.
 Linux 下载后先执行一次 `chmod`，再选择所需转换命令：
 
 ```bash
-chmod +x ./nspire2-convert-ui24-linux
-./nspire2-convert-ui24-linux
-./nspire2-convert-ui24-linux --no-animations
-./nspire2-convert-ui24-linux --languages all --output ./nSpire2-converted-all-languages
-./nspire2-convert-ui24-linux --no-animations --languages all --output ./nSpire2-converted-no-animations-all-languages
+chmod +x ./nspire2-convert
+./nspire2-convert
+./nspire2-convert --no-animations
+./nspire2-convert --languages all --output ./nSpire2-converted-all-languages
+./nspire2-convert --no-animations --languages all --output ./nSpire2-converted-no-animations-all-languages
 ```
 
 Without `--output`, results are written inside the original game directory:
 `nSpire2-converted/data` for animated and
-`nSpire2-converted-no-animations/data` for reduced. Source-built bundles use
-the upstream names `nspire2-convert.exe` and `nspire2-convert`; substitute the
-appropriate filename if using one of those builds.
-未指定 `--output` 时，默认输出位于原版目录中的上述文件夹。自行从源码打包的
-上游文件名为 `nspire2-convert.exe` 和 `nspire2-convert`，使用时相应替换命令中的文件名。
+`nSpire2-converted-no-animations/data` for reduced. The examples use the upstream
+standalone names `nspire2-convert.exe` and `nspire2-convert`; if a download adds
+a version suffix, substitute its actual filename.
+未指定 `--output` 时，默认输出位于原版目录中的上述文件夹。上述命令使用通用文件名；
+若下载的程序带版本后缀，请相应替换命令中的文件名。
 
 The calculator detects the animation profile from the generated data. Both
 profiles use the same launcher. The desktop converter is a separate download
 from the three calculator installation ZIPs; run it on your computer and copy
 its complete generated `data/` directory as a matching set beside the calculator's
-`nSpire2.tns` launcher from the corresponding calculator package. The converter
-generates data only; it does not generate or download the launcher. Optional locale files must come from that same conversion
-and common-data output. Do not add languages from the prebuilt release's
-optional-language ZIP or from another conversion: the UI24 version and animation
-profile alone do not guarantee matching resource addresses. The provided
+`nSpire2.tns` launcher described in the [installation guide](installation.md).
+The converter generates data only; it does not generate or download the launcher.
+Optional locale files must come from that same conversion and common-data output.
+Do not add languages from the prebuilt release's
+optional-language ZIP or from another conversion: version and animation
+profile labels alone do not guarantee matching resource addresses. The provided
 prebuilt optional-language folders match the provided prebuilt game packages.
 
 计算器会从数据文件自动识别动画模式，两种模式共用同一个启动程序，无需在
 设置中切换。转换器与三个计算器安装 ZIP 分开提供：转换器在电脑上运行，
 转换器只生成数据，不生成或下载启动程序；应将生成的 `data/` 目录整套放在
-对应计算器安装包提供的 `nSpire2.tns` 旁边。额外语言文件也必须
+[安装指南](installation.zh-CN.md)所述的配套 `nSpire2.tns` 旁边。额外语言文件也必须
 来自同一次转换、与这套公共数据匹配；不要混用预构建发行包的可选语言或另一次
 转换的语言文件。版本号和动画模式相同并不保证资源地址相同。
 
@@ -78,13 +83,13 @@ Python、.NET SDK 或 C++ 编译器。这是打包后的完整转换流程，**�
 A different game location can be selected explicitly. In PowerShell:
 
 ```powershell
-.\nspire2-convert-ui24.exe --game "PATH TO ORIGINAL GAME" --output "PATH TO OUTPUT"
+.\nspire2-convert.exe --game "PATH TO ORIGINAL GAME" --output "PATH TO OUTPUT"
 ```
 
 On Linux:
 
 ```bash
-./nspire2-convert-ui24-linux --game "PATH TO ORIGINAL GAME" --output "PATH TO OUTPUT"
+./nspire2-convert --game "PATH TO ORIGINAL GAME" --output "PATH TO OUTPUT"
 ```
 
 English and Simplified Chinese are the default output. Use `--languages all`
@@ -100,12 +105,12 @@ The same executable can encode a complete original-game ASCII seed without
 converting resources or requiring the game files:
 
 ```powershell
-.\nspire2-convert-ui24.exe --encode-seed "the complete original seed"
-.\nspire2-convert-ui24.exe --encode-seed-file .\seed.txt
+.\nspire2-convert.exe --encode-seed "the complete original seed"
+.\nspire2-convert.exe --encode-seed-file .\seed.txt
 ```
 
-On Linux, use `./nspire2-convert-ui24-linux` with the same options, for example
-`./nspire2-convert-ui24-linux --encode-seed-file seed.txt`.
+On Linux, use `./nspire2-convert` with the same options, for example
+`./nspire2-convert --encode-seed-file seed.txt`.
 
 The second form streams a text file and keeps its complete seed identity even
 when the text is longer than the calculator entry field. Both commands print
@@ -163,10 +168,10 @@ has been measured.
 ## Reduced actor animation profile
 
 ```powershell
-.\nspire2-convert-ui24.exe --no-animations
+.\nspire2-convert.exe --no-animations
 ```
 
-On Linux, use `./nspire2-convert-ui24-linux --no-animations`.
+On Linux, use `./nspire2-convert --no-animations`.
 
 The default reduced output is `nSpire2-converted-no-animations`, separate from
 the animated output. An explicit output folder containing language files that
