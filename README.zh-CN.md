@@ -23,11 +23,13 @@
 
 <table width="100%">
   <tr>
-    <td width="50%" align="center"><strong>触摸板设置</strong></td>
-    <td width="50%" align="center"><strong>亡灵契约师与 Osty</strong></td>
+    <td width="33%" align="center"><strong>触摸板设置</strong></td>
+    <td width="33%" align="center"><strong>涅奥选礼 · 精简版</strong></td>
+    <td width="33%" align="center"><strong>亡灵契约师与 Osty</strong></td>
   </tr>
   <tr>
     <td align="center"><img src="docs/media/controls.gif" alt="使用触摸板调整轻触点击与鼠标速度" width="100%"></td>
+    <td align="center"><img src="docs/media/ancient.gif" alt="在精简版涅奥房间中选择馈赠" width="100%"></td>
     <td align="center"><img src="docs/media/gameplay.gif" alt="亡灵契约师与 Osty 战斗演示" width="100%"></td>
   </tr>
 </table>

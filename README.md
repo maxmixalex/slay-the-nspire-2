@@ -23,11 +23,13 @@ Ndless. Build a deck, choose your route and climb the Spire on a 320×240 screen
 
 <table width="100%">
   <tr>
-    <td width="50%" align="center"><strong>Touchpad settings</strong></td>
-    <td width="50%" align="center"><strong>Necrobinder &amp; Osty</strong></td>
+    <td width="33%" align="center"><strong>Touchpad settings</strong></td>
+    <td width="33%" align="center"><strong>Neow’s gift · Reduced edition</strong></td>
+    <td width="33%" align="center"><strong>Necrobinder &amp; Osty</strong></td>
   </tr>
   <tr>
     <td align="center"><img src="docs/media/controls.gif" alt="Changing Tap to Click and pointer speed with the touchpad" width="100%"></td>
+    <td align="center"><img src="docs/media/ancient.gif" alt="Choosing a gift in the reduced edition’s Neow room" width="100%"></td>
     <td align="center"><img src="docs/media/gameplay.gif" alt="Necrobinder and Osty in combat" width="100%"></td>
   </tr>
 </table>
