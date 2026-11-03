@@ -40,11 +40,14 @@ template<class Codec>void run(Codec&c,UiRunHistory&v,unsigned version){
     c.integer(v.last_battle);c.integer(v.finished_battle);c.integer(v.encounter);c.integer(v.last_enemy_identity);
     c.integer(v.character);c.integer(v.ascension);c.integer(v.outcome);c.integer(v.start_region);
     for(auto&r:v.regions)c.integer(r);
-    c.integer(v.floor_count);c.integer(v.partial);c.integer(v.event);c.integer(v.abandoned);c.integer(v.potion_count);
+    c.integer(v.floor_count);uint8_t seed_flags=uint8_t(v.partial|(v.seed_imported<<1));c.integer(seed_flags);
+    if constexpr(Codec::reading){v.partial=seed_flags&1;v.seed_imported=(seed_flags>>1)&1;}
+    if(seed_flags&~3u)c.good=false;c.integer(v.event);c.integer(v.abandoned);c.integer(v.potion_count);
     if(v.character>=CharacterKinds||v.ascension>10||v.outcome>3||v.deck_count>MaxDeck||v.relic_count>WorldRelicCapacity||v.floor_count>UiHistoryFloors||v.potion_count>MaxPotionSlots){c.good=false;return;}
     for(auto&potion:v.potions){c.integer(potion);if(potion>PotionKinds)c.good=false;}
     for(auto&ch:v.seed_text)c.integer(ch);
     if(v.seed_text[64])c.good=false;
+    if(v.seed_imported){uint64_t value;if(!reference::parse_seed_code(v.seed_text,value)||value!=v.run_seed)c.good=false;}
     for(auto&seen:v.battle_seen)c.integer(seen);
     for(unsigned i=0;i<v.deck_count&&c.good;++i)card(c,v.deck[i]);
     for(unsigned i=0;i<v.relic_count&&c.good;++i){c.integer(v.relics[i]);if(v.relics[i]>=WorldRelicKinds)c.good=false;}
@@ -158,8 +161,14 @@ template<class Codec>void progress(Codec&c,UiProgress&v,unsigned version){
         build(v.current);for(auto&r:v.history)build(r);
         if(!v.current.serial&&(v.current_saved_at||v.current_saved_revision))c.good=false;
     }
+
     if(version>=10){const auto prefix=[&](UiRunHistory&r){c.integer(r.history_prefix);if(r.history_prefix&~0x1ffffffu)c.good=false;};
         prefix(v.current);for(auto&r:v.history)prefix(r);
+    }
+    if(version>=11){
+        auto&t=v.timeline;c.integer(t.flags);c.integer(t.ancients_seen);c.integer(t.characters_known);c.integer(t.score);
+        for(unsigned i=0;i<EpochCount;++i){uint8_t state=unsigned(t.states[i]);c.integer(state);if constexpr(Codec::reading)t.states[i]=EpochState(state);c.integer(t.obtained_at[i]);}
+        if(!timeline_valid(t))c.good=false;
     }
 }
 }
@@ -179,7 +188,8 @@ size_t encode_ui_progress(const UiProgress&value,uint8_t*out,size_t capacity){
     if(value.current_saved_at||value.current_saved_revision||value.current.build_id[0])version=9;
     for(const auto&r:value.history)if(r.build_id[0])version=9;
     if(value.current.history_prefix)version=10;for(const auto&r:value.history)if(r.history_prefix)version=10;
-    out[0]='N';out[1]='S';out[2]='H';out[3]=version==10?'A':char('0'+version);for(unsigned i=4;i<8;++i)out[i]=0;
+    if(value.timeline.flags)version=11;
+    out[0]='N';out[1]='S';out[2]='H';out[3]=version>=10?char('A'+version-10):char('0'+version);for(unsigned i=4;i<8;++i)out[i]=0;
     // Encoder never changes a field. The shared schema keeps its reader and
     // writer in the same order without depending on C++ padding/endianness.
     Encoder c{out,capacity,8};progress(c,const_cast<UiProgress&>(value),version);
@@ -187,13 +197,15 @@ size_t encode_ui_progress(const UiProgress&value,uint8_t*out,size_t capacity){
     for(unsigned i=0;i<4;++i)out[4+i]=uint8_t(c.at>>(i*8));return c.at;
 }
 bool decode_ui_progress(const uint8_t*data,size_t size,UiProgress&out){
-    if(!data||size<8||size>UiProgressCapacity||data[0]!='N'||data[1]!='S'||data[2]!='H'||((data[3]<'1'||data[3]>'9')&&data[3]!='A'))return false;
+    if(!data||size<8||size>UiProgressCapacity||data[0]!='N'||data[1]!='S'||data[2]!='H'||((data[3]<'1'||data[3]>'9')&&(data[3]<'A'||data[3]>'B')))return false;
     uint32_t stored=0;for(unsigned i=0;i<4;++i)stored|=uint32_t(data[4+i])<<(i*8);if(stored!=size)return false;
-    clear_ui_progress(out);Decoder c{data,size,8};progress(c,out,data[3]=='A'?10:unsigned(data[3]-'0'));return c.good&&c.at==size;
+    clear_ui_progress(out);const unsigned version=data[3]>='A'?10+unsigned(data[3]-'A'):unsigned(data[3]-'0');
+    Decoder c{data,size,8};progress(c,out,version);if(c.good&&version<11){timeline_initialize(out.timeline,true);out.timeline.characters_known=out.characters_started;
+        for(unsigned i=0;i<CharacterKinds;++i)if(out.characters[i].wins||out.characters[i].losses)out.timeline.characters_known|=uint8_t(1u<<i);}return c.good&&c.at==size;
 }
 bool decode_ui_progress_summary(const uint8_t*data,size_t size,UiProgressSummary&out){
     out={};
-    if(!data||size<8||size>UiProgressCapacity||data[0]!='N'||data[1]!='S'||data[2]!='H'||((data[3]<'1'||data[3]>'9')&&data[3]!='A'))return false;
+    if(!data||size<8||size>UiProgressCapacity||data[0]!='N'||data[1]!='S'||data[2]!='H'||((data[3]<'1'||data[3]>'9')&&(data[3]<'A'||data[3]>'B')))return false;
     uint32_t stored=0;for(unsigned i=0;i<4;++i)stored|=uint32_t(data[4+i])<<(i*8);if(stored!=size)return false;
     Decoder c{data,size,8};uint32_t serial=0,ignored=0;uint8_t count=0,next=0,byte=0;
     c.integer(serial);c.integer(count);c.integer(next);c.integer(byte);c.integer(byte);c.integer(ignored);c.integer(ignored);

@@ -2,7 +2,7 @@
 
 ## Project source
 
-nSpire II experimental native runtime, version 0.17 development (2026-10-23).
+nSpire II is an unofficial native TI-Nspire port of Slay the Spire 2.
 SPDX-License-Identifier: GPL-3.0-or-later.
 
 This project uses the offline-content / native-runtime approach explored by
@@ -81,9 +81,12 @@ to Mega Crit and the respective rights holders. This unofficial prototype is
 not endorsed by or associated with Mega Crit. GPL licensing of this project's
 code grants no additional right to redistribute original game content.
 
-The private content pack and offline HTML are transformed from the installation
-provided for this project. Public source archives exclude original game data,
-assemblies, PCKs, ROMs, flash dumps, screenshots and font files.
+The converter builds private content packs from the player's installation.
+The public repository does not distribute game data, assemblies, PCKs, game
+fonts, calculator firmware or flash dumps. A gameplay recording in the
+documentation illustrates the running port; the game artwork it depicts
+remains the property of its respective rights holders. Raw capture sets and
+converted game data are not part of the public launcher download.
 
 `tools/animation.py` and `tools/setup_pose.py` implement a bounded converter for
 the supplied Spine 4.2 data. Selected bone, slot, deform and draw-order tracks

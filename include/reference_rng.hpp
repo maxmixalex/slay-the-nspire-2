@@ -15,6 +15,10 @@ bool canonicalize_seed(const char* input, char* output, size_t capacity);
 // legacy hash, including its fixed three-unit slicing and ignorable marks.
 // On failure the caller's hash is unchanged. Empty strings are valid hashes.
 bool seed_hash(const char* utf8, uint64_t& value);
+// Explicit portable seed import, never applied to ordinary text. Accept a
+// SEED64-<16 hex> code or its 16 hex digits; no O/I mapping or truncation.
+bool parse_seed_code(const char*,uint64_t&);
+void format_seed_code(uint64_t,char*); // 24 bytes including NUL
 // Bounded editing never inserts or removes a partial UTF-8 scalar.
 bool seed_append(char* utf8, size_t capacity, uint32_t scalar);
 void seed_backspace(char* utf8);

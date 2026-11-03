@@ -27,7 +27,8 @@ int main(){
     start(1041);CHECK(!std::strcmp(app.progress.current.build_id,UiCurrentBuildId));CHECK(!app.progress.current_saved_at);
     CHECK(save(app.game,canonical));CHECK(app.save_current_run());CHECK(app.saved_at==now&&app.progress.current_saved_at==now);
     CHECK(disk.size==canonical.size&&!std::memcmp(disk.bytes,canonical.bytes,disk.size));
-    CHECK(history[3]=='9'&&read_history(loaded)&&loaded.current_saved_at==now);
+    CHECK(history[3]=='B'&&read_history(loaded)&&loaded.current_saved_at==now);
+    CHECK(loaded.timeline.flags==(TimelineInitialized|TimelineLegacyAccess));
     CHECK(!std::strcmp(loaded.current.build_id,UiCurrentBuildId));
     const auto first=history;const uint32_t actual_saved=now;
     now+=600;app.progress_dirty=true;CHECK(app.persist_progress());CHECK(app.progress.last_saved_at==now);
@@ -60,17 +61,20 @@ int main(){
     std::memcpy(loaded.current.build_id,UiCurrentBuildId,sizeof UiCurrentBuildId);
     const auto nine=encode(loaded);CHECK(nine[3]=='9'&&nine.size()==eight.size()+UiProgressMetadataBytes);
     CHECK(!std::memcmp(nine.data()+8,eight.data()+8,eight.size()-8));
-    CHECK(decode_ui_progress(nine.data(),nine.size(),loaded)&&encode(loaded)==nine);
+    CHECK(decode_ui_progress(nine.data(),nine.size(),loaded)&&loaded.timeline.flags==(TimelineInitialized|TimelineLegacyAccess));
+    loaded.timeline={};CHECK(encode(loaded)==nine);
     UiProgressSummary summary{};CHECK(decode_ui_progress_summary(nine.data(),nine.size(),summary)&&summary.exists);
     CHECK(!decode_ui_progress(nine.data(),nine.size()-1,loaded));
     auto bad=nine;bad[eight.size()+8]=1;CHECK(!decode_ui_progress(bad.data(),bad.size(),loaded));
     bad=nine;for(unsigned i=0;i<UiBuildIdBytes;++i)bad[eight.size()+8+i]='x';CHECK(!decode_ui_progress(bad.data(),bad.size(),loaded));
     bad=nine;bad[eight.size()+8+UiBuildIdBytes]='x';CHECK(!decode_ui_progress(bad.data(),bad.size(),loaded));
-    CHECK(decode_ui_progress(eight.data(),eight.size(),loaded));CHECK(!loaded.current_saved_at&&!loaded.current.build_id[0]&&encode(loaded)==eight);
+    CHECK(decode_ui_progress(eight.data(),eight.size(),loaded));
+    CHECK(!loaded.current_saved_at&&!loaded.current.build_id[0]&&loaded.timeline.flags==(TimelineInitialized|TimelineLegacyAccess));
+    loaded.timeline={};CHECK(encode(loaded)==eight);
 
     const auto epoch=ui_calendar(0);CHECK(epoch.year==1970&&epoch.month==1&&epoch.day==1&&epoch.weekday==4&&!epoch.hour&&!epoch.minute);
     const auto leap=ui_calendar(951825600);CHECK(leap.year==2000&&leap.month==2&&leap.day==29&&leap.weekday==2&&leap.hour==12);
     const auto century=ui_calendar(4107542400u);CHECK(century.year==2100&&century.month==3&&century.day==1);
     const auto limit=ui_calendar(UINT32_MAX);CHECK(limit.year==2106&&limit.month==2&&limit.day==7&&limit.hour==6&&limit.minute==28);
-    std::printf("Run metadata: %u checks passed; canonical v17 unchanged, NSH1-9, actual save/revision binding, unknown legacy build and calendar boundaries.\n",checks);
+    std::printf("Run metadata: %u checks passed; canonical v18 unchanged by metadata, NSH8/9 compatibility migration to NSHB, actual save/revision binding, unknown legacy build and calendar boundaries.\n",checks);
 }

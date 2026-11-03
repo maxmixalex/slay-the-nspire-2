@@ -62,6 +62,22 @@ def atomic_json(path, value):
     os.replace(temporary, path)
 
 
+def link_or_copy(source, target):
+    """Alias immutable edition bytes without duplicating them on the same disk."""
+    source, target = Path(source), Path(target)
+    target.parent.mkdir(parents=True, exist_ok=True)
+    temporary = target.with_name(target.name+'.link-tmp')
+    temporary.unlink(missing_ok=True)
+    try:
+        try:
+            os.link(source, temporary)
+        except OSError:
+            shutil.copy2(source, temporary)
+        os.replace(temporary, target)
+    finally:
+        temporary.unlink(missing_ok=True)
+
+
 def preflight_output(output,codes):
     """Prevent a new common file from leaving stale optional locale overlays."""
     stale=[code for code in LANGUAGES if code not in codes and
@@ -133,6 +149,13 @@ def self_test():
     faulthandler.enable(all_threads=True)
     print("[converter-self-test] begin",file=sys.stderr,flush=True)
     import numpy as np
+    from seed_codec import encode_seed, encode_seed_file
+    if encode_seed('oldA') != 'SEED64-EC8011CFFF0DFCC3':
+        raise ValueError('Embedded seed encoder differs from the pinned original-DLL vector')
+    with tempfile.TemporaryDirectory(prefix='nspire2-seed-check-') as directory:
+        seed_file=Path(directory)/'seed.txt';seed_file.write_bytes(b' \toldA\r\n')
+        if encode_seed_file(seed_file) != 'SEED64-EC8011CFFF0DFCC3':
+            raise ValueError('Embedded streaming seed encoder changed original ASCII trim semantics')
     configure_helpers()
     # Legacy source tools use the process default for some JSON/text files.
     # The frozen app must select UTF-8 before interpreter initialization, even
@@ -174,9 +197,23 @@ def self_test():
     verify_runtime_routes()
     from concurrent.futures import ProcessPoolExecutor
     import multiprocessing
-    with ProcessPoolExecutor(max_workers=1,mp_context=multiprocessing.get_context('spawn')) as pool:
-        if pool.submit(digest,Path(__file__)).result(timeout=30)!=digest(Path(__file__)):
-            raise ValueError('Embedded multiprocessing worker could not import its source recipe')
+    from converter_threads import worker_probe, VARIABLES
+    from converter_workspace import WorkLock
+    with tempfile.TemporaryDirectory(prefix='nspire2-spawn-check-') as directory:
+        with ProcessPoolExecutor(max_workers=2,mp_context=multiprocessing.get_context('spawn')) as pool:
+            if pool.submit(digest,Path(__file__)).result(timeout=30)!=digest(Path(__file__)):
+                raise ValueError('Embedded multiprocessing worker could not import its source recipe')
+            checks=[pool.submit(worker_probe,directory,number) for number in range(2)]
+            checked=[check.result(timeout=30) for check in checks]
+        if (len({check.pop('pid') for check in checked})!=2 or
+                any(check!={'environment':{name:'1' for name in VARIABLES},
+                            'numerical_solve':True} for check in checked) or
+                (Path(directory)/'counter').read_text()!='2'):
+            raise ValueError('Frozen workers did not preserve the numeric budget and shared lock')
+        with WorkLock(Path(directory)/'shared'):
+            pass
+    if Path(directory).exists():
+        raise ValueError('Frozen worker scratch did not close and clean up')
     # An unsupported protocol is rejected before attempting to load a skeleton.
     result=subprocess.run([os.environ['NSPIRE_SPINE_ADAPTER']],input='{"schema_version":2}\n',
         text=True,capture_output=True,check=True,timeout=30)
@@ -211,6 +248,9 @@ def self_test():
     if neow_hash!='e0f5a0b552e9597c2899f14aea37b40adee8a75594c18c743f64608b2c878885':
         raise ValueError('Bundled Neow source noise differs from its float32 oracle')
     return dict(passed=True,mandatory_linked_arm_validation=arm_proof,recipe_modules=len(modules),spawn_worker=True,spine_protocol=True,decim_samples=len(decim),
+        original_ascii_seed_encoder=True,streamed_seed_file=True,
+        native_numeric_threads=1,spawned_numeric_workers_verified=True,
+        spawned_distinct_processes=2,spawned_locks_released=True,spawned_temporary_files_removed=True,
         utf8_mode=bool(sys.flags.utf8_mode),unicode_default_io=True,
         retirement_route_sources=len(retirement_plan['runtime_route_sources']),retirement_routes_verified=True,
         vantom_pixels=field.size,vantom_sha256=noise_hash,random_pixels=50,random_sha256=random_hash,
@@ -220,11 +260,12 @@ def self_test():
 
 
 class Recipe:
-    def __init__(self, game, work, runtime, dotnet, noise, key_font, workers=2):
+    def __init__(self, game, work, runtime, dotnet, noise, key_font, workers=2, languages=LANGUAGES):
         self.game, self.work = Path(game), Path(work)
         self.pck, self.fonts = self.game/'SlayTheSpire2.pck', self.work/'fonts'
         self.runtime, self.dotnet, self.noise, self.key_font = runtime, dotnet, noise, key_font
         self.workers, self.stages = workers, []
+        self.languages = tuple(languages)
 
     def directory(self, name):
         return self.work/name
@@ -247,6 +288,7 @@ class Recipe:
         """All catalog appends start with extracted PCK data, never a prior pack."""
         font = self.fonts/'NotoSansMonoCJKsc-Regular.otf'
         native = ['--runtime', self.runtime, '--dotnet', self.dotnet]
+        languages = ','.join(self.languages)
         self.add('fonts', '@fonts', [self.pck, self.fonts, self.key_font],
             [self.fonts/'font-extraction.json',*(self.fonts/name for name in ORIGINAL_FONTS),
              self.fonts/'supplement/spectral_bold.ttf',self.fonts/'supplement/bitter_medium_italic.ttf',
@@ -255,7 +297,8 @@ class Recipe:
         self.add('base', 'build_content', [self.game, '--output', base.parent, '--font', font,'--host-intermediates'], [base])
         world = self.directory('world')/'world.nsp'
         self.add('world', 'build_world', [self.game, base, '--output', world, '--font', font, *native,
-            '--fastnoise-header', self.noise, '--cache', self.directory('cache/world'),'--host-intermediates'], [world])
+            '--fastnoise-header', self.noise, '--cache', self.directory('cache/world'),
+            '--workers',self.workers,'--host-intermediates'], [world])
         tiled = self.directory('tiles')/'tiles.nsp'
         self.add('tiles', 'content_tiles', ['--input', world, '--output', tiled, '--work', self.directory('cache/tiles'),
             '--receipt', tiled.with_suffix('.json'), '--workers', self.workers,
@@ -332,22 +375,23 @@ class Recipe:
         pair = paths
         editions=self.directory('editions')
         self.add('editions','build_locale_editions',['--input',pair[0],'--pck',self.pck,
-            '--fonts',self.fonts,'--output',editions,'--languages','all','--keep-logical'],
+            '--fonts',self.fonts,'--output',editions,'--languages',languages],
             self.edition_files(editions)+[editions/'locales-receipt.json'])
         ui12=self.directory('ui12')
         self.add('ui12','ui12_resources',['--editions',editions,'--pck',self.pck,'--fonts',self.fonts,
-            '--output',ui12,'--cache',self.directory('cache/ui12'),'--languages','all'],self.edition_files(ui12))
+            '--output',ui12,'--cache',self.directory('cache/ui12'),'--languages',languages,
+            '--keep-logical',''],self.edition_files(ui12)+[ui12/'locales-receipt.json'])
         legacy=self.directory('startup-input')
-        self.add('startup-input','@rename-editions',[ui12,legacy,'old'],self.edition_files(legacy,old=True))
+        self.add('startup-input','@rename-editions',[ui12,legacy,'old',languages],self.edition_files(legacy,old=True))
         startup=self.directory('startup')
         self.add('startup','startup_logo_resources',['--input-dir',legacy,'--output-dir',startup,
             '--cache-dir',self.directory('cache/startup'),'--pck',self.pck,'--runtime',self.runtime,
-            '--fonts',self.fonts,'--languages','all'],self.edition_files(startup,old=True))
+            '--fonts',self.fonts,'--languages',languages],self.edition_files(startup,old=True))
         swarm=self.directory('swarm')
         self.add('swarm','phobia_swarm_resources',['--pck',self.pck,'--input-dir',startup,
-            '--output-dir',swarm,'--cache-dir',self.directory('cache/swarm')],self.edition_files(swarm,old=True))
+            '--output-dir',swarm,'--cache-dir',self.directory('cache/swarm'),'--languages',languages],self.edition_files(swarm,old=True))
         ready=self.directory('ui13-input')
-        self.add('ui13-input','@rename-editions',[swarm,ready,'new'],
+        self.add('ui13-input','@rename-editions',[swarm,ready,'new',languages],
             self.edition_files(ready)+[ready/'eng.nsp'])
         # UI13 grafts real per-clip source registration into every locale while
         # proving frame IDs/counts/clocks. Vantom's later typed sampler requires
@@ -369,12 +413,13 @@ class Recipe:
         ui13=self.directory('ui13')
         self.add('ui13','ui13_resources',['pack','--artwork',rebaked/'eng.nsp',
             '--base-common',ready/'nSpire2.dat.tns','--editions',ready,'--fonts',self.fonts,
-            '--output',ui13,'--pck',self.pck,'--cache',artcache],
+            '--output',ui13,'--pck',self.pck,'--cache',artcache,'--languages',languages,'--keep-logical','eng'],
             self.edition_files(ui13)+[ui13/'ui13-eng.nsp'])
         ui14=self.directory('ui14')
         self.add('ui14','ui14_resources',['--artwork',ui13/'ui13-eng.nsp',
             '--source-common',ui13/'nSpire2.dat.tns','--source-editions',ui13,'--pck',self.pck,
-            '--cache',self.directory('cache/ui14'),'--output',ui14,'--workers',self.workers],
+            '--cache',self.directory('cache/ui14'),'--output',ui14,'--workers',self.workers,
+            '--languages',languages,'--keep-logical','eng'],
             self.edition_files(ui14)+[ui14/'ui14-eng.nsp'])
         vantom=self.directory('cache/vantom')
         self.add('vantom','vantom_ui15_assets',['--pck',self.pck,*native,'--input',ui14/'ui14-eng.nsp',
@@ -386,14 +431,13 @@ class Recipe:
         self.add('ui15','ui15_resources',['--source-common',ui14/'nSpire2.dat.tns',
             '--source-editions',ui14,'--pck',self.pck,'--fonts',self.fonts,
             '--cache',self.directory('cache/ui15'),'--output',ui15,
-            '--vantom-catalog',vantom/'vantom-assets.json','--extra-catalog',effects,'--languages','all'],
-            self.edition_files(ui15)+[ui15/'ui15-eng.nsp'])
+            '--vantom-catalog',vantom/'vantom-assets.json','--extra-catalog',effects,'--languages',languages,
+            '--keep-logical',''],self.edition_files(ui15)+[ui15/'locales-receipt.json'])
         return ui15
 
-    @staticmethod
-    def edition_files(directory, old=False):
+    def edition_files(self, directory, old=False):
         return [directory/('nSpire2.common.tns' if old else 'nSpire2.dat.tns'),
-                *(directory/(f'nSpire2.{code}.tns' if old else f'nSpire2.{code}.dat.tns') for code in LANGUAGES)]
+                *(directory/(f'nSpire2.{code}.tns' if old else f'nSpire2.{code}.dat.tns') for code in self.languages)]
 
 
 def internal(module, arguments):
@@ -421,10 +465,13 @@ def internal(module, arguments):
         source, output, mode = Path(arguments[0]),Path(arguments[1]),arguments[2]
         old = mode == 'old'
         output.mkdir(parents=True,exist_ok=True)
-        inputs = Recipe.edition_files(source,old=not old)
-        outputs = Recipe.edition_files(output,old=old)
+        codes = arguments[3].split(',') if len(arguments)>3 else LANGUAGES
+        def files(directory, legacy):
+            return [directory/('nSpire2.common.tns' if legacy else 'nSpire2.dat.tns'),
+                    *(directory/(f'nSpire2.{code}.tns' if legacy else f'nSpire2.{code}.dat.tns') for code in codes)]
+        inputs, outputs = files(source,not old), files(output,old)
         for before,after in zip(inputs,outputs):
-            shutil.copy2(before,after)
+            link_or_copy(before,after)
         if not old:
             common=(output/'nSpire2.dat.tns').read_bytes()
             (output/'eng.nsp').write_bytes(split.reconstruct(common,(output/'nSpire2.eng.dat.tns').read_bytes(),'eng'))
@@ -540,7 +587,10 @@ def prepare_tile_generation(stage, work, runner_receipt, log):
     receipt.unlink()
 
 
-def run_stages(stages, work, identity, stop_after=None):
+def run_stages(stages, work, identity, stop_after=None, *, compact=False, keep_intermediates=False):
+    if compact:
+        from converter_workspace import run
+        return run(stages,work,identity,stop_after,keep=keep_intermediates)
     receipts=Path(work)/'receipts';logs=Path(work)/'logs'
     receipts.mkdir(parents=True,exist_ok=True);logs.mkdir(parents=True,exist_ok=True)
     previous=identity
@@ -587,27 +637,51 @@ def run_stages(stages, work, identity, stop_after=None):
 
 
 def main(argv=None):
+    from converter_threads import configure
+    configure()
     argv=list(sys.argv[1:] if argv is None else argv)
     if argv[:1]==['--internal-stage']:
         internal(argv[1],argv[2:]);return 0
-    parser=argparse.ArgumentParser(description=__doc__)
+    parser=argparse.ArgumentParser(
+        description=(
+            'Convert Slay the Spire 2 into TI-Nspire game data.\n'
+            'Run in your original game folder for full animation, English and\n'
+            'Simplified Chinese. The standalone executable requires no separate\n'
+            'Python or .NET installation.'),
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog=(
+            'Examples:\n'
+            '  %(prog)s                         Full animation, English + Simplified Chinese\n'
+            '  %(prog)s --no-animations         Essential actor poses\n'
+            '  %(prog)s --languages all         Include every original language\n'
+            '  %(prog)s --no-animations --languages all\n'
+            '\nThe output is game data; install it with the matching nSpire2.tns launcher.'))
     parser.add_argument('--game',type=Path,help='Original game folder (default: current or executable folder)')
     parser.add_argument('--output',type=Path,help='Installed data output (default: game/nSpire2-converted)')
     parser.add_argument('--work',type=Path,help='Resumable intermediate directory (default: system temporary directory)')
+    parser.add_argument('--keep-intermediates',action='store_true',help='Developer option: retain every intermediate pack and scratch file')
     parser.add_argument('--no-animations',action='store_true',help='Retain only essential actor poses with original action timing')
-    parser.add_argument('--languages',default='eng,zhs',help='Comma-separated original locale codes, or all')
-    parser.add_argument('--workers',type=int,choices=(1,2),default=2)
+    parser.add_argument('--languages',default='eng,zhs',help='Comma-separated locale codes (default: eng,zhs), or all')
+    parser.add_argument('--workers',type=int,choices=(1,2),default=2,help='Parallel workers (default: 2; use 1 for lower computer CPU/RAM use)')
     parser.add_argument('--runtime',type=Path,help=argparse.SUPPRESS)
     parser.add_argument('--dotnet',default=os.environ.get('NSPIRE_DOTNET','dotnet'),help=argparse.SUPPRESS)
     parser.add_argument('--fastnoise-header',type=Path,help=argparse.SUPPRESS)
     parser.add_argument('--key-font',type=Path,help='Optional owner-supplied TINspireKeysCX.ttf; default: public calculator keycaps')
     parser.add_argument('--plan',action='store_true',help='Show every source build stage without converting')
     parser.add_argument('--self-test',action='store_true',help='Check embedded modules and native helpers without game data')
+    seed=parser.add_mutually_exclusive_group()
+    seed.add_argument('--encode-seed',help='Encode complete original ASCII seed text for explicit calculator seed-code import')
+    seed.add_argument('--encode-seed-file',type=Path,help='Stream an ASCII seed text file into a calculator import code; no game files required')
     parser.add_argument('--stop-after',help='Developer checkpoint; never produces a release receipt')
     args=parser.parse_args(argv);started_output=None
     try:
         if args.self_test:
             print(json.dumps(self_test(),indent=2));return 0
+        if args.encode_seed is not None or args.encode_seed_file is not None:
+            from seed_codec import encode_seed, encode_seed_file
+            print(encode_seed(args.encode_seed) if args.encode_seed is not None else
+                  encode_seed_file(args.encode_seed_file),flush=True)
+            return 0
         game=locate_game(args.game)
         from reference_inventory import verify_release
         _lock,assembly,reference=verify_release(game)
@@ -637,7 +711,7 @@ def main(argv=None):
             if supplied and not keyfont.is_file():
                 raise ValueError('Optional calculator key font does not exist: '+str(keyfont))
             runtime,noise=private_helper_inputs(runtime,noise,work)
-        recipe=Recipe(game,work,runtime,args.dotnet,noise,keyfont,args.workers)
+        recipe=Recipe(game,work,runtime,args.dotnet,noise,keyfont,args.workers,codes)
         recipe.reference=dict(reference,pck_sha256=digest(game/'SlayTheSpire2.pck'),assembly_sha256=digest(assembly)) if not args.plan else reference
         source_editions=recipe.source_stages()
         # The post-catalog recipe is deliberately separate from source baking:
@@ -660,15 +734,23 @@ def main(argv=None):
         work.mkdir(parents=True,exist_ok=True)
         # All public recipe/config files and source inputs identify this build.
         from run_logged import inventory
-        identity=hashlib.sha256(json.dumps(dict(source=inventory(ROOT),reference=reference,
-            pck=digest(game/'SlayTheSpire2.pck'),assembly=digest(assembly),runtime=digest(runtime),noise=digest(noise),
+        from converter_workspace import scoped_identities
+        identity=scoped_identities(ROOT,recipe.stages,dict(reference=reference,
+            native_numeric_threads=1,
+            pck=recipe.reference['pck_sha256'],assembly=recipe.reference['assembly_sha256'],runtime=digest(runtime),noise=digest(noise),
             arm_elf=digest(arm_elf),arm_source=arm_record['source_files'],
             helpers={key:digest(value) for key in ('NSPIRE_SPINE_ADAPTER','NSPIRE_FASTNOISE_LIBRARY')
                      if (value:=os.environ.get(key))},
-            key_font=digest(keyfont) if str(keyfont)!='-' else 'public-keycaps'),sort_keys=True).encode()).hexdigest()
-        complete=run_stages(recipe.stages,work,identity,args.stop_after)
+            key_font=digest(keyfont) if str(keyfont)!='-' else 'public-keycaps'),inventory(ROOT))
+        complete=run_stages(recipe.stages,work,identity,args.stop_after,compact=True,keep_intermediates=args.keep_intermediates)
         if complete:
-            print(f'Resource conversion complete: {output}/data. Place this data folder beside the matching UI23 nSpire2.tns launcher from the calculator package.',flush=True)
+            summary=json.loads((work/'receipts/pipeline.json').read_text(encoding='utf-8'))
+            receipt=json.loads((output/'converter-receipt.json').read_text(encoding='utf-8'))
+            receipt['pipeline']={key:value for key,value in summary.items() if key!='stages'}
+            receipt['execution']=dict(worker_process_limit=args.workers,native_numeric_threads=1)
+            atomic_json(output/'converter-receipt.json',receipt)
+            print(f"Pipeline: {summary['total_elapsed_seconds']:.2f} seconds; measured peak temporary bytes {summary['peak_work_bytes']:,}; retained {summary['retained_work_bytes']:,}.",flush=True)
+            print(f'Resource conversion complete: {output}/data. Place this data folder beside the matching UI24 nSpire2.tns launcher from the calculator package.',flush=True)
         else:
             atomic_json(output/'converter-receipt.json',dict(complete=False,status='checkpoint',
                 reference=reference,languages=codes,no_animations=args.no_animations,stopped_after=args.stop_after))

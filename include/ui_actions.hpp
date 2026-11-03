@@ -32,7 +32,8 @@ enum class UiAction {
     InspectPreviousRelic, InspectNextRelic, CloseRelicInspect, SettingsLongPress,
     SettingsLanguagePrevious, SettingsLanguageNext,
     SelectRandomCharacter,
-    SettingsSkipIntroLogo,
+    SettingsSkipIntroLogo, RunSeedImport,
+    OpenTimeline, TimelineReveal,
     SettingsLanguageFirst=256,SettingsLanguageLast=271
 };
 }

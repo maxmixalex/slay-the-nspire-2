@@ -36,6 +36,8 @@ UI22_SELECTION_COUNTS = (64,140,160,80,96)
 
 
 def validate_ui22(source, image):
+    from no_animations import clip_policy, reduced, sample_map
+    reduced_policy = clip_policy() if reduced(source.data) else None
     tiles.require(len(source.aux) >= UI22_ACTOR_AUX+5 and len(source.clips) == UI22_CLIPS and
                   len(source.images) >= 58612,
                   'UI22 requires the complete native actor catalog and five selection markers (7211 auxiliaries)')
@@ -58,6 +60,7 @@ def validate_ui22(source, image):
                       10+2*frames<=used<=len(words),'Invalid UI22 actor table header')
         if index<UI22_CLIPS:
             first,count,clock,_px,_py,old_units=source.clips[index]
+            retained = sample_map(count, reduced_policy[index]) if reduced_policy is not None else None
             tiles.require((frames,ms)==(count,clock),'UI22 actor frame clock differs from the stable clip')
             if 1753<=index<=1764:
                 tiles.require((frames,ms)==UI22_DEATH_CLOCKS[index-1753],
@@ -79,7 +82,14 @@ def validate_ui22(source, image):
                 tiles.require(0<=picture<len(source.images) and picture not in forbidden,
                               'UI22 actor piece refers outside its pixel catalog')
                 if first is not None and part==0:
-                    tiles.require(picture==first+frame,'UI22 actor primary frame identity changed')
+                    # Reduced whole-pose tables may name either the stable
+                    # aliased frame slot or its exact retained source slot.
+                    # Do not accept arbitrary duplicate images or early poses.
+                    selected = first + retained[frame] if retained is not None else first + frame
+                    tiles.require(picture==first+frame or
+                                  (retained is not None and picture==selected and
+                                   source.images[picture]==source.images[first+frame]),
+                                  'UI22 actor primary frame identity changed')
                 else:
                     tiles.require(picture>=58099,'UI22 actor overflow must use its appended source slot')
                 _offset,pw,ph,pfmt,_size=source.images[picture]

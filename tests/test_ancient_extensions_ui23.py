@@ -58,7 +58,7 @@ class TypedCatalogIntegration(unittest.TestCase):
                 data=no_animations.mark(data) if marked else bytes(data))
             source.aux[7228]=60293
             image=lambda index:(256,9,0,b'parameter-parser-covered-by-owner-tests')
-            with patch.object(n,'parameters',return_value={'source_static':static}):
+            with patch.object(n,'parameters',return_value={'source_static':static,'baked_light':False}):
                 with self.assertRaisesRegex(ValueError,'profile does not match final marker'):
                     n.validate(source,image,final=True)
         # A static intermediate is permitted before the reducer writes NAF1;
@@ -67,15 +67,17 @@ class TypedCatalogIntegration(unittest.TestCase):
         def image(index):
             if index==60293:return (256,9,0,b'parameter-parser-covered-by-owner-tests')
             raise RuntimeError('actual source page validation reached')
-        with patch.object(n,'parameters',return_value={'source_static':True}):
-            with self.assertRaisesRegex(RuntimeError,'source page validation reached'):
-                n.validate(source,image,final=False)
+        for baked in (False,True):
+            with patch.object(n,'parameters',return_value={'source_static':True,'baked_light':baked}):
+                with self.assertRaisesRegex(RuntimeError,'source page validation reached'):
+                    n.validate(source,image,final=False)
 
     def test_source_recipe_chains_every_real_producer_before_quality_and_reduction(self):
         from converter import Recipe
         from converter_finalize import add_final_stages
         names=['ancient-materials46','ancient-gpu-masks46','tez-cinders46','nonu-fog46','ancient-trajectories46',
-               'neow-post46','vakuu-cinders46','neow-particles46','ancient-fire46','neow-fire46','card-afflictions46']
+               'neow-post46','vakuu-cinders46','neow-particles46','ancient-fire46','neow-fire46',
+               'neow-static-field46','card-afflictions46']
         for reduced in (False,True):
             recipe=Recipe('/game','/work','/private/runtime','dotnet','/noise','-')
             add_final_stages(recipe,recipe.source_stages(),Path('/output'),['eng','zhs'],reduced)
@@ -98,6 +100,9 @@ class TypedCatalogIntegration(unittest.TestCase):
             self.assertEqual(neow[neow.index('--runtime')+1],'/private/runtime')
             self.assertEqual(neow[neow.index('--light-work')+1],'/work/cache/ancient-scenes45')
             self.assertEqual('--no-animations' in neow,reduced)
+            baked=stages['neow-static-field46']
+            self.assertEqual(baked.module,'neow_static_field_ui24')
+            self.assertEqual(baked.arguments[baked.arguments.index('--work')+1],'/work/cache/neow-static-field46')
             self.assertEqual(stages['card-afflictions46'].module,'card_affliction_ui23')
             self.assertNotIn('--no-animations',stages['card-afflictions46'].arguments)
             self.assertNotIn('--sampled',stages['ancient-trajectories46'].arguments)

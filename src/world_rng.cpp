@@ -23,7 +23,13 @@ bool world_set_seed_raw(State&s,const char*seed){
     if(length==sizeof s.world.seed_text)return false;
     uint64_t value;if(!reference::seed_hash(seed,value))return false;
     for(unsigned i=0;i<sizeof s.world.seed_text;++i)s.world.seed_text[i]=i<length?seed[i]:0;
-    world_init_streams(s,value);return true;
+    world_init_streams(s,value);s.world.seed_imported=0;return true;
+}
+bool world_import_seed(State&s,const char*code){
+    uint64_t value;if(!reference::parse_seed_code(code,value))return false;
+    for(auto&ch:s.world.seed_text)ch=0;
+    reference::format_seed_code(value,s.world.seed_text);
+    world_init_streams(s,value);s.world.seed_imported=1;return true;
 }
 reference::Random& world_rng(State&s,WorldRng stream){
     // Standalone card/encounter fixtures may run without a world map. Their

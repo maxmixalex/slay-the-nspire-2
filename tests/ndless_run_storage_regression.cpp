@@ -191,13 +191,13 @@ static void dense_state(){
 }
 static size_t bounded_storage(const char*label,const char*file){
  scenario=label;files.clear();reset_io();source_roundtrip();const auto data=files.at(save_path);CHECK(data.size()<canonical.size&&data.size()==run_storage::encoded_size(canonical.bytes,unsigned(canonical.size)));
- CHECK(max_write<=run_storage::BlockBytes);std::printf("%s: NS17=%zu, stored=%zu, writes=%u, max_write=%u; canonical exact.\n",label,canonical.size,data.size(),writes,max_write);
+ CHECK(max_write<=run_storage::BlockBytes);std::printf("%s: NS18=%zu, stored=%zu, writes=%u, max_write=%u; canonical exact.\n",label,canonical.size,data.size(),writes,max_write);
  export_bytes(file,data);std::string raw_name=std::string(file)+".raw";export_bytes(raw_name.c_str(),bytes(canonical));return data.size();
 }
 static void capacity(){
- boundary_state();const size_t sparse=bounded_storage("all variable counts and 8 enemy states","bounded-run.sav.tns");CHECK(canonical.size==250964);
+ boundary_state();const size_t sparse=bounded_storage("all variable counts and 8 enemy states","bounded-run.sav.tns");CHECK(SaveVersion==18&&canonical.size==250964+12); // Frozen unlock masks and first-run flag.
  dense_state();const size_t dense=bounded_storage("nonzero signed card metadata, 320 relics, 32 full hooks and 128 rewards","dense-run.sav.tns");
- constexpr size_t history=295347,raw_bound=252928,small=340;
+ constexpr size_t history=295347,raw_bound=252928+12,small=340;
  std::printf("Observed dense 3-profile history atomic peak=%zu; mixed legacy backups=%zu; unconditional raw-bound peak=%zu bytes.\n",4*history+6*dense+small,4*history+3*dense+3*raw_bound+small,4*history+6*raw_bound+small);
  CHECK(sparse<dense&&4*history+6*dense+small<2400000&&4*history+3*dense+3*raw_bound+small<2400000);
 }

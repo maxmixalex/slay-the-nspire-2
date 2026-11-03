@@ -6,6 +6,15 @@ namespace spire::tez_cinders_ui23 {
 // 74 original emitters *24 particles, in the existing scene-owned union.
 // Local Q16 physics, 60Hz. No persistent global particle allocation.
 constexpr unsigned Emitters=74,PerEmitter=24,Particles=Emitters*PerEmitter;
+#ifndef SPIRE_TEZ_BACKGROUND_STRIDE
+#define SPIRE_TEZ_BACKGROUND_STRIDE 12
+#endif
+// Keep both foreground emitters complete. Background decoration selects a
+// staggered subset of original particle indices, never a slower simulation.
+constexpr unsigned CalculatorBackgroundStride=SPIRE_TEZ_BACKGROUND_STRIDE;
+static_assert(CalculatorBackgroundStride>=1&&CalculatorBackgroundStride<=PerEmitter,"Bounded background particle sampling");
+inline unsigned presentation_step(unsigned emitter){return emitter<2?1:CalculatorBackgroundStride;}
+inline unsigned presentation_first(unsigned emitter){return emitter<2?0:emitter%CalculatorBackgroundStride;}
 struct Particle {
  int32_t x,y,vx,vy;
  uint16_t age_half,life64;
@@ -139,17 +148,19 @@ struct Table {
 };
 struct State {
  Particle particles[Particles];
- uint32_t tick=0,seed=0;bool valid=false,box_mode=false;
+ uint32_t tick=0,seed=0;bool valid=false,box_mode=false;uint8_t density_stride=1;
  // The caller binds content/language/room identity in the scene union owner.
  // Ordinary frames only advance newly elapsed fixed ticks. Reopen/seek uses
  // at most the current source lifecycle, never all prior room history.
- template<class Curve,class Poll,class Inherit=NoInheritance> void advance(uint32_t elapsed,uint32_t cosmetic,Curve orbit_curve,Poll poll,Inherit inherit={},bool box_only=false){
+ template<class Curve,class Poll,class Inherit=NoInheritance> void advance(uint32_t elapsed,uint32_t cosmetic,Curve orbit_curve,Poll poll,Inherit inherit={},bool box_only=false,unsigned stride=1){
+  if(!stride||stride>PerEmitter)stride=1;
   const uint32_t target=uint32_t(uint64_t(elapsed)*60/1000)+360u;
-  const bool reset=!valid||box_mode!=box_only||seed!=cosmetic||target<tick||target-tick>600;
+  const bool reset=!valid||box_mode!=box_only||density_stride!=stride||seed!=cosmetic||target<tick||target-tick>600;
   for(unsigned emitter=0;emitter<(box_only?1u:Emitters);++emitter){
    poll();const bool sphere=!box_only&&emitter<2;const unsigned period=sphere?600:420;
    const uint32_t emitter_seed=hash(cosmetic+emitter*0x9e3779b9u);
-   for(unsigned j=0;j<PerEmitter;++j){auto&p=particles[emitter*PerEmitter+j];
+   const unsigned spacing=emitter<2?1:stride;
+   for(unsigned j=emitter<2?0:emitter%stride;j<PerEmitter;j+=spacing){auto&p=particles[emitter*PerEmitter+j];
     const unsigned phase=period*2*j/PerEmitter;const uint64_t now=uint64_t(target)*2;
     if(now<phase){p={};continue;}
     const uint64_t local=now-phase;const unsigned age=unsigned(local%(period*2));
@@ -164,7 +175,7 @@ struct State {
     if(!p.active)p.age_half=uint16_t(age);
    }
   }
-  seed=cosmetic;tick=target;box_mode=box_only;valid=true;
+  seed=cosmetic;tick=target;box_mode=box_only;density_stride=uint8_t(stride);valid=true;
  }
 };
 static_assert(sizeof(State)==56844,"Complete cinder state must retain its reviewed scene-union tail");

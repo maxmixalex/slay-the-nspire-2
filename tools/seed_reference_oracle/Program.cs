@@ -11,7 +11,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 
-if(args.Length!=2)throw new ArgumentException("ASSEMBLY_DIRECTORY PRIVATE_OUTPUT_DIRECTORY");
+if(args.Length<2||args.Length>3||(args.Length==3&&args[2]!="ascii"))throw new ArgumentException("ASSEMBLY_DIRECTORY PRIVATE_OUTPUT_DIRECTORY [ascii]");
 string source=Path.GetFullPath(args[0]),output=Path.GetFullPath(args[1]);
 if(source==output)throw new ArgumentException("Keep the original assembly directory separate and immutable");
 byte[] original=File.ReadAllBytes(Path.Combine(source,"sts2.dll"));
@@ -64,6 +64,7 @@ var canonical=helper.GetMethod("CanonicalizeSeed",flags)!.CreateDelegate<Func<st
 var hash=strings.GetMethod("GetDeterministicHashCode",flags)!.CreateDelegate<Func<string,ulong>>();
 var ctor=rng.GetConstructor(new[]{typeof(string)})!;var seed=rng.GetProperty("Seed")!;
 CultureInfo.CurrentCulture=CultureInfo.InvariantCulture;CultureInfo.CurrentUICulture=CultureInfo.InvariantCulture;
+if(args.Length==3){AsciiOracle.Run(assembly,output);return;}
 string scalarPath=Path.Combine(output,"scalar-original.tsv"),prefixPath=Path.Combine(output,"prefix-invariant.tsv"),vectorPath=Path.Combine(output,"seed-original-vectors.tsv");
 var prefixPoints=new List<int>();int scalarCount=0;
 using(var scalar=new StreamWriter(scalarPath){NewLine="\n"})

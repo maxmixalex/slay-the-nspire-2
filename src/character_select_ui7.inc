@@ -190,6 +190,8 @@ static void character_screen(Canvas&c){
     const UiAction actions[]={UiAction::SelectIronclad,UiAction::SelectSilent,UiAction::SelectDefect,UiAction::SelectRegent,UiAction::SelectNecrobinder,UiAction::SelectRandomCharacter};
     const int portrait_outline=a.content.world_image("character","OUTLINE");
     for(unsigned i=0;i<=CharacterKinds;++i){
+        if(i==CharacterKinds&&!a.timeline_character_available(CharacterKinds))continue;
+        const bool unlocked=a.timeline_character_available(i==CharacterKinds?CharacterKinds:unsigned(RunModeCharacters[i]));
         const int center=portrait_center(i);const bool selected=i==selection;
         const int scale=int(motion.portrait_scale(i,a.map_clock_ms));
         // The existing portrait payload contains its original 132:195 image
@@ -199,8 +201,8 @@ static void character_screen(Canvas&c){
         const int y=PortraitTop+PortraitHeight/2;const int portrait=a.content.ui_image(i==CharacterKinds?unsigned(I12_RandomCharacter):character_portrait(Character(model)));
         Canvas shade=c;shade.tint_red=shade.tint_green=shade.tint_blue=0;shade.picture(portrait,center-pw/2+2,y-ph/2+2,pw,ph,64);
         if(selected&&portrait_outline>=0)c.picture(portrait_outline,center-ow/2,y-oh/2,ow,oh,motion.outline_alpha(a.map_clock_ms),presentation::Add);
-        small_material_icon(c,portrait,center-pw/2,y-ph/2,pw,ph,motion.saturation(i,a.map_clock_ms),motion.value(i,a.map_clock_ms));
-        c.action(portrait_x(i)-1,PortraitTop-2,PortraitWidth+2,PortraitHeight+4,actions[model]);
+        small_material_icon(c,portrait,center-pw/2,y-ph/2,pw,ph,unlocked?motion.saturation(i,a.map_clock_ms):0,unlocked?motion.value(i,a.map_clock_ms):350);
+        c.action(portrait_x(i)-1,PortraitTop-2,PortraitWidth+2,PortraitHeight+4,actions[model],unlocked);
     }
     if(profile)profile(RuntimeRenderPart::CharacterPortraits,false);
     // Back and Confirm keep their original positions around the portraits

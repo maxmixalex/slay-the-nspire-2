@@ -1,6 +1,8 @@
 // Original scene textures and interaction flow, reflowed for 320x240.
 static const char* frontend_text(const App&a,const char*table,const char*key,const char*fallback){const char*text=a.content.world_string(table,key);return *text?text:fallback;}
 static const char* frontend_label(const App&a,FrontMenu item){
+ if(item==FrontTimeline){bool pending=false;for(unsigned i=0;i<EpochCount;++i)if(timeline_revealable(a.progress.timeline,Epoch(i))){pending=true;break;}
+  return a.content.language()==2?(pending?"时间线 !":"时间线"):(pending?"Timeline !":"Timeline");}
  static const char*keys[]={"SINGLE_PLAYER","CONTINUE","ABANDON_RUN","COMPENDIUM","SETTINGS","QUIT"};
  static const char*fallback[]={"单人游戏","继续游戏","放弃游戏","图鉴","设置","退出游戏"};
  return frontend_text(a,"main_menu_ui",keys[item],fallback[item]);
@@ -129,7 +131,7 @@ static LocalizedValue continue_saved_value(const void*context,const char*key){
 static void continue_run_info(Canvas&c,const title_scene::Rect&menu){
  auto&a=c.a;const bool focused=a.has_save&&front_item(a,a.menu)==FrontContinue&&
   (!a.pointer.visible||(a.pointer.x>=menu.x&&a.pointer.x<menu.x+menu.w&&
-   a.pointer.y>=title_scene::menu_y(a.title_menu_count(),0)&&a.pointer.y<title_scene::menu_y(a.title_menu_count(),0)+title_scene::MenuRowHeight));
+   a.pointer.y>=title_scene::menu_y(a.title_menu_count(),0)&&a.pointer.y<title_scene::menu_y(a.title_menu_count(),0)+title_scene::menu_height(a.title_menu_count())));
  const auto visual=a.title_presentation.run_info.observe(focused,a.map_clock_ms);if(!visual.alpha||!a.has_save)return;
  Canvas panel=c;panel.opacity=uint8_t(div255(unsigned(panel.opacity)*visual.alpha));
  const auto bounds=title_scene::continue_bounds(menu,a.saved_ascension!=0);

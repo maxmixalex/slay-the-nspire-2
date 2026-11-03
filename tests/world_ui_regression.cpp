@@ -729,6 +729,17 @@ static void deferred_enemy_values(){
   a.animation=lethal_pet_hit;a.render();CHECK(a.combat_health(MaxEnemies+1).hp==0);
   CHECK(a.osty_motion.clip==AnimOstyDie&&a.osty_motion.start==lethal_pet_hit);
 
+  // Direct HP loss/kill bypasses Osty's attack interception. Owner death
+  // still kills the living companion and starts its actual visible track.
+  enemy_visual_fight(EncounterId::NibbitsWeak,Character::Necrobinder);a.fast_mode=fast!=0;
+  a.game.expansion.osty_hp=a.game.expansion.osty_max_hp=9;a.last_osty_hp=9;
+  {UiCoreObserver observer(a);player_kill(a.game,true);resolve_pending(a.game);}
+  CHECK(a.game.phase==Phase::Dead&&a.game.expansion.osty_hp==0);
+  a.animation=a.combat_feedback.end_at+1;a.render();
+  CHECK(a.osty_motion.clip==AnimOstyDie);
+  const uint32_t owner_death_start=a.osty_motion.start;
+  a.advance(99);a.render();CHECK(a.osty_motion.start==owner_death_start);
+
   for(int lethal=0;lethal<2;++lethal){
    enemy_visual_fight(EncounterId::NibbitsNormal);a.fast_mode=fast!=0;
    for(int i=0;i<2;++i)a.game.enemy_world.models[i].node=0;

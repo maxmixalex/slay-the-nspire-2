@@ -1,19 +1,23 @@
 # Original-game fidelity contract
 
-Reference remains the owner's pinned v0.111.0 / 41cef1ea. Do not silently mix other releases or Slay the Spire 1 rules into this build. Audio, multiplayer and Timeline progression are excluded, not deferred; animation remains in scope.
+Reference remains the owner's pinned v0.111.0 / 41cef1ea. Do not silently mix other releases or Slay the Spire 1 rules into this build. Audio, multiplayer and hosted services remain unimplemented; earlier scope labels do not establish a user waiver. Timeline progression is implemented as described below, and animation remains in scope.
 
 Reflow, larger targets, scrolling, detail overlays and keyboard/touchpad adaptation are allowed for readable use at 320x240. Temporal visual sampling has a separate performance/fidelity boundary below; it is not a readability adjustment. Card effects, pools, enemy behavior and random probabilities must not be changed merely to make a demo work. Unsupported content and substitutions remain explicit gaps. Portraits and extracted text alone do not constitute supported gameplay.
 
 ## Current coverage and evidence
 
-Use the [UI23 retained-differences ledger](ui23-retained-differences.md) and
-[UI23 color, storage and native-render evidence](ui23-color-storage-evidence.md)
-for the current scope and measured results. UI23 restores source-derived
-sampled Neow and Tezcatara skeleton loops. Their independent particle emitters
-and material clocks remain incomplete; the other six Ancient backgrounds
-remain painted scenes with omitted ambient effects. This is not complete
-Ancient or original-game parity. The older checkpoint records below retain
-their historical scope and do not establish current device performance.
+Use the [retained-differences ledger](ui23-retained-differences.md),
+[UI24 Timeline record](ui24-timeline.md), [Necrobinder/Osty acceptance](ui24-necrobinder-osty.md),
+[Ancient performance](ui24-ancient-performance.md) and
+[ASCII seed comparison](seed-ascii-ui24.md) for current scope and measured
+results. The [UI23 color/storage record](ui23-color-storage-evidence.md) keeps
+its original checkpoints. The source 57-Epoch state machine, obtain dates,
+score and reveal graph now drive normal profile UI and run unlocks. Existing
+profiles retain explicit compatibility access without fabricated progress.
+The source Early Access act placeholders remain unavailable. Tested paths and
+the LCD Timeline presentation are identified separately from full desktop
+equivalence. Older checkpoint records below retain their historical scope and
+do not establish current device performance.
 
 ### Historical UI18 and earlier evidence
 
@@ -93,12 +97,14 @@ allowance:
   screen-by-screen desktop acceptance. See the newer per-family ledgers for
   actual retained frame counts and timings; the old generic bake rate is not
   a description of every current actor and effect family.
-- Complete Ancient scene parity remains incomplete. UI23 restores Neow and
-  Tezcatara's sampled skeleton loops, while independent particle emitters and
-  material clocks remain omitted; the other six backgrounds remain painted
-  scenes. Gameplay, dialogue, options, healing, and Ancient card materials are
-  implemented. See the [current omission inventory](ui23-retained-differences.md).
-  Audio, multiplayer, and Timeline remain outside the agreed single-player scope.
+- Ancient actor, material and particle families have the implementations and
+  bounded representations listed in the [current inventory](ui23-retained-differences.md).
+  UI24's permitted effect-density and material-grid simplifications have actual
+  guest measurements in [Ancient performance](ui24-ancient-performance.md).
+  This is not continuous desktop GPU or complete screen-by-screen equivalence.
+- Audio, multiplayer and hosted services remain unimplemented. Timeline uses
+  the source progression rules with a chronological LCD list and scrolling
+  details; it does not reproduce the PC spatial board or reveal choreography.
 
 The **95%+** goal is therefore still an acceptance target, not a reported result.
 Do not relabel unsupported effects, phase differences or resource omissions as

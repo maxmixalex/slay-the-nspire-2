@@ -91,6 +91,7 @@ def main():
     parser.add_argument('--merchant-cache', type=Path)
     parser.add_argument('--workers', type=int, default=4)
     parser.add_argument('--keep-logical', default='eng,zhs')
+    parser.add_argument('--languages', default='all')
     parser.add_argument('--skip-tighten', action='store_true')
     args = parser.parse_args()
     tiles.require(1 <= args.workers <= 4, 'Use at most four bounded encoder workers')
@@ -145,7 +146,9 @@ def main():
     common_source = tiles.private_path(args.source_common, 'Original common input').read_bytes()
     editions = tiles.private_path(args.source_editions, 'Original locale inputs')
     common = None;reports = {};keep = set(args.keep_logical.split(','))
-    for code in split.LANGUAGES:
+    codes=list(split.LANGUAGES) if args.languages=='all' else args.languages.split(',')
+    tiles.require(codes and set(codes)<=set(split.LANGUAGES) and len(codes)==len(set(codes)), 'Invalid locales')
+    for code in codes:
         path = editions/args.locale_pattern.format(language=code)
         original_locale = path.read_bytes();previous = split.reconstruct(common_source, original_locale, code)
         localized, report = graft_locale(artwork, previous, code);bounds = split.layout(localized, code)

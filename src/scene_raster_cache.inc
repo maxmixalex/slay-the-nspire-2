@@ -210,11 +210,11 @@ struct TezCinderRoom {
   entered=a.ancient_dialogue.entered;floor=unsigned(a.game.floor);event=unsigned(a.game.original_events.id);
  }
 };
-struct NeowRoom {neow_fire_ui23::Mask transmission;neow_post_ui23::CoverageCache post;};
+struct NeowRoom {neow_fire_ui23::Mask transmission;neow_fire_ui23::Illumination illumination;};
 union CharacterEffects {uint8_t inactive;TezCinderRoom cinders;NeowRoom neow;};
 enum class CharacterEffectOwner:uint8_t {None,Cinders,NeowFire};
 struct CharacterSceneRasters {character_select_delta::Raster raster;CharacterEffects effects{0};CharacterEffectOwner effect_owner=CharacterEffectOwner::None;RandomLightQuadCache light;};
-static_assert(sizeof(NeowRoom)<=sizeof(TezCinderRoom),"Neow transmission/post masks reuse the existing cinder-sized variant");
+static_assert(sizeof(NeowRoom)<=sizeof(TezCinderRoom),"Neow transmission/held light reuse the existing cinder-sized variant");
 static_assert(sizeof(CharacterSceneRasters)<=sizeof(MerchantRugRaster),"Character and1776cinders share the existing scene slot");
 static_assert(alignof(CharacterSceneRasters)<=alignof(MerchantRugRaster),"Cinders must not increase scene alignment");
 struct HistoryReadRaster {uint8_t bytes[sizeof(UiHistoryPage)+7];};

@@ -1,4 +1,7 @@
 static void death_cleanup(State&s){
+ // CreatureCmd.Kill also kills a living companion after owner death has
+ // passed revival checks. This is a kill, not a second damage event.
+ if(s.expansion.osty_hp>0){s.expansion.osty_hp=0;necro_observe_deaths(s);}
  enemy_player_died(s);
  ironclad_combat_end(s);silent_combat_end(s);defect_combat_end(s);regent_combat_end(s,false);necro_combat_end(s);
  for(unsigned id=0;id<s.card_count;id++)if(s.zones[id]==Zone::Limbo){const bool dupe=s.world_relics.card_is_dupe[id];put(s,dupe?s.powers:s.discard,id,dupe?Zone::Power:Zone::Discard);}

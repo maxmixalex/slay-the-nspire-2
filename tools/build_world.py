@@ -593,7 +593,9 @@ def plan_summary() -> dict:
 
 
 def build(game: Path, source: Path, output: Path, font_path: Path, *,
-          runtime=None, dotnet=None, fastnoise_header=None, cache_dir=None) -> dict:
+          runtime=None, dotnet=None, fastnoise_header=None, cache_dir=None, workers=1) -> dict:
+    if workers not in (1, 2):
+        raise ValueError('Use one or two bounded original-sampling workers')
     output = private_path(output, 'Output')
     cache_dir = private_path(cache_dir or output.parent / 'world-cache', 'Cache')
     source = source.resolve()
@@ -626,6 +628,7 @@ def build(game: Path, source: Path, output: Path, font_path: Path, *,
     pack = PackData(source.read_bytes())
     prefix = retained_prefix(pack)
     image_meta, animation_meta, layouts = [], [], {}
+    parallel = {}
     unique_images = set(raw for _w, _h, _fmt, raw in pack.images)
     encoded_image_bytes = sum(map(len, unique_images))
 
@@ -747,6 +750,13 @@ def build(game: Path, source: Path, output: Path, font_path: Path, *,
                 layouts[name] = choose_layout(measured)
                 atomic_bytes(cache.directory / 'layouts.json', canonical(layouts) + b'\n')
 
+            if workers > 1:
+                from prefetch_world_clips import prefetch
+                # Bounds are complete. Keep no parent atlas pool while the
+                # independent worker samplers own their bounded eight pages.
+                sampler._pages.clear()
+                parallel['enemies'] = prefetch(cache, game, runtime, dotnet,
+                    fastnoise_header, layouts, workers)
             for number, job in enumerate(ENEMY_CLIP_ROWS):
                 print(f'Enemy clip {number + 1}/{len(ENEMY_CLIP_ROWS)} {job["key"]}', flush=True)
                 state = job_state(job, layouts[job['model']])
@@ -809,6 +819,11 @@ def build(game: Path, source: Path, output: Path, font_path: Path, *,
                     append_image(frame)
                 pack.clips += struct.pack('<IHHhhI', first, len(frames), metadata['frame_ms'], *metadata['pivot'], 0)
                 animation_meta.append(dict(id=directory, key=job['key'], first_image=first, **metadata))
+            if workers > 1:
+                from prefetch_world_rest import prefetch
+                sampler._pages.clear()
+                parallel['rest_actors'] = prefetch(cache, game, runtime, dotnet,
+                    fastnoise_header, workers)
             for number, job in enumerate(REST_ACTOR_CLIP_ROWS):
                 print(f'Rest actor clip {number + 1}/{len(REST_ACTOR_CLIP_ROWS)} {job["key"]}', flush=True)
                 cached = cached_rest_actor_clip(cache, job, rest_actor_scope,
@@ -863,7 +878,7 @@ def build(game: Path, source: Path, output: Path, font_path: Path, *,
         retained_auxiliary_records=len(prefix[3]), retained_animation_clips=BASE_CLIPS,
         retained_glyph_payloads=len(prefix[5]), dependencies=dependencies,
         cache_identity=cache.identity, cache_hits=cache.hits, cache_misses=cache.misses,
-        cache_migrated_jobs=cache.legacy_hits,
+        cache_migrated_jobs=cache.legacy_hits, parallel_sampling=parallel,
         source_paths=image_meta, animations=animation_meta, layouts=layouts,
         animation_sampling='Full original selected periods; enemy idle 8 fps, actions 12 fps, map bosses and treasure 20 fps, rest actors up to 20 fps with a 256-frame period cap; physics 60 Hz; old clips unchanged',
         normalized_target_layout=CANONICAL_PLACEMENT,
@@ -891,6 +906,7 @@ if __name__ == '__main__':
     parser.add_argument('--dotnet')
     parser.add_argument('--fastnoise-header', type=Path)
     parser.add_argument('--cache', type=Path)
+    parser.add_argument('--workers', type=int, choices=(1, 2), default=1)
     parser.add_argument('--host-intermediates',action='store_true',
                         help='Read host-only legacy input with larger file extent; all directory limits remain')
     parser.add_argument('--plan', action='store_true', help='Print public directory counts without reading private inputs')
@@ -903,4 +919,5 @@ if __name__ == '__main__':
         from conversion_context import host_intermediate_files
         with host_intermediate_files(args.host_intermediates):
             build(args.game, args.source, args.output, choose_font(args.font), runtime=args.runtime,
-                  dotnet=args.dotnet, fastnoise_header=args.fastnoise_header, cache_dir=args.cache)
+                  dotnet=args.dotnet, fastnoise_header=args.fastnoise_header, cache_dir=args.cache,
+                  workers=args.workers)

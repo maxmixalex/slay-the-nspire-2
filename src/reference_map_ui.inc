@@ -1,22 +1,23 @@
 // Included inside app.cpp so map controls use the same Canvas and hit registry.
 static void seed_editor(Canvas& c) {
-    auto& a=c.a;auto& view=a.map_preview;a.hit_count=0;
-    c.rect(0,0,320,240,Panel);c.centered("输入种子",0,3,320,16,Gold);c.close_button(294,3);
+    auto& a=c.a;auto& view=a.map_preview;const bool english=a.content.language()!=2;a.hit_count=0;
+    c.rect(0,0,320,240,Panel);c.centered(english?"Enter seed":"输入种子",0,3,320,16,Gold);c.close_button(294,3);
     c.rect(8,29,304,39,Ink);c.box(8,29,304,39,Gold);
     c.text(view.draft,14,32,10,White,290,2);
-    c.text(*view.error?view.error:a.run_seed_editing?"留空使用新种子；I / O 自动转为 1 / 0":"输入后选择生成；I / O 自动转为 1 / 0",9,71,10,*view.error?Red:Muted,302);
+    c.text(*view.error?view.error:view.importing?"SEED64- + 16 HEX":a.run_seed_editing?(english?"Blank: random; I/O become 1/0":"留空随机；I/O 转为 1/0"):(english?"I/O become 1/0":"I/O 转为 1/0"),9,71,10,*view.error?Red:Muted,194);
+    if(a.run_seed_editing){c.button(view.importing?(english?"Seed text":"普通文本"):(english?"Import code":"导入种子码"),207,70,105,false,20);c.action(207,70,105,20,UiAction::RunSeedImport);}
     for(int i=0;i<40;++i) {
         int x=8+(i%10)*31,y=93+(i/10)*26;
         int code=i<SeedKeyCount?SeedKeys[i]:i==SeedKeyCount?8:-1;
         bool hover=a.pointer.visible&&a.pointer.x>=x&&a.pointer.x<x+28&&a.pointer.y>=y&&a.pointer.y<y+23;
         bool selected=hover||(!a.pointer.visible&&view.editor_selection==i);
         c.rect(x,y,28,23,selected?rgb(68,53,33):Ink);c.box(x,y,28,23,selected?Gold:rgb(78,75,62));
-        char s[2]={char(code),0};const char* label=i<SeedKeyCount?s:i==SeedKeyCount?"删":"清";
+        char s[2]={char(code),0};const char* label=i<SeedKeyCount?s:i==SeedKeyCount?(english?"Del":"删"):(english?"Clr":"清");
         c.centered(label,x,y+2,28,12,selected?Gold:White);c.hit(x,y,28,23,HitKind::SeedCharacter,code);
     }
-    c.button("返回",24,202,119,view.editor_selection==SeedKeyCount+2,28);
+    c.button(english?"Back":"返回",24,202,119,view.editor_selection==SeedKeyCount+2,28);
     c.hit(24,202,119,28,HitKind::SeedCharacter,27);
-    c.button(a.run_seed_editing?"应用种子":"生成地图",176,202,119,view.editor_selection==SeedKeyCount+3,28);
+    c.button(a.run_seed_editing?(english?"Apply seed":"应用种子"):(english?"Generate":"生成地图"),176,202,119,view.editor_selection==SeedKeyCount+3,28);
     c.hit(176,202,119,28,HitKind::SeedCharacter,13);
 }
 static void reference_map_screen(Canvas& c) {

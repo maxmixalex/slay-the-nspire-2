@@ -98,6 +98,7 @@ def main():
     parser.add_argument('--output-dir', type=Path)
     parser.add_argument('--cache-dir', type=Path)
     parser.add_argument('--write-curves', action='store_true')
+    parser.add_argument('--languages', default='all')
     args = parser.parse_args()
     pack = Pack(tiles.private_path(args.pck, 'Owner PCK'))
     try:
@@ -132,7 +133,9 @@ def main():
     report = dict(reference='v0.111.0 / 41cef1ea', source=metadata, sleeping=sleeping, locales={},
                   old_auxiliary=BASE_AUX, auxiliary=AUXILIARY, logical_files_written=0,
                   input_common_sha256=tiles.sha256(common))
-    for language in split.LANGUAGES:
+    languages=list(split.LANGUAGES) if args.languages=='all' else args.languages.split(',')
+    tiles.require(languages and set(languages)<=set(split.LANGUAGES) and len(languages)==len(set(languages)), 'Invalid locales')
+    for language in languages:
         data = split.reconstruct(common, (source_dir/('nSpire2.'+language+'.tns')).read_bytes(), language)
         result, receipt = patch_pack(data, manifest, cache, base_aux=BASE_AUX,
             auxiliary=AUXILIARY, input_version=40, version=40,

@@ -19,6 +19,11 @@ ROOT=Path(__file__).resolve().parents[1]
 
 
 def build(args):
+    # This source-only check must precede freezing and helper/asset work. A
+    # missing reviewed UI binding otherwise fails only in localize_content,
+    # after the owner has already paid for the world conversion.
+    from locale_profile import validate_generated
+    validate_generated()
     if importlib.util.find_spec('PyInstaller') is None:
         raise ValueError('Install PyInstaller in the build interpreter first')
     from converter import Recipe
@@ -97,6 +102,9 @@ def build(args):
     for key in ('PYTHONPATH','PYTHONHOME','PYTHONUTF8','NSPIRE_SPINE_ADAPTER','NSPIRE_FASTNOISE_LIBRARY',
                 'NSPIRE_SPINE_RUNTIME','NSPIRE_FASTNOISE_HEADER','NSPIRE_DOTNET'):
         environment.pop(key,None)
+    # Also exercise the files actually frozen into the one-file executable.
+    # This has no game/helper dependency and exposes packaging omissions.
+    subprocess.run([str(executable),'--internal-stage','locale_profile'],check=True,env=environment)
     try:
         smoke=subprocess.run([str(executable),'--self-test'],check=True,text=True,capture_output=True,env=environment)
     except subprocess.CalledProcessError as exc:
@@ -112,10 +120,12 @@ def build(args):
     (work/'frozen-self-test.stderr.log').write_text(smoke.stderr,encoding='utf-8')
     helper_test=json.loads(smoke.stdout)
     receipt=dict(schema=1,platform=sys.platform,embedded_python=True,native_cpp_converter=False,
+        source_locale_validation='reviewed UI bindings and generated indexes passed before freezing',
         separately_installed_python_required=False,dotnet_sdk_required=False,cxx_compiler_required=False,
         original_assets_included=False,bootloader_compatibility=bootloader_provenance,mandatory_arm_validation=arm_manifest,bytes=executable.stat().st_size,
         sha256=hashlib.sha256(executable.read_bytes()).hexdigest(),
-        smoke_test='--help and embedded dependency/native helper self-test passed',helper_self_test=helper_test,
+        smoke_test='--help, embedded locale profile and dependency/native helper self-test passed',helper_self_test=helper_test,
+        frozen_locale_validation=True,
         original_game_conversion_tested=False)
     (output/'converter-bundle.json').write_text(json.dumps(receipt,indent=2)+'\n')
     (output/'Spine-Runtimes-LICENSE').write_bytes((helpers/'Spine-Runtimes-LICENSE').read_bytes())

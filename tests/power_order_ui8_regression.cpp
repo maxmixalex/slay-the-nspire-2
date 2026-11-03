@@ -140,7 +140,7 @@ static void retained_victory_powers(){
 static void word(uint8_t*b,size_t at,unsigned value){for(unsigned i=0;i<4;++i)b[at+i]=uint8_t(value>>(8*i));}
 static void migration(){
  scenario="v17 compact sequence and frozen v15/v16 migration";complete_order();roundtrip();
- const size_t tail=(4+2*a.game.power_sequence.count+3)&~size_t(3),at=saved.size-4-tail;
+ const size_t tail=(4+2*a.game.power_sequence.count+3)&~size_t(3),at=saved.size-4-12-tail;
  CHECK(saved.bytes[at+2]==(a.game.power_sequence.count&255));
  bad=saved;bad.bytes[at+4]=255;bad.bytes[at+5]=255;CHECK(!load(restored,bad.bytes,bad.size));
  bad=saved;bad.bytes[at+2]=255;bad.bytes[at+3]=255;CHECK(!load(restored,bad.bytes,bad.size));
@@ -148,11 +148,11 @@ static void migration(){
  bad=saved;bad.size=at-16+4;word(bad.bytes,4,15);word(bad.bytes,bad.size-4,0);
  CHECK(load(restored,bad.bytes,bad.size)&&restored.test_subject_kills==0&&restored.run_options.mode==RunMode::Standard);
  CHECK(valid_power_order(restored));canonical=restored;power_order_reconcile(canonical);CHECK(!std::memcmp(&canonical.power_sequence,&restored.power_sequence,sizeof canonical.power_sequence));
- CHECK(save(restored,again)&&again.bytes[4]==17&&!std::memcmp(bad.bytes+8,again.bytes+8,bad.size-12));
+ CHECK(save(restored,again)&&again.bytes[4]==SaveVersion&&!std::memcmp(bad.bytes+8,again.bytes+8,bad.size-12));
  a.game.run_options.mode=RunMode::Custom;a.game.run_options.modifiers=run_modifier_bit(RunModifier::Flight);CHECK(save(a.game,saved));
  bad=saved;bad.size=at+4;word(bad.bytes,4,16);word(bad.bytes,bad.size-4,0);
  CHECK(load(restored,bad.bytes,bad.size)&&restored.run_options.mode==RunMode::Custom&&restored.run_options.modifiers==run_modifier_bit(RunModifier::Flight));
- CHECK(save(restored,again)&&again.bytes[4]==17&&!std::memcmp(bad.bytes+8,again.bytes+8,bad.size-12));
+ CHECK(save(restored,again)&&again.bytes[4]==SaveVersion&&!std::memcmp(bad.bytes+8,again.bytes+8,bad.size-12));
 }
 static void test_subject(){
  scenario="TestSubject knockout count survives each saved transformation";start(EncounterId::TestSubjectBoss);

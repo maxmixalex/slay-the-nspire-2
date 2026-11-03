@@ -37,17 +37,33 @@ static bool world_fill_encounters(State&s,WorldActRooms&out,EncounterClass kind,
     }
     return true;
 }
-static bool world_make_room_sets(State&s,unsigned first_region){
+template<class T> static void world_first_room(T*queue,unsigned count,unsigned at,T id){
+    for(unsigned i=0;i<count;++i)if(queue[i]==id){queue[i]=queue[at];break;}queue[at]=id;
+}
+static void world_discovery_rooms(State&s,WorldActRooms&q,const uint8_t*seen){
+    static constexpr EncounterId order[4][3]={
+        {EncounterId::VantomBoss,EncounterId::CeremonialBeastBoss,EncounterId::TheKinBoss},
+        {EncounterId::WaterfallGiantBoss,EncounterId::SoulFyshBoss,EncounterId::LagavulinMatriarchBoss},
+        {EncounterId::TheInsatiableBoss,EncounterId::KnowledgeDemonBoss,EncounterId::KaiserCrabBoss},
+        {EncounterId::QueenBoss,EncounterId::TestSubjectBoss,EncounterId::AeonglassBoss}};
+    if(seen)for(auto id:order[q.region])if(!(seen[unsigned(id)/8]&(1u<<(unsigned(id)%8)))){q.bosses[0]=id;break;}
+    if(!s.world.first_run||q.region)return;
+    static constexpr EncounterId first[]={EncounterId::NibbitsWeak,EncounterId::SlimesWeak,EncounterId::ShrinkerBeetleWeak,EncounterId::InkletsNormal,EncounterId::MawlerNormal,EncounterId::RubyRaidersNormal,EncounterId::NibbitsNormal};
+    for(unsigned i=0;i<7;++i)world_first_room(q.encounters,q.encounter_count,i,first[i]);
+    world_first_room(q.elites,q.elite_count,0,EncounterId::ByrdonisElite);world_first_room(q.elites,q.elite_count,1,EncounterId::PhrogParasiteElite);
+    world_first_room(q.events,q.event_count,0,uint8_t(OriginalEventId::ByrdonisNest));world_first_room(q.events,q.event_count,1,uint8_t(OriginalEventId::SapphireSeed));
+}
+static bool world_make_room_sets(State&s,unsigned first_region,const uint8_t*seen){
     auto&rng=world_rng(s,WorldRng::UpFront);
-    bool darv[WorldActCount]{};unsigned shared=1;
+    bool darv[WorldActCount]{};unsigned shared=s.world.unlocks.has(Epoch::Darv)?1:0;
     // RunManager assigns a prefix of the remaining shared ancient list to
     // each later act before generating any act's rooms. Darv is its sole item.
     for(unsigned a=1;a<WorldActCount;++a){unsigned count=rng.below(shared+1);darv[a]=count!=0;shared-=count;}
     for(unsigned a=0;a<WorldActCount;++a){
         auto&q=s.world.rooms[a];q={};q.region=uint8_t(a==0?first_region:a+1);
         const auto&pool=WorldRegionPools[q.region];
-        for(unsigned j=0;j<pool.event_count;++j)q.events[q.event_count++]=uint8_t(pool.events[j]);
-        for(auto id:WorldSharedEvents){if(q.event_count==MaxWorldEventQueue)return world_fail(s);q.events[q.event_count++]=uint8_t(id);}
+        for(unsigned j=0;j<pool.event_count;++j)if(timeline_model_allowed(s.world.unlocks,TimelineKind::Event,unsigned(pool.events[j])))q.events[q.event_count++]=uint8_t(pool.events[j]);
+        for(auto id:WorldSharedEvents){if(!timeline_model_allowed(s.world.unlocks,TimelineKind::Event,unsigned(id)))continue;if(q.event_count==MaxWorldEventQueue)return world_fail(s);q.events[q.event_count++]=uint8_t(id);}
         reference::shuffle(q.events,q.event_count,rng);
         q.encounter_count=pool.rooms;q.elite_count=15;
         if(!world_fill_encounters(s,q,EncounterClass::Weak,q.encounters,pool.weak))return false;
@@ -56,10 +72,15 @@ static bool world_make_room_sets(State&s,unsigned first_region){
         EncounterId bosses[EncounterKinds];unsigned n=encounter_pool(q.region,EncounterClass::Boss,bosses,EncounterKinds);
         if(!n||n>EncounterKinds)return world_fail(s);
         unsigned b=rng.below(n);q.bosses[0]=bosses[b];q.boss_count=1;
-        unsigned ancient=rng.below(pool.ancient_count+unsigned(darv[a]));
-        q.ancient=uint8_t(ancient==pool.ancient_count?OriginalEventId::Darv:pool.ancients[ancient]);
+        OriginalEventId ancients[4];unsigned ac=0;
+        for(unsigned i=0;i<pool.ancient_count;++i){const auto id=pool.ancients[i];
+            if((id!=OriginalEventId::Neow||s.world.unlocks.has(Epoch::Neow))&&(id!=OriginalEventId::Orobas||s.world.unlocks.has(Epoch::Orobas)))ancients[ac++]=id;}
+        if(darv[a])ancients[ac++]=OriginalEventId::Darv;
+        q.ancient=ac?uint8_t(ancients[rng.below(ac)]):0;
+        world_discovery_rooms(s,q,seen);
         if(a==2&&s.world.ascension>=10){
-            if(n<2)return world_fail(s);for(unsigned j=b+1;j<n;++j)bosses[j-1]=bosses[j];
+            if(n<2)return world_fail(s);b=0;while(b<n&&bosses[b]!=q.bosses[0])++b;
+            if(b==n)return world_fail(s);for(unsigned j=b+1;j<n;++j)bosses[j-1]=bosses[j];
             q.bosses[1]=bosses[rng.below(n-1)];q.boss_count=2;
         }
         q.ready=1;
@@ -97,7 +118,7 @@ static bool world_enter_act(State&s,unsigned act){
     ++s.revision;
     // Only the first Neow is automatically entered. Later ancients remain a
     // selectable starting point, exactly like RunManager.EnterAct.
-    return act?true:world_choose_point(s,w.maps[act].root);
+    return act||!w.rooms[0].ancient?true:world_choose_point(s,w.maps[act].root);
 }
 static EncounterId world_pull_encounter(State&s,WorldRoom type){
     auto&q=s.world.rooms[s.world.act_index];
@@ -129,13 +150,13 @@ static void world_use_free_travel(State&s){
 }
 } // namespace
 
-bool world_begin_run(State&s,reference::ActKind first_region,unsigned ascension){
+bool world_begin_run(State&s,reference::ActKind first_region,unsigned ascension,const uint8_t*seen_encounters){
     if(s.practice||s.world.active||unsigned(first_region)>1||ascension>10||s.hp<=0||!s.deck_count)return false;
     s.world.active=1;s.world.ascension=uint8_t(ascension);s.world.act_index=0;
     world_rng(s,WorldRng::UpFront);init_world_relics(s);original_event_new_run(s);
     s.potion_slots=uint8_t(ascension>=4?2:3);
     if(ascension>=5&&event_add_deck_card(s,{EventCardAscendersBane,0},nullptr,true)<0)return world_fail(s);
-    if(s.phase==Phase::Error||!world_make_room_sets(s,unsigned(first_region)))return false;
+    if(s.phase==Phase::Error||!world_make_room_sets(s,unsigned(first_region),seen_encounters))return false;
     if(has_run_modifier(s,RunModifier::DeadlyEvents))world_remove_relic_from_bags(s,WorldRelicJuzuBracelet);
     if(s.run_options.modifiers&RunExclusiveDeckModifiers){
         s.deck_count=0;for(auto&c:s.deck)c={};for(auto&f:s.event_cards.deck)f={};
@@ -186,7 +207,7 @@ bool world_reachable(const State&s,unsigned point){
     const auto*map=world_current_map(s);const auto&w=s.world;
     if(debug_travel(s))return map&&s.hp>0&&point<map->count&&map->points[point].active;
     if(!map||!world_can_travel(s)||point>=map->count||!map->points[point].active||w.visited[w.act_index][point])return false;
-    if(w.current_point>=map->count)return point==map->root;
+    if(w.current_point>=map->count)return w.rooms[w.act_index].ancient?point==map->root:map->points[map->root].children.contains(uint8_t(point));
     if(map->points[w.current_point].children.contains(uint8_t(point)))return true;
     return world_free_travel(s)&&map->points[point].row==map->points[w.current_point].row+1;
 }
@@ -220,7 +241,12 @@ bool world_choose_point(State&s,unsigned point){
     case PointType::Rest:room=WorldRoom::Rest;break;case PointType::Treasure:room=WorldRoom::Treasure;break;
     case PointType::Start:case PointType::Unknown:room=WorldRoom::Event;break;default:return false;
     }
-    if(p.type==PointType::Unknown)room=world_roll_unknown(s,point);
+    if(p.type==PointType::Unknown){
+        bool first_unknown=w.first_run;
+        if(first_unknown)for(unsigned a=0;a<WorldActCount;++a)if(w.map_ready[a])for(unsigned i=0;i<w.maps[a].count;++i)
+            if(w.visited[a][i]&&w.maps[a].points[i].type==PointType::Unknown)first_unknown=false;
+        if(!first_unknown)room=world_roll_unknown(s,point);
+    }
     if(room==WorldRoom::None)return world_fail(s);
     if(w.current_point<w.maps[w.act_index].count&&!w.maps[w.act_index].points[w.current_point].children.contains(uint8_t(point)))
         if(!debug_travel(s))

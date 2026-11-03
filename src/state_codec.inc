@@ -277,6 +277,7 @@ bool save(const State&s,SaveData&out){
     State&copy=*::new(detail::InPlaceAddress{workspace.state_storage()}) State(s);power_order_reconcile(copy);
     Codec c{out.bytes,nullptr,0,sizeof(out.bytes),true};c.field(0x3156534E);c.field(SaveVersion);c.field(0x41CEF1EA);code_state(copy,c,LegacySaveVersion);
     code_run_options(copy.run_options,c);code_power_order(copy,c);
+    for(auto&word:copy.world.unlocks.words)field(word,c);field(copy.world.first_run,c);
     c.field(0);out.size=c.at;return c.good;
 }
 bool load(State&s,const uint8_t*data,size_t len){
@@ -289,6 +290,7 @@ bool load(State&s,const uint8_t*data,size_t len){
     code_state(tmp,c,version>=CustomSaveVersion?LegacySaveVersion:version);
     if(version>=CustomSaveVersion){code_run_options(tmp.run_options,c);if(version==CustomSaveVersion&&tmp.run_options.mode==RunMode::Standard)return false;}
     if(version>=17)code_power_order(tmp,c);else if(c.good)power_order_migrate(tmp);
+    if(version>=18){for(auto&word:tmp.world.unlocks.words)field(word,c);field(tmp.world.first_run,c);}
     if(!c.good||c.at!=len-4||!validate(tmp)||tmp.phase==Phase::Error)return false;
     // Older v3-v15 files carry a checksum here; it is intentionally ignored.
     s=tmp;return true;

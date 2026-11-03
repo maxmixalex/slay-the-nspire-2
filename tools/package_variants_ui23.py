@@ -10,6 +10,7 @@ import argparse
 import hashlib
 import json
 from pathlib import Path
+import re
 import subprocess
 import shutil
 import sys
@@ -31,7 +32,7 @@ def digest(path):
     return value.hexdigest()
 
 
-def inspect_resources(directory, expected_profile):
+def inspect_resources(directory, expected_profile, *, require_timeline=False):
     common = (directory / "nSpire2.dat.tns").read_bytes()
     required = ["nSpire2.dat.tns", "nSpire2.eng.dat.tns", "nSpire2.zhs.dat.tns"]
     if common[:4] == b"NSM1":
@@ -43,6 +44,9 @@ def inspect_resources(directory, expected_profile):
         path = directory / ("nSpire2." + code + ".dat.tns")
         logical = reconstruct(common, path.read_bytes(), code)
         version = int.from_bytes(logical[4:8], 'little')
+        string_count = int.from_bytes(logical[24:28], 'little')
+        if require_timeline and string_count != 8961:
+            raise ValueError('UI24 requires the complete 8961-string Timeline catalog: '+code)
         if resource_format is None:
             resource_format = version
         elif version != resource_format:
@@ -51,7 +55,7 @@ def inspect_resources(directory, expected_profile):
         if profile != expected_profile:
             raise ValueError('Locale animation profile differs from its package folder: '+code)
         locales[code] = {"bytes": path.stat().st_size, "sha256": digest(path),
-                         "resource_format": version, "animation_profile": profile,
+                         "resource_format": version, "animation_profile": profile, "string_count": string_count,
                          "logical_bytes": len(logical),
                          "logical_sha256": hashlib.sha256(logical).hexdigest()}
     return {"resource_format": resource_format,
@@ -74,6 +78,9 @@ def check_archive(path):
 
 def build(args):
     args.output.mkdir(parents=True, exist_ok=True)
+    stage = getattr(args, 'stage', 'ui23')
+    if not re.fullmatch(r'ui[0-9]+', stage):
+        raise ValueError('The delivery stage must be ui followed by its number')
     documentation_ref = getattr(args, 'documentation_ref', None)
     launcher_bytes = args.launcher.stat().st_size
     directories = {"animated": args.animated, "no-animations": args.no_animations}
@@ -85,7 +92,12 @@ def build(args):
         'no-animations': getattr(args, 'no_animations_resource_source_ref', None) or
             (getattr(args, 'resource_source_ref', None) if resource_checkpoints['no-animations'] == resource_checkpoints['animated'] else None) or
             resource_checkpoints['no-animations']}
-    resources = {name: inspect_resources(path, name) for name, path in directories.items()}
+    resource_source_relations = {
+        'animated': getattr(args, 'resource_source_relation', 'equivalent_tree'),
+        'no-animations': getattr(args, 'no_animations_resource_source_relation', None) or
+            getattr(args, 'resource_source_relation', 'equivalent_tree')}
+    resources = {name: inspect_resources(path, name, require_timeline=int(stage[2:]) >= 24)
+                 for name, path in directories.items()}
     if resources['animated']['resource_format'] != resources['no-animations']['resource_format']:
         raise ValueError('Animated and reduced editions use different resource format versions')
     for row in resources.values():
@@ -95,12 +107,16 @@ def build(args):
         raise ValueError("Animated installation is %d bytes, above the %d-byte limit" %
                          (resources["animated"]["installed_bytes"], args.maximum_animated_bytes))
     base_version = (ROOT / "VERSION").read_text().strip().split("-", 1)[0]
-    stem = "Slay-the-Nspire-2-" + base_version + "-ui23"
+    stem = "Slay-the-Nspire-2-" + base_version + "-" + stage
+    archive_suffixes = ({"animated": "full-animated-bilingual",
+                         "no-animations": "no-character-animation-bilingual"}
+                        if int(stage[2:]) >= 25 else
+                        {profile: profile + "-bilingual-calculator" for profile in PROFILES})
     receipts = {}
     with tempfile.TemporaryDirectory(prefix="nspire-package-variants-") as temporary:
-        stage = Path(temporary)
+        staging_root = Path(temporary)
         for profile, directory in directories.items():
-            destination = stage / profile
+            destination = staging_root / profile
             command = [sys.executable, str(ROOT / "tools" / "package_release.py"),
                        "--launcher", str(args.launcher), "--common", str(directory / "nSpire2.dat.tns"),
                        "--eng", str(directory / "nSpire2.eng.dat.tns"),
@@ -110,14 +126,15 @@ def build(args):
                        "--resource-checkpoint", resource_checkpoints[profile],
                        "--runtime-source-ref", runtime_source_ref,
                        "--resource-source-ref", resource_source_refs[profile],
-                       "--stage", "ui23-" + profile]
+                       "--resource-source-relation", resource_source_relations[profile],
+                       "--stage", stage + "-" + profile]
             if documentation_ref:
                 command += ["--documentation-ref", documentation_ref]
             subprocess.run(command, check=True)
             candidates = list(destination.glob("*-calculator.zip"))
             if len(candidates) != 1:
                 raise ValueError("Expected exactly one calculator archive")
-            archive = args.output / (stem + "-" + profile + "-bilingual-calculator.zip")
+            archive = args.output / (stem + "-" + archive_suffixes[profile] + ".zip")
             candidates[0].replace(archive)
             receipts[profile] = check_archive(archive)
             reports = list(destination.glob('*-validation.json'))
@@ -136,10 +153,15 @@ def build(args):
 
     extras = [code for code in LANGUAGES if code not in ("eng", "zhs")]
     optional = args.output / (stem + "-optional-languages.zip")
+    edition_mapping = ((stage.upper() + "主包文件名 / Installer mapping:\n"
+                        "full-animated-bilingual → animated\n"
+                        "no-character-animation-bilingual → no-animations\n\n")
+                       if int(stage[2:]) >= 25 else "")
     instructions = (
-        "Slay the Nspire 2 UI23 — optional original languages\n\n"
+        "Slay the Nspire 2 " + stage.upper() + " — optional original languages\n\n"
         "请选择与你安装的版本对应的文件夹：\n"
         "animated = 完整动画版；no-animations = 无人物/怪物连续动画版。\n"
+        f"{edition_mapping}"
         "仅将其中所需的 data/nSpire2.<language>.dat.tns 复制到游戏 data 文件夹。\n"
         "本ZIP只配套本轮提供的对应主包；两个动画档的语言寻址不同，请勿混用。英语和简体中文已在两个主包中。\n\n"
         "Choose the directory matching your calculator edition: animated or no-animations.\n"
@@ -149,8 +171,8 @@ def build(args):
         "自行转换时，可选语言与common/用途包须来自同一次转换，不能混用此预制ZIP，即使版本/动画档相同。\n"
         "For fresh conversion, common/concern files and optional locales must come from that same conversion, even if version/profile labels match.\n"
         "English and Simplified Chinese are already in both complete installers.\n\n"
-        "原版内容按所选语言提供；本移植新增的五条历史/归档错误提示仅有简体中文和英语，其余语言显示英语。\n"
-        "Original content uses the selected locale. Five port-authored history/archive error messages are available in Simplified Chinese and English; other locales display English for those messages.\n\n"
+        "原版内容按所选语言提供；原文缺失处按原版英语回退。本移植新增的历史/归档错误与时间线状态提示提供简体中文和英语，其余语言显示英语。\n"
+        "Original content uses the selected locale, with English fallback where the original table lacks a key. Port-authored history/archive errors and Timeline status labels use Simplified Chinese or English; other locales display English for these labels.\n\n"
         "Available additional locale codes: " + ", ".join(extras) + "\n")
     with zipfile.ZipFile(optional, "w", zipfile.ZIP_DEFLATED, compresslevel=6) as archive:
         archive.writestr("README-languages.txt", instructions.encode("utf-8"))
@@ -165,12 +187,13 @@ def build(args):
                 if archive.read(profile + "/data/" + name) != (directory / name).read_bytes():
                     raise ValueError("Optional locale readback differs")
     receipts["optional-languages"] = check_archive(optional)
-    result = {"schema": 1, "stage": "ui23", "runtime_checkpoint": args.runtime_checkpoint,
+    result = {"schema": 1, "stage": stage, "runtime_checkpoint": args.runtime_checkpoint,
               "resource_checkpoint": args.resource_checkpoint,
               "runtime_source_ref": runtime_source_ref,
               "resource_source_ref": resource_source_refs['animated'],
               "resource_checkpoints": resource_checkpoints,
               "resource_source_refs": resource_source_refs,
+              "resource_source_relations": resource_source_relations,
               "maximum_animated_bytes": args.maximum_animated_bytes,
               "animated_storage_target_met": meets_budget,
               "physical_device_tested": False,
@@ -179,7 +202,7 @@ def build(args):
               "resources": resources, "archives": receipts}
     if documentation_ref:
         result['documentation_checkpoint'] = documentation_ref
-    manifest = args.output / "UI23-delivery-manifest.json"
+    manifest = args.output / (stage.upper() + "-delivery-manifest.json")
     manifest.write_text(json.dumps(result, ensure_ascii=False, indent=2) + "\n")
     return result
 
@@ -190,12 +213,15 @@ def main():
         parser.add_argument("--" + name, type=Path, required=True)
     parser.add_argument("--runtime-checkpoint", required=True)
     parser.add_argument("--resource-checkpoint", required=True)
+    parser.add_argument('--stage', default='ui23', help='Delivery label, for example ui24; defaults to the historical ui23 label')
     parser.add_argument('--runtime-source-ref', help='Verified published equivalent runtime source, separate from the actual build checkpoint')
-    parser.add_argument('--resource-source-ref', help='Verified published equivalent converter source, separate from the actual producer checkpoint')
+    parser.add_argument('--resource-source-ref', help='Published converter reference, separate from the actual producer checkpoint')
+    parser.add_argument('--resource-source-relation', choices=('equivalent_tree','published_implementation_reference'), default='equivalent_tree')
     parser.add_argument("--documentation-ref", help="Optional independent documentation commit for both installers")
     parser.add_argument("--no-animations-resource-checkpoint",
                         help="Record a different verified source checkpoint for the reduced resources")
-    parser.add_argument('--no-animations-resource-source-ref', help='Published equivalent source for a separately built reduced converter')
+    parser.add_argument('--no-animations-resource-source-ref', help='Published source for a separately built reduced converter')
+    parser.add_argument('--no-animations-resource-source-relation', choices=('equivalent_tree','published_implementation_reference'))
     parser.add_argument("--maximum-animated-bytes", type=int, default=70_000_000)
     parser.add_argument("--allow-over-budget-candidate", action="store_true",
                         help="Produce explicitly over-budget evaluation artifacts; never marks the target met")
@@ -206,7 +232,7 @@ def main():
         result = build(args)
     except (OSError, ValueError, subprocess.CalledProcessError) as error:
         parser.exit(1, "Packaging failed: " + str(error) + "\n")
-    print(json.dumps({"manifest": str(args.output / "UI23-delivery-manifest.json"),
+    print(json.dumps({"manifest": str(args.output / (args.stage.upper() + "-delivery-manifest.json")),
                       "storage_target_met": result["animated_storage_target_met"],
                       "archives": result["archives"]}, ensure_ascii=False))
 

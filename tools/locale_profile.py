@@ -24,7 +24,7 @@ def source_literals():
                 try:text=json.loads(match[0])
                 except ValueError:continue
                 if any(ord(char)>127 for char in text):
-                    rows.setdefault(text,[]).append(str(path.relative_to(ROOT)))
+                    rows.setdefault(text,[]).append(path.relative_to(ROOT).as_posix())
     return rows
 
 

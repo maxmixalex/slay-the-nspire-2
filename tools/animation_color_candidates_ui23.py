@@ -204,6 +204,8 @@ def protected_images(source, preserve_selection=False):
         elif len(source.clips) >= 1710:
             protected.update(i for first, count, *_ in source.clips[1705:1710]
                              for i in range(first, first+count))
+    from actor_storage_policy import exact_material_images
+    protected.update(exact_material_images(source))
     return protected
 
 

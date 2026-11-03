@@ -79,3 +79,25 @@ jobs:
         run: python3 tools/build_ndless.py --compression zopfli
       - name: Build WebAssembly runtime without private resources
         run: python3 tools/build_web.py --compile-only
+      - name: Stage the public calculator launcher and its notices
+        shell: bash
+        run: |
+          output="$RUNNER_TEMP/calculator-launcher"
+          mkdir -p "$output/licenses"
+          install -m 644 dist/nSpire2.tns "$output/nSpire2.tns"
+          install -m 644 docs/launcher-readme.txt "$output/README.txt"
+          install -m 644 COPYING LICENSE NOTICE.md \
+            licenses/Go-BSD-3-Clause.txt licenses/OkHSV-Godot-MIT.txt \
+            licenses/Noto-Boot-OFL.txt licenses/NotoEmoji-OFL.txt \
+            licenses/NotoSansSymbols2-OFL.txt "$output/licenses/"
+          install -m 644 third_party/unicode/LICENSE "$output/licenses/Unicode-License.txt"
+          git rev-parse HEAD > "$output/COMMIT"
+          (cd "$output" && sha256sum nSpire2.tns > SHA256SUMS)
+      - name: Upload the launcher built by this run
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: nspire2-launcher-${{ github.sha }}
+          path: ${{ runner.temp }}/calculator-launcher/
+          if-no-files-found: error
+          retention-days: 30
+          compression-level: 0

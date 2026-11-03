@@ -104,7 +104,8 @@ int main(int argc,char**argv){
  CHECK(ui_run_badge_rarity(app.progress.current,UiRunBadge::MysteryMachine)==1);
  CHECK(ui_run_badge_rarity(app.progress.current,UiRunBadge::Restful)==1);
  CHECK(ui_run_badge_rarity(app.progress.current,UiRunBadge::Restless)==0);
- const size_t paged=encode_ui_progress(app.progress,encoded,sizeof encoded);CHECK(paged&&encoded[3]=='A'&&decode_ui_progress(encoded,paged,restored));
+ const size_t paged=encode_ui_progress(app.progress,encoded,sizeof encoded);CHECK(paged&&encoded[3]=='B'&&decode_ui_progress(encoded,paged,restored));
+ CHECK(restored.timeline.flags==(TimelineInitialized|TimelineLegacyAccess));
  CHECK(ui_run_score(restored.current).floor_points==2000);
  export_fixture("synthetic-200-floors");app.open_history();unsigned total=0,last=200;
  const unsigned visible_first=app.history_at(app.history_index)->floors[0].floor;

@@ -76,6 +76,14 @@ static void reset_io(){fail_open.clear();fail_close.clear();fail_unlink.clear();
  write_limit=SIZE_MAX;written=peak=0;max_write=reads=writes=0;reenter=replace_existing=false;count_peak();}
 static void setup(){files.clear();reset_io();profile_launcher="/calc/game/nSpire2.tns";selected_profile=1;pending_profile=0;CHECK(configure_profile_paths(1));CHECK(!resource_transfer_uses);}
 static Bytes canonical(const UiProgress&v){const size_t n=encode_ui_progress(v,encoded,sizeof encoded);CHECK(n);return Bytes(encoded,encoded+n);}
+static bool legacy_payload_equal(UiProgress&v,const Bytes&raw){
+ CHECK(raw.size()>=8&&raw[3]=='8');
+ CHECK(v.timeline.flags==(TimelineInitialized|TimelineLegacyAccess));
+ CHECK(!v.timeline.score&&!v.timeline.ancients_seen&&!v.timeline.characters_known);
+ for(unsigned i=0;i<EpochCount;++i)CHECK(v.timeline.states[i]==EpochState::None&&!v.timeline.obtained_at[i]);
+ const auto compatibility=v.timeline;v.timeline={};const Bytes historical=canonical(v);v.timeline=compatibility;
+ return historical==raw;
+}
 static void fixture(unsigned version){
  clear_ui_progress(value);value.current.serial=1;value.current.floor_count=1;value.last_saved_at=123456;
  value.characters[0].play_seconds=15;value.characters[1].play_seconds=27;
@@ -117,7 +125,7 @@ static void versions(){
   UiProgressSummary summary,original;CHECK(decode_ui_progress_summary(raw.data(),raw.size(),original));
   reenter=true;CHECK(profile_info(1,summary)&&!resource_transfer_uses);reenter=false;
   CHECK(summary.exists==original.exists&&summary.play_seconds==42&&summary.last_saved_at==original.last_saved_at);
-  // NSH1's established canonical upgrade to NSH2 remains owned by the codec.
+  // The codec owns legacy decoding and the explicit NSHB compatibility grant.
   CHECK(save_progress(loaded)&&!resource_transfer_uses);CHECK(unpack_file(files.at(progress_path))==expected);
   CHECK(!files.count(progress_temp)&&!files.count(progress_backup));CHECK(load_progress(loaded)&&canonical(loaded)==expected);
  }
@@ -134,7 +142,12 @@ static void maximum(){
  value.tutorial_flags=FtueFresh|FtueSeenMask;const Bytes raw=canonical(value);CHECK(raw.size()==295349&&raw[3]=='8');
  reenter=true;CHECK(save_progress(value)&&!resource_transfer_uses);reenter=false;const Bytes stored=files.at(progress_path);
  CHECK(stored.size()==74001&&max_write==storage_codec::BlockBytes&&unpack_file(stored)==raw);
- CHECK(load_progress(loaded)&&canonical(loaded)==raw);UiProgressSummary summary;CHECK(profile_info(1,summary)&&summary.exists);
+ CHECK(load_progress(loaded)&&loaded.timeline.flags==(TimelineInitialized|TimelineLegacyAccess));
+ // Loading H8 grants explicit compatibility access without writing the file.
+ // Remove only that new extension to verify every historical field exactly.
+ CHECK(files.at(progress_path)==stored);const auto compatibility=loaded.timeline;
+ loaded.timeline={};CHECK(canonical(loaded)==raw);loaded.timeline=compatibility;
+ CHECK(canonical(loaded)[3]=='B');UiProgressSummary summary;CHECK(profile_info(1,summary)&&summary.exists);
  export_bytes("full-profile.nsh",raw);export_bytes("full-profile-storage.tns",stored);
  CHECK(4*stored.size()+6*121503+340==1025362);
  CHECK(4*stored.size()+3*121503+3*252928+340==1419637);
@@ -172,12 +185,12 @@ static void failures(){
   switch(fault){case 0:fail_open=progress_temp;break;case 1:write_limit=17;break;case 2:fail_close=progress_temp;break;
    case 3:fail_close=progress_path;break;case 4:fail_unlink=progress_backup;break;case 5:fail_renames={progress_path};break;case 6:fail_renames={progress_temp};break;}
   CHECK(!save_progress(value)&&!resource_transfer_uses);CHECK(files.at(progress_path)==old&&!files.count(progress_temp));
-  reset_io();CHECK(load_progress(loaded)&&canonical(loaded)==old);
+  reset_io();CHECK(load_progress(loaded)&&legacy_payload_equal(loaded,old));
  }
  scenario="failed rollback retains a recoverable valid backup and next save works";
  setup();const Bytes old=legacy(8);files[progress_path]=old;CHECK(load_progress(loaded));value=loaded;value.last_saved_at=345678;const Bytes next=canonical(value);
  fail_renames={progress_temp,progress_backup};CHECK(!save_progress(value)&&!files.count(progress_path)&&files.at(progress_backup)==old&&!files.count(progress_temp));
- CHECK(load_progress(loaded)&&canonical(loaded)==old);CHECK(save_progress(value)&&unpack_file(files.at(progress_path))==next&&!files.count(progress_backup));
+ CHECK(load_progress(loaded)&&legacy_payload_equal(loaded,old));CHECK(save_progress(value)&&unpack_file(files.at(progress_path))==next&&!files.count(progress_backup));
  scenario="cleanup failure after commit cannot invalidate the valid new primary";
  CHECK(load_progress(loaded));value=loaded;value.last_saved_at++;const Bytes committed=canonical(value);fail_unlink=progress_backup;
  CHECK(save_progress(value)&&files.count(progress_backup)&&unpack_file(files.at(progress_path))==committed);
@@ -188,11 +201,11 @@ static void recovery(){
  scenario="malformed primary never replaces the valid backup after recovery";
  for(unsigned fault=0;fault<4;++fault){setup();const Bytes raw=legacy(8),good=envelope(raw);Bytes bad=good;bad.pop_back();
   if(fault==3){Bytes invalid_canonical=raw;invalid_canonical.back()=0x80;bad=envelope(invalid_canonical);}
-  files[progress_path]=bad;files[progress_backup]=good;CHECK(load_progress(loaded)&&canonical(loaded)==raw);
+  files[progress_path]=bad;files[progress_backup]=good;CHECK(load_progress(loaded)&&legacy_payload_equal(loaded,raw));
   CHECK(progress_recovery==ProgressRecovery::BackupAfterInvalidPrimary);value=loaded;value.last_saved_at++;const Bytes next=canonical(value);
   if(fault==1)fail_unlink=progress_path;else if(fault==2)fail_renames={progress_temp};
   if(fault==1||fault==2){CHECK(!save_progress(value)&&files.at(progress_backup)==good&&!files.count(progress_temp));
-   if(fault==1)CHECK(files.at(progress_path)==bad);CHECK(load_progress(loaded)&&canonical(loaded)==raw);}
+   if(fault==1)CHECK(files.at(progress_path)==bad);CHECK(load_progress(loaded)&&legacy_payload_equal(loaded,raw));}
   CHECK(save_progress(value)&&!files.count(progress_backup)&&!files.count(progress_temp));
   CHECK(load_progress(loaded)&&canonical(loaded)==next&&progress_recovery==ProgressRecovery::PrimaryValid);
  }
@@ -216,14 +229,15 @@ static void recovery(){
  CHECK(!save_progress(value)&&files==preserved);
  CHECK(load_progress(loaded)&&progress_recovery==ProgressRecovery::BackupAfterInvalidPrimary);
  UiProgressSummary summary;CHECK(profile_info(1,summary)&&progress_recovery==ProgressRecovery::BackupAfterInvalidPrimary);
- CHECK(save_progress(loaded)&&load_progress(loaded)&&canonical(loaded)==recovery_raw);
+ CHECK(save_progress(loaded)&&unpack_file(files.at(progress_path))[3]=='B');
+ CHECK(load_progress(loaded)&&legacy_payload_equal(loaded,recovery_raw));
 }
 static void profiles(){
  scenario="three profiles retain separate raw/packed histories and recovery facts";setup();Bytes expected[3];
  for(unsigned slot=1;slot<=3;++slot){selected_profile=slot;CHECK(configure_profile_paths(slot)&&progress_recovery==ProgressRecovery::Unknown);
   fixture(8);value.last_saved_at=1000+slot;value.characters[0].play_seconds=slot*17;expected[slot-1]=canonical(value);
   CHECK(save_progress(value));UiProgressSummary summary;CHECK(profile_info(slot,summary)&&summary.last_saved_at==1000+slot);}
- for(unsigned slot=1;slot<=3;++slot){selected_profile=slot;CHECK(configure_profile_paths(slot));CHECK(load_progress(loaded)&&canonical(loaded)==expected[slot-1]);}
+ for(unsigned slot=1;slot<=3;++slot){selected_profile=slot;CHECK(configure_profile_paths(slot));CHECK(load_progress(loaded)&&legacy_payload_equal(loaded,expected[slot-1]));}
  const auto before=files;{ResourceTransferLease busy(ResourceTransferUse::Bytes);CHECK(busy);UiProgressSummary summary;
   CHECK(!load_progress(loaded)&&!save_progress(value)&&!profile_info(1,summary)&&files==before);}
  CHECK(!resource_transfer_uses);CHECK(configure_profile_paths(1)&&progress_recovery==ProgressRecovery::Unknown);
@@ -232,5 +246,5 @@ int main(int argc,char**argv){
  if(argc==3&&!std::strcmp(argv[1],"--export"))export_directory=argv[2];
  else if(argc!=1){std::fprintf(stderr,"usage: ndless_history_storage_regression [--export EXISTING_DIRECTORY]\n");return 2;}
  versions();maximum();bounds();failures();recovery();profiles();
- CHECK(!resource_transfer_uses);std::printf("Ndless history: %u checks passed, raw NSH1-8 and NSZ1, unchanged canonical bytes.\n",checks);
+ CHECK(!resource_transfer_uses);std::printf("Ndless history: %u checks passed, raw NSH1-8 and NSZ1, historical bytes retained with explicit NSHB migration.\n",checks);
 }

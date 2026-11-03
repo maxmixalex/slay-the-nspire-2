@@ -59,17 +59,30 @@ struct Mask {
 };
 static_assert(sizeof(Mask)<18000,"Compact Neow transmission must fit the existing cinder-sized scene variant");
 
+// Calculator presentation: retain one source fire-light pose instead of
+// evaluating four procedural shaders every frame. Only the light is held;
+// Mask still follows all 546 original full-resolution foreground poses.
+// Two 8-bit radiance channels fit alongside Mask in the existing Tez slot.
+struct Illumination {
+ const void*owner=nullptr;
+ uint32_t generation=0;
+ bool valid=false;
+ uint16_t pixels[MaskBytes];
+ bool matches(const void*source,uint32_t epoch)const{return valid&&owner==source&&generation==epoch;}
+};
+
 struct Table {
- const uint8_t*data=nullptr;bool bounded=false;
+ const uint8_t*data=nullptr;bool bounded=false,baked=false;
  template<class Picture>bool read(const Picture&p,bool reduced){
-  data=nullptr;bounded=false;if(!p.pixels||p.format||p.alpha||p.palette||p.w!=256||(p.h!=9&&p.h!=26))return false;
+  data=nullptr;bounded=baked=false;if(!p.pixels||p.format||p.alpha||p.palette||p.w!=256||(p.h!=9&&p.h!=26))return false;
   const auto*r=p.pixels;if(r[0]!='N'||r[1]!='W'||r[2]!='F'||r[3]!='1')return false;
-  const unsigned version=word(r+4);bounded=version==2;const unsigned length=Length+(bounded?(MaskBytes+1)/2:0);
-  if((version!=1&&version!=2)||p.h!=(length+511)/512)return false;
+  const unsigned version=word(r+4);bounded=version==2;baked=version==3;const unsigned length=Length+(bounded?(MaskBytes+1)/2:0);
+  if((version!=1&&version!=2&&version!=3)||p.h!=(length+511)/512)return false;
   const unsigned header[]={version,reduced?2u:1u,4,Frames,KeyInterval,MaskBytes,FirstImage,TexturePages,FirstMask,ParameterImage,NodesAt,ModelsAt,RowsAt,SpansAt,Spans,length};
   for(unsigned i=0;i<16;++i)if(word(r+4+i*2)!=header[i])return false;
   if(dword(r+36)!=200000||dword(r+40)!=Duration)return false;
   if(bounded){if(dword(r+44)!=Length||dword(r+48)!=(MaskBytes+1)/2||(r[length-1]&240))return false;}
+  else if(baked){if(dword(r+44)!=FirstImage||dword(r+48)!=MaskBytes*2)return false;}
   else for(unsigned i=44;i<52;++i)if(r[i])return false;
   for(unsigned i=52;i<64;++i)if(r[i])return false;
   unsigned green=0,blue=0;

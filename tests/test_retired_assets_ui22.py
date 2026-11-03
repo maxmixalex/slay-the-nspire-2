@@ -21,6 +21,22 @@ from test_release_content_guard import fixture
 
 
 class RetirementGuardTest(unittest.TestCase):
+    def test_reviewed_combat_prefetch_keeps_unknown_routing_edits_rejected(self):
+        relative='src/combat_preparation.inc';path=retired.ROOT/relative;raw=path.read_bytes()
+        expected=retired.PLAN['runtime_route_sources'][relative]
+        self.assertEqual(t.sha256(raw),retired.HIT_PREFETCH_SOURCE_SHA)
+        self.assertEqual(retired.route_digest(relative,raw),expected)
+        self.assertEqual(retired.route_digest('src/not-a-reviewed-route.inc',raw),t.sha256(raw))
+        retired.verify_runtime_routes()
+        read=Path.read_bytes
+        for at in (0,raw.index(b'AnimHeroAttack'),raw.index(b'"Hit"'),len(raw)-1):
+            changed=bytearray(raw);changed[at]^=1
+            with self.subTest(byte=at):
+                self.assertNotEqual(retired.route_digest(relative,changed),expected)
+                with patch.object(Path,'read_bytes',lambda p:bytes(changed) if p==path else read(p)):
+                    with self.assertRaisesRegex(ValueError,'Retirement routing must be reviewed again'):
+                        retired.verify_runtime_routes()
+
     def test_reviewed_text_fragments_have_an_exact_source_alias(self):
         relative='src/world_content.inc';raw=(retired.ROOT/relative).read_bytes()
         self.assertEqual(t.sha256(raw),retired.FRAGMENT_WORLD_SOURCE_SHA)

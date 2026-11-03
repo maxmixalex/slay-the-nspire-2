@@ -41,11 +41,12 @@ static void start(const char*input){
     app.title=app.character_select=true;app.practice_entry=app.paused=app.help=app.library=false;
     app.selected_character=Character::Ironclad;app.selected_ascension=0;app.selected_region=reference::ActKind::Overgrowth;
     app.progress_loaded=true;app.progress.tutorial_flags=0;app.callbacks.save=store;app.callbacks.load=restore;app.callbacks.seed_entropy=entropy;
+    app.selected_seed_imported=false;
     CHECK(std::strlen(input)<sizeof app.selected_seed);std::strcpy(app.selected_seed,input);
     CHECK(app.start_selected_run(RunOptions{},false));CHECK(!app.title&&validate(app.game));
 }
 static void ordinary_run_and_continue(){
-    for(const char*input:{"oldA",u8" \u00a0éio中\u3000",u8"ıiİIſßﬃᾀ",u8"e\u0301",u8"𐐨𞤢","   "}){
+    for(const char*input:{"raw:123","RAW:123","raw:oldA","SEED64:123","SEED64-0000000000000000","1234567890","0000012345","oldA",u8" \u00a0éio中\u3000",u8"ıiİIſßﬃᾀ",u8"e\u0301",u8"𐐨𞤢","   "}){
         char canonical[65]{};CHECK(reference::canonicalize_seed(input,canonical,sizeof canonical));uint64_t value=0;
         CHECK(reference::seed_hash(canonical,value));const unsigned before_entropy=entropy_calls;
         start(input);CHECK(entropy_calls==before_entropy);CHECK(app.game.world.run_seed==value&&!std::strcmp(app.game.world.seed_text,canonical));
@@ -77,7 +78,47 @@ static void editor_and_legacy_console(){
     CHECK(app.debug_command("new IRONCLAD 1104089578")&&app.game.seed==1104089578u);
     CHECK(save(app.game,encoded));CHECK(!app.debug_command(("new IRONCLAD raw:"+std::string(65,'a')).c_str()));CHECK(save(app.game,again));same(encoded,again);
 }
+static void imported_run_and_continue(){
+    app.character_departure={};app.title=true;app.has_save=false;app.open_run_menu(RunMenu::Custom);
+    // Normal UI chooses the original unlocked, unseen non-default act.
+    app.progress.discovered_acts&=uint8_t(~2u);
+    app.selected_character=Character::Necrobinder;app.selected_ascension=4;app.selected_region=reference::ActKind::Underdocks;
+    app.ui_action(UiAction::RunSeed);CHECK(app.run_seed_editing&&!app.map_preview.importing);
+    app.reference_input(Key::Down);CHECK(app.map_preview.importing&&!app.map_preview.draft[0]);
+    const char*code="SEED64-EE30F6EB8A5EC879";
+    // Exercise both the full portable code and manual sixteen-hex entry.
+    host_text_utf8(code,std::strlen(code),[](int cp){app.reference_text(cp);});app.reference_text(13);
+    CHECK(app.selected_seed_imported&&!std::strcmp(app.selected_seed,code)&&!app.map_preview.open);
+    const unsigned entropy_before=entropy_calls;
+    CHECK(app.start_selected_run(app.run_mode.pending,false)&&validate(app.game));
+    CHECK(app.game.character==Character::Necrobinder&&app.game.world.ascension==4&&app.game.world.rooms[0].region==1);
+    CHECK(app.game.world.seed_imported&&app.game.world.run_seed==UINT64_C(0xee30f6eb8a5ec879)&&entropy_calls==entropy_before);
+    CHECK(app.progress.current.seed_imported&&!std::strcmp(app.progress.current.seed_text,code));
+    CHECK(save(app.game,encoded));CHECK(load(loaded,encoded.bytes,encoded.size)&&loaded.world.seed_imported);CHECK(save(loaded,again));same(encoded,again);
+    for(unsigned i=0;i<WorldRngCount;++i)CHECK(world_rng(app.game,WorldRng(i)).next()==world_rng(loaded,WorldRng(i)).next());
+    const size_t size=encode_ui_progress(app.progress,progress_bytes,sizeof progress_bytes);CHECK(size);
+    clear_ui_progress(progress);CHECK(decode_ui_progress(progress_bytes,size,progress)&&progress.current.seed_imported&&progress.current.run_seed==app.game.world.run_seed);
+    CHECK(sizeof(WorldState)==sizeof(loaded.world));CHECK(sizeof(UiRunHistory)==7576);
+    uint64_t value=17;for(const char*invalid:{"","0","SEED64-000000000000000","SEED64-00000000000000000","SEED64-000000000000000I"," SEED64-0000000000000000","raw:123"}){
+        CHECK(!reference::parse_seed_code(invalid,value)&&value==17);CHECK(!world_import_seed(loaded,invalid));}
+    CHECK(reference::parse_seed_code("0000000000000000",value)&&value==0);
+    CHECK(reference::parse_seed_code("seed64-ffffffffffffffff",value)&&value==UINT64_MAX);
+    app.character_departure={};app.title=true;app.has_save=false;app.open_run_menu(RunMenu::Custom);CHECK(!app.selected_seed_imported&&!app.selected_seed[0]);
+    app.ui_action(UiAction::RunSeedImport);CHECK(app.map_preview.importing);app.reference_text('1');app.reference_text(13);
+    CHECK(app.map_preview.open&&*app.map_preview.error);app.reference_text(27);CHECK(!app.selected_seed_imported);
+    app.ui_action(UiAction::RunSeedImport);app.reference_input(Key::Up);CHECK(!app.map_preview.importing);
+    const std::string over(65,'a');host_text_utf8(over.data(),over.size(),[](int cp){app.reference_text(cp);});app.reference_text(13);
+    CHECK(app.map_preview.open&&app.map_preview.overflow&&!app.selected_seed[0]);
+    app.reference_text('b');app.reference_text(13);CHECK(app.map_preview.open&&app.map_preview.overflow);
+    app.reference_text(8);CHECK(!app.map_preview.overflow);app.reference_text(13);CHECK(!app.map_preview.open&&std::strlen(app.selected_seed)==63);
+    app.ui_action(UiAction::RunSeed);app.reference_text(-1);
+    for(unsigned i=0;i<21;++i)app.reference_text(0x4e2d);app.reference_text(0x4e2d);app.reference_text(13);
+    CHECK(app.map_preview.open&&app.map_preview.overflow&&std::strlen(app.map_preview.draft)==63);
+    app.reference_text(-1);CHECK(!app.map_preview.overflow);
+    host_text_utf8(code,std::strlen(code),[](int cp){app.reference_text(cp);});app.reference_text(13);CHECK(!app.selected_seed_imported);
+    uint64_t literal=0;CHECK(reference::seed_hash(code,literal));CHECK(app.start_selected_run({},false)&&app.game.world.run_seed==literal&&!app.game.world.seed_imported);
+}
 int main(){
-    raw_roundtrips();ordinary_run_and_continue();editor_and_legacy_console();
+    raw_roundtrips();ordinary_run_and_continue();editor_and_legacy_console();imported_run_and_continue();
     std::printf("Seed world / UI / save: %u checks\n",checks);return 0;
 }

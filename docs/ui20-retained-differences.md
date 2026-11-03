@@ -5,6 +5,13 @@ behavior, older completed work, and differences still present in UI20. It does
 not turn documentation, a registry entry, an image oracle, or a performance
 probe into a gameplay implementation.
 
+This is a historical UI20 record. Its Timeline omission is superseded by the
+[UI24 implementation and acceptance](ui24-timeline.md), its Ancient presentation
+by the [later inventory](ui23-retained-differences.md) and
+[UI24 performance record](ui24-ancient-performance.md), and its seed-input scope
+by [UI24 ASCII seed handling](seed-ascii-ui24.md). The old scope label below is
+not evidence that the user waived unfinished features.
+
 ## Concrete differences closed by UI20
 
 | Earlier behavior or newly exposed omission | UI20 production implementation |

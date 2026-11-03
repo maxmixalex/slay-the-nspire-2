@@ -83,7 +83,9 @@ static void singleplayer_screen(Canvas&c){
   // This source paragraph has extra glyph tracking, unlike modifier prose.
   const char*description=frontend_text(a,"main_menu_ui",key,"");
   profile_text_box(c,description,x+8,MenuTop+102,76,70,{8,0,rgb(255,246,226),64},true,true,transform);
-  c.action(x,MenuTop,MenuWidth,MenuHeight,actions[i]);
+  const bool enabled=a.timeline_mode_available(i==1?RunMode::Daily:i==2?RunMode::Custom:RunMode::Standard);
+  if(!enabled){c.dim(left,MenuTop,width,MenuHeight,150);profile_text_box(c,a.content.language()==2?"未解锁":"Locked",x+4,MenuTop+85,84,20,{10,0,rgb(239,200,81),64},true,false);}
+  c.action(x,MenuTop,MenuWidth,MenuHeight,actions[i],enabled);
  }
  native_original_back(c,a.run_mode.started);
 }
@@ -109,8 +111,9 @@ static void custom_run_screen(Canvas&c){
   const int w=(28*scale+512)/1024,h=(33*scale+512)/1024,ow=(26*scale+512)/1024,oh=(35*scale+512)/1024;
   const int portrait=a.content.ui_image(character_portrait(RunModeCharacters[i]));Canvas shadow=c;shadow.tint_red=shadow.tint_green=shadow.tint_blue=0;shadow.picture(portrait,center-w/2+2,cy-h/2+2,w,h,64);
   if(i==selected){const int outline=a.content.world_image("character","OUTLINE");if(outline>=0)c.picture(outline,center-ow/2,cy-oh/2,ow,oh,portraits.outline_alpha(a.map_clock_ms),presentation::Add);}
-  small_material_icon(c,portrait,center-w/2,cy-h/2,w,h,portraits.saturation(i,a.map_clock_ms),portraits.value(i,a.map_clock_ms));
-  if(!editing)c.action(portrait_left(i),CustomPortraitTop,CustomPortraitWidth,CustomPortraitHeight,actions[i]);
+  const bool unlocked=a.timeline_character_available(unsigned(RunModeCharacters[i]));
+  small_material_icon(c,portrait,center-w/2,cy-h/2,w,h,unlocked?portraits.saturation(i,a.map_clock_ms):0,unlocked?portraits.value(i,a.map_clock_ms):350);
+  if(!editing)c.action(portrait_left(i),CustomPortraitTop,CustomPortraitWidth,CustomPortraitHeight,actions[i],unlocked);
  }
  // AscensionPanel's six children impose844px minimum width on its764px
  // HBox. Native container layout places the description at(229,791).
@@ -126,11 +129,14 @@ static void custom_run_screen(Canvas&c){
  const int seed_left=seed_input_left(english),seed_width=SeedRight-seed_left,seed_height=SeedBottom-SeedTop;
  profile_text_box(c,label("CUSTOM_RUN_SCREEN.SEED_LABEL","Seed:"),9,SeedTop,40,seed_height,{8,bold,gold,128},false,true);
  c.dim(seed_left,SeedTop,seed_width,seed_height,140);c.rect(seed_left,SeedBottom-1,seed_width,1,editing?gold:Muted);
+ const bool importing=editing?a.map_preview.importing:a.selected_seed_imported;
  const char*seed=editing?a.map_preview.draft:a.selected_seed;const bool has_seed=*seed;Canvas seed_font=c;seed_font.sparse_scene_sizes=true;
  while(*seed&&seed_font.width(seed,8)>seed_width-4){++seed;while((uint8_t(*seed)&0xc0)==0x80)++seed;}
  profile_text_box(c,has_seed?seed:label("CUSTOM_RUN_SCREEN.SEED_RANDOM_PLACEHOLDER","Random"),seed_left+2,SeedTop,seed_width-4,seed_height,{8,0,has_seed?cream:rgb(128,128,128),0},false,false,{},true);
  if(editing)c.rect(seed_left+2+mn(seed_width-4,seed_font.width(seed,8)),SeedTop+5,1,10,cream);
  else c.action(seed_left,SeedTop,seed_width,seed_height,UiAction::RunSeed);
+ profile_text_box(c,importing?(english?"Code (up/down: text)":"导入码（上下切换文本）"):(english?"Import code (up/down)":"导入种子码（上下切换）"),9,110,144,14,{8,0,gold,0},false,false);
+ if(editing&&*a.map_preview.error)profile_text_box(c,a.map_preview.error,9,51,143,33,{8,0,Red,0},false,true);
  constexpr int left=ModifiersLeft,top=ModifiersTop,width=ModifiersWidth,view_height=ModifiersHeight;
  if(mode.layout_generation!=a.content.generation()){unsigned y=0;for(unsigned i=0;i<RunModifierKinds;++i){mode.row_offsets[i]=uint16_t(y);modifier_text(a,RunModifier(i),text,sizeof text);
    const auto plan=setup_text_plan(c,text,ModifierTextWidth);y+=unsigned(mx(project(56),plan.rows*plan.step+1)+project(8));}
@@ -153,6 +159,7 @@ static void custom_run_screen(Canvas&c){
    native_scrollbar_grabber(c,308,scroller.thumb_y(45,153)-7,12,14);c.hit(307,37,13,170,HitKind::ProgressThumb);}
   native_original_back(c,mode.started);native_original_confirm(c,UiAction::StartConfiguredRun,mode.started);
  }else{a.hit_count=0;c.hit(seed_left,SeedTop,seed_width,seed_height,HitKind::None);}
+ c.action(9,110,144,14,UiAction::RunSeedImport);
 }
 static void daily_run_screen(Canvas&c){
  auto&a=c.a;a.refresh_daily_run();const auto&mode=a.run_mode;title_submenu_background(c,185);a.hit_count=0;

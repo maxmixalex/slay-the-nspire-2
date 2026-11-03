@@ -1,0 +1,1039 @@
+{
+  "schema": 2,
+  "stage": "ui25",
+  "reference_game": {
+    "version": "v0.111.0",
+    "commit": "41cef1ea"
+  },
+  "status": "passed: fixed three-ZIP installation, independent resource/archive audits, final ordinary Firebird scenarios and complete ed5 source CI",
+  "source": {
+    "runtime_checkpoint": "ed5dd2564625779313aa2c71046079dee7506e76",
+    "resource_producer_checkpoint": "e98a6cb4ed29cd4e3bcaa597cff9ad089c6854f7",
+    "resource_producer_public": "e98a6cb4ed29cd4e3bcaa597cff9ad089c6854f7",
+    "resource_source_archive_actual": "e89d8e7b8cc0c4bfa17b6584c52e3af768de426a",
+    "resource_source_archive_public_relation": "equivalent_tree",
+    "resource_source_archive_tree": "ad517844fd666fd32c94cb5246b779b19ea510ff",
+    "packaging_checkpoint": "ed5dd2564625779313aa2c71046079dee7506e76"
+  },
+  "runtime": {
+    "actual": "ed5dd2564625779313aa2c71046079dee7506e76",
+    "public": "ed5dd2564625779313aa2c71046079dee7506e76",
+    "file": "nSpire2.tns",
+    "bytes": 1737025,
+    "sha256": "9c578a2cb0ca079a3aea523e8fcfadf0aecef3e4aee5ca557423c9c238932b1f",
+    "formal_allocation_bytes": 22288920,
+    "formal_cap_bytes": 22291016,
+    "headroom_bytes": 2096,
+    "allocation_change_from_c814_bytes": 1076,
+    "data_bss_pools_changed": false,
+    "diagnostic_launcher": false,
+    "linked_arm_elf_bytes": 8135908,
+    "linked_arm_elf_sha256": "33bd3b1060f8f70e75e78f5769ec2ead97e39dcf5002937f42b08bed75b1ef37",
+    "allocation_readback": {
+      "loader_prefix_bytes": 125208,
+      "elf_initialized_and_bss_bytes": 22163712,
+      "sum_bytes": 22288920,
+      "physical_peak_memory_measurement": false
+    }
+  },
+  "runtime_source_validation": {
+    "status": "passed",
+    "immutable_source_archive_files_checked": 1732,
+    "archive_mismatches": [],
+    "native_checks": 1059848,
+    "arm_journal_status": "passed",
+    "native_action_fixture": "final corrected full and reduced resources, normal select/Confirm after 180 idle frames",
+    "native_action_result": {
+      "enemy_hp_before": 44,
+      "enemy_hp_after": 38,
+      "energy_before": 3,
+      "energy_after": 2,
+      "resource_reads_each": 0,
+      "resource_bytes_each": 0
+    },
+    "evidence": {
+      "file": "hit-source-native-receipt.json",
+      "bytes": 7226,
+      "sha256": "75cd646845fef8200dc0f324bf4308a3038268d7ef37f2e14dae1b3d905490e7"
+    }
+  },
+  "machine": {
+    "emulator": "Firebird",
+    "supplied_checkpoint_model": "TI-Nspire CX II CAS",
+    "os": "6.4.0.74",
+    "guest_ram_bytes": 67108864,
+    "normal_boot_clock_report_mhz": {
+      "cpu": 396,
+      "ahb": 198,
+      "apb": 99
+    },
+    "guest_timer": "foreground SP804",
+    "guest_timer_hz": 32768,
+    "physical_calculator_tested": false,
+    "new_cpu_overclock_setting_applied": false,
+    "factory_clock_independently_verified": false,
+    "guest_memory_or_snapshot_headers_modified": false
+  },
+  "resource_families": {
+    "animated": {
+      "status": "passed production, all16 publication and independent decoded-resource audit",
+      "producer_checkpoint": "e98a6cb4ed29cd4e3bcaa597cff9ad089c6854f7",
+      "bilingual_files": 11,
+      "bilingual_data_bytes": 68019411,
+      "all16_files": 25,
+      "all16_data_bytes": 85979742,
+      "optional14_data_bytes": 17960331,
+      "all11_bilingual_files_exact_after_all16_publication": true,
+      "converter_receipt_sha256": "93303446e671baf067059dde4f645b56f2e30e3d7fd79beceae4765050fe6440",
+      "all16_converter_receipt_sha256": "b5222e9a568b0daf762dc4026e208d739a77bbcbfb059eabad0f31e6da8aade2",
+      "tail": {
+        "scope": "actual production recipe tail from verified original-source checkpoint; not a new cold CLI run",
+        "first_stage": "native-framed20",
+        "stages": 29,
+        "elapsed_seconds": 3863.3860369549984,
+        "peak_workspace_allocated_bytes": 1658974208,
+        "retained_workspace_allocated_bytes": 606781440,
+        "cumulative_reclaimed_logical_bytes": 5691162949,
+        "is_new_empty_work_cold_run": false,
+        "is_entire_tmp_measurement": false,
+        "receipt": {
+          "file": "tail-validation.json",
+          "bytes": 5484,
+          "sha256": "fb7b8c629a8b2f15edae2b3ef17ca2806c9ed777958f284555ee2c0f80749429"
+        }
+      },
+      "all16_publication": {
+        "file": "publication-validation.json",
+        "bytes": 1293,
+        "sha256": "629459aa4856177ea567446b239e4fe5cb744028f49721934c7febe982bac278"
+      },
+      "independent_decoded_audit": {
+        "image_entries_checked": 60294,
+        "raw_exact_entries": 60294,
+        "equivalent_auxiliary_tables": [],
+        "semantic_differences": [],
+        "all_1783_clip_records_unchanged": true,
+        "image_alias_partition_unchanged": true,
+        "retained_slash_group": {
+          "baseline_decoded": 83585,
+          "candidate_decoded": 83445,
+          "baseline_stored": 36814,
+          "candidate_stored": 36438,
+          "explanation": "The140-byte FR1 parameter table is stored separately; all12 authored frame pixels and sampling clocks are preserved."
+        },
+        "key_tracks": {
+          "necrobinder_attack": {
+            "frames": 12,
+            "frame_ms": 83,
+            "units": 3584,
+            "reference": 5120
+          },
+          "osty_die": {
+            "frames": 17,
+            "frame_ms": 78,
+            "units": 2688,
+            "reference": 4254
+          },
+          "necrobinder_die": {
+            "frames": 71,
+            "frame_ms": 33,
+            "units": 3584,
+            "reference": 5120
+          },
+          "osty_dead_loop": {
+            "frames": 3,
+            "frame_ms": 56,
+            "units": 2688,
+            "reference": 4254
+          }
+        },
+        "bilingual_all_image_bridge": {
+          "image_shapes_encodings_lengths_equal": true,
+          "every_image_offset_only_relocated": true,
+          "tile_group_cost_and_frame_directories_equal": true,
+          "all_artwork_equal": true,
+          "clips_equal": true,
+          "auxiliary_equal": true,
+          "animation_profile_equal": true
+        },
+        "locales": {
+          "eng": {
+            "strings_checked": 8961,
+            "glyphs_checked": 12902,
+            "strings_exact": true,
+            "glyphs_exact": true,
+            "logical_bytes": 65439364,
+            "logical_sha256": "19c892cdd3cdf19c4bcf170a9d5e3febe04f8585d8146e90c9033a9aae5eef62"
+          },
+          "zhs": {
+            "strings_checked": 8961,
+            "glyphs_checked": 53351,
+            "strings_exact": true,
+            "glyphs_exact": true,
+            "logical_bytes": 69673174,
+            "logical_sha256": "277f5659d03b5f1f65e56f1c39cd394ed4f89e6de977a5a518010dd7b95ba40b"
+          }
+        }
+      }
+    },
+    "no-animations": {
+      "status": "passed production, all16 publication and independent decoded-resource audit",
+      "producer_checkpoint": "e98a6cb4ed29cd4e3bcaa597cff9ad089c6854f7",
+      "bilingual_files": 11,
+      "bilingual_data_bytes": 27990788,
+      "all16_files": 25,
+      "all16_data_bytes": 42273212,
+      "optional14_data_bytes": 14282424,
+      "all11_bilingual_files_exact_after_all16_publication": true,
+      "converter_receipt_sha256": "3541feeba1ca0342f88d4025845bc16c344cdec2df03c8c52ff1a7f4522de7cd",
+      "all16_converter_receipt_sha256": "361c212d2736b29ac8f8cd46a94c49c0f175ebda038dfcff156e4569480dcaae",
+      "tail": {
+        "scope": "actual production recipe tail from verified original-source checkpoint; not a new cold CLI run",
+        "first_stage": "ancient-scenes45",
+        "stages": 22,
+        "elapsed_seconds": 1016.7306315280002,
+        "peak_workspace_allocated_bytes": 1771462656,
+        "retained_workspace_allocated_bytes": 1511530496,
+        "cumulative_reclaimed_logical_bytes": 2247255691,
+        "is_new_empty_work_cold_run": false,
+        "is_entire_tmp_measurement": false,
+        "receipt": {
+          "file": "tail-validation.json",
+          "bytes": 4688,
+          "sha256": "bfd8038a075eff1f41512dd76120085c71763ed2ce8fff7d05890f5567618c8e"
+        }
+      },
+      "all16_publication": {
+        "file": "publication-validation.json",
+        "bytes": 1296,
+        "sha256": "db11288d9be9bfbd2a73248dfc58c41290f0e9a1edcd8070a2c28af54a9cf2c9"
+      },
+      "independent_decoded_audit": {
+        "image_entries_checked": 60294,
+        "raw_exact_entries": 60293,
+        "equivalent_auxiliary_tables": [
+          {
+            "image": 58117,
+            "clip": 28,
+            "reason": "Equivalent reduced-image aliases; exact referenced pixels, clocks, signed XY, layer order and scale/reference units."
+          }
+        ],
+        "semantic_differences": [],
+        "all_1783_clip_records_unchanged": true,
+        "image_alias_partition_unchanged": true,
+        "retained_slash_group": {
+          "baseline_decoded": 18486,
+          "candidate_decoded": 18346,
+          "baseline_stored": 9908,
+          "candidate_stored": 9977,
+          "explanation": "The140-byte FR1 parameter table is stored separately; all12 authored frame pixels and sampling clocks are preserved."
+        },
+        "key_tracks": {
+          "necrobinder_attack": {
+            "frames": 12,
+            "frame_ms": 83,
+            "units": 3584,
+            "reference": 5120
+          },
+          "osty_die": {
+            "frames": 17,
+            "frame_ms": 78,
+            "units": 2688,
+            "reference": 4254
+          },
+          "necrobinder_die": {
+            "frames": 71,
+            "frame_ms": 33,
+            "units": 3584,
+            "reference": 5120
+          },
+          "osty_dead_loop": {
+            "frames": 3,
+            "frame_ms": 56,
+            "units": 2688,
+            "reference": 4254
+          }
+        },
+        "bilingual_all_image_bridge": {
+          "image_shapes_encodings_lengths_equal": true,
+          "every_image_offset_only_relocated": true,
+          "tile_group_cost_and_frame_directories_equal": true,
+          "all_artwork_equal": true,
+          "clips_equal": true,
+          "auxiliary_equal": true,
+          "animation_profile_equal": true
+        },
+        "locales": {
+          "eng": {
+            "strings_checked": 8961,
+            "glyphs_checked": 12902,
+            "strings_exact": true,
+            "glyphs_exact": true,
+            "logical_bytes": 25392322,
+            "logical_sha256": "196cee73b89f25d06fc6c9e6b033ba6d5dcc5c4ebcbd030d3e71371be05378fa"
+          },
+          "zhs": {
+            "strings_checked": 8961,
+            "glyphs_checked": 53351,
+            "strings_exact": true,
+            "glyphs_exact": true,
+            "logical_bytes": 29626132,
+            "logical_sha256": "e9d7e6cc117710fe0a669a2083644ad2915e72a822ea34501435c9b794d44551"
+          }
+        }
+      }
+    }
+  },
+  "resource_audit_summary": {
+    "file": "final-resource-preservation-summary.json",
+    "bytes": 11346,
+    "sha256": "b80426c56ab377684074f9f3bf9df1bfb17c68784af6133aca5a52028595d5f0"
+  },
+  "ordinary_guest_acceptance": {
+    "status": "passed",
+    "full_usb": {
+      "all_12_launcher_data_files_exact": true,
+      "fresh_normal_os_launch": true,
+      "evidence": {
+        "file": "release-full-usb-verified.json",
+        "bytes": 2664,
+        "sha256": "0c44e0948193ce12d1727efa99f5861daeb3986da49d47037bbc408d2c79ff14"
+      }
+    },
+    "full_first_strike_pair": {
+      "status": "passed",
+      "scope": "console-prepared Necrobinder seed1 / Nibbits fixture; normal card6 + Enter; matched 5420ms action and idle commands, cumulative scene counters",
+      "combat_resource_reads_delta": 0,
+      "combat_resource_bytes_delta": 0,
+      "combat_resource_ms_delta": 0.0,
+      "idle_max_render_ms": 60.272216796875,
+      "action_max_render_ms": 60.272216796875,
+      "idle_max_interval_ms": 70.037841796875,
+      "action_max_interval_ms": 70.037841796875,
+      "evidence": {
+        "file": "release-full-cold-strike-pair.json",
+        "bytes": 2983,
+        "sha256": "c534b8a63169106d8e8c09c52db76ba1db371ea3fbce388035c148e16929e190"
+      },
+      "maximum_scope": "Cumulative scene maxima retaining common setup/preparation history, not isolated attack-only peak measurements."
+    },
+    "reduced_usb": {
+      "all_12_launcher_data_files_exact": true,
+      "fresh_normal_os_launch": true,
+      "evidence": {
+        "file": "release-reduced-usb-verified.json",
+        "bytes": 2692,
+        "sha256": "3040c1f24edb9f5663a8cdee8444d114ae5e9b76571138ffcc82a21ebeb4d9c2"
+      }
+    },
+    "reduced_first_strike_pair": {
+      "status": "passed",
+      "scope": "console-prepared Necrobinder seed1 / Nibbits fixture; normal card6 + Enter; matched 5420ms action and idle commands, cumulative scene counters",
+      "combat_resource_reads_delta": 0,
+      "combat_resource_bytes_delta": 0,
+      "combat_resource_ms_delta": 0.0,
+      "idle_max_render_ms": 61.34033203125,
+      "action_max_render_ms": 61.34033203125,
+      "idle_max_interval_ms": 71.22802734375,
+      "action_max_interval_ms": 71.22802734375,
+      "evidence": {
+        "file": "release-reduced-cold-strike-pair.json",
+        "bytes": 2933,
+        "sha256": "3dbb5b764d5fedcd34a752be20058ae596fe73129840341395417d2f98366165"
+      },
+      "maximum_scope": "Cumulative scene maxima retaining common setup/preparation history, not isolated attack-only peak measurements."
+    },
+    "final_report": {
+      "file": "release-acceptance.json",
+      "bytes": 39069,
+      "sha256": "68d3ef18e4195418303699f4b61ee5ec31610063a2819822314dc06d48e2ee39"
+    },
+    "functional_flows": {
+      "full": {
+        "open": true,
+        "actions": true,
+        "osty": true,
+        "save": true,
+        "continue": true
+      },
+      "reduced": {
+        "open": true,
+        "actions": true,
+        "osty": true,
+        "save": true,
+        "continue": true
+      }
+    },
+    "warm_scene_windows": {
+      "full": {
+        "random": {
+          "scene": "random",
+          "mode": "full",
+          "scope": "Own matching NAND/RAM pair; B adds30000ms guest run before identical normal exit. Counts subtract same common setup/exit. Fixed Necrobinder1/ZHS for Ancient rooms; ordinary Ironclad for character; explicitly synthetic compatibility profile for Random.",
+          "frames": 833,
+          "guest_seconds": 30.0135498046875,
+          "fps": 27.7541312314181,
+          "render_mean_ms": 35.18196829513055,
+          "read_calls": 0,
+          "read_bytes": 0,
+          "over_50ms": 1,
+          "over_100ms": 0,
+          "over_250ms": 0,
+          "background": "animated water/light/dots",
+          "render_parts": {
+            "random_water": {
+              "calls": 833,
+              "mean_ms_per_frame": 8.317633694102641
+            },
+            "random_light": {
+              "calls": 833,
+              "mean_ms_per_frame": 12.136727249493548
+            },
+            "random_dots": {
+              "calls": 833,
+              "mean_ms_per_frame": 4.6689330028886555
+            }
+          }
+        },
+        "neow": {
+          "scene": "neow",
+          "mode": "full",
+          "scope": "Own matching NAND/RAM pair; B adds30000ms guest run before identical normal exit. Counts subtract same common setup/exit. Fixed Necrobinder1/ZHS for Ancient rooms; ordinary Ironclad for character; explicitly synthetic compatibility profile for Random.",
+          "frames": 893,
+          "guest_seconds": 30.014404296875,
+          "fps": 29.752381262252012,
+          "render_mean_ms": 33.08583907824748,
+          "read_calls": 0,
+          "read_bytes": 0,
+          "over_50ms": 1,
+          "over_100ms": 0,
+          "over_250ms": 0
+        },
+        "tez": {
+          "scene": "tez",
+          "mode": "full",
+          "scope": "Own matching NAND/RAM pair; B adds30000ms guest run before identical normal exit. Counts subtract same common setup/exit. Fixed Necrobinder1/ZHS for Ancient rooms; ordinary Ironclad for character; explicitly synthetic compatibility profile for Random.",
+          "frames": 809,
+          "guest_seconds": 30.04345703125,
+          "fps": 26.92766012774464,
+          "render_mean_ms": 36.7437299014022,
+          "read_calls": 0,
+          "read_bytes": 0,
+          "over_50ms": 1,
+          "over_100ms": 0,
+          "over_250ms": 0
+        },
+        "character": {
+          "scene": "character",
+          "mode": "full",
+          "scope": "Own matching NAND/RAM pair; B adds30000ms guest run before identical normal exit. Counts subtract same common setup/exit. Fixed Necrobinder1/ZHS for Ancient rooms; ordinary Ironclad for character; explicitly synthetic compatibility profile for Random.",
+          "frames": 900,
+          "guest_seconds": 29.999847412109375,
+          "fps": 30.00015258866673,
+          "render_mean_ms": 14.273206922743055,
+          "read_calls": 0,
+          "read_bytes": 0,
+          "over_50ms": 0,
+          "over_100ms": 0,
+          "over_250ms": 0,
+          "additional_settle_ms": 60000,
+          "classification": "same character fixture after an additional60s settling period"
+        }
+      },
+      "reduced": {
+        "random": {
+          "scene": "random",
+          "mode": "reduced",
+          "scope": "Own matching NAND/RAM pair; B adds30000ms guest run before identical normal exit. Counts subtract same common setup/exit. Fixed Necrobinder1/ZHS for Ancient rooms; ordinary Ironclad for character; explicitly synthetic compatibility profile for Random.",
+          "frames": 900,
+          "guest_seconds": 29.9937744140625,
+          "fps": 30.00622687813633,
+          "render_mean_ms": 11.444091796875,
+          "read_calls": 0,
+          "read_bytes": 0,
+          "over_50ms": 0,
+          "over_100ms": 0,
+          "over_250ms": 0,
+          "background": "static reduced-profile background",
+          "render_parts": {
+            "random_water": {
+              "calls": 0,
+              "mean_ms_per_frame": 0.0
+            },
+            "random_light": {
+              "calls": 0,
+              "mean_ms_per_frame": 0.0
+            },
+            "random_dots": {
+              "calls": 0,
+              "mean_ms_per_frame": 0.0
+            }
+          }
+        },
+        "neow": {
+          "scene": "neow",
+          "mode": "reduced",
+          "scope": "Own matching NAND/RAM pair; B adds30000ms guest run before identical normal exit. Counts subtract same common setup/exit. Fixed Necrobinder1/ZHS for Ancient rooms; ordinary Ironclad for character; explicitly synthetic compatibility profile for Random.",
+          "frames": 901,
+          "guest_seconds": 30.0260009765625,
+          "fps": 30.007326007326007,
+          "render_mean_ms": 16.876220703125,
+          "read_calls": 0,
+          "read_bytes": 0,
+          "over_50ms": 0,
+          "over_100ms": 0,
+          "over_250ms": 0
+        },
+        "tez": {
+          "scene": "tez",
+          "mode": "reduced",
+          "scope": "Own matching NAND/RAM pair; B adds30000ms guest run before identical normal exit. Counts subtract same common setup/exit. Fixed Necrobinder1/ZHS for Ancient rooms; ordinary Ironclad for character; explicitly synthetic compatibility profile for Random.",
+          "frames": 900,
+          "guest_seconds": 29.99267578125,
+          "fps": 30.007326007326007,
+          "render_mean_ms": 16.90673828125,
+          "read_calls": 0,
+          "read_bytes": 0,
+          "over_50ms": 0,
+          "over_100ms": 0,
+          "over_250ms": 0
+        },
+        "character": {
+          "scene": "character",
+          "mode": "reduced",
+          "scope": "Own matching NAND/RAM pair; B adds30000ms guest run before identical normal exit. Counts subtract same common setup/exit. Fixed Necrobinder1/ZHS for Ancient rooms; ordinary Ironclad for character; explicitly synthetic compatibility profile for Random.",
+          "frames": 900,
+          "guest_seconds": 29.997802734375,
+          "fps": 30.002197426569328,
+          "render_mean_ms": 13.702392578125,
+          "read_calls": 0,
+          "read_bytes": 0,
+          "over_50ms": 0,
+          "over_100ms": 0,
+          "over_250ms": 0,
+          "settle_ms": 5000,
+          "classification": "initial first-cycle window; preserve any cold-loading cost"
+        }
+      }
+    },
+    "initial_character_windows": {
+      "full": {
+        "scene": "character",
+        "mode": "full",
+        "scope": "Own matching NAND/RAM pair; B adds30000ms guest run before identical normal exit. Counts subtract same common setup/exit. Fixed Necrobinder1/ZHS for Ancient rooms; ordinary Ironclad for character; explicitly synthetic compatibility profile for Random.",
+        "frames": 847,
+        "guest_seconds": 30.030792236328125,
+        "fps": 28.204384131278015,
+        "render_mean_ms": 16.548129715632378,
+        "read_calls": 17,
+        "read_bytes": 1199150,
+        "over_50ms": 6,
+        "over_100ms": 6,
+        "over_250ms": 5,
+        "settle_ms": 5000,
+        "classification": "initial first-cycle window; preserve any cold-loading cost"
+      },
+      "reduced": {
+        "scene": "character",
+        "mode": "reduced",
+        "scope": "Own matching NAND/RAM pair; B adds30000ms guest run before identical normal exit. Counts subtract same common setup/exit. Fixed Necrobinder1/ZHS for Ancient rooms; ordinary Ironclad for character; explicitly synthetic compatibility profile for Random.",
+        "frames": 900,
+        "guest_seconds": 29.997802734375,
+        "fps": 30.002197426569328,
+        "render_mean_ms": 13.702392578125,
+        "read_calls": 0,
+        "read_bytes": 0,
+        "over_50ms": 0,
+        "over_100ms": 0,
+        "over_250ms": 0,
+        "settle_ms": 5000,
+        "classification": "initial first-cycle window; preserve any cold-loading cost"
+      }
+    },
+    "bilingual": {
+      "full": {
+        "status": "passed",
+        "scope": "Actual final ed5 release on corrected full data. Simplified-Chinese character/gameplay first, normal Settings language change to English, English title and Ironclad screen, then ordinary keyboard exit to OS. No claim for all16 locales on emulator.",
+        "visual_inspection": {
+          "title": "English Profile1, Singleplayer, Settings, Compendium, Timeline, Quit visible.",
+          "character": "English The Ironclad, HP80/80, Burning Blood, Ascension description visible.",
+          "exit": "TI OS document browser and selected nSpire2 visible after ordinary exit, before USB readback."
+        },
+        "native_screenshots": {
+          "title": {
+            "file": "release-full-english-title.png",
+            "sha256": "54f39dd4b2bc10fa1d1268d45e8d5e9e258f5863d98e50cb266db87ecb5e8e42",
+            "dimensions": [
+              320,
+              240
+            ],
+            "lossless_native_framebuffer": true
+          },
+          "character": {
+            "file": "release-full-english-character.png",
+            "sha256": "cccb8d8e7d3b224a88db0e744d1cd85870ef5fd998b43e52b1671433252cb22f",
+            "dimensions": [
+              320,
+              240
+            ],
+            "lossless_native_framebuffer": true
+          },
+          "os": {
+            "file": "release-full-english-os.png",
+            "sha256": "77922c5777fa94f56012ec004bf488e495705e3531d0f02dbd9dd9f6d0baaa3b",
+            "dimensions": [
+              320,
+              240
+            ],
+            "lossless_native_framebuffer": true
+          }
+        },
+        "language_readback": {
+          "bytes": 8,
+          "sha256": "92548d7c08d72ad8d5f89897b1f1dcf172a86fde51a0caf9335ad469ae8ddafa",
+          "exact_bytes_ascii": "NSL1eng\n",
+          "exact": true
+        },
+        "settings_change_journals": [
+          {
+            "file": "ui25-release-full-language-change-fda32d7add70.json",
+            "sha256": "98912d613ee37590b7a575cd54840490d0bc02cba5307901aebff649ee3b949d",
+            "status": "passed"
+          }
+        ],
+        "english_smoke_journals": [
+          {
+            "file": "ui25-release-full-english-smoke-1f52e8e96ac0.json",
+            "sha256": "47889ee0d13c1e4dd161a8f082fb1b333854475d61abe4cdd3ff9430d3a353e0",
+            "status": "passed"
+          }
+        ]
+      },
+      "reduced": {
+        "status": "passed",
+        "scope": "Actual final ed5 release on corrected reduced data. Simplified-Chinese character/gameplay first, normal Settings language change to English, English title and Ironclad screen, then ordinary keyboard exit to OS. No claim for all16 locales on emulator.",
+        "visual_inspection": {
+          "title": "English Profile1, Singleplayer, Settings, Compendium, Timeline, Quit visible.",
+          "character": "English The Ironclad, HP80/80, Burning Blood, Ascension description visible.",
+          "exit": "TI OS document browser and selected nSpire2 visible after ordinary exit, before USB readback."
+        },
+        "native_screenshots": {
+          "title": {
+            "file": "release-reduced-english-title.png",
+            "sha256": "db022e79e22208d2236c37d8401694ec7fbdff714cf4e719e6fe18f440571063",
+            "dimensions": [
+              320,
+              240
+            ],
+            "lossless_native_framebuffer": true
+          },
+          "character": {
+            "file": "release-reduced-english-character.png",
+            "sha256": "51bf76653f1a91a07b4d6d577e15c0b3c1f4fd9f0baeba90cdf0260250825e00",
+            "dimensions": [
+              320,
+              240
+            ],
+            "lossless_native_framebuffer": true
+          },
+          "os": {
+            "file": "release-reduced-english-os.png",
+            "sha256": "1b202f7eb8e7af8d01c1b9e77d34fff1330dc88fb623920231a12789c876fbeb",
+            "dimensions": [
+              320,
+              240
+            ],
+            "lossless_native_framebuffer": true
+          }
+        },
+        "language_readback": {
+          "bytes": 8,
+          "sha256": "92548d7c08d72ad8d5f89897b1f1dcf172a86fde51a0caf9335ad469ae8ddafa",
+          "exact_bytes_ascii": "NSL1eng\n",
+          "exact": true
+        },
+        "settings_change_journals": [
+          {
+            "file": "ui25-release-reduced-language-change-a2080423aa11.json",
+            "sha256": "f0e594f7fd9b9728c860433fd1fb9a495c78ff069e6a0db6c5863e2356f108a8",
+            "status": "passed"
+          }
+        ],
+        "english_smoke_journals": [
+          {
+            "file": "ui25-release-reduced-english-smoke-7a3a29f1cc58.json",
+            "sha256": "96e4b1a1c709dc6873dcfec99e8a1889070a30967822a164f889e92804f7b748",
+            "status": "passed"
+          }
+        ]
+      }
+    },
+    "full_death_motion": {
+      "scope": "Final publiced5 ordinary release launcher+correctedfull e98, actualFirebird64MiB. Same explicitconsolefixture then normalOffering6+Enter, noRAM edits.40ms capturesteps; times are offsets after sampled input, not original clip authored timestamps. Screenshot formatconversion is lossless320x240.",
+      "observations": "Osty first leans/moves left, rotates upward with raised limbs, falls toward a horizontal pose, changes limbs/body pose during landing, and settles to the persistent corpse. Necrobinder also changes death poses; both remain visible over the backstop.",
+      "frames": [
+        {
+          "after_input_ms": 1760,
+          "file": "release-full-death-detail-offering-01760.ppm",
+          "sha256": "5c520ca68c5520f42da9f15586aa1d54ae8ff31a3f146b6a1790227f1d838e7c"
+        },
+        {
+          "after_input_ms": 1840,
+          "file": "release-full-death-detail-offering-01840.ppm",
+          "sha256": "370f916100955e34118c5f9a295ab4c6b2684ac2be5777322ad2059715a401a8"
+        },
+        {
+          "after_input_ms": 1960,
+          "file": "release-full-death-detail-offering-01960.ppm",
+          "sha256": "f2e1dd2b57d6e719469b87ba0103df6b87031680ac8390b1a95a7f7272ed6c4f"
+        },
+        {
+          "after_input_ms": 2080,
+          "file": "release-full-death-detail-offering-02080.ppm",
+          "sha256": "f4cd58a9468c580a48877a1bad952b34d49e6949d59235c5a15834947d8f87f5"
+        },
+        {
+          "after_input_ms": 2240,
+          "file": "release-full-death-detail-offering-02240.ppm",
+          "sha256": "ea3ec7e7283aad14d9252b55cf014a0d4a563a8706aa04c7aa5c07e1627adf2e"
+        },
+        {
+          "after_input_ms": 3100,
+          "file": "release-full-death-detail-offering-03100.ppm",
+          "sha256": "6c4b2ba5da0f35491ccec6c7c0df67cdbb83dd3e4ec3780655ac299149eae12d"
+        }
+      ],
+      "late_corpse_after_input_ms": 10100,
+      "late_corpse_file": "release-full-offering-10100.ppm"
+    },
+    "measurement_limits": [
+      "Paired first-Strike evidence is the explicit Necrobinder seed1 / NIBBITS_NORMAL fixture with normal card selection/Confirm, not every attack or encounter.",
+      "Console creates the fixed character/fight/card/HP fixture; attacks, damage, death, save, Continue and exit use actual ordinary release gameplay. No guest RAM edits.",
+      "Random selection uses an explicitly synthetic production-codec legacy-compatibility profile with zero obtained Epochs/timestamps. It does not prove natural Timeline progression.",
+      "Warm FPS windows do not erase cold startup/transition stalls; cumulative startup/other-scene maxima remain larger.",
+      "No physical-calculator measurement, seven-Affliction stress rerun, or resolution of the historical first touch-start/exit trigger is claimed. Normal keyboard save/Continue/exit is covered.",
+      "Extra14 locale files are separately audited by the packaging/converter workflow; emulator smoke covers English and Simplified Chinese."
+    ],
+    "remaining_scenarios": [],
+    "preserved_failed_attempts": [
+      {
+        "file": "release-full-random-initial-transfer-stall.json",
+        "status": "failed before game launch",
+        "reason": "Initial synthetic-profile USB transfer stalled before connection; unchanged input NAND retained; later OS-wake retry passed."
+      },
+      {
+        "file": "release-full-character-warm-host-enospc.json",
+        "status": "failed_host_enospc_preserved",
+        "reason": "Host storage exhaustion interrupted atomic journal writing; partial snapshot/image and failed journal retained; a separate same-source retry passed."
+      }
+    ],
+    "host_enospc_recovery": {
+      "scope": "Only strict dot-prefixed rsync temporary-copy names. Every removed file matched a complete byte-for-byte prefix of its existing ordinary original and was not open at process scan. Ordinary original evidence retained unchanged. No rsync process stopped.",
+      "removed_verified_temporary_copies": 422,
+      "removed_bytes": 32100319232,
+      "retained_open_temporary_copies": 1,
+      "normal_evidence_originals_deleted": false,
+      "source": {
+        "file": "host-enospc-verified-temporary-copy-cleanup.json",
+        "bytes": 225319,
+        "sha256": "0499a678356e40a1b06c22de32435bbde1d5a12ed7b01e20af3f574532536ba0"
+      },
+      "is_converter_peak_space_measurement": false
+    }
+  },
+  "packages": {
+    "status": "passed production, self-audit and separate independent archive/resource audit",
+    "required_zip_count": 3,
+    "maximum_full_bilingual_extracted_bytes": 70000000,
+    "full_bilingual_extracted_bytes": 69839495,
+    "full_installation_headroom_bytes": 160505,
+    "ceiling_counts": "every extracted member including launcher, all required artwork, both default locales, BUILD-INFO, README and licenses; before user saves",
+    "standalone_converter_binaries_separate": true,
+    "manifest": {
+      "file": "UI25-delivery-manifest.json",
+      "bytes": 15896,
+      "sha256": "05228d83e769ebd20a569c799128053a31edd0ea75e706d09f5d3b261e4ccda9"
+    },
+    "self_audit": {
+      "file": "ui25-three-zip-self-audit.json",
+      "bytes": 14284,
+      "sha256": "18fee506619fca8b88970ff5cb17d9b57824b843f52a995da4c7805155ec0647"
+    },
+    "archives": {
+      "animated": {
+        "file": "Slay-the-Nspire-2-0.1.0-ui25-full-animated-bilingual.zip",
+        "zip_bytes": 68968610,
+        "extracted_bytes": 69839495,
+        "sha256": "68dadfe183638f8d5fcc31222d82d0c93aa3efb13d8769f676b277b79b6a1146",
+        "members": 23,
+        "validation_file": "Slay-the-Nspire-2-0.1.0-ui25-animated-validation.json",
+        "validation_sha256": "763672a150a7e6461ca9d58b73c766378c455188bd978b1b97d6d4cbdc92688d",
+        "installed_bytes": 69756436
+      },
+      "no-animations": {
+        "file": "Slay-the-Nspire-2-0.1.0-ui25-no-character-animation-bilingual.zip",
+        "zip_bytes": 27964300,
+        "extracted_bytes": 29811189,
+        "sha256": "bafe05980754fa70da1c2c1db5c7b3e00566b88189855044fada24752a1ecdee",
+        "members": 23,
+        "validation_file": "Slay-the-Nspire-2-0.1.0-ui25-no-animations-validation.json",
+        "validation_sha256": "03d2219bd03372764d665c6eac25b844f1e4842a97115edc4d2de9d4673f9939",
+        "installed_bytes": 29727813
+      },
+      "optional-languages": {
+        "file": "Slay-the-Nspire-2-0.1.0-ui25-optional-languages.zip",
+        "zip_bytes": 29467909,
+        "extracted_bytes": 32244564,
+        "sha256": "7a4a5e02035d05525be4707d8a38b00d2584e0cc9811dd1e19b398f8c8e86bc4",
+        "members": 29
+      }
+    },
+    "successful_journal": {
+      "file": "ui25-three-zips-localtemp-9889570829fa.json",
+      "bytes": 147164,
+      "sha256": "3cbb1884ab6fe55ac4bc6bc4eead91b7ae14f23e0f37aa4132d16191afedfa82"
+    },
+    "successful_journal_status": "passed",
+    "retained_failed_journal": {
+      "file": "ui25-three-zips-ca9e0019913b.json",
+      "bytes": 147154,
+      "sha256": "072c551e3b04aa62f7244aa72f649904f87c54a676facd5dba6b8303694a8c83"
+    },
+    "retained_failure": "EXDEV: temporary ZIP and output were on different filesystems; unchanged published source reran with TMPDIR on the output filesystem",
+    "optional_locale_directories": {
+      "full-animated-bilingual": "animated/data",
+      "no-character-animation-bilingual": "no-animations/data"
+    },
+    "independent_audit": {
+      "file": "UI25-independent-archive-audit.json",
+      "bytes": 33910,
+      "sha256": "8e097fdc00a1011d3531f49f1a917e9c5e057fa890c1b0e7cc16c51706dbe914",
+      "members_checked": 75,
+      "resource_members_checked": 50,
+      "launcher_members_checked": 2,
+      "locale_profile_reconstructions": 32
+    }
+  },
+  "standalone_converters": {
+    "source_checkpoint": "ed5dd2564625779313aa2c71046079dee7506e76",
+    "linux": {
+      "bytes": 90675856,
+      "sha256": "9a33eab27e6fb54a5bdf40867e6dc5f585681a9b30f34355be89678e0fbdfd33",
+      "frozen_selftest": "passed",
+      "locale_validation": "passed",
+      "linked_arm_elf_sha256": "33bd3b1060f8f70e75e78f5769ec2ead97e39dcf5002937f42b08bed75b1ef37",
+      "delivery_receipt": {
+        "file": "final-linux-delivery.json",
+        "bytes": 1326,
+        "sha256": "6c3ebb18c491c9ef342414eac498ef58590c5ffc1e8b7e748f034c5c7403badd"
+      },
+      "ordinary_game_entrypoint_scope": "Actual game-directory discovery, original release verification and fresh fonts completed through intentional --stop-after fonts. This is not a full cold original-input conversion.",
+      "all_83_reduced_recipe_declarations_equivalent_to_resource_producer": true
+    },
+    "windows": {
+      "bytes": 70301735,
+      "sha256": "86b26d09483a32ed310582f7a2e4c2fe669f45dfb14edda07702b6cbea922575",
+      "workflow_run": 41495670730,
+      "source_commit": "ed5dd2564625779313aa2c71046079dee7506e76",
+      "original_game_conversion_tested": false
+    },
+    "separate_desktop_notices": {
+      "bytes": 979326,
+      "sha256": "05d1be36f5d848e4543cbd58c7e665e0a679ee021f254433350ad6c695e455d9",
+      "sections": 50
+    },
+    "separate_python_or_dotnet_installation_required": false,
+    "native_cpp_converter": false
+  },
+  "original_completed_cold_run": {
+    "source_actual": "5a21f14752dba19e4ceaa43d1b41639dd27d4826",
+    "source_public": "5a21f14752dba19e4ceaa43d1b41639dd27d4826",
+    "execution_status": "passed",
+    "output_acceptance": "rejected after independent image comparison",
+    "fresh_work": true,
+    "stages_completed": 84,
+    "languages": [
+      "eng",
+      "zhs"
+    ],
+    "animation_profile": "full",
+    "executable_bytes": 90671856,
+    "executable_sha256": "2f549cb9fcf08b12d827d880f5992e082fc778f3c96256bf3e87fc989ec1208c",
+    "started_at": "2026-11-02T12:01:31.539836+00:00",
+    "ended_at": "2026-11-02T15:39:38.718749+00:00",
+    "actual_cli_wall_seconds": 13087.111952852,
+    "peak_process_tree_rss_bytes": 2441826304,
+    "pipeline_elapsed_seconds": 13079.16874849,
+    "entire_dedicated_tmp_peak_allocated_bytes": 2279501824,
+    "entire_dedicated_tmp_peak_logical_bytes": 2259566656,
+    "temporary_measurement": "Linux file blocks st_blocks*512, inode-deduplicated across the entire dedicated TMP, sampled every0.5s; excludes directory/inode metadata. Onefile/runtime/sampler extraction is included. Original inputs, executable, build environment, final outputs and private recovery checkpoint exports are outside TMP. RSS sums process resident pages, including shared-page double counting. This is one shared-environment real run; checkpoint export overlap is recorded separately.",
+    "evidence": {
+      "file": "cold-default.json",
+      "bytes": 3956,
+      "sha256": "77e4974bca123909b97748c245f94ae7be0f825a6ff25b85a3637c8a6bbdefa4"
+    },
+    "does_not_measure_corrected_producer": true
+  },
+  "original_cold_output_discrepancy": {
+    "images_compared": 60294,
+    "different_image_ids": [
+      2418,
+      2419,
+      2420,
+      2421,
+      2422,
+      2423,
+      2424,
+      2425,
+      2426,
+      2427,
+      2428,
+      2429
+    ],
+    "other_images_exact": 60282,
+    "clip_id": 28,
+    "clip_name": "necrobinder.attack",
+    "frame_ms": 83,
+    "difference": "second bounded-a5 color/alpha reduction and retained-to-tiled storage change",
+    "accepted_group_decoded_bytes": 83585,
+    "rejected_group_decoded_bytes": 1044120,
+    "geometry_equal": true,
+    "nonzero_alpha_masks_equal": true,
+    "clip_records_equal": true,
+    "english_glyphs_checked": 12902,
+    "simplified_chinese_glyphs_checked": 53351,
+    "strings_checked_per_locale": 8961,
+    "bilingual_glyph_and_string_differences": [],
+    "evidence": [
+      {
+        "file": "all-decoded-comparison.json",
+        "bytes": 6549,
+        "sha256": "b7d3ebb299179bb080e81eb51b97138b96f218f06bd4f6e584a677a51495cf93"
+      },
+      {
+        "file": "first12-bounded-a5-causality.json",
+        "bytes": 4215,
+        "sha256": "96eb72a1847980ad046ebfe6578fa3f0a3fb88fda12f6c3027375d9bb2eff432"
+      },
+      {
+        "file": "alias-and-clip28-cache-shape.json",
+        "bytes": 7489,
+        "sha256": "1710456dce4fcc282638daef02f304f07dd899218212694c8ba9656bf05627bb"
+      }
+    ]
+  },
+  "excluded_intermediate_results": [
+    "The f37 ARM source_changed journal remains source_changed; its 650-input bridge is historical and does not replace the separate clean ed5 build.",
+    "Candidate2 files named final-full/final-reduced are not final ed5 guest acceptance; ed5 uses release-full/release-reduced evidence.",
+    "The source final-index46 artwork boundary has 8704 strings; all final-delivery checks reconstruct the actual published 8961-string data.",
+    "Earlier failed strict reduced raw-FR1/group-layout comparison is preserved; final parameter alias equivalence is explicitly checked."
+  ],
+  "limitations": [
+    "Audio, multiplayer, cloud saves and hosted leaderboards are unimplemented; no user waiver is established.",
+    "Desktop timezone/DST data and calculator IME are not supplied.",
+    "Source Early Access Timeline placeholders remain unavailable; legacy profiles do not gain invented acquisition dates.",
+    "Port-authored history/archive errors and Timeline status labels use English or Simplified Chinese; other locales use English for those labels.",
+    "The seven-Affliction extreme has no new optimization or final performance measurement in UI25.",
+    "Warm scene results do not remove cold loading stalls or establish universal frame rate.",
+    "No physical-calculator FPS or physical peak-memory measurement, exhaustive original-game parity, or arbitrary Spine/GPU-history equivalence is established.",
+    "Attack preparation uses remaining capacity after previous actor/enemy priorities; full Regent plus Nibbits leaves the attack cold within the unchanged 640-page ceiling.",
+    "Paired first-Strike evidence is the explicit Necrobinder seed1 / NIBBITS_NORMAL fixture with normal card selection/Confirm, not every attack or encounter.",
+    "Console creates the fixed character/fight/card/HP fixture; attacks, damage, death, save, Continue and exit use actual ordinary release gameplay. No guest RAM edits.",
+    "Random selection uses an explicitly synthetic production-codec legacy-compatibility profile with zero obtained Epochs/timestamps. It does not prove natural Timeline progression.",
+    "Warm FPS windows do not erase cold startup/transition stalls; cumulative startup/other-scene maxima remain larger.",
+    "No physical-calculator measurement, seven-Affliction stress rerun, or resolution of the historical first touch-start/exit trigger is claimed. Normal keyboard save/Continue/exit is covered.",
+    "Extra14 locale files are separately audited by the packaging/converter workflow; emulator smoke covers English and Simplified Chinese."
+  ],
+  "measurement_completion": {
+    "corrected_whole_empty_work_cold_run_completed": false,
+    "two_planned_whole_all_language_warm_cli_runs_completed": false,
+    "physical_calculator_measurements_completed": false
+  },
+  "continuous_integration": {
+    "status": "passed",
+    "tested_checkpoint": "ed5dd2564625779313aa2c71046079dee7506e76",
+    "core_run_url": "https://github.com/maxmixalex/slay-the-nspire-2/actions/runs/41495670719",
+    "native_job_url": "https://github.com/maxmixalex/slay-the-nspire-2/actions/runs/41495670719/job/125450117968",
+    "windows_run_url": "https://github.com/maxmixalex/slay-the-nspire-2/actions/runs/41495670730",
+    "native": {
+      "job": 125450117968,
+      "status": "success",
+      "suites_passed": 183,
+      "suites_failed": 0,
+      "ctest_seconds": 345.87,
+      "sanitizers": [
+        "address",
+        "undefined"
+      ],
+      "compiler": "clang18",
+      "flags": "-O1 -fsanitize=address,undefined -fno-omit-frame-pointer",
+      "combat_preparation_suite": {
+        "id": 80,
+        "name": "combat_preparation_regression",
+        "seconds": 0.3
+      },
+      "sanitizer_failure_reports_in_job_log": []
+    },
+    "conversion": {
+      "job": 125450118302,
+      "status": "success",
+      "commands": [
+        {
+          "scope": "unittest discover -s tests -p test_*.py",
+          "ran": 652,
+          "seconds": 57.905,
+          "result": "OK"
+        },
+        {
+          "scope": "six explicitly named supplemental regression modules",
+          "ran": 56,
+          "seconds": 1.364,
+          "result": "OK"
+        }
+      ],
+      "counting": "Report each actual command separately; do not advertise an aggregate independent-test count."
+    },
+    "portable": {
+      "job": 125450118582,
+      "status": "success",
+      "launcher_bytes": 1737025,
+      "launcher_allocation_bytes": 22288920,
+      "wasm_compile_only_bytes": 7630720,
+      "interactive_wasm_validation": false
+    },
+    "windows": {
+      "status": "success",
+      "jobs": [
+        {
+          "id": 125449839359,
+          "name": "arm-validation",
+          "conclusion": "success"
+        },
+        {
+          "id": 125450768172,
+          "name": "windows-converter",
+          "conclusion": "success"
+        }
+      ]
+    },
+    "source_equivalence": {
+      "scope": "The actual current working tree, including uncommitted final documentation, differs from tested ed5 only in README/docs. All remaining tracked files are equal.",
+      "non_document_changes": [],
+      "exact_unchanged_code_subtrees": {
+        "src": "91fcc6c4998c0809b264ca583a9baaace15ad880",
+        "include": "d471b357e8b9decb027d4da7b76af7ac3cf97602",
+        "tools": "ebb5fb5ab5a5bb21ae797279c1b2eb7e14cfdfc6",
+        "tests": "d189ea63fd5c2183fcf77199ac754600862d092c",
+        "platform": "219b68a62f0a50c04572bb741df4e68e9812625d",
+        "config": "1eca394c7fae2ee3dbc05d6faa6196c4f23b8e0c",
+        "third_party": "a4f969cc48a7b1464067ce77e3cf9291c5e66b91",
+        ".github": "e7ccbc4fe7703e62eb9d3a3540e892dc33559122"
+      }
+    },
+    "evidence": {
+      "file": "ed5-core-ci-review.json",
+      "bytes": 13789,
+      "sha256": "08c5420d605b8fedc2d45c2f6999599ad90de66e4a24b3eb6d5019d29e6d8a7b"
+    }
+  }
+}

@@ -1,6 +1,6 @@
 namespace ancient_fire {
 using namespace ancient_fire_ui23;
-static void node(Canvas&c,const Table&table,unsigned index,unsigned frame,const Shader*shaders){
+static void node(Canvas&c,const Table&table,unsigned index,unsigned frame,const Shader*shaders,const ancient_fire_grid::Texel*grid){
  const auto*r=table.node(index);const int cx=table.coordinate(index,0,frame),cy=table.coordinate(index,1,frame);
  const int ax=table.coordinate(index,2,frame),ay=table.coordinate(index,3,frame),bx=table.coordinate(index,4,frame),by=table.coordinate(index,5,frame);
  if(CombatCardMotion::magnitude(cx)>=1048576||CombatCardMotion::magnitude(cy)>=1048576||CombatCardMotion::magnitude(ax)>=16384||CombatCardMotion::magnitude(ay)>=16384||CombatCardMotion::magnitude(bx)>=16384||CombatCardMotion::magnitude(by)>=16384)return;
@@ -27,7 +27,7 @@ static void node(Canvas&c,const Table&table,unsigned index,unsigned frame,const 
  const auto&shader=shaders[r[36]];const unsigned blend=r[37]?presentation::Add:0;
  for(int y=top;y<bottom;++y,startu+=uy,startv+=vy){int u=startu,v=startv;
   for(int x=left;x<right;++x,u+=du,v+=dv){if(unsigned(u)>=16777216||unsigned(v)>=16777216)continue;
-   const auto pixel=shader.sample(u>>4,v>>4);const unsigned alpha=(pixel.alpha*255+524288)>>20;if(!alpha)continue;
+   const auto pixel=grid?ancient_fire_grid::sample(grid+unsigned(r[36])*ancient_fire_grid::Pixels,unsigned(u)>>4,unsigned(v)>>4):shader.sample(u>>4,v>>4);const unsigned alpha=(pixel.alpha*255+524288)>>20;if(!alpha)continue;
    unsigned color[3];for(unsigned channel=0;channel<3;++channel){
     const unsigned value=word(r+24+channel*2)+unsigned(uint64_t(pixel.inner)*word(r+30+channel*2)>>20);
     color[channel]=mn(255u,(value*255+32768)>>16);
@@ -37,6 +37,9 @@ static void node(Canvas&c,const Table&table,unsigned index,unsigned frame,const 
  }
 }
 static bool draw(Canvas&c,uint32_t elapsed,uint32_t seed){
+#ifdef SPIRE_NEOW_LAYER_PROFILE
+ RuntimeScopedRenderPart all_timing(c.a.callbacks.profile_render,RuntimeRenderPart::CharacterControls);
+#endif
  if(c.a.content.ui_image(Auxiliary)!=int(ParameterImage))return false;
  static constexpr unsigned dimensions[][3]={{512,512,1},{250,250,3},{500,500,1},{50,500,1},{20,500,1}};
  Field fields[5];unsigned page=0;
@@ -60,14 +63,55 @@ static bool draw(Canvas&c,uint32_t elapsed,uint32_t seed){
  if(!table.read(parameters)||!cinder_table.read(cinder_parameters)||!light_table.read(light_parameters,1)||!texture.valid()||!light_texture.valid())return false;
  const bool reduced=c.a.content.reduced_animations();const uint32_t clock=reduced?0:elapsed,shader_clock=reduced?0:c.a.map_clock_ms;
  Model models[3];Shader shaders[3];for(unsigned i=0;i<3;++i){models[i].read(table.data+ModelsAt+i*128);shaders[i].bind(fields,models[i],shader_clock);}
+ // One material evaluation per UV grid point is shared by all 237 flames.
+ // The lease ends before the frame ends; no page/content request occurs while
+ // these borrowed field pointers are in use. If scratch is unavailable the
+ // complete source shader remains the explicit fallback.
+ ForegroundScratch<ancient_fire_grid::Texel,ancient_fire_grid::Pixels*ancient_fire_grid::Models> lookup;
+ const auto*grid=lookup?lookup.array():nullptr;
+ {
+#ifdef SPIRE_NEOW_LAYER_PROFILE
+ RuntimeScopedRenderPart grid_timing(c.a.callbacks.profile_render,RuntimeRenderPart::RandomWater);
+#endif
+ if(lookup)for(unsigned model=0;model<3;++model)for(unsigned y=0;y<ancient_fire_grid::Side;++y){
+  c.poll();for(unsigned x=0;x<ancient_fire_grid::Side;++x)
+   lookup[model*ancient_fire_grid::Pixels+y*ancient_fire_grid::Side+x]=ancient_fire_grid::quantize(shaders[model].sample(x<<ancient_fire_grid::Shift,y<<ancient_fire_grid::Shift));
+ }
+ }
  auto&state=tez_cinder_room(c.a).state;
- state.advance(clock,seed,cinder_table.source_curve(0),[&](){c.poll();},[&](unsigned emitter,int32_t born){return cinder_table.inherit(emitter,born);});
+ {
+#ifdef SPIRE_NEOW_LAYER_PROFILE
+ RuntimeScopedRenderPart state_timing(c.a.callbacks.profile_render,RuntimeRenderPart::RandomLight);
+#endif
+ state.advance(clock,seed,cinder_table.source_curve(0),[&](){c.poll();},[&](unsigned emitter,int32_t born){return cinder_table.inherit(emitter,born);},false,tez_cinders_ui23::CalculatorBackgroundStride);
+ }
  const unsigned frame=table.frame(clock);
  for(unsigned i=0;i<Commands;++i){const unsigned command=table.command(i),kind=command>>14,index=command&16383;
-  if(kind==0){if(!ancient_lights::nodes(c,light_texture,light_table,1,clock,seed,index,1))return false;}
-  else if(kind==1){for(unsigned j=0;j<24;++j)tez_cinders::particle(c,texture,state.particles[index*24+j],cinder_table,index,frame);}
-  else node(c,table,index,frame,shaders);
+  if(kind==0)continue;
+  if(kind==1){
+#ifdef SPIRE_NEOW_LAYER_PROFILE
+   RuntimeScopedRenderPart particle_timing(c.a.callbacks.profile_render,RuntimeRenderPart::CharacterInfo);
+#endif
+   for(unsigned j=tez_cinders_ui23::presentation_first(index);j<24;j+=tez_cinders_ui23::presentation_step(index))
+    tez_cinders::particle(c,texture,state.particles[index*24+j],cinder_table,index,frame);
+  }else{
+#ifdef SPIRE_NEOW_LAYER_PROFILE
+   RuntimeScopedRenderPart flame_timing(c.a.callbacks.profile_render,RuntimeRenderPart::CharacterPortraits);
+#endif
+   node(c,table,index,frame,shaders,grid);
+  }
   if(!(i&31u))c.poll();
+ }
+ // Calculator presentation consolidates decorative glow above the fire
+ // material, rather than preserving its interleaving with79 normal flames.
+ // Smooth contributions share the existing4px field; no body is resampled.
+ {
+#ifdef SPIRE_NEOW_LAYER_PROFILE
+ RuntimeScopedRenderPart light_timing(c.a.callbacks.profile_render,RuntimeRenderPart::RandomDots);
+#endif
+ SoftAddGrid glow(c);
+ if(!ancient_lights::nodes(glow.canvas(),light_texture,light_table,1,clock,seed,0,~0u,&glow))return false;
+ glow.finish();
  }
  return true;
 }

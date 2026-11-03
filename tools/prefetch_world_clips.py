@@ -10,7 +10,6 @@ from __future__ import annotations
 import argparse
 import atexit
 from concurrent.futures import ProcessPoolExecutor
-import fcntl
 import hashlib
 import json
 import multiprocessing
@@ -32,6 +31,7 @@ from pck import Pack
 from reference_inventory import sha256, verify_release
 from world_enemy_assets import SpineSampler, RUNTIME_SHA256, manifest
 from world_ui_profile import ENEMY_CLIP_ROWS, validate_headers
+from converter_workspace import WorkLock
 
 
 def unique_atomic_bytes(path: Path, data: bytes) -> None:
@@ -71,8 +71,7 @@ def open_cache(directory, dependencies, sources):
     directory.mkdir(parents=True, exist_ok=True)
     # ConversionCache's common dependency receipt is initialized once at a
     # time. flock is released by the OS even if a worker is interrupted.
-    with (directory / 'prefetch-init.lock').open('a') as guard:
-        fcntl.flock(guard.fileno(), fcntl.LOCK_EX)
+    with WorkLock(directory/'prefetch-init', blocking=True):
         return PrefetchCache(directory, dependencies, source_files=sources)
 
 
@@ -138,6 +137,30 @@ def measured_layouts(cache, sources, models):
     return layouts
 
 
+def prefetch(cache, game, runtime, dotnet, fastnoise, layouts, workers=2, *, first=1, last=None):
+    """Fill missing complete jobs before the ordered world-pack assembly."""
+    last = last or len(ENEMY_CLIP_ROWS)
+    sources = cache.source_files
+    models = {row['model']: row for row in manifest()['models']}
+    pending = []
+    for number in range(last-1, first-2, -1):
+        job = ENEMY_CLIP_ROWS[number]
+        settings = dict(job=job, visual_state=job_state(job, layouts[job['model']]))
+        if cached_enemy_clip(cache, settings, sources, models[job['model']]) is None:
+            pending.append((number, job, layouts[job['model']]))
+    print(f'Prefetch: {len(pending)} missing clips in rows {first}..{last}; {workers} workers; cache {cache.identity}', flush=True)
+    report = dict(workers=workers, requested_jobs=last-first+1, missing_jobs=len(pending), baked=0, reused=0, matched=0)
+    if pending:
+        with ProcessPoolExecutor(max_workers=workers,
+                mp_context=multiprocessing.get_context('spawn'), initializer=initialize_worker,
+                initargs=(str(game), str(cache.directory.parent), cache.dependencies, sources,
+                          str(runtime), dotnet, str(fastnoise))) as pool:
+            for completed, (number, key, status, size) in enumerate(pool.map(prefetch_job, pending), 1):
+                report[status] += 1
+                print(f'Prefetch {completed}/{len(pending)} clip {number+1}: {key}: {status}, {size} bytes', flush=True)
+    return report
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('game', type=Path)
@@ -164,22 +187,7 @@ def main():
     cache = open_cache(args.cache, dependencies, sources)
     models = {row['model']: row for row in manifest()['models']}
     layouts = measured_layouts(cache, sources, models)
-    pending = []
-    for number in range(len(ENEMY_CLIP_ROWS) - 1, -1, -1):
-        if not first<=number+1<=last:
-            continue
-        job = ENEMY_CLIP_ROWS[number]
-        scope = render_scope('clip', sources, model=models[job['model']])
-        settings = dict(job=job, visual_state=job_state(job, layouts[job['model']]))
-        if cached_enemy_clip(cache, settings, sources, models[job['model']]) is None:
-            pending.append((number, job, layouts[job['model']]))
-    print(f'Prefetch: {len(pending)} missing clips in rows {first}..{last}; {args.workers} workers; cache {cache.identity}', flush=True)
-    with ProcessPoolExecutor(max_workers=args.workers,
-            mp_context=multiprocessing.get_context('spawn'), initializer=initialize_worker,
-            initargs=(str(game), str(args.cache), dependencies, sources,
-                      str(runtime), args.dotnet, str(fastnoise))) as pool:
-        for completed, (number, key, status, size) in enumerate(pool.map(prefetch_job, pending), 1):
-            print(f'Prefetch {completed}/{len(pending)} clip {number + 1}: {key}: {status}, {size} bytes', flush=True)
+    prefetch(cache, game, runtime, args.dotnet, fastnoise, layouts, args.workers, first=first, last=last)
     print('Complete: cache population only; final pack validation still belongs to build_world.', flush=True)
 
 

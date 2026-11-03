@@ -368,8 +368,8 @@ static void combat_player_speech(Canvas&c){
     layer.fitted(label,x+7,y+8,98,37,10,10,rgb(255,246,226),true,false,false,true);
 }
 #include "phobia_swarm_ui.inc"
-static void combat_actors(Canvas&c){
-    auto&a=c.a;const auto&s=a.game;const auto player=a.combat_player_pose();combat_sovereign_blades(c,true);c.actor(0,player.sprite_x,player.sprite_y,player.scale);combat_sovereign_blades(c,false);
+static void combat_osty(Canvas&c){
+    auto&a=c.a;const auto&s=a.game;
     const bool pet=s.character==Character::Necrobinder||s.expansion.osty_max_hp>0;
     if(pet){const auto p=a.combat_player_pose(true);const auto&m=a.osty_motion;const auto clip=a.content.clip(m.clip);const unsigned elapsed=(a.animation-m.start)*33;
         if(m.clip>=0&&elapsed<(unsigned)clip.count*clip.frame_ms)c.scaled_clip(m.clip,p.sprite_x,p.sprite_y,elapsed,p.scale,false);
@@ -379,6 +379,10 @@ static void combat_actors(Canvas&c){
             c.scaled_clip(FramedUi20OstyDeadLoop,p.sprite_x,p.sprite_y,m.clip==AnimOstyDie&&elapsed>=duration?elapsed-duration:a.animation*33u,p.scale,true);
         }else{const auto dead=a.content.clip(AnimOstyDie);c.scaled_clip(AnimOstyDie,p.sprite_x,p.sprite_y,dead.count?uint32_t(dead.count-1)*dead.frame_ms:0u,p.scale,false);}
     }
+}
+static void combat_actors(Canvas&c){
+    auto&a=c.a;const auto&s=a.game;const auto player=a.combat_player_pose();combat_sovereign_blades(c,true);c.actor(0,player.sprite_x,player.sprite_y,player.scale);combat_sovereign_blades(c,false);
+    combat_osty(c);
     int shared=-1;bool shared_action=false;
     for(int i=0;i<s.enemy_count;i++){
         if(s.enemy_world.active&&!a.enemy_opacity(i))continue;

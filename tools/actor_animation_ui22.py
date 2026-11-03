@@ -34,6 +34,7 @@ from ui12_resources import replace_images, view
 from world_enemy_assets import SpineSampler, _compose
 from world_enemy_profile import plan as enemy_plan
 from world_raster import raster
+from actor_slot_materials import NecrobinderSlash, apply_slot_materials
 
 ROOT=Path(__file__).resolve().parents[1]
 BASE_AUX,CLIP_COUNT=5422,1783
@@ -95,7 +96,8 @@ def input_identity(pack,runtime):
     for name in ('actor_animation_ui22.py','framed_animation_ui20_assets.py',
                  'character_death_assets.py','character_death_particles.py',
                  'measure_combat_registration.py','world_enemy_assets.py',
-                 'world_raster.py','SpineSampleAdapter.cs','animation.py'):
+                 'world_raster.py','SpineSampleAdapter.cs','animation.py',
+                 'actor_slot_materials.py','world_room_shaders.py','world_scene_assets.py'):
         digest.update((ROOT/'tools'/name).read_bytes())
     for name,entry in sorted(pack.entries.items()):
         digest.update(name.encode());digest.update(entry.md5)
@@ -204,11 +206,13 @@ def render_job(pack,sampler,job):
         for sample in samples:yield particle_frame(sample,job['scale'])
     else:
         poses=sample_bounded(sampler,job['resource'],job['animation'],job['times'],loop=job['loop'])
+        slash = (NecrobinderSlash(pack, next(c['events'] for c in sampler.metadata(job['resource'])['clips']
+                 if c['name'] == job['animation'])) if job['key'] == 'necrobinder.attack' else None)
         for pose in poses:
             draw=[(*row[:-1],job['materials'].get(row[-1],job['materials'].get(str(row[-1]),row[-1])))
                   for row in sampler.draw(job['resource'],pose)]
             t.require(all(row[-1] in (0,1,2) for row in draw),'Unhandled actor material')
-            yield source_frame(draw,job['scale'])
+            yield source_frame(apply_slot_materials(pose,draw,slash),job['scale'])
 
 
 def sample_job(pack,sampler,job,cache,identity):
