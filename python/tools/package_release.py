@@ -110,8 +110,8 @@ def write_archive(
             entry.compress_type = zipfile.ZIP_DEFLATED
             with archive.open(entry, "w") as dest:
                 if isinstance(item, Path):
-                    with item.open("rb") as source:
-                        shutil.copyfileobj(source, dest, 1024 * 1024)
+                    with item.open("rb") as stream:
+                        shutil.copyfileobj(stream, dest, 1024 * 1024)
                 else:
                     dest.write(item)
     with zipfile.ZipFile(temporary) as archive:

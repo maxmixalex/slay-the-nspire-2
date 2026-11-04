@@ -157,6 +157,7 @@ def build(helpers: Path, output: Path, work: Path, *, mode: str = "onefile") -> 
     for key in (
         "PYTHONPATH",
         "PYTHONHOME",
+        "LIBUNICORN_PATH",
         "NSPIRE_SPINE_ADAPTER",
         "NSPIRE_FASTNOISE_LIBRARY",
         "NSPIRE_SPINE_RUNTIME",
