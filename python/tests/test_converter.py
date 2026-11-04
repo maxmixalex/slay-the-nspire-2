@@ -14,6 +14,54 @@ from nspire_converter import converter
 
 
 class ConverterTests(unittest.TestCase):
+    def test_effects_entrypoint_reads_the_preceding_json_catalog(self):
+        from nspire_converter import assemble_effect_resources as effects
+        from nspire_converter.converter_finalize import add_final_stages
+        from nspire_converter.converter_workspace import Workspace
+
+        with tempfile.TemporaryDirectory() as directory:
+            for reduced in (False, True):
+                with self.subTest(reduced=reduced):
+                    work = Path(directory) / str(reduced)
+                    recipe = converter.Recipe("/game", work, "/runtime", "dotnet", "/noise", "-")
+                    add_final_stages(
+                        recipe, recipe.source_stages(), work / "published", ["eng", "zhs"], reduced
+                    )
+                    stages = {stage.name: stage for stage in recipe.stages}
+                    workspace = Workspace(
+                        recipe.stages, work, "source", converter.digest, converter.atomic_json
+                    )
+                    self.assertEqual(workspace.required, set(range(len(recipe.stages))))
+                    self.assertIn(
+                        recipe.stages.index(stages["vantom-effects"]),
+                        workspace.dependencies[recipe.stages.index(stages["effects"])],
+                    )
+                    catalog = stages["vantom-effects"].outputs[0]
+                    catalog.parent.mkdir(parents=True)
+                    catalog.write_text('{"images": []}')
+                    stage = stages["effects"]
+                    args = stage.arguments
+                    output = Path(args[args.index("--output") + 1])
+                    self.assertEqual(catalog.suffix, ".json")
+                    self.assertNotEqual(catalog, output)
+                    common = Path(args[args.index("--source-common") + 1])
+                    common.parent.mkdir(parents=True)
+                    common.write_bytes(b"source common")
+                    (common.parent / "nSpire2.eng.dat.tns").write_bytes(b"source locale")
+
+                    def read_catalog(original, pck, cache, room, vantom, extra):
+                        self.assertEqual(extra, [catalog])
+                        self.assertEqual(json.loads(extra[0].read_text()), {"images": []})
+                        self.assertTrue(output.is_dir())
+                        raise RuntimeError("catalog input verified")
+
+                    with (
+                        patch.object(effects.split, "reconstruct", return_value=b"artwork"),
+                        patch.object(effects, "build_artwork", side_effect=read_catalog),
+                        self.assertRaisesRegex(RuntimeError, "catalog input verified"),
+                    ):
+                        converter.internal(stage.module, args)
+
     def test_public_plans_use_descriptive_stage_and_file_names(self):
         from nspire_converter.converter_finalize import add_final_stages
 
