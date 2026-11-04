@@ -2,7 +2,7 @@
 """Generate bounded calendar culture facts from calendar_reference_oracle.
 
 Input is its cultures.json metadata, not an assembly or localization payload.
-The Unicode-derived output is distributed with third_party/unicode/LICENSE.
+The Unicode-derived output is distributed with cpp/third_party/notices/ATTRIBUTIONS.txt.
 """
 
 from __future__ import annotations
@@ -73,7 +73,7 @@ def generate(cultures):
     text = (
         "// Generated culture facts for the v0.111.0 language map.\n"
         "// .NET 9.0.22 / ICU 74.2; see python/dotnet/calendar_reference_oracle and\n"
-        "// docs/porting.md#calendar-localization. Unicode License V3: third_party/unicode/LICENSE.\n"
+        "// Unicode License V3: cpp/third_party/notices/ATTRIBUTIONS.txt.\n"
         "// Month strings are NUL-separated to avoid 12 pointers per language.\n"
     )
     for values, name in sets.items():

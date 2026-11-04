@@ -1,4 +1,5 @@
 #include "reference_map.hpp"
+#include "inplace_reset.hpp"
 
 namespace spire::reference {
 unsigned PointSet::count() const {
@@ -779,7 +780,7 @@ bool ReferenceMap::valid() const {
     return seen[boss];
 }
 bool generate_map(ReferenceMap& map, Random rng, const MapConfig& config, MapWorkspace& work) {
-    map = ReferenceMap{};
+    reset_in_place(map);
     map.config = config;
     for (auto& column : map.grid)
         for (auto& cell : column)
@@ -814,7 +815,7 @@ bool generate_map(ReferenceMap& map, Random rng, const MapConfig& config, MapWor
     return b.good();
 }
 bool generate_golden_map(ReferenceMap& map, Random rng, MapWorkspace& work) {
-    map = ReferenceMap{};
+    reset_in_place(map);
     map.config.rows = 17;
     map.config.variant = 1;
     map.config.prune = false;
@@ -848,7 +849,7 @@ bool generate_golden_map(ReferenceMap& map, Random rng, MapWorkspace& work) {
 }
 bool generate_spoils_map(ReferenceMap& map, Random rng, const MapConfig& config,
                          MapWorkspace& work) {
-    map = ReferenceMap{};
+    reset_in_place(map);
     map.config = config;
     map.config.variant = 2;
     map.config.second_boss = false;

@@ -39,3 +39,7 @@ src/card_inspect_input.cpp
 src/state_codec.cpp
 src/end_turn_input.cpp
 src/settings_input.cpp
+src/physical_input.cpp
+src/combat_peek.cpp
+src/map_window.cpp
+src/map_travel.cpp

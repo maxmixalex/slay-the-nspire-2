@@ -1,4 +1,8 @@
-#pragma once
+#include "app.hpp"
+#include "world_run.hpp"
+#include "ui_core_observer.hpp"
+
+namespace spire {
 // Original map travel is asynchronous presentation followed by exactly one
 // controller operation. No pending destination or UI clock enters State/save.
 static bool map_travel_scene(const App& a) {
@@ -140,3 +144,5 @@ void App::update_map_travel() {
         }
     }
 }
+
+} // namespace spire

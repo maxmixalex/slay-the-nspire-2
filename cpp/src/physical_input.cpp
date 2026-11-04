@@ -1,4 +1,9 @@
-#pragma once
+#include "app.hpp"
+#include "game_over_ui.hpp"
+#include "text_buffer.hpp"
+#include "ui_core_observer.hpp"
+
+namespace spire {
 // NInputManager keeps independent mouse/keyboard and keyboard-only maps.
 // Physical keys enter here once; semantic UI buttons keep the existing API.
 static bool configured_run_confirm(const App& a) {
@@ -537,3 +542,5 @@ bool App::physical_key(uint16_t code, bool pressed) {
         return false;
     }
 }
+
+} // namespace spire

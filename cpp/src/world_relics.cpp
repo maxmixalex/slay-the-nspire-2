@@ -1006,7 +1006,7 @@ WorldRelicReward* w_reward_slot(State& s, unsigned group, unsigned kind) {
     for (unsigned i = 0; i < MaxWorldRelicRewards; i++)
         if (!w.rewards[i].group) {
             auto& r = w.rewards[i];
-            r = WorldRelicReward{};
+            reset_in_place(r);
             r.group = uint8_t(group);
             r.kind = uint8_t(kind);
             if (i >= w.reward_count)
@@ -1039,7 +1039,7 @@ void w_group_free(State& s, unsigned group) {
                 else if (r.kind == 5)
                     notify_history(s, RunHistoryEvent::CardSkipped, r.value);
             }
-            r = WorldRelicReward{};
+            reset_in_place(r);
         }
     w.group_active[group - 1] = 0;
     w.group_skip[group - 1] = 0;
@@ -1114,7 +1114,7 @@ void w_schedule_group(State& s, unsigned group, bool combat_set = false) {
                     r.value = uint16_t(w_min(65535, int(r.value) * 2));
                 if (vintage && r.kind == 1) {
                     const RelicId relic = random_world_relic(s);
-                    r = WorldRelicReward{};
+                    reset_in_place(r);
                     r.group = uint8_t(group);
                     r.kind = 2;
                     r.value = relic;

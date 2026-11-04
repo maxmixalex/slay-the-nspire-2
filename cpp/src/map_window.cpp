@@ -1,4 +1,7 @@
-#pragma once
+#include "app.hpp"
+#include "world_run.hpp"
+
+namespace spire {
 // Map windows retain the live room underneath, including a completed room
 // whose controller permits travel. Only destination commit exits that room.
 // Phase::Map remains the later acts' standalone map room.
@@ -164,3 +167,5 @@ void App::sync_map_window() {
     if (panel == 3 && !map_window.visible)
         open_map_window();
 }
+
+} // namespace spire

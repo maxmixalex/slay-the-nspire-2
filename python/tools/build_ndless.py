@@ -37,6 +37,7 @@ SIZE_OPTIMIZATION = {
     "cpp/src/card_grid_input.cpp": "-Oz",
     "cpp/src/card_inspect_input.cpp": "-Oz",
     "cpp/src/settings_input.cpp": "-Oz",
+    "cpp/src/physical_input.cpp": "-Oz",
 }
 SIZE_OPTIMIZED_SOURCES = tuple(SIZE_OPTIMIZATION)
 
@@ -44,6 +45,12 @@ SIZE_OPTIMIZED_SOURCES = tuple(SIZE_OPTIMIZATION)
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output", type=Path, help="Launcher output path")
+    parser.add_argument(
+        "--build-dir",
+        type=Path,
+        default=ROOT / "build" / "ndless",
+        help="Directory for intermediate objects, ELF and link map",
+    )
     parser.add_argument(
         "--size-event-rules",
         action="store_true",
@@ -76,9 +83,8 @@ def main() -> None:
     link = shutil.which("ld.lld") or shutil.which("ld.lld-18")
     if not clang or not link:
         raise SystemExit("Install LLVM with clang++ and ld.lld, and put both on PATH.")
-    directory = ROOT / "build" / "ndless"
+    directory = args.build_dir
     directory.mkdir(parents=True, exist_ok=True)
-    (ROOT / "dist").mkdir(exist_ok=True)
     sources = [
         "cpp/" + line.strip()
         for line in (ROOT / "cpp/core_sources.txt").read_text().splitlines()

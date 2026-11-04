@@ -88,19 +88,6 @@ def edition_files(directory: Path, profile: str) -> dict[str, Path]:
     return files
 
 
-def notices() -> dict[str, Path]:
-    files = {"data/licenses/LICENSE": ROOT / "LICENSE"}
-    source = ROOT / "cpp/third_party/notices"
-    for path in sorted(source.glob("*")):
-        if path.is_file():
-            files["data/licenses/" + path.name] = path
-    files["data/licenses/Unicode-License.txt"] = ROOT / "cpp/third_party/unicode/LICENSE"
-    for path in files.values():
-        if not path.is_file():
-            raise ValueError(f"Required license is missing: {path}")
-    return files
-
-
 def write_archive(
     path: Path,
     files: dict[str, Path],
@@ -146,13 +133,17 @@ def package(
         raise ValueError(f"Launcher is missing: {launcher}")
     receipts: dict[str, object] = {"port_version": __version__, "source_game_version": version}
     languages: dict[str, Path] = {}
+    credits = b"\n\n".join(
+        path.read_bytes()
+        for path in (ROOT / "LICENSE", ROOT / "cpp/third_party/notices/ATTRIBUTIONS.txt")
+    )
     for profile, directory in (("full", full), ("reduced", reduced)):
         files = edition_files(directory, profile)
-        files.update(notices())
         files["nSpire2.tns"] = launcher
         generated = {
             "data/" + FILE_NAME: metadata,
             "data/README.txt": instructions(profile, version),
+            "data/Credits.txt": credits,
         }
         receipts[profile] = write_archive(
             output / f"nSpire-{__version__}-{profile}.zip",

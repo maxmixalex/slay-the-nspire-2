@@ -63,7 +63,6 @@ class ReleasePackagingTests(unittest.TestCase):
             with (
                 patch.object(package_release, "verify_release"),
                 patch.object(package_release, "edition_files", edition_files),
-                patch.object(package_release, "notices", return_value={}),
             ):
                 result = package_release.package(
                     game, root / "full", root / "reduced", launcher, root / "release"
@@ -72,6 +71,7 @@ class ReleasePackagingTests(unittest.TestCase):
             self.assertEqual(result["source_game_version"], "9.88.7")
             for profile in ("full", "reduced"):
                 with zipfile.ZipFile(result[profile]["path"]) as archive:
+                    self.assertIn(b"SIL OPEN FONT LICENSE", archive.read("data/Credits.txt"))
                     self.assertEqual(archive.read("nSpire2.tns"), launcher.read_bytes())
                     self.assertEqual(
                         archive.read("data/nSpire2.version.tns"), encode_version("9.88.7")

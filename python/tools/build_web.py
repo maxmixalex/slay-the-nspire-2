@@ -264,12 +264,6 @@ def package_runtime(
         for name in (
             "LICENSE",
             "cpp/third_party/notices/ATTRIBUTIONS.txt",
-            "cpp/third_party/notices/Go-BSD-3-Clause.txt",
-            "cpp/third_party/notices/OkHSV-Godot-MIT.txt",
-            "cpp/third_party/notices/Noto-Boot-OFL.txt",
-            "cpp/third_party/notices/NotoEmoji-OFL.txt",
-            "cpp/third_party/notices/NotoSansSymbols2-OFL.txt",
-            "cpp/third_party/unicode/LICENSE",
         )
     )
     if source_checkpoint:

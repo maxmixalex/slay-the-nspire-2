@@ -1,6 +1,6 @@
 // Adapted from Go runtime/softfloat64.go and math/{log,sqrt,sin}.go.
 // Copyright 2009-2011 The Go Authors. All rights reserved.
-// BSD-3-Clause: see cpp/third_party/notices/Go-BSD-3-Clause.txt.
+// BSD-3-Clause: see cpp/third_party/notices/ATTRIBUTIONS.txt.
 // Log/sqrt algorithms and constants also carry this notice:
 // Copyright (C) 1993 by Sun Microsystems, Inc. All rights reserved.
 // Developed at SunPro, a Sun Microsystems, Inc. business.

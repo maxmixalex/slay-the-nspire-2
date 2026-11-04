@@ -1,4 +1,6 @@
-#pragma once
+#include "app.hpp"
+
+namespace spire {
 // NPeekButton hides its registered selection controls and backstop while
 // retaining the selection transaction. No gameplay command runs here.
 bool App::combat_peek_context() const {
@@ -59,3 +61,5 @@ bool App::combat_peek_input(Key key) {
     }
     return key == Key::Up || key == Key::Down || key == Key::Confirm || key == Key::EndTurn;
 }
+
+} // namespace spire

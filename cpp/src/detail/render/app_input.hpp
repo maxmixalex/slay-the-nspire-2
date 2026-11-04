@@ -8,17 +8,14 @@
 #define SPIRE_COLD_CONTROL
 #endif
 #include "hand_focus.hpp"
-#include "combat_peek.hpp"
 #include "auxiliary_input.hpp"
 static void invalidate_hud_motion();
 #include "ui_progress.hpp"
 #include "ui_progress_navigation.hpp"
 #include "frontend_input.hpp"
 #include "history_archive_ui.hpp"
-#include "world_map_travel.hpp"
 #include "world_map_act_intro.hpp"
 #include "world_map_drawing_input.hpp"
-#include "world_map_window.hpp"
 bool App::begin_startup_logo() {
     if (!title ||
         !startup_logo.begin(map_clock_ms, content.has_startup_logo_assets(), skip_intro_logo))
@@ -465,7 +462,6 @@ static void next_target(App& a) {
 #include "card_target_input.hpp"
 #include "potion_input.hpp"
 #include "world_map_input.hpp"
-#include "input_bindings.hpp"
 void App::input(Key k) {
     if (startup_logo.active()) {
         if (k == Key::Confirm || k == Key::Back)

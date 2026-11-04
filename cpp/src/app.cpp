@@ -1,4 +1,5 @@
 #include "app.hpp"
+#include "text_buffer.hpp"
 #include "source_version.hpp"
 #include "card_affliction_scene.hpp"
 #include "neow_fire.hpp"

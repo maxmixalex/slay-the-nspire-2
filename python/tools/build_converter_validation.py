@@ -45,15 +45,17 @@ def build(output, clang, linker):
                 str(ROOT / "python/tools/build_ndless.py"),
                 "--output",
                 str(tools / "unused-launcher.tns"),
+                "--build-dir",
+                str(tools / "build"),
                 "--size-event-rules",
             ],
             cwd=ROOT,
             env=env,
             check=True,
         )
+        elf = (tools / "build/nSpire2.elf").read_bytes()
     if source_inventory() != before:
         raise ValueError("ARM source changed while building the validation helper")
-    elf = (ROOT / "build/ndless/nSpire2.elf").read_bytes()
     (output / "nSpire2.elf").write_bytes(elf)
     record = dict(
         schema=1,
