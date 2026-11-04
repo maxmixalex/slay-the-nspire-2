@@ -77,7 +77,7 @@ An unofficial port of *Slay the Spire 2* to the TI-Nspire Ndless platform. Choos
   </tr>
 </table>
 
-Captured from the game running in Firebird at the calculator’s native resolution. Some scenes were prepared with the in-game console. The final clip shows the language menu and battles in several languages.
+Captured from the game running in Firebird at the calculator’s native 320×240 resolution. Some scenes were prepared with the in-game console. The first eight clips use English. The final clip visits all sixteen languages and shows battles in English, Simplified Chinese, Japanese and Turkish.
 
 ## Key features
 
@@ -131,6 +131,19 @@ To select another edition or additional languages, use the command line.
 ```
 
 `--no-animations` writes a separate pack to `nSpire2-converted-no-animations/data/`. Language packs contain their own text and fonts, so you can select just the languages you want. Run `nspire-converter --help` for the complete options.
+
+Use these codes with `--languages` to choose the languages shown in Settings. Keep `eng` in every selection.
+
+| Language | Code | Language | Code |
+| --- | --- | --- | --- |
+| English | `eng` | 日本語 | `jpn` |
+| 简体中文 | `zhs` | 한국어 | `kor` |
+| 繁體中文 | `zht` | Polski | `pol` |
+| Deutsch | `deu` | Português (Brasil) | `ptb` |
+| Español (Latinoamérica) | `esp` | Русский | `rus` |
+| Français | `fra` | Español (España) | `spa` |
+| Bahasa Indonesia | `ind` | ภาษาไทย | `tha` |
+| Italiano | `ita` | Türkçe | `tur` |
 
 For an ASCII seed that is too long to type, use `nspire-converter --encode-seed-file seed.txt`, then choose **Import seed code** in the custom game’s seed editor.
 

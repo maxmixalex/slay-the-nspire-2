@@ -77,7 +77,7 @@
   </tr>
 </table>
 
-以上画面均录自 Firebird 中运行的游戏，保留计算器原生分辨率。部分场景通过游戏内控制台准备。最后一段集中展示语言列表及几种语言下的战斗。
+以上画面均录自 Firebird 中运行的游戏，保留计算器原生的 320×240 分辨率。部分场景通过游戏内控制台准备。前八张使用英文，最后一张逐一展示全部十六种语言，并包含英语、简体中文、日语和土耳其语战斗。
 
 ## 主要特性
 
@@ -131,6 +131,19 @@
 ```
 
 `--no-animations` 会单独写入 `nSpire2-converted-no-animations/data/`。语言包自带文字和字形，可以只选自己需要的语言。完整参数见 `nspire-converter --help`。
+
+在 `--languages` 后使用以下代码，选择需要在设置中显示的语言。每次选择都须包含 `eng`。
+
+| 语言 | 代码 | 语言 | 代码 |
+| --- | --- | --- | --- |
+| English | `eng` | 日本語 | `jpn` |
+| 简体中文 | `zhs` | 한국어 | `kor` |
+| 繁體中文 | `zht` | Polski | `pol` |
+| Deutsch | `deu` | Português (Brasil) | `ptb` |
+| Español (Latinoamérica) | `esp` | Русский | `rus` |
+| Français | `fra` | Español (España) | `spa` |
+| Bahasa Indonesia | `ind` | ภาษาไทย | `tha` |
+| Italiano | `ita` | Türkçe | `tur` |
 
 如果 ASCII 种子太长，可以先用 `nspire-converter --encode-seed-file seed.txt` 生成短码，再在自定义模式的种子输入框中选择“导入种子码”。
 
