@@ -118,7 +118,7 @@ If you already have a complete installation pack, continue with **Transfer to Ha
 
 ### Create Content Pack
 
-In Steam, choose **Slay the Spire 2 → Manage → Browse local files**. Copy the converter into that directory, next to `SlayTheSpire2.pck` and `release_info.json`, then run `nspire-converter.exe` on Windows or `./nspire-converter` on Linux.
+In Steam, choose **Slay the Spire 2 → Manage → Browse local files**. Copy the converter into that directory, next to `SlayTheSpire2.pck` and `release_info.json`. On Windows, run `nspire-converter.exe`. On Linux, run `chmod +x nspire-converter` once after extracting the download, then run `./nspire-converter`.
 
 With no arguments, it creates a full-animation English and Simplified Chinese pack in `nSpire2-converted/data/`. Conversion extracts the game’s resources, samples animation, prepares fonts and compresses the result. The progress display follows each stage.
 

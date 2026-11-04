@@ -118,7 +118,7 @@
 
 ### 创建内容包
 
-在 Steam 中选择**杀戮尖塔 2 → 管理 → 浏览本地文件**。把转换器放到这个目录，与 `SlayTheSpire2.pck` 和 `release_info.json` 放在一起。在 Windows 上运行 `nspire-converter.exe`，在 Linux 上运行 `./nspire-converter`。
+在 Steam 中选择**杀戮尖塔 2 → 管理 → 浏览本地文件**。把转换器放到这个目录，与 `SlayTheSpire2.pck` 和 `release_info.json` 放在一起。Windows 上直接运行 `nspire-converter.exe`。Linux 上解压后先执行一次 `chmod +x nspire-converter`，再运行 `./nspire-converter`。
 
 不带参数时，转换器会把中英双语全动画数据写入 `nSpire2-converted/data/`。转换包括提取游戏资源、采样动画、准备字形和压缩数据，进度显示会依次跟随这些步骤。
 

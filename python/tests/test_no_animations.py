@@ -68,6 +68,36 @@ class ReducedPoseTests(unittest.TestCase):
         for count in (1, 2, 3):
             self.assertEqual(reduced.sample_map(count, False), list(range(count)))
 
+    def test_necrobinder_strike_retains_source_arc_on_unchanged_clock(self):
+        mapping = reduced.sample_map(12, False, 28)
+        self.assertEqual(mapping, [0] * 3 + [3] * 8 + [11])
+        # The source slash event starts at166.7ms. Its clear blue arc appears
+        # at the retained source slot249ms, with the same996ms action duration.
+        for elapsed, selected in (
+            (0, 0),
+            (166.7, 0),
+            (248, 0),
+            (249, 3),
+            (912, 3),
+            (913, 11),
+            (995, 11),
+            (996, 11),
+        ):
+            frame = min(11, int(elapsed // 83))
+            self.assertEqual(mapping[frame], selected)
+        self.assertEqual(len(mapping) * 83, 996)
+        raw, original = self.framed_fixture(12, 3)
+        (_, _, _, output), _, kept = reduced.reduce_framed(raw, False, 100, 28)
+        words, frames = reduced.framed_rows(output)
+        self.assertEqual(words[:8], list(struct.unpack_from("<8H", raw)))
+        for frame, selected in enumerate(mapping):
+            self.assertEqual(frames[frame][0], (100 + frame, *original[selected][0][1:]))
+            self.assertEqual(frames[frame][1:], original[selected][1:])
+        self.assertEqual(kept, {100, 103, 111, 203})
+        for count, loop in ((11, False), (12, True)):
+            with self.assertRaisesRegex(ValueError, "Strike source clock"):
+                reduced.sample_map(count, loop, 28)
+
     def test_reject_bad_counts(self):
         for count in (0, -1, 257):
             with self.assertRaises(ValueError):
@@ -97,14 +127,17 @@ class ReducedPoseTests(unittest.TestCase):
         self.assertFalse(reduced.reduced(marked[:39]))
 
     @staticmethod
-    def framed_fixture():
+    def framed_fixture(count=5, extra_frame=1):
         # Variable piece counts/registration, including an empty terminal
         # picture ID. The converter must choose whole poses, not mix layers.
         frames = [
-            [(100 + i, 7 + i, 65530 + i), *([(200 + i, 65535, 3)] if i == 1 else [])]
-            for i in range(5)
+            [
+                (100 + i, 7 + i, (65530 + i) & 65535),
+                *([(200 + i, 65535, 3)] if i == extra_frame else []),
+            ]
+            for i in range(count)
         ]
-        words = [0x4652, 1, 5, 83, 5376, 0, 9500, 0, 0, 3] + [0] * 10
+        words = [0x4652, 1, count, 83, 5376, 0, 9500, 0, 0, 3] + [0] * (count * 2)
         for i, pieces in enumerate(frames):
             words[10 + i * 2 : 12 + i * 2] = [len(words), len(pieces)]
             for row in pieces:

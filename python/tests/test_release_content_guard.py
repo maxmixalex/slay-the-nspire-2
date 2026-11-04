@@ -77,6 +77,7 @@ def fixture(auxiliary=5422):
             struct.pack_into("<I", out, aux_at + (5419 + i) * 4, image_id)
     native_offsets = {}
     if auxiliary >= 7211:
+        tiles.CLIP.pack_into(out, clip_at + 28 * 16, 0, 12, 83, 0, 0, 5376)
         for index, (frames, ms) in enumerate(guard.UI22_DEATH_CLOCKS):
             tiles.CLIP.pack_into(out, clip_at + (1753 + index) * 16, 0, frames, ms, 0, 0, 5376)
         for ordinal, index in enumerate(sorted(guard.UI22_EXPECTED)):
@@ -385,6 +386,22 @@ class ReleaseContentGuardTest(unittest.TestCase):
         struct.pack_into("<I", data, 12, len(data))
         with self.assertRaisesRegex(ValueError, "exact opaque copy"):
             guard.validate_release_content(data, "ui22")
+
+    def test_reduced_strike_guard_uses_contact_pose_schedule(self):
+        data, at = fixture(7212)
+        struct.pack_into("<I", data, 36, 0x3146414E)
+        frame = 4
+        start = struct.unpack_from("<H", data, at["native"][28] + 20 + frame * 4)[0]
+        picture_at = at["native"][28] + 2 * start
+        for picture, valid in ((3, True), (0, False), (5, False)):
+            struct.pack_into("<H", data, picture_at, picture)
+            source = tiles.PackView(data, 7212, versions=(46,))
+            with self.subTest(picture=picture):
+                if valid:
+                    self.assertTrue(guard.validate_ui22(source, source.image_raw)["complete"])
+                else:
+                    with self.assertRaisesRegex(ValueError, "primary frame identity"):
+                        guard.validate_ui22(source, source.image_raw)
 
     def test_reduced_actor_allows_only_exact_retained_primary_alias(self):
         original, at = fixture(7212)

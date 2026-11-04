@@ -123,7 +123,9 @@ def validate_ui22(source, image):
         if index < UI22_CLIPS:
             first, count, clock, _px, _py, old_units = source.clips[index]
             retained = (
-                sample_map(count, reduced_policy[index]) if reduced_policy is not None else None
+                sample_map(count, reduced_policy[index], index)
+                if reduced_policy is not None
+                else None
             )
             tiles.require(
                 (frames, ms) == (count, clock),
