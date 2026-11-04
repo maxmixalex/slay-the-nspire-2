@@ -872,8 +872,8 @@ class Recipe:
             ],
             [vantom / "vantom-assets.json"],
         )
-        effects = self.directory("cache/vantom-effects") / "catalog.json"
-        self.add("vantom-effects", "@vantom-effects", [self.pck, effects], [effects])
+        extra_catalog = self.directory("cache/vantom-effects") / "catalog.json"
+        self.add("vantom-effects", "@vantom-effects", [self.pck, extra_catalog], [extra_catalog])
         effects = self.directory("effects")
         self.add(
             "effects",
@@ -894,7 +894,7 @@ class Recipe:
                 "--vantom-catalog",
                 vantom / "vantom-assets.json",
                 "--extra-catalog",
-                effects,
+                extra_catalog,
                 "--languages",
                 languages,
                 "--keep-logical",
