@@ -14,7 +14,7 @@ An unofficial port of *Slay the Spire 2* to the TI-Nspire Ndless platform. Choos
       <strong>Main menu and animated title</strong>
     </td>
     <td width="33%" align="center" valign="center">
-      <strong>Character selection and tutorial</strong>
+      <strong>Characters and unlocks</strong>
     </td>
     <td width="33%" align="center" valign="center">
       <strong>Battle with Osty</strong>
@@ -25,7 +25,7 @@ An unofficial port of *Slay the Spire 2* to the TI-Nspire Ndless platform. Choos
       <img src="assets/screenshots/menu.gif" alt="Main menu and animated title" width="100%">
     </td>
     <td width="33%" align="center" valign="center">
-      <img src="assets/screenshots/characters.gif" alt="Character selection and tutorial" width="100%">
+      <img src="assets/screenshots/characters.gif" alt="Characters and unlocks" width="100%">
     </td>
     <td width="33%" align="center" valign="center">
       <img src="assets/screenshots/battle.gif" alt="Battle with Osty" width="100%">

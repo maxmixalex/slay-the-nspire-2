@@ -18,9 +18,8 @@ class JournalTests(unittest.TestCase):
     def invoke(self, child: str, timeout: float = 10):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
-            (root / "cpp/src").mkdir()
+            (root / "cpp/src").mkdir(parents=True)
             (root / "cpp/src" / "sample.cpp").write_text("int main() { return 0; }\n")
-            (root / "VERSION").write_text("test\n")
             cmd = [
                 sys.executable,
                 str(RUNNER),
@@ -52,7 +51,7 @@ class JournalTests(unittest.TestCase):
         self.assertEqual(report["status"], "passed")
         self.assertFalse(report["source_changed"])
         self.assertEqual(log.strip(), "ok")
-        self.assertIn("src/sample.cpp", report["source_files"])
+        self.assertIn("cpp/src/sample.cpp", report["source_files"])
 
     def test_failure_preserves_exit_code(self):
         code, report, _ = self.invoke("raise SystemExit(7)")
@@ -67,7 +66,7 @@ class JournalTests(unittest.TestCase):
 
     def test_source_change_invalidates_success(self):
         code, report, _ = self.invoke(
-            "from pathlib import Path; Path('src/sample.cpp').write_text('changed')"
+            "from pathlib import Path; Path('cpp/src/sample.cpp').write_text('changed')"
         )
         self.assertEqual(code, 1)
         self.assertEqual(report["status"], "source_changed")

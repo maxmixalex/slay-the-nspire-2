@@ -13,6 +13,7 @@ ROOT = Path(__file__).resolve().parents[2]
 
 def main() -> int:
     environment = os.environ.copy()
+    environment.setdefault("CXX", "c++")
     environment["PYTHONPATH"] = (
         os.pathsep.join(
             map(str, (ROOT / "python/src", ROOT / "python/tools", ROOT / "python/tests"))

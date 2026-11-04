@@ -97,7 +97,7 @@ jobs:
           path: ${{ runner.temp }}/converter-helpers/${{ matrix.rid }}/
       - name: Compile with Nuitka and exercise the standalone converter
         run: >-
-          poetry run python python/tools/build_converter_bundle.py
+          poetry run poe converter
           --helpers "${{ runner.temp }}/converter-helpers/${{ matrix.rid }}"
           --output "${{ runner.temp }}/converter-delivery"
           --work "${{ runner.temp }}/converter-build"

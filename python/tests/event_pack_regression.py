@@ -58,7 +58,9 @@ class PackTests(unittest.TestCase):
             page,
         )
         self.assertIn("profileStorage.readRun(saveProfile,supportedSaveVersion())", page)
-        self.assertIn("unsigned save_version(){return spire::SaveVersion;}", host)
+        self.assertRegex(
+            host, r"unsigned\s+save_version\(\)\s*\{\s*return spire::SaveVersion;\s*\}"
+        )
         self.assertIn("latestSaveVersion=17", storage)
         self.assertIn("key('nSpire2-save-v'+version,slot)", storage)
 

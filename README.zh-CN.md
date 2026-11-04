@@ -14,7 +14,7 @@
       <strong>主菜单与动态标题</strong>
     </td>
     <td width="33%" align="center" valign="center">
-      <strong>角色选择与教程</strong>
+      <strong>角色选择与解锁</strong>
     </td>
     <td width="33%" align="center" valign="center">
       <strong>与奥斯提并肩战斗</strong>
@@ -25,7 +25,7 @@
       <img src="assets/screenshots/menu.gif" alt="主菜单与动态标题" width="100%">
     </td>
     <td width="33%" align="center" valign="center">
-      <img src="assets/screenshots/characters.gif" alt="角色选择与教程" width="100%">
+      <img src="assets/screenshots/characters.gif" alt="角色选择与解锁" width="100%">
     </td>
     <td width="33%" align="center" valign="center">
       <img src="assets/screenshots/battle.gif" alt="与奥斯提并肩战斗" width="100%">
