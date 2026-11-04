@@ -30,7 +30,7 @@ Color and particle mathematics: Godot contributors and Björn Ottosson;
 see the MIT notice below. Boot glyphs derive from Noto Sans CJK SC.
 The converter can also use Noto Emoji and Noto Sans Symbols 2 for
 characters missing from a game font. The OFL notice below
-identify the corresponding font authors and redistribution terms.
+identifies the corresponding font authors and redistribution terms.
 
 https://www.7-zip.org/sdk.html
 https://www.unicode.org/
@@ -101,8 +101,6 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
-
-Reference and adaptation: docs/rich-rainbow-0.17.md
 
 Unicode
 -------

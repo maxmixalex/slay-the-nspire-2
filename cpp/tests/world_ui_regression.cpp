@@ -1072,7 +1072,7 @@ static void compound_intent_values() {
     CHECK(intent.damage == 3 && intent.hits == 3 && intent.flags == EnemyIntentAttack);
     const int repeat_x =
         rendered_number("3", 10, pos.intent_x - 25, pos.intent - 12, pos.intent_x + 25,
-                        pos.intent + 34, a.content.english() ? "x3" : "×3");
+                        pos.intent + 34, a.content.language() == 2 ? "×3" : "x3");
     CHECK(repeat_x >= 0 && repeat_x < pos.intent_x);
     capture("intent-byrdonis-three-hits");
     unchanged();
