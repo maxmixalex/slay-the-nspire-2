@@ -71,22 +71,29 @@ def build(helpers: Path, output: Path, work: Path, *, mode: str = "onefile") -> 
                     "module-name": "nspire_converter",
                     "dlls": [
                         {
-                            "from_filenames": {
-                                "relative_path": str(bundled_helpers),
-                                "prefixes": ["SpineSampleAdapter"],
+                            "by_code": {
+                                "filename_code": repr(str(bundled_helpers / adapter)),
                                 "executable": "yes",
                             },
                             "dest_path": "converter_helpers",
                         },
                         {
-                            "from_filenames": {
-                                "relative_path": str(bundled_helpers),
-                                "prefixes": ["nspire_noise"],
+                            "by_code": {
+                                "filename_code": repr(str(bundled_helpers / noise)),
                             },
                             "dest_path": "converter_helpers",
                         },
                     ],
-                }
+                },
+                {
+                    "module-name": "unicorn",
+                    "dlls": [
+                        {
+                            "from_filenames": {"relative_path": "lib", "prefixes": [""]},
+                            "dest_path": "unicorn/lib",
+                        }
+                    ],
+                },
             ],
             indent=2,
         ),
@@ -107,10 +114,8 @@ def build(helpers: Path, output: Path, work: Path, *, mode: str = "onefile") -> 
         "--jobs=2",
         "--include-package=nspire_converter",
         "--include-package=unicorn",
-        "--include-package-data=unicorn",
         f"--user-package-configuration-file={configuration}",
         f"--include-data-dir={PACKAGE_ROOT / 'data'}=nspire_converter/data",
-        f"--include-data-dir={bundled_helpers}=converter_helpers",
         f"--include-data-dir={ROOT / 'cpp/src'}=cpp/src",
         f"--include-data-dir={ROOT / 'cpp/include'}=cpp/include",
         f"--report={work / 'nuitka-report.xml'}",
@@ -119,8 +124,13 @@ def build(helpers: Path, output: Path, work: Path, *, mode: str = "onefile") -> 
         f"--product-version={__version__}.0",
         f"--file-version={__version__}.0",
     ]
-    # The self-contained .NET sampler is an executable payload. Nuitka does not
-    # treat binaries as data by default, so force the required helper names.
+    # Register native helpers exclusively as binaries. Linux's extensionless
+    # sampler would otherwise also enter the data list and conflict at packaging.
+    command += [
+        f"--include-data-files={path}=converter_helpers/{path.name}"
+        for path in sorted(bundled_helpers.iterdir())
+        if path.is_file() and path.name not in (adapter, noise)
+    ]
     if mode == "onefile":
         command += [
             f"--onefile-tempdir-spec={{CACHE_DIR}}/nSpire/converter/{identity}",
@@ -176,7 +186,12 @@ def build(helpers: Path, output: Path, work: Path, *, mode: str = "onefile") -> 
     notices = output / "licenses"
     notices.mkdir(exist_ok=True)
     shutil.copy2(ROOT / "LICENSE", notices / "LICENSE")
+    shutil.copy2(ROOT / "cpp/third_party/notices/ATTRIBUTIONS.txt", notices / "ATTRIBUTIONS.txt")
     shutil.copy2(helpers / "Spine-Runtimes-LICENSE", notices / "Spine-Runtimes-LICENSE")
+    (notices / "FastNoiseLite-LICENSE.txt").write_text(
+        (helpers / "FastNoiseLite.h").read_text(encoding="utf-8").split("#ifndef", 1)[0],
+        encoding="utf-8",
+    )
     (output / "README.txt").write_text(
         "Copy the converter into your owned Slay the Spire 2 installation and run it.\n"
         "Default: English + Simplified Chinese, full animation.\n"

@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import shutil
 import struct
 import sys
 import zipfile
@@ -100,11 +101,19 @@ def write_archive(
         raise ValueError(f"Installation is {installed} bytes, above the {maximum_bytes}-byte limit")
     path.parent.mkdir(parents=True, exist_ok=True)
     temporary = path.with_suffix(".tmp")
-    with zipfile.ZipFile(temporary, "w", zipfile.ZIP_DEFLATED, compresslevel=6) as archive:
-        for name, source in sorted(files.items()):
-            archive.write(source, name)
-        for name, data in sorted(generated.items()):
-            archive.writestr(name, data)
+    with zipfile.ZipFile(temporary, "w") as archive:
+        for name, item in sorted((files | generated).items()):
+            # ZipInfo's fixed timestamp keeps builds independent of checkout and extraction times.
+            entry = zipfile.ZipInfo(name)
+            entry.create_system = 3
+            entry.external_attr = 0o100644 << 16
+            entry.compress_type = zipfile.ZIP_DEFLATED
+            with archive.open(entry, "w") as dest:
+                if isinstance(item, Path):
+                    with item.open("rb") as source:
+                        shutil.copyfileobj(source, dest, 1024 * 1024)
+                else:
+                    dest.write(item)
     with zipfile.ZipFile(temporary) as archive:
         if set(archive.namelist()) != set(files) | set(generated):
             raise ValueError("Package member list changed")

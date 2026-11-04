@@ -8,7 +8,7 @@ __pycache__/
 *.bak.tns
 *.tmp.tns
 *.o
-/converter_helpers/
+/converter_helpers
 .mypy_cache/
 .ruff_cache/
 *.egg-info/

@@ -1,6 +1,7 @@
 """Release packaging preserves resource bytes and installation metadata."""
 
 import json
+import os
 import tempfile
 import unittest
 import zipfile
@@ -12,6 +13,18 @@ from nspire_converter.source_version import decode_version, encode_version, inst
 
 
 class ReleasePackagingTests(unittest.TestCase):
+    def test_archive_is_reproducible_after_extracting_inputs(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            data = root / "data.tns"
+            data.write_bytes(b"game data")
+            files = {"data/data.tns": data}
+            generated = {"data/README.txt": b"Install the launcher."}
+            first = package_release.write_archive(root / "first.zip", files, generated)
+            os.utime(data, (946684800, 946684800))
+            second = package_release.write_archive(root / "second.zip", files, generated)
+            self.assertEqual(first["sha256"], second["sha256"])
+
     def test_version_comes_from_the_supplied_installation(self):
         with tempfile.TemporaryDirectory() as directory:
             game = Path(directory)
