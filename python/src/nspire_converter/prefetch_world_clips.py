@@ -164,10 +164,14 @@ def clip_group_key(job, model, layout):
         return job["key"]
     state = job_state(job, layout)
     setup = state.get("setup_tracks", [])
-    if any(track.get("queued") for track in setup):
+    if (
+        "track" not in state
+        or "setup_tracks" not in state
+        or any(track.get("queued") for track in setup)
+    ):
         return job["key"]
     state.pop("facts", None)
-    state["setup_tracks"] = [track for track in setup if track["track"] != state.get("track", 0)]
+    state["setup_tracks"] = [track for track in setup if track["track"] != state["track"]]
     inputs = {
         key: value for key, value in job.items() if key not in ("key", "id", "when", "visual_state")
     }

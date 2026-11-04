@@ -35,6 +35,9 @@ class PrefetchProtocol(unittest.TestCase):
         )
         changed_model = dict(model, scene_controls=[{"node": "new fact-dependent driver"}])
         self.assertNotEqual(key, prefetch.clip_group_key(first, changed_model, KAISER_LAYOUT))
+        changed = deepcopy(first)
+        changed["visual_state"].pop("track")
+        self.assertEqual(changed["key"], prefetch.clip_group_key(changed, model, KAISER_LAYOUT))
 
     def test_group_reuses_cached_peer_with_each_original_job_identity(self):
         model = next(model for model in manifest()["models"] if model["model"] == "Rocket")
@@ -103,7 +106,16 @@ class PrefetchProtocol(unittest.TestCase):
             with ThreadPoolExecutor(max_workers=4) as pool:
                 list(
                     pool.map(
-                        lambda _: cache.put("clip", settings, metadata, payload, scope=scope),
+                        lambda index: cache.put(
+                            "clip",
+                            settings,
+                            metadata,
+                            payload,
+                            scope=scope,
+                            reused_from=dict(
+                                pipeline="equivalent-kaiser-tracks", key=f"{index:064x}"
+                            ),
+                        ),
                         range(20),
                     )
                 )
