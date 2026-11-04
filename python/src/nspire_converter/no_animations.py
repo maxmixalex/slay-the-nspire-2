@@ -2,7 +2,7 @@
 """Build the reduced-pose UI23 variant from complete private UI22 artwork.
 
 Looping actors and scenery retain one exact source pose. Nonlooping actions
-retain their first, middle and terminal poses (at most three). Every original
+retain their first, representative action and terminal poses (at most three). Every original
 clip ID, sample count, frame clock, pivot and gameplay event remains unchanged:
 discarded samples become descriptor aliases, not a shortened animation.
 Registered actor/Vantom tables select the corresponding whole source pose.
@@ -56,7 +56,7 @@ def mark(data):
     return bytes(out)
 
 
-def sample_map(count, loop):
+def sample_map(count, loop, clip=None):
     """Hold the latest retained pose; never display a death terminal early."""
     require(0 < count <= 256, "Animation sample count is outside the runtime bound")
     # Finite source clocks include a terminal endpoint. An odd millisecond
@@ -64,6 +64,12 @@ def sample_map(count, loop):
     # that middle pose so a death/action has visibly progressed by halfway.
     # Tiny one-to-three-frame actions keep every available meaningful pose.
     middle = min(count - 1, max(1, (count - 2) // 2))
+    if clip == 28:
+        # Necrobinder's attack_slash_start occurs at 166.7 ms. Source frame 3
+        # carries its blue contact arc, which has faded by the default frame 5.
+        # Keep the source slot's 249 ms onset and the original terminal slot.
+        require(count == 12 and not loop, "Necrobinder Strike source clock changed")
+        middle = 3
     samples = [0] if loop else sorted({0, middle, count - 1})
     return [max(sample for sample in samples if sample <= frame) for frame in range(count)]
 
@@ -196,9 +202,9 @@ def framed_rows(raw):
     return words, rows
 
 
-def reduce_framed(raw, loop, first=None):
+def reduce_framed(raw, loop, first=None, clip=None):
     words, rows = framed_rows(raw)
-    mapping = sample_map(len(rows), loop)
+    mapping = sample_map(len(rows), loop, clip)
     out = words[:10] + [0] * (2 * len(rows))
     before = {piece[0] for row in rows for piece in row}
     kept = set()
@@ -328,7 +334,7 @@ def validate_profile(source, image):
     for clip, (first, count, _ms, *_registration) in enumerate(source.clips):
         if clip in retired or VANTOM_FIRST <= clip < VANTOM_END:
             continue
-        mapping = sample_map(count, policy[clip])
+        mapping = sample_map(count, policy[clip], clip)
         for frame, selected in enumerate(mapping):
             index, target = first + frame, first + selected
             if index not in protected:
@@ -349,7 +355,7 @@ def validate_profile(source, image):
         _w, _h, fmt, raw = image(index)
         require(fmt == 0, "Reduced actor parameters are not exact words")
         _words, rows = framed_rows(raw)
-        mapping = sample_map(len(rows), clip == -2 or policy[clip])
+        mapping = sample_map(len(rows), clip == -2 or policy[clip], clip)
 
         def pose(row):
             return tuple((source.images[picture], x, y) for picture, x, y in row)
@@ -490,7 +496,7 @@ def prepare(data, work):
         require(fmt == 0, "Actor parameters must remain exact words")
         loop = clip == -2 or policy[clip]
         first = None if clip == -2 else source.clips[clip][0]
-        new, before, after = reduce_framed(raw, loop, first)
+        new, before, after = reduce_framed(raw, loop, first, clip)
         save(index, new)
         typed_before.update(before)
         typed_after.update(after)
@@ -499,7 +505,7 @@ def prepare(data, work):
                 kind="framed",
                 image=index,
                 clip=clip,
-                poses=len(set(sample_map(struct.unpack_from("<H", raw, 4)[0], loop))),
+                poses=len(set(sample_map(struct.unpack_from("<H", raw, 4)[0], loop, clip))),
             )
         )
     aliases = {}
@@ -513,7 +519,7 @@ def prepare(data, work):
         direct.update(range(first, first + count))
         if clip in retired:
             continue
-        mapping = sample_map(count, policy[clip])
+        mapping = sample_map(count, policy[clip], clip)
         for frame, selected in enumerate(mapping):
             index, target = first + frame, first + selected
             if index in static or index in protected_vantom:
