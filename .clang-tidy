@@ -1,0 +1,11 @@
+Checks: >-
+  -*,
+  clang-analyzer-*,
+  -clang-analyzer-optin.*,
+  bugprone-use-after-move,
+  bugprone-sizeof-expression,
+  bugprone-suspicious-memset-usage,
+  bugprone-undefined-memory-manipulation
+WarningsAsErrors: '*'
+HeaderFilterRegex: 'cpp/(include|src|platform)/.*'
+FormatStyle: file

@@ -1,0 +1,71 @@
+#pragma once
+#include "resource_source_base.hpp"
+
+namespace spire {
+
+// Shared by eager container validation and deferred immutable-file providers.
+bool artwork_part_header(const uint8_t*, uint32_t length, unsigned part);
+
+// Small independent LZ4 pages around locale containers. They may be read while
+// an image owns ResourceTransferLease: this adapter never borrows that scratch.
+// Literal-only ranges read directly. Mixed ranges use at most 32 KiB of
+// encoded bytes from the current request, with one 4 KiB decoded-page cache.
+class BlockedResourceSource {
+  public:
+    // The largest pinned edition uses 1,264 pages. Keep 8 MiB of logical capacity
+    // without reserving a 16 MiB table in the calculator's contiguous BSS.
+    static constexpr uint32_t BlockBytes = 4096, MaxBlocks = 2048, EncodedBytes = 8 * BlockBytes;
+    bool open(ResourceSource);
+    void close();
+    ResourceSource source();
+    bool read(uint32_t, void*, uint32_t) const;
+
+  private:
+    ResourceSource input_{};
+    uint32_t length_{}, blocks_{}, data_{};
+    uint32_t offsets_[MaxBlocks + 1]{};
+    mutable uint32_t cached_ = UINT32_MAX;
+    mutable uint8_t decoded_[BlockBytes]{}, encoded_[EncodedBytes]{};
+    // Providers may read a different adapter, but cannot recursively alter
+    // this adapter's source, in-flight encoded bytes or decoded cache.
+    mutable bool busy_{};
+    static bool read_at(void*, uint32_t, void*, uint32_t);
+    static void progress_at(void*, ResourceStage, uint32_t, uint32_t);
+};
+
+// An NSM1 table maps the original immutable NSC1 artwork address space onto
+// separately stored concern files from the same edition. Rendering performs only a memory
+// lookup and the original requested file read; no image is copied at startup.
+class MultipartResourceSource {
+  public:
+    // The complete pinned artwork maps 95 spans; 128 retains explicit headroom.
+    static constexpr unsigned MaxParts = 8, MaxSpans = 128;
+    // A file owner may provide headers obtained with its length probes. They
+    // are validated here exactly like stream reads and are never retained.
+    bool open(ResourceSource index, const ResourceSource* parts, unsigned count,
+              const uint8_t (*part_headers)[32] = nullptr);
+    // Every part provider must validate artwork_part_header before returning
+    // its first payload bytes. Presence and actual lengths are already known.
+    bool open_deferred(ResourceSource index, const ResourceSource* parts, unsigned count);
+    void close();
+    ResourceSource source();
+    bool read(uint32_t, void*, uint32_t) const;
+
+  private:
+    struct Span {
+        uint32_t first, end, physical, part;
+    };
+    ResourceSource parts_[MaxParts]{};
+    Span spans_[MaxSpans]{};
+    uint8_t header_[64]{};
+    uint32_t length_{}, span_count_{}, part_count_{};
+    mutable uint32_t last_ = 0;
+    bool open_table(ResourceSource, const ResourceSource*, unsigned, const uint8_t (*)[32], bool);
+    static bool read_at(void*, uint32_t, void*, uint32_t);
+};
+
+constexpr const char* ArtworkPartNames[MultipartResourceSource::MaxParts] = {
+    "nSpire2.interface.dat.tns", "nSpire2.cards.dat.tns",  "nSpire2.characters.dat.tns",
+    "nSpire2.enemies.dat.tns",   "nSpire2.bosses.dat.tns", "nSpire2.rooms.dat.tns",
+    "nSpire2.effects.dat.tns",   "nSpire2.shared.dat.tns"};
+} // namespace spire
