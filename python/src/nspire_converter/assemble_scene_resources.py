@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build private UI13 source artwork and all sixteen compatible locale files.
+"""Build private scenes source artwork and all sixteen compatible locale files.
 
 The artwork stage runs independently of the dense enemy resampling stage.
 The pack stage copies that finished art, changes only three pile textures,
@@ -51,7 +51,7 @@ def assets(args):
     from nspire_converter.frontend_assets import source_assets as frontend
     from nspire_converter.pck import Pack
 
-    cache = tiles.private_path(args.cache, "Private UI13 source cache")
+    cache = tiles.private_path(args.cache, "Private scenes source cache")
     cache.mkdir(parents=True, exist_ok=True)
     pck = tiles.private_path(args.pck, "Original PCK")
     runtime = tiles.private_path(args.runtime, "Original runtime")
@@ -94,7 +94,7 @@ def assets(args):
         rows.extend(batch)
     tiles.require(
         [row["auxiliary"] for row in rows] == list(range(BASE_AUX, AUXILIARY)),
-        "Incomplete UI13 directory",
+        "Incomplete scenes directory",
     )
     manifest = dict(
         schema=1,
@@ -104,7 +104,7 @@ def assets(args):
         clips=[],
         localized_text={language: {} for language in LANGUAGES},
     )
-    tiles.atomic_bytes(cache / "ui13-assets.json", json.dumps(manifest, indent=2).encode() + b"\n")
+    tiles.atomic_bytes(cache / "scene-assets.json", json.dumps(manifest, indent=2).encode() + b"\n")
     emit("source_catalog_complete", images=len(rows), auxiliary=AUXILIARY)
 
 
@@ -112,15 +112,15 @@ def extend_doom(args):
     """Extend an already verified1130-image source build without resampling it."""
     from nspire_converter.doom_assets import BASE_AUXILIARY, source_assets
 
-    cache = tiles.private_path(args.cache, "Private UI13 source cache")
-    path = cache / "ui13-assets.json"
+    cache = tiles.private_path(args.cache, "Private scenes source cache")
+    path = cache / "scene-assets.json"
     original = path.read_bytes()
     manifest = json.loads(original)
     tiles.require(
         manifest.get("reference") == "v0.111.0 / 41cef1ea"
         and [row["auxiliary"] for row in manifest["images"]]
         == list(range(BASE_AUX, BASE_AUXILIARY)),
-        "Doom extension requires a complete earlier UI13 source catalog",
+        "Doom extension requires a complete earlier scenes source catalog",
     )
     for row in manifest["images"]:
         raw = (cache / row["file"]).read_bytes()
@@ -162,7 +162,7 @@ def catalog_endpoint(manifest):
         manifest.get("reference") == "v0.111.0 / 41cef1ea"
         and end in (AUXILIARY, RANDOM_AUXILIARY, retained_endpoint(), no_rug_endpoint())
         and [row["auxiliary"] for row in rows] == list(range(BASE_AUX, end)),
-        "Incomplete UI13 source manifest",
+        "Incomplete scenes source manifest",
     )
     return end
 
@@ -220,8 +220,8 @@ def extend_retained(args):
     from nspire_converter.pck import Pack
     from nspire_converter.random_character_assets import source_assets as random_character
 
-    cache = tiles.private_path(args.cache, "Private UI13 source cache")
-    path = cache / "ui13-assets.json"
+    cache = tiles.private_path(args.cache, "Private scenes source cache")
+    path = cache / "scene-assets.json"
     original = path.read_bytes()
     manifest = json.loads(original)
     end = catalog_endpoint(manifest)
@@ -238,9 +238,9 @@ def extend_retained(args):
         raw = (cache / row["file"]).read_bytes()
         tiles.require(
             len(raw) == row["bytes"] and tiles.sha256(raw) == row["sha256"],
-            "Earlier UI13 source image changed",
+            "Earlier scenes source image changed",
         )
-    baseline = cache / "ui13-assets.before-retained.json"
+    baseline = cache / "scene-assets.before-retained.json"
     if end == AUXILIARY:
         extension_baseline(baseline, original, AUXILIARY, "Different retained-extension baseline")
     else:
@@ -291,7 +291,7 @@ def extend_retained(args):
             emit("retained_source_cache_verified", catalog=name, images=len(rows))
         else:
             emit("retained_source_sampling", catalog=name)
-            catalog_cache = cache / "retained-ui13" / name
+            catalog_cache = cache / "retained-scenes" / name
             catalog_cache.mkdir(parents=True, exist_ok=True)
             rows = builder(pck, catalog_cache, fastnoise_header=noise, **kwargs)
             # New writers receive a separate directory; a reused basename
@@ -347,8 +347,8 @@ def extend_fake_rug(args):
     from nspire_converter.fake_merchant_scene_assets import source_no_rug_assets
     from nspire_converter.pck import Pack
 
-    cache = tiles.private_path(args.cache, "Private UI13 source cache")
-    path = cache / "ui13-assets.json"
+    cache = tiles.private_path(args.cache, "Private scenes source cache")
+    path = cache / "scene-assets.json"
     original = path.read_bytes()
     manifest = json.loads(original)
     end = catalog_endpoint(manifest)
@@ -368,7 +368,7 @@ def extend_fake_rug(args):
             len(raw) == row["bytes"] and tiles.sha256(raw) == row["sha256"],
             "Earlier retained source image changed",
         )
-    baseline = cache / "ui13-assets.before-fake-rug.json"
+    baseline = cache / "scene-assets.before-fake-rug.json"
     if end == start:
         extension_baseline(
             baseline, original, start, "Different no-rug extension baseline", retained=True
@@ -396,7 +396,7 @@ def extend_fake_rug(args):
         emit("no_rug_source_cache_verified", images=len(rows))
     else:
         emit("no_rug_source_sampling")
-        catalog_cache = cache / "retained-ui13" / "fake-merchant-no-rug"
+        catalog_cache = cache / "retained-scenes" / "fake-merchant-no-rug"
         catalog_cache.mkdir(parents=True, exist_ok=True)
         rows = source_no_rug_assets(
             pck, catalog_cache, runtime=runtime, dotnet=args.dotnet, base=start, end=finish
@@ -436,14 +436,14 @@ def extend_fake_rug(args):
 def pack_editions(args):
     from nspire_converter.pile_icon_assets import source_replacements
 
-    cache = tiles.private_path(args.cache, "Private UI13 cache")
-    output = tiles.private_path(args.output, "Private UI13 editions")
+    cache = tiles.private_path(args.cache, "Private scenes cache")
+    output = tiles.private_path(args.output, "Private scenes editions")
     output.mkdir(parents=True, exist_ok=True)
     original_common = tiles.private_path(args.base_common, "Previous shared artwork").read_bytes()
     artwork = tiles.private_path(args.artwork, "Dense enemy artwork").read_bytes()
     source = view(artwork)
     tiles.require(len(source.aux) == BASE_AUX, "Enemy pack has unexpected source catalog")
-    manifest = json.loads((cache / "ui13-assets.json").read_text())
+    manifest = json.loads((cache / "scene-assets.json").read_text())
     auxiliary = catalog_endpoint(manifest)
     replacements = {
         row["image"]: Image.open(row["png"]).convert("RGBA")
@@ -470,7 +470,8 @@ def pack_editions(args):
     reports = {}
     previous_common = (
         (
-            tiles.private_path(args.previous_editions, "Previous UI13 editions") / "nSpire2.dat.tns"
+            tiles.private_path(args.previous_editions, "Previous scenes editions")
+            / "nSpire2.dat.tns"
         ).read_bytes()
         if args.previous_editions
         else None
@@ -534,7 +535,7 @@ def pack_editions(args):
                     for i in range(len(previous.strings))
                     if i != CREDIT_SLOT
                 ),
-                "Previous UI13 localized text changed",
+                "Previous scenes localized text changed",
             )
             for i, (cp, offset, band, w, h, advance, encoded) in enumerate(previous.glyphs):
                 tiles.require(
@@ -546,7 +547,7 @@ def pack_editions(args):
                         encoded & ~tiles.GLYPH_GROUP_FLAG,
                         bytes(previous.glyph_payload(i)),
                     ),
-                    "Previous UI13 glyph raster or metrics changed",
+                    "Previous scenes glyph raster or metrics changed",
                 )
         bounds = split.layout(localized, language)
         candidate = split.common_file(
@@ -564,7 +565,7 @@ def pack_editions(args):
         )
         tiles.atomic_bytes(output / f"nSpire2.{language}.dat.tns", directory)
         if language in keep:
-            tiles.atomic_bytes(output / f"ui13-{language}.nsp", localized)
+            tiles.atomic_bytes(output / f"scenes-{language}.nsp", localized)
         reports[language] = dict(
             bytes=len(directory),
             sha256=tiles.sha256(directory),
@@ -576,7 +577,7 @@ def pack_editions(args):
             previous_texts_unchanged_except_credit=True,
         )
         if previous_locale is not None:
-            reports[language]["previous_ui13_locale_sha256"] = tiles.sha256(previous_locale)
+            reports[language]["previous_scenes_locale_sha256"] = tiles.sha256(previous_locale)
         tiles.atomic_bytes(
             output / f"{language}-receipt.json",
             json.dumps(reports[language], ensure_ascii=False, indent=2).encode() + b"\n",

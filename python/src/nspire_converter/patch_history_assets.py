@@ -116,7 +116,7 @@ def build_art(path, cache):
         runtime_added_pixel_buffers=0,
     )
     tiles.atomic_bytes(
-        cache / "history-ui8-assets.json", json.dumps(manifest, indent=2).encode() + b"\n"
+        cache / "history-assets.json", json.dumps(manifest, indent=2).encode() + b"\n"
     )
     return manifest
 
@@ -135,7 +135,7 @@ def main():
     manifest = build_art(tiles.private_path(args.pck, "Owner PCK"), cache)
     for language, path in (("eng", args.input_eng), ("zhs", args.input_zhs)):
         path = tiles.private_path(path, "Input pack")
-        target = output / ("ui8-" + language + ".nsp")
+        target = output / ("history-" + language + ".nsp")
         tiles.require(path != target, "Do not overwrite verified input")
         data, receipt = patch_pack(
             path.read_bytes(),

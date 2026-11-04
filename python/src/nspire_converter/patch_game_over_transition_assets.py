@@ -105,7 +105,7 @@ def main():
     receipts = {}
     for language in ("eng", "zhs"):
         source = tiles.private_path(getattr(args, "input_" + language), "Previous private pack")
-        target = output / f"ui9-{language}.nsp"
+        target = output / f"game-over-{language}.nsp"
         tiles.require(
             source.resolve() != target.resolve(), "Transition append must preserve the v30 input"
         )

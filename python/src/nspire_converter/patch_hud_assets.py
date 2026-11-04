@@ -115,9 +115,7 @@ def build_art(path, cache):
         reused_ancient_icons=8,
         runtime_added_pixel_buffers=0,
     )
-    tiles.atomic_bytes(
-        cache / "hud-ui7-assets.json", json.dumps(manifest, indent=2).encode() + b"\n"
-    )
+    tiles.atomic_bytes(cache / "hud-assets.json", json.dumps(manifest, indent=2).encode() + b"\n")
     return manifest
 
 
@@ -135,7 +133,7 @@ def main():
     manifest = build_art(tiles.private_path(args.pck, "Owner PCK"), cache)
     for language, path in (("eng", args.input_eng), ("zhs", args.input_zhs)):
         path = tiles.private_path(path, "Input pack")
-        target = output / ("ui7-" + language + ".nsp")
+        target = output / ("hud-" + language + ".nsp")
         tiles.require(path != target, "Do not overwrite verified input")
         data, receipt = patch_pack(
             path.read_bytes(),

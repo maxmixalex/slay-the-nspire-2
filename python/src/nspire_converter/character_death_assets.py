@@ -367,7 +367,7 @@ def main():
     grouped = grouped_art(art["images"], cache)
     receipts = {}
     for language, source in sources.items():
-        target = output / f"ui9-{language}.nsp"
+        target = output / f"death-{language}.nsp"
         tiles.require(
             target.resolve() != source.resolve(), "The v29 output must preserve its v28 input"
         )

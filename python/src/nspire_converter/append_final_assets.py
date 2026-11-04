@@ -18,10 +18,10 @@ def build_images(pack, cache):
     rows = history.build_images(pack, cache, BASE_AUX)
     tiles.require(len(rows) == history.AUXILIARY - BASE_AUX, "History catalog count differs")
     rows.extend(settings.build_images(pack, cache, history.AUXILIARY))
-    tiles.require(len(rows) == AUXILIARY - BASE_AUX, "Combined UI39 catalog count differs")
+    tiles.require(len(rows) == AUXILIARY - BASE_AUX, "Combined NSP2/39 catalog count differs")
     tiles.require(
         [row["auxiliary"] for row in rows] == list(range(BASE_AUX, AUXILIARY)),
-        "Combined UI39 image order differs",
+        "Combined NSP2/39 image order differs",
     )
     return rows
 
@@ -55,7 +55,7 @@ def main():
         parser.add_argument("--" + key, type=Path, required=True)
     args = parser.parse_args()
     cache = tiles.private_path(args.cache_dir, "Source UI image cache")
-    output = tiles.private_path(args.output_dir, "Private UI39 output")
+    output = tiles.private_path(args.output_dir, "Private NSP2/39 output")
     cache.mkdir(parents=True, exist_ok=True)
     pack = Pack(tiles.private_path(args.pck, "Pinned original PCK"))
     try:
@@ -63,21 +63,21 @@ def main():
     finally:
         pack.close()
     tiles.atomic_bytes(
-        cache / "ui10-final-artwork.json", json.dumps(rows, indent=2).encode() + b"\n"
+        cache / "interface-details-final-artwork.json", json.dumps(rows, indent=2).encode() + b"\n"
     )
     receipts = {}
     for language in ("eng", "zhs"):
-        source = tiles.private_path(getattr(args, "input_" + language), "Immutable UI38 source")
-        target = output / f"ui10-{language}.nsp"
+        source = tiles.private_path(getattr(args, "input_" + language), "Immutable NSP2/38 source")
+        target = output / f"interface-details-{language}.nsp"
         tiles.require(source.resolve() != target.resolve(), "Preserve input resource files")
         result, receipts[language] = append(source.read_bytes(), rows, cache)
         tiles.atomic_bytes(target, result)
     tiles.require(
         receipts["eng"]["common_art_sha256"] == receipts["zhs"]["common_art_sha256"],
-        "UI39 artwork differs between locales",
+        "NSP2/39 artwork differs between locales",
     )
     tiles.atomic_bytes(
-        output / "ui10-final-artwork-conversion.json",
+        output / "interface-details-final-artwork-conversion.json",
         json.dumps(receipts, indent=2).encode() + b"\n",
     )
     print(json.dumps(receipts), flush=True)

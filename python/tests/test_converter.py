@@ -2,6 +2,7 @@ import argparse
 import contextlib
 import io
 import json
+import re
 import subprocess
 import sys
 import tempfile
@@ -13,6 +14,24 @@ from nspire_converter import converter
 
 
 class ConverterTests(unittest.TestCase):
+    def test_public_plans_use_descriptive_stage_and_file_names(self):
+        from nspire_converter.converter_finalize import add_final_stages
+
+        numbered_ui = re.compile(r"ui[0-9]+", re.IGNORECASE)
+        for reduced in (False, True):
+            with self.subTest(reduced=reduced):
+                recipe = converter.Recipe("/game", "/work", "/runtime", "dotnet", "/noise", "-")
+                add_final_stages(
+                    recipe,
+                    recipe.source_stages(),
+                    Path("/output"),
+                    list(converter.LANGUAGES),
+                    reduced,
+                )
+                for stage in recipe.stages:
+                    for value in (stage.name, stage.module, *stage.arguments, *stage.outputs):
+                        self.assertNotRegex(str(value), numbered_ui)
+
     def test_retained_compaction_binds_both_locales_before_grouped_glyphs(self):
         from nspire_converter import compact_retained_resources as compact
 
@@ -32,8 +51,8 @@ class ConverterTests(unittest.TestCase):
         self.assertEqual(
             stage.outputs,
             (
-                output / "ui9-eng.nsp",
-                output / "ui9-zhs.nsp",
+                output / "retained-eng.nsp",
+                output / "retained-zhs.nsp",
                 output / "compact-retained-receipt.json",
             ),
         )
@@ -90,7 +109,7 @@ class ConverterTests(unittest.TestCase):
         rebake = stages["enemy-rebake"]
         args = rebake.arguments
         self.assertEqual(rebake.module, "rebake_enemy")
-        self.assertEqual(args[args.index("--input") + 1], str(stages["ui13-input"].outputs[-1]))
+        self.assertEqual(args[args.index("--input") + 1], str(stages["scene-input"].outputs[-1]))
         models = [args[i + 1] for i, value in enumerate(args) if value == "--model"]
         catalog = plan()
         jobs = [job for job in catalog["jobs"] if job["model"] in models]
@@ -111,13 +130,13 @@ class ConverterTests(unittest.TestCase):
         self.assertTrue(
             all(not row.get("shared_group") for row in catalog["models"] if row["model"] in models)
         )
-        graft = stages["ui13"].arguments
+        graft = stages["scenes"].arguments
         self.assertEqual(graft[graft.index("--artwork") + 1], str(rebake.outputs[0]))
         self.assertEqual(
-            graft[graft.index("--base-common") + 1], str(stages["ui13-input"].outputs[0])
+            graft[graft.index("--base-common") + 1], str(stages["scene-input"].outputs[0])
         )
-        self.assertLess(list(stages).index("enemy-rebake"), list(stages).index("ui13"))
-        self.assertLess(list(stages).index("ui13"), list(stages).index("vantom"))
+        self.assertLess(list(stages).index("enemy-rebake"), list(stages).index("scenes"))
+        self.assertLess(list(stages).index("scenes"), list(stages).index("vantom"))
         self.assertNotIn("align_enemy_tiles", [stage.module for stage in recipe.stages])
 
     def test_retirement_tracks_the_receipt_written_by_the_actual_entrypoint(self):
@@ -168,28 +187,30 @@ class ConverterTests(unittest.TestCase):
         # Scene requirements now contain nine-pixel glyphs. The font writer
         # deliberately rejects pre-39 packs, while the retained transform
         # already accepts the Kaiser stage's version34 input.
-        self.assertLess(names.index("ui10"), names.index("scene-fonts"))
+        self.assertLess(names.index("interface-details"), names.index("scene-fonts"))
         self.assertLess(names.index("scene-fonts"), names.index("editions"))
-        self.assertEqual(stages["ui10"].module, ui10.__name__.rsplit(".", 1)[-1])
+        self.assertEqual(stages["interface-details"].module, ui10.__name__.rsplit(".", 1)[-1])
         self.assertEqual((ui10.VERSION, ui10.AUXILIARY), (39, 2154))
         for position, flag in enumerate(("--input-eng", "--input-zhs")):
             args = stages["scene-fonts"].arguments
-            self.assertEqual(args[args.index(flag) + 1], str(stages["ui10"].outputs[position]))
+            self.assertEqual(
+                args[args.index(flag) + 1], str(stages["interface-details"].outputs[position])
+            )
         for position, flag in enumerate(("--eng", "--zhs")):
             args = stages["retained-filter"].arguments
             self.assertEqual(args[args.index(flag) + 1], str(stages["kaiser"].outputs[position]))
         args = stages["editions"].arguments
         self.assertEqual(args[args.index("--input") + 1], str(stages["scene-fonts"].outputs[0]))
 
-    def test_ui13_snapshots_are_immutable_and_restore_the_resume_boundary(self):
+    def test_scene_snapshots_are_immutable_and_restore_the_resume_boundary(self):
         from nspire_converter import assemble_scene_resources
 
         with tempfile.TemporaryDirectory() as folder, contextlib.redirect_stdout(io.StringIO()):
             root = Path(folder)
             recipe = converter.Recipe("/game", root, "/runtime", "dotnet", "/noise", "-")
             recipe.source_stages()
-            stages = [stage for stage in recipe.stages if stage.module == "@ui13-assets"]
-            active = root / "cache/ui13/ui13-assets.json"
+            stages = [stage for stage in recipe.stages if stage.module == "@scene-assets"]
+            active = root / "cache/scenes/scene-assets.json"
             self.assertEqual(len(stages), 3)
             self.assertEqual(len({stage.outputs[0] for stage in stages}), 3)
             self.assertTrue(all(stage.outputs[0] != active for stage in stages))

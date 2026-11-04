@@ -69,12 +69,12 @@ def main():
     finally:
         pack.close()
     tiles.atomic_bytes(
-        cache / "history-header-ui10-assets.json", json.dumps(row, indent=2).encode() + b"\n"
+        cache / "history-header-assets.json", json.dumps(row, indent=2).encode() + b"\n"
     )
     receipts = {}
     for language in ("eng", "zhs"):
         source = tiles.private_path(getattr(args, "input_" + language), "Previous private pack")
-        target = output / f"ui10-{language}.nsp"
+        target = output / f"history-header-{language}.nsp"
         tiles.require(source.resolve() != target.resolve(), "Preserve the previous private pack")
         result, receipts[language] = append(source.read_bytes(), row, cache)
         tiles.atomic_bytes(target, result)
@@ -83,7 +83,7 @@ def main():
         "History artwork differs between locales",
     )
     tiles.atomic_bytes(
-        output / "history-header-ui10-conversion.json",
+        output / "history-header-conversion.json",
         json.dumps(receipts, indent=2).encode() + b"\n",
     )
     print(json.dumps(receipts), flush=True)

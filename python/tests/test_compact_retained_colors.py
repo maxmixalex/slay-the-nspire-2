@@ -92,7 +92,7 @@ class RetainedColorPackTest(unittest.TestCase):
             old = colors.view(source(group_bytes=4096))
             initial = colors.plan(old, root / "warm", jobs=1)
             output = colors.rewrite(old, initial)
-            (root / "ui9-eng.nsp").write_bytes(output)
+            (root / "filtered-eng.nsp").write_bytes(output)
             receipt = root / "retained-colors.json"
             # Reproduce the first release's receipt: it had mode/saved_bytes,
             # but neither chosen, stream nor a slice fingerprint.

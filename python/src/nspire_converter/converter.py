@@ -552,23 +552,23 @@ class Recipe:
             [retained / "retained-eng.nsp", retained / "retained-zhs.nsp"],
         )
         pair = tuple(retained / f"retained-{code}.nsp" for code in ("eng", "zhs"))
-        for name, module, prefix, extra in (
-            ("frontend", "patch_frontend_assets", "frontend", ()),
-            ("ui6", "patch_interface_assets", "ui6", ()),
-            ("selection", "patch_room_assets", "ui7", [*native, "--font", font]),
-            ("phobia", "patch_phobia_assets", "phobia", native),
-            ("profile", "patch_profile_assets", "ui7", ()),
-            ("hud", "patch_hud_assets", "ui7", ()),
-            ("history", "patch_history_assets", "ui8", ()),
-            ("death", "character_death_assets", "ui9", native),
-            ("journal", "patch_history_journal_assets", "ui9", ()),
-            ("game-over", "patch_game_over_transition_assets", "ui9", ()),
+        for name, module, extra in (
+            ("frontend", "patch_frontend_assets", ()),
+            ("interface", "patch_interface_assets", ()),
+            ("selection", "patch_room_assets", [*native, "--font", font]),
+            ("phobia", "patch_phobia_assets", native),
+            ("profile", "patch_profile_assets", ()),
+            ("hud", "patch_hud_assets", ()),
+            ("history", "patch_history_assets", ()),
+            ("death", "character_death_assets", native),
+            ("journal", "patch_history_journal_assets", ()),
+            ("game-over", "patch_game_over_transition_assets", ()),
         ):
-            pair = self.pair(name, module, pair, prefix, extra)
+            pair = self.pair(name, module, pair, name, extra)
         # The retained writer handles literal glyphs through NSP2/31. Compact
         # artwork before glyph grouping changes their representation in /32.
         compact = self.directory("retained-compact")
-        paths = tuple(compact / f"ui9-{code}.nsp" for code in ("eng", "zhs"))
+        paths = tuple(compact / f"retained-{code}.nsp" for code in ("eng", "zhs"))
         self.add(
             "retained-compact",
             "compact_retained_resources",
@@ -611,9 +611,9 @@ class Recipe:
             ("selector-fonts", "selection_assets", ["--font-dir", self.fonts]),
             ("kaiser", "bestiary_kaiser_assets", native),
         ):
-            pair = self.pair(name, module, pair, "ui9", extra)
+            pair = self.pair(name, module, pair, name, extra)
         color = self.directory("retained-filter")
-        paths = tuple(color / f"ui9-{code}.nsp" for code in ("eng", "zhs"))
+        paths = tuple(color / f"filtered-{code}.nsp" for code in ("eng", "zhs"))
         self.add(
             "retained-filter",
             "compact_retained_colors",
@@ -635,14 +635,14 @@ class Recipe:
         for name, module in (
             ("fake-merchant", "room_popup_assets"),
             ("history-header", "history_header_assets"),
-            ("ui10", "append_final_assets"),
+            ("interface-details", "append_final_assets"),
         ):
-            pair = self.pair(name, module, pair, "ui10")
+            pair = self.pair(name, module, pair, name)
         # Current scene labels include nine-pixel glyph bands. Their wire
         # interpretation requires the complete NSP2/39 artwork catalog, so
-        # append these fonts only after the UI10 37 -> 38 -> 39 sequence.
+        # append these fonts only after the NSP2/37 -> 38 -> 39 sequence.
         scene = self.directory("scene-fonts")
-        paths = tuple(scene / f"ui9-{code}.nsp" for code in ("eng", "zhs"))
+        paths = tuple(scene / f"scene-{code}.nsp" for code in ("eng", "zhs"))
         self.add(
             "scene-fonts",
             "scene_fonts",
@@ -677,9 +677,9 @@ class Recipe:
             ],
             self.edition_files(editions) + [editions / "locales-receipt.json"],
         )
-        ui12 = self.directory("ui12")
+        corrected = self.directory("corrected")
         self.add(
-            "ui12",
+            "corrected",
             "correct_source_resources",
             [
                 "--editions",
@@ -689,21 +689,21 @@ class Recipe:
                 "--fonts",
                 self.fonts,
                 "--output",
-                ui12,
+                corrected,
                 "--cache",
-                self.directory("cache/ui12"),
+                self.directory("cache/corrected"),
                 "--languages",
                 languages,
                 "--keep-logical",
                 "",
             ],
-            self.edition_files(ui12) + [ui12 / "locales-receipt.json"],
+            self.edition_files(corrected) + [corrected / "locales-receipt.json"],
         )
         legacy = self.directory("startup-input")
         self.add(
             "startup-input",
             "@rename-editions",
-            [ui12, legacy, "old", languages],
+            [corrected, legacy, "old", languages],
             self.edition_files(legacy, old=True),
         )
         startup = self.directory("startup")
@@ -746,14 +746,14 @@ class Recipe:
             ],
             self.edition_files(swarm, old=True),
         )
-        ready = self.directory("ui13-input")
+        ready = self.directory("scene-input")
         self.add(
-            "ui13-input",
+            "scene-input",
             "@rename-editions",
             [swarm, ready, "new", languages],
             self.edition_files(ready) + [ready / "eng.nsp"],
         )
-        # UI13 grafts real per-clip source registration into every locale while
+        # The scene pass grafts real per-clip source registration into every locale while
         # proving frame IDs/counts/clocks. Vantom's later typed sampler requires
         # these measured units; its old model-wide zero fields are insufficient.
         rebaked = self.directory("enemy-rebake")
@@ -776,17 +776,17 @@ class Recipe:
             ],
             [rebaked / "eng.nsp", rebaked / "enemy-rebake-receipt.json"],
         )
-        artcache = self.directory("cache/ui13")
+        artcache = self.directory("cache/scenes")
         for name, command, extra in (
-            ("ui13-assets", "assets", ()),
-            ("ui13-retained", "extend-retained", ["--fastnoise-header", self.noise]),
-            ("ui13-fake-rug", "extend-fake-rug", ()),
+            ("scene-assets", "assets", ()),
+            ("scene-retained", "extend-retained", ["--fastnoise-header", self.noise]),
+            ("merchant-rug", "extend-fake-rug", ()),
         ):
             # Each command extends the same verified source manifest. Use a
             # separate completion snapshot, since later stages update it.
             self.add(
                 name,
-                "@ui13-assets",
+                "@scene-assets",
                 [
                     command,
                     "--pck",
@@ -800,9 +800,9 @@ class Recipe:
                 ],
                 [artcache / (name + "-stage.json")],
             )
-        ui13 = self.directory("ui13")
+        scenes = self.directory("scenes")
         self.add(
-            "ui13",
+            "scenes",
             "assemble_scene_resources",
             [
                 "pack",
@@ -815,7 +815,7 @@ class Recipe:
                 "--fonts",
                 self.fonts,
                 "--output",
-                ui13,
+                scenes,
                 "--pck",
                 self.pck,
                 "--cache",
@@ -825,25 +825,25 @@ class Recipe:
                 "--keep-logical",
                 "eng",
             ],
-            self.edition_files(ui13) + [ui13 / "ui13-eng.nsp"],
+            self.edition_files(scenes) + [scenes / "scenes-eng.nsp"],
         )
-        ui14 = self.directory("ui14")
+        animations = self.directory("animations")
         self.add(
-            "ui14",
+            "animations",
             "assemble_animation_resources",
             [
                 "--artwork",
-                ui13 / "ui13-eng.nsp",
+                scenes / "scenes-eng.nsp",
                 "--source-common",
-                ui13 / "nSpire2.dat.tns",
+                scenes / "nSpire2.dat.tns",
                 "--source-editions",
-                ui13,
+                scenes,
                 "--pck",
                 self.pck,
                 "--cache",
-                self.directory("cache/ui14"),
+                self.directory("cache/animations"),
                 "--output",
-                ui14,
+                animations,
                 "--workers",
                 self.workers,
                 "--languages",
@@ -851,7 +851,7 @@ class Recipe:
                 "--keep-logical",
                 "eng",
             ],
-            self.edition_files(ui14) + [ui14 / "ui14-eng.nsp"],
+            self.edition_files(animations) + [animations / "animations-eng.nsp"],
         )
         vantom = self.directory("cache/vantom")
         self.add(
@@ -862,7 +862,7 @@ class Recipe:
                 self.pck,
                 *native,
                 "--input",
-                ui14 / "ui14-eng.nsp",
+                animations / "animations-eng.nsp",
                 "--cache",
                 vantom,
                 "--sample-work",
@@ -874,23 +874,23 @@ class Recipe:
         )
         effects = self.directory("cache/vantom-effects") / "catalog.json"
         self.add("vantom-effects", "@vantom-effects", [self.pck, effects], [effects])
-        ui15 = self.directory("ui15")
+        effects = self.directory("effects")
         self.add(
-            "ui15",
+            "effects",
             "assemble_effect_resources",
             [
                 "--source-common",
-                ui14 / "nSpire2.dat.tns",
+                animations / "nSpire2.dat.tns",
                 "--source-editions",
-                ui14,
+                animations,
                 "--pck",
                 self.pck,
                 "--fonts",
                 self.fonts,
                 "--cache",
-                self.directory("cache/ui15"),
+                self.directory("cache/effects"),
                 "--output",
-                ui15,
+                effects,
                 "--vantom-catalog",
                 vantom / "vantom-assets.json",
                 "--extra-catalog",
@@ -900,9 +900,9 @@ class Recipe:
                 "--keep-logical",
                 "",
             ],
-            self.edition_files(ui15) + [ui15 / "locales-receipt.json"],
+            self.edition_files(effects) + [effects / "locales-receipt.json"],
         )
-        return ui15
+        return effects
 
     def edition_files(self, directory, old=False):
         return [
@@ -964,14 +964,14 @@ def internal(module, arguments):
             (output / "eng.nsp").write_bytes(
                 split.reconstruct(common, (output / "nSpire2.eng.dat.tns").read_bytes(), "eng")
             )
-    elif module == "@ui13-assets":
+    elif module == "@scene-assets":
         args = list(arguments)
         position = args.index("--snapshot")
         snapshot = Path(args[position + 1])
         del args[position : position + 2]
         internal("assemble_scene_resources", args)
         cache = Path(args[args.index("--cache") + 1])
-        shutil.copy2(cache / "ui13-assets.json", snapshot)
+        shutil.copy2(cache / "scene-assets.json", snapshot)
     elif module == "@vantom-effects":
         from nspire_converter.vantom_vfx_assets import (
             AUXILIARY_COUNT,
@@ -1167,13 +1167,13 @@ def run_stages(stages, work, identity, stop_after=None, *, compact=False, keep_i
         )
         if resumed:
             print(f"[{index}/{len(stages)}] {stage.name}: verified existing output", flush=True)
-            if stage.module == "@ui13-assets":
+            if stage.module == "@scene-assets":
                 # Later commands extend this mutable scratch manifest. Restore
                 # the verified stage boundary before resuming the next one;
                 # an interrupted extension must not inherit a later suffix.
                 args = stage.arguments
                 snapshot = Path(args[args.index("--snapshot") + 1])
-                active = Path(args[args.index("--cache") + 1]) / "ui13-assets.json"
+                active = Path(args[args.index("--cache") + 1]) / "scene-assets.json"
                 shutil.copy2(snapshot, active)
         else:
             prepare_tile_generation(stage, work, receipt, logs / (stage.name + ".log"))

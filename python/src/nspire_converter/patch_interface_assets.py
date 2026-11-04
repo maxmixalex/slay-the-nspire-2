@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Append pinned UI6 artwork to private NSP2/22 packs without re-encoding them.
+"""Append pinned interface artwork to private NSP2/22 packs without re-encoding them.
 
 The shared relocation code preserves every historical image/clip/string index,
 the chosen Chinese glyph payload order, and the existing save/runtime codecs.
@@ -99,20 +99,20 @@ def cursor_image(pack, source):
 
 def build_art(pck_path, cache):
     cache.mkdir(parents=True, exist_ok=True)
-    manifest_path = cache / "ui6-assets.json"
+    manifest_path = cache / "interface-assets.json"
     if manifest_path.exists():
         manifest = json.loads(manifest_path.read_text())
         tiles.require(
             manifest.get("schema") == 1
             and manifest.get("output_version") == VERSION
             and len(manifest.get("images", [])) == AUXILIARY - BASE_AUX,
-            "Incompatible UI6 cache",
+            "Incompatible interface cache",
         )
         for row in manifest["images"]:
             raw = (cache / row["file"]).read_bytes()
             tiles.require(
                 len(raw) == row["bytes"] and tiles.sha256(raw) == row["sha256"],
-                "Invalid UI6 cache payload",
+                "Invalid interface cache payload",
             )
         return manifest
     pack, textures = Pack(pck_path), OrderedDict()
@@ -156,7 +156,7 @@ def build_art(pck_path, cache):
             )
             image.save(cache / (key + ".png"))
             rows.append(row)
-        tiles.require(len(rows) == AUXILIARY - BASE_AUX, "UI6 image directory mismatch")
+        tiles.require(len(rows) == AUXILIARY - BASE_AUX, "interface image directory mismatch")
         for i, row in enumerate(rows):
             row["auxiliary"] = BASE_AUX + i
         localized = {}
@@ -169,7 +169,7 @@ def build_art(pck_path, cache):
                 ).get(key)
                 tiles.require(
                     isinstance(value, str) and value and "\0" not in value,
-                    "Missing UI6 locale entry",
+                    "Missing interface locale entry",
                 )
                 localized[language][qualified] = value
     finally:
@@ -212,18 +212,18 @@ def main():
     parser.add_argument("--cache-dir", required=True, type=Path)
     args = parser.parse_args()
     pck = tiles.private_path(args.pck, "Owner PCK")
-    cache = tiles.private_path(args.cache_dir, "Private UI6 cache")
-    output = tiles.private_path(args.output_dir, "Private UI6 output")
+    cache = tiles.private_path(args.cache_dir, "Private interface cache")
+    output = tiles.private_path(args.output_dir, "Private interface output")
     tiles.require(cache != output, "Output and cache must differ")
     manifest = build_art(pck, cache)
     for language, path in (("zhs", args.input_zhs), ("eng", args.input_eng)):
         path = tiles.private_path(path, "Input pack")
-        destination = output / ("ui6-" + language + ".nsp")
+        destination = output / ("interface-" + language + ".nsp")
         tiles.require(path != destination, "Input and output must differ")
         data, receipt = patch_pack(path.read_bytes(), manifest, cache)
         tiles.atomic_bytes(destination, data)
         tiles.atomic_bytes(
-            output / ("ui6-" + language + "-receipt.json"),
+            output / ("interface-" + language + "-receipt.json"),
             json.dumps(receipt, indent=2).encode() + b"\n",
         )
         print(json.dumps(dict(language=language, **receipt)), flush=True)

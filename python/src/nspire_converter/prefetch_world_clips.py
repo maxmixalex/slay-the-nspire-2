@@ -148,6 +148,65 @@ def prefetch_job(item):
     return number, job["key"], "baked", len(payload)
 
 
+def clip_group_key(job, model, layout):
+    """Group Kaiser jobs whose selected track replaces the same setup pose.
+
+    The adapter sets setup tracks, then replaces the selected track before its
+    first Apply. These shared models have no phase/bone/child drivers that use
+    facts separately. Keep all other job and visual inputs in the comparison.
+    """
+    if (
+        model.get("shared_group") != "KaiserCrab"
+        or model.get("phase_tracks")
+        or model.get("scene_controls")
+        or any("skeleton" in layer for layer in model.get("layers", []))
+    ):
+        return job["key"]
+    state = job_state(job, layout)
+    setup = state.get("setup_tracks", [])
+    if any(track.get("queued") for track in setup):
+        return job["key"]
+    state.pop("facts", None)
+    state["setup_tracks"] = [track for track in setup if track["track"] != state.get("track", 0)]
+    inputs = {
+        key: value for key, value in job.items() if key not in ("key", "id", "when", "visual_state")
+    }
+    return canonical(dict(job=inputs, visual_state=state))
+
+
+def prefetch_group(group):
+    source, targets = group
+    source_result = prefetch_job(source)
+    cache, _pck, _sampler, _models, scopes, _sources = _worker
+    source_job, source_layout = source[1:]
+    scope = scopes[source_job["model"]]
+    settings = dict(job=source_job, visual_state=job_state(source_job, source_layout))
+    metadata, payload = cache.get("clip", settings, scope=scope)
+    source_key = cache.key("clip", settings, scope)
+    results = []
+    for number, job, layout in targets:
+        if number == source[0]:
+            results.append(source_result)
+            continue
+        settings = dict(job=job, visual_state=job_state(job, layout))
+        own_metadata = dict(metadata, visual_state=settings["visual_state"])
+        other = cache.get("clip", settings, scope=scope)
+        if other is not None:
+            if canonical(other[0]) != canonical(own_metadata) or other[1] != payload:
+                raise ValueError("Equivalent original-frame producers disagree: " + job["key"])
+        else:
+            cache.put(
+                "clip",
+                settings,
+                own_metadata,
+                payload,
+                scope=scope,
+                reused_from=dict(pipeline="equivalent-kaiser-tracks", key=source_key),
+            )
+        results.append((number, job["key"], "reused", len(payload)))
+    return results
+
+
 def measured_layouts(cache, sources, models):
     layouts = {}
     for name, model in models.items():
@@ -173,20 +232,33 @@ def prefetch(cache, game, runtime, dotnet, fastnoise, layouts, workers=2, *, fir
     last = last or len(ENEMY_CLIP_ROWS)
     sources = cache.source_files
     models = {row["model"]: row for row in manifest()["models"]}
-    pending = []
+    groups = {}
     for number in range(last - 1, first - 2, -1):
         job = ENEMY_CLIP_ROWS[number]
-        settings = dict(job=job, visual_state=job_state(job, layouts[job["model"]]))
+        layout = layouts[job["model"]]
+        item = number, job, layout
+        key = clip_group_key(job, models[job["model"]], layout)
+        group = groups.setdefault(key, dict(source=None, targets=[]))
+        settings = dict(job=job, visual_state=job_state(job, layout))
         if cached_enemy_clip(cache, settings, sources, models[job["model"]]) is None:
-            pending.append((number, job, layouts[job["model"]]))
+            group["targets"].append(item)
+        elif group["source"] is None:
+            group["source"] = item
+    pending = [
+        (group["source"] or group["targets"][0], group["targets"])
+        for group in groups.values()
+        if group["targets"]
+    ]
+    missing = sum(len(targets) for _source, targets in pending)
     print(
-        f"Prefetch: {len(pending)} missing clips in rows {first}..{last}; {workers} workers; cache {cache.identity}",
+        f"Prefetch: {missing} missing clips in {len(pending)} render groups in rows {first}..{last}; {workers} workers; cache {cache.identity}",
         flush=True,
     )
     report = dict(
         workers=workers,
         requested_jobs=last - first + 1,
-        missing_jobs=len(pending),
+        missing_jobs=missing,
+        render_groups=len(pending),
         baked=0,
         reused=0,
         matched=0,
@@ -206,14 +278,15 @@ def prefetch(cache, game, runtime, dotnet, fastnoise, layouts, workers=2, *, fir
                 str(fastnoise),
             ),
         ) as pool:
-            for completed, (number, key, status, size) in enumerate(
-                pool.map(prefetch_job, pending), 1
-            ):
-                report[status] += 1
-                print(
-                    f"Prefetch {completed}/{len(pending)} clip {number + 1}: {key}: {status}, {size} bytes",
-                    flush=True,
-                )
+            completed = 0
+            for results in pool.map(prefetch_group, pending):
+                for number, key, status, size in results:
+                    completed += 1
+                    report[status] += 1
+                    print(
+                        f"Prefetch {completed}/{missing} clip {number + 1}: {key}: {status}, {size} bytes",
+                        flush=True,
+                    )
     return report
 
 

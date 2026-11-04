@@ -120,6 +120,15 @@ void frame_pool_profiles() {
     CHECK(image_page_limit == 1728 && tile_page_limit == 48);
     CHECK(tile_pages == picture_pixels + (7u * 1024u - 256u) * 1024u);
     CHECK(sizeof picture_pixels == (13u * 1024u - 256u) * 1024u);
+    // Every full selection loop needs room for fragmentation from retained
+    // title/portrait pictures, even when its total patch bytes fit the normal
+    // tier. The dedicated split borrows tiles without growing the arena.
+    for (unsigned character = 0; character < character_select_delta::Characters; ++character) {
+        owner.set_image_cache_profile(false, character_select_delta::extended_cache(character));
+        CHECK(image_page_limit == 2176 && tile_page_limit == 34);
+        CHECK(tile_pages == picture_pixels + 2176u * ImagePageBytes);
+    }
+    CHECK(!character_select_delta::extended_cache(character_select_delta::Characters));
     owner.set_image_cache_profile(true);
     CHECK(image_page_limit == 3008 && tile_page_limit == 8);
     CHECK(tile_pages == picture_pixels + (12u * 1024u - 256u) * 1024u);

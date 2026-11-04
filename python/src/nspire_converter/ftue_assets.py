@@ -304,7 +304,7 @@ def main():
         ),
     ):
         path = tiles.private_path(getattr(args, "input_" + language), "Previous private content")
-        destination = output / ("ui9-" + language + ".nsp")
+        destination = output / ("ftue-" + language + ".nsp")
         tiles.require(path.resolve() != destination.resolve(), "Preserve the previous pack")
         data, receipt = append(path.read_bytes(), manifest, cache)
         out, font_receipt = append_fonts(data, *(Face(fonts / name) for name in names))

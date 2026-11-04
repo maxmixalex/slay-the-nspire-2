@@ -70,7 +70,7 @@ def build_images(pack, cache):
         image = material_tint(pack, original, material) if material else original
         size = (109, 126) if index == 0 else (37, 18)
         image = image.resize(size, Image.Resampling.LANCZOS)
-        row = write_image(cache, "ui10-" + key, image)
+        row = write_image(cache, "fake-merchant-" + key, image)
         row.update(
             key=key,
             auxiliary=BASE_AUX + len(rows),
@@ -80,12 +80,12 @@ def build_images(pack, cache):
             material=material,
         )
         rows.append(row)
-    tiles.require(len(rows) == AUXILIARY - BASE_AUX, "Room UI37 image count changed")
+    tiles.require(len(rows) == AUXILIARY - BASE_AUX, "Room NSP2/37 image count changed")
     return rows
 
 
 def append(data, rows, cache):
-    tiles.require(len(rows) == AUXILIARY - BASE_AUX, "Room UI37 requires all six images")
+    tiles.require(len(rows) == AUXILIARY - BASE_AUX, "Room NSP2/37 requires all six images")
     manifest = dict(images=rows, clips=[], localized_text={"eng": {}, "zhs": {}})
     result, receipt = patch_pack(
         data,
@@ -123,22 +123,22 @@ def main():
     finally:
         pack.close()
     tiles.atomic_bytes(
-        cache / "fake-merchant-ui10-assets.json", json.dumps(rows, indent=2).encode() + b"\n"
+        cache / "fake-merchant-assets.json", json.dumps(rows, indent=2).encode() + b"\n"
     )
     receipts = {}
     for language in ("eng", "zhs"):
         source = tiles.private_path(getattr(args, "input_" + language), "Previous private pack")
-        target = output / f"ui10-{language}.nsp"
+        target = output / f"fake-merchant-{language}.nsp"
         tiles.require(source.resolve() != target.resolve(), "Speech append must preserve its input")
         data, receipt = append(source.read_bytes(), rows, cache)
         tiles.atomic_bytes(target, data)
         receipts[language] = receipt
     tiles.require(
         receipts["eng"]["common_art_sha256"] == receipts["zhs"]["common_art_sha256"],
-        "Room UI37 artwork differs between languages",
+        "Room NSP2/37 artwork differs between languages",
     )
     tiles.atomic_bytes(
-        output / "fake-merchant-ui10-conversion.json",
+        output / "fake-merchant-conversion.json",
         json.dumps(receipts, indent=2).encode() + b"\n",
     )
     print(json.dumps(dict(auxiliary=AUXILIARY, languages=receipts)), flush=True)

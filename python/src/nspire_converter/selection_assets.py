@@ -501,7 +501,7 @@ def main():
         ),
     ):
         path = tiles.private_path(getattr(args, "input_" + language), "Previous private content")
-        destination = output / ("ui9-" + language + ".nsp")
+        destination = output / ("selector-fonts-" + language + ".nsp")
         tiles.require(path.resolve() != destination.resolve(), "Preserve the previous pack")
         if args.fonts_only:
             data = path.read_bytes()

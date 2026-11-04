@@ -108,7 +108,7 @@ class WorkspaceTests(unittest.TestCase):
             "/game", "/work", "/runtime", "dotnet", "/noise", "-", languages=("eng", "zhs")
         )
         recipe.source_stages()
-        names = ("editions", "ui12", "startup", "swarm", "ui13", "ui14", "ui15")
+        names = ("editions", "corrected", "startup", "swarm", "scenes", "animations", "effects")
         for stage in recipe.stages:
             if stage.name in names:
                 self.assertEqual(

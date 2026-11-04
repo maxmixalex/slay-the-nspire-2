@@ -181,7 +181,7 @@ class Workspace:
         (
             "fonts",
             "scene-fonts",
-            "ui15",
+            "effects",
             "paired44",
             "cache/paired44",
             "retirement45",
@@ -421,17 +421,17 @@ def _run(stages, work, identities, stop_after=None, *, keep=False):
                 summary["stages"].append(dict(stage=stage.name, action="reused"))
             else:
                 workspace.prepare_outputs(index)
-                if stage.module == "@ui13-assets":
+                if stage.module == "@scene-assets":
                     previous = [
                         parent
                         for parent in workspace.dependencies[index]
-                        if stages[parent].module == "@ui13-assets"
+                        if stages[parent].module == "@scene-assets"
                     ]
                     if previous:
                         snapshot = stages[max(previous)].outputs[0]
                         args = stage.arguments
                         shutil.copy2(
-                            snapshot, Path(args[args.index("--cache") + 1]) / "ui13-assets.json"
+                            snapshot, Path(args[args.index("--cache") + 1]) / "scene-assets.json"
                         )
                 converter.prepare_tile_generation(
                     stage, work, receipt, logs / (stage.name + ".log")

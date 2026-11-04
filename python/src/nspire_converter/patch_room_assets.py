@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Append original UI7 room/control/feedback art and missing locale glyphs.
+"""Append original selection room/control/feedback art and missing locale glyphs.
 
 The old common artwork, clip ids and save formats stay unchanged. Source art,
 licensed samplers and all encoded output are private caller-supplied inputs.
@@ -122,7 +122,7 @@ def converter_identity():
 
 def build_art(pck_path, cache, *, runtime, dotnet=None, hand_cache=None):
     cache.mkdir(parents=True, exist_ok=True)
-    saved = cache / "ui7-assets.json"
+    saved = cache / "selection-assets.json"
     identity = converter_identity()
     if saved.is_file():
         manifest = json.loads(saved.read_text())
@@ -131,13 +131,13 @@ def build_art(pck_path, cache, *, runtime, dotnet=None, hand_cache=None):
                 len(manifest["images"]) == 1097
                 and len(manifest.get("auxiliary_rows", [])) == AUXILIARY - BASE_AUX
                 and len(manifest.get("clips", [])) == CLIPS - BASE_CLIPS,
-                "Invalid UI7 cache count",
+                "Invalid selection cache count",
             )
             for row in manifest["images"]:
                 raw = (cache / row["file"]).read_bytes()
                 tiles.require(
                     len(raw) == row["bytes"] and tiles.sha256(raw) == row["sha256"],
-                    "Changed UI7 cache image",
+                    "Changed selection cache image",
                 )
             return manifest
     pack, texture_cache = Pack(pck_path), OrderedDict()
@@ -159,29 +159,31 @@ def build_art(pck_path, cache, *, runtime, dotnet=None, hand_cache=None):
             if key == "potion-error":
                 image = potion_error_tint(pack, image)
             image = image.resize(size, Image.Resampling.LANCZOS)
-            row = write_image(cache, "ui7-" + key, image)
+            row = write_image(cache, "selection-" + key, image)
             row.update(key=key, source=path, source_size=list(original.size))
-            image.save(cache / ("ui7-" + key + ".png"))
+            image.save(cache / ("selection-" + key + ".png"))
             images.append(row)
         catalog = json.loads((PACKAGE_ROOT / "data/config/frontend.json").read_text())
         tiles.require(
             BASE_AUX + len(images) == catalog["first_auxiliary"],
-            "Frontend UI7 asset boundary changed",
+            "Frontend selection asset boundary changed",
         )
         for spec in catalog["images"]:
             original = load_scene_texture(pack, spec["path"], cache=texture_cache).convert("RGBA")
             picture = authored_tint(original, spec.get("hsv"), spec.get("modulate")).resize(
                 tuple(spec["size"]), Image.Resampling.LANCZOS
             )
-            row = write_image(cache, "ui7-" + spec["key"], picture)
+            row = write_image(cache, "selection-" + spec["key"], picture)
             row.update(key=spec["key"], source=spec["path"], source_size=list(original.size))
-            picture.save(cache / ("ui7-" + spec["key"] + ".png"))
+            picture.save(cache / ("selection-" + spec["key"] + ".png"))
             images.append(row)
         original = load_scene_texture(
             pack, "images/ui/fuzzy_nine_patch_char_select.png", cache=texture_cache
         ).convert("RGBA")
         row = write_image(
-            cache, "ui7-character-info-panel", original.resize((28, 28), Image.Resampling.LANCZOS)
+            cache,
+            "selection-character-info-panel",
+            original.resize((28, 28), Image.Resampling.LANCZOS),
         )
         row.update(
             key="character-info-panel",
@@ -189,7 +191,7 @@ def build_art(pck_path, cache, *, runtime, dotnet=None, hand_cache=None):
             source_size=list(original.size),
         )
         images.append(row)
-        tiles.require(len(images) == 180, "UI7 character static prefix changed")
+        tiles.require(len(images) == 180, "selection character static prefix changed")
         auxiliary_rows = list(range(len(images)))
         character = character_images(pack, cache, runtime=runtime, dotnet=dotnet)
         prefix = len(images)
@@ -199,18 +201,18 @@ def build_art(pck_path, cache, *, runtime, dotnet=None, hand_cache=None):
         collection = json.loads((PACKAGE_ROOT / "data/config/collection.json").read_text())
         tiles.require(
             BASE_AUX + len(auxiliary_rows) == collection["first_auxiliary"],
-            "UI7 collection boundary changed",
+            "selection collection boundary changed",
         )
         for spec in collection["images"]:
             original = load_scene_texture(pack, spec["path"], cache=texture_cache).convert("RGBA")
             picture = original.resize(tuple(spec["size"]), Image.Resampling.LANCZOS)
-            row = write_image(cache, "ui7-" + spec["key"], picture)
+            row = write_image(cache, "selection-" + spec["key"], picture)
             row.update(key=spec["key"], source=spec["path"], source_size=list(original.size))
             auxiliary_rows.append(len(images))
             images.append(row)
         tiles.require(
             len(images) == 1097 and len(auxiliary_rows) == AUXILIARY - BASE_AUX,
-            "UI7 image/auxiliary count mismatch",
+            "selection image/auxiliary count mismatch",
         )
         for index, image_index in enumerate(auxiliary_rows):
             images[image_index]["auxiliary"] = BASE_AUX + index
@@ -224,7 +226,7 @@ def build_art(pck_path, cache, *, runtime, dotnet=None, hand_cache=None):
                 value = tables[table].get(key)
                 tiles.require(
                     isinstance(value, str) and value and "\0" not in value,
-                    "Missing UI7 original text: " + qualified,
+                    "Missing selection original text: " + qualified,
                 )
                 localized[language][qualified] = value
     finally:
@@ -385,8 +387,8 @@ def main():
         tiles.private_path(p, name)
         for p, name in (
             (args.pck, "Owner PCK"),
-            (args.cache_dir, "Private UI7 cache"),
-            (args.output_dir, "Private UI7 output"),
+            (args.cache_dir, "Private selection cache"),
+            (args.output_dir, "Private selection output"),
         )
     )
     tiles.require(cache != output, "Cache and output must differ")
@@ -401,7 +403,7 @@ def main():
     font = choose_font(str(args.font) if args.font else None)
     for language, input_path in (("eng", args.input_eng), ("zhs", args.input_zhs)):
         input_path = tiles.private_path(input_path, "Input pack")
-        target = output / ("ui7-" + language + ".nsp")
+        target = output / ("selection-" + language + ".nsp")
         tiles.require(input_path != target, "Do not overwrite verified input")
         input_bytes = input_path.read_bytes()
         expanded = grow_string_directory(input_bytes, 8704, BASE_AUX, BASE_CLIPS, 23)
@@ -440,7 +442,7 @@ def main():
         )
         tiles.atomic_bytes(target, data)
         tiles.atomic_bytes(
-            output / ("ui7-" + language + "-receipt.json"),
+            output / ("selection-" + language + "-receipt.json"),
             json.dumps(receipt, indent=2).encode() + b"\n",
         )
         print(json.dumps(dict(language=language, **receipt)), flush=True)

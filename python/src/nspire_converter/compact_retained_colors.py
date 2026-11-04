@@ -106,7 +106,7 @@ def previous_results(path):
     }
     if receipt.get("version") == CONTENT_VERSION and "locales" in receipt:
         for language, locale in receipt["locales"].items():
-            packed = path.parent / ("ui9-" + language + ".nsp")
+            packed = path.parent / ("filtered-" + language + ".nsp")
             if not packed.is_file():
                 continue
             data = packed.read_bytes()
@@ -476,7 +476,7 @@ def main():
     }
     output = tiles.private_path(args.output, "Retained output directory")
     cache = tiles.private_path(args.cache, "Retained compression cache")
-    outputs = {language: output / ("ui9-" + language + ".nsp") for language in inputs}
+    outputs = {language: output / ("filtered-" + language + ".nsp") for language in inputs}
     tiles.require(
         not set(inputs.values()).intersection(outputs.values()), "Never overwrite an input pack"
     )

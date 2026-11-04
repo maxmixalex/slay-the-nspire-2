@@ -558,7 +558,7 @@ def main():
         pack.close()
     t.atomic_bytes(args.output, result)
     t.atomic_bytes(
-        args.work / "actor-animation-ui22-receipt.json",
+        args.work / "actor-animation-receipt.json",
         json.dumps(receipt, indent=2).encode() + b"\n",
     )
     emit(

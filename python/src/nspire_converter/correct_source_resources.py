@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Correct source artwork and font metrics in private UI12 locale editions.
+"""Correct source artwork and font metrics in private corrected locale editions.
 
 Existing animation streams are copied without decoding. Replacement images
 and seven missing source UI images use the existing codec. Latin layout keeps
@@ -293,7 +293,7 @@ def precise_glyphs(source, font_dir, language, cache):
                 char = chr(cp)
                 q = round(font.getlength(char) * 64)
                 left = min(0, font.getbbox(char)[0])
-                tiles.require(-7 <= left <= 0 and 0 <= q <= 2560, "Metric outside UI40 range")
+                tiles.require(-7 <= left <= 0 and 0 <= q <= 2560, "Metric outside NSP2/40 range")
                 advance = 0x8000 | ((-left) << 12) | q
                 changed += 1
                 if left:
@@ -387,14 +387,14 @@ def main():
     parser.add_argument(
         "--art-source",
         type=Path,
-        help="UI39 logical pack with corrected/re-tiled art; locale text stays from editions",
+        help="NSP2/39 logical pack with corrected/re-tiled art; locale text stays from editions",
     )
     parser.add_argument("--languages", default="all")
     parser.add_argument("--keep-logical", default="eng,zhs")
     args = parser.parse_args()
-    out = tiles.private_path(args.output, "UI12 output")
+    out = tiles.private_path(args.output, "corrected output")
     out.mkdir(parents=True, exist_ok=True)
-    cache = tiles.private_path(args.cache, "UI12 cache")
+    cache = tiles.private_path(args.cache, "corrected cache")
     cache.mkdir(parents=True, exist_ok=True)
     original_common = (args.editions / "nSpire2.dat.tns").read_bytes()
     data = (
@@ -463,7 +463,7 @@ def main():
         )
         tiles.atomic_bytes(out / f"nSpire2.{language}.dat.tns", lang)
         if language in args.keep_logical.split(","):
-            tiles.atomic_bytes(out / f"ui12-{language}.nsp", localized)
+            tiles.atomic_bytes(out / f"corrected-{language}.nsp", localized)
         reports[language] = dict(
             old_manifest["languages"][language],
             fonts=font_report,

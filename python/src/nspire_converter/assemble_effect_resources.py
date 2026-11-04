@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Assemble private UI15 artwork and exact, demand-ordered locale fonts.
+"""Assemble private effects artwork and exact, demand-ordered locale fonts.
 
 Inputs are the owner's immutable UI14 split delivery and original PCK/fonts.
 No private pixels, fonts, strings or generated resource files belong in source.
@@ -82,7 +82,7 @@ def append_sort_fonts(data, font_directory):
             advance = round(font.getlength(chr(cp)) * 64)
             left = min(0, font.getbbox(chr(cp))[0])
             width = max(1, math.ceil(advance / 64), font.getbbox(chr(cp))[2]) - left
-            tiles.require(-7 <= left <= 0 and advance <= 2560, "Sort metrics exceed UI40")
+            tiles.require(-7 <= left <= 0 and advance <= 2560, "Sort metrics exceed NSP2/40")
             image = Image.new("L", (width, 11))
             ImageDraw.Draw(image).text((-left, 7), chr(cp), font=font, fill=255, anchor="ls")
             raw, encoded = rle(image.tobytes())
@@ -196,7 +196,7 @@ def build_artwork(original, pck, cache, room_catalog=None, vantom_catalog=None, 
     reclaimed = None
     if vantom_catalog:
         artwork, reclaimed = reclaim(artwork, cache / "reclaimed-vantom-tiles", 2)
-    tiles.require(len(view(artwork).aux) == auxiliary, "Incomplete UI15 artwork directory")
+    tiles.require(len(view(artwork).aux) == auxiliary, "Incomplete effects artwork directory")
     return artwork, dict(
         auxiliary_count=auxiliary,
         changed_images=changed,
@@ -227,15 +227,15 @@ def main():
         args.partial_art or args.vantom_catalog is not None,
         "Final artwork requires complete Vantom resources",
     )
-    output = tiles.private_path(args.output, "Private UI15 output")
+    output = tiles.private_path(args.output, "Private effects output")
     output.mkdir(parents=True, exist_ok=True)
-    cache = tiles.private_path(args.cache, "Private UI15 cache")
+    cache = tiles.private_path(args.cache, "Private effects cache")
     cache.mkdir(parents=True, exist_ok=True)
     common_source = tiles.private_path(args.source_common, "Original common data").read_bytes()
     editions = tiles.private_path(args.source_editions, "Original locale directory")
     if args.reuse_artwork:
         artwork = tiles.private_path(
-            args.reuse_artwork, "Previously verified UI15 artwork"
+            args.reuse_artwork, "Previously verified effects artwork"
         ).read_bytes()
         art_report = json.loads(args.reuse_artwork.with_suffix(".json").read_text())
     else:
@@ -245,9 +245,9 @@ def main():
         artwork, art_report = build_artwork(
             original, args.pck, cache, args.room_catalog, args.vantom_catalog, args.extra_catalog
         )
-        tiles.atomic_bytes(cache / "ui15-artwork.nsp", artwork)
+        tiles.atomic_bytes(cache / "effects-artwork.nsp", artwork)
         tiles.atomic_bytes(
-            cache / "ui15-artwork.json", json.dumps(art_report, indent=2).encode() + b"\n"
+            cache / "effects-artwork.json", json.dumps(art_report, indent=2).encode() + b"\n"
         )
     emit("artwork_ready", auxiliary_count=art_report["auxiliary_count"], bytes=len(artwork))
     codes = list(split.LANGUAGES) if args.languages == "all" else args.languages.split(",")
@@ -279,7 +279,7 @@ def main():
         )
         tiles.atomic_bytes(output / f"nSpire2.{code}.dat.tns", directory)
         if code in args.keep_logical.split(","):
-            tiles.atomic_bytes(output / f"ui15-{code}.nsp", localized)
+            tiles.atomic_bytes(output / f"effects-{code}.nsp", localized)
         reports[code] = dict(
             graft=graft,
             fonts=fonts,

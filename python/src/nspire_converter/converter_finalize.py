@@ -481,7 +481,7 @@ def add_final_stages(recipe, source_editions, output, codes, no_animations):
     workers = min(2, recipe.workers)
     for name, module, receipt in (
         ("native-framed20", "layered_animation_assets", None),
-        ("native-actors22", "actor_animation", "actor-animation-ui22-receipt.json"),
+        ("native-actors22", "actor_animation", "actor-animation-receipt.json"),
     ):
         target = recipe.directory(name) / "eng.nsp"
         work = recipe.directory("cache") / name

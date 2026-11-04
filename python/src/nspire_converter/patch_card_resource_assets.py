@@ -96,7 +96,7 @@ def main():
     receipts = {}
     for language in ("eng", "zhs"):
         source = tiles.private_path(getattr(args, "input_" + language), "Previous private pack")
-        target = output / f"ui9-{language}.nsp"
+        target = output / f"card-resources-{language}.nsp"
         tiles.require(source.resolve() != target.resolve(), "Card append must preserve its input")
         data, receipt = append(source.read_bytes(), row, cache)
         tiles.atomic_bytes(target, data)

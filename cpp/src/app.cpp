@@ -584,9 +584,9 @@ void App::render() {
         !(combat_feedback.active && choice_phase(game.phase)) &&
         int32_t(combat_linger_until - animation) <= 0 &&
         content.ui_image(I13_FakeMerchantSquareSpeck) >= 0;
-    // Only the two longest selection loops borrow a small part of the tile
-    // tier. The other three keep all 6 MiB of cold tiles. Using the merchant
-    // split here evicted hot tile groups throughout the player's first loop.
+    // Keep complete selection loops resident, including space fragmented by
+    // small title and portrait images. This borrows from the tile tier within
+    // the same arena, avoiding recurring frame-patch reloads after warmup.
     const bool entering_merchant = character_departure.phase == 1 &&
                                    character_departure.continuing && game.phase == Phase::Shop;
     const unsigned character = unsigned(selected_character);

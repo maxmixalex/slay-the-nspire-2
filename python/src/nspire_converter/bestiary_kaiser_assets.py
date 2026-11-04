@@ -410,7 +410,7 @@ def main():
     receipts = {}
     if not args.measure_only:
         for language, source in sources.items():
-            target = output / f"ui9-{language}.nsp"
+            target = output / f"kaiser-{language}.nsp"
             tiles.require(
                 target.resolve() != source.resolve(),
                 "The supplemental pack must preserve its input",

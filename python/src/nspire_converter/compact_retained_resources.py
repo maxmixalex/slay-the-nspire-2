@@ -379,7 +379,7 @@ def main():
             "Compaction did not reduce complete resource size",
         )
         proof = verify(source[language], data)
-        path = output / ("ui9-" + language + ".nsp")
+        path = output / ("retained-" + language + ".nsp")
         tiles.atomic_bytes(path, data)
         receipt["languages"][language] = dict(
             file=str(path),

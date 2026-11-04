@@ -9,6 +9,7 @@ __pycache__/
 *.tmp.tns
 *.o
 /converter_helpers
+/nuitka-crash-report.xml
 .mypy_cache/
 .ruff_cache/
 *.egg-info/

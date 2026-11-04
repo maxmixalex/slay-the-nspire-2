@@ -135,7 +135,7 @@ def main():
     manifest = build_art(tiles.private_path(args.pck, "Owner PCK"), cache)
     for language, path in (("eng", args.input_eng), ("zhs", args.input_zhs)):
         path = tiles.private_path(path, "Input pack")
-        target = output / ("ui7-" + language + ".nsp")
+        target = output / ("profile-" + language + ".nsp")
         tiles.require(path != target, "Do not overwrite verified input")
         data, receipt = patch_pack(
             path.read_bytes(),

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build the UI14 private artwork and all original-language data files.
+"""Build the animations private artwork and all original-language data files.
 
 The source pack and locale inputs are explicit build inputs. Runtime output
 uses only data/nSpire2.dat.tns and data/nSpire2.<language>.dat.tns. All source
@@ -130,14 +130,14 @@ def main():
     parser.add_argument("--skip-tighten", action="store_true")
     args = parser.parse_args()
     tiles.require(1 <= args.workers <= 4, "Use at most four bounded encoder workers")
-    cache = tiles.private_path(args.cache, "Private UI14 cache")
+    cache = tiles.private_path(args.cache, "Private animations cache")
     cache.mkdir(parents=True, exist_ok=True)
-    output = tiles.private_path(args.output, "Private UI14 editions")
+    output = tiles.private_path(args.output, "Private animations editions")
     output.mkdir(parents=True, exist_ok=True)
     artwork = tiles.private_path(args.artwork, "Original logical art pack").read_bytes()
     source = view(artwork)
     tiles.require(
-        len(source.aux) == BASE_AUXILIARY, "UI14 requires the complete current source catalog"
+        len(source.aux) == BASE_AUXILIARY, "animations requires the complete current source catalog"
     )
     pck = tiles.private_path(args.pck, "Original owner-supplied PCK")
     replacements = {}
@@ -175,13 +175,13 @@ def main():
         rows = source_assets(pck, art_cache)
     tiles.require(
         [row["auxiliary"] for row in rows] == list(range(BASE_AUXILIARY, COMBAT_AUXILIARY)),
-        "UI14 combat catalog has missing or reordered images",
+        "animations combat catalog has missing or reordered images",
     )
     rows = [dict(row, file=str(art_cache / row["file"])) for row in rows]
     rows.extend(dict(row, file=str(merchant_cache / row["file"])) for row in merchant_rows)
     tiles.require(
         [row["auxiliary"] for row in rows] == list(range(BASE_AUXILIARY, AUXILIARY_COUNT)),
-        "UI14 merchant static directory is incomplete",
+        "animations merchant static directory is incomplete",
     )
     art_cache = cache
     manifest = dict(images=rows, clips=[], localized_text={code: {} for code in split.LANGUAGES})
@@ -213,7 +213,7 @@ def main():
             artwork, cache / "stronger-streams", args.workers, artwork_only=True
         )
         emit("artwork_tightened", **compressed)
-    tiles.atomic_bytes(cache / "ui14-artwork.nsp", artwork)
+    tiles.atomic_bytes(cache / "animations-artwork.nsp", artwork)
     common_source = tiles.private_path(args.source_common, "Original common input").read_bytes()
     editions = tiles.private_path(args.source_editions, "Original locale inputs")
     common = None
@@ -246,7 +246,7 @@ def main():
         )
         tiles.atomic_bytes(output / f"nSpire2.{code}.dat.tns", directory)
         if code in keep:
-            tiles.atomic_bytes(output / f"ui14-{code}.nsp", localized)
+            tiles.atomic_bytes(output / f"animations-{code}.nsp", localized)
         reports[code] = dict(
             report,
             bytes=len(directory),

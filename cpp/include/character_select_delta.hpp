@@ -8,7 +8,7 @@ constexpr unsigned AuxiliaryFirst = ActorAnimationAuxiliaryCount;
 constexpr unsigned AuxiliaryCount = AuxiliaryFirst + Characters;
 constexpr unsigned ResidentPages[Characters] = {1600, 2000, 2000, 1600, 1600};
 constexpr bool extended_cache(unsigned character) {
-    return character == 1 || character == 2;
+    return character < Characters;
 }
 
 template <class Content>

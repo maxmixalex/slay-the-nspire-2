@@ -196,7 +196,7 @@ def requirements(source):
 
 def patch(data, regular, bold, display=None, italic=None, fallback=None):
     # Later font-only iterations preserve the complete existing artwork and
-    # its encoding/version, including RGR2 and the six source UI37 pictures.
+    # its encoding/version, including RGR2 and the six source NSP2/37 pictures.
     version = struct.unpack_from("<I", data, 4)[0] if len(data) >= 8 else 0
     auxiliary = (
         2154 if version == 39 else 2068 if version == 38 else 2067 if version == 37 else AUXILIARY
@@ -311,7 +311,7 @@ def main():
         ),
     ):
         path = tiles.private_path(getattr(args, "input_" + language), "Immutable input pack")
-        target = output / ("ui9-" + language + ".nsp")
+        target = output / ("scene-" + language + ".nsp")
         tiles.require(path.resolve() != target.resolve(), "Preserve the input pack")
         fallback = Face(fonts / "NotoSansMonoCJKsc-Regular.otf") if language == "eng" else None
         out, reports[language] = patch(
