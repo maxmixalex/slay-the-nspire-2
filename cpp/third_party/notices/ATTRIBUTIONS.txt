@@ -1,0 +1,41 @@
+Slay the Nspire 2 — component credits
+
+The port is distributed under GPL-3.0-or-later; see the project LICENSE.
+Slay the Spire 2 and its game assets belong to Mega Crit and the respective
+owners. Game assets are converted from the player's own installation.
+
+The native runtime uses Igor Pavlov's public-domain LZMA2 decoder (7-Zip
+LZMA SDK). Unicode-derived character tables are distributed with the
+Unicode License V3. Calendar data was collected from .NET culture APIs.
+The source uses Ndless platform interfaces and draws on the nZATO port.
+
+The reference arithmetic adapts Go softfloat and math routines.
+Copyright 2009–2011 The Go Authors. All rights reserved. See
+Go-BSD-3-Clause.txt. Notices for the logarithm, square root and sine:
+
+Copyright (C) 1993 by Sun Microsystems, Inc. All rights reserved.
+Developed at SunPro, a Sun Microsystems, Inc. business.
+Permission to use, copy, modify, and distribute this software is freely
+granted, provided that this notice is preserved.
+
+Sine coefficients: Cephes Math Library Release 2.8, June 2000.
+Copyright 1984, 1987, 1989, 1992, 2000 by Stephen L. Moshier.
+May be used freely, without support or guarantee.
+
+Reference implementations: https://go.dev/src/runtime/softfloat64.go and
+https://go.dev/src/math/ . These notices do not grant rights in the original
+game or imply exact last-bit equivalence to its Windows math library.
+
+Color and particle mathematics: Godot contributors and Björn Ottosson;
+see OkHSV-Godot-MIT.txt. Boot glyphs derive from Noto Sans CJK SC.
+The converter can also use Noto Emoji and Noto Sans Symbols 2 for
+characters missing from a game font. The accompanying OFL notices
+identify the corresponding font authors and redistribution terms.
+
+https://www.7-zip.org/sdk.html
+https://www.unicode.org/
+https://go.dev/
+https://github.com/godotengine/godot
+https://github.com/notofonts/noto-cjk
+https://github.com/googlefonts/noto-emoji
+https://github.com/notofonts/symbols
