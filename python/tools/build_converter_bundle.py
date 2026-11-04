@@ -15,6 +15,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
+from build_converter_helpers import verify_helpers
 from nspire_converter import __version__
 from nspire_converter.inventory import inventory
 from nspire_converter.paths import PACKAGE_ROOT, ROOT
@@ -46,6 +47,7 @@ def build(helpers: Path, output: Path, work: Path, *, mode: str = "onefile") -> 
     for name in required:
         if not (helpers / name).is_file():
             raise ValueError(f"Missing target helper: {name}")
+    verify_helpers(helpers)
     staging = work / "payload"
     staging.mkdir(exist_ok=True)
     bundled_helpers = staging / "converter_helpers"

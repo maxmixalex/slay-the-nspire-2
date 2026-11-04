@@ -15,9 +15,55 @@ import os
 import shutil
 import subprocess
 import sys
+import tempfile
 from pathlib import Path
 
 from nspire_converter.paths import ROOT
+
+
+def verify_helpers(directory: Path) -> None:
+    """Load both native helpers without the developer's runtime search paths."""
+    directory = directory.resolve(strict=True)
+    adapter = directory / ("SpineSampleAdapter.exe" if os.name == "nt" else "SpineSampleAdapter")
+    suffix = ".dll" if os.name == "nt" else ".dylib" if sys.platform == "darwin" else ".so"
+    library = directory / ("nspire_noise" + suffix)
+    environment = os.environ.copy()
+    for name in ("PYTHONPATH", "PYTHONHOME", "LD_LIBRARY_PATH", "DYLD_LIBRARY_PATH"):
+        environment.pop(name, None)
+    environment["PATH"] = (
+        str(Path(os.environ.get("SystemRoot", "C:/Windows")) / "System32")
+        if os.name == "nt"
+        else "/usr/bin:/bin"
+    )
+    probe = (
+        "import ctypes, math, sys\n"
+        "library = ctypes.CDLL(sys.argv[1])\n"
+        "library.nspire_decim_noise.argtypes = [ctypes.c_float]\n"
+        "library.nspire_decim_noise.restype = ctypes.c_float\n"
+        "if not math.isfinite(library.nspire_decim_noise(0.25)):\n"
+        "    raise ValueError('Native noise helper returned a non-finite sample')\n"
+    )
+    with tempfile.TemporaryDirectory(prefix="nspire-native-helpers-") as working_directory:
+        subprocess.run(
+            [sys.executable, "-I", "-c", probe, str(library)],
+            cwd=working_directory,
+            env=environment,
+            check=True,
+            timeout=30,
+        )
+        result = subprocess.run(
+            [str(adapter)],
+            input='{"schema_version":2}\n',
+            text=True,
+            capture_output=True,
+            cwd=working_directory,
+            env=environment,
+            check=True,
+            timeout=30,
+        )
+        reply = json.loads(result.stdout)
+        if reply.get("ok") is not False or reply.get("error") != "Unsupported adapter protocol":
+            raise ValueError("Native Spine adapter did not answer its protocol check")
 
 
 def build(args):
@@ -84,7 +130,9 @@ def build(args):
         command.append("-fPIC")
     command.extend(["-dynamiclib" if mac else "-shared", str(noise_source), "-o", str(library)])
     if windows:
-        command.extend(["-static-libgcc", "-static-libstdc++"])
+        # MinGW's static C++ runtime can still depend on a shared winpthread.
+        # Link its compiler runtimes statically into this DLL as well.
+        command.append("-static")
     subprocess.run(command, check=True)
     adapter = target / ("SpineSampleAdapter.exe" if windows else "SpineSampleAdapter")
     if not adapter.is_file() or not library.is_file():
@@ -114,6 +162,7 @@ def build(args):
         },
     }
     (target / "helper-build.json").write_text(json.dumps(receipt, indent=2) + "\n")
+    verify_helpers(target)
     return receipt
 
 
