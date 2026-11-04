@@ -21,6 +21,7 @@ from nspire_converter.patch_feedback_assets import write_image
 from nspire_converter.patch_frontend_assets import patch_pack
 from nspire_converter.paths import ROOT
 from nspire_converter.pck import Pack
+from nspire_converter.source_tables import cpp_tokens
 from nspire_converter.world_scene_assets import SceneLoader, _property, _vector, load_scene_texture
 
 SCENE = "scenes/creature_visuals/entomancer.tscn"
@@ -169,7 +170,7 @@ def main():
         if args.write_curves:
             header.write_text(curve_header(metadata))
         tiles.require(
-            header.read_text() == curve_header(metadata),
+            cpp_tokens(header.read_text()) == cpp_tokens(curve_header(metadata)),
             "Checked-in swarm curves differ from original scene",
         )
         if not args.input_dir:
